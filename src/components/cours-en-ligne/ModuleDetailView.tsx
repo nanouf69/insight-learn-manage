@@ -526,6 +526,10 @@ const isAdminAuthoritativeQuizModule = (moduleId: number | string) =>
 const getTrainerQuizIdsForModule = (moduleId: number | string) =>
   TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
 
+// Nombre de questions actuellement ouvertes en édition (Admin).
+let questionsEnEditionOuvertes = 0;
+const EVENEMENT_EDITION_QUESTION_FERMEE = "editeur-question-fermee";
+
 const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   // Matières identiques entre Cours VTC (2) et Cours VA (41) : source unique.
   2: ["dev-commercial", "reglementation-specifique-vtc"],
@@ -3260,6 +3264,18 @@ function ExerciceCard({
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
+  // Tant qu'une question est ouverte en édition, la relecture automatique
+  // des questions canoniques est suspendue (sinon le mode édition se referme).
+  useEffect(() => {
+    if (editingQId === null) return;
+    questionsEnEditionOuvertes += 1;
+    return () => {
+      questionsEnEditionOuvertes = Math.max(0, questionsEnEditionOuvertes - 1);
+      if (questionsEnEditionOuvertes === 0 && typeof window !== "undefined") {
+        window.dispatchEvent(new Event(EVENEMENT_EDITION_QUESTION_FERMEE));
+      }
+    };
+  }, [editingQId]);
   const [editingMeta, setEditingMeta] = useState(false);
   const [draftTitre, setDraftTitre] = useState(item.titre);
   const [draftSousTitre, setDraftSousTitre] = useState(item.sousTitre ?? "");
