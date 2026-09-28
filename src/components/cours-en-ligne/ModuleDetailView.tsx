@@ -531,13 +531,31 @@ const getTrainerQuizIdsForModule = (moduleId: number | string) =>
  * Ne garde que les exercices présents sur le serveur (plus ceux ajoutés dans la
  * session). Sans version serveur, rien n'est retiré.
  */
+const questionsAjouteesSession = new Set<string>();
 function garderExercicesDuServeur<T extends { exercices?: any[] }>(data: T, serveur: any, ajoutes: Set<number>): T {
   const exosServeur = Array.isArray(serveur?.exercices) ? serveur.exercices : null;
   if (!data || !Array.isArray(data.exercices) || !exosServeur || exosServeur.length === 0) return data;
   const ids = new Set(exosServeur.map((e: any) => Number(e?.id)));
-  const garde = data.exercices.filter((e: any) => ids.has(Number(e?.id)) || ajoutes.has(Number(e?.id)));
-  if (garde.length === data.exercices.length) return data;
-  console.warn("[ModuleEditor] Exercices absents du serveur ignorés:", data.exercices.filter((e: any) => !garde.includes(e)).map((e: any) => e?.id));
+  const parId = new Map<number, any>(exosServeur.map((e: any) => [Number(e?.id), e]));
+  let change = false;
+  const garde = data.exercices
+    .filter((e: any) => {
+      const ok = ids.has(Number(e?.id)) || ajoutes.has(Number(e?.id));
+      if (!ok) change = true;
+      return ok;
+    })
+    .map((e: any) => {
+      const srv = parId.get(Number(e?.id));
+      // Questions : seules celles présentes sur le serveur (ou ajoutées dans la session).
+      if (!srv || !Array.isArray(srv.questions) || !Array.isArray(e?.questions)) return e;
+      const qIds = new Set(srv.questions.map((q: any) => Number(q?.id)));
+      const qs = e.questions.filter((q: any) => qIds.has(Number(q?.id)) || questionsAjouteesSession.has(`${Number(e.id)}-${Number(q?.id)}`));
+      if (qs.length === e.questions.length) return e;
+      change = true;
+      console.warn("[ModuleEditor] Questions absentes du serveur ignorées:", e.id, e.questions.filter((q: any) => !qs.includes(q)).map((q: any) => q?.id));
+      return { ...e, questions: qs };
+    });
+  if (!change) return data;
   return { ...data, exercices: garde };
 }
 
@@ -3426,6 +3444,7 @@ function ExerciceCard({
         { lettre: "C", texte: "Choix C" },
       ],
     };
+    questionsAjouteesSession.add(`${Number(item.id)}-${Number(newId)}`);
     onUpdateQuestions(item.id, [...existing, newQ]);
     setEditingQId(newId);
     setExpanded(true);
