@@ -5563,6 +5563,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const exercicesAjoutesSessionRef = useRef<Set<number>>(new Set());
+  // À l'ouverture : l'affichage part aussi de la version serveur (retire les
+  // exercices d'une vieille copie embarquée qui n'existent plus sur le serveur).
+  const nettoyageOuvertureFaitRef = useRef<number | null>(null);
+  useEffect(() => {
+    const id = Number(module?.id);
+    if (!id || nettoyageOuvertureFaitRef.current === id) return;
+    if (!Array.isArray(moduleData?.exercices) || moduleData.exercices.length === 0) return;
+    nettoyageOuvertureFaitRef.current = id;
+    loadModuleEditorStateRow(id)
+      .then((row) => {
+        if (!row?.module_data) return;
+        setModuleData((prev) => garderExercicesDuServeur(prev, row.module_data, exercicesAjoutesSessionRef.current));
+      })
+      .catch(() => { nettoyageOuvertureFaitRef.current = null; });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [module?.id, moduleData?.exercices?.length]);
   const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
     isSavingToDbRef.current = true;
     try {
