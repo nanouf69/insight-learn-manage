@@ -526,6 +526,10 @@ const isAdminAuthoritativeQuizModule = (moduleId: number | string) =>
 const getTrainerQuizIdsForModule = (moduleId: number | string) =>
   TRAINER_QUIZ_IDS_BY_MODULE_ID[Number(moduleId)] || [];
 
+// Nombre de questions actuellement ouvertes en édition (Admin).
+let questionsEnEditionOuvertes = 0;
+const EVENEMENT_EDITION_QUESTION_FERMEE = "editeur-question-fermee";
+
 const CANONICAL_QUIZ_IDS_BY_MODULE_ID: Record<number, string[]> = {
   // Matières identiques entre Cours VTC (2) et Cours VA (41) : source unique.
   2: ["dev-commercial", "reglementation-specifique-vtc"],
@@ -3260,6 +3264,18 @@ function ExerciceCard({
   const [expanded, setExpanded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
+  // Tant qu'une question est ouverte en édition, la relecture automatique
+  // des questions canoniques est suspendue (sinon le mode édition se referme).
+  useEffect(() => {
+    if (editingQId === null) return;
+    questionsEnEditionOuvertes += 1;
+    return () => {
+      questionsEnEditionOuvertes = Math.max(0, questionsEnEditionOuvertes - 1);
+      if (questionsEnEditionOuvertes === 0 && typeof window !== "undefined") {
+        window.dispatchEvent(new Event(EVENEMENT_EDITION_QUESTION_FERMEE));
+      }
+    };
+  }, [editingQId]);
   const [editingMeta, setEditingMeta] = useState(false);
   const [draftTitre, setDraftTitre] = useState(item.titre);
   const [draftSousTitre, setDraftSousTitre] = useState(item.sousTitre ?? "");
@@ -4567,8 +4583,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const quizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)];
     if (!editorStateHydrated || !quizIds?.length) return;
     let cancelled = false;
+    let relectureEnAttente = false;
 
     const loadCanonicalQuestions = async () => {
+      if (questionsEnEditionOuvertes > 0) {
+        relectureEnAttente = true;
+        return;
+      }
+      relectureEnAttente = false;
       const [{ data, error }, { data: bindings, error: bindingsError }] = await Promise.all([
         supabase
           .from("quiz_questions")
@@ -4590,6 +4612,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const moduleBindings = (bindings ?? []) as unknown as CanonicalQuestionBinding[];
       const rows = mapCanonicalRowsToModuleExercises(sourceRows, moduleBindings);
       const sectionIds = new Set(moduleBindings.map((binding) => Number(binding.exercise_id)));
+      if (questionsEnEditionOuvertes > 0) {
+        relectureEnAttente = true;
+        return;
+      }
       canonicalRowsRef.current = rows;
       canonicalSectionIdsRef.current = sectionIds;
       setModuleData((previous) => applyCanonicalQuestionsToModule(previous, rows, sectionIds));
@@ -4628,14 +4654,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const pollInterval = window.setInterval(() => {
       if (!document.hidden) void loadCanonicalQuestions();
     }, 15_000);
+    const onEditionFermee = () => {
+      if (relectureEnAttente) void loadCanonicalQuestions();
+    };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener(EVENEMENT_EDITION_QUESTION_FERMEE, onEditionFermee);
     return () => {
       cancelled = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       window.clearInterval(pollInterval);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener(EVENEMENT_EDITION_QUESTION_FERMEE, onEditionFermee);
       void supabase.removeChannel(channel);
     };
   }, [editorStateHydrated, module.id, canonicalRefreshKey]);
