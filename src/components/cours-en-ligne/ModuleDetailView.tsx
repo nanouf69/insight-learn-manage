@@ -2882,13 +2882,18 @@ function QuestionEditor({
 
 
   return (
-    <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-3">
+    <div
+      className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-3"
+      onInputCapture={marquerSaisie}
+      onChangeCapture={marquerSaisie}
+      onPasteCapture={marquerSaisie}
+    >
       <div className="flex items-center justify-between">
-        <Badge>QCM — Q{question.id}</Badge>
+        <Badge>{isQrc ? "QRC" : "QCM"} — Q{question.id}</Badge>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image as any, imageSize, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion)} className="gap-1">
+          <Button size="sm" onClick={() => (saisieUtilisateurRef.current ? onSave(construire()) : onCancel())} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
