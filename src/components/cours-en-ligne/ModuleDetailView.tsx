@@ -5675,6 +5675,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // (vieille copie embarquée dans l'application), sauf s'il a été ajouté
       // volontairement dans cette session.
       normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
+      normalizedModuleData = appliquerSeulementQuestionsModifiees(normalizedModuleData, previousModuleData);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
@@ -5706,6 +5707,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ),
         );
         normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, latestRow?.module_data ?? null, exercicesAjoutesSessionRef.current);
+        normalizedModuleData = appliquerSeulementQuestionsModifiees(normalizedModuleData, latestRow?.module_data ?? null);
 
         console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
           moduleId: dataToSave.module_id,
