@@ -4480,6 +4480,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </DropdownMenuContent>
                           </DropdownMenu>
 
+                          {isFormationContinue && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                              title="Confirmation de formation continue — aperçu avant envoi"
+                              disabled={sendingEmailForApprenant === apprenant.id}
+                              onClick={() => handlePreviewTemplateEmail('confirmation-formation-continue', apprenant)}
+                            >
+                              <Send className="w-4 h-4" />
+                              <span className="text-xs">📩 Confirmation formation continue</span>
+                            </Button>
+                          )}
+
                           <Button
                             variant="ghost"
                             size="sm"
