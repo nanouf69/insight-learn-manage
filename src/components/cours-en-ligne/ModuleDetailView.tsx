@@ -2907,19 +2907,36 @@ function QuestionEditor({
         image={image}
         imageSize={imageSize}
         onImageSizeChange={(sz) => {
+          if (sz === imageSize) return;
+          marquerSaisie();
           setImageSize(sz);
-          onDraftSave({ ...question, enonce, choix, image: image as any, imageSize: sz, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave(construire({ imageSize: sz }));
         }}
         context="module"
         contextId={moduleId}
         questionId={question.id}
         onImageChange={(newImage) => {
+          if ((newImage ?? null) === (image ?? null)) return;
+          marquerSaisie();
           setImage(newImage);
           // newImage === null ⇒ suppression explicite (doit être persistée telle quelle).
-          onDraftSave({ ...question, enonce, choix, image: newImage as any, imageSize, explication: explication || undefined, _editedAt: new Date().toISOString() } as ExerciceQuestion);
+          onDraftSave(construire({ image: newImage as any }));
         }}
 
       />
+      {isQrc && (
+        <div className="space-y-1">
+          <label className="text-xs font-semibold">Réponses attendues (une réponse par ligne)</label>
+          <Textarea
+            value={reponsesTexte}
+            onChange={(e) => { reponsesEditeesRef.current = true; setReponsesTexte(e.target.value); }}
+            rows={Math.max(3, reponsesTexte.split("\n").length + 1)}
+            className="text-sm"
+            placeholder="Une réponse attendue par ligne"
+          />
+        </div>
+      )}
+      {!isQrc && (
       <div className="space-y-3">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
