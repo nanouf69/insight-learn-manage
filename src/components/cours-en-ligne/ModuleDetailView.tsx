@@ -2962,10 +2962,11 @@ function QuestionEditor({
             />
           </div>
         ))}
-        <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">
+        <Button size="sm" variant="outline" onClick={() => { marquerSaisie(); addChoix(); }} className="gap-1">
           <Plus className="w-3 h-3" /> Ajouter un choix
         </Button>
       </div>
+      )}
       <div className="space-y-1">
         <label className="text-xs font-semibold">💡 Information / explication de la question (affichée à l'apprenant après validation)</label>
         <Textarea
