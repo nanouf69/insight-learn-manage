@@ -31,6 +31,7 @@ const QUEUE_KEY = "answer_save_queue_v1";
  * récente enregistrée entre-temps (autre onglet, autre appareil).
  */
 import { setLearnerPreviewReadOnly, isLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
+import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 
 const SEQ_KEY = "answer_write_seq_v1";
 
@@ -680,6 +681,11 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   // la requête réseau.
   if (!isSendableInCurrentContext(item)) return "blocked";
   const url = endpoint();
+  // Reconnexion silencieuse : jeton renouvelé s'il expire bientôt.
+  if (authToken) {
+    const frais = await assurerSessionFraiche(60);
+    if (frais) authToken = frais;
+  }
   const headers = buildHeaders();
   if (!url || !headers) return "retry";
   try {

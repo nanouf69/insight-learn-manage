@@ -48,12 +48,12 @@ export function useConnexionEleveConfirmee(opts: {
       if (enCours.current || annule) return;
       enCours.current = true;
       try {
-        const v1 = await sessionValide(); console.info("[ConnexionEleve] v1", v1);
+        const v1 = await sessionValide();
         if (v1) { if (!annule) setEtat("ok"); return; }
         if (!annule) setEtat((e) => (e === "absente" ? e : "verification"));
         await new Promise((r) => { timer = window.setTimeout(r, 2500); });
         if (annule) return;
-        const ok = await sessionValide(); console.info("[ConnexionEleve] v2", ok);
+        const ok = await sessionValide();
         if (!annule) setEtat(ok ? "ok" : "absente");
       } finally {
         enCours.current = false;
