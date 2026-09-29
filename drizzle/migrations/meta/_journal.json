@@ -792,6 +792,13 @@
       "when": 1790674040285,
       "tag": "0112_fc_session_sync_dates_apprenants",
       "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1790674748282,
+      "tag": "0113_bilan_sync_append_only",
+      "breakpoints": true
     }
   ]
 }
