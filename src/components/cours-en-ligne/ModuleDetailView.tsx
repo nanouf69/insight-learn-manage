@@ -3512,7 +3512,6 @@ function ExerciceCard({
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const f = peekSearchFocus();
-    if (f) console.log("[focus]", JSON.stringify(f), moduleId, item.id);
     if (!f || f.moduleId !== moduleId || f.exerciceId !== Number(item.id)) return;
     setExpanded(true);
     let tries = 0;
@@ -3524,12 +3523,26 @@ function ExerciceCard({
       clearInterval(iv);
       if (!el) return;
       consumeSearchFocus();
-      el.scrollIntoView({ behavior: "auto", block: "center" });
-      // Re-cadrage si la page bouge encore (chargement d'images / autres exercices)
-      setTimeout(() => el.scrollIntoView({ behavior: "auto", block: "center" }), 600);
-      setTimeout(() => el.scrollIntoView({ behavior: "auto", block: "center" }), 1500);
-      el.classList.add("ring-4", "ring-primary", "rounded-lg", "bg-primary/10");
-      setTimeout(() => el.classList.remove("ring-4", "ring-primary", "bg-primary/10"), 4000);
+      // La liste peut encore se re-dessiner : on retrouve la question par son identifiant
+      // à chaque instant pendant 3 s pour la garder cadrée et surlignée.
+      const anchorId = f.questionId != null ? `question-anchor-${item.id}-${f.questionId}` : null;
+      const HL = ["ring-4", "ring-primary", "rounded-lg", "bg-primary/10"];
+      const start = Date.now();
+      let last: HTMLElement | null = null;
+      const tick = () => {
+        const cur = (anchorId ? document.getElementById(anchorId) : null) || cardRef.current;
+        if (cur && cur !== last) {
+          cur.classList.add(...HL);
+          cur.scrollIntoView({ behavior: "auto", block: "center" });
+          last = cur;
+        } else if (cur) {
+          const r = cur.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > window.innerHeight) cur.scrollIntoView({ behavior: "auto", block: "center" });
+        }
+        if (Date.now() - start < 3000) setTimeout(tick, 150);
+        else if (last) last.classList.remove("ring-4", "ring-primary", "bg-primary/10");
+      };
+      tick();
     }, 250);
     return () => clearInterval(iv);
   }, [moduleId, item.id]);
