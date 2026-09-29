@@ -3518,14 +3518,31 @@ function ExerciceCard({
     const iv = setInterval(() => {
       tries += 1;
       if (peekSearchFocus() !== f) return clearInterval(iv);
-      const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries > 15 ? cardRef.current : null);
-      if (!el && tries < 40) return;
+      const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries >= 80 ? cardRef.current : null);
+      if (!el && tries < 80) return;
       clearInterval(iv);
       if (!el) return;
       consumeSearchFocus();
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("ring-4", "ring-primary", "rounded-lg", "bg-primary/10");
-      setTimeout(() => el.classList.remove("ring-4", "ring-primary", "bg-primary/10"), 4000);
+      // La liste peut encore se re-dessiner : on retrouve la question par son identifiant
+      // à chaque instant pendant 3 s pour la garder cadrée et surlignée.
+      const anchorId = f.questionId != null ? `question-anchor-${item.id}-${f.questionId}` : null;
+      const HL = ["ring-4", "ring-primary", "rounded-lg", "bg-primary/10"];
+      const start = Date.now();
+      let last: HTMLElement | null = null;
+      const tick = () => {
+        const cur = (anchorId ? document.getElementById(anchorId) : null) || cardRef.current;
+        if (cur && cur !== last) {
+          cur.classList.add(...HL);
+          cur.scrollIntoView({ behavior: "auto", block: "center" });
+          last = cur;
+        } else if (cur) {
+          const r = cur.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > window.innerHeight) cur.scrollIntoView({ behavior: "auto", block: "center" });
+        }
+        if (Date.now() - start < 3000) setTimeout(tick, 150);
+        else if (last) last.classList.remove("ring-4", "ring-primary", "bg-primary/10");
+      };
+      tick();
     }, 250);
     return () => clearInterval(iv);
   }, [moduleId, item.id]);
