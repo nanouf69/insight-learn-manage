@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { SESSION_EXPIREE_MESSAGE, isLearnerSessionExpired } from "@/lib/sessionExpiree";
 import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
@@ -7762,6 +7763,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
         const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
         (async () => {
+          let lastError: any = null;
           for (let attempt = 1; attempt <= 3; attempt++) {
             const { error } = await (supabase as any).rpc("save_module_pages_progress", {
               _apprenant_id: apprenantId,
@@ -7770,10 +7772,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               _progress: progress,
             });
             if (!error) return;
+            lastError = error;
             console.error(`[module ${module.id}] progression étape non enregistrée (essai ${attempt}/3)`, error);
             await new Promise(r => setTimeout(r, 700 * attempt));
           }
-          toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion.");
+          if (await isLearnerSessionExpired(lastError)) {
+            toast.error(SESSION_EXPIREE_MESSAGE, { duration: 15000 });
+          } else {
+            toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion.");
+          }
         })();
       }
     };
@@ -7833,6 +7840,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           completionPersistedRef.current = false;
           if (wasLastCompletionRefusedIncomplete()) {
             toast.error("Module non terminé : aucune réponse n'est encore enregistrée. Vos réponses sont conservées, reprenez les questions du module.");
+          } else if (await isLearnerSessionExpired(null)) {
+            toast.error(SESSION_EXPIREE_MESSAGE, { duration: 15000 });
           } else {
             toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.");
           }
