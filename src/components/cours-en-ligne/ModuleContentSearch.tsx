@@ -121,6 +121,7 @@ export default function ModuleContentSearch({ onOpenModule }: Props) {
                         role="button"
                         tabIndex={0}
                         title="Ouvrir dans l'éditeur"
+                        data-target={`${r.exerciceId}-${r.questionId}`}
                         onClick={() => {
                           setSearchFocus(r.exerciceId != null ? { moduleId, exerciceId: r.exerciceId, questionId: r.questionId } : null);
                           onOpenModule({ id: moduleId, nom: group.nom });
