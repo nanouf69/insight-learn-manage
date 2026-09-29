@@ -6532,7 +6532,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     {/* Account creation/configuration dialog */}
     {accountDialogApprenant && (
       <Dialog open={!!accountDialogApprenant} onOpenChange={(o) => { if (!o) setAccountDialogApprenant(null); }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <KeyRound className="w-5 h-5" />
