@@ -35,7 +35,15 @@ export interface ModuleSearchResult {
   titre: string;
   contexte?: string;
   extrait?: string;
+  exerciceId?: number;
+  questionId?: number;
 }
+
+// Cible d'ouverture depuis la recherche (mémoire d'interface uniquement)
+let searchFocus: { moduleId: number; exerciceId: number; questionId?: number } | null = null;
+export const setSearchFocus = (f: typeof searchFocus) => { searchFocus = f; };
+export const peekSearchFocus = () => searchFocus;
+export const consumeSearchFocus = () => { searchFocus = null; };
 
 const asModule = (id: number, nom: string, cours: any[], exercices: any[]): SearchableModule => ({
   id,
@@ -125,7 +133,8 @@ export function searchModuleContent(
           moduleNom: mod.nom,
           kind: "exercice",
           titre: exTitre,
-          contexte: ex?.sousTitre ? String(ex.sousTitre) : undefined,
+          exerciceId: Number(ex?.id),
+          contexte: `${mod.nom}${ex?.sousTitre ? ` — ${ex.sousTitre}` : ""}`,
         });
       }
 
@@ -142,7 +151,9 @@ export function searchModuleContent(
             moduleNom: mod.nom,
             kind: "question",
             titre: String(q?.enonce ?? "Question").replace(/<[^>]*>/g, " ").trim(),
-            contexte: exTitre,
+            contexte: `${mod.nom} — ${exTitre}`,
+            exerciceId: Number(ex?.id),
+            questionId: q?.id != null ? Number(q.id) : undefined,
             extrait: makeExtrait([choixTexte, q?.reponseQRC, q?.explication].filter(Boolean).join(" — "), terms),
           });
         }

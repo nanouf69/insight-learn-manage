@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, X, BookOpen, ClipboardList, MessageSquareText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { searchModuleContent, type ModuleSearchResult } from "./module-content-search";
+import { searchModuleContent, setSearchFocus, type ModuleSearchResult } from "./module-content-search";
 
 const KIND_LABEL: Record<ModuleSearchResult["kind"], string> = {
   cours: "Cours",
@@ -116,7 +116,18 @@ export default function ModuleContentSearch({ onOpenModule }: Props) {
                   </div>
                   <ul className="divide-y">
                     {group.items.map((r) => (
-                      <li key={r.key} className="px-3 py-2 flex items-start gap-2">
+                      <li
+                        key={r.key}
+                        role="button"
+                        tabIndex={0}
+                        title="Ouvrir dans l'éditeur"
+                        onClick={() => {
+                          setSearchFocus(r.exerciceId != null ? { moduleId, exerciceId: r.exerciceId, questionId: r.questionId } : null);
+                          onOpenModule({ id: moduleId, nom: group.nom });
+                        }}
+                        onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}
+                        className="px-3 py-2 flex items-start gap-2 cursor-pointer hover:bg-muted/40"
+                      >
                         <KindIcon kind={r.kind} />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
