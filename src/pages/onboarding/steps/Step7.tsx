@@ -8,6 +8,7 @@ import { toast } from "sonner";
 export default function Step7() {
   const navigate = useNavigate();
   const [password, setPassword] = useState(() => localStorage.getItem('onboarding_mot_de_passe_cma') || '');
+  const [identifiant, setIdentifiant] = useState(() => localStorage.getItem('onboarding_identifiant_cma') || '');
   const [showPassword, setShowPassword] = useState(false);
   const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step7_confirmed') === 'true');
 
@@ -24,11 +25,21 @@ export default function Step7() {
     }
   };
 
+  const handleIdentifiantChange = (value: string) => {
+    setIdentifiant(value);
+    localStorage.setItem('onboarding_identifiant_cma', value.trim());
+  };
+
   const savePasswordToDB = async () => {
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
 
     if (!apprenantId) {
       toast.error("Dossier introuvable, veuillez recommencer depuis le début");
+      return false;
+    }
+
+    if (!identifiant.trim()) {
+      toast.error("L'identifiant CMA est obligatoire");
       return false;
     }
 
@@ -39,7 +50,7 @@ export default function Step7() {
 
     const { error } = await supabase
       .from('apprenants')
-      .update({ mot_de_passe_cma: password.trim() })
+      .update({ mot_de_passe_cma: password.trim(), identifiant_cma: identifiant.trim() })
       .eq('id', apprenantId);
 
     if (error) {
@@ -57,7 +68,7 @@ export default function Step7() {
     navigate('/bienvenue/etape-8');
   };
 
-  const canProceed = password.trim().length > 0 && confirmed;
+  const canProceed = identifiant.trim().length > 0 && password.trim().length > 0 && confirmed;
 
   return (
     <OnboardingLayout currentStep={7} totalSteps={11} title="Créez votre mot de passe">
@@ -76,10 +87,23 @@ export default function Step7() {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-amber-700">
-              <strong>Important :</strong> Communiquez-nous le mot de passe que vous avez choisi.
+              <strong>Important :</strong> Communiquez-nous votre identifiant CMA et le mot de passe que vous avez choisi.
             </p>
           </div>
 
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
+              Identifiant CMA (nom d'utilisateur) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={identifiant}
+              onChange={(e) => handleIdentifiantChange(e.target.value)}
+              placeholder="Écrivez ici votre identifiant CMA"
+              className="w-full max-w-md px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-1">

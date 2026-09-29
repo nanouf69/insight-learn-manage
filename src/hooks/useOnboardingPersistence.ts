@@ -39,6 +39,7 @@ const ONBOARDING_KEYS = [
 
   // Step 7 — mot de passe CMA
   "onboarding_mot_de_passe_cma",
+  "onboarding_identifiant_cma",
 
   // Step 11 — dossier & examen
   "onboarding_numero_dossier",
