@@ -40,6 +40,7 @@ import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
+import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { useLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { buildMatiereLookupKeys, selectLatestAttemptRows } from "@/components/cours-en-ligne/examens-blancs-utils";
