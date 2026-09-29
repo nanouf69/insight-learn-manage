@@ -901,6 +901,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const lastKnownUserIdRef = useRef<string | null>(null);
   if (user?.id) lastKnownUserIdRef.current = user.id;
   const effectiveUserId = user?.id || lastKnownUserIdRef.current;
+  const connexionEleve = useConnexionEleveConfirmee({ embedded: !!embedded, userId: user?.id, authLoading });
   const [apprenantLoading, setApprenantLoading] = useState(false);
   // True once the DB progression has actually been fetched. Locks are NEVER
   // computed from an empty/optimistic progression before this is true.
@@ -1693,11 +1694,27 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     );
   }
 
-  if (!embedded && !user && !authLoading && apprenant && !selectedModule) {
+  // Jamais de bilan, quiz, examen ou note affiché vide sans connexion confirmée :
+  // la page (et ses lectures) n'est montée qu'une fois la connexion valide,
+  // puis tout est relu depuis le serveur après reconnexion.
+  if (!embedded && !user && !authLoading && apprenant) {
+    if (connexionEleve === "absente") {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800">
+              Session expirée, reconnectez-vous. Vos réponses sont conservées et réapparaîtront après la reconnexion.
+            </p>
+          </div>
+          <StudentLogin onLogin={() => {}} />
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3 p-4 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        <p className="text-sm text-muted-foreground">Reconnexion en cours…</p>
+        <p className="text-sm text-muted-foreground">Vérification de votre connexion…</p>
       </div>
     );
   }
