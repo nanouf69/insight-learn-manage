@@ -3518,12 +3518,15 @@ function ExerciceCard({
     const iv = setInterval(() => {
       tries += 1;
       if (peekSearchFocus() !== f) return clearInterval(iv);
-      const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries > 15 ? cardRef.current : null);
-      if (!el && tries < 40) return;
+      const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries >= 80 ? cardRef.current : null);
+      if (!el && tries < 80) return;
       clearInterval(iv);
       if (!el) return;
       consumeSearchFocus();
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.scrollIntoView({ behavior: "auto", block: "center" });
+      // Re-cadrage si la page bouge encore (chargement d'images / autres exercices)
+      setTimeout(() => el.scrollIntoView({ behavior: "auto", block: "center" }), 600);
+      setTimeout(() => el.scrollIntoView({ behavior: "auto", block: "center" }), 1500);
       el.classList.add("ring-4", "ring-primary", "rounded-lg", "bg-primary/10");
       setTimeout(() => el.classList.remove("ring-4", "ring-primary", "bg-primary/10"), 4000);
     }, 250);
