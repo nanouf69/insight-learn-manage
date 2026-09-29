@@ -3513,16 +3513,21 @@ function ExerciceCard({
   useEffect(() => {
     const f = peekSearchFocus();
     if (!f || f.moduleId !== moduleId || f.exerciceId !== Number(item.id)) return;
-    consumeSearchFocus();
     setExpanded(true);
-    const t = setTimeout(() => {
-      const el = (f.questionId != null && document.getElementById(`question-anchor-${item.id}-${f.questionId}`)) || cardRef.current;
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries += 1;
+      if (peekSearchFocus() !== f) return clearInterval(iv);
+      const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries > 15 ? cardRef.current : null);
+      if (!el && tries < 40) return;
+      clearInterval(iv);
       if (!el) return;
+      consumeSearchFocus();
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.add("ring-4", "ring-primary", "rounded-lg", "bg-primary/10");
       setTimeout(() => el.classList.remove("ring-4", "ring-primary", "bg-primary/10"), 4000);
-    }, 400);
-    return () => clearTimeout(t);
+    }, 250);
+    return () => clearInterval(iv);
   }, [moduleId, item.id]);
 
   return (
