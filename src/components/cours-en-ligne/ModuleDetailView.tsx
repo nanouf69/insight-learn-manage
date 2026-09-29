@@ -1,4 +1,5 @@
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
+import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
@@ -3507,8 +3508,30 @@ function ExerciceCard({
 
   };
 
+  // Ouverture ciblée depuis la recherche « Gestion des modules » (affichage seul)
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const f = peekSearchFocus();
+    if (!f || f.moduleId !== moduleId || f.exerciceId !== Number(item.id)) return;
+    setExpanded(true);
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries += 1;
+      if (peekSearchFocus() !== f) return clearInterval(iv);
+      const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries > 15 ? cardRef.current : null);
+      if (!el && tries < 40) return;
+      clearInterval(iv);
+      if (!el) return;
+      consumeSearchFocus();
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-4", "ring-primary", "rounded-lg", "bg-primary/10");
+      setTimeout(() => el.classList.remove("ring-4", "ring-primary", "bg-primary/10"), 4000);
+    }, 250);
+    return () => clearInterval(iv);
+  }, [moduleId, item.id]);
+
   return (
-    <Card className="border-2 border-slate-300 transition-all hover:shadow-md">
+    <Card ref={cardRef} className="border-2 border-slate-300 transition-all hover:shadow-md">
       <CardContent className="p-4 space-y-3">
         <div>
           {editingMeta ? (
