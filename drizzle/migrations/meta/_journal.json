@@ -785,6 +785,13 @@
       "when": 1790604927057,
       "tag": "0111_restauration_sauvegarde_exception_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1790674040285,
+      "tag": "0112_fc_session_sync_dates_apprenants",
+      "breakpoints": true
     }
   ]
 }
