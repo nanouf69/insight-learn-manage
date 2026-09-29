@@ -603,8 +603,18 @@ export function classifyAnswerSaveFailure(
     };
   }
 
+  // Session expirée : l'élève doit se reconnecter, réponses conservées.
+  if (status === 401 || t.includes("unauthorized") || t.includes("jwt")) {
+    return {
+      definitif: true,
+      reason: "forbidden",
+      message:
+        "Session expirée, reconnectez-vous. Vos réponses restent affichées et conservées sur cet appareil.",
+    };
+  }
+
   // Refus de droits / propriété du dossier.
-  if (status === 401 || status === 403 || t.includes("permission denied") || t.includes("row-level security")) {
+  if (status === 403 || t.includes("permission denied") || t.includes("row-level security")) {
     return {
       definitif: true,
       reason: "forbidden",
