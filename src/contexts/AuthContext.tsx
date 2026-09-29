@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useMemo, ReactNode, use
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppVersionCheck } from '@/hooks/useAppVersionCheck';
+import { installerRenouvellementAuRetour } from "@/lib/sessionExpiree";
 
 interface Profile {
   full_name: string | null;
@@ -119,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   useEffect(() => {
+    installerRenouvellementAuRetour();
     let isActive = true;
 
     const recoverSessionBeforeClearing = (delayMs = 1200, attempt = 1) => {
