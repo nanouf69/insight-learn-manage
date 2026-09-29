@@ -9,6 +9,7 @@ export async function sendAdminNotification(payload: {
   email?: string;
   telephone?: string;
   numero_dossier_cma?: string;
+  identifiant_cma?: string;
   mot_de_passe_cma?: string;
   type_examen?: string;
   date_examen?: string;

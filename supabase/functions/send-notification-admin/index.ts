@@ -12,6 +12,7 @@ interface NotificationPayload {
   email?: string;
   telephone?: string;
   numero_dossier_cma?: string;
+  identifiant_cma?: string;
   mot_de_passe_cma?: string;
   type_examen?: string;
   date_examen?: string;
@@ -365,6 +366,7 @@ function buildEmailHtml(data: NotificationPayload): string {
   if (data.type_document === "dossier-bienvenue") {
     dossierRows = [
       ["N° Dossier CMA", data.numero_dossier_cma || "—"],
+      ["Identifiant CMA", data.identifiant_cma || "—"],
       ["Mot de passe CMA", data.mot_de_passe_cma || "—"],
       ["Type examen", data.type_examen || "—"],
       ["Date examen", data.date_examen || "—"],
