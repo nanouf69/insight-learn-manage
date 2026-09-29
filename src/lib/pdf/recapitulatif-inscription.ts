@@ -22,6 +22,7 @@ interface RecapitulatifData {
   lieuExamen?: string;
   b2Vierge: boolean;
   motDePasseCma?: string;
+  identifiantCma?: string;
   responsableContactCentre?: boolean;
   isTaxi?: boolean;
   mobiliteTaxiAck?: boolean;
@@ -106,6 +107,9 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   addField('N° Dossier', data.numeroDossier);
+  if (data.identifiantCma) {
+    addField('Identifiant CMA', data.identifiantCma);
+  }
   if (data.motDePasseCma) {
     addField('Mot de passe CMA', data.motDePasseCma);
   }

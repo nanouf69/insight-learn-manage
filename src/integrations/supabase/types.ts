@@ -835,6 +835,7 @@ export type Database = {
           heures_presentiel: number | null
           heures_totales: number | null
           id: string
+          identifiant_cma: string | null
           inscrit_france_travail: boolean | null
           lieu_examen: string | null
           modalite_formation: string | null
@@ -903,6 +904,7 @@ export type Database = {
           heures_presentiel?: number | null
           heures_totales?: number | null
           id?: string
+          identifiant_cma?: string | null
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
           modalite_formation?: string | null
@@ -971,6 +973,7 @@ export type Database = {
           heures_presentiel?: number | null
           heures_totales?: number | null
           id?: string
+          identifiant_cma?: string | null
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
           modalite_formation?: string | null
@@ -8087,6 +8090,7 @@ export type Database = {
           heures_presentiel: number | null
           heures_totales: number | null
           id: string
+          identifiant_cma: string | null
           inscrit_france_travail: boolean | null
           lieu_examen: string | null
           modalite_formation: string | null

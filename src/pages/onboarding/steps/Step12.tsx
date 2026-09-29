@@ -86,6 +86,7 @@ export default function Step12() {
   const [dateExamen, setDateExamen] = useState(getDateExamenParDefaut);
   const [typeExamen, setTypeExamen] = useState('');
   const [motDePasseCma, setMotDePasseCma] = useState('');
+  const [identifiantCma, setIdentifiantCma] = useState(() => localStorage.getItem('onboarding_identifiant_cma') || '');
   const [b2Vierge, setB2Vierge] = useState(false);
   const [parcoursAck, setParcoursAck] = useState(false);
   const [signature, setSignature] = useState('');
@@ -173,6 +174,7 @@ export default function Step12() {
       lieuExamen: selectedExam?.lieu,
       b2Vierge,
       motDePasseCma,
+      identifiantCma: identifiantCma.trim(),
       responsableContactCentre,
       isTaxi: typeExamen.startsWith('taxi'),
       mobiliteTaxiAck,
@@ -239,6 +241,11 @@ export default function Step12() {
       return;
     }
 
+    if (!identifiantCma.trim()) {
+      toast.error("L'identifiant CMA est obligatoire pour finaliser votre dossier");
+      setIsSubmitting(false);
+      return;
+    }
     if (!motDePasseCma.trim()) {
       toast.error("Le mot de passe CMA est obligatoire pour finaliser votre dossier");
       return;
@@ -269,6 +276,7 @@ export default function Step12() {
       const updateData: Database['public']['Tables']['apprenants']['Update'] = {
         numero_dossier_cma: numeroDossier,
         mot_de_passe_cma: motDePasseCma.trim(),
+        identifiant_cma: identifiantCma.trim() || null,
         date_examen_theorique: dateExamen,
         type_examen: typeExamen || null,
         lieu_examen: lieuExamen || null,
@@ -314,6 +322,7 @@ export default function Step12() {
             email,
             telephone,
             numero_dossier_cma: numeroDossier,
+            identifiant_cma: identifiantCma.trim(),
             mot_de_passe_cma: motDePasseCmaFinal,
             type_examen: getTypeExamenLabel(typeExamen),
             date_examen_theorique: dateExamen,
@@ -348,6 +357,7 @@ export default function Step12() {
         email,
         telephone,
         numero_dossier_cma: numeroDossier,
+        identifiant_cma: identifiantCma.trim(),
         mot_de_passe_cma: motDePasseCma.trim(),
         type_examen: getTypeExamenLabel(typeExamen),
         date_examen: dateExamen,
@@ -580,6 +590,25 @@ export default function Step12() {
             <p className="text-lg font-semibold text-gray-900">{dateExamen || '-'}</p>
           </div>
 
+          {/* Identifiant CMA */}
+          <div className={`border rounded-xl p-5 mb-4 ${identifiantCma.trim() ? 'border-gray-200' : 'border-red-300 bg-red-50'}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <KeyRound className="w-5 h-5 text-gray-500" />
+              <h3 className="font-semibold text-gray-900">
+                Identifiant CMA (nom d'utilisateur) <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            <Input
+              value={identifiantCma}
+              disabled={isSubmitted}
+              onChange={(e) => {
+                setIdentifiantCma(e.target.value);
+                localStorage.setItem('onboarding_identifiant_cma', e.target.value.trim());
+              }}
+              placeholder="Votre identifiant CMA"
+            />
+          </div>
+
           {/* Mot de passe CMA */}
           <div className={`border rounded-xl p-5 mb-4 ${motDePasseCma.trim() ? 'border-gray-200' : 'border-red-300 bg-red-50'}`}>
             <div className="flex items-center justify-between mb-4">
@@ -677,11 +706,11 @@ export default function Step12() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge || !parcoursAck || !signature || !motDePasseCma.trim()}
+              disabled={isSubmitting || isSubmitted || !b2Vierge || !parcoursAck || !signature || !motDePasseCma.trim() || !identifiantCma.trim()}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : (b2Vierge && parcoursAck && signature && motDePasseCma.trim())
+                  : (b2Vierge && parcoursAck && signature && motDePasseCma.trim() && identifiantCma.trim())
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
