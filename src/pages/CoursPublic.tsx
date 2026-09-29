@@ -1698,20 +1698,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Jamais de bilan, quiz, examen ou note affiché vide sans connexion confirmée :
   // la page (et ses lectures) n'est montée qu'une fois la connexion valide,
   // puis tout est relu depuis le serveur après reconnexion.
-  if (!embedded && !user && !authLoading && apprenant) {
-    if (connexionEleve === "absente") {
-      return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-800">
-              Session expirée, reconnectez-vous. Vos réponses sont conservées et réapparaîtront après la reconnexion.
-            </p>
-          </div>
-          <StudentLogin onLogin={() => {}} />
+  if (!embedded && !authLoading && apprenant && connexionEleve === "absente") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-800">
+            Session expirée, reconnectez-vous. Vos réponses sont conservées et réapparaîtront après la reconnexion.
+          </p>
         </div>
-      );
-    }
+        <StudentLogin onLogin={() => {}} />
+      </div>
+    );
+  }
+  if (!embedded && !user && !authLoading && apprenant) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3 p-4 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
