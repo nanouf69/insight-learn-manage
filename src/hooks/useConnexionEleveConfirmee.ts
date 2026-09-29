@@ -53,7 +53,6 @@ export function useConnexionEleveConfirmee(opts: {
         if (!annule) setEtat((e) => (e === "absente" ? e : "verification"));
         await new Promise((r) => { timer = window.setTimeout(r, 2500); });
         if (annule) return;
-        const ok = await sessionValide(); console.info("[CE] v2", ok);
         if (!annule) setEtat(ok ? "ok" : "absente");
       } finally {
         enCours.current = false;

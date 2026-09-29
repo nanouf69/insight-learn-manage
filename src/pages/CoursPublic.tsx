@@ -903,7 +903,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (user?.id) lastKnownUserIdRef.current = user.id;
   const effectiveUserId = user?.id || lastKnownUserIdRef.current;
   const connexionEleve = useConnexionEleveConfirmee({ embedded: !!embedded, userId: user?.id, authLoading });
-  console.info("[CE] render", connexionEleve, authLoading, !!user, typeof window !== "undefined" ? window.location.pathname : "");
   const [apprenantLoading, setApprenantLoading] = useState(false);
   // True once the DB progression has actually been fetched. Locks are NEVER
   // computed from an empty/optimistic progression before this is true.
@@ -1699,7 +1698,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Jamais de bilan, quiz, examen ou note affiché vide sans connexion confirmée :
   // la page (et ses lectures) n'est montée qu'une fois la connexion valide,
   // puis tout est relu depuis le serveur après reconnexion.
-  console.info("[CE] gate", !!embedded, authLoading, !!apprenant, connexionEleve);
   if (!embedded && !authLoading && apprenant && connexionEleve === "absente") {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -2813,6 +2811,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     </div>
   );
   }, [
+    connexionEleve,
     activeTab,
     apprenant,
     apprenantFetchError,
