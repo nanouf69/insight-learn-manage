@@ -3512,6 +3512,7 @@ function ExerciceCard({
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const f = peekSearchFocus();
+    if (f) console.log("[focus]", JSON.stringify(f), moduleId, item.id);
     if (!f || f.moduleId !== moduleId || f.exerciceId !== Number(item.id)) return;
     setExpanded(true);
     let tries = 0;
