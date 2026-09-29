@@ -28,9 +28,15 @@ export function useConnexionEleveConfirmee(opts: {
       try {
         const { data } = await supabase.auth.getSession();
         const s = data?.session;
-        return !!s?.access_token && (!s.expires_at || s.expires_at * 1000 > Date.now());
+        if (!s?.access_token || (s.expires_at && s.expires_at * 1000 <= Date.now())) return false;
+        // Vérification auprès du serveur : une session révoquée/expirée côté
+        // serveur paraît valide localement. Coupure réseau = on ne conclut pas.
+        const { error } = await supabase.auth.getUser();
+        if (!error) return true;
+        const st = (error as { status?: number }).status;
+        return !(st === 401 || st === 403);
       } catch {
-        return false;
+        return true;
       }
     };
 
