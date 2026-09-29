@@ -24,16 +24,20 @@ export function useConnexionEleveConfirmee(opts: {
     let annule = false;
     let timer: number | undefined;
 
+    const avecDelai = <T,>(p: Promise<T>, ms: number, repli: T) =>
+      Promise.race([p, new Promise<T>((r) => window.setTimeout(() => r(repli), ms))]);
+
     const sessionValide = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        const s = data?.session;
+        // Le client peut rester bloqué pendant un renouvellement raté : délai max.
+        const res = await avecDelai(supabase.auth.getSession(), 6000, null);
+        const s = res?.data?.session;
         if (!s?.access_token || (s.expires_at && s.expires_at * 1000 <= Date.now())) return false;
         // Vérification auprès du serveur : une session révoquée/expirée côté
         // serveur paraît valide localement. Coupure réseau = on ne conclut pas.
-        const { error } = await supabase.auth.getUser();
-        if (!error) return true;
-        const st = (error as { status?: number }).status;
+        const u = await avecDelai(supabase.auth.getUser(), 6000, null);
+        if (!u || !u.error) return true;
+        const st = (u.error as { status?: number }).status;
         return !(st === 401 || st === 403);
       } catch {
         return true;
