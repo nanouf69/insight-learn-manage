@@ -11,6 +11,27 @@ import { useToast } from "@/hooks/use-toast";
 import type { CreneauKey } from "@/lib/agendaSlots";
 import { creneauLabel, creneauHoraire } from "@/lib/agendaSlots";
 import { checkSignatureAgainstReferences } from "@/lib/signatureSimilarity";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
+
+// Alerte signature : journal d'erreurs + e-mail à contact@ftransport.fr.
+// Ne bloque jamais l'élève ; au plus une alerte par élève toutes les 10 min.
+const derniereAlerte: Record<string, number> = {};
+export const signalerEchecSignature = (info: {
+  apprenantId: string; nom: string; prenom: string; message: string;
+  date?: string; creneau?: string;
+}) => {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 300) : "";
+  console.error("[echec-signature-emargement]", info.message, { apprenantId: info.apprenantId, date: info.date, creneau: info.creneau, ua });
+  const now = Date.now();
+  if (derniereAlerte[info.apprenantId] && now - derniereAlerte[info.apprenantId] < 10 * 60 * 1000) return;
+  derniereAlerte[info.apprenantId] = now;
+  void sendAdminNotification({
+    type_document: "echec-signature-emargement",
+    nom: info.nom,
+    prenom: info.prenom,
+    donnees: { message: info.message, date_emargement: info.date, creneau: info.creneau, appareil_navigateur: ua, heure: new Date().toISOString() },
+  });
+};
 
 interface EmargementFCModalProps {
   apprenantId: string;
@@ -193,6 +214,7 @@ export const EmargementFCModal = ({
             .filter((u: string) => u && u.startsWith("data:image"));
           const check = await checkSignatureAgainstReferences(signatureToSave, refs);
           if (!check.ok) {
+            signalerEchecSignature({ apprenantId, nom: apprenantNom, prenom: apprenantPrenom, message: `Signature refusée par le contrôle anti-gribouillage : ${check.reason || ""}`, date: effectiveDate, creneau: String(demi) });
             toast({
               title: "Signature mal faite",
               description: check.reason || "La signature a été mal faite. Merci de re-signer.",
@@ -232,6 +254,7 @@ export const EmargementFCModal = ({
       onSigned?.();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Impossible d'enregistrer votre signature.";
+      signalerEchecSignature({ apprenantId, nom: apprenantNom, prenom: apprenantPrenom, message, date: effectiveDate, creneau: String(demi) });
       toast({
         title: "Erreur",
         description: message,
