@@ -900,10 +900,10 @@ export function ComptabilitePage() {
       list.push(f);
       groupes.set(key, list);
     }
-    const map = new Map<string, string[]>();
+    const map = new Map<string, Facture[]>();
     groupes.forEach((list) => {
       if (list.length < 2) return;
-      for (const f of list) map.set(f.id, list.filter((o) => o.id !== f.id).map((o) => o.numero));
+      for (const f of list) map.set(f.id, list.filter((o) => o.id !== f.id));
     });
     return map;
   }, [allFactures]);
@@ -1520,12 +1520,20 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(f.date_echeance)}</TableCell>
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
                         <TableCell>
-                          {doublonsParId.get(f.id)?.length ? (
-                            <div className="flex flex-col gap-0.5">
-                              <Badge variant="destructive" className="w-fit">Doublon ×{(doublonsParId.get(f.id)!.length) + 1}</Badge>
-                              <span className="text-xs text-muted-foreground">avec {doublonsParId.get(f.id)!.join(", ")}</span>
-                            </div>
-                          ) : <span className="text-muted-foreground">—</span>}
+                          {(() => {
+                            const autres = doublonsParId.get(f.id);
+                            if (!autres?.length) return <span className="text-muted-foreground">—</span>;
+                            return (
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="destructive" className="w-fit">Doublon ×{autres.length + 1}</Badge>
+                                {autres.map((d) => (
+                                  <span key={d.id} className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {d.numero} · {d.apprenant_id ? (apprenantNames[d.apprenant_id] || d.client_nom) : d.client_nom}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         {showActions && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
