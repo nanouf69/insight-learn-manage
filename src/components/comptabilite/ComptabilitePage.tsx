@@ -130,6 +130,7 @@ export function ComptabilitePage() {
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
   const [filterTypeFlux, setFilterTypeFlux] = useState<"all" | "ventes" | "achats">("all");
+  const [filterDoublons, setFilterDoublons] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
@@ -886,6 +887,27 @@ export function ComptabilitePage() {
     return [...factures, ...fournisseurFacturesAsFactures];
   }, [factures, fournisseurFacturesAsFactures]);
 
+  // Doublons probables : même élève (ou même client si pas d'élève) + même montant TTC,
+  // hors factures annulées, brouillons non enregistrés, avoirs et achats. Affichage uniquement.
+  const doublonsParId = useMemo(() => {
+    const groupes = new Map<string, Facture[]>();
+    for (const f of allFactures) {
+      if (f.type_financement === "fournisseur" || f.statut === "annulee") continue;
+      if (String(f.id).startsWith("draft-") || Number(f.montant_ttc) <= 0) continue;
+      const qui = f.apprenant_id ? `a:${f.apprenant_id}` : `c:${(f.client_nom || "").trim().toLowerCase()}`;
+      const key = `${qui}|${Number(f.montant_ttc).toFixed(2)}`;
+      const list = groupes.get(key) ?? [];
+      list.push(f);
+      groupes.set(key, list);
+    }
+    const map = new Map<string, string[]>();
+    groupes.forEach((list) => {
+      if (list.length < 2) return;
+      for (const f of list) map.set(f.id, list.filter((o) => o.id !== f.id).map((o) => o.numero));
+    });
+    return map;
+  }, [allFactures]);
+
   const filteredFactures = useMemo(() => {
     return allFactures.filter((f) => {
       const matchSearch =
@@ -899,9 +921,10 @@ export function ComptabilitePage() {
         filterTypeFlux === "all" ||
         (filterTypeFlux === "achats" && isAchat) ||
         (filterTypeFlux === "ventes" && !isAchat);
-      return matchSearch && matchStatut && matchFinancement && matchTypeFlux;
+      const matchDoublon = !filterDoublons || doublonsParId.has(f.id);
+      return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchDoublon;
     });
-  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames, filterDoublons, doublonsParId]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -1402,6 +1425,12 @@ export function ComptabilitePage() {
             >
               <Trash2 className="h-4 w-4" /> Factures supprimées
             </Button>
+            <Button
+              variant={filterDoublons ? "destructive" : "outline"}
+              onClick={() => setFilterDoublons((v) => !v)}
+            >
+              Doublons ({doublonsParId.size})
+            </Button>
 
           </div>
 
@@ -1490,6 +1519,14 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(f.date_emission)}</TableCell>
                         <TableCell>{formatDate(f.date_echeance)}</TableCell>
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
+                        <TableCell>
+                          {doublonsParId.get(f.id)?.length ? (
+                            <div className="flex flex-col gap-0.5">
+                              <Badge variant="destructive" className="w-fit">Doublon ×{(doublonsParId.get(f.id)!.length) + 1}</Badge>
+                              <span className="text-xs text-muted-foreground">avec {doublonsParId.get(f.id)!.join(", ")}</span>
+                            </div>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         {showActions && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             {String(f.id).startsWith("draft-") ? (
@@ -1580,6 +1617,7 @@ export function ComptabilitePage() {
                       <TableHead>Émission</TableHead>
                       <TableHead>Échéance</TableHead>
                       <TableHead>Paiement</TableHead>
+                      <TableHead>Doublons</TableHead>
                       {showActions && <TableHead>Actions</TableHead>}
                     </TableRow>
                   );
