@@ -226,7 +226,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
           .maybeSingle(),
         supabase
           .from("emargements_fc")
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent").eq("masque" as any, false as any)
+          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent").filter("masque", "eq", false)
           .eq("apprenant_id", apprenantId)
           .order("date_emargement", { ascending: true }),
         supabase

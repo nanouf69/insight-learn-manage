@@ -350,7 +350,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         withUntil(
           supabase
             .from("emargements_fc")
-            .select("apprenant_id, date_emargement, demi_journee, absent").eq("masque" as any, false as any)
+            .select("apprenant_id, date_emargement, demi_journee, absent").filter("masque", "eq", false)
             .eq("apprenant_id", selectedId)
             .gte("date_emargement", since),
           "date_emargement",

@@ -91,7 +91,7 @@ export function ReleveHeuresHorsFormationTab({ apprenant }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("emargements_fc")
-        .select("apprenant_id, date_emargement, demi_journee, absent").eq("masque" as any, false as any)
+        .select("apprenant_id, date_emargement, demi_journee, absent").filter("masque", "eq", false)
         .eq("apprenant_id", apprenantId);
       if (error) throw error;
       return (data || []) as any[];

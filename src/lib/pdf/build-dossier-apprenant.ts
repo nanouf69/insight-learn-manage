@@ -96,7 +96,7 @@ export async function buildDossierApprenantIntoZip(
   // ---------- 2) Feuilles d'émargement hebdomadaires ----------
   const { data: emargData } = await supabase
     .from("emargements_fc" as any)
-    .select("*").eq("masque" as any, false as any)
+    .select("*").filter("masque", "eq", false)
     .eq("apprenant_id", apprenant.id)
     .order("date_emargement", { ascending: true });
   const emargements = (emargData as any[]) || [];
@@ -197,7 +197,7 @@ export async function buildDossierApprenantIntoZip(
       fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites").select("module_id, module_nom, action_type, occurred_at").eq("apprenant_id", apprenant.id).order("occurred_at", { ascending: true }).range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("apprenant_module_completion").select("module_id, completed_at").eq("apprenant_id", apprenant.id).eq("status", "completed").range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("apprenant_quiz_results").select("quiz_titre, matiere_nom, score_obtenu, score_max, note_sur_20, reussi, duree_secondes, completed_at").eq("apprenant_id", apprenant.id).order("completed_at", { ascending: true }).range(from, to)),
-      fetchAllRows<any>((from, to) => supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent").eq("masque" as any, false as any).eq("apprenant_id", apprenant.id).range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent").filter("masque", "eq", false).eq("apprenant_id", apprenant.id).range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("session_apprenants").select("session_id, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, heure_debut, heure_fin, date_debut, date_fin)").eq("apprenant_id", apprenant.id).range(from, to)),
       fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants").select("exercice_id, updated_at").eq("apprenant_id", apprenant.id).eq("completed", true).range(from, to)),
     ]);

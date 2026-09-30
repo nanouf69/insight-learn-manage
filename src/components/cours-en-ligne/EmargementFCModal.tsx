@@ -203,7 +203,7 @@ export const EmargementFCModal = ({
         try {
           const { data: prev } = await supabase
             .from("emargements_fc")
-            .select("signature_data_url").eq("masque" as any, false as any)
+            .select("signature_data_url").filter("masque", "eq", false)
             .eq("apprenant_id", apprenantId)
             .eq("absent", false)
             .not("signature_data_url", "is", null)

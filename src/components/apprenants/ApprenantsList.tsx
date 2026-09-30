@@ -415,7 +415,7 @@ export function ApprenantsList() {
       const ids = presentielApprenants.map(a => a.id);
       const { data: signedRows } = await supabase
         .from('emargements_fc')
-        .select('apprenant_id, demi_journee').eq("masque" as any, false as any)
+        .select('apprenant_id, demi_journee').filter("masque", "eq", false)
         .eq('date_emargement', todayStr)
         .in('apprenant_id', ids);
 
