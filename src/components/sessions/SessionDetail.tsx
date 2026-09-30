@@ -2344,9 +2344,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     };
   };
 
-  const checkApprenantsCompleteness = (): { ok: boolean; missing: string[] } => {
+  const checkApprenantsCompleteness = (listArg?: any[]): { ok: boolean; missing: string[] } => {
     const missing: string[] = [];
-    for (const sa of apprenantsInSession) {
+    for (const sa of (listArg || apprenantsInSession)) {
       const a = sa.apprenant;
       if (!a) continue;
       const fc: any = (financeursFCMap as any)?.[a.id] || {};
@@ -2370,12 +2370,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return { ok: missing.length === 0, missing };
   };
 
-  const handleBulkDownloadAttestations = async () => {
-    if (!apprenantsInSession.length) {
+  const handleBulkDownloadAttestations = async (listArg?: any) => {
+    const list: any[] = Array.isArray(listArg) ? listArg : apprenantsInSession;
+    if (!list.length) {
       toast({ title: "Aucun apprenant", description: "Cette session ne contient aucun apprenant.", variant: "destructive" });
       return;
     }
-    const check = checkApprenantsCompleteness();
+    const check = checkApprenantsCompleteness(list);
     if (!check.ok) {
       toast({
         title: "Informations manquantes",
@@ -2388,7 +2389,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     try {
       let mergedDoc: any = null;
       let count = 0;
-      for (const sa of apprenantsInSession) {
+      for (const sa of list) {
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
         const { data } = buildAttestationDataForApprenant(apprenant, sa);
@@ -2417,12 +2418,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
-  const handleBulkSendAttestations = async () => {
-    if (!apprenantsInSession.length) {
+  const handleBulkSendAttestations = async (listArg?: any) => {
+    const list: any[] = Array.isArray(listArg) ? listArg : apprenantsInSession;
+    if (!list.length) {
       toast({ title: "Aucun apprenant", description: "Cette session ne contient aucun apprenant.", variant: "destructive" });
       return;
     }
-    const check = checkApprenantsCompleteness();
+    const check = checkApprenantsCompleteness(list);
     if (!check.ok) {
       toast({
         title: "Informations manquantes",
@@ -2432,7 +2434,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return;
     }
     // Vérifie qu'au moins un apprenant a un email
-    const withEmail = apprenantsInSession.filter(sa => sa.apprenant?.email);
+    const withEmail = list.filter(sa => sa.apprenant?.email);
     if (withEmail.length === 0) {
       toast({
         title: "Aucun destinataire",
@@ -2458,7 +2460,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     let skipped = 0;
     let failed = 0;
     try {
-      for (const sa of apprenantsInSession) {
+      for (const sa of list) {
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
         if (!apprenant.email) { skipped++; continue; }
@@ -4998,8 +5000,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
           const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
           const facturesCount = apprenantsForFactures.length;
-          const tabCount = 2 + (isFormationContinue ? 1 : 0) + 1;
-          const gridColsClass = tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+          const tabCount = 2 + (isFormationContinue ? 2 : 0) + 1;
+          const gridColsClass = tabCount === 5 ? 'grid-cols-5' : tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+          const attestationRows = (apprenantsInSession as any[]).filter((sa: any) => sa.apprenant).map((sa: any) => {
+            const a = sa.apprenant;
+            const isAbsent = absentIds.has(a.id);
+            const heures = Number((emargementsHoursMap as any)?.[a.id] || 0);
+            const present = !isAbsent && heures > 0;
+            const facture: any = (facturesFCMap as any)?.[a.id] || null;
+            const paiements: any[] = (facture?.id && (paiementsByFactureId as any)?.[facture.id]) || [];
+            const totalPaye = paiements.reduce((t: number, p: any) => t + Number(p?.montant || 0), 0);
+            const montant = getMontantFactureFor(a, sa);
+            const paye = !!facture && (facture.statut === 'payee' || (paiements.length > 0 && totalPaye + 0.001 >= montant));
+            const raison = isAbsent ? 'Absent' : heures <= 0 ? 'Aucune feuille d\'émargement signée' : !facture ? 'Pas de facture' : !paye ? 'Facture non acquittée' : '';
+            return { sa, a, heures, present, paye, eligible: present && paye, raison };
+          });
+          const attestationsEligibles = attestationRows.filter(r => r.eligible);
+          const attestationsExclues = attestationRows.filter(r => !r.eligible);
           return (
         <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
           <TabsList className={`shrink-0 grid w-full ${gridColsClass}`}>
@@ -5015,6 +5032,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               <TabsTrigger value="factures" className="gap-2">
                 <FileText className="w-4 h-4" />
                 Factures ({facturesCount})
+              </TabsTrigger>
+            )}
+            {isFormationContinue && (
+              <TabsTrigger value="attestations" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Attestations ({attestationsEligibles.length})
               </TabsTrigger>
             )}
             <TabsTrigger value="absents" className="gap-2">
@@ -5968,6 +5991,57 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               <div className="mt-4">
                 <SmallTransfersTable />
               </div>
+            </TabsContent>
+          )}
+
+          {isFormationContinue && (
+            <TabsContent value="attestations" className="flex-1 min-h-0 overflow-auto mt-4 space-y-4">
+              <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-sm flex-1">Attestations de formation continue — seulement les apprenants <strong>présents</strong> et dont la facture est <strong>acquittée</strong>.</p>
+                <Button size="sm" variant="outline" className="gap-2" disabled={!attestationsEligibles.length || bulkDownloadingAttestations}
+                  onClick={() => handleBulkDownloadAttestations(attestationsEligibles.map(r => r.sa))}>
+                  {bulkDownloadingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                  Tout télécharger ({attestationsEligibles.length})
+                </Button>
+                <Button size="sm" className="gap-2" disabled={!attestationsEligibles.length || bulkSendingAttestations}
+                  onClick={() => handleBulkSendAttestations(attestationsEligibles.map(r => r.sa))}>
+                  {bulkSendingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Tout envoyer par mail ({attestationsEligibles.length})
+                </Button>
+              </div>
+              {attestationsEligibles.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucun apprenant à la fois présent et ayant payé.</p>
+              ) : (
+                <div className="divide-y border rounded-lg">
+                  {attestationsEligibles.map(r => (
+                    <div key={r.a.id} className="flex flex-wrap items-center gap-3 p-3">
+                      <div className="flex-1 min-w-[200px]">
+                        <p className="font-medium text-sm">{r.a.prenom} {r.a.nom}</p>
+                        <p className="text-xs text-muted-foreground">{r.a.email || 'Pas d\'e-mail'} · {r.heures} h de présence · Payé</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="gap-1" disabled={bulkDownloadingAttestations} onClick={() => handleBulkDownloadAttestations([r.sa])}>
+                        <FileText className="w-4 h-4" /> Télécharger
+                      </Button>
+                      <Button size="sm" className="gap-1" disabled={!r.a.email || bulkSendingAttestations} onClick={() => handleBulkSendAttestations([r.sa])}>
+                        <Send className="w-4 h-4" /> Envoyer par mail
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {attestationsExclues.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Non éligibles ({attestationsExclues.length})</p>
+                  <div className="divide-y border rounded-lg opacity-60">
+                    {attestationsExclues.map(r => (
+                      <div key={r.a.id} className="flex items-center gap-3 p-3 text-sm">
+                        <span className="flex-1">{r.a.prenom} {r.a.nom}</span>
+                        <span className="text-xs text-muted-foreground">{r.raison}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
           )}
 
