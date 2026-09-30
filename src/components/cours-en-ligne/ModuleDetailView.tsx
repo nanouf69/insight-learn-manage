@@ -6531,9 +6531,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         ...base,
         exercices: base.exercices.map((e) => {
           const snap = etat.parExo[Number(e.id)];
-          // Corrections de l'éditeur pendant un passage en cours : gardé hors ligne
-          // jusqu'à l'essai dans l'espace élève (questionsSnapshotCorrigees).
-          return snap ? { ...e, questions: snap.questions } : e;
+          // Corrections de l'éditeur (texte, réponses, photo) visibles pendant un passage en cours ;
+          // liste/ordre du passage figé et réponses élève inchangés.
+          return snap ? { ...e, questions: questionsSnapshotCorrigees(snap.questions as any, e.questions as any) as any } : e;
         }),
       };
     })();
