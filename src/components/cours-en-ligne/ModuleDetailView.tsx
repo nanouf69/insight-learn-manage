@@ -6531,7 +6531,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         ...base,
         exercices: base.exercices.map((e) => {
           const snap = etat.parExo[Number(e.id)];
-          return snap ? { ...e, questions: questionsSnapshotCorrigees(snap.questions, e.questions as any[]) } : e;
+          // Corrections de l'éditeur pendant un passage en cours : gardé hors ligne
+          // jusqu'à l'essai sur un module bilan fictif (questionsSnapshotCorrigees).
+          return snap ? { ...e, questions: snap.questions } : e;
         }),
       };
     })();
