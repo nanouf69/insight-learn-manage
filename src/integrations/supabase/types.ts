@@ -3019,6 +3019,9 @@ export type Database = {
           demi_journee: string
           id: string
           justificatif_url: string | null
+          masque: boolean
+          masque_at: string | null
+          masque_motif: string | null
           motif_absence: string | null
           signature_data_url: string | null
           signed_at: string
@@ -3035,6 +3038,9 @@ export type Database = {
           demi_journee: string
           id?: string
           justificatif_url?: string | null
+          masque?: boolean
+          masque_at?: string | null
+          masque_motif?: string | null
           motif_absence?: string | null
           signature_data_url?: string | null
           signed_at?: string
@@ -3051,6 +3057,9 @@ export type Database = {
           demi_journee?: string
           id?: string
           justificatif_url?: string | null
+          masque?: boolean
+          masque_at?: string | null
+          masque_motif?: string | null
           motif_absence?: string | null
           signature_data_url?: string | null
           signed_at?: string
