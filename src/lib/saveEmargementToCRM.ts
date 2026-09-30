@@ -33,13 +33,9 @@ export async function saveEmargementToCRM(params: {
       .from("documents-inscription")
       .getPublicUrl(filePath);
 
-    // Supprimer les doublons éventuels (même nom de fichier "logique")
-    await supabase
-      .from("documents_inscription")
-      .delete()
-      .eq("apprenant_id", params.apprenantId)
-      .eq("type_document", "emargement")
-      .eq("nom_fichier", safeName);
+    // Règle absolue (30/09) : une feuille d'émargement ne remplace JAMAIS
+    // une ancienne. Toutes les versions sont conservées (nouvelle ligne).
+
 
     const { error: insertError } = await supabase
       .from("documents_inscription")
