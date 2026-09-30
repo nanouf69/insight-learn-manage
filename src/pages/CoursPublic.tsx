@@ -1648,6 +1648,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // including e-learning). State only, no persistence: reset on logout,
   // so the next login always re-prompts.
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  // Règle définitive : une signature manquante ne bloque JAMAIS l'accès.
+  // Bandeau « Signature en attente » + bouton qui ouvre la signature.
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
 
   const handleConfirmIdentity = useCallback(() => {
     setIdentityConfirmed(true);
