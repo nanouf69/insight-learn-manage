@@ -403,7 +403,7 @@ export const EmargementFCModal = ({
                     description: "Vous allez être déconnecté pour des raisons de sécurité.",
                     variant: "destructive",
                   });
-                  try { await supabase.auth.signOut(); } catch { /* noop */ }
+                  try { await supabase.auth.signOut({ scope: "local" }); } catch { /* noop */ }
                   window.location.href = "/login";
                 }}
               >

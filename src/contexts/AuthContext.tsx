@@ -243,7 +243,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     manualSignOutRef.current = true;
-    await supabase.auth.signOut();
+    // Ne ferme que l'appareil utilisé : les autres connexions restent ouvertes.
+    await supabase.auth.signOut({ scope: "local" });
     clearAuthState();
   }, [clearAuthState]);
 
