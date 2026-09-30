@@ -192,6 +192,36 @@ export type Database = {
           },
         ]
       }
+      answer_state_historique: {
+        Row: {
+          ancienne_ligne: Json
+          apprenant_id: string | null
+          created_at: string
+          id: string
+          nouvelle_ligne: Json
+          question_id: string | null
+          response_id: string | null
+        }
+        Insert: {
+          ancienne_ligne: Json
+          apprenant_id?: string | null
+          created_at?: string
+          id?: string
+          nouvelle_ligne: Json
+          question_id?: string | null
+          response_id?: string | null
+        }
+        Update: {
+          ancienne_ligne?: Json
+          apprenant_id?: string | null
+          created_at?: string
+          id?: string
+          nouvelle_ligne?: Json
+          question_id?: string | null
+          response_id?: string | null
+        }
+        Relationships: []
+      }
       app_version: {
         Row: {
           created_at: string
@@ -808,6 +838,8 @@ export type Database = {
           b2_vierge: boolean | null
           civilite: string | null
           code_postal: string | null
+          compte_cours_archive_at: string | null
+          compte_cours_archive_par: string | null
           created_at: string
           creneau_horaire: string | null
           date_abandon: string | null
@@ -877,6 +909,8 @@ export type Database = {
           b2_vierge?: boolean | null
           civilite?: string | null
           code_postal?: string | null
+          compte_cours_archive_at?: string | null
+          compte_cours_archive_par?: string | null
           created_at?: string
           creneau_horaire?: string | null
           date_abandon?: string | null
@@ -946,6 +980,8 @@ export type Database = {
           b2_vierge?: boolean | null
           civilite?: string | null
           code_postal?: string | null
+          compte_cours_archive_at?: string | null
+          compte_cours_archive_par?: string | null
           created_at?: string
           creneau_horaire?: string | null
           date_abandon?: string | null
@@ -2783,6 +2819,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      donnees_eleves_suppressions: {
+        Row: {
+          alerte_envoyee_at: string | null
+          apprenant_id: string | null
+          auteur_role: string | null
+          auteur_uid: string | null
+          compte_test: boolean
+          created_at: string
+          id: string
+          ligne: Json
+          motif: string | null
+          table_nom: string
+        }
+        Insert: {
+          alerte_envoyee_at?: string | null
+          apprenant_id?: string | null
+          auteur_role?: string | null
+          auteur_uid?: string | null
+          compte_test?: boolean
+          created_at?: string
+          id?: string
+          ligne: Json
+          motif?: string | null
+          table_nom: string
+        }
+        Update: {
+          alerte_envoyee_at?: string | null
+          apprenant_id?: string | null
+          auteur_role?: string | null
+          auteur_uid?: string | null
+          compte_test?: boolean
+          created_at?: string
+          id?: string
+          ligne?: Json
+          motif?: string | null
+          table_nom?: string
+        }
+        Relationships: []
       }
       email_accuses: {
         Row: {
@@ -8117,6 +8192,8 @@ export type Database = {
           b2_vierge: boolean | null
           civilite: string | null
           code_postal: string | null
+          compte_cours_archive_at: string | null
+          compte_cours_archive_par: string | null
           created_at: string
           creneau_horaire: string | null
           date_abandon: string | null
