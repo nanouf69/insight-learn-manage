@@ -6522,7 +6522,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         ...base,
         exercices: base.exercices.map((e) => {
           const snap = etat.parExo[Number(e.id)];
-          return snap ? { ...e, questions: snap.questions } : e;
+          return snap ? { ...e, questions: questionsSnapshotCorrigees(snap.questions, e.questions as any[]) } : e;
         }),
       };
     })();
