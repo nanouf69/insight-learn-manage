@@ -41,9 +41,10 @@ Deno.serve(async (req) => {
     }
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const depuis = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
-    // Uniquement les changements faits par l'agent (pas les admins dans l'éditeur)
+    // Changements faits par l'agent (y compris en base directe) et les traitements
+    // automatiques — tous deux étiquetés « Agent » ; jamais les admins de l'éditeur
     const { data, error } = await sb.from("question_change_log").select("*")
-      .eq("auteur_type", "agent_ou_fonction").gte("created_at", depuis).order("created_at").limit(1000);
+      .in("auteur_type", ["agent_ou_fonction", "automatique"]).gte("created_at", depuis).order("created_at").limit(1000);
     if (error) throw error;
     const n = data?.length ?? 0;
     await sendBrandedEmail({
