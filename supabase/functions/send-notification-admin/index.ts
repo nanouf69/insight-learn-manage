@@ -31,6 +31,7 @@ function formatDocumentLabel(type: string): string {
     "cgv-ri-acceptation": "CGV et Règlement Intérieur – Signature",
     "evaluation-acquis": "Évaluation des acquis",
     "satisfaction": "Questionnaire de satisfaction",
+    "echec-signature-emargement": "⚠️ ÉCHEC DE SIGNATURE D'ÉMARGEMENT",
   };
   return labels[type] || type;
 }
