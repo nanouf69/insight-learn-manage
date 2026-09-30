@@ -5818,7 +5818,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   setAddExtraFactureFor(a);
                                   setExtraFactureMontant('');
                                   // Libellé pré-rempli avec la session concernée (modifiable)
-                                  setExtraFactureLibelle(session?.nom ? `Formation continue — ${session.nom}` : '');
+                                  setExtraFactureLibelle(session?.title ? `Formation continue — ${session.title}` : '');
                                 }}
                               >
                                 <Plus className="w-4 h-4" />
