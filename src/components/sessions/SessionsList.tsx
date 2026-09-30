@@ -549,8 +549,8 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                         })()}
                         <div className="flex items-center gap-1.5">
                           <Users className="w-4 h-4" />
-                          <span className={sessionStats[session.id]?.inscrits > (session.places_disponibles || 18) ? "text-red-600 font-medium" : ""}>
-                            {sessionStats[session.id]?.inscrits || 0}/{session.places_disponibles || 18} inscrits
+                          <span className={"text-xl font-bold " + (sessionStats[session.id]?.inscrits > (session.places_disponibles || 18) ? "text-red-600" : "text-foreground")}>
+                            {sessionStats[session.id]?.inscrits || 0} inscrit{sessionStats[session.id]?.inscrits === 1 ? "" : "s"}
                           </span>
                         </div>
                         {sessionStats[session.id] && (sessionStats[session.id].total > 0 || sessionStats[session.id].absent > 0) && (() => {
