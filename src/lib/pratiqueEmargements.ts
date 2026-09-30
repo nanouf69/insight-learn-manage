@@ -119,7 +119,7 @@ export const fetchPratiqueSignatures = async (
 
   const { data } = await supabase
     .from("emargements_fc" as any)
-    .select("apprenant_id, demi_journee, signature_data_url, absent").eq("masque", false)
+    .select("apprenant_id, demi_journee, signature_data_url, absent").eq("masque" as any, false as any)
     .eq("date_emargement", dateISO)
     .in("apprenant_id", ids);
 

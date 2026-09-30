@@ -86,7 +86,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       // Signatures demi-journée en cours (pour "manquants" aujourd'hui)
       const { data: signesDemi, error: errS } = await supabase
         .from("emargements_fc")
-        .select("apprenant_id").eq("masque", false)
+        .select("apprenant_id").eq("masque" as any, false as any)
         .eq("date_emargement", today)
         .eq("demi_journee", demi)
         .in("apprenant_id", ids);
@@ -97,7 +97,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
       // Signatures des 10 derniers jours
       const { data: signesHistorique, error: errJ } = await supabase
         .from("emargements_fc")
-        .select("apprenant_id, demi_journee, created_at, date_emargement").eq("masque", false)
+        .select("apprenant_id, demi_journee, created_at, date_emargement").eq("masque" as any, false as any)
         .gte("date_emargement", startDay)
         .lte("date_emargement", today)
         .in("apprenant_id", ids)

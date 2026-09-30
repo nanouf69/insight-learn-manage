@@ -1542,7 +1542,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
       let q = supabase
         .from('emargements_fc')
-        .select('apprenant_id, date_emargement, demi_journee').eq("masque", false)
+        .select('apprenant_id, date_emargement, demi_journee').eq("masque" as any, false as any)
         .in('apprenant_id', apprenantIds)
         .eq('absent', false);
       if (dateDebut) q = q.gte('date_emargement', dateDebut);

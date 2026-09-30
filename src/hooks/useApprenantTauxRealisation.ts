@@ -72,7 +72,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .range(from, to)).catch(() => [] as any[]),
         fetchAllRows<any>((from, to) => supabase
           .from("emargements_fc" as any)
-          .select("date_emargement, demi_journee, absent").eq("masque", false)
+          .select("date_emargement, demi_journee, absent").eq("masque" as any, false as any)
           .eq("apprenant_id", apprenantId)
           .range(from, to)).catch(() => [] as any[]),
         fetchPratiqueSlotDetails(apprenantId).catch(() => []),

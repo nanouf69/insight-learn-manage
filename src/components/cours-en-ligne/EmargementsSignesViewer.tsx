@@ -337,7 +337,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       const [emRes, apRes] = await Promise.all([
         supabase
           .from("emargements_fc")
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent").eq("masque", false)
+          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent").eq("masque" as any, false as any)
           .eq("apprenant_id", apprenantId)
           .order("date_emargement", { ascending: true })
           .order("demi_journee", { ascending: true }),

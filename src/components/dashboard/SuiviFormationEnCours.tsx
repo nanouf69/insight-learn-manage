@@ -105,7 +105,7 @@ export function SuiviFormationEnCours({ onNavigateToApprenant }: Props) {
 
       const { data: signes, error: errS } = await supabase
         .from("emargements_fc")
-        .select("apprenant_id, date_emargement, demi_journee, absent, signature_data_url").eq("masque", false)
+        .select("apprenant_id, date_emargement, demi_journee, absent, signature_data_url").eq("masque" as any, false as any)
         .in("apprenant_id", actifIds);
       if (errS) throw errS;
 

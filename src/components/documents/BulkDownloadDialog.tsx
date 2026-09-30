@@ -217,7 +217,7 @@ export function BulkDownloadDialog() {
       try {
         const { data: emargData } = await supabase
           .from("emargements_fc" as any)
-          .select("*").eq("masque", false)
+          .select("*").eq("masque" as any, false as any)
           .eq("apprenant_id", apprenant.id)
           .order("date_emargement", { ascending: true });
         const emargements = (emargData as any[]) || [];
