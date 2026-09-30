@@ -1470,7 +1470,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const toISO = expected[expected.length - 1].date;
       const { data: signedData } = await supabase
         .from("emargements_fc" as any)
-        .select("date_emargement, demi_journee, signature_data_url, absent")
+        .select("date_emargement, demi_journee, signature_data_url, absent").filter("masque", "eq", false)
         .eq("apprenant_id", apprenant.id!)
         .gte("date_emargement", fromISO)
         .lte("date_emargement", toISO);

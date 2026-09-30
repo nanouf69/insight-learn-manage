@@ -219,7 +219,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .order("created_at", { ascending: false }),
         supabase
           .from("emargements_fc" as any)
-          .select("*")
+          .select("*").filter("masque", "eq", false)
           .eq("apprenant_id", apprenant.id)
           .order("signed_at", { ascending: false }),
         fournApprPromise,
