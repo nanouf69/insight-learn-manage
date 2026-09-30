@@ -32,36 +32,27 @@ ${rows.map((r) => `<tr><td>${paris(r.created_at)}</td><td>${esc(AUTEURS[r.auteur
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { mode } = await req.json().catch(() => ({ mode: "lot" }));
-    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-
-    if (mode === "quotidien") {
-      const depuis = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-      const { data, error } = await sb.from("question_change_log").select("*").gte("created_at", depuis).order("created_at").limit(1000);
-      if (error) throw error;
-      const n = data?.length ?? 0;
-      await sendBrandedEmail({
-        to: DEST,
-        subject: `Récapitulatif quotidien des questions : ${n === 0 ? "0 changement" : n + " changement(s)"}`,
-        html: `<p>Récapitulatif des dernières 24 h (jusqu'au ${paris(new Date().toISOString())}).</p>
-${n === 0 ? "<p><b>0 changement</b> — le rapport fonctionne.</p>" : tableau(data!)}${n >= 1000 ? "<p>Liste limitée à 1000 lignes, voir la page Historique des questions.</p>" : ""}`,
-      });
-      return new Response(JSON.stringify({ ok: true, mode, n }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const body = await req.json().catch(() => ({}));
+    const force = body?.force === true;
+    // Rapports à 8h et 20h heure de Paris toute l'année (tâche lancée à 6,7,18,19 h UTC)
+    const heureParis = Number(new Date().toLocaleString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false }));
+    if (!force && heureParis !== 8 && heureParis !== 20) {
+      return new Response(JSON.stringify({ ok: true, ignore: true, heureParis }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    const { data, error } = await sb.from("question_change_log").select("*").is("notifie_at", null).order("created_at").limit(500);
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const depuis = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+    // Uniquement les changements faits par l'agent (pas les admins dans l'éditeur)
+    const { data, error } = await sb.from("question_change_log").select("*")
+      .eq("auteur_type", "agent_ou_fonction").gte("created_at", depuis).order("created_at").limit(1000);
     if (error) throw error;
-    if (!data?.length) return new Response(JSON.stringify({ ok: true, mode: "lot", n: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const n = data?.length ?? 0;
     await sendBrandedEmail({
       to: DEST,
-      subject: `Alerte : ${data.length} changement(s) de questions`,
-      html: `<p>Changements de questions détectés depuis le dernier envoi :</p>${tableau(data)}`,
+      subject: `Rapport ${heureParis === 8 ? "de 8h" : "de 20h"} — changements de questions par l'agent : ${n === 0 ? "0 changement" : n + " changement(s)"}`,
+      html: `<p>Changements de questions faits par l'agent sur les 12 dernières heures (jusqu'au ${paris(new Date().toISOString())}).</p>
+${n === 0 ? "<p><b>0 changement</b> — le rapport fonctionne.</p>" : tableau(data!)}${n >= 1000 ? "<p>Liste limitée à 1000 lignes, voir la page Historique des questions.</p>" : ""}`,
     });
-    const ids = data.map((r) => r.id);
-    for (let i = 0; i < ids.length; i += 100) {
-      await sb.from("question_change_log").update({ notifie_at: new Date().toISOString() }).in("id", ids.slice(i, i + 100));
-    }
-    return new Response(JSON.stringify({ ok: true, mode: "lot", n: data.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, heureParis, n }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("[rapport-changements-questions]", e);
     return new Response(JSON.stringify({ error: String((e as Error)?.message ?? e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
