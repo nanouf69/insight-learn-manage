@@ -5990,6 +5990,60 @@ export type Database = {
           },
         ]
       }
+      question_change_log: {
+        Row: {
+          apres: Json | null
+          auteur_email: string | null
+          auteur_type: string
+          auteur_user_id: string | null
+          avant: Json | null
+          created_at: string
+          exercice_id: string | null
+          exercice_titre: string | null
+          id: string
+          module_id: number
+          module_nom: string | null
+          notifie_at: string | null
+          origine: string | null
+          question_id: string | null
+          type_changement: string
+        }
+        Insert: {
+          apres?: Json | null
+          auteur_email?: string | null
+          auteur_type: string
+          auteur_user_id?: string | null
+          avant?: Json | null
+          created_at?: string
+          exercice_id?: string | null
+          exercice_titre?: string | null
+          id?: string
+          module_id: number
+          module_nom?: string | null
+          notifie_at?: string | null
+          origine?: string | null
+          question_id?: string | null
+          type_changement: string
+        }
+        Update: {
+          apres?: Json | null
+          auteur_email?: string | null
+          auteur_type?: string
+          auteur_user_id?: string | null
+          avant?: Json | null
+          created_at?: string
+          exercice_id?: string | null
+          exercice_titre?: string | null
+          id?: string
+          module_id?: number
+          module_nom?: string | null
+          notifie_at?: string | null
+          origine?: string | null
+          question_id?: string | null
+          type_changement?: string
+        }
+        Relationships: []
+      }
       quiz_question_bindings: {
         Row: {
           created_at: string
