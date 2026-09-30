@@ -13,13 +13,16 @@ import GESTION_2_ASSET from "@/assets/cours-vtc/GESTION_2SUR3_v9-2.pptx.asset.js
 import GESTION_3_ASSET from "@/assets/cours-vtc/GESTION_3SUR3_v11.pptx.asset.json";
 import DEVELOPPEMENT_COMMERCIAL_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v11.pptx.asset.json";
 import REGLEMENTATION_VTC_ASSET from "@/assets/cours-vtc/Reglementation_VTC_1SUR1_v5_1.pptx.asset.json";
+import SECURITE_ROUTIERE_3_V6_ASSET from "@/assets/cours-vtc/SECURITE_ROUTIERE_3SUR3_v6.pptx.asset.json";
+import DEVELOPPEMENT_COMMERCIAL_V18_ASSET from "@/assets/cours-vtc/Developpement_commercial_1SUR1_v18_1.pptx.asset.json";
+import REGLEMENTATION_VTC_V6_ASSET from "@/assets/cours-vtc/Reglementation_VTC_1SUR1_v6.pptx.asset.json";
 
 const SECURITE_ROUTIERE_2_PPTX = `${SECURITE_ROUTIERE_2_ASSET.url}?v=20260915-2100`;
-const SECURITE_ROUTIERE_3_PPTX = `${SECURITE_ROUTIERE_3_ASSET.url}?v=20260916-1300`;
+const SECURITE_ROUTIERE_3_PPTX = `${SECURITE_ROUTIERE_3_V6_ASSET.url}?v=20260930-1508`;
 const GESTION_2_PPTX = `${GESTION_2_ASSET.url}?v=20260918-2109`;
 const GESTION_3_PPTX = `${GESTION_3_ASSET.url}?v=20260918-2109`;
-const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_ASSET.url}?v=20260918-2109`;
-const REGLEMENTATION_VTC_PPTX = `${REGLEMENTATION_VTC_ASSET.url}?v=20260918-2109`;
+const DEVELOPPEMENT_COMMERCIAL_PPTX = `${DEVELOPPEMENT_COMMERCIAL_V18_ASSET.url}?v=20260930-1508`;
+const REGLEMENTATION_VTC_PPTX = `${REGLEMENTATION_VTC_V6_ASSET.url}?v=20260930-1508`;
 interface ContentItem {
   id: number;
   titre: string;
