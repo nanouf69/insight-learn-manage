@@ -1875,68 +1875,33 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     (isFCLastDay ? emargementFCStatus !== "checking" : emargementFCStatus !== "skipped");
 
 
-  if (needsEmargement) {
-    const formationLabel = !isFC && !isPres && emargementPratiquePending
-      ? "formation pratique"
-      : isPres ? "formation en présentiel" : "formation continue";
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="text-center max-w-md mb-6">
-          <div className="text-5xl mb-3">📝</div>
-          <h1 className="text-xl font-bold text-slate-900 mb-1">
-            Bienvenue {apprenant!.prenom} {apprenant!.nom}
-          </h1>
-          <p className="text-sm text-slate-500">
-            {emargementFCStatus === "checking"
-              ? "Vérification de votre émargement…"
-              : isFCLastDay
-                ? `⚠️ Dernier jour de votre ${formationLabel}. Il vous reste une ou plusieurs signatures manquantes : vous devez toutes les régulariser avant d'accéder à la plateforme.`
-                : (() => {
-                    const today = (() => {
-                      const d = new Date();
-                      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                    })();
-                    const isPast = emargementDate && emargementDate !== today;
-                    return isPast
-                      ? `Avant d'accéder à votre ${formationLabel}, merci de régulariser une signature manquante d'un créneau passé.`
-                      : `Avant d'accéder à votre ${formationLabel}, merci de signer la feuille d'émargement de ce créneau.`;
-                  })()}
-          </p>
-        </div>
-
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="w-3.5 h-3.5 mr-1" />
-          Se déconnecter
-        </Button>
-        {emargementFCStatus === "needed" && emargementCreneau && identityConfirmed && (
-          <EmargementFCModal
-            key={`${emargementDate || "today"}|${emargementCreneau}`}
-            apprenantId={apprenant!.id!}
-            userId={effectiveUserId!}
-            apprenantNom={apprenant!.nom}
-            apprenantPrenom={apprenant!.prenom}
-            creneau={emargementCreneau}
-            extraCreneaux={emargementExtraCreneaux}
-            mode={emargementMode}
-            dateEmargement={emargementDate || undefined}
-            required={false}
-            onSigned={() => setEmargementRefreshTick((t) => t + 1)}
-            onSkipped={() => setEmargementFCStatus("skipped")}
-          />
-        )}
-        {!identityConfirmed && apprenant?.id && (
-          <IdentityConfirmModal
-            show
-            apprenantId={apprenant.id}
-            prenom={apprenant.prenom || ""}
-            nom={apprenant.nom || ""}
-            onConfirm={handleConfirmIdentity}
-            onDeny={handleDenyIdentity}
-          />
-        )}
+  // Règle définitive (30/09) : une signature manquante ne bloque jamais l'accès.
+  // Rappel non bloquant affiché dans l'espace élève (bandeau + bouton Signer).
+  const signatureEnAttente = needsEmargement && emargementFCStatus !== "checking";
+  const bandeauSignature = signatureEnAttente ? (
+    <div data-testid="bandeau-signature-en-attente" className="bg-amber-100 border-b border-amber-300 text-amber-900">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+        <span>📝 <strong>Signature en attente</strong> — merci de signer votre feuille d'émargement (obligatoire pour votre dossier de formation).</span>
+        <Button size="sm" onClick={() => setShowSignatureModal(true)}>Signer</Button>
       </div>
-    );
-  }
+    </div>
+  ) : null;
+  const modalSignature = signatureEnAttente && showSignatureModal && emargementFCStatus === "needed" && emargementCreneau ? (
+    <EmargementFCModal
+      key={`${emargementDate || "today"}|${emargementCreneau}`}
+      apprenantId={apprenant!.id!}
+      userId={effectiveUserId!}
+      apprenantNom={apprenant!.nom}
+      apprenantPrenom={apprenant!.prenom}
+      creneau={emargementCreneau}
+      extraCreneaux={emargementExtraCreneaux}
+      mode={emargementMode}
+      dateEmargement={emargementDate || undefined}
+      required={false}
+      onSigned={() => { setShowSignatureModal(false); setEmargementRefreshTick((t) => t + 1); }}
+      onSkipped={() => setShowSignatureModal(false)}
+    />
+  ) : null;
 
   // Module detail view
   if (selectedModule) {
@@ -2314,6 +2279,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
+       {bandeauSignature}
+       {modalSignature}
        {/* Top navbar */}
        <nav className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
          <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
@@ -2838,6 +2805,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     handleConfirmIdentity,
     handleDenyIdentity,
     identityConfirmed,
+    showSignatureModal,
+    emargementExtraCreneaux,
+    emargementPratiquePending,
     handleModuleCompleted,
     handleTrackCours,
     handleLearnerQuizActivity,
