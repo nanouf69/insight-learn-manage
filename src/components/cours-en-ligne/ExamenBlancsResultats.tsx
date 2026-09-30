@@ -1181,7 +1181,7 @@ function EcranResultats({
       {/* Boutons */}
       <div className="flex gap-3">
         <Button variant="outline" onClick={onRetour} className={`${canRetry ? "flex-1" : "w-full"} gap-2`}>
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-6 h-6" />
           Retour aux examens
         </Button>
         {canRetry && (
@@ -1202,7 +1202,7 @@ function EcranResultats({
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => setActiveTab("resultats")} className="gap-2">
-              <ArrowLeft className="w-4 h-4" /> Retour aux résultats
+              <ArrowLeft className="w-6 h-6" /> Retour aux résultats
             </Button>
             <h2 className="text-xl font-bold" style={{ color: "#0D2540" }}>
               🎯 Révision des questions fausses

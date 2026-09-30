@@ -9777,8 +9777,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="outline" size="icon" onClick={onBack}>
-              <ArrowLeft className="w-4 h-4" />
+            <Button variant="outline" onClick={onBack} className="min-w-[48px] min-h-[48px] h-12 px-4 gap-2 text-base">
+              <ArrowLeft className="w-6 h-6" /> Retour
             </Button>
             <h2 className="text-2xl font-bold">{(() => {
               const parentMap: Record<number, string> = {
@@ -10045,8 +10045,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4" />
+          <Button variant="outline" onClick={onBack} className="min-w-[48px] min-h-[48px] h-12 px-4 gap-2 text-base">
+            <ArrowLeft className="w-6 h-6" /> Retour
           </Button>
           <h2 className="text-2xl font-bold">Détail du module</h2>
           {!studentOnly && (
