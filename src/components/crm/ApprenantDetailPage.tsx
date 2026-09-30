@@ -1232,20 +1232,19 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                   <Trash2 className="w-5 h-5" />
-                  Supprimer le compte cours
+                  Archiver le compte cours
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {apprenant.auth_user_id ? (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      Cette action supprime le <strong>compte cours en ligne</strong> de l'apprenant (identifiants de connexion, progression, quiz, activités).
-                      Le dossier administratif (fiche apprenant, documents, factures) sera conservé.
+                      Cette action <strong>archive</strong> le compte cours en ligne : la connexion est désactivée, toutes les données (progression, quiz, réponses, émargements) sont conservées pour Qualiopi et le CPF.
                     </p>
                     <Button
                       variant="destructive"
                       onClick={async () => {
-                        if (!confirm("Êtes-vous sûr de vouloir supprimer le compte cours de cet apprenant ? Sa progression sera définitivement perdue.")) return;
+                        if (!confirm("Archiver le compte cours de cet apprenant ? La connexion sera désactivée ; aucune donnée ne sera supprimée.")) return;
                         try {
                           const { data: sessionData } = await supabase.auth.getSession();
                           const token = sessionData?.session?.access_token;
@@ -1256,7 +1255,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                           if (res.error || res.data?.error) {
                             toast.error(res.data?.error || res.error?.message || "Erreur lors de la suppression");
                           } else {
-                            toast.success(res.data?.message || "Compte cours supprimé");
+                            toast.success(res.data?.message || "Compte cours archivé");
                             queryClient.invalidateQueries({ queryKey: ["apprenant", apprenantId] });
                           }
                         } catch (err: any) {
@@ -1265,7 +1264,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       }}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer le compte cours
+                      Archiver le compte cours
                     </Button>
                   </>
                 ) : (

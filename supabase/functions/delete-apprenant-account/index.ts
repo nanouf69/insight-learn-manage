@@ -91,32 +91,23 @@ serve(async (req) => {
 
     const authUserId = apprenant.auth_user_id;
 
-    // Delete all related data
-    await supabaseAdmin.from("apprenant_connexions").delete().eq("apprenant_id", apprenant_id);
-    await supabaseAdmin.from("apprenant_module_activites").delete().eq("apprenant_id", apprenant_id);
-    await supabaseAdmin.from("apprenant_module_completion").delete().eq("apprenant_id", apprenant_id);
-    await supabaseAdmin.from("apprenant_quiz_results").delete().eq("apprenant_id", apprenant_id);
-
-    // Delete the auth user
-    const { error: deleteAuthErr } = await supabaseAdmin.auth.admin.deleteUser(authUserId);
-    if (deleteAuthErr) {
-      console.error("Error deleting auth user:", deleteAuthErr);
+    // Règle absolue (30/09) : la « suppression » d'un compte cours devient un ARCHIVAGE.
+    // Aucune donnée élève n'est supprimée (Qualiopi / CPF) : le compte est seulement désactivé.
+    const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { ban_duration: "876000h" });
+    if (banErr) {
       return new Response(
-        JSON.stringify({ error: `Erreur suppression compte auth : ${deleteAuthErr.message}` }),
+        JSON.stringify({ error: `Erreur désactivation du compte : ${banErr.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Clear auth_user_id on the apprenant
-    await supabaseAdmin
-      .from("apprenants")
-      .update({ auth_user_id: null })
+    await supabaseAdmin.from("apprenants")
+      .update({ compte_cours_archive_at: new Date().toISOString(), compte_cours_archive_par: callerUser.id })
       .eq("id", apprenant_id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Compte cours supprimé pour ${apprenant.prenom} ${apprenant.nom}`,
+        message: `Compte cours archivé (désactivé, données conservées) pour ${apprenant.prenom} ${apprenant.nom}`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
