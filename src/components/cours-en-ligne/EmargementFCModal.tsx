@@ -214,6 +214,7 @@ export const EmargementFCModal = ({
             .filter((u: string) => u && u.startsWith("data:image"));
           const check = await checkSignatureAgainstReferences(signatureToSave, refs);
           if (!check.ok) {
+            signalerEchecSignature({ apprenantId, nom: apprenantNom, prenom: apprenantPrenom, message: `Signature refusée par le contrôle anti-gribouillage : ${check.reason || ""}`, date: effectiveDate, creneau: String(demi) });
             toast({
               title: "Signature mal faite",
               description: check.reason || "La signature a été mal faite. Merci de re-signer.",
