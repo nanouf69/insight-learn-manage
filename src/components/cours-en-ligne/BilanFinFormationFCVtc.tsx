@@ -12,8 +12,8 @@ export default function BilanFinFormationFCVtc({ onBack }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button variant="outline" onClick={onBack} className="min-w-[48px] min-h-[48px] h-12 px-4 gap-2 text-base">
+          <ArrowLeft className="h-6 w-6" />
           Retour
         </Button>
         <div>

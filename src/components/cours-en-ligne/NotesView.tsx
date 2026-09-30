@@ -750,8 +750,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             {/* Header */}
             <div className="px-6 py-4 border-b flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedDetail(null)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-slate-600" />
+                <button onClick={() => setSelectedDetail(null)} className="min-w-[48px] min-h-[48px] px-3 flex items-center gap-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-600">
+                  <ArrowLeft className="w-6 h-6" /> <span className="text-base font-medium">Retour</span>
                 </button>
                 <div>
                   <h3 className="font-bold text-slate-800">{selectedDetail.title}</h3>
