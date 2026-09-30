@@ -59,7 +59,7 @@ export function EmargementsFinFormation({ onNavigateToApprenant }: Props) {
       // 3. Signatures existantes
       const { data: signes, error: errS } = await supabase
         .from("emargements_fc")
-        .select("apprenant_id, date_emargement, demi_journee, absent")
+        .select("apprenant_id, date_emargement, demi_journee, absent").eq("masque", false)
         .in("apprenant_id", ids);
       if (errS) throw errS;
 

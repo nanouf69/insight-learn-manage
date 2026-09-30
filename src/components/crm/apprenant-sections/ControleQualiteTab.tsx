@@ -378,7 +378,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
         // 2) Feuilles d'émargement hebdomadaires
         const { data: emargData } = await supabase
           .from("emargements_fc" as any)
-          .select("*")
+          .select("*").eq("masque", false)
           .eq("apprenant_id", apprenant.id)
           .order("date_emargement", { ascending: true });
         const emargements = (emargData as any[]) || [];
@@ -537,7 +537,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
               .from("emargements_fc" as any)
-              .select("date_emargement, demi_journee, absent")
+              .select("date_emargement, demi_journee, absent").eq("masque", false)
               .eq("apprenant_id", apprenant.id)
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
