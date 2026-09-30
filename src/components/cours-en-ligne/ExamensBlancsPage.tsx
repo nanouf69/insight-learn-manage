@@ -1455,7 +1455,7 @@ export default function ExamensBlancsPage({
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Button variant="ghost" size="sm" onClick={() => { setExamenChoixMatieres(null); setPhase("selection"); }} className="gap-2">
-          <ArrowLeft className="w-4 h-4" /> Retour
+          <ArrowLeft className="w-6 h-6" /> Retour
         </Button>
         <Card>
           <CardHeader>
@@ -1522,7 +1522,7 @@ export default function ExamensBlancsPage({
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Button variant="ghost" size="sm" onClick={() => setPhase("selection")} className="gap-2">
-          <ArrowLeft className="w-4 h-4" /> Retour
+          <ArrowLeft className="w-6 h-6" /> Retour
         </Button>
         <Card className="border-2 border-primary/20">
           <CardHeader className="text-center">
@@ -1642,7 +1642,7 @@ export default function ExamensBlancsPage({
                 setPhase("selection");
               }}
             >
-              <ArrowLeft className="w-4 h-4" /> Retour à la liste
+              <ArrowLeft className="w-6 h-6" /> Retour à la liste
             </Button>
           </div>
           <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} />
@@ -1768,7 +1768,7 @@ function RevisionPhaseView({
       </div>
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={onRetour} className="gap-2">
-          <ArrowLeft className="w-4 h-4" /> Retour aux résultats
+          <ArrowLeft className="w-6 h-6" /> Retour aux résultats
         </Button>
         <h2 className="text-xl font-bold" style={{ color: "#0D2540" }}>
           🎯 Révision des questions fausses
