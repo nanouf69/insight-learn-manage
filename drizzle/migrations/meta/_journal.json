@@ -834,6 +834,13 @@
       "when": 1790776297455,
       "tag": "0118_protection_donnees_eleves",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1790786698611,
+      "tag": "0119_auto_inscription_taxi_vers_vtc_taxi",
+      "breakpoints": true
     }
   ]
 }
