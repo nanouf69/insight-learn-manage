@@ -118,6 +118,29 @@ export function estAncienneQrcInformative(q: any): boolean {
   return String(q.type ?? "").toUpperCase() === "QRC";
 }
 
+/**
+ * Passage figé + corrections de l'éditeur : l'ensemble et l'ordre des questions
+ * restent ceux du passage (les réponses de l'élève, rattachées par identifiant,
+ * ne sont jamais effacées) ; le texte, les propositions, la bonne réponse et
+ * l'image viennent de la version actuelle quand la question y existe encore
+ * (même uid, sinon même identifiant). Le snapshot en base n'est jamais modifié.
+ */
+export function questionsSnapshotCorrigees(snapQuestions: any[], actuelles: any[] | undefined): any[] {
+  if (!Array.isArray(actuelles) || actuelles.length === 0) return snapQuestions;
+  const parUid = new Map<string, any>();
+  const parId = new Map<string, any>();
+  for (const q of actuelles) {
+    if (!q) continue;
+    if (q.uid) parUid.set(String(q.uid), q);
+    if (q.id != null) parId.set(String(q.id), q);
+  }
+  return snapQuestions.map((s) => {
+    const cur = (s?.uid && parUid.get(String(s.uid))) || (s?.id != null ? parId.get(String(s.id)) : undefined);
+    if (!cur) return s;
+    return { ...s, ...cur, id: s.id, image: cur.image ?? null };
+  });
+}
+
 /** Retire les anciennes QRC informatives des questions comptées, uniquement pour un exercice figé. */
 export function questionsComptees<T>(etat: EtatSnapshotsEleve, exoId: number, questions: T[]): T[] {
   if (etat.statut !== "pret" || !etat.parExo[Number(exoId)]) return questions;
