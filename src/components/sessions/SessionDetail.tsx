@@ -765,6 +765,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkSendingFactures, setBulkSendingFactures] = useState(false);
   const [singleFactureLoading, setSingleFactureLoading] = useState<string | null>(null);
   const [bulkValidatingFactures, setBulkValidatingFactures] = useState(false);
+  const [bulkCreatingFactures, setBulkCreatingFactures] = useState(false);
   const [selectedFactureApprenants, setSelectedFactureApprenants] = useState<Set<string>>(new Set());
   const [acquittementApprenant, setAcquittementApprenant] = useState<any | null>(null);
   const [acquittementDate, setAcquittementDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -3089,6 +3090,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   // Valider toutes les brouillons en bloc
+  // Créer les factures (brouillon) pour tous les apprenants qui n'en ont pas encore
+  const handleBulkCreateFactures = async () => {
+    const targets = (selectedFactureApprenants.size > 0
+      ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
+      : nonAbsentApprenants);
+    if (!targets.length) return;
+    setBulkCreatingFactures(true);
+    let created = 0, existing = 0, failed = 0;
+    try {
+      for (const sa of targets) {
+        if (!sa.apprenant) continue;
+        const already = (facturesFCMap as any)?.[sa.apprenant.id];
+        if (already) { existing++; continue; }
+        try {
+          await ensureFactureBrouillon(sa.apprenant, sa);
+          created++;
+        } catch {
+          failed++;
+        }
+      }
+      await refetchFacturesFC();
+      toast({
+        title: "Création terminée",
+        description: `${created} facture(s) créée(s)${existing ? `, ${existing} déjà existante(s)` : ''}${failed ? `, ${failed} en erreur` : ''}.`,
+        variant: failed ? "destructive" : "default",
+      });
+    } finally {
+      setBulkCreatingFactures(false);
+    }
+  };
+
   const handleBulkValidateFactures = async () => {
     const targets = (selectedFactureApprenants.size > 0
       ? nonAbsentApprenants.filter((sa: any) => sa.apprenant && selectedFactureApprenants.has(sa.apprenant.id))
@@ -5575,6 +5607,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     {selectedFactureApprenants.size > 0 ? `${selectedFactureApprenants.size} sélectionné(s)` : "Tout sélectionner"}
                   </span>
                 </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={handleBulkCreateFactures}
+                  disabled={bulkCreatingFactures || apprenantsForFactures.length === 0}
+                  className="gap-2"
+                  title="Créer la facture (brouillon) pour tous les apprenants qui n'en ont pas encore"
+                >
+                  {bulkCreatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Créer les factures{selectedFactureApprenants.size > 0 ? ` (${selectedFactureApprenants.size})` : ' pour tous'}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
