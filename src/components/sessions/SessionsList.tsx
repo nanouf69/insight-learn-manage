@@ -549,7 +549,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                         })()}
                         <div className="flex items-center gap-1.5">
                           <Users className="w-4 h-4" />
-                          <span className={"text-xl font-bold " + (sessionStats[session.id]?.inscrits > (session.places_disponibles || 18) ? "text-red-600" : "text-foreground")}>
+                          <span className="text-xl font-bold text-red-600">
                             {sessionStats[session.id]?.inscrits || 0} inscrit{sessionStats[session.id]?.inscrits === 1 ? "" : "s"}
                           </span>
                         </div>
