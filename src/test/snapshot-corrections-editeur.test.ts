@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { questionsSnapshotCorrigees } from "@/components/cours-en-ligne/bilanSnapshotsEleve";
 
