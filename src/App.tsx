@@ -30,6 +30,7 @@ import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionElearningPage from "./pages/SessionElearningPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 import AdminErrorLogs from "./pages/AdminErrorLogs";
+import AdminHistoriqueQuestions from "./pages/AdminHistoriqueQuestions";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
@@ -164,6 +165,12 @@ function App() {
                 <Route path="/admin/erreurs" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminErrorLogs /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/admin/historique-questions" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminHistoriqueQuestions /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
 
