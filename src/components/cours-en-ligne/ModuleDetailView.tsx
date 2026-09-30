@@ -6274,7 +6274,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     window.addEventListener("beforeunload", flushPendingSave);
-    return () => window.removeEventListener("beforeunload", flushPendingSave);
+    return () => {
+      window.removeEventListener("beforeunload", flushPendingSave);
+      // Sortie du module avant la fin du délai : l'enregistrement en attente
+      // était annulé sans aucun message. On l'envoie maintenant ; un refus
+      // éventuel s'affiche via le message d'erreur de performDbSave.
+      if (pendingDbSaveDataRef.current || dbSaveTimerRef.current) {
+        flushPendingSave();
+        toast.info("Enregistrement de vos dernières modifications en cours…");
+      }
+    };
   }, [studentOnly]);
 
   useEffect(() => {
