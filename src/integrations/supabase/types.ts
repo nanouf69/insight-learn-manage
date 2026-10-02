@@ -70,6 +70,36 @@ export type Database = {
           },
         ]
       }
+      agrement_blocs: {
+        Row: {
+          created_at: string
+          id: string
+          masque: boolean
+          nom: string
+          ordre: number
+          societe: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          masque?: boolean
+          nom?: string
+          ordre?: number
+          societe: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          masque?: boolean
+          nom?: string
+          ordre?: number
+          societe?: string
+          type?: string
+        }
+        Relationships: []
+      }
       agrement_dossiers: {
         Row: {
           date_delivrance: string | null
@@ -149,6 +179,7 @@ export type Database = {
         Row: {
           ajoute_par: string | null
           aussi_autre_dossier: boolean
+          bloc_id: string | null
           date_ajout: string
           date_expiration: string | null
           dossier: string
@@ -159,11 +190,13 @@ export type Database = {
           piece_code: string
           remplace_par: string | null
           societe: string | null
+          sous_ligne: string | null
           storage_path: string
         }
         Insert: {
           ajoute_par?: string | null
           aussi_autre_dossier?: boolean
+          bloc_id?: string | null
           date_ajout?: string
           date_expiration?: string | null
           dossier: string
@@ -174,11 +207,13 @@ export type Database = {
           piece_code: string
           remplace_par?: string | null
           societe?: string | null
+          sous_ligne?: string | null
           storage_path: string
         }
         Update: {
           ajoute_par?: string | null
           aussi_autre_dossier?: boolean
+          bloc_id?: string | null
           date_ajout?: string
           date_expiration?: string | null
           dossier?: string
@@ -189,7 +224,38 @@ export type Database = {
           piece_code?: string
           remplace_par?: string | null
           societe?: string | null
+          sous_ligne?: string | null
           storage_path?: string
+        }
+        Relationships: []
+      }
+      agrement_sous_lignes_etat: {
+        Row: {
+          bloc_id: string | null
+          dossier: string
+          id: string
+          non_concerne: boolean
+          societe: string
+          sous_ligne: string
+          updated_at: string
+        }
+        Insert: {
+          bloc_id?: string | null
+          dossier: string
+          id?: string
+          non_concerne?: boolean
+          societe: string
+          sous_ligne: string
+          updated_at?: string
+        }
+        Update: {
+          bloc_id?: string | null
+          dossier?: string
+          id?: string
+          non_concerne?: boolean
+          societe?: string
+          sous_ligne?: string
+          updated_at?: string
         }
         Relationships: []
       }
