@@ -198,9 +198,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   );
 }
 
-function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload }: {
+function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload, onRetirerPiece }: {
   societe: Societe; index: number; piece: (typeof PIECES)[number]; dossierCible: string; actifs: Fichier[]; remplaces: Fichier[];
-  nonConcerne?: boolean; onNonConcerne: (v: boolean) => void; reload: () => void;
+  nonConcerne?: boolean; onNonConcerne: (v: boolean) => void; reload: () => void; onRetirerPiece?: () => void;
 }) {
   const addRef = useRef<HTMLInputElement>(null);
   const replRef = useRef<HTMLInputElement>(null);
@@ -237,6 +237,12 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
     } finally { setBusy(false); setReplaceId(null); }
   };
 
+  const masquerFichier = async (f: Fichier) => {
+    if (!window.confirm(`Retirer « ${f.nom_fichier} » ? Il sera masqué, jamais supprimé (conservé en base).`)) return;
+    const { error } = await db.from("agrement_pieces_fichiers").update({ masque: true }).eq("id", f.id);
+    if (error) toast.error("Refusé : " + error.message); else { toast.success("Document masqué"); reload(); }
+  };
+
   const telecharger = async (f: Fichier) => {
     const { data, error } = await supabase.storage.from("agrements").createSignedUrl(f.storage_path, 300, { download: f.nom_fichier });
     if (error || !data) return toast.error("Lien indisponible");
@@ -269,6 +275,11 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
         <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={busy} onClick={() => addRef.current?.click()}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Ajouter
         </Button>
+        {onRetirerPiece && (
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" title="Retirer cette pièce" onClick={onRetirerPiece}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
       <input ref={addRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
       <input ref={replRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files, replaceId); e.target.value = ""; }} />
@@ -283,6 +294,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
               <Input type="date" className="h-7 w-36 text-xs" value={f.date_expiration ?? ""} onChange={(e) => setExpiration(f, e.target.value)} />
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Télécharger" onClick={() => telecharger(f)}><Download className="h-3.5 w-3.5" /></Button>
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Remplacer" onClick={() => { setReplaceId(f.id); replRef.current?.click(); }}><RefreshCw className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" title="Retirer ce document" onClick={() => masquerFichier(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
             </li>
           ))}
         </ul>
