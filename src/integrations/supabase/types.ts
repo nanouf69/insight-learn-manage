@@ -70,6 +70,66 @@ export type Database = {
           },
         ]
       }
+      agrement_dossiers: {
+        Row: {
+          date_delivrance: string | null
+          piece3_non_concerne: boolean
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          date_delivrance?: string | null
+          piece3_non_concerne?: boolean
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          date_delivrance?: string | null
+          piece3_non_concerne?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agrement_pieces_fichiers: {
+        Row: {
+          ajoute_par: string | null
+          date_ajout: string
+          date_expiration: string | null
+          dossier: string
+          id: string
+          masque: boolean
+          nom_fichier: string
+          piece_code: string
+          remplace_par: string | null
+          storage_path: string
+        }
+        Insert: {
+          ajoute_par?: string | null
+          date_ajout?: string
+          date_expiration?: string | null
+          dossier: string
+          id?: string
+          masque?: boolean
+          nom_fichier: string
+          piece_code: string
+          remplace_par?: string | null
+          storage_path: string
+        }
+        Update: {
+          ajoute_par?: string | null
+          date_ajout?: string
+          date_expiration?: string | null
+          dossier?: string
+          id?: string
+          masque?: boolean
+          nom_fichier?: string
+          piece_code?: string
+          remplace_par?: string | null
+          storage_path?: string
+        }
+        Relationships: []
+      }
       alertes_systeme: {
         Row: {
           created_at: string
