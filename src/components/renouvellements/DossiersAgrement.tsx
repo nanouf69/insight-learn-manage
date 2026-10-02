@@ -390,18 +390,17 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
   };
 
   const ouvrirPdf = async (f: Fichier) => {
-    const w = window.open("", "_blank");
     try {
       if (f.pdf_storage_path || isPdf(f.nom_fichier)) {
         const { data } = await supabase.storage.from("agrements").createSignedUrl(f.pdf_storage_path ?? f.storage_path, 300);
         if (!data) throw new Error();
-        if (w) w.location.href = data.signedUrl;
+        window.location.href = data.signedUrl;
       } else {
         const pdf = await pdfDe(f);
         if (!pdf) throw new Error();
-        if (w) w.location.href = URL.createObjectURL(pdf);
+        window.location.href = URL.createObjectURL(pdf);
       }
-    } catch { w?.close(); toast.error("PDF indisponible pour " + f.nom_fichier); }
+    } catch { toast.error("PDF indisponible pour " + f.nom_fichier); }
   };
 
   const copierLien = async (f: Fichier) => {
