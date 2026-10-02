@@ -32,6 +32,7 @@ interface Fichier {
   date_ajout: string; date_expiration: string | null; remplace_par: string | null; masque: boolean; societe: string | null;
 }
 interface DossierRow { type: Dossier; date_delivrance: string | null; piece3_non_concerne: boolean }
+interface PieceExtra { id: string; societe: string; dossier: string; label: string; ordre: number; masque: boolean }
 
 const fmt = (d: string | null) => (d ? new Date(d.length === 10 ? d + "T00:00:00" : d).toLocaleDateString("fr-FR") : "—");
 const today = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; };
@@ -45,15 +46,18 @@ export function DossiersAgrement() {
   const [loading, setLoading] = useState(true);
   const [societe, setSociete] = useState<Societe>("services_pro");
   const [allDossiers, setAllDossiers] = useState<any[]>([]);
+  const [extras, setExtras] = useState<PieceExtra[]>([]);
 
   const load = async () => {
-    const [f, d] = await Promise.all([
+    const [f, d, x] = await Promise.all([
       db.from("agrement_pieces_fichiers").select("*").eq("masque", false).order("date_ajout"),
       db.from("agrement_dossiers_societe").select("*"),
+      db.from("agrement_pieces_extra").select("*").eq("masque", false).order("ordre"),
     ]);
-    if (f.error || d.error) toast.error("Erreur de chargement des dossiers d'agrément");
+    if (f.error || d.error || x.error) toast.error("Erreur de chargement des dossiers d'agrément");
     setFichiers(f.data ?? []);
     setAllDossiers(d.data ?? []);
+    setExtras(x.data ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -85,7 +89,7 @@ export function DossiersAgrement() {
     </div>
     <div className="grid gap-4 md:grid-cols-2">
       {(["taxi", "vtc"] as Dossier[]).map((t) => (
-        <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load} />
+        <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load} extras={extras.filter((x) => x.societe === societe && x.dossier === t)} />
       ))}
     </div>
     </div>
