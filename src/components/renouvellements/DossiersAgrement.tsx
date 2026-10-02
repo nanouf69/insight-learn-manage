@@ -8,8 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus } from "lucide-react";
+import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus, FileText, Link2, FileStack } from "lucide-react";
 import { toast } from "sonner";
+import { toPdf, mergePdfs, isPdf } from "@/lib/agrementPdf";
+
+/** Obtient le PDF d'un fichier (PDF converti stocké, ou conversion à la volée sans modifier le stockage). */
+async function pdfDe(f: { storage_path: string; pdf_storage_path: string | null; nom_fichier: string }): Promise<Blob | null> {
+  const { data, error } = await supabase.storage.from("agrements").download(f.pdf_storage_path ?? f.storage_path);
+  if (error || !data) throw new Error(f.nom_fichier);
+  return f.pdf_storage_path ? data : toPdf(data, f.nom_fichier);
+}
 
 type Dossier = "taxi" | "vtc";
 type Societe = "services_pro" | "opto";
@@ -30,6 +38,7 @@ const PIECES = [
 interface Fichier {
   id: string; piece_code: string; dossier: string; storage_path: string; nom_fichier: string;
   date_ajout: string; date_expiration: string | null; remplace_par: string | null; masque: boolean; societe: string | null;
+  pdf_storage_path: string | null;
 }
 interface DossierRow { type: Dossier; date_delivrance: string | null; piece3_non_concerne: boolean }
 interface PieceExtra { id: string; societe: string; dossier: string; label: string; ordre: number; masque: boolean }
@@ -140,13 +149,39 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
     } finally { setZipping(false); }
   };
 
+  const [merging, setMerging] = useState(false);
+  const pdfComplet = async () => {
+    setMerging(true);
+    try {
+      const ordre = [
+        ...PIECES.map((p) => actifsPour(p.code, (p as any).commune)),
+        ...extras.map((x) => actifsPour(`extra:${x.id}`)),
+      ].flat();
+      const parts: Blob[] = []; const ignores: string[] = [];
+      for (const f of ordre) {
+        const pdf = await pdfDe(f);
+        if (pdf) parts.push(pdf); else ignores.push(f.nom_fichier);
+      }
+      if (!parts.length) throw new Error("aucun PDF");
+      saveAs(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
+      if (ignores.length) toast.warning(`Non inclus (non convertible) : ${ignores.join(", ")}`);
+    } catch (e: any) {
+      toast.error("PDF complet impossible : " + e.message);
+    } finally { setMerging(false); }
+  };
+
   return (
     <Card className="p-4 space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-semibold">Dossier agrément {type.toUpperCase()}</h4>
-        <Button size="sm" variant="outline" className="gap-1" onClick={telechargerTout} disabled={zipping || fournies === 0}>
-          {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />} Télécharger tout le dossier
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" className="gap-1" onClick={pdfComplet} disabled={merging || fournies === 0}>
+            {merging ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileStack className="h-4 w-4" />} PDF complet du dossier
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1" onClick={telechargerTout} disabled={zipping || fournies === 0}>
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />} Télécharger tout le dossier
+          </Button>
+        </div>
       </div>
       <div>
         <div className="flex justify-between text-xs text-muted-foreground mb-1"><span>Pièces fournies</span><span>{fournies}/8</span></div>
@@ -215,14 +250,25 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
     setBusy(true);
     try {
       for (const file of Array.from(files)) {
-        if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) { toast.error(`${file.name} : PDF, JPG ou PNG uniquement`); continue; }
+        if (!/\.(pdf|jpe?g|png|docx)$/i.test(file.name)) { toast.error(`${file.name} : PDF, Word (.docx), JPG ou PNG uniquement`); continue; }
         const remplacé = remplaceId ? actifs.find((a) => a.id === remplaceId) : null;
         const soc = remplacé ? remplacé.societe : (piece.code === "p5" && partage ? null : societe);
         const path = `${soc ?? "partage"}/${dossierCible}/${piece.code}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
         const up = await supabase.storage.from("agrements").upload(path, file);
         if (up.error) throw up.error;
+        let pdfPath: string | null = null;
+        if (!isPdf(file.name)) {
+          try {
+            const pdf = await toPdf(file, file.name);
+            if (pdf) {
+              const p = path.replace(/\.[^.]+$/, "") + ".pdf";
+              const upPdf = await supabase.storage.from("agrements").upload(p, pdf, { contentType: "application/pdf" });
+              if (!upPdf.error) pdfPath = p;
+            }
+          } catch { toast.warning(`${file.name} : conversion PDF impossible, l'original est conservé`); }
+        }
         const ins = await db.from("agrement_pieces_fichiers")
-          .insert({ piece_code: piece.code, dossier: dossierCible, storage_path: path, nom_fichier: file.name, societe: soc })
+          .insert({ piece_code: piece.code, dossier: dossierCible, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
           .select("id").single();
         if (ins.error) throw ins.error;
         if (remplaceId) {
@@ -254,12 +300,42 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
     if (error) toast.error("Enregistrement refusé : " + error.message); else reload();
   };
 
+  const ouvrirPdf = async (f: Fichier) => {
+    const w = window.open("", "_blank");
+    try {
+      if (f.pdf_storage_path || isPdf(f.nom_fichier)) {
+        const { data } = await supabase.storage.from("agrements").createSignedUrl(f.pdf_storage_path ?? f.storage_path, 300);
+        if (!data) throw new Error();
+        if (w) w.location.href = data.signedUrl;
+      } else {
+        const pdf = await pdfDe(f);
+        if (!pdf) throw new Error();
+        if (w) w.location.href = URL.createObjectURL(pdf);
+      }
+    } catch { w?.close(); toast.error("PDF indisponible pour " + f.nom_fichier); }
+  };
+
+  const copierLien = async (f: Fichier) => {
+    await navigator.clipboard.writeText(`${window.location.origin}/agrement-document/${f.id}`);
+    toast.success("Lien copié (réservé aux comptes connectés)");
+  };
+
   return (
     <div className="rounded-md border p-2 text-sm">
       <div className="flex items-start gap-2">
         <span className="font-medium w-5">{index}.</span>
         <div className="flex-1">
-          <div>{piece.label} {(piece as any).commune && <span className="text-xs text-muted-foreground">(commune TAXI/VTC)</span>}</div>
+          <div className="flex flex-wrap items-center gap-1">
+            <span>{piece.label} {(piece as any).commune && <span className="text-xs text-muted-foreground">(commune TAXI/VTC)</span>}</span>
+            {actifs.length === 0 ? (
+              <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground opacity-60"><FileText className="h-4 w-4" /> Manquant</span>
+            ) : actifs.map((f) => (
+              <span key={f.id} className="inline-flex items-center">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" title={`Ouvrir en PDF : ${f.nom_fichier}`} onClick={() => ouvrirPdf(f)}><FileText className="h-4 w-4" /></Button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Copier le lien" onClick={() => copierLien(f)}><Link2 className="h-3.5 w-3.5" /></Button>
+              </span>
+            ))}
+          </div>
           {nonConcerne !== undefined && (
             <label className="flex items-center gap-1 text-xs mt-1">
               <Checkbox checked={nonConcerne} onCheckedChange={(v) => onNonConcerne(!!v)} /> Non concerné

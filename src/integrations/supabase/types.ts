@@ -154,6 +154,7 @@ export type Database = {
           id: string
           masque: boolean
           nom_fichier: string
+          pdf_storage_path: string | null
           piece_code: string
           remplace_par: string | null
           societe: string | null
@@ -167,6 +168,7 @@ export type Database = {
           id?: string
           masque?: boolean
           nom_fichier: string
+          pdf_storage_path?: string | null
           piece_code: string
           remplace_par?: string | null
           societe?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           id?: string
           masque?: boolean
           nom_fichier?: string
+          pdf_storage_path?: string | null
           piece_code?: string
           remplace_par?: string | null
           societe?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.agrement_pieces_fichiers ADD COLUMN IF NOT EXISTS pdf_storage_path text;
