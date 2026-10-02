@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import { trouverCompteParEmail, deciderReutilisation } from "../_shared/compte-existant.ts";
 import {
   generateSetPasswordLink,
   generateUnsharedPassword,
@@ -192,18 +193,26 @@ serve(async (req) => {
           });
 
           if (authError) {
-            // If user already exists, find and reuse
+            // If user already exists, find (all pages, case-insensitive) and reuse only if orphan
             if (authError.message.includes("already been registered")) {
               console.log(`[auto-send-credentials] User already exists for ${apprenant.email}, linking...`);
-              const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-              const existingUser = listData?.users?.find((u: any) => u.email === apprenant.email);
-
+              const existingUser = await trouverCompteParEmail(apprenant.email, async (page, perPage) => {
+                const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+                if (error) throw error;
+                return data?.users ?? [];
+              });
+              let lies: { id: string; created_at: string | null }[] = [];
               if (existingUser) {
+                const { data } = await supabaseAdmin.from("apprenants").select("id, created_at").eq("auth_user_id", existingUser.id);
+                lies = data ?? [];
+              }
+              const decision = deciderReutilisation(existingUser, apprenant.id, lies);
+              if (decision.action === "reutiliser") {
                 // Réutilisation sans modifier le mot de passe existant.
-                authUserId = existingUser.id;
+                authUserId = decision.authUserId;
               } else {
-                console.error(`[auto-send-credentials] Could not find existing user for ${apprenant.email}`);
-                results.push({ id: apprenant.id, email: apprenant.email, success: false, error: "Utilisateur existant introuvable" });
+                console.error(`[auto-send-credentials] ${apprenant.email}: ${decision.raison}`);
+                results.push({ id: apprenant.id, email: apprenant.email, success: false, error: decision.raison });
                 continue;
               }
             } else {
@@ -364,6 +373,23 @@ serve(async (req) => {
         message: `${successCount} identifiant(s) envoyé(s), ${accountsCreated} compte(s) créé(s), ${failCount} échec(s)`,
         details: JSON.stringify(results),
       });
+    }
+
+    // Alerte e-mail au personnel si au moins un envoi a échoué
+    const echecs = results.filter((r) => !r.success);
+    if (echecs.length > 0) {
+      try {
+        const noms = new Map(toProcess.map((a: any) => [a.id, `${a.prenom || ""} ${a.nom || ""}`.trim()]));
+        const lignes = echecs.map((r) => `<li><b>${noms.get(r.id) || "?"}</b> — ${r.email} : ${r.error ?? "erreur inconnue"}</li>`).join("");
+        await sendBrandedEmail({
+          to: senderEmail,
+          subject: `⚠️ Envoi automatique des accès : ${echecs.length} échec(s)`,
+          html: `<p>L'envoi automatique des identifiants de ce matin a échoué pour :</p><ul>${lignes}</ul><p>Aucun accès n'a été envoyé à ces élèves. Action manuelle requise dans le CRM.</p>`,
+          replyTo: senderEmail,
+        });
+      } catch (e) {
+        console.error("[auto-send-credentials] Alerte personnel non envoyée:", e);
+      }
     }
 
     console.log(`[auto-send-credentials] Done: ${successCount} sent, ${accountsCreated} accounts created, ${failCount} failed`);
