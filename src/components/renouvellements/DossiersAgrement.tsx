@@ -200,7 +200,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
 
 function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload, onRetirerPiece }: {
   societe: Societe; index: number; piece: (typeof PIECES)[number]; dossierCible: string; actifs: Fichier[]; remplaces: Fichier[];
-  nonConcerne?: boolean; onNonConcerne: (v: boolean) => void; reload: () => void; onRetirerPiece?: () => void;
+  nonConcerne?: boolean; onNonConcerne?: (v: boolean) => void; reload: () => void; onRetirerPiece?: () => void;
 }) {
   const addRef = useRef<HTMLInputElement>(null);
   const replRef = useRef<HTMLInputElement>(null);
