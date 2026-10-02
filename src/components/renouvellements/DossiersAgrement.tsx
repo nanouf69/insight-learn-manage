@@ -437,7 +437,7 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
           )}
         </div>
         {kbisVieux && <Badge variant="destructive">Kbis de plus de 3 mois</Badge>}
-        {expire ? <Badge variant="destructive">Expiré</Badge> : nonConcerne && actifs.length === 0 ? <Badge variant="secondary">Non concerné</Badge> : fourni ? <Badge>Fourni</Badge> : <Badge variant="outline">Manquant</Badge>}
+        {expire ? <Badge variant="destructive">Expiré</Badge> : nonConcerne && actifs.length === 0 ? <Badge variant="secondary">Non concerné</Badge> : fourni ? <Badge>Fourni</Badge> : <Badge variant="destructive">Manquant</Badge>}
         <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={busy} onClick={() => addRef.current?.click()}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Ajouter
         </Button>
