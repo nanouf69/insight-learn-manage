@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Loader2, Plus, Pencil, Trash2, ShieldCheck, Car, Award, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { DossiersAgrement } from "./DossiersAgrement";
 
 interface Renouvellement {
   id: string;
@@ -241,6 +242,7 @@ export function RenouvellementsPage() {
                   </table>
                 </div>
               )}
+              {cat === "agrement" && <DossiersAgrement />}
             </Card>
           );
         })
