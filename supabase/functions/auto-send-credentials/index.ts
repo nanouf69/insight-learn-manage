@@ -375,6 +375,23 @@ serve(async (req) => {
       });
     }
 
+    // Alerte e-mail au personnel si au moins un envoi a échoué
+    const echecs = results.filter((r) => !r.success);
+    if (echecs.length > 0) {
+      try {
+        const noms = new Map(toProcess.map((a: any) => [a.id, `${a.prenom || ""} ${a.nom || ""}`.trim()]));
+        const lignes = echecs.map((r) => `<li><b>${noms.get(r.id) || "?"}</b> — ${r.email} : ${r.error ?? "erreur inconnue"}</li>`).join("");
+        await sendBrandedEmail({
+          to: senderEmail,
+          subject: `⚠️ Envoi automatique des accès : ${echecs.length} échec(s)`,
+          html: `<p>L'envoi automatique des identifiants de ce matin a échoué pour :</p><ul>${lignes}</ul><p>Aucun accès n'a été envoyé à ces élèves. Action manuelle requise dans le CRM.</p>`,
+          replyTo: senderEmail,
+        });
+      } catch (e) {
+        console.error("[auto-send-credentials] Alerte personnel non envoyée:", e);
+      }
+    }
+
     console.log(`[auto-send-credentials] Done: ${successCount} sent, ${accountsCreated} accounts created, ${failCount} failed`);
 
     return new Response(
