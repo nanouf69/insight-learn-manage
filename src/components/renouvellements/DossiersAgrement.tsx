@@ -268,7 +268,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
           } catch { toast.warning(`${file.name} : conversion PDF impossible, l'original est conservé`); }
         }
         const ins = await db.from("agrement_pieces_fichiers")
-          .insert({ piece_code: piece.code, dossier: dossierCible, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
+          .insert({ piece_code: piece.code, dossier: remplacé?.dossier ?? dossierCible, aussi_autre_dossier: !!remplacé?.aussi_autre_dossier, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
           .select("id").single();
         if (ins.error) throw ins.error;
         if (remplaceId) {
