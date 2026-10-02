@@ -410,14 +410,14 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
   };
 
   return (
-    <div className="rounded-md border p-2 text-sm">
+    <div className={`rounded-md border p-2 text-sm ${fourni ? "" : "border-destructive/50 bg-destructive/5"}`}>
       <div className="flex items-start gap-2">
         <span className="font-medium w-8">{index}</span>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-1">
-            <span>{piece.label}</span>
+            <span className={fourni ? "" : "text-destructive font-medium"}>{piece.label}</span>
             {actifs.length === 0 ? (
-              <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground opacity-60"><FileText className="h-4 w-4" /> Manquant</span>
+              <span className={`inline-flex items-center gap-0.5 text-xs ${fourni ? "text-muted-foreground opacity-60" : "text-destructive font-medium"}`}><FileText className="h-4 w-4" /> Manquant</span>
             ) : actifs.map((f) => (
               <span key={f.id} className="inline-flex items-center">
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" title={`Ouvrir en PDF : ${f.nom_fichier}`} onClick={() => ouvrirPdf(f)}><FileText className="h-4 w-4" /></Button>
@@ -437,7 +437,7 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
           )}
         </div>
         {kbisVieux && <Badge variant="destructive">Kbis de plus de 3 mois</Badge>}
-        {expire ? <Badge variant="destructive">Expiré</Badge> : nonConcerne && actifs.length === 0 ? <Badge variant="secondary">Non concerné</Badge> : fourni ? <Badge>Fourni</Badge> : <Badge variant="outline">Manquant</Badge>}
+        {expire ? <Badge variant="destructive">Expiré</Badge> : nonConcerne && actifs.length === 0 ? <Badge variant="secondary">Non concerné</Badge> : fourni ? <Badge>Fourni</Badge> : <Badge variant="destructive">Manquant</Badge>}
         <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={busy} onClick={() => addRef.current?.click()}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Ajouter
         </Button>
