@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { trouverCompteParEmail, deciderReutilisation } from "../../supabase/functions/_shared/compte-existant";
 
