@@ -115,6 +115,36 @@ export type Database = {
         }
         Relationships: []
       }
+      agrement_pieces_extra: {
+        Row: {
+          created_at: string
+          dossier: string
+          id: string
+          label: string
+          masque: boolean
+          ordre: number
+          societe: string
+        }
+        Insert: {
+          created_at?: string
+          dossier: string
+          id?: string
+          label: string
+          masque?: boolean
+          ordre?: number
+          societe: string
+        }
+        Update: {
+          created_at?: string
+          dossier?: string
+          id?: string
+          label?: string
+          masque?: boolean
+          ordre?: number
+          societe?: string
+        }
+        Relationships: []
+      }
       agrement_pieces_fichiers: {
         Row: {
           ajoute_par: string | null
