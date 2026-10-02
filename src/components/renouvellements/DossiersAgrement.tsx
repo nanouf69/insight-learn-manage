@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle } from "lucide-react";
+import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type Dossier = "taxi" | "vtc";
@@ -32,6 +32,7 @@ interface Fichier {
   date_ajout: string; date_expiration: string | null; remplace_par: string | null; masque: boolean; societe: string | null;
 }
 interface DossierRow { type: Dossier; date_delivrance: string | null; piece3_non_concerne: boolean }
+interface PieceExtra { id: string; societe: string; dossier: string; label: string; ordre: number; masque: boolean }
 
 const fmt = (d: string | null) => (d ? new Date(d.length === 10 ? d + "T00:00:00" : d).toLocaleDateString("fr-FR") : "—");
 const today = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; };
@@ -45,15 +46,18 @@ export function DossiersAgrement() {
   const [loading, setLoading] = useState(true);
   const [societe, setSociete] = useState<Societe>("services_pro");
   const [allDossiers, setAllDossiers] = useState<any[]>([]);
+  const [extras, setExtras] = useState<PieceExtra[]>([]);
 
   const load = async () => {
-    const [f, d] = await Promise.all([
+    const [f, d, x] = await Promise.all([
       db.from("agrement_pieces_fichiers").select("*").eq("masque", false).order("date_ajout"),
       db.from("agrement_dossiers_societe").select("*"),
+      db.from("agrement_pieces_extra").select("*").eq("masque", false).order("ordre"),
     ]);
-    if (f.error || d.error) toast.error("Erreur de chargement des dossiers d'agrément");
+    if (f.error || d.error || x.error) toast.error("Erreur de chargement des dossiers d'agrément");
     setFichiers(f.data ?? []);
     setAllDossiers(d.data ?? []);
+    setExtras(x.data ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -85,18 +89,20 @@ export function DossiersAgrement() {
     </div>
     <div className="grid gap-4 md:grid-cols-2">
       {(["taxi", "vtc"] as Dossier[]).map((t) => (
-        <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load} />
+        <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load} extras={extras.filter((x) => x.societe === societe && x.dossier === t)} />
       ))}
     </div>
     </div>
   );
 }
 
-function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reload }: {
+function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reload, extras }: {
   societe: Societe; type: Dossier; fichiers: Fichier[]; dossier: DossierRow;
-  onSaveDossier: (t: Dossier, p: Partial<DossierRow>) => void; reload: () => void;
+  onSaveDossier: (t: Dossier, p: Partial<DossierRow>) => void; reload: () => void; extras: PieceExtra[];
 }) {
   const [zipping, setZipping] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [adding, setAdding] = useState(false);
   const actifsPour = (code: string, commune?: boolean) =>
     fichiers.filter((f) => f.piece_code === code && !f.remplace_par && (commune ? f.dossier === "commun" : f.dossier === type));
   const remplacesPour = (code: string, commune?: boolean) =>
@@ -164,14 +170,37 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
             nonConcerne={(p as any).facultative ? dossier.piece3_non_concerne : undefined}
             onNonConcerne={(v) => onSaveDossier(type, { piece3_non_concerne: v })} reload={reload} />
         ))}
+        {extras.map((x, i) => (
+          <PieceLigne key={x.id} societe={societe} index={PIECES.length + i + 1}
+            piece={{ code: `extra:${x.id}`, label: x.label } as any} dossierCible={type}
+            actifs={actifsPour(`extra:${x.id}`)} remplaces={remplacesPour(`extra:${x.id}`)}
+            reload={reload}
+            onRetirerPiece={async () => {
+              if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
+              const { error } = await db.from("agrement_pieces_extra").update({ masque: true }).eq("id", x.id);
+              if (error) toast.error("Refusé : " + error.message); else { toast.success("Pièce masquée"); reload(); }
+            }} />
+        ))}
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Input className="h-8 flex-1 text-sm" placeholder="Nom de la pièce à ajouter…" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+        <Button size="sm" variant="outline" className="h-8 gap-1" disabled={adding || !newLabel.trim()}
+          onClick={async () => {
+            setAdding(true);
+            const { error } = await db.from("agrement_pieces_extra").insert({ societe, dossier: type, label: newLabel.trim(), ordre: 100 + extras.length });
+            setAdding(false);
+            if (error) toast.error("Refusé : " + error.message); else { setNewLabel(""); toast.success("Pièce ajoutée"); reload(); }
+          }}>
+          {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Ajouter une pièce
+        </Button>
       </div>
     </Card>
   );
 }
 
-function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload }: {
+function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload, onRetirerPiece }: {
   societe: Societe; index: number; piece: (typeof PIECES)[number]; dossierCible: string; actifs: Fichier[]; remplaces: Fichier[];
-  nonConcerne?: boolean; onNonConcerne: (v: boolean) => void; reload: () => void;
+  nonConcerne?: boolean; onNonConcerne?: (v: boolean) => void; reload: () => void; onRetirerPiece?: () => void;
 }) {
   const addRef = useRef<HTMLInputElement>(null);
   const replRef = useRef<HTMLInputElement>(null);
@@ -208,6 +237,12 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
     } finally { setBusy(false); setReplaceId(null); }
   };
 
+  const masquerFichier = async (f: Fichier) => {
+    if (!window.confirm(`Retirer « ${f.nom_fichier} » ? Il sera masqué, jamais supprimé (conservé en base).`)) return;
+    const { error } = await db.from("agrement_pieces_fichiers").update({ masque: true }).eq("id", f.id);
+    if (error) toast.error("Refusé : " + error.message); else { toast.success("Document masqué"); reload(); }
+  };
+
   const telecharger = async (f: Fichier) => {
     const { data, error } = await supabase.storage.from("agrements").createSignedUrl(f.storage_path, 300, { download: f.nom_fichier });
     if (error || !data) return toast.error("Lien indisponible");
@@ -240,6 +275,11 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
         <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={busy} onClick={() => addRef.current?.click()}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Ajouter
         </Button>
+        {onRetirerPiece && (
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" title="Retirer cette pièce" onClick={onRetirerPiece}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
       <input ref={addRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
       <input ref={replRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files, replaceId); e.target.value = ""; }} />
@@ -254,6 +294,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
               <Input type="date" className="h-7 w-36 text-xs" value={f.date_expiration ?? ""} onChange={(e) => setExpiration(f, e.target.value)} />
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Télécharger" onClick={() => telecharger(f)}><Download className="h-3.5 w-3.5" /></Button>
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Remplacer" onClick={() => { setReplaceId(f.id); replRef.current?.click(); }}><RefreshCw className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" title="Retirer ce document" onClick={() => masquerFichier(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
             </li>
           ))}
         </ul>
