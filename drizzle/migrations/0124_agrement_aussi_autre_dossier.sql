@@ -1,0 +1,1 @@
+ALTER TABLE public.agrement_pieces_fichiers ADD COLUMN IF NOT EXISTS aussi_autre_dossier boolean NOT NULL DEFAULT false;
