@@ -16,7 +16,7 @@ export async function imageToPdf(blob: Blob, name: string): Promise<Blob> {
   const s = Math.min((A4.w - 2 * m) / img.width, (A4.h - 2 * m) / img.height, 1);
   const page = doc.addPage([A4.w, A4.h]);
   page.drawImage(img, { x: (A4.w - img.width * s) / 2, y: (A4.h - img.height * s) / 2, width: img.width * s, height: img.height * s });
-  return new Blob([await doc.save()], { type: "application/pdf" });
+  return new Blob([(await doc.save()) as BlobPart], { type: "application/pdf" });
 }
 
 /** Word (.docx) -> HTML (mammoth) -> PDF (jsPDF). */
@@ -50,5 +50,5 @@ export async function mergePdfs(parts: Blob[]): Promise<Blob> {
     const pages = await out.copyPages(src, src.getPageIndices());
     pages.forEach((pg) => out.addPage(pg));
   }
-  return new Blob([await out.save()], { type: "application/pdf" });
+  return new Blob([(await out.save()) as BlobPart], { type: "application/pdf" });
 }
