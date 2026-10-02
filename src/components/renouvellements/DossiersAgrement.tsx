@@ -24,27 +24,46 @@ type Societe = "services_pro" | "opto";
 const SOCIETES: { code: Societe; label: string }[] = [{ code: "services_pro", label: "SERVICES PRO" }, { code: "opto", label: "OPTO" }];
 const db = supabase as any;
 
-const PIECES = [
-  { code: "p1", label: "Pièce d'identité du représentant légal", commune: true },
-  { code: "p2", label: "Extrait Kbis de moins de 3 mois", commune: true },
-  { code: "p3", label: "Autorisation de travail (si étranger, facultatif)", commune: true, facultative: true },
-  { code: "p4", label: "Conditions d'inscription + programme détaillé et durée des formations et examens" },
-  { code: "p5", label: "Locaux : titre d'occupation, attestation d'assurance des locaux, conformité ERP", commune: true },
-  { code: "p6", label: "Règlement intérieur", commune: true },
-  { code: "p7", label: "Véhicules : liste, cartes grises, attestations d'assurance, contrôles techniques", commune: true },
-  { code: "p8", label: "Liste des formateurs + diplômes/attestations + nom du responsable pédagogique", commune: true },
-] as const;
+type Ligne = { sl: string; label: string; nc?: boolean };
+type Groupe = { n: number; titre: string; commune: boolean; lignes: Ligne[]; bloc?: "vehicule" | "formateur"; lignesBloc?: Ligne[] };
+const GROUPES: Groupe[] = [
+  { n: 1, titre: "Identité du représentant légal", commune: true, lignes: [{ sl: "1.1", label: "Pièce d'identité recto" }, { sl: "1.2", label: "Pièce d'identité verso" }] },
+  { n: 2, titre: "Kbis", commune: true, lignes: [{ sl: "2.1", label: "Extrait Kbis de moins de 3 mois" }] },
+  { n: 3, titre: "Autorisation de travail", commune: true, lignes: [{ sl: "3.1", label: "Autorisation de travail", nc: true }] },
+  { n: 4, titre: "Inscription et programme", commune: false, lignes: [
+    { sl: "4.1", label: "Conditions d'inscription (devis, fiche d'inscription, CGV)" },
+    { sl: "4.2", label: "Programme détaillé et durée des formations" },
+    { sl: "4.3", label: "Durée et modalités des examens" }] },
+  { n: 5, titre: "Locaux", commune: true, lignes: [
+    { sl: "5.1", label: "Bail commercial" }, { sl: "5.2", label: "Avenant au bail" },
+    { sl: "5.3", label: "Attestation d'assurance des locaux" }, { sl: "5.4", label: "Conformité ERP et accessibilité" },
+    { sl: "5.5", label: "État descriptif des locaux et équipements" }] },
+  { n: 6, titre: "Règlement intérieur", commune: true, lignes: [{ sl: "6.1", label: "Règlement intérieur" }] },
+  { n: 7, titre: "Véhicules", commune: true, bloc: "vehicule", lignes: [{ sl: "7.1", label: "Liste des véhicules destinés à l'enseignement" }], lignesBloc: [
+    { sl: "7.2", label: "Carte grise" }, { sl: "7.3", label: "Attestation d'assurance (usage enseignement)" },
+    { sl: "7.4", label: "Contrôle technique (Non concerné si véhicule neuf)", nc: true },
+    { sl: "7.5", label: "Contrat de location (Non concerné si véhicule de la société)", nc: true },
+    { sl: "7.6", label: "Facture d'installation de la double commande et des rétroviseurs" }] },
+  { n: 8, titre: "Formateurs", commune: true, bloc: "formateur", lignes: [{ sl: "8.1", label: "Liste des formateurs et désignation du responsable pédagogique" }], lignesBloc: [
+    { sl: "8.2", label: "CV du formateur" }, { sl: "8.3", label: "Diplômes et attestations du formateur" }] },
+];
 
 interface Fichier {
   id: string; piece_code: string; dossier: string; storage_path: string; nom_fichier: string;
   date_ajout: string; date_expiration: string | null; remplace_par: string | null; masque: boolean; societe: string | null; aussi_autre_dossier?: boolean;
-  pdf_storage_path: string | null;
+  pdf_storage_path: string | null; sous_ligne: string | null; bloc_id: string | null;
 }
 interface DossierRow { type: Dossier; date_delivrance: string | null; piece3_non_concerne: boolean }
 interface PieceExtra { id: string; societe: string; dossier: string; label: string; ordre: number; masque: boolean }
+interface Bloc { id: string; societe: string; type: string; nom: string; ordre: number }
+interface Etat { societe: string; dossier: string; sous_ligne: string; bloc_id: string | null; non_concerne: boolean }
+interface Item { key: string; sl: string; label: string; bloc_id: string | null; commune: boolean; nc: boolean; groupe: number }
+interface Champs { piece_code: string; sous_ligne: string | null; bloc_id: string | null }
 
 const fmt = (d: string | null) => (d ? new Date(d.length === 10 ? d + "T00:00:00" : d).toLocaleDateString("fr-FR") : "—");
 const today = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; };
+/** Sous-ligne effective d'un fichier (anciens fichiers sans sous-ligne → première ligne de la pièce). */
+const slDe = (f: Fichier) => f.sous_ligne ?? (/^p\d$/.test(f.piece_code) ? `${f.piece_code.slice(1)}.1` : null);
 
 export function DossiersAgrement() {
   const [fichiers, setFichiers] = useState<Fichier[]>([]);
@@ -56,17 +75,23 @@ export function DossiersAgrement() {
   const [societe, setSociete] = useState<Societe>("services_pro");
   const [allDossiers, setAllDossiers] = useState<any[]>([]);
   const [extras, setExtras] = useState<PieceExtra[]>([]);
+  const [blocs, setBlocs] = useState<Bloc[]>([]);
+  const [etats, setEtats] = useState<Etat[]>([]);
 
   const load = async () => {
-    const [f, d, x] = await Promise.all([
+    const [f, d, x, b, e] = await Promise.all([
       db.from("agrement_pieces_fichiers").select("*").eq("masque", false).order("date_ajout"),
       db.from("agrement_dossiers_societe").select("*"),
       db.from("agrement_pieces_extra").select("*").eq("masque", false).order("ordre"),
+      db.from("agrement_blocs").select("*").eq("masque", false).order("ordre"),
+      db.from("agrement_sous_lignes_etat").select("*"),
     ]);
-    if (f.error || d.error || x.error) toast.error("Erreur de chargement des dossiers d'agrément");
+    if (f.error || d.error || x.error || b.error || e.error) toast.error("Erreur de chargement des dossiers d'agrément");
     setFichiers(f.data ?? []);
     setAllDossiers(d.data ?? []);
     setExtras(x.data ?? []);
+    setBlocs(b.data ?? []);
+    setEtats(e.data ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -98,26 +123,51 @@ export function DossiersAgrement() {
     </div>
     <div className="grid gap-4 md:grid-cols-2">
       {(["taxi", "vtc"] as Dossier[]).map((t) => (
-        <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load} extras={extras.filter((x) => x.societe === societe && x.dossier === t)} />
+        <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load}
+          extras={extras.filter((x) => x.societe === societe && x.dossier === t)}
+          blocs={blocs.filter((b) => b.societe === societe)} etats={etats.filter((e) => e.societe === societe)} />
       ))}
     </div>
     </div>
   );
 }
 
-function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reload, extras }: {
+function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reload, extras, blocs, etats }: {
   societe: Societe; type: Dossier; fichiers: Fichier[]; dossier: DossierRow;
-  onSaveDossier: (t: Dossier, p: Partial<DossierRow>) => void; reload: () => void; extras: PieceExtra[];
+  onSaveDossier: (t: Dossier, p: Partial<DossierRow>) => void; reload: () => void; extras: PieceExtra[]; blocs: Bloc[]; etats: Etat[];
 }) {
   const [zipping, setZipping] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [adding, setAdding] = useState(false);
-  const actifsPour = (code: string, commune?: boolean) =>
-    fichiers.filter((f) => f.piece_code === code && !f.remplace_par && (commune ? f.dossier === "commun" : (f.dossier === type || (!!f.aussi_autre_dossier && f.dossier !== "commun"))));
-  const remplacesPour = (code: string, commune?: boolean) =>
-    fichiers.filter((f) => f.piece_code === code && f.remplace_par && (commune ? f.dossier === "commun" : (f.dossier === type || (!!f.aussi_autre_dossier && f.dossier !== "commun"))));
 
-  const fournies = PIECES.filter((p) => actifsPour(p.code, (p as any).commune).length > 0 || ((p as any).facultative && dossier.piece3_non_concerne)).length;
+  const items: Item[] = useMemo(() => GROUPES.flatMap((g) => [
+    ...g.lignes.map((l) => ({ key: l.sl, sl: l.sl, label: l.label, bloc_id: null, commune: g.commune, nc: !!l.nc, groupe: g.n })),
+    ...(g.bloc ? blocs.filter((b) => b.type === g.bloc).flatMap((b) => g.lignesBloc!.map((l) => ({
+      key: `${l.sl}:${b.id}`, sl: l.sl, label: l.label, bloc_id: b.id, commune: g.commune, nc: !!l.nc, groupe: g.n,
+    }))) : []),
+  ]), [blocs]);
+
+  const cote = (f: Fichier, commune: boolean) => commune ? f.dossier === "commun" : (f.dossier === type || (!!f.aussi_autre_dossier && f.dossier !== "commun"));
+  const pourItem = (it: Item, remplace: boolean) => fichiers.filter((f) => slDe(f) === it.sl && (f.bloc_id ?? null) === it.bloc_id
+    && !!f.remplace_par === remplace && cote(f, it.commune));
+  const pourExtra = (code: string, remplace: boolean) => fichiers.filter((f) => f.piece_code === code && !!f.remplace_par === remplace && cote(f, false));
+  const dossierEtat = (it: Item) => (it.commune ? "commun" : type);
+  const ncDe = (it: Item) => {
+    if (!it.nc) return undefined;
+    const e = etats.find((x) => x.dossier === dossierEtat(it) && x.sous_ligne === it.sl && (x.bloc_id ?? null) === it.bloc_id);
+    if (e) return e.non_concerne;
+    return it.sl === "3.1" ? dossier.piece3_non_concerne : false;
+  };
+  const setNc = async (it: Item, v: boolean) => {
+    const ex = etats.find((x) => x.dossier === dossierEtat(it) && x.sous_ligne === it.sl && (x.bloc_id ?? null) === it.bloc_id) as any;
+    const r = ex
+      ? await db.from("agrement_sous_lignes_etat").update({ non_concerne: v, updated_at: new Date().toISOString() }).eq("id", ex.id)
+      : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: dossierEtat(it), sous_ligne: it.sl, bloc_id: it.bloc_id, non_concerne: v });
+    if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
+  };
+
+  const total = items.length;
+  const fournies = items.filter((it) => pourItem(it, false).length > 0 || !!ncDe(it)).length;
 
   const echeance = useMemo(() => {
     if (!dossier.date_delivrance) return null;
@@ -131,17 +181,20 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
     return null;
   })();
 
+  const nomBloc = (id: string | null) => blocs.find((b) => b.id === id)?.nom ?? "";
+  const ordonnes = () => [
+    ...items.map((it) => ({ dossierZip: `${it.sl}${it.bloc_id ? "_" + nomBloc(it.bloc_id) : ""}_${it.label.slice(0, 30)}`, list: pourItem(it, false) })),
+    ...extras.map((x) => ({ dossierZip: `extra_${x.label.slice(0, 30)}`, list: pourExtra(`extra:${x.id}`, false) })),
+  ];
+
   const telechargerTout = async () => {
     setZipping(true);
     try {
       const zip = new JSZip();
-      for (const p of PIECES) {
-        const list = actifsPour(p.code, (p as any).commune);
-        for (const f of list) {
-          const { data, error } = await supabase.storage.from("agrements").download(f.storage_path);
-          if (error || !data) throw new Error(f.nom_fichier);
-          zip.folder(`${p.code.replace("p", "")}_${p.label.slice(0, 40).replace(/[^\w\- ]+/g, "")}`)!.file(f.nom_fichier, data);
-        }
+      for (const g of ordonnes()) for (const f of g.list) {
+        const { data, error } = await supabase.storage.from("agrements").download(f.storage_path);
+        if (error || !data) throw new Error(f.nom_fichier);
+        zip.folder(g.dossierZip.replace(/[^\w\-. ]+/g, ""))!.file(f.nom_fichier, data);
       }
       saveAs(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
     } catch (e: any) {
@@ -153,12 +206,8 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const pdfComplet = async () => {
     setMerging(true);
     try {
-      const ordre = [
-        ...PIECES.map((p) => actifsPour(p.code, (p as any).commune)),
-        ...extras.map((x) => actifsPour(`extra:${x.id}`)),
-      ].flat();
       const parts: Blob[] = []; const ignores: string[] = [];
-      for (const f of ordre) {
+      for (const f of ordonnes().flatMap((g) => g.list)) {
         const pdf = await pdfDe(f);
         if (pdf) parts.push(pdf); else ignores.push(f.nom_fichier);
       }
@@ -169,6 +218,30 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
       toast.error("PDF complet impossible : " + e.message);
     } finally { setMerging(false); }
   };
+
+  const ajouterBloc = async (t: "vehicule" | "formateur") => {
+    const nom = window.prompt(t === "vehicule" ? "Nom du véhicule (ex. marque, immatriculation)" : "Nom du formateur");
+    if (!nom?.trim()) return;
+    const { error } = await db.from("agrement_blocs").insert({ societe, type: t, nom: nom.trim(), ordre: blocs.filter((b) => b.type === t).length + 1 });
+    if (error) toast.error("Refusé : " + error.message); else reload();
+  };
+  const renommerBloc = async (b: Bloc, nom: string) => {
+    if (!nom.trim() || nom === b.nom) return;
+    const { error } = await db.from("agrement_blocs").update({ nom: nom.trim() }).eq("id", b.id);
+    if (error) toast.error("Refusé : " + error.message); else reload();
+  };
+  const masquerBloc = async (b: Bloc) => {
+    if (!window.confirm(`Retirer « ${b.nom} » ? Il sera masqué avec ses fichiers, jamais supprimé.`)) return;
+    const { error } = await db.from("agrement_blocs").update({ masque: true }).eq("id", b.id);
+    if (error) toast.error("Refusé : " + error.message); else reload();
+  };
+
+  const rendreItem = (it: Item) => (
+    <PieceLigne key={it.key} societe={societe} index={it.sl} piece={{ code: `p${it.groupe}`, label: it.label, commune: it.commune } as any}
+      champs={{ piece_code: `p${it.groupe}`, sous_ligne: it.sl, bloc_id: it.bloc_id }}
+      dossierCible={it.commune ? "commun" : type} actifs={pourItem(it, false)} remplaces={pourItem(it, true)}
+      nonConcerne={ncDe(it)} onNonConcerne={(v) => setNc(it, v)} reload={reload} kbis={it.sl === "2.1"} />
+  );
 
   return (
     <Card className="p-4 space-y-3">
@@ -184,8 +257,8 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
         </div>
       </div>
       <div>
-        <div className="flex justify-between text-xs text-muted-foreground mb-1"><span>Pièces fournies</span><span>{fournies}/8</span></div>
-        <Progress value={(fournies / 8) * 100} />
+        <div className="flex justify-between text-xs text-muted-foreground mb-1"><span>Documents fournis</span><span>{fournies}/{total}</span></div>
+        <Progress value={total ? (fournies / total) * 100 : 0} />
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">Délivré le</span>
@@ -198,17 +271,32 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
           {alerte === "expire" ? "Agrément expiré : renouvellement urgent." : "Renouvellement à préparer : échéance dans moins de 2 mois."}
         </div>
       )}
-      <div className="space-y-2">
-        {PIECES.map((p, i) => (
-          <PieceLigne key={p.code} societe={societe} index={i + 1} piece={p} dossierCible={(p as any).commune ? "commun" : type}
-            actifs={actifsPour(p.code, (p as any).commune)} remplaces={remplacesPour(p.code, (p as any).commune)}
-            nonConcerne={(p as any).facultative ? dossier.piece3_non_concerne : undefined}
-            onNonConcerne={(v) => onSaveDossier(type, { piece3_non_concerne: v })} reload={reload} />
+      <div className="space-y-3">
+        {GROUPES.map((g) => (
+          <div key={g.n} className="space-y-1">
+            <div className="font-semibold text-sm">{g.n}. {g.titre} {g.commune && <span className="text-xs font-normal text-muted-foreground">(commun TAXI/VTC)</span>}</div>
+            {items.filter((it) => it.groupe === g.n && !it.bloc_id).map(rendreItem)}
+            {g.bloc && blocs.filter((b) => b.type === g.bloc).map((b) => (
+              <div key={b.id} className="ml-3 space-y-1 border-l-2 pl-2">
+                <div className="flex items-center gap-2">
+                  <Input className="h-7 w-56 text-sm font-medium" defaultValue={b.nom} onBlur={(e) => renommerBloc(b, e.target.value)} />
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" title="Retirer" onClick={() => masquerBloc(b)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+                {items.filter((it) => it.bloc_id === b.id).map(rendreItem)}
+              </div>
+            ))}
+            {g.bloc && (
+              <Button size="sm" variant="outline" className="h-7 gap-1 ml-3" onClick={() => ajouterBloc(g.bloc!)}>
+                <Plus className="h-3.5 w-3.5" /> Ajouter un {g.bloc === "vehicule" ? "véhicule" : "formateur"}
+              </Button>
+            )}
+          </div>
         ))}
         {extras.map((x, i) => (
-          <PieceLigne key={x.id} societe={societe} index={PIECES.length + i + 1}
+          <PieceLigne key={x.id} societe={societe} index={String(GROUPES.length + i + 1)}
             piece={{ code: `extra:${x.id}`, label: x.label } as any} dossierCible={type}
-            actifs={actifsPour(`extra:${x.id}`)} remplaces={remplacesPour(`extra:${x.id}`)}
+            champs={{ piece_code: `extra:${x.id}`, sous_ligne: null, bloc_id: null }}
+            actifs={pourExtra(`extra:${x.id}`, false)} remplaces={pourExtra(`extra:${x.id}`, true)}
             reload={reload}
             onRetirerPiece={async () => {
               if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
@@ -233,9 +321,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   );
 }
 
-function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload, onRetirerPiece }: {
-  societe: Societe; index: number; piece: (typeof PIECES)[number]; dossierCible: string; actifs: Fichier[]; remplaces: Fichier[];
-  nonConcerne?: boolean; onNonConcerne?: (v: boolean) => void; reload: () => void; onRetirerPiece?: () => void;
+function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, remplaces, nonConcerne, onNonConcerne, reload, onRetirerPiece, kbis }: {
+  societe: Societe; index: string; piece: { code: string; label: string; commune?: boolean }; champs: Champs; dossierCible: string; actifs: Fichier[]; remplaces: Fichier[];
+  nonConcerne?: boolean; onNonConcerne?: (v: boolean) => void; reload: () => void; onRetirerPiece?: () => void; kbis?: boolean;
 }) {
   const addRef = useRef<HTMLInputElement>(null);
   const replRef = useRef<HTMLInputElement>(null);
@@ -243,6 +331,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
   const [busy, setBusy] = useState(false);
   const [partage, setPartage] = useState(false);
   const fourni = actifs.length > 0 || !!nonConcerne;
+  const kbisVieux = !!kbis && actifs.length > 0 && actifs.every((f) => { const d = new Date(f.date_ajout); d.setMonth(d.getMonth() + 3); return d < today(); });
   const expire = actifs.some((f) => f.date_expiration && new Date(f.date_expiration + "T00:00:00") < today());
 
   const upload = async (files: FileList | null, remplaceId?: string | null) => {
@@ -252,8 +341,8 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
       for (const file of Array.from(files)) {
         if (!/\.(pdf|jpe?g|png|docx)$/i.test(file.name)) { toast.error(`${file.name} : PDF, Word (.docx), JPG ou PNG uniquement`); continue; }
         const remplacé = remplaceId ? actifs.find((a) => a.id === remplaceId) : null;
-        const soc = remplacé ? remplacé.societe : (piece.code === "p5" && partage ? null : societe);
-        const path = `${soc ?? "partage"}/${dossierCible}/${piece.code}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+        const soc = remplacé ? remplacé.societe : (champs.piece_code === "p5" && partage ? null : societe);
+        const path = `${soc ?? "partage"}/${dossierCible}/${(champs.sous_ligne ?? piece.code)}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
         const up = await supabase.storage.from("agrements").upload(path, file);
         if (up.error) throw up.error;
         let pdfPath: string | null = null;
@@ -268,7 +357,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
           } catch { toast.warning(`${file.name} : conversion PDF impossible, l'original est conservé`); }
         }
         const ins = await db.from("agrement_pieces_fichiers")
-          .insert({ piece_code: piece.code, dossier: remplacé?.dossier ?? dossierCible, aussi_autre_dossier: !!remplacé?.aussi_autre_dossier, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
+          .insert({ ...champs, bloc_id: remplacé ? remplacé.bloc_id : champs.bloc_id, piece_code: remplacé ? remplacé.piece_code : champs.piece_code, sous_ligne: remplacé ? (remplacé.sous_ligne ?? champs.sous_ligne) : champs.sous_ligne, dossier: remplacé?.dossier ?? dossierCible, aussi_autre_dossier: !!remplacé?.aussi_autre_dossier, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
           .select("id").single();
         if (ins.error) throw ins.error;
         if (remplaceId) {
@@ -323,10 +412,10 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
   return (
     <div className="rounded-md border p-2 text-sm">
       <div className="flex items-start gap-2">
-        <span className="font-medium w-5">{index}.</span>
+        <span className="font-medium w-8">{index}</span>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-1">
-            <span>{piece.label} {(piece as any).commune && <span className="text-xs text-muted-foreground">(commune TAXI/VTC)</span>}</span>
+            <span>{piece.label}</span>
             {actifs.length === 0 ? (
               <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground opacity-60"><FileText className="h-4 w-4" /> Manquant</span>
             ) : actifs.map((f) => (
@@ -341,13 +430,14 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
               <Checkbox checked={nonConcerne} onCheckedChange={(v) => onNonConcerne(!!v)} /> Non concerné
             </label>
           )}
-          {piece.code === "p5" && (
+          {champs.piece_code === "p5" && (
             <label className="flex items-center gap-1 text-xs mt-1">
               <Checkbox checked={partage} onCheckedChange={(v) => setPartage(!!v)} /> Commun aux deux sociétés (prochain ajout)
             </label>
           )}
         </div>
-        {expire ? <Badge variant="destructive">Expiré</Badge> : fourni ? <Badge>Fourni</Badge> : <Badge variant="outline">Manquant</Badge>}
+        {kbisVieux && <Badge variant="destructive">Kbis de plus de 3 mois</Badge>}
+        {expire ? <Badge variant="destructive">Expiré</Badge> : nonConcerne && actifs.length === 0 ? <Badge variant="secondary">Non concerné</Badge> : fourni ? <Badge>Fourni</Badge> : <Badge variant="outline">Manquant</Badge>}
         <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={busy} onClick={() => addRef.current?.click()}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Ajouter
         </Button>
@@ -357,8 +447,8 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
           </Button>
         )}
       </div>
-      <input ref={addRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
-      <input ref={replRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files, replaceId); e.target.value = ""; }} />
+      <input ref={addRef} type="file" multiple accept=".pdf,.docx,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+      <input ref={replRef} type="file" accept=".pdf,.docx,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files, replaceId); e.target.value = ""; }} />
       {actifs.length > 0 && (
         <ul className="mt-2 space-y-1 pl-7">
           {actifs.map((f) => (
@@ -366,7 +456,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
               <span className="truncate max-w-[12rem]" title={f.nom_fichier}>{f.nom_fichier}</span>
               {f.societe === null && <Badge variant="secondary">Partagé</Badge>}
               {f.dossier === "commun" && <Badge variant="outline">commun TAXI/VTC</Badge>}
-              {piece.code === "p4" && (
+              {champs.piece_code === "p4" && (
                 <>
                   {f.aussi_autre_dossier && <Badge variant="outline">commun TAXI/VTC</Badge>}
                   {f.dossier === dossierCible && (
