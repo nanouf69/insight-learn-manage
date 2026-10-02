@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle } from "lucide-react";
+import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type Dossier = "taxi" | "vtc";
