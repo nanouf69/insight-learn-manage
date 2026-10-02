@@ -91,6 +91,30 @@ export type Database = {
         }
         Relationships: []
       }
+      agrement_dossiers_societe: {
+        Row: {
+          date_delivrance: string | null
+          piece3_non_concerne: boolean
+          societe: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          date_delivrance?: string | null
+          piece3_non_concerne?: boolean
+          societe: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          date_delivrance?: string | null
+          piece3_non_concerne?: boolean
+          societe?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agrement_pieces_fichiers: {
         Row: {
           ajoute_par: string | null
@@ -102,6 +126,7 @@ export type Database = {
           nom_fichier: string
           piece_code: string
           remplace_par: string | null
+          societe: string | null
           storage_path: string
         }
         Insert: {
@@ -114,6 +139,7 @@ export type Database = {
           nom_fichier: string
           piece_code: string
           remplace_par?: string | null
+          societe?: string | null
           storage_path: string
         }
         Update: {
@@ -126,6 +152,7 @@ export type Database = {
           nom_fichier?: string
           piece_code?: string
           remplace_par?: string | null
+          societe?: string | null
           storage_path?: string
         }
         Relationships: []
