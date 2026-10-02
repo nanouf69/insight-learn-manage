@@ -18,6 +18,7 @@ import CoursPublic from "./pages/CoursPublic";
 import ResetPassword from "./pages/ResetPassword";
 import PreInformationPublic from "./pages/PreInformationPublic";
 import AuthCallback from "./pages/AuthCallback";
+import AgrementDocument from "./pages/AgrementDocument";
 import RevolutTransactions from "./pages/RevolutTransactions";
 import RevolutConnect from "./pages/RevolutConnect";
 import DevisPublic from "./pages/DevisPublic";
@@ -124,6 +125,7 @@ function App() {
 
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
                 <Route path="/auth/callback" element={<ErrorBoundary><AuthCallback /></ErrorBoundary>} />
+                <Route path="/agrement-document/:id" element={<ErrorBoundary><AgrementDocument /></ErrorBoundary>} />
                 <Route path="/revolut-connect" element={<ErrorBoundary><RevolutConnect /></ErrorBoundary>} />
                 <Route path="/revolut/transactions" element={
                   <ProtectedRoute>
