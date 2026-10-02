@@ -96,11 +96,13 @@ export function DossiersAgrement() {
   );
 }
 
-function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reload }: {
+function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reload, extras }: {
   societe: Societe; type: Dossier; fichiers: Fichier[]; dossier: DossierRow;
-  onSaveDossier: (t: Dossier, p: Partial<DossierRow>) => void; reload: () => void;
+  onSaveDossier: (t: Dossier, p: Partial<DossierRow>) => void; reload: () => void; extras: PieceExtra[];
 }) {
   const [zipping, setZipping] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [adding, setAdding] = useState(false);
   const actifsPour = (code: string, commune?: boolean) =>
     fichiers.filter((f) => f.piece_code === code && !f.remplace_par && (commune ? f.dossier === "commun" : f.dossier === type));
   const remplacesPour = (code: string, commune?: boolean) =>
@@ -168,6 +170,29 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
             nonConcerne={(p as any).facultative ? dossier.piece3_non_concerne : undefined}
             onNonConcerne={(v) => onSaveDossier(type, { piece3_non_concerne: v })} reload={reload} />
         ))}
+        {extras.map((x, i) => (
+          <PieceLigne key={x.id} societe={societe} index={PIECES.length + i + 1}
+            piece={{ code: `extra:${x.id}`, label: x.label } as any} dossierCible={type}
+            actifs={actifsPour(`extra:${x.id}`)} remplaces={remplacesPour(`extra:${x.id}`)}
+            reload={reload}
+            onRetirerPiece={async () => {
+              if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
+              const { error } = await db.from("agrement_pieces_extra").update({ masque: true }).eq("id", x.id);
+              if (error) toast.error("Refusé : " + error.message); else { toast.success("Pièce masquée"); reload(); }
+            }} />
+        ))}
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Input className="h-8 flex-1 text-sm" placeholder="Nom de la pièce à ajouter…" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+        <Button size="sm" variant="outline" className="h-8 gap-1" disabled={adding || !newLabel.trim()}
+          onClick={async () => {
+            setAdding(true);
+            const { error } = await db.from("agrement_pieces_extra").insert({ societe, dossier: type, label: newLabel.trim(), ordre: 100 + extras.length });
+            setAdding(false);
+            if (error) toast.error("Refusé : " + error.message); else { setNewLabel(""); toast.success("Pièce ajoutée"); reload(); }
+          }}>
+          {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Ajouter une pièce
+        </Button>
       </div>
     </Card>
   );
