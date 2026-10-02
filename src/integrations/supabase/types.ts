@@ -148,6 +148,7 @@ export type Database = {
       agrement_pieces_fichiers: {
         Row: {
           ajoute_par: string | null
+          aussi_autre_dossier: boolean
           date_ajout: string
           date_expiration: string | null
           dossier: string
@@ -162,6 +163,7 @@ export type Database = {
         }
         Insert: {
           ajoute_par?: string | null
+          aussi_autre_dossier?: boolean
           date_ajout?: string
           date_expiration?: string | null
           dossier: string
@@ -176,6 +178,7 @@ export type Database = {
         }
         Update: {
           ajoute_par?: string | null
+          aussi_autre_dossier?: boolean
           date_ajout?: string
           date_expiration?: string | null
           dossier?: string

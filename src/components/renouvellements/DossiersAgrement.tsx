@@ -30,14 +30,14 @@ const PIECES = [
   { code: "p3", label: "Autorisation de travail (si étranger, facultatif)", commune: true, facultative: true },
   { code: "p4", label: "Conditions d'inscription + programme détaillé et durée des formations et examens" },
   { code: "p5", label: "Locaux : titre d'occupation, attestation d'assurance des locaux, conformité ERP", commune: true },
-  { code: "p6", label: "Règlement intérieur" },
-  { code: "p7", label: "Véhicules : liste, cartes grises, attestations d'assurance, contrôles techniques" },
-  { code: "p8", label: "Liste des formateurs + diplômes/attestations + nom du responsable pédagogique" },
+  { code: "p6", label: "Règlement intérieur", commune: true },
+  { code: "p7", label: "Véhicules : liste, cartes grises, attestations d'assurance, contrôles techniques", commune: true },
+  { code: "p8", label: "Liste des formateurs + diplômes/attestations + nom du responsable pédagogique", commune: true },
 ] as const;
 
 interface Fichier {
   id: string; piece_code: string; dossier: string; storage_path: string; nom_fichier: string;
-  date_ajout: string; date_expiration: string | null; remplace_par: string | null; masque: boolean; societe: string | null;
+  date_ajout: string; date_expiration: string | null; remplace_par: string | null; masque: boolean; societe: string | null; aussi_autre_dossier?: boolean;
   pdf_storage_path: string | null;
 }
 interface DossierRow { type: Dossier; date_delivrance: string | null; piece3_non_concerne: boolean }
@@ -113,9 +113,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const [newLabel, setNewLabel] = useState("");
   const [adding, setAdding] = useState(false);
   const actifsPour = (code: string, commune?: boolean) =>
-    fichiers.filter((f) => f.piece_code === code && !f.remplace_par && (commune ? f.dossier === "commun" : f.dossier === type));
+    fichiers.filter((f) => f.piece_code === code && !f.remplace_par && (commune ? f.dossier === "commun" : (f.dossier === type || (!!f.aussi_autre_dossier && f.dossier !== "commun"))));
   const remplacesPour = (code: string, commune?: boolean) =>
-    fichiers.filter((f) => f.piece_code === code && f.remplace_par && (commune ? f.dossier === "commun" : f.dossier === type));
+    fichiers.filter((f) => f.piece_code === code && f.remplace_par && (commune ? f.dossier === "commun" : (f.dossier === type || (!!f.aussi_autre_dossier && f.dossier !== "commun"))));
 
   const fournies = PIECES.filter((p) => actifsPour(p.code, (p as any).commune).length > 0 || ((p as any).facultative && dossier.piece3_non_concerne)).length;
 
@@ -268,7 +268,7 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
           } catch { toast.warning(`${file.name} : conversion PDF impossible, l'original est conservé`); }
         }
         const ins = await db.from("agrement_pieces_fichiers")
-          .insert({ piece_code: piece.code, dossier: dossierCible, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
+          .insert({ piece_code: piece.code, dossier: remplacé?.dossier ?? dossierCible, aussi_autre_dossier: !!remplacé?.aussi_autre_dossier, storage_path: path, nom_fichier: file.name, societe: soc, pdf_storage_path: pdfPath })
           .select("id").single();
         if (ins.error) throw ins.error;
         if (remplaceId) {
@@ -365,6 +365,20 @@ function PieceLigne({ societe, index, piece, dossierCible, actifs, remplaces, no
             <li key={f.id} className="flex flex-wrap items-center gap-2">
               <span className="truncate max-w-[12rem]" title={f.nom_fichier}>{f.nom_fichier}</span>
               {f.societe === null && <Badge variant="secondary">Partagé</Badge>}
+              {f.dossier === "commun" && <Badge variant="outline">commun TAXI/VTC</Badge>}
+              {piece.code === "p4" && (
+                <>
+                  {f.aussi_autre_dossier && <Badge variant="outline">commun TAXI/VTC</Badge>}
+                  {f.dossier === dossierCible && (
+                    <label className="flex items-center gap-1 text-xs">
+                      <Checkbox checked={!!f.aussi_autre_dossier} onCheckedChange={async (v) => {
+                        const { error } = await db.from("agrement_pieces_fichiers").update({ aussi_autre_dossier: !!v }).eq("id", f.id);
+                        if (error) toast.error("Refusé : " + error.message); else reload();
+                      }} /> Aussi pour {dossierCible === "taxi" ? "VTC" : "TAXI"}
+                    </label>
+                  )}
+                </>
+              )}
               <span className="text-xs text-muted-foreground">ajouté le {fmt(f.date_ajout)}</span>
               <span className="text-xs text-muted-foreground">expire :</span>
               <Input type="date" className="h-7 w-36 text-xs" value={f.date_expiration ?? ""} onChange={(e) => setExpiration(f, e.target.value)} />
