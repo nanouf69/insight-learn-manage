@@ -141,9 +141,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const [adding, setAdding] = useState(false);
 
   const items: Item[] = useMemo(() => GROUPES.flatMap((g) => [
-    ...g.lignes.map((l) => ({ key: l.sl, sl: l.sl, label: l.label, bloc_id: null, commune: g.commune, nc: !!l.nc, groupe: g.n })),
+    ...g.lignes.map((l) => ({ key: l.sl, sl: l.sl, label: l.label, bloc_id: null, commune: g.commune, nc: true, groupe: g.n })),
     ...(g.bloc ? blocs.filter((b) => b.type === g.bloc).flatMap((b) => g.lignesBloc!.map((l) => ({
-      key: `${l.sl}:${b.id}`, sl: l.sl, label: l.label, bloc_id: b.id, commune: g.commune, nc: !!l.nc, groupe: g.n,
+      key: `${l.sl}:${b.id}`, sl: l.sl, label: l.label, bloc_id: b.id, commune: g.commune, nc: true, groupe: g.n,
     }))) : []),
   ]), [blocs]);
 
