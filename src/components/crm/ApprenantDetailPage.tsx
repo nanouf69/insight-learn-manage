@@ -599,6 +599,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       : "Aucune activité commencée"}
                   </div>
                 )}
+                {t.strong && taux.derniereActiviteAt && (
+                  <div className="mt-0.5 text-xs font-medium text-primary">
+                    {`Dernière activité (cours/quiz) le ${new Date(taux.derniereActiviteAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`}
+                  </div>
+                )}
               </div>
             ))}
           </div>
