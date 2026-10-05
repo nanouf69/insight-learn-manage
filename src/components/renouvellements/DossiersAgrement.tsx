@@ -141,9 +141,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const [adding, setAdding] = useState(false);
 
   const items: Item[] = useMemo(() => GROUPES.flatMap((g) => [
-    ...g.lignes.map((l) => ({ key: l.sl, sl: l.sl, label: l.label, bloc_id: null, commune: g.commune, nc: !!l.nc, groupe: g.n })),
+    ...g.lignes.map((l) => ({ key: l.sl, sl: l.sl, label: l.label, bloc_id: null, commune: g.commune, nc: true, groupe: g.n })),
     ...(g.bloc ? blocs.filter((b) => b.type === g.bloc).flatMap((b) => g.lignesBloc!.map((l) => ({
-      key: `${l.sl}:${b.id}`, sl: l.sl, label: l.label, bloc_id: b.id, commune: g.commune, nc: !!l.nc, groupe: g.n,
+      key: `${l.sl}:${b.id}`, sl: l.sl, label: l.label, bloc_id: b.id, commune: g.commune, nc: true, groupe: g.n,
     }))) : []),
   ]), [blocs]);
 
@@ -163,6 +163,17 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
     const r = ex
       ? await db.from("agrement_sous_lignes_etat").update({ non_concerne: v, updated_at: new Date().toISOString() }).eq("id", ex.id)
       : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: dossierEtat(it), sous_ligne: it.sl, bloc_id: it.bloc_id, non_concerne: v });
+    if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
+  };
+  const ncExtra = (x: PieceExtra) => {
+    const e = etats.find((y) => y.dossier === type && y.sous_ligne === `extra:${x.id}` && !y.bloc_id);
+    return !!e?.non_concerne;
+  };
+  const setNcExtra = async (x: PieceExtra, v: boolean) => {
+    const ex = etats.find((y) => y.dossier === type && y.sous_ligne === `extra:${x.id}` && !y.bloc_id) as any;
+    const r = ex
+      ? await db.from("agrement_sous_lignes_etat").update({ non_concerne: v, updated_at: new Date().toISOString() }).eq("id", ex.id)
+      : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: type, sous_ligne: `extra:${x.id}`, bloc_id: null, non_concerne: v });
     if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
   };
 
@@ -297,6 +308,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
             piece={{ code: `extra:${x.id}`, label: x.label } as any} dossierCible={type}
             champs={{ piece_code: `extra:${x.id}`, sous_ligne: null, bloc_id: null }}
             actifs={pourExtra(`extra:${x.id}`, false)} remplaces={pourExtra(`extra:${x.id}`, true)}
+            nonConcerne={ncExtra(x)} onNonConcerne={(v) => setNcExtra(x, v)}
             reload={reload}
             onRetirerPiece={async () => {
               if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
