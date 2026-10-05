@@ -165,6 +165,17 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
       : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: dossierEtat(it), sous_ligne: it.sl, bloc_id: it.bloc_id, non_concerne: v });
     if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
   };
+  const ncExtra = (x: PieceExtra) => {
+    const e = etats.find((y) => y.dossier === type && y.sous_ligne === `extra:${x.id}` && !y.bloc_id);
+    return !!e?.non_concerne;
+  };
+  const setNcExtra = async (x: PieceExtra, v: boolean) => {
+    const ex = etats.find((y) => y.dossier === type && y.sous_ligne === `extra:${x.id}` && !y.bloc_id) as any;
+    const r = ex
+      ? await db.from("agrement_sous_lignes_etat").update({ non_concerne: v, updated_at: new Date().toISOString() }).eq("id", ex.id)
+      : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: type, sous_ligne: `extra:${x.id}`, bloc_id: null, non_concerne: v });
+    if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
+  };
 
   const total = items.length;
   const fournies = items.filter((it) => pourItem(it, false).length > 0 || !!ncDe(it)).length;
