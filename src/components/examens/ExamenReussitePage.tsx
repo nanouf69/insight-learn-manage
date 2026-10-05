@@ -2299,6 +2299,15 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         <CardContent>
           {/* Barre de filtres */}
           <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg border bg-muted/30">
+            <div className="relative w-56">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Nom ou prénom..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
             <Select value={filterStatut} onValueChange={setFilterStatut}>
               <SelectTrigger className="h-8 w-56 text-xs">
                 <SelectValue placeholder="Statut" />
