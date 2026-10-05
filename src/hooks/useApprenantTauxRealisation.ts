@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
-import { getSessionEndMs, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
+import { getSessionEndMs, clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
@@ -20,6 +20,8 @@ export interface TauxRealisation {
   pctTotal: number;
   /** Date/heure de la PREMIÈRE activité pédagogique réelle (jamais une simple connexion) */
   premiereActiviteAt: string | null;
+  /** Dernier jour de cours/exercice/quiz, plafonné à la fin d'accès */
+  derniereActiviteAt: string | null;
 }
 
 const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) * 100)) : 0);
@@ -198,6 +200,12 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           : pedagogicalActTs.length > 0
             ? new Date(pedagogicalActTs[0]).toISOString()
             : null,
+        derniereActiviteAt: (() => {
+          // Dernier cours ouvert / exercice / quiz, jamais après la fin d'accès.
+          const cutoff = getAccessCutoffMs(apprenant?.date_fin_cours_en_ligne || apprenant?.date_fin_formation);
+          const valid = cutoff ? pedagogicalActTs.filter((t) => t <= cutoff) : pedagogicalActTs;
+          return valid.length > 0 ? new Date(valid[valid.length - 1]).toISOString() : null;
+        })(),
       };
     },
   });
