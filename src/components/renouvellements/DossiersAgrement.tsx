@@ -308,6 +308,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
             piece={{ code: `extra:${x.id}`, label: x.label } as any} dossierCible={type}
             champs={{ piece_code: `extra:${x.id}`, sous_ligne: null, bloc_id: null }}
             actifs={pourExtra(`extra:${x.id}`, false)} remplaces={pourExtra(`extra:${x.id}`, true)}
+            nonConcerne={ncExtra(x)} onNonConcerne={(v) => setNcExtra(x, v)}
             reload={reload}
             onRetirerPiece={async () => {
               if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
