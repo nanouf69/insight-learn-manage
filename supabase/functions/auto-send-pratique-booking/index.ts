@@ -184,10 +184,13 @@ serve(async (req) => {
     async function pratiqueForExam(examDate: string | null | undefined): Promise<string | null> {
       if (!examDate) return null;
       if (planningCache.has(examDate)) return planningCache.get(examDate) ?? null;
+      // Garde-fou : jamais d'e-mail tant qu'aucun planning à venir n'existe pour cette date d'examen
+      const todayIso = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("planning_pratique_config")
-        .select("date_pratique")
+        .select("date_pratique, planning_end_date")
         .ilike("exam_date", `%${examDate}%`)
+        .gte("planning_end_date", todayIso)
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -200,11 +203,13 @@ serve(async (req) => {
     let sent = 0;
     let smsSent = 0;
     const failures: any[] = [];
+    const sansPlanning: string[] = [];
 
     for (const { a, type } of eligible) {
       try {
         const examLabel = String(a.date_examen_theorique || '').trim();
         const pratiqueLabel = await pratiqueForExam(examLabel);
+        if (!pratiqueLabel) { sansPlanning.push(`${a.prenom || ''} ${a.nom || ''}`.trim()); continue; }
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
         const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url, ignoreModule, apology, relance);
         const marker = relance ? `${EMAIL_TYPE}:relance-aout:${a.id}` : `${EMAIL_TYPE}:${a.id}`;
