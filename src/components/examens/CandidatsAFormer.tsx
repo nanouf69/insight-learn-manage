@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, RotateCcw, Car, GraduationCap } from "lucide-react";
-import { formatDateShortFR } from "@/lib/safeDateParse";
 
 interface Candidat {
   id: string;
@@ -85,8 +84,7 @@ export function CandidatsAFormer() {
                 <TableHead className="w-10">#</TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead className="hidden md:table-cell">Formation</TableHead>
-                <TableHead className="hidden lg:table-cell">Examen théorique</TableHead>
-                <TableHead className="hidden lg:table-cell">Pratique</TableHead>
+                <TableHead>Examen théorique</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
