@@ -1049,7 +1049,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [maxPerDay, setMaxPerDay] = useState(3);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
   const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string>>({});
-  const [planningConfigLoaded, setPlanningConfigLoaded] = useState(false);
+  // Identité exacte de la configuration chargée. Une ancienne configuration
+  // ne doit jamais être sauvegardée sous une nouvelle session/période.
+  const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -1843,64 +1845,34 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     return { removed: [...removed], removedCMA: [...removedCMA] };
   };
 
-  // Load latest saved planning config for the selected exam date
-  useEffect(() => {
-    if (!selectedExamDate) return;
-    setPlanningConfigLoaded(false);
-    const seq = ++planningLoadSeq.current;
-    (async () => {
-      const union = await loadRemovedUnion(selectedExamDate);
-      const { data } = await supabase
-        .from('planning_pratique_config')
-        .select('*')
-        .eq('exam_date', selectedExamDate)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (seq !== planningLoadSeq.current) return;
-      if (data) {
-        const resolvedBounds = resolvePlanningBounds(data);
-        if (data.date_pratique && data.date_pratique !== selectedDatePratique) {
-          setSelectedDatePratique(data.date_pratique);
-        }
-        setPlanningStartDate(resolvedBounds?.start || data.planning_start_date);
-        setPlanningEndDate(resolvedBounds?.end || data.planning_end_date);
-        setExcludedDays(data.excluded_days || []);
-        setExtraDays(data.extra_days || []);
-        const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
-        setExtraCandidatsFormation(formationCandidates.extra);
-        setRemovedCandidatsFormation([...new Set([...formationCandidates.removed, ...union.removed])]);
-        setExtraCandidatsCMA(formationCandidates.extraCMA);
-        setRemovedCandidatsCMA([...new Set([...formationCandidates.removedCMA, ...union.removedCMA])]);
-        if (data.max_per_day) setMaxPerDay(data.max_per_day);
-        if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
-        if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
-      }
-
-      setPlanningConfigLoaded(true);
-    })();
-  }, [selectedExamDate]);
-
-  // Load exact config when the practical period is manually changed
+  // Charge uniquement la configuration exacte de la session et de la période choisies.
+  // Une autre période enregistrée ne doit jamais remplacer le choix de l'utilisateur.
   useEffect(() => {
     if (!selectedExamDate || !selectedDatePratique) return;
-    setPlanningConfigLoaded(false);
+    setLoadedPlanningKey(null);
     const seq = ++planningLoadSeq.current;
+    const requestedKey = `${selectedExamDate}::${selectedDatePratique}`;
     (async () => {
-      const union = await loadRemovedUnion(selectedExamDate);
-      const { data } = await supabase
+      const [union, configResult] = await Promise.all([
+        loadRemovedUnion(selectedExamDate),
+        supabase
         .from('planning_pratique_config')
         .select('*')
         .eq('exam_date', selectedExamDate)
         .eq('date_pratique', selectedDatePratique)
-        .maybeSingle();
+        .maybeSingle(),
+      ]);
 
       if (seq !== planningLoadSeq.current) return;
+      const { data, error } = configResult;
+      if (error) {
+        toast.error(`Planning non chargé : ${error.message}`);
+        return;
+      }
       if (data) {
         const resolvedBounds = resolvePlanningBounds(data);
-        setPlanningStartDate(resolvedBounds?.start || data.planning_start_date);
-        setPlanningEndDate(resolvedBounds?.end || data.planning_end_date);
+        setPlanningStartDate(resolvedBounds?.start || "");
+        setPlanningEndDate(resolvedBounds?.end || "");
         setExcludedDays(data.excluded_days || []);
         setExtraDays(data.extra_days || []);
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
@@ -1908,9 +1880,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setRemovedCandidatsFormation([...new Set([...formationCandidates.removed, ...union.removed])]);
         setExtraCandidatsCMA(formationCandidates.extraCMA);
         setRemovedCandidatsCMA([...new Set([...formationCandidates.removedCMA, ...union.removedCMA])]);
-        if (data.max_per_day) setMaxPerDay(data.max_per_day);
-        if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
-        if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
+        setMaxPerDay(data.max_per_day || 3);
+        setMaxPerDayMap((data.max_per_day_map || {}) as Record<string, number>);
+        setDayTimeSlots((data.day_time_slots || {}) as Record<string, { matin?: string; apresmidi?: string } | string>);
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
@@ -1921,19 +1893,21 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setRemovedCandidatsFormation(union.removed);
         setExtraCandidatsCMA([]);
         setRemovedCandidatsCMA(union.removedCMA);
+        setMaxPerDay(3);
         setMaxPerDayMap({});
         setDayTimeSlots({});
       }
 
-      setPlanningConfigLoaded(true);
+      setLoadedPlanningKey(requestedKey);
     })();
   }, [selectedExamDate, selectedDatePratique]);
 
   // Auto-save planning config to DB (debounced)
   useEffect(() => {
-    if (!planningConfigLoaded || !selectedExamDate || !selectedDatePratique) return;
+    const currentKey = `${selectedExamDate}::${selectedDatePratique}`;
+    if (loadedPlanningKey !== currentKey || !selectedExamDate || !selectedDatePratique) return;
     const timer = setTimeout(async () => {
-      await supabase
+      const { error } = await supabase
         .from('planning_pratique_config')
         .upsert({
           exam_date: selectedExamDate,
@@ -1948,9 +1922,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           day_time_slots: dayTimeSlots,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'exam_date,date_pratique' });
+      if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots]);
+  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({

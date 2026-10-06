@@ -15,3 +15,4 @@
 - « Terminé » d'un module = statut serveur uniquement ; compteurs complets sans serveur = « Validation en cours » (le module suivant reste ouvert) ; why: le navigateur ne décide jamais seul.
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
+- Planning pratique : chaque configuration est chargée et sauvegardée par la clé exacte session d'examen + période pratique ; why: un choix ancien ou une autre période ne doit jamais remplacer les choix enregistrés.
