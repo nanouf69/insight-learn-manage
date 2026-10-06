@@ -3701,9 +3701,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {vtcList.map((a, i) => {
-                          const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
-                          const hasReservation = !!reservation;
+                         {vtcList.map((a, i) => {
+                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
+                           const dateSessionPratique = datesSessionPratique?.get(a.id);
+                           const hasReservation = !!reservation || !!dateSessionPratique;
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
                           <TableRow key={a.id}>
@@ -4084,9 +4085,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {taxiList.map((a, i) => {
-                          const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
-                          const hasReservation = !!reservation;
+                         {taxiList.map((a, i) => {
+                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
+                           const dateSessionPratique = datesSessionPratique?.get(a.id);
+                           const hasReservation = !!reservation || !!dateSessionPratique;
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
                           <TableRow key={a.id}>
