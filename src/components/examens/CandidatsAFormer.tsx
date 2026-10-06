@@ -14,7 +14,6 @@ interface Candidat {
   type_apprenant: string | null;
   formation_choisie: string | null;
   date_examen_theorique: string | null;
-  resultat_examen_pratique: string | null;
 }
 
 // Classement TAXI / VTC à partir du type d'apprenant (insensible à la casse).
@@ -35,7 +34,7 @@ export function CandidatsAFormer() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_examen_theorique, resultat_examen_pratique")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_examen_theorique")
         .eq("resultat_examen", "oui");
       if (error) throw error;
       return (data || []) as Candidat[];
