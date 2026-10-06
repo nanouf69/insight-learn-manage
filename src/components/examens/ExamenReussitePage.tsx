@@ -4996,7 +4996,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   <p className="text-sm font-bold text-emerald-800">
                     VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jour(s) de formation
                   </p>
+                  {(() => {
+                    const besoin = (vtcDaysNeeded || 0) + (taxiDaysNeeded || 0);
+                    const diff = weekdays.length - besoin;
+                    return (
+                      <p className={`text-sm font-semibold ${diff < 0 ? 'text-destructive' : diff > 0 ? 'text-amber-700' : 'text-emerald-800'}`}>
+                        Besoin : {besoin} jour(s) • Planning : {weekdays.length} jour(s) •{' '}
+                        {diff < 0 ? `Il manque ${-diff} jour(s)` : diff > 0 ? `${diff} jour(s) en trop` : 'Planning juste'}
+                      </p>
+                    );
+                  })()}
                   <p className="text-xs text-emerald-700">
+
                     {totalReserved > 0 ? `${totalReserved} réservation(s) confirmée(s)` : 'Aucune réservation confirmée — les noms apparaîtront quand les candidats choisiront leur date'}
                   </p>
                 </div>
