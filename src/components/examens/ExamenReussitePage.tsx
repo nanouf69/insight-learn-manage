@@ -1825,11 +1825,31 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     return days;
   }, [existingSessions]);
 
+  // Les élèves retirés de la liste restent retirés pour cette session d'examen,
+  // quelle que soit la période de pratique choisie (union de toutes les configurations).
+  const planningLoadSeq = useRef(0);
+  const loadRemovedUnion = async (examDate: string) => {
+    const { data: rows } = await supabase
+      .from('planning_pratique_config')
+      .select('extra_candidats')
+      .eq('exam_date', examDate);
+    const removed = new Set<string>();
+    const removedCMA = new Set<string>();
+    (rows || []).forEach((r: any) => {
+      const c = splitFormationCandidates(r.extra_candidats || []);
+      c.removed.forEach((id) => removed.add(id));
+      c.removedCMA.forEach((id) => removedCMA.add(id));
+    });
+    return { removed: [...removed], removedCMA: [...removedCMA] };
+  };
+
   // Load latest saved planning config for the selected exam date
   useEffect(() => {
     if (!selectedExamDate) return;
     setPlanningConfigLoaded(false);
+    const seq = ++planningLoadSeq.current;
     (async () => {
+      const union = await loadRemovedUnion(selectedExamDate);
       const { data } = await supabase
         .from('planning_pratique_config')
         .select('*')
@@ -1838,6 +1858,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         .limit(1)
         .maybeSingle();
 
+      if (seq !== planningLoadSeq.current) return;
       if (data) {
         const resolvedBounds = resolvePlanningBounds(data);
         if (data.date_pratique && data.date_pratique !== selectedDatePratique) {
@@ -1849,9 +1870,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setExtraDays(data.extra_days || []);
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
         setExtraCandidatsFormation(formationCandidates.extra);
-        setRemovedCandidatsFormation(formationCandidates.removed);
+        setRemovedCandidatsFormation([...new Set([...formationCandidates.removed, ...union.removed])]);
         setExtraCandidatsCMA(formationCandidates.extraCMA);
-        setRemovedCandidatsCMA(formationCandidates.removedCMA);
+        setRemovedCandidatsCMA([...new Set([...formationCandidates.removedCMA, ...union.removedCMA])]);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -1865,7 +1886,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   useEffect(() => {
     if (!selectedExamDate || !selectedDatePratique) return;
     setPlanningConfigLoaded(false);
+    const seq = ++planningLoadSeq.current;
     (async () => {
+      const union = await loadRemovedUnion(selectedExamDate);
       const { data } = await supabase
         .from('planning_pratique_config')
         .select('*')
@@ -1873,6 +1896,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         .eq('date_pratique', selectedDatePratique)
         .maybeSingle();
 
+      if (seq !== planningLoadSeq.current) return;
       if (data) {
         const resolvedBounds = resolvePlanningBounds(data);
         setPlanningStartDate(resolvedBounds?.start || data.planning_start_date);
@@ -1881,9 +1905,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setExtraDays(data.extra_days || []);
         const formationCandidates = splitFormationCandidates(data.extra_candidats || []);
         setExtraCandidatsFormation(formationCandidates.extra);
-        setRemovedCandidatsFormation(formationCandidates.removed);
+        setRemovedCandidatsFormation([...new Set([...formationCandidates.removed, ...union.removed])]);
         setExtraCandidatsCMA(formationCandidates.extraCMA);
-        setRemovedCandidatsCMA(formationCandidates.removedCMA);
+        setRemovedCandidatsCMA([...new Set([...formationCandidates.removedCMA, ...union.removedCMA])]);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
         if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
@@ -1894,9 +1918,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setExcludedDays([]);
         setExtraDays([]);
         setExtraCandidatsFormation([]);
-        setRemovedCandidatsFormation([]);
+        setRemovedCandidatsFormation(union.removed);
         setExtraCandidatsCMA([]);
-        setRemovedCandidatsCMA([]);
+        setRemovedCandidatsCMA(union.removedCMA);
         setMaxPerDayMap({});
         setDayTimeSlots({});
       }
