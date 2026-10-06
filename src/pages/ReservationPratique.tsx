@@ -159,6 +159,8 @@ export default function ReservationPratique() {
 
   const type = detectedType;
   const isVTC = type === "vtc";
+  // Élève en e-learning : type se terminant par "-e" ou contenant "e-learning"
+  const isElearning = /(-e$|-e-|e-learning)/i.test(apprenant?.type_apprenant || "");
 
   useEffect(() => {
     async function load() {
@@ -576,7 +578,10 @@ export default function ReservationPratique() {
                <p className="font-semibold text-amber-800">⚠️ Rappels importants :</p>
                <ul className="list-disc pl-5 text-amber-700 space-y-1">
                  <li>Vous ne pouvez choisir qu'<strong>UNE SEULE date</strong> (modifiable si des places restent disponibles)</li>
-                 <li>Vous recevrez un <strong>email de confirmation</strong> après votre choix</li>
+                  <li>Vous recevrez un <strong>email de confirmation</strong> après votre choix</li>
+                  {isElearning && (
+                    <li className="text-red-700 font-semibold">Vous devez obligatoirement terminer le nombre d'heures présent sur votre plateforme, sous peine de sanction par le CPF ou France Travail.</li>
+                  )}
                  <li>Pause déjeuner à Confluences (12h-13h)</li>
                  {isVTC ? (
                    <>
@@ -645,7 +650,10 @@ export default function ReservationPratique() {
                      <p>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">https://app.formative.com/join/ZT924H</a></p>
                    </>
                  )}
-                <p className="font-semibold">⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.</p>
+                 <p className="font-semibold">⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.</p>
+                 {isElearning && (
+                   <p className="font-semibold text-red-700">⏱️ Vous devez obligatoirement terminer le nombre d'heures présent sur votre plateforme, sous peine de sanction par le CPF ou France Travail.</p>
+                 )}
                 <p>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.</p>
                 <p className="font-semibold">📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.</p>
               </div>
