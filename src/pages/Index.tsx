@@ -25,6 +25,7 @@ import { ComptabilitePage } from "@/components/comptabilite/ComptabilitePage";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
+import { CandidatsAFormer } from "@/components/examens/CandidatsAFormer";
 import { PlanningRdvCarteVtc } from "@/components/planning-rdv/PlanningRdvCarteVtc";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
@@ -66,6 +67,7 @@ const pageConfig = {
   organisations: { title: "Organisations", subtitle: "Gérez vos organisations clientes" },
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
   examens: { title: "Examen et Réussite", subtitle: "Suivi des examens théoriques" },
+  "candidats-a-former": { title: "Candidats à former", subtitle: "Admis à l'examen théorique — TAXI et VTC" },
   "rdv-carte-vtc": { title: "Planning RDV Carte VTC", subtitle: "Disponibilités pour les rendez-vous de création de carte professionnelle" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
@@ -422,6 +424,8 @@ const Index = () => {
         return <ApprenantsList />;
       case "examens":
         return <ExamenReussitePage onNavigateToApprenant={handleNavigateToApprenant} />;
+      case "candidats-a-former":
+        return <CandidatsAFormer />;
       case "rdv-carte-vtc":
         return <PlanningRdvCarteVtc />;
       case "crm":
