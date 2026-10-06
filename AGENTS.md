@@ -17,3 +17,4 @@
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
 - Planning pratique : chaque configuration est chargée et sauvegardée par la clé exacte session d'examen + période pratique ; why: un choix ancien ou une autre période ne doit jamais remplacer les choix enregistrés.
 - Besoin en jours de formation pratique : toujours ceil(candidats / 3) partout (onglet Candidats à former et résumé du planning), jamais divisé par max_per_day enregistré ; why: une capacité sauvegardée différente faisait afficher un faux nombre de jours (29 candidats = 4 j).
+- Page élève de réservation pratique : tout jour auquel l'admin a fixé un type VTC/TAXI dans le planning (même samedi/dimanche) est proposé tel quel ; why: le samedi 10 oct manquait côté élève alors qu'il figurait au planning.
