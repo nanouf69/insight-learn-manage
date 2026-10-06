@@ -916,6 +916,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
   const [fetchNonce, setFetchNonce] = useState(0);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
+  const [deepLinkChecked, setDeepLinkChecked] = useState(false);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
@@ -2062,6 +2063,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     ...module,
     nom: getModuleDisplayName(selectedFormation, module.id, module.nom),
   }));
+
+  // Ouverture directe d'un module via ?module=<id> (lien envoyé dans les e-mails pratiques)
+  if (!deepLinkChecked && !selectedModule && modules.length > 0) {
+    setDeepLinkChecked(true);
+    const mid = Number(new URLSearchParams(window.location.search).get('module'));
+    if (mid) {
+      const target = modules.find((m) => m.id === mid);
+      if (target) setSelectedModule(target);
+    }
+  }
+
 
 
   const completionsByModuleId = moduleCompletionsForNotes.reduce<Record<number, any[]>>((acc, completion) => {
