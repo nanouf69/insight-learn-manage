@@ -1050,6 +1050,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const loadedPlanningKeyRef = useRef<string | null>(null);
   // Dates figées : les bornes Du/Au ne sont envoyées que si l'admin les a modifiées lui-même.
   const planningBoundsEditedRef = useRef(false);
+  const planningRowExistsRef = useRef(false);
   loadedPlanningKeyRef.current = loadedPlanningKey;
   // Dates « Du / Au » verrouillées par défaut : modifiables seulement après clic volontaire.
   const [planningDatesUnlocked, setPlanningDatesUnlocked] = useState(false);
@@ -1078,7 +1079,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       .upsert({
         exam_date: selectedExamDate,
         date_pratique: selectedDatePratique,
-        ...(planningBoundsEditedRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}),
+        ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
         excluded_days: excludedDays,
         extra_days: extraDays,
         extra_candidats: joinFormationCandidates(extraFormation, removedFormation, extraCMA, removedCMA),
@@ -1117,7 +1118,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       .upsert({
         exam_date: selectedExamDate,
         date_pratique: selectedDatePratique,
-        ...(planningBoundsEditedRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}),
+        ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
         excluded_days: excludedDays,
         extra_days: extraDays,
         extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
@@ -1866,6 +1867,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         toast.error(`Planning non chargé : ${error.message}`);
         return;
       }
+      planningRowExistsRef.current = !!data;
       if (data) {
         const resolvedBounds = resolvePlanningBounds(data);
         setPlanningStartDate(resolvedBounds?.start || "");
@@ -1910,7 +1912,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         .upsert({
           exam_date: selectedExamDate,
           date_pratique: selectedDatePratique,
-          ...(planningBoundsEditedRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}),
+          ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
           excluded_days: excludedDays,
           extra_days: extraDays,
           extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
