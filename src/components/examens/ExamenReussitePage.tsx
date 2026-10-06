@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TestReservationPratique } from "./TestReservationPratique";
+import { TestReservationPratique, TEST_PRATIQUE } from "./TestReservationPratique";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car, Copy, KeyRound } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
@@ -1738,6 +1738,20 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       return data || [];
     },
   });
+
+  // Mise à jour en direct : dès qu'un élève choisit (ou qu'on supprime) une date, le planning se rafraîchit.
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const ch = supabase
+      .channel('reservations-pratique-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations_pratique' }, () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] }), 500);
+      })
+      .subscribe();
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(ch); };
+  }, [queryClient]);
+
 
   // Apprenants déjà inscrits sur une session pratique (quel que soit le statut de présence)
   const { data: inscritsSessionPratique } = useQuery({
@@ -4333,6 +4347,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         // Build apprenant map
         const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null; telephone?: string | null; email?: string | null }> = {};
         (allApprenants || []).forEach(a => { appMap[a.id] = a; });
+        // Élève fictif TEST (masqué des listes par la règle des comptes de test) : afficher son nom dans le planning.
+        if (!appMap[TEST_PRATIQUE.id]) appMap[TEST_PRATIQUE.id] = { id: TEST_PRATIQUE.id, nom: TEST_PRATIQUE.nom, prenom: TEST_PRATIQUE.prenom, type_apprenant: 'vtc', email: TEST_PRATIQUE.email, telephone: '' };
 
         // Reuse the same candidate list as "Candidats à former" section: only theory successes.
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
