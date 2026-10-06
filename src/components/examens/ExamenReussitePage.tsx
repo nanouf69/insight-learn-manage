@@ -4495,8 +4495,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           }
         }
         
-        const vtcDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'vtc').length;
-        const taxiDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'taxi').length;
+        // Le besoin est toujours calculé sur la règle de 3 candidats par jour.
+        // Les jours déjà affectés dans le planning ne doivent pas remplacer ce calcul.
+        const vtcDaysNeeded = Math.ceil(totalVTC / 3);
+        const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
 
