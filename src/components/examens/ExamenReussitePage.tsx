@@ -946,7 +946,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
-  const [filterDateExamen, setFilterDateExamen] = useState<string>("all");
   const [filterModalite, setFilterModalite] = useState<string>("all");
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
@@ -1506,8 +1505,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const handleExamDateChange = (date: string) => {
     setSelectedExamDate(date);
     const match = datesExamenTheorique.find(e => e.date === date);
-    if (match !== undefined) {
-      setSelectedDatePratique(datesExamenPratique[match.pratiqueIndex]);
+    const pratiqueDate = match ? datesExamenPratique[match.pratiqueIndex] : undefined;
+    if (pratiqueDate) {
+      setSelectedDatePratique(pratiqueDate);
     }
   };
 
@@ -2098,7 +2098,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (filterIdentifiants === 'avec_identifiants' && !hasT3p) return false;
       if (filterIdentifiants === 'sans_identifiants' && hasT3p) return false;
     }
-    if (filterDateExamen !== 'all' && (a.date_examen_theorique || '') !== filterDateExamen) return false;
     if (filterModalite !== 'all') {
       const m = (a as any).modalite_formation ?? null;
       if (filterModalite === 'none' ? m !== null : m !== filterModalite) return false;
@@ -2106,9 +2105,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     return true;
   });
 
-  const datesExamenDisponibles = [...new Set((apprenants || []).map(a => a.date_examen_theorique).filter(Boolean))] as string[];
-  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterDateExamen !== 'all' || filterModalite !== 'all' || search.trim() !== '';
-  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterDateExamen("all"); setFilterModalite("all"); };
+  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterModalite !== 'all' || search.trim() !== '';
+  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterModalite("all"); };
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
@@ -2350,14 +2348,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <SelectItem value="sans_identifiants">⚠️ Sans nouveaux identifiants</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterDateExamen} onValueChange={setFilterDateExamen}>
-              <SelectTrigger className="h-8 w-52 text-xs">
-                <SelectValue placeholder="Date d'examen" />
+            <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
+              <SelectTrigger className="h-8 w-52 text-xs" aria-label="Session d’examen">
+                <SelectValue placeholder="Session d’examen" />
               </SelectTrigger>
               <SelectContent className="z-[9999]">
-                <SelectItem value="all">Toutes les dates</SelectItem>
-                {datesExamenDisponibles.map(d => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                {datesExamenTheorique.map(e => (
+                  <SelectItem key={e.date} value={e.date}>{e.date}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

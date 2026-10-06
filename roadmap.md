@@ -2,8 +2,9 @@
 
 ## Sessions d’examen manquantes dans le filtre (06/10)
 - [x] Diagnostic lecture seule : « Toutes les dates » est construit uniquement depuis les élèves de la session déjà sélectionnée.
-- [ ] Présenter le correctif et obtenir l’accord avant modification : proposer toutes les sessions dans ce sélecteur, comme dans le sélecteur principal.
-- [ ] Vérifier le changement de session avec données fictives, sans sauvegarde de dates ni envoi.
+- [x] Correctif approuvé : les deux sélecteurs proposent les 12 sessions et partagent la même sélection ; filtre local trompeur retiré.
+- [x] 19/19 contrôles ciblés réussis ; sélection 2026/2027 et synchronisation vérifiées à l’écran avec listes fictives ; toutes les demandes d’écriture interceptées, aucun mail ni donnée réelle modifiée ; build OK.
+- [x] Session sans période pratique publiée : ne plus affecter une valeur indéfinie, pour éviter le plantage lors du choix d’une date 2027.
 
 ## Notes individuelles pratique (06/10)
 - [x] Champ par candidat dans les listes CMA et formation ; historique conservé avec refus des versions périmées.
