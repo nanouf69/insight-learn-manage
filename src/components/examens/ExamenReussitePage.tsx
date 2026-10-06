@@ -3393,8 +3393,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
-        const joursVTC = Math.ceil(vtcList.length / maxPerDay);
-        const joursTAXI = Math.ceil(taxiList.length / maxPerDay);
+        // Règle fixe : 3 candidats par jour. Ne jamais diviser par la capacité
+        // enregistrée (max_per_day), sinon le besoin en jours redevient faux.
+        const CANDIDATS_PAR_JOUR = 3;
+        const joursVTC = Math.ceil(vtcList.length / CANDIDATS_PAR_JOUR);
+        const joursTAXI = Math.ceil(taxiList.length / CANDIDATS_PAR_JOUR);
         const maxRows = Math.max(vtcList.length, taxiList.length);
 
         // Compute VTC/TAXI date ranges from calendar
