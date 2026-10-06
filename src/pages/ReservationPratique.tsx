@@ -350,7 +350,11 @@ export default function ReservationPratique() {
       }
     }
 
-    extraDays.forEach((dayKey) => {
+    // Jours ajoutés + jours (même samedi/dimanche) auxquels l'admin a fixé un type dans le planning
+    const manualTypedKeys = Object.entries(dayTimeSlots)
+      .filter(([k, v]) => (v?.type === 'vtc' || v?.type === 'taxi') && k >= planningStartDate && k <= planningEndDate)
+      .map(([k]) => k);
+    [...extraDays, ...manualTypedKeys].forEach((dayKey) => {
       if (!weekdays.some((date) => toLocalDateKey(date) === dayKey) && !excludedDays.includes(dayKey)) {
         weekdays.push(new Date(dayKey + "T00:00:00"));
       }
