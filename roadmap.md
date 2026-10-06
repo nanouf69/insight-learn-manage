@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Inscrits théorique : une session ou toutes les dates (06/10)
-- [ ] Ajouter « Toutes les dates » au filtre du tableau, avec lecture paginée, sans changer le planning.
-- [ ] Vérifier les deux choix et les filtres sur données fictives, sans écriture ni envoi.
+- [x] Ajouter « Toutes les dates » au filtre du tableau, avec lecture paginée, sans changer le planning.
+- [x] Vérifier à l’écran la vue globale (2 candidats fictifs de sessions différentes) puis une seule session ; 20/20 tests ciblés réussis, build OK ; écritures et envois bloqués.
 
 ## Sessions d’examen manquantes dans le filtre (06/10)
 - [x] Diagnostic lecture seule : « Toutes les dates » est construit uniquement depuis les élèves de la session déjà sélectionnée.
