@@ -1048,6 +1048,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
   const loadedPlanningKeyRef = useRef<string | null>(null);
+  // Dates figées : les bornes Du/Au ne sont envoyées que si l'admin les a modifiées lui-même.
+  const planningBoundsEditedRef = useRef(false);
   loadedPlanningKeyRef.current = loadedPlanningKey;
   // Dates « Du / Au » verrouillées par défaut : modifiables seulement après clic volontaire.
   const [planningDatesUnlocked, setPlanningDatesUnlocked] = useState(false);
