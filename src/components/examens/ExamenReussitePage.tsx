@@ -1739,6 +1739,20 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
+  // Mise à jour en direct : dès qu'un élève choisit (ou qu'on supprime) une date, le planning se rafraîchit.
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const ch = supabase
+      .channel('reservations-pratique-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations_pratique' }, () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] }), 500);
+      })
+      .subscribe();
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(ch); };
+  }, [queryClient]);
+
+
   // Apprenants déjà inscrits sur une session pratique (quel que soit le statut de présence)
   const { data: inscritsSessionPratique } = useQuery({
     queryKey: ['inscrits-session-pratique'],
