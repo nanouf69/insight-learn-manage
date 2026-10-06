@@ -1748,6 +1748,25 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
+  // Dates des sessions pratiques déjà suivies (pour afficher la coche verte même sans réservation)
+  const { data: datesSessionPratique } = useQuery({
+    queryKey: ['dates-session-pratique'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('session_apprenants')
+        .select('apprenant_id, sessions!inner(type_session, date_debut)')
+        .in('sessions.type_session', PRATIQUE_TYPES);
+      const map = new Map<string, string>();
+      for (const d of (data || []) as any[]) {
+        const date = d?.sessions?.date_debut;
+        if (!date) continue;
+        const prev = map.get(d.apprenant_id);
+        if (!prev || date < prev) map.set(d.apprenant_id, date);
+      }
+      return map;
+    },
+  });
+
   // Fetch apprenants ayant ouvert/effectué le module Pratique (VTC=8, TAXI=6)
   const { data: pratiqueDoneIds } = useQuery({
     queryKey: ['pratique-module-done-ids'],
@@ -3682,9 +3701,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {vtcList.map((a, i) => {
-                          const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
-                          const hasReservation = !!reservation;
+                         {vtcList.map((a, i) => {
+                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
+                           const dateSessionPratique = datesSessionPratique?.get(a.id);
+                           const hasReservation = !!reservation || !!dateSessionPratique;
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
                           <TableRow key={a.id}>
@@ -3693,16 +3713,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               <div className="flex items-center gap-2">
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                                {a.nom} {a.prenom}
-                                {hasReservation && <span className="text-xs text-muted-foreground">({reservation.date_choisie})</span>}
-                              </div>
-                              {isDecale && (
-                                <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
-                              )}
-                            </TableCell>
+                                 {a.nom} {a.prenom}
+                                 {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
+                               </div>
+                               {isDecale && (
+                                 <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
+                               )}
+                             </TableCell>
 
-                            <TableCell>
-                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                             <TableCell>
+                               <Badge className="bg-blue-100 text-blue-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
@@ -3807,18 +3827,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
-                                {hasReservation && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
-                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
+                                 {reservation && (
+                                   <AlertDialog>
+                                     <AlertDialogTrigger asChild>
+                                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
+                                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                       </Button>
+                                     </AlertDialogTrigger>
+                                     <AlertDialogContent>
+                                       <AlertDialogHeader>
+                                         <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
+                                         <AlertDialogDescription>
+                                           Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
@@ -4065,9 +4085,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {taxiList.map((a, i) => {
-                          const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
-                          const hasReservation = !!reservation;
+                         {taxiList.map((a, i) => {
+                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
+                           const dateSessionPratique = datesSessionPratique?.get(a.id);
+                           const hasReservation = !!reservation || !!dateSessionPratique;
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
                           <TableRow key={a.id}>
@@ -4076,16 +4097,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               <div className="flex items-center gap-2">
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                                {a.nom} {a.prenom}
-                                {hasReservation && <span className="text-xs text-muted-foreground">({reservation.date_choisie})</span>}
-                              </div>
-                              {isDecale && (
-                                <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
-                              )}
-                            </TableCell>
+                                 {a.nom} {a.prenom}
+                                 {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
+                               </div>
+                               {isDecale && (
+                                 <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
+                               )}
+                             </TableCell>
 
-                            <TableCell>
-                              <Badge className="bg-amber-100 text-amber-800 text-xs">
+                             <TableCell>
+                               <Badge className="bg-amber-100 text-amber-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
@@ -4190,18 +4211,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
-                                {hasReservation && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
-                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
+                                 {reservation && (
+                                   <AlertDialog>
+                                     <AlertDialogTrigger asChild>
+                                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
+                                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                       </Button>
+                                     </AlertDialogTrigger>
+                                     <AlertDialogContent>
+                                       <AlertDialogHeader>
+                                         <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
+                                         <AlertDialogDescription>
+                                           Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
