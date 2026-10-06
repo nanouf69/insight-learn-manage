@@ -4697,7 +4697,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             absentApresMidi: sigs[c.apprenant_id || c.id]?.apresMidiAbsent,
                           })),
                           resolvePratiqueDayCreneaux(dayTimeSlots[key], formation),
-                          dayFormateur || (formation === 'taxi' ? 'Rim TOUIL' : 'Naoufal GUENICHI')
+                          dayFormateur || 'Naoufal GUENICHI'
                         );
                       };
 
@@ -4853,7 +4853,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             <div className="flex gap-1 items-center w-full">
                               <span className="text-[8px] text-muted-foreground">Formateur:</span>
                               <select
-                                value={dayFormateur || ''}
+                                value={dayFormateur || 'Naoufal GUENICHI'}
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
                                   const next = { ...prev, [key]: { ...current, formateur: e.target.value || undefined } };
