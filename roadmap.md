@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Notes individuelles pratique (06/10)
+- [x] Champ par candidat dans les listes CMA et formation ; historique conservé avec refus des versions périmées.
+- [x] Note personnelle dans les sept mails pratiques ; CMA, impression et aperçus depuis la même note ; aucune date modifiée, aucun mail envoyé.
+- [ ] Vérifications ciblées et contrôle visuel sur candidat fictif.
+
 ## Réservation pratique — retrait du préalable module (06/10)
 - [x] Retirer la condition module PRATIQUE des envois manuels VTC/TAXI et les formulations correspondantes ; conserver les conseils et les heures e-learning.
 - [x] Vérifier sans envoi de mail ni modification de données élèves : 5 tests réussis, dix messages individuels/groupés contrôlés, build OK. Test navigateur non exécuté.
