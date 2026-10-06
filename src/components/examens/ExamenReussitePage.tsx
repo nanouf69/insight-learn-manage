@@ -1949,20 +1949,24 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     // Pas de planning enregistré et pas de dates valides : on ne crée rien (aucune écriture).
     if (!planningRowExistsRef.current && !isValidPlanningBounds(planningStartDate, planningEndDate)) return;
     const timer = setTimeout(async () => {
-      const { error } = await supabase
-        .from('planning_pratique_config')
-        .upsert({
-          exam_date: selectedExamDate,
-          date_pratique: selectedDatePratique,
-          ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
-          excluded_days: excludedDays,
-          extra_days: extraDays,
-          extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
-          max_per_day: maxPerDay,
-          max_per_day_map: maxPerDayMap,
-          day_time_slots: dayTimeSlots,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'exam_date,date_pratique' });
+      const fields = {
+        ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
+        excluded_days: excludedDays,
+        extra_days: extraDays,
+        extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
+        max_per_day: maxPerDay,
+        max_per_day_map: maxPerDayMap,
+        day_time_slots: dayTimeSlots,
+        updated_at: new Date().toISOString(),
+      };
+      // Ligne existante : simple mise à jour (un upsert sans dates « Du/Au » est refusé par la base).
+      const { error } = planningRowExistsRef.current
+        ? await supabase.from('planning_pratique_config').update(fields)
+            .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique)
+        : await supabase.from('planning_pratique_config').upsert({
+            exam_date: selectedExamDate, date_pratique: selectedDatePratique, ...fields,
+          }, { onConflict: 'exam_date,date_pratique' });
+      if (!error) planningRowExistsRef.current = true;
       if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
     }, 1000);
     return () => clearTimeout(timer);
