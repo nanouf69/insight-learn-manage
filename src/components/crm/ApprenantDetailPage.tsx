@@ -1134,11 +1134,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Date de début</p>
-                      <p className="font-medium">{apprenant.date_debut_formation || '-'}</p>
+                      <p className="text-2xl font-bold text-destructive break-words">{apprenant.date_debut_formation || '-'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Date de fin</p>
-                      <p className="font-medium">{apprenant.date_fin_formation || '-'}</p>
+                      <p className="text-2xl font-bold text-destructive break-words">{apprenant.date_fin_formation || '-'}</p>
                     </div>
                     {apprenantSessions && apprenantSessions.length > 0 && (
                       <div className="pt-2 border-t">
