@@ -14,8 +14,10 @@ describe("Réservation pratique sans préalable de module", () => {
   });
 
   for (const type of ["vtc", "taxi"]) {
-    it(`garde le lien personnalisé dans les trois envois ${type.toUpperCase()}`, () => {
-      expect(admin.match(new RegExp(`const bookingUrl = getBookingUrl\\(a.id, '${type}'\\);\\s*const (?:subject|message) =`, "g"))).toHaveLength(3);
+    it(`garde le lien dans les cinq envois individuels et groupés ${type.toUpperCase()}`, () => {
+      const messages = admin.match(new RegExp(`const bookingUrl = getBookingUrl\\(a.id, '${type}'\\);\\s*const (?:subject = [^\\n]+;\\s*const body|message) = [^\\n]+`, "g")) ?? [];
+      expect(messages).toHaveLength(5);
+      for (const message of messages) expect(message).toContain("${bookingUrl}");
     });
   }
 
