@@ -572,6 +572,24 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
 
       toast.success("Apprenant modifié avec succès");
 
+      // Accès cours en ligne déjà commencé et pas de compte : envoi immédiat des identifiants
+      {
+        const debut = updateData.date_debut_cours_en_ligne as string | null | undefined;
+        const fin = updateData.date_fin_cours_en_ligne as string | null | undefined;
+        const today = format(new Date(), 'yyyy-MM-dd');
+        if (!(apprenant as any).auth_user_id && debut && debut <= today && (!fin || fin >= today)) {
+          try {
+            const { data: credData, error: credErr } = await supabase.functions.invoke("auto-send-credentials", { body: { apprenantId: apprenant.id } });
+            if (credErr) throw credErr;
+            const r = credData?.results?.[0];
+            if (r?.success) toast.success("Compte créé : identifiants envoyés par e-mail");
+            else if (r?.error) toast.warning(`Identifiants non envoyés : ${r.error}`);
+          } catch (cErr: any) {
+            toast.error(`Envoi des identifiants impossible : ${cErr?.message || cErr}`);
+          }
+        }
+      }
+
       if (emailChanged) {
         const confirmResend = window.confirm(
           `L'email a changé (${oldEmail || "aucun"} → ${newEmail}).\n\nRenvoyer tous les emails précédents à la nouvelle adresse ?`
