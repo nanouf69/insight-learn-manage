@@ -15,7 +15,7 @@ describe("Réservation pratique sans préalable de module", () => {
 
   for (const type of ["vtc", "taxi"]) {
     it(`garde le lien personnalisé dans les trois envois ${type.toUpperCase()}`, () => {
-      expect(admin.match(new RegExp(`const bookingUrl = getBookingUrl\\(a.id, '${type}'\\)`, "g"))).toHaveLength(3);
+      expect(admin.match(new RegExp(`const bookingUrl = getBookingUrl\\(a.id, '${type}'\\);\\s*const (?:subject|message) =`, "g"))).toHaveLength(3);
     });
   }
 
