@@ -4298,9 +4298,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       <div id="anchor-planning" className="scroll-mt-24" />
       {/* Planning formation pratique - from reservations + computed fallback */}
       {(() => {
-        const totalInscritsP = apprenants?.length || 0;
-        const sansResultatP = apprenants?.filter(a => !(a as any).resultat_examen) || [];
-        if (totalInscritsP === 0 || sansResultatP.length > 0) return null;
+        // Le planning est toujours affiché, même vide ou si des résultats manquent encore.
 
         const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
