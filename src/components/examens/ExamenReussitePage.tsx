@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TestReservationPratique } from "./TestReservationPratique";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car, Copy, KeyRound } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
@@ -2206,6 +2207,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             { id: "anchor-recap", label: "Récapitulatif" },
             { id: "anchor-lettre-cma", label: "Lettre CMA" },
             { id: "anchor-candidats", label: "Candidats à former" },
+            { id: "anchor-test", label: "TEST" },
             { id: "anchor-planning", label: "Planning pratique" },
             { id: "anchor-decales", label: "Décalés" },
             { id: "anchor-resultats-pratique", label: "Résultats pratique" },
@@ -4310,6 +4312,15 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           </Card>
         );
       })()}
+
+      <div id="anchor-test" className="scroll-mt-24" />
+      {selectedExamDate && (
+        <TestReservationPratique
+          examDate={selectedExamDate}
+          datePratique={selectedDatePratique}
+          buildUrl={(id, type) => buildPratiqueReservationUrl(id, type, selectedExamDate, selectedDatePratique)}
+        />
+      )}
 
       <div id="anchor-planning" className="scroll-mt-24" />
       {/* Planning formation pratique - from reservations + computed fallback */}
