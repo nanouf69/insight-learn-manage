@@ -4211,18 +4211,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
-                                {hasReservation && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
-                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
+                                 {reservation && (
+                                   <AlertDialog>
+                                     <AlertDialogTrigger asChild>
+                                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
+                                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                       </Button>
+                                     </AlertDialogTrigger>
+                                     <AlertDialogContent>
+                                       <AlertDialogHeader>
+                                         <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
+                                         <AlertDialogDescription>
+                                           Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
