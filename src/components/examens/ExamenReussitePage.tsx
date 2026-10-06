@@ -947,6 +947,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
   const [filterModalite, setFilterModalite] = useState<string>("all");
+  const [showAllExamDates, setShowAllExamDates] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
   const [activeFs, setActiveFs] = useState<string | null>(null);
@@ -1503,6 +1504,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT;
 
   const handleExamDateChange = (date: string) => {
+    setShowAllExamDates(false);
     setSelectedExamDate(date);
     const match = datesExamenTheorique.find(e => e.date === date);
     const pratiqueDate = match ? datesExamenPratique[match.pratiqueIndex] : undefined;
@@ -1567,10 +1569,36 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
+  // Global view is confined to the theoretical table; planning keeps its exact session.
+  const { data: apprenantsToutesDates } = useQuery({
+    queryKey: ['apprenants-examen', selectedExamDate, 'all-dates'],
+    enabled: showAllExamDates,
+    queryFn: async () => {
+      const rows: NonNullable<typeof apprenants> = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('*')
+          .not('date_examen_theorique', 'is', null)
+          .neq('date_examen_theorique', '')
+          .is('deleted_at', null)
+          .order('nom', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+      }
+      return rows;
+    },
+  });
+  const tableApprenants = showAllExamDates ? apprenantsToutesDates : apprenants;
+
   // Statut de suivi provenant des sessions (source unique : session_apprenants)
-  const apprenantIdsExamen = (apprenants || []).map((a: any) => a.id);
+  const apprenantIdsExamen = (tableApprenants || []).map((a: any) => a.id);
   const { data: statutsSession } = useQuery({
-    queryKey: ['statuts-session-examen', selectedExamDate, apprenantIdsExamen.length],
+    queryKey: ['statuts-session-examen', selectedExamDate, apprenantIdsExamen.join(',')],
     enabled: apprenantIdsExamen.length > 0,
     queryFn: async () => {
       const map: Record<string, { sessionApprenantId: string; statut: string | null }> = {};
@@ -1625,7 +1653,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
   // Deuxième email : celui saisi dans le dossier de bienvenue (si différent du CRM)
   const { data: dossierEmails } = useQuery({
-    queryKey: ['dossier-bienvenue-emails-examen', selectedExamDate, apprenantIdsExamen.length],
+    queryKey: ['dossier-bienvenue-emails-examen', selectedExamDate, apprenantIdsExamen.join(',')],
     enabled: apprenantIdsExamen.length > 0,
     queryFn: async () => {
       const map: Record<string, string> = {};
@@ -2079,7 +2107,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
-  const filtered = apprenants?.filter(a => {
+  const filtered = tableApprenants?.filter(a => {
     const term = search.toLowerCase().trim();
     if (term) {
       const hay = `${a.nom || ''} ${a.prenom || ''} ${a.email || ''} ${a.telephone || ''}`.toLowerCase();
@@ -2238,13 +2266,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           <CardTitle className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5" />
-              Résultats et inscriptions examen théorique - {selectedExamDate}
+              Résultats et inscriptions examen théorique - {showAllExamDates ? 'Toutes les dates' : selectedExamDate}
             </span>
-            <span data-testid="date-limite-inscription-crm" className={trouverExamenTheorique(selectedExamDate)?.dateLimiteLibelle ? "text-destructive font-bold text-base uppercase" : "text-muted-foreground text-sm font-medium"}>
+            {!showAllExamDates && <span data-testid="date-limite-inscription-crm" className={trouverExamenTheorique(selectedExamDate)?.dateLimiteLibelle ? "text-destructive font-bold text-base uppercase" : "text-muted-foreground text-sm font-medium"}>
               {trouverExamenTheorique(selectedExamDate)?.dateLimiteLibelle
-                ? `🔴 Date limite d'inscription : ${trouverExamenTheorique(selectedExamDate)!.dateLimiteLibelle}`
+                ? `🔴 Date limite d'inscription : ${trouverExamenTheorique(selectedExamDate)?.dateLimiteLibelle}`
                 : "Date limite d'inscription : non renseignée"}
-            </span>
+            </span>}
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-1.5 text-xs">
@@ -2348,11 +2376,15 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <SelectItem value="sans_identifiants">⚠️ Sans nouveaux identifiants</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
+            <Select value={showAllExamDates ? 'all' : selectedExamDate} onValueChange={date => {
+              if (date === 'all') setShowAllExamDates(true);
+              else handleExamDateChange(date);
+            }}>
               <SelectTrigger className="h-8 w-52 text-xs" aria-label="Session d’examen">
                 <SelectValue placeholder="Session d’examen" />
               </SelectTrigger>
               <SelectContent className="z-[9999]">
+                <SelectItem value="all">Toutes les dates</SelectItem>
                 {datesExamenTheorique.map(e => (
                   <SelectItem key={e.date} value={e.date}>{e.date}</SelectItem>
                 ))}
@@ -2376,7 +2408,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               </Button>
             )}
             <span className="ml-auto text-xs text-muted-foreground">
-              {filtered?.length ?? 0} / {apprenants?.length ?? 0} apprenant(s)
+              {filtered?.length ?? 0} / {tableApprenants?.length ?? 0} apprenant(s)
             </span>
           </div>
           {filtered && filtered.length > 0 ? (
@@ -2610,11 +2642,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               Aucun apprenant trouvé
             </div>
           )}
-          {apprenants && apprenants.length > 0 && (
+          {tableApprenants && tableApprenants.length > 0 && (
             <div className="mt-4 text-sm text-muted-foreground">
               {hasActiveFilters
-                ? `${filtered?.length ?? 0} apprenant(s) affiché(s) sur ${apprenants.length} inscrit(s)`
-                : `Total : ${apprenants.length} apprenant(s) inscrit(s)`}
+                ? `${filtered?.length ?? 0} apprenant(s) affiché(s) sur ${tableApprenants.length} inscrit(s)`
+                : `Total : ${tableApprenants.length} apprenant(s) inscrit(s)`}
             </div>
           )}
         </CardContent>
