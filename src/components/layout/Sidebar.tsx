@@ -47,7 +47,6 @@ const menuItems = [
   { id: "organisations", label: "Organisations", icon: Building2 },
   { id: "crm", label: "Apprenants", icon: Users },
   { id: "examens", label: "Examen et Réussite", icon: ClipboardCheck },
-  { id: "candidats-a-former", label: "Candidats à former", icon: UserCheck },
   { id: "creneaux-25-mai", label: "Créneaux 25 mai", icon: CalendarClock },
   { id: "rdv-carte-vtc", label: "Planning RDV Carte VTC", icon: Truck },
   { id: "documents", label: "Documents", icon: FileText },

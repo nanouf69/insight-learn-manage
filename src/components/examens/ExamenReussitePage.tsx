@@ -3282,10 +3282,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       <div id="anchor-candidats" className="scroll-mt-24" />
       {/* Récapitulatif formation pratique */}
       {(() => {
-        // Block access if not all exam results are filled
-        const totalInscritsFormer = apprenants?.length || 0;
-        const sansResultatFormer = apprenants?.filter(a => !(a as any).resultat_examen) || [];
-        if (totalInscritsFormer === 0 || sansResultatFormer.length > 0) return null;
+        // La section est toujours affichée (même vide ou si des résultats manquent encore) :
+        // seuls les candidats ayant réussi l'examen théorique de la session sélectionnée y figurent.
 
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const currentTheorique2 = datesExamenTheorique.find(e => e.date === selectedExamDate);
