@@ -3,7 +3,8 @@
 ## Notes individuelles pratique (06/10)
 - [x] Champ par candidat dans les listes CMA et formation ; historique conservé avec refus des versions périmées.
 - [x] Note personnelle dans les sept mails pratiques ; CMA, impression et aperçus depuis la même note ; aucune date modifiée, aucun mail envoyé.
-- [ ] Vérifications ciblées et contrôle visuel sur candidat fictif.
+- [x] 9/9 tests ciblés ; champ vérifié sur ordinateur/téléphone avec données fictives simulées ; build OK ; empreinte des 12 plannings inchangée, 0 note élève écrite.
+- [ ] Enregistrement serveur et refus d’une version périmée de bout en bout : NON PROUVÉS, nécessitent un contexte de test isolé autorisé ; aucun test sur vrai élève.
 
 ## Réservation pratique — retrait du préalable module (06/10)
 - [x] Retirer la condition module PRATIQUE des envois manuels VTC/TAXI et les formulations correspondantes ; conserver les conseils et les heures e-learning.
