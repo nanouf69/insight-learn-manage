@@ -890,6 +890,13 @@
       "when": 1791285982147,
       "tag": "0126_realtime_reservations_pratique",
       "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1791296213308,
+      "tag": "0127_pratique_candidate_note_history",
+      "breakpoints": true
     }
   ]
 }

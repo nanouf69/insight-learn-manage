@@ -5428,6 +5428,50 @@ export type Database = {
         }
         Relationships: []
       }
+      pratique_candidate_note_revisions: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          date_pratique: string
+          exam_date: string
+          id: string
+          note: string
+          operation_id: string
+          revision: number
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by?: string
+          date_pratique?: string
+          exam_date?: string
+          id?: string
+          note?: string
+          operation_id: string
+          revision?: number
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string
+          date_pratique?: string
+          exam_date?: string
+          id?: string
+          note?: string
+          operation_id?: string
+          revision?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pratique_candidate_note_revisions_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prestataire_dossiers: {
         Row: {
           adresse: string | null
@@ -7875,6 +7919,26 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_pratique_candidate_notes: {
+        Args: { p_date_pratique: string; p_exam_date: string }
+        Returns: {
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          date_pratique: string
+          exam_date: string
+          id: string
+          note: string
+          operation_id: string
+          revision: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "pratique_candidate_note_revisions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -8242,6 +8306,33 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "apprenant_module_completion"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_pratique_candidate_note: {
+        Args: {
+          p_apprenant_id: string
+          p_date_pratique: string
+          p_exam_date: string
+          p_expected_revision: number
+          p_note: string
+          p_operation_id: string
+        }
+        Returns: {
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          date_pratique: string
+          exam_date: string
+          id: string
+          note: string
+          operation_id: string
+          revision: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pratique_candidate_note_revisions"
           isOneToOne: true
           isSetofReturn: false
         }
