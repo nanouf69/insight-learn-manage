@@ -19,3 +19,4 @@
 - Besoin en jours de formation pratique : toujours ceil(candidats / 3) partout (onglet Candidats à former et résumé du planning), jamais divisé par max_per_day enregistré ; why: une capacité sauvegardée différente faisait afficher un faux nombre de jours (29 candidats = 4 j).
 - Page élève de réservation pratique : tout jour auquel l'admin a fixé un type VTC/TAXI dans le planning (même samedi/dimanche) est proposé tel quel ; why: le samedi 10 oct manquait côté élève alors qu'il figurait au planning.
 - Practical candidate notes use admin-only append-only revisions scoped to learner, theoretical session and practical period, with server revision checks and escaped HTML shared by CMA and learner emails; why: preserve history and prevent cross-session or stale overwrites.
+- Exam session selectors share the configured session list, selected session and change handler; why: a list derived only from the current session's learners hides other sessions.
