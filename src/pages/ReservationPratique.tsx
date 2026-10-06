@@ -585,12 +585,12 @@ export default function ReservationPratique() {
                  <li>Pause déjeuner à Confluences (12h-13h)</li>
                  {isVTC ? (
                    <>
-                     <li>Faites le module <strong>« PRATIQUE VTC »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=8" className="underline text-primary" target="_blank" rel="noreferrer">ouvrir le module PRATIQUE VTC</a></li>
+                     <li>Pour vos révisions, consultez le module <strong>« PRATIQUE VTC »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=8" className="underline text-primary" target="_blank" rel="noreferrer">ouvrir le module PRATIQUE VTC</a></li>
                      <li>Révisez : <a href="https://app.formative.com/join/DNFDZS" className="underline text-primary" target="_blank" rel="noreferrer">Formation Pratique VTC</a></li>
                    </>
                  ) : (
                    <>
-                     <li>Faites le module <strong>« PRATIQUE TAXI »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=6" className="underline text-primary" target="_blank" rel="noreferrer">ouvrir le module PRATIQUE TAXI</a></li>
+                     <li>Pour vos révisions, consultez le module <strong>« PRATIQUE TAXI »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=6" className="underline text-primary" target="_blank" rel="noreferrer">ouvrir le module PRATIQUE TAXI</a></li>
                      <li>Révisez : <a href="https://app.formative.com/join/ZT924H" className="underline text-primary" target="_blank" rel="noreferrer">Formation Pratique TAXI</a></li>
                    </>
                  )}
@@ -639,13 +639,13 @@ export default function ReservationPratique() {
                 <p>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.</p>
                  {isVTC ? (
                    <>
-                     <p className="font-semibold">🎓 Avant tout, faites le module <strong>« PRATIQUE VTC »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=8" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">cliquez ici pour ouvrir le module PRATIQUE VTC</a></p>
+                     <p className="font-semibold">🎓 Pour vos révisions, consultez le module <strong>« PRATIQUE VTC »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=8" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">cliquez ici pour ouvrir le module PRATIQUE VTC</a></p>
                      <p>Notamment les exercices suivants dans <strong>"Formation Pratique VTC"</strong> : Quizz Lyon et Questions à apprendre.</p>
                      <p>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">https://app.formative.com/join/DNFDZS</a></p>
                    </>
                  ) : (
                    <>
-                     <p className="font-semibold">🎓 Avant tout, faites le module <strong>« PRATIQUE TAXI »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=6" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">cliquez ici pour ouvrir le module PRATIQUE TAXI</a></p>
+                     <p className="font-semibold">🎓 Pour vos révisions, consultez le module <strong>« PRATIQUE TAXI »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=6" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">cliquez ici pour ouvrir le module PRATIQUE TAXI</a></p>
                      <p>Notamment les exercices suivants dans <strong>"Formation Pratique TAXI"</strong> : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.</p>
                      <p>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">https://app.formative.com/join/ZT924H</a></p>
                    </>
