@@ -95,18 +95,7 @@ export function CandidatsAFormer() {
                   <TableCell className="hidden md:table-cell">
                     {(c.type_apprenant || "").toUpperCase() || "—"}
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {c.date_examen_theorique ? formatDateShortFR(c.date_examen_theorique) : "—"}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {c.resultat_examen_pratique ? (
-                      <Badge variant={c.resultat_examen_pratique === "oui" ? "default" : "outline"}>
-                        {c.resultat_examen_pratique}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground">à programmer</Badge>
-                    )}
-                  </TableCell>
+                  <TableCell>{c.date_examen_theorique || "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
