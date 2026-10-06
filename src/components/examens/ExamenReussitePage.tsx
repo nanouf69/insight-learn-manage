@@ -1124,20 +1124,23 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       return;
     }
 
-    const { error } = await supabase
-      .from('planning_pratique_config')
-      .upsert({
-        exam_date: selectedExamDate,
-        date_pratique: selectedDatePratique,
-        ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
-        excluded_days: excludedDays,
-        extra_days: extraDays,
-        extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
-        max_per_day: maxPerDay,
-        max_per_day_map: maxPerDayMap,
-        day_time_slots: nextDayTimeSlots,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'exam_date,date_pratique' });
+    const fields = {
+      ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
+      excluded_days: excludedDays,
+      extra_days: extraDays,
+      extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
+      max_per_day: maxPerDay,
+      max_per_day_map: maxPerDayMap,
+      day_time_slots: nextDayTimeSlots,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = planningRowExistsRef.current
+      ? await supabase.from('planning_pratique_config').update(fields)
+          .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique)
+      : await supabase.from('planning_pratique_config').upsert({
+          exam_date: selectedExamDate, date_pratique: selectedDatePratique, ...fields,
+        }, { onConflict: 'exam_date,date_pratique' });
+    if (!error) planningRowExistsRef.current = true;
 
     if (error) toast.error("Choix non sauvegardé : " + error.message);
   }, [
