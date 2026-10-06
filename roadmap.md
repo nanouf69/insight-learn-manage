@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Réservation pratique — retrait du préalable module (06/10)
+- [ ] Retirer la condition module PRATIQUE des envois manuels VTC/TAXI et les formulations correspondantes ; conserver les conseils et les heures e-learning.
+- [ ] Vérifier sans envoi de mail ni modification de données élèves.
+
 ## Chantier global affichage apprenant (25/09)
 - [x] Règle unique d'affichage + tableau de bord/déblocage branchés dessus + tests de cohérence.
 - [ ] Tests navigateur F5/reconnexion : NON PROUVÉS (portes identité/émargement/session unique).
