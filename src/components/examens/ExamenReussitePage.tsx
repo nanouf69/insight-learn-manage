@@ -1748,6 +1748,25 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
+  // Dates des sessions pratiques déjà suivies (pour afficher la coche verte même sans réservation)
+  const { data: datesSessionPratique } = useQuery({
+    queryKey: ['dates-session-pratique'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('session_apprenants')
+        .select('apprenant_id, sessions!inner(type_session, date_debut)')
+        .in('sessions.type_session', PRATIQUE_TYPES);
+      const map = new Map<string, string>();
+      for (const d of (data || []) as any[]) {
+        const date = d?.sessions?.date_debut;
+        if (!date) continue;
+        const prev = map.get(d.apprenant_id);
+        if (!prev || date < prev) map.set(d.apprenant_id, date);
+      }
+      return map;
+    },
+  });
+
   // Fetch apprenants ayant ouvert/effectué le module Pratique (VTC=8, TAXI=6)
   const { data: pratiqueDoneIds } = useQuery({
     queryKey: ['pratique-module-done-ids'],
