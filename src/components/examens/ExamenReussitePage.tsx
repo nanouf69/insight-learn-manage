@@ -786,6 +786,21 @@ function resolvePlanningBounds(config: {
   return labelPeriod;
 }
 
+// Bornes valides = deux dates ISO complètes, début <= fin.
+function isValidPlanningBounds(start?: string | null, end?: string | null) {
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  return !!start && !!end && iso.test(start) && iso.test(end) && start <= end;
+}
+
+// Dates figées : des bornes invalides (vides, inversées, saisie en cours) ne sont
+// jamais envoyées ; la base garde alors les dernières dates enregistrées.
+function planningBoundsPayload(start?: string | null, end?: string | null) {
+  return isValidPlanningBounds(start, end)
+    ? { planning_start_date: start as string, planning_end_date: end as string }
+    : {};
+}
+
+
 
 function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', examDate: string, pratiqueDate?: string | null) {
   const params = new URLSearchParams({
@@ -1032,6 +1047,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
+  const loadedPlanningKeyRef = useRef<string | null>(null);
+  loadedPlanningKeyRef.current = loadedPlanningKey;
+  // Dates « Du / Au » verrouillées par défaut : modifiables seulement après clic volontaire.
+  const [planningDatesUnlocked, setPlanningDatesUnlocked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -1048,14 +1067,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     removedCMA?: string[];
   }) => {
     if (!selectedExamDate || !selectedDatePratique) return;
+    if (loadedPlanningKeyRef.current !== `${selectedExamDate}::${selectedDatePratique}`) {
+      throw new Error("Planning en cours de chargement, réessayez.");
+    }
 
     const { error } = await supabase
       .from('planning_pratique_config')
       .upsert({
         exam_date: selectedExamDate,
         date_pratique: selectedDatePratique,
-        planning_start_date: planningStartDate,
-        planning_end_date: planningEndDate,
+        ...planningBoundsPayload(planningStartDate, planningEndDate),
         excluded_days: excludedDays,
         extra_days: extraDays,
         extra_candidats: joinFormationCandidates(extraFormation, removedFormation, extraCMA, removedCMA),
@@ -1084,14 +1105,17 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
   const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
     if (!selectedExamDate || !selectedDatePratique) return;
+    if (loadedPlanningKeyRef.current !== `${selectedExamDate}::${selectedDatePratique}`) {
+      toast.error("Planning en cours de chargement : choix non enregistré, réessayez.");
+      return;
+    }
 
     const { error } = await supabase
       .from('planning_pratique_config')
       .upsert({
         exam_date: selectedExamDate,
         date_pratique: selectedDatePratique,
-        planning_start_date: planningStartDate,
-        planning_end_date: planningEndDate,
+        ...planningBoundsPayload(planningStartDate, planningEndDate),
         excluded_days: excludedDays,
         extra_days: extraDays,
         extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
@@ -1868,6 +1892,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setDayTimeSlots({});
       }
 
+      setPlanningDatesUnlocked(false);
       setLoadedPlanningKey(requestedKey);
     })();
   }, [selectedExamDate, selectedDatePratique]);
@@ -1882,8 +1907,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         .upsert({
           exam_date: selectedExamDate,
           date_pratique: selectedDatePratique,
-          planning_start_date: planningStartDate,
-          planning_end_date: planningEndDate,
+          ...planningBoundsPayload(planningStartDate, planningEndDate),
           excluded_days: excludedDays,
           extra_days: extraDays,
           extra_candidats: joinFormationCandidates(extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA),
@@ -4525,6 +4549,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <Input 
                       type="date" 
                       value={planningStartDate} 
+                      disabled={!planningDatesUnlocked}
                       onChange={(e) => setPlanningStartDate(e.target.value)}
                       className="h-8 text-sm w-40"
                     />
@@ -4534,10 +4559,25 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <Input 
                       type="date" 
                       value={planningEndDate} 
+                      disabled={!planningDatesUnlocked}
                       onChange={(e) => setPlanningEndDate(e.target.value)}
                       className="h-8 text-sm w-40"
                     />
                   </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={planningDatesUnlocked ? "default" : "outline"}
+                    className="h-8"
+                    onClick={() => setPlanningDatesUnlocked((v) => !v)}
+                  >
+                    {planningDatesUnlocked ? "🔓 Figer les dates" : "🔒 Dates figées — Modifier"}
+                  </Button>
+                  {!isValidPlanningBounds(planningStartDate, planningEndDate) && (
+                    <span className="text-xs font-semibold text-destructive">
+                      Dates non enregistrées : la date « Du » doit être avant la date « Au ».
+                    </span>
+                  )}
                   <div className="flex items-center gap-2">
                     <Label className="text-xs whitespace-nowrap">Ajouter un jour :</Label>
                     <Input 
