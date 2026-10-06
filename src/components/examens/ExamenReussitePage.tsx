@@ -1505,8 +1505,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const handleExamDateChange = (date: string) => {
     setSelectedExamDate(date);
     const match = datesExamenTheorique.find(e => e.date === date);
-    if (match !== undefined) {
-      setSelectedDatePratique(datesExamenPratique[match.pratiqueIndex]);
+    const pratiqueDate = match ? datesExamenPratique[match.pratiqueIndex] : undefined;
+    if (pratiqueDate) {
+      setSelectedDatePratique(pratiqueDate);
     }
   };
 
