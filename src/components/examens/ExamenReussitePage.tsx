@@ -4666,6 +4666,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       const taxiOverbooked = taxiReserved.length > dayMax;
                       const daySlot = typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any) : {};
                       const dayFormateur: string | undefined = daySlot?.formateur;
+                       const dayScheduleMode = daySlot?.horaireMode || (
+                         (daySlot?.matin || '9h-12h') === '9h-12h' && (daySlot?.apresmidi || '13h-16h') === '13h-16h'
+                           ? '9-12_13-16'
+                           : (daySlot?.matin || '9h-12h') === '9h-12h' && daySlot?.apresmidi === '13h-17h'
+                             ? '9-12_13-17'
+                             : 'custom'
+                       );
                       const downloadEmargement = async (formation: 'vtc' | 'taxi', candidats: any[]) => {
                         const sigs = await fetchPratiqueSignatures(
                           key,
@@ -4775,43 +4782,67 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 <option value="libre">Libre</option>
                               </select>
                             </div>
-                            <div className="flex gap-1 items-center">
-                              <span className="text-[8px] text-muted-foreground">AM:</span>
-                              <input
-                                type="text"
-                                placeholder="ex: 9h-12h"
-                                value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setDayTimeSlots(prev => {
-                                    const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                    const next = { ...prev, [key]: { ...current, matin: val } };
-                                    saveDayTimeSlotsDebounced(next);
-                                    return next;
-                                  });
-                                }}
-                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
-                              />
+                            <div className="flex gap-1 items-center w-full">
+                              <span className="text-[8px] text-muted-foreground">Horaires:</span>
+                              <select
+                                value={dayScheduleMode}
+                                onChange={(e) => setDayTimeSlots(prev => {
+                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                  const mode = e.target.value;
+                                  const hours = mode === '9-12_13-17'
+                                    ? { matin: '9h-12h', apresmidi: '13h-17h' }
+                                    : mode === '9-12_13-16'
+                                      ? { matin: '9h-12h', apresmidi: '13h-16h' }
+                                      : { matin: current.matin || '9h-12h', apresmidi: current.apresmidi || '13h-16h' };
+                                  const next = { ...prev, [key]: { ...current, ...hours, horaireMode: mode } };
+                                  void saveDayTimeSlotsNow(next);
+                                  toast.success('Horaires sauvegardés');
+                                  return next;
+                                })}
+                                className="h-6 text-[9px] border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
+                                title="Choisir les horaires de cette journée"
+                              >
+                                <option value="9-12_13-16">9h–12h / 13h–16h</option>
+                                <option value="9-12_13-17">9h–12h / 13h–17h</option>
+                                <option value="custom">Horaires personnalisés</option>
+                              </select>
                             </div>
-                            <div className="flex gap-1 items-center">
-                              <span className="text-[8px] text-muted-foreground">PM:</span>
-                              <input
-                                type="text"
-                                placeholder="ex: 13h-16h"
-                                value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setDayTimeSlots(prev => {
-                                    const current = typeof prev[key] === 'object' ? prev[key] as any : {};
-                                    const next = { ...prev, [key]: { ...current, apresmidi: val } };
-                                    saveDayTimeSlotsDebounced(next);
-                                    return next;
-                                  });
-                                }}
-                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"
-                              />
-
-                            </div>
+                            {dayScheduleMode === 'custom' && (
+                              <div className="grid grid-cols-2 gap-1 w-full">
+                                <input
+                                  type="text"
+                                  aria-label={`Horaire du matin ${key}`}
+                                  placeholder="Matin, ex. 9h-12h"
+                                  value={daySlot?.matin || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDayTimeSlots(prev => {
+                                      const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                      const next = { ...prev, [key]: { ...current, matin: val, horaireMode: 'custom' } };
+                                      saveDayTimeSlotsDebounced(next);
+                                      return next;
+                                    });
+                                  }}
+                                  className="h-6 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 min-w-0"
+                                />
+                                <input
+                                  type="text"
+                                  aria-label={`Horaire de l'après-midi ${key}`}
+                                  placeholder="Après-midi, ex. 13h-16h"
+                                  value={daySlot?.apresmidi || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDayTimeSlots(prev => {
+                                      const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                      const next = { ...prev, [key]: { ...current, apresmidi: val, horaireMode: 'custom' } };
+                                      saveDayTimeSlotsDebounced(next);
+                                      return next;
+                                    });
+                                  }}
+                                  className="h-6 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1 min-w-0"
+                                />
+                              </div>
+                            )}
                           </div>
 
                             <div className="flex gap-1 items-center w-full">
