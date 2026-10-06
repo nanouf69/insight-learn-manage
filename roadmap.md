@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Sessions d’examen manquantes dans le filtre (06/10)
+- [x] Diagnostic lecture seule : « Toutes les dates » est construit uniquement depuis les élèves de la session déjà sélectionnée.
+- [ ] Présenter le correctif et obtenir l’accord avant modification : proposer toutes les sessions dans ce sélecteur, comme dans le sélecteur principal.
+- [ ] Vérifier le changement de session avec données fictives, sans sauvegarde de dates ni envoi.
+
 ## Notes individuelles pratique (06/10)
 - [x] Champ par candidat dans les listes CMA et formation ; historique conservé avec refus des versions périmées.
 - [x] Note personnelle dans les sept mails pratiques ; CMA, impression et aperçus depuis la même note ; aucune date modifiée, aucun mail envoyé.
