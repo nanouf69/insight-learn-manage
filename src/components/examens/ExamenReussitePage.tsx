@@ -776,13 +776,8 @@ function resolvePlanningBounds(config: {
   const labelPeriod = parsePratiquePeriod(config.date_pratique);
 
   if (storedStart && storedEnd) {
-    // Guard: stale rows can keep bounds from a previous period (ex: février
-    // alors que la période affichée est "Du 1er au 11 septembre"). Dans ce cas
-    // le libellé de la période fait foi.
-    if (labelPeriod) {
-      const overlaps = storedStart <= labelPeriod.end && storedEnd >= labelPeriod.start;
-      if (!overlaps) return labelPeriod;
-    }
+    // Dates figées : une fois enregistrées, les bornes stockées font toujours
+    // foi et ne sont jamais remplacées automatiquement par le libellé.
     return { start: storedStart, end: storedEnd };
   }
 
