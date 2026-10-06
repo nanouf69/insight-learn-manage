@@ -27,6 +27,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    let targetId: string | null = null;
+    try {
+      const b = await req.json();
+      if (b && typeof b.apprenantId === "string" && /^[0-9a-f-]{36}$/i.test(b.apprenantId)) targetId = b.apprenantId;
+    } catch { /* appel cron sans corps */ }
+
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const tomorrowDate = new Date();
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
@@ -142,7 +148,12 @@ serve(async (req) => {
 
 
 
-    const toProcess = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
+    // Mode ciblé (fiche élève) : un seul élève ; si aucun compte n'est lié,
+    // on renvoie les identifiants même si un ancien e-mail existe.
+    const toProcess = eligibleApprenants.filter((a: any) => {
+      if (targetId) return a.id === targetId && (!a.auth_user_id || !alreadySent.has(a.id));
+      return !alreadySent.has(a.id);
+    });
 
     console.log(`[auto-send-credentials] ${toProcess.length} apprenants to process (${alreadySent.size} already sent)`);
 
