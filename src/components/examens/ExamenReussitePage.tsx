@@ -1077,6 +1077,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     if (loadedPlanningKeyRef.current !== `${selectedExamDate}::${selectedDatePratique}`) {
       throw new Error("Planning en cours de chargement, réessayez.");
     }
+    if (!planningRowExistsRef.current && !isValidPlanningBounds(planningStartDate, planningEndDate)) {
+      throw new Error("Renseignez d'abord les dates « Du / Au » de cette période pratique.");
+    }
 
     const { error } = await supabase
       .from('planning_pratique_config')
@@ -1114,6 +1117,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     if (!selectedExamDate || !selectedDatePratique) return;
     if (loadedPlanningKeyRef.current !== `${selectedExamDate}::${selectedDatePratique}`) {
       toast.error("Planning en cours de chargement : choix non enregistré, réessayez.");
+      return;
+    }
+    if (!planningRowExistsRef.current && !isValidPlanningBounds(planningStartDate, planningEndDate)) {
+      toast.error("Renseignez d'abord les dates « Du / Au » de cette période pratique.");
       return;
     }
 
@@ -1939,6 +1946,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   useEffect(() => {
     const currentKey = `${selectedExamDate}::${selectedDatePratique}`;
     if (loadedPlanningKey !== currentKey || !selectedExamDate || !selectedDatePratique) return;
+    // Pas de planning enregistré et pas de dates valides : on ne crée rien (aucune écriture).
+    if (!planningRowExistsRef.current && !isValidPlanningBounds(planningStartDate, planningEndDate)) return;
     const timer = setTimeout(async () => {
       const { error } = await supabase
         .from('planning_pratique_config')
