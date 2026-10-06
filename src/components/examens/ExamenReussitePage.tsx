@@ -3713,16 +3713,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               <div className="flex items-center gap-2">
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                                {a.nom} {a.prenom}
-                                {hasReservation && <span className="text-xs text-muted-foreground">({reservation.date_choisie})</span>}
-                              </div>
-                              {isDecale && (
-                                <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
-                              )}
-                            </TableCell>
+                                 {a.nom} {a.prenom}
+                                 {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
+                               </div>
+                               {isDecale && (
+                                 <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
+                               )}
+                             </TableCell>
 
-                            <TableCell>
-                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                             <TableCell>
+                               <Badge className="bg-blue-100 text-blue-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
@@ -4097,16 +4097,16 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               <div className="flex items-center gap-2">
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                                {a.nom} {a.prenom}
-                                {hasReservation && <span className="text-xs text-muted-foreground">({reservation.date_choisie})</span>}
-                              </div>
-                              {isDecale && (
-                                <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
-                              )}
-                            </TableCell>
+                                 {a.nom} {a.prenom}
+                                 {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
+                               </div>
+                               {isDecale && (
+                                 <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
+                               )}
+                             </TableCell>
 
-                            <TableCell>
-                              <Badge className="bg-amber-100 text-amber-800 text-xs">
+                             <TableCell>
+                               <Badge className="bg-amber-100 text-amber-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
