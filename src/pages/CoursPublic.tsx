@@ -2064,6 +2064,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     nom: getModuleDisplayName(selectedFormation, module.id, module.nom),
   }));
 
+  // Ouverture directe d'un module via ?module=<id> (lien envoyé dans les e-mails pratiques)
+  if (!deepLinkChecked && !selectedModule && modules.length > 0) {
+    setDeepLinkChecked(true);
+    const mid = Number(new URLSearchParams(window.location.search).get('module'));
+    if (mid) {
+      const target = modules.find((m) => m.id === mid);
+      if (target) setSelectedModule(target);
+    }
+  }
+
+
 
   const completionsByModuleId = moduleCompletionsForNotes.reduce<Record<number, any[]>>((acc, completion) => {
     const normalizedId = normalizeModuleIdForDashboard(Number(completion.module_id));
