@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Numérotation administrateur et non-régression globale (07/10, périmètre autorisé)
+- [x] Audit lecture seule et accord : numérotation admin uniquement, contrôles et journal ; aucun quiz réactivé.
+- [ ] Aligner la numérotation administrateur sur les associations permanentes existantes sans modifier l'affichage apprenant.
+- [ ] Comparer les 15 parcours configurés et les contenus cours/quiz avant/après ; tester les quiz inactifs et la conservation des coordonnées historiques.
+- [ ] Ajouter un journal daté et documenter les limites des vérifications (pas d'élève réel).
+
 ## VTC — encadrés et ordre cours/quiz (07/10, plan approuvé)
 - [x] Diagnostic lecture seule : dépassements présents dans PowerPoint/PDF ; quiz désactivés entraînant un décalage par position.
 - [x] Nouvelle version intégrale du support partie 2 : 43 slides, textes et numéros inchangés, originaux conservés ; PDF correspondant et liens d’affichage dédiés.
