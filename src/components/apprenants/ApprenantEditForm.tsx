@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
 import { getProchaineDateExamenTheorique } from "@/lib/examDatesConfig";
+import { dateExamenDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 
 // Bloc "Virements reçus correspondants" réutilisable
 function VirementsMatchBlock({
@@ -348,6 +349,31 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         heures_totales: (apprenant as any).heures_totales?.toString() || "",
       });
       
+      // Date d'examen vide : la réponse du dossier de bienvenue est toujours prioritaire ;
+      // on ne propose la date la plus proche que si cette réponse est absente.
+      if (!apprenant.date_examen_theorique && apprenant.id) {
+        (async () => {
+          try {
+            const { data: docs } = await supabase
+              .from("apprenant_documents_completes" as any)
+              .select("type_document, donnees")
+              .eq("apprenant_id", apprenant.id)
+              .eq("type_document", "dossier-bienvenue")
+              .limit(1);
+            const reponse = dateExamenDossierBienvenue((docs as any[]) || []);
+            if (reponse) {
+              setFormData((prev) =>
+                prev.date_examen_theorique && prev.date_examen_theorique !== getProchaineDateExamenTheorique()?.date
+                  ? prev
+                  : { ...prev, date_examen_theorique: reponse },
+              );
+            }
+          } catch (e) {
+            console.error("Lecture dossier de bienvenue (date examen):", e);
+          }
+        })();
+      }
+
       // Restaurer la date de formation du catalogue si elle existe
       if (apprenant.date_formation_catalogue) {
         setSelectedDateOption(apprenant.date_formation_catalogue);
