@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Lettre commune TAXI/VTC (07/10)
-- [ ] Partager la lecture de la même lettre et de ses fichiers dans les deux dossiers et exports, sans modifier les données existantes.
-- [ ] Vérifier les identités, l’isolation par société et l’affichage avec données fictives ; aucune écriture réelle.
+- [x] Partager la lecture de la même lettre et de ses fichiers dans les deux dossiers et exports, sans modifier les données existantes.
+- [x] 6 tests PASS (en environnement node), affichage isolé TAXI/VTC vérifié avec le même fichier fictif en position 1 ; build OK ; aucune écriture réelle. Export ZIP/PDF branché sur la même lecture, téléchargement non exécuté.
 
 ## Lettre de présentation en position 1 (07/10)
 - [x] Classement d’affichage et exports ZIP/PDF : lettre en tête, identifiants et ordre enregistrés inchangés.
