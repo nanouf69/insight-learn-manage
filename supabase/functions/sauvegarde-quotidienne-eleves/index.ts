@@ -27,6 +27,13 @@ const TABLES: [string, string][] = [
 const BUCKET = "sauvegardes-eleves";
 const PAGE = 1000;
 const PART = 2000;
+// Tables aux lignes volumineuses (signatures, progression détaillée, snapshots) :
+// paquets plus petits pour rester sous la limite de calcul d'un appel.
+const TAILLES: Record<string, [number, number]> = {
+  apprenant_module_completion: [25, 100], emargements_fc: [50, 150], apprenant_documents_completes: [50, 300],
+  bilan_passage_snapshots: [25, 50], apprenant_quiz_results: [250, 1000], exam_attempts_v2: [100, 400],
+  apprenant_question_temps: [500, 1500], answer_events: [500, 1500], apprenant_module_activites: [500, 1500],
+};
 const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
 const RETENTION_JOURS = 30;
@@ -66,15 +73,16 @@ Deno.serve(async (req) => {
 
   if (etat.i < TABLES.length) {
     const [t, pk] = TABLES[etat.i];
+    const [page, part] = TAILLES[t] ?? [PAGE, PART];
     try {
       const buf: unknown[] = [];
       let f = etat.from, fini = false;
-      while (buf.length < PART) {
-        const { data, error } = await sb.from(t).select("*").order(pk, { ascending: true }).range(f, f + PAGE - 1);
+      while (buf.length < part) {
+        const { data, error } = await sb.from(t).select("*").order(pk, { ascending: true }).range(f, f + page - 1);
         if (error) throw error;
         if (!data?.length) { fini = true; break; }
         buf.push(...data); f += data.length;
-        if (data.length < PAGE) { fini = true; break; }
+        if (data.length < page) { fini = true; break; }
       }
       if (buf.length) {
         const { error } = await up(`${jour}/${t}/part-${String(etat.from).padStart(8, "0")}.json`, buf);
