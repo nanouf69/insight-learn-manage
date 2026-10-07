@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus, FileText, Link2, FileStack } from "lucide-react";
 import { toast } from "sonner";
 import { toPdf, mergePdfs, isPdf } from "@/lib/agrementPdf";
+import { separerLettresPresentation } from "@/lib/agrementOrdre";
 
 /** Obtient le PDF d'un fichier (PDF converti stocké, ou conversion à la volée sans modifier le stockage). */
 async function pdfDe(f: { storage_path: string; pdf_storage_path: string | null; nom_fichier: string }): Promise<Blob | null> {
@@ -139,6 +140,8 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const [zipping, setZipping] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [adding, setAdding] = useState(false);
+  const { lettres, autres } = useMemo(() => separerLettresPresentation(extras), [extras]);
+  const indexAffiche = (sl: string) => sl.replace(/^\d+/, (n) => String(Number(n) + lettres.length));
 
   const items: Item[] = useMemo(() => GROUPES.flatMap((g) => [
     ...g.lignes.map((l) => ({ key: l.sl, sl: l.sl, label: l.label, bloc_id: null, commune: g.commune, nc: true, groupe: g.n })),
@@ -194,8 +197,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
 
   const nomBloc = (id: string | null) => blocs.find((b) => b.id === id)?.nom ?? "";
   const ordonnes = () => [
-    ...items.map((it) => ({ dossierZip: `${it.sl}${it.bloc_id ? "_" + nomBloc(it.bloc_id) : ""}_${it.label.slice(0, 30)}`, list: pourItem(it, false) })),
-    ...extras.map((x) => ({ dossierZip: `extra_${x.label.slice(0, 30)}`, list: pourExtra(`extra:${x.id}`, false) })),
+    ...lettres.map((x, i) => ({ dossierZip: `${String(i + 1).padStart(2, "0")}_${x.label.slice(0, 30)}`, list: pourExtra(`extra:${x.id}`, false) })),
+    ...items.map((it) => ({ dossierZip: `${indexAffiche(it.sl).replace(/^\d+/, (n) => n.padStart(2, "0"))}${it.bloc_id ? "_" + nomBloc(it.bloc_id) : ""}_${it.label.slice(0, 30)}`, list: pourItem(it, false) })),
+    ...autres.map((x, i) => ({ dossierZip: `${String(lettres.length + GROUPES.length + i + 1).padStart(2, "0")}_${x.label.slice(0, 30)}`, list: pourExtra(`extra:${x.id}`, false) })),
   ];
 
   const telechargerTout = async () => {
@@ -248,10 +252,24 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   };
 
   const rendreItem = (it: Item) => (
-    <PieceLigne key={it.key} societe={societe} index={it.sl} piece={{ code: `p${it.groupe}`, label: it.label, commune: it.commune } as any}
+    <PieceLigne key={it.key} societe={societe} index={indexAffiche(it.sl)} piece={{ code: `p${it.groupe}`, label: it.label, commune: it.commune } as any}
       champs={{ piece_code: `p${it.groupe}`, sous_ligne: it.sl, bloc_id: it.bloc_id }}
       dossierCible={it.commune ? "commun" : type} actifs={pourItem(it, false)} remplaces={pourItem(it, true)}
       nonConcerne={ncDe(it)} onNonConcerne={(v) => setNc(it, v)} reload={reload} kbis={it.sl === "2.1"} />
+  );
+
+  const rendreExtra = (x: PieceExtra, index: number) => (
+    <PieceLigne key={x.id} societe={societe} index={String(index)}
+      piece={{ code: `extra:${x.id}`, label: x.label }} dossierCible={type}
+      champs={{ piece_code: `extra:${x.id}`, sous_ligne: null, bloc_id: null }}
+      actifs={pourExtra(`extra:${x.id}`, false)} remplaces={pourExtra(`extra:${x.id}`, true)}
+      nonConcerne={ncExtra(x)} onNonConcerne={(v) => setNcExtra(x, v)}
+      reload={reload}
+      onRetirerPiece={async () => {
+        if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
+        const { error } = await db.from("agrement_pieces_extra").update({ masque: true }).eq("id", x.id);
+        if (error) toast.error("Refusé : " + error.message); else { toast.success("Pièce masquée"); reload(); }
+      }} />
   );
 
   return (
@@ -283,9 +301,10 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
         </div>
       )}
       <div className="space-y-3">
+        {lettres.map((x, i) => rendreExtra(x, i + 1))}
         {GROUPES.map((g) => (
           <div key={g.n} className="space-y-1">
-            <div className="font-semibold text-sm">{g.n}. {g.titre} {g.commune && <span className="text-xs font-normal text-muted-foreground">(commun TAXI/VTC)</span>}</div>
+            <div className="font-semibold text-sm">{g.n + lettres.length}. {g.titre} {g.commune && <span className="text-xs font-normal text-muted-foreground">(commun TAXI/VTC)</span>}</div>
             {items.filter((it) => it.groupe === g.n && !it.bloc_id).map(rendreItem)}
             {g.bloc && blocs.filter((b) => b.type === g.bloc).map((b) => (
               <div key={b.id} className="ml-3 space-y-1 border-l-2 pl-2">
@@ -303,19 +322,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
             )}
           </div>
         ))}
-        {extras.map((x, i) => (
-          <PieceLigne key={x.id} societe={societe} index={String(GROUPES.length + i + 1)}
-            piece={{ code: `extra:${x.id}`, label: x.label } as any} dossierCible={type}
-            champs={{ piece_code: `extra:${x.id}`, sous_ligne: null, bloc_id: null }}
-            actifs={pourExtra(`extra:${x.id}`, false)} remplaces={pourExtra(`extra:${x.id}`, true)}
-            nonConcerne={ncExtra(x)} onNonConcerne={(v) => setNcExtra(x, v)}
-            reload={reload}
-            onRetirerPiece={async () => {
-              if (!window.confirm(`Retirer la pièce « ${x.label} » ? Elle sera masquée, jamais supprimée.`)) return;
-              const { error } = await db.from("agrement_pieces_extra").update({ masque: true }).eq("id", x.id);
-              if (error) toast.error("Refusé : " + error.message); else { toast.success("Pièce masquée"); reload(); }
-            }} />
-        ))}
+        {autres.map((x, i) => rendreExtra(x, lettres.length + GROUPES.length + i + 1))}
       </div>
       <div className="flex items-center gap-2 pt-1">
         <Input className="h-8 flex-1 text-sm" placeholder="Nom de la pièce à ajouter…" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
