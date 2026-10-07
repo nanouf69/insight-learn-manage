@@ -204,3 +204,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] 27/09 Contrôle de connaissances TAXI (module 13) : exercice 13100 créé (1 237 questions), exercices 1–5 désactivés.
 - [ ] Publication du lot : en attente (examen blanc en cours à 20:49 UTC) ; essais écran du module 13 à faire.
 - [x] Date examen : réponse du dossier de bienvenue toujours prioritaire ; date la plus proche seulement si vide (ApprenantEditForm + dateExamenDossierBienvenue, 4 tests PASS)
+
+- [x] 07/10 18:34 UTC T3P : cinq corrections autorisées, quiz 1/2 VTC réactivés ; protection serveur contre reconstruction des bilans ; 62 contenus comparés, bilans 4/9 intacts, 102 tests ordre PASS. Runtime déjà protégé, aucune modification frontend requise. Écrans complets/Safari iPhone et publication non vérifiés ; aucun déploiement.
