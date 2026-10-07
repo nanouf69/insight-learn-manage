@@ -1,5 +1,8 @@
 # Feuille de route
 
+## Lettre masquée remise visible (07/10)
+- [x] Lecture avant modification : ligne masquée, PDF original toujours présent et non masqué ; remettre uniquement la ligne visible sur demande explicite, sans remplacer le document.
+
 ## Lettre commune TAXI/VTC (07/10)
 - [x] Partager la lecture de la même lettre et de ses fichiers dans les deux dossiers et exports, sans modifier les données existantes.
 - [x] 6 tests PASS (en environnement node), affichage isolé TAXI/VTC vérifié avec le même fichier fictif en position 1 ; build OK ; aucune écriture réelle. Export ZIP/PDF branché sur la même lecture, téléchargement non exécuté.
