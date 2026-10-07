@@ -20,3 +20,4 @@
 - Page élève de réservation pratique : tout jour auquel l'admin a fixé un type VTC/TAXI dans le planning (même samedi/dimanche) est proposé tel quel ; why: le samedi 10 oct manquait côté élève alors qu'il figurait au planning.
 - Practical candidate notes use admin-only append-only revisions scoped to learner, theoretical session and practical period, with server revision checks and escaped HTML shared by CMA and learner emails; why: preserve history and prevent cross-session or stale overwrites.
 - Exam session selectors share the configured session list and session change handler; the theoretical table's all-dates view uses a separate paginated read without changing the planning session; why: expose all registrations without cross-session planning writes or truncated results.
+- Accreditation dossier display and exports partition priority pieces without changing stored piece IDs or order; why: keep document associations and history intact.
