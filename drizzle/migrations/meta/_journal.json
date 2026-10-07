@@ -904,6 +904,13 @@
       "when": 1791398006197,
       "tag": "0128_protect_bilan_saves_and_shared_question_deltas",
       "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1791402905125,
+      "tag": "0129_a9_devis_upload_connexion_obligatoire",
+      "breakpoints": true
     }
   ]
 }

@@ -306,12 +306,13 @@ export default function CGVReglementForm({
         ok = await saveFormDocument(payload);
       }
       if (!ok) {
-        // Ne jamais bloquer la progression de l'apprenant : comme les autres
-        // formulaires du module Introduction, on laisse continuer même si
-        // l'enregistrement du document a échoué (il pourra être refait).
+        // 07/10/2026 (B11) : sans preuve serveur de la signature, on n'affiche
+        // jamais « CGV signées » et le parcours ne continue pas.
         toast.error(
-          "La signature n'a pas pu être enregistrée pour le moment. Vous pouvez continuer, elle sera à refaire plus tard.",
+          "La signature n'a pas pu être enregistrée. Vérifiez votre connexion puis cliquez à nouveau sur le bouton.",
         );
+        setSaving(false);
+        return;
       }
     }
     setSaving(false);
