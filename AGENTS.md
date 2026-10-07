@@ -21,3 +21,4 @@
 - Practical candidate notes use admin-only append-only revisions scoped to learner, theoretical session and practical period, with server revision checks and escaped HTML shared by CMA and learner emails; why: preserve history and prevent cross-session or stale overwrites.
 - Exam session selectors share the configured session list and session change handler; the theoretical table's all-dates view uses a separate paginated read without changing the planning session; why: expose all registrations without cross-session planning writes or truncated results.
 - Accreditation display/exports share letter references per company with original IDs; uploads keep originals regardless of PDF conversion; why: preserve history and accept all formats.
+- Agrément exports (ZIP/PDF complets) are uploaded as new files under agrements/exports/ and opened via a signed https link; why: browsers/extensions block blob: links (ERR_BLOCKED_BY_CLIENT).
