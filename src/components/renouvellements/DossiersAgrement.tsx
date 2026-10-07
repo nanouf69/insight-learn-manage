@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus, FileText, Link2, FileStack } from "lucide-react";
 import { toast } from "sonner";
 import { toPdf, mergePdfs, isPdf } from "@/lib/agrementPdf";
-import { separerLettresPresentation } from "@/lib/agrementOrdre";
+import { estLettrePresentation, fichiersPourExtra, piecesPourDossier, separerLettresPresentation } from "@/lib/agrementOrdre";
 
 /** Obtient le PDF d'un fichier (PDF converti stocké, ou conversion à la volée sans modifier le stockage). */
 async function pdfDe(f: { storage_path: string; pdf_storage_path: string | null; nom_fichier: string }): Promise<Blob | null> {
@@ -125,7 +125,7 @@ export function DossiersAgrement() {
     <div className="grid gap-4 md:grid-cols-2">
       {(["taxi", "vtc"] as Dossier[]).map((t) => (
         <DossierColonne key={societe + t} societe={societe} type={t} fichiers={fichiersSociete} dossier={dossiers[t]} onSaveDossier={saveDossier} reload={load}
-          extras={extras.filter((x) => x.societe === societe && x.dossier === t)}
+          extras={piecesPourDossier(extras, societe, t)}
           blocs={blocs.filter((b) => b.societe === societe)} etats={etats.filter((e) => e.societe === societe)} />
       ))}
     </div>
@@ -153,7 +153,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const cote = (f: Fichier, commune: boolean) => commune ? f.dossier === "commun" : (f.dossier === type || (!!f.aussi_autre_dossier && f.dossier !== "commun"));
   const pourItem = (it: Item, remplace: boolean) => fichiers.filter((f) => slDe(f) === it.sl && (f.bloc_id ?? null) === it.bloc_id
     && !!f.remplace_par === remplace && cote(f, it.commune));
-  const pourExtra = (code: string, remplace: boolean) => fichiers.filter((f) => f.piece_code === code && !!f.remplace_par === remplace && cote(f, false));
+  const pourExtra = (x: PieceExtra, remplace: boolean) => fichiersPourExtra(fichiers, x, type, remplace);
   const dossierEtat = (it: Item) => (it.commune ? "commun" : type);
   const ncDe = (it: Item) => {
     if (!it.nc) return undefined;
@@ -169,14 +169,17 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
     if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
   };
   const ncExtra = (x: PieceExtra) => {
-    const e = etats.find((y) => y.dossier === type && y.sous_ligne === `extra:${x.id}` && !y.bloc_id);
+    const cible = estLettrePresentation(x.label) ? "commun" : type;
+    const e = etats.find((y) => y.dossier === cible && y.sous_ligne === `extra:${x.id}` && !y.bloc_id)
+      ?? (estLettrePresentation(x.label) ? etats.find((y) => y.dossier === x.dossier && y.sous_ligne === `extra:${x.id}` && !y.bloc_id) : undefined);
     return !!e?.non_concerne;
   };
   const setNcExtra = async (x: PieceExtra, v: boolean) => {
-    const ex = etats.find((y) => y.dossier === type && y.sous_ligne === `extra:${x.id}` && !y.bloc_id) as any;
+    const cible = estLettrePresentation(x.label) ? "commun" : type;
+    const ex = etats.find((y) => y.dossier === cible && y.sous_ligne === `extra:${x.id}` && !y.bloc_id) as any;
     const r = ex
       ? await db.from("agrement_sous_lignes_etat").update({ non_concerne: v, updated_at: new Date().toISOString() }).eq("id", ex.id)
-      : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: type, sous_ligne: `extra:${x.id}`, bloc_id: null, non_concerne: v });
+      : await db.from("agrement_sous_lignes_etat").insert({ societe, dossier: cible, sous_ligne: `extra:${x.id}`, bloc_id: null, non_concerne: v });
     if (r.error) toast.error("Enregistrement refusé : " + r.error.message); else reload();
   };
 
@@ -197,9 +200,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
 
   const nomBloc = (id: string | null) => blocs.find((b) => b.id === id)?.nom ?? "";
   const ordonnes = () => [
-    ...lettres.map((x, i) => ({ dossierZip: `${String(i + 1).padStart(2, "0")}_${x.label.slice(0, 30)}`, list: pourExtra(`extra:${x.id}`, false) })),
+    ...lettres.map((x, i) => ({ dossierZip: `${String(i + 1).padStart(2, "0")}_${x.label.slice(0, 30)}`, list: pourExtra(x, false) })),
     ...items.map((it) => ({ dossierZip: `${indexAffiche(it.sl).replace(/^\d+/, (n) => n.padStart(2, "0"))}${it.bloc_id ? "_" + nomBloc(it.bloc_id) : ""}_${it.label.slice(0, 30)}`, list: pourItem(it, false) })),
-    ...autres.map((x, i) => ({ dossierZip: `${String(lettres.length + GROUPES.length + i + 1).padStart(2, "0")}_${x.label.slice(0, 30)}`, list: pourExtra(`extra:${x.id}`, false) })),
+    ...autres.map((x, i) => ({ dossierZip: `${String(lettres.length + GROUPES.length + i + 1).padStart(2, "0")}_${x.label.slice(0, 30)}`, list: pourExtra(x, false) })),
   ];
 
   const telechargerTout = async () => {
@@ -260,9 +263,9 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
 
   const rendreExtra = (x: PieceExtra, index: number) => (
     <PieceLigne key={x.id} societe={societe} index={String(index)}
-      piece={{ code: `extra:${x.id}`, label: x.label }} dossierCible={type}
+      piece={{ code: `extra:${x.id}`, label: x.label, commune: estLettrePresentation(x.label) }} dossierCible={estLettrePresentation(x.label) ? "commun" : type}
       champs={{ piece_code: `extra:${x.id}`, sous_ligne: null, bloc_id: null }}
-      actifs={pourExtra(`extra:${x.id}`, false)} remplaces={pourExtra(`extra:${x.id}`, true)}
+      actifs={pourExtra(x, false)} remplaces={pourExtra(x, true)}
       nonConcerne={ncExtra(x)} onNonConcerne={(v) => setNcExtra(x, v)}
       reload={reload}
       onRetirerPiece={async () => {
@@ -434,6 +437,7 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-1">
             <span className={fourni ? "" : "text-destructive font-medium"}>{piece.label}</span>
+            {piece.commune && <span className="text-xs text-muted-foreground">(commun TAXI/VTC)</span>}
             {actifs.length === 0 ? (
               <span className={`inline-flex items-center gap-0.5 text-xs ${fourni ? "text-muted-foreground opacity-60" : "text-destructive font-medium"}`}><FileText className="h-4 w-4" /> Manquant</span>
             ) : actifs.map((f) => (
