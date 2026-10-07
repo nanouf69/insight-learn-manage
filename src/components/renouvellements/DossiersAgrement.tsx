@@ -20,6 +20,18 @@ async function pdfDe(f: { storage_path: string; pdf_storage_path: string | null;
   return f.pdf_storage_path ? data : toPdf(data, f.nom_fichier);
 }
 
+
+/** Téléchargement fiable : saveAs + bouton de secours (l'aperçu intégré bloque parfois le téléchargement automatique). */
+function livrer(blob: Blob, nom: string) {
+  saveAs(blob, nom);
+  const url = URL.createObjectURL(blob);
+  toast.success(`${nom} prêt (${(blob.size / 1048576).toFixed(1)} Mo)`, {
+    duration: 60000,
+    description: "Si le téléchargement n'a pas démarré, cliquez sur « Ouvrir ».",
+    action: { label: "Ouvrir", onClick: () => { const a = document.createElement("a"); a.href = url; a.download = nom; a.target = "_blank"; document.body.appendChild(a); a.click(); a.remove(); } },
+  });
+}
+
 type Dossier = "taxi" | "vtc";
 type Societe = "services_pro" | "opto";
 const SOCIETES: { code: Societe; label: string }[] = [{ code: "services_pro", label: "SERVICES PRO" }, { code: "opto", label: "OPTO" }];
@@ -209,12 +221,17 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
     setZipping(true);
     try {
       const zip = new JSZip();
-      for (const g of ordonnes()) for (const f of g.list) {
+      const tous = ordonnes(); const n = tous.reduce((a, g) => a + g.list.length, 0); let k = 0;
+      const tid = toast.loading(`Préparation du dossier… 0/${n}`);
+      try { for (const g of tous) for (const f of g.list) {
+        toast.loading(`Préparation du dossier… ${++k}/${n}`, { id: tid });
         const { data, error } = await supabase.storage.from("agrements").download(f.storage_path);
         if (error || !data) throw new Error(f.nom_fichier);
         zip.folder(g.dossierZip.replace(/[^\w\-. ]+/g, ""))!.file(f.nom_fichier, data);
       }
-      saveAs(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
+      toast.loading("Compression du ZIP…", { id: tid });
+      livrer(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
+      } finally { toast.dismiss(tid); }
     } catch (e: any) {
       toast.error("Téléchargement impossible : " + e.message);
     } finally { setZipping(false); }
@@ -225,12 +242,17 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
     setMerging(true);
     try {
       const parts: Blob[] = []; const ignores: string[] = [];
-      for (const f of ordonnes().flatMap((g) => g.list)) {
+      const liste = ordonnes().flatMap((g) => g.list); let k = 0;
+      const tid = toast.loading(`Assemblage du PDF… 0/${liste.length}`);
+      try { for (const f of liste) {
+        toast.loading(`Assemblage du PDF… ${++k}/${liste.length}`, { id: tid });
         const pdf = await pdfDe(f);
         if (pdf) parts.push(pdf); else ignores.push(f.nom_fichier);
       }
       if (!parts.length) throw new Error("aucun PDF");
-      saveAs(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
+      toast.loading("Fusion des pages…", { id: tid });
+      livrer(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
+      } finally { toast.dismiss(tid); }
       if (ignores.length) toast.warning(`Non inclus (non convertible) : ${ignores.join(", ")}`);
     } catch (e: any) {
       toast.error("PDF complet impossible : " + e.message);
