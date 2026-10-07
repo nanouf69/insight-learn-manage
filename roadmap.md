@@ -2,8 +2,9 @@
 
 ## T3P — corrections et réactivation autorisées (07/10, 18:25 UTC)
 - [x] Lire les questions exactes, protections serveur et périmètre de partage avant écriture.
-- [ ] Corriger P1 Q29/Q42 et P2 Q36/Q60/Q79 : BLOQUÉ par la synchronisation automatique des bilans, effet hors accord ; aucune écriture effectuée.
-- [ ] Réactiver uniquement les deux quiz du parcours VTC : BLOQUÉ par le même déclencheur sur module 2, même pour une activation seule ; ne pas contourner les protections.
+- [ ] Accord 18:29 : protéger contre la reconstruction automatique intégrale des bilans ; limiter la propagation aux questions réellement modifiées, préserver les métadonnées des autres questions.
+- [ ] Corriger P1 Q29/Q42 et P2 Q36/Q60/Q79, avec sauvegarde avant/après et refus d'écriture périmée.
+- [ ] Réactiver uniquement les deux quiz du parcours VTC ; vérifier bilans, autres activations, historiques et ordre complet inchangés hors ajouts autorisés.
 - [x] Textes exacts TPMR/sanctions livrés, aucune question modifiée ; journal de diagnostic ajouté. Correction du déclenchement des bilans nécessite un périmètre distinct explicitement autorisé.
 
 ## Numérotation administrateur et non-régression globale (07/10, périmètre autorisé)
@@ -203,3 +204,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] 27/09 Contrôle de connaissances TAXI (module 13) : exercice 13100 créé (1 237 questions), exercices 1–5 désactivés.
 - [ ] Publication du lot : en attente (examen blanc en cours à 20:49 UTC) ; essais écran du module 13 à faire.
 - [x] Date examen : réponse du dossier de bienvenue toujours prioritaire ; date la plus proche seulement si vide (ApprenantEditForm + dateExamenDossierBienvenue, 4 tests PASS)
+
+- [x] 07/10 18:34 UTC T3P : cinq corrections autorisées, quiz 1/2 VTC réactivés ; protection serveur contre reconstruction des bilans ; 62 contenus comparés, bilans 4/9 intacts, 102 tests ordre PASS. Runtime déjà protégé, aucune modification frontend requise. Écrans complets/Safari iPhone et publication non vérifiés ; aucun déploiement.

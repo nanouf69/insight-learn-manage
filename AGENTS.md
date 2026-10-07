@@ -22,4 +22,4 @@
 - Exam selectors share sessions/handler; all-dates uses separate pagination, never changes planning; why: complete registrations without cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Course/quiz order and admin labels share permanent-ID associations; historical adapters stay unchanged; why: prevent positional drift. Verify all paths against dated baselines and append the change journal.
-- Corrected media use new assets, matching PDF/PPTX, exact historical-path selection, originals retained; why: fix clipping without replacing custom uploads.
+- Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
