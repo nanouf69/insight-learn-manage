@@ -21,19 +21,45 @@ async function pdfDe(f: { storage_path: string; pdf_storage_path: string | null;
 }
 
 
-/** Téléchargement fiable : saveAs + bouton de secours (l'aperçu intégré bloque parfois le téléchargement automatique). */
-function livrer(blob: Blob, nom: string) {
-  saveAs(blob, nom);
-  const url = URL.createObjectURL(blob);
-  toast.success(`${nom} prêt (${(blob.size / 1048576).toFixed(1)} Mo)`, {
-    duration: 60000,
-    description: "Si le téléchargement n'a pas démarré, cliquez sur « Ouvrir ».",
-    action: { label: "Ouvrir", onClick: () => {
-      // Ouvre le fichier dans un nouvel onglet ; si l'aperçu le bloque, l'affiche dans la même fenêtre (même méthode que l'ouverture d'une pièce seule).
+/**
+ * Téléchargement fiable : le fichier assemblé est déposé comme NOUVEAU fichier d'export
+ * (jamais d'écrasement) puis ouvert par un lien sécurisé https, comme une pièce seule.
+ * Les liens « blob: » sont bloqués par certains navigateurs/extensions (ERR_BLOCKED_BY_CLIENT).
+ */
+async function livrer(blob: Blob, nom: string) {
+  const taille = `${(blob.size / 1048576).toFixed(1)} Mo`;
+  let lien: string | null = null;
+  try {
+    const path = `exports/${new Date().toISOString().replace(/[:.]/g, "-")}-${crypto.randomUUID()}-${nom}`;
+    const up = await supabase.storage.from("agrements").upload(path, blob, {
+      contentType: nom.endsWith(".pdf") ? "application/pdf" : "application/zip",
+      upsert: false,
+    });
+    if (up.error) throw up.error;
+    const { data } = await supabase.storage.from("agrements").createSignedUrl(path, 3600, { download: nom });
+    lien = data?.signedUrl ?? null;
+  } catch (e) {
+    console.error("[agrement] dépôt export impossible", e);
+  }
+  if (lien) {
+    const url = lien;
+    const ouvrir = () => {
       let w: Window | null = null;
       try { w = window.open(url, "_blank"); } catch { w = null; }
       if (!w) window.location.href = url;
-    } },
+    };
+    toast.success(`${nom} prêt (${taille})`, {
+      duration: 120000,
+      description: "Cliquez sur « Télécharger » pour récupérer le fichier.",
+      action: { label: "Télécharger", onClick: ouvrir },
+    });
+    return;
+  }
+  // Repli : téléchargement direct depuis le navigateur.
+  saveAs(blob, nom);
+  toast.warning(`${nom} (${taille}) : téléchargement direct lancé`, {
+    duration: 60000,
+    description: "Si rien ne s'est téléchargé, réessayez sur gestion.ftransport.fr.",
   });
 }
 
@@ -235,7 +261,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
         zip.folder(g.dossierZip.replace(/[^\w\-. ]+/g, ""))!.file(f.nom_fichier, data);
       }
       toast.loading("Compression du ZIP…", { id: tid });
-      livrer(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
+      await livrer(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
       } finally { toast.dismiss(tid); }
     } catch (e: any) {
       toast.error("Téléchargement impossible : " + e.message);
@@ -256,7 +282,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
       }
       if (!parts.length) throw new Error("aucun PDF");
       toast.loading("Fusion des pages…", { id: tid });
-      livrer(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
+      await livrer(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
       } finally { toast.dismiss(tid); }
       if (ignores.length) toast.warning(`Non inclus (non convertible) : ${ignores.join(", ")}`);
     } catch (e: any) {
