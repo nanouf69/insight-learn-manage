@@ -2,9 +2,9 @@
 
 ## VTC — encadrés et ordre cours/quiz (07/10, plan approuvé)
 - [x] Diagnostic lecture seule : dépassements présents dans PowerPoint/PDF ; quiz désactivés entraînant un décalage par position.
-- [ ] Nouvelle version intégrale du support partie 2, textes et numéros inchangés, originaux conservés.
-- [ ] Association cours/quiz par identifiants permanents, aucun quiz réactivé sans accord spécifique.
-- [ ] Tests fictifs et contrôles visuels ordinateur/mobile ; Safari réel distinct de WebKit automatisé.
+- [x] Nouvelle version intégrale du support partie 2 : 43 slides, textes et numéros inchangés, originaux conservés ; PDF correspondant et liens d’affichage dédiés.
+- [x] Association cours/quiz par identifiants permanents ; adaptation lecture/écriture des positions historiques sans migration ; aucun quiz réactivé.
+- [x] 46/46 tests ciblés PASS ; 39/39 pages interactives parcourues et défilement contrôlé en Chromium et WebKit, largeurs 1280/390 ; PDF 43 pages ouvert et TPMR visible. Aucun élève réel ni écriture serveur ; Safari/appareil réel et livraison distante des nouveaux médias NON PROUVÉS.
 
 ## Mise en valeur des sessions (07/10)
 - [x] Encadré identique (même couleur) pour session en cours, sessions TAXI/TA et sessions VTC en cours du soir ; aucune donnée modifiée.
