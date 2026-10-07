@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Mise en valeur des sessions (07/10)
+- [x] Encadré identique (même couleur) pour session en cours, sessions TAXI/TA et sessions VTC en cours du soir ; aucune donnée modifiée.
+- [x] Vérifié à l’écran : toutes les cartes concernées ont la même bordure et le même fond.
+
+
 ## Formats des documents d’agrément (07/10)
 - [x] Supprimer les restrictions de format pour Ajouter et Remplacer dans TAXI/VTC ; conserver les originaux, reconnaître JFIF pour la conversion PDF.
 - [x] 10/10 tests ciblés PASS : sélecteurs sans restriction, conversion JFIF et original intact, ordre commun TAXI/VTC ; build OK. Stockage sans restriction MIME, limite existante 20 Mo. Aucun document réel modifié ; envoi réel non testé.
