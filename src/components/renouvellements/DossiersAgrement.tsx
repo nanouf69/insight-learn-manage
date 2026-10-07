@@ -13,10 +13,26 @@ import { toast } from "sonner";
 import { toPdf, mergePdfs, isPdf } from "@/lib/agrementPdf";
 import { estLettrePresentation, fichiersPourExtra, piecesPourDossier, separerLettresPresentation } from "@/lib/agrementOrdre";
 
+/** Lecture d'un fichier avec 3 essais (coupure réseau / « Failed to fetch »), lecture seule. */
+async function telechargerFiable(path: string, nom: string): Promise<Blob> {
+  let derniere = "";
+  for (let essai = 1; essai <= 3; essai++) {
+    try {
+      const { data, error } = await supabase.storage.from("agrements").download(path);
+      if (data && !error) return data;
+      derniere = error?.message ?? "fichier vide";
+    } catch (e: any) {
+      derniere = e?.message ?? String(e);
+    }
+    console.warn(`[agrement] lecture ${nom} échouée (essai ${essai}/3) : ${derniere}`);
+    if (essai < 3) await new Promise((r) => setTimeout(r, 800 * essai));
+  }
+  throw new Error(`${nom} (${derniere})`);
+}
+
 /** Obtient le PDF d'un fichier (PDF converti stocké, ou conversion à la volée sans modifier le stockage). */
 async function pdfDe(f: { storage_path: string; pdf_storage_path: string | null; nom_fichier: string }): Promise<Blob | null> {
-  const { data, error } = await supabase.storage.from("agrements").download(f.pdf_storage_path ?? f.storage_path);
-  if (error || !data) throw new Error(f.nom_fichier);
+  const data = await telechargerFiable(f.pdf_storage_path ?? f.storage_path, f.nom_fichier);
   return f.pdf_storage_path ? data : toPdf(data, f.nom_fichier);
 }
 
