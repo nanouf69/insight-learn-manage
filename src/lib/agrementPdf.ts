@@ -3,11 +3,11 @@ import { jsPDF } from "jspdf";
 
 const A4 = { w: 595.28, h: 841.89 };
 
-export const isImage = (n: string) => /\.(jpe?g|png)$/i.test(n);
+export const isImage = (n: string) => /\.(jpe?g|jfif|jfi|jif|jff|png)$/i.test(n);
 export const isDocx = (n: string) => /\.docx$/i.test(n);
 export const isPdf = (n: string) => /\.pdf$/i.test(n);
 
-/** Image (JPG/PNG) -> PDF A4 une page, image entière. */
+/** Image (JPEG including JFIF, or PNG) -> PDF A4 une page, image entière. */
 export async function imageToPdf(blob: Blob, name: string): Promise<Blob> {
   const doc = await PDFDocument.create();
   const bytes = new Uint8Array(await blob.arrayBuffer());

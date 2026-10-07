@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Formats des documents d’agrément (07/10)
+- [x] Supprimer les restrictions de format pour Ajouter et Remplacer dans TAXI/VTC ; conserver les originaux, reconnaître JFIF pour la conversion PDF.
+- [ ] Vérifier les contrôles ciblés sans écrire dans les dossiers réels.
+
 ## Lettre masquée remise visible (07/10)
 - [x] Lecture avant modification : ligne masquée, PDF original toujours présent et non masqué ; remettre uniquement la ligne visible sur demande explicite, sans remplacer le document.
 
