@@ -1,3 +1,5 @@
+import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
+import { t3pPartie2DisplaySupport } from "@/lib/t3pPartie2Support";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
@@ -317,8 +319,9 @@ function CourseFileViewer({
   secureMode: boolean;
   onLastPageReached: () => void;
 }) {
-  const displayUrl = useDisplayableCourseUrl(fichier.url);
-  const pdfDisplayUrl = useDisplayableCourseUrl(pdfFallbackUrl);
+  const support = t3pPartie2DisplaySupport(fichier.url);
+  const displayUrl = useDisplayableCourseUrl(support.url);
+  const pdfDisplayUrl = useDisplayableCourseUrl(support.pdfUrl ?? pdfFallbackUrl);
   const lowerName = fichier.nom.toLowerCase();
   const lowerUrl = fichier.url.toLowerCase();
   const hasExtension = (extension: string) => new RegExp(`\\.${extension}(?:[?#].*)?$`, "i").test(lowerUrl);
@@ -334,7 +337,7 @@ function CourseFileViewer({
     return <div className="h-20 rounded-lg border bg-muted animate-pulse" />;
   }
 
-  const externalViewerUrl = resolveAppFileUrl(fichier.url, { forExternalViewer: true });
+  const externalViewerUrl = resolveAppFileUrl(support.url, { forExternalViewer: true });
   const googleViewerUrl = shouldShowViewers
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(externalViewerUrl)}&embedded=true`
     : null;
@@ -6769,16 +6772,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
     const pages: PageType[] = (() => {
       if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
-        // Simple zip: cours[0] → exo[0] → cours[1] → exo[1] → ...
-        const ac = activeCours;
-        const ae = activeExercices;
-        const result: PageType[] = [];
-        const maxLen = Math.max(ac.length, ae.length);
-        for (let i = 0; i < maxLen; i++) {
-          if (i < ac.length) result.push({ type: "cours", cours: ac[i] });
-          if (i < ae.length) result.push({ type: "exercice-single", exercice: ae[i] });
-        }
-        return result;
+        return orderedCoursePages(activeCours, activeExercices);
       }
       // Other modules: all cours first, then exercises
       return [
@@ -6863,6 +6857,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }, [pages, isBilanModule]);
 
 
+    // Display ordering changes, but the server and existing browser storage keep
+    // their historical coordinates. No learner row or answer is migrated.
+    const legacyPages: PageType[] = INTERLEAVED_IDS.has(Number(moduleData.id))
+      ? legacyCoursePages(activeCours, activeExercices)
+      : pages;
+    const pageFromStorage = (index: number): number => translateCoursePageIndex(
+      index, legacyPages as Exclude<PageType, { type: "exercices" }>[],
+      pages as Exclude<PageType, { type: "exercices" }>[],
+    );
+    const pageForStorage = (index: number): number => translateCoursePageIndex(
+      index, pages as Exclude<PageType, { type: "exercices" }>[],
+      legacyPages as Exclude<PageType, { type: "exercices" }>[],
+    );
+    const pagesForStorage = (indices: Iterable<number>): number[] =>
+      Array.from(indices, pageForStorage).filter(index => index >= 0);
+
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
     const exoCourantId = currentPageData?.type === "exercice-single" ? Number(currentPageData.exercice.id) : null;
@@ -6902,7 +6912,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           setShowResultsFor(new Set(parsed.showResultsFor));
         }
         if (Array.isArray(parsed.completedPages)) {
-          setCompletedPages(new Set(parsed.completedPages));
+          setCompletedPages(new Set(parsed.completedPages.map(pageFromStorage).filter(index => index >= 0)));
         }
         if (
           parsed.pendingResultRestore &&
@@ -6911,7 +6921,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         ) {
           setPendingResultRestore({
             exoId: parsed.pendingResultRestore.exoId,
-            page: parsed.pendingResultRestore.page,
+            page: pageFromStorage(parsed.pendingResultRestore.page),
             validatedAt: typeof parsed.pendingResultRestore.validatedAt === "number"
               ? parsed.pendingResultRestore.validatedAt
               : Date.now(),
@@ -6950,7 +6960,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           } catch {}
         }
         if (pageToRestore !== null && totalPages > 0) {
-          const clampedPage = Math.max(0, Math.min(pageToRestore, totalPages - 1));
+          const clampedPage = Math.max(0, pageFromStorage(pageToRestore));
           setCurrentPage(clampedPage);
         }
       } catch (error) {
@@ -7035,7 +7045,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const next = new Set(prev);
           let changed = false;
           saved.forEach((idx: any) => {
-            const n = Number(idx);
+            const n = pageFromStorage(Number(idx));
             if (Number.isFinite(n) && n >= 0 && n < pages.length && !next.has(n)) {
               next.add(n);
               changed = true;
@@ -7060,18 +7070,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         window.sessionStorage.setItem(
           learnerUiStateKey,
           JSON.stringify({
-            currentPage,
+            currentPage: pageForStorage(currentPage),
             selectedAnswers,
             showResultsFor: Array.from(showResultsFor),
-            completedPages: Array.from(completedPages),
-            pendingResultRestore,
+            completedPages: pagesForStorage(completedPages),
+            pendingResultRestore: pendingResultRestore
+              ? { ...pendingResultRestore, page: pageForStorage(pendingResultRestore.page) }
+              : null,
             revisionQuestionsFor: revisionSerialized,
           })
         );
         // Persist only the current page index to localStorage so the learner
         // resumes where they left off even after a disconnect (sessionStorage is cleared).
         try {
-          window.localStorage.setItem(`${learnerUiStateKey}:page`, String(currentPage));
+          window.localStorage.setItem(`${learnerUiStateKey}:page`, String(pageForStorage(currentPage)));
         } catch {}
       } catch (error) {
         console.error("Erreur sauvegarde état module:", error);
@@ -7779,7 +7791,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             const { error } = await (supabase as any).rpc("save_module_pages_progress", {
               _apprenant_id: apprenantId,
               _module_id: module.id,
-              _pages: snapshot,
+              _pages: pagesForStorage(snapshot),
               _progress: progress,
             });
             if (!error) return;
@@ -8915,11 +8927,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           window.sessionStorage.setItem(
                             learnerUiStateKey,
                             JSON.stringify({
-                              currentPage,
+                              currentPage: pageForStorage(currentPage),
                               selectedAnswers,
                               showResultsFor: Array.from(nextShowResults),
-                              completedPages: Array.from(nextCompletedPages),
-                              pendingResultRestore: validatedResultState,
+                              completedPages: pagesForStorage(nextCompletedPages),
+                              pendingResultRestore: { ...validatedResultState, page: pageForStorage(validatedResultState.page) },
                               revisionQuestionsFor: revisionSerialized,
                             })
                           );
