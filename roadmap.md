@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Réactivations après incident du 28/09 — demande 07/10 18:40 UTC
+- [ ] Présenter le périmètre exact : 13 quiz dans modules 2,10,17,23,25,32,39 ; corrections T3P toutes copies ; module 13 et Bilans Français intacts.
+- [ ] Vérifier l'origine du Bilan Français 4/9 en lecture seule, annoncer les limites de preuve.
+- [ ] Appliquer uniquement les bascules autorisées avec contrôle de version et historique conservé ; contrôler avant/après les contenus et les protections des données élèves.
+- [ ] Vérifier l'ordre complet de toutes les formations, l'aperçu sur données fictives sans écritures élèves, puis journaliser les résultats.
+- [ ] Publier sur demande explicite, après contrôles réussis et vérification des conditions de publication.
+
 ## T3P — corrections et réactivation autorisées (07/10, 18:25 UTC)
 - [x] Lire les questions exactes, protections serveur et périmètre de partage avant écriture.
 - [ ] Accord 18:29 : protéger contre la reconstruction automatique intégrale des bilans ; limiter la propagation aux questions réellement modifiées, préserver les métadonnées des autres questions.
