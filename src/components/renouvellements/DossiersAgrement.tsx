@@ -270,15 +270,19 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
       const zip = new JSZip();
       const tous = ordonnes(); const n = tous.reduce((a, g) => a + g.list.length, 0); let k = 0;
       const tid = toast.loading(`Préparation du dossier… 0/${n}`);
+      const echecs: string[] = [];
       try { for (const g of tous) for (const f of g.list) {
         toast.loading(`Préparation du dossier… ${++k}/${n}`, { id: tid });
-        const { data, error } = await supabase.storage.from("agrements").download(f.storage_path);
-        if (error || !data) throw new Error(f.nom_fichier);
-        zip.folder(g.dossierZip.replace(/[^\w\-. ]+/g, ""))!.file(f.nom_fichier, data);
+        try {
+          const data = await telechargerFiable(f.storage_path, f.nom_fichier);
+          zip.folder(g.dossierZip.replace(/[^\w\-. ]+/g, ""))!.file(f.nom_fichier, data);
+        } catch (e: any) { echecs.push(e?.message ?? f.nom_fichier); }
       }
+      if (echecs.length === n) throw new Error("aucun fichier lisible — vérifiez votre connexion ou votre bloqueur de publicités");
       toast.loading("Compression du ZIP…", { id: tid });
       await livrer(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
       } finally { toast.dismiss(tid); }
+      if (echecs.length) toast.warning(`Non inclus (lecture impossible, réessayez) : ${echecs.join(", ")}`, { duration: 60000 });
     } catch (e: any) {
       toast.error("Téléchargement impossible : " + e.message);
     } finally { setZipping(false); }
@@ -288,19 +292,22 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
   const pdfComplet = async () => {
     setMerging(true);
     try {
-      const parts: Blob[] = []; const ignores: string[] = [];
+      const parts: Blob[] = []; const ignores: string[] = []; const echecs: string[] = [];
       const liste = ordonnes().flatMap((g) => g.list); let k = 0;
       const tid = toast.loading(`Assemblage du PDF… 0/${liste.length}`);
       try { for (const f of liste) {
         toast.loading(`Assemblage du PDF… ${++k}/${liste.length}`, { id: tid });
-        const pdf = await pdfDe(f);
-        if (pdf) parts.push(pdf); else ignores.push(f.nom_fichier);
+        try {
+          const pdf = await pdfDe(f);
+          if (pdf) parts.push(pdf); else ignores.push(f.nom_fichier);
+        } catch (e: any) { echecs.push(e?.message ?? f.nom_fichier); }
       }
-      if (!parts.length) throw new Error("aucun PDF");
+      if (!parts.length) throw new Error(echecs.length ? "aucun fichier lisible — vérifiez votre connexion ou votre bloqueur de publicités" : "aucun PDF");
       toast.loading("Fusion des pages…", { id: tid });
       await livrer(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
       } finally { toast.dismiss(tid); }
       if (ignores.length) toast.warning(`Non inclus (non convertible) : ${ignores.join(", ")}`);
+      if (echecs.length) toast.warning(`Non inclus (lecture impossible, réessayez) : ${echecs.join(", ")}`, { duration: 60000 });
     } catch (e: any) {
       toast.error("PDF complet impossible : " + e.message);
     } finally { setMerging(false); }
