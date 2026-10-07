@@ -45,6 +45,19 @@ export function etatDepotDossierBienvenue(
   return { statut: "depose", dateDepot };
 }
 
+/**
+ * Réponse « Date examen théorique » du dossier de bienvenue signé.
+ * Toujours prioritaire : on ne propose la date la plus proche que si cette réponse est vide.
+ */
+export function dateExamenDossierBienvenue(
+  documents: DocumentBienvenueLike[],
+): string | null {
+  const dossier = documents.find((document) => document.type_document === "dossier-bienvenue");
+  const valeur = dossier?.donnees?.date_examen_theorique;
+  if (typeof valeur !== "string" || !valeur.trim()) return null;
+  return valeur.trim();
+}
+
 export function libelleDepotDossierBienvenue(etat: DossierBienvenueDepotEtat): string {
   if (etat.statut === "non_depose") return "Non déposé";
   if (etat.statut === "date_indisponible") return "Date de dépôt non disponible";
