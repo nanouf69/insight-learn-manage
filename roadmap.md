@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Lettre de présentation en position 1 (07/10)
+- [x] Classement d’affichage et exports ZIP/PDF : lettre en tête, identifiants et ordre enregistrés inchangés.
+- [x] 4 tests PASS ; écran TAXI/VTC vérifié avec pièces fictives et écritures bloquées ; build OK. Aucun document réel modifié.
+
 ## Inscrits théorique : une session ou toutes les dates (06/10)
 - [x] Ajouter « Toutes les dates » au filtre du tableau, avec lecture paginée, sans changer le planning.
 - [x] Vérifier à l’écran la vue globale (2 candidats fictifs de sessions différentes) puis une seule session ; 20/20 tests ciblés réussis, build OK ; écritures et envois bloqués.
