@@ -28,7 +28,12 @@ function livrer(blob: Blob, nom: string) {
   toast.success(`${nom} prêt (${(blob.size / 1048576).toFixed(1)} Mo)`, {
     duration: 60000,
     description: "Si le téléchargement n'a pas démarré, cliquez sur « Ouvrir ».",
-    action: { label: "Ouvrir", onClick: () => { const a = document.createElement("a"); a.href = url; a.download = nom; a.target = "_blank"; document.body.appendChild(a); a.click(); a.remove(); } },
+    action: { label: "Ouvrir", onClick: () => {
+      // Ouvre le fichier dans un nouvel onglet ; si l'aperçu le bloque, l'affiche dans la même fenêtre (même méthode que l'ouverture d'une pièce seule).
+      let w: Window | null = null;
+      try { w = window.open(url, "_blank"); } catch { w = null; }
+      if (!w) window.location.href = url;
+    } },
   });
 }
 
