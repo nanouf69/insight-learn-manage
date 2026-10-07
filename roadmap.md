@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Formats des documents d’agrément (07/10)
+- [x] Supprimer les restrictions de format pour Ajouter et Remplacer dans TAXI/VTC ; conserver les originaux, reconnaître JFIF pour la conversion PDF.
+- [x] 10/10 tests ciblés PASS : sélecteurs sans restriction, conversion JFIF et original intact, ordre commun TAXI/VTC ; build OK. Stockage sans restriction MIME, limite existante 20 Mo. Aucun document réel modifié ; envoi réel non testé.
+
 ## Lettre masquée remise visible (07/10)
 - [x] Lecture avant modification : ligne masquée, PDF original toujours présent et non masqué ; remettre uniquement la ligne visible sur demande explicite, sans remplacer le document.
 

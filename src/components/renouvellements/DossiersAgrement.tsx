@@ -361,7 +361,6 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
     setBusy(true);
     try {
       for (const file of Array.from(files)) {
-        if (!/\.(pdf|jpe?g|png|docx)$/i.test(file.name)) { toast.error(`${file.name} : PDF, Word (.docx), JPG ou PNG uniquement`); continue; }
         const remplacé = remplaceId ? actifs.find((a) => a.id === remplaceId) : null;
         const soc = remplacé ? remplacé.societe : (champs.piece_code === "p5" && partage ? null : societe);
         const path = `${soc ?? "partage"}/${dossierCible}/${(champs.sous_ligne ?? piece.code)}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
@@ -469,8 +468,8 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
           </Button>
         )}
       </div>
-      <input ref={addRef} type="file" multiple accept=".pdf,.docx,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
-      <input ref={replRef} type="file" accept=".pdf,.docx,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { upload(e.target.files, replaceId); e.target.value = ""; }} />
+      <input ref={addRef} type="file" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+      <input ref={replRef} type="file" className="hidden" onChange={(e) => { upload(e.target.files, replaceId); e.target.value = ""; }} />
       {actifs.length > 0 && (
         <ul className="mt-2 space-y-1 pl-7">
           {actifs.map((f) => (
