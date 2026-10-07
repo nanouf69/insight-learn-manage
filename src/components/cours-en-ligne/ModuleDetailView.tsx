@@ -1,3 +1,4 @@
+import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { t3pPartie2DisplaySupport } from "@/lib/t3pPartie2Support";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
@@ -3082,63 +3083,6 @@ function syncSousTitreQuestionCount(sousTitre?: string, actualCount?: number): s
   if (!sousTitre) return sousTitre;
   if (typeof actualCount !== "number" || !Number.isFinite(actualCount)) return sousTitre;
   return sousTitre.replace(/^\s*\d+\s+questions/i, `${actualCount} questions`);
-}
-
-function computeExercicePartNumbers(moduleId: number, cours: ContentItem[], exercices: ExerciceItem[]): Map<number, string> {
-
-  const INTERLEAVED = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
-  const BILAN = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
-  type P = { type: "cours"; titre: string } | { type: "exercice"; exo: ExerciceItem };
-  const ac = (cours || []).filter((c) => c.actif);
-  const ae = (exercices || []).filter((e) => e.actif);
-  const seq: P[] = [];
-  if (INTERLEAVED.has(Number(moduleId))) {
-    const maxLen = Math.max(ac.length, ae.length);
-    for (let i = 0; i < maxLen; i++) {
-      if (i < ac.length) seq.push({ type: "cours", titre: ac[i].titre });
-      if (i < ae.length) seq.push({ type: "exercice", exo: ae[i] });
-    }
-  } else {
-    ac.forEach((c) => seq.push({ type: "cours", titre: c.titre }));
-    ae.forEach((e) => seq.push({ type: "exercice", exo: e }));
-  }
-  const result = new Map<number, string>();
-  if (BILAN.has(Number(moduleId))) {
-    let n = 0;
-    seq.forEach((p) => { if (p.type === "exercice") { n++; result.set(Number(p.exo.id), String(n)); } });
-    return result;
-  }
-  const hasSubjectLetters = seq.some((p) => p.type === "cours" && /^\s*[A-G]\./i.test(p.titre));
-  if (hasSubjectLetters) {
-    const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
-    const partBySubject: Record<number, number> = {};
-    let cur: { s: number; p: number } | null = null;
-    seq.forEach((p) => {
-      if (p.type === "cours") {
-        const letter = p.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
-        const s = subjectNums[letter] || 1;
-        const np = (partBySubject[s] || 0) + 1;
-        partBySubject[s] = np;
-        cur = { s, p: np };
-      } else if (cur) {
-        result.set(Number(p.exo.id), String(cur.p));
-      }
-    });
-    return result;
-  }
-  let pairNum = 0;
-  let lastCoursIdx = -1;
-  seq.forEach((p, i) => {
-    if (p.type === "cours") {
-      pairNum++;
-      lastCoursIdx = i;
-    } else {
-      const isQuiz = (p.exo.questions?.length || 0) > 0;
-      const n = isQuiz ? (lastCoursIdx === i - 1 ? pairNum : ++pairNum) : ++pairNum;
-      result.set(Number(p.exo.id), String(n));
-    }
-  });
-  return result;
 }
 
 // ===== Déplacement d'une question vers un autre module / quiz =====
