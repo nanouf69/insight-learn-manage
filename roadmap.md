@@ -1,5 +1,11 @@
 # Feuille de route
 
+## T3P — corrections et réactivation autorisées (07/10, 18:25 UTC)
+- [x] Lire les questions exactes, protections serveur et périmètre de partage avant écriture.
+- [ ] Corriger P1 Q29/Q42 et P2 Q36/Q60/Q79 : BLOQUÉ par la synchronisation automatique des bilans, effet hors accord ; aucune écriture effectuée.
+- [ ] Réactiver uniquement les deux quiz du parcours VTC : BLOQUÉ par le même déclencheur sur module 2, même pour une activation seule ; ne pas contourner les protections.
+- [x] Textes exacts TPMR/sanctions livrés, aucune question modifiée ; journal de diagnostic ajouté. Correction du déclenchement des bilans nécessite un périmètre distinct explicitement autorisé.
+
 ## Numérotation administrateur et non-régression globale (07/10, périmètre autorisé)
 - [x] Audit lecture seule et accord : numérotation admin uniquement, contrôles et journal ; aucun quiz réactivé.
 - [x] Aligner la numérotation administrateur sur les associations permanentes existantes sans modifier l'affichage apprenant.
