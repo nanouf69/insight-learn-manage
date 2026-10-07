@@ -38,7 +38,7 @@ const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
 const RETENTION_JOURS = 30;
 
-type Etat = { jour: string; i: number; from: number; comptes: Record<string, number>; erreurs: string[]; maj: string; termine?: boolean };
+type Etat = { jour: string; i: number; from: number; comptes: Record<string, number>; erreurs: string[]; maj: string; termine?: boolean; pos?: string; essais?: number };
 
 const json = (b: unknown) => new Response(JSON.stringify(b), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -74,6 +74,20 @@ Deno.serve(async (req) => {
   if (etat.i < TABLES.length) {
     const [t, pk] = TABLES[etat.i];
     const [page, part] = TAILLES[t] ?? [PAGE, PART];
+    // Un paquet qui fait tomber l'appel 3 fois est signalé puis la table suivante est traitée
+    // (jamais de blocage silencieux : la nuit se termine par « _incomplet.json » + alerte).
+    const pos = `${etat.i}:${etat.from}`;
+    etat.essais = etat.pos === pos ? (etat.essais ?? 0) + 1 : 1;
+    etat.pos = pos;
+    if (etat.essais > 3) {
+      etat.erreurs.push(`${t}@${etat.from}: paquet trop lourd (3 échecs)`);
+      etat.i += 1; etat.from = 0; etat.essais = 0;
+      etat.maj = new Date().toISOString();
+      await up(`${jour}/_etat.json`, etat);
+      return json({ ok: false, saute: t });
+    }
+    etat.maj = new Date().toISOString();
+    await up(`${jour}/_etat.json`, etat);
     try {
       const buf: unknown[] = [];
       let f = etat.from, fini = false;
