@@ -29,10 +29,12 @@ const PAGE = 1000;
 const PART = 2000;
 // Tables aux lignes volumineuses (signatures, progression détaillée, snapshots) :
 // paquets plus petits pour rester sous la limite de calcul d'un appel.
+// 07/10/2026 soir : découpage plus fin des tables lourdes (lignes jusqu'à ~84 ko).
 const TAILLES: Record<string, [number, number]> = {
-  apprenant_module_completion: [25, 100], emargements_fc: [50, 150], apprenant_documents_completes: [50, 300],
-  bilan_passage_snapshots: [25, 50], apprenant_quiz_results: [250, 1000], exam_attempts_v2: [100, 400],
-  apprenant_question_temps: [500, 1500], answer_events: [500, 1500], apprenant_module_activites: [500, 1500],
+  apprenant_module_completion: [5, 20], emargements_fc: [10, 40], apprenant_documents_completes: [10, 50],
+  bilan_passage_snapshots: [5, 20], apprenant_quiz_results: [100, 400], exam_attempts_v2: [50, 200],
+  apprenant_question_temps: [500, 1500], answer_events: [250, 1000], apprenant_module_activites: [500, 1500],
+  qrc_instances_v2: [100, 400], bilan_passages_figes: [25, 100], answer_state_historique: [250, 1000],
 };
 const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;

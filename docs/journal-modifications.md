@@ -75,3 +75,9 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - **A1 NON APPLIQUÉ (arrêt)** : les bonnes réponses sont aussi présentes dans les états pédagogiques lisibles par les élèves et dans le code de l'application, et la correction des quiz se fait dans le navigateur. Masquer `quiz_questions` seul ne protégerait pas et casserait la correction. Nécessite un plan dédié (correction côté serveur).
 - **A9** : migration `0129_a9_devis_upload_connexion_obligatoire.sql` — règle d'envoi sans connexion retirée ; les 2 fichiers signés existants sont conservés ; la signature publique passe par la fonction serveur `upload-devis-signe`.
 - **Contrôles** : 110 tests PASS ; build OK ; comptages des 23 tables élèves comparés à l'export (voir résumé).
+
+## 2026-10-07 22:40 (Paris) — B2 terminé, liste B11 détaillée, plan A1 (non appliqué)
+- B2 : découpage plus fin des tables lourdes dans la sauvegarde nocturne (accord explicite). Sauvegarde 2026-10-07 relancée : `_termine.json` écrit à 20:51 UTC, 0 fichier d'erreur, pas de `_incomplet.json` (23/23 tables).
+- B11 : lecture seule de la progression des 8 élèves sans CGV ; aucun dossier modifié.
+- A1 : plan de correction des quiz par le serveur préparé, rien appliqué.
+- Aucune donnée élève modifiée.
