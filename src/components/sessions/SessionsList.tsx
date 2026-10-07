@@ -409,11 +409,21 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
             const fin = new Date(session.date_fin);
             fin.setHours(0, 0, 0, 0);
             const isCurrent = today >= debut && today <= fin;
+            const types = session.types_apprenant || [];
+            const isTaxiTa = types.some(t => /taxi|ta/i.test(t));
+            const isVtcSoir = types.some(t => /vtc/i.test(t)) && getSessionDayType(session) === "soir";
+            const highlight = isCurrent
+              ? 'border-2 border-red-500 bg-red-50 dark:bg-red-950/20'
+              : isTaxiTa
+                ? 'border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/20'
+                : isVtcSoir
+                  ? 'border-2 border-indigo-400 bg-indigo-50 dark:bg-indigo-950/20'
+                  : '';
 
             return (
             <Card 
               key={session.id} 
-              className={`hover:shadow-md transition-shadow cursor-pointer ${isCurrent ? 'border-2 border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}
+              className={`hover:shadow-md transition-shadow cursor-pointer ${highlight}`}
               onClick={() => openSessionDetail(session)}
             >
               <CardContent className="p-5">
