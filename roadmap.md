@@ -1,5 +1,11 @@
 # Feuille de route
 
+## VTC — encadrés et ordre cours/quiz (07/10, plan approuvé)
+- [x] Diagnostic lecture seule : dépassements présents dans PowerPoint/PDF ; quiz désactivés entraînant un décalage par position.
+- [ ] Nouvelle version intégrale du support partie 2, textes et numéros inchangés, originaux conservés.
+- [ ] Association cours/quiz par identifiants permanents, aucun quiz réactivé sans accord spécifique.
+- [ ] Tests fictifs et contrôles visuels ordinateur/mobile ; Safari réel distinct de WebKit automatisé.
+
 ## Mise en valeur des sessions (07/10)
 - [x] Encadré identique (même couleur) pour session en cours, sessions TAXI/TA et sessions VTC en cours du soir ; aucune donnée modifiée.
 - [x] Vérifié à l’écran : toutes les cartes concernées ont la même bordure et le même fond.
