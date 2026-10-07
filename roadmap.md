@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Numérotation administrateur et non-régression globale (07/10, périmètre autorisé)
+- [x] Audit lecture seule et accord : numérotation admin uniquement, contrôles et journal ; aucun quiz réactivé.
+- [x] Aligner la numérotation administrateur sur les associations permanentes existantes sans modifier l'affichage apprenant.
+- [x] 102/102 tests PASS : 15 parcours configurés, quatre séquences cours/quiz, 68 fichiers pédagogiques inchangés ; quiz inactifs et coordonnées historiques vérifiés. Empreinte serveur des 62 modules identique avant/après ; compilation automatique OK.
+- [x] Journal daté ajouté dans `docs/journal-modifications.md` ; aucun élève réel, aucune écriture serveur, aucun quiz réactivé.
+- [ ] Parcours complets à l'écran ordinateur/téléphone et Safari réel : NON PROUVÉS ; nécessitent une vérification isolée sur données fictives, aucun déploiement demandé.
+
 ## VTC — encadrés et ordre cours/quiz (07/10, plan approuvé)
 - [x] Diagnostic lecture seule : dépassements présents dans PowerPoint/PDF ; quiz désactivés entraînant un décalage par position.
 - [x] Nouvelle version intégrale du support partie 2 : 43 slides, textes et numéros inchangés, originaux conservés ; PDF correspondant et liens d’affichage dédiés.
