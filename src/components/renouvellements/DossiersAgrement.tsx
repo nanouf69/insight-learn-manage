@@ -261,7 +261,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
         zip.folder(g.dossierZip.replace(/[^\w\-. ]+/g, ""))!.file(f.nom_fichier, data);
       }
       toast.loading("Compression du ZIP…", { id: tid });
-      livrer(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
+      await livrer(await zip.generateAsync({ type: "blob" }), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.zip`);
       } finally { toast.dismiss(tid); }
     } catch (e: any) {
       toast.error("Téléchargement impossible : " + e.message);
@@ -282,7 +282,7 @@ function DossierColonne({ societe, type, fichiers, dossier, onSaveDossier, reloa
       }
       if (!parts.length) throw new Error("aucun PDF");
       toast.loading("Fusion des pages…", { id: tid });
-      livrer(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
+      await livrer(await mergePdfs(parts), `Dossier_agrement_${societe.toUpperCase()}_${type.toUpperCase()}.pdf`);
       } finally { toast.dismiss(tid); }
       if (ignores.length) toast.warning(`Non inclus (non convertible) : ${ignores.join(", ")}`);
     } catch (e: any) {
