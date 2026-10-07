@@ -1,5 +1,11 @@
 # Feuille de route
 
+## T3P — corrections et réactivation autorisées (07/10, 18:25 UTC)
+- [ ] Lire les questions exactes, protections serveur et périmètre de partage avant écriture.
+- [ ] Corriger P1 Q29/Q42 et P2 Q36/Q60/Q79 selon les formulations approuvées ; conserver les versions précédentes.
+- [ ] Réactiver uniquement les deux quiz du parcours VTC après leurs chapitres, sans toucher aux données apprenants.
+- [ ] Livrer les textes exacts TPMR/sanctions, sans les modifier ; comparer toutes les formations avant/après et journaliser les preuves/limites.
+
 ## Numérotation administrateur et non-régression globale (07/10, périmètre autorisé)
 - [x] Audit lecture seule et accord : numérotation admin uniquement, contrôles et journal ; aucun quiz réactivé.
 - [x] Aligner la numérotation administrateur sur les associations permanentes existantes sans modifier l'affichage apprenant.
