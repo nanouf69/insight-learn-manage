@@ -153,11 +153,13 @@ export default function CGVAcceptanceForm({ apprenantId, completed, onComplete }
         ok = await saveFormDocument(payload);
       }
       if (!ok) {
-        // Ne jamais bloquer la progression de l'apprenant : on laisse continuer
-        // même si l'enregistrement du document a échoué (il pourra être refait).
+        // 07/10/2026 (B11) : sans preuve serveur de l'acceptation, on n'affiche
+        // jamais « CGV acceptées » et le parcours ne continue pas.
         toast.error(
-          "L'acceptation n'a pas pu être enregistrée pour le moment. Vous pouvez continuer, elle sera à refaire plus tard.",
+          "L'acceptation n'a pas pu être enregistrée. Vérifiez votre connexion puis cliquez à nouveau sur le bouton.",
         );
+        setSaving(false);
+        return;
       }
     }
     setSaving(false);
