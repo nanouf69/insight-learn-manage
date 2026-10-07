@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
+import { getProchaineDateExamenTheorique } from "@/lib/examDatesConfig";
 
 // Bloc "Virements reçus correspondants" réutilisable
 function VirementsMatchBlock({
@@ -283,7 +284,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     selected_formation: "",
     creneau_horaire: "",
     montant_ttc: "1299",
-    date_examen_theorique: "27 janvier 2026",
+    date_examen_theorique: getProchaineDateExamenTheorique()?.date ?? "",
     montant_paye: "0",
     moyen_paiement: "",
     notes: "",
@@ -328,7 +329,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         selected_formation: apprenant.formation_choisie || "",
         creneau_horaire: apprenant.creneau_horaire || "",
         montant_ttc: apprenant.montant_ttc?.toString() || "1299",
-        date_examen_theorique: apprenant.date_examen_theorique || "27 janvier 2026",
+        date_examen_theorique: apprenant.date_examen_theorique || getProchaineDateExamenTheorique()?.date || "",
         montant_paye: apprenant.montant_paye?.toString() || "0",
         moyen_paiement: apprenant.moyen_paiement || "",
         notes: apprenant.notes || "",
