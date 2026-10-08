@@ -3359,7 +3359,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       ? new Date(theoriqueAuto.dateObj.getTime() - 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
       : '[date à compléter]';
     // Même règle pour le pratique : la période qui suit la fin de formation prime.
-    const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw);
+    const pratiqueAuto = getPratiqueDatesForFormation(dateFinRaw, theoriqueAuto.dateObj);
     const dateExamenPratique = pratiqueAuto.examenPratique
       || (a.date_examen_pratique ? formatDateFr(a.date_examen_pratique) : '[date à compléter]');
     const periodeExamenPratique = pratiqueAuto.examenPratique || '[dates à compléter]';
