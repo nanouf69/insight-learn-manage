@@ -1,3 +1,4 @@
+import { dateInscriptionAffichee, inscriptionTropTardive } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
@@ -657,7 +658,6 @@ function apprenantMatchesSearch(apprenant: SearchableApprenant, term: string) {
   return keywords.every((keyword) => haystack.includes(keyword));
 }
 
-import { dateInscriptionAffichee, inscriptionTropTardive } from "@/lib/dateInscription";
 const APPRENANT_SEARCH_SELECT = 'id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma';
 
 function mergeApprenantSearchResults(
