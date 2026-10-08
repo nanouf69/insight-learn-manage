@@ -96,3 +96,11 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - Doublons de listes : cause = mêmes dates proposées dans les groupes TAXI et TA (liste des dates de formation) ; non modifié pour ne pas changer les valeurs enregistrées.
 - Parcours authentifiés non testés : connexion du compte technique refusée sans accord (approbation indisponible).
 - Empreintes contenus/données identiques avant/après.
+
+## 2026-10-08 — Taux e-learning et relance individuelle dans Examens
+- Accord : demande explicite du propriétaire, colonne « Taux e-learning » et mail sous le taux.
+- Fichiers : ExamenReussitePage.tsx, nouveau TauxElearningCell.tsx, examenElearningRelance.ts, examen-elearning-relance.test.tsx ; roadmap et AGENTS mis à jour.
+- Affichage : pourcentage et heures issus du hook CRM existant, uniquement pour les parcours e-learning ; heures contractuelles absentes signalées séparément.
+- Mail : préparation individuelle modifiable, envoi uniquement après confirmation ; HTML échappé, adresse invalide désactivée, refus et doublon serveur distingués du succès. Message conservant les heures/modules après réussite et le risque de sanction conditionnel selon le financement.
+- Contrôles exécutés : 113/113 tests passent (9 nouveaux), tous les envois simulés ; références des 15 parcours, quatre séquences cours/quiz et empreintes des 68 fichiers pédagogiques vérifiées.
+- Aucune écriture de données ni envoi réel exécuté, aucun backend modifié, aucune publication. Aucune nouvelle comparaison de base effectuée dans cette passe frontend ; contrôle navigateur authentifié et livraison réelle non exécutés.
