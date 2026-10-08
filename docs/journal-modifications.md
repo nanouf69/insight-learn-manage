@@ -104,3 +104,7 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - Mail : préparation individuelle modifiable, envoi uniquement après confirmation ; HTML échappé, adresse invalide désactivée, refus et doublon serveur distingués du succès. Message conservant les heures/modules après réussite et le risque de sanction conditionnel selon le financement.
 - Contrôles exécutés : 113/113 tests passent (9 nouveaux), tous les envois simulés ; références des 15 parcours, quatre séquences cours/quiz et empreintes des 68 fichiers pédagogiques vérifiées.
 - Aucune écriture de données ni envoi réel exécuté, aucun backend modifié, aucune publication. Aucune nouvelle comparaison de base effectuée dans cette passe frontend ; contrôle navigateur authentifié et livraison réelle non exécutés.
+
+## 08/10/2026 — Livres de formation à la place des fiches de synthèse
+- Modules Fiches Révisions 70 (VTC), 71 (TAXI), 72 (TA), 73 (VA) : les liens « Fiche Synthèse » pointent vers Livre_VTC/TAXI/TA/VA_FINAL.pdf (stockage durable du projet, fichiers identiques octet par octet aux pièces jointes).
+- Pourquoi : demande de naoufal guenichi. Identifiants des éléments conservés, Définitions/Bilan QRC inchangés, anciennes fiches conservées dans le stockage, aucune donnée élève touchée.
