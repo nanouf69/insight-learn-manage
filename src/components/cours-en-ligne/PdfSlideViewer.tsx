@@ -234,7 +234,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     loadingTimerRef.current = setTimeout(() => {
       setLoadError(true);
       setRenderMode("native");
-    }, 8000);
+    }, 30000);
     return () => {
       if (loadingTimerRef.current) {
         clearTimeout(loadingTimerRef.current);
