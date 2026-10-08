@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Taux e-learning candidats examens — 08/10
+- [ ] Afficher le taux depuis le suivi existant, uniquement pour les e-learning, sans écriture de progression.
+- [ ] Ajouter sous le taux une préparation de mail individuel modifiable et un envoi manuel confirmé.
+- [ ] Tests isolés sans envoi réel, contrôle ordre/contenus inchangés et journal ; aucune publication.
+
 ## Réactivations après incident du 28/09 — demande 07/10 18:40 UTC
 - [ ] Présenter le périmètre exact : 13 quiz dans modules 2,10,17,23,25,32,39 ; corrections T3P toutes copies ; module 13 et Bilans Français intacts.
 - [ ] Vérifier l'origine du Bilan Français 4/9 en lecture seule, annoncer les limites de preuve.
