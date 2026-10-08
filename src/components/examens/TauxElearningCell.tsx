@@ -33,7 +33,12 @@ export function TauxElearningCell({ candidat }: { candidat: CandidatElearning })
           subject: mail.subject.trim(), body: texteMailVersHtml(mail.body), attachments: [] },
       });
       if (error) throw new Error(error instanceof FunctionsHttpError ? await error.context.text() : error.message);
-      if (data?.error || data?.success === false) throw new Error(data.error || "L'envoi a été refusé");
+      if (data?.error || data?.success !== true) throw new Error(data?.error || "L'envoi n'a pas été confirmé");
+      if (data.skipped) {
+        toast.info('Aucun nouvel envoi : une relance identique a déjà été envoyée dans les dernières 24 heures');
+        setOpen(false);
+        return;
+      }
       toast.success('Mail envoyé');
       void queryClient.invalidateQueries({ queryKey: ['emails', candidat.id] });
       setOpen(false);
