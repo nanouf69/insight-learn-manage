@@ -46,6 +46,10 @@ import SlideViewer from "./slides/SlideViewer";
 import PdfSlideViewer from "./PdfSlideViewer";
 import ImageCarouselViewer from "./ImageCarouselViewer";
 import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
+import LIVRE_VTC from "@/assets/livres/livre-vtc.pdf.asset.json";
+import LIVRE_VA from "@/assets/livres/livre-va.pdf.asset.json";
+import LIVRE_TAXI from "@/assets/livres/livre-taxi.pdf.asset.json";
+import LIVRE_TA from "@/assets/livres/livre-ta.pdf.asset.json";
 import { NATIONALE_PARTIE1_IMAGES, NATIONALE_PARTIE2_IMAGES } from "./slides/nationale-slide-images";
 
 /** Cours dont les diapositives sont rendues à l'identique du PowerPoint (images) */
@@ -2799,8 +2803,8 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS VTC",
       description: "Fiches de révision pour la formation VTC : synthèse matières communes, spécialités VTC et définitions.",
       cours: [
-        { id: 1, titre: "Fiche Synthèse — Matières Communes", description: "Fiche de révision regroupant les matières communes à toutes les formations.", actif: true, fichiers: [{ nom: "Fiches_Revision_Matiere_Commune.pdf", url: "/cours/vtc/Fiches_Revision_Matiere_Commune.pdf" }] },
-        { id: 2, titre: "Fiche Synthèse — Spécialités VTC", description: "Fiche de synthèse des spécialités propres à la formation VTC.", actif: true, fichiers: [{ nom: "Fiche_Synthese_Specialites_VTC.pdf", url: "/cours/vtc/Fiche_Synthese_Specialites_VTC.pdf" }] },
+        { id: 1, titre: "Livre de formation VTC", description: "Livre complet de la formation VTC à consulter.", actif: true, fichiers: [{ nom: "Livre_VTC_FINAL.pdf", url: LIVRE_VTC.url }] },
+        { id: 2, titre: "Télécharger le livre VTC", description: "Livre complet de la formation VTC à télécharger.", actif: true, fichiers: [{ nom: "Livre_VTC_FINAL.pdf", url: LIVRE_VTC.url }] },
         { id: 3, titre: "Définitions VTC", description: "Glossaire et définitions clés de la formation VTC.", actif: true, fichiers: [{ nom: "Definitions_VTC.docx", url: "/cours/vtc/Definitions_VTC.docx" }] },
         { id: 4, titre: "Bilan QRC VTC", description: "Bilan des Questions à Réponse Courte pour la formation VTC.", actif: true, fichiers: [{ nom: "Bilan_QRC_VTC.docx", url: "/cours/vtc/Bilan_QRC_VTC.docx" }] },
       ],
@@ -2814,8 +2818,8 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS TAXI",
       description: "Fiches de révision pour la formation TAXI : synthèse matières communes, spécialités TAXI et définitions.",
       cours: [
-        { id: 1, titre: "Fiche Synthèse — Matières Communes", description: "Fiche de révision regroupant les matières communes à toutes les formations.", actif: true, fichiers: [{ nom: "Fiches_Revision_Matiere_Commune.pdf", url: "/cours/vtc/Fiches_Revision_Matiere_Commune.pdf" }] },
-        { id: 2, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités propres à la formation TAXI.", actif: true, fichiers: [{ nom: "Fiche_Revision_Specialites_TAXI.pdf", url: "/cours/vtc/Fiche_Revision_Specialites_TAXI.pdf" }] },
+        { id: 1, titre: "Livre de formation TAXI", description: "Livre complet de la formation TAXI à consulter.", actif: true, fichiers: [{ nom: "Livre_TAXI_FINAL.pdf", url: LIVRE_TAXI.url }] },
+        { id: 2, titre: "Télécharger le livre TAXI", description: "Livre complet de la formation TAXI à télécharger.", actif: true, fichiers: [{ nom: "Livre_TAXI_FINAL.pdf", url: LIVRE_TAXI.url }] },
         { id: 3, titre: "Définitions TAXI", description: "Glossaire et définitions clés de la formation TAXI.", actif: true, fichiers: [{ nom: "Definitions_Taxi.docx", url: "/cours/vtc/Definitions_Taxi.docx" }] },
         { id: 4, titre: "Bilan QRC TAXI", description: "Bilan des Questions à Réponse Courte pour la formation TAXI.", actif: true, fichiers: [{ nom: "Bilan_QRC_TAXI.docx", url: "/cours/vtc/Bilan_QRC_TAXI.docx" }] },
       ],
@@ -2829,8 +2833,8 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS TA",
       description: "Fiches de synthèse pour la passerelle TA : uniquement Réglementation Nationale (spécificités) et Réglementation Locale.",
       cours: [
-        { id: 1, titre: "Fiche Synthèse — Réglementation Nationale (Spécificités)", description: "Synthèse de la réglementation nationale spécifique TAXI pour la passerelle TA.", actif: true, fichiers: [{ nom: "Fiche_Revision_Specialites_TAXI.pdf", url: "/cours/vtc/Fiche_Revision_Specialites_TAXI.pdf" }] },
-        { id: 2, titre: "Fiche Synthèse — Réglementation Locale", description: "Synthèse de la réglementation locale pour la passerelle TA.", actif: true, fichiers: [{ nom: "Fiche_de_Révision_Taxi.pdf", url: "/cours/vtc/Fiche_de_Révision_Taxi.pdf" }] },
+        { id: 1, titre: "Livre de formation TA", description: "Livre complet de la passerelle TA à consulter.", actif: true, fichiers: [{ nom: "Livre_TA_FINAL.pdf", url: LIVRE_TA.url }] },
+        { id: 2, titre: "Télécharger le livre TA", description: "Livre complet de la passerelle TA à télécharger.", actif: true, fichiers: [{ nom: "Livre_TA_FINAL.pdf", url: LIVRE_TA.url }] },
       ],
       exercices: [],
     };
@@ -2843,7 +2847,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS VA",
       description: "Fiches de révision pour la passerelle VA : synthèse spécialités VTC, définitions VA et bilan QRC.",
       cours: [
-        { id: 1, titre: "Fiche Synthèse — Spécialités VTC", description: "Fiche de synthèse des spécialités VTC pour la passerelle VA.", actif: true, fichiers: [{ nom: "Fiche_Synthese_Specialites_VTC.pdf", url: "/cours/vtc/Fiche_Synthese_Specialites_VTC.pdf" }] },
+        { id: 1, titre: "Livre de formation VA", description: "Livre complet de la passerelle VA à consulter et télécharger.", actif: true, fichiers: [{ nom: "Livre_VA_FINAL.pdf", url: LIVRE_VA.url }] },
         { id: 2, titre: "Définitions VA", description: "Glossaire et définitions clés de la passerelle VA.", actif: true, fichiers: [{ nom: "Definitions_VA.docx", url: "/cours/vtc/Definitions_VA.docx" }] },
         { id: 3, titre: "Bilan QRC VA", description: "Bilan des Questions à Réponse Courte pour la passerelle VA.", actif: true, fichiers: [{ nom: "Bilan_QRC_VA.docx", url: "/cours/vtc/Bilan_QRC_VA.docx" }] },
       ],
