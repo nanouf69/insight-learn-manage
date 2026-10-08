@@ -254,7 +254,11 @@ serve(async (req) => {
           sent++;
           if (sendSms && a.telephone) {
             try {
+              // Identification explicite de l'automatisme : sans ce jeton, l'appel arrivait
+              // anonyme et était refusé (« refuse_auth », 17 refus du 28/09 au 06/10).
+              const srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
               const { data: smsData, error: smsErr } = await supabase.functions.invoke('send-sms-ovh', {
+                headers: { Authorization: `Bearer ${srk}`, apikey: srk },
                 body: { receivers: [a.telephone], message: buildSms(a.prenom || '', type, url), sender: 'FTRANSPORT' },
               });
               if (!smsErr && (smsData as any)?.success) smsSent++;

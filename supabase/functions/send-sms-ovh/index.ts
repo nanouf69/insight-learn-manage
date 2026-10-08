@@ -50,9 +50,12 @@ Deno.serve(async (req) => {
   // 1. Identification
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const apikeyHeader = (req.headers.get("apikey") ?? "").trim();
   let declencheur: { type: "automatique" | "admin"; userId: string | null; email: string | null } | null = null;
 
-  if (token && token === serviceKey) {
+  // Automatisme serveur : jeton de service dans Authorization OU dans apikey (les clés de
+  // service récentes ne sont pas transmises en Authorization par le client).
+  if ((token && token === serviceKey) || (apikeyHeader && apikeyHeader === serviceKey)) {
     declencheur = { type: "automatique", userId: null, email: null };
   } else if (token) {
     const { data: u } = await admin.auth.getUser(token);

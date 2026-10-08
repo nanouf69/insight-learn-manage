@@ -22,6 +22,9 @@ export function SmallTransfersTable() {
 
   useEffect(() => {
     const load = async () => {
+      // Pas de session = pas de lecture (évite le refus 42501 observé le 07/10).
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess?.session) { setLoading(false); return; }
       const { data, error } = await supabase
         .from("transactions_bancaires")
         .select("montant, date_operation, libelle")

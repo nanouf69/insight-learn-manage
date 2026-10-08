@@ -70,6 +70,10 @@ export function usePresenceCheck({
   const runServerCheck = useCallback(
     async (event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence" = "heartbeat"): Promise<ServerSessionCheck | null> => {
       if (!enabled || !apprenantId || !userId || !connexionId) return null;
+      // Session expirée/absente : l'appel partirait en anonyme et serait refusé (42501 observé
+      // 02/10, 05/10, 07/10). On n'appelle le contrôle qu'avec une session réellement présente.
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess?.session?.access_token) return null;
 
       const callRpc = () =>
         supabase.rpc("check_apprenant_session" as any, {
