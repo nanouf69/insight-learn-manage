@@ -29,6 +29,17 @@ Node.prototype.removeChild = function <T extends Node>(child: T): T {
   }
   return origRemoveChild.call(this, child) as T;
 };
+// Même protection pour insertBefore : erreurs « insertBefore … not a child » / « The object can not
+// be found here » (Safari) observées en production quand le DOM a été modifié hors de React
+// (traduction automatique, extensions). On insère en fin de parent au lieu de faire planter l'écran.
+const origInsertBefore = Node.prototype.insertBefore;
+Node.prototype.insertBefore = function <T extends Node>(newNode: T, refNode: Node | null): T {
+  if (refNode && refNode.parentNode !== this) {
+    console.warn('[DOM Patch] insertBefore: reference node not a child, appending');
+    return origInsertBefore.call(this, newNode, null) as T;
+  }
+  return origInsertBefore.call(this, newNode, refNode) as T;
+};
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

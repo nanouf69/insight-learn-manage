@@ -120,6 +120,9 @@ function App() {
                 <Route path="/pre-information" element={<ErrorBoundary><PreInformationPublic /></ErrorBoundary>} />
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
+                {/* Anciens liens encore en circulation (404 observés) : redirection, aucun contenu changé. */}
+                <Route path="/cours-en-ligne" element={<Navigate to="/cours" replace />} />
+                <Route path="/examens" element={<Navigate to="/?section=examens" replace />} />
                 <Route path="/document-a-signer/:token" element={<ErrorBoundary><DocumentASignerPublic /></ErrorBoundary>} />
                 <Route path="/identifiants-t3p" element={<ErrorBoundary><IdentifiantsT3PPublic /></ErrorBoundary>} />
 
