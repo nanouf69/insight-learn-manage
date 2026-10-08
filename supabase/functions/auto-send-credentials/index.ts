@@ -179,7 +179,7 @@ serve(async (req) => {
       "passage-pratique": "Passage examen pratique",
     };
 
-    const results: { id: string; email: string; success: boolean; accountCreated?: boolean; error?: string }[] = [];
+    const results: { id: string; email: string; success: boolean; accountCreated?: boolean; error?: string; ignore?: boolean }[] = [];
     const senderEmail = "contact@ftransport.fr";
     const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
 
