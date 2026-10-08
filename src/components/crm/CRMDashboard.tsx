@@ -107,7 +107,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
         'mode_financement', 'organisme_financeur',
         'montant_ttc', 'montant_paye',
         'date_formation_catalogue', 'date_examen_theorique',
-        'type_examen', 'b2_vierge', 'numero_dossier_cma', 'notes', 'auth_user_id',
+        'type_examen', 'b2_vierge', 'numero_dossier_cma', 'notes', 'auth_user_id', 'abandonnee',
       ].join(', ');
       const pageSize = 1000;
       let from = 0;
@@ -335,13 +335,15 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
             }
 
             const hasAnomalies = anomalies.length > 0;
+            const annulee = (apprenant as any).abandonnee === true;
 
             return (
               <div 
                 key={apprenant.id || `apprenant-${index}`} 
                 className={`bg-card rounded-xl border p-5 hover:shadow-lg transition-all duration-200 cursor-pointer ${
-                  hasAnomalies ? 'border-red-500 border-2' : 'border-border'
+                  annulee ? 'border-destructive border-2 bg-destructive/5' : hasAnomalies ? 'border-red-500 border-2' : 'border-border'
                 }`}
+
                 onClick={() => setSelectedApprenantId(apprenant.id)}
               >
                 <div className="flex items-start justify-between">
@@ -353,7 +355,13 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</h3>
+                        {annulee && (
+                          <span className="inline-flex items-center rounded-md bg-destructive px-2.5 py-1 text-base font-extrabold uppercase tracking-wide text-destructive-foreground">
+                            Annulé
+                          </span>
+                        )}
                         {hasAnomalies && (
+
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>

@@ -218,3 +218,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Date examen : réponse du dossier de bienvenue toujours prioritaire ; date la plus proche seulement si vide (ApprenantEditForm + dateExamenDossierBienvenue, 4 tests PASS)
 
 - [x] 07/10 18:34 UTC T3P : cinq corrections autorisées, quiz 1/2 VTC réactivés ; protection serveur contre reconstruction des bilans ; 62 contenus comparés, bilans 4/9 intacts, 102 tests ordre PASS. Runtime déjà protégé, aucune modification frontend requise. Écrans complets/Safari iPhone et publication non vérifiés ; aucun déploiement.
+
+- [x] 08/10 15:45 UTC Annulation d'inscription : « INSCRIPTION ANNULÉE » en grand et en rouge sur la fiche apprenant (avec date) + badge rouge « ANNULÉ » sur la carte de la liste des apprenants et dans la table Apprenants ; masquage Examens/Réussite/sessions conservé ; aucune donnée supprimée ; vérifié à l'écran sur David FERREIRA ; frontend non publié.
