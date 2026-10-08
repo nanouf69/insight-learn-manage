@@ -108,3 +108,9 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 ## 08/10/2026 — Livres de formation à la place des fiches de synthèse
 - Modules Fiches Révisions 70 (VTC), 71 (TAXI), 72 (TA), 73 (VA) : les liens « Fiche Synthèse » pointent vers Livre_VTC/TAXI/TA/VA_FINAL.pdf (stockage durable du projet, fichiers identiques octet par octet aux pièces jointes).
 - Pourquoi : demande de naoufal guenichi. Identifiants des éléments conservés, Définitions/Bilan QRC inchangés, anciennes fiches conservées dans le stockage, aucune donnée élève touchée.
+
+## 08/10/2026 — Semaine d'entrée dans la convocation TA
+- Demande : naoufal guenichi — à côté des horaires 8h45-12h / 13h-16h, afficher toujours la semaine d'entrée en formation.
+- Modèle email_templates `convocation-ta` : « Horaires de la première semaine ({{semaine_entree}}) : de 8h45 à 12h et de 13h à 16h. » — sauvegarde avant modification : docs/backups/convocation-ta-avant-semaine-entree-2026-10-08.html.
+- SessionDetail.tsx : nouvelle variable {{semaine_entree}} = du jour de début au vendredi de la même semaine (bornée par date_fin) ; ajoutée à la liste des variables affichée dans l'éditeur.
+- Vérification : modèle en base relu après écriture ; calcul testé (26/10 → « du 26 octobre au 30 octobre 2026 » ; début en cours de semaine borné au vendredi ; fin de session plus courte bornée). Aucune autre phrase modifiée, aucune donnée élève touchée, frontend non publié.

@@ -3366,6 +3366,26 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       || (a.date_examen_pratique ? formatDateFr(a.date_examen_pratique) : '[date à compléter]');
     const periodeExamenPratique = pratiqueAuto.examenPratique || '[dates à compléter]';
     const periodeEntrainementPratique = pratiqueAuto.entrainementPratique || '[dates à compléter]';
+    // Semaine d'entrée en formation : de la date de début au vendredi de la même semaine
+    // (bornée par la fin de formation si la session est plus courte).
+    const semaineEntree = (() => {
+      if (!dateDebutRaw) return null;
+      try {
+        const start = new Date(dateDebutRaw + 'T00:00:00');
+        if (isNaN(start.getTime())) return null;
+        const end = new Date(start);
+        const jour = start.getDay(); // 0 = dimanche, 6 = samedi
+        end.setDate(end.getDate() + (jour === 0 ? 5 : jour === 6 ? 6 : 5 - jour));
+        const finRaw = dateFinRaw ? new Date(dateFinRaw + 'T00:00:00') : null;
+        if (finRaw && !isNaN(finRaw.getTime()) && finRaw < end) end.setTime(finRaw.getTime());
+        const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        const fmt = (d: Date) => `${d.getDate()} ${mois[d.getMonth()]}`;
+        return `du ${fmt(start)} au ${fmt(end)} ${end.getFullYear()}`;
+      } catch {
+        return null;
+      }
+    })();
+    const semaineEntreeText = semaineEntree || '[semaine à compléter]';
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}`;
     const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
@@ -3384,6 +3404,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       .replace(/\{\{date_examen_pratique\}\}/g, dateExamenPratique)
       .replace(/\{\{periode_examen_pratique\}\}/g, periodeExamenPratique)
       .replace(/\{\{periode_entrainement_pratique\}\}/g, periodeEntrainementPratique)
+      .replace(/\{\{semaine_entree\}\}/g, semaineEntreeText)
       .replace(/\{\{date_jour\}\}/g, today)
 
       .replace(/\{\{civilite\}\}/g, a.civilite || '')
@@ -6480,7 +6501,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </div>
           <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
             <span className="text-xs text-muted-foreground">
-              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{lieu_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{horaire_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_entrainement_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
+              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{semaine_entree}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{lieu_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{horaire_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{periode_entrainement_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
             </span>
           </div>
           <div className="flex justify-end gap-2">
