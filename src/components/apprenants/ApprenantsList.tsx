@@ -209,11 +209,13 @@ function ApprenantTable({
           {dedupeByStableId(data).map((apprenant, index) => {
             const status = emargementStatus[apprenant.id];
             const missing = status?.needsSignature;
+            const annulee = (apprenant as any).abandonnee === true;
             return (
             <TableRow
               key={apprenant.id || `apprenant-${index}`}
-              className={missing ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive" : "hover:bg-muted/50"}
+              className={annulee ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive" : missing ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive" : "hover:bg-muted/50"}
             >
+
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
@@ -226,7 +228,13 @@ function ApprenantTable({
                       {apprenant.civilite && `${apprenant.civilite} `}
                       {apprenant.prenom} {apprenant.nom}
                     </span>
+                    {annulee && (
+                      <span className="ml-2 inline-flex items-center rounded-md bg-destructive px-2.5 py-1 text-base font-extrabold uppercase tracking-wide text-destructive-foreground">
+                        Annulé
+                      </span>
+                    )}
                     {missing && (
+
                       <div className="mt-1">
                         <Badge variant="destructive" className="gap-1 text-[10px] py-0.5">
                           <AlertTriangle className="w-3 h-3" />

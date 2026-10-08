@@ -586,7 +586,28 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         </div>
       </div>
 
+      {(apprenant as any).abandonnee === true && (
+        <div className="rounded-lg border-2 border-destructive bg-destructive/10 px-4 py-3 flex flex-wrap items-center gap-3">
+          <AlertTriangle className="w-9 h-9 text-destructive shrink-0" />
+          <div>
+            <div className="text-3xl font-extrabold uppercase tracking-wide text-destructive leading-none">
+              Inscription annulée
+            </div>
+            {(() => {
+              const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String((apprenant as any).date_abandon ?? ""));
+              if (!m) return null;
+              return (
+                <div className="mt-1.5 text-sm font-semibold text-destructive">
+                  Annulée le {m[3]}/{m[2]}/{m[1]}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Taux de réalisation (mêmes valeurs que le relevé de connexions) */}
+
       {taux && (
         <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
