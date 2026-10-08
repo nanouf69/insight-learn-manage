@@ -30,7 +30,7 @@ describe("Correction IA QRC e-learning — périmètre", () => {
     expect(estElearning("vtc-e")).toBe(true);
   });
   it("la fonction serveur s'arrête pour un non e-learning, un passage antérieur, un compte test ou un interrupteur éteint", () => {
-    expect(fonction).toMatch(/if \(!cfg\?\.actif\) return json\(\{ ok: true, statut: "desactive" \}\)/);
+    expect(fonction).toMatch(/if \(!estRattrapage && !cfg\?\.actif\) return json\(\{ ok: true, statut: "desactive" \}\)/);
     expect(fonction).toMatch(/non_elearning/);
     expect(fonction).toMatch(/passage_anterieur_activation/);
     expect(fonction).toMatch(/compte_test_exclu/);
