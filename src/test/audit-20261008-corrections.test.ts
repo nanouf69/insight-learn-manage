@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { estEmailValide } from "../../supabase/functions/_shared/send-branded-email";
+import { estEmailValide } from "../../supabase/functions/_shared/email-valide";
 import { deciderReutilisation } from "../../supabase/functions/_shared/compte-existant";
 
 describe("Audit 08/10 — corrections", () => {

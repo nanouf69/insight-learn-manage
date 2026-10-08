@@ -14,9 +14,8 @@ interface BrandedEmailParams {
 
 const FROM_ADDRESS = "FTRANSPORT <contact@ftransport.fr>";
 
-export function estEmailValide(to: unknown): boolean {
-  return typeof to === "string" && /^[^\s@,;<>]+@[^\s@,;<>]+\.[a-z]{2,}$/i.test(to.trim());
-}
+import { estEmailValide } from "./email-valide.ts";
+export { estEmailValide };
 
 /**
  * Single outbound transport for FTRANSPORT emails.
