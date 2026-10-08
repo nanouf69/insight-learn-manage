@@ -14,6 +14,9 @@ interface BrandedEmailParams {
 
 const FROM_ADDRESS = "FTRANSPORT <contact@ftransport.fr>";
 
+import { estEmailValide } from "./email-valide.ts";
+export { estEmailValide };
+
 /**
  * Single outbound transport for FTRANSPORT emails.
  * Using the branded sender here prevents the Microsoft mailbox profile name
@@ -26,6 +29,12 @@ export async function sendBrandedEmail({
   replyTo,
   attachments = [],
 }: BrandedEmailParams): Promise<void> {
+  // Adresse invalide (ex. « rrt ») : envoi ignoré AVANT le fournisseur, avec motif explicite.
+  // La fiche n'est ni modifiée ni supprimée.
+  if (!estEmailValide(to)) {
+    console.warn(`[email-invalide] Envoi ignoré : adresse invalide « ${String(to ?? "").slice(0, 80)} »`);
+    throw new Error(`ADRESSE_INVALIDE : envoi ignoré, adresse « ${String(to ?? "").slice(0, 80)} » invalide`);
+  }
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const restHeaders = {

@@ -179,7 +179,7 @@ serve(async (req) => {
       "passage-pratique": "Passage examen pratique",
     };
 
-    const results: { id: string; email: string; success: boolean; accountCreated?: boolean; error?: string }[] = [];
+    const results: { id: string; email: string; success: boolean; accountCreated?: boolean; error?: string; ignore?: boolean }[] = [];
     const senderEmail = "contact@ftransport.fr";
     const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
 
@@ -223,7 +223,8 @@ serve(async (req) => {
                 authUserId = decision.authUserId;
               } else {
                 console.error(`[auto-send-credentials] ${apprenant.email}: ${decision.raison}`);
-                results.push({ id: apprenant.id, email: apprenant.email, success: false, error: decision.raison });
+                // Dossier volontairement bloqué (réinscription) : ignoré avec motif, pas compté comme échec.
+                results.push({ id: apprenant.id, email: apprenant.email, success: false, ignore: decision.raison.startsWith("Réinscription"), error: decision.raison });
                 continue;
               }
             } else {
@@ -373,7 +374,8 @@ serve(async (req) => {
     }
 
     const successCount = results.filter((r) => r.success).length;
-    const failCount = results.filter((r) => !r.success).length;
+    const ignoredCount = results.filter((r: any) => r.ignore).length;
+    const failCount = results.filter((r: any) => !r.success && !r.ignore).length;
     const accountsCreated = results.filter((r) => r.accountCreated).length;
 
     // Create admin alert
@@ -381,13 +383,13 @@ serve(async (req) => {
       await supabaseAdmin.from("alertes_systeme").insert({
         type: "auto_credentials",
         titre: `📧 Envoi automatique des identifiants`,
-        message: `${successCount} identifiant(s) envoyé(s), ${accountsCreated} compte(s) créé(s), ${failCount} échec(s)`,
+        message: `${successCount} identifiant(s) envoyé(s), ${accountsCreated} compte(s) créé(s), ${failCount} échec(s), ${ignoredCount} ignoré(s) (décision Admin requise)`,
         details: JSON.stringify(results),
       });
     }
 
     // Alerte e-mail au personnel si au moins un envoi a échoué
-    const echecs = results.filter((r) => !r.success);
+    const echecs = results.filter((r: any) => !r.success && !r.ignore);
     if (echecs.length > 0) {
       try {
         const noms = new Map(toProcess.map((a: any) => [a.id, `${a.prenom || ""} ${a.nom || ""}`.trim()]));

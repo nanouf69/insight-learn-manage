@@ -81,3 +81,12 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - B11 : lecture seule de la progression des 8 élèves sans CGV ; aucun dossier modifié.
 - A1 : plan de correction des quiz par le serveur préparé, rien appliqué.
 - Aucune donnée élève modifiée.
+
+## 2026-10-08 — Corrections de l'audit (accord explicite du propriétaire)
+- SMS automatiques : jeton de service transmis par auto-send-pratique-booking et accepté (apikey) par send-sms-ovh. Cause prouvée : 17 refus « anonyme/refuse_auth » du 28/09 au 06/10.
+- Accès 06:00 : dossier en réinscription bloqué = « ignoré (décision Admin requise) », plus compté comme échec ni alerte e-mail ; aucun rattachement, compte bloqué intact.
+- Adresses invalides : envoi ignoré avant le fournisseur avec motif ADRESSE_INVALIDE (_shared/email-valide.ts) ; aucune fiche modifiée.
+- Contrôle de présence / tableaux bancaires : plus d'appel sans session (cause : appels anonymes, 42501). Migration 0130 : 7 politiques admin limitées aux utilisateurs connectés (restriction admin inchangée).
+- Écran qui se casse (insertBefore / « object can not be found ») : protection DOM ajoutée dans main.tsx.
+- Liens obsolètes /cours-en-ligne et /examens redirigés. Avertissements : Badge et Toaster acceptent une ref.
+- Empreintes avant/après identiques : 62 modules, 2 251 questions, 57 versions d'examen, 4 001 QRC, 2 025 factures ; comptes réponses 8 513, notes 5 078, élèves 3 331.
