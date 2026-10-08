@@ -1,4 +1,4 @@
-import { dateInscriptionAffichee, inscriptionTropTardive } from "@/lib/dateInscription";
+import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
@@ -2604,10 +2604,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           {(() => {
                             const ins = dateInscriptionAffichee(apprenant as any);
                             if (!ins) return <span className="text-xs text-muted-foreground">-</span>;
-                            const tard = inscriptionTropTardive(ins.date, apprenant.date_examen_theorique);
+                            const tard = inscriptionRecente(ins.date);
                             return (
                               <span
-                                title={`${ins.source === "cpf" ? "Acceptation CPF (import Excel)" : "Inscription CRM"}${tard ? " — moins de 15 jours ouvrés avant l'examen" : ""}`}
+                                title={`${ins.source === "cpf" ? "Acceptation CPF (import Excel)" : "Inscription CRM"}${tard ? " — inscrit depuis moins de 15 jours ouvrés" : ""}`}
                                 className={tard ? "text-xs font-bold text-destructive whitespace-nowrap" : "text-xs whitespace-nowrap"}
                               >
                                 {ins.date.split("-").reverse().join("/")}{ins.source === "cpf" ? " (CPF)" : ""}

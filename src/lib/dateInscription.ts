@@ -39,3 +39,11 @@ export function inscriptionTropTardive(dateIso: string, dateExamen: string | nul
   if (!ex || !ins) return false;
   return joursOuvresEntre(ins, ex) < seuil;
 }
+
+/** Rouge : inscription datant de moins de 15 jours ouvrés (par rapport à aujourd'hui). */
+export function inscriptionRecente(dateIso: string, seuil = 15, aujourdhui = new Date()): boolean {
+  const ins = parseDateExamen(dateIso);
+  if (!ins) return false;
+  const auj = new Date(Date.UTC(aujourdhui.getFullYear(), aujourdhui.getMonth(), aujourdhui.getDate(), 12));
+  return joursOuvresEntre(ins, auj) < seuil;
+}
