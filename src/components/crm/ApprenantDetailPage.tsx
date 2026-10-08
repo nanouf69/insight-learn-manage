@@ -549,6 +549,31 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             <Pencil className="w-4 h-4 mr-2" />
             Modifier
           </Button>
+          <Button
+            variant={(apprenant as any).abandonnee ? "default" : "outline"}
+            size="sm"
+            className={(apprenant as any).abandonnee ? "" : "text-destructive border-destructive/40 hover:bg-destructive/10"}
+            onClick={async () => {
+              const annule = (apprenant as any).abandonnee === true;
+              const msg = annule
+                ? `Rétablir l'inscription de ${apprenant.prenom} ${apprenant.nom} ? Il réapparaîtra dans Examens et Réussite et dans ses sessions.`
+                : `Annuler l'inscription de ${apprenant.prenom} ${apprenant.nom} ? Il n'apparaîtra plus dans Examens et Réussite ni dans ses sessions (aucune donnée supprimée, réversible).`;
+              if (!window.confirm(msg)) return;
+              const { error } = await supabase
+                .from("apprenants")
+                .update({ abandonnee: !annule, date_abandon: annule ? null : new Date().toISOString().slice(0, 10) } as any)
+                .eq("id", apprenantId);
+              if (error) { toast.error("Erreur : " + error.message); return; }
+              toast.success(annule ? "Inscription rétablie" : "Inscription annulée");
+              queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
+              queryClient.invalidateQueries({ queryKey: ["apprenants-examen"] });
+              queryClient.invalidateQueries({ queryKey: ["session-apprenants"] });
+              queryClient.invalidateQueries({ queryKey: ["session-apprenants-search"] });
+            }}
+          >
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            {(apprenant as any).abandonnee ? "Inscription annulée — Rétablir" : "Annuler l'inscription"}
+          </Button>
           <Button 
             variant="ghost" 
             size="sm" 

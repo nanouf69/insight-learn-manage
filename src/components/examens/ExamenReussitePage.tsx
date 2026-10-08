@@ -1575,6 +1575,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         .select('*')
         .ilike('date_examen_theorique', `%${selectedExamDate}%`)
         .is('deleted_at', null)
+        .or('abandonnee.is.null,abandonnee.eq.false')
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -1595,6 +1596,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           .not('date_examen_theorique', 'is', null)
           .neq('date_examen_theorique', '')
           .is('deleted_at', null)
+          .or('abandonnee.is.null,abandonnee.eq.false')
           .order('nom', { ascending: true })
           .order('id', { ascending: true })
           .range(from, from + pageSize - 1);
@@ -1718,6 +1720,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           .from('apprenants')
           .select(APPRENANT_SEARCH_SELECT)
           .is('deleted_at', null)
+          .or('abandonnee.is.null,abandonnee.eq.false')
           .order('nom', { ascending: true })
           .range(from, from + pageSize - 1);
 
