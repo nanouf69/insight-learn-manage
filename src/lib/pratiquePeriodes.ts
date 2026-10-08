@@ -1,8 +1,8 @@
 /**
  * Calcule automatiquement, à partir de la date de fin de formation théorique :
  *  - la période d'examen pratique = la 1re session d'examen pratique qui commence après la formation
- *  - la période d'entraînement pratique = les 3 semaines qui précèdent l'examen pratique
- *    (de J-21 à J-3 par rapport au 1er jour d'examen pratique)
+ *  - la période d'entraînement pratique = de J-28 (jamais avant le lendemain de l'examen
+ *    théorique) jusqu'au dernier vendredi avant le 1er jour d'examen pratique
  *
  * Exemple : formation du 14 au 27 septembre 2026
  *   → examen pratique "Du 2 au 13 novembre 2026"
@@ -89,7 +89,8 @@ export interface PratiqueDatesResult {
  * ainsi que la fenêtre d'entraînement pratique (3 semaines avant).
  */
 export function getPratiqueDatesForFormation(
-  dateFinFormation: string | Date | null | undefined
+  dateFinFormation: string | Date | null | undefined,
+  dateExamenTheorique?: string | Date | null
 ): PratiqueDatesResult {
   const empty: PratiqueDatesResult = {
     examenPratique: null, entrainementPratique: null,
@@ -98,13 +99,25 @@ export function getPratiqueDatesForFormation(
   const fin = toDate(dateFinFormation);
   if (!fin) return empty;
 
-  const periode = parsedPeriodes().find((p) => p.debut.getTime() > fin.getTime());
+  // L'entraînement a toujours lieu après l'examen théorique : la période
+  // d'examen pratique retenue est la première qui commence après la formation
+  // ET après l'examen théorique.
+  const theorique = toDate(dateExamenTheorique ?? null);
+  const apres = theorique && theorique.getTime() > fin.getTime() ? theorique : fin;
+  const periode = parsedPeriodes().find((p) => p.debut.getTime() > apres.getTime());
   if (!periode) return empty;
 
-  const entrainementDebut = new Date(periode.debut);
-  entrainementDebut.setDate(entrainementDebut.getDate() - 21);
+  // Début : 4 semaines avant l'examen pratique, jamais avant le lendemain de l'examen théorique.
+  let entrainementDebut = new Date(periode.debut);
+  entrainementDebut.setDate(entrainementDebut.getDate() - 28);
+  if (theorique) {
+    const lendemain = new Date(theorique);
+    lendemain.setDate(lendemain.getDate() + 1);
+    if (lendemain.getTime() > entrainementDebut.getTime()) entrainementDebut = lendemain;
+  }
+  // Fin : dernier vendredi avant le 1er jour d'examen pratique.
   const entrainementFin = new Date(periode.debut);
-  entrainementFin.setDate(entrainementFin.getDate() - 3);
+  do { entrainementFin.setDate(entrainementFin.getDate() - 1); } while (entrainementFin.getDay() !== 5);
 
   return {
     examenPratique: formatPeriodeFr(periode.debut, periode.fin),
