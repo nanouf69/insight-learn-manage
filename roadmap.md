@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## Taux e-learning candidats examens — 08/10
-- [ ] Afficher le taux depuis le suivi existant, uniquement pour les e-learning, sans écriture de progression.
-- [ ] Ajouter sous le taux une préparation de mail individuel modifiable et un envoi manuel confirmé.
-- [ ] Tests isolés sans envoi réel, contrôle ordre/contenus inchangés et journal ; aucune publication.
+- [x] Afficher le taux depuis le suivi existant, uniquement pour les e-learning, sans écriture de progression.
+- [x] Ajouter sous le taux une préparation de mail individuel modifiable et un envoi manuel confirmé.
+- [x] 113 tests isolés réussis, sans envoi réel ; ordre/contenus des 15 formations et 68 fichiers pédagogiques inchangés ; journal ajouté, aucune publication.
 
 ## Réactivations après incident du 28/09 — demande 07/10 18:40 UTC
 - [ ] Présenter le périmètre exact : 13 quiz dans modules 2,10,17,23,25,32,39 ; corrections T3P toutes copies ; module 13 et Bilans Français intacts.

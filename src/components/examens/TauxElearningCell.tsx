@@ -7,7 +7,7 @@ import { useApprenantTauxRealisation } from '@/hooks/useApprenantTauxRealisation
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,7 +61,7 @@ export function TauxElearningCell({ candidat }: { candidat: CandidatElearning })
       onClick={() => { setMail(mailRelanceElearning(candidat.prenom)); setOpen(true); }}><Mail className="h-3.5 w-3.5" /></Button>
     <Dialog open={open} onOpenChange={value => { if (!sending) setOpen(value); }}>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Relance e-learning</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Relance e-learning</DialogTitle><DialogDescription>Vérifiez et adaptez le message avant de confirmer l’envoi individuel.</DialogDescription></DialogHeader>
         <div className="space-y-4">
           <div><Label>Destinataire</Label><p className="break-all text-sm">{candidat.email}</p></div>
           <div><Label htmlFor={`relance-subject-${candidat.id}`}>Objet</Label><Input id={`relance-subject-${candidat.id}`} value={mail.subject} disabled={sending} onChange={e => setMail({ ...mail, subject: e.target.value })} /></div>
