@@ -1032,6 +1032,7 @@ export type Database = {
           created_at: string
           creneau_horaire: string | null
           date_abandon: string | null
+          date_acceptation_cpf: string | null
           date_debut_cours_en_ligne: string | null
           date_debut_formation: string | null
           date_examen_pratique: string | null
@@ -1103,6 +1104,7 @@ export type Database = {
           created_at?: string
           creneau_horaire?: string | null
           date_abandon?: string | null
+          date_acceptation_cpf?: string | null
           date_debut_cours_en_ligne?: string | null
           date_debut_formation?: string | null
           date_examen_pratique?: string | null
@@ -1174,6 +1176,7 @@ export type Database = {
           created_at?: string
           creneau_horaire?: string | null
           date_abandon?: string | null
+          date_acceptation_cpf?: string | null
           date_debut_cours_en_ligne?: string | null
           date_debut_formation?: string | null
           date_examen_pratique?: string | null
@@ -8486,6 +8489,7 @@ export type Database = {
           created_at: string
           creneau_horaire: string | null
           date_abandon: string | null
+          date_acceptation_cpf: string | null
           date_debut_cours_en_ligne: string | null
           date_debut_formation: string | null
           date_examen_pratique: string | null

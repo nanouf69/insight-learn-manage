@@ -1,3 +1,4 @@
+import { dateInscriptionAffichee, inscriptionTropTardive } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
@@ -2456,6 +2457,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <TableHead>Statut</TableHead>
                     <TableHead>Tél.</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Date d'inscription</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-center"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
@@ -2598,6 +2600,21 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           })()}
                         </TableCell>
 
+                        <TableCell>
+                          {(() => {
+                            const ins = dateInscriptionAffichee(apprenant as any);
+                            if (!ins) return <span className="text-xs text-muted-foreground">-</span>;
+                            const tard = inscriptionTropTardive(ins.date, apprenant.date_examen_theorique);
+                            return (
+                              <span
+                                title={`${ins.source === "cpf" ? "Acceptation CPF (import Excel)" : "Inscription CRM"}${tard ? " — moins de 15 jours ouvrés avant l'examen" : ""}`}
+                                className={tard ? "text-xs font-bold text-destructive whitespace-nowrap" : "text-xs whitespace-nowrap"}
+                              >
+                                {ins.date.split("-").reverse().join("/")}{ins.source === "cpf" ? " (CPF)" : ""}
+                              </span>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell>
                           <Badge className="whitespace-normal break-words bg-primary/10 px-1.5 text-[10px] leading-tight text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>

@@ -1,0 +1,2 @@
+ALTER TABLE public.apprenants ADD COLUMN IF NOT EXISTS date_acceptation_cpf date;
+COMMENT ON COLUMN public.apprenants.date_acceptation_cpf IS 'Date d''acceptation CPF reprise d''un import Excel ; à défaut la date d''inscription CRM (created_at) est affichée.';

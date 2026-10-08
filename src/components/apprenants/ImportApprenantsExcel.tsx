@@ -20,6 +20,7 @@ interface ParsedRow {
   formation_choisie: string | null;
   date_debut: string | null;
   date_fin: string | null;
+  date_acceptation_cpf: string | null;
   montant_ttc: number | null;
 }
 
@@ -99,6 +100,7 @@ export function ImportApprenantsExcel({ onImported }: { onImported?: () => void 
           formation_choisie: pick(r, ["formation", "formation choisie", "formation_choisie"]) || null,
           date_debut: toIsoDate(pick(r, ["date debut", "date_debut", "debut", "date de debut", "date début"])),
           date_fin: toIsoDate(pick(r, ["date fin", "date_fin", "fin", "date de fin"])),
+          date_acceptation_cpf: toIsoDate(pick(r, ["date acceptation", "date d'acceptation", "date acceptation cpf", "date d'acceptation cpf", "acceptation cpf", "date validation", "date inscription", "date d'inscription"])),
           montant_ttc: montant ? Number(montant.replace(",", ".").replace(/[^\d.]/g, "")) || null : null,
         };
       })
@@ -147,6 +149,7 @@ export function ImportApprenantsExcel({ onImported }: { onImported?: () => void 
             source_inscription: "import_excel",
             date_debut_formation: row.date_debut,
             date_fin_formation: row.date_fin,
+            date_acceptation_cpf: row.date_acceptation_cpf,
             // Accès e-learning exactement sur les dates inscrites dans le tableur
             date_debut_cours_en_ligne: row.date_debut,
             date_fin_cours_en_ligne: row.date_fin,
