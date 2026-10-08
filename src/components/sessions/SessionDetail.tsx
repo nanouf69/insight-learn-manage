@@ -884,7 +884,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             organisme_financeur,
             documents_complets,
             modalite_formation,
-            frais_examen
+            frais_examen,
+            abandonnee
           )
         `)
         .eq('session_id', session.id);
@@ -895,7 +896,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
       // Ne pas filtrer les e-learning : s'ils ont été explicitement ajoutés à une session
       // théorique, ils doivent apparaître (sinon impossible de les gérer / retirer).
-      const filtered = data || [];
+      // Inscription annulée : masquée de la session (la ligne d'inscription est conservée).
+      const filtered = (data || []).filter((sa: any) => sa.apprenant?.abandonnee !== true);
       console.log('[SessionDetail] apprenantsInSession chargés:', filtered.length);
       return filtered;
 

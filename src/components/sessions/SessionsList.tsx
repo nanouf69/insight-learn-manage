@@ -114,10 +114,10 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
     queryFn: async () => {
       const { data, error } = await supabase
         .from('session_apprenants')
-        .select('session_id, apprenant_id, apprenants(nom, prenom, email, telephone, resultat_examen)');
+        .select('session_id, apprenant_id, apprenants(nom, prenom, email, telephone, resultat_examen, abandonnee)');
       
       if (error) throw error;
-      return data || [];
+      return (data || []).filter((r: any) => r.apprenants?.abandonnee !== true);
     },
   });
 
