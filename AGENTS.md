@@ -23,3 +23,4 @@
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Course/quiz order and admin labels share permanent-ID associations; historical adapters stay unchanged; why: prevent positional drift. Verify all paths against dated baselines and append the change journal.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
+- Exam rates reuse CRM hook, mails require confirmation; why: no drift or auto-send.

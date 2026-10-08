@@ -33,6 +33,7 @@ import { usePratiqueCandidateNotes } from "@/hooks/usePratiqueCandidateNotes";
 import { PratiqueCandidateNote } from "./PratiqueCandidateNote";
 import { pratiqueNoteHTML, pratiqueCandidateNameHTML } from "@/lib/pratiqueCandidateNotes";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
+import { TauxElearningCell } from './TauxElearningCell';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -2441,7 +2442,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   <col className="w-[14%]" />
                   <col className="w-[11%]" />
                   <col className="w-[8%]" />
-                  <col className="w-[13%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[7%]" />
                   <col className="w-[6%]" />
                   <col className="w-[3%]" />
                 </colgroup>
@@ -2457,6 +2460,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <TableHead>Statut</TableHead>
                     <TableHead>Tél.</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Taux e-learning</TableHead>
                     <TableHead>Date d'inscription</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-center"><span className="sr-only">Actions</span></TableHead>
@@ -2600,6 +2604,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           })()}
                         </TableCell>
 
+                        <TableCell><TauxElearningCell candidat={apprenant} /></TableCell>
                         <TableCell>
                           {(() => {
                             const ins = dateInscriptionAffichee(apprenant as any);
