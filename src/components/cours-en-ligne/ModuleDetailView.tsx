@@ -389,6 +389,28 @@ function CourseFileViewer({
         />
       )}
 
+      {isPdf && fichier.url.startsWith("/__l5e/") && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href={displayUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+          >
+            <Maximize className="w-4 h-4" />
+            Ouvrir le livre
+          </a>
+          <a
+            href={displayUrl}
+            download={fichier.nom}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-primary text-primary text-sm font-medium hover:bg-primary/10"
+          >
+            <Download className="w-4 h-4" />
+            Télécharger {fichier.nom}
+          </a>
+        </div>
+      )}
+
       {isPdf && !shouldShowViewers && (
         <div className="mt-2">
           <PdfSlideViewer
