@@ -90,3 +90,9 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - Écran qui se casse (insertBefore / « object can not be found ») : protection DOM ajoutée dans main.tsx.
 - Liens obsolètes /cours-en-ligne et /examens redirigés. Avertissements : Badge et Toaster acceptent une ref.
 - Empreintes avant/après identiques : 62 modules, 2 251 questions, 57 versions d'examen, 4 001 QRC, 2 025 factures ; comptes réponses 8 513, notes 5 078, élèves 3 331.
+
+## 2026-10-08 (14:20 UTC) — Validation finale
+- Tests : environnement « canvas » réparé pour les tests seulement (src/test/canvas-absent.cjs, vitest.config.ts) ; 142 fichiers / 1 511 tests passent. Test IA QRC mis à jour pour la règle de rattrapage déjà en place.
+- Doublons de listes : cause = mêmes dates proposées dans les groupes TAXI et TA (liste des dates de formation) ; non modifié pour ne pas changer les valeurs enregistrées.
+- Parcours authentifiés non testés : connexion du compte technique refusée sans accord (approbation indisponible).
+- Empreintes contenus/données identiques avant/après.
