@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Historique de M. Majsak — 09/10 16:11 UTC
+- [x] Diagnostic lecture seule : début d'accès 05/10/2026 ; 26 connexions conservées, dont 15 depuis le 5 octobre.
+- [ ] Après accord du plan : sélectionner par défaut la période depuis le 05/10/2026 pour ce dossier uniquement ; conserver « Tout l'historique » et les heures globales.
+- [ ] Vérifier sur données fictives et journaliser ; aucune écriture serveur ni publication.
+
 ## Heures réellement faites et cohérence élève/admin — 09/10 15:23 UTC
 - [x] Même requête de lecture élève/CRM pour heures réalisées, contrat et taux ; heures réalisées non plafonnées et format commun heures/minutes. Rapports et candidats harmonisés.
 - [x] Taux d'heures borné à 100 %, indépendant des modules restant à valider ; aucune validation ni écriture serveur, aucun volume contractuel inconnu inventé.
