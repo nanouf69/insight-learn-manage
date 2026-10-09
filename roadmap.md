@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Taux e-learning vide — 09/10
+- [x] Réutiliser les heures requises du parcours si aucun volume contractuel n'est renseigné, sans changer les heures réalisées ni les modules.
+- [x] 136 tests isolés PASS : VTC/TAXI/VA/TA, priorité contrat, séparation heures/modules et ordre pédagogique ; compilation automatique OK.
+- [x] Journaliser ; aucune écriture élève ni publication.
+- [ ] Vérification authentifiée sur appareil réel NON PROUVÉE : compte technique soumis à approbation.
+
 ## Pratique signée et taux présentiel — 09/10 15:07 UTC
 - [x] Compter uniquement les signatures présentes aux horaires du planning ; conserver les heures prouvées même sans volume contractuel présentiel.
 - [x] Actualiser le taux CRM sur événement de signature, sans écriture de progression ni modification du contrat ; corriger également les lectures des rapports.

@@ -7,11 +7,16 @@ const state = vi.hoisted(() => ({
   rows: [] as Record<string, unknown>[],
   subscription: undefined as (() => void) | undefined,
   selects: [] as string[],
+  learner: { heures_elearning: 60, heures_presentiel: 0, heures_totales: 66, type_apprenant: "vtc-e" } as Record<string, unknown>,
+  connections: [] as Record<string, unknown>[],
+  activities: [] as Record<string, unknown>[],
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: (table: string) => {
-    const data = () => table === "apprenants" ? { heures_elearning: 60, heures_presentiel: 0, heures_totales: 66, type_apprenant: "vtc-e" }
-      : table === "emargements_fc" ? state.rows : [];
+    const data = () => table === "apprenants" ? state.learner
+      : table === "emargements_fc" ? state.rows
+      : table === "apprenant_connexions" ? state.connections
+      : table === "apprenant_module_activites" ? state.activities : [];
     const builder: Record<string, unknown> = {};
     for (const method of ["eq", "filter", "range"]) builder[method] = () => builder;
     builder.select = (columns: string) => { if (table === "emargements_fc") state.selects.push(columns); return builder; };
@@ -53,5 +58,21 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
     expect(state.selects.every((columns) => columns.includes("signature_data_url"))).toBe(true);
     unmount();
     client.clear();
+  });
+  it.each([["vtc-e", 60], ["taxi-e", 90], ["va-e", 7], ["ta-e", 35]])("affiche des heures requises pour %s sans valider de module", async (type, required) => {
+    state.learner = { type_apprenant: type, heures_elearning: null, heures_presentiel: null, heures_totales: null };
+    state.rows = [];
+    const end = type === "va-e" ? "2026-10-01T16:00:00Z" : "2026-10-01T12:00:00Z";
+    state.connections = [{ started_at: "2026-10-01T09:00:00Z", ended_at: end, last_seen_at: end }];
+    state.activities = [{ action_type: "open_module", module_nom: "Cours", occurred_at: "2026-10-01T09:30:00Z" }];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const { result, unmount } = renderHook(() => useApprenantTauxRealisation("fictif"), { wrapper });
+    await waitFor(() => expect(result.current.data?.reqElearning).toBe(required));
+    const done = type === "va-e" ? 7 : 3;
+    expect(result.current.data?.doneElearning).toBe(done);
+    expect(result.current.data?.pctElearning).toBe(Math.round(done * 100 / Number(required)));
+    expect(result.current.data?.modulesCompleted).toBe(0);
+    unmount(); client.clear();
   });
 });

@@ -6,6 +6,7 @@ import { getSessionEndMs, clampConnexionsToAccessEnd, getAccessCutoffMs } from "
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours, presentielProgress } from "@/lib/presentielHours";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
+import { requiredElearningHours } from "@/lib/elearningRequiredHours";
 
 
 export interface TauxRealisation {
@@ -55,7 +56,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       // encore etre charge au premier rendu (sinon taux calcules sur 0h).
       const { data: apprenantRow } = await supabase
         .from("apprenants")
-        .select("heures_elearning, heures_presentiel, heures_totales, date_fin_cours_en_ligne, date_fin_formation")
+        .select("heures_elearning, heures_presentiel, heures_totales, type_apprenant, date_fin_cours_en_ligne, date_fin_formation")
         .eq("id", apprenantId)
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
@@ -168,9 +169,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
 
 
-      const reqElearning =
-        Number(apprenant?.heures_elearning) ||
-        Math.max(0, (Number(apprenant?.heures_totales) || 0) - (Number(apprenant?.heures_presentiel) || 0));
+      const reqElearning = requiredElearningHours(apprenant);
       const presence = presentielProgress(theorieHours + pratiqueMinutes / 60, Number(apprenant?.heures_presentiel) || 0, pratiqueDetails);
       const reqPresentiel = presence.required;
       const reqTotal = Number(apprenant?.heures_totales) || reqElearning + reqPresentiel;
