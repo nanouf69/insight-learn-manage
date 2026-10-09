@@ -1116,6 +1116,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     maxPerDay,
     maxPerDayMap,
     dayTimeSlots,
+    noteLettreCMA,
   ]);
 
   const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
