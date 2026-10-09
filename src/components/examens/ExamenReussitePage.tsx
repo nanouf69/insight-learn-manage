@@ -1969,6 +1969,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
+        note_lettre_cma: noteLettreCMA,
         updated_at: new Date().toISOString(),
       };
       // Ligne existante : simple mise à jour (un upsert sans dates « Du/Au » est refusé par la base).
@@ -1982,7 +1983,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots]);
+  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
