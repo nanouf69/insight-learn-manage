@@ -1482,8 +1482,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .map((r: any) => `${r.date_emargement}|${r.demi_journee}`),
       );
 
-      // Premier créneau non signé (passés d'abord, puis aujourd'hui)
-      const next = expected.find((e) => !signedSet.has(`${e.date}|${e.creneau}`));
+      // Créneau à signer : AUJOURD'HUI d'abord (la feuille du jour est prioritaire),
+      // puis les créneaux passés non signés. Aucun créneau en retard n'est retiré.
+      const next =
+        expected.find((e) => e.date === todayStr && !signedSet.has(`${e.date}|${e.creneau}`)) ||
+        expected.find((e) => !signedSet.has(`${e.date}|${e.creneau}`));
       if (!next) {
         setEmargementCreneau(null);
         setEmargementDate(null);
