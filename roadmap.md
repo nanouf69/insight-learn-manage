@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Heures réellement faites et cohérence élève/admin — 09/10 15:23 UTC
+- [ ] Partager le calcul des heures réalisées et requises entre les comptes élève et administrateur ; ne plus plafonner les heures réalisées.
+- [ ] Garder les taux bornés à 100 %, les validations serveur et toutes les données inchangées ; ne pas inventer les volumes contractuels manquants.
+- [ ] Vérifier sur données fictives les dépassements, contrats et parcours ; journaliser sans publication ni écriture élève.
+
 ## Vérification des taux des autres élèves — 09/10 15:19 UTC
 - [x] Audit lecture seule de 239 dossiers suivis, hors comptes techniques, archivés et abandonnés ; 41 dossiers bénéficient du repli corrigé.
 - [x] 125 tests fictifs PASS (5 fichiers) ; compilation automatique OK. Divergence prouvée : 6 VTC-e avec contrats 66/90 h mais compteur élève standard 60 h ; 4 dossiers sans type malgré formation continue VTC ; 3 continue-taxi sans référence horaire. 1 contrat VTC à vérifier : 20+34 h contre total 60 h, aucune valeur corrigée.
