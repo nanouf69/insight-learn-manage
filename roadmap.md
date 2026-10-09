@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Vérification des taux des autres élèves — 09/10 15:19 UTC
+- [x] Audit lecture seule de 239 dossiers suivis, hors comptes techniques, archivés et abandonnés ; 41 dossiers bénéficient du repli corrigé.
+- [x] 125 tests fictifs PASS (5 fichiers) ; compilation automatique OK. Divergence prouvée : 6 VTC-e avec contrats 66/90 h mais compteur élève standard 60 h ; 4 dossiers sans type malgré formation continue VTC ; 3 continue-taxi sans référence horaire. 1 contrat VTC à vérifier : 20+34 h contre total 60 h, aucune valeur corrigée.
+- [ ] Correction des divergences : attend un accord explicite ; volume de référence continue-taxi à prouver avant changement. Vérification authentifiée des écrans NON PROUVÉE, compte technique soumis à approbation.
+- Aucun changement de l'application, aucune écriture élève, aucun envoi ni publication ; corrections soumises à accord.
+
 ## Taux e-learning vide — 09/10
 - [x] Réutiliser les heures requises du parcours si aucun volume contractuel n'est renseigné, sans changer les heures réalisées ni les modules.
 - [x] 136 tests isolés PASS : VTC/TAXI/VA/TA, priorité contrat, séparation heures/modules et ordre pédagogique ; compilation automatique OK.
