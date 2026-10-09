@@ -953,6 +953,13 @@
       "when": 1791545739595,
       "tag": "0135_acces_auto_apres_modification_apprenant",
       "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1791553529188,
+      "tag": "0136_restreindre_lecture_questions_utilisateurs_autorises",
+      "breakpoints": true
     }
   ]
 }
