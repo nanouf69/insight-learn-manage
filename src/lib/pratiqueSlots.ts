@@ -170,7 +170,10 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
     }))
     .filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
 
-  const daySlots = await fetchPlanningDaySlotsForDates(reservations.map((row) => row.date));
+  const practicalSessionDates = ((sessionsRes.data as any[]) || [])
+    .filter((row) => String(row?.sessions?.type_session || "").toLowerCase().includes("pratique"))
+    .map((row) => normalizeDate(row.sessions.date_debut));
+  const daySlots = await fetchPlanningDaySlotsForDates([...reservations.map((row) => row.date), ...practicalSessionDates]);
   const out: PratiqueSlotDetail[] = reservations.map((row) => {
     const parts = resolvePratiqueSlotParts(daySlots.get(row.date), row.typeFormation, row.reservationCreneau);
     const minutes = parts.reduce((sum, part) => sum + part.minutes, 0);
@@ -189,18 +192,20 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
     const date = normalizeDate(sess.date_debut);
     if (!date || seenDates.has(date)) continue;
     const minutes = minutesFromSessionTimes(row.heure_debut_personnalisee || sess.heure_debut, row.heure_fin_personnalisee || sess.heure_fin, 180);
+    const plannedSlot = daySlots.get(date);
+    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee") : undefined;
     out.push({
       date,
       typeFormation: normalizePratiqueType(sess.nom),
       reservationCreneau: "journee",
-      parts: [{
+      parts: plannedParts ?? [{
         creneau: "matin",
         label: `${String(row.heure_debut_personnalisee || sess.heure_debut || "").slice(0, 5)} - ${String(row.heure_fin_personnalisee || sess.heure_fin || "").slice(0, 5)}`,
         minutes,
         startMinute: parseClockMinutes(row.heure_debut_personnalisee || sess.heure_debut),
         endMinute: parseClockMinutes(row.heure_fin_personnalisee || sess.heure_fin),
       }],
-      minutes,
+      minutes: plannedParts ? plannedParts.reduce((sum, part) => sum + part.minutes, 0) : minutes,
       label: "Pratique",
     });
     seenDates.add(date);
