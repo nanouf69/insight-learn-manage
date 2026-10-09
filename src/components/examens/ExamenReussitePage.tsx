@@ -1957,6 +1957,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDayMap({});
         setDayTimeSlots({});
         setNoteLettreCMA("");
+        setLettreExclusIds([]);
       }
 
       setPlanningDatesUnlocked(false);
@@ -1980,6 +1981,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
         note_lettre_cma: noteLettreCMA,
+        lettre_exclus_ids: lettreExclusIds,
         updated_at: new Date().toISOString(),
       };
       // Ligne existante : simple mise à jour (un upsert sans dates « Du/Au » est refusé par la base).
