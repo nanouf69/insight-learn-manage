@@ -3,6 +3,14 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-09 15:23 UTC — Heures réellement faites et cohérence élève/admin
+- Demande explicite : afficher ce qui est réellement fait et assurer la cohérence des comptes élève et administrateur.
+- Lecture seule préalable : 239 dossiers suivis ; contrats personnalisés différents du standard, types manquants, heures réalisées plafonnées dans le CRM et pourcentage élève limité à 99% à cause de modules restants.
+- Fichiers : src/lib/elearningRequiredHours.ts, src/hooks/useStudentEffectiveHours.ts, src/hooks/useApprenantTauxRealisation.ts, src/components/cours-en-ligne/StudentHoursTracker.tsx, src/components/crm/ApprenantDetailPage.tsx, src/components/examens/TauxElearningCell.tsx, src/components/cours-en-ligne/ApprenantActivityReport.tsx, src/test/elearning-required-hours.test.ts, src/test/presentiel-taux-hook.test.tsx, src/test/examen-elearning-relance.test.tsx, AGENTS.md, roadmap.md, ce journal.
+- Compteur élève adapté à la même requête de lecture que le CRM : même contrat, preuves, date de fin et taux. Politique de lecture du propre dossier élève vérifiée en base. Heures réalisées non plafonnées au volume requis ; affichage commun en heures/minutes. Taux d'heures limité à 100%, distinct des modules ; mention « Modules à valider » conservée, aucune validation automatique.
+- Rapports : heures réelles et référence contractuelle partagée ; repli formation connue uniquement si type absent. Aucun volume TAXI continue inventé, aucun contrat corrigé.
+- Vérifications en cours : tests fictifs de parité, dépassement VA, contrats VTC 66/90 h, séparation modules/heures, présentiel et ordre des formations. Aucun compte réel utilisé, aucune écriture serveur, aucun envoi ni publication.
+
 ## 2026-10-09 — Taux e-learning sans volume contractuel
 - Accord explicite : « Oui, corriger l’affichage ». Diagnostic lecture seule : fiche VA e-learning sans heures_elearning/heures_totales/heures_presentiel ; espace élève utilise déjà 7h, CRM calculait 0h et donc 0%. Dix lignes completed et une in_progress : aucune validation automatique.
 - Fichiers : src/lib/elearningRequiredHours.ts, src/hooks/useStudentEffectiveHours.ts, src/hooks/useApprenantTauxRealisation.ts, src/test/elearning-required-hours.test.ts, src/test/presentiel-taux-hook.test.tsx, AGENTS.md, roadmap.md, ce journal.
