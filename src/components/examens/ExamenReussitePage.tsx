@@ -3381,6 +3381,17 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </div>
                 </div>
               )}
+              <div className="mt-4">
+                <Label className="text-sm font-medium">Note pour la lettre à la CMA</Label>
+                <Textarea
+                  rows={3}
+                  className="mt-1.5"
+                  placeholder="Facultatif — cette note apparaît dans la lettre (aperçu, impression et e-mail envoyé à la CMA)."
+                  value={noteLettreCMA}
+                  onChange={(e) => setNoteLettreCMA(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Enregistrée automatiquement pour cette session d'examen et cette période pratique.</p>
+              </div>
             </CardContent>
           </Card>
         );
