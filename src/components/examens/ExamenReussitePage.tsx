@@ -1119,6 +1119,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     maxPerDayMap,
     dayTimeSlots,
     noteLettreCMA,
+    lettreExclusIds,
   ]);
 
   const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
@@ -1141,6 +1142,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       max_per_day_map: maxPerDayMap,
       day_time_slots: nextDayTimeSlots,
       note_lettre_cma: noteLettreCMA,
+      lettre_exclus_ids: lettreExclusIds,
       updated_at: new Date().toISOString(),
     };
     const { error } = planningRowExistsRef.current
