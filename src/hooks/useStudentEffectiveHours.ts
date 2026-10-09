@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { HEURES_REQUISES } from "@/lib/elearningRequiredHours";
+export { HEURES_REQUISES } from "@/lib/elearningRequiredHours";
 
 export interface ConnexionRow {
   apprenant_id: string;
@@ -23,13 +25,6 @@ interface ModuleActivityRow {
 
 const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
 
-export const HEURES_REQUISES: Record<string, number> = {
-  "vtc-e": 60,
-  "taxi-e": 90,
-  "continue-vtc": 14,
-  "ta-e": 35,
-  "va-e": 7,
-};
 
 async function fetchAll<T>(builder: () => any): Promise<T[]> {
   const PAGE = 1000;
