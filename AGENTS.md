@@ -25,3 +25,6 @@
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
+<!-- LOVABLE:BEGIN -->
+- Presence summaries require a nonempty stored signature, exclude absences/hidden sheets, and use exact planned practical half-days; missing contract targets fall back to planned hours for display only, never writing contracts or module completion; why: blank auto-created sheets are not attendance evidence and proven practical hours must not disappear.
+<!-- LOVABLE:END -->

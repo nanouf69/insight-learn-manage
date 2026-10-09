@@ -537,7 +537,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
               .from("emargements_fc" as any)
-              .select("date_emargement, demi_journee, absent").filter("masque", "eq", false)
+              .select("date_emargement, demi_journee, absent, signature_data_url").filter("masque", "eq", false)
               .eq("apprenant_id", apprenant.id)
               .range(from, to)),
             fetchAllRows<any>((from, to) => supabase
