@@ -8109,6 +8109,10 @@ export type Database = {
           stored_write_seq: number
         }[]
       }
+      peut_lire_contenu_pedagogique: {
+        Args: { _uid: string }
+        Returns: boolean
+      }
       qrc_attempt_publication_state: {
         Args: { p_attempt_id: string }
         Returns: {
