@@ -1163,6 +1163,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     removedCandidatsCMA,
     maxPerDay,
     maxPerDayMap,
+    noteLettreCMA,
   ]);
 
   // Sauvegarde différée (pour la saisie des horaires : évite qu'un upsert par frappe
