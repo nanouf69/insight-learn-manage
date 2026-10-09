@@ -1,7 +1,7 @@
 import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { StrictMode, type ReactNode } from "react";
 
 const state = vi.hoisted(() => ({
   rows: [] as Record<string, unknown>[],
@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   learner: { heures_elearning: 60, heures_presentiel: 0, heures_totales: 66, type_apprenant: "vtc-e" } as Record<string, unknown>,
   connections: [] as Record<string, unknown>[],
   activities: [] as Record<string, unknown>[],
+  channels: new Map<string, { subscribed: boolean; on: (event: string, filter: unknown, callback: () => void) => unknown; subscribe: () => unknown }>(),
+  removed: [] as unknown[],
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: (table: string) => {
@@ -24,11 +26,23 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: data(), error: null }).then(resolve);
     return builder;
   },
-  channel: () => ({ on: (_event: string, _filter: unknown, callback: () => void) => {
-    state.subscription = callback;
-    return { subscribe: () => ({}) };
-  }}),
-  removeChannel: vi.fn(),
+  channel: (name: string) => {
+    const existing = state.channels.get(name);
+    if (existing) return existing;
+    const channel = {
+      subscribed: false,
+      on: (_event: string, _filter: unknown, callback: () => void) => {
+        if (channel.subscribed) throw new Error("cannot add postgres_changes callbacks after subscribe()");
+        state.subscription = callback;
+        return channel;
+      },
+      subscribe: () => { channel.subscribed = true; return channel; },
+    };
+    state.channels.set(name, channel);
+    return channel;
+  },
+  // Keep channels until async cleanup completes, like the actual client.
+  removeChannel: vi.fn((channel: unknown) => { state.removed.push(channel); return Promise.resolve("ok"); }),
 }}));
 vi.mock("@/lib/pratiqueSlots", () => ({ fetchPratiqueSlotDetails: async () => [{
   date: "2026-10-09", typeFormation: "vtc", reservationCreneau: "journee", minutes: 360,
@@ -40,6 +54,34 @@ import { useStudentEffectiveHours } from "../hooks/useStudentEffectiveHours";
 import StudentHoursTracker from "../components/cours-en-ligne/StudentHoursTracker";
 
 describe("Taux présentiel de la fiche, lecture seule", () => {
+  beforeEach(() => {
+    state.channels.clear(); state.removed = []; state.subscription = undefined;
+  });
+  it("isole deux affichages simultanés, les doubles montages et la réouverture", async () => {
+    state.learner = { type_apprenant: "vtc-e", heures_elearning: 60 };
+    state.rows = []; state.connections = []; state.activities = [];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <StrictMode><QueryClientProvider client={client}>{children}</QueryClientProvider></StrictMode>;
+    const mount = () => renderHook(() => ({ admin: useApprenantTauxRealisation("fictif"), learner: useApprenantTauxRealisation("fictif") }), { wrapper });
+    const first = mount();
+    await waitFor(() => expect(first.result.current.learner.data?.reqElearning).toBe(60));
+    expect(first.result.current.admin.data).toEqual(first.result.current.learner.data);
+    expect(state.channels.size).toBe(4);
+    expect(state.removed).toHaveLength(2);
+    first.unmount();
+    expect(state.removed).toHaveLength(4);
+    const second = mount();
+    await waitFor(() => expect(second.result.current.learner.data?.reqElearning).toBe(60));
+    expect(state.channels.size).toBe(8);
+    state.rows = [{ date_emargement: "2026-10-09", demi_journee: "matin", absent: false, signature_data_url: "fictif" }];
+    act(() => state.subscription?.());
+    await waitFor(() => expect(second.result.current.admin.data?.donePresentiel).toBe(3));
+    expect(second.result.current.learner.data?.donePresentiel).toBe(3);
+    second.unmount();
+    expect(state.removed).toHaveLength(8);
+    expect(new Set(state.removed).size).toBe(8);
+    client.clear();
+  });
   it("compte depuis le 6 octobre Paris avec les mêmes heures élève/admin et conserve les anciennes preuves", async () => {
     const id = "c048754d-9045-4ab6-b89f-a5ab26de314c";
     state.learner = { type_apprenant: "vtc-e", heures_elearning: 60 };
