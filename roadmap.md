@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Heures de M. Majsak depuis le 6 octobre — 09/10 16:16 UTC
+- [ ] Présenter le périmètre après diagnostic lecture seule et obtenir l'accord sur le plan.
+- [ ] Calcul e-learning commun élève/admin/rapports depuis le 06/10/2026 inclus à minuit Paris, autres dossiers et preuves historiques inchangés.
+- [ ] Tests fictifs de bornes et non-régression, contrôles lecture seule avant/après, journal ; aucune publication sans demande.
+
 ## Historique de M. Majsak — 09/10 16:11 UTC
 - [x] Diagnostic lecture seule : début d'accès 05/10/2026 ; 26 connexions conservées, dont 15 depuis le 5 octobre.
 - [x] Plan approuvé : filtre initial depuis le 05/10/2026 pour ce dossier uniquement, « Tout l'historique » accessible et heures globales inchangées.
