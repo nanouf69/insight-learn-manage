@@ -488,6 +488,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const actRes = { data: actRows0 }; const complRes = { data: complRows0 }; const qrRes = { data: qrRows0 };
           const html = buildRapportActiviteHtml({
             apprenant: {
+              id: apprenant.id,
               nom: apprenant.nom,
               prenom: apprenant.prenom,
               email: apprenant.email,

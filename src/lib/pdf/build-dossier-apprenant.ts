@@ -183,7 +183,7 @@ export async function buildDossierApprenantIntoZip(
     ]);
     const actRes = { data: actRows }; const complRes = { data: complRows }; const qrRes = { data: qrRows };
     const html = buildRapportActiviteHtml({
-      apprenant: { nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email, type_apprenant: apprenant.type_apprenant },
+      apprenant: { id: apprenant.id, nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email, type_apprenant: apprenant.type_apprenant },
       connexions: cnxRawRows.map((r: any) => ({ id: r.id || "", started_at: r.started_at, ended_at: r.ended_at, last_seen_at: r.last_seen_at, current_module: r.current_module })),
       activites: ((actRes.data as any[]) || []) as any,
       quizResults: ((qrRes.data as any[]) || []) as any,
