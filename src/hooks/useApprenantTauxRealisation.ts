@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getSessionEndMs, clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
-import { computePresentielHours } from "@/lib/presentielHours";
+import { computePresentielHours, presentielProgress } from "@/lib/presentielHours";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 
 
@@ -31,6 +32,15 @@ const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) 
  * avec EXACTEMENT la meme logique que le releve de connexions PDF.
  */
 export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?: any) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!apprenantId) return;
+    const channel = supabase.channel(`taux-presence-${apprenantId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [apprenantId, queryClient]);
   return useQuery<TauxRealisation | null>({
     queryKey: ["apprenant-taux-realisation", apprenantId],
     enabled: !!apprenantId,
@@ -74,7 +84,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .range(from, to)).catch(() => [] as any[]),
         fetchAllRows<any>((from, to) => supabase
           .from("emargements_fc" as any)
-          .select("date_emargement, demi_journee, absent").filter("masque", "eq", false)
+          .select("date_emargement, demi_journee, absent, signature_data_url").filter("masque", "eq", false)
           .eq("apprenant_id", apprenantId)
           .range(from, to)).catch(() => [] as any[]),
         fetchPratiqueSlotDetails(apprenantId).catch(() => []),
@@ -161,17 +171,15 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       const reqElearning =
         Number(apprenant?.heures_elearning) ||
         Math.max(0, (Number(apprenant?.heures_totales) || 0) - (Number(apprenant?.heures_presentiel) || 0));
-      const reqPresentiel = Number(apprenant?.heures_presentiel) || 0;
+      const presence = presentielProgress(theorieHours + pratiqueMinutes / 60, Number(apprenant?.heures_presentiel) || 0, pratiqueDetails);
+      const reqPresentiel = presence.required;
       const reqTotal = Number(apprenant?.heures_totales) || reqElearning + reqPresentiel;
 
       const doneElearning = Math.min(
         onlineMin / 60,
         reqElearning > 0 ? reqElearning : Number.MAX_SAFE_INTEGER,
       );
-      const donePresentiel = Math.min(
-        theorieHours + pratiqueMinutes / 60,
-        reqPresentiel > 0 ? reqPresentiel : 0,
-      );
+      const donePresentiel = presence.done;
 
       // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
       const ta = String((apprenantTypeRow as any)?.type_apprenant || (apprenantProp as any)?.type_apprenant || "").toLowerCase().trim();

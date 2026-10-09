@@ -194,7 +194,8 @@ export function generateReleveConnexionsPdf(
 
   // Taux de realisation (e-learning plafonne au volume prevu + presentiel confirme)
   const reqEl = Number(opts?.heuresPrevuesElearning) || 0;
-  const reqPr = Number(opts?.heuresPrevuesPresentiel) || 0;
+  const donePr = Math.max(0, Number(opts?.heuresFaitesPresentiel) || 0);
+  const reqPr = Number(opts?.heuresPrevuesPresentiel) || donePr;
   const reqTot = Number(opts?.heuresPrevuesTotal) || reqEl + reqPr;
   let tauxLine = "";
   if (reqTot > 0) {
@@ -202,7 +203,6 @@ export function generateReleveConnexionsPdf(
       Number(opts?.heuresFaitesElearning ?? totalMin / 60) || 0,
       reqEl > 0 ? reqEl : Number.MAX_SAFE_INTEGER,
     );
-    const donePr = Math.min(Number(opts?.heuresFaitesPresentiel) || 0, reqPr > 0 ? reqPr : 0);
     const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) * 100)) : 0);
     tauxLine =
       `Taux e-learning : ${pct(doneEl, reqEl)}% (${doneEl.toFixed(1)}h / ${reqEl}h)` +

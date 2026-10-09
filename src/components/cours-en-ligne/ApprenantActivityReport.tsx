@@ -34,6 +34,7 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
+import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -104,6 +105,7 @@ interface EmargementRow {
   date_emargement: string;
   demi_journee: string;
   absent: boolean | null;
+  signature_data_url: string | null;
 }
 
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
@@ -350,7 +352,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         withUntil(
           supabase
             .from("emargements_fc")
-            .select("apprenant_id, date_emargement, demi_journee, absent").filter("masque", "eq", false)
+            .select("apprenant_id, date_emargement, demi_journee, absent, signature_data_url").filter("masque", "eq", false)
             .eq("apprenant_id", selectedId)
             .gte("date_emargement", since),
           "date_emargement",
@@ -479,7 +481,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const pratiqueRows = useMemo(() => {
     const byDate = new Map<string, { date: string; slots: Set<string>; hours: number }>();
     for (const row of emargements) {
-      if (row.absent) continue;
+      if (!isSignedPresentielRow(row)) continue;
       const date = String(row.date_emargement || "").slice(0, 10);
       const slot = String(row.demi_journee || "").trim().toLowerCase();
       if (!date || !slot) continue;
@@ -502,7 +504,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             hours: signedMinutes / 60,
           });
           pratiqueByDate.delete(date);
-          continue;
+          // Theory evening signatures on the same day still count separately below.
+          if (![...slots].some((slot) => slot.startsWith("soir"))) continue;
         }
         pratiqueByDate.delete(date);
       }
@@ -535,7 +538,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     const requiredElearning =
       Number(a?.heures_elearning) ||
       Math.max(0, (Number(a?.heures_totales) || 0) - (Number(a?.heures_presentiel) || 0));
-    const requiredPresentiel = Number(a?.heures_presentiel) || 0;
+    const presence = presentielProgress(pratiqueRows.reduce((s, p) => s + (p.hours || 0), 0), Number(a?.heures_presentiel) || 0, pratiqueDetails);
+    const requiredPresentiel = presence.required;
     const requiredTotal =
       Number(a?.heures_totales) || requiredElearning + requiredPresentiel;
 
@@ -544,9 +548,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       ? Math.min(doneElearningRaw, requiredElearning)
       : doneElearningRaw;
     const donePresentielRaw = pratiqueRows.reduce((s, p) => s + (p.hours || 0), 0);
-    const donePresentiel = requiredPresentiel > 0
-      ? Math.min(donePresentielRaw, requiredPresentiel)
-      : donePresentielRaw;
+    const donePresentiel = presence.done;
 
     const pct = (done: number, req: number) =>
       req > 0 ? Math.min(100, Math.round((done / req) * 100)) : 0;
@@ -563,7 +565,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       pctPresentiel: pct(donePresentiel, requiredPresentiel),
       pctTotal: pct(doneElearning + donePresentiel, requiredTotal),
     };
-  }, [selectedApprenant, allHistoryMinutes, pratiqueRows]);
+  }, [selectedApprenant, allHistoryMinutes, pratiqueRows, pratiqueDetails]);
 
 
 

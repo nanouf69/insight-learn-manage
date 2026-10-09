@@ -4,6 +4,27 @@ export interface EmargementRowLike {
   date_emargement?: string | null;
   demi_journee?: string | null;
   absent?: boolean | null;
+  signature_data_url?: string | null;
+  masque?: boolean | null;
+}
+
+export function isSignedPresentielRow(row: EmargementRowLike): boolean {
+  return row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim());
+}
+
+/** Missing contractual hours never erase proven presence. Planning supplies only a display target. */
+export function presentielProgress(signedHours: number, contractualHours: number, details: PratiqueSlotDetail[]) {
+  const planned = new Map<string, number>();
+  for (const detail of details) {
+    for (const part of detail.parts) {
+      const key = `${detail.date}:${part.creneau}`;
+      planned.set(key, Math.max(planned.get(key) ?? 0, Math.max(0, part.minutes)));
+    }
+  }
+  const plannedHours = [...planned.values()].reduce((sum, minutes) => sum + minutes, 0) / 60;
+  const required = contractualHours > 0 ? contractualHours : Math.max(plannedHours, signedHours);
+  const done = Math.max(0, signedHours);
+  return { done, required, pct: required > 0 ? Math.min(100, Math.round(done / required * 100)) : 0 };
 }
 
 /**
@@ -17,12 +38,12 @@ export interface EmargementRowLike {
 export function buildEmargementsSlotMap(rows: EmargementRowLike[] | null | undefined) {
   const byDate = new Map<string, Set<string>>();
   for (const r of rows || []) {
-    if (r?.absent) continue;
+    if (!isSignedPresentielRow(r)) continue;
     const date = String(r?.date_emargement || "").slice(0, 10);
     const slot = String(r?.demi_journee || "").trim().toLowerCase();
     if (!date || !slot) continue;
     if (!byDate.has(date)) byDate.set(date, new Set());
-    byDate.get(date)!.add(slot);
+    byDate.get(date)?.add(slot);
   }
   return byDate;
 }
@@ -38,26 +59,30 @@ export function computePresentielHours(
   // --- Theorie : toutes les journees emargees qui ne sont pas des journees pratique
   let theorieHours = 0;
   for (const [date, slots] of byDate.entries()) {
-    if (pratiqueDates.has(date)) continue;
-    const evening = slots.has("soir") || slots.has("soir_1") || slots.has("soir_2");
+    // Evening attendance remains theory even when practice happens on the same date.
+    const daytime = pratiqueDates.has(date) ? new Set([...slots].filter((s) => s.startsWith("soir"))) : slots;
+    const evening = daytime.has("soir") || daytime.has("soir_1") || daytime.has("soir_2");
     if (evening) {
       theorieHours += Math.min(
-        (slots.has("soir") ? 4 : 0) + (slots.has("soir_1") ? 1.5 : 0) + (slots.has("soir_2") ? 2.5 : 0),
+        (daytime.has("soir") ? 4 : 0) + (daytime.has("soir_1") ? 1.5 : 0) + (daytime.has("soir_2") ? 2.5 : 0),
         4,
       );
     } else {
-      theorieHours += Math.min((slots.has("matin") ? 3 : 0) + (slots.has("apres_midi") ? 3 : 0), 6);
+      theorieHours += Math.min((daytime.has("matin") ? 3 : 0) + (daytime.has("apres_midi") ? 3 : 0), 6);
     }
   }
 
   // --- Pratique : uniquement les creneaux reellement signes
   let pratiqueMinutes = 0;
+  const counted = new Set<string>();
   for (const detail of details) {
     const slots = byDate.get(detail.date);
     if (!slots || slots.size === 0) continue;
     for (const part of detail.parts) {
       const signed = part.creneau === "matin" ? slots.has("matin") : slots.has("apres_midi");
-      if (!signed) continue;
+      const key = `${detail.date}:${part.creneau}`;
+      if (!signed || counted.has(key)) continue;
+      counted.add(key);
       pratiqueMinutes += Math.max(0, part.minutes || 0);
     }
   }
