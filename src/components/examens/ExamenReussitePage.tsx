@@ -1995,7 +1995,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA]);
+  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA, lettreExclusIds]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -2945,7 +2945,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       {/* Lettre CMA - Réussite examen */}
       {(() => {
         const totalInscrits = apprenants?.length || 0;
-        const sansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        const tousSansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        const sansResultat = tousSansResultat.filter(a => !lettreExclusIds.includes(a.id));
+        const exclusDeLettre = tousSansResultat.filter(a => lettreExclusIds.includes(a.id));
         const resultatsIncomplets = totalInscrits === 0 || sansResultat.length > 0;
 
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
