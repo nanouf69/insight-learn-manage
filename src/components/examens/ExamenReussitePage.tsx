@@ -3089,6 +3089,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
               <p><strong>Important :</strong> Nous disposons d'un seul vehicule disponible pour les epreuves pratiques.</p>
 
+              ${pratiqueNoteHTML(noteLettreCMA)}
+
               <p>Je reste a votre disposition pour toute information complementaire.</p>
               <p style="margin-top:30px;">Cordialement,<br/><br/><strong>FTRANSPORT</strong></p>
             </div>
