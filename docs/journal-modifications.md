@@ -126,3 +126,11 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - src/components/examens/ExamenReussitePage.tsx : bouton « Retirer de la lettre » sur chaque candidat sans résultat dans le bandeau rouge ; les candidats retirés apparaissent dans un encadré gris avec bouton « Rétablir » ; le blocage d'envoi/impression ne tient compte que des candidats non retirés ; liste enregistrée par session d'examen + période pratique (mêmes garde-fous que le planning).
 - Aucune donnée élève supprimée ni modifiée : l'exclusion est une simple liste d'identifiants dans la configuration, réversible en un clic.
 - Vérifié à l'écran (session injectée) : 4 boutons présents, retrait 4→3 + apparition « Rétablir », rétablissement 3→4, base relue vide après le test. Rien publié.
+
+## 09/10/2026 — Feuilles d'émargement générées automatiquement pour chaque session
+- Demande : naoufal guenichi — « à chaque session il faut une feuille d'émargement » ; cas déclencheur : la feuille du jour ne s'affichait pas pour M. SILLA (anciennes soirées non signées passaient avant).
+- Base (migration 0134) : fonction serveur `generer_emargements_session(session_id)` + déclencheurs sur `session_apprenants` (inscription), `sessions` (dates/créneaux) et `reservations_pratique` (jour pratique réservé). Création strictement additive (ON CONFLICT DO NOTHING) : une ligne par élève inscrit × jour × créneau, signature vide ; jamais d'écrasement ni de suppression.
+- Jours : lun–ven entre début et fin de session ; cours du soir = soir_1 + soir_2, journée = matin + après-midi ; sessions pratiques = uniquement les jours réservés par l'élève. Élèves annulés, supprimés ou en liste d'attente exclus.
+- Rétroactif (sessions en cours/à venir) : 312 feuilles « à signer » créées ; contrôle avant/après : 2 391 feuilles signées intactes, 0 modifiée, 0 supprimée.
+- Frontend `src/pages/CoursPublic.tsx` : la feuille du jour est désormais proposée en priorité ; les créneaux passés non signés restent demandés ensuite (rien n'est retiré).
+- Frontend non publié.
