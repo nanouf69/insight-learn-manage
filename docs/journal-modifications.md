@@ -134,3 +134,7 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - Rétroactif (sessions en cours/à venir) : 312 feuilles « à signer » créées ; contrôle avant/après : 2 391 feuilles signées intactes, 0 modifiée, 0 supprimée.
 - Frontend `src/pages/CoursPublic.tsx` : la feuille du jour est désormais proposée en priorité ; les créneaux passés non signés restent demandés ensuite (rien n'est retiré).
 - Frontend non publié.
+
+## 2026-10-09 — Accès automatiques à chaque modification de fiche
+- Migration 0135 : déclencheur trg_zz_acces_auto_apres_modification sur apprenants (sans compte, période d’accès en cours) → auto-send-credentials ciblé ; non bloquant.
+- ApprenantEditForm.tsx : appel navigateur retiré (évite les doublons), message informatif.
