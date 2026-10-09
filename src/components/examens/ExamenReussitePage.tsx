@@ -3253,14 +3253,44 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {sansResultat.map(a => (
-                      <Badge key={a.id} className="bg-red-200 text-red-800 border-red-400 text-sm font-semibold px-3 py-1">
+                      <Badge key={a.id} className="bg-red-200 text-red-800 border-red-400 text-sm font-semibold px-3 py-1 flex items-center gap-2">
                         {a.nom} {a.prenom} — ☎️ {a.telephone || 'pas de tél'}
+                        <button
+                          type="button"
+                          title="Retirer ce candidat de la lettre (réversible, aucune donnée supprimée)"
+                          className="ml-1 rounded bg-red-700 text-white text-[10px] px-1.5 py-0.5 hover:bg-red-800"
+                          onClick={() => setLettreExclusIds(prev => prev.includes(a.id) ? prev : [...prev, a.id])}
+                        >
+                          Retirer de la lettre
+                        </button>
                       </Badge>
                     ))}
                   </div>
                   <p className="text-red-600 text-xs mt-2 italic">
-                    Saisissez le résultat (Oui / Non / Absent) de chaque candidat dans le tableau ci-dessus avant d'envoyer la lettre.
+                    Saisissez le résultat (Oui / Non / Absent) de chaque candidat dans le tableau ci-dessus avant d'envoyer la lettre, ou retirez-le de la lettre.
                   </p>
+                </div>
+              )}
+              {exclusDeLettre.length > 0 && (
+                <div className="mt-3 p-3 bg-muted/50 border border-muted rounded-lg">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {exclusDeLettre.length} candidat(s) retiré(s) de la lettre (conservés dans l'examen, rien n'est supprimé) :
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {exclusDeLettre.map(a => (
+                      <Badge key={a.id} variant="outline" className="text-sm px-3 py-1 flex items-center gap-2 text-muted-foreground">
+                        {a.nom} {a.prenom}
+                        <button
+                          type="button"
+                          title="Remettre ce candidat dans la lettre"
+                          className="ml-1 rounded bg-foreground text-background text-[10px] px-1.5 py-0.5 hover:opacity-80"
+                          onClick={() => setLettreExclusIds(prev => prev.filter(id => id !== a.id))}
+                        >
+                          Rétablir
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardHeader>
