@@ -1050,6 +1050,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [maxPerDay, setMaxPerDay] = useState(3);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
   const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string>>({});
+  // Note générale de la lettre CMA (distincte des notes par candidat), enregistrée par session/période.
+  const [noteLettreCMA, setNoteLettreCMA] = useState("");
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
