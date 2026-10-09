@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Vérification des taux des autres élèves — 09/10 15:19 UTC
+- [ ] Auditer en lecture seule les volumes et parcours de tous les dossiers suivis, hors comptes techniques, archivés et abandonnés.
+- [ ] Contrôler les calculs et tests des différents écrans ; distinguer anomalie prouvée et vérification écran NON PROUVÉE.
+- Aucun changement de l'application, aucune écriture élève, aucun envoi ni publication ; corrections soumises à accord.
+
 ## Taux e-learning vide — 09/10
 - [x] Réutiliser les heures requises du parcours si aucun volume contractuel n'est renseigné, sans changer les heures réalisées ni les modules.
 - [x] 136 tests isolés PASS : VTC/TAXI/VA/TA, priorité contrat, séparation heures/modules et ordre pédagogique ; compilation automatique OK.
