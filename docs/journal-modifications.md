@@ -119,3 +119,10 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - Nouvelle colonne additive planning_pratique_config.note_lettre_cma (texte, nullable) — migration 0132, aucune donnée touchée.
 - src/components/examens/ExamenReussitePage.tsx : champ « Note pour la lettre à la CMA » dans la carte Lettre CMA ; enregistré par session d'examen + période pratique (mêmes garde-fous que le planning : écriture refusée tant que la clé n'est pas chargée) ; note incluse dans la lettre générée (aperçu, impression, e-mail CMA) sous la ligne « Important », jamais si vide.
 - Notes par candidat inchangées ; rien publié.
+
+## 09/10/2026 — Retrait réversible des candidats sans résultat de la lettre CMA
+- Demande : naoufal guenichi — pouvoir retirer les élèves sans résultat d'examen pour débloquer l'envoi du mail CMA.
+- Nouvelle colonne additive planning_pratique_config.lettre_exclus_ids (texte[], nullable) — migration 0133, aucune donnée touchée.
+- src/components/examens/ExamenReussitePage.tsx : bouton « Retirer de la lettre » sur chaque candidat sans résultat dans le bandeau rouge ; les candidats retirés apparaissent dans un encadré gris avec bouton « Rétablir » ; le blocage d'envoi/impression ne tient compte que des candidats non retirés ; liste enregistrée par session d'examen + période pratique (mêmes garde-fous que le planning).
+- Aucune donnée élève supprimée ni modifiée : l'exclusion est une simple liste d'identifiants dans la configuration, réversible en un clic.
+- Vérifié à l'écran (session injectée) : 4 boutons présents, retrait 4→3 + apparition « Rétablir », rétablissement 3→4, base relue vide après le test. Rien publié.
