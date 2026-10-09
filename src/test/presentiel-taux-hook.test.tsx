@@ -62,14 +62,16 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
   it.each([["vtc-e", 60], ["taxi-e", 90], ["va-e", 7], ["ta-e", 35]])("affiche des heures requises pour %s sans valider de module", async (type, required) => {
     state.learner = { type_apprenant: type, heures_elearning: null, heures_presentiel: null, heures_totales: null };
     state.rows = [];
-    state.connections = [{ started_at: "2026-10-01T09:00:00Z", ended_at: "2026-10-01T12:00:00Z", last_seen_at: "2026-10-01T12:00:00Z" }];
+    const end = type === "va-e" ? "2026-10-01T16:00:00Z" : "2026-10-01T12:00:00Z";
+    state.connections = [{ started_at: "2026-10-01T09:00:00Z", ended_at: end, last_seen_at: end }];
     state.activities = [{ action_type: "open_module", module_nom: "Cours", occurred_at: "2026-10-01T09:30:00Z" }];
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
     const { result, unmount } = renderHook(() => useApprenantTauxRealisation("fictif"), { wrapper });
     await waitFor(() => expect(result.current.data?.reqElearning).toBe(required));
-    expect(result.current.data?.doneElearning).toBe(3);
-    expect(result.current.data?.pctElearning).toBe(Math.round(300 / Number(required)));
+    const done = type === "va-e" ? 7 : 3;
+    expect(result.current.data?.doneElearning).toBe(done);
+    expect(result.current.data?.pctElearning).toBe(Math.round(done * 100 / Number(required)));
     expect(result.current.data?.modulesCompleted).toBe(0);
     unmount(); client.clear();
   });

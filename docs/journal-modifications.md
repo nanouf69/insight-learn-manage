@@ -3,6 +3,13 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-09 — Taux e-learning sans volume contractuel
+- Accord explicite : « Oui, corriger l’affichage ». Diagnostic lecture seule : fiche VA e-learning sans heures_elearning/heures_totales/heures_presentiel ; espace élève utilise déjà 7h, CRM calculait 0h et donc 0%. Dix lignes completed et une in_progress : aucune validation automatique.
+- Fichiers : src/lib/elearningRequiredHours.ts, src/hooks/useStudentEffectiveHours.ts, src/hooks/useApprenantTauxRealisation.ts, src/test/elearning-required-hours.test.ts, src/test/presentiel-taux-hook.test.tsx, AGENTS.md, roadmap.md, ce journal.
+- Les constantes existantes de l'espace élève deviennent une source partagée. CRM : volume explicite prioritaire, sinon déduction total-présentiel, sinon volume existant du parcours connu. Aucun changement de durée de connexion, module, contrat, règle d'accès ou donnée serveur. Valeurs inconnues/présentiel seul restent sans volume e-learning inventé.
+- 136 tests isolés PASS : neuf règles de volume, cinq tests de fiche simulée (VA atteint 100% des heures sans valider de module), régression présentiel et relance, 91 contrôles des 15 formations et empreintes pédagogiques + 11 tests d'ordre cours/quiz. Compilation automatique OK.
+- Vérification authentifiée de la fiche sur appareil réel NON PROUVÉE : compte technique soumis à approbation. Aucun test sur un compte réel, aucun e-mail, aucune publication.
+
 ## 2026-10-07 — Numérotation administrateur des quiz
 
 - **Accord** : « Autoriser ce périmètre » — correction de la numérotation administrateur, contrôles et journal uniquement.
