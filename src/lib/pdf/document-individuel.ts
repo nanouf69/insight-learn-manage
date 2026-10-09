@@ -90,6 +90,7 @@ const FIELD_LABELS: Record<string, string> = {
   cgv_accepted_at: "Date d'acceptation des CGV", cgv_version: 'Version des CGV',
   accepted: 'Accepte', accepted_at: 'Date acceptation',
   signed_at: 'Date de signature', formationLabel: 'Formation',
+  horaires: 'Horaires de formation',
   type_formation: 'Type de formation', prix: 'Prix', duree: 'Duree',
   date_formation: 'Date de formation', date_inscription: "Date d'inscription",
   mode_financement: 'Mode de financement', code_postal: 'Code postal',

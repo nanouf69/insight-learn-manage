@@ -141,3 +141,10 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 
 ## 2026-10-09 — Sécurité lecture questions (migration 0136)
 - quiz_questions, quiz_question_sets, quiz_question_bindings, examens_blancs_parcours : lecture réservée admin/modérateur + apprenant inscrit non supprimé (fonction peut_lire_contenu_pedagogique). Aucune donnée modifiée. Tests : VTC/TAXI/VA/TA/admin = lecture complète ; utilisateur inconnu = 0 ligne.
+
+## 2026-10-09 — Horaires du planning sur la feuille pratique signée
+- Demande : afficher sur la feuille individuelle les horaires du planning, notamment l'après-midi de M. SILLA.
+- DocumentsCompletes.tsx : lecture des créneaux pratiques de l'apprenant par le circuit existant ; ajout d'horaires à l'affichage et aux données du PDF uniquement, correspondance exacte date + demi-journée. Aucun horaire pratique ajouté aux signatures de soirée.
+- pratiqueDocumentHours.ts : résolution pure pour l'affichage ; document-individuel.ts : libellé « Horaires de formation » dans le PDF. Inscription, planning, signatures et anciens fichiers non modifiés ; aucune écriture serveur, aucun envoi, aucune publication.
+- Tests réellement exécutés : 15/15 PASS (6 horaires/PDF, 4 notes, 5 réservation sans préalable) ; PDF fictif généré et contenu contrôlé, VTC/TAXI matin/après-midi, horaires personnalisés, refus de correspondance soirée/autre date et non-mutation. Compilation automatique OK après le premier correctif.
+- Vérification sur compte élève technique et affichage sur appareil réel : NON PROUVÉS, connexion soumise à approbation ; aucun compte réel utilisé. Contenus pédagogiques et ordre des modules hors périmètre, non modifiés.

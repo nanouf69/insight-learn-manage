@@ -22,3 +22,6 @@
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Exam rates reuse CRM hook, mails require confirmation; why: no drift or auto-send.
 - Accès élève : créés/envoyés par le serveur (trigger sur apprenants) à chaque modification si aucun compte ; why: une fiche corrigée ne doit jamais rester sans accès.
+<!-- LOVABLE:BEGIN -->
+- Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
+<!-- LOVABLE:END -->
