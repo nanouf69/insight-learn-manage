@@ -190,3 +190,11 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - PASS Chromium local, toutes données entièrement fictives et appels serveur interceptés : 06/10 compte 1h, 02/10 exclu du total puis redevient visible avec Tout l’historique sans augmenter le total ; impression 1h, aucune erreur JavaScript, captures vérifiées. Premiers essais du script incomplets corrigés avant cette vérification finale.
 - Contrôle serveur en lecture seule avant/après : 26 connexions, empreinte identique a2ce802a227e9b39ec976b6314b51d03. Aucune écriture serveur, aucun compte réel utilisé, aucun envoi, aucune publication.
 - NON PROUVÉS : appareil réel/mobile, site publié et téléchargement réel de l’archive complète ; contrôles des règles d’export exécutés sur données fictives.
+
+## 2026-10-09 16:28 UTC — Blocage de la vue apprenant (plan approuvé)
+- Diagnostic lecture seule : erreur `cannot add postgres_changes callbacks after subscribe()` dans useApprenantTauxRealisation ; la fiche et StudentHoursTracker réutilisaient un canal déjà abonné pour le même apprenant, également exposé aux doubles montages React.
+- Correction : nom de canal unique par exécution d’effet (UUID), fermeture du seul canal appartenant à cet effet ; aucune modification des calculs d’heures, contrats, réponses, notes, signatures, accès ou contenus pédagogiques.
+- Fichiers : src/hooks/useApprenantTauxRealisation.ts, src/test/presentiel-taux-hook.test.tsx, AGENTS.md, roadmap.md et ce journal.
+- PASS exécutés : 157/157 tests, 7 fichiers. Le faux client reproduit la réutilisation réelle des canaux et leur retrait asynchrone ; deux vues simultanées sous StrictMode, fermeture/réouverture, huit canaux distincts correctement retirés et événement de signature reflété dans les deux vues. Contrôles des heures depuis le 6 octobre, présentiel, verrou lecture seule, ordre des 15 parcours et empreintes pédagogiques.
+- Compilation automatique OK 16:28:14 UTC. Aucune écriture serveur, aucun compte réel utilisé, aucun envoi ni publication.
+- NON PROUVÉS : vue complète authentifiée dans le navigateur, appareil réel/mobile et site publié. La reproduction et la vérification du défaut sont exécutées dans les tests React isolés, pas sur un élève réel.

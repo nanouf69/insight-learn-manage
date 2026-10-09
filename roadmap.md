@@ -3,7 +3,7 @@
 ## Blocage vue apprenant — 09/10 16:26 UTC
 - [x] Diagnostic lecture seule et plan approuvé : canal de suivi des heures partagé déjà abonné.
 - [x] Canal unique par montage, calculs et données inchangés.
-- [ ] Vérifier affichages simultanés, doubles montages, réouverture, signatures et non-régression des parcours ; journaliser.
+- [x] 157/157 tests fictifs PASS (7 fichiers) : affichages simultanés, doubles montages, réouverture, signatures, lecture seule et ordre des 15 parcours. Compilation automatique OK 16:28:14 UTC ; journal ajouté. Vue complète authentifiée/appareil réel NON PROUVÉS ; aucune écriture serveur ni publication.
 
 ## Heures de M. Majsak depuis le 6 octobre — 09/10 16:16 UTC
 - [x] Diagnostic lecture seule et plan approuvé : fenêtre de calcul distincte du filtre historique.
