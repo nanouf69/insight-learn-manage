@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## Heures de M. Majsak depuis le 6 octobre — 09/10 16:16 UTC
-- [ ] Présenter le périmètre après diagnostic lecture seule et obtenir l'accord sur le plan.
-- [ ] Calcul e-learning commun élève/admin/rapports depuis le 06/10/2026 inclus à minuit Paris, autres dossiers et preuves historiques inchangés.
-- [ ] Tests fictifs de bornes et non-régression, contrôles lecture seule avant/après, journal ; aucune publication sans demande.
+- [x] Diagnostic lecture seule et plan approuvé : fenêtre de calcul distincte du filtre historique.
+- [x] Calcul e-learning élève/admin/rapports depuis le 06/10/2026 inclus à minuit Paris ; connexion chevauchante tronquée sans réinitialiser le plafond de session.
+- [x] 151 tests PASS (7 fichiers), build OK ; Chromium fictif écran/impression : 1h depuis le 6 reste 1h avec Tout l’historique. Avant/après : 26 connexions, même empreinte. Journal ajouté ; aucune écriture serveur ni publication. Appareil réel/mobile et site publié NON PROUVÉS.
 
 ## Historique de M. Majsak — 09/10 16:11 UTC
 - [x] Diagnostic lecture seule : début d'accès 05/10/2026 ; 26 connexions conservées, dont 15 depuis le 5 octobre.
