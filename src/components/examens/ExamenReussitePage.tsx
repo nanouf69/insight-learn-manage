@@ -1946,6 +1946,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDay(3);
         setMaxPerDayMap({});
         setDayTimeSlots({});
+        setNoteLettreCMA("");
       }
 
       setPlanningDatesUnlocked(false);
