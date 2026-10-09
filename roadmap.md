@@ -1,14 +1,16 @@
 # Feuille de route
 
 ## Heures réellement faites et cohérence élève/admin — 09/10 15:23 UTC
-- [ ] Partager le calcul des heures réalisées et requises entre les comptes élève et administrateur ; ne plus plafonner les heures réalisées.
-- [ ] Garder les taux bornés à 100 %, les validations serveur et toutes les données inchangées ; ne pas inventer les volumes contractuels manquants.
-- [ ] Vérifier sur données fictives les dépassements, contrats et parcours ; journaliser sans publication ni écriture élève.
+- [x] Même requête de lecture élève/CRM pour heures réalisées, contrat et taux ; heures réalisées non plafonnées et format commun heures/minutes. Rapports et candidats harmonisés.
+- [x] Taux d'heures borné à 100 %, indépendant des modules restant à valider ; aucune validation ni écriture serveur, aucun volume contractuel inconnu inventé.
+- [x] 147 tests fictifs PASS (7 fichiers), dont parité VA/VTC, contrats 66/90 h, 100% heures avec modules restants, ordre des 15 parcours et contenus ; compilation automatique OK, journal ajouté. Aucun envoi ni publication.
+- [ ] Vérification authentifiée à l'écran NON PROUVÉE : nécessite compte technique autorisé ; aucun test sur vrai élève.
 
 ## Vérification des taux des autres élèves — 09/10 15:19 UTC
 - [x] Audit lecture seule de 239 dossiers suivis, hors comptes techniques, archivés et abandonnés ; 41 dossiers bénéficient du repli corrigé.
 - [x] 125 tests fictifs PASS (5 fichiers) ; compilation automatique OK. Divergence prouvée : 6 VTC-e avec contrats 66/90 h mais compteur élève standard 60 h ; 4 dossiers sans type malgré formation continue VTC ; 3 continue-taxi sans référence horaire. 1 contrat VTC à vérifier : 20+34 h contre total 60 h, aucune valeur corrigée.
-- [ ] Correction des divergences : attend un accord explicite ; volume de référence continue-taxi à prouver avant changement. Vérification authentifiée des écrans NON PROUVÉE, compte technique soumis à approbation.
+- [x] Accord 15:23 : cohérence des volumes contractuels et repli formation connue implémentés, heures réelles non plafonnées ; aucune donnée corrigée.
+- [ ] Volume de référence continue-taxi et incohérence du contrat 20+34/60 : à confirmer avant toute modification des valeurs. Vérification authentifiée des écrans NON PROUVÉE, compte technique soumis à approbation.
 - Aucun changement de l'application, aucune écriture élève, aucun envoi ni publication ; corrections soumises à accord.
 
 ## Taux e-learning vide — 09/10
