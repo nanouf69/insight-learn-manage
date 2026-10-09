@@ -138,3 +138,6 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 ## 2026-10-09 — Accès automatiques à chaque modification de fiche
 - Migration 0135 : déclencheur trg_zz_acces_auto_apres_modification sur apprenants (sans compte, période d’accès en cours) → auto-send-credentials ciblé ; non bloquant.
 - ApprenantEditForm.tsx : appel navigateur retiré (évite les doublons), message informatif.
+
+## 2026-10-09 — Sécurité lecture questions (migration 0136)
+- quiz_questions, quiz_question_sets, quiz_question_bindings, examens_blancs_parcours : lecture réservée admin/modérateur + apprenant inscrit non supprimé (fonction peut_lire_contenu_pedagogique). Aucune donnée modifiée. Tests : VTC/TAXI/VA/TA/admin = lecture complète ; utilisateur inconnu = 0 ligne.
