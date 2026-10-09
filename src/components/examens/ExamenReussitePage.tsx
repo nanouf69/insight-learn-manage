@@ -1932,6 +1932,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDay(data.max_per_day || 3);
         setMaxPerDayMap((data.max_per_day_map || {}) as Record<string, number>);
         setDayTimeSlots((data.day_time_slots || {}) as Record<string, { matin?: string; apresmidi?: string } | string>);
+        setNoteLettreCMA(data.note_lettre_cma || "");
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
