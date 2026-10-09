@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Pratique signée et taux présentiel — 09/10 15:07 UTC
+- [ ] Compter uniquement les signatures présentes et les horaires exacts du planning ; ne plus annuler les heures si le volume contractuel présentiel est vide.
+- [ ] Mettre à jour les taux à la réception d'une signature, sans écriture de progression ni modification du contrat.
+- [ ] Tests fictifs, contrôles des lectures et compilation ; aucun envoi ni publication.
+
 ## Horaires des feuilles pratiques — 09/10
 - [x] Lire le circuit PDF et le planning sans écriture serveur.
 - [x] Afficher les horaires pratiques par date et demi-journée, sans modifier les signatures.
