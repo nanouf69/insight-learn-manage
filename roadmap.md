@@ -2,8 +2,8 @@
 
 ## Historique de M. Majsak — 09/10 16:11 UTC
 - [x] Diagnostic lecture seule : début d'accès 05/10/2026 ; 26 connexions conservées, dont 15 depuis le 5 octobre.
-- [ ] Après accord du plan : sélectionner par défaut la période depuis le 05/10/2026 pour ce dossier uniquement ; conserver « Tout l'historique » et les heures globales.
-- [ ] Vérifier sur données fictives et journaliser ; aucune écriture serveur ni publication.
+- [x] Plan approuvé : filtre initial depuis le 05/10/2026 pour ce dossier uniquement, « Tout l'historique » accessible et heures globales inchangées.
+- [x] 109 tests PASS, compilation OK ; filtre et impression vérifiés en Chromium avec données fictives ; contrôle après : 26 connexions conservées dont 15 depuis le 5 octobre. Journal ajouté, aucune écriture serveur ni publication. Appareil réel/mobile et site publié NON PROUVÉS.
 
 ## Heures réellement faites et cohérence élève/admin — 09/10 15:23 UTC
 - [x] Même requête de lecture élève/CRM pour heures réalisées, contrat et taux ; heures réalisées non plafonnées et format commun heures/minutes. Rapports et candidats harmonisés.

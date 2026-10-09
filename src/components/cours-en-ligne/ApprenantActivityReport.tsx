@@ -36,6 +36,7 @@ import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSe
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
 import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
+import { getHistoryDefaults, historyStartTimestamp, type HistoryPeriod } from "@/lib/reports/history-defaults";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -192,10 +193,18 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [pratiqueDetails, setPratiqueDetails] = useState<PratiqueSlotDetail[]>([]);
   const [loading, setLoading] = useState(false);
-  // Par défaut on affiche TOUT l'historique (conservé à vie), jamais une fenêtre glissante.
-  const [period, setPeriod] = useState<"7" | "30" | "90" | "all" | "custom">("all");
-  const [customStart, setCustomStart] = useState<string>("");
+  // Préférence d'affichage uniquement : Tout l'historique reste toujours disponible.
+  const [period, setPeriod] = useState<HistoryPeriod>(() => getHistoryDefaults(lockedApprenantId).period);
+  const [customStart, setCustomStart] = useState<string>(() => getHistoryDefaults(lockedApprenantId).start);
   const [customEnd, setCustomEnd] = useState<string>("");
+
+  const selectApprenant = (id: string) => {
+    const defaults = getHistoryDefaults(id);
+    setSelectedId(id);
+    setPeriod(defaults.period);
+    setCustomStart(defaults.start);
+    setCustomEnd(defaults.end);
+  };
 
   const printRef = useRef<HTMLDivElement>(null);
   const [editingConn, setEditingConn] = useState<{ id: string; started_at: string; ended_at: string } | null>(null);
@@ -292,6 +301,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         : period === "all"
           ? "2000-01-01"
           : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
+      const sinceTimestamp = period === "custom" && customStart
+        ? historyStartTimestamp(since)
+        : since;
       // Bornes hautes (inclusives) pour la période personnalisée
       const untilDate = period === "custom" && customEnd ? customEnd : null;
       const untilTs = untilDate ? `${untilDate}T23:59:59.999` : null;
@@ -308,7 +320,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             .from(table as any)
             .select(cols)
             .eq("apprenant_id", selectedId)
-            .gte(dateCol, since);
+            .gte(dateCol, sinceTimestamp);
           if (untilTs) q = q.lte(dateCol, untilTs);
           const { data } = await q
             .order(dateCol, { ascending: false })
@@ -339,7 +351,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             .select("id, exercice_id, completed, updated_at")
             .eq("apprenant_id", selectedId)
             .eq("completed", true)
-            .gte("updated_at", since),
+            .gte("updated_at", sinceTimestamp),
           "updated_at",
         ).order("updated_at", { ascending: false }),
         withUntil(
@@ -347,7 +359,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             .from("apprenant_quiz_results")
             .select("id, quiz_titre, matiere_nom, completed_at")
             .eq("apprenant_id", selectedId)
-            .gte("completed_at", since),
+            .gte("completed_at", sinceTimestamp),
           "completed_at",
         ).order("completed_at", { ascending: false }),
         withUntil(
@@ -971,13 +983,13 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             <ApprenantCombobox
               apprenants={apprenants}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              onSelect={selectApprenant}
             />
           </div>
         )}
         <div className="w-48">
           <label className="text-sm font-medium mb-1 block">Période :</label>
-          <Select value={period} onValueChange={(v) => setPeriod(v as any)}>
+          <Select value={period} onValueChange={(v) => setPeriod(v as HistoryPeriod)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

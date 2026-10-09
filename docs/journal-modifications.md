@@ -3,6 +3,15 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-09 16:11 UTC — Historique de M. Majsak depuis le 5 octobre
+- Accord : plan approuvé, affichage initial depuis le 05/10/2026 inclus pour ce dossier uniquement ; « Tout l'historique » conservé, aucune publication.
+- Diagnostic et contrôle après en lecture seule : 26 connexions conservées, 15 depuis le 5 octobre (minuit Paris). Aucun enregistrement modifié, aucune date d'accès changée, aucun envoi.
+- Fichiers : ApprenantActivityReport.tsx, src/lib/reports/history-defaults.ts, src/test/history-defaults.test.ts, AGENTS.md, roadmap.md, ce journal.
+- Préférence par identifiant permanent ; ouverture du dossier verrouillé ou sélection dans le rapport initialise les dates personnalisées. Borne timestamp = minuit local ; dates d'émargement inchangées. Aucun changement du calcul global des heures ni des statuts.
+- PASS réellement exécutés : 109 tests (9 filtre/date, 91 ordre des 15 formations et empreintes pédagogiques, 9 cohérence des heures). Compilation automatique : build OK 16:14:07 UTC.
+- PASS Chromium local avec données entièrement fictives, requêtes serveur interceptées : 02/10 absent initialement, 06/10 visible, 02/10 réapparaît avec Tout l'historique ; impression contrôlée par interception du HTML, période 05/10 et mêmes lignes ; aucune erreur JavaScript. Captures vérifiées. Aucun compte réel utilisé.
+- NON PROUVÉ : appareil réel/mobile et site publié ; aucune publication demandée ni réalisée.
+
 ## 2026-10-09 15:23 UTC — Heures réellement faites et cohérence élève/admin
 - Demande explicite : afficher ce qui est réellement fait et assurer la cohérence des comptes élève et administrateur.
 - Lecture seule préalable : 239 dossiers suivis ; contrats personnalisés différents du standard, types manquants, heures réalisées plafonnées dans le CRM et pourcentage élève limité à 99% à cause de modules restants.
