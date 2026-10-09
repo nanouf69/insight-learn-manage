@@ -56,7 +56,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       // encore etre charge au premier rendu (sinon taux calcules sur 0h).
       const { data: apprenantRow } = await supabase
         .from("apprenants")
-        .select("heures_elearning, heures_presentiel, heures_totales, type_apprenant, date_fin_cours_en_ligne, date_fin_formation")
+        .select("heures_elearning, heures_presentiel, heures_totales, type_apprenant, formation_choisie, date_fin_cours_en_ligne, date_fin_formation")
         .eq("id", apprenantId)
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
@@ -174,10 +174,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       const reqPresentiel = presence.required;
       const reqTotal = Number(apprenant?.heures_totales) || reqElearning + reqPresentiel;
 
-      const doneElearning = Math.min(
-        onlineMin / 60,
-        reqElearning > 0 ? reqElearning : Number.MAX_SAFE_INTEGER,
-      );
+      // Actual proven time is never capped at the contractual target.
+      const doneElearning = onlineMin / 60;
       const donePresentiel = presence.done;
 
       // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
