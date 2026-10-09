@@ -7,6 +7,7 @@ import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours, presentielProgress } from "@/lib/presentielHours";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
+import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
 
 
 export interface TauxRealisation {
@@ -118,7 +119,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .map((a: any) => Date.parse(a.occurred_at)),
         ...exos.map((e: any) => Date.parse(e.updated_at)),
         ...quizzes.map((q: any) => Date.parse(q.completed_at)),
-      ].filter((t: number) => !Number.isNaN(t)).sort((a: number, b: number) => a - b);
+      ].filter((t: number) => !Number.isNaN(t) && t >= (getLearningHoursStartMs(apprenantId) ?? -Infinity)).sort((a: number, b: number) => a - b);
 
       const hasActivityInWindow = (start: number, end: number): boolean => {
         let lo = 0, hi = pedagogicalActTs.length - 1;
@@ -138,9 +139,9 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         !!nom && !isAccueil(nom) && !/^syst[eè]me$/i.test(nom.trim());
       const firstPedagogicalConnectionStart = (cnxRows as any[])
         .map((c: any) => {
-          const start = Date.parse(c.started_at);
+          const { start, end, minutes } = learningSessionWindow(c, apprenantId);
           if (Number.isNaN(start)) return null;
-          const end = getSessionEndMs(c as any);
+          if (getLearningHoursStartMs(apprenantId) !== null && minutes <= 0) return null;
           const qualifies = isPedagogicalModule(c.current_module) || hasActivityInWindow(start, end);
           return qualifies ? start : null;
         })
@@ -156,9 +157,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         const s = c.started_at;
         const e = c.ended_at || c.last_seen_at;
         if (!s || !e) continue;
-        const startMs = new Date(s).getTime();
+        const { start: startMs, end: endMs } = learningSessionWindow(c, apprenantId);
         if (!isFinite(startMs)) continue;
-        const endMs = getSessionEndMs(c as any);
         const ms = endMs - startMs;
         if (ms <= 0) continue;
         if (!hasActivityInWindow(startMs, endMs)) continue;

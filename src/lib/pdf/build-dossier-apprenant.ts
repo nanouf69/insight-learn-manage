@@ -19,6 +19,7 @@ import { generateFicheProgression, type FicheProgressionData, type ProgressionMo
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
+import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
 
 const escapeCsv = (v: any) => {
   if (v === null || v === undefined) return "";
@@ -167,7 +168,7 @@ export async function buildDossierApprenantIntoZip(
   const releveFolder = root.folder("releve-connexions")!;
 
   try {
-    const [actRows, complRows, qrRows] = await Promise.all([
+    const [actRows, complRows, qrRows, exerciseRows] = await Promise.all([
       fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites")
         .select("id, module_id, module_nom, action_type, occurred_at")
         .eq("apprenant_id", apprenant.id)
@@ -179,11 +180,13 @@ export async function buildDossierApprenantIntoZip(
         .eq("apprenant_id", apprenant.id)
         .order("completed_at", { ascending: false })
         .range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants").select("updated_at").eq("apprenant_id", apprenant.id).eq("completed", true).range(from, to)),
     ]);
     const actRes = { data: actRows }; const complRes = { data: complRows }; const qrRes = { data: qrRows };
     const html = buildRapportActiviteHtml({
-      apprenant: { nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email, type_apprenant: apprenant.type_apprenant },
-      connexions: cnxRawRows.map((r: any) => ({ id: r.id || "", started_at: r.started_at, ended_at: r.ended_at, last_seen_at: r.last_seen_at, current_module: r.current_module })),
+      apprenant: { id: apprenant.id, nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email, type_apprenant: apprenant.type_apprenant },
+      connexions: cnxRawRows.map((r: any) => ({ ...r, id: r.id || "" })),
+      exerciseActivityTimestamps: exerciseRows.map((r: any) => r.updated_at),
       activites: ((actRes.data as any[]) || []) as any,
       quizResults: ((qrRes.data as any[]) || []) as any,
       completedModuleIds: new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)),
@@ -276,10 +279,9 @@ export async function buildDossierApprenantIntoZip(
     for (const c of cnxRawRows) {
       const s = c.started_at, e = c.ended_at || c.last_seen_at;
       if (!s || !e) continue;
-      const startMs = new Date(s).getTime();
+      const { start: startMs, end: endMs } = learningSessionWindow(c, apprenant.id);
       const rawEndMs = new Date(e).getTime();
       if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
-      const endMs = getSessionEndMs(c as any);
       const ms = endMs - startMs;
       if (ms <= 0) continue;
       if (!hasActivityInWindow(startMs, endMs)) continue;

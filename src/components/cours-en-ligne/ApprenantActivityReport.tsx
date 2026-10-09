@@ -37,6 +37,7 @@ import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqu
 import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
 import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
 import { getHistoryDefaults, historyStartTimestamp, type HistoryPeriod } from "@/lib/reports/history-defaults";
+import { learningSessionWindow, learningSessionMinutes, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -422,11 +423,10 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       );
       let total = 0;
       for (const c of conns) {
-        const start = Date.parse(c.started_at);
+        const { start, end } = learningSessionWindow(c, selectedId, cutoffAll);
         if (Number.isNaN(start)) continue;
         // Aucune heure comptabilisée après la fin d'accès à la formation
         if (cutoffAll && start > cutoffAll) continue;
-        const end = getSessionEndMs(c as any, cutoffAll);
 
         if (end <= start) continue;
         let lo = 0, hi = tsArr.length - 1, found = false;
@@ -463,7 +463,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   // un module/section pédagogique OU complété un exercice/quiz pendant la fenêtre.
   // Rester sur "Accueil — Liste des modules" ne compte pas.
   const hasPedagogicalActivity = (connexion: Connexion) => {
-    const start = parseISO(connexion.started_at);
+    const start = new Date(learningSessionWindow(connexion, selectedId, accessCutoffMs).start);
     const end = getCappedSessionEnd(connexion);
     const isAccueil = (nom?: string | null) =>
       !!nom && /accueil|liste\s+des\s+modules/i.test(nom);
@@ -473,7 +473,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     };
     // Fallback pour anciennes sessions sans logs d'activité :
     // si current_module est un vrai module (pas l'accueil), compter la session.
-    if (connexion.current_module && !isAccueil(connexion.current_module)) return true;
+    if (getLearningHoursStartMs(selectedId) === null && connexion.current_module && !isAccueil(connexion.current_module)) return true;
     if (activites.some(a =>
       inWindow(a.occurred_at)
       && (a.action_type === "open_module" || a.action_type === "open_section" || a.action_type === "open_cours")
@@ -486,7 +486,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
 
   const getSessionMinutes = (connexion: Connexion) => {
     if (!hasPedagogicalActivity(connexion)) return 0;
-    return getSessionDurationMinutes(connexion as any, accessCutoffMs);
+    return learningSessionMinutes(connexion, selectedId, accessCutoffMs);
   };
 
   // Présentiel : une ligne n'est qualifiée de pratique que si l'apprenant est

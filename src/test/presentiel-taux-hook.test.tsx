@@ -40,6 +40,29 @@ import { useStudentEffectiveHours } from "../hooks/useStudentEffectiveHours";
 import StudentHoursTracker from "../components/cours-en-ligne/StudentHoursTracker";
 
 describe("Taux présentiel de la fiche, lecture seule", () => {
+  it("compte depuis le 6 octobre Paris avec les mêmes heures élève/admin et conserve les anciennes preuves", async () => {
+    const id = "c048754d-9045-4ab6-b89f-a5ab26de314c";
+    state.learner = { type_apprenant: "vtc-e", heures_elearning: 60 };
+    state.rows = [];
+    state.connections = [
+      { started_at: "2026-10-05T09:00:00Z", ended_at: "2026-10-05T10:00:00Z" },
+      { started_at: "2026-10-05T21:30:00Z", ended_at: "2026-10-05T22:30:00Z" },
+      { started_at: "2026-10-06T09:00:00Z", ended_at: "2026-10-06T10:00:00Z" },
+    ];
+    state.activities = ["2026-10-05T09:30:00Z", "2026-10-05T22:10:00Z", "2026-10-06T09:30:00Z"].map(occurred_at => ({ action_type: "open_module", module_nom: "Cours", occurred_at }));
+    const before = JSON.stringify({ connections: state.connections, activities: state.activities });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const { result, unmount } = renderHook(() => ({ admin: useApprenantTauxRealisation(id), student: useStudentEffectiveHours(id, "vtc-e") }), { wrapper });
+    await waitFor(() => expect(result.current.student.loading).toBe(false));
+    expect(result.current.admin.data?.doneElearning).toBe(1.5);
+    expect(result.current.student.formattedDone).toBe("1h30");
+    expect(result.current.student.pct).toBe(result.current.admin.data?.pctElearning);
+    expect(result.current.admin.data?.reqElearning).toBe(60);
+    expect(result.current.admin.data?.modulesCompleted).toBe(0);
+    expect(JSON.stringify({ connections: state.connections, activities: state.activities })).toBe(before);
+    unmount(); client.clear();
+  });
   it.each([["va-e", null, 7], ["vtc-e", 66, 66], ["vtc-e", 90, 90]])("élève et admin affichent le temps réel sans plafond (%s, contrat %s)", async (type, contract, required) => {
     state.learner = { type_apprenant: type, heures_elearning: contract };
     state.rows = [];

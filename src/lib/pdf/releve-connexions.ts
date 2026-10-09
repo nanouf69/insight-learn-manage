@@ -6,6 +6,7 @@ import logoImage from "@/assets/logo-ftransport.png";
 import signatureImage from "@/assets/signature-dirigeant.png";
 import tamponImage from "@/assets/tampon-entreprise.png";
 import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
 
 
 const COMPANY = {
@@ -107,7 +108,7 @@ function joinList(items?: string[] | null): string {
 }
 
 export function generateReleveConnexionsPdf(
-  apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string },
+  apprenant: { id?: string; nom: string; prenom: string; civilite?: string; type_apprenant?: string },
   rows: ConnexionRow[],
   opts?: {
     returnBlob?: boolean;
@@ -167,10 +168,9 @@ export function generateReleveConnexionsPdf(
     const s = r.started_at;
     const e = r.ended_at || r.last_seen_at;
     if (s && e) {
-      const startMs = new Date(s).getTime();
+      const { start: startMs, end: endMs } = learningSessionWindow({ ...r, started_at: s }, apprenant.id);
       const rawEndMs = new Date(e).getTime();
       if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
-      const endMs = getSessionEndMs(r as any);
       const ms = endMs - startMs;
       if (ms > 0) totalMin += Math.floor(ms / 60000);
     }
@@ -290,7 +290,9 @@ export function generateReleveConnexionsPdf(
         fmtDate(startedAt),
         fmtTime(startedAt),
         fmtTime(endedAt),
-        duree(startedAt, endedAt),
+        getLearningHoursStartMs(apprenant.id) !== null && startedAt
+          ? (() => { const mins = learningSessionWindow({ ...r, started_at: startedAt }, apprenant.id).minutes; return `${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, "0")}`; })()
+          : duree(startedAt, endedAt),
         moduleFallback,
         quizTxt,
         exosTxt,
