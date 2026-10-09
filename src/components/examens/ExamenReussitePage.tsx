@@ -1097,6 +1097,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
+        note_lettre_cma: noteLettreCMA,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
