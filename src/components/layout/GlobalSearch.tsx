@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Search, User, GraduationCap, Calendar, Loader2 } from "lucide-react";
+import { Search, User, GraduationCap, Calendar, Loader2, Building2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CommandDialog,
@@ -16,7 +16,7 @@ interface SearchResult {
   id: string;
   label: string;
   sublabel?: string;
-  type: "apprenant" | "formation" | "session";
+  type: "apprenant" | "organisation" | "formation" | "session";
 }
 
 interface GlobalSearchProps {
@@ -84,7 +84,9 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
       const fullPattern = `%${cleaned}%`;
       const apprenantResults = filterAndSortApprenants(allApprenants, cleaned).slice(0, 20);
 
-      const [formations, sessions] = await Promise.all([
+      const safe = cleaned.replace(/[,()]/g, " ");
+      const safePattern = `%${safe}%`;
+      const [formations, sessions, organismes] = await Promise.all([
         supabase
           .from("formations")
           .select("id, nom, description")
@@ -95,6 +97,11 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
           .select("id, nom, lieu, date_debut, date_fin")
           .or(`nom.ilike.${fullPattern},lieu.ilike.${fullPattern}`)
           .limit(5),
+        supabase
+          .from("organismes")
+          .select("id, nom, ville, email, telephone, siret")
+          .or(`nom.ilike.${safePattern},ville.ilike.${safePattern},email.ilike.${safePattern},telephone.ilike.${safePattern},siret.ilike.${safePattern}`)
+          .limit(8),
       ]);
 
       const mapped: SearchResult[] = [
@@ -103,6 +110,12 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
           label: `${a.prenom} ${a.nom}`,
           sublabel: a.email || a.telephone || a.numero_dossier_cma || undefined,
           type: "apprenant" as const,
+        })),
+        ...((organismes.data as any[]) || []).map((o) => ({
+          id: o.id,
+          label: o.nom,
+          sublabel: [o.ville, o.email].filter(Boolean).join(" · ") || undefined,
+          type: "organisation" as const,
         })),
         ...(formations.data || []).map((f) => ({
           id: f.id,
@@ -140,6 +153,8 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
 
     if (result.type === "apprenant" && onSelectApprenant) {
       onSelectApprenant(result.id);
+    } else if (result.type === "organisation" && onNavigate) {
+      onNavigate("organisations");
     } else if (result.type === "formation" && onNavigate) {
       onNavigate("formations");
     } else if (result.type === "session" && onNavigate) {
@@ -149,12 +164,14 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
 
   const iconMap = {
     apprenant: User,
+    organisation: Building2,
     formation: GraduationCap,
     session: Calendar,
   };
 
   const groupLabels = {
     apprenant: "Apprenants",
+    organisation: "Organisations",
     formation: "Formations",
     session: "Sessions",
   };
