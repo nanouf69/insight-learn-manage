@@ -3,7 +3,8 @@
 ## Horaires des feuilles pratiques — 09/10
 - [x] Lire le circuit PDF et le planning sans écriture serveur.
 - [x] Afficher les horaires pratiques par date et demi-journée, sans modifier les signatures.
-- [ ] Tests isolés et compilation automatique ; aucune publication demandée.
+- [x] 15 tests isolés réussis, dont génération réelle du PDF ; compilation automatique OK ; aucune écriture serveur ni publication.
+- [ ] Vérification sur le compte élève technique : NON PROUVÉE, nécessite une approbation de connexion ; aucun essai sur élève réel.
 
 ## Taux e-learning candidats examens — 08/10
 - [x] Afficher le taux depuis le suivi existant, uniquement pour les e-learning, sans écriture de progression.

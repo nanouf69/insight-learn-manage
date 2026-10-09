@@ -674,9 +674,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
                 {donnees.date_emargement} — {donnees.demi_journee}
               </span>
             </div>
+            {donnees.horaires && <p className="font-semibold">Horaires de formation : {donnees.horaires}</p>}
             {donnees.absent ? (
-              <>
-                {donnees.horaires && <p className="font-semibold">Horaires de formation : {donnees.horaires}</p>}
               <>
                 <div>
                   <p className="font-medium">Motif de l'absence :</p>
@@ -698,10 +697,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   <p className="text-xs text-destructive">Aucun justificatif fourni</p>
                 )}
               </>
-              </>
             ) : donnees.signature ? (
               <div>
-                {donnees.horaires && <p className="font-semibold">Horaires de formation : {donnees.horaires}</p>}
                 <p className="font-medium mb-1">Signature :</p>
                 <img src={donnees.signature} alt="Signature" className="border rounded max-h-32" />
               </div>
