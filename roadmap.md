@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Pratique signée et taux présentiel — 09/10 15:07 UTC
-- [ ] Compter uniquement les signatures présentes et les horaires exacts du planning ; ne plus annuler les heures si le volume contractuel présentiel est vide.
-- [ ] Mettre à jour les taux à la réception d'une signature, sans écriture de progression ni modification du contrat.
-- [ ] Tests fictifs, contrôles des lectures et compilation ; aucun envoi ni publication.
+- [x] Compter uniquement les signatures présentes aux horaires du planning ; conserver les heures prouvées même sans volume contractuel présentiel.
+- [x] Actualiser le taux CRM sur événement de signature, sans écriture de progression ni modification du contrat ; corriger également les lectures des rapports.
+- [x] 41 tests fictifs PASS, dont fiche 0→50→100 %, 11 contrôles ordre cours/quiz ; compilation automatique OK ; aucun envoi ni publication.
+- [ ] Vérification du compte technique sur appareil réel : NON PROUVÉE, approbation de connexion nécessaire ; aucun test sur vrai apprenant.
 
 ## Horaires des feuilles pratiques — 09/10
 - [x] Lire le circuit PDF et le planning sans écriture serveur.
