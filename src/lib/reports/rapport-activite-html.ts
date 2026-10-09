@@ -1,10 +1,12 @@
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
 import { getSessionEndMs, getSessionDurationMinutes } from "@/lib/reports/session-duration";
+import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
 
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
 
 export interface RapportApprenant {
+  id?: string;
   nom: string;
   prenom: string;
   email?: string | null;
@@ -35,6 +37,7 @@ export interface RapportQuizResult {
 }
 
 export interface BuildRapportArgs {
+  exerciseActivityTimestamps?: string[];
   apprenant: RapportApprenant;
   connexions: RapportConnexion[];
   activites: RapportActivite[];
@@ -56,7 +59,19 @@ export function buildRapportActiviteHtml({
   activites,
   quizResults,
   completedModuleIds,
+  exerciseActivityTimestamps = [],
 }: BuildRapportArgs): string {
+  const scoped = getLearningHoursStartMs(apprenant.id) !== null;
+  const activityTs = [
+    ...activites.filter(a => ["open_module", "open_section", "open_cours"].includes(a.action_type) && !/accueil|liste\s+des\s+modules/i.test(a.module_nom ?? "")).map(a => Date.parse(a.occurred_at)),
+    ...quizResults.map(q => Date.parse(q.completed_at)),
+    ...exerciseActivityTimestamps.map(t => Date.parse(t)),
+  ];
+  const getSessionMinutes = (c: RapportConnexion) => {
+    if (!scoped) return getSessionDurationMinutes(c);
+    const { start, end, minutes } = learningSessionWindow(c, apprenant.id);
+    return activityTs.some(t => t >= start && t <= end) ? minutes : 0;
+  };
   const totalMinutes = connexions.reduce((s, c) => s + getSessionMinutes(c), 0);
   const totalHours = Math.floor(totalMinutes / 60);
   const remaining = totalMinutes % 60;
