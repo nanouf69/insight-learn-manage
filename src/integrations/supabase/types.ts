@@ -5395,6 +5395,7 @@ export type Database = {
           id: string
           max_per_day: number
           max_per_day_map: Json
+          note_lettre_cma: string | null
           planning_end_date: string
           planning_start_date: string
           updated_at: string
@@ -5410,6 +5411,7 @@ export type Database = {
           id?: string
           max_per_day?: number
           max_per_day_map?: Json
+          note_lettre_cma?: string | null
           planning_end_date: string
           planning_start_date: string
           updated_at?: string
@@ -5425,6 +5427,7 @@ export type Database = {
           id?: string
           max_per_day?: number
           max_per_day_map?: Json
+          note_lettre_cma?: string | null
           planning_end_date?: string
           planning_start_date?: string
           updated_at?: string
