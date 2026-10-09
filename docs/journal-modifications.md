@@ -114,3 +114,8 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - Modèle email_templates `convocation-ta` : « Horaires de la première semaine ({{semaine_entree}}) : de 8h45 à 12h et de 13h à 16h. » — sauvegarde avant modification : docs/backups/convocation-ta-avant-semaine-entree-2026-10-08.html.
 - SessionDetail.tsx : nouvelle variable {{semaine_entree}} = du jour de début au vendredi de la même semaine (bornée par date_fin) ; ajoutée à la liste des variables affichée dans l'éditeur.
 - Vérification : modèle en base relu après écriture ; calcul testé (26/10 → « du 26 octobre au 30 octobre 2026 » ; début en cours de semaine borné au vendredi ; fin de session plus courte bornée). Aucune autre phrase modifiée, aucune donnée élève touchée, frontend non publié.
+
+## 09/10/2026 — Note générale pour la lettre CMA
+- Nouvelle colonne additive planning_pratique_config.note_lettre_cma (texte, nullable) — migration 0132, aucune donnée touchée.
+- src/components/examens/ExamenReussitePage.tsx : champ « Note pour la lettre à la CMA » dans la carte Lettre CMA ; enregistré par session d'examen + période pratique (mêmes garde-fous que le planning : écriture refusée tant que la clé n'est pas chargée) ; note incluse dans la lettre générée (aperçu, impression, e-mail CMA) sous la ligne « Important », jamais si vide.
+- Notes par candidat inchangées ; rien publié.
