@@ -19,6 +19,7 @@ import { generateFicheProgression, type FicheProgressionData, type ProgressionMo
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
+import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
 
 const escapeCsv = (v: any) => {
   if (v === null || v === undefined) return "";
@@ -276,10 +277,9 @@ export async function buildDossierApprenantIntoZip(
     for (const c of cnxRawRows) {
       const s = c.started_at, e = c.ended_at || c.last_seen_at;
       if (!s || !e) continue;
-      const startMs = new Date(s).getTime();
+      const { start: startMs, end: endMs } = learningSessionWindow(c, apprenant.id);
       const rawEndMs = new Date(e).getTime();
       if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
-      const endMs = getSessionEndMs(c as any);
       const ms = endMs - startMs;
       if (ms <= 0) continue;
       if (!hasActivityInWindow(startMs, endMs)) continue;

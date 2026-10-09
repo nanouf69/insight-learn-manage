@@ -25,6 +25,7 @@ import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
+import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
 import { isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 
 
@@ -676,10 +677,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
             const s = c.started_at;
             const e = c.ended_at || c.last_seen_at;
             if (!s || !e) continue;
-            const startMs = new Date(s).getTime();
+            const { start: startMs, end: endMs } = learningSessionWindow(c, apprenant.id);
             const rawEndMs = new Date(e).getTime();
             if (!isFinite(startMs) || !isFinite(rawEndMs)) continue;
-            const endMs = getSessionEndMs(c as any);
             const ms = endMs - startMs;
             if (ms <= 0) continue;
             if (!hasActivityInWindow(startMs, endMs)) continue;
