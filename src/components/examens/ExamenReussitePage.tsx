@@ -1052,6 +1052,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string>>({});
   // Note générale de la lettre CMA (distincte des notes par candidat), enregistrée par session/période.
   const [noteLettreCMA, setNoteLettreCMA] = useState("");
+  const [lettreExclusIds, setLettreExclusIds] = useState<string[]>([]);
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
@@ -1098,6 +1099,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
         note_lettre_cma: noteLettreCMA,
+        lettre_exclus_ids: lettreExclusIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
@@ -1117,6 +1119,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     maxPerDayMap,
     dayTimeSlots,
     noteLettreCMA,
+    lettreExclusIds,
   ]);
 
   const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
@@ -1139,6 +1142,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       max_per_day_map: maxPerDayMap,
       day_time_slots: nextDayTimeSlots,
       note_lettre_cma: noteLettreCMA,
+      lettre_exclus_ids: lettreExclusIds,
       updated_at: new Date().toISOString(),
     };
     const { error } = planningRowExistsRef.current
@@ -1164,6 +1168,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     maxPerDay,
     maxPerDayMap,
     noteLettreCMA,
+    lettreExclusIds,
   ]);
 
   // Sauvegarde différée (pour la saisie des horaires : évite qu'un upsert par frappe
@@ -1937,6 +1942,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDayMap((data.max_per_day_map || {}) as Record<string, number>);
         setDayTimeSlots((data.day_time_slots || {}) as Record<string, { matin?: string; apresmidi?: string } | string>);
         setNoteLettreCMA(data.note_lettre_cma || "");
+        setLettreExclusIds(data.lettre_exclus_ids || []);
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
@@ -1951,6 +1957,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDayMap({});
         setDayTimeSlots({});
         setNoteLettreCMA("");
+        setLettreExclusIds([]);
       }
 
       setPlanningDatesUnlocked(false);
@@ -1974,6 +1981,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
         note_lettre_cma: noteLettreCMA,
+        lettre_exclus_ids: lettreExclusIds,
         updated_at: new Date().toISOString(),
       };
       // Ligne existante : simple mise à jour (un upsert sans dates « Du/Au » est refusé par la base).
@@ -1987,7 +1995,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA]);
+  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA, lettreExclusIds]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -2937,7 +2945,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       {/* Lettre CMA - Réussite examen */}
       {(() => {
         const totalInscrits = apprenants?.length || 0;
-        const sansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        const tousSansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        const sansResultat = tousSansResultat.filter(a => !lettreExclusIds.includes(a.id));
+        const exclusDeLettre = tousSansResultat.filter(a => lettreExclusIds.includes(a.id));
         const resultatsIncomplets = totalInscrits === 0 || sansResultat.length > 0;
 
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -3243,14 +3253,44 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {sansResultat.map(a => (
-                      <Badge key={a.id} className="bg-red-200 text-red-800 border-red-400 text-sm font-semibold px-3 py-1">
+                      <Badge key={a.id} className="bg-red-200 text-red-800 border-red-400 text-sm font-semibold px-3 py-1 flex items-center gap-2">
                         {a.nom} {a.prenom} — ☎️ {a.telephone || 'pas de tél'}
+                        <button
+                          type="button"
+                          title="Retirer ce candidat de la lettre (réversible, aucune donnée supprimée)"
+                          className="ml-1 rounded bg-red-700 text-white text-[10px] px-1.5 py-0.5 hover:bg-red-800"
+                          onClick={() => setLettreExclusIds(prev => prev.includes(a.id) ? prev : [...prev, a.id])}
+                        >
+                          Retirer de la lettre
+                        </button>
                       </Badge>
                     ))}
                   </div>
                   <p className="text-red-600 text-xs mt-2 italic">
-                    Saisissez le résultat (Oui / Non / Absent) de chaque candidat dans le tableau ci-dessus avant d'envoyer la lettre.
+                    Saisissez le résultat (Oui / Non / Absent) de chaque candidat dans le tableau ci-dessus avant d'envoyer la lettre, ou retirez-le de la lettre.
                   </p>
+                </div>
+              )}
+              {exclusDeLettre.length > 0 && (
+                <div className="mt-3 p-3 bg-muted/50 border border-muted rounded-lg">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {exclusDeLettre.length} candidat(s) retiré(s) de la lettre (conservés dans l'examen, rien n'est supprimé) :
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {exclusDeLettre.map(a => (
+                      <Badge key={a.id} variant="outline" className="text-sm px-3 py-1 flex items-center gap-2 text-muted-foreground">
+                        {a.nom} {a.prenom}
+                        <button
+                          type="button"
+                          title="Remettre ce candidat dans la lettre"
+                          className="ml-1 rounded bg-foreground text-background text-[10px] px-1.5 py-0.5 hover:opacity-80"
+                          onClick={() => setLettreExclusIds(prev => prev.filter(id => id !== a.id))}
+                        >
+                          Rétablir
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardHeader>

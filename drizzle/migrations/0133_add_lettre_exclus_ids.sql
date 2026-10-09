@@ -1,0 +1,1 @@
+ALTER TABLE public.planning_pratique_config ADD COLUMN IF NOT EXISTS lettre_exclus_ids TEXT[];

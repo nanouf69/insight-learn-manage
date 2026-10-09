@@ -5393,6 +5393,7 @@ export type Database = {
           extra_candidats: string[]
           extra_days: string[]
           id: string
+          lettre_exclus_ids: string[] | null
           max_per_day: number
           max_per_day_map: Json
           note_lettre_cma: string | null
@@ -5409,6 +5410,7 @@ export type Database = {
           extra_candidats?: string[]
           extra_days?: string[]
           id?: string
+          lettre_exclus_ids?: string[] | null
           max_per_day?: number
           max_per_day_map?: Json
           note_lettre_cma?: string | null
@@ -5425,6 +5427,7 @@ export type Database = {
           extra_candidats?: string[]
           extra_days?: string[]
           id?: string
+          lettre_exclus_ids?: string[] | null
           max_per_day?: number
           max_per_day_map?: Json
           note_lettre_cma?: string | null
