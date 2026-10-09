@@ -168,7 +168,7 @@ export async function buildDossierApprenantIntoZip(
   const releveFolder = root.folder("releve-connexions")!;
 
   try {
-    const [actRows, complRows, qrRows] = await Promise.all([
+    const [actRows, complRows, qrRows, exerciseRows] = await Promise.all([
       fetchAllRows<any>((from, to) => supabase.from("apprenant_module_activites")
         .select("id, module_id, module_nom, action_type, occurred_at")
         .eq("apprenant_id", apprenant.id)
@@ -180,11 +180,13 @@ export async function buildDossierApprenantIntoZip(
         .eq("apprenant_id", apprenant.id)
         .order("completed_at", { ascending: false })
         .range(from, to)),
+      fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants").select("updated_at").eq("apprenant_id", apprenant.id).eq("completed", true).range(from, to)),
     ]);
     const actRes = { data: actRows }; const complRes = { data: complRows }; const qrRes = { data: qrRows };
     const html = buildRapportActiviteHtml({
       apprenant: { id: apprenant.id, nom: apprenant.nom, prenom: apprenant.prenom, email: apprenant.email, type_apprenant: apprenant.type_apprenant },
-      connexions: cnxRawRows.map((r: any) => ({ id: r.id || "", started_at: r.started_at, ended_at: r.ended_at, last_seen_at: r.last_seen_at, current_module: r.current_module })),
+      connexions: cnxRawRows.map((r: any) => ({ ...r, id: r.id || "" })),
+      exerciseActivityTimestamps: exerciseRows.map((r: any) => r.updated_at),
       activites: ((actRes.data as any[]) || []) as any,
       quizResults: ((qrRes.data as any[]) || []) as any,
       completedModuleIds: new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)),
