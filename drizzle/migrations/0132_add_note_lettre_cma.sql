@@ -1,0 +1,1 @@
+ALTER TABLE public.planning_pratique_config ADD COLUMN IF NOT EXISTS note_lettre_cma TEXT;

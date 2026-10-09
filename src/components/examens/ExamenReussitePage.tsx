@@ -1050,6 +1050,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [maxPerDay, setMaxPerDay] = useState(3);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
   const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string>>({});
+  // Note générale de la lettre CMA (distincte des notes par candidat), enregistrée par session/période.
+  const [noteLettreCMA, setNoteLettreCMA] = useState("");
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
@@ -1095,6 +1097,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
+        note_lettre_cma: noteLettreCMA,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
@@ -1113,6 +1116,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     maxPerDay,
     maxPerDayMap,
     dayTimeSlots,
+    noteLettreCMA,
   ]);
 
   const saveDayTimeSlotsNow = useCallback(async (nextDayTimeSlots: typeof dayTimeSlots) => {
@@ -1134,6 +1138,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       max_per_day: maxPerDay,
       max_per_day_map: maxPerDayMap,
       day_time_slots: nextDayTimeSlots,
+      note_lettre_cma: noteLettreCMA,
       updated_at: new Date().toISOString(),
     };
     const { error } = planningRowExistsRef.current
@@ -1158,6 +1163,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     removedCandidatsCMA,
     maxPerDay,
     maxPerDayMap,
+    noteLettreCMA,
   ]);
 
   // Sauvegarde différée (pour la saisie des horaires : évite qu'un upsert par frappe
@@ -1930,6 +1936,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDay(data.max_per_day || 3);
         setMaxPerDayMap((data.max_per_day_map || {}) as Record<string, number>);
         setDayTimeSlots((data.day_time_slots || {}) as Record<string, { matin?: string; apresmidi?: string } | string>);
+        setNoteLettreCMA(data.note_lettre_cma || "");
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
@@ -1943,6 +1950,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         setMaxPerDay(3);
         setMaxPerDayMap({});
         setDayTimeSlots({});
+        setNoteLettreCMA("");
       }
 
       setPlanningDatesUnlocked(false);
@@ -1965,6 +1973,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day: maxPerDay,
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
+        note_lettre_cma: noteLettreCMA,
         updated_at: new Date().toISOString(),
       };
       // Ligne existante : simple mise à jour (un upsert sans dates « Du/Au » est refusé par la base).
@@ -1978,7 +1987,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots]);
+  }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -3080,6 +3089,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
               <p><strong>Important :</strong> Nous disposons d'un seul vehicule disponible pour les epreuves pratiques.</p>
 
+              ${pratiqueNoteHTML(noteLettreCMA)}
+
               <p>Je reste a votre disposition pour toute information complementaire.</p>
               <p style="margin-top:30px;">Cordialement,<br/><br/><strong>FTRANSPORT</strong></p>
             </div>
@@ -3370,6 +3381,17 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </div>
                 </div>
               )}
+              <div className="mt-4">
+                <Label className="text-sm font-medium">Note pour la lettre à la CMA</Label>
+                <Textarea
+                  rows={3}
+                  className="mt-1.5"
+                  placeholder="Facultatif — cette note apparaît dans la lettre (aperçu, impression et e-mail envoyé à la CMA)."
+                  value={noteLettreCMA}
+                  onChange={(e) => setNoteLettreCMA(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Enregistrée automatiquement pour cette session d'examen et cette période pratique.</p>
+              </div>
             </CardContent>
           </Card>
         );
