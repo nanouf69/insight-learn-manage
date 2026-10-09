@@ -35,6 +35,7 @@ import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
+import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
 
 // Build a static map: exercice_id → human-readable title
 const EXERCICE_TITLE_MAP = new Map<string, string>();
@@ -532,21 +533,17 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     return rows.sort((a, b) => b.date.localeCompare(a.date));
   }, [emargements, pratiqueDetails]);
 
-  // Synthèse des taux : e-learning (plafonné au volume prévu), présentiel (confirmé) et total
+  // Synthèse des taux : heures réellement effectuées, sans plafond contractuel.
   const taux = useMemo(() => {
     const a = selectedApprenant;
-    const requiredElearning =
-      Number(a?.heures_elearning) ||
-      Math.max(0, (Number(a?.heures_totales) || 0) - (Number(a?.heures_presentiel) || 0));
+    const requiredElearning = requiredElearningHours(a ?? {});
     const presence = presentielProgress(pratiqueRows.reduce((s, p) => s + (p.hours || 0), 0), Number(a?.heures_presentiel) || 0, pratiqueDetails);
     const requiredPresentiel = presence.required;
     const requiredTotal =
       Number(a?.heures_totales) || requiredElearning + requiredPresentiel;
 
     const doneElearningRaw = allHistoryMinutes / 60;
-    const doneElearning = requiredElearning > 0
-      ? Math.min(doneElearningRaw, requiredElearning)
-      : doneElearningRaw;
+    const doneElearning = doneElearningRaw;
     const donePresentielRaw = pratiqueRows.reduce((s, p) => s + (p.hours || 0), 0);
     const donePresentiel = presence.done;
 
@@ -756,7 +753,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         <div class="stats">
           <div class="stat-card">
             <div class="stat-value">${taux.pctElearning}%</div>
-            <div class="stat-label">Connexion e-learning<br/>${taux.doneElearning.toFixed(1)}h / ${taux.requiredElearning}h</div>
+            <div class="stat-label">Connexion e-learning<br/>${formatLearningHours(taux.doneElearning)} / ${taux.requiredElearning}h</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${taux.pctPresentiel}%</div>
@@ -915,7 +912,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                         {taux.pctElearning}%
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {taux.doneElearning.toFixed(1)}h / {taux.requiredElearning}h
+                        {formatLearningHours(taux.doneElearning)} / {taux.requiredElearning}h
                       </div>
                     </div>
                     <div className="w-px h-10 bg-border" />

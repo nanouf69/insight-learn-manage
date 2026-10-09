@@ -42,6 +42,7 @@ import { Input } from "@/components/ui/input";
 import { getAvatarUrl } from "@/lib/avatarUrl";
 import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
+import { formatLearningHours } from "@/lib/elearningRequiredHours";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
@@ -636,7 +637,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 <div className="mt-1 text-xs text-muted-foreground">
                   {(t as any).unit === "modules"
                     ? `${t.done} / ${t.req} modules réalisés`
-                    : `${t.done.toFixed(1)}h / ${t.req}h`}
+                    : `${formatLearningHours(t.done)} / ${t.req > 0 ? `${t.req}h` : "Heures non renseignées"}`}
                 </div>
                 {t.strong && (
                   <div className={`mt-0.5 text-xs font-medium ${taux.premiereActiviteAt ? "text-primary" : "text-muted-foreground"}`}>

@@ -54,7 +54,7 @@ export default function StudentHoursTracker({
   modulesCompleted,
   modulesTotal,
 }: StudentHoursTrackerProps) {
-  const { loading, formattedDone, formattedRemaining, requis, pct } = useStudentEffectiveHours(
+  const { loading, formattedDone, formattedRemaining, requis, pct, faitHeures } = useStudentEffectiveHours(
     apprenantId,
     typeApprenant,
     { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
@@ -73,7 +73,7 @@ export default function StudentHoursTracker({
     return null;
   }
 
-  if (requis === 0) {
+  if (requis === 0 && faitHeures === 0) {
     return null;
   }
 
@@ -81,8 +81,8 @@ export default function StudentHoursTracker({
   const isComplete = etat === "terminee";
   const isPresque = etat === "presque";
   const isLow = etat === "en_cours" && pct < 50;
-  // 100 % uniquement si la formation est réellement terminée (heures + modules)
-  const displayPct = isComplete ? 100 : Math.min(99, Math.round(pct));
+  // Hours rate is separate from server-backed module completion.
+  const displayPct = Math.min(100, Math.round(pct));
 
   return (
     <Card className="mb-8 border shadow-sm overflow-hidden">
@@ -143,7 +143,7 @@ export default function StudentHoursTracker({
             </div>
             <div className="text-muted-foreground text-xl">/</div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{requis}h</div>
+              <div className="text-2xl font-bold">{requis > 0 ? `${requis}h` : "Non renseignées"}</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Requises</div>
             </div>
             <div className="text-center">
@@ -155,12 +155,12 @@ export default function StudentHoursTracker({
           </div>
         </div>
 
-        <div className="mt-4">
+        {requis > 0 && <div className="mt-4">
           <div className="flex items-center gap-3">
             <Progress value={displayPct} className="h-2.5 flex-1" />
             <span className="text-sm font-semibold w-12 text-right">{displayPct}%</span>
           </div>
-        </div>
+        </div>}
 
         {(() => {
           const saved = (dateExamenTheorique || "").trim();

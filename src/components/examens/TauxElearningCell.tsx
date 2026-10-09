@@ -4,6 +4,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApprenantTauxRealisation } from '@/hooks/useApprenantTauxRealisation';
+import { formatLearningHours } from '@/lib/elearningRequiredHours';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -53,7 +54,7 @@ export function TauxElearningCell({ candidat }: { candidat: CandidatElearning })
       <span className="text-muted-foreground">Heures non renseignées</span> : <>
         <strong>{taux.pctElearning}%</strong>
         <Progress value={taux.pctElearning} aria-label="Taux e-learning" className="h-1.5" />
-        <div className="text-muted-foreground">{taux.doneElearning.toFixed(1)}h / {taux.reqElearning}h</div>
+        <div className="text-muted-foreground">{formatLearningHours(taux.doneElearning)} / {taux.reqElearning}h</div>
       </>}
     <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={!emailValide}
       aria-label="Préparer le mail de relance e-learning"

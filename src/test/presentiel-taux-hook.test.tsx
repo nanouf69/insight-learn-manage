@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -36,9 +36,45 @@ vi.mock("@/lib/pratiqueSlots", () => ({ fetchPratiqueSlotDetails: async () => [{
 }] }));
 vi.mock("@/components/cours-en-ligne/modules-config", () => ({ FORMATION_MODULES: { "vtc-e": { modules: [] } } }));
 import { useApprenantTauxRealisation } from "../hooks/useApprenantTauxRealisation";
+import { useStudentEffectiveHours } from "../hooks/useStudentEffectiveHours";
+import StudentHoursTracker from "../components/cours-en-ligne/StudentHoursTracker";
 
 describe("Taux présentiel de la fiche, lecture seule", () => {
+  it.each([["va-e", null, 7], ["vtc-e", 66, 66], ["vtc-e", 90, 90]])("élève et admin affichent le temps réel sans plafond (%s, contrat %s)", async (type, contract, required) => {
+    state.learner = { type_apprenant: type, heures_elearning: contract };
+    state.rows = [];
+    state.connections = Array.from({ length: 5 }, (_, index) => ({
+      started_at: `2026-10-0${index + 1}T09:00:00Z`, ended_at: `2026-10-0${index + 1}T16:00:00Z`, last_seen_at: `2026-10-0${index + 1}T16:00:00Z`,
+    }));
+    state.activities = Array.from({ length: 5 }, (_, index) => ({ action_type: "open_module", module_nom: "Cours", occurred_at: `2026-10-0${index + 1}T09:30:00Z` }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const { result, unmount } = renderHook(() => ({ admin: useApprenantTauxRealisation("fictif"), student: useStudentEffectiveHours("fictif", type) }), { wrapper });
+    await waitFor(() => expect(result.current.student.loading).toBe(false));
+    expect(result.current.admin.data?.doneElearning).toBe(35);
+    expect(result.current.student.faitHeures).toBe(35);
+    expect(result.current.student.requis).toBe(required);
+    expect(result.current.student.pct).toBe(result.current.admin.data?.pctElearning);
+    expect(result.current.student.formattedDone).toBe("35h00");
+    expect(result.current.admin.data?.modulesCompleted).toBe(0);
+    unmount(); client.clear();
+  });
+  it("affiche 100% des heures sans déclarer les modules terminés", async () => {
+    state.learner = { type_apprenant: "va-e", heures_elearning: 7 };
+    state.rows = [];
+    state.connections = [{ started_at: "2026-10-01T09:00:00Z", ended_at: "2026-10-01T16:00:00Z", last_seen_at: "2026-10-01T16:00:00Z" }];
+    state.activities = [{ action_type: "open_module", module_nom: "Cours", occurred_at: "2026-10-01T09:30:00Z" }];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const view = render(<QueryClientProvider client={client}><StudentHoursTracker apprenantId="fictif" typeApprenant="va-e" modulesCompleted={10} modulesTotal={11} /></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByText("100%")).toBeTruthy());
+    expect(screen.getByText("7h00")).toBeTruthy();
+    expect(screen.getByText("Modules à valider")).toBeTruthy();
+    expect(screen.queryByText("Formation terminée")).toBeNull();
+    view.unmount(); client.clear();
+  });
   it("passe de 0 à 50 puis 100% après les événements de signature sans valider de module", async () => {
+    state.learner = { heures_elearning: 60, heures_presentiel: 0, heures_totales: 66, type_apprenant: "vtc-e" };
+    state.connections = []; state.activities = [];
     state.rows = [{ date_emargement: "2026-10-09", demi_journee: "matin", absent: false, signature_data_url: null }];
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;

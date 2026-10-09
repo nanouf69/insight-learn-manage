@@ -28,7 +28,7 @@ describe('Taux e-learning et relance manuelle — données fictives, réseau sim
   });
   it('reprend le taux et les heures de la fiche sans envoi à l’affichage', () => {
     mount(); expect(screen.getByText('25%')).toBeInTheDocument();
-    expect(screen.getByText('15.0h / 60h')).toBeInTheDocument(); expect(mocks.invoke).not.toHaveBeenCalled();
+    expect(screen.getByText('15h00 / 60h')).toBeInTheDocument(); expect(mocks.invoke).not.toHaveBeenCalled();
   });
   it('ne charge pas les données de taux des présentiels', () => {
     mount({ ...candidat, type_apprenant: 'taxi' });
