@@ -1052,6 +1052,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' } | string>>({});
   // Note générale de la lettre CMA (distincte des notes par candidat), enregistrée par session/période.
   const [noteLettreCMA, setNoteLettreCMA] = useState("");
+  const [lettreExclusIds, setLettreExclusIds] = useState<string[]>([]);
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
@@ -1098,6 +1099,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         max_per_day_map: maxPerDayMap,
         day_time_slots: dayTimeSlots,
         note_lettre_cma: noteLettreCMA,
+        lettre_exclus_ids: lettreExclusIds,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'exam_date,date_pratique' });
 
