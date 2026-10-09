@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Horaires des feuilles pratiques — 09/10
+- [x] Lire le circuit PDF et le planning sans écriture serveur.
+- [x] Afficher les horaires pratiques par date et demi-journée, sans modifier les signatures.
+- [ ] Tests isolés et compilation automatique ; aucune publication demandée.
+
 ## Taux e-learning candidats examens — 08/10
 - [x] Afficher le taux depuis le suivi existant, uniquement pour les e-learning, sans écriture de progression.
 - [x] Ajouter sous le taux une préparation de mail individuel modifiable et un envoi manuel confirmé.

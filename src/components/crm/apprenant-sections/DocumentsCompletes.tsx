@@ -18,6 +18,8 @@ import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
 import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
+import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
+import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 
 interface Props {
   apprenant: any;
@@ -147,6 +149,7 @@ const FIELD_LABELS: Record<string, string> = {
   fichier_url: 'Fichier signé',
   statut: 'Statut',
   date_emargement: "Date d'émargement",
+  horaires: 'Horaires de formation',
   demi_journee: 'Demi-journée',
   modele: 'Modèle de devis',
   formation: 'Formation',
@@ -206,7 +209,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             ].filter(Boolean).join(","))
         : Promise.resolve({ data: [], error: null } as any);
 
-      const [docsRes, devisRes, emargRes, fournApprRes, inscriptionRes] = await Promise.all([
+      const [docsRes, devisRes, emargRes, fournApprRes, inscriptionRes, pratiqueDetails] = await Promise.all([
         supabase
           .from("apprenant_documents_completes" as any)
           .select("*")
@@ -228,6 +231,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .select("id, type_document, nom_fichier, url, statut, created_at")
           .eq("apprenant_id", apprenant.id)
           .order("created_at", { ascending: false }),
+        fetchPratiqueSlotDetails(apprenant.id),
       ]);
 
       if (docsRes.error) throw docsRes.error;
@@ -282,6 +286,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         donnees: {
           date_emargement: e.date_emargement,
           demi_journee: e.demi_journee,
+          horaires: pratiqueDocumentHours(e.date_emargement, e.demi_journee, pratiqueDetails),
           signed_at: e.signed_at,
           signature: e.signature_data_url,
           absent: !!e.absent,
@@ -671,6 +676,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
             </div>
             {donnees.absent ? (
               <>
+                {donnees.horaires && <p className="font-semibold">Horaires de formation : {donnees.horaires}</p>}
+              <>
                 <div>
                   <p className="font-medium">Motif de l'absence :</p>
                   <p className="text-muted-foreground whitespace-pre-wrap">
@@ -691,8 +698,10 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   <p className="text-xs text-destructive">Aucun justificatif fourni</p>
                 )}
               </>
+              </>
             ) : donnees.signature ? (
               <div>
+                {donnees.horaires && <p className="font-semibold">Horaires de formation : {donnees.horaires}</p>}
                 <p className="font-medium mb-1">Signature :</p>
                 <img src={donnees.signature} alt="Signature" className="border rounded max-h-32" />
               </div>
