@@ -946,6 +946,13 @@
       "when": 1791544981521,
       "tag": "0134_generer_emargements_session_auto",
       "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1791545739595,
+      "tag": "0135_acces_auto_apres_modification_apprenant",
+      "breakpoints": true
     }
   ]
 }
