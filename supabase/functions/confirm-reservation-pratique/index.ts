@@ -520,7 +520,8 @@ Deno.serve(async (req) => {
             date_debut: selectedDate,
             date_fin: selectedDate,
             heure_debut: "09:00",
-            heure_fin: type === "vtc" ? "17:00" : "17:30",
+            // Pratique VTC/TAXI : 9h-12h / 13h-16h strict (Planning pratique).
+            heure_fin: "16:00",
             places_disponibles: 3,
             statut: "planifiee",
             lieu: "86 Route de Genas, 69003 Lyon",
