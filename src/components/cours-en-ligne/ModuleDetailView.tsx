@@ -19,7 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { SESSION_EXPIREE_MESSAGE, isLearnerSessionExpired } from "@/lib/sessionExpiree";
+import { SESSION_EXPIREE_MESSAGE, isLearnerSessionExpired, assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
@@ -4711,7 +4711,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     let cancelled = false;
     let relectureEnAttente = false;
 
-    const loadCanonicalQuestions = async () => {
+    const loadCanonicalQuestions = async (dejaRenouvele = false): Promise<void> => {
       if (questionsEnEditionOuvertes > 0) {
         relectureEnAttente = true;
         return;
@@ -4731,7 +4731,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       ]);
       if (cancelled) return;
       if (error || bindingsError) {
-        console.error("[CanonicalQuiz] Lecture impossible", error ?? bindingsError);
+        const err: any = error ?? bindingsError;
+        // Jeton expiré : un seul renouvellement puis une seule relecture.
+        // Le contenu affiché et les réponses restent intacts entre-temps.
+        if (!dejaRenouvele && (err?.code === "PGRST303" || /jwt/i.test(String(err?.message ?? "")))) {
+          const jeton = await assurerSessionFraiche(3600);
+          if (cancelled) return;
+          if (jeton) return loadCanonicalQuestions(true);
+          return; // plus de session : l'élève se reconnecte, aucune boucle
+        }
+        console.error("[CanonicalQuiz] Lecture impossible", err);
         return;
       }
       const sourceRows = (data ?? []) as unknown as CanonicalQuestionRow[];

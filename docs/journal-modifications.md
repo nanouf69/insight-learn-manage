@@ -198,3 +198,9 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - PASS exécutés : 157/157 tests, 7 fichiers. Le faux client reproduit la réutilisation réelle des canaux et leur retrait asynchrone ; deux vues simultanées sous StrictMode, fermeture/réouverture, huit canaux distincts correctement retirés et événement de signature reflété dans les deux vues. Contrôles des heures depuis le 6 octobre, présentiel, verrou lecture seule, ordre des 15 parcours et empreintes pédagogiques.
 - Compilation automatique OK 16:28:14 UTC. Aucune écriture serveur, aucun compte réel utilisé, aucun envoi ni publication.
 - NON PROUVÉS : vue complète authentifiée dans le navigateur, appareil réel/mobile et site publié. La reproduction et la vérification du défaut sont exécutées dans les tests React isolés, pas sur un élève réel.
+
+## 2026-10-10 06:30 UTC — Bilan du 10/10
+- Migration 0137 : trigger trg_regulariser_alerte_exam_result_missing (annotation lu + preuve résultat_id, aucune suppression).
+- ExamensBlancsEditor : lecture sans session = refus propre, plus de fausse alerte « Aucune version active ».
+- ModuleDetailView (CanonicalQuiz) : JWT expiré → un renouvellement + une relecture, sans boucle.
+- Diagnostics sans écriture : sauvegarde 05:51 renvoyée 05:52:51 ; 3 alertes EB2 déjà notées (<1 s) ; Issam Ouerfelli bloqué volontairement ; 10 suppressions = remplacements par l'élève.
