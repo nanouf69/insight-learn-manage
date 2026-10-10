@@ -6556,6 +6556,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
     // Validation de quiz : « OK » affiché seulement après confirmation serveur.
     const [validatingExo, setValidatingExo] = useState<number | null>(null);
+    // Verrou synchrone : deux appuis rapprochés (avant le rafraîchissement de l'écran) ne lancent jamais deux validations.
+    const validationEnCoursRef = useRef<Set<number>>(new Set());
     const [validationFailedFor, setValidationFailedFor] = useState<Set<number>>(new Set());
     // Échec de validation dû à une connexion perdue (jeton absent/expiré) : message dédié.
     const [validationSessionPerdueFor, setValidationSessionPerdueFor] = useState<Set<number>>(new Set());
@@ -8881,7 +8883,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           return;
                         }
                         setUnansweredKeys(new Set());
-                        if (validatingExo === exo.id) return;
+                        if (validatingExo === exo.id || validationEnCoursRef.current.has(exo.id)) return;
+                        validationEnCoursRef.current.add(exo.id);
                         setValidatingExo(exo.id);
                         // Affichage du résultat : appelé UNIQUEMENT après confirmation serveur.
                         const afficherResultatValide = () => {
@@ -9078,9 +9081,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           } finally {
                             if (timer) clearTimeout(timer);
                             setValidatingExo((cur) => (cur === exo.id ? null : cur));
+                            validationEnCoursRef.current.delete(exo.id);
                           }
                         }
 
+                        validationEnCoursRef.current.delete(exo.id);
                         setValidationFailedFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
                         afficherResultatValide();
                         toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");

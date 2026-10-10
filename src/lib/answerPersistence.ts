@@ -819,6 +819,10 @@ async function processQueue(): Promise<void> {
       const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
       const delay = computeRetryDelay(attempts);
       if (hadFailure) setTimeout(() => void processQueue(), delay);
+      // Réponses ajoutées PENDANT cet envoi (autre quiz, autre question) : elles
+      // n'étaient pas dans ce tour. Sans échec, on les envoie tout de suite au lieu
+      // d'attendre la prochaine réponse de l'élève.
+      else if (queue.some(isSendableInCurrentContext)) setTimeout(() => void processQueue(), 0);
     }
   } finally {
     processing = false;
