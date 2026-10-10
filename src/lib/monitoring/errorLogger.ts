@@ -27,6 +27,9 @@ const IGNORED_PATTERNS = [
   /NetworkError when attempting/i,
   /removeChild.*not a child/i,
   /\[DOM Patch\]/i,
+  // Avertissement React de développement (aperçu uniquement, jamais en ligne),
+  // sans effet sur les données : il noyait le journal (≈ 5 800 lignes / 72 h).
+  /Function components cannot be given refs/i,
 ];
 
 const RECENT_FINGERPRINTS = new Map<string, number>();
