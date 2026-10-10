@@ -66,7 +66,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
 
-      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, apprenantTypeRow] = await Promise.all([
+      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, apprenantTypeRow] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
