@@ -9,6 +9,7 @@ import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore
 import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
+import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
 import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
@@ -125,6 +126,8 @@ interface ControleDocument {
   isProgress?: boolean;
   /** If true, check apprenant_connexions for activity */
   isActivity?: boolean;
+  /** If true, check signed practice attendance sheets (emargements_fc on practice days) */
+  isPratique?: boolean;
   /** Static document — always available */
   isStatic?: boolean;
   /** Formation-specific variants */
@@ -194,6 +197,13 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     description: "Historique des connexions et activités de l'apprenant",
     category: "suivi",
     isActivity: true,
+  },
+  {
+    id: "emargement-pratique",
+    label: "Feuilles d'émargement pratique",
+    description: "Feuilles signées lors des journées de formation pratique",
+    category: "suivi",
+    isPratique: true,
   },
   {
     id: "attestation-fin",
