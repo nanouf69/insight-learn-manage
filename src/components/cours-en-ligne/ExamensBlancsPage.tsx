@@ -1,3 +1,4 @@
+import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
 
@@ -1146,8 +1147,8 @@ export default function ExamensBlancsPage({
       if (attempt > 0) {
         await new Promise(r => setTimeout(r, 1000 * attempt));
         try {
-          const { error: refreshError } = await supabase.auth.refreshSession();
-          if (refreshError) console.warn(`[ExamSubmission][EB] Session refresh failed (attempt ${attempt + 1}):`, refreshError);
+          const jeton = await assurerSessionFraiche();
+          if (!jeton) console.warn(`[ExamSubmission][EB] Session refresh failed (attempt ${attempt + 1})`);
         } catch (refreshErr) {
           console.warn(`[ExamSubmission][EB] Session refresh threw (attempt ${attempt + 1}):`, refreshErr);
         }

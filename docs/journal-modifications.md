@@ -204,3 +204,6 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - ExamensBlancsEditor : lecture sans session = refus propre, plus de fausse alerte « Aucune version active ».
 - ModuleDetailView (CanonicalQuiz) : JWT expiré → un renouvellement + une relecture, sans boucle.
 - Diagnostics sans écriture : sauvegarde 05:51 renvoyée 05:52:51 ; 3 alertes EB2 déjà notées (<1 s) ; Issam Ouerfelli bloqué volontairement ; 10 suppressions = remplacements par l'élève.
+
+## 2026-10-10 07:12 UTC — Déconnexions M. BOUDJORF DOUBAA
+Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depuis les examens blancs, qui invalident la session sur mobile. Correction : ExamenBlancsListe.tsx et ExamensBlancsPage.tsx passent par assurerSessionFraiche (un seul renouvellement, seulement si proche de l expiration). Aucune donnée modifiée. Non publié.
