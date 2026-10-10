@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "lucide-react";
 import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
-import { getExpectedEmargements, isPresentielType, type CreneauKey } from "@/lib/agendaSlots";
+import { getExpectedEmargements, isPresentielType, PRATIQUE_HORAIRES, type CreneauKey } from "@/lib/agendaSlots";
+import { getPratiqueDates } from "@/lib/pratiqueEmargements";
 import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 import cachetAsset from "@/assets/cachet-ftransport.png.asset.json";
 
@@ -65,8 +66,10 @@ const normalizeCreneauKey = (d: string): CreneauKey | null => {
   return null;
 };
 const emargementSlotKey = (date: string, creneau: CreneauKey) => `${date}|${creneau}`;
-const labelDemi = (d: string) => {
+const labelDemi = (d: string, pratique = false) => {
   const k = normalizeDemi(d);
+  if (pratique && k === "matin") return `Matin (${PRATIQUE_HORAIRES.matin})`;
+  if (pratique && (k === "apres-midi" || k === "après-midi")) return `Après-midi (${PRATIQUE_HORAIRES.apres_midi})`;
   if (k === "matin") return "Matin (09h00 — 12h00)";
   if (k === "apres-midi" || k === "après-midi") return "Après-midi (13h00 — 17h00)";
   if (k === "soir") return "Soir (17h00 — 21h00)";
@@ -106,9 +109,10 @@ type GroupedEmargements = {
 export const buildEmargementHTML = (
   groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null,
-  options?: { isFormationContinue?: boolean }
+  options?: { isFormationContinue?: boolean; pratiqueDates?: Set<string> }
 ) => {
   const isFC = !!options?.isFormationContinue;
+  const pratiqueDates = options?.pratiqueDates;
   const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation";
   const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
     .filter(Boolean)
@@ -171,9 +175,12 @@ export const buildEmargementHTML = (
         const expectedMatin = !!matin || expectedSet?.has("matin");
         const expectedApresMidi = !!apresMidi || expectedSet?.has("apres_midi");
         const hm = expectedMatin ? HRS.matin : 0;
-        const ha = expectedApresMidi ? HRS.apresMidi : 0;
+        // Pratique VTC/TAXI : après-midi strictement 13h-16h (3 h), jamais 17h.
+        const jourPratique = !!pratiqueDates?.has(date);
+        const hApres = jourPratique ? 3 : HRS.apresMidi;
+        const ha = expectedApresMidi ? hApres : 0;
         heuresJour = hm + ha;
-        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin, "matin", expectedMatin)}</td><td class="horaire">13:00 - ${isFC ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(HRS.apresMidi)}</span></td><td class="sig">${sigImg(apresMidi, "apres_midi", expectedApresMidi)}</td>`;
+        cells = `<td class="horaire">09:00 - 12:00<br/><span class="hsmall">${fmtH(HRS.matin)}</span></td><td class="sig">${sigImg(matin, "matin", expectedMatin)}</td><td class="horaire">13:00 - ${isFC && !jourPratique ? "17:00" : "16:00"}<br/><span class="hsmall">${fmtH(hApres)}</span></td><td class="sig">${sigImg(apresMidi, "apres_midi", expectedApresMidi)}</td>`;
       }
       totalHeures += heuresJour;
       return `
@@ -321,6 +328,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [pratiqueDates, setPratiqueDates] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!apprenantId) return;
+    let cancelled = false;
+    getPratiqueDates(apprenantId).then((d) => { if (!cancelled) setPratiqueDates(new Set(d)); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [apprenantId, refreshTick]);
   const [manualDate, setManualDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [manualCreneau, setManualCreneau] = useState<CreneauKey>("matin");
 
@@ -580,7 +594,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 onClick={() => openSignatureFor(slot)}
                 className="flex items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-blue-100 transition-colors"
               >
-                <span><span className="capitalize">{formatDateFR(slot.date)}</span> — {labelDemi(slot.creneau === "apres_midi" ? "apres-midi" : slot.creneau)}</span>
+                <span><span className="capitalize">{formatDateFR(slot.date)}</span> — {labelDemi(slot.creneau === "apres_midi" ? "apres-midi" : slot.creneau, pratiqueDates.has(slot.date))}</span>
                 <span className="font-medium text-primary">Re-signer</span>
               </button>
             ))}
@@ -647,7 +661,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
               <div className={`grid grid-cols-1 ${colsClass} gap-3`}>
                 {keys.map((key) => {
                   const r = key === "matin" ? matin : key === "apres_midi" ? apresMidi : key === "soir_1" ? soir1 : key === "soir_2" ? soir2 : soir;
-                  const label = labelDemi(key === "apres_midi" ? "apres-midi" : key);
+                  const label = labelDemi(key === "apres_midi" ? "apres-midi" : key, pratiqueDates.has(date));
                   return (
                     <div key={key} className="border rounded-md p-2 bg-slate-50/50">
                       <div className="flex items-center justify-between mb-1.5">
@@ -717,6 +731,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           creneau={signTarget.creneau}
           mode={isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ? "fc" : "presentiel"}
           dateEmargement={signTarget.date}
+          pratique={pratiqueDates.has(signTarget.date)}
           replaceExisting={signTarget.replaceExisting}
           onSigned={() => { setSignTarget(null); setRefreshTick((t) => t + 1); }}
           onSkipped={() => setSignTarget(null)}

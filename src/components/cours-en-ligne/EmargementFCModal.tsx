@@ -9,7 +9,7 @@ import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CreneauKey } from "@/lib/agendaSlots";
-import { creneauLabel, creneauHoraire } from "@/lib/agendaSlots";
+import { creneauLabel, creneauHoraire, creneauHorairePratique } from "@/lib/agendaSlots";
 import { checkSignatureAgainstReferences } from "@/lib/signatureSimilarity";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
@@ -50,6 +50,8 @@ interface EmargementFCModalProps {
    */
   extraCreneaux?: CreneauKey[];
   replaceExisting?: boolean;
+  /** Journée de formation PRATIQUE (Planning pratique) : horaires 9h-12h / 13h-16h. */
+  pratique?: boolean;
   required?: boolean;
   onSigned?: () => void;
   /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
@@ -133,6 +135,7 @@ export const EmargementFCModal = ({
   dateEmargement,
   extraCreneaux,
   replaceExisting = false,
+  pratique = false,
   required = false,
   onSigned,
   onSkipped,
@@ -151,6 +154,7 @@ export const EmargementFCModal = ({
   const [identityConfirmed, setIdentityConfirmed] = useState(true);
   const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
+  const horaire = (c: CreneauKey) => (pratique ? creneauHorairePratique(c) : creneauHoraire(c));
   const extras = (extraCreneaux || []).filter((c) => c && c !== demi);
   const allCreneaux: CreneauKey[] = [demi, ...extras];
   const isMultiCreneau = extras.length > 0;
@@ -431,7 +435,7 @@ export const EmargementFCModal = ({
             <br />
             Créneau{isMultiCreneau ? "x" : ""} :{" "}
             <strong>
-              {allCreneaux.map((c) => `${creneauLabel(c)} (${creneauHoraire(c)})`).join(" + ")}
+              {allCreneaux.map((c) => `${creneauLabel(c)} (${horaire(c)})`).join(" + ")}
             </strong>
             {isMultiCreneau && (
               <>
@@ -481,7 +485,7 @@ export const EmargementFCModal = ({
                 <strong>Je confirme que je suis bien au lieu de formation</strong>{" "}
                 {isMultiCreneau
                   ? "pour toute la journée (matin et après-midi)."
-                  : `pour ce créneau (${creneauLabel(demi)} — ${creneauHoraire(demi)}).`}
+                  : `pour ce créneau (${creneauLabel(demi)} — ${horaire(demi)}).`}
               </span>
             </label>
             <p className="text-xs text-muted-foreground flex items-start gap-2">

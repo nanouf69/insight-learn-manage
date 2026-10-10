@@ -4840,9 +4840,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                        const dayScheduleMode = daySlot?.horaireMode || (
                          (daySlot?.matin || '9h-12h') === '9h-12h' && (daySlot?.apresmidi || '13h-16h') === '13h-16h'
                            ? '9-12_13-16'
-                           : (daySlot?.matin || '9h-12h') === '9h-12h' && daySlot?.apresmidi === '13h-17h'
-                             ? '9-12_13-17'
-                             : 'custom'
+                           : 'custom'
                        );
                       const downloadEmargement = async (formation: 'vtc' | 'taxi', candidats: any[]) => {
                         const sigs = await fetchPratiqueSignatures(
@@ -4960,9 +4958,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 onChange={(e) => setDayTimeSlots(prev => {
                                   const current = typeof prev[key] === 'object' ? prev[key] as any : {};
                                   const mode = e.target.value;
-                                  const hours = mode === '9-12_13-17'
-                                    ? { matin: '9h-12h', apresmidi: '13h-17h' }
-                                    : mode === '9-12_13-16'
+                                  const hours = mode === '9-12_13-16'
                                       ? { matin: '9h-12h', apresmidi: '13h-16h' }
                                       : { matin: current.matin || '9h-12h', apresmidi: current.apresmidi || '13h-16h' };
                                   const next = { ...prev, [key]: { ...current, ...hours, horaireMode: mode } };
@@ -4974,7 +4970,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 title="Choisir les horaires de cette journée"
                               >
                                 <option value="9-12_13-16">9h–12h / 13h–16h</option>
-                                <option value="9-12_13-17">9h–12h / 13h–17h</option>
                                 <option value="custom">Horaires personnalisés</option>
                               </select>
                             </div>
