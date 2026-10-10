@@ -555,11 +555,16 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       .createSignedUrl(filePath, 300);
     
     if (error || !data?.signedUrl) {
+      win?.close();
       toast.error("Impossible d'ouvrir le document");
       console.error('Signed URL error:', error);
       return;
     }
-    window.open(data.signedUrl, '_blank');
+    if (win) {
+      win.location.href = data.signedUrl;
+    } else {
+      window.open(data.signedUrl, '_blank');
+    }
   };
 
   const validDocuments = documents.filter(d => d.uploaded && d.status === 'valid');
