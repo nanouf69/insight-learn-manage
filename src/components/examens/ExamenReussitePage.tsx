@@ -4837,7 +4837,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       const taxiOverbooked = taxiReserved.length > dayMax;
                       const daySlot = typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any) : {};
                       const dayFormateur: string | undefined = daySlot?.formateur;
-                       const dayScheduleMode = daySlot?.horaireMode || (
+                       const dayScheduleMode = (daySlot?.horaireMode && daySlot.horaireMode !== '9-12_13-17' ? daySlot.horaireMode : null) || (
                          (daySlot?.matin || '9h-12h') === '9h-12h' && (daySlot?.apresmidi || '13h-16h') === '13h-16h'
                            ? '9-12_13-16'
                            : 'custom'
