@@ -238,3 +238,6 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 - Cause : commit 22c0a5563 (29/09) — renouvellement de connexion avant chaque envoi ; le jeton obtenu pouvait être celui de l élève précédent et remplacer celui du nouvel élève, sans revérifier la propriété.
 - Correction : answerPersistence.ts — jeton gardé seulement s il appartient au compte toujours connecté ; propriété revérifiée avant envoi ; sinon réessai, rien retiré.
 - Test src/test/tablette-changement-eleve-pendant-envoi.test.ts : FAIL avant, PASS après ; suite complète 1600 PASS.
+
+## 10/10/2026 — Analyse « serveur ne valide pas » quiz Ville de Lyon (lecture seule)
+- Module 8 : 3 élèves (BOUDJORF 10/10 envoi bloqué ; BAH 10/10 et ABRAR 09/10 relecture sur quiz déjà validé). Message introduit par commits 0d0753f50/7e761d1f4 (25-26/09), premiers journaux le 27/09. Aucune donnée modifiée.
