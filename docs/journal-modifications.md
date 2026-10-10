@@ -207,3 +207,7 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 
 ## 2026-10-10 07:12 UTC — Déconnexions M. BOUDJORF DOUBAA
 Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depuis les examens blancs, qui invalident la session sur mobile. Correction : ExamenBlancsListe.tsx et ExamensBlancsPage.tsx passent par assurerSessionFraiche (un seul renouvellement, seulement si proche de l expiration). Aucune donnée modifiée. Non publié.
+
+## 2026-10-10 08:00 UTC — Tests non-régression émargements pratique
+- 10/10 PASS (transaction annulée, données fictives). Signatures 2399, empreinte identique avant/après.
+- Anomalie signalée, non modifiée : 14 feuilles du 17/11 (7 élèves inscrits seulement à la session d’examen), créées le 09/10 11:23 par l’ancienne règle.
