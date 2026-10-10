@@ -233,3 +233,8 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 ## 10/10/2026 — Tablettes partagées (quiz Ville de Lyon)
 - Contrôle : file locale des réponses rattachée à l élève (apprenant + compte) et au quiz ; jamais envoyée ni montrée sous un autre compte ; jamais vidée (déconnexion, écran de secours).
 - Ajout test src/test/tablette-partagee-file-reponses.test.ts (2 PASS) ; aucune modification du code ni des données.
+
+## 10/10/2026 — Régression tablette partagée (changement d élève pendant un envoi)
+- Cause : commit 22c0a5563 (29/09) — renouvellement de connexion avant chaque envoi ; le jeton obtenu pouvait être celui de l élève précédent et remplacer celui du nouvel élève, sans revérifier la propriété.
+- Correction : answerPersistence.ts — jeton gardé seulement s il appartient au compte toujours connecté ; propriété revérifiée avant envoi ; sinon réessai, rien retiré.
+- Test src/test/tablette-changement-eleve-pendant-envoi.test.ts : FAIL avant, PASS après ; suite complète 1600 PASS.
