@@ -1009,6 +1009,13 @@
       "when": 1791637919207,
       "tag": "0143_qrc_ia_protections_coupure_septembre",
       "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1791641045175,
+      "tag": "0144_presentiel_heures_validees",
+      "breakpoints": true
     }
   ]
 }

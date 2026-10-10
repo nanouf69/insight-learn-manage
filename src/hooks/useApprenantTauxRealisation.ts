@@ -15,6 +15,8 @@ export interface TauxRealisation {
   modulesTotal: number;
   doneElearning: number;
   donePresentiel: number;
+  /** Heures de présence validées manuellement par un admin (ajoutées aux heures signées) */
+  heuresPresentielValidees: number;
   reqElearning: number;
   reqPresentiel: number;
   reqTotal: number;
@@ -64,7 +66,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
 
-      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, apprenantTypeRow] = await Promise.all([
+      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, apprenantTypeRow] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
@@ -97,6 +99,11 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .select("module_id")
           .eq("apprenant_id", apprenantId)
           .eq("status", "completed")
+          .range(from, to)).catch(() => [] as any[]),
+        fetchAllRows<any>((from, to) => supabase
+          .from("presentiel_heures_validees" as any)
+          .select("heures")
+          .eq("apprenant_id", apprenantId)
           .range(from, to)).catch(() => [] as any[]),
         supabase
           .from("apprenants")
@@ -170,6 +177,10 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       // ---- Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
       const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
 
+      // Heures validées manuellement par un admin : elles S'AJOUTENT aux heures
+      // signées, sans jamais modifier ni remplacer les émargements existants.
+      const heuresPresentielValidees = (heuresValideesRows as any[])
+        .reduce((sum, r) => sum + (Number(r?.heures) || 0), 0);
 
       const reqElearning = requiredElearningHours(apprenant);
       const presence = presentielProgress(theorieHours + pratiqueMinutes / 60, Number(apprenant?.heures_presentiel) || 0, pratiqueDetails);
@@ -178,7 +189,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
 
       // Actual proven time is never capped at the contractual target.
       const doneElearning = onlineMin / 60;
-      const donePresentiel = presence.done;
+      const donePresentiel = presence.done + heuresPresentielValidees;
 
       // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
       const ta = String((apprenantTypeRow as any)?.type_apprenant || (apprenantProp as any)?.type_apprenant || "").toLowerCase().trim();
@@ -196,6 +207,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         modulesTotal,
         doneElearning,
         donePresentiel,
+        heuresPresentielValidees,
         reqElearning,
         reqPresentiel,
         reqTotal,
