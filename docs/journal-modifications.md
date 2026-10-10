@@ -245,3 +245,7 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 ## 10/10/2026 — Validation finale quiz Ville de Lyon (lecture seule + tests)
 - Message réel : « Vos réponses sont conservées sur cet écran mais n ont pas encore été confirmées par le serveur. » Aucune erreur validation_serveur dans les journaux. Étapes en échec : envoi (BOUDJORF, 23/99 en base) et relecture (BAH, ABRAR, quiz déjà validé).
 - Ajout test src/test/validation-finale-ville-de-lyon.test.ts (4 PASS). Aucune donnée modifiée.
+
+## 10/10/2026 — Validation finale Ville de Lyon : connexion perdue
+- Preuve : 42501 « permission denied for function save_module_completion » (BOUDJORF 10:04–10:18, 40 essais) = appel sans connexion valide (fonction réservée aux élèves connectés). Droits inchangés.
+- ModuleDetailView.tsx : en cas d échec, vérification bornée de la connexion ; si perdue, message « reconnectez-vous puis Valider », rien n est validé.
