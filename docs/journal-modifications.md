@@ -241,3 +241,7 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 
 ## 10/10/2026 — Analyse « serveur ne valide pas » quiz Ville de Lyon (lecture seule)
 - Module 8 : 3 élèves (BOUDJORF 10/10 envoi bloqué ; BAH 10/10 et ABRAR 09/10 relecture sur quiz déjà validé). Message introduit par commits 0d0753f50/7e761d1f4 (25-26/09), premiers journaux le 27/09. Aucune donnée modifiée.
+
+## 10/10/2026 — Validation finale quiz Ville de Lyon (lecture seule + tests)
+- Message réel : « Vos réponses sont conservées sur cet écran mais n ont pas encore été confirmées par le serveur. » Aucune erreur validation_serveur dans les journaux. Étapes en échec : envoi (BOUDJORF, 23/99 en base) et relecture (BAH, ABRAR, quiz déjà validé).
+- Ajout test src/test/validation-finale-ville-de-lyon.test.ts (4 PASS). Aucune donnée modifiée.
