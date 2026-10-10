@@ -9,6 +9,7 @@ import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore
 import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
+import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
 import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
@@ -125,6 +126,8 @@ interface ControleDocument {
   isProgress?: boolean;
   /** If true, check apprenant_connexions for activity */
   isActivity?: boolean;
+  /** If true, check signed practice attendance sheets (emargements_fc on practice days) */
+  isPratique?: boolean;
   /** Static document — always available */
   isStatic?: boolean;
   /** Formation-specific variants */
@@ -194,6 +197,13 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     description: "Historique des connexions et activités de l'apprenant",
     category: "suivi",
     isActivity: true,
+  },
+  {
+    id: "emargement-pratique",
+    label: "Feuilles d'émargement pratique",
+    description: "Feuilles signées lors des journées de formation pratique",
+    category: "suivi",
+    isPratique: true,
   },
   {
     id: "attestation-fin",
@@ -290,6 +300,31 @@ export function ControleQualiteTab({ apprenant }: Props) {
     },
   });
 
+  // Feuilles d'émargement pratique signées : émargements des journées pratiques
+  // (source de vérité = Planning pratique via fetchPratiqueSlotDetails)
+  const { data: pratiqueSheets = [] } = useQuery({
+    queryKey: ["apprenant-emargements-pratique", apprenant.id],
+    enabled: !!apprenant?.id,
+    queryFn: async () => {
+      const [emargRes, pratiqueDetails] = await Promise.all([
+        supabase
+          .from("emargements_fc" as any)
+          .select("date_emargement, demi_journee, absent, signature_data_url")
+          .filter("masque", "eq", false)
+          .eq("apprenant_id", apprenant.id),
+        fetchPratiqueSlotDetails(apprenant.id),
+      ]);
+      if (emargRes.error) throw emargRes.error;
+      const pratiqueDates = new Set((pratiqueDetails || []).map((d) => d.date));
+      return ((emargRes.data as any[]) || []).filter(
+        (e) =>
+          pratiqueDates.has(String(e.date_emargement || "").slice(0, 10)) &&
+          e.absent !== true &&
+          Boolean(e.signature_data_url?.trim()),
+      );
+    },
+  });
+
   const getDocStatus = (doc: ControleDocument): { found: boolean; details?: any } => {
     if (doc.isStatic) return { found: true };
     if (doc.docType) {
@@ -301,6 +336,12 @@ export function ControleQualiteTab({ apprenant }: Props) {
     }
     if (doc.isActivity) {
       return { found: connexions.length > 0 };
+    }
+    if (doc.isPratique) {
+      return {
+        found: pratiqueSheets.length > 0,
+        details: { count: pratiqueSheets.length },
+      };
     }
     return { found: false };
   };
@@ -444,6 +485,50 @@ export function ControleQualiteTab({ apprenant }: Props) {
           const sigs = w.sigs.sort((a, b) => a.date.localeCompare(b.date));
           const res = generateEmargementSemainePdf(apprenant, label, wsStr, weStr, sigs, formateur, { returnBlob: true });
           if (res) emargFolder.file(res.fileName, res.blob);
+        }
+
+        // 2b) Feuilles d'émargement pratique : une feuille par journée pratique
+        // émargée (source de vérité = Planning pratique), avec la signature
+        // numérique de l'apprenant. Aucune donnée existante n'est modifiée.
+        try {
+          const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id).catch(() => [] as any[]);
+          const pratiqueByDate = new Map((pratiqueDetails || []).map((d: any) => [d.date, d]));
+          const pratiqueDays = new Map<string, { detail: any; matin?: any; apresMidi?: any }>();
+          for (const e of emargements) {
+            const date = String(e.date_emargement || "").slice(0, 10);
+            const detail = pratiqueByDate.get(date);
+            if (!detail) continue;
+            if (!pratiqueDays.has(date)) pratiqueDays.set(date, { detail });
+            const day = pratiqueDays.get(date)!;
+            const slot = String(e.demi_journee || "").toLowerCase();
+            if (slot === "matin") day.matin = e;
+            else if (slot === "apres_midi") day.apresMidi = e;
+          }
+          if (pratiqueDays.size > 0) {
+            const pratFolder = zip.folder("feuilles-emargement-pratique")!;
+            for (const [date, day] of Array.from(pratiqueDays.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+              const resPrat = generateEmargementPratiquePDF(
+                new Date(date + "T00:00:00"),
+                day.detail.typeFormation === "taxi" ? "taxi" : "vtc",
+                [{
+                  nom: apprenant.nom || "",
+                  prenom: apprenant.prenom || "",
+                  telephone: apprenant.telephone || "",
+                  email: apprenant.email || "",
+                  signatureMatin: day.matin?.signature_data_url || null,
+                  signatureApresMidi: day.apresMidi?.signature_data_url || null,
+                  absentMatin: day.matin?.absent === true,
+                  absentApresMidi: day.apresMidi?.absent === true,
+                }],
+                { matin: "9h-12h", apresmidi: "13h-16h" },
+                formateur,
+                { returnBlob: true },
+              );
+              if (resPrat?.blob) pratFolder.file(resPrat.fileName, resPrat.blob);
+            }
+          }
+        } catch (pratErr) {
+          console.error("[bulk-download] feuilles pratique failed:", pratErr);
         }
 
         // 3) Relevé de connexion (PDF + CSV)
@@ -1027,10 +1112,15 @@ export function ControleQualiteTab({ apprenant }: Props) {
                     {isExpanded && status.details && (
                       <div className="mt-3 pt-3 border-t space-y-2">
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>
-                            Complété le :{" "}
-                            {format(new Date(status.details.completed_at), "dd MMMM yyyy à HH:mm", { locale: fr })}
-                          </span>
+                          {status.details.completed_at && (
+                            <span>
+                              Complété le :{" "}
+                              {format(new Date(status.details.completed_at), "dd MMMM yyyy à HH:mm", { locale: fr })}
+                            </span>
+                          )}
+                          {typeof status.details.count === "number" && (
+                            <span>{status.details.count} feuille(s) signée(s)</span>
+                          )}
                           {status.details.module_id && (
                             <span>Module #{status.details.module_id}</span>
                           )}

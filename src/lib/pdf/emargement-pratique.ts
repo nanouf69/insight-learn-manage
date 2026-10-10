@@ -58,7 +58,8 @@ export function generateEmargementPratiquePDF(
   type: "vtc" | "taxi",
   candidats: CandidatPratique[],
   creneaux?: { matin?: string; apresmidi?: string },
-  formateur?: string
+  formateur?: string,
+  options?: { returnBlob?: boolean }
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -378,9 +379,9 @@ export function generateEmargementPratiquePDF(
     { align: "center" }
   );
 
-  // Télécharger
+  // Télécharger (sauf si l'appelant veut récupérer le Blob, ex. archive ZIP)
   const fileName = `emargement_pratique_${typeLabel}_${format(date, "yyyy-MM-dd")}.pdf`;
   const blob = doc.output("blob") as Blob;
-  doc.save(fileName);
+  if (!options?.returnBlob) doc.save(fileName);
   return { blob, fileName };
 }
