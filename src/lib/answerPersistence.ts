@@ -570,6 +570,9 @@ const buildHeaders = (): Record<string, string> | null => {
 
 type SendResult = "ok" | "retry" | "blocked";
 
+/** Délai maximal d'un envoi au serveur avant abandon + réessai. */
+export const ENVOI_DELAI_MS = 15000;
+
 /**
  * ÉTAPE 1 DU PLAN ANTI-PANNE — classification des erreurs serveur.
  *
@@ -688,11 +691,16 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   }
   const headers = buildHeaders();
   if (!url || !headers) return "retry";
+  // Un envoi qui ne répond jamais ne doit pas figer la file : abandon après
+  // ENVOI_DELAI_MS puis réessai (la réponse reste en file, rien n'est perdu).
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const abandon = controller ? setTimeout(() => controller.abort(), ENVOI_DELAI_MS) : undefined;
   try {
     const res = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(item.payload),
+      signal: controller?.signal,
     });
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
@@ -731,6 +739,8 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   } catch (e) {
     console.error("[answerPersistence] Erreur réseau sauvegarde", e);
     return "retry";
+  } finally {
+    if (abandon) clearTimeout(abandon);
   }
 }
 

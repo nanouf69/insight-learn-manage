@@ -27,9 +27,12 @@ let renouvellementEnCours: Promise<string | null> | null = null;
  * ou deux envois consomment le même jeton de renouvellement).
  * null = pas de connexion valide (l'élève doit se reconnecter).
  */
+/** Au-delà, on cesse d'attendre le renouvellement (verrou de session bloqué sur certains mobiles). */
+export const RENOUVELLEMENT_DELAI_MS = 8000;
+
 export function assurerSessionFraiche(margeSecondes = 60): Promise<string | null> {
   if (renouvellementEnCours) return renouvellementEnCours;
-  renouvellementEnCours = (async () => {
+  const interne = (async () => {
     try {
       const { data } = await supabase.auth.getSession();
       const s = data?.session;
@@ -47,10 +50,18 @@ export function assurerSessionFraiche(margeSecondes = 60): Promise<string | null
       return r.session.access_token;
     } catch {
       return null;
-    } finally {
-      setTimeout(() => { renouvellementEnCours = null; }, 0);
     }
   })();
+  // Garde-fou : un renouvellement qui ne répond jamais ne doit JAMAIS bloquer
+  // l'envoi des réponses. Après le délai : null (l'appelant garde son jeton actuel).
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  const delai = new Promise<null>((resolve) => {
+    minuteur = setTimeout(() => resolve(null), RENOUVELLEMENT_DELAI_MS);
+  });
+  renouvellementEnCours = Promise.race([interne, delai]).finally(() => {
+    if (minuteur) clearTimeout(minuteur);
+    setTimeout(() => { renouvellementEnCours = null; }, 0);
+  });
   return renouvellementEnCours;
 }
 
