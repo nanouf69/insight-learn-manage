@@ -4711,27 +4711,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     let cancelled = false;
     let relectureEnAttente = false;
 
-    const loadCanonicalQuestions = async () => {
-      if (questionsEnEditionOuvertes > 0) {
-        relectureEnAttente = true;
-        return;
-      }
-      relectureEnAttente = false;
-      const [{ data, error }, { data: bindings, error: bindingsError }] = await Promise.all([
-        supabase
-          .from("quiz_questions")
-          .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
-          .in("quiz_id", quizIds)
-          .order("section_id")
-          .order("position"),
-        supabase
-          .from("quiz_question_bindings")
-          .select("quiz_id,exercise_id,section_id")
-          .eq("module_id", Number(module.id)),
-      ]);
+    const loadCanonicalQuestions = async (dejaRenouvele = false): Promise<void> => {
+...
       if (cancelled) return;
       if (error || bindingsError) {
-        console.error("[CanonicalQuiz] Lecture impossible", error ?? bindingsError);
+        const err: any = error ?? bindingsError;
+        // Jeton expiré : un seul renouvellement puis une seule relecture.
+        // Le contenu affiché et les réponses restent intacts entre-temps.
+        if (!dejaRenouvele && (err?.code === "PGRST303" || /jwt/i.test(String(err?.message ?? "")))) {
+          const jeton = await assurerSessionFraiche(3600);
+          if (cancelled) return;
+          if (jeton) return loadCanonicalQuestions(true);
+          return; // plus de session : l'élève se reconnecte, aucune boucle
+        }
+        console.error("[CanonicalQuiz] Lecture impossible", err);
         return;
       }
       const sourceRows = (data ?? []) as unknown as CanonicalQuestionRow[];

@@ -353,6 +353,14 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
   
   
   try {
+    // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
+    // manquante. On refuse proprement sans journaliser une fausse anomalie.
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess?.session) {
+      const e = new ExamContentUnavailableError("Session absente : reconnexion nécessaire");
+      (e as any).sessionAbsente = true;
+      throw e;
+    }
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
     const { data, error } = await supabase
       .from("module_editor_state")
@@ -511,7 +519,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       reconcileSharedMatieres(examens, savedAtByExamIdx);
     }
   } catch (err) {
-    console.error("[ExamensEditor] Error loading saved exams:", err);
+    if (!(err as any)?.sessionAbsente) console.error("[ExamensEditor] Error loading saved exams:", err);
     // AUCUN REPLI : on propage l'échec, aucune question n'est servie.
     if (isExamContentUnavailable(err)) throw err;
     throw new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
