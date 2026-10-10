@@ -229,3 +229,7 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 - Cause prouvée : élève refaisant un quiz déjà validé (status submitted) sous l’identifiant validé ; le serveur fige cette ligne (réponses journalisées, non appliquées) ; la relecture différait → message d’échec. 9 élèves sur 3 jours (+ M. Boudjorf, cause distincte : file d’envoi bloquée).
 - Correction ModuleDetailView.tsx : quiz validé ⇒ sauvegardes sous module_X_revision_exo_Y ; à la validation, relecture du statut serveur et bascule en révision. Ligne validée, note et module jamais touchés.
 - Tests : quiz-deja-valide-revision.test.ts + suite complète. Aucune donnée réelle modifiée.
+
+## 10/10/2026 — Tablettes partagées (quiz Ville de Lyon)
+- Contrôle : file locale des réponses rattachée à l élève (apprenant + compte) et au quiz ; jamais envoyée ni montrée sous un autre compte ; jamais vidée (déconnexion, écran de secours).
+- Ajout test src/test/tablette-partagee-file-reponses.test.ts (2 PASS) ; aucune modification du code ni des données.
