@@ -5481,6 +5481,41 @@ export type Database = {
           },
         ]
       }
+      presentiel_heures_validees: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string | null
+          heures: number
+          id: string
+          motif: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by?: string | null
+          heures: number
+          id?: string
+          motif?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string | null
+          heures?: number
+          id?: string
+          motif?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentiel_heures_validees_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prestataire_dossiers: {
         Row: {
           adresse: string | null
