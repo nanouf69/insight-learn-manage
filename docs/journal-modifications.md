@@ -253,4 +253,5 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 ## 10/10/2026 — Fiabilisation transversale des quiz
 - ModuleDetailView.tsx : verrou synchrone anti double appui sur Valider (libéré dans tous les cas).
 - Test src/test/fiabilite-quiz-tous-modules.test.ts (modules 2,4,6,8,26 : coupure/rechargement, révision, élèves successifs, verrou, complétude, messages).
+- answerPersistence.ts : réponses ajoutées pendant un envoi relancées aussitôt (avant : attendaient la réponse suivante ; test FAIL avant, PASS après).
 - Alerte serveur sur échecs répétés : proposée, en attente d accord. Aucune donnée modifiée.
