@@ -981,6 +981,20 @@
       "when": 1791619348946,
       "tag": "0139_planning_pratique_horaires_stricts",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1791624258796,
+      "tag": "0140_quiz_valide_protection_et_alerte_echecs",
+      "breakpoints": true
+    },
+    {
+      "idx": 141,
+      "version": "7",
+      "when": 1791624343178,
+      "tag": "0141_quiz_valide_protection_correctif_tableau",
+      "breakpoints": true
     }
   ]
 }

@@ -6589,6 +6589,66 @@ export type Database = {
           },
         ]
       }
+      quiz_validation_echecs: {
+        Row: {
+          alerte_id: string | null
+          apprenant_id: string
+          created_at: string
+          etape: string
+          exercice_id: string
+          id: string
+          module_id: number
+        }
+        Insert: {
+          alerte_id?: string | null
+          apprenant_id: string
+          created_at?: string
+          etape: string
+          exercice_id: string
+          id?: string
+          module_id: number
+        }
+        Update: {
+          alerte_id?: string | null
+          apprenant_id?: string
+          created_at?: string
+          etape?: string
+          exercice_id?: string
+          id?: string
+          module_id?: number
+        }
+        Relationships: []
+      }
+      quiz_valide_reecritures_refusees: {
+        Row: {
+          apprenant_id: string
+          auteur: string | null
+          champs: string[]
+          cle: string
+          created_at: string
+          id: string
+          table_cible: string
+        }
+        Insert: {
+          apprenant_id: string
+          auteur?: string | null
+          champs?: string[]
+          cle: string
+          created_at?: string
+          id?: string
+          table_cible: string
+        }
+        Update: {
+          apprenant_id?: string
+          auteur?: string | null
+          champs?: string[]
+          cle?: string
+          created_at?: string
+          id?: string
+          table_cible?: string
+        }
+        Relationships: []
+      }
       rdv_carte_vtc_slots: {
         Row: {
           created_at: string
@@ -8373,6 +8433,15 @@ export type Database = {
       }
       shared_exercice_key: { Args: { e: Json }; Returns: string }
       shared_exercice_strict_key: { Args: { e: Json }; Returns: string }
+      signaler_echec_validation_quiz: {
+        Args: {
+          _apprenant_id: string
+          _etape: string
+          _exercice_id: string
+          _module_id: number
+        }
+        Returns: Json
+      }
       soundex: { Args: { "": string }; Returns: string }
       start_apprenant_connexion:
         | {
