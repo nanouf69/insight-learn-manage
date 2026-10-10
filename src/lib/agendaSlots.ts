@@ -279,6 +279,15 @@ export const creneauHoraire = (k: CreneauKey): string => {
 };
 
 /**
+ * Horaires STRICTS des journées de formation PRATIQUE VTC/TAXI (Planning pratique) :
+ * matin 9h–12h, après-midi 13h–16h. Jamais 17h. Les horaires de théorie restent
+ * donnés par `creneauHoraire`.
+ */
+export const PRATIQUE_HORAIRES = { matin: "09h00 — 12h00", apres_midi: "13h00 — 16h00" } as const;
+export const creneauHorairePratique = (k: CreneauKey): string =>
+  k === "matin" ? PRATIQUE_HORAIRES.matin : k === "apres_midi" ? PRATIQUE_HORAIRES.apres_midi : creneauHoraire(k);
+
+/**
  * Calcule la liste ordonnée des créneaux d'émargement attendus entre `startDate` et `endDate`
  * (inclus) pour un apprenant donné. Renvoie une liste `[{ date: "YYYY-MM-DD", creneau }]`
  * triée chronologiquement.

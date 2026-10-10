@@ -211,3 +211,10 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 ## 2026-10-10 08:00 UTC — Tests non-régression émargements pratique
 - 10/10 PASS (transaction annulée, données fictives). Signatures 2399, empreinte identique avant/après.
 - Anomalie signalée, non modifiée : 14 feuilles du 17/11 (7 élèves inscrits seulement à la session d’examen), créées le 09/10 11:23 par l’ancienne règle.
+
+## 2026-10-10 08:05 UTC — Pratique VTC/TAXI : après-midi strict 13h-16h
+- Affichage signature élève, liste des feuilles, feuille téléchargée, PDF pratique : 9h-12h / 13h-16h (théorie inchangée).
+- Planning pratique : option 13h-17h retirée ; migration 0139 trigger trg_a_planning_pratique_horaires_stricts (jours nouveaux/modifiés normalisés, saisie d’origine conservée dans *_saisi_origine).
+- confirm-reservation-pratique : nouvelles sessions pratiques heure_fin 16:00.
+- Signatures 2399 inchangées ; 2 jours historiques d’avril 2026 (13h-17h30) conservés en base, imprimés 13h-16h.
+- Tests : 4/4 nouveaux + 1371 PASS ; test serveur annulé PASS.

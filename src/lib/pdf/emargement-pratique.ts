@@ -48,6 +48,11 @@ function formatCreneau(raw?: string): string {
   return `${expand(parts[0])} - ${expand(parts[1])}`;
 }
 
+/** Libellé imprimé d'un créneau pratique : toujours 09h00-12h00 / 13h00-16h00. */
+export function pratiqueCreneauLabel(part: "matin" | "apresmidi", _saisi?: string): string {
+  return formatCreneau(part === "matin" ? "9h-12h" : "13h-16h");
+}
+
 export function generateEmargementPratiquePDF(
   date: Date,
   type: "vtc" | "taxi",
@@ -179,8 +184,10 @@ export function generateEmargementPratiquePDF(
 
   const afterCandidats = (doc as any).lastAutoTable.finalY + 8;
 
-  const matinLabel = formatCreneau(creneaux?.matin) || "";
-  const apresLabel = formatCreneau(creneaux?.apresmidi) || "";
+  // Pratique VTC/TAXI : horaires stricts 9h-12h / 13h-16h, quel que soit l'ancien
+  // horaire saisi dans le planning (jamais 17h). Les valeurs enregistrées ne sont pas modifiées.
+  const matinLabel = pratiqueCreneauLabel("matin", creneaux?.matin);
+  const apresLabel = pratiqueCreneauLabel("apresmidi", creneaux?.apresmidi);
 
   // ===== TABLEAU D'ÉMARGEMENT =====
   const emargementRows = candidats.map((c) => [
