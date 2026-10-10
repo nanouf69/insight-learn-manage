@@ -6560,8 +6560,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
+    // Quiz déjà validé côté serveur : toute nouvelle réponse part sous l'identifiant
+    // de révision (la ligne validée est figée par le serveur et ne l'appliquerait pas).
     const exerciceIdPourSauvegarde = (exoId: number) =>
-      revisionActiveRef.current.has(exoId)
+      revisionActiveRef.current.has(exoId) || submittedExoIdsRef.current.has(exoId)
         ? buildRevisionExerciceId(module.id, exoId)
         : buildExerciceId(module.id, exoId);
     type PendingWrongQuestionRevision = {
@@ -8956,12 +8958,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         // partent sous l'identifiant de révision, la ligne validée,
                         // sa note et le statut du module ne sont jamais touchés.
                         if (apprenantId) {
-                          const enRevision = revisionActiveRef.current.has(exo.id);
+                          let enRevision = revisionActiveRef.current.has(exo.id) || submittedExoIdsRef.current.has(exo.id);
                           const exoAnswers: Record<string, any> = {};
                           Object.entries(selectedAnswers).forEach(([k, v]) => {
                             if (k.startsWith(`${exo.id}-`)) exoAnswers[k] = v;
                           });
-                          const exerciceId = enRevision
+                          let exerciceId = enRevision
                             ? buildRevisionExerciceId(module.id, exo.id)
                             : buildExerciceId(module.id, exo.id);
                           // Délai global de 20 s (envoi + relecture + validation serveur).
@@ -8987,8 +8989,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               completed: false,
                               updated_at: new Date().toISOString(),
                             });
-                            const flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+                            let flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
                             if (!flushed) { echec("envoi"); return false; }
+                            // Le serveur a peut-être déjà validé ce quiz (autre appareil, état
+                            // pas encore relu) : la ligne validée est figée, les réponses y sont
+                            // seulement journalisées. On les renvoie alors sous l'identifiant de
+                            // révision au lieu d'annoncer un faux échec. Rien n'est écrasé.
+                            if (!enRevision) {
+                              const { data: statutRow } = await supabase
+                                .from("reponses_apprenants" as any)
+                                .select("status")
+                                .eq("apprenant_id", apprenantId)
+                                .eq("exercice_id", exerciceId)
+                                .maybeSingle();
+                              if (isAttemptSubmitted(statutRow as any)) {
+                                enRevision = true;
+                                submittedExoIdsRef.current.add(exo.id);
+                                revisionActiveRef.current.add(exo.id);
+                                exerciceId = buildRevisionExerciceId(module.id, exo.id);
+                                enqueueAnswerSave({
+                                  apprenant_id: apprenantId,
+                                  user_id: userIdForSaveRef.current || undefined,
+                                  module_id: module.id,
+                                  module_total_questions: totalQuestionsModuleRef.current,
+                                  exercice_id: exerciceId,
+                                  exercice_type: "quiz",
+                                  reponses: exoAnswers,
+                                  completed: false,
+                                  updated_at: new Date().toISOString(),
+                                });
+                                flushed = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+                                if (!flushed) { echec("envoi_revision"); return false; }
+                              }
+                            }
                             etapeEnCours = "relecture";
                             const { data: confirmedRow, error: confirmedError } = await supabase
                               .from("reponses_apprenants" as any)
