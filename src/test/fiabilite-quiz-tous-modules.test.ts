@@ -95,6 +95,7 @@ describe("Fiabilité des quiz — modules 2, 4, 6, 8, 26", () => {
         enqueueAnswerSave({ apprenant_id: `app-${l}`, exercice_id: buildExerciceId(m, exo), exercice_type: "quiz", reponses: { q1: [l] } });
       }
       await vi.advanceTimersByTimeAsync(30000);
+      console.log("DBG", l, appels, JSON.stringify(queue().map((i) => [i.payload.apprenant_id, i.payload.exercice_id, i.blocked, i.attempts])), [...base.keys()].join(","));
     }
     for (const l of ["A", "B"]) for (const [m, exo] of MODULES) {
       expect(base.get(`app-${l}|${buildExerciceId(m, exo)}`)?.reponses).toEqual({ q1: [l] });
