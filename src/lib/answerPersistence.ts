@@ -678,6 +678,19 @@ export function computeRetryDelay(attempts: number, random: () => number = Math.
   return Math.max(500, Math.round(base * jitter));
 }
 
+/** Le jeton porte-t-il ce compte ? Jeton illisible : on ne bloque pas (le serveur tranche). */
+function jetonAppartientA(token: string, userId: string | null): boolean {
+  if (!userId) return true;
+  try {
+    const part = token.split(".")[1];
+    if (!part) return true;
+    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json?.sub !== "string" || json.sub === userId;
+  } catch {
+    return true;
+  }
+}
+
 async function sendItem(item: QueueItem): Promise<SendResult> {
   // Dernière barrière immédiatement avant l'Edge Function. Même si un ancien
   // timer ou événement appelle le worker, Vue apprenant ne peut jamais émettre
@@ -685,10 +698,16 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   if (!isSendableInCurrentContext(item)) return "blocked";
   const url = endpoint();
   // Reconnexion silencieuse : jeton renouvelé s'il expire bientôt.
+  // Tablette partagée : pendant l'attente, un autre élève peut s'être
+  // connecté. On ne garde le jeton renouvelé que s'il appartient au compte
+  // toujours connecté, et on revérifie la propriété avant d'envoyer.
+  const compteAvant = authUserId;
   if (authToken) {
     const frais = await assurerSessionFraiche(60);
-    if (frais) authToken = frais;
+    if (frais && authUserId === compteAvant && jetonAppartientA(frais, authUserId)) authToken = frais;
   }
+  if (authUserId !== compteAvant || !isSendableInCurrentContext(item)) return "retry";
+  if (authToken && authUserId && !jetonAppartientA(authToken, authUserId)) return "retry";
   const headers = buildHeaders();
   if (!url || !headers) return "retry";
   // Un envoi qui ne répond jamais ne doit pas figer la file : abandon après
