@@ -58,7 +58,12 @@ export const lireIdentifiantExerciceModule = (
   return m ? { moduleId: Number(m[1]), exoId: m[3], revision: !!m[2] } : null;
 };
 
-/** Trace un échec de validation de quiz de module (journal d'erreurs, invisible pour l'élève). */
+/**
+ * Trace un échec de validation de quiz de module (invisible pour l'élève).
+ * Signalé au serveur (identifiants seulement, jamais les réponses) : 3 échecs
+ * en 15 min sur le même quiz créent une alerte Admin. Envoi avec la clé
+ * publique seule, pour fonctionner même si la connexion de l'élève a expiré.
+ */
 export const journaliserEchecValidationQuiz = (p: {
   apprenantId: string;
   moduleId: number | string;
@@ -68,6 +73,25 @@ export const journaliserEchecValidationQuiz = (p: {
   console.error(
     `[QuizModule] Échec validation quiz — apprenant=${p.apprenantId} module=${p.moduleId} exercice=${p.exerciceId} etape=${p.etape}`,
   );
+  try {
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const moduleId = Number(p.moduleId);
+    if (!baseUrl || !apiKey || !Number.isFinite(moduleId) || typeof fetch !== "function") return;
+    void fetch(`${baseUrl}/rest/v1/rpc/signaler_echec_validation_quiz`, {
+      method: "POST",
+      headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        _apprenant_id: p.apprenantId,
+        _module_id: moduleId,
+        _exercice_id: p.exerciceId,
+        _etape: p.etape,
+      }),
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    /* jamais bloquant */
+  }
 };
 
 /** Identifiant canonique d'un quiz intégré à une page de cours. */
