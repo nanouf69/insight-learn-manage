@@ -9085,6 +9085,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           }
                         }
 
+                        validationEnCoursRef.current.delete(exo.id);
                         setValidationFailedFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
                         afficherResultatValide();
                         toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
