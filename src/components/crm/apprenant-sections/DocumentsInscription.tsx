@@ -535,6 +535,9 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   }, [pendingPhotoDocId]);
 
   const openDocument = async (url: string) => {
+    // Ouvrir l'onglet immédiatement (geste utilisateur) : sinon le navigateur
+    // bloque la fenêtre car elle s'ouvrirait après l'attente du lien signé.
+    const win = window.open('', '_blank');
     // If url is a full public URL, extract the path
     const bucketPrefix = '/storage/v1/object/public/documents-inscription/';
     let filePath = url;
