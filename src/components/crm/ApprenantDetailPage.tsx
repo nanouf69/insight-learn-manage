@@ -42,6 +42,7 @@ import { Input } from "@/components/ui/input";
 import { getAvatarUrl } from "@/lib/avatarUrl";
 import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
+import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -656,6 +657,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </div>
         </div>
       )}
+
+      {/* Validation manuelle des heures de présence (admin) */}
+      {taux && <HeuresPresentielValidees apprenantId={apprenant.id} />}
 
 
 
