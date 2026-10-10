@@ -100,6 +100,11 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .eq("apprenant_id", apprenantId)
           .eq("status", "completed")
           .range(from, to)).catch(() => [] as any[]),
+        fetchAllRows<any>((from, to) => supabase
+          .from("presentiel_heures_validees" as any)
+          .select("heures")
+          .eq("apprenant_id", apprenantId)
+          .range(from, to)).catch(() => [] as any[]),
         supabase
           .from("apprenants")
           .select("type_apprenant, formation_choisie")
