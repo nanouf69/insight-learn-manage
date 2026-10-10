@@ -228,7 +228,8 @@ export default function ExamensBlancsPage({
       } catch (err) {
         // Version active non confirmée : on n'affiche AUCUNE question.
         // Le contenu déjà chargé reste inchangé, rien n'est remplacé.
-        console.error("[ExamensBlancs] Version active indisponible", err);
+        if ((err as any)?.sessionAbsente) console.warn("[ExamensBlancs] Connexion expirée : reconnexion nécessaire");
+        else console.error("[ExamensBlancs] Version active indisponible", err);
         setLiveExamensError(true);
         return [] as ExamenBlanc[];
       } finally {
