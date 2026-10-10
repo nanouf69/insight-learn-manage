@@ -35,6 +35,14 @@ export async function definirIaActif(actif: boolean, email?: string | null) {
   return data as { actif: boolean };
 }
 
+/** Nombre de copies e-learning en attente de correction IA (admin, aucun contenu de réponse). */
+export async function compterCopiesEnAttenteIa(): Promise<{ reponses: number; passages: number }> {
+  const { data, error } = await supabase.rpc("qrc_ia_compter_copies_en_attente" as any);
+  if (error) throw error;
+  const d = (data ?? {}) as { reponses?: number; passages?: number };
+  return { reponses: Number(d.reponses ?? 0), passages: Number(d.passages ?? 0) };
+}
+
 export async function lireCorrectionsIa(qrcIds: string[]): Promise<CorrectionIa[]> {
   const out: CorrectionIa[] = [];
   for (const lot of lots(qrcIds)) {

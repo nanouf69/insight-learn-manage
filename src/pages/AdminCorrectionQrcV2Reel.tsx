@@ -25,6 +25,7 @@ import {
 } from "@/features/correction-qrc-v2/noyauReel";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  compterCopiesEnAttenteIa,
   definirIaActif,
   LIBELLES_MOTIF_IA,
   lireConfigIa,
