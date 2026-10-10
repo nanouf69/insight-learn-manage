@@ -376,6 +376,19 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     }
 
     if (!data || data.length === 0) {
+      // 0 ligne avec une connexion expirée (jeton périmé encore présent dans
+      // le navigateur) : la base répond comme à un visiteur. Ce n'est PAS une
+      // version manquante → refus propre, sans fausse alerte.
+      let connexionValide = false;
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        connexionValide = !!u?.user;
+      } catch { connexionValide = false; }
+      if (!connexionValide) {
+        const e = new ExamContentUnavailableError("Session expirée : reconnexion nécessaire");
+        (e as any).sessionAbsente = true;
+        throw e;
+      }
       throw new ExamContentUnavailableError("Aucune version active enregistrée");
     }
 
