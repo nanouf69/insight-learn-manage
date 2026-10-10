@@ -4712,7 +4712,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     let relectureEnAttente = false;
 
     const loadCanonicalQuestions = async (dejaRenouvele = false): Promise<void> => {
-...
+      if (questionsEnEditionOuvertes > 0) {
+        relectureEnAttente = true;
+        return;
+      }
+      relectureEnAttente = false;
+      const [{ data, error }, { data: bindings, error: bindingsError }] = await Promise.all([
+        supabase
+          .from("quiz_questions")
+          .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
+          .in("quiz_id", quizIds)
+          .order("section_id")
+          .order("position"),
+        supabase
+          .from("quiz_question_bindings")
+          .select("quiz_id,exercise_id,section_id")
+          .eq("module_id", Number(module.id)),
+      ]);
       if (cancelled) return;
       if (error || bindingsError) {
         const err: any = error ?? bindingsError;
