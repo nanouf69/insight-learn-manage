@@ -300,6 +300,31 @@ export function ControleQualiteTab({ apprenant }: Props) {
     },
   });
 
+  // Feuilles d'émargement pratique signées : émargements des journées pratiques
+  // (source de vérité = Planning pratique via fetchPratiqueSlotDetails)
+  const { data: pratiqueSheets = [] } = useQuery({
+    queryKey: ["apprenant-emargements-pratique", apprenant.id],
+    enabled: !!apprenant?.id,
+    queryFn: async () => {
+      const [emargRes, pratiqueDetails] = await Promise.all([
+        supabase
+          .from("emargements_fc" as any)
+          .select("date_emargement, demi_journee, absent, signature_data_url")
+          .filter("masque", "eq", false)
+          .eq("apprenant_id", apprenant.id),
+        fetchPratiqueSlotDetails(apprenant.id),
+      ]);
+      if (emargRes.error) throw emargRes.error;
+      const pratiqueDates = new Set((pratiqueDetails || []).map((d) => d.date));
+      return ((emargRes.data as any[]) || []).filter(
+        (e) =>
+          pratiqueDates.has(String(e.date_emargement || "").slice(0, 10)) &&
+          e.absent !== true &&
+          Boolean(e.signature_data_url?.trim()),
+      );
+    },
+  });
+
   const getDocStatus = (doc: ControleDocument): { found: boolean; details?: any } => {
     if (doc.isStatic) return { found: true };
     if (doc.docType) {
@@ -311,6 +336,12 @@ export function ControleQualiteTab({ apprenant }: Props) {
     }
     if (doc.isActivity) {
       return { found: connexions.length > 0 };
+    }
+    if (doc.isPratique) {
+      return {
+        found: pratiqueSheets.length > 0,
+        details: { count: pratiqueSheets.length },
+      };
     }
     return { found: false };
   };
