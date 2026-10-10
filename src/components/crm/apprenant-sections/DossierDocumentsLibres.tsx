@@ -82,6 +82,9 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
 
   const handleView = async (doc: LibreDoc) => {
     if (!doc.url) return;
+    // Ouvrir l'onglet immédiatement (geste utilisateur) : sinon le navigateur
+    // bloque la fenêtre car elle s'ouvrirait après l'attente du lien signé.
+    const win = window.open("", "_blank");
     const path = doc.url.includes("/documents-inscription/")
       ? doc.url.split("/documents-inscription/")[1]
       : doc.url;
@@ -89,10 +92,16 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
       .from("documents-inscription")
       .createSignedUrl(path, 3600);
     if (error || !data?.signedUrl) {
+      win?.close();
       toast.error("Impossible d'ouvrir le document");
       return;
     }
-    window.open(data.signedUrl, "_blank");
+    if (win) {
+      win.location.href = data.signedUrl;
+    } else {
+      // Repli si le navigateur a tout de même bloqué l'onglet vide
+      window.open(data.signedUrl, "_blank");
+    }
   };
 
   const handleRename = async (doc: LibreDoc) => {
