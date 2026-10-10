@@ -16,7 +16,8 @@ import {
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
-import { computePresenceHours, formatPresenceHours, isEveningTrainingValue, isFormationContinueValue } from "@/lib/emargementHours";
+import { formatPresenceHours } from "@/lib/emargementHours";
+import { computePresentielHours } from "@/lib/presentielHours";
 import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
@@ -415,6 +416,29 @@ export function DocumentsCompletes({ apprenant }: Props) {
     },
   });
 
+  // Heures de présence : même source que la carte « Taux présentiel »
+  // (computePresentielHours sur les émargements signés, sans plafonnement),
+  // pour que ce bloc et la carte affichent toujours le même total.
+  const { data: presenceHeures } = useQuery({
+    queryKey: ["apprenant-presence-heures", apprenant.id],
+    enabled: !!apprenant?.id,
+    queryFn: async () => {
+      const [emargRes, pratiqueDetails] = await Promise.all([
+        supabase
+          .from("emargements_fc" as any)
+          .select("date_emargement, demi_journee, absent, signature_data_url")
+          .filter("masque", "eq", false)
+          .eq("apprenant_id", apprenant.id),
+        fetchPratiqueSlotDetails(apprenant.id),
+      ]);
+      const { theorieHours, pratiqueMinutes } = computePresentielHours(
+        (emargRes.data as any[]) || [],
+        pratiqueDetails,
+      );
+      return theorieHours + pratiqueMinutes / 60;
+    },
+  });
+
   const downloadJSON = (doc: any) => {
     const blob = new Blob([JSON.stringify(doc.donnees, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -749,22 +773,10 @@ export function DocumentsCompletes({ apprenant }: Props) {
     const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
     return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
   });
-  const isEvening = isEveningTrainingValue(apprenant?.creneau_horaire, apprenant?.formation_choisie, apprenant?.type_apprenant);
-  const isFC = isFormationContinueValue(apprenant?.type_apprenant, apprenant?.formation_choisie);
-  const totalHeures = computePresenceHours(
-    emargementsRaw.map((d: any) => ({
-      date_emargement: d.donnees?.date_emargement,
-      demi_journee: d.donnees?.demi_journee,
-      absent: d.donnees?.absent,
-    })),
-    {
-      isEvening,
-      isFormationContinue: isFC,
-      maxHours: isEvening ? 40 : 60,
-      dateStart: apprenant?.date_debut_formation,
-      dateEnd: apprenant?.date_fin_formation,
-    },
-  );
+  // Même calcul que la carte « Taux présentiel » (computePresentielHours) :
+  // heures réellement signées, sans plafonnement, pour que les deux affichages
+  // soient toujours cohérents.
+  const totalHeures = presenceHeures ?? 0;
 
   const uniqueMap = new Map<string, any>();
   for (const d of emargementsRaw) {
