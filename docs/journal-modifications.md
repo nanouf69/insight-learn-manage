@@ -218,3 +218,9 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 - confirm-reservation-pratique : nouvelles sessions pratiques heure_fin 16:00.
 - Signatures 2399 inchangées ; 2 jours historiques d’avril 2026 (13h-17h30) conservés en base, imprimés 13h-16h.
 - Tests : 4/4 nouveaux + 1371 PASS ; test serveur annulé PASS.
+
+## 2026-10-10 08:12 UTC — Réponses non envoyées (M. BOUDJORF DOUBAA, module 8 « Quizz Ville De Lyon »)
+- Constat lecture seule : 23/99 réponses enregistrées et journalisées (25 écritures 07:49–07:52:55), plus aucune écriture ensuite ; 08:04:54 validation échouée « délai dépassé 20 s pendant envoi » (Android).
+- Cause : la file d’envoi attendait sans limite le renouvellement de connexion (verrou de session bloqué) et l’envoi réseau ; la file restait figée, réponses gardées seulement sur le téléphone.
+- Correction : sessionExpiree.ts (renouvellement abandonné après 8 s, jeton actuel conservé) ; answerPersistence.ts (envoi abandonné après 15 s puis réessai, rien retiré de la file).
+- Tests : answer-queue-no-freeze.test.ts 4/4 + suite complète. Aucune donnée réelle modifiée.
