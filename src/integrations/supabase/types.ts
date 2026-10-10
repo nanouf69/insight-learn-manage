@@ -7892,6 +7892,10 @@ export type Database = {
         Args: { _apprenant_id: string; _exam_id: string }
         Returns: undefined
       }
+      generer_emargements_planning_pratique: {
+        Args: { p_apprenant_id?: string }
+        Returns: number
+      }
       generer_emargements_session: {
         Args: { p_session_id: string }
         Returns: number
