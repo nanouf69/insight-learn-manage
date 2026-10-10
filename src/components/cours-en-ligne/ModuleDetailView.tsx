@@ -19,7 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { SESSION_EXPIREE_MESSAGE, isLearnerSessionExpired } from "@/lib/sessionExpiree";
+import { SESSION_EXPIREE_MESSAGE, isLearnerSessionExpired, assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
