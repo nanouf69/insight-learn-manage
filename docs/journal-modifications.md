@@ -249,3 +249,8 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 ## 10/10/2026 — Validation finale Ville de Lyon : connexion perdue
 - Preuve : 42501 « permission denied for function save_module_completion » (BOUDJORF 10:04–10:18, 40 essais) = appel sans connexion valide (fonction réservée aux élèves connectés). Droits inchangés.
 - ModuleDetailView.tsx : en cas d échec, vérification bornée de la connexion ; si perdue, message « reconnectez-vous puis Valider », rien n est validé.
+
+## 10/10/2026 — Fiabilisation transversale des quiz
+- ModuleDetailView.tsx : verrou synchrone anti double appui sur Valider (libéré dans tous les cas).
+- Test src/test/fiabilite-quiz-tous-modules.test.ts (modules 2,4,6,8,26 : coupure/rechargement, révision, élèves successifs, verrou, complétude, messages).
+- Alerte serveur sur échecs répétés : proposée, en attente d accord. Aucune donnée modifiée.
