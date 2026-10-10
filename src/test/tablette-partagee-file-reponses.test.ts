@@ -58,7 +58,8 @@ describe("Tablette partagée : file locale liée à l'élève et au quiz", () =>
     // Changement d'élève sur la même tablette, réseau revenu.
     online = true;
     login("B");
-    expect(getPendingAnswers("app-A", EXO)).toBeTruthy(); // toujours conservées localement
+    expect(queue().filter((i) => i.payload.apprenant_id === "app-A")).toHaveLength(1); // conservées localement
+    expect(getPendingAnswers("app-A", EXO) ?? null).toBeNull(); // invisibles pour B
     expect(getPendingAnswers("app-B", EXO) ?? {}).toEqual({}); // aucune fuite vers B
     enqueueAnswerSave({ apprenant_id: "app-B", exercice_id: EXO, exercice_type: "quiz", reponses: { "1785332774763-1": ["A"] } });
     await vi.advanceTimersByTimeAsync(40000);
