@@ -15,6 +15,8 @@ export interface TauxRealisation {
   modulesTotal: number;
   doneElearning: number;
   donePresentiel: number;
+  /** Heures de présence validées manuellement par un admin (ajoutées aux heures signées) */
+  heuresPresentielValidees: number;
   reqElearning: number;
   reqPresentiel: number;
   reqTotal: number;
