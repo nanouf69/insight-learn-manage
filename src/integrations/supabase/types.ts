@@ -7433,6 +7433,7 @@ export type Database = {
         }[]
       }
       alerter_qrc_ia_attente_24h: { Args: never; Returns: number }
+      alerter_qrc_ia_coupee: { Args: never; Returns: number }
       apply_admin_canonical_quiz_actions: {
         Args: { p_actions: Json; p_module_id: number }
         Returns: {
@@ -8196,6 +8197,17 @@ export type Database = {
         Returns: boolean
       }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
+      qrc_ia_compter_copies_en_attente: { Args: never; Returns: Json }
+      qrc_ia_copies_en_attente_elearning: {
+        Args: { p_min_age?: string }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          exam_id: string
+          fin: string
+          nb: number
+        }[]
+      }
       qrc_ia_definir_actif: {
         Args: { p_actif: boolean; p_email?: string }
         Returns: Json

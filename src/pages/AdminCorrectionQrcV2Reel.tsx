@@ -25,6 +25,7 @@ import {
 } from "@/features/correction-qrc-v2/noyauReel";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  compterCopiesEnAttenteIa,
   definirIaActif,
   LIBELLES_MOTIF_IA,
   lireConfigIa,
@@ -346,10 +347,19 @@ export default function AdminCorrectionQrcV2Reel() {
   const basculerIa = async () => {
     if (!configIa) return;
     const cible = !configIa.actif;
-    const msg = cible
-      ? "ACTIVER la correction IA automatique des QRC e-learning ?\n\nSeuls les passages terminés À PARTIR DE MAINTENANT seront corrigés par Gemini 3.8 Flash. Aucune ancienne copie ne sera touchée."
-      : "DÉSACTIVER la correction IA ? Les corrections déjà enregistrées restent inchangées.";
-    if (!window.confirm(msg)) return;
+    if (cible) {
+      const msg = "ACTIVER la correction IA automatique des QRC e-learning ?\n\nSeuls les passages terminés À PARTIR DE MAINTENANT seront corrigés par Gemini 3.8 Flash. Aucune ancienne copie ne sera touchée.";
+      if (!window.confirm(msg)) return;
+    } else {
+      let enAttente: { reponses: number; passages: number } | null = null;
+      try { enAttente = await compterCopiesEnAttenteIa(); } catch { enAttente = null; }
+      const detail = enAttente
+        ? `${enAttente.reponses} réponse(s) écrite(s) e-learning (${enAttente.passages} passage(s)) attendent actuellement la correction IA.`
+        : "Le nombre de copies en attente n'a pas pu être vérifié.";
+      const msg = `DÉSACTIVER la correction IA ?\n\n${detail}\nAprès la coupure, les nouvelles copies e-learning resteront « En attente » jusqu'à une correction par un formateur ou une réactivation manuelle. La correction IA ne se réactive JAMAIS automatiquement.\n\nLes corrections déjà enregistrées restent inchangées.`;
+      if (!window.confirm(msg)) return;
+      if (!window.confirm("Confirmation finale : couper la correction IA maintenant ?")) return;
+    }
     try {
       await definirIaActif(cible, emailAdmin);
       setConfigIa(await lireConfigIa());
