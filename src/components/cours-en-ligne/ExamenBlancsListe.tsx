@@ -1,3 +1,4 @@
+import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,7 +137,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
       for (let attempt = 0; attempt < 3; attempt++) {
         if (attempt > 0) {
           await new Promise((r) => setTimeout(r, 600 * attempt));
-          try { await supabase.auth.refreshSession(); } catch { /* best effort */ }
+          try { await assurerSessionFraiche(); } catch { /* best effort */ }
         }
         const result = await supabase
           .from("apprenant_quiz_results" as any)
