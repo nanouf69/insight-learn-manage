@@ -224,3 +224,8 @@ Cause : renouvellements de connexion forcés en rafale (6 en 1 s, 07:07:53) depu
 - Cause : la file d’envoi attendait sans limite le renouvellement de connexion (verrou de session bloqué) et l’envoi réseau ; la file restait figée, réponses gardées seulement sur le téléphone.
 - Correction : sessionExpiree.ts (renouvellement abandonné après 8 s, jeton actuel conservé) ; answerPersistence.ts (envoi abandonné après 15 s puis réessai, rien retiré de la file).
 - Tests : answer-queue-no-freeze.test.ts 4/4 + suite complète. Aucune donnée réelle modifiée.
+
+## 2026-10-10 08:18 UTC — Faux échec « serveur ne valide pas » sur quiz déjà validés (dont Ville de Lyon)
+- Cause prouvée : élève refaisant un quiz déjà validé (status submitted) sous l’identifiant validé ; le serveur fige cette ligne (réponses journalisées, non appliquées) ; la relecture différait → message d’échec. 9 élèves sur 3 jours (+ M. Boudjorf, cause distincte : file d’envoi bloquée).
+- Correction ModuleDetailView.tsx : quiz validé ⇒ sauvegardes sous module_X_revision_exo_Y ; à la validation, relecture du statut serveur et bascule en révision. Ligne validée, note et module jamais touchés.
+- Tests : quiz-deja-valide-revision.test.ts + suite complète. Aucune donnée réelle modifiée.
