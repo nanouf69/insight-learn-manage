@@ -6557,6 +6557,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Validation de quiz : « OK » affiché seulement après confirmation serveur.
     const [validatingExo, setValidatingExo] = useState<number | null>(null);
     const [validationFailedFor, setValidationFailedFor] = useState<Set<number>>(new Set());
+    // Échec de validation dû à une connexion perdue (jeton absent/expiré) : message dédié.
+    const [validationSessionPerdueFor, setValidationSessionPerdueFor] = useState<Set<number>>(new Set());
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
@@ -8844,7 +8846,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <div className="flex flex-col items-center gap-3 w-full">
                     {validationFailedFor.has(exo.id) && validatingExo !== exo.id && (
                       <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">
-                        Vos réponses sont conservées sur cet écran mais n'ont pas encore été confirmées par le serveur.
+                        {validationSessionPerdueFor.has(exo.id)
+                          ? "Votre connexion a expiré : le serveur ne peut pas valider ce quiz. Ne fermez pas la page et ne videz pas la tablette : reconnectez-vous avec votre compte, puis appuyez de nouveau sur Valider. Vos réponses sont conservées."
+                          : "Vos réponses sont conservées sur cet écran mais n'ont pas encore été confirmées par le serveur."}
                       </div>
                     )}
                     <Button
@@ -8976,6 +8980,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             termine = true;
                             journaliserEchecValidationQuiz({ apprenantId, moduleId: module.id, exerciceId, etape });
                             setValidationFailedFor((prev) => new Set(prev).add(exo.id));
+                            // Connexion perdue sur la tablette ? (vérification bornée à 8 s, sans écriture)
+                            void assurerSessionFraiche(60).then((jeton) => {
+                              setValidationSessionPerdueFor((prev) => {
+                                const next = new Set(prev);
+                                if (jeton) next.delete(exo.id); else next.add(exo.id);
+                                return next;
+                              });
+                            });
                           };
                           const sequence = async (): Promise<boolean> => {
                             enqueueAnswerSave({
