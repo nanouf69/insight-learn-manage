@@ -995,6 +995,13 @@
       "when": 1791624343178,
       "tag": "0141_quiz_valide_protection_correctif_tableau",
       "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1791635768926,
+      "tag": "0142_alerte_qrc_ia_attente_24h",
+      "breakpoints": true
     }
   ]
 }

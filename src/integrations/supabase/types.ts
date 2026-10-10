@@ -7432,6 +7432,7 @@ export type Database = {
           type_signalement: string
         }[]
       }
+      alerter_qrc_ia_attente_24h: { Args: never; Returns: number }
       apply_admin_canonical_quiz_actions: {
         Args: { p_actions: Json; p_module_id: number }
         Returns: {

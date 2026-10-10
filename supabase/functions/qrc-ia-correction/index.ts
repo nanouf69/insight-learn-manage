@@ -37,12 +37,16 @@ Deno.serve(async (req) => {
     const utilisateur = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
 
     const { attempt_id, rattrapage } = await req.json().catch(() => ({}));
-    // RATTRAPAGE EXCEPTIONNEL (autorisé le 25/09/2026) : passages e-learning de
-    // septembre 2026 uniquement, déclenché par un administrateur. L'interrupteur
-    // général n'est ni lu ni modifié ; toutes les autres règles restent actives.
+    // RATTRAPAGES EXCEPTIONNELS, déclenchés par un administrateur uniquement :
+    // - autorisé le 25/09/2026 : passages e-learning de septembre 2026 ;
+    // - autorisé le 10/10/2026 : passages e-learning du 01/10 au 10/10/2026 14 h 28 (Paris).
+    // L'interrupteur général n'est ni lu ni modifié ; toutes les autres règles
+    // restent actives (QRC en attente seulement, idempotence, jamais d'écrasement).
     const estRattrapage = rattrapage === true;
-    const DEBUT_RATTRAPAGE = new Date("2026-08-31T22:00:00Z");
-    const FIN_RATTRAPAGE = new Date("2026-09-30T22:00:00Z");
+    const PERIODES_RATTRAPAGE: Array<[Date, Date]> = [
+      [new Date("2026-08-31T22:00:00Z"), new Date("2026-09-30T22:00:00Z")],
+      [new Date("2026-09-30T22:00:00Z"), new Date("2026-10-10T12:28:00Z")],
+    ];
     if (!attempt_id || typeof attempt_id !== "string") return json({ ok: false, message: "attempt_id requis" }, 400);
 
     // 1. Interrupteur général
@@ -68,7 +72,7 @@ Deno.serve(async (req) => {
     if (att.is_test) return json({ ok: true, statut: "compte_test_exclu" });
     if (estRattrapage) {
       const fin = new Date(att.finished_at);
-      if (fin < DEBUT_RATTRAPAGE || fin >= FIN_RATTRAPAGE) return json({ ok: true, statut: "hors_periode_rattrapage" });
+      if (!PERIODES_RATTRAPAGE.some(([d, f]) => fin >= d && fin < f)) return json({ ok: true, statut: "hors_periode_rattrapage" });
     } else if (!cfg.actif_depuis || new Date(att.finished_at) < new Date(cfg.actif_depuis)) {
       return json({ ok: true, statut: "passage_anterieur_activation" });
     }
