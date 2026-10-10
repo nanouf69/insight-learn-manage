@@ -749,22 +749,10 @@ export function DocumentsCompletes({ apprenant }: Props) {
     const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
     return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
   });
-  const isEvening = isEveningTrainingValue(apprenant?.creneau_horaire, apprenant?.formation_choisie, apprenant?.type_apprenant);
-  const isFC = isFormationContinueValue(apprenant?.type_apprenant, apprenant?.formation_choisie);
-  const totalHeures = computePresenceHours(
-    emargementsRaw.map((d: any) => ({
-      date_emargement: d.donnees?.date_emargement,
-      demi_journee: d.donnees?.demi_journee,
-      absent: d.donnees?.absent,
-    })),
-    {
-      isEvening,
-      isFormationContinue: isFC,
-      maxHours: isEvening ? 40 : 60,
-      dateStart: apprenant?.date_debut_formation,
-      dateEnd: apprenant?.date_fin_formation,
-    },
-  );
+  // Même calcul que la carte « Taux présentiel » (computePresentielHours) :
+  // heures réellement signées, sans plafonnement, pour que les deux affichages
+  // soient toujours cohérents.
+  const totalHeures = presenceHeures ?? 0;
 
   const uniqueMap = new Map<string, any>();
   for (const d of emargementsRaw) {
