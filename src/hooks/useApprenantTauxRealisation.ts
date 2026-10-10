@@ -207,6 +207,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         modulesTotal,
         doneElearning,
         donePresentiel,
+        heuresPresentielValidees,
         reqElearning,
         reqPresentiel,
         reqTotal,
