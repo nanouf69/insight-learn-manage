@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { captureError } from "@/lib/monitoring/errorLogger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -343,6 +344,31 @@ export function reconcileSharedMatieres(
 }
 
 
+/**
+ * Trace technique ANONYME du chargement des examens : version du code, phase,
+ * état de session (stable/changée/absente), résultat des lectures, route.
+ * Aucun nom, identifiant, e-mail, jeton ni réponse. Ne bloque jamais.
+ */
+type TraceChargement = {
+  phase: string;
+  session: "stable" | "changee" | "absente";
+  premiere: "vide" | "erreur" | "non_lue";
+  relecture: "non" | "vide" | "erreur" | "trouve";
+};
+export function tracerChargementExamens(t: TraceChargement): void {
+  try {
+    let build = "inconnu";
+    try { build = String(import.meta.url).split("/").pop()?.split("?")[0] || "inconnu"; } catch { /* ignore */ }
+    const route = typeof window !== "undefined" ? window.location.pathname : "";
+    void captureError({
+      message: `[ExamensEditor:trace] ${t.phase} session=${t.session} premiere=${t.premiere} relecture=${t.relecture}`,
+      level: t.relecture === "vide" ? "error" : "warning",
+      source: "examens-chargement",
+      anonyme: true,
+      context: { build, route, ...t },
+    });
+  } catch { /* le suivi ne doit jamais casser le chargement */ }
+}
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
@@ -357,10 +383,13 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
     const { data: sess } = await supabase.auth.getSession();
     if (!sess?.session) {
+      tracerChargementExamens({ phase: "verification", session: "absente", premiere: "non_lue", relecture: "non" });
       const e = new ExamContentUnavailableError("Session absente : reconnexion nécessaire");
       (e as any).sessionAbsente = true;
       throw e;
     }
+    // Compte de départ (comparé en mémoire seulement, jamais journalisé).
+    const compteDepart = sess.session.user?.id ?? null;
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
     const lireVersions = () => supabase
       .from("module_editor_state")
@@ -370,21 +399,25 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
     let { data, error } = await lireVersions();
     
     if (error) {
+      tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
       console.error("[ExamensEditor] Error loading saved exams:", error);
       // AUCUN REPLI : jamais de contenu statique ni de copie par position.
       throw new ExamContentUnavailableError(error.message);
     }
 
     if (!data || data.length === 0) {
-      // 0 ligne avec une connexion expirée : réponse « visiteur », pas une
-      // version manquante → refus propre, sans fausse alerte.
-      let connexionValide = false;
+      // 0 ligne : vérifier que la MÊME connexion est toujours valide. Une
+      // réponse vide n'est jamais une preuve d'absence si la session a
+      // disparu ou changé (autre onglet, autre élève sur la tablette).
+      let compteActuel: string | null = null;
       try {
         const { data: u } = await supabase.auth.getUser();
-        connexionValide = !!u?.user;
-      } catch { connexionValide = false; }
-      if (!connexionValide) {
-        const e = new ExamContentUnavailableError("Session expirée : reconnexion nécessaire");
+        compteActuel = u?.user?.id ?? null;
+      } catch { compteActuel = null; }
+      if (!compteActuel || (compteDepart && compteActuel !== compteDepart)) {
+        const etat = compteActuel ? "changee" : "absente";
+        tracerChargementExamens({ phase: "verification_apres_vide", session: etat, premiere: "vide", relecture: "non" });
+        const e = new ExamContentUnavailableError("Session expirée ou changée : reconnexion nécessaire");
         (e as any).sessionAbsente = true;
         throw e;
       }
@@ -392,14 +425,31 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       // alors partie avec l'ancien. Une seule relecture (lecture seule) ;
       // toujours 0 ligne → vraie alerte conservée.
       const relecture = await lireVersions();
+      // La connexion doit être restée la même pendant la relecture.
+      let sessionFinale = false;
+      let compteFinal: string | null = null;
+      try {
+        const { data: s2 } = await supabase.auth.getSession();
+        sessionFinale = !!s2?.session;
+        compteFinal = s2?.session?.user?.id ?? null;
+      } catch { sessionFinale = false; }
+      if (!sessionFinale || (compteFinal && compteFinal !== compteActuel)) {
+        tracerChargementExamens({ phase: "relecture", session: sessionFinale ? "changee" : "absente", premiere: "vide", relecture: relecture.error ? "erreur" : (relecture.data?.length ? "trouve" : "vide") });
+        const e = new ExamContentUnavailableError("Session expirée ou changée : reconnexion nécessaire");
+        (e as any).sessionAbsente = true;
+        throw e;
+      }
       if (relecture.error) {
+        tracerChargementExamens({ phase: "relecture", session: "stable", premiere: "vide", relecture: "erreur" });
         console.error("[ExamensEditor] Error loading saved exams:", relecture.error);
         throw new ExamContentUnavailableError(relecture.error.message);
       }
       data = relecture.data;
       if (!data || data.length === 0) {
+        tracerChargementExamens({ phase: "relecture", session: "stable", premiere: "vide", relecture: "vide" });
         throw new ExamContentUnavailableError("Aucune version active enregistrée");
       }
+      tracerChargementExamens({ phase: "relecture", session: "stable", premiere: "vide", relecture: "trouve" });
     }
 
     if (data && data.length > 0) {

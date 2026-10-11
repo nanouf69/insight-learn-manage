@@ -17,6 +17,8 @@ type ErrorPayload = {
   component_stack?: string;
   context?: Record<string, unknown>;
   fingerprint?: string;
+  /** Vrai : aucun identifiant/e-mail ni URL complète joints (trace technique). */
+  anonyme?: boolean;
 };
 
 const IGNORED_PATTERNS = [
@@ -77,7 +79,7 @@ export async function captureError(payload: ErrorPayload) {
       }
     }
 
-    const user = await currentUser();
+    const user = payload.anonyme ? { id: null, email: null } : await currentUser();
 
     await supabase.rpc("log_error", {
       _message: message,
@@ -85,9 +87,9 @@ export async function captureError(payload: ErrorPayload) {
       _source: payload.source ?? "client",
       _stack: payload.stack?.slice(0, 8000) ?? null,
       _component_stack: payload.component_stack?.slice(0, 8000) ?? null,
-      _url: typeof window !== "undefined" ? window.location.href : null,
+      _url: payload.anonyme ? null : (typeof window !== "undefined" ? window.location.href : null),
       _route: route,
-      _user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      _user_agent: payload.anonyme ? null : (typeof navigator !== "undefined" ? navigator.userAgent : null),
       _user_id: user.id,
       _user_email: user.email,
       _context: (payload.context as never) ?? null,
