@@ -426,13 +426,15 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       // toujours 0 ligne → vraie alerte conservée.
       const relecture = await lireVersions();
       // La connexion doit être restée la même pendant la relecture.
+      let sessionFinale = false;
       let compteFinal: string | null = null;
       try {
         const { data: s2 } = await supabase.auth.getSession();
+        sessionFinale = !!s2?.session;
         compteFinal = s2?.session?.user?.id ?? null;
-      } catch { compteFinal = null; }
-      if (compteFinal !== compteActuel) {
-        tracerChargementExamens({ phase: "relecture", session: compteFinal ? "changee" : "absente", premiere: "vide", relecture: relecture.error ? "erreur" : (relecture.data?.length ? "trouve" : "vide") });
+      } catch { sessionFinale = false; }
+      if (!sessionFinale || (compteFinal && compteFinal !== compteActuel)) {
+        tracerChargementExamens({ phase: "relecture", session: sessionFinale ? "changee" : "absente", premiere: "vide", relecture: relecture.error ? "erreur" : (relecture.data?.length ? "trouve" : "vide") });
         const e = new ExamContentUnavailableError("Session expirée ou changée : reconnexion nécessaire");
         (e as any).sessionAbsente = true;
         throw e;
