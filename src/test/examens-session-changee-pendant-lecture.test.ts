@@ -48,6 +48,21 @@ const traces = () => etat.rpc.filter((a) => a._source === "examens-chargement");
 const attendre = () => new Promise((r) => setTimeout(r, 0));
 
 describe("Examens blancs : session changée/absente pendant le chargement", () => {
+  it("trace anonyme : ni identifiant, ni e-mail, ni URL complète", async () => {
+    etat.sessions = ["eleve-A"]; etat.user = "eleve-B";
+    await loadSavedExamens().catch(() => null);
+    await attendre();
+    const t = traces();
+    expect(t.length).toBeGreaterThan(0);
+    for (const a of t) {
+      expect(a._user_id).toBeNull();
+      expect(a._user_email).toBeNull();
+      expect(a._url).toBeNull();
+      expect(JSON.stringify(a)).not.toMatch(/eleve-[AB]|fictif/);
+      expect(a._context).toMatchObject({ session: "changee", premiere: "vide", relecture: "non" });
+      expect(a._context.build).toBeTruthy();
+    }
+  });
   it("compte changé après une lecture vide → refus session, aucune relecture, pas d'« absence »", async () => {
     etat.sessions = ["eleve-A"]; etat.user = "eleve-B";
     const err: any = await loadSavedExamens().catch((e) => e);
@@ -88,19 +103,4 @@ describe("Examens blancs : session changée/absente pendant le chargement", () =
     expect(etat.appels).toBe(1);
   });
 
-  it("trace anonyme : ni identifiant, ni e-mail, ni URL complète", async () => {
-    etat.sessions = ["eleve-A"]; etat.user = "eleve-B";
-    await loadSavedExamens().catch(() => null);
-    await attendre();
-    const t = traces();
-    expect(t.length).toBeGreaterThan(0);
-    for (const a of t) {
-      expect(a._user_id).toBeNull();
-      expect(a._user_email).toBeNull();
-      expect(a._url).toBeNull();
-      expect(JSON.stringify(a)).not.toMatch(/eleve-[AB]|fictif/);
-      expect(a._context).toMatchObject({ session: "changee", premiere: "vide", relecture: "non" });
-      expect(a._context.build).toBeTruthy();
-    }
-  });
 });
