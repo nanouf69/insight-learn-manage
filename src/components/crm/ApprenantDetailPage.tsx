@@ -43,6 +43,7 @@ import { getAvatarUrl } from "@/lib/avatarUrl";
 import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
 import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
+import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -657,6 +658,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </div>
         </div>
       )}
+
+      {/* Jalons pondérés : indicatif interne, admin uniquement */}
+      {taux && <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} />}
 
       {/* Validation manuelle des heures de présence (admin) */}
       {taux && <HeuresPresentielValidees apprenantId={apprenant.id} />}
