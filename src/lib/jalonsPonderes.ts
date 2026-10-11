@@ -79,6 +79,6 @@ export function calculerJalonsPonderes(
   const manquants = lignes.filter((l) => l.obligatoireSansPoids && l.progression < 100).map((l) => l.moduleId);
   let taux = Math.round(brut * 10) / 10;
   if (taux > 100) taux = 100;
-  if (taux >= 100 && manquants.length > 0) taux = 99.9;
+  if (taux >= 100 && lignes.some((l) => l.progression < 100)) taux = 99.9;
   return { filiere, taux, lignes, jalonsObligatoiresManquants: manquants };
 }
