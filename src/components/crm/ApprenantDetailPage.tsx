@@ -620,8 +620,8 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               { label: "Taux présentiel", pct: taux.pctPresentiel, done: taux.donePresentiel, req: taux.reqPresentiel, strong: false },
               { label: "TAUX TOTAL", pct: taux.pctTotal, done: taux.doneElearning + taux.donePresentiel, req: taux.reqTotal, strong: true },
             ].map((t) => (
+              <div key={t.label} data-indicateur={t.label}>
               <div
-                key={t.label}
                 className={`rounded-md px-3 py-2 ${t.strong ? "bg-primary/10 border border-primary/30" : "bg-muted/50"}`}
               >
                 <div className="flex items-baseline justify-between gap-2">
@@ -654,13 +654,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   </div>
                 )}
               </div>
+              {/* Jalons pondérés : juste sous « Modules (jalons) », indicatif interne admin */}
+              {(t as any).unit === "modules" && (
+                <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} />
+              )}
+              </div>
             ))}
           </div>
         </div>
       )}
-
-      {/* Jalons pondérés : indicatif interne, admin uniquement */}
-      {taux && <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} />}
 
       {/* Validation manuelle des heures de présence (admin) */}
       {taux && <HeuresPresentielValidees apprenantId={apprenant.id} />}

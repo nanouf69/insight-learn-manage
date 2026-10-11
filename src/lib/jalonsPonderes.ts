@@ -27,7 +27,7 @@ export function filiereDuParcours(key: string | null | undefined): Filiere | nul
 
 export interface CompletionLite { module_id: number; status?: string | null; progress?: number | null }
 
-export interface LigneJalon { moduleId: number; poids: number; progression: number; contribution: number; obligatoireSansPoids: boolean }
+export interface LigneJalon { moduleId: number; poids: number; progression: number; contribution: number; obligatoireSansPoids: boolean; valide: boolean }
 
 export interface ResultatJalons {
   filiere: Filiere;
@@ -50,35 +50,43 @@ export function calculerJalonsPonderes(
   completions: CompletionLite[],
 ): ResultatJalons {
   const grille = GRILLE_JALONS[filiere];
+  // Un seul statut « completed » suffit à valider ; sinon meilleure progression, sans cumul.
   const parId = new Map<number, CompletionLite>();
   for (const c of completions) {
     const id = Number(c.module_id);
     const prev = parId.get(id);
     // Plusieurs lignes du même module : on garde la meilleure, sans additionner.
-    if (!prev || progressionModule(c) > progressionModule(prev)) parId.set(id, c);
+    if (!prev || (prev.status !== "completed" && (c.status === "completed" || progressionModule(c) > progressionModule(prev)))) parId.set(id, c);
   }
   const lignes: LigneJalon[] = [];
   const vus = new Set<number>();
+  let introAttribuee = false;
   for (const id of modulesParcours) {
     if (vus.has(id)) continue;
     vus.add(id);
-    const poids = INTRO_IDS.has(id) ? grille[INTRO] : grille[id] ?? 0;
-    const progression = progressionModule(parId.get(id));
-    lignes.push({ moduleId: id, poids, progression, contribution: (poids * progression) / 100, obligatoireSansPoids: poids === 0 });
+    let poids = grille[id] ?? 0;
+    if (INTRO_IDS.has(id)) {
+      // Poids d'introduction attribué une seule fois (premier alias du parcours) ; autres intros = obligatoires poids 0.
+      poids = introAttribuee ? 0 : grille[INTRO];
+      introAttribuee = true;
+    }
+    const row = parId.get(id);
+    const progression = progressionModule(row);
+    lignes.push({ moduleId: id, poids, progression, contribution: (poids * progression) / 100, obligatoireSansPoids: poids === 0, valide: row?.status === "completed" });
   }
   // Modules de la grille absents du parcours attribué : comptés à 0, jamais renormalisés.
   for (const [k, poids] of Object.entries(grille)) {
     const id = Number(k);
     if (id === INTRO) {
-      if (!lignes.some((l) => INTRO_IDS.has(l.moduleId))) lignes.push({ moduleId: 0, poids, progression: 0, contribution: 0, obligatoireSansPoids: false });
+      if (!introAttribuee) lignes.push({ moduleId: 0, poids, progression: 0, contribution: 0, obligatoireSansPoids: false, valide: false });
     } else if (!vus.has(id)) {
-      lignes.push({ moduleId: id, poids, progression: 0, contribution: 0, obligatoireSansPoids: false });
+      lignes.push({ moduleId: id, poids, progression: 0, contribution: 0, obligatoireSansPoids: false, valide: false });
     }
   }
   const brut = lignes.reduce((s, l) => s + l.contribution, 0);
-  const manquants = lignes.filter((l) => l.obligatoireSansPoids && l.progression < 100).map((l) => l.moduleId);
+  const manquants = lignes.filter((l) => l.obligatoireSansPoids && !l.valide).map((l) => l.moduleId);
   let taux = Math.round(brut * 10) / 10;
   if (taux > 100) taux = 100;
-  if (taux >= 100 && lignes.some((l) => l.progression < 100)) taux = 99.9;
+  if (taux >= 100 && lignes.some((l) => !l.valide)) taux = 99.9;
   return { filiere, taux, lignes, jalonsObligatoiresManquants: manquants };
 }
