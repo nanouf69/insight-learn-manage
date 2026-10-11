@@ -362,22 +362,21 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       throw e;
     }
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
-    const { data, error } = await supabase
+    const lireVersions = () => supabase
       .from("module_editor_state")
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
+    let { data, error } = await lireVersions();
     
     if (error) {
       console.error("[ExamensEditor] Error loading saved exams:", error);
       // AUCUN REPLI : jamais de contenu statique ni de copie par position.
-      // Tant que la version active n'est pas confirmée, rien n'est servi.
       throw new ExamContentUnavailableError(error.message);
     }
 
     if (!data || data.length === 0) {
-      // 0 ligne avec une connexion expirée (jeton périmé encore présent dans
-      // le navigateur) : la base répond comme à un visiteur. Ce n'est PAS une
+      // 0 ligne avec une connexion expirée : réponse « visiteur », pas une
       // version manquante → refus propre, sans fausse alerte.
       let connexionValide = false;
       try {
@@ -389,7 +388,18 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
         (e as any).sessionAbsente = true;
         throw e;
       }
-      throw new ExamContentUnavailableError("Aucune version active enregistrée");
+      // La vérification a pu renouveler le jeton : la première lecture est
+      // alors partie avec l'ancien. Une seule relecture (lecture seule) ;
+      // toujours 0 ligne → vraie alerte conservée.
+      const relecture = await lireVersions();
+      if (relecture.error) {
+        console.error("[ExamensEditor] Error loading saved exams:", relecture.error);
+        throw new ExamContentUnavailableError(relecture.error.message);
+      }
+      data = relecture.data;
+      if (!data || data.length === 0) {
+        throw new ExamContentUnavailableError("Aucune version active enregistrée");
+      }
     }
 
     if (data && data.length > 0) {
