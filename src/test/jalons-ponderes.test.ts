@@ -35,10 +35,42 @@ describe("jalons pondérés", () => {
     const r = calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }, { module_id: 2, status: "in_progress", progress: 50 }]);
     expect(r.taux).toBe(21);
   });
+  it("progress 100 sans status completed => jamais 100", () => {
+    const rows = all("vtc-e").map((c) => (c.module_id === 2 ? { module_id: 2, status: "in_progress", progress: 100 } : c));
+    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), rows).taux).toBe(99.9);
+    const fin = all("vtc-e").map((c) => (c.module_id === 50 ? { module_id: 50, status: "in_progress", progress: 100 } : c));
+    const r = calculerJalonsPonderes("vtc", ids("vtc-e"), fin);
+    expect(r.taux).toBe(99.9);
+    expect(r.jalonsObligatoiresManquants).toEqual([50]);
+    const adm = all("taxi").map((c) => (c.module_id === 84 ? { module_id: 84, status: "in_progress", progress: 100 } : c));
+    expect(calculerJalonsPonderes("taxi", ids("taxi"), adm).taux).toBe(99.9);
+  });
+  it("plusieurs intros : poids attribué une seule fois, somme <= 100", () => {
+    const parcours = [26, 1, ...ids("vtc-e").filter((id) => id !== 26)];
+    const rows = parcours.map((id) => ({ module_id: id, status: "completed" }));
+    const r = calculerJalonsPonderes("vtc", parcours, rows);
+    expect(r.lignes.reduce((s, l) => s + l.poids, 0)).toBeCloseTo(100, 5);
+    expect(r.lignes.find((l) => l.moduleId === 1)!.poids).toBe(0);
+    expect(r.taux).toBe(100);
+    expect(calculerJalonsPonderes("vtc", parcours, rows.filter((x) => x.module_id !== 1)).taux).toBe(99.9);
+  });
+  it("carte placée dans la colonne de la tuile Modules (même sur mobile)", () => {
+    const page = readFileSync("src/components/crm/ApprenantDetailPage.tsx", "utf8");
+    expect(page.match(/<JalonsPonderesCard/g)!.length).toBe(1);
+    const i = page.indexOf("<JalonsPonderesCard");
+    const before = page.slice(page.lastIndexOf("data-indicateur", i), i);
+    expect(before).toMatch(/unit === "modules"/);
+    expect(page.slice(i).indexOf("))}")).toBeLessThan(400);
+  });
   it("carte réservée admin (contrôle user_roles) et absente du côté apprenant", () => {
     const src = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
     expect(src).toMatch(/user_roles[\s\S]*eq\("role", "admin"\)/);
     expect(src).toMatch(/if \(!isAdmin/);
+    expect(src).toMatch(/useAuth\(\)/);
+    expect(src).toMatch(/\["jalons-ponderes-admin", userId\]/);
+    expect(src).toMatch(/\["jalons-ponderes", apprenantId, userId\]/);
+    expect(src).toMatch(/adminCheck\?\.userId === userId/);
+    expect(src).toMatch(/overflow-x-auto/);
     const pub = readFileSync("src/pages/CoursPublic.tsx", "utf8");
     expect(pub).not.toMatch(/JalonsPonderes/);
   });
