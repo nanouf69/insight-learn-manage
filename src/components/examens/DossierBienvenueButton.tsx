@@ -12,8 +12,10 @@ interface Props {
 /**
  * Bouton « Dossier de bienvenue » de la liste des examens.
  * Au chargement : une seule lecture (SELECT, limite 1) pour savoir si le
- * dossier est rempli → bouton vert. Aucune écriture, aucun PDF généré
- * automatiquement ; le PDF n'est produit qu'au clic volontaire.
+ * dossier est rempli → bouton vert, et rouge quand il ne l'est pas.
+ * Une lecture impossible laisse le bouton neutre : aucune couleur affirmée.
+ * Aucune écriture, aucun PDF généré automatiquement ; le PDF n'est produit
+ * qu'au clic volontaire.
  */
 export function DossierBienvenueButton({ apprenant }: Props) {
   const { user, loading } = useAuth();
@@ -21,7 +23,8 @@ export function DossierBienvenueButton({ apprenant }: Props) {
   owner.current = loading ? undefined : user?.id;
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
-  const [present, setPresent] = useState(false);
+  // « inconnu » = lecture pas encore faite ou échouée : aucune couleur affirmée.
+  const [etat, setEtat] = useState<"inconnu" | "rempli" | "absent">("inconnu");
 
   // Présence du dossier (lecture seule, silencieuse en cas d'erreur).
   useEffect(() => {
@@ -37,10 +40,12 @@ export function DossierBienvenueButton({ apprenant }: Props) {
           .eq("type_document", "dossier-bienvenue")
           .order("completed_at", { ascending: false })
           .limit(1);
-        if (!alive || owner.current !== userId || error) return;
-        setPresent(!!data && data.length > 0);
+        if (!alive || owner.current !== userId) return;
+        // Une erreur de lecture laisse l'état « inconnu » : jamais de rouge affirmé.
+        if (error) return;
+        setEtat(data && data.length > 0 ? "rempli" : "absent");
       } catch {
-        /* sans dossier prouvé, pas d'indication verte */
+        /* lecture impossible : ni vert, ni rouge */
       }
     })();
     return () => { alive = false; };
@@ -90,9 +95,19 @@ export function DossierBienvenueButton({ apprenant }: Props) {
       size="sm"
       disabled={loading || !user || busy}
       className={`mt-1 h-auto min-h-6 w-full gap-1 whitespace-normal px-1 py-1 text-[10px] leading-tight ${
-        present ? "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-50" : ""
+        etat === "rempli"
+          ? "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-50"
+          : etat === "absent"
+            ? "border-red-500 text-red-700 bg-red-50 hover:bg-red-50"
+            : ""
       }`}
-      title={present ? "Dossier de bienvenue rempli — cliquer pour le télécharger" : "Aucun dossier de bienvenue enregistré dans le CRM"}
+      title={
+        etat === "rempli"
+          ? "Dossier de bienvenue rempli — cliquer pour le télécharger"
+          : etat === "absent"
+            ? "Dossier de bienvenue non rempli"
+            : "Aucun dossier de bienvenue enregistré dans le CRM"
+      }
       onClick={download}
     >
       {busy ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" /> : <FileText className="h-3 w-3 shrink-0" />}
