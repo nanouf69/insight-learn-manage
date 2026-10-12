@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluerEpreuve, matiereDe } from "@/lib/preuvesExamensBlancs";
+import { evaluerEpreuve, matiereDe, moduleEBPourFiliere } from "@/lib/preuvesExamensBlancs";
 
 const M = ["anglais", "francais", "gestion", "reglementation_vtc", "reglementation_vtc2", "securite", "t3p"];
 const rep = (ex: string, status: string, n: number, extra = "") =>
@@ -25,9 +25,10 @@ describe("preuves examens blancs (données fictives)", () => {
   it("tout rempli mais non envoyé = en cours (cas EB5)", () => {
     expect(evaluerEpreuve("EB5", 7, rep("EB5", "in_progress", 5), [], []).etat).toBe("en_cours");
   });
-  it("partiellement envoyé = non prouvé (cas EB6)", () => {
+  it("partiellement envoyé = « Partiellement soumise », non prouvé (cas EB6)", () => {
     const r = rep("EB6", "in_progress", 5); r[2].status = "submitted"; r[5].status = "submitted";
-    expect(evaluerEpreuve("EB6", 7, r, [], []).prouvee).toBe(false);
+    const e = evaluerEpreuve("EB6", 7, r, [], []);
+    expect(e.prouvee).toBe(false); expect(e.etat).toBe("partiellement_soumise");
   });
   it("passage V2 terminé = preuve ; test exclu", () => {
     expect(evaluerEpreuve("EB2", 7, [], [], [{ exam_id: "EB2", etat: "terminee" }]).prouvee).toBe(true);
@@ -40,5 +41,10 @@ describe("preuves examens blancs (données fictives)", () => {
   it("aucune donnée = non commencée ; ne confond pas EB1 et EB10", () => {
     expect(evaluerEpreuve("EB1", 7, rep("EB10", "submitted", 5), [], []).etat).toBe("non_commencee");
     expect(matiereDe("EB1__anglais__t2", "EB1")).toBe("anglais");
+  });
+  it("filière → module EB", () => {
+    expect(moduleEBPourFiliere("vtc-e", null)).toBe(35); expect(moduleEBPourFiliere("TAXI-E", null)).toBe(36);
+    expect(moduleEBPourFiliere("ta-e", null)).toBe(37); expect(moduleEBPourFiliere("va-e", null)).toBe(38);
+    expect(moduleEBPourFiliere(null, "vtc-elearning-1099")).toBe(35); expect(moduleEBPourFiliere("vtc", "vtc")).toBe(null);
   });
 });
