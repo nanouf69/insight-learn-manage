@@ -193,6 +193,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [pratiqueDetails, setPratiqueDetails] = useState<PratiqueSlotDetail[]>([]);
+  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[] }>({ minutes: 0, lignes: [] });
   const [loading, setLoading] = useState(false);
   // Préférence d'affichage uniquement : Tout l'historique reste toujours disponible.
   const [period, setPeriod] = useState<HistoryPeriod>(() => getHistoryDefaults(lockedApprenantId).period);
@@ -292,6 +293,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setConnexions([]);
       setActivites([]);
       setPratiqueDetails([]);
+      setHeuresValidees({ minutes: 0, lignes: [] });
       return;
     }
 
