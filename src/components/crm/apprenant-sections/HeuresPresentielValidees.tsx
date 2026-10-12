@@ -69,6 +69,8 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
     setMotif("");
     queryClient.invalidateQueries({ queryKey: ["presentiel-heures-validees", apprenantId] });
     queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
+    queryClient.invalidateQueries({ queryKey: ["jalons-volumes"] });
+    queryClient.invalidateQueries({ queryKey: ["jalons-heures-enregistrees", apprenantId] });
   };
 
   return (

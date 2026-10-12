@@ -24,6 +24,6 @@ export function tableauAffichageJalons(calcul: Calcul) {
 export function heuresEnregistreesJalons(calcul: Calcul, preuves?: PreuvesJalons | null) {
   const enLigneLisible = !!preuves && ["connexions", "activites", "reponses", "quiz"].every((cle) => preuves.sources.some((s) => s.cle === cle && s.lu));
   const enLigne = enLigneLisible ? preuves?.minutesConnexionRetenues ?? null : null;
-  const pratique = calcul.pratique.minutes; // Non plafonnée : heures réellement signées, pas durée CPF.
+  const pratique = calcul.pratique.minutes; // Non plafonnée : présence signée + heures validées par l’admin, pas durée CPF.
   return { enLigne, pratique, total: enLigne == null ? null : enLigne + pratique };
 }

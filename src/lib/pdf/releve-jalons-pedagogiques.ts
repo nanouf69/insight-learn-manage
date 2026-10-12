@@ -84,7 +84,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     const volume = data.calcul.volumes[volumeId];
     const completion: any = completionById.get(line.moduleId);
     const completedAt = isPractice ? data.calcul.pratique.dernierePreuve : completion?.completed_at;
-    const source = isPractice ? "Planning pratique + émargements signés" : "Volumes actuels + progression serveur";
+    const source = isPractice ? data.calcul.pratique.source : "Volumes actuels + progression serveur";
     return [
       isPractice ? LABEL_PRESENTIEL : sansEmoji(MODULE_NAME_BY_ID[line.moduleId] || `Module ${line.moduleId}`),
       isPractice ? "—" : String(volume?.pages ?? 0),
@@ -100,7 +100,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   });
   const affichage = tableauAffichageJalons(data.calcul);
   const heures = heuresEnregistreesJalons(data.calcul, data.preuvesJalons);
-  const heuresTexte = `Heures réellement enregistrées — en ligne : ${heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} ; pratique signée : ${formatDureeJalon(heures.pratique)} ; total : ${heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune heure réelle par module déduite des connexions.`;
+  const heuresTexte = `Heures réellement enregistrées — en ligne : ${heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} ; présence (signée ou validée par l’administration) : ${formatDureeJalon(heures.pratique)} ; total : ${heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune heure réelle par module déduite des connexions.`;
   doc.setFont("helvetica", "bold"); doc.setFontSize(9);
   doc.text("POURCENTAGES ET HEURES PRÉVISIONNELLES PAR JALON", margin, y + 4);
   autoTable(doc, {
@@ -151,7 +151,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
 
   const brut = data.calcul.resultat.lignes.reduce((sum: number, line: any) => sum + line.contribution, 0);
   addTextSection("MÉTHODE ET TAUX", [
-    `Répartition prévisionnelle des durées CPF : durée totale ${totalPoints} min (${totalPoints / 60} h). Examens blancs (6 épreuves) et entraînement pratique ou formation présentielle (360 min) ont des durées fixes ; le budget restant est réparti entre les autres modules selon le tableau approuvé, ajusté au volume actuel (2 × pages d’audit + questions actives) et arrondi à la minute. Poids = durée prévisionnelle / durée totale × 100. Contribution = poids × progression / 100. Ces durées sont prévisionnelles : elles ne sont ni des heures réalisées, ni des temps validés par la CDC, ni une note ou un score. Les heures réalisées en présentiel ne proviennent que du Planning pratique et des émargements signés.`,
+    `Répartition prévisionnelle des durées CPF : durée totale ${totalPoints} min (${totalPoints / 60} h). Examens blancs (6 épreuves) et entraînement pratique ou formation présentielle (360 min) ont des durées fixes ; le budget restant est réparti entre les autres modules selon le tableau approuvé, ajusté au volume actuel (2 × pages d’audit + questions actives) et arrondi à la minute. Poids = durée prévisionnelle / durée totale × 100. Contribution = poids × progression / 100. Ces durées sont prévisionnelles : elles ne sont ni des heures réalisées, ni des temps validés par la CDC, ni une note ou un score. Les heures réalisées en présentiel proviennent uniquement des émargements signés (pratique et théorie) et des heures validées par l’administration (saisie datée, conservée).`,
     `Taux pédagogique brut calculé : ${fmtPct(brut)}. Indicateur interne affiché : ${fmtPct(data.calcul.resultat.taux)}${data.calcul.resultat.taux < brut ? " (plafond interne appliqué car un jalon obligatoire reste non validé)" : ""}. Aucun taux EDOF n’est déclaré automatiquement ; tout taux destiné à un tiers doit être vérifié humainement. Réussite à un quiz et réalisation pédagogique restent distinctes.`,
   ]);
 
@@ -170,7 +170,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     table("SOURCES CONSULTÉES (lecture seule)", ["Source", "État de lecture", "Lignes lues"],
       pj.sources.map((s) => [s.libelle, s.lu ? "lue intégralement (pagination complète)" : `LECTURE NON POSSIBLE (${s.erreur}) — absence de trace non démontrée`, s.lu ? String(s.lignes) : "—"]));
     addTextSection("RAPPEL CHIFFRÉ — TABLEAU DES JALONS EN DÉBUT DE RELEVÉ", [`Poids total : 100 %. Taux global pondéré actuel : ${fmtPct(affichage.taux)}. Durée CPF : ${formatDureeJalon(affichage.totalMinutes)}. Durée prévisionnelle couverte : ${formatDureeJalon(affichage.minutesCouvertes)}. Examens blancs : ${formatDureeJalon(BUDGET_CPF[data.calcul.filiere as keyof typeof BUDGET_CPF].examensBlancs)} ; présentiel : 6h00.`, heuresTexte]);
-    table("SYNTHÈSE DES PREUVES PAR JALON", ["Jalon", "Statut enregistré", "Ouvertures", "Exercices avec réponses enregistrées", "Matières d’examen blanc envoyées", "Passages V2 terminés", "Notes (par matière)", "Émargements signés", "Première trace", "Dernière trace", "Traces", "Lecture"],
+    table("SYNTHÈSE DES PREUVES PAR JALON", ["Jalon", "Statut enregistré", "Ouvertures", "Exercices avec réponses enregistrées", "Matières d’examen blanc envoyées", "Passages V2 terminés", "Notes (par matière)", "Présences signées ou validées", "Première trace", "Dernière trace", "Traces", "Lecture"],
       pj.synthese.map((l) => [nomJalon(l.moduleId), l.statutEnregistre, String(l.ouvertures), String(l.exercicesAvecReponses), String(l.matieresEnvoyees), String(l.passagesV2Termines), String(l.notes), String(l.emargements), dt(l.premiere), dt(l.derniere), l.traces, l.commentaire]),
       { 0: { cellWidth: 36 }, 11: { cellWidth: 62 } });
     table(`ANNEXE A — CHRONOLOGIE DES TRACES RATTACHÉES (${pj.chronologie.length})`, ["Date (Paris)", "Jalon", "Source", "Trace", "Détail / identifiants", "Référence", "Période"],
@@ -181,7 +181,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     table(`ANNEXE C — CONNEXIONS (${pj.connexions.length}) — durée retenue : ${Math.floor(pj.minutesConnexionRetenues / 60)} h ${String(pj.minutesConnexionRetenues % 60).padStart(2, "0")}`, ["Début (Paris)", "Minutes retenues", "Comptée", "Motif"],
       pj.connexions.map((c) => [dt(c.date), String(c.minutesRetenues), c.comptee ? "oui" : "non", c.motif]));
     addTextSection("PORTÉE DES PREUVES", [
-      "Calcul des connexions identique au relevé de connexions : fin d’accès, plafond 7 h, fin à la dernière activité + 30 min, connexions limitées à l’accueil non comptées. Une connexion seule ne prouve pas un exercice effectué ; une ouverture de cours ne prouve pas une lecture intégrale ; une réponse ne prouve pas la réalisation complète d’un module. Le statut enregistré est présenté séparément des traces et n’est jamais modifié. Les questions ajoutées depuis une validation ne sont pas appliquées rétroactivement. Les contenus des réponses ne sont pas reproduits (identifiants uniquement). La présence pratique ne provient que du Planning pratique et des émargements signés : une inscription au planning n’est pas une présence.",
+      "Calcul des connexions identique au relevé de connexions : fin d’accès, plafond 7 h, fin à la dernière activité + 30 min, connexions limitées à l’accueil non comptées. Une connexion seule ne prouve pas un exercice effectué ; une ouverture de cours ne prouve pas une lecture intégrale ; une réponse ne prouve pas la réalisation complète d’un module. Le statut enregistré est présenté séparément des traces et n’est jamais modifié. Les questions ajoutées depuis une validation ne sont pas appliquées rétroactivement. Les contenus des réponses ne sont pas reproduits (identifiants uniquement). La présence ne provient que des émargements signés et des heures validées par l’administration : une inscription au planning n’est pas une présence.",
     ]);
   } else {
     const preuves = data.preuves.length ? data.preuves.map((p) => {
@@ -193,7 +193,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   addTextSection("ÉLÉMENTS À COMPLÉTER OU À CONTRÔLER", [data.elementsACompleter.length ? data.elementsACompleter.map((x) => `• ${x}`).join("\n") : "• Aucun élément supplémentaire signalé par les lectures disponibles."]);
   addTextSection("LIMITES ET PORTÉE", [
     `Les nombres de pages/slides/fiches proviennent de l’audit des supports et ne sont pas recomptés automatiquement. ${data.calcul.limites.length ? data.calcul.limites.join(" ") : "Aucune divergence de support n’a été signalée."} Les questions actives sont comptées au moment de l’édition. Un ancien statut « Terminé » n’est pas versionné par rapport aux questions ajoutées ultérieurement ; aucun historique rétroactif n’est reconstitué.`,
-    "La pondération est un choix pédagogique interne de l’organisme, pas une grille officiellement validée par la CDC. Une activité semblable dans plusieurs modules n’est comptée comme distincte que lorsqu’elle correspond à un travail réellement distinct. La pratique contractuelle reste présentielle et n’est justifiée que par le planning et les émargements signés.",
+    "La pondération est un choix pédagogique interne de l’organisme, pas une grille officiellement validée par la CDC. Une activité semblable dans plusieurs modules n’est comptée comme distincte que lorsqu’elle correspond à un travail réellement distinct. La pratique contractuelle reste présentielle et n’est justifiée que par les émargements signés ou les heures validées par l’administration.",
   ]);
   addTextSection("RÉFÉRENCES DOCUMENTAIRES", [
     `CPOF Mon Compte Formation V15, mai 2026 : 5.1.1 p.20 (jalons réalisés et probants), 5.1.2 p.20-21 (programme, jalons, logs/travaux/accompagnement). ${CPOF_URL}`,
