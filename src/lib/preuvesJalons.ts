@@ -113,8 +113,7 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
   for (const row of e.emargements ?? []) {
     const date = String(row.date_emargement || "").slice(0, 10);
     if (!datesPratique.has(date) || !isSignedPresentielRow(row)) continue;
-    push({ ref: `emargement:${row.id ?? `${date}:${row.demi_journee}`}`, date: row.signed_at || `${date}T12:00:00`, source: "Émargements signés (Planning pratique)", type: "Présence physique signée", detail: `${date} · ${row.demi_journee ?? "créneau ?"}` }, null);
-    traces[traces.length - 1] && traces[traces.length - 1].ref.startsWith("emargement:") && Object.assign(traces[traces.length - 1], { moduleId: PRATIQUE_PHYSIQUE, motifNonRattache: undefined });
+    push({ ref: `emargement:${row.id ?? `${date}:${row.demi_journee}`}`, date: row.signed_at || `${date}T12:00:00`, source: "Émargements signés (Planning pratique)", type: "Présence physique signée", detail: `${date} · ${row.demi_journee ?? "créneau ?"}` }, PRATIQUE_PHYSIQUE);
   }
   traces.sort((a, b) => ms(a.date) - ms(b.date) || a.ref.localeCompare(b.ref));
 
