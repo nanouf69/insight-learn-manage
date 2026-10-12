@@ -105,3 +105,40 @@ describe("jalons pondérés par volume", () => {
     expect(readFileSync("src/pages/CoursPublic.tsx", "utf8")).not.toMatch(/JalonsPonderes/);
   });
 });
+
+import { arrondirPoidsAffichage } from "@/lib/jalonsPonderes";
+import { compterQuestionsExamensBlancs } from "@/lib/volumeModules";
+describe("revue jalons", () => {
+  it("questions_masquees_bilan (structure réelle) exclues, par uid ou exercice+id", () => {
+    const md = { exercices: [{ id: 7, titre: "B", actif: true, questions: [q(116, { uid: "u-116" }), q(117), q(118)] }],
+      questions_masquees_bilan: [{ motif: "QRC", exercice_id: 7, masquee_le: "2026-09-24", question: { id: 116, uid: "u-116" } }, { motif: "QRC", exercice_id: 7, question: { id: 117 } }] };
+    expect(compterQuestionsActives(contenuEffectif(null, { module_id: 5, module_data: md })).total).toBe(1);
+  });
+  it("deleted_cours et deletedQuestionIds des quiz intégrés exclus ; quiz source jamais réinjecté", () => {
+    const init = { cours: [{ id: 1, actif: true, quiz: [q(1), q(2)], slidesKey: "k" }], exercices: [] };
+    const row = { module_id: 2, deleted_cours: [{ id: 2 }], module_data: { cours: [{ id: 1, actif: true }, { id: 2, actif: true, quiz: [q(5)] }, { id: 3, actif: true, quiz: [q(1), q(2)], deletedQuestionIds: [2] }] } };
+    expect(compterQuestionsActives(contenuEffectif(init, row))).toEqual({ exercices: 0, inline: 1, total: 1 });
+  });
+  it("examens blancs : bilan-*, inactifs, retirés, doublons de numéro exclus", () => {
+    const m = (n: number) => [{ questions: Array.from({ length: n }, (_, i) => q(i)) }];
+    const ex = [
+      { id: "vtc-1", type: "VTC", numero: 1, matieres: m(3) }, { id: "vtc-1b", type: "VTC", numero: 1, matieres: m(50) },
+      { id: "bilan-vtc", type: "VTC", numero: 2, matieres: m(50) }, { id: "vtc-3", type: "VTC", numero: 3, matieres: m(50), actif: false },
+      { id: "vtc-4", type: "VTC", numero: 4, matieres: m(50), retired: true }, { id: "vtc-5", type: "VTC", numero: 5, matieres: [{ questions: [q(1), q(2, { actif: false })] }] },
+    ];
+    expect(compterQuestionsExamensBlancs(ex, "VTC")).toEqual({ examens: 2, questions: 4, doublons: 1 });
+  });
+  it("poids affichés arrondis à 0,1 : somme exactement 100", () => {
+    for (const p of [[33.333, 33.333, 33.334], [46.67, 2.14, 17.33, 19.8, 5.0, 1.1, 0.8, 7.0, 0.16], [1, 1, 1, 1, 1, 1, 1]]) {
+      const a = arrondirPoidsAffichage(p);
+      expect(Math.round(a.reduce((x, y) => x + y, 0) * 10)).toBe(1000);
+    }
+  });
+  it("invalidation explicite après enregistrement de l'éditeur", () => {
+    for (const f of ["src/components/cours-en-ligne/ExamensBlancsEditor.tsx", "src/components/cours-en-ligne/ModuleDetailView.tsx", "src/components/cours-en-ligne/shared-exercise-overrides.ts"])
+      expect(readFileSync(f, "utf8")).toMatch(/signalerContenuModifie\(/);
+    const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
+    expect(card).toMatch(/ecouterContenuModifie/);
+    expect(card).toMatch(/!volumes \|\| volFetching/);
+  });
+});
