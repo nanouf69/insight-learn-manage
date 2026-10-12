@@ -93,8 +93,4 @@ export async function chargerCalculJalons(params: {
 }
 
 export const estJalonPratique = (moduleId: number) => moduleId === PRATIQUE_PHYSIQUE;
-/** Durée prévisionnelle d'une ligne de résultat (intro attribuée ou non = clé INTRO). */
-export function dureeLigne(durees: Record<number, number>, moduleId: number, poids: number) {
-  if (poids <= 0) return 0;
-  return durees[INTRO_IDS.has(moduleId) || moduleId === 0 ? -1 : moduleId] ?? 0;
-}
+export { dureeLigne } from "@/lib/jalonsPonderes";

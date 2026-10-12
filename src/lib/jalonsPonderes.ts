@@ -181,3 +181,9 @@ export function arrondirPoidsAffichage(poids: number[]): number[] {
   for (const [, i] of ordre) { if (reste <= 0) break; base[i]++; reste--; }
   return base.map((b) => b / 10);
 }
+
+/** Durée prévisionnelle d'une ligne de résultat (intro attribuée ou non = clé INTRO). */
+export function dureeLigne(durees: Record<number, number>, moduleId: number, poids: number) {
+  if (poids <= 0) return 0;
+  return durees[INTRO_IDS.has(moduleId) || moduleId === 0 ? INTRO : moduleId] ?? 0;
+}

@@ -2,8 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImage from "@/assets/logo-ftransport.png";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { BUDGET_CPF, INTRO, INTRO_IDS, LABEL_PRESENTIEL, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage } from "@/lib/jalonsPonderes";
-import { dureeLigne } from "@/lib/jalonsPedagogiques";
+import { BUDGET_CPF, INTRO, INTRO_IDS, LABEL_PRESENTIEL, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, dureeLigne } from "@/lib/jalonsPonderes";
 
 export interface PreuveJalonPdf {
   label: string;
