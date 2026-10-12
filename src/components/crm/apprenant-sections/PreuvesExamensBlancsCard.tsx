@@ -42,7 +42,7 @@ export function PreuvesExamensBlancsCard({ apprenantId, typeApprenant, formation
         fetchAllRows<any>((a, b) => db.from("reponses_apprenants").select("id, exercice_id, status, reponses, submitted_at").eq("apprenant_id", apprenantId)
           .or(exams.map((e) => `exercice_id.like.${e}__*`).join(",")).order("id").range(a, b)),
         fetchAllRows<any>((a, b) => db.from("apprenant_quiz_results").select("id, quiz_id, matiere_id").eq("apprenant_id", apprenantId).eq("quiz_type", "examen_blanc").in("quiz_id", exams).order("id").range(a, b)),
-        fetchAllRows<any>((a, b) => db.from("exam_attempts_v2").select("id, exam_id, etat, is_test").eq("apprenant_id", apprenantId).in("exam_id", exams).order("id").range(a, b)),
+        fetchAllRows<any>((a, b) => db.from("exam_attempts_v2").select("attempt_id, exam_id, etat, is_test").eq("apprenant_id", apprenantId).in("exam_id", exams).order("attempt_id").range(a, b)),
         db.from("apprenant_module_completion").select("status, completed_at").eq("apprenant_id", apprenantId).eq("module_id", moduleId).maybeSingle(),
       ]);
       if (comp.error) throw comp.error;
