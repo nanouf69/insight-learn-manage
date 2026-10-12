@@ -22,6 +22,7 @@ import { DocumentsFormation } from "./apprenant-sections/DocumentsFormation";
 import { DocumentsDossier } from "./apprenant-sections/DocumentsDossier";
 import { DocumentsInscription } from "./apprenant-sections/DocumentsInscription";
 import { ExamensSection } from "./apprenant-sections/ExamensSection";
+import { PreuvesExamensBlancsCard } from "./apprenant-sections/PreuvesExamensBlancsCard";
 import { EmailsSection } from "./apprenant-sections/EmailsSection";
 import { DevisSection } from "./apprenant-sections/DevisSection";
 import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
@@ -1256,7 +1257,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
           {activeTab === "dossier" && <DocumentsDossier apprenant={apprenant} />}
           {activeTab === "docs-inscription" && <DocumentsInscription apprenant={apprenant} />}
-          {activeTab === "examens" && <ExamensSection apprenant={apprenant} />}
+          {activeTab === "examens" && (<div className="space-y-4"><ExamensSection apprenant={apprenant} /><PreuvesExamensBlancsCard apprenantId={apprenant.id} /></div>)}
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
