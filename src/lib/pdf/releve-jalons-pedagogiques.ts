@@ -4,6 +4,7 @@ import logoImage from "@/assets/logo-ftransport.png";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 import { BUDGET_CPF, INTRO, INTRO_IDS, LABEL_PRESENTIEL, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, dureeLigne } from "@/lib/jalonsPonderes";
 import { objectifsJalons, TITRE_OBJECTIFS_JALONS } from "@/lib/objectifsJalons";
+import type { PreuvesJalons } from "@/lib/preuvesJalons";
 
 export interface PreuveJalonPdf {
   label: string;
@@ -19,6 +20,7 @@ export interface ReleveJalonsData {
   calcul: any;
   preuves: PreuveJalonPdf[];
   elementsACompleter: string[];
+  preuvesJalons?: PreuvesJalons | null;
   generatedAt?: Date;
 }
 
@@ -65,6 +67,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     `Dossier : ${data.apprenant?.id || "Non renseigné"}`,
     `Session : ${data.session?.nom || "Non renseigné"}`,
     `Période : ${safeDate(data.apprenant?.date_debut_cours_en_ligne || data.session?.date_debut || data.apprenant?.date_debut_formation)} au ${safeDate(data.apprenant?.date_fin_cours_en_ligne || data.session?.date_fin || data.apprenant?.date_fin_formation)}`,
+    `Version de méthode : ${data.preuvesJalons?.version ?? "durées CPF 12/10/2026"}.`,
     `Édité à Paris le ${formatParis(now)}. Capture figée des données disponibles à cet instant ; aucune donnée ni historique n’est modifié.`,
   ];
   let y = 47;
@@ -132,14 +135,39 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     `Taux pédagogique brut calculé : ${fmtPct(brut)}. Indicateur interne affiché : ${fmtPct(data.calcul.resultat.taux)}${data.calcul.resultat.taux < brut ? " (plafond interne appliqué car un jalon obligatoire reste non validé)" : ""}. Aucun taux EDOF n’est déclaré automatiquement ; tout taux destiné à un tiers doit être vérifié humainement. Réussite à un quiz et réalisation pédagogique restent distinctes.`,
   ]);
 
-  const preuves = data.preuves.length ? data.preuves.map((p) => {
-    const dates = p.dates?.length ? ` — dates : ${p.dates.slice(0, 8).map(safeDate).join(", ")}${p.dates.length > 8 ? "…" : ""}` : "";
-    return `• ${p.label} : ${p.count ?? "non renseigné"}${p.detail ? ` — ${p.detail}` : ""}${dates}`;
-  }) : ["• Aucune preuve nominative exploitable n’a été remontée lors de cette édition."];
-  addTextSection("PREUVES NOMINATIVES DISPONIBLES", [
-    ...preuves,
-    "Une connexion ou un clic sur un support constitue une trace d’accès partielle, pas la preuve que le cours a été lu intégralement. Les répétitions techniques et nouvelles tentatives ne créent pas un nouveau jalon. Le module en ligne Pratique ne prouve jamais la réalisation de la pratique présentielle.",
-  ]);
+  const pj = data.preuvesJalons;
+  if (pj) {
+    const nomJalon = (id: number | null) => id === PRATIQUE_PHYSIQUE ? LABEL_PRESENTIEL : id == null ? "—" : sansEmoji(MODULE_NAME_BY_ID[id] || `Module ${id}`);
+    const dt = (iso?: string | null) => iso ? formatParis(new Date(iso)) : "—";
+    const table = (titre: string, head: string[], body: string[][], widths?: Record<number, any>) => {
+      doc.addPage();
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(13, 37, 64); doc.text(titre, margin, 15);
+      autoTable(doc, { startY: 20, head: [head], body: body.length ? body : [[ "Aucune ligne", ...head.slice(1).map(() => "") ]], theme: "grid",
+        styles: { fontSize: 6.5, cellPadding: 1.2, overflow: "linebreak", valign: "top" }, headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" },
+        columnStyles: widths, showHead: "everyPage", margin: { left: margin, right: margin, top: 20, bottom: 14 } });
+    };
+    table("SOURCES CONSULTÉES (lecture seule)", ["Source", "État de lecture", "Lignes lues"],
+      pj.sources.map((s) => [s.libelle, s.lu ? "lue intégralement (pagination complète)" : `LECTURE NON POSSIBLE (${s.erreur}) — absence de trace non démontrée`, s.lu ? String(s.lignes) : "—"]));
+    table("SYNTHÈSE DES PREUVES PAR JALON", ["Jalon", "Statut enregistré", "Ouvertures", "Réponses non vides", "Épreuves envoyées / passages", "Notes", "Émargements signés", "Première trace", "Dernière trace", "Traces", "Lecture"],
+      pj.synthese.map((l) => [nomJalon(l.moduleId), l.statutEnregistre, String(l.ouvertures), String(l.reponsesNonVides), String(l.soumissionsExamen), String(l.notes), String(l.emargements), dt(l.premiere), dt(l.derniere), l.traces, l.commentaire]),
+      { 0: { cellWidth: 38 }, 10: { cellWidth: 70 } });
+    table(`ANNEXE A — CHRONOLOGIE DES TRACES RATTACHÉES (${pj.chronologie.length})`, ["Date (Paris)", "Jalon", "Source", "Trace", "Détail / identifiants", "Référence", "Période"],
+      pj.chronologie.map((t) => [dt(t.date), nomJalon(t.moduleId), t.source, t.type, t.detail, t.ref, t.horsPeriode ? "hors période d’accès" : "dans la période"]),
+      { 0: { cellWidth: 24 }, 1: { cellWidth: 38 }, 4: { cellWidth: 80 } });
+    table(`ANNEXE B — TRACES NON RATTACHABLES À UN JALON (${pj.nonRattachees.length})`, ["Date (Paris)", "Source", "Trace", "Détail / identifiants", "Motif", "Référence"],
+      pj.nonRattachees.map((t) => [dt(t.date), t.source, t.type, t.detail, t.motifNonRattache ?? "", t.ref]), { 3: { cellWidth: 80 } });
+    table(`ANNEXE C — CONNEXIONS (${pj.connexions.length}) — durée retenue : ${Math.floor(pj.minutesConnexionRetenues / 60)} h ${String(pj.minutesConnexionRetenues % 60).padStart(2, "0")}`, ["Début (Paris)", "Minutes retenues", "Comptée", "Motif"],
+      pj.connexions.map((c) => [dt(c.date), String(c.minutesRetenues), c.comptee ? "oui" : "non", c.motif]));
+    addTextSection("PORTÉE DES PREUVES", [
+      "Calcul des connexions identique au relevé de connexions : fin d’accès, plafond 7 h, fin à la dernière activité + 30 min, connexions limitées à l’accueil non comptées. Une connexion seule ne prouve pas un exercice effectué ; une ouverture de cours ne prouve pas une lecture intégrale ; une réponse ne prouve pas la réalisation complète d’un module. Le statut enregistré est présenté séparément des traces et n’est jamais modifié. Les questions ajoutées depuis une validation ne sont pas appliquées rétroactivement. Les contenus des réponses ne sont pas reproduits (identifiants uniquement). La présence pratique ne provient que du Planning pratique et des émargements signés : une inscription au planning n’est pas une présence.",
+    ]);
+  } else {
+    const preuves = data.preuves.length ? data.preuves.map((p) => {
+      const dates = p.dates?.length ? ` — dates : ${p.dates.map(safeDate).join(", ")}` : "";
+      return `• ${p.label} : ${p.count ?? "non renseigné"}${p.detail ? ` — ${p.detail}` : ""}${dates}`;
+    }) : ["• Aucune preuve nominative exploitable n’a été remontée lors de cette édition."];
+    addTextSection("PREUVES NOMINATIVES DISPONIBLES", preuves);
+  }
   addTextSection("ÉLÉMENTS À COMPLÉTER OU À CONTRÔLER", [data.elementsACompleter.length ? data.elementsACompleter.map((x) => `• ${x}`).join("\n") : "• Aucun élément supplémentaire signalé par les lectures disponibles."]);
   addTextSection("LIMITES ET PORTÉE", [
     `Les nombres de pages/slides/fiches proviennent de l’audit des supports et ne sont pas recomptés automatiquement. ${data.calcul.limites.length ? data.calcul.limites.join(" ") : "Aucune divergence de support n’a été signalée."} Les questions actives sont comptées au moment de l’édition. Un ancien statut « Terminé » n’est pas versionné par rapport aux questions ajoutées ultérieurement ; aucun historique rétroactif n’est reconstitué.`,
@@ -148,7 +176,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   addTextSection("RÉFÉRENCES DOCUMENTAIRES", [
     `CPOF Mon Compte Formation V15, mai 2026 : 5.1.1 p.20 (jalons réalisés et probants), 5.1.2 p.20-21 (programme, jalons, logs/travaux/accompagnement). ${CPOF_URL}`,
     `Conditions générales Mon Compte Formation V15 : CG 7.1 (informations programme/parcours), CG 7.3 p.19-20 (durée moyenne, assistance, évaluations). ${CG_URL}`,
-    "Ce relevé présente factuellement les données disponibles. Il ne constitue ni une attestation officielle, ni une garantie de conformité, ni un avis juridique.",
+    "Ce relevé présente factuellement les données disponibles. Il ne constitue ni une attestation officielle, ni une garantie de conformité CDC, ni une déclaration EDOF, ni un avis juridique.",
   ]);
 
   const pages = doc.getNumberOfPages();
