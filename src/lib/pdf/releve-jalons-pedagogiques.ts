@@ -25,6 +25,7 @@ const COMPANY = { name: "Ftransport", address: "86 Route de Genas 69003 Lyon", s
 const CPOF_URL = "https://www.moncompteformation.gouv.fr/espace-public/sites/mcf/files/2026-05/CPOF_MCF_V15_VF.pdf";
 const CG_URL = "https://www.moncompteformation.gouv.fr/espace-public/sites/mcf/files/2026-05/CG_MCF_V15_VF.pdf";
 
+const sansEmoji = (t: string) => t.replace(/[^\u0000-\u024F\u2013\u2014\u2019]/g, "").replace(/^[\s.]+/, "").trim();
 const safeDate = (value?: string | null) => value ? String(value).slice(0, 10).split("-").reverse().join("/") : "Non renseigné";
 const fmtPct = (value: number) => `${value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
 const formatParis = (value: Date) => new Intl.DateTimeFormat("fr-FR", {
@@ -42,10 +43,9 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     for (const paragraph of paragraphs) {
       const wrapped = doc.splitTextToSize(paragraph, pw - margin * 2);
       if (y + wrapped.length * 4.2 + 10 > ph - 15) { doc.addPage(); y = 25; }
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(13, 37, 64); doc.text(title, margin, y);
-      y += 5;
+      if (title) { doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(13, 37, 64); doc.text(title, margin, y); y += 5; }
       doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(45, 45, 45); doc.text(wrapped, margin, y);
-      y += wrapped.length * 4.2 + 4;
+      y += wrapped.length * 4.2 + (title ? 4 : 1.5);
       title = "";
     }
     (doc as any).lastAutoTable = { finalY: y - 4 };
@@ -81,7 +81,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     const completedAt = isPractice ? data.calcul.pratique.dernierePreuve : completion?.completed_at;
     const source = isPractice ? "Planning pratique + émargements signés" : "Volumes actuels + progression serveur";
     return [
-      isPractice ? LABEL_PRESENTIEL : (MODULE_NAME_BY_ID[line.moduleId] || `Module ${line.moduleId}`),
+      isPractice ? LABEL_PRESENTIEL : sansEmoji(MODULE_NAME_BY_ID[line.moduleId] || `Module ${line.moduleId}`),
       isPractice ? "—" : String(volume?.pages ?? 0),
       isPractice ? "—" : String(volume?.questions ?? 0),
       String(dureeLigne(data.calcul.durees, line.moduleId, line.poids)),
