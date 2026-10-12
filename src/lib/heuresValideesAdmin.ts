@@ -13,5 +13,13 @@ export async function fetchHeuresValideesAdmin(apprenantId: string) {
     .map((r) => String(r?.created_at || "").slice(0, 10))
     .filter(Boolean)
     .map((date) => ({ date, label: "presence validee par l'administration" }));
-  return { minutes, journees };
+  // Détail par ajout (date + heures), pour les écrans qui listent les journées.
+  const lignes = rows
+    .map((r) => ({
+      date: String(r?.created_at || "").slice(0, 10),
+      heures: Number(r?.heures) || 0,
+      label: "Présence validée par l'administration",
+    }))
+    .filter((l) => l.date && l.heures > 0);
+  return { minutes, journees, lignes };
 }
