@@ -15,7 +15,7 @@
 - Jours de formation pratique : toujours ceil(candidats / 3) partout ; why: max_per_day enregistré donnait un faux nombre.
 - Page élève de réservation pratique : tout jour auquel l'admin a fixé un type VTC/TAXI dans le planning (même samedi/dimanche) est proposé tel quel ; why: l'élève doit voir exactement le planning admin.
 - Practical notes: admin-only append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: preserve history and reject stale/cross-session writes.
-- Exam selectors share sessions/handler; all-dates uses separate pagination, never changes planning; why: complete registrations without cross-session writes.
+- Exam selectors share sessions/handler; all-dates paginates separately, never changes planning; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Course/quiz order and admin labels share permanent-ID associations; historical adapters stay unchanged; why: prevent positional drift. Verify all paths against dated baselines and append the change journal.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
@@ -24,6 +24,6 @@
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
-- Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; why: anti-réécriture élève.
-- Échecs de validation : RPC `signaler_echec_validation_quiz` ; 3/15 min = 1 alerte/h ; why: session expirée OK.
+- Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
+- Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Admin milestones/PDF: read-only `chargerCalculJalons`, `objectifsJalons`, `chargerPreuvesJalons` (connection-report rules, permanent module IDs, unreadable ≠ 0); why: consistent, traceable, no learner writes.
