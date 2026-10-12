@@ -547,10 +547,15 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       if (slots.has("soir") || slots.has("soir_1") || slots.has("soir_2")) labels.push("Soir");
       rows.push({ date, label: labels.join(" + ") || "Présentiel", hours });
     }
+    // Heures validées par l'administration : une ligne par ajout, comptée
+    // en présentiel comme la carte « Taux présentiel » et les jalons.
+    for (const l of heuresValidees.lignes) {
+      rows.push({ date: l.date, label: l.label, hours: l.heures });
+    }
     // Une réservation/session pratique sans émargement signé ne produit
     // aucune ligne et ne compte aucune heure dans le rapport.
     return rows.sort((a, b) => b.date.localeCompare(a.date));
-  }, [emargements, pratiqueDetails]);
+  }, [emargements, pratiqueDetails, heuresValidees]);
 
   // Synthèse des taux : heures réellement effectuées, sans plafond contractuel.
   const taux = useMemo(() => {
