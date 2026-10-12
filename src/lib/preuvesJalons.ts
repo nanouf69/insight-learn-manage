@@ -119,6 +119,9 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
   }
   for (const h of e.heuresValidees ?? []) {
     push({ ref: `heuresValidees:${h.id}`, date: h.created_at, source: "Heures validées par l’administration", type: "Présence validée par l’administration", detail: `${Number(h.heures).toLocaleString("fr-FR")} h · ${h.motif ? String(h.motif).slice(0, 80) : "motif non renseigné"}` }, PRATIQUE_PHYSIQUE);
+    // Date de saisie admin ≠ date de présence : jamais exclue comme « hors période ».
+    const t = traces.find((x) => x.ref === `heuresValidees:${h.id}`);
+    if (t) t.horsPeriode = false;
   }
   traces.sort((a, b) => ms(a.date) - ms(b.date) || a.ref.localeCompare(b.ref));
 
