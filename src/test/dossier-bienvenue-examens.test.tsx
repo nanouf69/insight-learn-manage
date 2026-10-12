@@ -30,13 +30,36 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Dossier de bienvenue — liste examens, données fictives", () => {
-  it("lit uniquement au clic et utilise le dossier CRM intact", async () => {
+  it("génère le PDF uniquement au clic avec le dossier CRM intact", async () => {
     render(<DossierBienvenueButton apprenant={learner} />);
-    expect(mocks.from).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Dossier de bienvenue" }));
     await waitFor(() => expect(mocks.pdf).toHaveBeenCalledWith(learner, doc));
     expect(mocks.from).toHaveBeenCalledWith("apprenant_documents_completes");
     expect(mocks.from.mock.results[0].value.eq).toHaveBeenCalledWith("apprenant_id", learner.id);
+  });
+  it("affiche le bouton en vert quand le dossier est rempli (lecture seule)", async () => {
+    render(<DossierBienvenueButton apprenant={learner} />);
+    const button = await waitFor(() => {
+      const b = screen.getByRole("button", { name: "Dossier de bienvenue" });
+      expect(b.className).toContain("border-emerald-500");
+      return b;
+    });
+    expect(mocks.pdf).not.toHaveBeenCalled();
+    expect(button.className).toContain("bg-emerald-50");
+  });
+  it("reste neutre quand le dossier est absent, jamais vert", async () => {
+    mocks.read.mockResolvedValue({ data: [], error: null });
+    render(<DossierBienvenueButton apprenant={learner} />);
+    await waitFor(() => expect(mocks.from).toHaveBeenCalled());
+    await new Promise(r => setTimeout(r, 10));
+    expect(screen.getByRole("button", { name: "Dossier de bienvenue" }).className).not.toContain("emerald");
+  });
+  it("ne devient jamais vert si la lecture échoue (sans fallback silencieux ni fausse couleur)", async () => {
+    mocks.read.mockResolvedValue({ data: null, error: new Error("lecture refusée") });
+    render(<DossierBienvenueButton apprenant={learner} />);
+    await waitFor(() => expect(mocks.from).toHaveBeenCalled());
+    await new Promise(r => setTimeout(r, 10));
+    expect(screen.getByRole("button", { name: "Dossier de bienvenue" }).className).not.toContain("emerald");
   });
   it("ne fabrique aucun PDF si absent", async () => {
     mocks.read.mockResolvedValue({ data: [], error: null });
