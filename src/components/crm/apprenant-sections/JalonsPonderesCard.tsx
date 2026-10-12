@@ -43,7 +43,8 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   });
   useEffect(() => {
     if (!isAdmin || !key) return;
-    const ch = supabase.channel(`jalons-volumes-${apprenantId}`)
+    // Nom unique par instance : la carte peut être affichée deux fois (fiche + Contrôle).
+    const ch = supabase.channel(`jalons-volumes-${apprenantId}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, () => {
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
       })
