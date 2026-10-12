@@ -10,6 +10,7 @@ import {
 import { generateProgrammeFormationPdf } from "@/lib/pdf/programme-formation";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import { generateReleveConnexionsPdf } from "@/lib/pdf/releve-connexions";
+import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
 import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
@@ -295,7 +296,10 @@ export async function buildDossierApprenantIntoZip(
     // Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
     const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
     const theorieSec = Math.round(theorieHours * 3600);
-    const pratiqueSec = pratiqueMinutes * 60;
+    // Heures validées par l'administration : comptées en présentiel pratique (comme le taux présentiel et les jalons)
+          const validees = await fetchHeuresValideesAdmin(apprenant.id).catch(() => ({ minutes: 0, journees: [] as { date: string; label: string }[] }));
+          const pratiqueSec = (pratiqueMinutes + validees.minutes) * 60;
+          journeesPresentiel.push(...validees.journees);
     const presentielTotalSec = theorieSec + pratiqueSec;
     const grandTotalSec = onlineSec + presentielTotalSec;
     const notes = quizzes.filter((q: any) => q.note_sur_20 != null).map((q: any) => Number(q.note_sur_20));
