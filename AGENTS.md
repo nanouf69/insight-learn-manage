@@ -24,6 +24,6 @@
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
-- Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: jamais réécrit par l'élève.
-- Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: marche même session expirée.
-- Admin milestones/PDF share read-only `chargerCalculJalons` (CPF durations, signed planning) and `objectifsJalons` (existing permanent module IDs); why: consistent weights, evidence and editorial objectives without learner writes.
+- Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; why: anti-réécriture élève.
+- Échecs de validation : RPC `signaler_echec_validation_quiz` ; 3/15 min = 1 alerte/h ; why: session expirée OK.
+- Admin milestones/PDF: read-only `chargerCalculJalons`, `objectifsJalons`, `chargerPreuvesJalons` (connection-report rules, permanent module IDs, unreadable ≠ 0); why: consistent, traceable, no learner writes.
