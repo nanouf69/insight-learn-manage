@@ -34,6 +34,7 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
+import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
 import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
 import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
 import { getHistoryDefaults, historyStartTimestamp, type HistoryPeriod } from "@/lib/reports/history-defaults";
@@ -339,7 +340,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       const withUntil = (q: any, col: string, isDateOnly = false) =>
         untilDate ? q.lte(col, isDateOnly ? untilDate : untilTs) : q;
 
-      const [connRes, actRes, complRes, exRes, qrRes, emgRes, pratiqueRes] = await Promise.all([
+      const [connRes, actRes, complRes, exRes, qrRes, emgRes, pratiqueRes, valideesRes] = await Promise.all([
         fetchAllRows("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at, current_module", "started_at"),
         fetchAllRows("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "occurred_at"),
 
@@ -375,6 +376,9 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
           true,
         ).order("date_emargement", { ascending: false }),
         fetchPratiqueSlotDetails(selectedId),
+        // Heures validées par l'administration : comptées en présentiel,
+        // comme la carte « Taux présentiel », les jalons et le relevé PDF.
+        fetchHeuresValideesAdmin(selectedId).catch(() => ({ minutes: 0, lignes: [] as { date: string; heures: number; label: string }[] })),
       ]);
 
 
@@ -385,6 +389,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setQuizResults(((qrRes.data as any[]) || []) as QuizResult[]);
       setEmargements(((emgRes.data as any[]) || []) as EmargementRow[]);
       setPratiqueDetails(pratiqueRes.filter((row) => row.date >= since && (!untilDate || row.date <= untilDate)));
+      setHeuresValidees(valideesRes);
       setLoading(false);
     };
     load();
