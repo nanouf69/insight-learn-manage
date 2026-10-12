@@ -26,4 +26,4 @@
 <!-- LOVABLE:END -->
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: jamais réécrit par l'élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: marche même session expirée.
-- Jalons pondérés (fiche admin) : poids recalculés depuis le volume actuel (4×pages d’audit `jalonsPagesBaseline.ts` + questions actives effectives, `jalonsVolumes.ts`), calcul pur dans `src/lib/jalonsPonderes.ts`, lecture seule de apprenant_module_completion, carte rendue seulement après contrôle user_roles admin ; why: indicateur interne indicatif, jamais visible élève ni écrit en base.
+- Jalons pondérés (fiche admin) : poids = volume actuel (pages d’audit + questions actives) via `src/lib/jalons*.ts`, lecture seule, carte après contrôle admin ; why: indicatif interne, jamais visible élève ni écrit en base.
