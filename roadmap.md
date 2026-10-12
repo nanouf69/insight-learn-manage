@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Relevé des jalons pédagogiques PDF — 12/10 14:32 UTC
+- [ ] Ajouter dans Contrôle, pour VTC/TAXI/TA/VA e-learning uniquement, un téléchargement admin en lecture seule près du relevé de connexions.
+- [ ] Réutiliser la source dynamique des Jalons pondérés pour points, poids, progression et statuts, sans grille parallèle ni écriture élève.
+- [ ] Générer un PDF factuel paginé : identité/dates disponibles, tableau des jalons, méthode, preuves réellement disponibles, limites et références CPOF/CG V15.
+- [ ] Vérifier sur données fictives : calculs, zéro/incomplet, informations absentes, filtrage e-learning/admin, pagination et rendu visuel de toutes les pages.
+- [ ] Compilation et contrôles ciblés ; première phase sans publication.
+
 ## Blocage vue apprenant — 09/10 16:26 UTC
 - [x] Diagnostic lecture seule et plan approuvé : canal de suivi des heures partagé déjà abonné.
 - [x] Canal unique par montage, calculs et données inchangés.
