@@ -18,6 +18,7 @@ import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatPresenceHours } from "@/lib/emargementHours";
 import { computePresentielHours } from "@/lib/presentielHours";
+import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
 import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
@@ -435,7 +436,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
         (emargRes.data as any[]) || [],
         pratiqueDetails,
       );
-      return theorieHours + pratiqueMinutes / 60;
+      const validees = await fetchHeuresValideesAdmin(apprenant.id).catch(() => ({ minutes: 0 }));
+      return theorieHours + (pratiqueMinutes + validees.minutes) / 60;
     },
   });
 
