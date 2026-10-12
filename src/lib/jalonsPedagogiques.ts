@@ -66,9 +66,9 @@ export async function chargerCalculJalons(params: {
   const completions = [...(((completionsResult.data as JalonCompletion[]) ?? [])), completionPratique(pratiqueMinutes)];
   const poids = calculerPoids(filiere, volumes.volumes);
   const resultat = calculerJalonsPonderes(filiere, parcours, completions, poids);
-  const datesPratique = emargements
+  const datesPratique = (emargements as Array<EmargementRowLike & { signed_at?: string | null }>)
     .filter((row) => row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim()))
-    .map((row: any) => row.signed_at || row.date_emargement)
+    .map((row) => row.signed_at || row.date_emargement)
     .filter(Boolean)
     .sort();
   return {
