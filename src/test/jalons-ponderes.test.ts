@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { MODULES_FILIERE, INTRO, calculerJalonsPonderes, calculerPoids, filiereDuParcours, type Filiere } from "@/lib/jalonsPonderes";
+import { MODULES_FILIERE, INTRO, calculerJalonsPonderes, calculerPoids, filiereDuParcours, unites, type Filiere } from "@/lib/jalonsPonderes";
 import { construireVolumes } from "@/lib/jalonsVolumes";
 import { compterQuestionsActives, contenuEffectif } from "@/lib/volumeModules";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
@@ -16,7 +16,13 @@ const sum = (p: Record<number, number>) => Object.values(p).reduce((a, b) => a +
 
 describe("jalons pondérés par volume", () => {
   it("poids de chaque filière somment 100 (aucun % figé)", () => {
-    for (const [f, k] of [["vtc", "vtc-e"], ["taxi", "taxi"], ["ta", "ta"], ["va", "va-e"]] as const) expect(sum(calculerPoids(f, vol(f, k).volumes))).toBeCloseTo(100, 6);
+    for (const [f, k] of [["vtc", "vtc-e"], ["taxi", "taxi"], ["ta", "ta"], ["va", "va-e"]] as const) {
+      const volumes = vol(f, k).volumes;
+      const totalPoints = MODULES_FILIERE[f].reduce((total, id) => total + unites(volumes[id]), 0);
+      const poids = calculerPoids(f, volumes);
+      expect(sum(poids)).toBeCloseTo(100, 6);
+      for (const id of MODULES_FILIERE[f]) expect(poids[id]).toBeCloseTo((unites(volumes[id]) / totalPoints) * 100, 10);
+    }
     expect(readFileSync("src/lib/jalonsPonderes.ts", "utf8")).not.toMatch(/GRILLE_JALONS|42\b/);
   });
   it("ajout d'une/plusieurs questions : module monte, autres baissent, somme 100", () => {
@@ -92,6 +98,9 @@ describe("jalons pondérés par volume", () => {
     const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })), p);
     expect(r.lignes.reduce((s, l) => s + l.poids, 0)).toBeCloseTo(100, 5);
     expect(r.lignes.find((l) => l.moduleId === 1)!.poids).toBe(0);
+    const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
+    expect(card).toMatch(/l\.poids > 0 \? unites/);
+    expect(card).toMatch(/MODULES_FILIERE\[filiere\].*unites/);
   });
   it("carte placée sous la tuile Modules, admin uniquement, actualisée en direct", () => {
     const page = readFileSync("src/components/crm/ApprenantDetailPage.tsx", "utf8");

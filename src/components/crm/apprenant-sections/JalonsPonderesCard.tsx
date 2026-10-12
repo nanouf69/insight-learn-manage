@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { FORMATION_MODULES, MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { arrondirPoidsAffichage, INTRO_IDS, MODULES_FILIERE, calculerJalonsPonderes, calculerPoids, filiereDuParcours } from "@/lib/jalonsPonderes";
+import { arrondirPoidsAffichage, INTRO, INTRO_IDS, MODULES_FILIERE, calculerJalonsPonderes, calculerPoids, filiereDuParcours, unites } from "@/lib/jalonsPonderes";
 import { construireVolumes } from "@/lib/jalonsVolumes";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
 
@@ -82,6 +82,11 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const ponderees = r.lignes.map((l, i) => [l.poids, i] as const).filter(([p]) => p > 0);
   const arrondis = arrondirPoidsAffichage(ponderees.map(([p]) => p));
   const poidsAffiche = new Map(ponderees.map(([, i], k) => [i, arrondis[k]]));
+  const pointsParLigne = new Map(r.lignes.map((l, i) => {
+    const volumeId = INTRO_IDS.has(l.moduleId) && l.poids > 0 ? INTRO : l.moduleId;
+    return [i, l.poids > 0 ? unites(volumes.volumes[volumeId]) : 0] as const;
+  }));
+  const totalPoints = MODULES_FILIERE[filiere].reduce((total, moduleId) => total + unites(volumes.volumes[moduleId]), 0);
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
@@ -97,21 +102,24 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module
       </button>
       {open && (
-        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[22rem] text-xs">
-          <thead><tr className="text-muted-foreground text-left"><th>Module</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Poids</th><th className="text-right">Progression</th><th className="text-right">Contribution</th></tr></thead>
+        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[42rem] text-xs">
+          <thead><tr className="text-muted-foreground text-left"><th>Module</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Points du module</th><th className="text-right">Poids</th><th className="text-right">Progression</th><th className="text-right">Contribution</th></tr></thead>
           <tbody>
             {r.lignes.map((l, i) => (
               <tr key={l.moduleId} className="border-t">
                 <td>{l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
                 {(() => { const v = Object.values(volumes.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{v?.pages ?? "–"}</td><td className="text-right">{v?.questions ?? "–"}</td></>; })()}
+                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : pointsParLigne.get(i)?.toLocaleString("fr-FR")}</td>
                 <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : (poidsAffiche.get(i) ?? 0).toLocaleString("fr-FR")}</td>
                 <td className="text-right">{Math.round(l.progression)}%</td>
                 <td className="text-right">{l.contribution.toFixed(1)}</td>
               </tr>
             ))}
           </tbody>
+          <tfoot><tr className="border-t font-semibold"><td colSpan={3}>Total formation</td><td className="text-right">{totalPoints.toLocaleString("fr-FR")}</td><td className="text-right">100</td><td colSpan={2} /></tr></tfoot>
         </table>
-        <p className="mt-2 text-xs text-muted-foreground">Poids = (4 × pages + questions actives) / total de la filière. Questions recomptées sur le contenu actuel ; pages issues de l'audit (non recomptées automatiquement). Un module déjà « Terminé » reste à 100 % même si des questions ont été ajoutées depuis.</p>
+        <p className="mt-2 text-xs text-muted-foreground">1 slide/page/fiche = 4 points ; 1 question active = 1 point ; poids du module = points du module / points totaux × 100. Les points sont des points de pondération, pas une note ni un score. La contribution est la part déjà acquise dans la progression globale : par exemple, un module de 100 points sur 1 000 pèse 10 %, et réalisé à 50 % contribue 5 points de pourcentage au total.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Questions recomptées sur le contenu actuel ; pages issues de l'audit (non recomptées automatiquement). Un module déjà « Terminé » reste à 100 % même si des questions ont été ajoutées depuis.</p>
         {volumes.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{volumes.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
         </div>
       )}
