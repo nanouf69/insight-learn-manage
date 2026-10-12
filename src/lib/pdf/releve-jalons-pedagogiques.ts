@@ -85,7 +85,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
       isPractice ? "6 h contractuelles" : String(volume?.pages ?? 0),
       isPractice ? "—" : String(volume?.questions ?? 0),
       String(line.poids > 0 ? unites(volume) : 0),
-      line.poids > 0 ? fmtPct(displayWeight.get(line.moduleId) ?? 0) : "0 % obligatoire",
+      line.poids > 0 ? fmtPct(Number(displayWeight.get(line.moduleId) ?? 0)) : "0 % obligatoire",
       fmtPct(line.progression),
       `${line.contribution.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt`,
       line.valide ? "Réalisé" : line.progression > 0 ? "En cours" : "Non commencé",
