@@ -10,6 +10,7 @@ import {
   avecJalonPratique,
   calculerJalonsPonderes,
   calculerPoids,
+  calculerDureesPrevisionnelles,
   completionPratique,
   filiereDuParcours,
   type CompletionLite,
@@ -64,6 +65,7 @@ export async function chargerCalculJalons(params: {
   const emargements = ((emargementsResult.data as any[]) ?? []) as EmargementRowLike[];
   const { pratiqueMinutes } = computePresentielHours(emargements, pratiqueDetails);
   const completions = [...(((completionsResult.data as JalonCompletion[]) ?? [])), completionPratique(pratiqueMinutes)];
+  const durees = calculerDureesPrevisionnelles(filiere, volumes.volumes);
   const poids = calculerPoids(filiere, volumes.volumes);
   const resultat = calculerJalonsPonderes(filiere, parcours, completions, poids);
   const datesPratique = (emargements as Array<EmargementRowLike & { signed_at?: string | null }>)
@@ -77,6 +79,7 @@ export async function chargerCalculJalons(params: {
     parcours,
     volumes: volumes.volumes,
     limites: volumes.limites,
+    durees,
     poids,
     resultat,
     completions,
@@ -90,3 +93,8 @@ export async function chargerCalculJalons(params: {
 }
 
 export const estJalonPratique = (moduleId: number) => moduleId === PRATIQUE_PHYSIQUE;
+/** Durée prévisionnelle d'une ligne de résultat (intro attribuée ou non = clé INTRO). */
+export function dureeLigne(durees: Record<number, number>, moduleId: number, poids: number) {
+  if (poids <= 0) return 0;
+  return durees[INTRO_IDS.has(moduleId) || moduleId === 0 ? -1 : moduleId] ?? 0;
+}
