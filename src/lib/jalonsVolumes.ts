@@ -1,5 +1,5 @@
 import { BASE_PAGES_AUDIT } from "@/lib/jalonsPagesBaseline";
-import { EXAMENS_BLANCS_FILIERE, INTRO, INTRO_IDS, INTRO_PAR_DEFAUT, MODULES_FILIERE, type Filiere, type VolumeModule } from "@/lib/jalonsPonderes";
+import { EXAMENS_BLANCS_FILIERE, INTRO, INTRO_IDS, INTRO_PAR_DEFAUT, MODULES_FILIERE, POINTS_PRATIQUE_PHYSIQUE, PRATIQUE_PHYSIQUE, type Filiere, type VolumeModule } from "@/lib/jalonsPonderes";
 import { compterQuestionsActives, compterQuestionsExamensBlancs, contenuEffectif, empreinteSupports, type EditorRowLite, type ModuleContentLite } from "@/lib/volumeModules";
 
 export interface VolumesFiliere { volumes: Record<number, VolumeModule & { moduleId: number }>; limites: string[] }
@@ -40,5 +40,6 @@ export function construireVolumes(
     }
     volumes[ref] = { moduleId: id, pages: base.pages, questions };
   }
+  volumes[PRATIQUE_PHYSIQUE] = { moduleId: PRATIQUE_PHYSIQUE, pages: 0, questions: 0, points: POINTS_PRATIQUE_PHYSIQUE };
   return { volumes, limites };
 }

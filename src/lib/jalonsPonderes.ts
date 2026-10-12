@@ -11,6 +11,8 @@
 export type Filiere = "vtc" | "taxi" | "ta" | "va";
 
 export const INTRO = -1; // introduction, quel que soit l'id attribué (1/26/31/32/33/34)
+export const PRATIQUE_PHYSIQUE = -2; // jalon virtuel, jamais enregistré comme module élève
+export const POINTS_PRATIQUE_PHYSIQUE = 360;
 
 /** Modules de référence de chaque filière (structure, pas de pourcentage). */
 export const MODULES_FILIERE: Record<Filiere, number[]> = {
@@ -19,6 +21,9 @@ export const MODULES_FILIERE: Record<Filiere, number[]> = {
   ta: [INTRO, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6],
   va: [INTRO, 41, 3, 29, 30, 38, 63, 73, 8],
 };
+export const MODULES_PONDERES: Record<Filiere, number[]> = Object.fromEntries(
+  Object.entries(MODULES_FILIERE).map(([filiere, ids]) => [filiere, [...ids, PRATIQUE_PHYSIQUE]]),
+) as Record<Filiere, number[]>;
 export const INTRO_PAR_DEFAUT: Record<Filiere, number> = { vtc: 26, taxi: 26, ta: 32, va: 34 };
 export const EXAMENS_BLANCS_FILIERE: Record<Filiere, { moduleId: number; type: string }> = {
   vtc: { moduleId: 35, type: "VTC" }, taxi: { moduleId: 36, type: "TAXI" }, ta: { moduleId: 37, type: "TA" }, va: { moduleId: 38, type: "VA" },
@@ -26,15 +31,27 @@ export const EXAMENS_BLANCS_FILIERE: Record<Filiere, { moduleId: number; type: s
 
 export const INTRO_IDS = new Set([1, 26, 31, 32, 33, 34]);
 
-export interface VolumeModule { pages: number; questions: number }
-export const unites = (v: VolumeModule | undefined) => (v ? 4 * Math.max(0, v.pages) + Math.max(0, v.questions) : 0);
+export interface VolumeModule { pages: number; questions: number; points?: number }
+export const unites = (v: VolumeModule | undefined) => (v ? Math.max(0, v.points ?? (4 * Math.max(0, v.pages) + Math.max(0, v.questions))) : 0);
 
 /** Poids (somme 100) calculés depuis les volumes ; clé INTRO pour l'introduction. */
 export function calculerPoids(filiere: Filiere, volumes: Record<number, VolumeModule>): Record<number, number> {
-  const ids = MODULES_FILIERE[filiere];
+  const ids = MODULES_PONDERES[filiere];
   const total = ids.reduce((s, id) => s + unites(volumes[id]), 0);
   if (total <= 0) throw new Error("Volumes indisponibles");
   return Object.fromEntries(ids.map((id) => [id, (unites(volumes[id]) / total) * 100]));
+}
+
+export function avecJalonPratique(modulesParcours: number[]): number[] {
+  if (modulesParcours.includes(PRATIQUE_PHYSIQUE)) return modulesParcours;
+  const indexFin = modulesParcours.findIndex((id) => id >= 50 && id <= 53);
+  if (indexFin < 0) return [...modulesParcours, PRATIQUE_PHYSIQUE];
+  return [...modulesParcours.slice(0, indexFin), PRATIQUE_PHYSIQUE, ...modulesParcours.slice(indexFin)];
+}
+
+export function completionPratique(minutes: number): CompletionLite {
+  const progression = Math.max(0, Math.min(100, (minutes / POINTS_PRATIQUE_PHYSIQUE) * 100));
+  return { module_id: PRATIQUE_PHYSIQUE, status: progression >= 100 ? "completed" : "in_progress", progress: progression };
 }
 
 /** Filière d'une clé de parcours (alias présentiel/e-présentiel/e-learning) ; null pour FC/mobilité. */

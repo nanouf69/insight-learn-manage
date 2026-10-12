@@ -158,9 +158,11 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
       .order("date_choisie", { ascending: true }),
     supabase
       .from("session_apprenants")
-      .select("heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, date_debut, date_fin, heure_debut, heure_fin)")
+      .select("heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, date_debut, date_fin, heure_debut, heure_fin, statut)")
       .eq("apprenant_id", apprenantId),
   ]);
+  if (reservationsRes.error) throw reservationsRes.error;
+  if (sessionsRes.error) throw sessionsRes.error;
 
   const reservations = ((reservationsRes.data as any[]) || [])
     .map((row) => ({
@@ -171,7 +173,7 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
     .filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
 
   const practicalSessionDates = ((sessionsRes.data as any[]) || [])
-    .filter((row) => String(row?.sessions?.type_session || "").toLowerCase().includes("pratique"))
+    .filter((row) => String(row?.sessions?.type_session || "").toLowerCase().includes("pratique") && !/annul/i.test(String(row?.sessions?.statut || "")))
     .map((row) => normalizeDate(row.sessions.date_debut));
   const daySlots = await fetchPlanningDaySlotsForDates([...reservations.map((row) => row.date), ...practicalSessionDates]);
   const out: PratiqueSlotDetail[] = reservations.map((row) => {
@@ -188,7 +190,7 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
   const seenDates = new Set(out.map((row) => row.date));
   for (const row of ((sessionsRes.data as any[]) || [])) {
     const sess = row?.sessions;
-    if (!sess || !String(sess.type_session || "").toLowerCase().includes("pratique")) continue;
+    if (!sess || !String(sess.type_session || "").toLowerCase().includes("pratique") || /annul/i.test(String(sess.statut || ""))) continue;
     const date = normalizeDate(sess.date_debut);
     if (!date || seenDates.has(date)) continue;
     const minutes = minutesFromSessionTimes(row.heure_debut_personnalisee || sess.heure_debut, row.heure_fin_personnalisee || sess.heure_fin, 180);
