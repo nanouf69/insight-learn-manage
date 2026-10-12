@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImage from "@/assets/logo-ftransport.png";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { INTRO, INTRO_IDS, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, progressionModule, unites } from "@/lib/jalonsPonderes";
+import { INTRO, INTRO_IDS, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, unites } from "@/lib/jalonsPonderes";
 
 export interface PreuveJalonPdf {
   label: string;
@@ -37,7 +37,6 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   const ph = doc.internal.pageSize.getHeight();
   const margin = 10;
   const now = data.generatedAt ?? new Date();
-  const lines: string[] = [];
   const addTextSection = (title: string, paragraphs: string[]) => {
     let y = ((doc as any).lastAutoTable?.finalY ?? 30) + 9;
     for (const paragraph of paragraphs) {

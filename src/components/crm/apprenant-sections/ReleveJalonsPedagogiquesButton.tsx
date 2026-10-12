@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,14 +13,26 @@ export function ReleveJalonsPedagogiquesButton({ apprenant }: { apprenant: any }
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const key = formationJalonsElearning(apprenant?.type_apprenant, apprenant?.formation_choisie);
-  if (!key || loading || !user?.id) return null;
+  const userId = !loading ? user?.id ?? null : null;
+  const { data: adminCheck } = useQuery({
+    queryKey: ["releve-jalons-admin", userId],
+    enabled: !!userId && !!key,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId as string).eq("role", "admin").maybeSingle();
+      if (error) throw error;
+      return { userId, admin: !!data };
+    },
+  });
+  const isAdmin = !!userId && adminCheck?.userId === userId && adminCheck.admin;
+  if (!key || !isAdmin) return null;
 
   const download = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      const userId = user.id;
-      const { data: role, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+      const stableUserId = userId;
+      if (!stableUserId) throw new Error("Accès administrateur requis");
+      const { data: role, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", stableUserId).eq("role", "admin").maybeSingle();
       if (roleError) throw roleError;
       if (!role) throw new Error("Accès administrateur requis");
       const [calcul, activities, quizzes, answers, connexions, documents, emails, sessions] = await Promise.all([
@@ -32,7 +45,8 @@ export function ReleveJalonsPedagogiquesButton({ apprenant }: { apprenant: any }
         supabase.from("emails").select("created_at, sent_at, received_at, type, subject").eq("apprenant_id", apprenant.id).order("created_at", { ascending: true }),
         supabase.from("session_apprenants").select("sessions:session_id(nom, date_debut, date_fin, type_session)").eq("apprenant_id", apprenant.id),
       ]);
-      if (user.id !== userId) throw new Error("Session administrateur modifiée pendant la lecture");
+      const { data: currentAuth } = await supabase.auth.getUser();
+      if (currentAuth.user?.id !== stableUserId) throw new Error("Session administrateur modifiée pendant la lecture");
       for (const result of [activities, quizzes, answers, connexions, documents, emails, sessions]) if (result.error) throw result.error;
       const act = activities.data ?? [], quiz = quizzes.data ?? [], ans = answers.data ?? [], cnx = connexions.data ?? [], docs = (documents.data as any[]) ?? [], mails = emails.data ?? [];
       const preuves: PreuveJalonPdf[] = [
