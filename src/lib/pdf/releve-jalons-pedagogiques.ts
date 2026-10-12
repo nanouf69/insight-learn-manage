@@ -109,7 +109,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     body: affichage.lignes.map((l) => [l.moduleId === PRATIQUE_PHYSIQUE ? LABEL_PRESENTIEL : sansEmoji(MODULE_NAME_BY_ID[l.moduleId] || `Module ${l.moduleId}`), fmtPct(l.poidsAffiche), fmtPct(l.progression), `${l.contribution.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de %`, formatDureeJalon(l.minutesCpf), formatDureeJalon(l.minutesCouvertes)]),
     foot: [["TOTAL FORMATION", "100 %", `Taux global : ${fmtPct(affichage.taux)}`, `${affichage.contributionBrute.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de % (brut)`, formatDureeJalon(affichage.totalMinutes), formatDureeJalon(affichage.minutesCouvertes)]],
     theme: "grid", styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak", valign: "top" },
-    headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" }, footStyles: { fillColor: [232, 238, 245], fontStyle: "bold" },
+    headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" }, footStyles: { fillColor: [232, 238, 245], textColor: [13, 37, 64], fontStyle: "bold" }, showFoot: "lastPage",
     columnStyles: { 0: { cellWidth: 75 }, 1: { cellWidth: 30 }, 2: { cellWidth: 37 }, 3: { cellWidth: 43 }, 4: { cellWidth: 43 }, 5: { cellWidth: pw - margin * 2 - 228 } },
     rowPageBreak: "avoid", margin: { left: margin, right: margin, top: 24, bottom: 16 },
   });
