@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,13 +9,42 @@ interface Props {
   apprenant: { id: string; nom: string; prenom: string; [key: string]: unknown };
 }
 
-/** Same saved document and PDF renderer as CRM → Formulaires; SELECT only. */
+/**
+ * Bouton « Dossier de bienvenue » de la liste des examens.
+ * Au chargement : une seule lecture (SELECT, limite 1) pour savoir si le
+ * dossier est rempli → bouton vert. Aucune écriture, aucun PDF généré
+ * automatiquement ; le PDF n'est produit qu'au clic volontaire.
+ */
 export function DossierBienvenueButton({ apprenant }: Props) {
   const { user, loading } = useAuth();
   const owner = useRef(user?.id);
   owner.current = loading ? undefined : user?.id;
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [present, setPresent] = useState(false);
+
+  // Présence du dossier (lecture seule, silencieuse en cas d'erreur).
+  useEffect(() => {
+    const userId = owner.current;
+    if (!userId) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("apprenant_documents_completes")
+          .select("completed_at")
+          .eq("apprenant_id", apprenant.id)
+          .eq("type_document", "dossier-bienvenue")
+          .order("completed_at", { ascending: false })
+          .limit(1);
+        if (!alive || owner.current !== userId || error) return;
+        setPresent(!!data && data.length > 0);
+      } catch {
+        /* sans dossier prouvé, pas d'indication verte */
+      }
+    })();
+    return () => { alive = false; };
+  }, [apprenant.id, user?.id, loading]);
 
   const download = async () => {
     const userId = owner.current;
@@ -60,8 +89,10 @@ export function DossierBienvenueButton({ apprenant }: Props) {
       variant="outline"
       size="sm"
       disabled={loading || !user || busy}
-      className="mt-1 h-auto min-h-6 w-full gap-1 whitespace-normal px-1 py-1 text-[10px] leading-tight"
-      title="Télécharger le dossier de bienvenue enregistré dans le CRM"
+      className={`mt-1 h-auto min-h-6 w-full gap-1 whitespace-normal px-1 py-1 text-[10px] leading-tight ${
+        present ? "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-50" : ""
+      }`}
+      title={present ? "Dossier de bienvenue rempli — cliquer pour le télécharger" : "Aucun dossier de bienvenue enregistré dans le CRM"}
       onClick={download}
     >
       {busy ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" /> : <FileText className="h-3 w-3 shrink-0" />}
