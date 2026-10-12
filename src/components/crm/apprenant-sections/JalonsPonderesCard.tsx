@@ -1,10 +1,13 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { FORMATION_MODULES, MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { calculerJalonsPonderes, filiereDuParcours } from "@/lib/jalonsPonderes";
+import { INTRO_IDS, MODULES_FILIERE, calculerJalonsPonderes, calculerPoids, filiereDuParcours } from "@/lib/jalonsPonderes";
+import { construireVolumes } from "@/lib/jalonsVolumes";
+
+export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
 /** Carte interne ADMIN : taux indicatif pondéré. Lecture seule. */
 export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null }) {
@@ -36,10 +39,42 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       return data ?? [];
     },
   });
+  const parcours = key ? FORMATION_MODULES[key].modules.map((m) => m.id) : [];
+  const queryClient = useQueryClient();
+  // Poids recalculés depuis le contenu ACTUEL (questions) à chaque affichage, retour d'onglet et enregistrement éditeur.
+  const { data: volumes, isError: volErr, isFetching: volFetching } = useQuery({
+    queryKey: [JALONS_VOLUMES_KEY, filiere, parcours.join(","), ta, userId],
+    enabled: !!isAdmin && !!filiere,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    queryFn: async () => {
+      const ids = [...new Set([...MODULES_FILIERE[filiere!].filter((x) => x > 0), ...parcours.filter((x) => INTRO_IDS.has(x)), 26, 32, 34])];
+      const [{ data, error }, mdv, { fetchLiveExamens }] = await Promise.all([
+        supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices").in("module_id", ids),
+        import("@/components/cours-en-ligne/ModuleDetailView"),
+        import("@/components/cours-en-ligne/useLiveExamens"),
+      ]);
+      if (error) throw error;
+      const examens = await fetchLiveExamens();
+      const v = construireVolumes(filiere!, parcours, (data ?? []) as any, (id) => mdv.getInitialModuleContentForVolume(id, typeApprenant), examens as any);
+      return { ...v, poids: calculerPoids(filiere!, v.volumes) };
+    },
+  });
+  useEffect(() => {
+    if (!isAdmin || !filiere) return;
+    const ch = supabase.channel(`jalons-volumes-${apprenantId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, () => {
+        void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [isAdmin, filiere, apprenantId, queryClient]);
   if (!isAdmin || !filiere || !key) return null;
-  if (isError) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles.</div>;
-  if (!rows) return null;
-  const r = calculerJalonsPonderes(filiere, FORMATION_MODULES[key].modules.map((m) => m.id), rows as any);
+  if (isError || volErr) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché).</div>;
+  if (!rows || !volumes) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
+  const r = calculerJalonsPonderes(filiere, parcours, rows as any, volumes.poids);
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
@@ -50,24 +85,29 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
         <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, r.taux)}%` }} />
       </div>
+      {volFetching && <div className="mt-1 text-xs text-muted-foreground">Mise à jour des poids…</div>}
       {finIncomplete && <div className="mt-1 text-xs text-muted-foreground">Contenus pédagogiques terminés ; validation de fin de formation / jalon administratif en attente.</div>}
       <button type="button" onClick={() => setOpen(!open)} className="mt-1 flex items-center gap-1 text-xs text-primary">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module
       </button>
       {open && (
         <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[22rem] text-xs">
-          <thead><tr className="text-muted-foreground text-left"><th>Module</th><th className="text-right">Poids</th><th className="text-right">Progression</th><th className="text-right">Contribution</th></tr></thead>
+          <thead><tr className="text-muted-foreground text-left"><th>Module</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Poids</th><th className="text-right">Progression</th><th className="text-right">Contribution</th></tr></thead>
           <tbody>
             {r.lignes.map((l) => (
               <tr key={l.moduleId} className="border-t">
                 <td>{l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
-                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : l.poids}</td>
+                {(() => { const v = Object.values(volumes.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{v?.pages ?? "–"}</td><td className="text-right">{v?.questions ?? "–"}</td></>; })()}
+                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : l.poids.toFixed(1)}</td>
                 <td className="text-right">{Math.round(l.progression)}%</td>
                 <td className="text-right">{l.contribution.toFixed(1)}</td>
               </tr>
             ))}
           </tbody>
-        </table></div>
+        </table>
+        <p className="mt-2 text-xs text-muted-foreground">Poids = (4 × pages + questions actives) / total de la filière. Questions recomptées sur le contenu actuel ; pages issues de l'audit (non recomptées automatiquement). Un module déjà « Terminé » reste à 100 % même si des questions ont été ajoutées depuis.</p>
+        {volumes.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{volumes.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
+        </div>
       )}
     </div>
   );
