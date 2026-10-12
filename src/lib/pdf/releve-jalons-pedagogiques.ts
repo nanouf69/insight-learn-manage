@@ -104,7 +104,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     styles: { fontSize: 6.3, cellPadding: 1.3, overflow: "linebreak", valign: "top" },
     headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" },
     footStyles: { fillColor: [232, 238, 245], textColor: [13, 37, 64], fontStyle: "bold" },
-    columnStyles: { 0: { cellWidth: 41 }, 1: { cellWidth: 18 }, 2: { cellWidth: 16 }, 3: { cellWidth: 13 }, 4: { cellWidth: 16 }, 5: { cellWidth: 17 }, 6: { cellWidth: 18 }, 7: { cellWidth: 18 }, 8: { cellWidth: 20 }, 9: { cellWidth: 44 } },
+    columnStyles: { 0: { cellWidth: 41 }, 1: { cellWidth: 18 }, 2: { cellWidth: 16 }, 3: { cellWidth: 13 }, 4: { cellWidth: 16 }, 5: { cellWidth: 17 }, 6: { cellWidth: 18 }, 7: { cellWidth: 18 }, 8: { cellWidth: 20 }, 9: { cellWidth: pw - margin * 2 - 177 } },
     margin: { left: margin, right: margin, top: 24, bottom: 14 },
   });
 
