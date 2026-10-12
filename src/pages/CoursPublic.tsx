@@ -2253,6 +2253,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   });
   const { effectivelyCompletedIds, unlockedModuleIds } = unlockState;
 
+  // Dérogation individuelle : débloque le module Pratique pour les apprenants
+  // explicitement autorisés, sans modifier leur progression enregistrée.
+  if (apprenant?.id && PRATIQUE_UNLOCK_APPRENANT_IDS.has(apprenant.id)) {
+    modules.forEach((m) => {
+      if (PRATIQUE_MODULE_IDS.has(m.id)) unlockedModuleIds.add(m.id);
+    });
+  }
+
   // Check if the Introduction (first module) is completed.
   // Fallback : toute ligne `apprenant_module_completion` avec un `completed_at`
   // pour le module d'intro (ou son ID brut) suffit — évite d'afficher à tort
