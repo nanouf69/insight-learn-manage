@@ -63,7 +63,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
-import { computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
+import { applyPratiqueUnlockDerogation, computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import {
   fetchModuleCompletions,
   isCompletionDone,
@@ -2235,6 +2235,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Modules always unlocked even in e-learning (no sequential gate)
   const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
 
+  // Dérogations individuelles (accord explicite du responsable) : module
+  // Pratique (VTC = 8, TAXI = 6) débloqué sans attendre les modules précédents.
+  const PRATIQUE_MODULE_IDS = new Set([6, 8]);
+  const PRATIQUE_UNLOCK_APPRENANT_IDS = new Set<string>([
+    "96604b15-bd2b-418c-8019-293186c016fb", // Enzo Calvo (VTC) — accord 12/10/2026
+  ]);
+
   const unlockState = computeUnlockState({
     modules,
     completedModuleIds,
@@ -2245,6 +2252,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     alwaysUnlockedIds: ALWAYS_UNLOCKED_IDS,
   });
   const { effectivelyCompletedIds, unlockedModuleIds } = unlockState;
+
+  // Dérogation individuelle : débloque le module Pratique pour les apprenants
+  // explicitement autorisés, sans modifier leur progression enregistrée.
+  applyPratiqueUnlockDerogation(
+    unlockedModuleIds,
+    modules,
+    apprenant?.id,
+    PRATIQUE_UNLOCK_APPRENANT_IDS,
+    PRATIQUE_MODULE_IDS,
+  );
 
   // Check if the Introduction (first module) is completed.
   // Fallback : toute ligne `apprenant_module_completion` avec un `completed_at`
