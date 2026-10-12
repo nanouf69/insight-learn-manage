@@ -15,16 +15,15 @@ export function PreuvesExamensBlancsCard({ apprenantId }: { apprenantId: string 
     queryKey: ["preuves-eb-admin", apprenantId],
     queryFn: async () => {
       const db = supabase as any;
-      const [parc, rep, notes, v2, comp, req] = await Promise.all([
+      const [parc, rep, notes, v2, comp] = await Promise.all([
         db.from("examens_blancs_parcours").select("module_id, exam_id"),
         db.from("reponses_apprenants").select("exercice_id, status, reponses, submitted_at").eq("apprenant_id", apprenantId).ilike("exercice_id", "eb%\\_\\_%"),
         db.from("apprenant_quiz_results").select("quiz_id, matiere_id").eq("apprenant_id", apprenantId).eq("quiz_type", "examen_blanc"),
         db.from("exam_attempts_v2").select("exam_id, etat, is_test").eq("apprenant_id", apprenantId),
         db.from("apprenant_module_completion").select("module_id, status, completed_at").eq("apprenant_id", apprenantId).in("module_id", [35, 36, 37, 38]),
-        db.rpc("examens_blancs_matieres_requises").then((r: any) => r, () => ({ data: null })),
       ]);
       for (const r of [parc, rep, notes, v2, comp]) if (r.error) throw r.error;
-      return { parc: parc.data ?? [], rep: rep.data ?? [], notes: notes.data ?? [], v2: v2.data ?? [], comp: comp.data ?? [], req: req?.data };
+      return { parc: parc.data ?? [], rep: rep.data ?? [], notes: notes.data ?? [], v2: v2.data ?? [], comp: comp.data ?? [] };
     },
   });
 
