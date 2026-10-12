@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Objectifs pédagogiques des jalons — 12/10 18:56 UTC
+- [ ] Ajouter les textes approuvés via un mapping partagé, limité aux modules existants des quatre parcours e-learning, dans Contrôle et le PDF.
+- [ ] Tester les quatre parcours et l'absence de modification des calculs ; inspecter toutes les pages PDF fictives et l'affichage.
+- [ ] Vérifier la compilation automatique, publier puis confirmer le texte dans le bundle servi ; journaliser.
+
 ## Relevé des jalons pédagogiques PDF — 12/10 14:32 UTC
 - [x] Étendre la source commune carte/PDF avec un jalon virtuel « Entraînement pratique — 6 h » valant 360 points pour les quatre parcours e-learning visés.
 - [x] Calculer sa progression uniquement depuis les minutes pratiques justifiées par Planning pratique + émargements signés : 0/180/360 min = 0/50/100 %, indisponible distinct de 0.
