@@ -18,12 +18,12 @@ export const VERSION_METHODE_PREUVES = "preuves-jalons v1 — 12/10/2026";
 
 export interface SourceLecture { cle: string; libelle: string; lu: boolean; lignes: number; erreur?: string }
 export interface TracePreuve {
-  ref: string; date: string; source: string; type: string; detail: string;
+  ref: string; date: string; dateSeule?: boolean; source: string; type: string; detail: string;
   moduleId: number | null; motifNonRattache?: string; horsPeriode?: boolean;
 }
 export interface SyntheseJalon {
-  moduleId: number; statutEnregistre: string; ouvertures: number; reponsesNonVides: number;
-  soumissionsExamen: number; notes: number; emargements: number; premiere: string | null; derniere: string | null;
+  moduleId: number; statutEnregistre: string; ouvertures: number; exercicesAvecReponses: number;
+  matieresEnvoyees: number; passagesV2Termines: number; notes: number; emargements: number; premiere: string | null; derniere: string | null;
   traces: "disponibles" | "manquantes" | "lecture non possible"; commentaire: string;
 }
 export interface ConnexionRetenue { date: string; minutesRetenues: number; comptee: boolean; motif: string }
@@ -107,13 +107,13 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
   }
   for (const t of e.tentativesV2 ?? []) {
     if (t.is_test === true) continue;
-    push({ ref: `passageV2:${t.attempt_id}`, date: t.finished_at || t.started_at, source: "Passages nouveau moteur", type: t.finished_at ? "Passage terminé" : "Passage commencé", detail: `passage ${String(t.attempt_id).slice(0, 8)} · examen ${t.exam_id} · état ${t.etat}` }, ebModule);
+    push({ ref: `passageV2:${t.attempt_id}`, date: t.finished_at || t.started_at, source: "Passages nouveau moteur", type: t.etat === "terminee" ? "Passage terminé" : t.etat === "abandonnee" ? "Passage abandonné" : "Passage non terminé", detail: `passage ${String(t.attempt_id).slice(0, 8)} · examen ${t.exam_id} · état ${t.etat}` }, ebModule);
   }
   const datesPratique = new Map((e.pratiqueDetails ?? []).map((d) => [d.date, d]));
   for (const row of e.emargements ?? []) {
     const date = String(row.date_emargement || "").slice(0, 10);
     if (!datesPratique.has(date) || !isSignedPresentielRow(row)) continue;
-    push({ ref: `emargement:${row.id ?? `${date}:${row.demi_journee}`}`, date: row.signed_at || `${date}T12:00:00`, source: "Émargements signés (Planning pratique)", type: "Présence physique signée", detail: `${date} · ${row.demi_journee ?? "créneau ?"}` }, PRATIQUE_PHYSIQUE);
+    push({ ref: `emargement:${row.id ?? `${date}:${row.demi_journee}`}`, date: row.signed_at || `${date}T00:00:00`, dateSeule: !row.signed_at, source: "Émargements signés (Planning pratique)", type: "Présence physique signée", detail: `${date} · ${row.demi_journee ?? "créneau ?"}${row.signed_at ? "" : " · heure de signature non disponible"}` }, PRATIQUE_PHYSIQUE);
   }
   traces.sort((a, b) => ms(a.date) - ms(b.date) || a.ref.localeCompare(b.ref));
 
@@ -141,7 +141,7 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
   const lu = (cle: string) => e.sources.find((s) => s.cle === cle)?.lu !== false;
   const statutDe = new Map(e.completions.map((c) => [Number(c.module_id), c]));
   const synthese: SyntheseJalon[] = e.lignesModuleIds.map((moduleId) => {
-    const t = traces.filter((x) => x.moduleId === moduleId);
+    const t = traces.filter((x) => x.moduleId === moduleId && !x.horsPeriode);
     const c = statutDe.get(moduleId);
     const pratique = moduleId === PRATIQUE_PHYSIQUE;
     const sourcesUtiles = pratique ? ["emargements", "planning"] : ["activites", "reponses", ...(moduleId === ebModule ? ["quiz", "v2"] : [])];
@@ -151,8 +151,9 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
       moduleId,
       statutEnregistre: pratique ? "calculé depuis les émargements signés" : c?.status ? String(c.status) : "aucun statut enregistré",
       ouvertures: count((x) => x.source === "Journal d’activité"),
-      reponsesNonVides: count((x) => x.source === "Réponses enregistrées" && !x.type.startsWith("Épreuve")),
-      soumissionsExamen: count((x) => x.type === "Épreuve d’examen blanc envoyée" || x.type === "Passage terminé"),
+      exercicesAvecReponses: count((x) => x.source === "Réponses enregistrées" && !x.type.startsWith("Épreuve")),
+      matieresEnvoyees: count((x) => x.type === "Épreuve d’examen blanc envoyée"),
+      passagesV2Termines: count((x) => x.type === "Passage terminé"),
       notes: count((x) => x.type === "Note enregistrée"),
       emargements: count((x) => x.source.startsWith("Émargements")),
       premiere: t[0]?.date ?? null,
@@ -160,6 +161,7 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
       traces: t.length ? "disponibles" : illisible ? "lecture non possible" : "manquantes",
       commentaire: t.length
         ? "Traces partielles : une ouverture ou une réponse ne prouve pas la réalisation intégrale du module."
+        : traces.some((x) => x.moduleId === moduleId) ? "Traces uniquement hors période d’accès (visibles en annexe, non comptées)."
         : illisible ? "Une source n’a pas pu être lue : absence de trace non démontrée."
         : pratique ? "Aucune présence physique signée : une inscription au planning n’est pas une présence."
         : c?.status === "completed" ? "Statut enregistré sans trace individuelle retrouvée dans les sources consultées (statut conservé tel quel)." : "Aucune trace retrouvée dans les sources consultées.",
