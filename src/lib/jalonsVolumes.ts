@@ -13,7 +13,7 @@ export function construireVolumes(
   modulesParcours: number[],
   rows: EditorRowLite[],
   initialDe: (moduleId: number) => ModuleContentLite | null,
-  examens: Array<{ type: string; numero: number; matieres?: any[] }>,
+  examens: Array<{ id?: string; type: string; numero: number; matieres?: any[] }>,
 ): VolumesFiliere {
   const parId = new Map<number, EditorRowLite>();
   for (const r of rows) parId.set(Number(r.module_id), r);
@@ -32,6 +32,7 @@ export function construireVolumes(
     if (id === eb.moduleId) {
       const r = compterQuestionsExamensBlancs(examens, eb.type);
       if (r.examens === 0) throw new Error("Examens blancs indisponibles");
+      if (r.doublons > 0) limites.push(`Examens blancs ${eb.type} : ${r.doublons} doublon(s) de numéro ignoré(s).`);
       if (r.examens < 6) limites.push(`Examens blancs ${eb.type} : ${r.examens} examen(s) seulement.`);
       questions = r.questions;
     } else {
