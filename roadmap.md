@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Clarification pourcentages et heures — 12/10 19:55 UTC
-- [ ] Tableau partagé Contrôle/PDF : poids, progression, contribution, heures CPF et couverture prévisionnelle ; heures enregistrées séparées, calculs inchangés.
-- [ ] Tests ciblés quatre filières, rendu PDF et Contrôle ; conserver objectifs et annexes.
+- [x] Tableau partagé Contrôle/PDF : poids, progression, contribution, heures CPF et couverture prévisionnelle ; heures enregistrées séparées, calculs inchangés.
+- [x] 18 tests ciblés quatre filières, 38 pages PDF inspectées, Contrôle et téléchargement Amar admin lecture seule ; objectifs et annexes conservés.
 - [ ] Compilation automatique puis publication confirmée par bundle/date ; journaliser.
 
 ## Objectifs pédagogiques des jalons — 12/10 18:56 UTC

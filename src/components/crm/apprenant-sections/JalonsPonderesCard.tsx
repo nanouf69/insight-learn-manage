@@ -89,7 +89,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module
       </Button>
       {open && (
-        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[58rem] text-xs [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
+        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[48rem] text-xs [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
           <caption className="text-left font-semibold mb-2">Pourcentages et heures prévisionnelles par jalon</caption>
           <thead><tr className="text-muted-foreground text-left"><th>Module / jalon</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Heures CPF prévisionnelles</th><th className="text-right">Poids dans la formation (%)</th><th className="text-right">Progression élève (%)</th><th className="text-right">Contribution (points de %)</th><th className="text-right">Durée prévisionnelle couverte</th></tr></thead>
           <tbody>
