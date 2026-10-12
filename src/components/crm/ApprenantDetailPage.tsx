@@ -1257,7 +1257,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
           {activeTab === "dossier" && <DocumentsDossier apprenant={apprenant} />}
           {activeTab === "docs-inscription" && <DocumentsInscription apprenant={apprenant} />}
-          {activeTab === "examens" && (<div className="space-y-4"><ExamensSection apprenant={apprenant} /><PreuvesExamensBlancsCard apprenantId={apprenant.id} /></div>)}
+          {activeTab === "examens" && (<div className="space-y-4"><ExamensSection apprenant={apprenant} /><PreuvesExamensBlancsCard apprenantId={apprenant.id} typeApprenant={apprenant.type_apprenant} formationChoisie={apprenant.formation_choisie} /></div>)}
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}

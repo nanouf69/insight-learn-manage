@@ -10,7 +10,8 @@
 export type EtatEpreuve =
   | "notee" // toutes les matières notées
   | "soumise_correction_manquante" // soumise, note(s) manquante(s)
-  | "soumission_incomplete" // marquée envoyée mais matière(s) vide(s)/non envoyée(s)
+  | "soumission_incomplete" // matière(s) envoyée(s) vide(s)
+  | "partiellement_soumise" // une partie des matières envoyée (non vide), le reste non envoyé
   | "en_cours"
   | "non_commencee";
 
@@ -71,7 +72,8 @@ export function evaluerEpreuve(
   let etat: EtatEpreuve;
   if (requises > 0 && notees >= requises) etat = "notee";
   else if (prouvee) etat = "soumise_correction_manquante";
-  else if (ok.size + videsSet.size > 0 && videsSet.size > 0) etat = "soumission_incomplete";
+  else if (videsSet.size > 0) etat = "soumission_incomplete";
+  else if (ok.size > 0) etat = "partiellement_soumise";
   else if (ok.size + cours.size + notees > 0) etat = "en_cours";
   else etat = "non_commencee";
   return { examId, requises, notees, soumisesNonVides: ok.size, soumisesVides: [...videsSet].sort(), enCours: cours.size,
@@ -82,6 +84,15 @@ export const LIBELLE_ETAT: Record<EtatEpreuve, string> = {
   notee: "Soumise et notée",
   soumise_correction_manquante: "Soumise — note manquante",
   soumission_incomplete: "Envoi incomplet (matière vide)",
+  partiellement_soumise: "Partiellement soumise",
   en_cours: "Commencée, non soumise",
   non_commencee: "Non commencée",
 };
+
+/** Filière e-learning → module Examens blancs (null = carte non concernée). */
+export function moduleEBPourFiliere(typeApprenant?: string | null, formation?: string | null): number | null {
+  const t = (typeApprenant ?? "").toLowerCase().trim();
+  const f = (formation ?? "").toLowerCase();
+  const k = /^(vtc|taxi|ta|va)-e/.exec(t)?.[1] ?? /^(vtc|taxi|ta|va)-elearning/.exec(f)?.[1] ?? null;
+  return k === "vtc" ? 35 : k === "taxi" ? 36 : k === "ta" ? 37 : k === "va" ? 38 : null;
+}
