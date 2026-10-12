@@ -7,11 +7,12 @@ import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 import { arrondirPoidsAffichage, BUDGET_CPF, LABEL_PRESENTIEL } from "@/lib/jalonsPonderes";
 import { chargerCalculJalons, dureeLigne, estJalonPratique, formationJalonsElearning } from "@/lib/jalonsPedagogiques";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
+import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
 /** Carte interne ADMIN : taux indicatif pondéré. Lecture seule. */
-export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie, defaultOpen = false, titre }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null; defaultOpen?: boolean; titre?: string }) {
+export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie, defaultOpen = false, titre, afficherObjectifs = false }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null; defaultOpen?: boolean; titre?: string; afficherObjectifs?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   const { user, loading } = useAuth();
   const userId = !loading ? user?.id ?? null : null;
@@ -95,6 +96,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         {calcul.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{calcul.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
         </div>
       )}
+      {afficherObjectifs && <ObjectifsJalonsSection parcours={key} moduleIds={r.lignes.map((line) => line.moduleId)} />}
     </div>
   );
 }

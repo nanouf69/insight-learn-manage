@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import logoImage from "@/assets/logo-ftransport.png";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 import { BUDGET_CPF, INTRO, INTRO_IDS, LABEL_PRESENTIEL, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, dureeLigne } from "@/lib/jalonsPonderes";
+import { objectifsJalons, TITRE_OBJECTIFS_JALONS } from "@/lib/objectifsJalons";
 
 export interface PreuveJalonPdf {
   label: string;
@@ -106,6 +107,24 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     columnStyles: { 0: { cellWidth: 41 }, 1: { cellWidth: 18 }, 2: { cellWidth: 16 }, 3: { cellWidth: 13 }, 4: { cellWidth: 16 }, 5: { cellWidth: 17 }, 6: { cellWidth: 18 }, 7: { cellWidth: 18 }, 8: { cellWidth: 20 }, 9: { cellWidth: 44 } },
     margin: { left: margin, right: margin, top: 24, bottom: 14 },
   });
+
+  const objectifs = objectifsJalons(`${data.calcul.filiere}-e`, data.calcul.resultat.lignes.map((line: any) => line.moduleId));
+  if (objectifs.length) {
+    doc.addPage();
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(13, 37, 64);
+    doc.text(TITRE_OBJECTIFS_JALONS, margin, 15);
+    autoTable(doc, {
+      startY: 22,
+      head: [["Jalon", "Objectif pédagogique"]],
+      body: objectifs.map(({ intitule, objectif }) => [intitule, objectif]),
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak", valign: "top" },
+      headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" },
+      columnStyles: { 0: { cellWidth: 72, fontStyle: "bold" }, 1: { cellWidth: pw - margin * 2 - 72 } },
+      rowPageBreak: "avoid",
+      margin: { left: margin, right: margin, top: 22, bottom: 16 },
+    });
+  }
 
   const brut = data.calcul.resultat.lignes.reduce((sum: number, line: any) => sum + line.contribution, 0);
   addTextSection("MÉTHODE ET TAUX", [
