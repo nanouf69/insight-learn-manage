@@ -2255,11 +2255,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Dérogation individuelle : débloque le module Pratique pour les apprenants
   // explicitement autorisés, sans modifier leur progression enregistrée.
-  if (apprenant?.id && PRATIQUE_UNLOCK_APPRENANT_IDS.has(apprenant.id)) {
-    modules.forEach((m) => {
-      if (PRATIQUE_MODULE_IDS.has(m.id)) unlockedModuleIds.add(m.id);
-    });
-  }
+  applyPratiqueUnlockDerogation(
+    unlockedModuleIds,
+    modules,
+    apprenant?.id,
+    PRATIQUE_UNLOCK_APPRENANT_IDS,
+    PRATIQUE_MODULE_IDS,
+  );
 
   // Check if the Introduction (first module) is completed.
   // Fallback : toute ligne `apprenant_module_completion` avec un `completed_at`
