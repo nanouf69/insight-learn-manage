@@ -25,12 +25,14 @@ describe("Preuves individuelles des jalons", () => {
         { id: "c", exercice_id: "EB3__t3p", reponses: [{ r: "x" }], completed: true, status: "submitted", submitted_at: "2026-05-25T12:32:23Z", updated_at: "2026-05-25T12:32:23Z" },
       ],
       quiz: [{ id: "q", quiz_type: "examen_blanc", quiz_id: "EB1", matiere_id: "t3p", note_sur_20: 13, completed_at: "2026-05-17T16:54:35Z" }],
-      tentativesV2: [{ attempt_id: "t-test", exam_id: 1, etat: "finalise", is_test: true, finished_at: "2026-06-01T00:00:00Z" }],
+      tentativesV2: [{ attempt_id: "t-test", exam_id: 1, etat: "terminee", is_test: true, finished_at: "2026-06-01T00:00:00Z" }, { attempt_id: "ab", exam_id: 1, etat: "abandonnee", is_test: false, started_at: "2026-06-02T00:00:00Z", finished_at: "2026-06-02T01:00:00Z" }],
     });
-    expect(r.chronologie.map((t) => t.ref)).toEqual(["activite:1", "reponse:a", "quiz:q", "reponse:c"]);
+    expect(r.chronologie.map((t) => t.ref)).toEqual(["activite:1", "reponse:a", "quiz:q", "reponse:c", "passageV2:ab"]);
+    expect(s(35).passagesV2Termines).toBe(0);
     expect(r.nonRattachees.map((t) => t.ref)).toEqual(["activite:2", "activite:3"]);
     const s = (id: number) => r.synthese.find((l) => l.moduleId === id)!;
-    expect(s(35).soumissionsExamen).toBe(1);
+    expect(s(35).matieresEnvoyees).toBe(1);
+    expect(s(2).exercicesAvecReponses).toBe(1);
     expect(s(35).notes).toBe(1);
     expect(s(5).traces).toBe("manquantes");
     expect(s(5).statutEnregistre).toBe("completed");
@@ -41,6 +43,13 @@ describe("Preuves individuelles des jalons", () => {
       emargements: [{ id: "e1", date_emargement: "2026-06-10", demi_journee: "matin", absent: false, signature_data_url: "" }] });
     const p = r.synthese.find((l) => l.moduleId === PRATIQUE_PHYSIQUE)!;
     expect(p.emargements).toBe(0);
+    const signe = construirePreuvesJalons({ ...base, dateDebutAcces: "2026-06-01", dateFinAcces: "2026-06-30", pratiqueDetails: [{ date: "2026-06-10", parts: [], minutes: 360 } as any, { date: "2026-07-10", parts: [], minutes: 360 } as any],
+      emargements: [{ id: "e2", date_emargement: "2026-06-10", demi_journee: "matin", signature_data_url: "x" }, { id: "e3", date_emargement: "2026-07-10", demi_journee: "matin", signature_data_url: "x" }] });
+    const t = signe.chronologie.find((x) => x.ref === "emargement:e2")!;
+    expect(t.dateSeule).toBe(true);
+    expect(t.detail).toContain("heure de signature non disponible");
+    expect(signe.chronologie.find((x) => x.ref === "emargement:e3")!.horsPeriode).toBe(true);
+    expect(signe.synthese.find((l) => l.moduleId === PRATIQUE_PHYSIQUE)!.emargements).toBe(1);
     expect(p.commentaire).toContain("inscription au planning");
   });
 

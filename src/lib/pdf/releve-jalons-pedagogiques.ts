@@ -139,6 +139,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   if (pj) {
     const nomJalon = (id: number | null) => id === PRATIQUE_PHYSIQUE ? LABEL_PRESENTIEL : id == null ? "—" : sansEmoji(MODULE_NAME_BY_ID[id] || `Module ${id}`);
     const dt = (iso?: string | null) => iso ? formatParis(new Date(iso)) : "—";
+    const dtT = (t: { date: string; dateSeule?: boolean }) => t.dateSeule ? `${safeDate(t.date)} (heure de signature non disponible)` : dt(t.date);
     const table = (titre: string, head: string[], body: string[][], widths?: Record<number, any>) => {
       doc.addPage();
       doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(13, 37, 64); doc.text(titre, margin, 15);
@@ -148,14 +149,14 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     };
     table("SOURCES CONSULTÉES (lecture seule)", ["Source", "État de lecture", "Lignes lues"],
       pj.sources.map((s) => [s.libelle, s.lu ? "lue intégralement (pagination complète)" : `LECTURE NON POSSIBLE (${s.erreur}) — absence de trace non démontrée`, s.lu ? String(s.lignes) : "—"]));
-    table("SYNTHÈSE DES PREUVES PAR JALON", ["Jalon", "Statut enregistré", "Ouvertures", "Réponses non vides", "Épreuves envoyées / passages", "Notes", "Émargements signés", "Première trace", "Dernière trace", "Traces", "Lecture"],
-      pj.synthese.map((l) => [nomJalon(l.moduleId), l.statutEnregistre, String(l.ouvertures), String(l.reponsesNonVides), String(l.soumissionsExamen), String(l.notes), String(l.emargements), dt(l.premiere), dt(l.derniere), l.traces, l.commentaire]),
-      { 0: { cellWidth: 38 }, 10: { cellWidth: 70 } });
+    table("SYNTHÈSE DES PREUVES PAR JALON", ["Jalon", "Statut enregistré", "Ouvertures", "Exercices avec réponses enregistrées", "Matières d’examen blanc envoyées", "Passages V2 terminés", "Notes (par matière)", "Émargements signés", "Première trace", "Dernière trace", "Traces", "Lecture"],
+      pj.synthese.map((l) => [nomJalon(l.moduleId), l.statutEnregistre, String(l.ouvertures), String(l.exercicesAvecReponses), String(l.matieresEnvoyees), String(l.passagesV2Termines), String(l.notes), String(l.emargements), dt(l.premiere), dt(l.derniere), l.traces, l.commentaire]),
+      { 0: { cellWidth: 36 }, 11: { cellWidth: 62 } });
     table(`ANNEXE A — CHRONOLOGIE DES TRACES RATTACHÉES (${pj.chronologie.length})`, ["Date (Paris)", "Jalon", "Source", "Trace", "Détail / identifiants", "Référence", "Période"],
-      pj.chronologie.map((t) => [dt(t.date), nomJalon(t.moduleId), t.source, t.type, t.detail, t.ref, t.horsPeriode ? "hors période d’accès" : "dans la période"]),
+      pj.chronologie.map((t) => [dtT(t), nomJalon(t.moduleId), t.source, t.type, t.detail, t.ref, t.horsPeriode ? "HORS PÉRIODE D’ACCÈS — non comptée dans la synthèse" : "dans la période"]),
       { 0: { cellWidth: 24 }, 1: { cellWidth: 38 }, 4: { cellWidth: 80 } });
     table(`ANNEXE B — TRACES NON RATTACHABLES À UN JALON (${pj.nonRattachees.length})`, ["Date (Paris)", "Source", "Trace", "Détail / identifiants", "Motif", "Référence"],
-      pj.nonRattachees.map((t) => [dt(t.date), t.source, t.type, t.detail, t.motifNonRattache ?? "", t.ref]), { 3: { cellWidth: 80 } });
+      pj.nonRattachees.map((t) => [dtT(t), t.source, t.type, t.detail, t.motifNonRattache ?? "", t.ref]), { 3: { cellWidth: 80 } });
     table(`ANNEXE C — CONNEXIONS (${pj.connexions.length}) — durée retenue : ${Math.floor(pj.minutesConnexionRetenues / 60)} h ${String(pj.minutesConnexionRetenues % 60).padStart(2, "0")}`, ["Début (Paris)", "Minutes retenues", "Comptée", "Motif"],
       pj.connexions.map((c) => [dt(c.date), String(c.minutesRetenues), c.comptee ? "oui" : "non", c.motif]));
     addTextSection("PORTÉE DES PREUVES", [
