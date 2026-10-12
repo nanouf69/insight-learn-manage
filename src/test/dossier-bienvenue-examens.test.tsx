@@ -47,19 +47,26 @@ describe("Dossier de bienvenue — liste examens, données fictives", () => {
     expect(mocks.pdf).not.toHaveBeenCalled();
     expect(button.className).toContain("bg-emerald-50");
   });
-  it("reste neutre quand le dossier est absent, jamais vert", async () => {
+  it("affiche le bouton en rouge quand le dossier n'est pas rempli", async () => {
     mocks.read.mockResolvedValue({ data: [], error: null });
     render(<DossierBienvenueButton apprenant={learner} />);
-    await waitFor(() => expect(mocks.from).toHaveBeenCalled());
-    await new Promise(r => setTimeout(r, 10));
-    expect(screen.getByRole("button", { name: "Dossier de bienvenue" }).className).not.toContain("emerald");
+    const button = await waitFor(() => {
+      const b = screen.getByRole("button", { name: "Dossier de bienvenue" });
+      expect(b.className).toContain("border-red-500");
+      return b;
+    });
+    expect(button.className).toContain("bg-red-50");
+    expect(button.className).not.toContain("emerald");
+    expect(mocks.pdf).not.toHaveBeenCalled();
   });
-  it("ne devient jamais vert si la lecture échoue (sans fallback silencieux ni fausse couleur)", async () => {
+  it("ne devient ni vert ni rouge si la lecture échoue (aucune fausse couleur)", async () => {
     mocks.read.mockResolvedValue({ data: null, error: new Error("lecture refusée") });
     render(<DossierBienvenueButton apprenant={learner} />);
     await waitFor(() => expect(mocks.from).toHaveBeenCalled());
     await new Promise(r => setTimeout(r, 10));
-    expect(screen.getByRole("button", { name: "Dossier de bienvenue" }).className).not.toContain("emerald");
+    const cls = screen.getByRole("button", { name: "Dossier de bienvenue" }).className;
+    expect(cls).not.toContain("emerald");
+    expect(cls).not.toContain("red");
   });
   it("ne fabrique aucun PDF si absent", async () => {
     mocks.read.mockResolvedValue({ data: [], error: null });

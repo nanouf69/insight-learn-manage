@@ -5,3 +5,4 @@
 - Même générateur PDF que CRM → Formulaires ; aucun dossier fabriqué si absent.
 - Aucun changement de contenu, de données élèves, de droits, ni envoi mail/SMS ; aucune publication.
 - Contrôles : tests fictifs ciblés ; aucun test sur un véritable apprenant.
+- 13:35 UTC — Couleur ajoutée : vert si le dossier est rempli, rouge s'il ne l'est pas, neutre tant que la lecture n'est pas faite ou a échoué. Lecture seule, aucune écriture, aucune publication.
