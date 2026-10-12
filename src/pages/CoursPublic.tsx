@@ -2235,6 +2235,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Modules always unlocked even in e-learning (no sequential gate)
   const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
 
+  // Dérogations individuelles (accord explicite du responsable) : module
+  // Pratique (VTC = 8, TAXI = 6) débloqué sans attendre les modules précédents.
+  const PRATIQUE_MODULE_IDS = new Set([6, 8]);
+  const PRATIQUE_UNLOCK_APPRENANT_IDS = new Set<string>([
+    "96604b15-bd2b-418c-8019-293186c016fb", // Enzo Calvo (VTC) — accord 12/10/2026
+  ]);
+
   const unlockState = computeUnlockState({
     modules,
     completedModuleIds,
