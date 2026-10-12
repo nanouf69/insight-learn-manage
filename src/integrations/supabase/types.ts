@@ -7657,10 +7657,6 @@ export type Database = {
         }[]
       }
       confirmer_changement_mdp_effectue: { Args: never; Returns: boolean }
-      controle_preuve_validation_module: {
-        Args: { _apprenant_id: string; _details?: Json; _module_id: number }
-        Returns: Json
-      }
       core_admin_reset_exam: {
         Args: {
           p_admin_email?: string
