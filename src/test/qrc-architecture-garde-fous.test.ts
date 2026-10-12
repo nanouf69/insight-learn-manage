@@ -202,6 +202,14 @@ describe("Surveillance d'incohérence", () => {
     expect(report.incoherences).toHaveLength(1);
   });
 
+  it("drapeau historique avec correction IA sur la même écriture → pas d'incohérence", () => {
+    const report = auditQrcCoherence([
+      row({ details: { questions: [question(1, "QRC", "rep")], reponses: { "1": "rep" }, correctionsIA: { "1": { correctedBy: "ia:google/gemini-3.8-flash", note: 2 } }, qrc_pending_correction: true } }),
+    ]);
+    expect(report.qrcToCorrect).toBe(0);
+    expect(report.incoherences).toHaveLength(0);
+  });
+
   it("aucune incohérence quand la QRC est réellement en attente", () => {
     const report = auditQrcCoherence([
       row({ details: { questions: [question(1, "QRC", "rep")], reponses: { "1": "rep" }, correctionsIA: {}, qrc_pending_correction: true } }),
