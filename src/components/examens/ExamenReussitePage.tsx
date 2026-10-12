@@ -34,6 +34,7 @@ import { PratiqueCandidateNote } from "./PratiqueCandidateNote";
 import { pratiqueNoteHTML, pratiqueCandidateNameHTML } from "@/lib/pratiqueCandidateNotes";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 import { TauxElearningCell } from './TauxElearningCell';
+import { DossierBienvenueButton } from './DossierBienvenueButton';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -2494,7 +2495,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
                     return (
                       <TableRow key={apprenant.id} className="[&>td]:px-1.5 [&>td]:py-2">
-                        <TableCell className="truncate font-medium" title={apprenant.nom || undefined}>
+                        <TableCell className="font-medium" title={apprenant.nom || undefined}>
                           {onNavigateToApprenant ? (
                             <button
                               type="button"
@@ -2505,6 +2506,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               {apprenant.nom}
                             </button>
                           ) : apprenant.nom}
+                          <DossierBienvenueButton apprenant={apprenant} />
                         </TableCell>
                         <TableCell className="truncate" title={apprenant.prenom || undefined}>
                           {onNavigateToApprenant ? (

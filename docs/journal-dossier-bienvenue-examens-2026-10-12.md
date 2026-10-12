@@ -1,0 +1,7 @@
+# 12/10/2026 — Dossier de bienvenue dans les examens
+
+- Périmètre autorisé : liste des inscriptions/résultats théoriques uniquement, toutes filières et toutes dates.
+- Bouton sous le nom de chaque candidat, lecture du dossier enregistré par identifiant apprenant.
+- Même générateur PDF que CRM → Formulaires ; aucun dossier fabriqué si absent.
+- Aucun changement de contenu, de données élèves, de droits, ni envoi mail/SMS ; aucune publication.
+- Contrôles : tests fictifs ciblés ; aucun test sur un véritable apprenant.
