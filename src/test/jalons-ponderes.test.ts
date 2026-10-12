@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { MODULES_FILIERE, INTRO, calculerJalonsPonderes, calculerPoids, filiereDuParcours, unites, type Filiere } from "@/lib/jalonsPonderes";
+import { MODULES_FILIERE, MODULES_PONDERES, INTRO, PRATIQUE_PHYSIQUE, avecJalonPratique, calculerJalonsPonderes, calculerPoids, completionPratique, filiereDuParcours, unites, type Filiere } from "@/lib/jalonsPonderes";
 import { construireVolumes } from "@/lib/jalonsVolumes";
 import { compterQuestionsActives, contenuEffectif } from "@/lib/volumeModules";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
@@ -18,10 +18,10 @@ describe("jalons pondérés par volume", () => {
   it("poids de chaque filière somment 100 (aucun % figé)", () => {
     for (const [f, k] of [["vtc", "vtc-e"], ["taxi", "taxi"], ["ta", "ta"], ["va", "va-e"]] as const) {
       const volumes = vol(f, k).volumes;
-      const totalPoints = MODULES_FILIERE[f].reduce((total, id) => total + unites(volumes[id]), 0);
+      const totalPoints = MODULES_PONDERES[f].reduce((total, id) => total + unites(volumes[id]), 0);
       const poids = calculerPoids(f, volumes);
       expect(sum(poids)).toBeCloseTo(100, 6);
-      for (const id of MODULES_FILIERE[f]) expect(poids[id]).toBeCloseTo((unites(volumes[id]) / totalPoints) * 100, 10);
+      for (const id of MODULES_PONDERES[f]) expect(poids[id]).toBeCloseTo((unites(volumes[id]) / totalPoints) * 100, 10);
     }
     expect(readFileSync("src/lib/jalonsPonderes.ts", "utf8")).not.toMatch(/GRILLE_JALONS|42\b/);
   });
@@ -69,24 +69,26 @@ describe("jalons pondérés par volume", () => {
   });
   it("0 partout => 0 ; tout complet => 100 ; fin non validée => 99.9", () => {
     const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
-    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), [], p).taux).toBe(0);
-    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), all("vtc-e"), p).taux).toBe(100);
-    const r = calculerJalonsPonderes("vtc", ids("vtc-e"), all("vtc-e").filter((c) => c.module_id !== 50), p);
+    const parcours = avecJalonPratique(ids("vtc-e"));
+    expect(calculerJalonsPonderes("vtc", parcours, [], p).taux).toBe(0);
+    const complet = [...all("vtc-e"), completionPratique(360)];
+    expect(calculerJalonsPonderes("vtc", parcours, complet, p).taux).toBe(100);
+    const r = calculerJalonsPonderes("vtc", parcours, complet.filter((c) => c.module_id !== 50), p);
     expect(r.taux).toBe(99.9);
     expect(r.jalonsObligatoiresManquants).toContain(50);
   });
   it("module absent du parcours : pas de renormalisation", () => {
     const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
-    const parcours = ids("vtc-e").filter((id) => id !== 35);
-    const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })), p);
+    const parcours = avecJalonPratique(ids("vtc-e").filter((id) => id !== 35));
+    const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })) , p);
     expect(r.taux).toBeCloseTo(Math.round((100 - p[35]) * 10) / 10, 5);
   });
   it("tentatives en double n'ajoutent rien ; progress 100 sans completed => jamais 100", () => {
     const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
     const un = calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }], p).taux;
     expect(calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }, { module_id: 2, status: "in_progress", progress: 50 }], p).taux).toBe(un);
-    const rows = all("vtc-e").map((c) => (c.module_id === 2 ? { module_id: 2, status: "in_progress", progress: 100 } : c));
-    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), rows, p).taux).toBe(99.9);
+    const rows = [...all("vtc-e").map((c) => (c.module_id === 2 ? { module_id: 2, status: "in_progress", progress: 100 } : c)), completionPratique(360)];
+    expect(calculerJalonsPonderes("vtc", avecJalonPratique(ids("vtc-e")), rows, p).taux).toBe(99.9);
   });
   it("alias filière, intro présentiel et poids intro une seule fois", () => {
     expect(filiereDuParcours("ta-e-presentiel")).toBe("ta");
@@ -94,13 +96,13 @@ describe("jalons pondérés par volume", () => {
     const v = construireVolumes("ta", ids("ta"), [], () => null, examens("TA"));
     expect(v.volumes[INTRO].moduleId).toBe(31);
     const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
-    const parcours = [26, 1, ...ids("vtc-e").filter((id) => id !== 26)];
+    const parcours = avecJalonPratique([26, 1, ...ids("vtc-e").filter((id) => id !== 26)]);
     const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })), p);
     expect(r.lignes.reduce((s, l) => s + l.poids, 0)).toBeCloseTo(100, 5);
     expect(r.lignes.find((l) => l.moduleId === 1)!.poids).toBe(0);
     const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
     expect(card).toMatch(/l\.poids > 0 \? unites/);
-    expect(card).toMatch(/MODULES_FILIERE\[filiere\].*unites/);
+    expect(card).toMatch(/MODULES_PONDERES\[calcul\.filiere\].*unites/);
   });
   it("carte placée sous la tuile Modules, admin uniquement, actualisée en direct", () => {
     const page = readFileSync("src/components/crm/ApprenantDetailPage.tsx", "utf8");
@@ -148,6 +150,15 @@ describe("revue jalons", () => {
       expect(readFileSync(f, "utf8")).toMatch(/signalerContenuModifie\(/);
     const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
     expect(card).toMatch(/ecouterContenuModifie/);
-    expect(card).toMatch(/!volumes \|\| volFetching/);
+    expect(card).toMatch(/!calcul \|\| isFetching/);
+  });
+  it("jalon pratique virtuel : 360 points et progression 0 / 3 h / 6 h", () => {
+    const volumes = vol("vtc", "vtc-e").volumes;
+    const p = calculerPoids("vtc", volumes);
+    expect(unites(volumes[PRATIQUE_PHYSIQUE])).toBe(360);
+    expect(completionPratique(0).progress).toBe(0);
+    expect(completionPratique(180).progress).toBe(50);
+    expect(completionPratique(360)).toMatchObject({ progress: 100, status: "completed" });
+    expect(sum(p)).toBeCloseTo(100, 6);
   });
 });
