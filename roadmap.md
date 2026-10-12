@@ -1,6 +1,9 @@
 # Feuille de route
 
 ## Relevé des jalons pédagogiques PDF — 12/10 14:32 UTC
+- [ ] Étendre la source commune carte/PDF avec un jalon virtuel « Entraînement pratique — 6 h » valant 360 points pour les quatre parcours e-learning visés.
+- [ ] Calculer sa progression uniquement depuis les minutes pratiques justifiées par Planning pratique + émargements signés : 0/180/360 min = 0/50/100 %, indisponible distinct de 0.
+- [ ] Recalculer tous les poids sur points e-learning + 360, sans pourcentage figé, double comptage, écriture de module ni assimilation du module en ligne 6/8 à la présence physique.
 - [ ] Ajouter dans Contrôle, pour VTC/TAXI/TA/VA e-learning uniquement, un téléchargement admin en lecture seule près du relevé de connexions.
 - [ ] Réutiliser la source dynamique des Jalons pondérés pour points, poids, progression et statuts, sans grille parallèle ni écriture élève.
 - [ ] Générer un PDF factuel paginé : identité/dates disponibles, tableau des jalons, méthode, preuves réellement disponibles, limites et références CPOF/CG V15.
