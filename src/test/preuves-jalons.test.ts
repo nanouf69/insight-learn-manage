@@ -28,12 +28,12 @@ describe("Preuves individuelles des jalons", () => {
       tentativesV2: [{ attempt_id: "t-test", exam_id: 1, etat: "terminee", is_test: true, finished_at: "2026-06-01T00:00:00Z" }, { attempt_id: "ab", exam_id: 1, etat: "abandonnee", is_test: false, started_at: "2026-06-02T00:00:00Z", finished_at: "2026-06-02T01:00:00Z" }],
     });
     expect(r.chronologie.map((t) => t.ref)).toEqual(["activite:1", "reponse:a", "quiz:q", "reponse:c", "passageV2:ab"]);
-    expect(s(35).passagesV2Termines).toBe(0);
     expect(r.nonRattachees.map((t) => t.ref)).toEqual(["activite:2", "activite:3"]);
     const s = (id: number) => r.synthese.find((l) => l.moduleId === id)!;
     expect(s(35).matieresEnvoyees).toBe(1);
     expect(s(2).exercicesAvecReponses).toBe(1);
     expect(s(35).notes).toBe(1);
+    expect(s(35).passagesV2Termines).toBe(0);
     expect(s(5).traces).toBe("manquantes");
     expect(s(5).statutEnregistre).toBe("completed");
   });
