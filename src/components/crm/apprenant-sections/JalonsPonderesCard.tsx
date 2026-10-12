@@ -3,9 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { FORMATION_MODULES, MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { arrondirPoidsAffichage, INTRO, INTRO_IDS, MODULES_FILIERE, calculerJalonsPonderes, calculerPoids, filiereDuParcours, unites } from "@/lib/jalonsPonderes";
-import { construireVolumes } from "@/lib/jalonsVolumes";
+import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
+import { arrondirPoidsAffichage, INTRO, INTRO_IDS, MODULES_PONDERES, PRATIQUE_PHYSIQUE, unites } from "@/lib/jalonsPonderes";
+import { chargerCalculJalons, estJalonPratique, formationJalonsElearning } from "@/lib/jalonsPedagogiques";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
@@ -27,45 +27,21 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   });
   // Le résultat n'est valable que pour le compte qui l'a obtenu (changement de compte / déconnexion = masqué).
   const isAdmin = !!userId && adminCheck?.userId === userId && adminCheck.admin;
-  const ta = String(typeApprenant ?? "").toLowerCase().trim();
-  const fc = String(formationChoisie ?? "").toLowerCase().trim();
-  const key = FORMATION_MODULES[ta] ? ta : FORMATION_MODULES[fc] ? fc : null;
-  const filiere = filiereDuParcours(key);
-  const { data: rows, isError } = useQuery({
-    queryKey: ["jalons-ponderes", apprenantId, userId],
-    enabled: !!isAdmin && !!filiere,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("apprenant_module_completion").select("module_id, status, progress").eq("apprenant_id", apprenantId);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const parcours = key ? FORMATION_MODULES[key].modules.map((m) => m.id) : [];
+  const key = formationJalonsElearning(typeApprenant, formationChoisie);
   const queryClient = useQueryClient();
   // Poids recalculés depuis le contenu ACTUEL (questions) à chaque affichage, retour d'onglet et enregistrement éditeur.
-  const { data: volumes, isError: volErr, isFetching: volFetching } = useQuery({
-    queryKey: [JALONS_VOLUMES_KEY, filiere, parcours.join(","), ta, userId],
-    enabled: !!isAdmin && !!filiere,
+  const { data: calcul, isError, isFetching } = useQuery({
+    queryKey: [JALONS_VOLUMES_KEY, apprenantId, key, userId],
+    enabled: !!isAdmin && !!key,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
     refetchInterval: 5 * 60 * 1000, // filet de sécurité si un événement en direct est manqué
-    queryFn: async () => {
-      const ids = [...new Set([...MODULES_FILIERE[filiere!].filter((x) => x > 0), ...parcours.filter((x) => INTRO_IDS.has(x)), 26, 32, 34])];
-      const [{ data, error }, mdv, { fetchLiveExamens }] = await Promise.all([
-        supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices").in("module_id", ids),
-        import("@/components/cours-en-ligne/ModuleDetailView"),
-        import("@/components/cours-en-ligne/useLiveExamens"),
-      ]);
-      if (error) throw error;
-      const examens = await fetchLiveExamens();
-      const v = construireVolumes(filiere!, parcours, (data ?? []) as any, (id) => mdv.getInitialModuleContentForVolume(id, typeApprenant), examens as any);
-      return { ...v, poids: calculerPoids(filiere!, v.volumes) };
-    },
+    queryFn: () => chargerCalculJalons({ apprenantId, typeApprenant, formationChoisie }),
   });
   useEffect(() => {
-    if (!isAdmin || !filiere) return;
+    if (!isAdmin || !key) return;
     const ch = supabase.channel(`jalons-volumes-${apprenantId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, () => {
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
@@ -73,20 +49,20 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       .subscribe();
     const stop = ecouterContenuModifie(() => { void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] }); });
     return () => { stop(); void supabase.removeChannel(ch); };
-  }, [isAdmin, filiere, apprenantId, queryClient]);
-  if (!isAdmin || !filiere || !key) return null;
-  if (isError || volErr) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché).</div>;
+  }, [isAdmin, key, apprenantId, queryClient]);
+  if (!isAdmin || !key) return null;
+  if (isError) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché).</div>;
   // Pendant un recalcul, aucun ancien pourcentage n'est affiché.
-  if (!rows || !volumes || volFetching) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
-  const r = calculerJalonsPonderes(filiere, parcours, rows as any, volumes.poids);
+  if (!calcul || isFetching) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
+  const r = calcul.resultat;
   const ponderees = r.lignes.map((l, i) => [l.poids, i] as const).filter(([p]) => p > 0);
   const arrondis = arrondirPoidsAffichage(ponderees.map(([p]) => p));
   const poidsAffiche = new Map(ponderees.map(([, i], k) => [i, arrondis[k]]));
   const pointsParLigne = new Map(r.lignes.map((l, i) => {
     const volumeId = INTRO_IDS.has(l.moduleId) && l.poids > 0 ? INTRO : l.moduleId;
-    return [i, l.poids > 0 ? unites(volumes.volumes[volumeId]) : 0] as const;
+    return [i, l.poids > 0 ? unites(calcul.volumes[volumeId]) : 0] as const;
   }));
-  const totalPoints = MODULES_FILIERE[filiere].reduce((total, moduleId) => total + unites(volumes.volumes[moduleId]), 0);
+  const totalPoints = MODULES_PONDERES[calcul.filiere].reduce((total, moduleId) => total + unites(calcul.volumes[moduleId]), 0);
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
@@ -107,8 +83,8 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
           <tbody>
             {r.lignes.map((l, i) => (
               <tr key={l.moduleId} className="border-t">
-                <td>{l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
-                {(() => { const v = Object.values(volumes.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{v?.pages ?? "–"}</td><td className="text-right">{v?.questions ?? "–"}</td></>; })()}
+                <td>{estJalonPratique(l.moduleId) ? "Entraînement pratique — 6 h" : l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
+                {(() => { const v = Object.values(calcul.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{estJalonPratique(l.moduleId) ? "6 h" : v?.pages ?? "–"}</td><td className="text-right">{estJalonPratique(l.moduleId) ? "–" : v?.questions ?? "–"}</td></>; })()}
                 <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : pointsParLigne.get(i)?.toLocaleString("fr-FR")}</td>
                 <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : (poidsAffiche.get(i) ?? 0).toLocaleString("fr-FR")}</td>
                 <td className="text-right">{Math.round(l.progression)}%</td>
@@ -118,9 +94,9 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
           </tbody>
           <tfoot><tr className="border-t font-semibold"><td colSpan={3}>Total formation</td><td className="text-right">{totalPoints.toLocaleString("fr-FR")}</td><td className="text-right">100</td><td colSpan={2} /></tr></tfoot>
         </table>
-        <p className="mt-2 text-xs text-muted-foreground">1 slide/page/fiche = 4 points ; 1 question active = 1 point ; poids du module = points du module / points totaux × 100. Les points sont des points de pondération, pas une note ni un score. La contribution est la part déjà acquise dans la progression globale : par exemple, un module de 100 points sur 1 000 pèse 10 %, et réalisé à 50 % contribue 5 points de pourcentage au total.</p>
+        <p className="mt-2 text-xs text-muted-foreground">1 slide/page/fiche = 4 points estimés ; 1 question active = 1 point estimé ; entraînement pratique 6 h = 360 points. Poids du jalon = points / points totaux × 100. Ces points sont des unités de pondération, pas une note, un score ou des heures attestées. La pratique réalisée provient uniquement du Planning pratique et des émargements signés ({Math.min(360, calcul.pratique.minutes)} / 360 min justifiées).</p>
         <p className="mt-1 text-xs text-muted-foreground">Questions recomptées sur le contenu actuel ; pages issues de l'audit (non recomptées automatiquement). Un module déjà « Terminé » reste à 100 % même si des questions ont été ajoutées depuis.</p>
-        {volumes.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{volumes.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
+        {calcul.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{calcul.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
         </div>
       )}
     </div>
