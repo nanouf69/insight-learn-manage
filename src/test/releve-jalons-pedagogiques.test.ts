@@ -7,6 +7,7 @@ import { calculerDureesPrevisionnelles, MODULES_PONDERES, PRATIQUE_PHYSIQUE, ave
 import { formationJalonsElearning } from "@/lib/jalonsPedagogiques";
 import { generateReleveJalonsPedagogiquesPdf } from "@/lib/pdf/releve-jalons-pedagogiques";
 import { objectifsJalons } from "@/lib/objectifsJalons";
+import { tableauAffichageJalons, formatDureeJalon, heuresEnregistreesJalons } from "@/lib/affichageJalons";
 
 const volumes = Object.fromEntries(MODULES_PONDERES.vtc.map((id) => [id, { moduleId: id, pages: id === PRATIQUE_PHYSIQUE ? 0 : 10, questions: id === PRATIQUE_PHYSIQUE ? 0 : 5, points: id === PRATIQUE_PHYSIQUE ? 360 : undefined }]));
 
@@ -34,11 +35,21 @@ describe("Relevé des jalons pédagogiques", () => {
     const poids = calculerPoids(filiere, volumes);
     const calcul = { filiere, volumes, durees: calculerDureesPrevisionnelles(filiere, volumes), limites: ["Module fictif : pages issues de l’audit."], poids, completions, resultat: calculerJalonsPonderes(filiere, parcours, completions, poids), pratique: { minutes: 180, progression: 50, dernierePreuve: "2026-02-10", source: "Planning pratique + émargements signés" } };
     const before = JSON.stringify(calcul);
+    const affichage = tableauAffichageJalons(calcul as any);
+    expect(affichage.lignes.reduce((s, l) => s + l.poidsAffiche, 0)).toBeCloseTo(100, 8);
+    expect(affichage.lignes.reduce((s, l) => s + l.minutesCpf, 0)).toBe(affichage.totalMinutes);
+    expect(formatDureeJalon(affichage.totalMinutes)).toBe(filiere === "vtc" ? "66h00" : filiere === "taxi" ? "96h00" : "36h00");
+    expect(affichage.minutesCouvertes).toBe(affichage.totalMinutes - 180);
+    expect(affichage.taux).toBe(calcul.resultat.taux);
+    expect(heuresEnregistreesJalons(calcul as any).enLigne).toBeNull();
+    const preuvesJalons = { version: "test fictif", sources: ["connexions", "activites", "reponses", "quiz"].map((cle) => ({ cle, libelle: cle, lu: true, lignes: 1 })), synthese: [], chronologie: [], nonRattachees: [], connexions: [], minutesConnexionRetenues: 3435 };
+    expect(heuresEnregistreesJalons(calcul as any, preuvesJalons)).toEqual({ enLigne: 3435, pratique: 180, total: 3615 });
     const result = generateReleveJalonsPedagogiquesPdf({
       apprenant: { id: "DOSSIER-FICTIF", civilite: "Mme", prenom: "Alice", nom: "EXEMPLE", type_apprenant: `${filiere}-e`, date_debut_formation: "2026-01-02", date_fin_formation: "2026-03-04" },
       formationLabel: `${filiere.toUpperCase()} — e-learning (CPF)`,
       session: { nom: "Session fictive", date_debut: "2026-01-02", date_fin: "2026-03-04" },
       calcul,
+      preuvesJalons,
       preuves: Array.from({ length: 12 }, (_, index) => ({ label: `Preuve fictive ${index + 1}`, count: index, dates: ["2026-02-10"], detail: "Donnée fictive de contrôle visuel" })),
       elementsACompleter: ["Accompagnement : non renseigné dans le jeu fictif."],
       generatedAt: new Date("2026-10-12T14:00:00Z"),
@@ -52,6 +63,13 @@ describe("Relevé des jalons pédagogiques", () => {
     writeFileSync(path, bytes);
     const pdf = execFileSync("pdftotext", ["-raw", path, "-"], { encoding: "utf8" }).replace(/\s+/g, " ");
     expect(pdf).toContain("Objectifs pédagogiques des jalons");
+    expect(pdf).toContain("Durée prévisionnelle couverte");
+    expect(pdf).toContain(formatDureeJalon(affichage.totalMinutes));
+    expect(pdf).toContain(formatDureeJalon(affichage.minutesCouvertes));
+    expect(pdf).toContain("Taux global :");
+    expect(pdf).toContain("57h15");
+    expect(pdf).toContain("60h15");
+    expect(pdf).toContain("RAPPEL CHIFFRÉ");
     for (const { intitule, objectif } of objectifsJalons(`${filiere}-e`, parcours)) {
       expect(pdf).toContain(intitule);
       expect(pdf).toContain(objectif);

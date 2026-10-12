@@ -37,7 +37,7 @@ vi.mock("@/lib/jalonsPedagogiques", async () => {
       const volumes = jv.construireVolumes("vtc", parcours, [], () => ({ cours: [], exercices: [] }), Array.from({ length: 6 }, (_, i) => ({ type: "VTC", numero: i + 1, matieres: [{ questions: Array.from({ length: 10 }, () => ({})) }] })));
       const poids = jp.calculerPoids("vtc", volumes.volumes);
       const completions = [{ module_id: 2, status: "in_progress", progress: 50 }, jp.completionPratique(0)];
-      return { key: "vtc-e", filiere: "vtc", parcours, volumes: volumes.volumes, limites: [], poids, completions, resultat: jp.calculerJalonsPonderes("vtc", parcours, completions, poids), pratique: { minutes: 0, progression: 0, dernierePreuve: null, source: "test" } };
+      return { key: "vtc-e", filiere: "vtc", parcours, volumes: volumes.volumes, durees: jp.calculerDureesPrevisionnelles("vtc", volumes.volumes), limites: [], poids, completions, resultat: jp.calculerJalonsPonderes("vtc", parcours, completions, poids), pratique: { minutes: 0, progression: 0, dernierePreuve: null, source: "test" } };
     },
   };
 });

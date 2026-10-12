@@ -4,15 +4,18 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { arrondirPoidsAffichage, BUDGET_CPF, LABEL_PRESENTIEL } from "@/lib/jalonsPonderes";
-import { chargerCalculJalons, dureeLigne, estJalonPratique, formationJalonsElearning } from "@/lib/jalonsPedagogiques";
+import { LABEL_PRESENTIEL } from "@/lib/jalonsPonderes";
+import { chargerCalculJalons, estJalonPratique, formationJalonsElearning } from "@/lib/jalonsPedagogiques";
+import { EXPLICATION_JALONS, formatDureeJalon, heuresEnregistreesJalons, tableauAffichageJalons } from "@/lib/affichageJalons";
+import { chargerPreuvesJalons } from "@/lib/preuvesJalons";
+import { Button } from "@/components/ui/button";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
 import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
 /** Carte interne ADMIN : taux indicatif pondéré. Lecture seule. */
-export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie, defaultOpen = false, titre, afficherObjectifs = false }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null; defaultOpen?: boolean; titre?: string; afficherObjectifs?: boolean }) {
+export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie, defaultOpen = false, titre, afficherObjectifs = false, apprenant }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null; defaultOpen?: boolean; titre?: string; afficherObjectifs?: boolean; apprenant?: any }) {
   const [open, setOpen] = useState(defaultOpen);
   const { user, loading } = useAuth();
   const userId = !loading ? user?.id ?? null : null;
@@ -21,7 +24,8 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     enabled: !!userId,
     staleTime: 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId!).eq("role", "admin").maybeSingle();
+      if (!userId) throw new Error("Accès administrateur requis");
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
       if (error) throw error;
       return { userId, admin: !!data };
     },
@@ -41,6 +45,16 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     refetchInterval: 5 * 60 * 1000, // filet de sécurité si un événement en direct est manqué
     queryFn: () => chargerCalculJalons({ apprenantId, typeApprenant, formationChoisie }),
   });
+  const { data: preuves, isFetching: preuvesFetching } = useQuery({
+    queryKey: ["jalons-heures-enregistrees", apprenantId, userId, calcul?.key],
+    enabled: !!isAdmin && !!calcul && !!apprenant && afficherObjectifs,
+    staleTime: 0,
+    gcTime: 0,
+    queryFn: () => {
+      if (!calcul || !apprenant) throw new Error("Relevé indisponible");
+      return chargerPreuvesJalons({ apprenant, filiere: calcul.filiere, lignesModuleIds: calcul.resultat.lignes.map((l) => l.moduleId), completions: calcul.completions });
+    },
+  });
   useEffect(() => {
     if (!isAdmin || !key) return;
     // Nom unique par instance : la carte peut être affichée deux fois (fiche + Contrôle).
@@ -57,10 +71,9 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   // Pendant un recalcul, aucun ancien pourcentage n'est affiché.
   if (!calcul || isFetching) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
   const r = calcul.resultat;
-  const ponderees = r.lignes.map((l, i) => [l.poids, i] as const).filter(([p]) => p > 0);
-  const arrondis = arrondirPoidsAffichage(ponderees.map(([p]) => p));
-  const poidsAffiche = new Map(ponderees.map(([, i], k) => [i, arrondis[k]]));
-  const totalMinutes = BUDGET_CPF[calcul.filiere].total;
+  const tableau = tableauAffichageJalons(calcul);
+  const heures = heuresEnregistreesJalons(calcul, preuvesFetching ? null : preuves);
+  const pct = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
@@ -72,27 +85,30 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, r.taux)}%` }} />
       </div>
       {finIncomplete && <div className="mt-1 text-xs text-muted-foreground">Contenus pédagogiques terminés ; validation de fin de formation / jalon administratif en attente.</div>}
-      <button type="button" onClick={() => setOpen(!open)} className="mt-1 flex items-center gap-1 text-xs text-primary">
+      <Button variant="ghost" size="sm" onClick={() => setOpen(!open)} className="mt-1 gap-1 text-xs text-primary">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module
-      </button>
+      </Button>
       {open && (
-        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[42rem] text-xs">
-          <thead><tr className="text-muted-foreground text-left"><th>Module</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Durée prévisionnelle CPF (min)</th><th className="text-right">Poids</th><th className="text-right">Progression</th><th className="text-right">Contribution</th></tr></thead>
+        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[48rem] text-xs [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
+          <caption className="text-left font-semibold mb-2">Pourcentages et heures prévisionnelles par jalon</caption>
+          <thead><tr className="text-muted-foreground text-left"><th>Module / jalon</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Heures CPF prévisionnelles</th><th className="text-right">Poids dans la formation (%)</th><th className="text-right">Progression élève (%)</th><th className="text-right">Contribution (points de %)</th><th className="text-right">Durée prévisionnelle couverte</th></tr></thead>
           <tbody>
-            {r.lignes.map((l, i) => (
+            {tableau.lignes.map((l) => (
               <tr key={l.moduleId} className="border-t">
                 <td>{estJalonPratique(l.moduleId) ? LABEL_PRESENTIEL : l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
-                {(() => { const v = Object.values(calcul.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{estJalonPratique(l.moduleId) ? "6 h" : v?.pages ?? "–"}</td><td className="text-right">{estJalonPratique(l.moduleId) ? "–" : v?.questions ?? "–"}</td></>; })()}
-                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : dureeLigne(calcul.durees, l.moduleId, l.poids).toLocaleString("fr-FR")}</td>
-                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : (poidsAffiche.get(i) ?? 0).toLocaleString("fr-FR")}</td>
-                <td className="text-right">{Math.round(l.progression)}%</td>
-                <td className="text-right">{l.contribution.toFixed(1)}</td>
+                {(() => { const v = Object.values(calcul.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{estJalonPratique(l.moduleId) ? "–" : v?.pages ?? "–"}</td><td className="text-right">{estJalonPratique(l.moduleId) ? "–" : v?.questions ?? "–"}</td></>; })()}
+                <td className="text-right whitespace-nowrap">{formatDureeJalon(l.minutesCpf)}</td>
+                <td className="text-right">{pct(l.poidsAffiche)}{l.obligatoireSansPoids ? " (obligatoire)" : ""}</td>
+                <td className="text-right">{pct(l.progression)}</td>
+                <td className="text-right">{l.contribution.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de %</td>
+                <td className="text-right whitespace-nowrap">{formatDureeJalon(l.minutesCouvertes)}</td>
               </tr>
             ))}
           </tbody>
-          <tfoot><tr className="border-t font-semibold"><td colSpan={3}>Total formation</td><td className="text-right">{totalMinutes.toLocaleString("fr-FR")} ({totalMinutes / 60} h)</td><td className="text-right">100</td><td colSpan={2} /></tr></tfoot>
+          <tfoot><tr className="border-t font-semibold"><td colSpan={3}>TOTAL FORMATION</td><td className="text-right">{formatDureeJalon(tableau.totalMinutes)}</td><td className="text-right">100 %</td><td className="text-right">Taux global : {pct(tableau.taux)}</td><td className="text-right">{tableau.contributionBrute.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de % (brut)</td><td className="text-right">{formatDureeJalon(tableau.minutesCouvertes)}</td></tr></tfoot>
         </table>
-        <p className="mt-2 text-xs text-muted-foreground">Répartition prévisionnelle des durées CPF (tableau approuvé) : examens blancs et présentiel 6 h fixes ; le reste du budget est réparti selon le volume actuel (2 × pages d’audit + questions actives) et s’ajuste automatiquement quand des questions sont ajoutées. Poids = durée prévisionnelle / durée totale × 100. Ces durées ne sont ni des heures réalisées, ni des temps validés par la CDC, ni une note. Heures réalisées en présentiel (preuve) : {Math.min(360, calcul.pratique.minutes)} / 360 min justifiées par le Planning pratique et les émargements signés.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{EXPLICATION_JALONS} Durée couverte = durée CPF × progression / 100 (arrondie à la minute pour l’affichage). Le total couvert est arrondi après addition. Le taux global n’est pas la somme des progressions ; le plafond interne existant reste inchangé. Examens blancs : {calcul.filiere === "vtc" || calcul.filiere === "taxi" ? "23h00" : "5h00"} ; présentiel : 6h00.</p>
+        <p className="mt-2 text-xs font-medium">Heures réellement enregistrées (distinctes du prévisionnel) : en ligne {heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} · pratique signée {formatDureeJalon(heures.pratique)} · total {heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune répartition d’heures réelles par module n’est déduite des connexions.</p>
         <p className="mt-1 text-xs text-muted-foreground">Questions recomptées sur le contenu actuel ; pages issues de l'audit (non recomptées automatiquement). Un module déjà « Terminé » reste à 100 % même si des questions ont été ajoutées depuis.</p>
         {calcul.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{calcul.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
         </div>

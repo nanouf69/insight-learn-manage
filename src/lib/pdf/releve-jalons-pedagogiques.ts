@@ -5,6 +5,7 @@ import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 import { BUDGET_CPF, INTRO, INTRO_IDS, LABEL_PRESENTIEL, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, dureeLigne } from "@/lib/jalonsPonderes";
 import { objectifsJalons, TITRE_OBJECTIFS_JALONS } from "@/lib/objectifsJalons";
 import type { PreuvesJalons } from "@/lib/preuvesJalons";
+import { EXPLICATION_JALONS, formatDureeJalon, heuresEnregistreesJalons, tableauAffichageJalons } from "@/lib/affichageJalons";
 
 export interface PreuveJalonPdf {
   label: string;
@@ -97,9 +98,28 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
       source,
     ];
   });
+  const affichage = tableauAffichageJalons(data.calcul);
+  const heures = heuresEnregistreesJalons(data.calcul, data.preuvesJalons);
+  const heuresTexte = `Heures réellement enregistrées — en ligne : ${heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} ; pratique signée : ${formatDureeJalon(heures.pratique)} ; total : ${heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune heure réelle par module déduite des connexions.`;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  doc.text("POURCENTAGES ET HEURES PRÉVISIONNELLES PAR JALON", margin, y + 4);
+  autoTable(doc, {
+    startY: y + 7,
+    head: [["Module / jalon", "Poids formation (%)", "Progression élève (%)", "Contribution (points de %)", "Heures CPF prévisionnelles", "Durée prévisionnelle couverte"]],
+    body: affichage.lignes.map((l) => [l.moduleId === PRATIQUE_PHYSIQUE ? LABEL_PRESENTIEL : sansEmoji(MODULE_NAME_BY_ID[l.moduleId] || `Module ${l.moduleId}`), fmtPct(l.poidsAffiche), fmtPct(l.progression), `${l.contribution.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de %`, formatDureeJalon(l.minutesCpf), formatDureeJalon(l.minutesCouvertes)]),
+    foot: [["TOTAL FORMATION", "100 %", `Taux global : ${fmtPct(affichage.taux)}`, `${affichage.contributionBrute.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de % (brut)`, formatDureeJalon(affichage.totalMinutes), formatDureeJalon(affichage.minutesCouvertes)]],
+    theme: "grid", styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak", valign: "top" },
+    headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" }, footStyles: { fillColor: [232, 238, 245], textColor: [13, 37, 64], fontStyle: "bold" }, showFoot: "lastPage",
+    columnStyles: { 0: { cellWidth: 75 }, 1: { cellWidth: 30 }, 2: { cellWidth: 37 }, 3: { cellWidth: 43 }, 4: { cellWidth: 43 }, 5: { cellWidth: pw - margin * 2 - 228 } },
+    rowPageBreak: "avoid", margin: { left: margin, right: margin, top: 24, bottom: 16 },
+  });
+  addTextSection("LECTURE DU TABLEAU", [EXPLICATION_JALONS, "Durée prévisionnelle couverte = durée CPF × progression / 100, arrondie à la minute à l’affichage ; total arrondi après addition. Le taux global n’est pas la somme des progressions. Le plafond interne existant est conservé.", heuresTexte]);
+  doc.addPage();
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(13, 37, 64);
+  doc.text("DÉTAIL DES VOLUMES ET VALIDATIONS ENREGISTRÉES", margin, 15);
   const totalPoints = BUDGET_CPF[data.calcul.filiere as keyof typeof BUDGET_CPF].total;
   autoTable(doc, {
-    startY: y + 2,
+    startY: 22,
     head: [["Module / activité attendue", "Pages (audit)", "Questions actives", "Durée prév. CPF (min)", "Poids", "Progression", "Contribution", "Statut", "Validation prouvée", "Source"]],
     body: rows,
     foot: [["TOTAL FORMATION", "", "", `${totalPoints} (${totalPoints / 60} h)`, "100 %", "", `${data.calcul.resultat.lignes.reduce((sum: number, line: any) => sum + line.contribution, 0).toFixed(1)} pts`, "", "", ""]],
@@ -149,6 +169,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     };
     table("SOURCES CONSULTÉES (lecture seule)", ["Source", "État de lecture", "Lignes lues"],
       pj.sources.map((s) => [s.libelle, s.lu ? "lue intégralement (pagination complète)" : `LECTURE NON POSSIBLE (${s.erreur}) — absence de trace non démontrée`, s.lu ? String(s.lignes) : "—"]));
+    addTextSection("RAPPEL CHIFFRÉ — TABLEAU DES JALONS EN DÉBUT DE RELEVÉ", [`Poids total : 100 %. Taux global pondéré actuel : ${fmtPct(affichage.taux)}. Durée CPF : ${formatDureeJalon(affichage.totalMinutes)}. Durée prévisionnelle couverte : ${formatDureeJalon(affichage.minutesCouvertes)}. Examens blancs : ${formatDureeJalon(BUDGET_CPF[data.calcul.filiere as keyof typeof BUDGET_CPF].examensBlancs)} ; présentiel : 6h00.`, heuresTexte]);
     table("SYNTHÈSE DES PREUVES PAR JALON", ["Jalon", "Statut enregistré", "Ouvertures", "Exercices avec réponses enregistrées", "Matières d’examen blanc envoyées", "Passages V2 terminés", "Notes (par matière)", "Émargements signés", "Première trace", "Dernière trace", "Traces", "Lecture"],
       pj.synthese.map((l) => [nomJalon(l.moduleId), l.statutEnregistre, String(l.ouvertures), String(l.exercicesAvecReponses), String(l.matieresEnvoyees), String(l.passagesV2Termines), String(l.notes), String(l.emargements), dt(l.premiere), dt(l.derniere), l.traces, l.commentaire]),
       { 0: { cellWidth: 36 }, 11: { cellWidth: 62 } });
