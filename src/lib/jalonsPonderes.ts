@@ -99,3 +99,15 @@ export function calculerJalonsPonderes(
   if (taux >= 100 && lignes.some((l) => !l.valide)) taux = 99.9;
   return { filiere, taux, lignes, jalonsObligatoiresManquants: manquants };
 }
+
+/** Arrondi d'AFFICHAGE à 0,1 dont la somme vaut exactement 100 (méthode du plus grand reste). */
+export function arrondirPoidsAffichage(poids: number[]): number[] {
+  const total = poids.reduce((a, b) => a + b, 0);
+  if (total <= 0) return poids.map(() => 0);
+  const dixiemes = poids.map((p) => (p / total) * 1000);
+  const base = dixiemes.map(Math.floor);
+  let reste = 1000 - base.reduce((a, b) => a + b, 0);
+  const ordre = dixiemes.map((d, i) => [d - Math.floor(d), i] as const).sort((a, b) => b[0] - a[0]);
+  for (const [, i] of ordre) { if (reste <= 0) break; base[i]++; reste--; }
+  return base.map((b) => b / 10);
+}

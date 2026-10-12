@@ -4,8 +4,9 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { FORMATION_MODULES, MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { INTRO_IDS, MODULES_FILIERE, calculerJalonsPonderes, calculerPoids, filiereDuParcours } from "@/lib/jalonsPonderes";
+import { arrondirPoidsAffichage, INTRO_IDS, MODULES_FILIERE, calculerJalonsPonderes, calculerPoids, filiereDuParcours } from "@/lib/jalonsPonderes";
 import { construireVolumes } from "@/lib/jalonsVolumes";
+import { ecouterContenuModifie } from "@/lib/contenuModifie";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
@@ -49,6 +50,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     gcTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
+    refetchInterval: 5 * 60 * 1000, // filet de sécurité si un événement en direct est manqué
     queryFn: async () => {
       const ids = [...new Set([...MODULES_FILIERE[filiere!].filter((x) => x > 0), ...parcours.filter((x) => INTRO_IDS.has(x)), 26, 32, 34])];
       const [{ data, error }, mdv, { fetchLiveExamens }] = await Promise.all([
@@ -69,12 +71,17 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
       })
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    const stop = ecouterContenuModifie(() => { void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] }); });
+    return () => { stop(); void supabase.removeChannel(ch); };
   }, [isAdmin, filiere, apprenantId, queryClient]);
   if (!isAdmin || !filiere || !key) return null;
   if (isError || volErr) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché).</div>;
-  if (!rows || !volumes) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
+  // Pendant un recalcul, aucun ancien pourcentage n'est affiché.
+  if (!rows || !volumes || volFetching) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
   const r = calculerJalonsPonderes(filiere, parcours, rows as any, volumes.poids);
+  const ponderees = r.lignes.map((l, i) => [l.poids, i] as const).filter(([p]) => p > 0);
+  const arrondis = arrondirPoidsAffichage(ponderees.map(([p]) => p));
+  const poidsAffiche = new Map(ponderees.map(([, i], k) => [i, arrondis[k]]));
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
@@ -85,7 +92,6 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
         <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, r.taux)}%` }} />
       </div>
-      {volFetching && <div className="mt-1 text-xs text-muted-foreground">Mise à jour des poids…</div>}
       {finIncomplete && <div className="mt-1 text-xs text-muted-foreground">Contenus pédagogiques terminés ; validation de fin de formation / jalon administratif en attente.</div>}
       <button type="button" onClick={() => setOpen(!open)} className="mt-1 flex items-center gap-1 text-xs text-primary">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module
@@ -94,11 +100,11 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[22rem] text-xs">
           <thead><tr className="text-muted-foreground text-left"><th>Module</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Poids</th><th className="text-right">Progression</th><th className="text-right">Contribution</th></tr></thead>
           <tbody>
-            {r.lignes.map((l) => (
+            {r.lignes.map((l, i) => (
               <tr key={l.moduleId} className="border-t">
                 <td>{l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
                 {(() => { const v = Object.values(volumes.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{v?.pages ?? "–"}</td><td className="text-right">{v?.questions ?? "–"}</td></>; })()}
-                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : l.poids.toFixed(1)}</td>
+                <td className="text-right">{l.obligatoireSansPoids ? "0 (obligatoire)" : (poidsAffiche.get(i) ?? 0).toLocaleString("fr-FR")}</td>
                 <td className="text-right">{Math.round(l.progression)}%</td>
                 <td className="text-right">{l.contribution.toFixed(1)}</td>
               </tr>

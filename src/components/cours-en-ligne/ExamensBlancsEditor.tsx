@@ -1,3 +1,4 @@
+import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { captureError } from "@/lib/monitoring/errorLogger";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,7 @@ async function saveExamModuleWithCas({
   });
 
   if (error) throw error;
+  signalerContenuModifie(moduleId);
   return (Array.isArray(data) ? data[0]?.updated_at : (data as any)?.updated_at) ?? fallbackSavedAt;
 }
 

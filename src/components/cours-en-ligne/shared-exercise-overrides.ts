@@ -1,3 +1,4 @@
+import { signalerContenuModifie } from "@/lib/contenuModifie";
 // ======================================================================
 // SYNCHRONISATION DES EXERCICES PARTAGÉS ENTRE MODULES IDENTIQUES
 // ----------------------------------------------------------------------
@@ -247,6 +248,7 @@ export async function syncSharedExercisesToSiblingModules(
           p_expected_updated_at: expectedUpdatedAt,
         });
         if (rpcError) throw rpcError;
+        signalerContenuModifie(moduleId);
       };
 
       try {
@@ -281,6 +283,7 @@ export async function syncSharedExercisesToSiblingModules(
             p_expected_updated_at: fresh?.updated_at ?? null,
           });
           if (retryError) throw retryError;
+          signalerContenuModifie(moduleId);
         } catch (retryErr) {
           console.error("[SharedSync] reprise impossible sur le module", moduleId, retryErr);
           continue;
