@@ -41,7 +41,7 @@ export async function chargerCalculJalons(params: {
   const parcoursInitial = FORMATION_MODULES[key].modules.map((module) => module.id);
   const parcours = avecJalonPratique(parcoursInitial);
   const ids = [...new Set([...MODULES_FILIERE[filiere].filter((id) => id > 0), ...parcoursInitial.filter((id) => INTRO_IDS.has(id)), 26, 32, 34])];
-  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult] = await Promise.all([
+  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult] = await Promise.all([
     supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
     import("@/components/cours-en-ligne/useLiveExamens"),
     import("@/components/cours-en-ligne/ModuleDetailView"),
@@ -50,10 +50,12 @@ export async function chargerCalculJalons(params: {
     params.completions
       ? Promise.resolve({ data: params.completions, error: null })
       : supabase.from("apprenant_module_completion").select("module_id, status, progress, completed_at").eq("apprenant_id", params.apprenantId),
+    supabase.from("presentiel_heures_validees" as any).select("heures, created_at").eq("apprenant_id", params.apprenantId),
   ]);
   if (editorError) throw editorError;
   if (emargementsResult.error) throw emargementsResult.error;
   if (completionsResult.error) throw completionsResult.error;
+  if (heuresValideesResult.error) throw heuresValideesResult.error;
   const examens = await examensModule.fetchLiveExamens();
   const volumes = construireVolumes(
     filiere,
@@ -63,16 +65,23 @@ export async function chargerCalculJalons(params: {
     examens as any,
   );
   const emargements = ((emargementsResult.data as any[]) ?? []) as EmargementRowLike[];
-  const { pratiqueMinutes } = computePresentielHours(emargements, pratiqueDetails);
+  // Même présence que le « taux présentiel » : théorie signée + pratique signée
+  // + heures validées par un admin (append-only). Aucune ligne n'est modifiée.
+  const { theorieHours, pratiqueMinutes: pratiqueSigneeMinutes } = computePresentielHours(emargements, pratiqueDetails);
+  const heuresValidees = ((heuresValideesResult.data as any[]) ?? []);
+  const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + (Number(r?.heures) || 0), 0) * 60);
+  const theorieMinutes = Math.round(theorieHours * 60);
+  const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
   const completions = [...(((completionsResult.data as JalonCompletion[]) ?? [])), completionPratique(pratiqueMinutes)];
   const durees = calculerDureesPrevisionnelles(filiere, volumes.volumes);
   const poids = calculerPoids(filiere, volumes.volumes);
   const resultat = calculerJalonsPonderes(filiere, parcours, completions, poids);
-  const datesPratique = (emargements as Array<EmargementRowLike & { signed_at?: string | null }>)
-    .filter((row) => row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim()))
-    .map((row) => row.signed_at || row.date_emargement)
-    .filter(Boolean)
-    .sort();
+  const datesPratique = [
+    ...(emargements as Array<EmargementRowLike & { signed_at?: string | null }>)
+      .filter((row) => row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim()))
+      .map((row) => row.signed_at || row.date_emargement),
+    ...heuresValidees.map((r) => r?.created_at),
+  ].filter(Boolean).sort();
   return {
     key,
     filiere,
@@ -85,9 +94,10 @@ export async function chargerCalculJalons(params: {
     completions,
     pratique: {
       minutes: pratiqueMinutes,
+      detail: { pratiqueSignee: pratiqueSigneeMinutes, theorieSignee: theorieMinutes, valideesAdmin: valideesMinutes },
       progression: Math.max(0, Math.min(100, pratiqueMinutes / 360 * 100)),
       dernierePreuve: datesPratique.at(-1) ?? null,
-      source: "Planning pratique + émargements signés",
+      source: "Émargements signés + heures validées par l’administration",
     },
   };
 }

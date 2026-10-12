@@ -84,7 +84,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     const volume = data.calcul.volumes[volumeId];
     const completion: any = completionById.get(line.moduleId);
     const completedAt = isPractice ? data.calcul.pratique.dernierePreuve : completion?.completed_at;
-    const source = isPractice ? "Planning pratique + émargements signés" : "Volumes actuels + progression serveur";
+    const source = isPractice ? data.calcul.pratique.source : "Volumes actuels + progression serveur";
     return [
       isPractice ? LABEL_PRESENTIEL : sansEmoji(MODULE_NAME_BY_ID[line.moduleId] || `Module ${line.moduleId}`),
       isPractice ? "—" : String(volume?.pages ?? 0),
@@ -100,7 +100,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   });
   const affichage = tableauAffichageJalons(data.calcul);
   const heures = heuresEnregistreesJalons(data.calcul, data.preuvesJalons);
-  const heuresTexte = `Heures réellement enregistrées — en ligne : ${heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} ; pratique signée : ${formatDureeJalon(heures.pratique)} ; total : ${heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune heure réelle par module déduite des connexions.`;
+  const heuresTexte = `Heures réellement enregistrées — en ligne : ${heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} ; présence (signée ou validée par l’administration) : ${formatDureeJalon(heures.pratique)} ; total : ${heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune heure réelle par module déduite des connexions.`;
   doc.setFont("helvetica", "bold"); doc.setFontSize(9);
   doc.text("POURCENTAGES ET HEURES PRÉVISIONNELLES PAR JALON", margin, y + 4);
   autoTable(doc, {
