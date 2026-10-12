@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { writeFileSync } from "node:fs";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
-import { MODULES_PONDERES, PRATIQUE_PHYSIQUE, avecJalonPratique, calculerJalonsPonderes, calculerPoids, completionPratique, unites } from "@/lib/jalonsPonderes";
+import { calculerDureesPrevisionnelles, MODULES_PONDERES, PRATIQUE_PHYSIQUE, avecJalonPratique, calculerJalonsPonderes, calculerPoids, completionPratique, unites } from "@/lib/jalonsPonderes";
 import { formationJalonsElearning } from "@/lib/jalonsPedagogiques";
 import { generateReleveJalonsPedagogiquesPdf } from "@/lib/pdf/releve-jalons-pedagogiques";
 
@@ -31,9 +31,9 @@ describe("Relevé des jalons pédagogiques", () => {
     const poids = calculerPoids("vtc", volumes);
     const result = generateReleveJalonsPedagogiquesPdf({
       apprenant: { id: "DOSSIER-FICTIF", civilite: "Mme", prenom: "Alice", nom: "EXEMPLE", type_apprenant: "vtc-e", date_debut_formation: "2026-01-02", date_fin_formation: "2026-03-04" },
-      formationLabel: "VTC — e-learning + entraînement pratique présentiel 6 h",
+      formationLabel: "VTC — e-learning (CPF)",
       session: { nom: "Session fictive", date_debut: "2026-01-02", date_fin: "2026-03-04" },
-      calcul: { filiere: "vtc", volumes, limites: ["Module fictif : pages issues de l’audit."], poids, completions, resultat: calculerJalonsPonderes("vtc", parcours, completions, poids), pratique: { minutes: 180, progression: 50, dernierePreuve: "2026-02-10", source: "Planning pratique + émargements signés" } },
+      calcul: { filiere: "vtc", volumes, durees: calculerDureesPrevisionnelles("vtc", volumes), limites: ["Module fictif : pages issues de l’audit."], poids, completions, resultat: calculerJalonsPonderes("vtc", parcours, completions, poids), pratique: { minutes: 180, progression: 50, dernierePreuve: "2026-02-10", source: "Planning pratique + émargements signés" } },
       preuves: Array.from({ length: 12 }, (_, index) => ({ label: `Preuve fictive ${index + 1}`, count: index, dates: ["2026-02-10"], detail: "Donnée fictive de contrôle visuel" })),
       elementsACompleter: ["Accompagnement : non renseigné dans le jeu fictif."],
       generatedAt: new Date("2026-10-12T14:00:00Z"),
