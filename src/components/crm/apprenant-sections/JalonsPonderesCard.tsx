@@ -11,8 +11,8 @@ import { ecouterContenuModifie } from "@/lib/contenuModifie";
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
 /** Carte interne ADMIN : taux indicatif pondéré. Lecture seule. */
-export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null }) {
-  const [open, setOpen] = useState(false);
+export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisie, defaultOpen = false, titre }: { apprenantId: string; typeApprenant?: string | null; formationChoisie?: string | null; defaultOpen?: boolean; titre?: string }) {
+  const [open, setOpen] = useState(defaultOpen);
   const { user, loading } = useAuth();
   const userId = !loading ? user?.id ?? null : null;
   const { data: adminCheck } = useQuery({
@@ -63,7 +63,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">Jalons pondérés (indicatif interne)</span>
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">{titre ?? "Jalons pondérés (indicatif interne)"}</span>
         <span className="text-lg font-bold text-foreground">{r.taux.toLocaleString("fr-FR")}%</span>
       </div>
       <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">

@@ -56,11 +56,11 @@ export function ReleveJalonsPedagogiquesButton({ apprenant }: { apprenant: any }
         { label: "Connexions utiles au suivi", count: cnx.length, dates: cnx.map((row: any) => row.started_at).filter(Boolean), detail: "adresses IP exclues du relevé" },
         { label: "Évaluations et documents complétés", count: docs.length, dates: docs.map((row: any) => row.completed_at).filter(Boolean), detail: [...new Set(docs.map((row: any) => row.type_document).filter(Boolean))].join(", ") || "non renseigné" },
         { label: "Accompagnement / relances tracés", count: mails.length, dates: mails.map((row: any) => row.sent_at || row.received_at || row.created_at).filter(Boolean), detail: "existence des échanges uniquement, sans contenu" },
-        { label: "Entraînement pratique signé", count: calcul.pratique.minutes > 0 ? 1 : 0, dates: calcul.pratique.dernierePreuve ? [calcul.pratique.dernierePreuve] : [], detail: `${calcul.pratique.minutes} minute(s) justifiée(s) sur 360` },
+        { label: "Entraînement pratique ou formation présentielle signé(e)", count: calcul.pratique.minutes > 0 ? 1 : 0, dates: calcul.pratique.dernierePreuve ? [calcul.pratique.dernierePreuve] : [], detail: `${calcul.pratique.minutes} minute(s) justifiée(s) sur 360` },
       ];
       const elementsACompleter = preuves.filter((preuve) => !preuve.count).map((preuve) => `${preuve.label} : non renseigné dans les sources consultées.`);
       const session = ((sessions.data as any[]) ?? []).map((row) => row.sessions).find((value) => value) ?? null;
-      generateReleveJalonsPedagogiquesPdf({ apprenant, formationLabel: `${key.toUpperCase()} — e-learning + entraînement pratique présentiel 6 h`, session, calcul, preuves, elementsACompleter });
+      generateReleveJalonsPedagogiquesPdf({ apprenant, formationLabel: `${key.toUpperCase()} — e-learning (CPF)`, session, calcul, preuves, elementsACompleter });
     } catch (error: any) {
       toast({ title: "Relevé indisponible", description: error?.message || "Impossible de générer le relevé.", variant: "destructive" });
     } finally { setBusy(false); }
