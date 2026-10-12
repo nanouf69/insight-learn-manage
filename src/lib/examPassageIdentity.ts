@@ -14,6 +14,7 @@
 import {
   MEME_PASSAGE_MS,
   isQrcCorrectionValidated,
+  isQrcPendingCorrection,
   isQrcAnswerCertainlyEmpty,
   isResultPlaceholder,
 } from "@/components/cours-en-ligne/exam-helpers";
@@ -266,9 +267,12 @@ export function auditQrcCoherence(rows: PassageRowLike[] | null | undefined): Qr
     report.qrcToCorrect += toCorrect;
     if (toCorrect > 0) report.pendingPassages++;
 
-    // Drapeau brut posé sur une écriture alors qu'aucune QRC n'attend : ancienne
-    // divergence d'affichage. Signalée, jamais corrigée automatiquement.
-    const flagged = p.rows.some((r) => r?.details?.qrc_pending_correction === true);
+    // Divergence RÉELLE d'affichage : une écriture qui s'afficherait encore
+    // « En attente » (drapeau + aucune correction sur cette écriture) alors
+    // qu'aucune QRC n'attend. Un drapeau historique dont les QRC portent leur
+    // correction (IA ou formateur) sur la même écriture n'est pas affiché en
+    // attente : ce n'est pas une incohérence. Jamais corrigé automatiquement.
+    const flagged = p.rows.some((r) => isQrcPendingCorrection(r?.details));
     if (flagged && toCorrect === 0 && ids.length > 0) {
       report.incoherences.push({
         passageKey: p.key,
