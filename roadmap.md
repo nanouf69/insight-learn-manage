@@ -3,12 +3,12 @@
 ## Clarification pourcentages et heures — 12/10 19:55 UTC
 - [x] Tableau partagé Contrôle/PDF : poids, progression, contribution, heures CPF et couverture prévisionnelle ; heures enregistrées séparées, calculs inchangés.
 - [x] 18 tests ciblés quatre filières, 38 pages PDF inspectées, Contrôle et téléchargement Amar admin lecture seule ; objectifs et annexes conservés.
-- [ ] Compilation automatique puis publication confirmée par bundle/date ; journaliser.
+- [x] Compilation automatique OK ; publication confirmée le 12/10 à 20:04:37 UTC, bundle index-1Ewywis7.js contenant tableaux, rappel chiffré et objectifs ; journalisé.
 
 ## Objectifs pédagogiques des jalons — 12/10 18:56 UTC
 - [x] Ajouter les textes approuvés via un mapping partagé, limité aux modules existants des quatre parcours e-learning, dans Contrôle et le PDF.
 - [x] Tester les quatre parcours et l'absence de modification des calculs ; inspecter toutes les pages PDF fictives et l'affichage.
-- [ ] Vérifier la compilation automatique, publier puis confirmer le texte dans le bundle servi ; journaliser.
+- [x] Compilation et publication confirmées ; objectifs toujours présents dans index-1Ewywis7.js au contrôle du 12/10 à 20:04:37 UTC.
 
 ## Relevé des jalons pédagogiques PDF — 12/10 14:32 UTC
 - [x] Étendre la source commune carte/PDF avec un jalon virtuel « Entraînement pratique — 6 h » valant 360 points pour les quatre parcours e-learning visés.
