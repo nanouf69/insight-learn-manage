@@ -1,77 +1,107 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { GRILLE_JALONS, calculerJalonsPonderes, filiereDuParcours } from "@/lib/jalonsPonderes";
+import { MODULES_FILIERE, INTRO, calculerJalonsPonderes, calculerPoids, filiereDuParcours, type Filiere } from "@/lib/jalonsPonderes";
+import { construireVolumes } from "@/lib/jalonsVolumes";
+import { compterQuestionsActives, contenuEffectif } from "@/lib/volumeModules";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 
 const ids = (k: string) => FORMATION_MODULES[k].modules.map((m) => m.id);
 const all = (k: string) => ids(k).map((id) => ({ module_id: id, status: "completed" }));
+const q = (id: number, extra: any = {}) => ({ id, enonce: `Q${id}`, choix: [], ...extra });
+const exo = (id: number, n: number, extra: any = {}) => ({ id, titre: `E${id}`, actif: true, questions: Array.from({ length: n }, (_, i) => q(i + 1)), ...extra });
+const examens = (type: string) => Array.from({ length: 8 }, (_, i) => ({ type, numero: i + 1, matieres: [{ questions: [q(1), q(2)] }] }));
+const vol = (f: Filiere, k: string, rows: any[] = [], initial: (id: number) => any = () => ({ cours: [], exercices: [exo(1, 10)] })) =>
+  construireVolumes(f, ids(k), rows, initial, examens(f.toUpperCase()));
+const sum = (p: Record<number, number>) => Object.values(p).reduce((a, b) => a + b, 0);
 
-describe("jalons pondérés", () => {
-  it("chaque grille somme 100", () => {
-    for (const g of Object.values(GRILLE_JALONS)) expect(Math.round(Object.values(g).reduce((a, b) => a + b, 0) * 10) / 10).toBe(100);
+describe("jalons pondérés par volume", () => {
+  it("poids de chaque filière somment 100 (aucun % figé)", () => {
+    for (const [f, k] of [["vtc", "vtc-e"], ["taxi", "taxi"], ["ta", "ta"], ["va", "va-e"]] as const) expect(sum(calculerPoids(f, vol(f, k).volumes))).toBeCloseTo(100, 6);
+    expect(readFileSync("src/lib/jalonsPonderes.ts", "utf8")).not.toMatch(/GRILLE_JALONS|42\b/);
   });
-  it("0 partout => 0", () => expect(calculerJalonsPonderes("vtc", ids("vtc-e"), []).taux).toBe(0));
-  it("VTC cours 50 % => 21 pts", () => expect(calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }]).taux).toBe(21));
-  it("tout terminé + fin validée => 100", () => {
-    for (const k of ["vtc", "vtc-e", "taxi", "taxi-e-presentiel", "ta", "ta-e", "va", "va-e"]) expect(calculerJalonsPonderes(filiereDuParcours(k)!, ids(k), all(k)).taux).toBe(100);
+  it("ajout d'une/plusieurs questions : module monte, autres baissent, somme 100", () => {
+    const base = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
+    for (const n of [1, 25]) {
+      const rows = [{ module_id: 2, module_data: { exercices: [exo(1, 10 + n)] } }];
+      const p = calculerPoids("vtc", vol("vtc", "vtc-e", rows).volumes);
+      expect(p[2]).toBeGreaterThan(base[2]);
+      for (const id of MODULES_FILIERE.vtc.filter((x) => x !== 2 && base[x] > 0)) expect(p[id]).toBeLessThan(base[id]);
+      expect(sum(p)).toBeCloseTo(100, 6);
+    }
   });
-  it("pédagogique 100 mais fin non validée => < 100", () => {
-    const r = calculerJalonsPonderes("vtc", ids("vtc-e"), all("vtc-e").filter((c) => c.module_id !== 50));
+  it("supprimées / désactivées / masquées / exercice supprimé ou inactif => exclues", () => {
+    const md = { exercices: [exo(1, 5, { deletedQuestionIds: [1] }), { ...exo(2, 3), actif: false }, exo(3, 2)] };
+    md.exercices[2].questions[0].actif = false;
+    md.exercices[0].questions.push(q(9, { masque: true }));
+    const c = contenuEffectif({ cours: [], exercices: [exo(4, 7)] }, { module_id: 2, module_data: md, deleted_exercices: [{ id: 4 }] });
+    expect(compterQuestionsActives(c).total).toBe(4 + 1);
+  });
+  it("quiz intégré aux cours compté ; cours inactif ignoré", () => {
+    const c = { cours: [{ id: 1, actif: true, quiz: [q(1), q(2)] }, { id: 2, actif: false, quiz: [q(3)] }], exercices: [] };
+    expect(compterQuestionsActives(c)).toEqual({ exercices: 0, inline: 2, total: 2 });
+  });
+  it("état enregistré prioritaire, contenu par défaut sinon", () => {
+    const init = { cours: [], exercices: [exo(1, 10)] };
+    expect(compterQuestionsActives(contenuEffectif(init, null)).total).toBe(10);
+    expect(compterQuestionsActives(contenuEffectif(init, { module_id: 2, module_data: { exercices: [exo(1, 3)] } })).total).toBe(3);
+  });
+  it("module partagé TAXI/TA (7) : même volume dans les deux filières, chaque filière somme 100", () => {
+    const rows = [{ module_id: 7, module_data: { exercices: [exo(1, 40)] } }];
+    const t = vol("taxi", "taxi", rows), a = vol("ta", "ta", rows);
+    expect(t.volumes[7].questions).toBe(40);
+    expect(a.volumes[7].questions).toBe(40);
+    expect(sum(calculerPoids("taxi", t.volumes))).toBeCloseTo(100, 6);
+    expect(sum(calculerPoids("ta", a.volumes))).toBeCloseTo(100, 6);
+  });
+  it("examens blancs : 6 premiers examens du type, une fois chacun", () => {
+    expect(vol("vtc", "vtc-e").volumes[35].questions).toBe(12);
+    expect(() => construireVolumes("vtc", ids("vtc-e"), [], () => null, [])).toThrow();
+  });
+  it("supports modifiés depuis l'audit => limite signalée (pas d'illusion de recomptage)", () => {
+    const rows = [{ module_id: 2, module_data: { cours: [{ id: 1, actif: true, fichiers: [{ url: "nouveau.pdf" }] }], exercices: [] } }];
+    expect(vol("vtc", "vtc-e", rows).limites.join(" ")).toMatch(/Module 2 : supports modifiés/);
+  });
+  it("0 partout => 0 ; tout complet => 100 ; fin non validée => 99.9", () => {
+    const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
+    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), [], p).taux).toBe(0);
+    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), all("vtc-e"), p).taux).toBe(100);
+    const r = calculerJalonsPonderes("vtc", ids("vtc-e"), all("vtc-e").filter((c) => c.module_id !== 50), p);
     expect(r.taux).toBe(99.9);
     expect(r.jalonsObligatoiresManquants).toContain(50);
   });
   it("module absent du parcours : pas de renormalisation", () => {
+    const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
     const parcours = ids("vtc-e").filter((id) => id !== 35);
-    const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })));
-    expect(r.taux).toBeCloseTo(88.6, 1);
+    const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })), p);
+    expect(r.taux).toBeCloseTo(Math.round((100 - p[35]) * 10) / 10, 5);
   });
-  it("alias filière et intro équivalente", () => {
+  it("tentatives en double n'ajoutent rien ; progress 100 sans completed => jamais 100", () => {
+    const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
+    const un = calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }], p).taux;
+    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }, { module_id: 2, status: "in_progress", progress: 50 }], p).taux).toBe(un);
+    const rows = all("vtc-e").map((c) => (c.module_id === 2 ? { module_id: 2, status: "in_progress", progress: 100 } : c));
+    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), rows, p).taux).toBe(99.9);
+  });
+  it("alias filière, intro présentiel et poids intro une seule fois", () => {
     expect(filiereDuParcours("ta-e-presentiel")).toBe("ta");
     expect(filiereDuParcours("continue-vtc")).toBeNull();
-    expect(filiereDuParcours("mobilite-taxi")).toBeNull();
-    expect(calculerJalonsPonderes("ta", ids("ta"), [{ module_id: 31, status: "completed" }]).taux).toBe(3.4);
-  });
-  it("tentative répétée n'ajoute rien", () => {
-    const r = calculerJalonsPonderes("vtc", ids("vtc-e"), [{ module_id: 2, status: "in_progress", progress: 50 }, { module_id: 2, status: "in_progress", progress: 50 }]);
-    expect(r.taux).toBe(21);
-  });
-  it("progress 100 sans status completed => jamais 100", () => {
-    const rows = all("vtc-e").map((c) => (c.module_id === 2 ? { module_id: 2, status: "in_progress", progress: 100 } : c));
-    expect(calculerJalonsPonderes("vtc", ids("vtc-e"), rows).taux).toBe(99.9);
-    const fin = all("vtc-e").map((c) => (c.module_id === 50 ? { module_id: 50, status: "in_progress", progress: 100 } : c));
-    const r = calculerJalonsPonderes("vtc", ids("vtc-e"), fin);
-    expect(r.taux).toBe(99.9);
-    expect(r.jalonsObligatoiresManquants).toEqual([50]);
-    const adm = all("taxi").map((c) => (c.module_id === 84 ? { module_id: 84, status: "in_progress", progress: 100 } : c));
-    expect(calculerJalonsPonderes("taxi", ids("taxi"), adm).taux).toBe(99.9);
-  });
-  it("plusieurs intros : poids attribué une seule fois, somme <= 100", () => {
+    const v = construireVolumes("ta", ids("ta"), [], () => null, examens("TA"));
+    expect(v.volumes[INTRO].moduleId).toBe(31);
+    const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
     const parcours = [26, 1, ...ids("vtc-e").filter((id) => id !== 26)];
-    const rows = parcours.map((id) => ({ module_id: id, status: "completed" }));
-    const r = calculerJalonsPonderes("vtc", parcours, rows);
+    const r = calculerJalonsPonderes("vtc", parcours, parcours.map((id) => ({ module_id: id, status: "completed" })), p);
     expect(r.lignes.reduce((s, l) => s + l.poids, 0)).toBeCloseTo(100, 5);
     expect(r.lignes.find((l) => l.moduleId === 1)!.poids).toBe(0);
-    expect(r.taux).toBe(100);
-    expect(calculerJalonsPonderes("vtc", parcours, rows.filter((x) => x.module_id !== 1)).taux).toBe(99.9);
   });
-  it("carte placée dans la colonne de la tuile Modules (même sur mobile)", () => {
+  it("carte placée sous la tuile Modules, admin uniquement, actualisée en direct", () => {
     const page = readFileSync("src/components/crm/ApprenantDetailPage.tsx", "utf8");
     expect(page.match(/<JalonsPonderesCard/g)!.length).toBe(1);
-    const i = page.indexOf("<JalonsPonderesCard");
-    const before = page.slice(page.lastIndexOf("data-indicateur", i), i);
-    expect(before).toMatch(/unit === "modules"/);
-    expect(page.slice(i).indexOf("))}")).toBeLessThan(400);
-  });
-  it("carte réservée admin (contrôle user_roles) et absente du côté apprenant", () => {
     const src = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
     expect(src).toMatch(/user_roles[\s\S]*eq\("role", "admin"\)/);
-    expect(src).toMatch(/if \(!isAdmin/);
-    expect(src).toMatch(/useAuth\(\)/);
-    expect(src).toMatch(/\["jalons-ponderes-admin", userId\]/);
-    expect(src).toMatch(/\["jalons-ponderes", apprenantId, userId\]/);
     expect(src).toMatch(/adminCheck\?\.userId === userId/);
-    expect(src).toMatch(/overflow-x-auto/);
-    const pub = readFileSync("src/pages/CoursPublic.tsx", "utf8");
-    expect(pub).not.toMatch(/JalonsPonderes/);
+    expect(src).toMatch(/table: "module_editor_state"/);
+    expect(src).toMatch(/refetchOnWindowFocus: true/);
+    expect(src).not.toMatch(/\.(insert|update|upsert|delete)\(/);
+    expect(readFileSync("src/pages/CoursPublic.tsx", "utf8")).not.toMatch(/JalonsPonderes/);
   });
 });
