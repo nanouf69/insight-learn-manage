@@ -2,7 +2,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImage from "@/assets/logo-ftransport.png";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
-import { INTRO, INTRO_IDS, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, unites } from "@/lib/jalonsPonderes";
+import { BUDGET_CPF, INTRO, INTRO_IDS, LABEL_PRESENTIEL, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage } from "@/lib/jalonsPonderes";
+import { dureeLigne } from "@/lib/jalonsPedagogiques";
 
 export interface PreuveJalonPdf {
   label: string;
@@ -60,7 +61,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
   doc.setTextColor(35, 35, 35); doc.setFontSize(8); doc.setFont("helvetica", "normal");
   const identite = [
     `Stagiaire : ${[data.apprenant?.civilite, data.apprenant?.prenom, data.apprenant?.nom].filter(Boolean).join(" ") || "Non renseigné"}`,
-    `Formation / modalité : ${data.formationLabel} — parcours mixte e-learning + entraînement pratique présentiel de 6 h`,
+    `Formation / modalité : ${data.formationLabel} — parcours mixte e-learning + entraînement pratique ou formation présentielle de 6 h`,
     `Dossier : ${data.apprenant?.id || "Non renseigné"}`,
     `Session : ${data.session?.nom || "Non renseigné"}`,
     `Période : ${safeDate(data.apprenant?.date_debut_cours_en_ligne || data.session?.date_debut || data.apprenant?.date_debut_formation)} au ${safeDate(data.apprenant?.date_fin_cours_en_ligne || data.session?.date_fin || data.apprenant?.date_fin_formation)}`,
@@ -81,10 +82,10 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     const completedAt = isPractice ? data.calcul.pratique.dernierePreuve : completion?.completed_at;
     const source = isPractice ? "Planning pratique + émargements signés" : "Volumes actuels + progression serveur";
     return [
-      isPractice ? "Entraînement pratique — 6 h" : (MODULE_NAME_BY_ID[line.moduleId] || `Module ${line.moduleId}`),
-      isPractice ? "6 h contractuelles" : String(volume?.pages ?? 0),
+      isPractice ? LABEL_PRESENTIEL : (MODULE_NAME_BY_ID[line.moduleId] || `Module ${line.moduleId}`),
+      isPractice ? "—" : String(volume?.pages ?? 0),
       isPractice ? "—" : String(volume?.questions ?? 0),
-      String(line.poids > 0 ? unites(volume) : 0),
+      String(dureeLigne(data.calcul.durees, line.moduleId, line.poids)),
       line.poids > 0 ? fmtPct(Number(displayWeight.get(line.moduleId) ?? 0)) : "0 % obligatoire",
       fmtPct(line.progression),
       `${line.contribution.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt`,
@@ -93,12 +94,12 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
       source,
     ];
   });
-  const totalPoints = Object.values(data.calcul.volumes).reduce((sum: number, volume: any) => sum + unites(volume), 0);
+  const totalPoints = BUDGET_CPF[data.calcul.filiere as keyof typeof BUDGET_CPF].total;
   autoTable(doc, {
     startY: y + 2,
-    head: [["Module / activité attendue", "Pages / durée", "Questions actives", "Points", "Poids", "Progression", "Contribution", "Statut", "Validation prouvée", "Source"]],
+    head: [["Module / activité attendue", "Pages (audit)", "Questions actives", "Durée prév. CPF (min)", "Poids", "Progression", "Contribution", "Statut", "Validation prouvée", "Source"]],
     body: rows,
-    foot: [["TOTAL FORMATION", "", "", String(totalPoints), "100 %", "", `${data.calcul.resultat.lignes.reduce((sum: number, line: any) => sum + line.contribution, 0).toFixed(1)} pts`, "", "", ""]],
+    foot: [["TOTAL FORMATION", "", "", `${totalPoints} (${totalPoints / 60} h)`, "100 %", "", `${data.calcul.resultat.lignes.reduce((sum: number, line: any) => sum + line.contribution, 0).toFixed(1)} pts`, "", "", ""]],
     theme: "grid",
     styles: { fontSize: 6.3, cellPadding: 1.3, overflow: "linebreak", valign: "top" },
     headStyles: { fillColor: [13, 37, 64], textColor: 255, fontStyle: "bold" },
@@ -109,7 +110,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
 
   const brut = data.calcul.resultat.lignes.reduce((sum: number, line: any) => sum + line.contribution, 0);
   addTextSection("MÉTHODE ET TAUX", [
-    `Points estimés : 1 slide/page/fiche = 4 points (hypothèse 4 minutes), 1 question active = 1 point (hypothèse 1 minute), entraînement pratique présentiel de 6 h = 360 points (1 point/minute). Poids = points du jalon / ${totalPoints} points totaux × 100. Contribution = poids × progression / 100. Ces points sont des unités internes de pondération : ils ne sont ni une note, ni un score, ni des heures réelles attestées.`,
+    `Répartition prévisionnelle des durées CPF : durée totale ${totalPoints} min (${totalPoints / 60} h). Examens blancs (6 épreuves) et entraînement pratique ou formation présentielle (360 min) ont des durées fixes ; le budget restant est réparti entre les autres modules selon le tableau approuvé, ajusté au volume actuel (2 × pages d’audit + questions actives) et arrondi à la minute. Poids = durée prévisionnelle / durée totale × 100. Contribution = poids × progression / 100. Ces durées sont prévisionnelles : elles ne sont ni des heures réalisées, ni des temps validés par la CDC, ni une note ou un score. Les heures réalisées en présentiel ne proviennent que du Planning pratique et des émargements signés.`,
     `Taux pédagogique brut calculé : ${fmtPct(brut)}. Indicateur interne affiché : ${fmtPct(data.calcul.resultat.taux)}${data.calcul.resultat.taux < brut ? " (plafond interne appliqué car un jalon obligatoire reste non validé)" : ""}. Aucun taux EDOF n’est déclaré automatiquement ; tout taux destiné à un tiers doit être vérifié humainement. Réussite à un quiz et réalisation pédagogique restent distinctes.`,
   ]);
 
