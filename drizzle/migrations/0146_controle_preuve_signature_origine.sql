@@ -1,0 +1,153 @@
+DROP FUNCTION public.controle_preuve_validation_module(uuid, integer);
+CREATE OR REPLACE FUNCTION public.controle_preuve_validation_module(_apprenant_id uuid, _module_id integer, _details jsonb DEFAULT NULL)
+RETURNS jsonb
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_res jsonb;
+BEGIN
+  IF NOT (EXISTS (SELECT 1 FROM apprenants a WHERE a.id = _apprenant_id AND a.auth_user_id = auth.uid())
+          OR has_role(auth.uid(), 'admin') OR current_setting('role', true) = 'service_role') THEN
+    RAISE EXCEPTION 'not authorized for this apprenant';
+  END IF;
+  IF EXISTS (SELECT 1 FROM examens_blancs_parcours WHERE module_id = _module_id) THEN
+    WITH ex AS (SELECT exam_id FROM examens_blancs_parcours WHERE module_id = _module_id),
+    req AS (
+      SELECT q.quiz_id, count(DISTINCT split_part(q.matiere_id, '__', 1)) rq
+        FROM apprenant_quiz_results q
+       WHERE q.quiz_type = 'examen_blanc' AND q.quiz_id IN (SELECT exam_id FROM ex) GROUP BY q.quiz_id),
+    per AS (
+      SELECT ex.exam_id,
+        EXISTS (SELECT 1 FROM exam_attempts_v2 a WHERE a.apprenant_id = _apprenant_id AND a.exam_id = ex.exam_id
+                 AND a.etat = 'terminee' AND NOT coalesce(a.is_test, false)) v2,
+        (SELECT count(DISTINCT split_part(q.matiere_id, '__', 1)) FROM apprenant_quiz_results q
+          WHERE q.apprenant_id = _apprenant_id AND q.quiz_type = 'examen_blanc' AND q.quiz_id = ex.exam_id) nm,
+        (SELECT count(DISTINCT split_part(r.exercice_id, '__', 2)) FROM reponses_apprenants r
+          WHERE r.apprenant_id = _apprenant_id AND r.exercice_id LIKE ex.exam_id || '\_\_%'
+            AND r.status = 'submitted'
+            AND EXISTS (SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(r.reponses)='object' THEN r.reponses ELSE '{}'::jsonb END) x
+                         WHERE x.value::text NOT IN ('null','""','[]','{}'))) ns,
+        coalesce((SELECT rq FROM req WHERE req.quiz_id = ex.exam_id), 0) rq
+      FROM ex)
+    SELECT jsonb_build_object(
+      'type', 'examens_blancs',
+      'attendus', (SELECT count(*) FROM per),
+      'prouves', (SELECT count(*) FROM per WHERE v2 OR (rq > 0 AND (nm >= rq OR ns >= rq))),
+      'preuve_ok', (SELECT count(*) FROM per) = 6
+                   AND (SELECT count(*) FROM per WHERE v2 OR (rq > 0 AND (nm >= rq OR ns >= rq))) = 6,
+      'detail', (SELECT jsonb_agg(jsonb_build_object('exam', exam_id, 'v2', v2, 'notes', nm, 'soumises', ns, 'requises', rq,
+                   'prouve', v2 OR (rq > 0 AND (nm >= rq OR ns >= rq))) ORDER BY exam_id) FROM per))
+    INTO v_res;
+    RETURN v_res;
+  END IF;
+  IF _module_id IN (3, 31, 60, 62, 63, 64, 90) THEN
+    RETURN jsonb_build_object('type', 'facultatif', 'preuve_ok', true, 'attendus', 0, 'prouves', 0);
+  END IF;
+  WITH st AS (SELECT module_data FROM module_editor_state WHERE module_id = _module_id LIMIT 1),
+  exo AS (
+    SELECT e->>'id' AS exo_id
+      FROM st, jsonb_array_elements(CASE WHEN jsonb_typeof(st.module_data->'exercices')='array' THEN st.module_data->'exercices' ELSE '[]'::jsonb END) e
+     WHERE coalesce(e->>'actif','true') <> 'false'
+       AND EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(e->'questions')='array' THEN e->'questions' ELSE '[]'::jsonb END) q
+                    WHERE coalesce(q->>'actif','true') <> 'false'
+                      AND NOT (coalesce(e->'deletedQuestionIds','[]'::jsonb) @> jsonb_build_array(q->'id')))),
+  prv AS (
+    SELECT exo.exo_id,
+      EXISTS (SELECT 1 FROM reponses_apprenants r, jsonb_each(CASE WHEN jsonb_typeof(r.reponses)='object' THEN r.reponses ELSE '{}'::jsonb END) x
+               WHERE r.apprenant_id = _apprenant_id
+                 AND r.exercice_id = 'module_' || _module_id || '_exo_' || exo.exo_id
+                 AND x.value::text NOT IN ('null','""','[]','{}'))
+      OR EXISTS (SELECT 1 FROM apprenant_module_completion c,
+                   jsonb_array_elements(CASE WHEN jsonb_typeof(c.details)='array' THEN c.details ELSE '[]'::jsonb END) d
+                  WHERE c.apprenant_id = _apprenant_id AND c.module_id = _module_id
+                    AND d->>'exerciceId' = exo.exo_id
+                    AND d->'reponseEleve' IS NOT NULL AND (d->'reponseEleve')::text NOT IN ('null','""','[]','{}'))
+      OR EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(_details)='array' THEN _details ELSE '[]'::jsonb END) d
+                  WHERE d->>'exerciceId' = exo.exo_id
+                    AND d->'reponseEleve' IS NOT NULL AND (d->'reponseEleve')::text NOT IN ('null','""','[]','{}')) AS ok
+    FROM exo)
+  SELECT jsonb_build_object(
+    'type', 'exercices',
+    'attendus', (SELECT count(*) FROM prv),
+    'prouves', (SELECT count(*) FROM prv WHERE ok),
+    'preuve_ok', NOT EXISTS (SELECT 1 FROM prv WHERE NOT ok),
+    'manquants', (SELECT coalesce(jsonb_agg(exo_id), '[]'::jsonb) FROM prv WHERE NOT ok))
+  INTO v_res;
+  RETURN v_res;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.controle_preuve_validation_module(uuid, integer, jsonb) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.controle_preuve_validation_module(uuid, integer, jsonb) TO authenticated, service_role;
+
+DROP FUNCTION public.save_module_completion(uuid,integer,boolean,integer,numeric,numeric,jsonb);
+CREATE OR REPLACE FUNCTION public.save_module_completion(_apprenant_id uuid, _module_id integer, _completed boolean DEFAULT false, _progress integer DEFAULT 0, _score_obtenu integer DEFAULT NULL::integer, _score_max integer DEFAULT NULL::integer, _details jsonb DEFAULT NULL::jsonb)
+RETURNS public.apprenant_module_completion LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $function$
+DECLARE
+  allowed BOOLEAN;
+  result public.apprenant_module_completion;
+  v_deja_termine boolean;
+  v_nb_questions bigint := 0;
+  v_preuve boolean;
+  v_controle jsonb;
+BEGIN
+  SELECT EXISTS (SELECT 1 FROM public.apprenants a WHERE a.id = _apprenant_id AND a.auth_user_id = auth.uid())
+    OR public.has_role(auth.uid(), 'admin')
+    OR current_setting('role', true) = 'service_role'
+  INTO allowed;
+  IF NOT allowed THEN RAISE EXCEPTION 'not authorized for this apprenant'; END IF;
+  IF _completed THEN
+    SELECT EXISTS (SELECT 1 FROM public.apprenant_module_completion
+                    WHERE apprenant_id = _apprenant_id AND module_id = _module_id AND status = 'completed')
+      INTO v_deja_termine;
+    IF NOT v_deja_termine THEN
+      SELECT COALESCE(SUM(CASE WHEN jsonb_typeof(e->'questions') = 'array' THEN jsonb_array_length(e->'questions') ELSE 0 END), 0)
+        INTO v_nb_questions
+        FROM public.module_editor_state m,
+             jsonb_array_elements(CASE WHEN jsonb_typeof(m.module_data->'exercices') = 'array' THEN m.module_data->'exercices' ELSE '[]'::jsonb END) e
+       WHERE m.module_id = _module_id;
+      IF v_nb_questions = 0 AND EXISTS (SELECT 1 FROM public.module_regles_validation r
+                                         WHERE r.module_id = _module_id AND r.protection_serveur AND r.contient_questions IS TRUE) THEN
+        v_nb_questions := 1;
+      END IF;
+      IF v_nb_questions > 0 THEN
+        v_preuve := EXISTS (
+            SELECT 1 FROM public.reponses_apprenants r, jsonb_each(r.reponses) x
+             WHERE r.apprenant_id = _apprenant_id
+               AND r.exercice_id LIKE 'module\_' || _module_id || '\_%'
+               AND x.value::text NOT IN ('null', '""', '[]', '{}'))
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(_details) = 'array' THEN _details ELSE '[]'::jsonb END) d
+             WHERE d->'reponseEleve' IS NOT NULL
+               AND (d->'reponseEleve')::text NOT IN ('null', '""', '[]', '{}'));
+        IF NOT v_preuve THEN
+          RAISE EXCEPTION 'MODULE_INCOMPLET: aucune réponse enregistrée pour ce module' USING ERRCODE = 'P0501';
+        END IF;
+      END IF;
+      IF NOT public.has_role(auth.uid(), 'admin') THEN
+        v_controle := public.controle_preuve_validation_module(_apprenant_id, _module_id, _details);
+        IF coalesce((v_controle->>'preuve_ok')::boolean, true) IS NOT TRUE THEN
+          RAISE EXCEPTION 'MODULE_INCOMPLET: preuves insuffisantes (% / %)', v_controle->>'prouves', v_controle->>'attendus'
+            USING ERRCODE = 'P0501';
+        END IF;
+      END IF;
+    END IF;
+  END IF;
+  INSERT INTO public.apprenant_module_completion AS amc
+    (apprenant_id, module_id, status, progress, completed_at, score_obtenu, score_max, details)
+  VALUES (_apprenant_id, _module_id,
+    CASE WHEN _completed THEN 'completed' ELSE 'in_progress' END,
+    CASE WHEN _completed THEN 100 ELSE GREATEST(COALESCE(_progress, 0), 0) END,
+    now(), _score_obtenu, _score_max, COALESCE(_details, '[]'::jsonb))
+  ON CONFLICT (apprenant_id, module_id) DO UPDATE
+  SET status = CASE WHEN amc.status = 'completed' OR _completed THEN 'completed' ELSE 'in_progress' END,
+      progress = GREATEST(COALESCE(amc.progress, 0), COALESCE(_progress, 0), CASE WHEN _completed THEN 100 ELSE 0 END),
+      completed_at = CASE WHEN amc.status = 'completed' THEN amc.completed_at WHEN _completed THEN now() ELSE amc.completed_at END,
+      score_obtenu = COALESCE(_score_obtenu, amc.score_obtenu),
+      score_max = COALESCE(_score_max, amc.score_max),
+      details = CASE WHEN _details IS NULL THEN amc.details
+                     WHEN amc.status = 'completed' AND jsonb_array_length(COALESCE(_details, '[]'::jsonb)) = 0 THEN amc.details
+                     ELSE _details END
+  RETURNING * INTO result;
+  RETURN result;
+END;
+$function$;
