@@ -1,3 +1,4 @@
+import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { t3pPartie2DisplaySupport } from "@/lib/t3pPartie2Support";
@@ -3241,6 +3242,7 @@ function MoveQuestionDialog({
         p_expected_updated_at: (row as any)?.updated_at ?? null,
       });
       if (saveError) throw saveError;
+      signalerContenuModifie(targetModuleId);
 
       toast.success(`Question déplacée vers « ${targetName} » — ${exercices[targetIdx].titre}`);
       onMoved();
@@ -5636,6 +5638,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     });
 
     if (error) throw error;
+    signalerContenuModifie(moduleId);
     return (Array.isArray(casData) ? casData[0]?.updated_at : (casData as any)?.updated_at) ?? fallbackSavedAt;
   };
 
