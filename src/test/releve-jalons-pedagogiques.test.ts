@@ -1,10 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { calculerDureesPrevisionnelles, MODULES_PONDERES, PRATIQUE_PHYSIQUE, avecJalonPratique, calculerJalonsPonderes, calculerPoids, completionPratique, unites } from "@/lib/jalonsPonderes";
 import { formationJalonsElearning } from "@/lib/jalonsPedagogiques";
 import { generateReleveJalonsPedagogiquesPdf } from "@/lib/pdf/releve-jalons-pedagogiques";
+import { objectifsJalons } from "@/lib/objectifsJalons";
 
 const volumes = Object.fromEntries(MODULES_PONDERES.vtc.map((id) => [id, { moduleId: id, pages: id === PRATIQUE_PHYSIQUE ? 0 : 10, questions: id === PRATIQUE_PHYSIQUE ? 0 : 5, points: id === PRATIQUE_PHYSIQUE ? 360 : undefined }]));
 
@@ -25,15 +27,18 @@ describe("Relevé des jalons pédagogiques", () => {
     expect(resultat.taux).toBeLessThan(100);
   });
 
-  it("génère un PDF fictif paginé en lecture seule", async () => {
-    const parcours = avecJalonPratique(FORMATION_MODULES["vtc-e"].modules.map((module) => module.id));
+  it.each(["vtc", "taxi", "ta", "va"] as const)("génère un PDF fictif paginé avec objectifs : %s", async (filiere) => {
+    const volumes = Object.fromEntries(MODULES_PONDERES[filiere].map((id) => [id, { moduleId: id, pages: id === PRATIQUE_PHYSIQUE ? 0 : 10, questions: id === PRATIQUE_PHYSIQUE ? 0 : 5, points: id === PRATIQUE_PHYSIQUE ? 360 : undefined }]));
+    const parcours = avecJalonPratique(FORMATION_MODULES[`${filiere}-e`].modules.map((module) => module.id));
     const completions = [...parcours.filter((id) => id !== PRATIQUE_PHYSIQUE).map((module_id) => ({ module_id, status: "completed" })), completionPratique(180)];
-    const poids = calculerPoids("vtc", volumes);
+    const poids = calculerPoids(filiere, volumes);
+    const calcul = { filiere, volumes, durees: calculerDureesPrevisionnelles(filiere, volumes), limites: ["Module fictif : pages issues de l’audit."], poids, completions, resultat: calculerJalonsPonderes(filiere, parcours, completions, poids), pratique: { minutes: 180, progression: 50, dernierePreuve: "2026-02-10", source: "Planning pratique + émargements signés" } };
+    const before = JSON.stringify(calcul);
     const result = generateReleveJalonsPedagogiquesPdf({
-      apprenant: { id: "DOSSIER-FICTIF", civilite: "Mme", prenom: "Alice", nom: "EXEMPLE", type_apprenant: "vtc-e", date_debut_formation: "2026-01-02", date_fin_formation: "2026-03-04" },
-      formationLabel: "VTC — e-learning (CPF)",
+      apprenant: { id: "DOSSIER-FICTIF", civilite: "Mme", prenom: "Alice", nom: "EXEMPLE", type_apprenant: `${filiere}-e`, date_debut_formation: "2026-01-02", date_fin_formation: "2026-03-04" },
+      formationLabel: `${filiere.toUpperCase()} — e-learning (CPF)`,
       session: { nom: "Session fictive", date_debut: "2026-01-02", date_fin: "2026-03-04" },
-      calcul: { filiere: "vtc", volumes, durees: calculerDureesPrevisionnelles("vtc", volumes), limites: ["Module fictif : pages issues de l’audit."], poids, completions, resultat: calculerJalonsPonderes("vtc", parcours, completions, poids), pratique: { minutes: 180, progression: 50, dernierePreuve: "2026-02-10", source: "Planning pratique + émargements signés" } },
+      calcul,
       preuves: Array.from({ length: 12 }, (_, index) => ({ label: `Preuve fictive ${index + 1}`, count: index, dates: ["2026-02-10"], detail: "Donnée fictive de contrôle visuel" })),
       elementsACompleter: ["Accompagnement : non renseigné dans le jeu fictif."],
       generatedAt: new Date("2026-10-12T14:00:00Z"),
@@ -43,6 +48,14 @@ describe("Relevé des jalons pédagogiques", () => {
     const bytes = new Uint8Array(await result.blob.arrayBuffer());
     expect(new TextDecoder("latin1").decode(bytes.slice(0, 8))).toContain("%PDF");
     expect(bytes.length).toBeGreaterThan(10_000);
-    writeFileSync("/tmp/releve-jalons-pedagogiques-fictif.pdf", bytes);
+    const path = `/tmp/releve-jalons-pedagogiques-fictif-${filiere}.pdf`;
+    writeFileSync(path, bytes);
+    const pdf = execFileSync("pdftotext", ["-raw", path, "-"], { encoding: "utf8" }).replace(/\s+/g, " ");
+    expect(pdf).toContain("Objectifs pédagogiques des jalons");
+    for (const { intitule, objectif } of objectifsJalons(`${filiere}-e`, parcours)) {
+      expect(pdf).toContain(intitule);
+      expect(pdf).toContain(objectif);
+    }
+    expect(JSON.stringify(calcul)).toBe(before);
   });
 });

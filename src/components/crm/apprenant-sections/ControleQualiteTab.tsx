@@ -1030,7 +1030,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               </Button>
             </div>
           </div>
-          <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={apprenant.type_apprenant} formationChoisie={apprenant.formation_choisie} defaultOpen titre="Répartition prévisionnelle des durées CPF et jalons pondérés" />
+          <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={apprenant.type_apprenant} formationChoisie={apprenant.formation_choisie} defaultOpen afficherObjectifs titre="Répartition prévisionnelle des durées CPF et jalons pondérés" />
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
