@@ -50,7 +50,7 @@ describe("Relevé des jalons pédagogiques", () => {
     expect(bytes.length).toBeGreaterThan(10_000);
     const path = `/tmp/releve-jalons-pedagogiques-fictif-${filiere}.pdf`;
     writeFileSync(path, bytes);
-    const pdf = execFileSync("pdftotext", ["-layout", path, "-"], { encoding: "utf8" }).replace(/\s+/g, " ");
+    const pdf = execFileSync("pdftotext", ["-raw", path, "-"], { encoding: "utf8" }).replace(/\s+/g, " ");
     expect(pdf).toContain("Objectifs pédagogiques des jalons");
     for (const { intitule, objectif } of objectifsJalons(`${filiere}-e`, parcours)) {
       expect(pdf).toContain(intitule);
