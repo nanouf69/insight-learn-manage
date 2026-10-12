@@ -38,6 +38,7 @@ export interface EntreesPreuves {
   dateFinAcces?: string | null; dateDebutAcces?: string | null;
   activites?: any[] | null; reponses?: any[] | null; quiz?: any[] | null; tentativesV2?: any[] | null;
   connexions?: any[] | null; emargements?: any[] | null; pratiqueDetails?: PratiqueSlotDetail[] | null;
+  heuresValidees?: any[] | null;
   sources: SourceLecture[];
 }
 
@@ -112,8 +113,12 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
   const datesPratique = new Map((e.pratiqueDetails ?? []).map((d) => [d.date, d]));
   for (const row of e.emargements ?? []) {
     const date = String(row.date_emargement || "").slice(0, 10);
-    if (!datesPratique.has(date) || !isSignedPresentielRow(row)) continue;
-    push({ ref: `emargement:${row.id ?? `${date}:${row.demi_journee}`}`, date: row.signed_at || `${date}T00:00:00`, dateSeule: !row.signed_at, source: "Émargements signés (Planning pratique)", type: "Présence physique signée", detail: `${date} · ${row.demi_journee ?? "créneau ?"}${row.signed_at ? "" : " · heure de signature non disponible"}` }, PRATIQUE_PHYSIQUE);
+    if (!isSignedPresentielRow(row)) continue;
+    const pratiqueJour = datesPratique.has(date);
+    push({ ref: `emargement:${row.id ?? `${date}:${row.demi_journee}`}`, date: row.signed_at || `${date}T00:00:00`, dateSeule: !row.signed_at, source: pratiqueJour ? "Émargements signés (Planning pratique)" : "Émargements signés (formation présentielle)", type: "Présence physique signée", detail: `${date} · ${row.demi_journee ?? "créneau ?"}${row.signed_at ? "" : " · heure de signature non disponible"}` }, PRATIQUE_PHYSIQUE);
+  }
+  for (const h of e.heuresValidees ?? []) {
+    push({ ref: `heuresValidees:${h.id}`, date: h.created_at, source: "Heures validées par l’administration", type: "Présence validée par l’administration", detail: `${Number(h.heures).toLocaleString("fr-FR")} h · ${h.motif ? String(h.motif).slice(0, 80) : "motif non renseigné"}` }, PRATIQUE_PHYSIQUE);
   }
   traces.sort((a, b) => ms(a.date) - ms(b.date) || a.ref.localeCompare(b.ref));
 
@@ -144,18 +149,18 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
     const t = traces.filter((x) => x.moduleId === moduleId && !x.horsPeriode);
     const c = statutDe.get(moduleId);
     const pratique = moduleId === PRATIQUE_PHYSIQUE;
-    const sourcesUtiles = pratique ? ["emargements", "planning"] : ["activites", "reponses", ...(moduleId === ebModule ? ["quiz", "v2"] : [])];
+    const sourcesUtiles = pratique ? ["emargements", "planning", "heuresValidees"] : ["activites", "reponses", ...(moduleId === ebModule ? ["quiz", "v2"] : [])];
     const illisible = sourcesUtiles.some((s) => !lu(s));
     const count = (pred: (x: TracePreuve) => boolean) => t.filter(pred).length;
     return {
       moduleId,
-      statutEnregistre: pratique ? "calculé depuis les émargements signés" : c?.status ? String(c.status) : "aucun statut enregistré",
+      statutEnregistre: pratique ? "calculé depuis les émargements signés et les heures validées par l’administration" : c?.status ? String(c.status) : "aucun statut enregistré",
       ouvertures: count((x) => x.source === "Journal d’activité"),
       exercicesAvecReponses: count((x) => x.source === "Réponses enregistrées" && !x.type.startsWith("Épreuve")),
       matieresEnvoyees: count((x) => x.type === "Épreuve d’examen blanc envoyée"),
       passagesV2Termines: count((x) => x.type === "Passage terminé"),
       notes: count((x) => x.type === "Note enregistrée"),
-      emargements: count((x) => x.source.startsWith("Émargements")),
+      emargements: count((x) => x.source.startsWith("Émargements") || x.source.startsWith("Heures validées")),
       premiere: t[0]?.date ?? null,
       derniere: t.at(-1)?.date ?? null,
       traces: t.length ? "disponibles" : illisible ? "lecture non possible" : "manquantes",
@@ -163,7 +168,7 @@ export function construirePreuvesJalons(e: EntreesPreuves): PreuvesJalons {
         ? "Traces partielles : une ouverture ou une réponse ne prouve pas la réalisation intégrale du module."
         : traces.some((x) => x.moduleId === moduleId) ? "Traces uniquement hors période d’accès (visibles en annexe, non comptées)."
         : illisible ? "Une source n’a pas pu être lue : absence de trace non démontrée."
-        : pratique ? "Aucune présence physique signée : une inscription au planning n’est pas une présence."
+        : pratique ? "Aucune présence signée ni validée par l’administration : une inscription au planning n’est pas une présence."
         : c?.status === "completed" ? "Statut enregistré sans trace individuelle retrouvée dans les sources consultées (statut conservé tel quel)." : "Aucune trace retrouvée dans les sources consultées.",
     };
   });
@@ -189,7 +194,7 @@ export async function chargerPreuvesJalons(p: {
   const sources: SourceLecture[] = [];
   const page = (table: string, cols: string, order: string) => () => fetchAllRows<any>((from, to) =>
     (supabase.from(table as any) as any).select(cols).eq("apprenant_id", id).order(order, { ascending: true }).range(from, to));
-  const [activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails] = await Promise.all([
+  const [activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails, heuresValidees] = await Promise.all([
     lire(sources, "activites", "Journal d’activité", page("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "id")),
     lire(sources, "reponses", "Réponses enregistrées", page("reponses_apprenants", "id, exercice_id, reponses, completed, status, tentative, submitted_at, updated_at", "id")),
     lire(sources, "quiz", "Résultats de quiz / examens", page("apprenant_quiz_results", "id, quiz_type, quiz_id, matiere_id, note_sur_20, completed_at", "id")),
@@ -198,11 +203,12 @@ export async function chargerPreuvesJalons(p: {
     lire(sources, "emargements", "Émargements", () => fetchAllRows<any>((from, to) => (supabase.from("emargements_fc" as any) as any)
       .select("id, date_emargement, demi_journee, absent, signature_data_url, masque, signed_at").eq("apprenant_id", id).eq("masque", false).order("id", { ascending: true }).range(from, to))),
     lire(sources, "planning", "Planning pratique", () => fetchPratiqueSlotDetails(id)),
+    lire(sources, "heuresValidees", "Heures validées par l’administration", page("presentiel_heures_validees", "id, heures, motif, created_at", "id")),
   ]);
   return construirePreuvesJalons({
     apprenantId: id, filiere: p.filiere, lignesModuleIds: p.lignesModuleIds, completions: p.completions,
     dateFinAcces: p.apprenant.date_fin_cours_en_ligne || p.apprenant.date_fin_formation,
     dateDebutAcces: p.apprenant.date_debut_cours_en_ligne || p.apprenant.date_debut_formation,
-    activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails, sources,
+    activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails, heuresValidees, sources,
   });
 }
