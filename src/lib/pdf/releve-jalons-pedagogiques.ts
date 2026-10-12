@@ -1,6 +1,5 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { formatInTimeZone } from "date-fns-tz";
 import logoImage from "@/assets/logo-ftransport.png";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 import { INTRO, INTRO_IDS, PRATIQUE_PHYSIQUE, arrondirPoidsAffichage, progressionModule, unites } from "@/lib/jalonsPonderes";
@@ -28,6 +27,9 @@ const CG_URL = "https://www.moncompteformation.gouv.fr/espace-public/sites/mcf/f
 
 const safeDate = (value?: string | null) => value ? String(value).slice(0, 10).split("-").reverse().join("/") : "Non renseigné";
 const fmtPct = (value: number) => `${value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
+const formatParis = (value: Date) => new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+}).format(value);
 
 export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts?: { returnBlob?: boolean }) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -63,7 +65,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     `Dossier : ${data.apprenant?.id || "Non renseigné"}`,
     `Session : ${data.session?.nom || "Non renseigné"}`,
     `Période : ${safeDate(data.apprenant?.date_debut_cours_en_ligne || data.session?.date_debut || data.apprenant?.date_debut_formation)} au ${safeDate(data.apprenant?.date_fin_cours_en_ligne || data.session?.date_fin || data.apprenant?.date_fin_formation)}`,
-    `Édité à Paris le ${formatInTimeZone(now, "Europe/Paris", "dd/MM/yyyy HH:mm")}. Capture figée des données disponibles à cet instant ; aucune donnée ni historique n’est modifié.`,
+    `Édité à Paris le ${formatParis(now)}. Capture figée des données disponibles à cet instant ; aucune donnée ni historique n’est modifié.`,
   ];
   let y = 47;
   for (const text of identite) { doc.text(text, margin, y); y += 4.5; }

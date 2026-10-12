@@ -28,6 +28,7 @@ import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
 import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
 import { isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
+import { ReleveJalonsPedagogiquesButton } from "./ReleveJalonsPedagogiquesButton";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -1012,6 +1013,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               Contrôle qualité — Dossier apprenant
             </CardTitle>
             <div className="flex items-center gap-2">
+              <ReleveJalonsPedagogiquesButton apprenant={apprenant} />
               <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
                 <Download className="w-4 h-4" />
                 Télécharger PDF
