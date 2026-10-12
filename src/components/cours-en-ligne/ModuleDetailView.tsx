@@ -10336,3 +10336,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 };
 
 export default ModuleDetailView;
+/** Lecture seule : contenu par défaut du code d'un module (pour le comptage des jalons pondérés). */
+export function getInitialModuleContentForVolume(moduleId: number, apprenantType?: string | null): { cours: any[]; exercices: any[] } | null {
+  try {
+    const d = getInitialModuleData({ id: moduleId, nom: `Module ${moduleId}` }, apprenantType, true);
+    return { cours: d.cours ?? [], exercices: d.exercices ?? [] };
+  } catch {
+    return null;
+  }
+}
