@@ -26,4 +26,4 @@
 <!-- LOVABLE:END -->
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: jamais réécrit par l'élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: marche même session expirée.
-- Jalons/PDF admin partagent `chargerCalculJalons` : contenu actuel + pratique virtuelle 360 points prouvée par planning/émargements signés, lecture seule ; why: aucun double calcul ni écrit élève.
+- Jalons/PDF admin partagent `chargerCalculJalons` : poids = durées prévisionnelles CPF de `jalonsPonderes.ts` (EB/présentiel fixes, reste réparti au volume actuel), présentiel prouvé par planning/émargements signés, lecture seule ; why: aucun double calcul ni écrit élève.
