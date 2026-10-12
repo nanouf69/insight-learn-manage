@@ -29,6 +29,7 @@ import { computePresentielHours } from "@/lib/presentielHours";
 import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
 import { isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 import { ReleveJalonsPedagogiquesButton } from "./ReleveJalonsPedagogiquesButton";
+import { JalonsPonderesCard } from "./JalonsPonderesCard";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -1029,6 +1030,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
               </Button>
             </div>
           </div>
+          <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={apprenant.type_apprenant} formationChoisie={apprenant.formation_choisie} defaultOpen titre="Répartition prévisionnelle des durées CPF et jalons pondérés" />
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">

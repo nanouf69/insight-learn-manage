@@ -32,14 +32,67 @@ export const EXAMENS_BLANCS_FILIERE: Record<Filiere, { moduleId: number; type: s
 export const INTRO_IDS = new Set([1, 26, 31, 32, 33, 34]);
 
 export interface VolumeModule { pages: number; questions: number; points?: number }
+/** Ancien volume brut (conservé pour compatibilité). */
 export const unites = (v: VolumeModule | undefined) => (v ? Math.max(0, v.points ?? (4 * Math.max(0, v.pages) + Math.max(0, v.questions))) : 0);
+/** Volume de répartition du budget restant : 2 × pages d'audit + questions actives. */
+export const volumeRepartition = (v: VolumeModule | undefined) => (v ? 2 * Math.max(0, v.pages) + Math.max(0, v.questions) : 0);
 
-/** Poids (somme 100) calculés depuis les volumes ; clé INTRO pour l'introduction. */
-export function calculerPoids(filiere: Filiere, volumes: Record<number, VolumeModule>): Record<number, number> {
-  const ids = MODULES_PONDERES[filiere];
-  const total = ids.reduce((s, id) => s + unites(volumes[id]), 0);
+export const LABEL_PRESENTIEL = "Entraînement pratique ou formation présentielle";
+
+/**
+ * Répartition prévisionnelle CPF (minutes) — tableau approuvé le 12/10/2026.
+ * Durées FIXES : total, examens blancs (6 épreuves) et présentiel 6 h.
+ * Les autres modules se partagent le budget restant ; chaque durée de base
+ * est ajustée par (volume actuel / volume de référence mesuré le 12/10/2026)
+ * puis renormalisée au budget restant. Volumes identiques = tableau exact.
+ */
+export const BUDGET_CPF: Record<Filiere, { total: number; examensBlancs: number; presentiel: number }> = {
+  vtc: { total: 3960, examensBlancs: 1380, presentiel: 360 },
+  taxi: { total: 5760, examensBlancs: 1380, presentiel: 360 },
+  ta: { total: 2160, examensBlancs: 300, presentiel: 360 },
+  va: { total: 2160, examensBlancs: 300, presentiel: 360 },
+};
+/** [module de référence, minutes de base, volume de référence (2×pages+questions) au 12/10/2026]. */
+export const GRILLE_DUREES: Record<Filiere, Array<[number, number, number]>> = {
+  vtc: [[INTRO, 19, 34], [2, 914, 1607], [3, 44, 77], [4, 497, 875], [5, 528, 1002], [60, 16, 28], [70, 101, 178], [8, 101, 177]],
+  taxi: [[INTRO, 28, 34], [10, 1419, 1729], [3, 63, 77], [9, 784, 955], [11, 782, 1054], [7, 392, 477], [64, 26, 32], [12, 53, 64], [13, 186, 227], [61, 26, 32], [71, 176, 214], [6, 85, 104]],
+  ta: [[INTRO, 57, 71], [40, 279, 348], [3, 62, 77], [27, 200, 244], [28, 86, 107], [7, 383, 477], [64, 26, 32], [12, 51, 64], [13, 182, 227], [62, 21, 26], [72, 69, 86], [6, 84, 104]],
+  va: [[INTRO, 30, 22], [41, 303, 220], [3, 106, 77], [29, 181, 131], [30, 523, 380], [63, 33, 24], [73, 80, 58], [8, 244, 177]],
+};
+
+/** Arrondi entier à somme exacte (plus grand reste). */
+function arrondirSomme(valeurs: number[], cible: number): number[] {
+  const total = valeurs.reduce((a, b) => a + b, 0);
   if (total <= 0) throw new Error("Volumes indisponibles");
-  return Object.fromEntries(ids.map((id) => [id, (unites(volumes[id]) / total) * 100]));
+  const brut = valeurs.map((v) => (v / total) * cible);
+  const base = brut.map(Math.floor);
+  let reste = cible - base.reduce((a, b) => a + b, 0);
+  const ordre = brut.map((b, i) => [b - Math.floor(b), i] as const).sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+  for (const [, i] of ordre) { if (reste <= 0) break; base[i]++; reste--; }
+  return base;
+}
+
+/** Durées prévisionnelles (minutes entières) par jalon ; somme = total CPF exact. */
+export function calculerDureesPrevisionnelles(filiere: Filiere, volumes: Record<number, VolumeModule>): Record<number, number> {
+  const b = BUDGET_CPF[filiere];
+  const grille = GRILLE_DUREES[filiere];
+  const brut = grille.map(([id, minutes, ref]) => {
+    const v = volumes[id];
+    if (!v) throw new Error(`Volume indisponible pour le module ${id}`);
+    return ref > 0 ? (minutes * volumeRepartition(v)) / ref : minutes;
+  });
+  const reparties = arrondirSomme(brut, b.total - b.examensBlancs - b.presentiel);
+  const out: Record<number, number> = Object.fromEntries(grille.map(([id], i) => [id, reparties[i]]));
+  out[EXAMENS_BLANCS_FILIERE[filiere].moduleId] = b.examensBlancs;
+  out[PRATIQUE_PHYSIQUE] = b.presentiel;
+  return out;
+}
+
+/** Poids (somme 100) = durée prévisionnelle / durée CPF totale ; clé INTRO pour l'introduction. */
+export function calculerPoids(filiere: Filiere, volumes: Record<number, VolumeModule>): Record<number, number> {
+  const durees = calculerDureesPrevisionnelles(filiere, volumes);
+  const total = BUDGET_CPF[filiere].total;
+  return Object.fromEntries(MODULES_PONDERES[filiere].map((id) => [id, ((durees[id] ?? 0) / total) * 100]));
 }
 
 export function avecJalonPratique(modulesParcours: number[]): number[] {
@@ -127,4 +180,10 @@ export function arrondirPoidsAffichage(poids: number[]): number[] {
   const ordre = dixiemes.map((d, i) => [d - Math.floor(d), i] as const).sort((a, b) => b[0] - a[0]);
   for (const [, i] of ordre) { if (reste <= 0) break; base[i]++; reste--; }
   return base.map((b) => b / 10);
+}
+
+/** Durée prévisionnelle d'une ligne de résultat (intro attribuée ou non = clé INTRO). */
+export function dureeLigne(durees: Record<number, number>, moduleId: number, poids: number) {
+  if (poids <= 0) return 0;
+  return durees[INTRO_IDS.has(moduleId) || moduleId === 0 ? INTRO : moduleId] ?? 0;
 }

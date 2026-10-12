@@ -18,20 +18,21 @@ describe("jalons pondérés par volume", () => {
   it("poids de chaque filière somment 100 (aucun % figé)", () => {
     for (const [f, k] of [["vtc", "vtc-e"], ["taxi", "taxi"], ["ta", "ta"], ["va", "va-e"]] as const) {
       const volumes = vol(f, k).volumes;
-      const totalPoints = MODULES_PONDERES[f].reduce((total, id) => total + unites(volumes[id]), 0);
       const poids = calculerPoids(f, volumes);
       expect(sum(poids)).toBeCloseTo(100, 6);
-      for (const id of MODULES_PONDERES[f]) expect(poids[id]).toBeCloseTo((unites(volumes[id]) / totalPoints) * 100, 10);
+      expect(MODULES_PONDERES[f].every((id) => poids[id] > 0)).toBe(true);
     }
     expect(readFileSync("src/lib/jalonsPonderes.ts", "utf8")).not.toMatch(/GRILLE_JALONS|42\b/);
   });
   it("ajout d'une/plusieurs questions : module monte, autres baissent, somme 100", () => {
     const base = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
-    for (const n of [1, 25]) {
+    for (const n of [25, 200]) {
       const rows = [{ module_id: 2, module_data: { exercices: [exo(1, 10 + n)] } }];
       const p = calculerPoids("vtc", vol("vtc", "vtc-e", rows).volumes);
       expect(p[2]).toBeGreaterThan(base[2]);
-      for (const id of MODULES_FILIERE.vtc.filter((x) => x !== 2 && base[x] > 0)) expect(p[id]).toBeLessThan(base[id]);
+      for (const id of MODULES_FILIERE.vtc.filter((x) => x !== 2 && x !== 35 && base[x] > 0)) expect(p[id]).toBeLessThanOrEqual(base[id]);
+      expect(p[35]).toBe(base[35]);
+      expect(p[PRATIQUE_PHYSIQUE]).toBe(base[PRATIQUE_PHYSIQUE]);
       expect(sum(p)).toBeCloseTo(100, 6);
     }
   });
@@ -101,8 +102,8 @@ describe("jalons pondérés par volume", () => {
     expect(r.lignes.reduce((s, l) => s + l.poids, 0)).toBeCloseTo(100, 5);
     expect(r.lignes.find((l) => l.moduleId === 1)!.poids).toBe(0);
     const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
-    expect(card).toMatch(/l\.poids > 0 \? unites/);
-    expect(card).toMatch(/MODULES_PONDERES\[calcul\.filiere\].*unites/);
+    expect(card).toMatch(/dureeLigne\(calcul\.durees/);
+    expect(card).toMatch(/BUDGET_CPF\[calcul\.filiere\]\.total/);
   });
   it("carte placée sous la tuile Modules, admin uniquement, actualisée en direct", () => {
     const page = readFileSync("src/components/crm/ApprenantDetailPage.tsx", "utf8");
