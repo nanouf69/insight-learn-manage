@@ -132,6 +132,24 @@ export function computeUnlockState(
   return { effectivelyCompletedIds, unlockedModuleIds };
 }
 
+/**
+ * Dérogation individuelle (accord explicite du responsable) : débloque les
+ * modules Pratique (VTC = 8, TAXI = 6) pour un apprenant précis, sans toucher
+ * à sa progression enregistrée ni à la règle séquentielle des autres élèves.
+ */
+export function applyPratiqueUnlockDerogation(
+  unlockedModuleIds: Set<number>,
+  modules: ModuleLite[],
+  apprenantId: string | null | undefined,
+  allowedApprenantIds: Set<string>,
+  pratiqueModuleIds: Set<number> = new Set([6, 8]),
+): void {
+  if (!apprenantId || !allowedApprenantIds.has(apprenantId)) return;
+  modules.forEach((m) => {
+    if (pratiqueModuleIds.has(m.id)) unlockedModuleIds.add(m.id);
+  });
+}
+
 export function isModuleLocked(
   modId: number,
   state: UnlockComputationResult,
