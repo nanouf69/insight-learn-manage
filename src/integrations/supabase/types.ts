@@ -6795,6 +6795,41 @@ export type Database = {
         }
         Relationships: []
       }
+      releve_jalons_calcul_fige: {
+        Row: {
+          base_gel_id: string | null
+          calcul: Json
+          code_ref: string
+          created_at: string
+          gel_id: string
+          methode: string
+        }
+        Insert: {
+          base_gel_id?: string | null
+          calcul: Json
+          code_ref: string
+          created_at?: string
+          gel_id: string
+          methode: string
+        }
+        Update: {
+          base_gel_id?: string | null
+          calcul?: Json
+          code_ref?: string
+          created_at?: string
+          gel_id?: string
+          methode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releve_jalons_calcul_fige_gel_id_fkey"
+            columns: ["gel_id"]
+            isOneToOne: true
+            referencedRelation: "releve_jalons_fin_acces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       releve_jalons_fin_acces: {
         Row: {
           apprenant_id: string
@@ -8476,6 +8511,7 @@ export type Database = {
           qrc_repondues: number
         }[]
       }
+      releve_demander_resolution: { Args: never; Returns: undefined }
       releve_figer_contenu: { Args: never; Returns: Json }
       releve_sources_apprenant: { Args: { _id: string }; Returns: Json }
       reset_quiz_attempt: {

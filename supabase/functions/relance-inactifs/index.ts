@@ -1,6 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+// Avertissement d'origine conservé tel quel (indépendant des heures).
+const AVERTISSEMENT_SANCTIONS = `
+              <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                <h3 style="color: #dc2626; margin-top: 0;">⚠️ Rappel important – sanctions en cas d'abandon ou de manquement à vos engagements</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #991b1b; font-weight: bold;">
+                  En cas d'abandon de la formation ou de manquement à vos engagements, les sanctions suivantes peuvent s'appliquer :
+                </p>
+                <ul style="font-size: 14px; line-height: 1.8; color: #991b1b; font-weight: bold;">
+                  <li>Abandonne la formation / manque à ses engagements : <strong>remboursement des frais engagés</strong> – R.6333-7 du code du travail</li>
+                  <li>Absent sans motif légitime à l'examen final : <strong>CPF bloqué temporairement pour toute nouvelle formation</strong> – Art. 59, loi du 25/06/2026</li>
+                  <li>Pour <strong>France Travail</strong>, l'abandon (même sans fraude, un simple arrêt en cours de route) déclenche potentiellement : <strong>arrêt immédiat de la rémunération/cotisations</strong> (L.6342-1 + instruction DG 2024-6), <strong>remboursement du trop-perçu</strong>, et <strong>suspension de l'ARE de 1 à 4 mois</strong> (R.5412-4).</li>
+                </ul>
+              </div>
+`;
 import { etatModules, exclusionRelance, mailModulesATerminer, TAGS_RELANCE_PEDAGOGIQUE } from "../_shared/relance-modules.ts";
 
 const corsHeaders = {
@@ -69,7 +83,7 @@ serve(async (req) => {
     const senderEmail = "contact@ftransport.fr";
     const results: { id: string; success: boolean; error?: string }[] = [];
     for (const { a: apprenant, etat } of toSend) {
-      const { subject, html: emailBody, preview } = mailModulesATerminer({ prenom: apprenant.prenom, etat, nomModule });
+      const { subject, html: emailBody, preview } = mailModulesATerminer({ prenom: apprenant.prenom, etat, nomModule, avertissementHtml: AVERTISSEMENT_SANCTIONS });
       try {
         await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
         await supabaseAdmin.from("emails").insert({
