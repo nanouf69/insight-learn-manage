@@ -2,7 +2,7 @@
 
 ## Cohérence affichage élève — finalisation autorisée 05e1c399
 - [x] Un seul calcul pour bandeau, bloc modules, listes et état secondaire des heures ; présence physique identifiée par jalon, jamais par nom.
-- [ ] Tests fictifs : jeux restants, 100 % sans validation, changement de compte, erreurs ; captures dashboard ordinateur/mobile.
+- [x] 29 tests fictifs : jeux restants, 100 % sans validation, changement de compte, erreurs, gels ; captures vrai dashboard ordinateur 1280 et mobile 390, aucun débordement ni erreur JS.
 - [ ] Publication après contrôles, preuve du fichier servi et date.
 - Limites antérieures conservées hors ce correctif : recomptage fiable des pages de supports et exigences de nouvelles questions après validation non prouvées ; gels et suivi mails inchangés.
 
