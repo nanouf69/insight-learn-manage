@@ -1,3 +1,7 @@
+<!-- LOVABLE:BEGIN -->
+- Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
+<!-- LOVABLE:END -->
+
 
 - Module « Terminé » : le serveur (save_module_completion) refuse une validation sans aucune réponse prouvée pour un module qui a des questions (P0501) ; why: le navigateur ne doit jamais décider seul qu’un module est terminé.
 - Règles de fin des modules définis dans le code : table `module_regles_validation` (protection_serveur) lue par save_module_completion ; why: le serveur doit connaître les modules à questions absents de module_editor_state.
@@ -20,11 +24,9 @@
 - Course/quiz labels share permanent IDs; retain adapters, check dated baselines and journal; why: no drift.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters share progressionModulesEleve and account proofs; attendance uses milestone ID; why: no divergence or account leakage.
-- Exam counters share learner helpers; reminders need confirmation; why: same totals, no auto-send.
+- Counters share learner helpers and ID-scoped display dispensations; never fabricate answers/signatures; reminders need confirmation; why: consistent totals.
 - Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
-<!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
-<!-- LOVABLE:END -->
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
