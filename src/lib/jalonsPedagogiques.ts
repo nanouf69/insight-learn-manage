@@ -1,7 +1,7 @@
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
-import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
+import { fetchPratiqueSlotDetails, pratiqueSlotDetailsDepuisGel } from "@/lib/pratiqueSlots";
 import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
 import { lireContenuFige, type GelFinAcces } from "@/lib/releveJalonsGel";
@@ -52,7 +52,7 @@ export async function chargerCalculJalons(params: {
       : supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
     import("@/components/cours-en-ligne/useLiveExamens"),
     import("@/components/cours-en-ligne/ModuleDetailView"),
-    fetchPratiqueSlotDetails(params.apprenantId),
+    gel ? Promise.resolve().then(() => pratiqueSlotDetailsDepuisGel(gel.sources as any)) : fetchPratiqueSlotDetails(params.apprenantId),
     gel
       ? Promise.resolve({ data: gel.sources.emargements ?? [], error: null })
       : supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent, signature_data_url, masque, signed_at").eq("apprenant_id", params.apprenantId),
