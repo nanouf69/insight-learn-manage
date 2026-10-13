@@ -95,8 +95,16 @@ export function calculerSignaturesManquantes(
       const source = `Pratique — session « ${s.nom ?? 'Pratique'} »`;
       for (const c of creneauxAttendus(debutH, finH)) attendre(date, c, source);
     } else if (type.includes('theorique')) {
-      const debut = normDate(row.date_debut || s.date_debut);
-      const fin = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
+      // Bornes réelles du cours : la ligne d'inscription peut porter une date
+      // de fin d'accès e-learning au-delà de la session (ex. 31/10) — on ne
+      // peut pas exiger d'émargement hors des dates de la session, ni avant
+      // son début. Intersection des deux bornes, jamais d'extension.
+      const debutBrut = normDate(row.date_debut || s.date_debut);
+      const finBrute = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
+      const debutSession = normDate(s.date_debut);
+      const finSession = normDate(s.date_fin || s.date_debut);
+      const debut = debutSession && estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
+      const fin = finSession && estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
       if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
       const source = `Théorie — session « ${s.nom ?? 'Session'} »`;
       for (const date of joursOuvres(debut, fin)) {
