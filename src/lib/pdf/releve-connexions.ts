@@ -114,6 +114,7 @@ export function generateReleveConnexionsPdf(
     returnBlob?: boolean;
     tempsEnLearning?: string;
     tempsPratique?: string;
+    tempsPresenceAdmin?: string;
     tempsPresentielTheorie?: string;
     tempsTotal?: string;
     /** Heures prevues (pour les taux) */

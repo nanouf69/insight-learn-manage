@@ -786,12 +786,20 @@ export function ControleQualiteTab({ apprenant }: Props) {
           // Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
           const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
           const theorieSec = Math.round(theorieHours * 3600);
-          // Heures validées par l'administration : comptées en présentiel pratique (comme le taux présentiel et les jalons)
-          const validees = await fetchHeuresValideesAdmin(apprenant.id).catch(() => ({ minutes: 0, journees: [] as { date: string; label: string }[] }));
-          const pratiqueSec = (pratiqueMinutes + validees.minutes) * 60;
+
+          // Présence validée par l'administration : catégorie distincte (jamais requalifiée « pratique »).
+
+          // Erreur de lecture = export interrompu, jamais un faux 0 h.
+
+          const validees = await fetchHeuresValideesAdmin(apprenant.id, (apprenant as any).date_fin_cours_en_ligne || (apprenant as any).date_fin_formation);
+
+          const pratiqueSec = pratiqueMinutes * 60;
+
+          const presenceAdminSec = validees.minutes * 60;
+
           journeesPresentiel.push(...validees.journees);
 
-          const presentielTotalSec = theorieSec + pratiqueSec;
+          const presentielTotalSec = theorieSec + pratiqueSec + presenceAdminSec;
           const grandTotalSec = onlineSec + presentielTotalSec;
 
 
@@ -816,7 +824,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
             tempsTotal: fmtDur(grandTotalSec),
             tempsEnLigne: fmtDur(onlineSec),
             tempsPresentielTheorie: fmtDur(theorieSec),
-            tempsPresentielPratique: fmtDur(pratiqueSec),
+            tempsPresentielPratique: fmtDur(pratiqueSec), tempsPresenceAdmin: presenceAdminSec > 0 ? fmtDur(presenceAdminSec) : undefined,
             tempsPresentielTotal: fmtDur(presentielTotalSec),
             modules: progModules,
             recap: {
@@ -853,13 +861,13 @@ export function ControleQualiteTab({ apprenant }: Props) {
               returnBlob: true,
               tempsEnLearning: fmtDur(onlineSec),
               tempsPresentielTheorie: fmtDur(theorieSec),
-              tempsPratique: fmtDur(pratiqueSec),
+              tempsPratique: fmtDur(pratiqueSec), tempsPresenceAdmin: presenceAdminSec > 0 ? fmtDur(presenceAdminSec) : undefined,
               tempsTotal: fmtDur(grandTotalSec),
               heuresPrevuesElearning: reqElearning,
               heuresPrevuesPresentiel: reqPresentiel,
               heuresPrevuesTotal: reqTotal,
               heuresFaitesElearning: onlineSec / 3600,
-              heuresFaitesPresentiel: (theorieSec + pratiqueSec) / 3600,
+              heuresFaitesPresentiel: presentielTotalSec / 3600,
               journeesPresentiel,
             }) as { blob: Blob; fileName: string } | undefined;
             if (relevePdf?.blob) {

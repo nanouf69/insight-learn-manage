@@ -60,6 +60,8 @@ export interface FicheProgressionData {
   tempsEnLigne?: string;
   tempsPresentielTheorie?: string;
   tempsPresentielPratique?: string;
+  /** Présence validée par l'administration (catégorie distincte). */
+  tempsPresenceAdmin?: string;
   tempsPresentielTotal?: string;
   modules: ProgressionModule[];
   recap: {
@@ -157,13 +159,19 @@ export function generateFicheProgression(data: FicheProgressionData, options?: {
     doc.text('Pratique (presentiel) :', col1, y + 52);
     doc.setFont('helvetica', 'normal');
     doc.text(data.tempsPresentielPratique || '-', col1 + 55, y + 52);
+    if (data.tempsPresenceAdmin) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Presence validee admin :', col1 + 95, y + 52);
+      doc.setFont('helvetica', 'normal');
+      doc.text(data.tempsPresenceAdmin, col1 + 140, y + 52);
+    }
 
     doc.setDrawColor(0, 102, 51);
     doc.line(col1, y + 54.5, col1 + 90, y + 54.5);
 
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 102, 51);
-    doc.text('TOTAL (e-learning + theorie + pratique) :', col1, y + 60);
+    doc.text(data.tempsPresenceAdmin ? 'TOTAL (e-learning + theorie + pratique + admin) :' : 'TOTAL (e-learning + theorie + pratique) :', col1, y + 60);
     doc.setFont('helvetica', 'bold');
     doc.text(data.tempsTotal, col1 + 95, y + 60);
     doc.setTextColor(0);
