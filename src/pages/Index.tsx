@@ -84,6 +84,7 @@ const pageConfig = {
   renouvellements: { title: "Renouvellements", subtitle: "Échéances véhicules, agréments TAXI/VTC et Qualiopi" },
   "creneaux-25-mai": { title: "Créneaux lundi 25 mai", subtitle: "Q/R avant l'examen du 26 mai — temps réel" },
   satisfaction: { title: "Enquêtes de satisfaction", subtitle: "Réponses des apprenants et rapport annuel" },
+  "suivi-emails": { title: "Suivi des emails", subtitle: "Accusés de réception des emails envoyés" },
   qualiopi: { title: "Qualiopi", subtitle: "Pilotage des preuves — 7 critères et 32 indicateurs du Référentiel National Qualité" },
 };
 
@@ -474,7 +475,8 @@ const Index = () => {
     }
   };
 
-  const config = pageConfig[currentPage as keyof typeof pageConfig];
+  // Repli : une page absente de pageConfig ne doit jamais faire planter tout l'espace admin.
+  const config = pageConfig[currentPage as keyof typeof pageConfig] ?? { title: "", subtitle: "" };
 
   if (loading) {
     return (

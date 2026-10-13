@@ -30,7 +30,7 @@ export default function SuiviEmailsPage() {
   const [filtre, setFiltre] = useState("all");
   const [recherche, setRecherche] = useState("");
 
-  const { data: accuses = [], isLoading, refetch, isFetching } = useQuery({
+  const { data: accuses = [], isLoading, isError, error: erreurLecture, refetch, isFetching } = useQuery({
     queryKey: ["email-accuses", periode],
     queryFn: async () => {
       let query = supabase
@@ -167,6 +167,10 @@ export default function SuiviEmailsPage() {
         <CardContent>
           {isLoading ? (
             <p className="text-sm text-muted-foreground py-8 text-center">Chargement...</p>
+          ) : isError ? (
+            <p className="text-sm text-destructive py-8 text-center">
+              Lecture du suivi impossible ({erreurLecture instanceof Error ? erreurLecture.message : "erreur inconnue"}). Les chiffres ci-dessus ne sont pas fiables — cliquez sur Actualiser.
+            </p>
           ) : lignes.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               Aucun email sur cette période.
