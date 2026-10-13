@@ -34,7 +34,7 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
-import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
+import { fetchHeuresValideesAdmin, HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
 import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
 import { getHistoryDefaults, historyStartTimestamp, type HistoryPeriod } from "@/lib/reports/history-defaults";
@@ -288,6 +288,16 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     load();
   }, []);
 
+  // Rechargement après un ajout d'heures CONFIRMÉ par le serveur (même élève uniquement).
+  const [heuresReloadKey, setHeuresReloadKey] = useState(0);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      if ((e as CustomEvent).detail?.apprenantId === selectedId) setHeuresReloadKey((k) => k + 1);
+    };
+    window.addEventListener(HEURES_VALIDEES_EVENT, onChange);
+    return () => window.removeEventListener(HEURES_VALIDEES_EVENT, onChange);
+  }, [selectedId]);
+
   // Load connexions & activities for selected apprenant
   useEffect(() => {
     if (!selectedId) {
@@ -393,7 +403,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setLoading(false);
     };
     load();
-  }, [selectedId, period, customStart, customEnd]);
+  }, [selectedId, period, customStart, customEnd, heuresReloadKey]);
 
   // Charge TOUT l'historique (indépendant du filtre période) pour le taux de réalisation
   useEffect(() => {
