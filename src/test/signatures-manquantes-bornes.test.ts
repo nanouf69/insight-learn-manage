@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculerSignaturesManquantes } from '../../dev-server/src/lib/signaturesManquantes';
+import { calculerSignaturesManquantes } from '../lib/signaturesManquantes';
 
 const S = (d: string, demi: string) => ({ date_emargement: d, demi_journee: demi, signature_data_url: 'data:image/png;base64,AAA', masque: false });
 
