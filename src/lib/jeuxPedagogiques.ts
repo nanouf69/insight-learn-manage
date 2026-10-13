@@ -1,45 +1,61 @@
-import type { CompletionLite, Filiere, VolumeModule } from "@/lib/jalonsPonderes";
+import type { CompletionLite, VolumeModule } from "@/lib/jalonsPonderes";
 
 /**
- * Jeux cartographiques de Lyon : deux activités distinctes du module 8 (PRATIQUE VTC,
- * parcours VTC et VA). Volume réel = nombre d'éléments à placer (1 unité = 1 placement,
- * comme une question) : 9 arrondissements + 13 quartiers, puis 24 lieux.
- * Terminé = toutes les étiquettes placées (réalisation, jamais un score minimal),
- * confirmé par le serveur dans reponses_apprenants (completed = true).
+ * REGISTRE CANONIQUE des activités d'un module définies dans le code (hors
+ * module_data de l'éditeur), ex. jeux cartographiques. Source UNIQUE lue par :
+ * l'affichage élève du module, le calcul des volumes, la progression des jalons
+ * et la lecture des réalisations serveur. Ajouter une activité ici suffit : elle
+ * est rattachée à toutes les filières dont le parcours réel contient le module.
+ *
+ * Volume = nombre réel d'éléments à réaliser (1 unité chacun, comme une question).
+ * Terminé = réalisation complète confirmée par le serveur (reponses_apprenants,
+ * completed = true) — jamais un score, jamais un stockage local.
  */
-export const MODULE_JEUX = 8;
-export const JEUX_LYON = [
-  { id: "jeu_lyon_arrondissements_quartiers", titre: "Lyon : arrondissements et quartiers", unites: 22 },
-  { id: "jeu_lyon_lieux", titre: "Lyon : monuments, musées et lieux touristiques", unites: 24 },
-] as const;
+export interface ActiviteCode { id: string; moduleId: number; titre: string; unites: number; ajouteeLe: string; retireeLe?: string }
+
+export const ACTIVITES_CODE: ActiviteCode[] = [
+  { id: "jeu_lyon_arrondissements_quartiers", moduleId: 8, titre: "Lyon : arrondissements et quartiers", unites: 22, ajouteeLe: "2026-10-13T10:41:00Z" },
+  { id: "jeu_lyon_lieux", moduleId: 8, titre: "Lyon : monuments, musées et lieux touristiques", unites: 24, ajouteeLe: "2026-10-13T10:41:00Z" },
+];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
+export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";
+
+/** Activités actives (non retirées) d'un module à une date donnée. */
+export function activitesDuModule(moduleId: number, a: string = new Date().toISOString()): ActiviteCode[] {
+  return ACTIVITES_CODE.filter((x) => x.moduleId === moduleId && x.ajouteeLe <= a && (!x.retireeLe || x.retireeLe > a));
+}
+export const idsActivites = (moduleIds: number[]) => moduleIds.flatMap((m) => activitesDuModule(m).map((x) => x.id));
+
+// Compatibilité (jeux de Lyon)
+export const JEUX_LYON = ACTIVITES_CODE.filter((x) => x.moduleId === 8);
 export const IDS_JEUX_LYON = JEUX_LYON.map((j) => j.id);
 export const UNITES_JEUX_LYON = JEUX_LYON.reduce((s, j) => s + j.unites, 0);
-/** Un module 8 validé AVANT cette date garde son statut historique (100 %) ; après, les jeux sont exigés. */
-export const DATE_EXIGENCE_JEUX = "2026-10-13T12:30:00Z";
-export const METHODE_JEUX = "jalons-calcul v4 — 13/10/2026 (jeux cartographiques du module 8)";
 
-export const filiereAvecJeux = (f: Filiere) => f === "vtc" || f === "va";
+export interface EtatActivites { moduleId: number; termines: string[]; requises: string[]; versionAnterieureValidee: boolean; progressionModuleSeul: number }
 
-export interface EtatJeux { termines: string[]; requis: number; statutHistorique: boolean; progressionModuleSeul: number }
-
-/** Unités pondérées du module (sans les jeux), même règle que unites(). */
 const unitesModule = (v: VolumeModule) => v.points ?? 4 * Math.max(0, v.pages) + Math.max(0, v.questions);
 
 /**
- * Progression du module 8 intégrant les jeux. Jamais 100 % tant qu'un jeu requis
- * n'est pas terminé, sauf validation historique antérieure à l'exigence (statut conservé).
+ * Progression courante d'un module incluant ses activités du registre.
+ * Un module validé avant l'ajout d'activités garde son statut EN BASE (jamais réécrit),
+ * mais le calcul courant ne l'affiche plus à 100 % tant que les nouvelles activités ne
+ * sont pas terminées : « version antérieure validée » + activités à faire.
  */
-export function completionAvecJeux(row: (CompletionLite & { completed_at?: string | null }) | undefined, volume: VolumeModule, termines: Set<string>): { completion: CompletionLite; etat: EtatJeux } {
-  const faits = IDS_JEUX_LYON.filter((id) => termines.has(id));
-  const historique = row?.status === "completed" && !!row.completed_at && row.completed_at < DATE_EXIGENCE_JEUX;
+export function completionAvecActivites(
+  row: (CompletionLite & { completed_at?: string | null }) | undefined,
+  volume: VolumeModule,
+  activites: ActiviteCode[],
+  termines: Set<string>,
+): { completion: CompletionLite; etat: EtatActivites } {
+  const moduleId = Number(row?.module_id ?? activites[0]?.moduleId);
+  const faits = activites.filter((a) => termines.has(a.id)).map((a) => a.id);
   const progModule = row?.status === "completed" ? 100 : Math.max(0, Math.min(100, Number(row?.progress) || 0));
-  const etat: EtatJeux = { termines: faits, requis: JEUX_LYON.length, statutHistorique: historique, progressionModuleSeul: progModule };
-  if (historique) return { completion: { module_id: MODULE_JEUX, status: "completed", progress: 100 }, etat };
+  const etat: EtatActivites = { moduleId, termines: faits, requises: activites.map((a) => a.id), versionAnterieureValidee: row?.status === "completed" && faits.length < activites.length, progressionModuleSeul: progModule };
   const um = unitesModule(volume);
-  const uj = JEUX_LYON.reduce((s, j) => s + (termines.has(j.id) ? j.unites : 0), 0);
-  const total = um + UNITES_JEUX_LYON;
-  const p = total > 0 ? ((progModule * um) / 100 + uj) / total * 100 : 0;
-  const tout = progModule >= 100 && faits.length === JEUX_LYON.length;
-  return { completion: { module_id: MODULE_JEUX, status: tout ? "completed" : "in_progress", progress: tout ? 100 : Math.min(99.9, p) }, etat };
+  const ua = activites.reduce((s, a) => s + a.unites, 0);
+  const uf = activites.reduce((s, a) => s + (termines.has(a.id) ? a.unites : 0), 0);
+  const total = um + ua;
+  const tout = progModule >= 100 && faits.length === activites.length;
+  const p = total > 0 ? (((progModule * um) / 100 + uf) / total) * 100 : 0;
+  return { completion: { module_id: moduleId, status: tout ? "completed" : "in_progress", progress: tout ? 100 : Math.min(99.9, p) }, etat };
 }
