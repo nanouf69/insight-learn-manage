@@ -373,7 +373,22 @@ export function tracerChargementExamens(t: TraceChargement): void {
 }
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
-export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
+export async function loadSavedExamens(
+  notifyRepairs: boolean = false,
+  /** Relevé figé : lignes lues dans le contenu figé à la fin des accès (jamais le contenu actuel). */
+  lireLignesFigees?: (moduleIds: number[]) => Promise<Array<{ module_id: number; module_data: any; updated_at: string | null }>>,
+): Promise<ExamenBlanc[]> {
+  if (lireLignesFigees) return fusionnerExamensFiges(await lireLignesFigees(cloneExamens(tousLesExamens).map((ex) => getModuleIdForExamId(ex.id))));
+  return loadSavedExamensActuels(notifyRepairs);
+}
+
+/** Même fusion que la version active, à partir de lignes figées : aucune lecture de la base. */
+async function fusionnerExamensFiges(rows: Array<{ module_id: number; module_data: any; updated_at: string | null }>): Promise<ExamenBlanc[]> {
+  if (!rows.length) throw new ExamContentUnavailableError("Contenu figé des examens blancs indisponible");
+  return loadSavedExamensActuels(false, rows);
+}
+
+async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Array<{ module_id: number; module_data: any; updated_at: string | null }>): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
   // Date réelle de dernière écriture Admin enregistrée par la base : sert de
   // référence de comparaison quand une question ne porte pas de marqueur de date.
@@ -383,7 +398,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
   try {
     // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
-    const { data: sess } = await supabase.auth.getSession();
+    const { data: sess } = lignesFigees ? { data: { session: { user: null } } as any } : await supabase.auth.getSession();
     if (!sess?.session) {
       tracerChargementExamens({ phase: "verification", session: "absente", premiere: "non_lue", relecture: "non" });
       const e = new ExamContentUnavailableError("Session absente : reconnexion nécessaire");
@@ -398,7 +413,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
-    let { data, error } = await lireVersions();
+    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await lireVersions();
     
     if (error) {
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
@@ -622,6 +637,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
   // The fournisseur portal saves modifications in `quiz_questions_overrides`
   // with quiz_id like "bilan-examen-ta". Without this step, students taking
   // the actual exam blanc would not see the formatrice's modifications.
+  if (lignesFigees) return examens; // relevé figé : comptage seulement, aucune lecture actuelle
   try {
     const fournisseurQuizIds = Object.keys(FOURNISSEUR_QUIZ_TO_EXAM);
     const { data: overridesData } = await supabase

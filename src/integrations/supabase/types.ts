@@ -2377,6 +2377,36 @@ export type Database = {
         }
         Relationships: []
       }
+      contenu_module_fige: {
+        Row: {
+          created_at: string
+          deleted_cours: Json | null
+          deleted_exercices: Json | null
+          empreinte: string
+          module_data: Json | null
+          module_id: number
+          source_updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_cours?: Json | null
+          deleted_exercices?: Json | null
+          empreinte: string
+          module_data?: Json | null
+          module_id: number
+          source_updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_cours?: Json | null
+          deleted_exercices?: Json | null
+          empreinte?: string
+          module_data?: Json | null
+          module_id?: number
+          source_updated_at?: string | null
+        }
+        Relationships: []
+      }
       contrats_fournisseurs: {
         Row: {
           created_at: string
@@ -6765,6 +6795,59 @@ export type Database = {
         }
         Relationships: []
       }
+      releve_jalons_fin_acces: {
+        Row: {
+          apprenant_id: string
+          contenu: Json
+          created_at: string
+          cree_par: string | null
+          fin_acces: string
+          heures_validee_id: string | null
+          historique_prouve: boolean
+          id: string
+          nature: string
+          remplace_id: string | null
+          sources: Json
+          version: number
+        }
+        Insert: {
+          apprenant_id: string
+          contenu: Json
+          created_at?: string
+          cree_par?: string | null
+          fin_acces: string
+          heures_validee_id?: string | null
+          historique_prouve: boolean
+          id?: string
+          nature: string
+          remplace_id?: string | null
+          sources: Json
+          version: number
+        }
+        Update: {
+          apprenant_id?: string
+          contenu?: Json
+          created_at?: string
+          cree_par?: string | null
+          fin_acces?: string
+          heures_validee_id?: string | null
+          historique_prouve?: boolean
+          id?: string
+          nature?: string
+          remplace_id?: string | null
+          sources?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releve_jalons_fin_acces_remplace_id_fkey"
+            columns: ["remplace_id"]
+            isOneToOne: false
+            referencedRelation: "releve_jalons_fin_acces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       releve_jalons_gels: {
         Row: {
           apprenant_id: string
@@ -8078,6 +8161,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      fin_acces_elearning: { Args: { _id: string }; Returns: string }
+      geler_releves_fin_acces: { Args: never; Returns: number }
       generer_emargements_planning_pratique: {
         Args: { p_apprenant_id?: string }
         Returns: number
@@ -8350,6 +8435,8 @@ export type Database = {
           qrc_repondues: number
         }[]
       }
+      releve_figer_contenu: { Args: never; Returns: Json }
+      releve_sources_apprenant: { Args: { _id: string }; Returns: Json }
       reset_quiz_attempt: {
         Args: { _apprenant_id: string; _exercice_id: string }
         Returns: {

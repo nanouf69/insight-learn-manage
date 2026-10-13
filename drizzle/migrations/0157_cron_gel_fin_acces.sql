@@ -1,0 +1,1 @@
+SELECT cron.schedule('geler-releves-fin-acces', '7 * * * *', $$SELECT public.geler_releves_fin_acces()$$);

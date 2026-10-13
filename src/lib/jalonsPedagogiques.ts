@@ -4,6 +4,7 @@ import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
+import { lireContenuFige, type GelFinAcces } from "@/lib/releveJalonsGel";
 import {
   INTRO_IDS,
   MODULES_FILIERE,
@@ -35,7 +36,10 @@ export async function chargerCalculJalons(params: {
   typeApprenant?: string | null;
   formationChoisie?: string | null;
   completions?: JalonCompletion[];
+  /** Relevé figé à la fin des accès : contenu et sources figés uniquement (jamais le contenu actuel). */
+  gel?: GelFinAcces | null;
 }) {
+  const gel = params.gel ?? null;
   const key = formationJalonsElearning(params.typeApprenant, params.formationChoisie);
   if (!key) throw new Error("Formation e-learning non concernée");
   const filiere = filiereDuParcours(key) as Filiere;
@@ -43,21 +47,31 @@ export async function chargerCalculJalons(params: {
   const parcours = avecJalonPratique(parcoursInitial);
   const ids = [...new Set([...MODULES_FILIERE[filiere].filter((id) => id > 0), ...parcoursInitial.filter((id) => INTRO_IDS.has(id)), 26, 32, 34])];
   const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult] = await Promise.all([
-    supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
+    gel
+      ? lireContenuFige(gel, ids).then((data) => ({ data, error: null }))
+      : supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
     import("@/components/cours-en-ligne/useLiveExamens"),
     import("@/components/cours-en-ligne/ModuleDetailView"),
     fetchPratiqueSlotDetails(params.apprenantId),
-    supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent, signature_data_url, masque, signed_at").eq("apprenant_id", params.apprenantId),
-    params.completions
+    gel
+      ? Promise.resolve({ data: gel.sources.emargements ?? [], error: null })
+      : supabase.from("emargements_fc" as any).select("date_emargement, demi_journee, absent, signature_data_url, masque, signed_at").eq("apprenant_id", params.apprenantId),
+    gel
+      ? Promise.resolve({ data: gel.sources.completions ?? [], error: null })
+      : params.completions
       ? Promise.resolve({ data: params.completions, error: null })
       : supabase.from("apprenant_module_completion").select("module_id, status, progress, completed_at").eq("apprenant_id", params.apprenantId),
-    supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
+    gel
+      ? Promise.resolve({ data: gel.sources.heures_validees ?? [], error: null })
+      : supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
   ]);
   if (editorError) throw editorError;
   if (emargementsResult.error) throw emargementsResult.error;
   if (completionsResult.error) throw completionsResult.error;
   if (heuresValideesResult.error) throw heuresValideesResult.error;
-  const examens = await examensModule.fetchLiveExamens();
+  const examens = gel
+    ? await (await import("@/components/cours-en-ligne/ExamensBlancsEditor")).loadSavedExamens(false, (mids) => lireContenuFige(gel, mids))
+    : await examensModule.fetchLiveExamens();
   const volumes = construireVolumes(
     filiere,
     parcoursInitial,
@@ -86,6 +100,7 @@ export async function chargerCalculJalons(params: {
   ].filter(Boolean).sort();
   return {
     key,
+    gelId: gel?.id ?? null,
     filiere,
     parcours,
     volumes: volumes.volumes,
