@@ -31,6 +31,8 @@ export function assemblerCalculJalons(i: {
   jeuxTermines?: string[];
   /** Date de référence des activités (défaut : maintenant). */
   dateActivites?: string;
+  /** Explicit current-path waivers, never interpreted as completed answers. */
+  activitesDispensees?: readonly string[];
 }) {
   const volumes = construireVolumes(i.filiere, i.parcoursInitial, i.editorRows as any, i.initialDe, i.examens as any);
   const emargements = (i.emargements ?? []) as EmargementRowLike[];
@@ -48,7 +50,7 @@ export function assemblerCalculJalons(i: {
     // Tout module du parcours RÉEL ayant des activités dans le registre (aucune liste parallèle).
     for (const [cle, v] of Object.entries(volumes.volumes)) {
       if (!i.parcours.includes(v.moduleId)) continue;
-      const acts = activitesDuModule(v.moduleId, i.dateActivites);
+      const acts = activitesDuModule(v.moduleId, i.dateActivites).filter(a => !i.activitesDispensees?.includes(a.id));
       if (!acts.length) continue;
       const lignes = completionsBase.filter((c) => Number(c.module_id) === v.moduleId);
       const row = lignes.find((c) => c.status === "completed") ?? [...lignes].sort((x, y) => (Number(y.progress) || 0) - (Number(x.progress) || 0))[0];

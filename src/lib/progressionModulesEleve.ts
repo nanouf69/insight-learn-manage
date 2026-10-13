@@ -1,6 +1,6 @@
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
 import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
-import { exceptionModulesEleve, jeuxLyonDispensesParHistorique } from "@/lib/exceptionsModulesEleve";
+import { exceptionModulesEleve, activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
 import type { CompletionLite } from "@/lib/moduleUnlockLogic";
 
 export interface ModuleEleveLite { id: number; nom: string }
@@ -23,7 +23,7 @@ export function progressionModulesEleve(
   completions: readonly CompletionLite[] = [],
 ): ProgressionModules {
   const exception = exceptionModulesEleve(apprenantId);
-  const dispensesHistoriques = jeuxLyonDispensesParHistorique(modules, completions);
+  const dispensesHistoriques = activitesDispenseesPourParcours(modules, completions, apprenantId);
   const vus = new Map<number, ModuleEleveLite>();
   for (const m of modules) if (!exception?.rubriquesHorsCompteur.includes(Number(m.id)) && !vus.has(Number(m.id))) vus.set(Number(m.id), m);
   const restants: ModuleRestant[] = [];

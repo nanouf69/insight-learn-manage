@@ -9,6 +9,10 @@ export interface ExceptionModulesEleve {
 }
 
 const EXCEPTIONS: Readonly<Record<string, ExceptionModulesEleve>> = {
+  "4c75ae96-9d4d-4c6f-8097-dd59d27fe9f5": {
+    activitesDispensees: ["jeu_lyon_arrondissements_quartiers", "jeu_lyon_lieux"],
+    rubriquesHorsCompteur: [],
+  },
   "bf12b32a-f8a2-434c-b855-f6033de38c2f": {
     activitesDispensees: ["jeu_lyon_arrondissements_quartiers", "jeu_lyon_lieux"],
     // Attendance archive is not a pedagogical achievement; no signature is validated here.
@@ -18,6 +22,11 @@ const EXCEPTIONS: Readonly<Record<string, ExceptionModulesEleve>> = {
 
 export function exceptionModulesEleve(apprenantId?: string | null): ExceptionModulesEleve | undefined {
   return apprenantId ? EXCEPTIONS[apprenantId] : undefined;
+}
+
+/** Shared waiver IDs, not completed answers. No cached cross-account state. */
+export function activitesDispenseesPourParcours(modules: readonly { id: number }[], completions: readonly CompletionLite[], apprenantId?: string | null): Set<string> {
+  return new Set([...jeuxLyonDispensesParHistorique(modules, completions), ...(exceptionModulesEleve(apprenantId)?.activitesDispensees ?? [])]);
 }
 
 /** Only these two games are waived when the entire pedagogical path was already done.
