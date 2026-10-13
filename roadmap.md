@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Gestion partie 2 — cadrage 38 et 40 (13/10)
+- [ ] Corriger uniquement la géométrie des deux encadrés droits du support actuel ; originaux et textes intégralement conservés.
+- [ ] Vérifier le média servi, la parité textuelle et le rendu ordinateur/tablette/mobile sans écritures apprenant ; publier uniquement après validation.
+
 ## Formulaires — PDF de toutes les signatures
 - [x] Export lecture seule des signatures réelles (théorie/pratique), dates et horaires séparés de l'instant de signature ; toutes versions conservées. Horaires absents/ambigus explicitement non déterminés.
 - [x] Tests fictifs, téléchargement du bouton Formulaires et inspection des 6 pages ; ajustement ordre matin/après-midi, aucune coupure/image manquante. Bouton ordinateur/téléphone sans débordement, aucune erreur JS ni écriture élève. Pas de publication demandée ; dossiers réels non testés.
