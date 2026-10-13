@@ -76,6 +76,7 @@ export function assemblerCalculJalons(i: {
     parcours: i.parcours,
     volumes: volumes.volumes,
     limites: volumes.limites,
+    pagesNonRecomptees: volumes.pagesNonRecomptees ?? [],
     durees,
     poids,
     resultat,

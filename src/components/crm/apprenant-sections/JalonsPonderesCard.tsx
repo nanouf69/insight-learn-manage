@@ -78,11 +78,6 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, () => {
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
       })
-      // Jeu du module 8 terminé (confirmé serveur) : recalcul immédiat.
-      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, (p: any) => {
-        const id = String(p?.new?.exercice_id ?? p?.old?.exercice_id ?? "");
-        if (id.startsWith("jeu_lyon_")) void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY, apprenantId] });
-      })
       .subscribe();
     const stop = ecouterContenuModifie(() => { void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] }); });
     // Ajout d'heures confirmé par le serveur : relire l'état du gel (nouvelle version possible).
@@ -112,11 +107,15 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, r.taux)}%` }} />
       </div>
       <div className={`mt-1 text-xs ${gel ? "font-medium text-foreground" : "text-muted-foreground"}`}>{mentionGel(etatGel)}</div>
-      {(calcul as any).jeux && (() => { const j = (calcul as any).jeux; return (
-        <div className="mt-1 text-xs text-muted-foreground">
-          Jeux cartographiques de Lyon (module 8) : {j.termines.length}/{j.requis} terminé(s), confirmés par le serveur.
-          {j.statutHistorique ? " Module 8 validé avant l’ajout des jeux : statut historique conservé (100 %), jeux non exigés rétroactivement." : ""}
-        </div>); })()}
+      {((calcul as any).pagesNonRecomptees?.length ?? 0) > 0 && (
+        <div className="mt-1 text-xs font-medium text-destructive">Taux provisoire : pages non recomptées pour le(s) module(s) {(calcul as any).pagesNonRecomptees.join(", ")} (supports modifiés depuis l’audit).</div>
+      )}
+      {((calcul as any).activites ?? []).map((j: any) => (
+        <div key={j.moduleId} className="mt-1 text-xs text-muted-foreground">
+          Module {j.moduleId} — activités du module : {j.termines.length}/{j.requises.length} terminée(s), confirmées par le serveur.
+          {j.versionAnterieureValidee ? " Version antérieure du module validée (statut conservé) ; nouvelles activités à faire, donc moins de 100 % dans le calcul courant." : ""}
+        </div>
+      ))}
       {finIncomplete && <div className="mt-1 text-xs text-muted-foreground">Contenus pédagogiques terminés ; validation de fin de formation / jalon administratif en attente.</div>}
       <Button variant="ghost" size="sm" onClick={() => setOpen(!open)} className="mt-1 gap-1 text-xs text-primary">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module
