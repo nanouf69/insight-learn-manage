@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Mail, CheckCheck, Eye, AlertTriangle, RefreshCw } from "lucide-react";
 import { AccuseReceptionBadge, type AccuseReception } from "./AccuseReceptionBadge";
+import { EmailDetailDialog } from "./EmailDetailDialog";
 
 const PERIODES = [
   { id: "7", label: "7 jours" },
@@ -29,6 +30,7 @@ export default function SuiviEmailsPage() {
   const [periode, setPeriode] = useState("30");
   const [filtre, setFiltre] = useState("all");
   const [recherche, setRecherche] = useState("");
+  const [ouvert, setOuvert] = useState<AccuseReception | null>(null);
 
   const { data: accuses = [], isLoading, isError, error: erreurLecture, refetch, isFetching } = useQuery({
     queryKey: ["email-accuses", periode],
@@ -186,12 +188,13 @@ export default function SuiviEmailsPage() {
                   key={a.id}
                   className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border rounded-lg p-3"
                 >
-                  <div className="min-w-0">
+                  <button type="button" onClick={() => setOuvert(a)} className="min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" aria-label={`Voir le mail : ${a.sujet || "(sans objet)"}`}>
                     <p className="font-medium truncate">{a.sujet || "(sans objet)"}</p>
                     <p className="text-xs text-muted-foreground truncate">{a.destinataire}</p>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     <AccuseReceptionBadge accuse={a} />
+                    <Button size="sm" variant="outline" className="h-7" onClick={() => setOuvert(a)}>Voir le mail</Button>
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(a.sent_at), "dd/MM/yyyy HH:mm", { locale: fr })}
                     </span>
@@ -202,6 +205,7 @@ export default function SuiviEmailsPage() {
           )}
         </CardContent>
       </Card>
+      <EmailDetailDialog accuse={ouvert} onClose={() => setOuvert(null)} />
     </div>
   );
 }
