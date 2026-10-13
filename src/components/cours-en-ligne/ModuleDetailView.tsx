@@ -4,7 +4,7 @@ import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from 
 import { t3pPartie2DisplaySupport } from "@/lib/t3pPartie2Support";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
