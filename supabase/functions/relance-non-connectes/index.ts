@@ -149,6 +149,7 @@ serve(async (req) => {
               <h2 style="color: #991b1b;">Bonjour ${prenom} ${nom},</h2>
               
               <p style="font-size: 16px; line-height: 1.6;">Nous constatons que vous <strong>ne vous êtes toujours pas connecté(e)</strong> à vos cours en ligne, alors que votre accès est ouvert depuis <strong>${daysSinceStart} jours</strong>.</p>
+              <p style="font-size: 16px; line-height: 1.6;">Votre formation consiste à <strong>réaliser et terminer tous les modules qui vous ont été attribués</strong> : cours, exercices, bilans et examens blancs. La première étape est de vous connecter pour commencer le premier module.</p>
               
               <div style="background-color: #fef2f2; border: 2px solid #ef4444; padding: 20px; margin: 25px 0; border-radius: 8px;">
                 <h3 style="color: #991b1b; margin-top: 0;">🚨 ATTENTION – Risque de perte de votre financement CPF</h3>
@@ -182,12 +183,12 @@ serve(async (req) => {
                 <h3 style="color: #1e40af; margin-top: 0;">📋 Vos dates de formation</h3>
                 <p><strong>Début des cours :</strong> ${startDate}</p>
                 <p><strong>Fin des cours :</strong> ${endDate}</p>
-                <p style="color: #dc2626; font-weight: bold;">⏰ Votre accès est actif – connectez-vous dès maintenant !</p>
+                <p style="color: #dc2626; font-weight: bold;">⏰ Votre accès est actif – commencez dès maintenant votre premier module !</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${coursUrl}" style="background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 18px; font-weight: bold; display: inline-block; text-transform: uppercase;">
-                  🚀 Me connecter maintenant
+                  🚀 Commencer mes modules
                 </a>
               </div>
               

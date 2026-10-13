@@ -29,7 +29,6 @@ function isCredentialsSubject(s: string | null): boolean {
 
 function buildEmail(prenom: string, type: string) {
   const isTaxi = type.toLowerCase().includes("taxi");
-  const heures = isTaxi ? 90 : 60;
   const formation = isTaxi ? "TAXI" : "VTC";
   const subject = `⚠️ ${prenom}, vous n'avez pas encore activé votre formation e-learning`;
   const html = `
@@ -39,12 +38,12 @@ function buildEmail(prenom: string, type: string) {
       <p style="background:#fff3cd;border-left:4px solid #f0ad4e;padding:12px;">
         ⚠️ <strong>À ce jour, nous constatons que vous ne vous êtes pas encore connecté(e).</strong>
       </p>
-      <p><strong>📌 Rappel important (Qualiopi) :</strong><br/>
-      Formation ${formation} : <strong>${heures} heures</strong> e-learning obligatoires.</p>
-      <p>Sans la validation de la totalité de vos heures et de tous vos modules,
+      <p><strong>📌 Rappel important :</strong><br/>
+      Votre formation ${formation} consiste à <strong>réaliser et terminer tous les modules qui vous ont été attribués</strong> : cours, exercices, bilans et examens blancs.</p>
+      <p>Sans la réalisation de tous vos modules,
       <strong>nous serons contraints de vous refuser le passage de l'examen pratique</strong>,
       sans remboursement possible.</p>
-      <p>👉 <strong>Connectez-vous dès aujourd'hui</strong> avec les identifiants reçus hier par email pour démarrer votre formation.</p>
+      <p>👉 <strong>Connectez-vous dès aujourd'hui</strong> avec les identifiants reçus hier par email pour commencer votre premier module.</p>
       <p>Si vous avez perdu vos identifiants ou rencontrez un problème de connexion, répondez simplement à cet email.</p>
       <p>Cordialement,<br/><strong>L'équipe FTRANSPORT</strong></p>
     </div>

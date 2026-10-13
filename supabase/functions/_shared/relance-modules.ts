@@ -49,7 +49,7 @@ export const SUJET_RELANCE_MODULES = "Votre formation : les modules à terminer"
 export const LIEN_ESPACE_ELEVE = "https://gestion.ftransport.fr/cours-public";
 
 /** Texte du mail : aucun identifiant, aucune note/réponse, aucune promesse CPF. */
-export function mailModulesATerminer(p: { prenom?: string | null; etat: EtatModules; nomModule: (id: number) => string }) {
+export function mailModulesATerminer(p: { prenom?: string | null; etat: EtatModules; nomModule: (id: number) => string; avertissementHtml?: string }) {
   const { etat } = p;
   const liste = etat.restantsEnLigne.slice(0, 5).map((id) => `<li>${esc(p.nomModule(id))}</li>`).join("");
   const plus = etat.restantsEnLigne.length > 5 ? `<li>… et ${etat.restantsEnLigne.length - 5} autre(s)</li>` : "";
@@ -64,6 +64,7 @@ export function mailModulesATerminer(p: { prenom?: string | null; etat: EtatModu
 ${pratique}
 <p>Terminer un module, c'est faire son contenu jusqu'au bout ; réussir l'examen est une étape distincte, que ces modules vous aident à préparer.</p>
 <p>Besoin d'aide ? Contactez-nous au 04 28 29 60 91 ou à contact@ftransport.fr.</p>
+${p.avertissementHtml ?? ""}
 <p>Cordialement,<br>L'équipe FTRANSPORT</p>`;
   return { subject: SUJET_RELANCE_MODULES, html, preview: `Il vous reste ${etat.restantsEnLigne.length} module(s) à terminer (${etat.termines.length}/${etat.requis.length}).` };
 }
