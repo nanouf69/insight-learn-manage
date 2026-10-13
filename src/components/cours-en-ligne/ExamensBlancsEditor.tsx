@@ -373,7 +373,22 @@ export function tracerChargementExamens(t: TraceChargement): void {
 }
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
-export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<ExamenBlanc[]> {
+export async function loadSavedExamens(
+  notifyRepairs: boolean = false,
+  /** Relevé figé : lignes lues dans le contenu figé à la fin des accès (jamais le contenu actuel). */
+  lireLignesFigees?: (moduleIds: number[]) => Promise<Array<{ module_id: number; module_data: any; updated_at: string | null }>>,
+): Promise<ExamenBlanc[]> {
+  if (lireLignesFigees) return fusionnerExamensFiges(await lireLignesFigees(cloneExamens(tousLesExamens).map((ex) => getModuleIdForExamId(ex.id))));
+  return loadSavedExamensActuels(notifyRepairs);
+}
+
+/** Même fusion que la version active, à partir de lignes figées : aucune lecture de la base. */
+async function fusionnerExamensFiges(rows: Array<{ module_id: number; module_data: any; updated_at: string | null }>): Promise<ExamenBlanc[]> {
+  if (!rows.length) throw new ExamContentUnavailableError("Contenu figé des examens blancs indisponible");
+  return loadSavedExamensActuels(false, rows);
+}
+
+async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Array<{ module_id: number; module_data: any; updated_at: string | null }>): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
   // Date réelle de dernière écriture Admin enregistrée par la base : sert de
   // référence de comparaison quand une question ne porte pas de marqueur de date.
@@ -381,6 +396,7 @@ export async function loadSavedExamens(notifyRepairs: boolean = false): Promise<
   
   
   try {
+    if (lignesFigees) throw Object.assign(new Error("__figees__"), { __figees: true });
     // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
     const { data: sess } = await supabase.auth.getSession();
