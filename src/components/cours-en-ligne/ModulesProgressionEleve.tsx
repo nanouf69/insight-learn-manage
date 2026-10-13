@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { progressionModulesEleve, type ModuleEleveLite, type ProgressionModules } from "@/lib/progressionModulesEleve";
+import type { CompletionLite } from "@/lib/moduleUnlockLogic";
 
 export const ACTIVITE_CONFIRMEE_EVENT = "activite-registre-confirmee";
 const CLE = "activites-registre-eleve";
@@ -36,10 +37,10 @@ export function useActivitesTermineesEleve(apprenantId: string | null | undefine
   return { pret: q.isSuccess && !q.isFetching, termines: q.data ?? null };
 }
 
-export function useProgressionModulesEleve(apprenantId: string | null | undefined, modules: ModuleEleveLite[], estTermine: (id: number) => boolean, charge: boolean): ProgressionModules | null {
+export function useProgressionModulesEleve(apprenantId: string | null | undefined, modules: ModuleEleveLite[], estTermine: (id: number) => boolean, charge: boolean, completions: readonly CompletionLite[] = []): ProgressionModules | null {
   const { pret, termines } = useActivitesTermineesEleve(apprenantId);
   if (!charge || !pret) return null;
-  return progressionModulesEleve(modules, estTermine, termines, undefined, apprenantId);
+  return progressionModulesEleve(modules, estTermine, termines, undefined, apprenantId, completions);
 }
 
 export function ModulesProgressionEleve({ progression, onOuvrir, estVerrouille }: { progression: ProgressionModules | null; onOuvrir: (id: number) => void; estVerrouille: (id: number) => boolean }) {

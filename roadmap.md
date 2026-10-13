@@ -1,5 +1,9 @@
 # Feuille de route
  
+## Parcours terminés avant les jeux Lyon — 13/10
+- [x] Dispense automatique des deux jeux seulement sur preuve serveur datée de tous les modules pédagogiques avant leur ajout ; compteurs élève et candidats partagés, données/gels inchangés.
+- [x] 49 tests fictifs passés ; compilation automatique OK à 15:26:13 UTC ; compteur 10/10 confirmé sur ordinateur/mobile pour un compte fictif sans exception nominative, aucun débordement ni erreur JS. Aucune publication demandée.
+ 
 ## Exception individuelle Zekkour — 13/10
 - [x] Exclure les deux jeux Lyon et la rubrique d'archives émargement du compteur individuel ; dix validations serveur, aucune réponse/signature/statut fabriqué, gels inchangés.
 - [x] 132 tests fictifs, compilation OK, compteur 10/10 vérifié en Chromium ordinateur/téléphone ; aucune publication demandée.

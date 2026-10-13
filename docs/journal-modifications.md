@@ -3,6 +3,12 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 — Dispense des jeux Lyon pour parcours déjà terminés
+- Accord explicite : ne pas compter les deux nouveaux jeux pour les personnes ayant déjà terminé tous leurs modules avant leur ajout (date du registre : 10:41 UTC).
+- Preuves readonly déjà chargées : status completed et date antérieure pour chaque module pédagogique attribué, normalisation parent/enfants partagée. Archives de présence exclues du contrôle d'éligibilité seulement, compteur inchangé hors exception individuelle antérieure.
+- Fichiers : exceptionsModulesEleve, progressionModulesEleve, useCandidatModules, ModulesProgressionEleve, CoursPublic, test exception, AGENTS, roadmap et journal. Aucune mutation serveur, aucun envoi ni modification des gels/jalons/heures/notes.
+- PASS : 49 tests fictifs (ancien parcours complet/incomplet, dates absentes/invalides/limite, état in_progress, TAXI, parent/enfants, changement de compte, intégrité des preuves) ; compilation automatique OK 15:26:13 UTC. Compteur candidats fictif 10/10 affiché en Chromium 1280/390, aucun débordement/erreur JS, relance désactivée. Aucune publication demandée.
+
 ## 2026-10-13 — Exception individuelle Zekkour
 - Autorisation explicite : dispenser exceptionnellement les deux nouveaux jeux Lyon et afficher 100 % des modules pour le dossier VA identifié par UUID ; aucun effet sur l'homonyme.
 - Compteur partagé élève/candidats : dix modules réellement completed, rubrique d'archives émargement 83 hors compteur individuel, sans inventer de signature ni réponse ni modifier statut, heure, poids ou gel.
