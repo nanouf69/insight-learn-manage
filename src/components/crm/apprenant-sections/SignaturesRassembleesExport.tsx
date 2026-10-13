@@ -4,8 +4,7 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { chargerSignaturesRassemblees } from '@/lib/signaturesRassemblees';
-import { formaterCompteSignaturesPdf } from '@/lib/signaturesRassemblees';
+import { chargerSignaturesRassemblees, formaterCompteSignaturesPdf } from '@/lib/signaturesRassemblees';
 import { generateSignaturesRassembleesPdf } from '@/lib/pdf/signatures-rassemblees';
 
 function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, totalIndisponible }: { apprenant: any; userId: string; seulementPlanning: boolean; totalAttendu: number | null; totalIndisponible: boolean }) {
