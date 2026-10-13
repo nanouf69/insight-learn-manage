@@ -851,6 +851,12 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   Problème : plus de signatures que prévu ({bilanEdof.total} pour {bilanEdof.objectifTotal} attendues) — à vérifier.
                 </p>
               )}
+              {bilanEdof.horsPlanning.length > 0 && (
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  {bilanEdof.horsPlanning.length} signature(s) hors planning, conservée(s) mais non comptée(s) :{" "}
+                  {bilanEdof.horsPlanning.map((h) => `${h.date.slice(8, 10)}/${h.date.slice(5, 7)}/${h.date.slice(0, 4)} ${h.creneau}`).join(", ")}
+                </p>
+              )}
               {bilanEdof.complet && !bilanEdof.excedent && (
                 <p className="text-base font-bold text-destructive">Possibilité de valider sur EDOF</p>
               )}

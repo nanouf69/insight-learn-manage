@@ -166,6 +166,8 @@ export interface BilanSignaturesEdof {
   theorie: number;
   pratique: number;
   total: number;
+  /** Signatures conservées mais hors des dates du planning (non comptées). */
+  horsPlanning: { date: string; creneau: string }[];
   objectifTheorie: number;
   objectifPratique: number;
   objectifTotal: number;
@@ -181,6 +183,7 @@ export function calculerBilanSignaturesEdof(
   const f = String(formation ?? '').toLowerCase();
   const filiere: 'VTC' | 'TAXI' | 'TA' = /(^|[^a-z])ta([^a-z]|$)/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
   const datesPratique = new Set<string>();
+  const datesTheorie = new Set<string>();
   let soir = false;
   for (const row of sessionRows ?? []) {
     const s = row?.sessions;
@@ -192,6 +195,14 @@ export function calculerBilanSignaturesEdof(
     } else if (type.includes('theorique')) {
       const h = String(row.heure_debut_personnalisee ?? s.heure_debut ?? '').slice(0, 5);
       if (h >= '17:00') soir = true;
+      // Mêmes bornes que les signatures manquantes : intersection inscription ∩ session.
+      const debutBrut = normDate(row.date_debut || s.date_debut);
+      const finBrute = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
+      const debutSession = normDate(s.date_debut);
+      const finSession = normDate(s.date_fin || s.date_debut);
+      const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
+      const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
+      if (estDate(debut) && estDate(fin) && fin >= debut) for (const d of joursOuvres(debut, fin)) datesTheorie.add(d);
     }
   }
   for (const r of reservations ?? []) {
@@ -201,6 +212,7 @@ export function calculerBilanSignaturesEdof(
   const vus = new Set<string>();
   let theorie = 0;
   let pratique = 0;
+  const horsPlanning: { date: string; creneau: string }[] = [];
   for (const e of emargements ?? []) {
     if (e?.masque === true) continue;
     const date = normDate(e?.date_emargement);
@@ -213,12 +225,14 @@ export function calculerBilanSignaturesEdof(
     if (!signe || vus.has(key)) continue;
     vus.add(key);
     if (datesPratique.has(date)) pratique++;
-    else theorie++;
+    else if (datesTheorie.has(date)) theorie++;
+    else horsPlanning.push({ date, creneau: DEMI_LABELS[demi] ?? demi });
   }
+  horsPlanning.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
   const objectifTheorie = filiere === 'TAXI' ? 80 : filiere === 'TA' ? 20 : soir ? 20 : 40;
   const objectifPratique = 2;
   return {
-    filiere, soir, theorie, pratique, total: theorie + pratique,
+    filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning,
     objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
     complet: theorie >= objectifTheorie && pratique >= objectifPratique,
     excedent: theorie > objectifTheorie || pratique > objectifPratique,
@@ -229,7 +243,7 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, heure_debut_personnalisee, sessions:session_id(type_session, statut, date_debut, heure_debut)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie').eq('apprenant_id', apprenantId).order('id').range(f, t)),
   ]);
   return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation);
