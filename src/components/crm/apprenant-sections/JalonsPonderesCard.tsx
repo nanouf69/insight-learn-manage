@@ -13,6 +13,7 @@ import { ecouterContenuModifie } from "@/lib/contenuModifie";
 import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { GEL_QUERY_KEY, chargerEtatGel, mentionGel } from "@/lib/releveJalonsGel";
+import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
@@ -77,6 +78,14 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     const ch = supabase.channel(`jalons-volumes-${apprenantId}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, () => {
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
+      })
+      // Réalisations confirmées par le serveur pour CET élève (jeux/activités, modules) : relecture ciblée immédiate.
+      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, (p: any) => {
+        const ex = String((p.new as any)?.exercice_id ?? (p.old as any)?.exercice_id ?? "");
+        if (ACTIVITES_CODE.some((a) => a.id === ex)) void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY, apprenantId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "apprenant_module_completion", filter: `apprenant_id=eq.${apprenantId}` }, () => {
+        void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY, apprenantId] });
       })
       .subscribe();
     const stop = ecouterContenuModifie(() => { void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] }); });
