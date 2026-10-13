@@ -26,4 +26,4 @@
 <!-- LOVABLE:END -->
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
-- Milestones/PDF: `chargerCalculJalons`+`affichageJalons` (forecast≠recorded, unreadable≠0); closed = immutable `releve_jalons_gels` via `figer_releve_jalons`, read first; why: later content edits never alter it.
+- Milestones/PDF: `chargerCalculJalons`+`affichageJalons` (forecast≠recorded, unreadable≠0); access end = hourly `geler_releves_fin_acces` → immutable `releve_jalons_fin_acces`, only admin pratique adds a version; why: later content edits never alter it.
