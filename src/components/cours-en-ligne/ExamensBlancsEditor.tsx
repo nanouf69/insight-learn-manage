@@ -396,10 +396,9 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   
   
   try {
-    if (lignesFigees) throw Object.assign(new Error("__figees__"), { __figees: true });
     // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
-    const { data: sess } = await supabase.auth.getSession();
+    const { data: sess } = lignesFigees ? { data: { session: { user: null } } as any } : await supabase.auth.getSession();
     if (!sess?.session) {
       tracerChargementExamens({ phase: "verification", session: "absente", premiere: "non_lue", relecture: "non" });
       const e = new ExamContentUnavailableError("Session absente : reconnexion nécessaire");
@@ -414,7 +413,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
-    let { data, error } = await lireVersions();
+    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await lireVersions();
     
     if (error) {
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
@@ -638,6 +637,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   // The fournisseur portal saves modifications in `quiz_questions_overrides`
   // with quiz_id like "bilan-examen-ta". Without this step, students taking
   // the actual exam blanc would not see the formatrice's modifications.
+  if (lignesFigees) return examens; // relevé figé : comptage seulement, aucune lecture actuelle
   try {
     const fournisseurQuizIds = Object.keys(FOURNISSEUR_QUIZ_TO_EXAM);
     const { data: overridesData } = await supabase
