@@ -150,7 +150,15 @@ export function calculerJalonsPonderes(
       poids = introAttribuee ? 0 : grille[INTRO] ?? 0;
       introAttribuee = true;
     }
-    const row = parId.get(id);
+    let row = parId.get(id);
+    // Introduction : l'élève a pu valider une autre variante (ex. 33 « INTRODUCTION VA »
+    // au lieu de 34) — c'est la même introduction, la validation serveur compte.
+    if (INTRO_IDS.has(id) && row?.status !== "completed") {
+      for (const alt of INTRO_IDS) {
+        const r = parId.get(alt);
+        if (r?.status === "completed") { row = r; break; }
+      }
+    }
     const progression = progressionModule(row);
     lignes.push({ moduleId: id, poids, progression, contribution: (poids * progression) / 100, obligatoireSansPoids: poids === 0, valide: row?.status === "completed" });
   }
