@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Formulaires — PDF de toutes les signatures
+- [ ] Export lecture seule des signatures réelles (théorie/pratique), dates et horaires séparés de l'instant de signature ; toutes versions conservées.
+- [ ] Tests fictifs, téléchargement et inspection de chaque page ; aucune écriture élève, pas de publication demandée.
+
 ## Dispenses Lyon dans la fiche CRM — 13/10
 - [x] Partager les dispenses avec le compteur CRM et les jalons actuels ; exception deux jeux Thierno BAH, aucun faux module terminé, gels inchangés.
 - [x] 37 tests fictifs, compilation OK 15:32:20 UTC et rendu ordinateur/mobile sans exigences des jeux ; aucune écriture élève ni publication demandée. Fiche réelle complète non testée ; limites gel/pages/questions précédentes conservées.
