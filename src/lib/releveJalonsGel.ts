@@ -65,7 +65,12 @@ export async function chargerGelReleve(apprenantId: string): Promise<GelReleve |
 
 /** Formation terminée (date de fin passée, jour Paris). Ne vaut PAS clôture : seule l'action admin fige. */
 export function formationTerminee(apprenant: any, now = new Date()): boolean {
-  const iso = (v: unknown) => (/^\d{4}-\d{2}-\d{2}/.test(String(v ?? "")) ? String(v).slice(0, 10) : null);
+  const iso = (v: unknown) => {
+    const t = String(v ?? "").trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+  };
   const fin = iso(apprenant?.date_fin_cours_en_ligne) ?? iso(apprenant?.date_fin_formation);
   if (!fin) return false;
   const jourParis = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(now);

@@ -68,6 +68,8 @@ describe("gel du relevé à la clôture", () => {
     const now = new Date("2026-10-13T08:00:00Z");
     expect(formationTerminee({ date_fin_formation: "2026-09-30" }, now)).toBe(true);
     expect(formationTerminee({ date_fin_formation: "2026-10-13" }, now)).toBe(false);
+    expect(formationTerminee({ date_fin_formation: "30/09/2026" }, now)).toBe(true);
+    expect(formationTerminee({ date_fin_formation: "30/11/2026" }, now)).toBe(false);
     expect(mentionGel(null, { date_fin_formation: "2026-09-30" })).toMatch(/version historique non disponible/);
   });
   it("empreinte stable quel que soit l'ordre des clés", async () => {
