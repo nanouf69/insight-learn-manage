@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Map as MapIcon, Landmark, RefreshCw, XCircle, Trophy } from "lucide-react";
+import { CheckCircle2, MapPin, Map as MapIcon, Landmark, RefreshCw, XCircle, Trophy } from "lucide-react";
 import { CarteLyon, type Touche } from "./CarteLyon";
 import { LYON_GEO, type LieuLyon } from "./lyon-geo-data";
 import {
@@ -166,7 +166,7 @@ function JeuArrondissements({ compteId }: { compteId?: string | null }) {
         afficherNumerosArr={apprentissage || niveau === 2} afficherZones={niveau === 2 && apprentissage} desactive={termine}
         calques={niveau === 2 && apprentissage ? (k) => LYON_GEO.zones.map((z) => {
           const p = new Path2DCentre(z.d);
-          return <text key={z.id} x={p.x} y={p.y} textAnchor="middle" className="fill-accent-foreground font-semibold" style={{ fontSize: 13 * k }} stroke="hsl(var(--accent))" strokeWidth={3 * k} paintOrder="stroke">{z.nom.split(" (")[0]}</text>;
+          return <text key={z.id} x={p.x} y={p.y} textAnchor="middle" className="fill-accent-foreground font-semibold" style={{ fontSize: 18 * k }} stroke="hsl(var(--accent))" strokeWidth={3 * k} paintOrder="stroke">{z.nom.split(" (")[0]}</text>;
         }) : undefined} />
     </div>
   );
@@ -236,16 +236,17 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
       {retour && (
         <div role="status" className={`rounded-lg border p-3 text-sm ${retour.ton === "ok" ? "border-success/40 bg-success/10" : retour.ton === "ko" ? "border-destructive/40 bg-destructive/10" : "bg-muted/40"}`}>
           <p className="font-medium">{retour.texte}</p>
-          {retour.fiche && <p className="mt-1">📍 {retour.fiche}</p>}
+          {retour.fiche && <p className="mt-1 flex gap-1"><MapPin className="h-4 w-4 shrink-0 mt-0.5" />{retour.fiche}</p>}
         </div>
       )}
       <CarteLyon cible="point" onTouche={onTouche} afficherNumerosArr desactive={termine}
         calques={(k) => (
           <>
+            <text x={880} y={560} textAnchor="middle" className="fill-muted-foreground italic" style={{ fontSize: 20 * k }}>Villeurbanne (commune)</text>
             {apprentissage && LYON_GEO.lieux.map((l, i) => (
               <g key={l.id}>
-                <circle cx={l.x} cy={l.y} r={6 * k} className="fill-warning stroke-card" strokeWidth={1.5 * k} />
-                <text x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central" className="fill-warning-foreground font-bold" style={{ fontSize: 7 * k }}>{i + 1}</text>
+                <circle cx={l.x} cy={l.y} r={9 * k} className="fill-warning stroke-card" strokeWidth={1.5 * k} />
+                <text x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central" className="fill-warning-foreground font-bold" style={{ fontSize: 10 * k }}>{i + 1}</text>
               </g>
             ))}
             {traces.map((t) => (
