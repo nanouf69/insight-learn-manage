@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import { etatModules, exclusionRelance, mailModulesATerminer, TAGS_RELANCE_PEDAGOGIQUE } from "../_shared/relance-modules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,203 +26,60 @@ serve(async (req) => {
 
     console.log(`[relance-inactifs] Running for date: ${today.toISOString()}`);
 
-    // Find apprenants with active course access
-    const { data: apprenants, error: fetchErr } = await supabaseAdmin
-      .from("apprenants")
-      .select("id, nom, prenom, email, auth_user_id, formation_choisie, type_apprenant, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, resultat_examen_pratique")
-      .not("auth_user_id", "is", null)
-      .not("email", "is", null);
-
-    if (fetchErr) throw fetchErr;
-
-    // Exclude présentiel formations from relances
-    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "formation-continue-vtc", "formation-continue-taxi", "pa-vtc"];
-    const isElearning = (a: any) => {
-      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
-      return !PRESENTIEL_TYPES.includes(type);
-    };
-
-    // Filter: active course period + e-learning only
-    const eligible = (apprenants || []).filter((a: any) => {
-      if (!isElearning(a)) return false;
-      // Exclure les apprenants ayant échoué à l'examen pratique
-      if (a.resultat_examen_pratique === 'non') return false;
-      const startDate = a.date_debut_cours_en_ligne || a.date_debut_formation;
-      const endDate = a.date_fin_cours_en_ligne || a.date_fin_formation;
-      if (!startDate) return false;
-      const start = new Date(startDate);
-      const end = endDate ? new Date(endDate) : null;
-      return today >= start && (!end || today <= end);
-    });
-
-    console.log(`[relance-inactifs] ${eligible.length} apprenants with active access`);
-
-    if (eligible.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "Aucun apprenant éligible", count: 0 }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Sélection : accès e-learning actif (règles communes) + inactivité > 2 jours (indice seulement)
+    // + au moins un module EN LIGNE attribué non « completed » côté serveur.
+    const apprenants: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin.from("apprenants")
+        .select("id, prenom, email, auth_user_id, formation_choisie, type_apprenant, modules_autorises, statut, deleted_at, compte_cours_archive_at, resultat_examen, resultat_examen_pratique, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
+        .not("auth_user_id", "is", null).not("email", "is", null).order("id").range(from, from + 999);
+      if (error) throw error;
+      apprenants.push(...(data || []));
+      if (!data || data.length < 1000) break;
     }
+    const [{ data: tests, error: tErr }, { data: gels, error: gErr }, { data: noms, error: nErr }] = await Promise.all([
+      supabaseAdmin.from("comptes_test_techniques").select("apprenant_id"),
+      supabaseAdmin.from("releve_jalons_fin_acces").select("apprenant_id"),
+      supabaseAdmin.from("module_editor_state").select("module_id, nom:module_data->>nom"),
+    ]);
+    if (tErr || gErr || nErr) throw tErr || gErr || nErr; // jamais d'envoi si une exclusion est illisible
+    const ctx = { testIds: new Set((tests || []).map((t: any) => t.apprenant_id)), gelIds: new Set((gels || []).map((g: any) => g.apprenant_id)) };
+    const nomsModules = new Map((noms || []).map((n: any) => [Number(n.module_id), String(n.nom || "").trim()]));
+    const nomModule = (id: number) => nomsModules.get(id) || `Module ${id}`;
+    const eligible = apprenants.filter((a) => !exclusionRelance(a, today, ctx));
 
-    // Get latest connexion for each eligible apprenant
-    // Query per apprenant to avoid 1000-row default limit
-    const ids = eligible.map((a: any) => a.id);
-    const latestActivity = new Map<string, Date>();
-    for (const id of ids) {
-      const { data: rows } = await supabaseAdmin
-        .from("apprenant_connexions")
-        .select("last_seen_at, started_at")
-        .eq("apprenant_id", id)
-        .order("started_at", { ascending: false })
-        .limit(1);
-      if (rows && rows.length > 0) {
-        const seen = new Date(rows[0].last_seen_at || rows[0].started_at);
-        latestActivity.set(id, seen);
-      }
+    const toSend: Array<{ a: any; etat: ReturnType<typeof etatModules> }> = [];
+    for (const a of eligible) {
+      const { data: rows, error } = await supabaseAdmin.from("apprenant_connexions")
+        .select("last_seen_at, started_at").eq("apprenant_id", a.id).order("started_at", { ascending: false }).limit(1);
+      if (error) continue;
+      if (!rows || rows.length === 0) continue; // jamais connecté = relance-non-connectes
+      if (new Date(rows[0].last_seen_at || rows[0].started_at) >= twoDaysAgo) continue;
+      const { data: comp, error: cErr } = await supabaseAdmin.from("apprenant_module_completion").select("module_id, status").eq("apprenant_id", a.id);
+      if (cErr) continue;
+      const etat = etatModules(a.modules_autorises, comp || []);
+      if (!etat.relancePertinente) continue; // tout fait (ou seule la pratique physique reste) : pas de relance
+      const { data: recent, error: rErr } = await supabaseAdmin.from("emails").select("id").eq("apprenant_id", a.id)
+        .or(TAGS_RELANCE_PEDAGOGIQUE.map((t) => `subject.ilike.%${t}%`).join(",")).gte("sent_at", twoDaysAgo.toISOString()).limit(1);
+      if (rErr || (recent && recent.length)) continue; // anti-doublon commun aux relances pédagogiques
+      toSend.push({ a, etat });
     }
-
-    // Filter: has connected before BUT last seen > 2 days ago
-    const inactive = eligible.filter((a: any) => {
-      const lastSeen = latestActivity.get(a.id);
-      if (!lastSeen) return false; // Never connected = handled by relance-non-connectes
-      return lastSeen < twoDaysAgo;
-    });
-
-    console.log(`[relance-inactifs] ${inactive.length} inactive for 2+ days`);
-
-    if (inactive.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "Aucun apprenant inactif", count: 0 }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Avoid spamming: check if we already sent a support email in the last 2 days
-    const inactiveIds = inactive.map((a: any) => a.id);
-    const { data: recentEmails } = await supabaseAdmin
-      .from("emails")
-      .select("apprenant_id")
-      .in("apprenant_id", inactiveIds)
-      .like("subject", "%Nous sommes là pour vous%")
-      .gte("sent_at", twoDaysAgo.toISOString());
-
-    const recentlySent = new Set((recentEmails || []).map((e: any) => e.apprenant_id));
-    const toSend = inactive.filter((a: any) => !recentlySent.has(a.id));
-
-    console.log(`[relance-inactifs] ${toSend.length} to send (${recentlySent.size} already sent recently)`);
-
-    if (toSend.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "Relances déjà envoyées", count: 0 }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    console.log(`[relance-inactifs] ${toSend.length} relance(s) pédagogique(s) à envoyer`);
 
     const senderEmail = "contact@ftransport.fr";
-    const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
-    const results: { id: string; email: string; success: boolean; error?: string }[] = [];
-
-    for (const apprenant of toSend) {
+    const results: { id: string; success: boolean; error?: string }[] = [];
+    for (const { a: apprenant, etat } of toSend) {
+      const { subject, html: emailBody, preview } = mailModulesATerminer({ prenom: apprenant.prenom, etat, nomModule });
       try {
-        const prenom = apprenant.prenom || "";
-        const nom = apprenant.nom || "";
-        const lastSeen = latestActivity.get(apprenant.id)!;
-        const daysSinceLastSeen = Math.floor((today.getTime() - lastSeen.getTime()) / (1000 * 60 * 60 * 24));
-        const formation = (apprenant.type_apprenant || apprenant.formation_choisie || "").toUpperCase();
-
-        const emailBody = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #2563eb, #1e40af); padding: 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0;">💪 Nous sommes là pour vous !</h1>
-              <p style="color: #bfdbfe; margin: 5px 0 0;">FTRANSPORT – Centre de formation VTC & TAXI</p>
-            </div>
-            
-            <div style="padding: 30px; background-color: #ffffff;">
-              <h2 style="color: #1e40af;">Bonjour ${prenom},</h2>
-              
-              <p style="font-size: 16px; line-height: 1.6;">Nous avons remarqué que vous ne vous êtes pas connecté(e) à vos cours en ligne depuis <strong>${daysSinceLastSeen} jour${daysSinceLastSeen > 1 ? "s" : ""}</strong>. Nous espérons que tout va bien ! 🙂</p>
-              
-              <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 4px;">
-                <h3 style="color: #1e40af; margin-top: 0;">🎯 Votre réussite est notre priorité</h3>
-                <p style="font-size: 15px; color: #1f2937; line-height: 1.6;">
-                  La régularité est la clé du succès pour votre formation <strong>${formation || "VTC/TAXI"}</strong>. Même 30 minutes par jour font une grande différence !
-                </p>
-              </div>
-
-              <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                <h3 style="color: #166534; margin-top: 0;">💡 Nos conseils pour reprendre en douceur</h3>
-                <ul style="color: #1f2937; font-size: 15px; line-height: 2;">
-                  <li>📚 Reprenez là où vous vous êtes arrêté(e)</li>
-                  <li>⏰ Fixez-vous un créneau régulier chaque jour (matin ou soir)</li>
-                  <li>🧠 Révisez les modules déjà vus pour consolider vos acquis</li>
-                  <li>✍️ Testez-vous avec les examens blancs pour évaluer votre progression</li>
-                </ul>
-              </div>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${coursUrl}" style="background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 18px; font-weight: bold; display: inline-block;">
-                  📖 Reprendre mes cours
-                </a>
-              </div>
-              
-              <div style="background-color: #fefce8; border-left: 4px solid #eab308; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <h3 style="color: #854d0e; margin-top: 0;">🤝 Besoin d'un coup de pouce ?</h3>
-                <p style="font-size: 15px; line-height: 1.6;">Si vous rencontrez des difficultés avec un module ou si vous avez des questions, n'hésitez pas à nous contacter. Notre équipe pédagogique est là pour vous accompagner !</p>
-                <p>📞 <strong>04.28.29.60.91</strong> | 📧 <strong>contact@ftransport.fr</strong></p>
-              </div>
-
-              <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                <h3 style="color: #dc2626; margin-top: 0;">⚠️ Rappel important – sanctions en cas d'abandon ou de manquement à vos engagements</h3>
-                <p style="font-size: 14px; line-height: 1.6; color: #991b1b; font-weight: bold;">
-                  En cas d'abandon de la formation ou de manquement à vos engagements, les sanctions suivantes peuvent s'appliquer :
-                </p>
-                <ul style="font-size: 14px; line-height: 1.8; color: #991b1b; font-weight: bold;">
-                  <li>Abandonne la formation / manque à ses engagements : <strong>remboursement des frais engagés</strong> – R.6333-7 du code du travail</li>
-                  <li>Absent sans motif légitime à l'examen final : <strong>CPF bloqué temporairement pour toute nouvelle formation</strong> – Art. 59, loi du 25/06/2026</li>
-                  <li>Pour <strong>France Travail</strong>, l'abandon (même sans fraude, un simple arrêt en cours de route) déclenche potentiellement : <strong>arrêt immédiat de la rémunération/cotisations</strong> (L.6342-1 + instruction DG 2024-6), <strong>remboursement du trop-perçu</strong>, et <strong>suspension de l'ARE de 1 à 4 mois</strong> (R.5412-4).</li>
-                </ul>
-              </div>
-
-              <p style="color: #6b7280; font-size: 13px; margin-top: 20px;">
-                Ce message de soutien est envoyé automatiquement pour vous encourager dans votre parcours de formation.
-              </p>
-            </div>
-            
-            <div style="background-color: #1f2937; padding: 20px; text-align: center; font-size: 13px; color: #9ca3af;">
-              <p style="margin: 0;"><strong>FTRANSPORT</strong> – Centre de formation VTC & TAXI</p>
-              <p style="margin: 5px 0 0;">86 Route de Genas, 69003 Lyon</p>
-              <p style="margin: 5px 0 0;">📞 04.28.29.60.91 | 📧 contact@ftransport.fr</p>
-            </div>
-          </div>
-        `;
-
-        const subject = `💪 ${prenom}, nous sommes là pour vous – Reprenez vos cours en ligne !`;
-
-        try {
-          await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
-          await supabaseAdmin.from("emails").insert({
-            apprenant_id: apprenant.id,
-            subject,
-            body_preview: `Bonjour ${prenom}, vous ne vous êtes pas connecté(e) depuis ${daysSinceLastSeen} jours. Nous sommes là pour vous soutenir !`,
-            body_html: emailBody,
-            sender_email: senderEmail,
-            sender_name: "FTRANSPORT",
-            recipients: [apprenant.email],
-            type: "sent",
-            is_read: true,
-            has_attachments: false,
-            sent_at: new Date().toISOString(),
-          });
-          results.push({ id: apprenant.id, email: apprenant.email, success: true });
-          console.log(`[relance-inactifs] ✅ Sent to ${apprenant.email}`);
-        } catch (sendError) {
-          const message = sendError instanceof Error ? sendError.message : String(sendError);
-          console.error(`[relance-inactifs] ❌ Failed for ${apprenant.email}:`, message);
-          results.push({ id: apprenant.id, email: apprenant.email, success: false, error: message });
-        }
-      } catch (err: unknown) {
-        console.error(`[relance-inactifs] Error for ${apprenant.email}:`, err);
-        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err instanceof Error ? err.message : String(err) });
+        await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
+        await supabaseAdmin.from("emails").insert({
+          apprenant_id: apprenant.id, subject, body_preview: preview, body_html: emailBody,
+          sender_email: senderEmail, sender_name: "FTRANSPORT", recipients: [apprenant.email],
+          type: "sent", is_read: true, has_attachments: false, sent_at: new Date().toISOString(),
+        });
+        results.push({ id: apprenant.id, success: true });
+      } catch (sendError) {
+        results.push({ id: apprenant.id, success: false, error: sendError instanceof Error ? sendError.message : String(sendError) });
       }
     }
 
@@ -231,8 +89,8 @@ serve(async (req) => {
     if (results.length > 0) {
       await supabaseAdmin.from("alertes_systeme").insert({
         type: "relance_inactifs",
-        titre: `💪 Relance de soutien apprenants inactifs`,
-        message: `${successCount} email(s) de soutien envoyé(s), ${failCount} échec(s)`,
+        titre: `Relance pédagogique : modules à terminer`,
+        message: `${successCount} relance(s) modules envoyée(s), ${failCount} échec(s)`,
         details: JSON.stringify(results),
       });
     }

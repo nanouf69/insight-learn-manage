@@ -3,6 +3,7 @@
 // Lecture seule sur les données élèves : n'écrit que l'e-mail envoyé (table emails) et une alerte récap.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import { etatModules, exclusionRelance, mailModulesATerminer, TAGS_RELANCE_PEDAGOGIQUE } from "../_shared/relance-modules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
