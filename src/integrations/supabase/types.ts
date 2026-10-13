@@ -6805,6 +6805,8 @@ export type Database = {
           heures_validee_id: string | null
           historique_prouve: boolean
           id: string
+          methode_version: string
+          modules_modifies_apres_fin: number | null
           nature: string
           remplace_id: string | null
           sources: Json
@@ -6819,6 +6821,8 @@ export type Database = {
           heures_validee_id?: string | null
           historique_prouve: boolean
           id?: string
+          methode_version?: string
+          modules_modifies_apres_fin?: number | null
           nature: string
           remplace_id?: string | null
           sources: Json
@@ -6833,6 +6837,8 @@ export type Database = {
           heures_validee_id?: string | null
           historique_prouve?: boolean
           id?: string
+          methode_version?: string
+          modules_modifies_apres_fin?: number | null
           nature?: string
           remplace_id?: string | null
           sources?: Json
@@ -6894,6 +6900,41 @@ export type Database = {
             columns: ["remplace_gel_id"]
             isOneToOne: false
             referencedRelation: "releve_jalons_gels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      releve_jalons_resolution: {
+        Row: {
+          created_at: string
+          cree_par: string | null
+          gel_id: string
+          limites: Json
+          methode_code: string
+          volumes: Json
+        }
+        Insert: {
+          created_at?: string
+          cree_par?: string | null
+          gel_id: string
+          limites?: Json
+          methode_code: string
+          volumes: Json
+        }
+        Update: {
+          created_at?: string
+          cree_par?: string | null
+          gel_id?: string
+          limites?: Json
+          methode_code?: string
+          volumes?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releve_jalons_resolution_gel_id_fkey"
+            columns: ["gel_id"]
+            isOneToOne: true
+            referencedRelation: "releve_jalons_fin_acces"
             referencedColumns: ["id"]
           },
         ]

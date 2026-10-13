@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
-import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
+import { fetchPratiqueSlotDetails, pratiqueSlotDetailsDepuisGel, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import { isSignedPresentielRow } from "@/lib/presentielHours";
 import { EXAMENS_BLANCS_FILIERE, INTRO_IDS, PRATIQUE_PHYSIQUE, type Filiere } from "@/lib/jalonsPonderes";
 
@@ -192,25 +192,33 @@ async function lire<T>(sources: SourceLecture[], cle: string, libelle: string, r
 /** Lecture paginée et stable de toutes les sources (admin uniquement, lecture seule). */
 export async function chargerPreuvesJalons(p: {
   apprenant: any; filiere: Filiere; lignesModuleIds: number[]; completions: EntreesPreuves["completions"];
+  /** Relevé figé : toutes les preuves viennent des archives du gel, jamais d'une lecture actuelle. */
+  gel?: { sources: Record<string, any>; fin_acces?: string } | null;
 }): Promise<PreuvesJalons> {
   const id = p.apprenant.id as string;
   const sources: SourceLecture[] = [];
-  const page = (table: string, cols: string, order: string) => () => fetchAllRows<any>((from, to) =>
+  const g = p.gel?.sources ?? null;
+  const archive = (cle: string, filtre?: (r: any) => boolean) => async () => {
+    const rows = g?.[cle];
+    if (!Array.isArray(rows)) throw { code: "non archivée dans le relevé figé" };
+    return filtre ? rows.filter(filtre) : rows;
+  };
+  const page = (table: string, cols: string, order: string, cleGel?: string) => g ? archive(cleGel ?? table) : () => fetchAllRows<any>((from, to) =>
     (supabase.from(table as any) as any).select(cols).eq("apprenant_id", id).order(order, { ascending: true }).range(from, to));
   const [activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails, heuresValidees] = await Promise.all([
-    lire(sources, "activites", "Journal d’activité", page("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "id")),
-    lire(sources, "reponses", "Réponses enregistrées", page("reponses_apprenants", "id, exercice_id, reponses, completed, status, tentative, submitted_at, updated_at", "id")),
-    lire(sources, "quiz", "Résultats de quiz / examens", page("apprenant_quiz_results", "id, quiz_type, quiz_id, matiere_id, note_sur_20, completed_at", "id")),
-    lire(sources, "v2", "Passages nouveau moteur", page("exam_attempts_v2", "attempt_id, exam_id, etat, is_test, started_at, finished_at", "attempt_id")),
-    lire(sources, "connexions", "Connexions", page("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at", "id")),
-    lire(sources, "emargements", "Émargements", () => fetchAllRows<any>((from, to) => (supabase.from("emargements_fc" as any) as any)
+    lire(sources, "activites", "Journal d’activité", page("apprenant_module_activites", "id, module_id, module_nom, action_type, occurred_at", "id", "activites")),
+    lire(sources, "reponses", "Réponses enregistrées", page("reponses_apprenants", "id, exercice_id, reponses, completed, status, tentative, submitted_at, updated_at", "id", "reponses")),
+    lire(sources, "quiz", "Résultats de quiz / examens", page("apprenant_quiz_results", "id, quiz_type, quiz_id, matiere_id, note_sur_20, completed_at", "id", "quiz")),
+    lire(sources, "v2", "Passages nouveau moteur", page("exam_attempts_v2", "attempt_id, exam_id, etat, is_test, started_at, finished_at", "attempt_id", "tentatives_v2")),
+    lire(sources, "connexions", "Connexions", page("apprenant_connexions", "id, started_at, ended_at, last_seen_at, last_action_at", "id", "connexions")),
+    lire(sources, "emargements", "Émargements", g ? archive("emargements", (r) => r.masque !== true) : () => fetchAllRows<any>((from, to) => (supabase.from("emargements_fc" as any) as any)
       .select("id, date_emargement, demi_journee, absent, signature_data_url, masque, signed_at").eq("apprenant_id", id).eq("masque", false).order("id", { ascending: true }).range(from, to))),
-    lire(sources, "planning", "Planning pratique", () => fetchPratiqueSlotDetails(id)),
-    lire(sources, "heuresValidees", "Heures validées par l’administration", page("presentiel_heures_validees", "id, heures, motif, created_at", "id")),
+    lire(sources, "planning", "Planning pratique", g ? async () => pratiqueSlotDetailsDepuisGel(g) : () => fetchPratiqueSlotDetails(id)),
+    lire(sources, "heuresValidees", "Heures validées par l’administration", page("presentiel_heures_validees", "id, heures, motif, created_at", "id", "heures_validees")),
   ]);
   return construirePreuvesJalons({
     apprenantId: id, filiere: p.filiere, lignesModuleIds: p.lignesModuleIds, completions: p.completions,
-    dateFinAcces: p.apprenant.date_fin_cours_en_ligne || p.apprenant.date_fin_formation,
+    dateFinAcces: p.gel?.fin_acces || p.apprenant.date_fin_cours_en_ligne || p.apprenant.date_fin_formation,
     dateDebutAcces: p.apprenant.date_debut_cours_en_ligne || p.apprenant.date_debut_formation,
     activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails, heuresValidees, sources,
   });
