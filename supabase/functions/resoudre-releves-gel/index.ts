@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
         (globalThis as any).document = { createElement: el, createElementNS: el, head: el(), body: el(), documentElement: el(), addEventListener() {}, querySelector: () => null };
       }
     }
-    const { calculerGelInitial, recalculerPratiqueSeule, METHODE_CALCUL_JALONS } = await import("./calcul.bundle.js");
+    const { calculerGelInitial, recalculerPratiqueSeule, METHODE_CALCUL_JALONS, METHODE_GEL } = await import("./calcul.bundle.js");
     const { data: gels, error } = await sb.from("releve_jalons_fin_acces")
       .select("id, apprenant_id, version, remplace_id").order("version", { ascending: true }).limit(500);
     if (error) throw error;
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
           // Essai sans écriture : renvoie seulement les chiffres agrégés (aucune donnée personnelle).
           return new Response(JSON.stringify({ essai: true, taux: calcul.resultat.taux, lignes: calcul.resultat.lignes.map((l: any) => [l.moduleId, Math.round(l.poids * 100) / 100, Math.round(l.progression * 100) / 100]), pratique_min: calcul.pratique.minutes, limites: calcul.limites, durees: calcul.durees }), { headers: { ...cors, "Content-Type": "application/json" } });
         }
-        const { error: insErr } = await sb.from("releve_jalons_calcul_fige").insert({ gel_id: gel.id, calcul, methode: METHODE_CALCUL_JALONS, code_ref: CODE_REF, base_gel_id: base });
+        const { error: insErr } = await sb.from("releve_jalons_calcul_fige").insert({ gel_id: gel.id, calcul, methode: base ? (calculs.get(base)?.registreActivites ? METHODE_GEL : METHODE_CALCUL_JALONS) : METHODE_GEL, code_ref: CODE_REF, base_gel_id: base });
         if (insErr && insErr.code !== "23505") throw insErr;
         calculs.set(gel.id, calcul);
         bilan.calcules++;
