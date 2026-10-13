@@ -62,13 +62,13 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const calcul = calculActuel;
   const isError = gelQuery.isError || calculError;
   const { data: preuvesActuelles, isFetching: preuvesFetching } = useQuery({
-    queryKey: ["jalons-heures-enregistrees", apprenantId, userId, calcul?.key],
+    queryKey: ["jalons-heures-enregistrees", apprenantId, userId, calcul?.key, gel?.id ?? "actuel"],
     enabled: !!isAdmin && !!calcul && !!apprenant && afficherObjectifs,
     staleTime: 0,
     gcTime: 0,
     queryFn: () => {
       if (!calcul || !apprenant) throw new Error("Relevé indisponible");
-      return chargerPreuvesJalons({ apprenant, filiere: calcul.filiere, lignesModuleIds: calcul.resultat.lignes.map((l) => l.moduleId), completions: calcul.completions });
+      return chargerPreuvesJalons({ apprenant, filiere: calcul.filiere, lignesModuleIds: calcul.resultat.lignes.map((l) => l.moduleId), completions: calcul.completions, gel });
     },
   });
   useEffect(() => {
