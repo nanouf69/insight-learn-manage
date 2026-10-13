@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculerPratiqueSlotDetails, daySlotsDepuisConfigs, type PratiqueSlotDetail } from '@/lib/pratiqueSlots';
 import { pratiqueDocumentHours } from '@/lib/pratiqueDocumentHours';
+import { datesDuPlanning } from '@/lib/signaturesManquantes';
 
 export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; signedAt: string | null; signature: string; absent: boolean }
 const labels: Record<string, string> = { matin: 'Matin', apres_midi: 'Après-midi', soir: 'Soir', soir_1: 'Soir 1', soir_2: 'Soir 2' };
@@ -50,6 +51,8 @@ async function paginer(build: (from: number, to: number) => any): Promise<any[]>
 }
 
 export async function chargerSignaturesRassemblees(apprenantId: string) {
+  // Le PDF ne contient que les signatures faites aux dates du planning :
+  // les signatures hors planning sont conservées en base mais exclues de l'export.
   const [rows, reservations, sessions] = await Promise.all([
     paginer((from, to) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).eq('masque', false).order('id').range(from, to)),
     paginer((from, to) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(from, to)),
@@ -66,5 +69,7 @@ export async function chargerSignaturesRassemblees(apprenantId: string) {
       return raw ? part : { ...part, label: '', minutes: 0 };
     }) };
   });
-  return rassemblerSignatures(rows, pratique, sessions);
+  const { datesTheorie, datesPratique } = datesDuPlanning(sessions, reservations);
+  return rassemblerSignatures(rows, pratique, sessions)
+    .filter(s => datesTheorie.has(s.date) || datesPratique.has(s.date));
 }

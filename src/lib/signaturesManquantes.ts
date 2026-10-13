@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+// complet = compte EXACT atteint (jamais « >= ») : la mention EDOF ne s'affiche qu'au nombre précis.
 
 // ================== Signatures d'émargement manquantes ==================
 // Calcul purement indicatif, lecture seule : à partir des sessions réellement
@@ -159,29 +160,9 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 // ── Objectif EDOF : nombre de signatures attendues selon la formation ──
 // VTC soir : 20 théorie + 2 pratique = 22 ; VTC journée : 40 + 2 = 42 ;
 // TAXI : 80 + 2 = 82. Signature comptée une seule fois par date + créneau.
-export interface BilanSignaturesEdof {
-  filiere: 'VTC' | 'TAXI' | 'TA';
-  excedent: boolean;
-  soir: boolean;
-  theorie: number;
-  pratique: number;
-  total: number;
-  /** Signatures conservées mais hors des dates du planning (non comptées). */
-  horsPlanning: { date: string; creneau: string }[];
-  objectifTheorie: number;
-  objectifPratique: number;
-  objectifTotal: number;
-  complet: boolean;
-}
 
-export function calculerBilanSignaturesEdof(
-  emargements: any[],
-  sessionRows: any[],
-  reservations: any[],
-  formation: string,
-): BilanSignaturesEdof {
-  const f = String(formation ?? '').toLowerCase();
-  const filiere: 'VTC' | 'TAXI' | 'TA' = /(^|[^a-z])ta([^a-z]|$)/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
+/** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
+export function datesDuPlanning(sessionRows: any[], reservations: any[]): { datesTheorie: Set<string>; datesPratique: Set<string>; soir: boolean } {
   const datesPratique = new Set<string>();
   const datesTheorie = new Set<string>();
   let soir = false;
@@ -209,6 +190,32 @@ export function calculerBilanSignaturesEdof(
     const d = normDate(r?.date_choisie);
     if (estDate(d)) datesPratique.add(d);
   }
+  return { datesTheorie, datesPratique, soir };
+}
+export interface BilanSignaturesEdof {
+  filiere: 'VTC' | 'TAXI' | 'TA';
+  excedent: boolean;
+  soir: boolean;
+  theorie: number;
+  pratique: number;
+  total: number;
+  /** Signatures conservées mais hors des dates du planning (non comptées). */
+  horsPlanning: { date: string; creneau: string }[];
+  objectifTheorie: number;
+  objectifPratique: number;
+  objectifTotal: number;
+  complet: boolean;
+}
+
+export function calculerBilanSignaturesEdof(
+  emargements: any[],
+  sessionRows: any[],
+  reservations: any[],
+  formation: string,
+): BilanSignaturesEdof {
+  const f = String(formation ?? '').toLowerCase();
+  const filiere: 'VTC' | 'TAXI' | 'TA' = /(^|[^a-z])ta([^a-z]|$)/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
+  const { datesTheorie, datesPratique, soir } = datesDuPlanning(sessionRows, reservations);
   const vus = new Set<string>();
   let theorie = 0;
   let pratique = 0;
@@ -234,7 +241,7 @@ export function calculerBilanSignaturesEdof(
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning,
     objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
-    complet: theorie >= objectifTheorie && pratique >= objectifPratique,
+    complet: theorie === objectifTheorie && pratique === objectifPratique,
     excedent: theorie > objectifTheorie || pratique > objectifPratique,
   };
 }
