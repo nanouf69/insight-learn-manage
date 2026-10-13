@@ -1,3 +1,4 @@
+import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { lireIdentifiantExerciceModule } from "@/lib/quizAttempts";
 import { supabase } from "@/integrations/supabase/client";
