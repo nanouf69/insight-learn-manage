@@ -44,7 +44,8 @@ export function assemblerCalculJalons(i: {
   const v8 = Object.entries(volumes.volumes).find(([, v]) => v.moduleId === MODULE_JEUX);
   if (i.jeuxTermines && filiereAvecJeux(i.filiere) && v8 && i.parcours.includes(MODULE_JEUX)) {
     const sansJeux = { ...v8[1] };
-    const row8 = completionsBase.filter((c) => Number(c.module_id) === MODULE_JEUX).sort((a, b) => (a.status === "completed" ? -1 : 0) - (b.status === "completed" ? -1 : 0))[0];
+    const lignes8 = completionsBase.filter((c) => Number(c.module_id) === MODULE_JEUX);
+    const row8 = lignes8.find((c) => c.status === "completed") ?? lignes8.sort((a, b) => (Number(b.progress) || 0) - (Number(a.progress) || 0))[0];
     const r = completionAvecJeux(row8 as any, sansJeux, new Set(i.jeuxTermines));
     volumes.volumes[Number(v8[0])] = { ...v8[1], jeux: UNITES_JEUX_LYON };
     completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== MODULE_JEUX), { ...r.completion, completed_at: (row8 as any)?.completed_at ?? null }];
@@ -72,6 +73,7 @@ export function assemblerCalculJalons(i: {
     poids,
     resultat,
     completions,
+    jeux,
     pratique: {
       minutes: pratiqueMinutes,
       detail: { pratiqueSignee: pratiqueSigneeMinutes, theorieSignee: theorieMinutes, valideesAdmin: valideesMinutes },
