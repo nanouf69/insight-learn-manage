@@ -808,7 +808,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
-            <p className="text-2xl font-bold text-primary">{formatPresenceHours(totalHeures)}</p>
+            <p className="text-2xl font-bold text-primary">{totalHeuresIndisponible ? "Indisponible" : formatPresenceHours(totalHeures)}</p>
           </div>
           <div className="text-right text-sm text-muted-foreground">
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>

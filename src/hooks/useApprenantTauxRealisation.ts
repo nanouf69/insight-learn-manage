@@ -71,23 +71,23 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
           .eq("apprenant_id", apprenantId)
-          .range(from, to)).catch(() => [] as any[]),
+          .range(from, to)),
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_quiz_results")
           .select("completed_at")
           .eq("apprenant_id", apprenantId)
-          .range(from, to)).catch(() => [] as any[]),
+          .range(from, to)),
         fetchAllRows<any>((from, to) => supabase
           .from("reponses_apprenants")
           .select("updated_at")
           .eq("apprenant_id", apprenantId)
           .eq("completed", true)
-          .range(from, to)).catch(() => [] as any[]),
+          .range(from, to)),
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_connexions")
           .select("started_at, ended_at, last_seen_at, last_action_at, current_module")
           .eq("apprenant_id", apprenantId)
-          .range(from, to)).catch(() => [] as any[]),
+          .range(from, to)),
         fetchAllRows<any>((from, to) => supabase
           .from("emargements_fc" as any)
           .select("date_emargement, demi_journee, absent, signature_data_url").filter("masque", "eq", false)
@@ -99,7 +99,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .select("module_id")
           .eq("apprenant_id", apprenantId)
           .eq("status", "completed")
-          .range(from, to)).catch(() => [] as any[]),
+          .range(from, to)),
         fetchAllRows<any>((from, to) => supabase
           .from("presentiel_heures_validees" as any)
           .select("id, heures, created_at")

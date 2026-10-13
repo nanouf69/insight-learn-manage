@@ -194,7 +194,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [pratiqueDetails, setPratiqueDetails] = useState<PratiqueSlotDetail[]>([]);
-  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[] }>({ minutes: 0, lignes: [] });
+  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[]; indisponible?: boolean }>({ minutes: 0, lignes: [] });
   const [loading, setLoading] = useState(false);
   // Préférence d'affichage uniquement : Tout l'historique reste toujours disponible.
   const [period, setPeriod] = useState<HistoryPeriod>(() => getHistoryDefaults(lockedApprenantId).period);
@@ -378,7 +378,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         fetchPratiqueSlotDetails(selectedId),
         // Heures validées par l'administration : comptées en présentiel,
         // comme la carte « Taux présentiel », les jalons et le relevé PDF.
-        fetchHeuresValideesAdmin(selectedId).catch(() => ({ minutes: 0, lignes: [] as { date: string; heures: number; label: string }[] })),
+        fetchHeuresValideesAdmin(selectedId).then((v) => ({ ...v, indisponible: false }), () => ({ minutes: 0, lignes: [] as { date: string; heures: number; label: string }[], indisponible: true })),
       ]);
 
 
