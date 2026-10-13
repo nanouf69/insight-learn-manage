@@ -19,11 +19,11 @@
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Course/quiz order and admin labels share permanent-ID associations; historical adapters stay unchanged; why: prevent positional drift. Verify all paths against dated baselines and append the change journal.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
-- Exam rates reuse CRM hook, mails require confirmation; why: no drift or auto-send.
+- Exam rates reuse CRM hook; mails need confirmation; why: no auto-send.
 - Accès élève : créés/envoyés par le serveur (trigger sur apprenants) à chaque modification si aucun compte ; why: aucune fiche corrigée sans accès.
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
-- Milestones/PDF: frozen relevé = server-computed `releve_jalons_calcul_fige` (fn resoudre-releves-gel, bundle of src/lib/releveCalculServeur.ts with images/pdf libs stubbed, <4.5 MB; activities from ACTIVITES_CODE at gele_le + archived reponses, registry frozen in calcul); UI never recomputes; admin pratique = new version, pratique only; why: later edits never alter it.
+- Milestones/PDF: frozen relevé = server-computed `releve_jalons_calcul_fige` (resoudre-releves-gel = bundle of releveCalculServeur.ts, images/pdf stubbed; ACTIVITES_CODE at gele_le + archived reponses); admin pratique = new version; why: later edits never alter it.
