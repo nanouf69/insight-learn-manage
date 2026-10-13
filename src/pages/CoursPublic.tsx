@@ -2059,7 +2059,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Affichage élève : module terminé = serveur + activités requises du registre terminées.
   const progressionModules = completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
-    ? progressionModulesEleve(modules.map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id)
+    ? progressionModulesEleve(modules.map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id, moduleCompletionsForNotes)
     : null;
   const progressionDisponible = progressionModules?.etat === "ok" ? progressionModules : null;
   const completedCount = progressionDisponible?.termines;

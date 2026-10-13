@@ -27,7 +27,7 @@ export async function chargerCandidatModules(apprenantId: string) {
   ]);
   const done = computeServerCompletedModuleIds(completions, DASHBOARD_PARENT_TO_CHILDREN, normalizeModuleIdForDashboard);
   return progressionModulesEleve(modulesAttribuesDashboard(formation, apprenant.modules_autorises), id => done.has(id),
-    new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId);
+    new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId, completions);
 }
 
 export function useCandidatModules(apprenantId?: string) {
