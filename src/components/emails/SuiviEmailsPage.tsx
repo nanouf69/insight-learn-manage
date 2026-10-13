@@ -33,28 +33,32 @@ export default function SuiviEmailsPage() {
   const { data: accuses = [], isLoading, isError, error: erreurLecture, refetch, isFetching } = useQuery({
     queryKey: ["email-accuses", periode],
     queryFn: async () => {
-      let query = supabase
-        .from("email_accuses")
-        .select("*")
-        .order("sent_at", { ascending: false })
-        .limit(1000);
-
-      if (periode !== "all") {
-        const since = new Date();
-        since.setDate(since.getDate() - Number(periode));
-        query = query.gte("sent_at", since.toISOString());
+      // Lecture paginée : plus de plafond silencieux à 1 000 lignes (ordre stable sent_at + id).
+      const since = periode !== "all" ? new Date(Date.now() - Number(periode) * 86400000).toISOString() : null;
+      const PAGE = 1000;
+      const out: AccuseReception[] = [];
+      for (let from = 0; from < 50000; from += PAGE) {
+        let query = supabase
+          .from("email_accuses")
+          .select("*")
+          .order("sent_at", { ascending: false })
+          .order("id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (since) query = query.gte("sent_at", since);
+        const { data, error } = await query;
+        if (error) throw error;
+        out.push(...((data || []) as AccuseReception[]));
+        if (!data || data.length < PAGE) break;
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as AccuseReception[];
+      return out;
     },
   });
 
   const stats = useMemo(() => {
     const total = accuses.length;
     const ouverts = accuses.filter((a) => a.opened_at || a.statut === "ouvert").length;
-    const remis = accuses.filter((a) => a.delivered_at || a.statut === "remis" || a.opened_at).length;
+    // « Bien remis » = confirmation de remise du fournisseur uniquement (une ouverture n'est pas une preuve de remise).
+    const remis = accuses.filter((a) => a.delivered_at || a.statut === "remis").length;
     const echecs = accuses.filter((a) => a.statut === "echec").length;
     return { total, ouverts, remis, echecs };
   }, [accuses]);
