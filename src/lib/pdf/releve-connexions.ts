@@ -190,6 +190,7 @@ export function generateReleveConnexionsPdf(
   if (opts?.tempsTotal) {
     doc.setTextColor(13, 37, 64);
     doc.text(`TOTAL formation : ${opts.tempsTotal}`, margin, 68);
+    if (opts?.tempsPresenceAdmin) doc.text(`Presence validee par l'administration : ${opts.tempsPresenceAdmin}`, margin + 90, 68);
     doc.setTextColor(40, 40, 40);
   }
 

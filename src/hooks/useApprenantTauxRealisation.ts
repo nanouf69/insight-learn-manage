@@ -92,8 +92,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .from("emargements_fc" as any)
           .select("date_emargement, demi_journee, absent, signature_data_url").filter("masque", "eq", false)
           .eq("apprenant_id", apprenantId)
-          .range(from, to)).catch(() => [] as any[]),
-        fetchPratiqueSlotDetails(apprenantId).catch(() => []),
+          .range(from, to)),
+        fetchPratiqueSlotDetails(apprenantId),
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_completion")
           .select("module_id")
@@ -102,9 +102,9 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .range(from, to)).catch(() => [] as any[]),
         fetchAllRows<any>((from, to) => supabase
           .from("presentiel_heures_validees" as any)
-          .select("heures")
+          .select("id, heures, created_at")
           .eq("apprenant_id", apprenantId)
-          .range(from, to)).catch(() => [] as any[]),
+          .range(from, to)), // erreur propagée : taux indisponible, jamais un faux 0 h
         supabase
           .from("apprenants")
           .select("type_apprenant, formation_choisie")
