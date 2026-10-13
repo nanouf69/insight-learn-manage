@@ -66,7 +66,9 @@ describe("jalons pondérés par volume", () => {
   });
   it("supports modifiés depuis l'audit => limite signalée (pas d'illusion de recomptage)", () => {
     const rows = [{ module_id: 2, module_data: { cours: [{ id: 1, actif: true, fichiers: [{ url: "nouveau.pdf" }] }], exercices: [] } }];
-    expect(vol("vtc", "vtc-e", rows).limites.join(" ")).toMatch(/Module 2 : supports modifiés/);
+    const v = vol("vtc", "vtc-e", rows);
+    expect(v.limites.join(" ")).toMatch(/Module 2 : supports \(cours\/pages\) modifiés.*NON RECOMPTÉ/);
+    expect(v.pagesNonRecomptees).toContain(2);
   });
   it("0 partout => 0 ; tout complet => 100 ; fin non validée => 99.9", () => {
     const p = calculerPoids("vtc", vol("vtc", "vtc-e").volumes);
