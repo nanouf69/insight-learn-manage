@@ -124,14 +124,14 @@ export async function chargerCalculJalons(params: {
 
 export const METHODE_CODE_RELEVE = "jalons-volumes v2 — 13/10/2026";
 
-async function volumesFiges(gel: GelFinAcces, calculer: () => ReturnType<typeof construireVolumes>) {
+async function volumesFiges(gel: GelFinAcces, calculer: () => ReturnType<typeof construireVolumes>): Promise<ReturnType<typeof construireVolumes>> {
   const { data: chaine, error: e1 } = await supabase.from("releve_jalons_fin_acces" as any).select("id").eq("apprenant_id", gel.apprenant_id);
   if (e1) throw e1;
   const ids = ((chaine as any[]) ?? []).map((r) => r.id);
   const { data, error } = await supabase.from("releve_jalons_resolution" as any).select("gel_id, volumes, limites, methode_code, created_at").in("gel_id", ids.length ? ids : [gel.id]).order("created_at", { ascending: true }).limit(1);
   if (error) throw error;
   const deja = ((data as any[]) ?? [])[0];
-  if (deja) return { volumes: deja.volumes, limites: [...(deja.limites ?? []), `Volumes figés le ${String(deja.created_at).slice(0, 10)} (${deja.methode_code}).`] };
+  if (deja) return { volumes: deja.volumes as ReturnType<typeof construireVolumes>["volumes"], limites: [...(deja.limites ?? []), `Volumes figés le ${String(deja.created_at).slice(0, 10)} (${deja.methode_code}).`] };
   const calc = calculer();
   const { error: insError } = await supabase.from("releve_jalons_resolution" as any).insert({ gel_id: gel.id, volumes: calc.volumes, limites: calc.limites, methode_code: METHODE_CODE_RELEVE });
   if (insError && insError.code !== "23505") throw insError;
