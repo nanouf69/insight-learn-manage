@@ -1065,6 +1065,13 @@
       "when": 1791875694894,
       "tag": "0151_reservation_pratique_inscrit_session",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1791876555048,
+      "tag": "0152_auto_sync_reservation_pratique_session",
+      "breakpoints": true
     }
   ]
 }
