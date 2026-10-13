@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getSessionEndMs, clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
+import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours, presentielProgress } from "@/lib/presentielHours";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
@@ -113,9 +114,13 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .then((r) => r.data, () => null),
       ]);
 
-      const cnxRows = clampConnexionsToAccessEnd(
-        cnxAll as any[],
-        apprenant?.date_fin_cours_en_ligne || apprenant?.date_fin_formation,
+      // Jours de pratique : 9h-12h / 13h-16h = formation pratique, pas d'e-learning.
+      const cnxRows = retirerCreneauxPratique(
+        clampConnexionsToAccessEnd(
+          cnxAll as any[],
+          apprenant?.date_fin_cours_en_ligne || apprenant?.date_fin_formation,
+        ),
+        (pratiqueDetails as any[]).map((p: any) => p.date),
       );
 
       // ---- E-learning (identique au Rapport d'activite / releve)

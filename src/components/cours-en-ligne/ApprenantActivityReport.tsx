@@ -392,7 +392,8 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       ]);
 
 
-      setConnexions(((connRes.data as any[]) || []) as Connexion[]);
+      // Jours de pratique : 9h-12h / 13h-16h = formation pratique, pas d'e-learning.
+      setConnexions(retirerCreneauxPratique(((connRes.data as any[]) || []) as Connexion[], pratiqueRes.map((p) => p.date)));
       setActivites(((actRes.data as any[]) || []) as ModuleActivite[]);
       setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
       setExercicesCompletes(((exRes.data as any[]) || []) as ExerciceComplete[]);
