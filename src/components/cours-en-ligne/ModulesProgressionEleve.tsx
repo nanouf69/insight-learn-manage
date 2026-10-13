@@ -4,6 +4,7 @@ import { BookOpen, ChevronRight, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { progressionModulesEleve, type ModuleEleveLite, type ProgressionModules } from "@/lib/progressionModulesEleve";
 
@@ -19,8 +20,9 @@ export function useActivitesTermineesEleve(apprenantId: string | null | undefine
     staleTime: 0,
     gcTime: 0, // jamais réutilisé pour un autre compte sur la même tablette
     queryFn: async () => {
+      if (!apprenantId) throw new Error("Compte absent");
       const { data, error } = await supabase.from("reponses_apprenants").select("exercice_id, completed")
-        .eq("apprenant_id", apprenantId!).in("exercice_id", ACTIVITES_CODE.map((a) => a.id));
+        .eq("apprenant_id", apprenantId).in("exercice_id", ACTIVITES_CODE.map((a) => a.id));
       if (error) throw error;
       return new Set(((data as any[]) ?? []).filter((r) => r.completed === true).map((r) => String(r.exercice_id)));
     },
@@ -61,15 +63,16 @@ export function ModulesProgressionEleve({ progression, onOuvrir, estVerrouille }
               const lock = estVerrouille(m.id);
               return (
                 <li key={m.id}>
-                  <button type="button" disabled={lock} onClick={() => onOuvrir(m.id)}
-                    className="w-full flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed">
+                  <Button type="button" variant="outline" disabled={lock} onClick={() => onOuvrir(m.id)}
+                    className="w-full h-auto flex items-center justify-between gap-2 px-3 py-2 text-left text-sm whitespace-normal">
                     <span className="min-w-0 break-words">
                       {m.nom}
                       {m.raison === "nouvelles_activites" && <span className="block text-xs text-muted-foreground">Nouvelles activités à terminer</span>}
                       {m.pratique && <span className="block text-xs text-muted-foreground">Présence / pratique à réaliser</span>}
+                       {(m.id === 6 || m.id === 8) && <span className="block text-xs text-muted-foreground">Activités pratiques en ligne à terminer</span>}
                     </span>
                     {lock ? <Lock className="w-4 h-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                  </button>
+                  </Button>
                 </li>
               );
             })}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ProgressionModules } from "@/lib/progressionModulesEleve";
 
 interface WelcomeBannerProps {
   prenom: string;
@@ -6,18 +7,17 @@ interface WelcomeBannerProps {
   xp: number;
   xpToday: number;
   streak: number;
-  completedCount: number;
-  totalModules: number;
-  globalProgress: number;
+  progression: ProgressionModules | null;
 }
 
-export function WelcomeBanner({ prenom, formationLabel, xp, xpToday, streak, completedCount, totalModules, globalProgress }: WelcomeBannerProps) {
+export function WelcomeBanner({ prenom, formationLabel, xp, xpToday, streak, progression }: WelcomeBannerProps) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
-  const remaining = totalModules - completedCount;
+  const disponible = progression?.etat === "ok";
+  const globalProgress = disponible ? Math.round(progression.total > 0 ? progression.termines / progression.total * 100 : 0) : null;
 
   return (
     <div
@@ -47,14 +47,16 @@ export function WelcomeBanner({ prenom, formationLabel, xp, xpToday, streak, com
         </div>
 
         <p className="text-sm text-white/75 mb-5 leading-relaxed">
-          Tu as complété <span className="text-amber-400 font-bold">{completedCount}/{totalModules}</span> modules.{" "}
-          <span className="text-primary">{remaining} restant{remaining > 1 ? "s" : ""}</span> avant ton examen !
+          {disponible ? <>
+            Tu as complété <span className="text-amber-400 font-bold" data-testid="bienvenue-modules">{progression.termines}/{progression.total}</span> modules.{" "}
+            <span className="text-primary">{progression.restants.length} restant{progression.restants.length > 1 ? "s" : ""}</span>
+          </> : <span>{progression ? "Progression des modules momentanément indisponible" : "Chargement de vos modules…"}</span>}
         </p>
 
         <div className="flex gap-2.5 flex-wrap">
           {[
             { icon: "⚡", val: `${xp} XP`, sub: "total", colorClass: "text-amber-400" },
-            { icon: "🎯", val: `${globalProgress}%`, sub: "progression", colorClass: "text-primary" },
+            { icon: "🎯", val: globalProgress === null ? "—" : `${globalProgress}%`, sub: "progression", colorClass: "text-primary" },
             { icon: "✨", val: `+${xpToday} XP`, sub: "aujourd'hui", colorClass: "text-emerald-400" },
           ].map((stat, i) => (
             <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-white/10">
@@ -70,12 +72,12 @@ export function WelcomeBanner({ prenom, formationLabel, xp, xpToday, streak, com
         <div className="mt-5 max-w-xl">
           <div className="flex justify-between text-[10px] text-blue-200/70 mb-1">
             <span>{formationLabel}</span>
-            <span>{globalProgress}% complété</span>
+            <span>{globalProgress === null ? "—" : `${globalProgress}% complété`}</span>
           </div>
           <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-700"
-              style={{ width: `${globalProgress}%` }}
+              style={{ width: `${globalProgress ?? 0}%` }}
             />
           </div>
         </div>
