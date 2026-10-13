@@ -150,6 +150,25 @@ export function applyPratiqueUnlockDerogation(
   });
 }
 
+/**
+ * Règle générale e-learning (accord du responsable, 13/10/2026) : le module
+ * Pratique (VTC = 8, TAXI = 6) est débloqué pour TOUS les apprenants
+ * e-learning, sans attendre la fin des modules précédents. Aucune progression
+ * n'est inventée : le module n'est pas marqué terminé, seulement accessible.
+ * Les autres modules restent soumis à la règle séquentielle.
+ */
+export function applyPratiqueUnlockElearning(
+  unlockedModuleIds: Set<number>,
+  modules: ModuleLite[],
+  isElearning: boolean,
+  pratiqueModuleIds: Set<number> = new Set([6, 8]),
+): void {
+  if (!isElearning) return;
+  modules.forEach((m) => {
+    if (pratiqueModuleIds.has(m.id)) unlockedModuleIds.add(m.id);
+  });
+}
+
 export function isModuleLocked(
   modId: number,
   state: UnlockComputationResult,

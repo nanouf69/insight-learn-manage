@@ -102,8 +102,11 @@ describe("jalons pondérés par volume", () => {
     expect(r.lignes.reduce((s, l) => s + l.poids, 0)).toBeCloseTo(100, 5);
     expect(r.lignes.find((l) => l.moduleId === 1)!.poids).toBe(0);
     const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
-    expect(card).toMatch(/dureeLigne\(calcul\.durees/);
-    expect(card).toMatch(/BUDGET_CPF\[calcul\.filiere\]\.total/);
+    // Durées CPF affichées via le tableau partagé (dureeLigne(calcul.durees, ...) dans affichageJalons).
+    expect(card).toMatch(/tableauAffichageJalons/);
+    const affichage = readFileSync("src/lib/affichageJalons.ts", "utf8");
+    expect(affichage).toMatch(/dureeLigne\(calcul\.durees/);
+    expect(affichage).toMatch(/BUDGET_CPF\[calcul\.filiere\]\.total/);
   });
   it("carte placée sous la tuile Modules, admin uniquement, actualisée en direct", () => {
     const page = readFileSync("src/components/crm/ApprenantDetailPage.tsx", "utf8");
