@@ -1299,11 +1299,11 @@ function RevisionFausses({
         // Règle générale : les réponses locales encore en attente d'envoi
         // restent affichées après F5 / reconnexion, et une valeur vide
         // n'écrase jamais une réponse réellement saisie.
-        const pending = getPendingAnswers(apprenantId, exerciceId) as any;
+        const pending = getPendingAnswers(apprenantId, idTentative) as any;
         const mergedAnswers = mergeSavedAndPendingAnswers(
           (saved.answers && typeof saved.answers === "object" ? saved.answers : {}) as any,
           apprenantId,
-          exerciceId,
+          idTentative,
         );
         const pendingAnswers = pending?.answers && typeof pending.answers === "object" ? pending.answers : {};
         const finalAnswers = { ...mergedAnswers, ...pendingAnswers };
@@ -1323,7 +1323,7 @@ function RevisionFausses({
         setLoaded(true);
       }
     })();
-  }, [apprenantId, userId, examenId, exerciceId, wrongQuestions.length]);
+  }, [apprenantId, userId, examenId, baseExerciceId, wrongQuestions.length]);
 
   // ---- Persist progress (debounced) ----
   const correctedQuestionsRef = useRef<string[]>([]);
@@ -1335,6 +1335,8 @@ function RevisionFausses({
     correctedQuestions: string[],
   ) => {
     if (!apprenantId || !userId) return;
+    // Tentative non identifiée ou déjà terminée : aucune réécriture « en cours ».
+    if (!tentativePreteRef.current || termineeRef.current) return;
     if (blockLearnerWrite("revision_progress(reponses_apprenants)")) return;
     const payload = {
       apprenant_id: apprenantId,
