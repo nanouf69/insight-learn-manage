@@ -21,7 +21,7 @@
 - Practical notes: admin-only append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: preserve history and reject stale/cross-session writes.
 - Exam selectors share sessions/handler; all-dates paginates separately, never changes planning; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
-- Course/quiz labels share permanent IDs; retain adapters, check dated baselines and journal; why: no drift.
+- Course/quiz labels use permanent IDs and dated baselines; why: no drift.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters share progressionModulesEleve and account proofs; attendance uses milestone ID; why: no divergence or account leakage.
 - Counters share learner helpers and ID-scoped display dispensations; never fabricate answers/signatures; reminders need confirmation; why: consistent totals.
