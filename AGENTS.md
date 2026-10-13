@@ -24,7 +24,7 @@
 - Course/quiz labels use permanent IDs and dated baselines; why: no drift.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters share progressionModulesEleve and account proofs; attendance uses milestone ID; why: no divergence or account leakage.
-- Counters share dated-server-proof Lyon waivers and ID exceptions; never fabricate answers/signatures; why: preserve completed paths.
+- CRM/current jalons and student counters share Lyon waivers; frozen reads stay unchanged; why: preserve proofs.
 - Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.

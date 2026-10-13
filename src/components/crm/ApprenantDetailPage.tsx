@@ -43,6 +43,7 @@ import { Input } from "@/components/ui/input";
 import { getAvatarUrl } from "@/lib/avatarUrl";
 import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
+import { useCandidatModules } from "@/hooks/useCandidatModules";
 import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
@@ -321,6 +322,8 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   });
 
   const { data: tauxData, isError: tauxErreur } = useApprenantTauxRealisation(apprenantId, apprenant);
+  const modulesQuery = useCandidatModules(apprenantId);
+  const modulesProgression = !modulesQuery.isError && !modulesQuery.isFetching && modulesQuery.data?.etat === "ok" ? modulesQuery.data : null;
   // Lecture en erreur : aucun ancien taux affiché, jamais un faux 0 h.
   const taux = tauxErreur ? null : tauxData;
 
@@ -623,7 +626,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: "Modules (jalons)", pct: taux.modulesTotal > 0 ? Math.round((taux.modulesCompleted / taux.modulesTotal) * 100) : 0, done: taux.modulesCompleted, req: taux.modulesTotal, strong: false, unit: "modules" },
+              { label: "Modules (jalons)", pct: modulesProgression && modulesProgression.total > 0 ? Math.round((modulesProgression.termines / modulesProgression.total) * 100) : 0, done: modulesProgression?.termines, req: modulesProgression?.total, strong: false, unit: "modules" },
               { label: "Taux e-learning", pct: taux.pctElearning, done: taux.doneElearning, req: taux.reqElearning, strong: false },
               { label: "Taux présentiel", pct: taux.pctPresentiel, done: taux.donePresentiel, req: taux.reqPresentiel, strong: false },
               { label: "TAUX TOTAL", pct: taux.pctTotal, done: taux.doneElearning + taux.donePresentiel, req: taux.reqTotal, strong: true },
@@ -636,7 +639,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   <span className={`text-xs uppercase tracking-wide ${t.strong ? "text-primary font-semibold" : "text-muted-foreground"}`}>
                     {t.label}
                   </span>
-                  <span className={`text-lg font-bold ${t.strong ? "text-primary" : "text-foreground"}`}>{t.pct}%</span>
+                  <span className={`text-lg font-bold ${t.strong ? "text-primary" : "text-foreground"}`}>{(t as any).unit === "modules" && !modulesProgression ? "—" : `${t.pct}%`}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
                   <div
@@ -646,7 +649,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {(t as any).unit === "modules"
-                    ? `${t.done} / ${t.req} modules réalisés`
+                    ? modulesProgression ? `${t.done} / ${t.req} modules réalisés` : "Progression des modules indisponible"
                     : `${formatLearningHours(t.done)} / ${t.req > 0 ? `${t.req}h` : "Heures non renseignées"}`}
                 </div>
                 {t.strong && (

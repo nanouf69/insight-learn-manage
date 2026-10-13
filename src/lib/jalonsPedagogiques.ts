@@ -3,6 +3,8 @@ import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
 import { idsActivites } from "@/lib/jeuxPedagogiques";
+import { activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
+import { modulesAttribuesDashboard, resolveFormationId } from "@/lib/parcoursModulesDashboard";
 import type { GelFinAcces } from "@/lib/releveJalonsGel";
 import {
   INTRO_IDS,
@@ -60,7 +62,7 @@ export async function chargerCalculJalons(params: {
   const key = formationJalonsElearning(params.typeApprenant, params.formationChoisie);
   if (!key) throw new Error("Formation e-learning non concernée");
   const { filiere, parcoursInitial, parcours, ids } = modulesDuCalcul(key);
-  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult, jeuxResult] = await Promise.all([
+  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult, jeuxResult, affectation] = await Promise.all([
     supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
     import("@/components/cours-en-ligne/useLiveExamens"),
     import("@/components/cours-en-ligne/ModuleDetailView"),
@@ -72,7 +74,11 @@ export async function chargerCalculJalons(params: {
     supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
     // Jeux du module 8 : seule une ligne serveur completed = true compte (jamais le score local).
     supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", idsActivites(parcoursInitial).length ? idsActivites(parcoursInitial) : ["__aucune__"]),
+    supabase.from("apprenants").select("modules_autorises, type_apprenant, formation_choisie").eq("id", params.apprenantId).single(),
   ]);
+  if (affectation.error) throw affectation.error;
+  const formation = resolveFormationId(affectation.data.type_apprenant, affectation.data.formation_choisie, affectation.data.modules_autorises);
+  if (!formation) throw new Error("Parcours indisponible");
   if (jeuxResult.error) throw jeuxResult.error;
   if (editorError) throw editorError;
   if (emargementsResult.error) throw emargementsResult.error;
@@ -85,6 +91,7 @@ export async function chargerCalculJalons(params: {
     pratiqueDetails, emargements: (emargementsResult.data as any[]) ?? [], completions: (completionsResult.data as JalonCompletion[]) ?? [],
     heuresValidees: (heuresValideesResult.data as any[]) ?? [],
     jeuxTermines: ((jeuxResult.data as any[]) ?? []).filter((r) => r.completed === true).map((r) => String(r.exercice_id)),
+    activitesDispensees: [...activitesDispenseesPourParcours(modulesAttribuesDashboard(formation, affectation.data.modules_autorises), (completionsResult.data as JalonCompletion[]) ?? [], params.apprenantId)],
   });
 }
 

@@ -3,6 +3,12 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 — Dispenses Lyon dans les compteurs CRM
+- Cause readonly : compteur CRM brut et calcul pondéré courant n'appliquaient pas les dispenses existantes ; Zekkour pénalisé par les deux jeux. Thierno BAH identifié par UUID ; son module 5 reste in_progress, donc aucune dispense historique globale ni validation inventée.
+- Correctif : dispense individuelle des deux jeux pour BAH uniquement ; fonction commune des dispenses pour progression élève/candidats et jalons actuels ; compteur fiche CRM via useCandidatModules. Aucun changement des heures, réponses, notes, validations ni des 22 calculs figés ; aucun envoi ni publication demandée.
+- Fichiers : exceptionsModulesEleve, progressionModulesEleve, jalonsCalculCore, jalonsPedagogiques, ApprenantDetailPage, test dispenses-jalons-crm, AGENTS et roadmap.
+- PASS : 37 tests fictifs, compilation automatique OK 15:32:20 UTC ; compteur partagé 10/10 et jalons sans exigence des jeux affichés ordinateur/mobile, aucune erreur JS ni débordement. Simulation pondérée à 96 % car introduction 34 absente du parcours fictif affiché ; test calcul complet fictif à 100 %. Aucun taux réel pondéré forcé. Fiche CRM réelle complète NON PROUVÉE ; deux lignes de validations réelles inchangées par ce correctif (aucune écriture base).
+
 ## 2026-10-13 — Planning pratique : accès direct CRM
 - Demande explicite : cliquer le nom d'un apprenant dans le planning ouvre sa fiche CRM via le callback admin existant, identifiant apprenant réel (pas nom ni réservation).
 - Fichiers : PratiqueApprenantLink.tsx, ExamenReussitePage.tsx (VTC/TAXI), test associé, AGENTS, roadmap, journal. Aucun changement de données, horaires, inscriptions, signatures ou droits ; aucun mail/SMS/IA.
