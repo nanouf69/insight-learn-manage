@@ -35,6 +35,7 @@ import { pratiqueNoteHTML, pratiqueCandidateNameHTML } from "@/lib/pratiqueCandi
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 import { TauxElearningCell } from './TauxElearningCell';
 import { DossierBienvenueButton } from './DossierBienvenueButton';
+import { PratiqueApprenantLink } from './PratiqueApprenantLink';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -5092,9 +5093,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 <div key={a.id} className={`text-[11px] px-1.5 py-1 rounded mb-1 border ${vtcOverbooked && idx >= dayMax ? 'bg-destructive/10 border-destructive/40 text-destructive' : 'bg-blue-100 border-blue-200'}`}>
                                   <div className="flex items-start gap-1">
                                     <span className="text-[9px] font-bold opacity-60 mt-[1px]">{idx + 1}.</span>
-                                    <span className="flex-1 font-semibold leading-tight break-words">
-                                      {a.nom?.toUpperCase()} {a.prenom}
-                                    </span>
+                                    <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
                                     <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                       <X className="h-3 w-3" />
                                     </button>
@@ -5142,9 +5141,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 <div key={a.id} className={`text-[11px] px-1.5 py-1 rounded mb-1 border ${taxiOverbooked && idx >= dayMax ? 'bg-destructive/10 border-destructive/40 text-destructive' : 'bg-amber-100 border-amber-200'}`}>
                                   <div className="flex items-start gap-1">
                                     <span className="text-[9px] font-bold opacity-60 mt-[1px]">{idx + 1}.</span>
-                                    <span className="flex-1 font-semibold leading-tight break-words">
-                                      {a.nom?.toUpperCase()} {a.prenom}
-                                    </span>
+                                    <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
                                     <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                       <X className="h-3 w-3" />
                                     </button>

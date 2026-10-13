@@ -1,5 +1,9 @@
 # Feuille de route
  
+## Planning pratique — ouvrir fiche CRM (13/10)
+- [x] Noms VTC/TAXI cliquables via navigation CRM existante ; horaires/réservations/signatures inchangés.
+- [x] 11 tests fictifs passés ; compilation automatique OK 15:28:40 UTC ; clic et identifiant transmis confirmés sur ordinateur/mobile, aucune erreur JS. Fiche CRM complète réelle non testée, aucun dossier élève modifié ; pas de publication demandée.
+ 
 ## Parcours terminés avant les jeux Lyon — 13/10
 - [x] Dispense automatique des deux jeux seulement sur preuve serveur datée de tous les modules pédagogiques avant leur ajout ; compteurs élève et candidats partagés, données/gels inchangés.
 - [x] 49 tests fictifs passés ; compilation automatique OK à 15:26:13 UTC ; compteur 10/10 confirmé sur ordinateur/mobile pour un compte fictif sans exception nominative, aucun débordement ni erreur JS. Aucune publication demandée.
