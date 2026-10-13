@@ -6,7 +6,14 @@ export function dateSignatureParis(value: string | null): string {
   if (!value || !Number.isFinite(Date.parse(value))) return 'Date de signature non renseignée';
   return new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 }
+const fmtJourSemaine = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long' });
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+export function dateSignatureAvecJour(value: string | null): string {
+  if (!value || !Number.isFinite(Date.parse(value))) return dateSignatureParis(value);
+  return `${cap(fmtJourSemaine.format(new Date(value)))} ${dateSignatureParis(value)}`;
+}
 const datePresence = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.split('-').reverse().join('/') : 'Date non renseignée';
+export const datePresenceAvecJour = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${cap(fmtJourSemaine.format(new Date(`${value}T12:00:00Z`)))} ${datePresence(value)}` : datePresence(value);
 
 /** Read-only export: no shared/fallback signature, no invented attendance or hours. */
 export function generateSignaturesRassembleesPdf(apprenant: { nom?: string; prenom?: string }, rows: SignatureRassemblee[]) {
@@ -35,13 +42,13 @@ export function generateSignaturesRassembleesPdf(apprenant: { nom?: string; pren
     doc.setDrawColor(200, 207, 216); doc.rect(margin, y, width, rowHeight);
     doc.line(133, y, 133, y + rowHeight);
     doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.text(`${datePresence(row.date)} — ${row.creneau}`, margin + 3, y + 6);
+    doc.text(`${datePresenceAvecJour(row.date)} — ${row.creneau}`, margin + 3, y + 6);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
     doc.text(`${row.activite}${row.absent ? ' — absence déclarée' : ''}`, margin + 3, y + 12);
     doc.text(doc.splitTextToSize(`Horaires de formation : ${row.horaires}`, 112), margin + 3, y + 18);
     doc.setFontSize(6.5);
     doc.text(doc.splitTextToSize(row.sourceHoraires, 112), margin + 3, y + 25);
-    doc.text(`Signé le : ${dateSignatureParis(row.signedAt)}`, margin + 3, y + 31);
+    doc.text(`Signé le : ${dateSignatureAvecJour(row.signedAt)}`, margin + 3, y + 31);
     doc.text(`Référence : ${row.id}`, margin + 3, y + 36);
     try {
       const props = doc.getImageProperties(row.signature);
