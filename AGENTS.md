@@ -27,3 +27,4 @@
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Milestones/PDF: frozen relevé = server-computed `releve_jalons_calcul_fige` (fn resoudre-releves-gel, bundled code); UI never recomputes; admin pratique = new version, pratique only; why: later edits never alter it.
+- Jeux cartes de Lyon (module 8, donc VTC et VA) : `src/components/cours-en-ligne/jeux-lyon/`, hors module_data, sans écriture serveur ni points ; géodonnées régénérées hors app ; why: entraînement libre qui ne change ni quiz, ni progression, ni relevés figés.

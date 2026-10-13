@@ -242,7 +242,7 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
       <CarteLyon cible="point" onTouche={onTouche} afficherNumerosArr desactive={termine}
         calques={(k) => (
           <>
-            <text x={880} y={560} textAnchor="middle" className="fill-muted-foreground italic" style={{ fontSize: 20 * k }}>Villeurbanne (commune)</text>
+            <text x={845} y={425} textAnchor="middle" className="fill-muted-foreground italic" style={{ fontSize: 20 * k }}>Villeurbanne (commune)</text>
             {apprentissage && LYON_GEO.lieux.map((l, i) => (
               <g key={l.id}>
                 <circle cx={l.x} cy={l.y} r={9 * k} className="fill-warning stroke-card" strokeWidth={1.5 * k} />
