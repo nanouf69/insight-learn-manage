@@ -2421,8 +2421,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
             {/* Gamification: Welcome Banner + XP + Badges + Quiz — jamais avant la progression serveur */}
             {completionsLoaded && (() => {
-              const xp = calculateXP(completedModuleIds, moduleScores);
-              const badges = buildBadges(completedModuleIds, modules.length, moduleScores);
+              const effectiveDoneIds = new Set(doneModules.map((m) => m.id));
+              const xp = calculateXP(effectiveDoneIds, moduleScores);
+              const badges = buildBadges(effectiveDoneIds, progressionDisponible?.total ?? modules.length, moduleScores);
               // Estimate streak (simplified: always show 1 if user is active today)
               const streak = completedCount ? Math.min(completedCount, 7) : 0;
               return (
