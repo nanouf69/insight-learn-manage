@@ -2,3 +2,4 @@
 
 - Corrected media use new assets, matching PDF/PPTX, exact historical-path selection, originals retained; why: fix clipping without replacing custom uploads.
 - T3P 07/10 : sauvegarder un module ne doit jamais reconstruire globalement les Bilans ; migration 0128 conserve les objets questions inchangés et partage seulement les deltas de contenu. Réactivation limitée aux quiz 1/2 du module VTC 2 ; `shouldSyncVtcBilanFromCours` reste false ; why: préserver bilans, historiques et acquis.
+- Jeux cartes de Lyon (module 8, donc VTC et VA) : `jeux-lyon/`, hors module_data, sans écriture serveur ni points ; géodonnées générées hors app (sources en tête de `lyon-geo-data.ts`) ; why: entraînement libre qui ne change ni quiz, ni progression, ni relevés figés.

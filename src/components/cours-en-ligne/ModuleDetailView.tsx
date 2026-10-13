@@ -4,7 +4,7 @@ import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from 
 import { t3pPartie2DisplaySupport } from "@/lib/t3pPartie2Support";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
@@ -2050,6 +2050,8 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
     },
   ],
 };
+
+const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -9609,7 +9611,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             />
           )}
 
-
+          {/* Jeux de cartes de Lyon — entraînement complémentaire du module PRATIQUE VTC (8), non noté */}
+          {Number(module.id) === 8 && (
+            <Suspense fallback={null}>
+              <JeuxCartesLyon compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
 
           {/* Print all revision sheets button for modules 70-73 */}
           {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
