@@ -1,6 +1,7 @@
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
+import { completionAvecJeux, filiereAvecJeux, MODULE_JEUX, UNITES_JEUX_LYON, METHODE_JEUX, type EtatJeux } from "@/lib/jeuxPedagogiques";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import type { ModuleContentLite } from "@/lib/volumeModules";
 import {
@@ -26,6 +27,8 @@ export function assemblerCalculJalons(i: {
   editorRows: any[]; examens: any[]; initialDe: (id: number) => ModuleContentLite | null;
   pratiqueDetails: PratiqueSlotDetail[]; emargements: any[]; completions: CompletionCalc[]; heuresValidees: any[];
   gelId?: string | null;
+  /** Jeux terminés confirmés serveur. Absent = méthode v3 inchangée (calculs figés). */
+  jeuxTermines?: string[];
 }) {
   const volumes = construireVolumes(i.filiere, i.parcoursInitial, i.editorRows as any, i.initialDe, i.examens as any);
   const emargements = (i.emargements ?? []) as EmargementRowLike[];
@@ -36,7 +39,19 @@ export function assemblerCalculJalons(i: {
   const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + r.heures, 0) * 60);
   const theorieMinutes = Math.round(theorieHours * 60);
   const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
-  const completions = [...(i.completions ?? []), completionPratique(pratiqueMinutes)];
+  let completionsBase = i.completions ?? [];
+  let jeux: (EtatJeux & { methode: string }) | null = null;
+  const v8 = Object.entries(volumes.volumes).find(([, v]) => v.moduleId === MODULE_JEUX);
+  if (i.jeuxTermines && filiereAvecJeux(i.filiere) && v8 && i.parcours.includes(MODULE_JEUX)) {
+    const sansJeux = { ...v8[1] };
+    const lignes8 = completionsBase.filter((c) => Number(c.module_id) === MODULE_JEUX);
+    const row8 = lignes8.find((c) => c.status === "completed") ?? lignes8.sort((a, b) => (Number(b.progress) || 0) - (Number(a.progress) || 0))[0];
+    const r = completionAvecJeux(row8 as any, sansJeux, new Set(i.jeuxTermines));
+    volumes.volumes[Number(v8[0])] = { ...v8[1], jeux: UNITES_JEUX_LYON };
+    completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== MODULE_JEUX), { ...r.completion, completed_at: (row8 as any)?.completed_at ?? null }];
+    jeux = { ...r.etat, methode: METHODE_JEUX };
+  }
+  const completions = [...completionsBase, completionPratique(pratiqueMinutes)];
   const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes);
   const poids = calculerPoids(i.filiere, volumes.volumes);
   const resultat = calculerJalonsPonderes(i.filiere, i.parcours, completions, poids);
@@ -58,6 +73,7 @@ export function assemblerCalculJalons(i: {
     poids,
     resultat,
     completions,
+    jeux,
     pratique: {
       minutes: pratiqueMinutes,
       detail: { pratiqueSignee: pratiqueSigneeMinutes, theorieSignee: theorieMinutes, valideesAdmin: valideesMinutes },

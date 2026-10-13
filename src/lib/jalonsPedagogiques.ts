@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
+import { IDS_JEUX_LYON } from "@/lib/jeuxPedagogiques";
 import type { GelFinAcces } from "@/lib/releveJalonsGel";
 import {
   INTRO_IDS,
@@ -59,7 +60,7 @@ export async function chargerCalculJalons(params: {
   const key = formationJalonsElearning(params.typeApprenant, params.formationChoisie);
   if (!key) throw new Error("Formation e-learning non concernée");
   const { filiere, parcoursInitial, parcours, ids } = modulesDuCalcul(key);
-  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult] = await Promise.all([
+  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult, jeuxResult] = await Promise.all([
     supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
     import("@/components/cours-en-ligne/useLiveExamens"),
     import("@/components/cours-en-ligne/ModuleDetailView"),
@@ -69,7 +70,10 @@ export async function chargerCalculJalons(params: {
       ? Promise.resolve({ data: params.completions, error: null })
       : supabase.from("apprenant_module_completion").select("module_id, status, progress, completed_at").eq("apprenant_id", params.apprenantId),
     supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
+    // Jeux du module 8 : seule une ligne serveur completed = true compte (jamais le score local).
+    supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", IDS_JEUX_LYON),
   ]);
+  if (jeuxResult.error) throw jeuxResult.error;
   if (editorError) throw editorError;
   if (emargementsResult.error) throw emargementsResult.error;
   if (completionsResult.error) throw completionsResult.error;
@@ -80,6 +84,7 @@ export async function chargerCalculJalons(params: {
     initialDe: (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),
     pratiqueDetails, emargements: (emargementsResult.data as any[]) ?? [], completions: (completionsResult.data as JalonCompletion[]) ?? [],
     heuresValidees: (heuresValideesResult.data as any[]) ?? [],
+    jeuxTermines: ((jeuxResult.data as any[]) ?? []).filter((r) => r.completed === true).map((r) => String(r.exercice_id)),
   });
 }
 

@@ -1,6 +1,7 @@
 // Deux jeux cartographiques — module PRATIQUE VTC (id 8, partagé avec les parcours VA).
-// Entraînement complémentaire : ne crée aucune obligation, n'écrit rien sur le serveur,
-// ne touche ni aux quiz, ni aux notes, ni à la progression, aux heures ou aux relevés figés.
+// Activités du module : « terminé » = toutes les étiquettes placées (jamais un score),
+// confirmé par le serveur (reponses_apprenants), compté dans les jalons. Aucune note,
+// aucun quiz/question modifié ; le meilleur score local reste un simple repère.
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,12 @@ import {
   MAX_ESSAIS, enregistrerMeilleurScore, evaluerArrondissement, evaluerLieu, evaluerQuartier,
   ficheLieu, libelleArrondissement, libelleArrondissements, lireMeilleurScore, melanger, pointsEssai,
 } from "./jeuxLyonLogic";
+import { useSuiviJeu, LIBELLE_SUIVI, type EtatSuivi } from "./useSuiviJeu";
+import { JEUX_LYON } from "@/lib/jeuxPedagogiques";
+
+function BadgeSuivi({ etat }: { etat: EtatSuivi }) {
+  return <Badge variant={etat === "confirme" ? "default" : etat === "lecture_impossible" ? "destructive" : "outline"} role="status">{LIBELLE_SUIVI[etat]}</Badge>;
+}
 
 type Ton = "ok" | "ko" | "info";
 type Item = { id: string; libelle: string };
@@ -84,11 +91,19 @@ function JeuArrondissements({ compteId }: { compteId?: string | null }) {
   const [sArr, setSArr] = useState<{ numero: number; ton: Ton }[]>([]);
   const [sZones, setSZones] = useState<{ id: string; ton: Ton }[]>([]);
   const [meilleur, enregistrer] = useMeilleur(compteId, `arrondissements-n${niveau}`);
+  const suivi = useSuiviJeu(compteId, JEUX_LYON[0].id);
 
   useEffect(() => { setRestants(items); setChoisi(null); setEssai(1); setLignes([]); setRetour(null); setSArr([]); setSZones([]); }, [items]);
 
   const termine = restants.length === 0;
-  useEffect(() => { if (termine && lignes.length) enregistrer(lignes.reduce((s, l) => s + l.points, 0), lignes.length); }, [termine]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!termine || !lignes.length) return;
+    enregistrer(lignes.reduce((s, l) => s + l.points, 0), lignes.length);
+    if (suivi.etat === "confirme") return;
+    // Réalisation seulement : niveau 1 enregistré en cours, niveau 2 terminé seulement si le niveau 1 l'est.
+    if (niveau === 1) void suivi.enregistrer({ niveau1_termine: true, niveau1_places: lignes.length }, suivi.reponses.niveau2_termine === true);
+    else void suivi.enregistrer({ niveau2_termine: true, niveau2_places: lignes.length }, suivi.reponses.niveau1_termine === true);
+  }, [termine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const valider = (item: Item, juste: boolean, detail: string) => {
     setLignes((l) => (l.some((x) => x.item.id === item.id) ? l : [...l, { item, juste, points: pointsEssai(essai, juste), detail }]));
@@ -148,7 +163,11 @@ function JeuArrondissements({ compteId }: { compteId?: string | null }) {
           <Label htmlFor="appr-arr">Mode apprentissage (afficher les repères)</Label>
         </div>
         {meilleur && <Badge variant="secondary">Meilleur score sur cet appareil : {meilleur.score.toLocaleString("fr-FR")}/{meilleur.total}</Badge>}
+        <BadgeSuivi etat={suivi.etat} />
       </div>
+      {niveau === 2 && suivi.etat !== "confirme" && suivi.reponses.niveau1_termine !== true && (
+        <p className="text-xs text-muted-foreground">Pour que le jeu soit terminé, le niveau 1 (arrondissements) doit aussi être terminé.</p>
+      )}
       {niveau === 2 && (
         <p className="text-xs text-muted-foreground">Les quartiers n'ont pas de frontière officielle : chaque zone reprend les périmètres des conseils de quartier de la Ville de Lyon. La Croix-Rousse (plateau 4e + pentes 1er) et la Presqu'île (1er + 2e) sont acceptées partout dans leur périmètre.</p>
       )}
@@ -194,10 +213,15 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
   const [retour, setRetour] = useState<{ ton: Ton; texte: string; fiche?: string } | null>(null);
   const [traces, setTraces] = useState<{ lieu: LieuLyon; x: number; y: number; juste: boolean }[]>([]);
   const [meilleur, enregistrer] = useMeilleur(compteId, "lieux");
+  const suivi = useSuiviJeu(compteId, JEUX_LYON[1].id);
 
   useEffect(() => { setRestants(lieux); setChoisi(null); setEssai(1); setLignes([]); setRetour(null); setTraces([]); }, [lieux]);
   const termine = restants.length === 0;
-  useEffect(() => { if (termine && lignes.length) enregistrer(lignes.reduce((s, l) => s + l.points, 0), lignes.length); }, [termine]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!termine || !lignes.length) return;
+    enregistrer(lignes.reduce((s, l) => s + l.points, 0), lignes.length);
+    if (suivi.etat !== "confirme") void suivi.enregistrer({ lieux_places: lignes.length }, true);
+  }, [termine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onTouche = (t: Touche) => {
     const lieu = restants.find((l) => l.id === choisi);
@@ -223,6 +247,7 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
           <Label htmlFor="appr-lieux">Mode apprentissage (afficher tous les lieux)</Label>
         </div>
         {meilleur && <Badge variant="secondary">Meilleur score sur cet appareil : {meilleur.score.toLocaleString("fr-FR")}/{meilleur.total}</Badge>}
+        <BadgeSuivi etat={suivi.etat} />
       </div>
       <p className="text-xs text-muted-foreground">Juste à moins de 400 m (la précision au mètre n'est pas demandée). Villeurbanne est une commune limitrophe, pas un arrondissement de Lyon.</p>
       {termine ? (
@@ -276,7 +301,7 @@ export default function JeuxCartesLyon({ compteId }: { compteId?: string | null 
   return (
     <section className="rounded-xl border bg-card p-4 space-y-3" aria-labelledby="jeux-lyon-titre">
       <div>
-        <h3 id="jeux-lyon-titre" className="font-bold">🗺️ Jeux de cartes de Lyon <span className="text-xs font-normal text-muted-foreground">— entraînement libre, non noté dans le module</span></h3>
+        <h3 id="jeux-lyon-titre" className="font-bold">🗺️ Jeux de cartes de Lyon <span className="text-xs font-normal text-muted-foreground">— 2 activités du module, comptées une fois terminées (non notées)</span></h3>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         {jeux.map(({ id, titre, desc, Icone }) => (
