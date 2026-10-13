@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { useApprenantTauxRealisation } from '@/hooks/useApprenantTauxRealisation';
-import { formatLearningHours } from '@/lib/elearningRequiredHours';
+import { useCandidatModules } from '@/hooks/useCandidatModules';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -16,17 +16,21 @@ import { estCandidatElearning, mailRelanceElearning, texteMailVersHtml, type Can
 
 export function TauxElearningCell({ candidat }: { candidat: CandidatElearning }) {
   const elearning = estCandidatElearning(candidat);
-  const { data: taux, isLoading, isError } = useApprenantTauxRealisation(elearning ? candidat.id : undefined, candidat);
+  const { data: progression, isLoading, isError, isFetching } = useCandidatModules(elearning ? candidat.id : undefined);
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [mail, setMail] = useState(() => mailRelanceElearning(candidat.prenom));
   const emailValide = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidat.email ?? '');
+  const disponible = !isLoading && !isFetching && !isError && progression?.etat === 'ok';
+  const relancePertinente = disponible && progression.total > 0 && progression.restants.length > 0;
+  useEffect(() => { setOpen(false); setMail(mailRelanceElearning(candidat.prenom)); }, [candidat.id, candidat.prenom, user?.id]);
 
   if (!elearning) return <span className="text-muted-foreground">—</span>;
 
   const send = async () => {
-    if (sending || !emailValide || !mail.subject.trim() || !mail.body.trim()) return;
+    if (sending || !relancePertinente || !emailValide || !mail.subject.trim() || !mail.body.trim()) return;
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
@@ -49,20 +53,19 @@ export function TauxElearningCell({ candidat }: { candidat: CandidatElearning })
   };
 
   return <div className="min-w-0 space-y-1">
-    {isLoading ? <span className="text-muted-foreground">Chargement…</span> : isError || !taux ?
-      <span className="text-muted-foreground">Indisponible</span> : taux.reqElearning <= 0 ?
-      <span className="text-muted-foreground">Heures non renseignées</span> : <>
-        <strong>{taux.pctElearning}%</strong>
-        <Progress value={taux.pctElearning} aria-label="Taux e-learning" className="h-1.5" />
-        <div className="text-muted-foreground">{formatLearningHours(taux.doneElearning)} / {taux.reqElearning}h</div>
+    {isLoading || isFetching ? <span className="text-muted-foreground">Chargement…</span> : !disponible ?
+      <span className="text-muted-foreground">Modules indisponibles</span> : <>
+        <strong className="block whitespace-normal">{progression.termines} / {progression.total} modules terminés</strong>
+        {progression.total > 0 && <Progress value={progression.termines / progression.total * 100} aria-label="Progression des modules" className="h-1.5" />}
+        <div className="text-muted-foreground whitespace-normal">{progression.total === 0 ? 'Aucun module attribué' : progression.restants.length === 0 ? 'Tous les modules sont terminés' : `${progression.restants.length} à terminer`}</div>
       </>}
-    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={!emailValide}
+    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={!emailValide || !relancePertinente}
       aria-label="Préparer le mail de relance e-learning"
-      title={emailValide ? 'Préparer le mail de relance e-learning' : 'Adresse e-mail absente ou invalide'}
+      title={!emailValide ? 'Adresse e-mail absente ou invalide' : !disponible ? 'Modules indisponibles' : !relancePertinente ? 'Aucun module à relancer' : 'Préparer le mail de relance e-learning'}
       onClick={() => { setMail(mailRelanceElearning(candidat.prenom)); setOpen(true); }}><Mail className="h-3.5 w-3.5" /></Button>
     <Dialog open={open} onOpenChange={value => { if (!sending) setOpen(value); }}>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Relance e-learning</DialogTitle><DialogDescription>Vérifiez et adaptez le message avant de confirmer l’envoi individuel.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Modules à terminer</DialogTitle><DialogDescription>Vérifiez et adaptez le message avant de confirmer l’envoi individuel.</DialogDescription></DialogHeader>
         <div className="space-y-4">
           <div><Label>Destinataire</Label><p className="break-all text-sm">{candidat.email}</p></div>
           <div><Label htmlFor={`relance-subject-${candidat.id}`}>Objet</Label><Input id={`relance-subject-${candidat.id}`} value={mail.subject} disabled={sending} onChange={e => setMail({ ...mail, subject: e.target.value })} /></div>
@@ -70,7 +73,7 @@ export function TauxElearningCell({ candidat }: { candidat: CandidatElearning })
         </div>
         <DialogFooter>
           <Button variant="outline" disabled={sending} onClick={() => setOpen(false)}>Annuler</Button>
-          <Button disabled={sending || !mail.subject.trim() || !mail.body.trim()} onClick={() => void send()}><Mail className="mr-2 h-4 w-4" />{sending ? 'Envoi en cours…' : 'Confirmer et envoyer'}</Button>
+          <Button disabled={sending || !relancePertinente || !mail.subject.trim() || !mail.body.trim()} onClick={() => void send()}><Mail className="mr-2 h-4 w-4" />{sending ? 'Envoi en cours…' : 'Confirmer et envoyer'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

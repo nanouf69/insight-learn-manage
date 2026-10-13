@@ -15,8 +15,8 @@ export function estCandidatElearning(candidat: CandidatElearning): boolean {
 
 export function mailRelanceElearning(prenom?: string | null) {
   return {
-    subject: 'Votre formation e-learning : heures et modules à terminer',
-    body: `Bonjour${prenom ? ` ${prenom}` : ''},\n\nVotre connexion aux cours est faible. Vous devez terminer toutes vos heures de formation et tous vos modules, même après la réussite de l'examen.\n\nLe non-respect de vos obligations de formation peut vous exposer à une sanction du CPF ou de France Travail, selon votre financement et les règles applicables à votre dossier.\n\nMerci de poursuivre votre formation et de nous contacter si vous rencontrez des difficultés.\n\nCordialement,\nL'équipe Ftransport`,
+    subject: 'Votre formation : modules à terminer',
+    body: `Bonjour${prenom ? ` ${prenom}` : ''},\n\nVous n'avez pas encore terminé tous les modules de votre formation. Vous devez terminer tous les modules qui vous sont attribués, y compris leurs cours, exercices, bilans et examens blancs, même après la réussite de l'examen.\n\nMerci de reprendre les modules qui restent à terminer dans votre espace élève et d'aller jusqu'au bout de chacun. Les modules déjà terminés n'ont pas à être refaits.\n\nLe non-respect de vos obligations de formation peut vous exposer à une sanction du CPF ou de France Travail, selon votre financement et les règles applicables à votre dossier.\n\nNous restons à votre disposition si vous rencontrez des difficultés.\n\nCordialement,\nL'équipe Ftransport`,
   };
 }
 
