@@ -780,7 +780,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             <div class="stat-label">Connexion e-learning<br/>${formatLearningHours(taux.doneElearning)} / ${taux.requiredElearning}h</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${taux.pctPresentiel}%</div>
+            <div class="stat-value">${heuresValidees.indisponible ? "Indisponible" : `${taux.pctPresentiel}%`}</div>
             <div class="stat-label">Présentiel<br/>${taux.donePresentiel.toFixed(1)}h / ${taux.requiredPresentiel}h</div>
           </div>
           <div class="stat-card">
@@ -943,10 +943,10 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground">Présentiel</div>
                       <div className={cn("text-lg font-bold", taux.pctPresentiel >= 100 ? "text-green-600" : taux.pctPresentiel > 0 ? "text-primary" : "text-orange-500")}>
-                        {taux.pctPresentiel}%
+                        {heuresValidees.indisponible ? "Indisponible" : `${taux.pctPresentiel}%`}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {taux.donePresentiel.toFixed(1)}h / {taux.requiredPresentiel}h
+                        {heuresValidees.indisponible ? "Heures validées admin illisibles" : `${taux.donePresentiel.toFixed(1)}h / ${taux.requiredPresentiel}h`}
                       </div>
                     </div>
                     <div className="w-px h-10 bg-border" />

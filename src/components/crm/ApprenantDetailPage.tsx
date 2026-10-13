@@ -320,7 +320,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     },
   });
 
-  const { data: taux } = useApprenantTauxRealisation(apprenantId, apprenant);
+  const { data: tauxData, isError: tauxErreur } = useApprenantTauxRealisation(apprenantId, apprenant);
+  // Lecture en erreur : aucun ancien taux affiché, jamais un faux 0 h.
+  const taux = tauxErreur ? null : tauxData;
 
   const { data: photoDoc } = useQuery({
     queryKey: ['apprenant-photo', apprenantId],
@@ -612,6 +614,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
       {/* Taux de réalisation (mêmes valeurs que le relevé de connexions) */}
 
+      {tauxErreur && (
+        <div className="w-full rounded-lg border border-destructive/40 bg-card px-4 py-3 text-sm text-destructive">
+          Taux de réalisation indisponible : une source d'heures n'a pas pu être lue. Aucun chiffre n'est affiché pour éviter un faux zéro.
+        </div>
+      )}
       {taux && (
         <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
