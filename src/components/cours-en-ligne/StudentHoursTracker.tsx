@@ -86,12 +86,12 @@ export default function StudentHoursTracker({
 
   return (
     <Card className="mb-8 border shadow-sm overflow-hidden">
-      <CardContent className="p-5">
+      <CardContent className="p-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <Clock className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">Mes heures e-learning</h3>
+              <Clock className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-sm">Mes heures e-learning</h3>
               {isComplete ? (
                 <>
                   <Badge className="bg-green-600 text-white border-green-600">
@@ -116,38 +116,38 @@ export default function StudentHoursTracker({
               ) : null}
             </div>
             {isPresque && (
-              <p className="text-sm text-orange-600 font-semibold mb-1" data-testid="formation-presque">
+              <p className="text-xs text-orange-600 font-semibold mb-1" data-testid="formation-presque">
                 Vous avez atteint le nombre d'heures requis. Pour terminer votre formation, vous devez maintenant valider tous les modules restants.
                 {typeof modulesTotal === "number" && modulesTotal > 0 && (
                   <> ({Math.min(modulesCompleted ?? 0, modulesTotal)}/{modulesTotal} modules terminés)</>
                 )}
               </p>
             )}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Le temps affiché correspond à vos <strong>sessions de connexion pendant lesquelles vous avez consulté un module, un exercice ou un quiz</strong> (plafonné à 7h par session), <strong>uniquement sur la période de votre formation</strong>.
             </p>
-            <p className="text-sm text-orange-600 font-semibold mt-1">
+            <p className="text-xs text-orange-600 font-semibold mt-1">
               ⚠️ Attention : le compteur ne se déclenche pas tant que vous n'avez pas ouvert un module. Rester sur la page d'accueil ne compte pas.
             </p>
             {!isComplete && (
-              <p className="text-sm text-red-600 font-semibold mt-1">
+              <p className="text-xs text-red-600 font-semibold mt-1">
                 Vous devez terminer tous les modules pour valider votre formation.
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-6 shrink-0">
+          <div className="flex items-center gap-4 shrink-0 flex-wrap">
             <div className="text-center">
-              <div className="text-2xl font-bold">{formattedDone}</div>
+              <div className="text-base font-semibold">{formattedDone}</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Réalisées</div>
             </div>
             <div className="text-muted-foreground text-xl">/</div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{requis > 0 ? `${requis}h` : "Non renseignées"}</div>
+              <div className="text-base font-semibold">{requis > 0 ? `${requis}h` : "Non renseignées"}</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Requises</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isComplete ? "text-green-600" : isPresque || isLow ? "text-orange-600" : ""}`}>
+              <div className={`text-base font-semibold ${isComplete ? "text-green-600" : isPresque || isLow ? "text-orange-600" : ""}`}>
                 {isComplete ? "Terminé" : isPresque ? "Modules à valider" : formattedRemaining}
               </div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Restantes</div>

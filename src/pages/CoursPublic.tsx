@@ -39,6 +39,8 @@ import BilanFinFormationFCVtc from "@/components/cours-en-ligne/BilanFinFormatio
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
+import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/components/cours-en-ligne/ModulesProgressionEleve";
+import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -1540,6 +1542,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [activeTab, isStudentSession, connexionId, trackModuleActivity]);
 
 
+  // Activités du registre (jeux) confirmées par le serveur, pour CE compte uniquement.
+  const activitesEleve = useActivitesTermineesEleve(apprenant?.id);
+
   const handleModuleCompleted = useCallback((moduleId: number) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
@@ -2212,6 +2217,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
+  // Affichage élève : module terminé = serveur + activités requises du registre terminées.
+  const progressionModules = completionsLoaded && activitesEleve.pret
+    ? progressionModulesEleve(modules.map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines)
+    : null;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
   const doneModules = modules.filter((m) => moduleProgressById[m.id]?.isDone);
   const inProgressModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone && moduleProgressById[m.id]?.hasProgress);
@@ -2452,6 +2461,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                    {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
+                   <ModulesProgressionEleve
+                     progression={progressionModules}
+                     estVerrouille={(id) => isModuleLocked(id)}
+                     onOuvrir={(id) => { const m = modules.find((x) => x.id === id); if (m) setSelectedModule(m); }}
+                   />
                    <StudentHoursTracker
                      apprenantId={apprenant?.id}
                      typeApprenant={apprenant?.type_apprenant}
