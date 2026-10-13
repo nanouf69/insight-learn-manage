@@ -79,6 +79,7 @@ export async function figerReleve(params: { apprenantId: string; payload: Payloa
   const empreinte = await empreinteGel(params.payload);
   const { data: auth } = await supabase.auth.getUser();
   if (auth.user?.id !== params.adminId) throw new Error("Session administrateur modifiée : clôture annulée");
+  const avant = await chargerGelReleve(params.apprenantId);
   const { data, error } = await supabase.rpc("figer_releve_jalons" as any, {
     _apprenant_id: params.apprenantId, _payload: params.payload as any, _empreinte: empreinte,
     _methode: METHODE_GEL, _motif: motif, _nouvelle_version: false,
@@ -89,7 +90,7 @@ export async function figerReleve(params: { apprenantId: string; payload: Payloa
   // Relecture serveur obligatoire avant d'annoncer « figé ».
   const relu = await chargerGelReleve(params.apprenantId);
   if (!relu || relu.id !== gel.id) throw new Error("Clôture non confirmée par relecture serveur");
-  const statut = gel.empreinte !== empreinte ? "existant_conserve" : gel.created_at && relu.version === gel.version && gel.cree_par === params.adminId && Date.now() - new Date(gel.created_at).getTime() < 60_000 ? "cree" : "existant_identique";
+  const statut = !avant ? "cree" : gel.empreinte === empreinte ? "existant_identique" : "existant_conserve";
   return { statut, gel: relu };
 }
 
