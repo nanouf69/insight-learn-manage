@@ -100,7 +100,7 @@ export default function SuiviEmailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{stats.total}</p>
+            <p className="text-3xl font-bold">{isError ? "—" : stats.total}</p>
           </CardContent>
         </Card>
         <Card>
@@ -110,7 +110,7 @@ export default function SuiviEmailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-blue-600">{stats.remis}</p>
+            <p className="text-3xl font-bold text-blue-600">{isError ? "—" : stats.remis}</p>
           </CardContent>
         </Card>
         <Card>
@@ -120,7 +120,7 @@ export default function SuiviEmailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-emerald-600">{stats.ouverts}</p>
+            <p className="text-3xl font-bold text-emerald-600">{isError ? "—" : stats.ouverts}</p>
             <p className="text-xs text-muted-foreground">{tauxOuverture}% des envois</p>
           </CardContent>
         </Card>
@@ -131,7 +131,7 @@ export default function SuiviEmailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-destructive">{stats.echecs}</p>
+            <p className="text-3xl font-bold text-destructive">{isError ? "—" : stats.echecs}</p>
           </CardContent>
         </Card>
       </div>
