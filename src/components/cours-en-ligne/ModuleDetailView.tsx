@@ -2051,6 +2051,8 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
   ],
 };
 
+const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
+
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
   nom: "7.PRATIQUE VTC",
@@ -9609,7 +9611,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             />
           )}
 
-
+          {/* Jeux de cartes de Lyon — entraînement complémentaire du module PRATIQUE VTC (8), non noté */}
+          {Number(module.id) === 8 && (
+            <Suspense fallback={null}>
+              <JeuxCartesLyon compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
 
           {/* Print all revision sheets button for modules 70-73 */}
           {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
