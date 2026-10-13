@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Dispenses Lyon dans la fiche CRM — 13/10
-- [ ] Partager les dispenses avec le compteur CRM et les jalons actuels ; exception deux jeux Thierno BAH, aucun faux module terminé, gels inchangés.
-- [ ] Tests fictifs et rendu ordinateur/mobile ; aucune écriture élève ni publication demandée.
+- [x] Partager les dispenses avec le compteur CRM et les jalons actuels ; exception deux jeux Thierno BAH, aucun faux module terminé, gels inchangés.
+- [x] 37 tests fictifs, compilation OK 15:32:20 UTC et rendu ordinateur/mobile sans exigences des jeux ; aucune écriture élève ni publication demandée. Fiche réelle complète non testée ; limites gel/pages/questions précédentes conservées.
  
 ## Planning pratique — ouvrir fiche CRM (13/10)
 - [x] Noms VTC/TAXI cliquables via navigation CRM existante ; horaires/réservations/signatures inchangés.
