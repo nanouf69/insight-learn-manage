@@ -10,7 +10,7 @@ import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 const { filiere, parcoursInitial, parcours } = modulesDuCalcul("vtc-e");
 const completions = [{ module_id: 8, status: "completed", progress: 100, completed_at: "2026-10-01T10:00:00Z" }];
 const base = (jeux: string[] | undefined, date: string, heures: any[] = []) => assemblerCalculJalons({
-  key: "vtc-e", filiere, parcours, parcoursInitial, editorRows: [], examens: [],
+  key: "vtc-e", filiere, parcours, parcoursInitial, editorRows: [], examens: [1,2,3,4,5,6].map((n) => ({ id: `eb-${n}`, type: "VTC", numero: n, matieres: [{ questions: [{ id: n }] }] })) as any,
   initialDe: (id) => getInitialModuleContentForVolume(id, "vtc-e"), pratiqueDetails: [], emargements: [], completions,
   heuresValidees: heures, jeuxTermines: jeux, dateActivites: date,
 });
