@@ -11,8 +11,21 @@ import { pratiqueSlotDetailsDepuisGel } from "@/lib/pratiqueSlots";
 import { calculerJalonsPonderes, completionPratique, PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 import { computePresentielHours } from "@/lib/presentielHours";
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
+import { ACTIVITES_CODE, METHODE_ACTIVITES } from "@/lib/jeuxPedagogiques";
 
 export { METHODE_CALCUL_JALONS };
+/** Méthode enregistrée avec chaque NOUVEAU calcul figé (les calculs déjà figés gardent la leur). */
+export const METHODE_GEL = `${METHODE_CALCUL_JALONS} + ${METHODE_ACTIVITES}`;
+
+/**
+ * Activités du registre terminées d'après les SEULES réponses archivées au gel
+ * (reponses_apprenants.completed = true). Archive absente => null (jamais 0 inventé).
+ */
+export function activitesTermineesDepuisGel(sources: any): string[] | null {
+  if (!Array.isArray(sources?.reponses)) return null;
+  const ids = new Set(ACTIVITES_CODE.map((a) => a.id));
+  return [...new Set(sources.reponses.filter((r: any) => r?.completed === true && ids.has(String(r.exercice_id))).map((r: any) => String(r.exercice_id)))] as string[];
+}
 
 export interface LigneContenuFige { empreinte: string; module_id: number; module_data: any; deleted_exercices: any; deleted_cours: any; source_updated_at: string | null }
 
@@ -36,12 +49,20 @@ export async function calculerGelInitial(gel: any, apprenant: { type_apprenant?:
   for (const cle of ["completions", "emargements", "heures_validees"]) if (!Array.isArray(s[cle])) throw new Error(`Source ${cle} non archivée`);
   const { filiere, parcoursInitial, parcours, ids } = modulesDuCalcul(key);
   const examens = await loadSavedExamens(false, async (mids) => lignesFigees(gel, contenus, mids));
-  return assemblerCalculJalons({
+  const jeuxTermines = activitesTermineesDepuisGel(s);
+  // Date de référence = instant du gel : une activité ajoutée après n'entre jamais dans ce relevé.
+  const dateActivites = typeof s.gele_le === "string" ? new Date(s.gele_le).toISOString() : new Date().toISOString();
+  const calcul = assemblerCalculJalons({
     key, filiere, parcours, parcoursInitial, gelId: gel.id,
     editorRows: lignesFigees(gel, contenus, ids), examens: examens as any,
     initialDe: (id) => getInitialModuleContentForVolume(id, apprenant.type_apprenant),
     pratiqueDetails: pratiqueSlotDetailsDepuisGel(s), emargements: s.emargements, completions: s.completions, heuresValidees: s.heures_validees,
+    jeuxTermines: jeuxTermines ?? undefined, dateActivites,
   });
+  // Registre figé avec le calcul (version, unités, dates) : relecture identique même si le code change.
+  const registre = ACTIVITES_CODE.filter((a) => a.ajouteeLe <= dateActivites && (!a.retireeLe || a.retireeLe > dateActivites)).map((a) => ({ ...a }));
+  const limites = jeuxTermines === null ? [...calcul.limites, "Réponses non archivées au gel : activités du registre non évaluées (indisponible, pas 0)."] : calcul.limites;
+  return { ...calcul, limites, registreActivites: { methode: METHODE_ACTIVITES, reference: dateActivites, activites: registre } } as CalculJalons;
 }
 
 /**
