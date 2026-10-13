@@ -45,6 +45,20 @@ vi.mock("@/lib/jalonsPedagogiques", async () => {
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 
 describe("carte jalons : changement de compte et erreurs", () => {
+  it('libellé, pourcentage et barre rouges dès juillet sans changer le calcul', async () => {
+    auth = { user: { id: 'admin-fictif' }, loading: false };
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = (date: string) => <QueryClientProvider client={qc}><JalonsPonderesCard apprenantId="couleur-fictif" typeApprenant="vtc-e" titre="TAUX DE JALONS" apprenant={{type_apprenant:'vtc-e',date_debut_formation:date}} /></QueryClientProvider>;
+    const view = render(ui('2026-07-01'));
+    await waitFor(() => expect(screen.getByText('TAUX DE JALONS')).toHaveClass('text-destructive'));
+    const taux = screen.getByText(/%$/).textContent;
+    expect(screen.getByText(/%$/)).toHaveClass('text-destructive');
+    expect(view.container.querySelector('.bg-destructive')).toBeTruthy();
+    view.rerender(ui('2026-06-30'));
+    expect(screen.getByText('TAUX DE JALONS')).not.toHaveClass('text-destructive');
+    expect(screen.getByText(/%$/).textContent).toBe(taux);
+    view.unmount(); qc.clear();
+  });
   it("admin voit le taux calculé par volume ; autre compte / déconnexion / chargement => masquée", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const ui = () => <QueryClientProvider client={qc}><JalonsPonderesCard apprenantId="eleve-fictif" typeApprenant="vtc-e" /></QueryClientProvider>;
