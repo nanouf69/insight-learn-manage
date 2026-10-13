@@ -161,21 +161,24 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
         {/* Quartiers (zones souples) */}
         {LYON_GEO.zones.map((z) => {
           const ton = sZone.get(z.id);
-          const visible = afficherZones || ton;
+          if (!afficherZones && !ton) return null;
           return (
-            <path key={z.id} ref={(el) => (zoneRefs.current[z.id] = el)} d={z.d}
-              className={ton ? TON[ton] : visible ? "fill-accent/10 stroke-accent" : "fill-transparent stroke-transparent"}
-              strokeWidth={visible ? 1.4 * k : 22 * k} strokeDasharray={visible && !ton ? `${5 * k} ${3 * k}` : undefined}
-              style={{ pointerEvents: "none" }} />
+            <path key={z.id} d={z.d} className={`pointer-events-none ${ton ? TON[ton] : "fill-accent/10 stroke-accent"}`}
+              strokeWidth={1.4 * k} strokeDasharray={ton ? undefined : `${5 * k} ${3 * k}`} />
           );
         })}
+        {/* Zones de test des quartiers : trait invisible de 16 unités ≈ 85 m de tolérance de chaque côté */}
+        <g visibility="hidden">
+          {LYON_GEO.zones.map((z) => (
+            <path key={z.id} ref={(el) => (zoneRefs.current[z.id] = el)} d={z.d} fill="black" stroke="black" strokeWidth={16} />
+          ))}
+        </g>
         {afficherNumerosArr && LYON_GEO.arr.map((a) => (
           <text key={a.numero} x={a.lx} y={a.ly} textAnchor="middle" dominantBaseline="middle"
             className="fill-foreground font-bold pointer-events-none" style={{ fontSize: 26 * k, paintOrder: "stroke" }}
             stroke="hsl(var(--card))" strokeWidth={4 * k}>{a.numero === 1 ? "1er" : `${a.numero}e`}</text>
         ))}
-        <text x={vb.x + vb.w * 0.5} y={vb.y + vb.h * 0.06} className="hidden" />
-        {calques && <g className="pointer-events-none">{typeof calques === "function" ? null : calques}</g>}
+        {calques && <g className="pointer-events-none">{calques}</g>}
         {curseur && cible === "point" && (
           <g className="pointer-events-none">
             <circle cx={curseur.x} cy={curseur.y} r={7 * k} className="fill-foreground/80 stroke-card" strokeWidth={2 * k} />
@@ -209,4 +212,3 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
   );
 }
 
-export const UNITE_ZOOM = (vbw: number) => vbw / W;
