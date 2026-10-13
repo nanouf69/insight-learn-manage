@@ -1,7 +1,7 @@
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
-import { completionAvecJeux, filiereAvecJeux, MODULE_JEUX, UNITES_JEUX_LYON, METHODE_JEUX, type EtatJeux } from "@/lib/jeuxPedagogiques";
+import { activitesDuModule, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import type { ModuleContentLite } from "@/lib/volumeModules";
 import {
@@ -27,8 +27,10 @@ export function assemblerCalculJalons(i: {
   editorRows: any[]; examens: any[]; initialDe: (id: number) => ModuleContentLite | null;
   pratiqueDetails: PratiqueSlotDetail[]; emargements: any[]; completions: CompletionCalc[]; heuresValidees: any[];
   gelId?: string | null;
-  /** Jeux terminés confirmés serveur. Absent = méthode v3 inchangée (calculs figés). */
+  /** Activités du registre terminées (confirmées serveur). Absent = méthode v3 inchangée (calculs figés). */
   jeuxTermines?: string[];
+  /** Date de référence des activités (défaut : maintenant). */
+  dateActivites?: string;
 }) {
   const volumes = construireVolumes(i.filiere, i.parcoursInitial, i.editorRows as any, i.initialDe, i.examens as any);
   const emargements = (i.emargements ?? []) as EmargementRowLike[];
@@ -40,16 +42,21 @@ export function assemblerCalculJalons(i: {
   const theorieMinutes = Math.round(theorieHours * 60);
   const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
   let completionsBase = i.completions ?? [];
-  let jeux: (EtatJeux & { methode: string }) | null = null;
-  const v8 = Object.entries(volumes.volumes).find(([, v]) => v.moduleId === MODULE_JEUX);
-  if (i.jeuxTermines && filiereAvecJeux(i.filiere) && v8 && i.parcours.includes(MODULE_JEUX)) {
-    const sansJeux = { ...v8[1] };
-    const lignes8 = completionsBase.filter((c) => Number(c.module_id) === MODULE_JEUX);
-    const row8 = lignes8.find((c) => c.status === "completed") ?? lignes8.sort((a, b) => (Number(b.progress) || 0) - (Number(a.progress) || 0))[0];
-    const r = completionAvecJeux(row8 as any, sansJeux, new Set(i.jeuxTermines));
-    volumes.volumes[Number(v8[0])] = { ...v8[1], jeux: UNITES_JEUX_LYON };
-    completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== MODULE_JEUX), { ...r.completion, completed_at: (row8 as any)?.completed_at ?? null }];
-    jeux = { ...r.etat, methode: METHODE_JEUX };
+  let activites: Array<EtatActivites & { methode: string }> = [];
+  if (i.jeuxTermines) {
+    const termines = new Set(i.jeuxTermines);
+    // Tout module du parcours RÉEL ayant des activités dans le registre (aucune liste parallèle).
+    for (const [cle, v] of Object.entries(volumes.volumes)) {
+      if (!i.parcours.includes(v.moduleId)) continue;
+      const acts = activitesDuModule(v.moduleId, i.dateActivites);
+      if (!acts.length) continue;
+      const lignes = completionsBase.filter((c) => Number(c.module_id) === v.moduleId);
+      const row = lignes.find((c) => c.status === "completed") ?? [...lignes].sort((x, y) => (Number(y.progress) || 0) - (Number(x.progress) || 0))[0];
+      const r = completionAvecActivites((row ?? { module_id: v.moduleId }) as any, { ...v }, acts, termines);
+      volumes.volumes[Number(cle)] = { ...v, jeux: acts.reduce((s2, x) => s2 + x.unites, 0) };
+      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), { ...r.completion, completed_at: (row as any)?.completed_at ?? null }];
+      activites.push({ ...r.etat, methode: METHODE_ACTIVITES });
+    }
   }
   const completions = [...completionsBase, completionPratique(pratiqueMinutes)];
   const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes);
@@ -69,11 +76,13 @@ export function assemblerCalculJalons(i: {
     parcours: i.parcours,
     volumes: volumes.volumes,
     limites: volumes.limites,
+    pagesNonRecomptees: volumes.pagesNonRecomptees ?? [],
     durees,
     poids,
     resultat,
     completions,
-    jeux,
+    activites,
+    jeux: activites[0] ?? null,
     pratique: {
       minutes: pratiqueMinutes,
       detail: { pratiqueSignee: pratiqueSigneeMinutes, theorieSignee: theorieMinutes, valideesAdmin: valideesMinutes },

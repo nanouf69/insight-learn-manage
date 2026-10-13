@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
-import { IDS_JEUX_LYON } from "@/lib/jeuxPedagogiques";
+import { idsActivites } from "@/lib/jeuxPedagogiques";
 import type { GelFinAcces } from "@/lib/releveJalonsGel";
 import {
   INTRO_IDS,
@@ -71,7 +71,7 @@ export async function chargerCalculJalons(params: {
       : supabase.from("apprenant_module_completion").select("module_id, status, progress, completed_at").eq("apprenant_id", params.apprenantId),
     supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
     // Jeux du module 8 : seule une ligne serveur completed = true compte (jamais le score local).
-    supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", IDS_JEUX_LYON),
+    supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", idsActivites(parcoursInitial).length ? idsActivites(parcoursInitial) : ["__aucune__"]),
   ]);
   if (jeuxResult.error) throw jeuxResult.error;
   if (editorError) throw editorError;

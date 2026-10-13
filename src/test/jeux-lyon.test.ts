@@ -60,6 +60,6 @@ describe("Jeux cartes de Lyon", () => {
     expect(suivi).toContain("score: null");
     expect(suivi).not.toMatch(/\.insert\(|\.update\(|\.upsert\(|\.delete\(|apprenant_quiz_results|module_completion/);
     const mdv = readFileSync("src/components/cours-en-ligne/ModuleDetailView.tsx", "utf8");
-    expect(mdv).toContain("Number(module.id) === 8 && (");
+    expect(mdv).toContain("activitesDuModule(Number(module.id)).some((a) => a.id.startsWith(\"jeu_lyon_\"))");
   });
 });
