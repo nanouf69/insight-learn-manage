@@ -22,20 +22,24 @@ describe('Signatures manquantes : calcul sans mutation', () => {
   it('ne compte pas le week-end d’une session théorique', () => {
     const result = calculerSignaturesManquantes([], [sessionTheorique()], [], '2026-10-16');
     const dates = new Set(result.map(r => r.date));
-    expect(dates.has('2026-10-10')).toBe(true);  // vendredi
+    expect(dates.has('2026-10-09')).toBe(true);  // vendredi
+    expect(dates.has('2026-10-10')).toBe(false); // samedi
     expect(dates.has('2026-10-11')).toBe(false); // dimanche
     expect(dates.has('2026-10-12')).toBe(true);  // lundi
     expect(result.filter(r => r.date === '2026-10-05').map(r => r.creneau)).toEqual(['Matin', 'Après-midi']);
   });
 
-  it('une signature réelle n’est jamais « manquante » ; masqué ignoré', () => {
+  it('une signature réelle n’est jamais « manquante » ; une ligne masquée est ignorée', () => {
     const result = calculerSignaturesManquantes(
       [emarg('2026-10-05', 'matin'), { ...emarg('2026-10-05', 'apres_midi'), masque: true }],
       [sessionTheorique()],
       [],
       '2026-10-16',
     );
-    expect(result.filter(r => r.date === '2026-10-05')).toHaveLength(0);
+    expect(result.filter(r => r.date === '2026-10-05' && r.creneau === 'Matin')).toHaveLength(0);
+    // L'émargement masqué ne compte pas comme signature : le créneau apparaît manquant.
+    const apresMidi = result.find(r => r.date === '2026-10-05' && r.creneau === 'Après-midi');
+    expect(apresMidi?.etat).toBe('manquante');
     expect(result.some(r => r.date === '2026-10-06' && r.creneau === 'Matin')).toBe(true);
   });
 
