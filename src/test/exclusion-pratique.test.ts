@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { retirerCreneauxPratique } from "/dev-server/src/lib/reports/exclusionPratique";
+import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 test("pratique", () => {
   // 09/10 Paris UTC+2 : 10h09-10h42 = exclu ; 16h10-16h40 compté ; 11h30-13h30 -> 12h-13h gardé
   const rows = [
