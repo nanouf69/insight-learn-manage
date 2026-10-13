@@ -13,7 +13,7 @@ type Props = {
   surlignerZones?: { id: string; ton: "ok" | "ko" | "info" }[];
   afficherNumerosArr?: boolean;
   afficherZones?: boolean;
-  calques?: ReactNode;
+  calques?: (k: number) => ReactNode;
   desactive?: boolean;
 };
 
@@ -178,7 +178,7 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
             className="fill-foreground font-bold pointer-events-none" style={{ fontSize: 26 * k, paintOrder: "stroke" }}
             stroke="hsl(var(--card))" strokeWidth={4 * k}>{a.numero === 1 ? "1er" : `${a.numero}e`}</text>
         ))}
-        {calques && <g className="pointer-events-none">{calques}</g>}
+        {calques && <g className="pointer-events-none">{calques(k)}</g>}
         {curseur && cible === "point" && (
           <g className="pointer-events-none">
             <circle cx={curseur.x} cy={curseur.y} r={7 * k} className="fill-foreground/80 stroke-card" strokeWidth={2 * k} />
