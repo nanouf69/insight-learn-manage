@@ -6,6 +6,7 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 ## 2026-10-13 — Planning pratique : accès direct CRM
 - Demande explicite : cliquer le nom d'un apprenant dans le planning ouvre sa fiche CRM via le callback admin existant, identifiant apprenant réel (pas nom ni réservation).
 - Fichiers : PratiqueApprenantLink.tsx, ExamenReussitePage.tsx (VTC/TAXI), test associé, AGENTS, roadmap, journal. Aucun changement de données, horaires, inscriptions, signatures ou droits ; aucun mail/SMS/IA.
+- PASS : 11 tests fictifs, compilation automatique OK 15:28:40 UTC ; vrai bouton rendu en Chromium ordinateur/mobile et callback confirmé avec identifiant fictif, sans erreur JS/débordement. Fiche complète réelle NON PROUVÉE, aucune publication demandée.
 
 ## 2026-10-13 — Dispense des jeux Lyon pour parcours déjà terminés
 - Accord explicite : ne pas compter les deux nouveaux jeux pour les personnes ayant déjà terminé tous leurs modules avant leur ajout (date du registre : 10:41 UTC).
