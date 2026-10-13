@@ -22,26 +22,27 @@ interface EmailArchive {
 }
 
 /** Copie archivée = même destinataire + même objet + envoi à ±30 min, la plus proche. Lecture seule. */
-export function choisirCopie(accuse: AccuseReception, copies: EmailArchive[]): EmailArchive | null {
+/** Plusieurs copies candidates = ambiguïté : aucune copie n'est montrée (jamais un choix arbitraire). */
+export function choisirCopie(accuse: AccuseReception, copies: EmailArchive[]): EmailArchive | null | "ambigu" {
   const ts = new Date(accuse.sent_at).getTime();
   const dest = accuse.destinataire.trim().toLowerCase();
   const sujet = normalizeSujet(accuse.sujet);
-  let best: EmailArchive | null = null;
-  let bestDelta = Infinity;
+  const candidats: EmailArchive[] = [];
   for (const c of copies) {
     if (!(c.recipients || []).some((r) => r.trim().toLowerCase() === dest)) continue;
     if (normalizeSujet(c.subject) !== sujet) continue;
     const d = Math.abs(new Date(c.sent_at || c.created_at).getTime() - ts);
-    if (d <= 30 * 60 * 1000 && d < bestDelta) { best = c; bestDelta = d; }
+    if (d <= 30 * 60 * 1000) candidats.push(c);
   }
-  return best;
+  if (candidats.length > 1) return "ambigu";
+  return candidats[0] ?? null;
 }
 
 const dt = (v: string | null | undefined) => (v ? format(new Date(v), "dd/MM/yyyy HH:mm", { locale: fr }) : "—");
 
 export function EmailDetailDialog({ accuse, onClose }: { accuse: AccuseReception | null; onClose: () => void }) {
   const { user } = useAuth();
-  const { data, isLoading, isError, error } = useQuery({
+  const { data: result, isLoading, isError, error } = useQuery({
     queryKey: ["email-archive", user?.id, accuse?.id],
     enabled: !!accuse && !!user?.id,
     staleTime: 60_000,
@@ -60,6 +61,8 @@ export function EmailDetailDialog({ accuse, onClose }: { accuse: AccuseReception
       return choisirCopie(a, (data || []) as EmailArchive[]);
     },
   });
+  const ambigu = result === "ambigu";
+  const data = ambigu ? null : (result as EmailArchive | null | undefined);
 
   const rendu = useMemo(() => (data?.body_html ? assainirHtmlEmail(data.body_html) : null), [data?.body_html]);
 
@@ -92,6 +95,8 @@ export function EmailDetailDialog({ accuse, onClose }: { accuse: AccuseReception
                 <p className="text-sm text-destructive py-6 text-center">
                   Lecture du contenu impossible ({error instanceof Error ? error.message : "erreur inconnue"}).
                 </p>
+              ) : ambigu ? (
+                <p className="text-sm py-6 text-center border rounded-md bg-muted">Contenu non identifiable avec certitude : plusieurs mails identiques ont été envoyés à ce destinataire au même moment.</p>
               ) : !data || (!data.body_html && !data.body_preview) ? (
                 <p className="text-sm py-6 text-center border rounded-md bg-muted">Contenu du mail non conservé.</p>
               ) : (

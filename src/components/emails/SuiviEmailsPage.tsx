@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 import { Mail, CheckCheck, Eye, AlertTriangle, RefreshCw } from "lucide-react";
 import { AccuseReceptionBadge, type AccuseReception } from "./AccuseReceptionBadge";
 import { EmailDetailDialog } from "./EmailDetailDialog";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const PERIODES = [
   { id: "7", label: "7 jours" },
@@ -205,7 +206,9 @@ export default function SuiviEmailsPage() {
           )}
         </CardContent>
       </Card>
-      <EmailDetailDialog accuse={ouvert} onClose={() => setOuvert(null)} />
+      <ErrorBoundary key={ouvert?.id ?? "aucun"} fallback={<p className="text-sm text-destructive">Affichage du mail impossible ; la liste reste utilisable.</p>}>
+        <EmailDetailDialog accuse={ouvert} onClose={() => setOuvert(null)} />
+      </ErrorBoundary>
     </div>
   );
 }
