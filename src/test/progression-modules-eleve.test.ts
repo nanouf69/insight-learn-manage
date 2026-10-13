@@ -10,11 +10,15 @@ describe("progression modules élève", () => {
   it("tout completed + jeux faits = tous terminés", () => { const p = ok(progressionModulesEleve(mods, () => true, new Set(IDS_JEUX_LYON))); expect(p.termines).toBe(3); expect(p.restants).toEqual([]); });
   it("completed avant les jeux, jeux à faire = pas 100 %", () => {
     const p = ok(progressionModulesEleve(mods, () => true, new Set([IDS_JEUX_LYON[0]])));
-    expect(p.termines).toBe(2); expect(p.restants[0]).toMatchObject({ id: 8, raison: "nouvelles_activites" }); expect(p.seulementPratique).toBe(true);
+    expect(p.termines).toBe(2); expect(p.restants[0]).toMatchObject({ id: 8, raison: "nouvelles_activites", pratique: false }); expect(p.seulementPratique).toBe(false);
   });
   it("seul le serveur compte (progress 100 sans completed = non terminé)", () => { const p = ok(progressionModulesEleve(mods, (id) => id === 1, new Set(IDS_JEUX_LYON))); expect(p.termines).toBe(1); });
   it("TAXI sans module 8 : aucun jeu requis, lecture des jeux sans effet", () => { const p = ok(progressionModulesEleve([{ id: 1, nom: "A" }, { id: 2, nom: "B" }], () => true, null)); expect(p.termines).toBe(2); });
   it("lecture des jeux impossible avec module 8 => indisponible, jamais 0", () => { expect(progressionModulesEleve(mods, () => true, null).etat).toBe("indisponible"); });
   it("doublon d'identifiant compté une fois", () => { const p = ok(progressionModulesEleve([...mods, { id: 2, nom: "Réglementation" }], () => false, new Set())); expect(p.total).toBe(3); });
   it("jeux ne comptent pas comme modules", () => { const p = ok(progressionModulesEleve(mods, () => false, new Set(IDS_JEUX_LYON))); expect(p.total).toBe(3); });
+  it("le nom ne prouve jamais une présence physique", () => {
+    const p = ok(progressionModulesEleve([{ id: 6, nom: "PRÉSENTIEL" }, { id: -2, nom: "Jalon" }], () => false, new Set()));
+    expect(p.restants.map((r: any) => r.pratique)).toEqual([false, true]);
+  });
 });

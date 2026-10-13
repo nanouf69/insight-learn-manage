@@ -909,6 +909,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // True once the DB progression has actually been fetched. Locks are NEVER
   // computed from an empty/optimistic progression before this is true.
   const [completionsLoaded, setCompletionsLoaded] = useState(false);
+  const [completionsOwner, setCompletionsOwner] = useState<string | null>(null);
   const [completionsError, setCompletionsError] = useState(false);
   const emptyRetryRef = useRef(0);
   const completionsLoadedRef = useRef(false);
@@ -1342,6 +1343,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
+        setCompletionsOwner(apprenant.id ?? null);
         setCompletionsLoaded(true);
       } else if (!cancelled && requestId === completionsRequestRef.current) {
         console.error("[CoursPublic] Impossible de charger la progression — verrouillage conservé");
@@ -2215,14 +2217,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
-  const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   // Affichage élève : module terminé = serveur + activités requises du registre terminées.
-  const progressionModules = completionsLoaded && activitesEleve.pret
+  const progressionModules = completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
     ? progressionModulesEleve(modules.map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines)
     : null;
-  const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
-  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.isDone);
+  const progressionDisponible = progressionModules?.etat === "ok" ? progressionModules : null;
+  const completedCount = progressionDisponible?.termines;
+  const remainingIds = new Set(progressionDisponible?.restants.map((m) => m.id) ?? []);
+  const remainingModules = progressionDisponible ? modules.filter((m) => remainingIds.has(m.id)) : [];
+  const doneModules = progressionDisponible ? modules.filter((m) => !remainingIds.has(m.id)) : [];
   const inProgressModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone && moduleProgressById[m.id]?.hasProgress);
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
@@ -2418,10 +2421,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
             {/* Gamification: Welcome Banner + XP + Badges + Quiz — jamais avant la progression serveur */}
             {completionsLoaded && (() => {
-              const xp = calculateXP(completedModuleIds, moduleScores);
-              const badges = buildBadges(completedModuleIds, modules.length, moduleScores);
+              const effectiveDoneIds = new Set(doneModules.map((m) => m.id));
+              const xp = calculateXP(effectiveDoneIds, moduleScores);
+              const badges = buildBadges(effectiveDoneIds, progressionDisponible?.total ?? modules.length, moduleScores);
               // Estimate streak (simplified: always show 1 if user is active today)
-              const streak = completedCount > 0 ? Math.min(completedCount, 7) : 0;
+              const streak = completedCount ? Math.min(completedCount, 7) : 0;
               return (
                 <>
                   <WelcomeBanner
@@ -2430,9 +2434,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     xp={xp}
                     xpToday={0}
                     streak={streak}
-                    completedCount={completedCount}
-                    totalModules={modules.length}
-                    globalProgress={globalProgress}
+                    progression={progressionModules}
                   />
                   {showLastFridayIntroReminder && (
                     <div className="mt-4 rounded-xl border-4 border-red-500 bg-red-50 p-5 shadow-lg animate-pulse">
@@ -2476,7 +2478,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                      dateExamenTheorique={apprenant?.date_examen_theorique}
                       resultatExamen={apprenant?.resultat_examen}
                       modulesCompleted={completedCount}
-                      modulesTotal={modules.length}
+                      modulesTotal={progressionDisponible?.total}
                    />
                  </>
                );
@@ -2556,9 +2558,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             </div>
 
             {/* Modules grid: À faire + Réalisés — jamais affichée avant la progression serveur */}
-            {!completionsLoaded ? (
+            {!progressionDisponible ? (
               <Card className="border-0 shadow-sm p-8 text-center">
-                <p className="text-muted-foreground text-sm animate-pulse">{completionsError ? "Impossible de charger votre progression — réessayer" : "Chargement…"}</p>
+                <p className="text-muted-foreground text-sm">{completionsError || progressionModules?.etat === "indisponible" ? "Impossible de charger votre progression — réessayer" : "Chargement…"}</p>
               </Card>
             ) : (
             <div className="grid md:grid-cols-2 gap-6">

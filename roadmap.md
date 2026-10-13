@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Cohérence affichage élève — finalisation autorisée 05e1c399
+- [x] Un seul calcul pour bandeau, bloc modules, listes et état secondaire des heures ; présence physique identifiée par jalon, jamais par nom.
+- [x] 29 tests fictifs : jeux restants, 100 % sans validation, changement de compte, erreurs, gels ; captures vrai dashboard ordinateur 1280 et mobile 390, aucun débordement ni erreur JS.
+- [x] Publication confirmée 13/10/2026 13:09:00 UTC : index-BLUB7gmc.js servi HTTP 200 sur gestion.ftransport.fr, marqueurs bandeau canonique et activités en ligne présents.
+- Limites antérieures conservées hors ce correctif : recomptage fiable des pages de supports et exigences de nouvelles questions après validation non prouvées ; gels et suivi mails inchangés.
+
 ## Clarification pourcentages et heures — 12/10 19:55 UTC
 - [x] Tableau partagé Contrôle/PDF : poids, progression, contribution, heures CPF et couverture prévisionnelle ; heures enregistrées séparées, calculs inchangés.
 - [x] 18 tests ciblés quatre filières, 38 pages PDF inspectées, Contrôle et téléchargement Amar admin lecture seule ; objectifs et annexes conservés.

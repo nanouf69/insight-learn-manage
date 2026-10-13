@@ -3,6 +3,15 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 13:06 UTC — Compteurs élève cohérents (05e1c399)
+- Autorisation existante : finalisation UI et publication ; aucune écriture élève, aucun envoi ni changement des gels/calculs pondérés.
+- Fichiers : CoursPublic.tsx, motivation/WelcomeBanner.tsx, ModulesProgressionEleve.tsx, progressionModulesEleve.ts, progression-modules-eleve.test.ts, modules-eleve-coherence.test.tsx, AGENTS.md, roadmap.md et ce journal.
+- Même progression canonique pour bienvenue, modules, listes, badges et état secondaire des heures ; 100 % sans statut serveur ne complète rien. Activités en ligne distinctes du jalon physique -2 ; nom jamais utilisé comme preuve de présence.
+- PASS : 29 tests fictifs, compilation automatique OK 13:06:11 UTC ; dashboard réel simulé en Chromium, 1280/390 px, 3/4 puis 4/4 après confirmation simulée des jeux, compte B 2/4 ; aucune erreur JS/débordement. Heures 16 px, compteur modules 24/30 px, chiffres conservés.
+- Sources serveur remplacées dans le navigateur et accès externes bloqués : aucun dossier réel utilisé. Appareil physique et flux d'écriture réel NON PROUVÉS, volontairement exclus. Gels et suivi mails non modifiés ; limites antérieures pages/questions conservées.
+- Régressions complémentaires PASS : 116 tests (dont 91 ordre/parcours), 3 tests de sécurité détail mail ; total 148. Publication demandée ; contrôle HTTP 200 à 13:08:40 UTC sert encore index-CyLRZArr.js, marqueurs nouveaux absents : livraison distante NON PROUVÉE à cette heure.
+- Livraison confirmée le 13/10/2026 à 13:09:00 UTC : index-BLUB7gmc.js HTTP 200 sur gestion.ftransport.fr ; présence de bienvenue-modules et du libellé activités pratiques en ligne. Contrôle visuel fictif local, pas de connexion production à un dossier réel.
+
 ## 2026-10-09 16:11 UTC — Historique de M. Majsak depuis le 5 octobre
 - Accord : plan approuvé, affichage initial depuis le 05/10/2026 inclus pour ce dossier uniquement ; « Tout l'historique » conservé, aucune publication.
 - Diagnostic et contrôle après en lecture seule : 26 connexions conservées, 15 depuis le 5 octobre (minuit Paris). Aucun enregistrement modifié, aucune date d'accès changée, aucun envoi.
