@@ -10,6 +10,7 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 - PASS : 29 tests fictifs, compilation automatique OK 13:06:11 UTC ; dashboard réel simulé en Chromium, 1280/390 px, 3/4 puis 4/4 après confirmation simulée des jeux, compte B 2/4 ; aucune erreur JS/débordement. Heures 16 px, compteur modules 24/30 px, chiffres conservés.
 - Sources serveur remplacées dans le navigateur et accès externes bloqués : aucun dossier réel utilisé. Appareil physique et flux d'écriture réel NON PROUVÉS, volontairement exclus. Gels et suivi mails non modifiés ; limites antérieures pages/questions conservées.
 - Régressions complémentaires PASS : 116 tests (dont 91 ordre/parcours), 3 tests de sécurité détail mail ; total 148. Publication demandée ; contrôle HTTP 200 à 13:08:40 UTC sert encore index-CyLRZArr.js, marqueurs nouveaux absents : livraison distante NON PROUVÉE à cette heure.
+- Livraison confirmée le 13/10/2026 à 13:09:00 UTC : index-BLUB7gmc.js HTTP 200 sur gestion.ftransport.fr ; présence de bienvenue-modules et du libellé activités pratiques en ligne. Contrôle visuel fictif local, pas de connexion production à un dossier réel.
 
 ## 2026-10-09 16:11 UTC — Historique de M. Majsak depuis le 5 octobre
 - Accord : plan approuvé, affichage initial depuis le 05/10/2026 inclus pour ce dossier uniquement ; « Tout l'historique » conservé, aucune publication.
