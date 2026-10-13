@@ -3,6 +3,12 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 — Exception individuelle Zekkour
+- Autorisation explicite : dispenser exceptionnellement les deux nouveaux jeux Lyon et afficher 100 % des modules pour le dossier VA identifié par UUID ; aucun effet sur l'homonyme.
+- Compteur partagé élève/candidats : dix modules réellement completed, rubrique d'archives émargement 83 hors compteur individuel, sans inventer de signature ni réponse ni modifier statut, heure, poids ou gel.
+- Fichiers : exceptionsModulesEleve.ts, progressionModulesEleve.ts, useCandidatModules.ts, CoursPublic.tsx, ModulesProgressionEleve.tsx, tests exception/candidat, AGENTS.md, roadmap.md, journal.
+- PASS : 132 tests fictifs (dispense, homonyme/autres comptes, absence de validation, parcours, gel, mail), compilation automatique OK 15:23:33 UTC. Compteur 10/10 et relance désactivée vus en Chromium 1280/390, aucun débordement ni erreur JS. Aucun dossier réel ouvert/testé ; aucune écriture élève, aucun mail/SMS/IA ni publication demandée ce tour.
+
 ## 2026-10-13 15:16 UTC — Candidats examens : modules et rappel manuel
 - Accord explicite colonne + mail : remplace Taux e-learning par modules terminés/total ; rappel de terminer tous les modules, plus de connexion faible alléguée ni quota d’heures dans le texte. Avertissement conditionnel et signature conservés.
 - Parcours et normalisation extraits sans changer les règles de CoursPublic dans parcoursModulesDashboard.ts ; useCandidatModules relit affectation, statuts terminaux et jeux confirmés. Aucune donnée, question, réponse, heure, statut ou gel modifié.

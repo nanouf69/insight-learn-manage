@@ -1,4 +1,8 @@
 # Feuille de route
+ 
+## Exception individuelle Zekkour — 13/10
+- [x] Exclure les deux jeux Lyon et la rubrique d'archives émargement du compteur individuel ; dix validations serveur, aucune réponse/signature/statut fabriqué, gels inchangés.
+- [x] 132 tests fictifs, compilation OK, compteur 10/10 vérifié en Chromium ordinateur/téléphone ; aucune publication demandée.
 
 ## Candidats examens — modules et rappel individuel (13/10)
 - [x] Colonne modules terminés/total selon le parcours partagé avec l’élève ; rappel de terminer tous les modules, aucune connexion faible alléguée ni envoi réel.

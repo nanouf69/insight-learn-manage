@@ -39,7 +39,7 @@ export function useActivitesTermineesEleve(apprenantId: string | null | undefine
 export function useProgressionModulesEleve(apprenantId: string | null | undefined, modules: ModuleEleveLite[], estTermine: (id: number) => boolean, charge: boolean): ProgressionModules | null {
   const { pret, termines } = useActivitesTermineesEleve(apprenantId);
   if (!charge || !pret) return null;
-  return progressionModulesEleve(modules, estTermine, termines);
+  return progressionModulesEleve(modules, estTermine, termines, undefined, apprenantId);
 }
 
 export function ModulesProgressionEleve({ progression, onOuvrir, estVerrouille }: { progression: ProgressionModules | null; onOuvrir: (id: number) => void; estVerrouille: (id: number) => boolean }) {
