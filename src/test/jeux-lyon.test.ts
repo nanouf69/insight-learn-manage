@@ -52,9 +52,13 @@ describe("Jeux cartes de Lyon", () => {
     expect(lireMeilleurScore(s, "B", "lieux")).toBeNull();
     expect(lireMeilleurScore(s, "A", "lieux")?.score).toBe(3);
   });
-  it("aucune écriture serveur et aucun ajout dans les exercices/quiz du module", () => {
+  it("écriture uniquement via la file durable existante, jamais dans les quiz/exercices/notes", () => {
     const src = readFileSync("src/components/cours-en-ligne/jeux-lyon/JeuxCartesLyon.tsx", "utf8") + readFileSync("src/components/cours-en-ligne/jeux-lyon/jeuxLyonLogic.ts", "utf8");
-    expect(src).not.toMatch(/supabase|fetch\(|module_editor_state|reponses_apprenant/);
+    expect(src).not.toMatch(/supabase|fetch\(|module_editor_state|apprenant_quiz_results/);
+    const suivi = readFileSync("src/components/cours-en-ligne/jeux-lyon/useSuiviJeu.ts", "utf8");
+    expect(suivi).toContain("enqueueAnswerSave");
+    expect(suivi).toContain("score: null");
+    expect(suivi).not.toMatch(/\.insert\(|\.update\(|\.upsert\(|\.delete\(|apprenant_quiz_results|module_completion/);
     const mdv = readFileSync("src/components/cours-en-ligne/ModuleDetailView.tsx", "utf8");
     expect(mdv).toContain("Number(module.id) === 8 && (");
   });
