@@ -18,6 +18,7 @@ export function useSuiviJeu(compteId: string | null | undefined, exerciceId: str
     if (error) { setEtat("lecture_impossible"); return null; }
     setReponses(((data as any)?.reponses as Record<string, unknown>) ?? {});
     setEtat((data as any)?.completed === true ? "confirme" : "a_faire");
+    if ((data as any)?.completed === true) window.dispatchEvent(new Event("activite-registre-confirmee"));
     return data as any;
   }, [compteId, exerciceId]);
 
