@@ -244,8 +244,15 @@ export interface QrcCoherenceReport {
  * Détecte les cas « élève en attente / file formateur vide » et l'inverse.
  * Ne corrige jamais une donnée : elle journalise pour diagnostic.
  */
-export function auditQrcCoherence(rows: PassageRowLike[] | null | undefined): QrcCoherenceReport {
-  const passages = groupPassages(rows);
+export function auditQrcCoherence(
+  rows: PassageRowLike[] | null | undefined,
+  opts?: { couvertParNouveauMoteur?: (row: PassageRowLike) => boolean },
+): QrcCoherenceReport {
+  // Source unique : une ligne dont la matière a un passage dans le nouveau
+  // moteur est affichée selon l'état réel de ses QRC (qrc_instances_v2), jamais
+  // selon le drapeau historique. Elle n'est donc pas une divergence d'affichage.
+  const couvert = opts?.couvertParNouveauMoteur;
+  const passages = groupPassages(couvert ? (rows || []).filter((r) => !couvert(r)) : rows);
   const report: QrcCoherenceReport = {
     passages: passages.length,
     pendingPassages: 0,
