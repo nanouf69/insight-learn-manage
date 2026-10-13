@@ -20,7 +20,7 @@
 - Course/quiz order and admin labels share permanent-ID associations; historical adapters stay unchanged; why: prevent positional drift. Verify all paths against dated baselines and append the change journal.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Exam rates reuse CRM hook; mails need confirmation; why: no auto-send.
-- Accès élève : créés/envoyés par le serveur (trigger sur apprenants) à chaque modification si aucun compte ; why: aucune fiche corrigée sans accès.
+- Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
