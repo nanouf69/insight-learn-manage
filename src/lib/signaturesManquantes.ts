@@ -241,7 +241,7 @@ export function calculerBilanSignaturesEdof(
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning,
     objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
-    complet: theorie >= objectifTheorie && pratique >= objectifPratique,
+    complet: theorie === objectifTheorie && pratique === objectifPratique,
     excedent: theorie > objectifTheorie || pratique > objectifPratique,
   };
 }

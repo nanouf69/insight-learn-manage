@@ -50,6 +50,8 @@ async function paginer(build: (from: number, to: number) => any): Promise<any[]>
 }
 
 export async function chargerSignaturesRassemblees(apprenantId: string) {
+  // Le PDF ne contient que les signatures faites aux dates du planning :
+  // les signatures hors planning sont conservées en base mais exclues de l'export.
   const [rows, reservations, sessions] = await Promise.all([
     paginer((from, to) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).eq('masque', false).order('id').range(from, to)),
     paginer((from, to) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(from, to)),
