@@ -42,6 +42,7 @@ import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker
 import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/components/cours-en-ligne/ModulesProgressionEleve";
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
+import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -2064,7 +2065,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const completedCount = progressionDisponible?.termines;
   const remainingIds = new Set(progressionDisponible?.restants.map((m) => m.id) ?? []);
   const remainingModules = progressionDisponible ? modules.filter((m) => remainingIds.has(m.id)) : [];
-  const doneModules = progressionDisponible ? modules.filter((m) => !remainingIds.has(m.id) && completedModuleIds.has(m.id)) : [];
+  const doneModules = progressionDisponible ? modules.filter((m) => !remainingIds.has(m.id) && !exceptionModulesEleve(apprenant?.id)?.rubriquesHorsCompteur.includes(m.id)) : [];
   const inProgressModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone && moduleProgressById[m.id]?.hasProgress);
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
