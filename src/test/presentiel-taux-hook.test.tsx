@@ -12,6 +12,11 @@ const state = vi.hoisted(() => ({
   activities: [] as Record<string, unknown>[],
   channels: new Map<string, { subscribed: boolean; on: (event: string, filter: unknown, callback: () => void) => unknown; subscribe: () => unknown }>(),
   removed: [] as unknown[],
+  ratio: { signees: 1, attendues: 2, taux: 50, raison: null } as any,
+}));
+vi.mock('@/lib/suiviFormationIndicateurs', async () => ({
+  ...(await vi.importActual<any>('@/lib/suiviFormationIndicateurs')),
+  chargerRatioSignatures: async () => state.ratio,
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: (table: string) => {
@@ -56,6 +61,20 @@ import StudentHoursTracker from "../components/cours-en-ligne/StudentHoursTracke
 describe("Taux présentiel de la fiche, lecture seule", () => {
   beforeEach(() => {
     state.channels.clear(); state.removed = []; state.subscription = undefined;
+  });
+  it.each([['vtc',66],['taxi',96],['ta',36]])('total présentiel %s : seules les signatures, heures prévues %s', async (type, required) => {
+    state.learner = { type_apprenant:type, date_debut_formation:'2026-07-01', heures_totales:69 };
+    state.rows=[]; state.connections=[]; state.activities=[];
+    state.ratio={signees:1,attendues:2,taux:50,raison:null};
+    const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+    const wrapper=({children}:{children:ReactNode})=><QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view=renderHook(()=>useApprenantTauxRealisation('indicateur-fictif'),{wrapper});
+    await waitFor(()=>expect(view.result.current.data?.reqTotal).toBe(required));
+    expect(view.result.current.data).toMatchObject({pctTotal:50,totalParSignatures:true,signatures:{signees:1,attendues:2}});
+    state.ratio={signees:2,attendues:2,taux:100,raison:null};
+    act(()=>state.subscription?.());
+    await waitFor(()=>expect(view.result.current.data?.pctTotal).toBe(100));
+    view.unmount();client.clear();
   });
   it("isole deux affichages simultanés, les doubles montages et la réouverture", async () => {
     state.learner = { type_apprenant: "vtc-e", heures_elearning: 60 };

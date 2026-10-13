@@ -14,6 +14,7 @@ import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { GEL_QUERY_KEY, chargerEtatGel, mentionGel } from "@/lib/releveJalonsGel";
 import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
+import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
@@ -105,15 +106,16 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const tableau = tableauAffichageJalons(calcul);
   const heures = heuresEnregistreesJalons(calcul, preuvesFetching ? null : preuves);
   const pct = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
+  const rouge = regleSuiviFormation(apprenant).elearning;
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">{titre ?? "Jalons pondérés (indicatif interne)"}</span>
-        <span className="text-lg font-bold text-foreground">{r.taux.toLocaleString("fr-FR")}%</span>
+        <span className={`text-xs uppercase tracking-wide ${rouge ? "text-destructive" : "text-muted-foreground"}`}>{titre ?? "Jalons pondérés (indicatif interne)"}</span>
+        <span className={`text-lg font-bold ${rouge ? "text-destructive" : "text-foreground"}`}>{r.taux.toLocaleString("fr-FR")}%</span>
       </div>
       <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
-        <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, r.taux)}%` }} />
+        <div className={`h-full rounded-full ${rouge ? "bg-destructive" : "bg-foreground/60"}`} style={{ width: `${Math.min(100, r.taux)}%` }} />
       </div>
       <div className={`mt-1 text-xs ${gel ? "font-medium text-foreground" : "text-muted-foreground"}`}>{mentionGel(etatGel)}</div>
       {((calcul as any).pagesNonRecomptees?.length ?? 0) > 0 && (

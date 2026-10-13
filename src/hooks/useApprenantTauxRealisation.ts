@@ -9,6 +9,7 @@ import { computePresentielHours, presentielProgress } from "@/lib/presentielHour
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
 import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
+import { regleSuiviFormation, chargerRatioSignatures, type RatioSignatures } from "@/lib/suiviFormationIndicateurs";
 
 
 export interface TauxRealisation {
@@ -24,6 +25,8 @@ export interface TauxRealisation {
   pctElearning: number;
   pctPresentiel: number;
   pctTotal: number;
+  signatures?: RatioSignatures;
+  totalParSignatures?: boolean;
   /** Date/heure de la PREMIÈRE activité pédagogique réelle (jamais une simple connexion) */
   premiereActiviteAt: string | null;
   /** Dernier jour de cours/exercice/quiz, plafonné à la fin d'accès */
@@ -45,7 +48,12 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     const channel = supabase.channel(`taux-presence-${apprenantId}-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
-      }).subscribe();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations_pratique", filter: `apprenant_id=eq.${apprenantId}` }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_blocs" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "planning_pratique_config" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [apprenantId, queryClient]);
   return useQuery<TauxRealisation | null>({
@@ -60,12 +68,17 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
 
       // Toujours relire les heures contractuelles en base : le prop peut ne pas
       // encore etre charge au premier rendu (sinon taux calcules sur 0h).
-      const { data: apprenantRow } = await supabase
+      const { data: apprenantRow, error: apprenantError } = await supabase
         .from("apprenants")
-        .select("heures_elearning, heures_presentiel, heures_totales, type_apprenant, formation_choisie, date_fin_cours_en_ligne, date_fin_formation")
+        .select("heures_elearning, heures_presentiel, heures_totales, type_apprenant, formation_choisie, date_debut_formation, date_fin_cours_en_ligne, date_fin_formation")
         .eq("id", apprenantId)
         .maybeSingle();
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
+      if (apprenantError || !apprenantRow) throw apprenantError ?? new Error("Formation indisponible");
+      const regle = regleSuiviFormation(apprenant);
+      const signatures = regle.presentiel && regle.filiere
+        ? await chargerRatioSignatures(apprenantId, regle.filiere).catch(() => ({ signees: 0, attendues: 0, taux: null, raison: "Signatures / planning indisponibles : lecture échouée" }))
+        : undefined;
 
       const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, apprenantTypeRow] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
@@ -189,8 +202,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
 
       const reqElearning = requiredElearningHours(apprenant);
       const presence = presentielProgress(theorieHours + pratiqueMinutes / 60, Number(apprenant?.heures_presentiel) || 0, pratiqueDetails);
-      const reqPresentiel = presence.required;
-      const reqTotal = Number(apprenant?.heures_totales) || reqElearning + reqPresentiel;
+      const reqPresentiel = regle.heures ?? presence.required;
+      const reqTotal = regle.heures ?? (Number(apprenant?.heures_totales) || reqElearning + reqPresentiel);
 
       // Actual proven time is never capped at the contractual target.
       const doneElearning = onlineMin / 60;
@@ -218,7 +231,9 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         reqTotal,
         pctElearning: pct(doneElearning, reqElearning),
         pctPresentiel: pct(donePresentiel, reqPresentiel),
-        pctTotal: pct(doneElearning + donePresentiel, reqTotal),
+        pctTotal: regle.presentiel ? signatures?.taux ?? 0 : pct(doneElearning + donePresentiel, reqTotal),
+        signatures,
+        totalParSignatures: regle.presentiel,
         premiereActiviteAt: firstActualActivityStart !== undefined
           ? new Date(firstActualActivityStart).toISOString()
           : pedagogicalActTs.length > 0

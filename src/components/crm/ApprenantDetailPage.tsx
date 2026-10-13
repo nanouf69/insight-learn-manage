@@ -47,6 +47,7 @@ import { useCandidatModules } from "@/hooks/useCandidatModules";
 import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
+import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
@@ -629,37 +630,40 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               { label: "Modules (jalons)", pct: modulesProgression && modulesProgression.total > 0 ? Math.round((modulesProgression.termines / modulesProgression.total) * 100) : 0, done: modulesProgression?.termines, req: modulesProgression?.total, strong: false, unit: "modules" },
               { label: "Taux e-learning", pct: taux.pctElearning, done: taux.doneElearning, req: taux.reqElearning, strong: false },
               { label: "Taux présentiel", pct: taux.pctPresentiel, done: taux.donePresentiel, req: taux.reqPresentiel, strong: false },
-              { label: "TAUX TOTAL", pct: taux.pctTotal, done: taux.doneElearning + taux.donePresentiel, req: taux.reqTotal, strong: true },
+              { label: "TAUX TOTAL", pct: taux.pctTotal, done: taux.totalParSignatures ? taux.donePresentiel : taux.doneElearning + taux.donePresentiel, req: taux.reqTotal, strong: true },
             ].map((t) => (
               <div key={t.label} data-indicateur={t.label}>
               <div
                 className={`rounded-md px-3 py-2 ${t.strong ? "bg-primary/10 border border-primary/30" : "bg-muted/50"}`}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className={`text-xs uppercase tracking-wide ${t.strong ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                  <span className={`text-xs uppercase tracking-wide ${t.strong && taux.totalParSignatures ? "text-destructive font-semibold" : t.strong ? "text-primary font-semibold" : "text-muted-foreground"}`}>
                     {t.label}
                   </span>
-                  <span className={`text-lg font-bold ${t.strong ? "text-primary" : "text-foreground"}`}>{(t as any).unit === "modules" && !modulesProgression ? "—" : `${t.pct}%`}</span>
+                  <span className={`text-lg font-bold ${t.strong && taux.totalParSignatures ? "text-destructive" : t.strong ? "text-primary" : "text-foreground"}`}>{t.strong && taux.totalParSignatures && taux.signatures?.taux == null ? "—" : (t as any).unit === "modules" && !modulesProgression ? "—" : `${t.pct.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%`}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${t.strong ? "bg-primary" : "bg-foreground/60"}`}
+                    className={`h-full rounded-full ${t.strong && taux.totalParSignatures ? "bg-destructive" : t.strong ? "bg-primary" : "bg-foreground/60"}`}
                     style={{ width: `${Math.min(100, t.pct)}%` }}
                   />
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {(t as any).unit === "modules"
                     ? modulesProgression ? `${t.done} / ${t.req} modules réalisés` : "Progression des modules indisponible"
-                    : `${formatLearningHours(t.done)} / ${t.req > 0 ? `${t.req}h` : "Heures non renseignées"}`}
+                    : t.strong && taux.totalParSignatures
+                      ? taux.signatures?.raison ?? `${taux.signatures?.signees} / ${taux.signatures?.attendues} signatures apprenant signées / attendues`
+                      : `${formatLearningHours(t.done)} / ${t.req > 0 ? `${t.req}h` : "Heures non renseignées"}`}
                 </div>
-                {t.strong && (
+                {t.strong && taux.totalParSignatures && <div className="mt-1 text-xs text-muted-foreground">Heures prévues : {taux.reqTotal} h · Connexions et quiz exclus du taux total</div>}
+                {t.strong && !taux.totalParSignatures && (
                   <div className={`mt-0.5 text-xs font-medium ${taux.premiereActiviteAt ? "text-primary" : "text-muted-foreground"}`}>
                     {taux.premiereActiviteAt
                       ? `Début des cours le ${new Date(taux.premiereActiviteAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`
                       : "Aucune activité commencée"}
                   </div>
                 )}
-                {t.strong && taux.derniereActiviteAt && (
+                {t.strong && !taux.totalParSignatures && taux.derniereActiviteAt && (
                   <div className="mt-0.5 text-xs font-medium text-primary">
                     {`Dernière activité (cours/quiz) le ${new Date(taux.derniereActiviteAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`}
                   </div>
@@ -667,7 +671,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
               {/* Jalons pondérés : juste sous « Modules (jalons) », indicatif interne admin */}
               {(t as any).unit === "modules" && (
-                <JalonsPonderesCard apprenant={apprenant} apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} />
+                <JalonsPonderesCard apprenant={apprenant} apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} titre={regleSuiviFormation(apprenant).elearning ? "TAUX DE JALONS" : undefined} />
               )}
               </div>
             ))}

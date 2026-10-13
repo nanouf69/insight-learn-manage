@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Indicateurs à compter du 01/07/2026
+- [ ] Affichage uniquement : objectifs présentiels VTC 66/TAXI 96/TA 36 ; total = signatures apprenant valides / créneaux attendus du planning, sans connexion/quiz.
+- [ ] Rouge pour jalons e-learning et total présentiel ; tests fictifs, anciennes formations conservées, contrôle et publication autorisée.
+- Fichiers : nouveau calcul/lecteur `suiviFormationIndicateurs.ts`, `useApprenantTauxRealisation.ts`, `ApprenantDetailPage.tsx`, `JalonsPonderesCard.tsx`, tests et règles `AGENTS.md` ; aucune écriture élève.
+
 ## Gestion partie 2 — cadrage 38 et 40 (13/10)
 - [x] Corriger uniquement la géométrie des deux encadrés droits du support actuel ; originaux, textes et styles intégralement conservés (comparaison XML hors géométrie).
 - [x] PDF/PPTX CDN téléchargés, validation PPTX et 52 tests ciblés réussis ; rendu isolé ordinateur/tablette/mobile sans compte élève ni erreur JS. Défaut de centrage au zoom détecté puis corrigé pour rendre les deux bords accessibles.
