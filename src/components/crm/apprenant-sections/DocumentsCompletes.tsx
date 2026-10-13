@@ -835,7 +835,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           <SignaturesRassembleesExport apprenant={apprenant} />
         </CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
-          {bilanEdofErreur ? (
+          {/e-?learning/i.test(formationEdof) ? null : bilanEdofErreur ? (
             <p role="alert" className="text-sm text-destructive">Total des signatures : indisponible (erreur de lecture).</p>
           ) : !bilanEdof ? (
             <p className="text-sm text-muted-foreground">Calcul du total des signatures…</p>
@@ -846,7 +846,12 @@ export function DocumentsCompletes({ apprenant }: Props) {
                 {" "}— présentiel {bilanEdof.theorie}/{bilanEdof.objectifTheorie}, pratique {bilanEdof.pratique}/{bilanEdof.objectifPratique}
                 {" "}({bilanEdof.filiere}{bilanEdof.filiere === "VTC" ? (bilanEdof.soir ? " cours du soir" : " journée") : ""})
               </p>
-              {bilanEdof.complet && (
+              {bilanEdof.excedent && (
+                <p role="alert" className="text-base font-bold text-destructive">
+                  Problème : plus de signatures que prévu ({bilanEdof.total} pour {bilanEdof.objectifTotal} attendues) — à vérifier.
+                </p>
+              )}
+              {bilanEdof.complet && !bilanEdof.excedent && (
                 <p className="text-base font-bold text-destructive">Possibilité de valider sur EDOF</p>
               )}
             </div>
