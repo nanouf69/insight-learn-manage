@@ -756,7 +756,17 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     }
     return "retry";
   } catch (e) {
-    console.error("[answerPersistence] Erreur réseau sauvegarde", e);
+    // Corrélation technique minimale (aucune réponse, jeton ni donnée personnelle) :
+    // distingue l'abandon volontaire après ENVOI_DELAI_MS d'une coupure réseau.
+    // Dans les deux cas l'élément RESTE en file et sera renvoyé.
+    const delaiDepasse = !!controller?.signal.aborted;
+    console.error(
+      delaiDepasse
+        ? `[answerPersistence] Délai d'envoi dépassé (${ENVOI_DELAI_MS / 1000} s) — réponse conservée en file, nouvel essai`
+        : "[answerPersistence] Erreur réseau sauvegarde — réponse conservée en file, nouvel essai",
+      { tentative: (item.attempts ?? 0) + 1, enLigne: typeof navigator !== "undefined" ? navigator.onLine : null, enFile: readQueue().length },
+      delaiDepasse ? "" : e,
+    );
     return "retry";
   } finally {
     if (abandon) clearTimeout(abandon);
