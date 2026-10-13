@@ -14,7 +14,7 @@ describe("consultation admin mail", () => {
   it("choisit la bonne copie archivée ou aucune", () => {
     const a: any = { id: "1", destinataire: "Cma@x.fr", sujet: "Ajout élève pratique", sent_at: "2026-10-09T16:06:00Z" };
     const c = (id: string, subject: string, sent_at: string, r = ["cma@x.fr"]) => ({ id, subject, sent_at, recipients: r, created_at: sent_at, body_html: "x" } as any);
-    expect(choisirCopie(a, [c("a", "Liste candidats", "2026-10-09T16:06:00Z"), c("b", "Ajout élève pratique", "2026-10-09T16:07:00Z"), c("z", "Ajout élève pratique", "2026-10-09T16:06:00Z", ["autre@x.fr"])])?.id).toBe("b");
+    expect((choisirCopie(a, [c("a", "Liste candidats", "2026-10-09T16:06:00Z"), c("b", "Ajout élève pratique", "2026-10-09T16:07:00Z"), c("z", "Ajout élève pratique", "2026-10-09T16:06:00Z", ["autre@x.fr"])]) as any)?.id).toBe("b");
     expect(choisirCopie(a, [c("b", "Ajout élève pratique", "2026-10-09T16:07:00Z"), c("d", "Ajout élève pratique", "2026-10-09T16:08:00Z")])).toBe("ambigu");
     expect(choisirCopie(a, [c("c", "Ajout élève pratique", "2026-10-09T18:00:00Z")])).toBeNull();
   });
