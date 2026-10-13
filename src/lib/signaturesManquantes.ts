@@ -159,6 +159,38 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 // ── Objectif EDOF : nombre de signatures attendues selon la formation ──
 // VTC soir : 20 théorie + 2 pratique = 22 ; VTC journée : 40 + 2 = 42 ;
 // TAXI : 80 + 2 = 82. Signature comptée une seule fois par date + créneau.
+
+/** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
+export function datesDuPlanning(sessionRows: any[], reservations: any[]): { datesTheorie: Set<string>; datesPratique: Set<string>; soir: boolean } {
+  const datesPratique = new Set<string>();
+  const datesTheorie = new Set<string>();
+  let soir = false;
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || row?.liste_attente === true || annulee(s)) continue;
+    const type = String(s.type_session ?? '').toLowerCase();
+    if (type.includes('pratique')) {
+      const d = normDate(s.date_debut);
+      if (estDate(d)) datesPratique.add(d);
+    } else if (type.includes('theorique')) {
+      const h = String(row.heure_debut_personnalisee ?? s.heure_debut ?? '').slice(0, 5);
+      if (h >= '17:00') soir = true;
+      // Mêmes bornes que les signatures manquantes : intersection inscription ∩ session.
+      const debutBrut = normDate(row.date_debut || s.date_debut);
+      const finBrute = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
+      const debutSession = normDate(s.date_debut);
+      const finSession = normDate(s.date_fin || s.date_debut);
+      const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
+      const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
+      if (estDate(debut) && estDate(fin) && fin >= debut) for (const d of joursOuvres(debut, fin)) datesTheorie.add(d);
+    }
+  }
+  for (const r of reservations ?? []) {
+    const d = normDate(r?.date_choisie);
+    if (estDate(d)) datesPratique.add(d);
+  }
+  return { datesTheorie, datesPratique, soir };
+}
 export interface BilanSignaturesEdof {
   filiere: 'VTC' | 'TAXI' | 'TA';
   excedent: boolean;
