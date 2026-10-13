@@ -40,6 +40,7 @@ import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
 import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/components/cours-en-ligne/ModulesProgressionEleve";
+import { resolveFormationId, normalizeModuleIdForDashboard, modulesAttribuesDashboard, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
@@ -73,81 +74,6 @@ import {
 
 
 const StableModuleDetailView = memo(ModuleDetailView);
-
-// Map CRM values to formation IDs (supports lowercase, aliases and multi-selection values like "x + y")
-const FORMATION_ALIASES: Record<string, FormationId> = {
-  "vtc": "vtc",
-  "vtc-exam": "vtc",
-  "vtc-e-presentiel": "vtc",
-  "vtc-e": "vtc-elearning",
-  "vtc-elearning": "vtc-elearning",
-  "vtc-elearning-1099": "vtc-elearning",
-  "taxi": "taxi",
-  "taxi-exam": "taxi",
-  "taxi-e-presentiel": "taxi",
-  "taxi-e": "taxi-elearning",
-  "taxi-elearning": "taxi-elearning",
-  "ta": "taxi-pour-vtc",
-  "ta-e-presentiel": "taxi-pour-vtc",
-  "ta-e": "taxi-pour-vtc-elearning",
-  "passerelle-taxi": "taxi-pour-vtc",
-  "passerelle-taxi-elearning": "taxi-pour-vtc-elearning",
-  "va": "vtc-pour-taxi",
-  "va-e-presentiel": "vtc-pour-taxi",
-  "va-e": "vtc-pour-taxi",
-  "passerelle-vtc": "vtc-pour-taxi",
-  "passerelle-vtc-elearning": "vtc-pour-taxi",
-  "vtc-s": "vtc-cours-du-soir",
-  "vtc-cours-du-soir": "vtc-cours-du-soir",
-  "continue-vtc": "continue-vtc",
-  "pa-vtc": "continue-vtc",
-  "formation-continue-vtc": "continue-vtc",
-  "continue-taxi": "continue-taxi",
-  "pa-taxi": "continue-taxi",
-  "formation-continue-taxi": "continue-taxi",
-};
-
-const normalizeFormationKey = (value: string | null | undefined): string =>
-  (value || "").split(" + ")[0].trim().toLowerCase().replace(/\s+/g, "-");
-
-const inferFormationFromModules = (modulesAutorises: number[] | null | undefined): FormationId | null => {
-  if (!modulesAutorises || modulesAutorises.length === 0) return null;
-
-  const expanded = new Set(expandModulesAutorises(modulesAutorises) || modulesAutorises);
-  let best: { id: FormationId; score: number } | null = null;
-
-  for (const formation of FORMATIONS) {
-    const formationModuleIds = MODULES_DATA
-      .filter((module) => module.formations.includes(formation.id))
-      .map((module) => module.id);
-
-    const score = formationModuleIds.reduce((acc, moduleId) => acc + (expanded.has(moduleId) ? 1 : 0), 0);
-
-    if (!best || score > best.score) {
-      best = { id: formation.id, score };
-    }
-  }
-
-  return best && best.score > 0 ? best.id : null;
-};
-
-const resolveFormationId = (
-  typeApprenant: string | null | undefined,
-  formationChoisie: string | null | undefined,
-  modulesAutorises: number[] | null | undefined,
-): FormationId | null => {
-  // Priority: explicit assigned modules (source of truth for learner access)
-  const byModules = inferFormationFromModules(modulesAutorises);
-  if (byModules) return byModules;
-
-  const byType = FORMATION_ALIASES[normalizeFormationKey(typeApprenant)];
-  if (byType) return byType;
-
-  const byFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
-  if (byFormation) return byFormation;
-
-  return null;
-};
 
 const getConnectedDeviceDetails = (userAgent: string | null | undefined) => {
   const ua = userAgent || "";
@@ -363,45 +289,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
 };
 
-const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
-  "vtc": [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
-  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
-  "vtc-elearning": [26, 2, 3, 4, 35, 5, 60, 70, 8, 50],
-  "taxi": [1, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 71, 6, 84, 51],
-  "taxi-elearning": [26, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 71, 6, 51],
-  "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 84, 52],
-  "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 72, 6, 52],
-  "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
-  "continue-vtc": [81, 5, 87, 83, 85, 88, 89],
-  "continue-taxi": [82, 11, 92, 84, 86, 93, 94, 95, 96, 51],
-  "mobilite-taxi": [90, 84, 86],
-};
-
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64, 70, 71, 72, 73, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96]);
-const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
-  25: 2,
-  14: 2,
-  15: 2,
-  16: 2,
-  17: 2,
-  18: 2,
-  19: 2,
-  39: 10,
-  20: 10,
-  21: 10,
-  22: 10,
-  23: 10,
-  24: 10,
-};
-
-const normalizeModuleIdForDashboard = (moduleId: number) => DASHBOARD_PARENT_MODULE_IDS[moduleId] ?? moduleId;
-
 // Reverse map: parent module → list of child module IDs
-const PARENT_TO_CHILDREN: Record<number, number[]> = {};
-for (const [child, parent] of Object.entries(DASHBOARD_PARENT_MODULE_IDS)) {
-  if (!PARENT_TO_CHILDREN[parent]) PARENT_TO_CHILDREN[parent] = [];
-  PARENT_TO_CHILDREN[parent].push(Number(child));
-}
+const PARENT_TO_CHILDREN = DASHBOARD_PARENT_TO_CHILDREN;
 
 /**
  * Compute the set of truly fully-completed module IDs.
@@ -2020,57 +1909,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Dashboard
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
-  const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
-
-  // Aligner la vue apprenant avec les modules gérés + fusionner les sous-modules sous le parent (2/10)
-  const rawAuthorizedIds = Array.from(
-    new Set(
-      (expandModulesAutorises(apprenant?.modules_autorises) || apprenant?.modules_autorises || [])
-        .map((id) => Number(id))
-        .filter((id) => Number.isFinite(id)),
-    ),
-  ) as number[];
-
-  const normalizedAuthorizedIds = Array.from(
-    new Set(rawAuthorizedIds.map((id) => normalizeModuleIdForDashboard(id))),
-  ).filter((id) => MANAGED_MODULE_IDS.has(id));
-
-  const formationDefaultIds = FORMATION_DEFAULT_MODULES[selectedFormation] || [];
-  const normalizedFormationDefaultIds = Array.from(
-    new Set(formationDefaultIds.map((id) => normalizeModuleIdForDashboard(id))),
-  ).filter((id) => MANAGED_MODULE_IDS.has(id));
-
-  // Pour les formations continues, toujours inclure l'ensemble des modules par défaut
-  // (évite que d'anciens apprenants n'aient pas accès aux nouveaux modules ajoutés)
-  const isFCFormation = selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi";
-  const effectiveAuthorizedIds = isFCFormation
-    ? Array.from(new Set([...normalizedAuthorizedIds, ...normalizedFormationDefaultIds]))
-    : normalizedAuthorizedIds;
-
-  const normalizedAuthorizedSet = new Set(effectiveAuthorizedIds);
-  const orderedPrimaryIds = normalizedFormationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
-  const orderedExtraIds = effectiveAuthorizedIds.filter((id) => !normalizedFormationDefaultIds.includes(id));
-  const orderedAuthorizedIds = [...orderedPrimaryIds, ...orderedExtraIds];
-
-  const orderedAuthorizedModules = orderedAuthorizedIds
-    .map((id) => MODULES_DATA.find((module) => module.id === id))
-    .filter((module): module is (typeof MODULES_DATA)[number] => !!module && module.formations.includes(selectedFormation));
-
-  const fallbackModules = normalizedFormationDefaultIds
-    .map((id) => MODULES_DATA.find((module) => module.id === id))
-    .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
-
-  const sourceModules = orderedAuthorizedModules.length > 0
-    ? orderedAuthorizedModules
-    : (fallbackModules.length > 0 ? fallbackModules : allModules);
-
-  // Whitelist stricte pour Formation Continue TAXI : uniquement les modules
-  // officiels du parcours FC TAXI (bilan, cours+QCM, émargements, financeur,
-  // demande carte pro, remboursement, fin de formation).
-  const FC_TAXI_WHITELIST = new Set([82, 11, 92, 84, 86, 93, 94, 95, 96, 51]);
-  const filteredSourceModules = selectedFormation === "continue-taxi"
-    ? sourceModules.filter((m) => FC_TAXI_WHITELIST.has(m.id))
-    : sourceModules;
+  const filteredSourceModules = modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises);
 
   const modules = filteredSourceModules.map((module) => ({
     ...module,
