@@ -3,6 +3,10 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 — Planning pratique : accès direct CRM
+- Demande explicite : cliquer le nom d'un apprenant dans le planning ouvre sa fiche CRM via le callback admin existant, identifiant apprenant réel (pas nom ni réservation).
+- Fichiers : PratiqueApprenantLink.tsx, ExamenReussitePage.tsx (VTC/TAXI), test associé, AGENTS, roadmap, journal. Aucun changement de données, horaires, inscriptions, signatures ou droits ; aucun mail/SMS/IA.
+
 ## 2026-10-13 — Dispense des jeux Lyon pour parcours déjà terminés
 - Accord explicite : ne pas compter les deux nouveaux jeux pour les personnes ayant déjà terminé tous leurs modules avant leur ajout (date du registre : 10:41 UTC).
 - Preuves readonly déjà chargées : status completed et date antérieure pour chaque module pédagogique attribué, normalisation parent/enfants partagée. Archives de présence exclues du contrôle d'éligibilité seulement, compteur inchangé hors exception individuelle antérieure.
