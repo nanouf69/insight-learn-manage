@@ -154,7 +154,7 @@ describe("revue jalons", () => {
       expect(readFileSync(f, "utf8")).toMatch(/signalerContenuModifie\(/);
     const card = readFileSync("src/components/crm/apprenant-sections/JalonsPonderesCard.tsx", "utf8");
     expect(card).toMatch(/ecouterContenuModifie/);
-    expect(card).toMatch(/!calcul \|\| \(!gel && isFetching\)/);
+    expect(card).toMatch(/!calcul \|\| isFetching/);
   });
   it("jalon pratique virtuel : 360 points et progression 0 / 3 h / 6 h", () => {
     const volumes = vol("vtc", "vtc-e").volumes;
