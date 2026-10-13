@@ -23,6 +23,13 @@ beforeEach(() => {
 });
 
 describe('Candidats : même parcours et preuves que l’élève, lecture simulée', () => {
+  it('dispense individuelle compte dix validations sans écrire de réponses', async () => {
+    fake.rows.apprenants.data = { type_apprenant: 'va-e', modules_autorises: null };
+    fake.rows.apprenant_module_completion.data = [33,41,3,29,30,38,63,73,8,53].map(module_id => ({ module_id, status: 'completed' }));
+    expect(await chargerCandidatModules('bf12b32a-f8a2-434c-b855-f6033de38c2f')).toMatchObject({ total: 10, termines: 10, restants: [] });
+    expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 11, termines: 9 });
+    expect(fake.rows.reponses_apprenants.data).toEqual([]);
+  });
   it.each(['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning', 'vtc-pour-taxi'] as const)('conserve les modules par défaut %s', formation => {
     expect(modulesAttribuesDashboard(formation, null).map(m => m.id)).toEqual(FORMATION_DEFAULT_MODULES[formation]);
   });
