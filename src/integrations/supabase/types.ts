@@ -5484,24 +5484,30 @@ export type Database = {
       presentiel_heures_validees: {
         Row: {
           apprenant_id: string
+          categorie: string | null
           created_at: string
           created_by: string | null
+          date_presence: string | null
           heures: number
           id: string
           motif: string | null
         }
         Insert: {
           apprenant_id: string
+          categorie?: string | null
           created_at?: string
           created_by?: string | null
+          date_presence?: string | null
           heures: number
           id?: string
           motif?: string | null
         }
         Update: {
           apprenant_id?: string
+          categorie?: string | null
           created_at?: string
           created_by?: string | null
+          date_presence?: string | null
           heures?: number
           id?: string
           motif?: string | null
