@@ -2253,13 +2253,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   });
   const { effectivelyCompletedIds, unlockedModuleIds } = unlockState;
 
-  // Dérogation individuelle : débloque le module Pratique pour les apprenants
-  // explicitement autorisés, sans modifier leur progression enregistrée.
-  applyPratiqueUnlockDerogation(
+  // Règle générale e-learning (accord du responsable, 13/10/2026) : le module
+  // Pratique est débloqué pour tous les apprenants e-learning, sans modifier
+  // leur progression enregistrée ni la règle séquentielle des autres modules.
+  applyPratiqueUnlockElearning(
     unlockedModuleIds,
     modules,
-    apprenant?.id,
-    PRATIQUE_UNLOCK_APPRENANT_IDS,
+    isElearning,
     PRATIQUE_MODULE_IDS,
   );
 
