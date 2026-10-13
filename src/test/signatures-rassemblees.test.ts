@@ -7,6 +7,9 @@ const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCA
 const row = (id = 'fixture-1', demi = 'matin') => ({ id, date_emargement: '2026-10-13', demi_journee: demi, signed_at: '2026-10-13T07:30:00Z', signature_data_url: png, masque: false });
 const session = (end = '16:00') => ({ sessions: { type_session: 'theorie', date_debut: '2026-10-01', date_fin: '2026-10-31', heure_debut: '09:00', heure_fin: end } });
 describe('PDF de signatures rassemblées sans mutation', () => {
+  it('ordonne le matin avant l’après-midi', () => {
+    expect(rassemblerSignatures([row('a', 'apres_midi'), row('b')], [], [])[0].creneau).toBe('Matin');
+  });
   it('préserve les versions distinctes, pas la copie doublonnée du même ID', () => {
     expect(rassemblerSignatures([row('a'), row('b'), row('a')], [], []).map(r => r.id)).toEqual(['a', 'b']);
   });

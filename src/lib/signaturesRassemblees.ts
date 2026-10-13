@@ -5,6 +5,7 @@ import { pratiqueDocumentHours } from '@/lib/pratiqueDocumentHours';
 export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; signedAt: string | null; signature: string; absent: boolean }
 const labels: Record<string, string> = { matin: 'Matin', apres_midi: 'Après-midi', soir: 'Soir', soir_1: 'Soir 1', soir_2: 'Soir 2' };
 const evening: Record<string, string> = { soir: '17h00 - 21h00', soir_1: '17h00 - 18h30', soir_2: '18h30 - 21h00' };
+const order: Record<string, number> = { Matin: 0, 'Après-midi': 1, Soir: 2, 'Soir 1': 3, 'Soir 2': 4 };
 
 /** Preserve every stored signature ID, including multiple versions on the same date. */
 export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[], sessions: any[]): SignatureRassemblee[] {
@@ -33,7 +34,7 @@ export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[]
       sourceHoraires: planning.length ? 'Planning pratique consulté à l’export' : candidates.length === 1 ? 'Session attribuée / créneau enregistré' : 'Source absente ou ambiguë',
       activite: planning.length ? `Pratique ${planning[0].typeFormation.toUpperCase()}` : theory.length ? 'Formation présentielle' : 'Présence (type non déterminé)',
       signedAt: r.signed_at ?? null, signature: r.signature_data_url, absent: r.absent === true };
-  }).sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau) || String(a.signedAt ?? '').localeCompare(String(b.signedAt ?? '')) || a.id.localeCompare(b.id));
+  }).sort((a, b) => a.date.localeCompare(b.date) || (order[a.creneau] ?? 5) - (order[b.creneau] ?? 5) || String(a.signedAt ?? '').localeCompare(String(b.signedAt ?? '')) || a.id.localeCompare(b.id));
 }
 
 async function paginer(build: (from: number, to: number) => any): Promise<any[]> {
