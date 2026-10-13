@@ -22,6 +22,7 @@ import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
 import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
+import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
 
 interface Props {
   apprenant: any;
@@ -814,6 +815,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
             <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
           </div>
+          <SignaturesRassembleesExport apprenant={apprenant} />
         </CardContent>
       </Card>
 

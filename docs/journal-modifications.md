@@ -3,6 +3,12 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 — Formulaires : PDF des signatures rassemblées
+- Demande explicite : nouveau téléchargement global des émargements réels, pratique incluse, dates de présence et horaires séparés de la date/heure de signature (Paris).
+- Lecture seule schéma et code avant édition ; signatures originales par ID, versions distinctes conservées, masqués exclus. Aucun fallback de signature partagée, aucune écriture, aucun changement de total/gels/signatures/relances. Sources horaires absentes/ambiguës explicitement signalées.
+- Fichiers : signaturesRassemblees.ts, pdf/signatures-rassemblees.ts, SignaturesRassembleesExport.tsx, DocumentsCompletes.tsx, tests, AGENTS, roadmap, journal. Export préparé après contrôle rôle admin et téléchargement au clic distinct ; cache lié au compte/dossier.
+- PASS : tests fictifs de générations/horaires et bouton Formulaires rendu avec services simulés, téléchargement réel PDF 30 signatures/6 pages. Six pages inspectées, sans coupure ni image manquante ; ordre matin/après-midi corrigé après inspection. Bouton ordinateur/téléphone visible sans débordement, aucune erreur JS/externalité. Compilation automatique OK à 15:41:03 UTC. Dossiers réels NON TESTÉS, aucune publication demandée.
+
 ## 2026-10-13 — Dispenses Lyon dans les compteurs CRM
 - Cause readonly : compteur CRM brut et calcul pondéré courant n'appliquaient pas les dispenses existantes ; Zekkour pénalisé par les deux jeux. Thierno BAH identifié par UUID ; son module 5 reste in_progress, donc aucune dispense historique globale ni validation inventée.
 - Correctif : dispense individuelle des deux jeux pour BAH uniquement ; fonction commune des dispenses pour progression élève/candidats et jalons actuels ; compteur fiche CRM via useCandidatModules. Aucun changement des heures, réponses, notes, validations ni des 22 calculs figés ; aucun envoi ni publication demandée.
