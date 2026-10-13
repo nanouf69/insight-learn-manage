@@ -50,9 +50,9 @@ async function paginer(build: (from: number, to: number) => any): Promise<any[]>
   throw new Error('Volume trop important : export incomplet refusé');
 }
 
-export async function chargerSignaturesRassemblees(apprenantId: string) {
-  // Le PDF ne contient que les signatures faites aux dates du planning :
-  // les signatures hors planning sont conservées en base mais exclues de l'export.
+export async function chargerSignaturesRassemblees(apprenantId: string, seulementPlanning = false) {
+  // seulementPlanning : uniquement les signatures aux dates de la session et de la pratique
+  // (les signatures hors planning restent conservées en base).
   const [rows, reservations, sessions] = await Promise.all([
     paginer((from, to) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).eq('masque', false).order('id').range(from, to)),
     paginer((from, to) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(from, to)),
@@ -70,6 +70,6 @@ export async function chargerSignaturesRassemblees(apprenantId: string) {
     }) };
   });
   const { datesTheorie, datesPratique } = datesDuPlanning(sessions, reservations);
-  return rassemblerSignatures(rows, pratique, sessions)
-    .filter(s => datesTheorie.has(s.date) || datesPratique.has(s.date));
+  const toutes = rassemblerSignatures(rows, pratique, sessions);
+  return seulementPlanning ? toutes.filter(s => datesTheorie.has(s.date) || datesPratique.has(s.date)) : toutes;
 }
