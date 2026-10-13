@@ -6765,6 +6765,56 @@ export type Database = {
         }
         Relationships: []
       }
+      releve_jalons_gels: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          cree_par: string
+          date_fin_formation: string
+          empreinte: string
+          id: string
+          methode: string
+          motif: string
+          payload: Json
+          remplace_gel_id: string | null
+          version: number
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          cree_par: string
+          date_fin_formation: string
+          empreinte: string
+          id?: string
+          methode: string
+          motif: string
+          payload: Json
+          remplace_gel_id?: string | null
+          version: number
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          cree_par?: string
+          date_fin_formation?: string
+          empreinte?: string
+          id?: string
+          methode?: string
+          motif?: string
+          payload?: Json
+          remplace_gel_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releve_jalons_gels_remplace_gel_id_fkey"
+            columns: ["remplace_gel_id"]
+            isOneToOne: false
+            referencedRelation: "releve_jalons_gels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       releves_bancaires: {
         Row: {
           banque: string
@@ -7998,6 +8048,35 @@ export type Database = {
       examens_blancs_valider_si_complet: {
         Args: { _apprenant_id: string; _exam_id: string }
         Returns: undefined
+      }
+      figer_releve_jalons: {
+        Args: {
+          _apprenant_id: string
+          _empreinte: string
+          _methode: string
+          _motif: string
+          _nouvelle_version?: boolean
+          _payload: Json
+        }
+        Returns: {
+          apprenant_id: string
+          created_at: string
+          cree_par: string
+          date_fin_formation: string
+          empreinte: string
+          id: string
+          methode: string
+          motif: string
+          payload: Json
+          remplace_gel_id: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "releve_jalons_gels"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       generer_emargements_planning_pratique: {
         Args: { p_apprenant_id?: string }

@@ -1072,6 +1072,27 @@
       "when": 1791876555048,
       "tag": "0152_auto_sync_reservation_pratique_session",
       "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1791879475829,
+      "tag": "0153_releve_jalons_gels",
+      "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1791879749389,
+      "tag": "0154_figer_releve_jalons_date_fin",
+      "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1791879782258,
+      "tag": "0155_figer_releve_jalons_formats_date",
+      "breakpoints": true
     }
   ]
 }

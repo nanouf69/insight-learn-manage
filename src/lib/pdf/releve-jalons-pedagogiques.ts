@@ -23,6 +23,8 @@ export interface ReleveJalonsData {
   elementsACompleter: string[];
   preuvesJalons?: PreuvesJalons | null;
   generatedAt?: Date;
+  /** État du gel historique (figé / non figé / version historique non disponible). */
+  etatGel?: string;
 }
 
 const COMPANY = { name: "Ftransport", address: "86 Route de Genas 69003 Lyon", siret: "53516371400044" };
@@ -69,6 +71,7 @@ export function generateReleveJalonsPedagogiquesPdf(data: ReleveJalonsData, opts
     `Session : ${data.session?.nom || "Non renseigné"}`,
     `Période : ${safeDate(data.apprenant?.date_debut_cours_en_ligne || data.session?.date_debut || data.apprenant?.date_debut_formation)} au ${safeDate(data.apprenant?.date_fin_cours_en_ligne || data.session?.date_fin || data.apprenant?.date_fin_formation)}`,
     `Version de méthode : ${data.preuvesJalons?.version ?? "durées CPF 12/10/2026"}.`,
+    ...(data.etatGel ? [data.etatGel] : []),
     `Édité à Paris le ${formatParis(now)}. Capture figée des données disponibles à cet instant ; aucune donnée ni historique n’est modifié.`,
   ];
   let y = 47;

@@ -11,6 +11,7 @@ import { chargerPreuvesJalons } from "@/lib/preuvesJalons";
 import { Button } from "@/components/ui/button";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
 import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
+import { GEL_QUERY_KEY, chargerGelReleve, mentionGel } from "@/lib/releveJalonsGel";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
@@ -34,10 +35,18 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const isAdmin = !!userId && adminCheck?.userId === userId && adminCheck.admin;
   const key = formationJalonsElearning(typeApprenant, formationChoisie);
   const queryClient = useQueryClient();
-  // Poids recalculés depuis le contenu ACTUEL (questions) à chaque affichage, retour d'onglet et enregistrement éditeur.
-  const { data: calcul, isError, isFetching } = useQuery({
-    queryKey: [JALONS_VOLUMES_KEY, apprenantId, key, userId],
+  // Relevé figé à la clôture : prioritaire sur tout recalcul (le contenu actuel ne s'applique plus).
+  const gelQuery = useQuery({
+    queryKey: [GEL_QUERY_KEY, apprenantId, userId],
     enabled: !!isAdmin && !!key,
+    staleTime: 0,
+    queryFn: () => chargerGelReleve(apprenantId),
+  });
+  const gel = gelQuery.data ?? null;
+  // Poids recalculés depuis le contenu ACTUEL — seulement si aucun gel n'existe (lecture du gel réussie).
+  const { data: calculActuel, isError: calculError, isFetching } = useQuery({
+    queryKey: [JALONS_VOLUMES_KEY, apprenantId, key, userId],
+    enabled: !!isAdmin && !!key && gelQuery.isSuccess && !gelQuery.data,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
@@ -45,9 +54,11 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     refetchInterval: 5 * 60 * 1000, // filet de sécurité si un événement en direct est manqué
     queryFn: () => chargerCalculJalons({ apprenantId, typeApprenant, formationChoisie }),
   });
-  const { data: preuves, isFetching: preuvesFetching } = useQuery({
+  const calcul = (gel ? gel.payload.calcul : calculActuel) as typeof calculActuel;
+  const isError = gelQuery.isError || calculError;
+  const { data: preuvesActuelles, isFetching: preuvesFetching } = useQuery({
     queryKey: ["jalons-heures-enregistrees", apprenantId, userId, calcul?.key],
-    enabled: !!isAdmin && !!calcul && !!apprenant && afficherObjectifs,
+    enabled: !!isAdmin && !!calcul && !gel && !!apprenant && afficherObjectifs,
     staleTime: 0,
     gcTime: 0,
     queryFn: () => {
@@ -67,12 +78,14 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     return () => { stop(); void supabase.removeChannel(ch); };
   }, [isAdmin, key, apprenantId, queryClient]);
   if (!isAdmin || !key) return null;
+  const preuves = gel ? gel.payload.preuvesJalons : preuvesActuelles;
+  if (gelQuery.isError) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-destructive">Jalons pondérés : état du relevé figé illisible — aucun pourcentage affiché (ni figé, ni recalculé).</div>;
   if (isError) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché).</div>;
   // Pendant un recalcul, aucun ancien pourcentage n'est affiché.
-  if (!calcul || isFetching) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
+  if (!calcul || (!gel && isFetching)) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
   const r = calcul.resultat;
   const tableau = tableauAffichageJalons(calcul);
-  const heures = heuresEnregistreesJalons(calcul, preuvesFetching ? null : preuves);
+  const heures = heuresEnregistreesJalons(calcul, !gel && preuvesFetching ? null : preuves);
   const pct = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
@@ -84,6 +97,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
         <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, r.taux)}%` }} />
       </div>
+      <div className={`mt-1 text-xs ${gel ? "font-medium text-foreground" : "text-muted-foreground"}`}>{mentionGel(gel, apprenant ?? null)}</div>
       {finIncomplete && <div className="mt-1 text-xs text-muted-foreground">Contenus pédagogiques terminés ; validation de fin de formation / jalon administratif en attente.</div>}
       <Button variant="ghost" size="sm" onClick={() => setOpen(!open)} className="mt-1 gap-1 text-xs text-primary">
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />} Détail par module

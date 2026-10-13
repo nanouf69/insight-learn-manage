@@ -664,7 +664,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
               {/* Jalons pondérés : juste sous « Modules (jalons) », indicatif interne admin */}
               {(t as any).unit === "modules" && (
-                <JalonsPonderesCard apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} />
+                <JalonsPonderesCard apprenant={apprenant} apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} />
               )}
               </div>
             ))}

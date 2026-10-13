@@ -18,6 +18,7 @@ vi.mock("@/integrations/supabase/client", () => {
   const ch: any = { on: () => ch, subscribe: () => ch };
   return { supabase: { from: q, channel: () => ch, removeChannel: () => {} } };
 });
+vi.mock("@/lib/releveJalonsGel", async () => ({ ...(await vi.importActual<any>("@/lib/releveJalonsGel")), chargerGelReleve: async () => null }));
 vi.mock("@/components/cours-en-ligne/ModuleDetailView", () => ({ getInitialModuleContentForVolume: () => null }));
 vi.mock("@/components/cours-en-ligne/useLiveExamens", () => ({
   fetchLiveExamens: async () => {
