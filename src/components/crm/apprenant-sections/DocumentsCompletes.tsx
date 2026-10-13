@@ -452,6 +452,13 @@ export function DocumentsCompletes({ apprenant }: Props) {
     queryFn: () => chargerSignaturesManquantes(apprenant.id),
   });
 
+  const formationEdof = [apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.formation].filter(Boolean).join(" ");
+  const { data: bilanEdof, isError: bilanEdofErreur } = useQuery({
+    queryKey: ["apprenant-bilan-signatures-edof", apprenant.id, formationEdof],
+    enabled: !!apprenant?.id,
+    queryFn: () => chargerBilanSignaturesEdof(apprenant.id, formationEdof),
+  });
+
   const downloadJSON = (doc: any) => {
     const blob = new Blob([JSON.stringify(doc.donnees, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -826,6 +833,24 @@ export function DocumentsCompletes({ apprenant }: Props) {
             <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
           </div>
           <SignaturesRassembleesExport apprenant={apprenant} />
+        </CardContent>
+        <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
+          {bilanEdofErreur ? (
+            <p role="alert" className="text-sm text-destructive">Total des signatures : indisponible (erreur de lecture).</p>
+          ) : !bilanEdof ? (
+            <p className="text-sm text-muted-foreground">Calcul du total des signatures…</p>
+          ) : (
+            <div className="text-sm space-y-1">
+              <p className="text-foreground">
+                <strong>Total signatures : {bilanEdof.total} / {bilanEdof.objectifTotal}</strong>
+                {" "}— présentiel {bilanEdof.theorie}/{bilanEdof.objectifTheorie}, pratique {bilanEdof.pratique}/{bilanEdof.objectifPratique}
+                {" "}({bilanEdof.filiere}{bilanEdof.filiere === "VTC" ? (bilanEdof.soir ? " cours du soir" : " journée") : ""})
+              </p>
+              {bilanEdof.complet && (
+                <p className="text-base font-bold text-destructive">Possibilité de valider sur EDOF</p>
+              )}
+            </div>
+          )}
         </CardContent>
         <CardContent className="px-4 pb-4 pt-0">
           {signaturesManquantesErreur ? (
