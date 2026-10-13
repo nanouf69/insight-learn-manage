@@ -136,7 +136,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
           <tbody>
             {tableau.lignes.map((l) => {
               // Affichage seul : module non terminé en rouge quand la formation n'est pas à 100 %.
-              const nonTermine = !l.valide && !l.obligatoireSansPoids && r.taux < 100;
+              const nonTermine = !l.valide && r.taux < 100 && !(estJalonPratique(l.moduleId) && l.progression >= 100);
               return (
               <tr key={l.moduleId} className={`border-t ${nonTermine ? "text-destructive" : ""}`}>
                 <td className={nonTermine ? "font-medium" : ""}>{estJalonPratique(l.moduleId) ? LABEL_PRESENTIEL : l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}{nonTermine ? " — non terminé" : ""}</td>
