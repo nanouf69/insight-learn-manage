@@ -6,7 +6,8 @@ import { estCandidatElearning, mailRelanceElearning, texteMailVersHtml } from '@
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), hook: vi.fn(), success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { functions: { invoke: mocks.invoke } } }));
-vi.mock('@/hooks/useApprenantTauxRealisation', () => ({ useApprenantTauxRealisation: mocks.hook }));
+vi.mock('@/hooks/useCandidatModules', () => ({ useCandidatModules: mocks.hook }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'admin-fictif' } }) }));
 vi.mock('sonner', () => ({ toast: { success: mocks.success, error: mocks.error, info: mocks.info } }));
 
 const candidat = { id: 'fictif', prenom: 'Test', email: 'test@example.com', type_apprenant: 'vtc-e' };
@@ -16,7 +17,7 @@ function mount(props = candidat) {
 
 beforeEach(() => {
   cleanup(); vi.clearAllMocks();
-  mocks.hook.mockReturnValue({ data: { pctElearning: 25, doneElearning: 15, reqElearning: 60 }, isLoading: false });
+  mocks.hook.mockReturnValue({ data: { etat: 'ok', total: 12, termines: 9, restants: [{ id: 2 }, { id: 4 }, { id: 8 }], seulementPratique: false }, isLoading: false });
   mocks.invoke.mockResolvedValue({ data: { success: true }, error: null });
 });
 
@@ -26,13 +27,13 @@ describe('Taux e-learning et relance manuelle — données fictives, réseau sim
     for (const type of ['vtc', 'taxi', 'ta', 'va']) expect(estCandidatElearning({ id: 'x', type_apprenant: type })).toBe(false);
     expect(estCandidatElearning({ id: 'x', modalite_formation: 'elearning_asynchrone' })).toBe(true);
   });
-  it('reprend le taux et les heures de la fiche sans envoi à l’affichage', () => {
-    mount(); expect(screen.getByText('25%')).toBeInTheDocument();
-    expect(screen.getByText('15h00 / 60h')).toBeInTheDocument(); expect(mocks.invoke).not.toHaveBeenCalled();
+  it('affiche les modules sans heures ni envoi à l’affichage', () => {
+    mount(); expect(screen.getByText('9 / 12 modules terminés')).toBeInTheDocument();
+    expect(screen.getByText('3 à terminer')).toBeInTheDocument(); expect(mocks.invoke).not.toHaveBeenCalled();
   });
   it('ne charge pas les données de taux des présentiels', () => {
     mount({ ...candidat, type_apprenant: 'taxi' });
-    expect(mocks.hook).toHaveBeenCalledWith(undefined, expect.anything());
+    expect(mocks.hook).toHaveBeenCalledWith(undefined);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
   it('préparer puis annuler ne déclenche aucun envoi', () => {
@@ -62,14 +63,20 @@ describe('Taux e-learning et relance manuelle — données fictives, réseau sim
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et envoyer' }));
     await waitFor(() => expect(mocks.info).toHaveBeenCalled()); expect(mocks.success).not.toHaveBeenCalled();
   });
-  it('désactive les adresses invalides et distingue heures manquantes du taux nul', () => {
-    mocks.hook.mockReturnValue({ data: { pctElearning: 0, doneElearning: 0, reqElearning: 0 } });
+  it('désactive les adresses invalides et signale une lecture impossible', () => {
+    mocks.hook.mockReturnValue({ isError: true });
     mount({ ...candidat, email: 'rrt' }); expect(screen.getByRole('button')).toBeDisabled();
-    expect(screen.getByText('Heures non renseignées')).toBeInTheDocument();
+    expect(screen.getByText('Modules indisponibles')).toBeInTheDocument();
+  });
+  it('ne relance pas les modules déjà tous terminés', () => {
+    mocks.hook.mockReturnValue({ data: { etat: 'ok', total: 12, termines: 12, restants: [] } });
+    mount(); expect(screen.getByText('12 / 12 modules terminés')).toBeInTheDocument();
+    expect(screen.getByRole('button')).toBeDisabled(); expect(mocks.invoke).not.toHaveBeenCalled();
   });
   it('le message conserve les obligations et un risque conditionnel, pas une sanction certaine', () => {
     const { body } = mailRelanceElearning();
-    expect(body).toContain("même après la réussite de l'examen"); expect(body).toContain('tous vos modules');
+    expect(body).toContain("même après la réussite de l'examen"); expect(body).toContain('tous les modules');
+    expect(body).toContain("Vous n'avez pas encore terminé"); expect(body).not.toMatch(/connexion.*faible|heures de formation/);
     expect(body).toContain('selon votre financement'); expect(body).toContain('France Travail');
     expect(texteMailVersHtml('<>&\n')).toBe('&lt;&gt;&amp;<br>');
   });

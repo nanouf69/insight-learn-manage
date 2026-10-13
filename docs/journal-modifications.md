@@ -3,6 +3,14 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-13 15:16 UTC — Candidats examens : modules et rappel manuel
+- Accord explicite colonne + mail : remplace Taux e-learning par modules terminés/total ; rappel de terminer tous les modules, plus de connexion faible alléguée ni quota d’heures dans le texte. Avertissement conditionnel et signature conservés.
+- Parcours et normalisation extraits sans changer les règles de CoursPublic dans parcoursModulesDashboard.ts ; useCandidatModules relit affectation, statuts terminaux et jeux confirmés. Aucune donnée, question, réponse, heure, statut ou gel modifié.
+- Lecture refusée = indisponible ; pas de rappel pour modules tous terminés ; mises à jour ciblées et cache par compte/candidat. Envoi individuel confirmé inchangé.
+- Fichiers : parcoursModulesDashboard.ts, useCandidatModules.ts, CoursPublic.tsx, TauxElearningCell.tsx, ExamenReussitePage.tsx, examenElearningRelance.ts, tests candidat-modules-source/examen-elearning-relance, AGENTS.md, roadmap.md, ce journal.
+- PASS : 125 tests isolés incluant 91 contrôles des parcours/ordre ; compilation automatique OK 15:13:03 UTC ; vrais composants et lectures simulées en Chromium 1280/390, 2/3 modules + 1 restant, mail ouvert/annulé, aucun débordement ni erreur JS. Accès externes bloqués, aucun envoi ni vrai élève testé.
+- Tableau complet authentifié et appareil physique NON PROUVÉS ; publication non demandée ce tour. Chantiers gel/suivi mails inchangés.
+
 ## 2026-10-13 13:06 UTC — Compteurs élève cohérents (05e1c399)
 - Autorisation existante : finalisation UI et publication ; aucune écriture élève, aucun envoi ni changement des gels/calculs pondérés.
 - Fichiers : CoursPublic.tsx, motivation/WelcomeBanner.tsx, ModulesProgressionEleve.tsx, progressionModulesEleve.ts, progression-modules-eleve.test.ts, modules-eleve-coherence.test.tsx, AGENTS.md, roadmap.md et ce journal.

@@ -20,11 +20,11 @@
 - Course/quiz labels share permanent IDs; retain adapters, check dated baselines and journal; why: no drift.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters share progressionModulesEleve and account proofs; attendance uses milestone ID; why: no divergence or account leakage.
-- Exam rates reuse CRM hook; mails need confirmation; why: no auto-send.
+- Exam counters share learner helpers; reminders need confirmation; why: same totals, no auto-send.
 - Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
 - Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
-- Milestones/PDF: frozen relevé = server-computed `releve_jalons_calcul_fige` (resoudre-releves-gel = bundle of releveCalculServeur.ts, images/pdf stubbed; ACTIVITES_CODE at gele_le + archived reponses); admin pratique = new version; why: later edits never alter it.
+- Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.

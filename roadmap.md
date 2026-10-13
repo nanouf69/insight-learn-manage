@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Candidats examens — modules et rappel individuel (13/10)
+- [x] Colonne modules terminés/total selon le parcours partagé avec l’élève ; rappel de terminer tous les modules, aucune connexion faible alléguée ni envoi réel.
+- [x] 125 tests fictifs, compilation OK, compteur 2/3 + 1 restant et mail vérifiés en Chromium 1280/390 ; aucune erreur JS ni débordement. Publication non demandée ce tour.
+
 ## Cohérence affichage élève — finalisation autorisée 05e1c399
 - [x] Un seul calcul pour bandeau, bloc modules, listes et état secondaire des heures ; présence physique identifiée par jalon, jamais par nom.
 - [x] 29 tests fictifs : jeux restants, 100 % sans validation, changement de compte, erreurs, gels ; captures vrai dashboard ordinateur 1280 et mobile 390, aucun débordement ni erreur JS.

@@ -2481,7 +2481,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <TableHead>Statut</TableHead>
                     <TableHead>Tél.</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Taux e-learning</TableHead>
+                    <TableHead>Modules terminés / total</TableHead>
                     <TableHead>Date d'inscription</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-center"><span className="sr-only">Actions</span></TableHead>
