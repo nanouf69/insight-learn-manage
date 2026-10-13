@@ -48,7 +48,7 @@ export function generateSignaturesRassembleesPdf(apprenant: { nom?: string; pren
     doc.text(doc.splitTextToSize(`Horaires de formation : ${row.horaires}`, 112), margin + 3, y + 18);
     doc.setFontSize(6.5);
     doc.text(doc.splitTextToSize(row.sourceHoraires, 112), margin + 3, y + 25);
-    doc.text(`Signé le : ${dateSignatureParis(row.signedAt)}`, margin + 3, y + 31);
+    doc.text(`Signé le : ${dateSignatureAvecJour(row.signedAt)}`, margin + 3, y + 31);
     doc.text(`Référence : ${row.id}`, margin + 3, y + 36);
     try {
       const props = doc.getImageProperties(row.signature);

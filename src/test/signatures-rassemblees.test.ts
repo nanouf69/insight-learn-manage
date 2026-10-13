@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { rassemblerSignatures } from '../lib/signaturesRassemblees';
-import { dateSignatureParis, generateSignaturesRassembleesPdf } from '../lib/pdf/signatures-rassemblees';
+import { dateSignatureParis, dateSignatureAvecJour, datePresenceAvecJour, generateSignaturesRassembleesPdf } from '../lib/pdf/signatures-rassemblees';
 import { resolvePratiqueSlotParts } from '../lib/pratiqueSlots';
 const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=';
 const row = (id = 'fixture-1', demi = 'matin') => ({ id, date_emargement: '2026-10-13', demi_journee: demi, signed_at: '2026-10-13T07:30:00Z', signature_data_url: png, masque: false });
@@ -34,6 +34,13 @@ describe('PDF de signatures rassemblées sans mutation', () => {
   it('date signature Paris séparée de présence, sans date inventée', () => {
     expect(dateSignatureParis('2026-10-13T07:30:00Z')).toContain('09:30');
     expect(dateSignatureParis(null)).toContain('non renseignée');
+  });
+  it('affiche le jour de la semaine, en Europe/Paris', () => {
+    expect(datePresenceAvecJour('2026-10-13')).toBe('Mardi 13/10/2026');
+    expect(datePresenceAvecJour('2026-10-17')).toBe('Samedi 17/10/2026');
+    expect(datePresenceAvecJour('date-invalide')).toBe('Date non renseignée');
+    expect(dateSignatureAvecJour('2026-10-13T07:30:00Z')).toBe('Mardi 13/10/2026 09:30');
+    expect(dateSignatureAvecJour(null)).toContain('non renseignée');
   });
   it('absence avec signature conservée et explicitement signalée', () => {
     expect(rassemblerSignatures([{ ...row(), absent: true }], [], [])[0].absent).toBe(true);
