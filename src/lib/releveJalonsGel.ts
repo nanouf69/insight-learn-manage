@@ -1,110 +1,73 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Gel historique du relevé des jalons à la clôture admin explicite d'une formation terminée.
- * L'archive (table append-only `releve_jalons_gels`) remplace le calcul actuel pour toute
- * lecture/export ultérieurs : les questions ajoutées/supprimées ensuite ne la changent jamais.
+ * Gel du relevé à la FIN EFFECTIVE DES ACCÈS e-learning (tâche serveur horaire
+ * `geler_releves_fin_acces`, sans visite). Le relevé figé est recalculé
+ * uniquement depuis le contenu et les sources figés côté serveur.
+ * Seule exception : un ajout ADMIN d'heures de pratique crée une nouvelle version
+ * (trigger serveur), l'ancienne reste intacte.
  */
-export const METHODE_GEL = "releve-jalons-v1 (durées CPF 12/10/2026)";
-export const GEL_QUERY_KEY = "releve-jalons-gel";
+export const GEL_QUERY_KEY = "releve-jalons-gel-fin-acces";
 
-export interface PayloadGel {
-  calcul: any;
-  preuvesJalons: any;
-  session: any;
-  elementsACompleter: string[];
-  formationLabel: string;
-  calculeLe: string;
-}
-
-export interface GelReleve {
+export interface GelFinAcces {
   id: string;
   apprenant_id: string;
   version: number;
-  payload: PayloadGel;
-  empreinte: string;
-  methode: string;
-  motif: string;
-  date_fin_formation: string;
-  remplace_gel_id: string | null;
-  cree_par: string;
+  fin_acces: string;
+  nature: "fin_acces" | "protection_apres_fin" | "ajout_pratique_admin";
+  historique_prouve: boolean;
+  contenu: Record<string, string>;
+  sources: { completions: any[]; emargements: any[]; heures_validees: any[] };
+  heures_validee_id: string | null;
+  remplace_id: string | null;
   created_at: string;
 }
 
-/** JSON à clés triées : même contenu => même empreinte. */
-export function jsonCanonique(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
-  if (Array.isArray(value)) return `[${value.map(jsonCanonique).join(",")}]`;
-  const obj = value as Record<string, unknown>;
-  return `{${Object.keys(obj).filter((k) => obj[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${jsonCanonique(obj[k])}`).join(",")}}`;
-}
+export type EtatGel =
+  | { etat: "fige"; gel: GelFinAcces }
+  | { etat: "en_attente"; finAcces: string }
+  | { etat: "actif" };
 
-export async function empreinteGel(payload: PayloadGel): Promise<string> {
-  const bytes = new TextEncoder().encode(jsonCanonique(payload));
-  const hash = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/** Copie détachée (JSON) : l'archive ne partage aucune référence avec le calcul vivant. */
-export function construirePayloadGel(p: Omit<PayloadGel, "calculeLe"> & { calculeLe?: string }): PayloadGel {
-  return JSON.parse(JSON.stringify({ ...p, calculeLe: p.calculeLe ?? new Date().toISOString() }));
-}
-
-/** Dernière version du gel ; null = aucun gel ; erreur de lecture = exception (jamais « non figé » silencieux). */
-export async function chargerGelReleve(apprenantId: string): Promise<GelReleve | null> {
-  const { data, error } = await supabase.from("releve_jalons_gels" as any)
+/** Erreur de lecture = exception : jamais de repli silencieux sur le calcul actuel. */
+export async function chargerEtatGel(apprenantId: string): Promise<EtatGel> {
+  const { data, error } = await supabase.from("releve_jalons_fin_acces" as any)
     .select("*").eq("apprenant_id", apprenantId).order("version", { ascending: false }).limit(1);
   if (error) throw error;
-  const row = ((data as any[]) ?? [])[0] ?? null;
-  if (!row) return null;
-  // Contrôle d'intégrité : une archive dont l'empreinte ne correspond plus n'est jamais présentée comme figée.
-  const recalc = await empreinteGel(row.payload);
-  if (recalc !== row.empreinte) throw new Error("Archive du relevé illisible (empreinte non conforme)");
-  return row as GelReleve;
-}
-
-/** Formation terminée (date de fin passée, jour Paris). Ne vaut PAS clôture : seule l'action admin fige. */
-export function formationTerminee(apprenant: any, now = new Date()): boolean {
-  const iso = (v: unknown) => {
-    const t = String(v ?? "").trim();
-    if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
-    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
-    return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
-  };
-  const fin = iso(apprenant?.date_fin_cours_en_ligne) ?? iso(apprenant?.date_fin_formation);
-  if (!fin) return false;
-  const jourParis = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(now);
-  return String(fin).slice(0, 10) < jourParis;
-}
-
-export type ResultatGel = { statut: "cree" | "existant_identique" | "existant_conserve"; gel: GelReleve };
-
-export async function figerReleve(params: { apprenantId: string; payload: PayloadGel; motif: string; adminId: string }): Promise<ResultatGel> {
-  const motif = params.motif.trim();
-  if (motif.length < 5) throw new Error("Motif de clôture obligatoire");
-  const empreinte = await empreinteGel(params.payload);
-  const { data: auth } = await supabase.auth.getUser();
-  if (auth.user?.id !== params.adminId) throw new Error("Session administrateur modifiée : clôture annulée");
-  const avant = await chargerGelReleve(params.apprenantId);
-  const { data, error } = await supabase.rpc("figer_releve_jalons" as any, {
-    _apprenant_id: params.apprenantId, _payload: params.payload as any, _empreinte: empreinte,
-    _methode: METHODE_GEL, _motif: motif, _nouvelle_version: false,
-  });
-  if (error) throw error;
-  const gel = (Array.isArray(data) ? data[0] : data) as GelReleve | null;
-  if (!gel?.id || gel.apprenant_id !== params.apprenantId) throw new Error("Clôture non confirmée par le serveur");
-  // Relecture serveur obligatoire avant d'annoncer « figé ».
-  const relu = await chargerGelReleve(params.apprenantId);
-  if (!relu || relu.id !== gel.id) throw new Error("Clôture non confirmée par relecture serveur");
-  const statut = !avant ? "cree" : gel.empreinte === empreinte ? "existant_identique" : "existant_conserve";
-  return { statut, gel: relu };
-}
-
-export function mentionGel(gel: GelReleve | null, apprenant: any): string {
+  const gel = ((data as any[]) ?? [])[0] as GelFinAcces | undefined;
   if (gel) {
-    const d = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" }).format(new Date(gel.created_at));
-    return `Relevé FIGÉ à la clôture le ${d} (version ${gel.version}, empreinte ${gel.empreinte.slice(0, 12)}…, ${gel.methode}). Les modifications ultérieures de questions ou de contenus ne s'appliquent pas à ce relevé.`;
+    if (!gel.contenu || !gel.sources) throw new Error("Relevé figé illisible");
+    return { etat: "fige", gel };
   }
-  if (formationTerminee(apprenant)) return "Formation terminée mais relevé NON figé : version historique non disponible — calcul sur le contenu ACTUEL, susceptible d'évoluer.";
-  return "Formation en cours : calcul sur le contenu actuel (non figé).";
+  const { data: fin, error: finError } = await supabase.rpc("fin_acces_elearning" as any, { _id: apprenantId });
+  if (finError) throw finError;
+  return fin ? { etat: "en_attente", finAcces: String(fin) } : { etat: "actif" };
+}
+
+export type LigneFigee = { module_id: number; module_data: any; deleted_exercices: any; deleted_cours: any; updated_at: string | null };
+
+/** Lit le contenu FIGÉ des modules demandés. Un module absent du gel n'avait pas de version enregistrée. */
+export async function lireContenuFige(gel: GelFinAcces, moduleIds: number[]): Promise<LigneFigee[]> {
+  const empreintes = [...new Set(moduleIds.map((id) => gel.contenu[String(id)]).filter(Boolean))];
+  if (!empreintes.length) return [];
+  const { data, error } = await supabase.from("contenu_module_fige" as any)
+    .select("empreinte, module_id, module_data, deleted_exercices, deleted_cours, source_updated_at").in("empreinte", empreintes);
+  if (error) throw error;
+  const rows = (data as any[]) ?? [];
+  if (rows.length !== empreintes.length) throw new Error("Contenu figé incomplet : relevé indisponible");
+  return rows.map((r) => ({ module_id: r.module_id, module_data: r.module_data, deleted_exercices: r.deleted_exercices, deleted_cours: r.deleted_cours, updated_at: r.source_updated_at }));
+}
+
+const fmt = (iso: string) => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
+const jour = (d: string) => String(d).slice(0, 10).split("-").reverse().join("/");
+
+export function mentionGel(etat: EtatGel | null): string {
+  if (!etat) return "État du gel non lu.";
+  if (etat.etat === "actif") return "Accès en cours : calcul sur le contenu actuel (non figé).";
+  if (etat.etat === "en_attente") return `Accès terminés le ${jour(etat.finAcces)} : gel serveur en attente (prochaine exécution horaire) — aucun pourcentage affiché d'ici là.`;
+  const g = etat.gel;
+  const base = g.historique_prouve
+    ? `Relevé FIGÉ à la fin des accès (${jour(g.fin_acces)}), gel du ${fmt(g.created_at)}.`
+    : `Gel réalisé le ${fmt(g.created_at)} après la fin des accès (${jour(g.fin_acces)}) ; état historique à la fin des accès non disponible.`;
+  const v = g.version > 1 ? ` Version ${g.version} : heures de pratique ajoutées par l'administration après le gel (version précédente conservée).` : "";
+  return `${base}${v} Les modifications ultérieures de questions ou de contenus ne s'appliquent pas à ce relevé.`;
 }
