@@ -23,6 +23,8 @@ import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/d
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
+import { chargerSignaturesManquantes } from '@/lib/signaturesManquantes';
+import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 
 interface Props {
   apprenant: any;
@@ -442,6 +444,14 @@ export function DocumentsCompletes({ apprenant }: Props) {
     },
   });
 
+  // Signatures manquantes : créneaux passés (sessions théoriques + pratique réservée)
+  // sans signature enregistrée. Lecture seule, aucune donnée modifiée.
+  const { data: signaturesManquantes, isError: signaturesManquantesErreur } = useQuery({
+    queryKey: ["apprenant-signatures-manquantes", apprenant.id],
+    enabled: !!apprenant?.id,
+    queryFn: () => chargerSignaturesManquantes(apprenant.id),
+  });
+
   const downloadJSON = (doc: any) => {
     const blob = new Blob([JSON.stringify(doc.donnees, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -816,6 +826,55 @@ export function DocumentsCompletes({ apprenant }: Props) {
             <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
           </div>
           <SignaturesRassembleesExport apprenant={apprenant} />
+        </CardContent>
+        <CardContent className="px-4 pb-4 pt-0">
+          {signaturesManquantesErreur ? (
+            <p role="alert" className="text-sm text-destructive">
+              Signatures manquantes : indisponible (erreur de lecture) — aucune liste inventée.
+            </p>
+          ) : !signaturesManquantes ? (
+            <p className="text-sm text-muted-foreground">Calcul des signatures manquantes…</p>
+          ) : (
+            (() => {
+              const manquantes = signaturesManquantes.filter((m) => m.etat === "manquante");
+              const absences = signaturesManquantes.filter((m) => m.etat === "absence_enregistree");
+              if (manquantes.length === 0 && absences.length === 0) {
+                return <p className="text-sm text-emerald-700">Aucune signature manquante.</p>;
+              }
+              return (
+                <div className="space-y-3" data-testid="signatures-manquantes">
+                  {manquantes.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-destructive">
+                        Signatures manquantes ({manquantes.length})
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {manquantes.map((m) => (
+                          <li key={`${m.date}|${m.creneau}|${m.source}`} className="text-sm text-destructive">
+                            {datePresenceAvecJour(m.date)} — {m.creneau} — {m.source}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {absences.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-amber-700">
+                        Absences enregistrées ({absences.length})
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {absences.map((m) => (
+                          <li key={`${m.date}|${m.creneau}|${m.source}`} className="text-sm text-amber-700">
+                            {datePresenceAvecJour(m.date)} — {m.creneau} — {m.source}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          )}
         </CardContent>
       </Card>
 
