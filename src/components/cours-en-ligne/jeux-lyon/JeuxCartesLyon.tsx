@@ -32,7 +32,7 @@ function useMeilleur(compteId: string | null | undefined, jeu: string) {
 
 function Etiquettes({ items, choisi, onChoisir, desactive }: { items: Item[]; choisi: string | null; onChoisir: (id: string) => void; desactive?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-2" role="listbox" aria-label="Étiquettes à placer">
+    <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1 rounded-lg" role="listbox" aria-label="Étiquettes à placer">
       {items.map((it) => (
         <button key={it.id} type="button" role="option" aria-selected={choisi === it.id} disabled={desactive}
           onClick={() => onChoisir(it.id)}

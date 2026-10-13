@@ -137,7 +137,7 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
       <svg
         ref={svgRef}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className="w-full h-auto max-h-[62vh] touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="w-full h-auto max-h-[58vh] touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ aspectRatio: `${W} / ${H}` }}
         role="application"
         aria-label={cible === "point" ? "Carte de Lyon : flèches pour déplacer le repère, Entrée pour placer" : "Carte de Lyon"}
