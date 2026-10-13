@@ -1,0 +1,149 @@
+import { supabase } from '@/integrations/supabase/client';
+
+// ================== Signatures d'émargement manquantes ==================
+// Calcul purement indicatif, lecture seule : à partir des sessions réellement
+// attribuées à l'apprenant (théorique + pratique) et de ses réservations de
+// pratique, on liste les créneaux passés sans signature enregistrée.
+// Aucun jour n'est inventé : seuls les jours couverts par une session ou une
+// réservation existante sont attendus. Aucune écriture, aucune mutation.
+
+export interface SignatureManquante {
+  date: string;
+  creneau: string;
+  source: string;
+  etat: 'manquante' | 'absence_enregistree';
+}
+
+const DEMI_LABELS: Record<string, string> = {
+  matin: 'Matin',
+  apres_midi: 'Après-midi',
+  soir: 'Soir',
+  soir_1: 'Soir 1 (17h-18h30)',
+  soir_2: 'Soir 2 (18h30-21h)',
+};
+
+export function dateDuJourParis(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(now);
+}
+
+const normDate = (value: unknown) => String(value ?? '').slice(0, 10);
+const estDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+const annulee = (s: any) => /annul/i.test(String(s?.statut ?? ''));
+
+/** Créneaux attendus pour une journée selon les horaires de session (jamais de pratique déduite du soir). */
+export function creneauxAttendus(heureDebut?: string | null, heureFin?: string | null): string[] {
+  const start = String(heureDebut ?? '').slice(0, 5);
+  const end = String(heureFin ?? '').slice(0, 5);
+  const valide = (v: string) => /^\d{2}:\d{2}$/.test(v);
+  if (valide(start) && start >= '17:00') return ['soir_1', 'soir_2'];
+  if (valide(start) && start >= '13:00') return ['apres_midi'];
+  if (valide(start) && valide(end) && end <= '12:00') return ['matin'];
+  // Horaires standards : journée 9h-12h / 13h-16h (mémoire horaires-standards)
+  return ['matin', 'apres_midi'];
+}
+
+/** Les sessions théoriques ne tiennent jamais le week-end (constaté sur les émargements réels : lundi-vendrei uniquement). */
+function joursOuvres(debut: string, fin: string): string[] {
+  const out: string[] = [];
+  const d = new Date(`${debut}T00:00:00Z`);
+  const end = new Date(`${fin}T00:00:00Z`);
+  for (let i = 0; d <= end && i < 400; i++) {
+    const dow = d.getUTCDay();
+    if (dow !== 0 && dow !== 6) out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
+/** Fonction pure : attendus (sessions + réservations) vs signatures réelles ; les dates futures ne sont jamais « manquantes ». */
+export function calculerSignaturesManquantes(
+  emargements: any[],
+  sessionRows: any[],
+  reservations: any[],
+  dateReference: string = dateDuJourParis(),
+): SignatureManquante[] {
+  const signes = new Set<string>();
+  const absents = new Set<string>();
+  for (const e of emargements ?? []) {
+    if (e?.masque === true) continue;
+    const date = normDate(e?.date_emargement);
+    const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
+    if (!estDate(date) || !demi) continue;
+    const key = `${date}|${demi}`;
+    const signe =
+      (typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url)) ||
+      !!e?.signed_at;
+    if (signe) signes.add(key);
+    else if (e?.absent === true) absents.add(key);
+  }
+
+  const attendus = new Map<string, { creneau: string; source: string }>();
+  const attendre = (date: string, creneau: string, source: string) => {
+    const key = `${date}|${creneau}`;
+    if (!attendus.has(key)) attendus.set(key, { creneau, source });
+  };
+
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || row?.liste_attente === true || annulee(s)) continue;
+    const type = String(s.type_session ?? '').toLowerCase();
+    const debutH = row.heure_debut_personnalisee ?? s.heure_debut;
+    const finH = row.heure_fin_personnalisee ?? s.heure_fin;
+    if (type.includes('pratique')) {
+      const date = normDate(s.date_debut);
+      if (!estDate(date)) continue;
+      const source = `Pratique — session « ${s.nom ?? 'Pratique'} »`;
+      for (const c of creneauxAttendus(debutH, finH)) attendre(date, c, source);
+    } else if (type.includes('theorique')) {
+      const debut = normDate(row.date_debut || s.date_debut);
+      const fin = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
+      if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
+      const source = `Théorie — session « ${s.nom ?? 'Session'} »`;
+      for (const date of joursOuvres(debut, fin)) {
+        for (const c of creneauxAttendus(debutH, finH)) attendre(date, c, source);
+      }
+    }
+    // type_session « examen » : présence suivie par convocation, jamais exigée en émargement ici.
+  }
+
+  for (const r of reservations ?? []) {
+    const date = normDate(r?.date_choisie);
+    if (!estDate(date)) continue;
+    const v = String(r?.creneau ?? '').toLowerCase();
+    const creneaux = v.includes('apres') || v.includes('aprem') ? ['apres_midi'] : v.includes('matin') ? ['matin'] : ['matin', 'apres_midi'];
+    const type = String(r?.type_formation ?? '').toUpperCase() || 'PRATIQUE';
+    for (const c of creneaux) attendre(date, c, `Pratique ${type} — réservation`);
+  }
+
+  const manquantes: SignatureManquante[] = [];
+  for (const [key, { creneau, source }] of attendus) {
+    const date = key.slice(0, 10);
+    if (date > dateReference) continue; // créneau à venir : rien à reprocher
+    if (signes.has(key)) continue;
+    manquantes.push({ date, creneau: DEMI_LABELS[creneau] ?? creneau, source, etat: absents.has(key) ? 'absence_enregistree' : 'manquante' });
+  }
+  manquantes.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
+  return manquantes;
+}
+
+async function paginer(build: (from: number, to: number) => any): Promise<any[]> {
+  const rows: any[] = [];
+  for (let p = 0; p < 50; p++) {
+    const { data, error } = await build(p * 1000, p * 1000 + 999);
+    if (error) throw error;
+    if (!Array.isArray(data)) throw new Error('Données indisponibles');
+    rows.push(...data);
+    if (data.length < 1000) return rows;
+  }
+  throw new Error('Volume trop important : calcul refusé');
+}
+
+export async function chargerSignaturesManquantes(apprenantId: string): Promise<SignatureManquante[]> {
+  if (!apprenantId) throw new Error('Apprenant requis');
+  const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
+    paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+  ]);
+  return calculerSignaturesManquantes(emargRes, sessionsRes, reservationsRes);
+}
