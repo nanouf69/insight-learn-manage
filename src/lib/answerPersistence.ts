@@ -569,6 +569,9 @@ const buildHeaders = (): Record<string, string> | null => {
 };
 
 type SendResult = "ok" | "retry" | "blocked";
+let retrySuccessCount = 0;
+/** Nombre (anonyme) de réponses confirmées après au moins un réessai, depuis le chargement. */
+export const getRetrySuccessCount = () => retrySuccessCount;
 
 /** Délai maximal d'un envoi au serveur avant abandon + réessai. */
 export const ENVOI_DELAI_MS = 15000;
@@ -739,6 +742,11 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
         } else if (lastRejection?.reason !== "identity") {
           // Un refus d'identité reste affiché jusqu'au rechargement de la page.
           clearAnswerSaveRejection();
+        }
+        // Compteur anonyme : prouve un succès APRÈS réessai (aucune réponse/jeton/personne).
+        if ((item.attempts ?? 0) > 0) {
+          retrySuccessCount += 1;
+          console.info("[answerPersistence] Confirmé par le serveur après réessai", { tentative: (item.attempts ?? 0) + 1, succesApresReessai: retrySuccessCount });
         }
         return "ok";
       }
