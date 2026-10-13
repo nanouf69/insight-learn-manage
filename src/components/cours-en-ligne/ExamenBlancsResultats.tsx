@@ -27,6 +27,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
+import { choisirTentativeRevision, revisionBaseId } from "@/lib/revisionFaussesTentative";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
@@ -1480,7 +1481,8 @@ function RevisionFausses({
       // Save final revision results to database
       const finalCorrected = correctedCount;
       let finEnregistree = false;
-      if (apprenantId && userId && examenId && !blockLearnerWrite("revision_fausses(fin)")) {
+      const ecritureBloquee = blockLearnerWrite("revision_fausses(fin)");
+      if (apprenantId && userId && examenId && !ecritureBloquee) {
         // Plus aucune sauvegarde « en cours » différée ne doit partir après la fin :
         // elle réécrirait une révision terminée (refus serveur).
         if (saveTimeoutRef.current) { clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null; }
@@ -1545,7 +1547,9 @@ function RevisionFausses({
           console.error("Erreur sauvegarde révision:", err);
         }
       }
-      if (finEnregistree) {
+      if (ecritureBloquee) {
+        onTerminer();
+      } else if (finEnregistree) {
         toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
         onTerminer();
       } else {
