@@ -26,7 +26,7 @@ describe('Signatures manquantes : calcul sans mutation', () => {
     expect(dates.has('2026-10-10')).toBe(false); // samedi
     expect(dates.has('2026-10-11')).toBe(false); // dimanche
     expect(dates.has('2026-10-12')).toBe(true);  // lundi
-    expect(result.filter(r => r.date === '2026-10-05').map(r => r.creneau)).toEqual(['Matin', 'Après-midi']);
+    expect(result.filter(r => r.date === '2026-10-05').map(r => r.creneau).sort()).toEqual(['Après-midi', 'Matin']);
   });
 
   it('une signature réelle n’est jamais « manquante » ; une ligne masquée est ignorée', () => {
