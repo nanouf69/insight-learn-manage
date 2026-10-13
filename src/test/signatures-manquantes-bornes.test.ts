@@ -43,3 +43,22 @@ describe('bornes session_apprenants vs sessions', () => {
     expect(out).toEqual([]);
   });
 });
+
+describe('bilan EDOF : compte exact et hors planning', () => {
+  const mkSessions = () => [{ liste_attente: false, date_debut: '2026-09-14', date_fin: '2026-09-27', heure_debut_personnalisee: '17:00', sessions: { type_session: 'theorique', statut: 'terminee', date_debut: '2026-09-14', date_fin: '2026-09-27', heure_debut: '17:00', heure_fin: '21:00' } }];
+  const mkResa = () => [{ date_choisie: '2026-10-13', type_formation: 'vtc', creneau: 'journee' }];
+  const sig = (date: string, demi: string) => ({ date_emargement: date, demi_journee: demi, signature_data_url: 'data:image/png;base64,xxx', masque: false });
+  it('complet seulement au compte exact (22/22), pas au-delà', () => {
+    const soirs = ['2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25'];
+    const emargs = [...soirs.flatMap(d => [sig(d, 'soir_1'), sig(d, 'soir_2')]), sig('2026-10-13', 'matin'), sig('2026-10-13', 'apres_midi')];
+    const ok = calculerBilanSignaturesEdof(emargs, mkSessions(), mkResa(), 'VTC');
+    expect(ok.total).toBe(22); expect(ok.complet).toBe(true);
+    const trop = calculerBilanSignaturesEdof([...emargs, sig('2026-09-28', 'soir_1'), sig('2026-09-28', 'soir_2')], mkSessions(), mkResa(), 'VTC');
+    expect(trop.horsPlanning).toHaveLength(2); expect(trop.complet).toBe(true); expect(trop.excedent).toBe(false);
+  });
+  it('incomplet si une signature manque', () => {
+    const soirs = ['2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25'];
+    const emargs = [...soirs.flatMap(d => [sig(d, 'soir_1'), sig(d, 'soir_2')]), sig('2026-10-13', 'matin')];
+    expect(calculerBilanSignaturesEdof(emargs, mkSessions(), mkResa(), 'VTC').complet).toBe(false);
+  });
+});
