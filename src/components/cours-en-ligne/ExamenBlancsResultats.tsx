@@ -1479,10 +1479,14 @@ function RevisionFausses({
     } else {
       // Save final revision results to database
       const finalCorrected = correctedCount;
+      let finEnregistree = false;
       if (apprenantId && userId && examenId && !blockLearnerWrite("revision_fausses(fin)")) {
+        // Plus aucune sauvegarde « en cours » différée ne doit partir après la fin :
+        // elle réécrirait une révision terminée (refus serveur).
+        if (saveTimeoutRef.current) { clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null; }
         try {
           // Mark the in-progress record as completed
-          await supabase
+          const { error: finError } = await supabase
             .from("reponses_apprenants")
             .upsert({
               apprenant_id: apprenantId,
@@ -1498,7 +1502,16 @@ function RevisionFausses({
               score: finalCorrected,
               completed: true,
             } as any, { onConflict: "apprenant_id,exercice_id" });
+          if (finError) {
+            console.error("Erreur sauvegarde révision (fin):", finError.message);
+          } else {
+            finEnregistree = true;
+            termineeRef.current = true;
+            pendingSaveRef.current = false;
+            latestPayloadRef.current = null;
+          }
 
+          if (finEnregistree) {
           const { error } = await supabase
             .from("apprenant_quiz_results")
             .insert({
@@ -1513,6 +1526,7 @@ function RevisionFausses({
               reussi: finalCorrected === wrongQuestions.length,
               details: {
                 reponses,
+                revision_exercice_id: exerciceId,
                 questions: wrongQuestions.map(wq => ({
                   questionId: wq.question.id,
                   matiereId: wq.matiere.id,
@@ -1526,12 +1540,18 @@ function RevisionFausses({
           } else {
             console.log("Révision sauvegardée avec succès");
           }
+          }
         } catch (err) {
           console.error("Erreur sauvegarde révision:", err);
         }
       }
-      toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
-      onTerminer();
+      if (finEnregistree) {
+        toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
+        onTerminer();
+      } else {
+        // Jamais « terminée » sans accusé serveur : l'élève reste sur la révision.
+        toast.error("Révision non enregistrée par le serveur. Vérifiez votre connexion puis réessayez.");
+      }
     }
   };
 
