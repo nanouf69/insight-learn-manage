@@ -832,7 +832,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
             <p><strong className="text-foreground">{joursPresence.size}</strong> jour(s) de présence</p>
           </div>
-          <SignaturesRassembleesExport apprenant={apprenant} />
+          <SignaturesRassembleesExport
+            apprenant={apprenant}
+            totalAttendu={/e-?learning/i.test(formationEdof) ? null : (bilanEdof?.objectifTotal ?? null)}
+            totalIndisponible={bilanEdofErreur}
+          />
         </CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
           {/e-?learning/i.test(formationEdof) ? null : bilanEdofErreur ? (

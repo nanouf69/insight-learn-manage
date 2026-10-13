@@ -50,6 +50,16 @@ async function paginer(build: (from: number, to: number) => any): Promise<any[]>
   throw new Error('Volume trop important : export incomplet refusé');
 }
 
+/** Compte des signatures réellement incluses dans un PDF, rapporté au total attendu. */
+export function formaterCompteSignaturesPdf(signees: number, total: number | null | undefined, totalIndisponible = false): { texte: string; ton: 'ok' | 'partiel' | 'excedent' | 'neutre' } {
+  const pluriel = (n: number) => (n > 1 ? 's' : '');
+  const base = `${signees} signature${pluriel(signees)} signée${pluriel(signees)}`;
+  if (typeof total === 'number' && Number.isFinite(total)) {
+    return { texte: `${base} sur ${total}`, ton: signees === total ? 'ok' : signees > total ? 'excedent' : 'partiel' };
+  }
+  return { texte: totalIndisponible ? `${base} — total attendu indisponible` : base, ton: 'neutre' };
+}
+
 export async function chargerSignaturesRassemblees(apprenantId: string, seulementPlanning = false) {
   // seulementPlanning : uniquement les signatures aux dates de la session et de la pratique
   // (les signatures hors planning restent conservées en base).
