@@ -31,11 +31,11 @@ export const EXAMENS_BLANCS_FILIERE: Record<Filiere, { moduleId: number; type: s
 
 export const INTRO_IDS = new Set([1, 26, 31, 32, 33, 34]);
 
-export interface VolumeModule { pages: number; questions: number; points?: number }
+export interface VolumeModule { pages: number; questions: number; points?: number; /** placements des jeux cartographiques (1 unité chacun) */ jeux?: number }
 /** Ancien volume brut (conservé pour compatibilité). */
-export const unites = (v: VolumeModule | undefined) => (v ? Math.max(0, v.points ?? (4 * Math.max(0, v.pages) + Math.max(0, v.questions))) : 0);
+export const unites = (v: VolumeModule | undefined) => (v ? Math.max(0, v.points ?? (4 * Math.max(0, v.pages) + Math.max(0, v.questions) + Math.max(0, v.jeux ?? 0))) : 0);
 /** Volume de répartition du budget restant : 2 × pages d'audit + questions actives. */
-export const volumeRepartition = (v: VolumeModule | undefined) => (v ? 2 * Math.max(0, v.pages) + Math.max(0, v.questions) : 0);
+export const volumeRepartition = (v: VolumeModule | undefined) => (v ? 2 * Math.max(0, v.pages) + Math.max(0, v.questions) + Math.max(0, v.jeux ?? 0) : 0);
 
 export const LABEL_PRESENTIEL = "Entraînement pratique ou formation présentielle";
 
