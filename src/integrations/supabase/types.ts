@@ -6904,6 +6904,41 @@ export type Database = {
           },
         ]
       }
+      releve_jalons_resolution: {
+        Row: {
+          created_at: string
+          cree_par: string | null
+          gel_id: string
+          limites: Json
+          methode_code: string
+          volumes: Json
+        }
+        Insert: {
+          created_at?: string
+          cree_par?: string | null
+          gel_id: string
+          limites?: Json
+          methode_code: string
+          volumes: Json
+        }
+        Update: {
+          created_at?: string
+          cree_par?: string | null
+          gel_id?: string
+          limites?: Json
+          methode_code?: string
+          volumes?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releve_jalons_resolution_gel_id_fkey"
+            columns: ["gel_id"]
+            isOneToOne: true
+            referencedRelation: "releve_jalons_fin_acces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       releves_bancaires: {
         Row: {
           banque: string
