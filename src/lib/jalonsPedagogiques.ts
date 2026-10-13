@@ -1,3 +1,4 @@
+import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
@@ -50,7 +51,7 @@ export async function chargerCalculJalons(params: {
     params.completions
       ? Promise.resolve({ data: params.completions, error: null })
       : supabase.from("apprenant_module_completion").select("module_id, status, progress, completed_at").eq("apprenant_id", params.apprenantId),
-    supabase.from("presentiel_heures_validees" as any).select("heures, created_at").eq("apprenant_id", params.apprenantId),
+    supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
   ]);
   if (editorError) throw editorError;
   if (emargementsResult.error) throw emargementsResult.error;
@@ -68,8 +69,8 @@ export async function chargerCalculJalons(params: {
   // Même présence que le « taux présentiel » : théorie signée + pratique signée
   // + heures validées par un admin (append-only). Aucune ligne n'est modifiée.
   const { theorieHours, pratiqueMinutes: pratiqueSigneeMinutes } = computePresentielHours(emargements, pratiqueDetails);
-  const heuresValidees = ((heuresValideesResult.data as any[]) ?? []);
-  const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + (Number(r?.heures) || 0), 0) * 60);
+  const heuresValidees = normaliserHeuresValidees(((heuresValideesResult.data as any[]) ?? []));
+  const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + r.heures, 0) * 60);
   const theorieMinutes = Math.round(theorieHours * 60);
   const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
   const completions = [...(((completionsResult.data as JalonCompletion[]) ?? [])), completionPratique(pratiqueMinutes)];
@@ -80,7 +81,8 @@ export async function chargerCalculJalons(params: {
     ...(emargements as Array<EmargementRowLike & { signed_at?: string | null }>)
       .filter((row) => row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim()))
       .map((row) => row.signed_at || row.date_emargement),
-    ...heuresValidees.map((r) => r?.created_at),
+    // Date de présence seulement si réellement saisie (jamais la date de saisie).
+    ...heuresValidees.map((r) => r.datePresence),
   ].filter(Boolean).sort();
   return {
     key,
