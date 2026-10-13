@@ -27,6 +27,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending } from "./exam-helpers";
+import { choisirTentativeRevision, revisionBaseId } from "@/lib/revisionFaussesTentative";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
@@ -1253,7 +1254,12 @@ function RevisionFausses({
   const pendingSaveRef = useRef(false);
   const accessTokenRef = useRef<string | null>(null);
 
-  const exerciceId = `revision_fausses_${examenId || "unknown"}`;
+  const baseExerciceId = revisionBaseId(examenId);
+  // Identifiant de la tentative en cours : jamais celui d'une révision déjà terminée.
+  const [exerciceId, setExerciceId] = useState<string>(baseExerciceId);
+  // Tant que la tentative n'est pas identifiée (ou après la fin), aucune écriture.
+  const tentativePreteRef = useRef(false);
+  const termineeRef = useRef(false);
 
 
   // ---- Load saved progress on mount ----
@@ -1264,26 +1270,41 @@ function RevisionFausses({
     }
     (async () => {
       try {
+        const { data: tentatives, error: errTentatives } = await supabase
+          .from("reponses_apprenants")
+          .select("exercice_id, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_type", "revision_fausses")
+          .like("exercice_id", `${baseExerciceId}%`);
+        if (errTentatives) {
+          // Lecture impossible : on n'écrit rien plutôt que réécrire une révision terminée.
+          console.error("Erreur chargement révision (tentatives):", errTentatives.message);
+          return;
+        }
+        const idTentative = choisirTentativeRevision(baseExerciceId, (tentatives as any[]) || []);
+        setExerciceId(idTentative);
+        tentativePreteRef.current = true;
         const { data } = await supabase
           .from("reponses_apprenants")
           .select("reponses, score")
           .eq("apprenant_id", apprenantId)
-          .eq("exercice_id", exerciceId)
+          .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses")
           .eq("completed", false)
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
+
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
         // Règle générale : les réponses locales encore en attente d'envoi
         // restent affichées après F5 / reconnexion, et une valeur vide
         // n'écrase jamais une réponse réellement saisie.
-        const pending = getPendingAnswers(apprenantId, exerciceId) as any;
+        const pending = getPendingAnswers(apprenantId, idTentative) as any;
         const mergedAnswers = mergeSavedAndPendingAnswers(
           (saved.answers && typeof saved.answers === "object" ? saved.answers : {}) as any,
           apprenantId,
-          exerciceId,
+          idTentative,
         );
         const pendingAnswers = pending?.answers && typeof pending.answers === "object" ? pending.answers : {};
         const finalAnswers = { ...mergedAnswers, ...pendingAnswers };
@@ -1303,7 +1324,7 @@ function RevisionFausses({
         setLoaded(true);
       }
     })();
-  }, [apprenantId, userId, examenId, exerciceId, wrongQuestions.length]);
+  }, [apprenantId, userId, examenId, baseExerciceId, wrongQuestions.length]);
 
   // ---- Persist progress (debounced) ----
   const correctedQuestionsRef = useRef<string[]>([]);
@@ -1315,6 +1336,8 @@ function RevisionFausses({
     correctedQuestions: string[],
   ) => {
     if (!apprenantId || !userId) return;
+    // Tentative non identifiée ou déjà terminée : aucune réécriture « en cours ».
+    if (!tentativePreteRef.current || termineeRef.current) return;
     if (blockLearnerWrite("revision_progress(reponses_apprenants)")) return;
     const payload = {
       apprenant_id: apprenantId,
@@ -1457,10 +1480,15 @@ function RevisionFausses({
     } else {
       // Save final revision results to database
       const finalCorrected = correctedCount;
-      if (apprenantId && userId && examenId && !blockLearnerWrite("revision_fausses(fin)")) {
+      let finEnregistree = false;
+      const ecritureBloquee = blockLearnerWrite("revision_fausses(fin)");
+      if (apprenantId && userId && examenId && !ecritureBloquee) {
+        // Plus aucune sauvegarde « en cours » différée ne doit partir après la fin :
+        // elle réécrirait une révision terminée (refus serveur).
+        if (saveTimeoutRef.current) { clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null; }
         try {
           // Mark the in-progress record as completed
-          await supabase
+          const { error: finError } = await supabase
             .from("reponses_apprenants")
             .upsert({
               apprenant_id: apprenantId,
@@ -1476,7 +1504,16 @@ function RevisionFausses({
               score: finalCorrected,
               completed: true,
             } as any, { onConflict: "apprenant_id,exercice_id" });
+          if (finError) {
+            console.error("Erreur sauvegarde révision (fin):", finError.message);
+          } else {
+            finEnregistree = true;
+            termineeRef.current = true;
+            pendingSaveRef.current = false;
+            latestPayloadRef.current = null;
+          }
 
+          if (finEnregistree) {
           const { error } = await supabase
             .from("apprenant_quiz_results")
             .insert({
@@ -1491,6 +1528,7 @@ function RevisionFausses({
               reussi: finalCorrected === wrongQuestions.length,
               details: {
                 reponses,
+                revision_exercice_id: exerciceId,
                 questions: wrongQuestions.map(wq => ({
                   questionId: wq.question.id,
                   matiereId: wq.matiere.id,
@@ -1504,12 +1542,20 @@ function RevisionFausses({
           } else {
             console.log("Révision sauvegardée avec succès");
           }
+          }
         } catch (err) {
           console.error("Erreur sauvegarde révision:", err);
         }
       }
-      toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
-      onTerminer();
+      if (ecritureBloquee) {
+        onTerminer();
+      } else if (finEnregistree) {
+        toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
+        onTerminer();
+      } else {
+        // Jamais « terminée » sans accusé serveur : l'élève reste sur la révision.
+        toast.error("Révision non enregistrée par le serveur. Vérifiez votre connexion puis réessayez.");
+      }
     }
   };
 
