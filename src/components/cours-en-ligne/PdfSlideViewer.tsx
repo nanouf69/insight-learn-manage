@@ -464,11 +464,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
         ref={scrollAreaRef}
-        className={`flex justify-center overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
+        className={`flex overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
-          touchAction: renderMode === "react-pdf" ? "pan-y pinch-zoom" : "auto",
+          touchAction: renderMode === "react-pdf" ? "pan-x pan-y pinch-zoom" : "auto",
           WebkitOverflowScrolling: "touch",
           overscrollBehavior: "contain",
         }}
@@ -537,7 +537,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             loading={<div className="flex items-center justify-center p-12 text-muted-foreground">Chargement du PDF…</div>}
             error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
           >
-            <div className="flex flex-col items-center gap-4 py-4">
+            <div className="flex flex-col items-center gap-4 py-4" style={{ width: isMobile ? fitPageWidth : Math.max(280, containerWidth * zoom), flexShrink: 0 }}>
               {isMobile ? (
                 <div
                   key={page}

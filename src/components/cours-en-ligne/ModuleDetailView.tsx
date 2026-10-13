@@ -1,7 +1,7 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
-import { t3pPartie2DisplaySupport } from "@/lib/t3pPartie2Support";
+import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
@@ -325,7 +325,7 @@ function CourseFileViewer({
   secureMode: boolean;
   onLastPageReached: () => void;
 }) {
-  const support = t3pPartie2DisplaySupport(fichier.url);
+  const support = courseDisplaySupport(fichier.url);
   const displayUrl = useDisplayableCourseUrl(support.url);
   const pdfDisplayUrl = useDisplayableCourseUrl(support.pdfUrl ?? pdfFallbackUrl);
   const lowerName = fichier.nom.toLowerCase();
