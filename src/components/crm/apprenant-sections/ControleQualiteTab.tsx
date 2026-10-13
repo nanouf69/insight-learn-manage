@@ -782,7 +782,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           // ---- Présentiel théorie : émargements FC
           const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
           fallbackJourneesPresentiel = journeesPresentiel;
-          const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id).catch(() => []);
+          const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id); // erreur = export interrompu, jamais 0 h
           // Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
           const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
           const theorieSec = Math.round(theorieHours * 3600);
@@ -878,6 +878,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
           }
         } catch (progErr) {
           console.error("[bulk-download] suivi progression failed:", progErr);
+    // Source d'heures illisible : export interrompu plutôt qu'un relevé partiel trompeur.
+    if (String((progErr as any)?.message || "").includes("indisponibles") || (progErr as any)?.heuresIndisponibles) throw progErr;
           // Fallback: relevé simple sans synthèse
           try {
             const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true, journeesPresentiel: fallbackJourneesPresentiel }) as { blob: Blob; fileName: string } | undefined;

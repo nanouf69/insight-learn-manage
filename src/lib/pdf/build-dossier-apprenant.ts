@@ -292,7 +292,7 @@ export async function buildDossierApprenantIntoZip(
 
     const journeesPresentiel = buildJourneesPresentiel(emargAll, sessInscrits);
     fallbackJourneesPresentiel = journeesPresentiel;
-    const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id).catch(() => []);
+    const pratiqueDetails = await fetchPratiqueSlotDetails(apprenant.id); // erreur = export interrompu, jamais 0 h
     // Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
     const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
     const theorieSec = Math.round(theorieHours * 3600);
@@ -353,6 +353,8 @@ export async function buildDossierApprenantIntoZip(
     } catch (e) { console.error("[dossier] releve PDF failed", e); }
   } catch (e) {
     console.error("[dossier] suivi progression failed", e);
+    // Source d'heures illisible : export interrompu plutôt qu'un relevé partiel trompeur.
+    if (String((e as any)?.message || "").includes("indisponibles") || (e as any)?.heuresIndisponibles) throw e;
     try {
       const relevePdf = generateReleveConnexionsPdf(apprenant, cnxRawRows, { returnBlob: true, journeesPresentiel: fallbackJourneesPresentiel }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
