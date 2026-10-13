@@ -34,7 +34,7 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
-import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
+import { fetchHeuresValideesAdmin, HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
 import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
 import { getHistoryDefaults, historyStartTimestamp, type HistoryPeriod } from "@/lib/reports/history-defaults";
@@ -194,7 +194,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [pratiqueDetails, setPratiqueDetails] = useState<PratiqueSlotDetail[]>([]);
-  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[] }>({ minutes: 0, lignes: [] });
+  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[]; indisponible?: boolean }>({ minutes: 0, lignes: [] });
   const [loading, setLoading] = useState(false);
   // Préférence d'affichage uniquement : Tout l'historique reste toujours disponible.
   const [period, setPeriod] = useState<HistoryPeriod>(() => getHistoryDefaults(lockedApprenantId).period);
@@ -288,6 +288,16 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     load();
   }, []);
 
+  // Rechargement après un ajout d'heures CONFIRMÉ par le serveur (même élève uniquement).
+  const [heuresReloadKey, setHeuresReloadKey] = useState(0);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      if ((e as CustomEvent).detail?.apprenantId === selectedId) setHeuresReloadKey((k) => k + 1);
+    };
+    window.addEventListener(HEURES_VALIDEES_EVENT, onChange);
+    return () => window.removeEventListener(HEURES_VALIDEES_EVENT, onChange);
+  }, [selectedId]);
+
   // Load connexions & activities for selected apprenant
   useEffect(() => {
     if (!selectedId) {
@@ -378,7 +388,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
         fetchPratiqueSlotDetails(selectedId),
         // Heures validées par l'administration : comptées en présentiel,
         // comme la carte « Taux présentiel », les jalons et le relevé PDF.
-        fetchHeuresValideesAdmin(selectedId).catch(() => ({ minutes: 0, lignes: [] as { date: string; heures: number; label: string }[] })),
+        fetchHeuresValideesAdmin(selectedId).then((v) => ({ ...v, indisponible: false }), () => ({ minutes: 0, lignes: [] as { date: string; heures: number; label: string }[], indisponible: true })),
       ]);
 
 
@@ -393,7 +403,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
       setLoading(false);
     };
     load();
-  }, [selectedId, period, customStart, customEnd]);
+  }, [selectedId, period, customStart, customEnd, heuresReloadKey]);
 
   // Charge TOUT l'historique (indépendant du filtre période) pour le taux de réalisation
   useEffect(() => {
@@ -780,7 +790,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
             <div class="stat-label">Connexion e-learning<br/>${formatLearningHours(taux.doneElearning)} / ${taux.requiredElearning}h</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${taux.pctPresentiel}%</div>
+            <div class="stat-value">${heuresValidees.indisponible ? "Indisponible" : `${taux.pctPresentiel}%`}</div>
             <div class="stat-label">Présentiel<br/>${taux.donePresentiel.toFixed(1)}h / ${taux.requiredPresentiel}h</div>
           </div>
           <div class="stat-card">
@@ -943,10 +953,10 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground">Présentiel</div>
                       <div className={cn("text-lg font-bold", taux.pctPresentiel >= 100 ? "text-green-600" : taux.pctPresentiel > 0 ? "text-primary" : "text-orange-500")}>
-                        {taux.pctPresentiel}%
+                        {heuresValidees.indisponible ? "Indisponible" : `${taux.pctPresentiel}%`}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {taux.donePresentiel.toFixed(1)}h / {taux.requiredPresentiel}h
+                        {heuresValidees.indisponible ? "Heures validées admin illisibles" : `${taux.donePresentiel.toFixed(1)}h / ${taux.requiredPresentiel}h`}
                       </div>
                     </div>
                     <div className="w-px h-10 bg-border" />

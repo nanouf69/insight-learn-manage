@@ -420,7 +420,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
   // Heures de présence : même source que la carte « Taux présentiel »
   // (computePresentielHours sur les émargements signés, sans plafonnement),
   // pour que ce bloc et la carte affichent toujours le même total.
-  const { data: presenceHeures } = useQuery({
+  const { data: presenceHeures, isError: presenceHeuresErreur } = useQuery({
     queryKey: ["apprenant-presence-heures", apprenant.id],
     enabled: !!apprenant?.id,
     queryFn: async () => {
@@ -436,7 +436,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         (emargRes.data as any[]) || [],
         pratiqueDetails,
       );
-      const validees = await fetchHeuresValideesAdmin(apprenant.id).catch(() => ({ minutes: 0 }));
+      const validees = await fetchHeuresValideesAdmin(apprenant.id); // erreur = indisponible, jamais 0 h
       return theorieHours + (pratiqueMinutes + validees.minutes) / 60;
     },
   });
@@ -779,6 +779,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
   // heures réellement signées, sans plafonnement, pour que les deux affichages
   // soient toujours cohérents.
   const totalHeures = presenceHeures ?? 0;
+  const totalHeuresIndisponible = presenceHeuresErreur || presenceHeures == null;
 
   const uniqueMap = new Map<string, any>();
   for (const d of emargementsRaw) {
@@ -807,7 +808,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
-            <p className="text-2xl font-bold text-primary">{formatPresenceHours(totalHeures)}</p>
+            <p className="text-2xl font-bold text-primary">{totalHeuresIndisponible ? "Indisponible" : formatPresenceHours(totalHeures)}</p>
           </div>
           <div className="text-right text-sm text-muted-foreground">
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
