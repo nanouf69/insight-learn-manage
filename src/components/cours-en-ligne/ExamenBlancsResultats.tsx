@@ -1253,7 +1253,12 @@ function RevisionFausses({
   const pendingSaveRef = useRef(false);
   const accessTokenRef = useRef<string | null>(null);
 
-  const exerciceId = `revision_fausses_${examenId || "unknown"}`;
+  const baseExerciceId = revisionBaseId(examenId);
+  // Identifiant de la tentative en cours : jamais celui d'une révision déjà terminée.
+  const [exerciceId, setExerciceId] = useState<string>(baseExerciceId);
+  // Tant que la tentative n'est pas identifiée (ou après la fin), aucune écriture.
+  const tentativePreteRef = useRef(false);
+  const termineeRef = useRef(false);
 
 
   // ---- Load saved progress on mount ----
@@ -1264,16 +1269,31 @@ function RevisionFausses({
     }
     (async () => {
       try {
+        const { data: tentatives, error: errTentatives } = await supabase
+          .from("reponses_apprenants")
+          .select("exercice_id, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_type", "revision_fausses")
+          .like("exercice_id", `${baseExerciceId}%`);
+        if (errTentatives) {
+          // Lecture impossible : on n'écrit rien plutôt que réécrire une révision terminée.
+          console.error("Erreur chargement révision (tentatives):", errTentatives.message);
+          return;
+        }
+        const idTentative = choisirTentativeRevision(baseExerciceId, (tentatives as any[]) || []);
+        setExerciceId(idTentative);
+        tentativePreteRef.current = true;
         const { data } = await supabase
           .from("reponses_apprenants")
           .select("reponses, score")
           .eq("apprenant_id", apprenantId)
-          .eq("exercice_id", exerciceId)
+          .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses")
           .eq("completed", false)
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
+
 
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
         // Règle générale : les réponses locales encore en attente d'envoi
