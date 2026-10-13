@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from '@/lib/pratiqueSlots';
+import { calculerPratiqueSlotDetails, daySlotsDepuisConfigs, type PratiqueSlotDetail } from '@/lib/pratiqueSlots';
 import { pratiqueDocumentHours } from '@/lib/pratiqueDocumentHours';
 
 export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; signedAt: string | null; signature: string; absent: boolean }
@@ -49,10 +49,21 @@ async function paginer(build: (from: number, to: number) => any): Promise<any[]>
 }
 
 export async function chargerSignaturesRassemblees(apprenantId: string) {
-  const [rows, pratique, sessions] = await Promise.all([
+  const [rows, reservations, sessions] = await Promise.all([
     paginer((from, to) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).eq('masque', false).order('id').range(from, to)),
-    fetchPratiqueSlotDetails(apprenantId),
-    paginer((from, to) => supabase.from('session_apprenants').select('id, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(from, to)),
+    paginer((from, to) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(from, to)),
+    paginer((from, to) => supabase.from('session_apprenants').select('id, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(from, to)),
   ]);
+  const dates = [...reservations.map(r => r.date_choisie), ...sessions.filter(r => /pratique/i.test(r.sessions?.type_session ?? '')).map(r => r.sessions.date_debut)].filter(Boolean).map(d => String(d).slice(0, 10)).sort();
+  const configs = dates.length ? await paginer((from, to) => supabase.from('planning_pratique_config').select('id, planning_start_date, planning_end_date, day_time_slots, updated_at').lte('planning_start_date', dates[dates.length - 1]).gte('planning_end_date', dates[0]).order('id').range(from, to)) : [];
+  const slots = daySlotsDepuisConfigs(dates, configs);
+  const pratique = calculerPratiqueSlotDetails(reservations, sessions, slots).map(p => {
+    // Do not label historical signatures with a default or generic practical-session timetable.
+    const explicit = slots.get(p.date);
+    return { ...p, parts: p.parts.map(part => {
+      const raw = typeof explicit === 'string' ? (part.creneau === 'matin' ? explicit : '') : explicit?.[part.creneau === 'matin' ? 'matin' : 'apresmidi'];
+      return raw ? part : { ...part, label: '', minutes: 0 };
+    }) };
+  });
   return rassemblerSignatures(rows, pratique, sessions);
 }
