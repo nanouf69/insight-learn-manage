@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+// complet = compte EXACT atteint (jamais « >= ») : la mention EDOF ne s'affiche qu'au nombre précis.
 
 // ================== Signatures d'émargement manquantes ==================
 // Calcul purement indicatif, lecture seule : à partir des sessions réellement
