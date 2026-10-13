@@ -6805,6 +6805,8 @@ export type Database = {
           heures_validee_id: string | null
           historique_prouve: boolean
           id: string
+          methode_version: string
+          modules_modifies_apres_fin: number | null
           nature: string
           remplace_id: string | null
           sources: Json
@@ -6819,6 +6821,8 @@ export type Database = {
           heures_validee_id?: string | null
           historique_prouve: boolean
           id?: string
+          methode_version?: string
+          modules_modifies_apres_fin?: number | null
           nature: string
           remplace_id?: string | null
           sources: Json
@@ -6833,6 +6837,8 @@ export type Database = {
           heures_validee_id?: string | null
           historique_prouve?: boolean
           id?: string
+          methode_version?: string
+          modules_modifies_apres_fin?: number | null
           nature?: string
           remplace_id?: string | null
           sources?: Json
