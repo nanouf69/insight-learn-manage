@@ -11,6 +11,7 @@ import { chargerPreuvesJalons } from "@/lib/preuvesJalons";
 import { Button } from "@/components/ui/button";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
 import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
+import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { GEL_QUERY_KEY, chargerEtatGel, mentionGel } from "@/lib/releveJalonsGel";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
@@ -40,6 +41,9 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
     queryKey: [GEL_QUERY_KEY, apprenantId, userId],
     enabled: !!isAdmin && !!key,
     staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 5 * 60 * 1000,
     queryFn: () => chargerEtatGel(apprenantId),
   });
   const etatGel = gelQuery.data ?? null;
@@ -76,7 +80,10 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       })
       .subscribe();
     const stop = ecouterContenuModifie(() => { void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] }); });
-    return () => { stop(); void supabase.removeChannel(ch); };
+    // Ajout d'heures confirmé par le serveur : relire l'état du gel (nouvelle version possible).
+    const onHeures = () => { void queryClient.invalidateQueries({ queryKey: [GEL_QUERY_KEY, apprenantId] }); };
+    window.addEventListener(HEURES_VALIDEES_EVENT, onHeures);
+    return () => { stop(); window.removeEventListener(HEURES_VALIDEES_EVENT, onHeures); void supabase.removeChannel(ch); };
   }, [isAdmin, key, apprenantId, queryClient]);
   if (!isAdmin || !key) return null;
   const preuves = preuvesActuelles;
