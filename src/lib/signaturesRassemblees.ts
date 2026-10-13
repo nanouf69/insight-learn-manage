@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculerPratiqueSlotDetails, daySlotsDepuisConfigs, type PratiqueSlotDetail } from '@/lib/pratiqueSlots';
 import { pratiqueDocumentHours } from '@/lib/pratiqueDocumentHours';
+import { datesDuPlanning } from '@/lib/signaturesManquantes';
 
 export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; signedAt: string | null; signature: string; absent: boolean }
 const labels: Record<string, string> = { matin: 'Matin', apres_midi: 'Après-midi', soir: 'Soir', soir_1: 'Soir 1', soir_2: 'Soir 2' };
@@ -68,5 +69,7 @@ export async function chargerSignaturesRassemblees(apprenantId: string) {
       return raw ? part : { ...part, label: '', minutes: 0 };
     }) };
   });
-  return rassemblerSignatures(rows, pratique, sessions);
+  const { datesTheorie, datesPratique } = datesDuPlanning(sessions, reservations);
+  return rassemblerSignatures(rows, pratique, sessions)
+    .filter(s => datesTheorie.has(s.date) || datesPratique.has(s.date));
 }
