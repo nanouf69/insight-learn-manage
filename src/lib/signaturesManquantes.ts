@@ -160,7 +160,8 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 // VTC soir : 20 théorie + 2 pratique = 22 ; VTC journée : 40 + 2 = 42 ;
 // TAXI : 80 + 2 = 82. Signature comptée une seule fois par date + créneau.
 export interface BilanSignaturesEdof {
-  filiere: 'VTC' | 'TAXI';
+  filiere: 'VTC' | 'TAXI' | 'TA';
+  excedent: boolean;
   soir: boolean;
   theorie: number;
   pratique: number;
@@ -177,7 +178,8 @@ export function calculerBilanSignaturesEdof(
   reservations: any[],
   formation: string,
 ): BilanSignaturesEdof {
-  const filiere: 'VTC' | 'TAXI' = /taxi/i.test(formation ?? '') && !/vtc/i.test(formation ?? '') ? 'TAXI' : 'VTC';
+  const f = String(formation ?? '').toLowerCase();
+  const filiere: 'VTC' | 'TAXI' | 'TA' = /(^|[^a-z])ta([^a-z]|$)/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
   const datesPratique = new Set<string>();
   let soir = false;
   for (const row of sessionRows ?? []) {
@@ -213,12 +215,13 @@ export function calculerBilanSignaturesEdof(
     if (datesPratique.has(date)) pratique++;
     else theorie++;
   }
-  const objectifTheorie = filiere === 'TAXI' ? 80 : soir ? 20 : 40;
+  const objectifTheorie = filiere === 'TAXI' ? 80 : filiere === 'TA' ? 20 : soir ? 20 : 40;
   const objectifPratique = 2;
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique,
     objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
     complet: theorie >= objectifTheorie && pratique >= objectifPratique,
+    excedent: theorie > objectifTheorie || pratique > objectifPratique,
   };
 }
 
