@@ -101,7 +101,7 @@ function JeuArrondissements({ compteId }: { compteId?: string | null }) {
     enregistrer(lignes.reduce((s, l) => s + l.points, 0), lignes.length);
     if (suivi.etat === "confirme") return;
     // Réalisation seulement : niveau 1 enregistré en cours, niveau 2 terminé seulement si le niveau 1 l'est.
-    if (niveau === 1) void suivi.enregistrer({ niveau1_termine: true, niveau1_places: lignes.length }, false);
+    if (niveau === 1) void suivi.enregistrer({ niveau1_termine: true, niveau1_places: lignes.length }, suivi.reponses.niveau2_termine === true);
     else void suivi.enregistrer({ niveau2_termine: true, niveau2_places: lignes.length }, suivi.reponses.niveau1_termine === true);
   }, [termine]); // eslint-disable-line react-hooks/exhaustive-deps
 
