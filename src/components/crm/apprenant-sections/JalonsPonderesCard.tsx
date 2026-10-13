@@ -134,17 +134,21 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
           <caption className="text-left font-semibold mb-2">Pourcentages et heures prévisionnelles par jalon</caption>
           <thead><tr className="text-muted-foreground text-left"><th>Module / jalon</th><th className="text-right">Pages</th><th className="text-right">Questions</th><th className="text-right">Heures CPF prévisionnelles</th><th className="text-right">Poids dans la formation (%)</th><th className="text-right">Progression élève (%)</th><th className="text-right">Contribution (points de %)</th><th className="text-right">Durée prévisionnelle couverte</th></tr></thead>
           <tbody>
-            {tableau.lignes.map((l) => (
-              <tr key={l.moduleId} className="border-t">
-                <td>{estJalonPratique(l.moduleId) ? LABEL_PRESENTIEL : l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}</td>
+            {tableau.lignes.map((l) => {
+              // Affichage seul : module non terminé en rouge quand la formation n'est pas à 100 %.
+              const nonTermine = !l.valide && r.taux < 100 && !(estJalonPratique(l.moduleId) && l.progression >= 100);
+              return (
+              <tr key={l.moduleId} className={`border-t ${nonTermine ? "text-destructive" : ""}`}>
+                <td className={nonTermine ? "font-medium" : ""}>{estJalonPratique(l.moduleId) ? LABEL_PRESENTIEL : l.moduleId ? `${l.moduleId} · ${MODULE_NAME_BY_ID[l.moduleId] ?? ""}` : "Introduction (non attribuée)"}{nonTermine ? " — non terminé" : ""}</td>
                 {(() => { const v = Object.values(calcul.volumes).find((x) => x.moduleId === l.moduleId); return <><td className="text-right">{estJalonPratique(l.moduleId) ? "–" : v?.pages ?? "–"}</td><td className="text-right">{estJalonPratique(l.moduleId) ? "–" : v?.questions ?? "–"}</td></>; })()}
                 <td className="text-right whitespace-nowrap">{formatDureeJalon(l.minutesCpf)}</td>
                 <td className="text-right">{pct(l.poidsAffiche)}{l.obligatoireSansPoids ? " (obligatoire)" : ""}</td>
-                <td className="text-right">{pct(l.progression)}</td>
+                <td className={`text-right ${nonTermine ? "font-semibold" : ""}`}>{pct(l.progression)}</td>
                 <td className="text-right">{l.contribution.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de %</td>
                 <td className="text-right whitespace-nowrap">{formatDureeJalon(l.minutesCouvertes)}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
           <tfoot><tr className="border-t font-semibold"><td colSpan={3}>TOTAL FORMATION</td><td className="text-right">{formatDureeJalon(tableau.totalMinutes)}</td><td className="text-right">100 %</td><td className="text-right">Taux global : {pct(tableau.taux)}</td><td className="text-right">{tableau.contributionBrute.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} pt de % (brut)</td><td className="text-right">{formatDureeJalon(tableau.minutesCouvertes)}</td></tr></tfoot>
         </table>
