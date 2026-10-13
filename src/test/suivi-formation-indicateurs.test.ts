@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { calculerRatioSignatures, regleSuiviFormation } from '@/lib/suiviFormationIndicateurs';
 const session = (extra: any = {}) => ({ sessions: { type_session: 'theorique', date_debut: '2026-07-06', date_fin: '2026-07-06', heure_debut: '09:00', heure_fin: '16:00', ...extra } });
 const sig = (demi: string, extra: any = {}) => ({ date_emargement: '2026-07-06', demi_journee: demi, signature_data_url: 'data:image/png;base64,YQ==', ...extra });
-const ratio = (rows: any[], sessions = [session()], rs: any[] = [], bs: any[] = [], cs: any[] = []) => calculerRatioSignatures(rows, sessions, rs, bs, cs, 'vtc');
+const ratio = (rows: any[], sessions: any[] = [session()], rs: any[] = [], bs: any[] = [], cs: any[] = []) => calculerRatioSignatures(rows, sessions, rs, bs, cs, 'vtc');
 describe('Règles indicateurs juillet 2026, sans mutation', () => {
   it.each([['vtc',66],['taxi',96],['ta',36],['taxi-pour-vtc',36],['vtc-cours-du-soir',66],['ta-e-presentiel',36]])('heures prévues %s = %s', (type, h) => {
     expect(regleSuiviFormation({type_apprenant: type,date_debut_formation:'2026-07-01',heures_totales:69}).heures).toBe(h);
