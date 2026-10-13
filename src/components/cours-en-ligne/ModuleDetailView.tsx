@@ -2051,6 +2051,7 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
   ],
 };
 
+import { activitesDuModule } from "@/lib/jeuxPedagogiques";
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
@@ -9612,7 +9613,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           )}
 
           {/* Jeux de cartes de Lyon — entraînement complémentaire du module PRATIQUE VTC (8), non noté */}
-          {Number(module.id) === 8 && (
+          {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
             <Suspense fallback={null}>
               <JeuxCartesLyon compteId={apprenantId ?? null} />
             </Suspense>
