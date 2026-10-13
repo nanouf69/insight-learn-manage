@@ -23,6 +23,8 @@ import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/d
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
+import { chargerSignaturesManquantes } from '@/lib/signaturesManquantes';
+import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 
 interface Props {
   apprenant: any;

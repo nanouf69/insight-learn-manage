@@ -42,7 +42,7 @@ export function creneauxAttendus(heureDebut?: string | null, heureFin?: string |
   return ['matin', 'apres_midi'];
 }
 
-/** Les sessions théoriques ne tiennent jamais le week-end (constaté sur les émargements réels : lundi-vendrei uniquement). */
+/** Les sessions théoriques ne tiennent jamais le week-end (constaté sur les émargements réels : lundi-vendredi uniquement). */
 function joursOuvres(debut: string, fin: string): string[] {
   const out: string[] = [];
   const d = new Date(`${debut}T00:00:00Z`);
