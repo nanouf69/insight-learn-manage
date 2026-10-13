@@ -40,7 +40,7 @@ import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
 import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/components/cours-en-ligne/ModulesProgressionEleve";
-import { resolveFormationId, normalizeModuleIdForDashboard, modulesAttribuesDashboard, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
+import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";

@@ -33,7 +33,7 @@ const FORMATION_ALIASES: Record<string, FormationId> = {
   "formation-continue-taxi": "continue-taxi",
 };
 
-const normalizeFormationKey = (value: string | null | undefined): string =>
+export const normalizeFormationKey = (value: string | null | undefined): string =>
   (value || "").split(" + ")[0].trim().toLowerCase().replace(/\s+/g, "-");
 
 const inferFormationFromModules = (modulesAutorises: number[] | null | undefined): FormationId | null => {
