@@ -8,10 +8,9 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
-import { pratiqueSlotDetailsDepuisGel } from "@/lib/pratiqueSlots";
 import { clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
-import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
+import { fetchPratiqueSlotDetails, pratiqueSlotDetailsDepuisGel, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import { isSignedPresentielRow } from "@/lib/presentielHours";
 import { EXAMENS_BLANCS_FILIERE, INTRO_IDS, PRATIQUE_PHYSIQUE, type Filiere } from "@/lib/jalonsPonderes";
 
@@ -194,7 +193,7 @@ async function lire<T>(sources: SourceLecture[], cle: string, libelle: string, r
 export async function chargerPreuvesJalons(p: {
   apprenant: any; filiere: Filiere; lignesModuleIds: number[]; completions: EntreesPreuves["completions"];
   /** Relevé figé : toutes les preuves viennent des archives du gel, jamais d'une lecture actuelle. */
-  gel?: { sources: Record<string, any> } | null;
+  gel?: { sources: Record<string, any>; fin_acces?: string } | null;
 }): Promise<PreuvesJalons> {
   const id = p.apprenant.id as string;
   const sources: SourceLecture[] = [];
@@ -219,7 +218,7 @@ export async function chargerPreuvesJalons(p: {
   ]);
   return construirePreuvesJalons({
     apprenantId: id, filiere: p.filiere, lignesModuleIds: p.lignesModuleIds, completions: p.completions,
-    dateFinAcces: p.apprenant.date_fin_cours_en_ligne || p.apprenant.date_fin_formation,
+    dateFinAcces: p.gel?.fin_acces || p.apprenant.date_fin_cours_en_ligne || p.apprenant.date_fin_formation,
     dateDebutAcces: p.apprenant.date_debut_cours_en_ligne || p.apprenant.date_debut_formation,
     activites, reponses, quiz, tentativesV2, connexions, emargements, pratiqueDetails, heuresValidees, sources,
   });

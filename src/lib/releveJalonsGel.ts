@@ -21,6 +21,8 @@ export interface GelFinAcces {
   heures_validee_id: string | null;
   remplace_id: string | null;
   created_at: string;
+  methode_version?: string;
+  modules_modifies_apres_fin?: number | null;
 }
 
 export type EtatGel =
@@ -69,5 +71,9 @@ export function mentionGel(etat: EtatGel | null): string {
     ? `Relevé FIGÉ à la fin des accès (${jour(g.fin_acces)}), gel du ${fmt(g.created_at)}.`
     : `Gel réalisé le ${fmt(g.created_at)} après la fin des accès (${jour(g.fin_acces)}) ; état historique à la fin des accès non disponible.`;
   const v = g.version > 1 ? ` Version ${g.version} : heures de pratique ajoutées par l'administration après le gel (version précédente conservée).` : "";
-  return `${base}${v} Les modifications ultérieures de questions ou de contenus ne s'appliquent pas à ce relevé.`;
+  const m = g.modules_modifies_apres_fin == null
+    ? " Contenu à la date exacte de fin non certifié (contrôle non disponible pour ce gel)."
+    : g.modules_modifies_apres_fin > 0 ? ` ${g.modules_modifies_apres_fin} module(s) modifié(s) entre la fin des accès et le gel : contenu figé = état à l'heure du gel, pas à la fin exacte.` : "";
+  const src = g.methode_version && g.methode_version !== "gel-v1" ? "" : " Planning et preuves détaillées non archivés dans ce gel : indisponibles.";
+  return `${base}${v}${m}${src} Méthode ${g.methode_version ?? "gel-v1"}. Les modifications ultérieures de questions ou de contenus ne s'appliquent pas à ce relevé.`;
 }

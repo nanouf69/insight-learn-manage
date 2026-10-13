@@ -13,8 +13,10 @@ import { chargerEtatGel, mentionGel, type GelFinAcces } from "@/lib/releveJalons
 async function construireReleve(apprenant: any, key: string, gel: GelFinAcces | null) {
   const calcul = await chargerCalculJalons({ apprenantId: apprenant.id, typeApprenant: apprenant.type_apprenant, formationChoisie: apprenant.formation_choisie, gel });
   const [preuvesJalons, sessions] = await Promise.all([
-    chargerPreuvesJalons({ apprenant, filiere: calcul.filiere, lignesModuleIds: calcul.resultat.lignes.map((l: any) => l.moduleId), completions: calcul.completions as any }),
-    supabase.from("session_apprenants").select("sessions:session_id(nom, date_debut, date_fin, type_session)").eq("apprenant_id", apprenant.id),
+    chargerPreuvesJalons({ apprenant, filiere: calcul.filiere, lignesModuleIds: calcul.resultat.lignes.map((l: any) => l.moduleId), completions: calcul.completions as any, gel }),
+    gel
+      ? Promise.resolve(Array.isArray((gel.sources as any).sessions) ? { data: (gel.sources as any).sessions, error: null } : { data: null, error: { message: "non archivée" } })
+      : supabase.from("session_apprenants").select("sessions:session_id(nom, date_debut, date_fin, type_session)").eq("apprenant_id", apprenant.id),
   ]);
   const elementsACompleter = [
     ...preuvesJalons.sources.filter((s) => !s.lu).map((s) => `${s.libelle} : lecture non possible — les traces de cette source ne sont pas démontrées absentes.`),

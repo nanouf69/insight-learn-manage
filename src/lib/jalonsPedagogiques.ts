@@ -72,13 +72,16 @@ export async function chargerCalculJalons(params: {
   const examens = gel
     ? await (await import("@/components/cours-en-ligne/ExamensBlancsEditor")).loadSavedExamens(false, (mids) => lireContenuFige(gel, mids))
     : await examensModule.fetchLiveExamens();
-  const volumes = construireVolumes(
+  const volumesCalcules = () => construireVolumes(
     filiere,
     parcoursInitial,
     (editorRows ?? []) as any,
     (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),
     examens as any,
   );
+  // Relevé figé : les volumes résolus (contenu figé + programme du code) sont enregistrés UNE fois
+  // pour le gel ; ensuite toute modification du code/éditeur ne change plus le relevé.
+  const volumes = gel ? await volumesFiges(gel, volumesCalcules) : volumesCalcules();
   const emargements = ((emargementsResult.data as any[]) ?? []) as EmargementRowLike[];
   // Même présence que le « taux présentiel » : théorie signée + pratique signée
   // + heures validées par un admin (append-only). Aucune ligne n'est modifiée.
@@ -117,6 +120,23 @@ export async function chargerCalculJalons(params: {
       source: "Émargements signés + heures validées par l’administration",
     },
   };
+}
+
+export const METHODE_CODE_RELEVE = "jalons-volumes v2 — 13/10/2026";
+
+async function volumesFiges(gel: GelFinAcces, calculer: () => ReturnType<typeof construireVolumes>) {
+  const { data: chaine, error: e1 } = await supabase.from("releve_jalons_fin_acces" as any).select("id").eq("apprenant_id", gel.apprenant_id);
+  if (e1) throw e1;
+  const ids = ((chaine as any[]) ?? []).map((r) => r.id);
+  const { data, error } = await supabase.from("releve_jalons_resolution" as any).select("gel_id, volumes, limites, methode_code, created_at").in("gel_id", ids.length ? ids : [gel.id]).order("created_at", { ascending: true }).limit(1);
+  if (error) throw error;
+  const deja = ((data as any[]) ?? [])[0];
+  if (deja) return { volumes: deja.volumes, limites: [...(deja.limites ?? []), `Volumes figés le ${String(deja.created_at).slice(0, 10)} (${deja.methode_code}).`] };
+  const calc = calculer();
+  const { error: insError } = await supabase.from("releve_jalons_resolution" as any).insert({ gel_id: gel.id, volumes: calc.volumes, limites: calc.limites, methode_code: METHODE_CODE_RELEVE });
+  if (insError && insError.code !== "23505") throw insError;
+  if (insError) return volumesFiges(gel, calculer);
+  return { volumes: calc.volumes, limites: [...calc.limites, "Volumes résolus et figés à cette première lecture du relevé figé."] };
 }
 
 export const estJalonPratique = (moduleId: number) => moduleId === PRATIQUE_PHYSIQUE;
