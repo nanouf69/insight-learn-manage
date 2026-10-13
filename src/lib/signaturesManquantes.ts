@@ -155,3 +155,79 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
   ]);
   return calculerSignaturesManquantes(emargRes, sessionsRes, reservationsRes);
 }
+
+// ── Objectif EDOF : nombre de signatures attendues selon la formation ──
+// VTC soir : 20 théorie + 2 pratique = 22 ; VTC journée : 40 + 2 = 42 ;
+// TAXI : 80 + 2 = 82. Signature comptée une seule fois par date + créneau.
+export interface BilanSignaturesEdof {
+  filiere: 'VTC' | 'TAXI';
+  soir: boolean;
+  theorie: number;
+  pratique: number;
+  total: number;
+  objectifTheorie: number;
+  objectifPratique: number;
+  objectifTotal: number;
+  complet: boolean;
+}
+
+export function calculerBilanSignaturesEdof(
+  emargements: any[],
+  sessionRows: any[],
+  reservations: any[],
+  formation: string,
+): BilanSignaturesEdof {
+  const filiere: 'VTC' | 'TAXI' = /taxi/i.test(formation ?? '') && !/vtc/i.test(formation ?? '') ? 'TAXI' : 'VTC';
+  const datesPratique = new Set<string>();
+  let soir = false;
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || row?.liste_attente === true || annulee(s)) continue;
+    const type = String(s.type_session ?? '').toLowerCase();
+    if (type.includes('pratique')) {
+      const d = normDate(s.date_debut);
+      if (estDate(d)) datesPratique.add(d);
+    } else if (type.includes('theorique')) {
+      const h = String(row.heure_debut_personnalisee ?? s.heure_debut ?? '').slice(0, 5);
+      if (h >= '17:00') soir = true;
+    }
+  }
+  for (const r of reservations ?? []) {
+    const d = normDate(r?.date_choisie);
+    if (estDate(d)) datesPratique.add(d);
+  }
+  const vus = new Set<string>();
+  let theorie = 0;
+  let pratique = 0;
+  for (const e of emargements ?? []) {
+    if (e?.masque === true) continue;
+    const date = normDate(e?.date_emargement);
+    const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
+    if (!estDate(date) || !demi) continue;
+    const signe =
+      (typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url)) ||
+      !!e?.signed_at;
+    const key = `${date}|${demi}`;
+    if (!signe || vus.has(key)) continue;
+    vus.add(key);
+    if (datesPratique.has(date)) pratique++;
+    else theorie++;
+  }
+  const objectifTheorie = filiere === 'TAXI' ? 80 : soir ? 20 : 40;
+  const objectifPratique = 2;
+  return {
+    filiere, soir, theorie, pratique, total: theorie + pratique,
+    objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
+    complet: theorie >= objectifTheorie && pratique >= objectifPratique,
+  };
+}
+
+export async function chargerBilanSignaturesEdof(apprenantId: string, formation: string): Promise<BilanSignaturesEdof> {
+  if (!apprenantId) throw new Error('Apprenant requis');
+  const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
+    paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, heure_debut_personnalisee, sessions:session_id(type_session, statut, date_debut, heure_debut)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+  ]);
+  return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation);
+}
