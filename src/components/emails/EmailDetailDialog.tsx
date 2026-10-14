@@ -34,7 +34,12 @@ export function choisirCopie(accuse: AccuseReception, copies: EmailArchive[]): E
     const d = Math.abs(new Date(c.sent_at || c.created_at).getTime() - ts);
     if (d <= 30 * 60 * 1000) candidats.push(c);
   }
-  if (candidats.length > 1) return "ambigu";
+  if (candidats.length > 1) {
+    // Copies strictement identiques (objet, destinataires, contenu) : le contenu est prouvé, quelle que soit la copie.
+    const empreinte = (c: EmailArchive) => JSON.stringify([normalizeSujet(c.subject), [...(c.recipients || [])].map((r) => r.trim().toLowerCase()).sort(), c.body_html ?? null, c.body_html ? null : c.body_preview ?? null, !!c.has_attachments]);
+    const e0 = empreinte(candidats[0]);
+    return candidats.every((c) => empreinte(c) === e0) ? candidats[0] : "ambigu";
+  }
   return candidats[0] ?? null;
 }
 
@@ -48,6 +53,17 @@ export function EmailDetailDialog({ accuse, onClose }: { accuse: AccuseReception
     staleTime: 60_000,
     queryFn: async ({ signal }) => {
       const a = accuse!;
+      // 1) Lien exact enregistré à l'envoi (nouveaux mails).
+      const exact = await supabase
+        .from("emails")
+        .select("id, subject, body_html, body_preview, sender_email, sender_name, recipients, has_attachments, sent_at, created_at")
+        .eq("email_accuse_id", a.id)
+        .limit(2)
+        .abortSignal(signal);
+      if (exact.error) throw exact.error;
+      if (exact.data?.length === 1) return exact.data[0] as EmailArchive;
+      if ((exact.data?.length ?? 0) > 1) return "ambigu" as const;
+      // 2) Historique sans lien : rapprochement prudent.
       const t = new Date(a.sent_at).getTime();
       const { data, error } = await supabase
         .from("emails")
