@@ -16,9 +16,9 @@ describe('Notes individuelles pratique', () => {
     const source = readFileSync('src/components/examens/ExamenReussitePage.tsx', 'utf8');
     expect(source.match(/await candidateNotes.emailNote\(/g)).toHaveLength(7);
     expect(source.match(/body: noteHTML \+ body/g)).toHaveLength(7);
-    expect(source.match(/__html: pratiqueNoteHTML\(candidateNotes.row/g)).toHaveLength(2);
+    expect(source.match(/__html: pratiqueNoteHTML\(candidateNotes.noteFor/g)).toHaveLength(2);
     expect(source.match(/<PratiqueCandidateNote candidateId=/g)).toHaveLength(4);
-    expect(source).toContain('generateLettreHTML(refreshed.data)');
+    expect(source).toContain('generateLettreHTML(refreshed.data, other.data)');
   });
   it('préserve l’historique avec contrôle de version serveur', () => {
     const sql = readFileSync('drizzle/migrations/0127_pratique_candidate_note_history.sql', 'utf8');

@@ -17,6 +17,24 @@ export function usePratiqueCandidateNotes(examDate: string, pratiqueDate: string
     return data ?? [];
   };
   const query = useQuery({ queryKey, queryFn: load, enabled: !!examDate && !!pratiqueDate });
+  // Notes saved for the same exam session under another practical period (e.g. a stale
+  // period selection). Read-only fallback so an existing note is never silently omitted.
+  const loadOtherPeriods = async () => {
+    const { data, error } = await supabase.from('pratique_candidate_note_revisions')
+      .select('apprenant_id, note, revision, date_pratique, created_at')
+      .eq('exam_date', examDate).neq('date_pratique', pratiqueDate)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    const latest = new Map<string, { note: string; date_pratique: string }>();
+    for (const r of data ?? []) if (!latest.has(r.apprenant_id)) latest.set(r.apprenant_id, { note: r.note, date_pratique: r.date_pratique });
+    return latest;
+  };
+  const otherQuery = useQuery({ queryKey: ['pratique-candidate-notes-other', examDate, pratiqueDate], queryFn: loadOtherPeriods, enabled: !!examDate && !!pratiqueDate });
+  const noteFor = (id: string, current = query.data, other = otherQuery.data) => {
+    const own = current?.find(n => n.apprenant_id === id);
+    if (own) return own.note;
+    return other?.get(id)?.note?.trim() || undefined;
+  };
   const row = (id: string) => query.data?.find(n => n.apprenant_id === id);
   const draft = (id: string) => drafts[key(id)];
   const edit = (id: string, text: string) => {
@@ -68,7 +86,8 @@ export function usePratiqueCandidateNotes(examDate: string, pratiqueDate: string
     if (draft(id) || saving[key(id)]) throw new Error('Enregistrez la note de cet élève avant l’envoi.');
     const latest = await load();
     client.setQueryData(queryKey, latest);
-    return pratiqueNoteHTML(latest.find(n => n.apprenant_id === id)?.note);
+    const other = await loadOtherPeriods();
+    return pratiqueNoteHTML(noteFor(id, latest, other));
   };
-  return { query, row, draft, edit, save, acceptBase, emailNote, isSaving: (id: string) => !!saving[key(id)] };
+  return { query, otherQuery, noteFor, loadOtherPeriods, row, draft, edit, save, acceptBase, emailNote, isSaving: (id: string) => !!saving[key(id)] };
 }

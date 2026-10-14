@@ -3038,8 +3038,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
         const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
 
-        const generateLettreHTML = (notes = candidateNotes.query.data) => {
-          const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, notes?.find(n => n.apprenant_id === a.id)?.note);
+        const generateLettreHTML = (notes = candidateNotes.query.data, other = candidateNotes.otherQuery.data) => {
+          const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other));
           const taxiRows = taxiReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
           const vtcRows = vtcReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
           const padTaxi = taxiReussis.length < maxRows ? Array(maxRows - taxiReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
@@ -3130,7 +3130,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             if (reussisLettre.some(a => candidateNotes.draft(a.id) || candidateNotes.isSaving(a.id))) throw new Error("Enregistrez les notes avant l’envoi CMA.");
             const refreshed = await candidateNotes.query.refetch();
             if (refreshed.error) throw refreshed.error;
-            const htmlBody = generateLettreHTML(refreshed.data);
+            const other = await candidateNotes.otherQuery.refetch();
+            if (other.error) throw other.error;
+            const htmlBody = generateLettreHTML(refreshed.data, other.data);
             const dateDebutText = dateDebutPratique 
               ? ` - Début souhaité : ${formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}`
               : '';
@@ -3702,7 +3704,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 <div className="p-4 bg-white border-t text-xs space-y-1 text-foreground">
                                   <p className="font-semibold text-muted-foreground">Objet : Félicitations - Choix de votre date de formation pratique VTC - {vtcList[0]?.prenom || 'Prénom'} {vtcList[0]?.nom || 'Nom'}</p>
                                   <hr className="my-2" />
-                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: pratiqueNoteHTML(candidateNotes.row(vtcList[0]?.id ?? "")?.note) + `Bonjour ${vtcList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${vtcPreviewBookingUrl}" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
+                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: pratiqueNoteHTML(candidateNotes.noteFor(vtcList[0]?.id ?? "")) + `Bonjour ${vtcList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${vtcPreviewBookingUrl}" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
                                 </div>
                               </details>
                             </div>
@@ -3885,7 +3887,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                         <AlertDialogTitle>Envoyer l'email VTC à {a.prenom} {a.nom}</AlertDialogTitle>
                                         <AlertDialogDescription>
                                           Envoyer l'email "Félicitations VTC - Choix date pratique" à <strong>{a.email}</strong> ?
-                                          {candidateNotes.row(a.id)?.note && <span className="block whitespace-pre-wrap mt-2">Note : {candidateNotes.row(a.id)?.note}</span>}
+                                          {candidateNotes.noteFor(a.id) && <span className="block whitespace-pre-wrap mt-2">Note : {candidateNotes.noteFor(a.id)}</span>}
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
@@ -4083,7 +4085,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 <div className="p-4 bg-white border-t text-xs space-y-1 text-foreground">
                                   <p className="font-semibold text-muted-foreground">Objet : Félicitations - Choix de votre date de formation pratique TAXI - {taxiList[0]?.prenom || 'Prénom'} {taxiList[0]?.nom || 'Nom'}</p>
                                   <hr className="my-2" />
-                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: pratiqueNoteHTML(candidateNotes.row(taxiList[0]?.id ?? "")?.note) + `Bonjour ${taxiList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${taxiPreviewBookingUrl}" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
+                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: pratiqueNoteHTML(candidateNotes.noteFor(taxiList[0]?.id ?? "")) + `Bonjour ${taxiList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${taxiPreviewBookingUrl}" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
                                 </div>
                               </details>
                             </div>
@@ -4266,7 +4268,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                         <AlertDialogTitle>Envoyer l'email TAXI à {a.prenom} {a.nom}</AlertDialogTitle>
                                         <AlertDialogDescription>
                                           Envoyer l'email "Félicitations TAXI - Choix date pratique" à <strong>{a.email}</strong> ?
-                                          {candidateNotes.row(a.id)?.note && <span className="block whitespace-pre-wrap mt-2">Note : {candidateNotes.row(a.id)?.note}</span>}
+                                          {candidateNotes.noteFor(a.id) && <span className="block whitespace-pre-wrap mt-2">Note : {candidateNotes.noteFor(a.id)}</span>}
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
