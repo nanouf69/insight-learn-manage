@@ -36,6 +36,7 @@ import {
 import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
+import { resultatsDuPassage } from "@/lib/examClotureGarde";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
@@ -693,13 +694,22 @@ export default function ExamensBlancsPage({
       currentTentativeRef.current = nextTentative;
 
       if (hasIncompletePassage) {
+        const latestByKeyPassage = new Map<string, any>();
+        resultatsDuPassage(allResultRows, passage.tentative, (r: any) => getAttemptNumber(r)).forEach((row: any) => {
+          const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
+          const prev = latestByKeyPassage.get(key);
+          const ts = Math.max(toTimestamp(row?.completed_at), toTimestamp(row?.created_at));
+          if (!prev || ts >= Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at))) latestByKeyPassage.set(key, row);
+        });
+        const latestCompletedRowsPassage = Array.from(latestByKeyPassage.values());
         const preloadedResults: ResultatMatiere[] = [];
 
         for (let i = 0; i < latestExamen.matieres.length; i++) {
           const m = latestExamen.matieres[i];
           if (!m) continue;
           const expectedKeys = buildMatiereLookupKeys(m.id, m.nom);
-          const row = latestCompletedRows.find((r: any) =>
+          // Résultats de la MÊME tentative que le passage repris (incident 14/10).
+          const row = latestCompletedRowsPassage.find((r: any) =>
             shareLookupKey(buildMatiereLookupKeys(r?.matiere_id, r?.matiere_nom), expectedKeys)
           );
           if (row) {
@@ -731,9 +741,9 @@ export default function ExamensBlancsPage({
 
         const unfinishedStarted = latestExamen.matieres
           .map((matiere, index) => ({ matiere, index, row: matiere ? bestRowsByMatiere.get(matiere.id) : undefined }))
-          .filter(({ matiere, row }) => Boolean(matiere && row && !isMatiereDone(matiere) && getMeaningfulAnswerCount(row?.reponses) > 0))
+          .filter(({ matiere, index, row }) => Boolean(matiere && row && !preloadedResults[index] && getMeaningfulAnswerCount(row?.reponses) > 0))
           .sort((a, b) => getSavedAnswerRowTimestamp(b.row as SavedExamAnswerRow) - getSavedAnswerRowTimestamp(a.row as SavedExamAnswerRow));
-        const resumeIndex = unfinishedStarted[0]?.index ?? latestExamen.matieres.findIndex((m) => m && !isMatiereDone(m));
+        const resumeIndex = unfinishedStarted[0]?.index ?? latestExamen.matieres.findIndex((m, i) => m && !preloadedResults[i]);
         if (resumeIndex < 0) {
           // All done by ID match — show results
           toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
@@ -741,7 +751,7 @@ export default function ExamensBlancsPage({
           return;
         }
 
-        const nbDone = completedMatiereCount;
+        const nbDone = preloadedResults.filter(Boolean).length;
         const nbRemaining = Math.max(matieresTotal - nbDone, 0);
         toast.info(`${nbDone} matière${nbDone > 1 ? "s" : ""} déjà terminée${nbDone > 1 ? "s" : ""}. Il reste ${nbRemaining} épreuve${nbRemaining > 1 ? "s" : ""}.`, { duration: 5000, icon: "📋" });
 
@@ -1234,6 +1244,24 @@ export default function ExamensBlancsPage({
   };
 
 
+  /** Sortie d'une matière sans résultat (aucune note fabriquée, rien écrit). */
+  const handleMatiereSansResultat = () => {
+    if (!examenChoisi) return;
+    let nextIndex = -1;
+    for (let i = matiereIndex + 1; i < examenChoisi.matieres.length; i++) {
+      if (!tousResultats[i]) { nextIndex = i; break; }
+    }
+    if (nextIndex >= 0) {
+      setMatiereIndex(nextIndex);
+      setPhase("transition");
+      persistExamSession("examen", examenChoisi.id, nextIndex, tousResultats);
+    } else {
+      setPhase("selection");
+      setSelectionRefreshKey(k => k + 1);
+      try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+    }
+  };
+
   const handleTerminerMatiere = async (reponses: Reponses) => {
     try {
       if (!examenChoisi) return;
@@ -1657,7 +1685,7 @@ export default function ExamensBlancsPage({
               <ArrowLeft className="w-6 h-6" /> Retour à la liste
             </Button>
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} onSansReponse={handleMatiereSansResultat} />
 
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
