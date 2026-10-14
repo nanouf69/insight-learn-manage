@@ -103,7 +103,13 @@ function PassageMatiere({
   const routageResoluRef = useRef(false);
   const ligneServeurTermineeRef = useRef(false);
   const expirationDiffereeRef = useRef(false);
-  const [clotureEtat, setClotureEtat] = useState<null | "sans_reponse" | "deja_terminee">(null);
+  const [clotureEtat, setClotureEtat] = useState<null | "expire_sans_reponse" | "interruption_sans_reponse" | "deja_terminee">(null);
+  // Lecture serveur ratée : jamais d'autorisation de clôture, erreur visible, relecture non destructive.
+  const [lectureEchec, setLectureEchec] = useState(false);
+  const [lectureEssai, setLectureEssai] = useState(0);
+  // Démontage / changement de clé : aucune continuation obsolète n'appelle onTerminer.
+  const monteRef = useRef(true);
+  useEffect(() => { monteRef.current = true; return () => { monteRef.current = false; }; }, []);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
@@ -164,6 +170,7 @@ function PassageMatiere({
 
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
+    let annuleLecture = false;
     (async () => {
       try {
         const { data, error } = await supabase
@@ -172,8 +179,11 @@ function PassageMatiere({
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", exerciceKey)
           .maybeSingle();
+        if (annuleLecture) return;
         if (error) {
           console.warn("[AutoSave] Load query error:", error.message);
+          setLectureEchec(true);
+          return; // reste en attente : aucune clôture, aucune décision « sans réponse »
         }
         // RÈGLE GÉNÉRALE : une ligne vide (ou absente, ou en erreur de lecture)
         // ne doit jamais masquer une réponse réellement saisie encore en file
@@ -211,11 +221,18 @@ function PassageMatiere({
             });
           }
         }
-      } catch (e) { console.error("[AutoSave] Load error:", e); }
+      } catch (e) {
+        console.error("[AutoSave] Load error:", e);
+        if (!annuleLecture) setLectureEchec(true);
+        return;
+      }
+      if (annuleLecture) return;
+      setLectureEchec(false);
       initialLoadedRef.current = true;
       setInitialLoaded(true);
     })();
-  }, [apprenantId, exerciceKey, initialLoaded]);
+    return () => { annuleLecture = true; };
+  }, [apprenantId, exerciceKey, initialLoaded, lectureEssai]);
 
 
   // Silent auto-save on every change
@@ -343,7 +360,6 @@ function PassageMatiere({
       if (annule) return;
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
-        marquerResolu();
         // Le chrono suit la tentative V2 réellement ouverte. Une réouverture
         // administrative obtient donc une nouvelle fenêtre ; F5/reconnexion sur
         // la même tentative conserve exactement la même fenêtre serveur.
@@ -426,11 +442,14 @@ function PassageMatiere({
         // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
         // avec zéro réponse côté V2 → note 0 technique.
         rattraperReponsesNoyau(decision.attemptId);
+        // Résolu seulement APRÈS restauration des réponses et identité chrono fixée.
+        marquerResolu();
         void viderFileNoyau(decision.attemptId).then(() => actualiserConfirmationsNoyau(decision.attemptId));
         return;
       }
-      marquerResolu();
+      if (decision.moteur !== "bloque") marquerResolu();
       if (decision.moteur === "bloque") {
+        // Blocage explicite : jamais résolu, aucun repli vers l'ancien circuit.
         setBlocageV2(decision.message);
         void captureError({
           message: `[NoyauV2] démarrage bloqué : ${decision.message}`,
