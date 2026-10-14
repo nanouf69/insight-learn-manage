@@ -21,12 +21,15 @@ export function usePratiqueCandidateNotes(examDate: string, pratiqueDate: string
   // period selection). Read-only fallback so an existing note is never silently omitted.
   const loadOtherPeriods = async () => {
     const { data, error } = await supabase.from('pratique_candidate_note_revisions')
-      .select('apprenant_id, note, revision, date_pratique, created_at')
-      .eq('exam_date', examDate).neq('date_pratique', pratiqueDate)
-      .order('created_at', { ascending: false });
+      .select('apprenant_id, note, revision, exam_date, date_pratique, created_at')
+      .order('created_at', { ascending: false }).limit(5000);
     if (error) throw error;
-    const latest = new Map<string, { note: string; date_pratique: string }>();
-    for (const r of data ?? []) if (!latest.has(r.apprenant_id)) latest.set(r.apprenant_id, { note: r.note, date_pratique: r.date_pratique });
+    // Priority: same exam session (other period) first, then latest note from any session.
+    const latest = new Map<string, { note: string; date_pratique: string; exam_date: string }>();
+    const rows = (data ?? []).filter(r => !(r.exam_date === examDate && r.date_pratique === pratiqueDate));
+    for (const sameExam of [true, false])
+      for (const r of rows) if ((r.exam_date === examDate) === sameExam && !latest.has(r.apprenant_id))
+        latest.set(r.apprenant_id, { note: r.note, date_pratique: r.date_pratique, exam_date: r.exam_date });
     return latest;
   };
   const otherQuery = useQuery({ queryKey: ['pratique-candidate-notes-other', examDate, pratiqueDate], queryFn: loadOtherPeriods, enabled: !!examDate && !!pratiqueDate });
@@ -56,6 +59,7 @@ export function usePratiqueCandidateNotes(examDate: string, pratiqueDate: string
       const confirmed = latest.find(n => n.apprenant_id === id);
       if (!data || !confirmed || confirmed.revision < data.revision) throw new Error('Confirmation indisponible ; votre saisie est conservée.');
       client.setQueryData(queryKey, latest);
+      client.invalidateQueries({ queryKey: ['pratique-candidate-notes-other'] });
       setDrafts(prev => {
         if (prev[k]?.operationId !== d.operationId) return prev;
         const next = { ...prev }; delete next[k]; return next;
