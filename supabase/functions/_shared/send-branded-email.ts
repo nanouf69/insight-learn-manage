@@ -28,7 +28,7 @@ export async function sendBrandedEmail({
   html,
   replyTo,
   attachments = [],
-}: BrandedEmailParams): Promise<void> {
+}: BrandedEmailParams): Promise<string | null> {
   // Adresse invalide (ex. « rrt ») : envoi ignoré AVANT le fournisseur, avec motif explicite.
   // La fiche n'est ni modifiée ni supprimée.
   if (!estEmailValide(to)) {
@@ -57,7 +57,7 @@ export async function sendBrandedEmail({
           apprenantId = rows[0].id ?? null;
           if (rows[0].emails_bloques === true) {
             console.log(`[email-bloque] Envoi annulé vers ${to}`);
-            return;
+            return null;
           }
         }
       }
@@ -148,4 +148,5 @@ export async function sendBrandedEmail({
       console.warn("[accuse-reception] identifiant fournisseur non enregistré:", idErr);
     }
   }
+  return trackingEnabled ? trackingId : null;
 }

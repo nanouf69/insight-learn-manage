@@ -393,8 +393,9 @@ Deno.serve(async (req) => {
 
       let success = false;
       let deliveryError: string | null = null;
+      let accuseId: string | null = null;
       try {
-        await sendBrandedEmail({
+        accuseId = await sendBrandedEmail({
           to,
           subject,
           html: bodyWithSignature,
@@ -412,7 +413,8 @@ Deno.serve(async (req) => {
           apprenant_id: apprenantId || null,
           subject,
           body_preview: body.substring(0, 200),
-          body_html: body,
+          // Instantané exact du contenu envoyé (signature comprise, sans pixel) + lien unique au suivi.
+          body_html: bodyWithSignature,
           sender_email: "contact@ftransport.fr",
           sender_name: "FTRANSPORT",
           recipients: [to],
@@ -420,6 +422,7 @@ Deno.serve(async (req) => {
           is_read: true,
           has_attachments: attachments.length > 0,
           sent_at: new Date().toISOString(),
+          email_accuse_id: accuseId,
         });
       }
 
@@ -434,7 +437,7 @@ Deno.serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: success && !deliveryError, error: deliveryError }),
+        JSON.stringify({ success: success && !deliveryError, error: deliveryError, archived: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

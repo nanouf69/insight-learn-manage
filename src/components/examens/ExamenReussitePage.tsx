@@ -3157,20 +3157,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               throw error;
             }
             if (data?.success) {
-              // Enregistrer l'email envoyé dans la table emails
-              const dateDebutTextForSubject = dateDebutPratique 
-                ? ` - Début souhaité : ${formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}`
-                : '';
-              await supabase.from('emails').insert({
-                subject: `Liste candidats inscrits épreuves pratiques - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
-                body_html: htmlBody,
-                body_preview: `Liste des ${reussisLettre.length} candidats inscrits aux épreuves pratiques - Examen du ${selectedExamDate}`,
-                sender_email: 'contact@ftransport.fr',
-                recipients: ['audrey.crevier@cma-auvergnerhonealpes.fr'],
-                type: 'sent',
-                is_read: true,
-                sent_at: new Date().toISOString(),
-              });
+              // Copie archivée côté serveur (contenu exact + lien unique au suivi) : pas de seconde copie ici.
               toast.success('Email envoyé à la CMA avec accusé de réception demandé !');
             } else {
               await supabase.from('alertes_systeme').insert({
