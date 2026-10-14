@@ -1685,7 +1685,7 @@ export default function ExamensBlancsPage({
               <ArrowLeft className="w-6 h-6" /> Retour à la liste
             </Button>
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} onSansReponse={handleMatiereSansResultat} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}_${resumeExerciceIds[matiere.id] ?? ""}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} onSansReponse={handleMatiereSansResultat} />
 
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
