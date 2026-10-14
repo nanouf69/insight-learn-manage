@@ -1135,6 +1135,13 @@
       "when": 1791894270230,
       "tag": "0161_realtime_reponses_apprenants",
       "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1791972914918,
+      "tag": "0162_garde_eb_legacy_cloture_vide",
+      "breakpoints": true
     }
   ]
 }

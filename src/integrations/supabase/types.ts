@@ -8180,6 +8180,7 @@ export type Database = {
       }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
+      eb_reponses_renseignees: { Args: { _r: Json }; Returns: boolean }
       enforce_apprenant_session_limits: {
         Args: never
         Returns: {
