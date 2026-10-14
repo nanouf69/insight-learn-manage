@@ -103,7 +103,13 @@ function PassageMatiere({
   const routageResoluRef = useRef(false);
   const ligneServeurTermineeRef = useRef(false);
   const expirationDiffereeRef = useRef(false);
-  const [clotureEtat, setClotureEtat] = useState<null | "sans_reponse" | "deja_terminee">(null);
+  const [clotureEtat, setClotureEtat] = useState<null | "expire_sans_reponse" | "interruption_sans_reponse" | "deja_terminee">(null);
+  // Lecture serveur ratée : jamais d'autorisation de clôture, erreur visible, relecture non destructive.
+  const [lectureEchec, setLectureEchec] = useState(false);
+  const [lectureEssai, setLectureEssai] = useState(0);
+  // Démontage / changement de clé : aucune continuation obsolète n'appelle onTerminer.
+  const monteRef = useRef(true);
+  useEffect(() => { monteRef.current = true; return () => { monteRef.current = false; }; }, []);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
@@ -164,6 +170,7 @@ function PassageMatiere({
 
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
+    let annuleLecture = false;
     (async () => {
       try {
         const { data, error } = await supabase
@@ -172,8 +179,11 @@ function PassageMatiere({
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", exerciceKey)
           .maybeSingle();
+        if (annuleLecture) return;
         if (error) {
           console.warn("[AutoSave] Load query error:", error.message);
+          setLectureEchec(true);
+          return; // reste en attente : aucune clôture, aucune décision « sans réponse »
         }
         // RÈGLE GÉNÉRALE : une ligne vide (ou absente, ou en erreur de lecture)
         // ne doit jamais masquer une réponse réellement saisie encore en file
@@ -211,11 +221,18 @@ function PassageMatiere({
             });
           }
         }
-      } catch (e) { console.error("[AutoSave] Load error:", e); }
+      } catch (e) {
+        console.error("[AutoSave] Load error:", e);
+        if (!annuleLecture) setLectureEchec(true);
+        return;
+      }
+      if (annuleLecture) return;
+      setLectureEchec(false);
       initialLoadedRef.current = true;
       setInitialLoaded(true);
     })();
-  }, [apprenantId, exerciceKey, initialLoaded]);
+    return () => { annuleLecture = true; };
+  }, [apprenantId, exerciceKey, initialLoaded, lectureEssai]);
 
 
   // Silent auto-save on every change
@@ -343,7 +360,6 @@ function PassageMatiere({
       if (annule) return;
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
-        marquerResolu();
         // Le chrono suit la tentative V2 réellement ouverte. Une réouverture
         // administrative obtient donc une nouvelle fenêtre ; F5/reconnexion sur
         // la même tentative conserve exactement la même fenêtre serveur.
@@ -426,11 +442,14 @@ function PassageMatiere({
         // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
         // avec zéro réponse côté V2 → note 0 technique.
         rattraperReponsesNoyau(decision.attemptId);
+        // Résolu seulement APRÈS restauration des réponses et identité chrono fixée.
+        marquerResolu();
         void viderFileNoyau(decision.attemptId).then(() => actualiserConfirmationsNoyau(decision.attemptId));
         return;
       }
-      marquerResolu();
+      if (decision.moteur !== "bloque") marquerResolu();
       if (decision.moteur === "bloque") {
+        // Blocage explicite : jamais résolu, aucun repli vers l'ancien circuit.
         setBlocageV2(decision.message);
         void captureError({
           message: `[NoyauV2] démarrage bloqué : ${decision.message}`,
@@ -728,6 +747,8 @@ function PassageMatiere({
     return true;
   };
 
+  const terminerSiActuel = (r: Reponses) => { if (monteRef.current) onTerminer(r); };
+
   const handleTerminer = async () => {
     if (!allAnswered) {
       // Aucune réponse n'est modifiée ni perdue : on se contente de déplacer
@@ -752,7 +773,7 @@ function PassageMatiere({
     }
 
     if (!apprenantId) {
-      onTerminer(reponses);
+      terminerSiActuel(reponses);
       return;
     }
     try {
@@ -795,7 +816,7 @@ function PassageMatiere({
     }
     if (!(await synchronisationConfirmee())) return;
     if (!(await finaliserNoyau())) return;
-    onTerminer(reponses);
+    terminerSiActuel(reponses);
   };
 
   /**
@@ -840,7 +861,7 @@ function PassageMatiere({
         expirationDiffereeRef.current = false;
         matiereTermineeRef.current = true;
         setFinalisationEnAttente(false);
-        setClotureEtat(decision);
+        setClotureEtat(decision === "sans_reponse" ? "expire_sans_reponse" : "deja_terminee");
         return;
       }
     }
@@ -852,7 +873,7 @@ function PassageMatiere({
       toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
       if (!apprenantId) {
         matiereTermineeRef.current = true;
-        onTerminer(reponses);
+        terminerSiActuel(reponses);
         return;
       }
       try {
@@ -901,7 +922,7 @@ function PassageMatiere({
       }
       setFinalisationEnAttente(false);
       matiereTermineeRef.current = true;
-      onTerminer(reponses);
+      terminerSiActuel(reponses);
     } finally {
       expirationEnCoursRef.current = false;
     }
@@ -911,7 +932,7 @@ function PassageMatiere({
   const handleInterruption = async () => {
     if (!apprenantId) {
       setShowInterruptConfirm(false);
-      onTerminer(reponses);
+      terminerSiActuel(reponses);
       return;
     }
     const decisionInterruption = deciderCloture({
@@ -928,7 +949,7 @@ function PassageMatiere({
       // Interruption sans aucune réponse : aucune ligne terminale vide, aucune note 0.
       setShowInterruptConfirm(false);
       matiereTermineeRef.current = true;
-      setClotureEtat(decisionInterruption);
+      setClotureEtat(decisionInterruption === "sans_reponse" ? "interruption_sans_reponse" : "deja_terminee");
       return;
     }
     try {
@@ -954,7 +975,7 @@ function PassageMatiere({
       // Interruption volontaire : les questions vides sont autorisées (0 serveur).
       if (!(await finaliserNoyau(true))) return;
       setShowInterruptConfirm(false);
-      onTerminer(reponses);
+      terminerSiActuel(reponses);
     } catch (error) {
       console.error("[AutoSave] Interruption bloquée: réponses non sauvegardées", error);
       setSaveStatus("error");
@@ -977,6 +998,8 @@ function PassageMatiere({
 
   useEffect(() => {
     if (isBilan) return;
+    // Identité du chrono = tentative définitive : aucune lecture avant routage résolu.
+    if (apprenantId && !routageResolu) return;
     let cancelled = false;
 
     const sync = async () => {
@@ -1030,7 +1053,7 @@ function PassageMatiere({
       window.removeEventListener("online", sync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentativeChrono]);
+  }, [apprenantId, exerciceKey, dureeSecondes, isBilan, tentativeChrono, routageResolu]);
 
   // « Finalisation en attente » : le temps est écoulé, les réponses sont figées
   // mais le serveur n'a pas encore confirmé. On réessaie automatiquement
@@ -1056,22 +1079,42 @@ function PassageMatiere({
     }
   }, [initialLoaded, routageResolu]);
 
+  if (lectureEchec && !initialLoaded) {
+    return (
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" /> Lecture de vos réponses impossible
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>Vos réponses n'ont pas pu être relues. Rien n'a été clôturé ni modifié.</p>
+          <Button onClick={() => { setLectureEchec(false); setLectureEssai((n) => n + 1); }}>Réessayer la lecture</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (clotureEtat) {
+    const titre = clotureEtat === "expire_sans_reponse"
+      ? "Temps écoulé sans réponse"
+      : clotureEtat === "interruption_sans_reponse"
+        ? "Interruption sans réponse"
+        : "Matière déjà terminée";
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Timer className="h-5 w-5" />
-            {clotureEtat === "sans_reponse" ? "Matière clôturée sans réponse" : "Matière déjà terminée"}
+            <Timer className="h-5 w-5" /> {titre}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p>
-            {clotureEtat === "sans_reponse"
-              ? "Aucune réponse n'a été enregistrée pour cette matière. Aucune note n'a été calculée et rien n'a été enregistré comme terminé."
-              : "Cette matière est déjà terminée pour ce passage. Rien n'a été modifié."}
+            {clotureEtat === "deja_terminee"
+              ? "Cette matière est déjà terminée pour ce passage. Rien n'a été modifié."
+              : "Aucune réponse n'a été saisie pour cette matière. Aucune note n'a été calculée et la matière n'est pas enregistrée comme terminée."}
           </p>
-          <Button onClick={() => onSansReponse?.()} disabled={!onSansReponse}>Continuer</Button>
+          <Button onClick={() => { if (monteRef.current) onSansReponse?.(); }} disabled={!onSansReponse}>Continuer</Button>
         </CardContent>
       </Card>
     );
