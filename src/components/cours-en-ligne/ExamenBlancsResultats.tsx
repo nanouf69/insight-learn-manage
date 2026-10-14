@@ -79,8 +79,8 @@ function EcranResultats({
     return () => { cancelled = true; };
   }, [apprenantId, examen?.id, coreTick]);
   const resultatsSource = resultats;
-  // Les emplacements vides (matière sans résultat) sont ignorés : jamais de plantage.
-  resultats = useMemo(() => resultatsSource.filter((r) => r != null).map((r) => ({
+  // Les emplacements vides (matière sans résultat) restent à leur index : jamais de plantage.
+  resultats = useMemo(() => resultatsSource.map((r) => (r == null ? r : {
     ...r,
     __core: matchCoreState(coreStates, r.quizId ?? examen?.id, r.matiereId, r.completedAt, r.resultId),
   })), [resultatsSource, coreStates, examen?.id]);
