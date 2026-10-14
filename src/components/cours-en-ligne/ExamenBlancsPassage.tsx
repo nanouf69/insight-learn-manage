@@ -50,6 +50,7 @@ import {
   recommencerMatiereNoyau,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
+import { deciderCloture, compterReponsesSaisies } from "@/lib/examClotureGarde";
 
 
 
@@ -66,6 +67,7 @@ function PassageMatiere({
   tentative = 1,
   exerciceIdOverride,
   onLearnerActivity,
+  onSansReponse,
 }: {
   matiere: Matiere;
   numero: number;
@@ -78,6 +80,8 @@ function PassageMatiere({
   tentative?: number;
   exerciceIdOverride?: string;
   onLearnerActivity?: () => void;
+  /** Sortie sans résultat : temps écoulé sans réponse ou matière déjà close. Aucune note créée. */
+  onSansReponse?: () => void;
 }) {
 
   const [reponses, setReponses] = useState<Reponses>({});
@@ -92,6 +96,14 @@ function PassageMatiere({
   const matiereTermineeRef = useRef(false);
 
   const [initialLoaded, setInitialLoaded] = useState(false);
+  // GARDE DE CLÔTURE (incident 13–14/10) : aucune clôture avant relecture des
+  // réponses ET résolution du routage ; jamais de ligne terminale vide.
+  const initialLoadedRef = useRef(false);
+  const [routageResolu, setRoutageResolu] = useState(false);
+  const routageResoluRef = useRef(false);
+  const ligneServeurTermineeRef = useRef(false);
+  const expirationDiffereeRef = useRef(false);
+  const [clotureEtat, setClotureEtat] = useState<null | "sans_reponse" | "deja_terminee">(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
@@ -167,6 +179,7 @@ function PassageMatiere({
         // ne doit jamais masquer une réponse réellement saisie encore en file
         // d'attente locale. Les réponses non vides gagnent toujours.
         const rawReponses = (!error ? (data as any)?.reponses : null) as Reponses | null;
+        ligneServeurTermineeRef.current = !error && (data as any)?.completed === true;
         const merged = mergeSavedAndPendingAnswers(rawReponses as any, apprenantId, exerciceKey) as Reponses;
         if (Object.keys(merged).length > 0) {
           const parsed = normalizeReponses(merged);
@@ -199,6 +212,7 @@ function PassageMatiere({
           }
         }
       } catch (e) { console.error("[AutoSave] Load error:", e); }
+      initialLoadedRef.current = true;
       setInitialLoaded(true);
     })();
   }, [apprenantId, exerciceKey, initialLoaded]);
@@ -308,18 +322,28 @@ function PassageMatiere({
     let annule = false;
     // On attend d'avoir lu l'éventuel passage déjà engagé sur l'ancien circuit :
     // un passage commencé ne change jamais de moteur.
-    if (!apprenantId || !examenId || !initialLoaded) return;
+    if (!apprenantId || !examenId) { routageResoluRef.current = true; setRoutageResolu(true); return; }
+    if (!initialLoaded) return;
+    const marquerResolu = () => { if (!annule) { routageResoluRef.current = true; setRoutageResolu(true); } };
     (async () => {
-      const decision = await routerPassage({
+      let decision: Awaited<ReturnType<typeof routerPassage>>;
+      try {
+        decision = await routerPassage({
         apprenantId,
         examenId,
         matiereId: matiere.id,
         tentative,
         passageDejaEngage: Object.keys(latestReponsesRef.current ?? {}).length > 0,
       });
+      } catch (e) {
+        // Routage indisponible : aucune clôture possible (garde "attendre").
+        console.error("[NoyauV2] routage impossible", e);
+        return;
+      }
       if (annule) return;
       if (decision.moteur === "v2") {
         attemptV2Ref.current = decision.attemptId;
+        marquerResolu();
         // Le chrono suit la tentative V2 réellement ouverte. Une réouverture
         // administrative obtient donc une nouvelle fenêtre ; F5/reconnexion sur
         // la même tentative conserve exactement la même fenêtre serveur.
@@ -405,6 +429,7 @@ function PassageMatiere({
         void viderFileNoyau(decision.attemptId).then(() => actualiserConfirmationsNoyau(decision.attemptId));
         return;
       }
+      marquerResolu();
       if (decision.moteur === "bloque") {
         setBlocageV2(decision.message);
         void captureError({
@@ -802,7 +827,27 @@ function PassageMatiere({
     expireRef.current = true;
     setExpire(true);
     if (matiereTermineeRef.current || expirationEnCoursRef.current) return;
+    if (apprenantId) {
+      const decision = deciderCloture({
+        reponsesChargees: initialLoadedRef.current,
+        routageResolu: routageResoluRef.current,
+        ligneServeurTerminee: ligneServeurTermineeRef.current,
+        nbReponsesSaisies: compterReponsesSaisies(latestReponsesRef.current),
+      });
+      if (decision === "attendre") { expirationDiffereeRef.current = true; return; }
+      if (decision === "deja_terminee" || decision === "sans_reponse") {
+        // Aucune écriture : ni ligne terminale vide, ni note fabriquée.
+        expirationDiffereeRef.current = false;
+        matiereTermineeRef.current = true;
+        setFinalisationEnAttente(false);
+        setClotureEtat(decision);
+        return;
+      }
+    }
+    expirationDiffereeRef.current = false;
     expirationEnCoursRef.current = true;
+    // Réponses figées à l'instant de l'expiration (jamais un état initial périmé).
+    const reponses = latestReponsesRef.current;
     try {
       toast.warning("Temps écoulé — enregistrement de vos réponses avant la suite.", { duration: 5000 });
       if (!apprenantId) {
@@ -867,6 +912,23 @@ function PassageMatiere({
     if (!apprenantId) {
       setShowInterruptConfirm(false);
       onTerminer(reponses);
+      return;
+    }
+    const decisionInterruption = deciderCloture({
+      reponsesChargees: initialLoadedRef.current,
+      routageResolu: routageResoluRef.current,
+      ligneServeurTerminee: ligneServeurTermineeRef.current,
+      nbReponsesSaisies: compterReponsesSaisies(latestReponsesRef.current),
+    });
+    if (decisionInterruption === "attendre") {
+      toast.info("Chargement de vos réponses en cours. Réessayez dans un instant.");
+      return;
+    }
+    if (decisionInterruption === "deja_terminee" || decisionInterruption === "sans_reponse") {
+      // Interruption sans aucune réponse : aucune ligne terminale vide, aucune note 0.
+      setShowInterruptConfirm(false);
+      matiereTermineeRef.current = true;
+      setClotureEtat(decisionInterruption);
       return;
     }
     try {
@@ -985,6 +1047,35 @@ function PassageMatiere({
   }, [finalisationEnAttente]);
 
 
+
+  // Expiration survenue avant la relecture des réponses ou le routage :
+  // rejouée une seule fois dès que les deux sont prêts.
+  useEffect(() => {
+    if (initialLoaded && routageResolu && expirationDiffereeRef.current) {
+      void handleExpireRef.current();
+    }
+  }, [initialLoaded, routageResolu]);
+
+  if (clotureEtat) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Timer className="h-5 w-5" />
+            {clotureEtat === "sans_reponse" ? "Matière clôturée sans réponse" : "Matière déjà terminée"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>
+            {clotureEtat === "sans_reponse"
+              ? "Aucune réponse n'a été enregistrée pour cette matière. Aucune note n'a été calculée et rien n'a été enregistré comme terminé."
+              : "Cette matière est déjà terminée pour ce passage. Rien n'a été modifié."}
+          </p>
+          <Button onClick={() => onSansReponse?.()} disabled={!onSansReponse}>Continuer</Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Le nouveau moteur n'a pas pu ouvrir la tentative : on bloque le démarrage
   // plutôt que de basculer silencieusement sur l'ancien circuit.
