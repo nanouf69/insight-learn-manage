@@ -7,17 +7,24 @@ import { toast } from "sonner";
 
 interface Props {
   apprenant: { id: string; nom: string; prenom: string; [key: string]: unknown };
+  /** Statut de suivi (session_apprenants.statut_suivi ou apprenants.statut_suivi). */
+  statutSuivi?: string | null;
 }
+
+/** Statuts qui prouvent que le dossier est en règle : vert même sans dépôt CRM du dossier. */
+const STATUTS_VERTS = new Set(["paye", "document_complet"]);
 
 /**
  * Bouton « Dossier de bienvenue » de la liste des examens.
  * Au chargement : une seule lecture (SELECT, limite 1) pour savoir si le
- * dossier est rempli → bouton vert, et rouge quand il ne l'est pas.
+ * dossier est rempli. Vert si le dossier est déposé OU si le statut de
+ * l'apprenant est « Payé » ou « Dossier complet » ; rouge seulement quand
+ * le dossier n'est pas déposé ET que le statut ne prouve rien.
  * Une lecture impossible laisse le bouton neutre : aucune couleur affirmée.
  * Aucune écriture, aucun PDF généré automatiquement ; le PDF n'est produit
  * qu'au clic volontaire.
  */
-export function DossierBienvenueButton({ apprenant }: Props) {
+export function DossierBienvenueButton({ apprenant, statutSuivi }: Props) {
   const { user, loading } = useAuth();
   const owner = useRef(user?.id);
   owner.current = loading ? undefined : user?.id;
@@ -25,6 +32,8 @@ export function DossierBienvenueButton({ apprenant }: Props) {
   const [busy, setBusy] = useState(false);
   // « inconnu » = lecture pas encore faite ou échouée : aucune couleur affirmée.
   const [etat, setEtat] = useState<"inconnu" | "rempli" | "absent">("inconnu");
+
+  const statutVert = !!statutSuivi && STATUTS_VERTS.has(statutSuivi.toLowerCase().trim());
 
   // Présence du dossier (lecture seule, silencieuse en cas d'erreur).
   useEffect(() => {
@@ -68,7 +77,11 @@ export function DossierBienvenueButton({ apprenant }: Props) {
       if (error) throw error;
       const document = data?.[0];
       if (!document) {
-        toast.info("Dossier de bienvenue non déposé dans le CRM.");
+        toast.info(
+          statutVert
+            ? "Statut « Payé / Dossier complet » mais dossier de bienvenue non déposé dans le CRM."
+            : "Dossier de bienvenue non déposé dans le CRM.",
+        );
         return;
       }
       const { generateDocumentIndividuelPdf } = await import("@/lib/pdf/document-individuel");
@@ -88,6 +101,9 @@ export function DossierBienvenueButton({ apprenant }: Props) {
     }
   };
 
+  const vert = statutVert || etat === "rempli";
+  const rouge = !vert && etat === "absent";
+
   return (
     <Button
       type="button"
@@ -95,16 +111,18 @@ export function DossierBienvenueButton({ apprenant }: Props) {
       size="sm"
       disabled={loading || !user || busy}
       className={`mt-1 h-auto min-h-6 w-full gap-1 whitespace-normal px-1 py-1 text-[10px] leading-tight ${
-        etat === "rempli"
+        vert
           ? "border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-50"
-          : etat === "absent"
+          : rouge
             ? "border-red-500 text-red-700 bg-red-50 hover:bg-red-50"
             : ""
       }`}
       title={
-        etat === "rempli"
-          ? "Dossier de bienvenue rempli — cliquer pour le télécharger"
-          : etat === "absent"
+        vert
+          ? statutVert && etat !== "rempli"
+            ? "Statut Payé / Dossier complet — cliquer pour télécharger le dossier de bienvenue s'il est déposé"
+            : "Dossier de bienvenue rempli — cliquer pour le télécharger"
+          : rouge
             ? "Dossier de bienvenue non rempli"
             : "Aucun dossier de bienvenue enregistré dans le CRM"
       }

@@ -101,7 +101,52 @@ describe("Dossier de bienvenue — liste examens, données fictives", () => {
   });
   it("est placé dans chaque rangée sans modifier les colonnes ou filières", () => {
     const source = readFileSync("src/components/examens/ExamenReussitePage.tsx", "utf8");
-    expect(source).toContain('<DossierBienvenueButton apprenant={apprenant} />');
-    expect(source.indexOf('<DossierBienvenueButton apprenant={apprenant} />')).toBeGreaterThan(source.indexOf('{filtered.map((apprenant) =>'));
+    expect(source).toContain("statutSuivi={statutsSession?.[apprenant.id]?.statut");
+    expect(source.indexOf("statutSuivi={statutsSession?.[apprenant.id]?.statut")).toBeGreaterThan(
+      source.indexOf('{filtered.map((apprenant) =>'),
+    );
+  });
+
+  it("est vert avec le statut « paye » même si le dossier n'est pas déposé", async () => {
+    mocks.read.mockResolvedValue({ data: [], error: null });
+    render(<DossierBienvenueButton apprenant={learner} statutSuivi="paye" />);
+    const button = await waitFor(() => {
+      const b = screen.getByRole("button", { name: "Dossier de bienvenue" });
+      expect(b.className).toContain("border-emerald-500");
+      return b;
+    });
+    expect(button.className).not.toContain("red");
+  });
+
+  it("est vert avec le statut « document_complet » même si la lecture du dossier échoue", async () => {
+    mocks.read.mockResolvedValue({ data: null, error: new Error("lecture refusée") });
+    render(<DossierBienvenueButton apprenant={learner} statutSuivi="document_complet" />);
+    const button = await waitFor(() => {
+      const b = screen.getByRole("button", { name: "Dossier de bienvenue" });
+      expect(b.className).toContain("border-emerald-500");
+      return b;
+    });
+    expect(button.className).not.toContain("red");
+  });
+
+  it("reste rouge quand le statut ne prouve rien et que le dossier est absent", async () => {
+    mocks.read.mockResolvedValue({ data: [], error: null });
+    render(<DossierBienvenueButton apprenant={learner} statutSuivi="a_payer" />);
+    const button = await waitFor(() => {
+      const b = screen.getByRole("button", { name: "Dossier de bienvenue" });
+      expect(b.className).toContain("border-red-500");
+      return b;
+    });
+    expect(button.className).not.toContain("emerald");
+  });
+
+  it("reste neutre sans statut prouvant et lecture échouée (jamais de rouge affirmé)", async () => {
+    mocks.read.mockResolvedValue({ data: null, error: new Error("lecture refusée") });
+    render(<DossierBienvenueButton apprenant={learner} statutSuivi={null} />);
+    await waitFor(() => expect(mocks.from).toHaveBeenCalled());
+    await new Promise(r => setTimeout(r, 10));
+    const cls = screen.getByRole("button", { name: "Dossier de bienvenue" }).className;
+    expect(cls).not.toContain("emerald");
+    expect(cls).not.toContain("red");
   });
 });

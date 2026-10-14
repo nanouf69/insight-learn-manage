@@ -2507,7 +2507,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               {apprenant.nom}
                             </button>
                           ) : apprenant.nom}
-                          <DossierBienvenueButton apprenant={apprenant} />
+                          <DossierBienvenueButton
+                            apprenant={apprenant}
+                            statutSuivi={statutsSession?.[apprenant.id]?.statut ?? (apprenant as any).statut_suivi ?? null}
+                          />
                         </TableCell>
                         <TableCell className="truncate" title={apprenant.prenom || undefined}>
                           {onNavigateToApprenant ? (
