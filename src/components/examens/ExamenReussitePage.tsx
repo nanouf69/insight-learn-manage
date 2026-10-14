@@ -3038,8 +3038,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
         const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
 
-        const generateLettreHTML = (notes = candidateNotes.query.data) => {
-          const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, notes?.find(n => n.apprenant_id === a.id)?.note);
+        const generateLettreHTML = (notes = candidateNotes.query.data, other = candidateNotes.otherQuery.data) => {
+          const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other));
           const taxiRows = taxiReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
           const vtcRows = vtcReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
           const padTaxi = taxiReussis.length < maxRows ? Array(maxRows - taxiReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
