@@ -3171,6 +3171,7 @@ export type Database = {
           body_html: string | null
           body_preview: string | null
           created_at: string
+          email_accuse_id: string | null
           has_attachments: boolean | null
           id: string
           is_read: boolean | null
@@ -3189,6 +3190,7 @@ export type Database = {
           body_html?: string | null
           body_preview?: string | null
           created_at?: string
+          email_accuse_id?: string | null
           has_attachments?: boolean | null
           id?: string
           is_read?: boolean | null
@@ -3207,6 +3209,7 @@ export type Database = {
           body_html?: string | null
           body_preview?: string | null
           created_at?: string
+          email_accuse_id?: string | null
           has_attachments?: boolean | null
           id?: string
           is_read?: boolean | null
