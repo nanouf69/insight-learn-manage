@@ -28,6 +28,6 @@
 - Consolidated attendance PDF uses original signature IDs and account-scoped readonly export; missing/ambiguous times stay explicit; why: preserve every version without invented proofs.
 - Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
-- Quiz validé : triggers `trg_00_garde_*` gardent réponses/note/statut, refus tracés dans `quiz_valide_reecritures_refusees` ; Admin/service/nouvelle tentative passent ; why: anti-réécriture élève.
+- Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 ; why: anti-réécriture.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
