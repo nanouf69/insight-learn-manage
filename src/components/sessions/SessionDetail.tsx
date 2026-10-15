@@ -53,6 +53,7 @@ import {
   ChevronLeft,
   ArrowRightLeft,
   Video,
+  Clock,
 } from "lucide-react";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
@@ -63,6 +64,7 @@ import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { isPratiqueType } from "@/lib/sessionTypes";
+import { heuresSessionAffichees } from "@/lib/sessionHeures";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
@@ -93,6 +95,10 @@ interface Session {
   status: string;
   type_session?: string;
   creneaux?: string[] | string | null;
+  nom?: string | null;
+  heure_debut?: string | null;
+  types_apprenant?: string[] | null;
+  heures_total?: number | null;
 }
 
 interface SessionDetailProps {
@@ -737,6 +743,31 @@ function PaiementPopover({
 
 export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant, asPage, onBack }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
+  // Total d'heures de la session (modifiable, enregistré en base ; défaut calculé sinon)
+  const [heuresTotal, setHeuresTotal] = useState<number | null>(session?.heures_total ?? null);
+  const [heuresTotalEdit, setHeuresTotalEdit] = useState(false);
+  const [heuresTotalInput, setHeuresTotalInput] = useState("");
+  const [savingHeuresTotal, setSavingHeuresTotal] = useState(false);
+  useEffect(() => { setHeuresTotal(session?.heures_total ?? null); }, [session?.id, session?.heures_total]);
+  const heuresAffichees = heuresSessionAffichees({ ...session, heures_total: heuresTotal });
+  const saveHeuresTotal = async () => {
+    if (!session?.id) return;
+    const v = Number(String(heuresTotalInput).replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0 || v > 1000) {
+      toast({ title: "Valeur invalide", description: "Saisissez un nombre d'heures positif.", variant: "destructive" });
+      return;
+    }
+    setSavingHeuresTotal(true);
+    const { error } = await supabase.from("sessions").update({ heures_total: v }).eq("id", session.id);
+    setSavingHeuresTotal(false);
+    if (error) {
+      toast({ title: "Erreur", description: error.message || "Enregistrement impossible", variant: "destructive" });
+      return;
+    }
+    setHeuresTotal(v);
+    setHeuresTotalEdit(false);
+    toast({ title: "Total d'heures enregistré", description: `Session : ${v} h.` });
+  };
   const [learnerSearch, setLearnerSearch] = useState("");
   const [learnerStatutFilter, setLearnerStatutFilter] = useState<string>("all");
   const [learnerIdentFilter, setLearnerIdentFilter] = useState<string>("all");
@@ -4924,15 +4955,50 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
           <div className="flex items-center justify-between">
             {asPage ? (
-              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
+              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight flex-wrap">
                 {session.title}
                 {getStatusBadge(session.status)}
               </h1>
             ) : (
-              <DialogTitle className="flex items-center gap-3">
+              <DialogTitle className="flex items-center gap-3 flex-wrap">
                 {session.title}
                 {getStatusBadge(session.status)}
               </DialogTitle>
+            )}
+            {heuresAffichees != null && (
+              <div className="flex items-center gap-1.5">
+                {heuresTotalEdit ? (
+                  <>
+                    <Input
+                      type="number"
+                      min={1}
+                      step="0.5"
+                      value={heuresTotalInput}
+                      onChange={(e) => setHeuresTotalInput(e.target.value)}
+                      className="h-7 w-20 text-xs"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") saveHeuresTotal(); if (e.key === "Escape") setHeuresTotalEdit(false); }}
+                    />
+                    <span className="text-xs text-muted-foreground">h</span>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" disabled={savingHeuresTotal} onClick={saveHeuresTotal}>
+                      {savingHeuresTotal ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </Button>
+                  </>
+                ) : (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Clock className="w-3 h-3" />
+                    Total : {heuresAffichees} h{heuresTotal == null ? " (par défaut)" : ""}
+                    <button
+                      type="button"
+                      aria-label="Modifier le total d'heures de la session"
+                      className="ml-1 rounded hover:bg-foreground/10 p-0.5"
+                      onClick={() => { setHeuresTotalInput(String(heuresAffichees)); setHeuresTotalEdit(true); }}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
             )}
             <div className="flex gap-2 flex-wrap items-center">
               <Button

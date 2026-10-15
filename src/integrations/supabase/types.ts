@@ -7407,6 +7407,7 @@ export type Database = {
           formation_id: string | null
           heure_debut: string | null
           heure_fin: string | null
+          heures_total: number | null
           id: string
           lieu: string | null
           nom: string | null
@@ -7424,6 +7425,7 @@ export type Database = {
           formation_id?: string | null
           heure_debut?: string | null
           heure_fin?: string | null
+          heures_total?: number | null
           id?: string
           lieu?: string | null
           nom?: string | null
@@ -7441,6 +7443,7 @@ export type Database = {
           formation_id?: string | null
           heure_debut?: string | null
           heure_fin?: string | null
+          heures_total?: number | null
           id?: string
           lieu?: string | null
           nom?: string | null

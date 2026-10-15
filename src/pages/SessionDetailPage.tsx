@@ -42,6 +42,9 @@ export default function SessionDetailPage() {
         type_session: data.type_session,
         creneaux: data.creneaux,
         nom: data.nom,
+        heure_debut: data.heure_debut,
+        types_apprenant: data.types_apprenant,
+        heures_total: data.heures_total,
       });
       setLoading(false);
     })();
