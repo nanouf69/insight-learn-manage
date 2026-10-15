@@ -100,7 +100,7 @@ describe("Envoi orchestré serveur", () => {
     expect(sent).toHaveBeenCalledTimes(1);
     expect(r.map((x) => x.etat).sort()).toEqual(["envoye", "non_disponible"]);
     expect(docs[0].envoye_le).toBe("2026-10-16T08:00:00.000Z");
-    expect(sent.mock.calls[0][0].html).toBe(p.doc.mail_html_fige);
+    expect((sent.mock.calls as any)[0][0].html).toBe(p.doc.mail_html_fige);
   });
   it("mail accepté mais base en échec → indéterminé, jamais réexpédié", async () => {
     const { deps, docs, sent } = fake([base()], ok, { failFinal: true });

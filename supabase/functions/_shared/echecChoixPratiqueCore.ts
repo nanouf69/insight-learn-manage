@@ -53,7 +53,7 @@ export async function preparer(deps: Deps, apprenantId: string, adminId: string 
   const a = await deps.getApprenant(apprenantId);
   if (!a) return { etat: "bloque" as const, raison: "Dossier introuvable." };
   const el = eligibiliteServeur(a);
-  if (!el.ok) return { etat: "bloque" as const, raison: el.raison };
+  if (!el.ok) return { etat: "bloque" as const, raison: (el as { raison: string }).raison };
   const existant = await deps.findDoc(a.id, el.cle);
   if (existant) return { etat: "existant" as const, doc: existant };
 
@@ -91,7 +91,7 @@ export async function envoyer(deps: Deps, docId: string) {
   // Éligibilité revalidée en base au moment de l'envoi (pas depuis le navigateur).
   const a = doc.apprenant_id ? await deps.getApprenant(doc.apprenant_id) : null;
   const el = a ? eligibiliteServeur(a) : { ok: false as const, raison: "Dossier introuvable." };
-  if (!el.ok) return { etat: "bloque" as const, raison: el.raison };
+  if (!el.ok) return { etat: "bloque" as const, raison: (el as { raison: string }).raison };
   if (el.cle !== doc.cle_envoi) return { etat: "bloque" as const, raison: "L'examen du dossier a changé depuis la préparation." };
   if ((a!.email || "").trim().toLowerCase() !== doc.identite_figee.email.toLowerCase())
     return { etat: "bloque" as const, raison: "L'adresse mail du dossier a changé depuis la préparation." };
