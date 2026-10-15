@@ -298,6 +298,12 @@ export const clearAnswerSaveRejection = (): void => {
   emitRejection();
 };
 
+/** Dernier refus définitif connu pour CET exercice (lecture seule, file intacte). */
+export const getAnswerSaveRejectionFor = (exerciceId: string): AnswerSaveRejection | null =>
+  lastRejection && lastRejection.exerciceId === exerciceId && lastRejection.reason !== "frozen"
+    ? lastRejection
+    : null;
+
 function readQueue(): QueueItem[] {
   if (memoryQueue) return memoryQueue;
   try {
