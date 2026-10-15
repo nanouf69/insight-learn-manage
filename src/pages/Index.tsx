@@ -537,7 +537,7 @@ const Index = () => {
           canGoBack={pageHistory.length > 0}
           onGoBack={handleGoBack}
         />
-        
+        <RappelAuditQualiopi />
         <main className="flex-1 overflow-auto p-3 sm:p-6">
           <ErrorBoundary>
             {renderContent()}
