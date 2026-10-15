@@ -31,4 +31,4 @@
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
-- Theory-fail mail + practice choice: see `supabase/functions/_shared/AGENTS.md`; why: single server-orchestrated signed answer.
+- Theory-fail mail + practice choice: see `supabase/functions/_shared/AGENTS.md`; why: one signed answer.
