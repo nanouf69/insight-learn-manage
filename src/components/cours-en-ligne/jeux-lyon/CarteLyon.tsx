@@ -15,6 +15,8 @@ type Props = {
   afficherZones?: boolean;
   calques?: (k: number) => ReactNode;
   desactive?: boolean;
+  /** Mode agrandi (plein écran) : la carte occupe beaucoup plus de hauteur. */
+  agrandi?: boolean;
 };
 
 const W = LYON_GEO.W, H = LYON_GEO.H;
