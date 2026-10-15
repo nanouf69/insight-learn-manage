@@ -23,10 +23,21 @@ const u32 = (b: Uint8Array, o: number) => ((b[o] << 24) | (b[o + 1] << 16) | (b[
 
 async function inflate(data: Uint8Array): Promise<Uint8Array | null> {
   try {
-    const ds = new DecompressionStream("deflate");
-    const stream = new Blob([data]).stream().pipeThrough(ds);
-    const buf = new Uint8Array(await new Response(stream).arrayBuffer());
-    return buf;
+    const src = new ReadableStream<Uint8Array>({ start(c) { c.enqueue(data); c.close(); } });
+    const reader = src.pipeThrough(new DecompressionStream("deflate") as any).getReader();
+    const parts: Uint8Array[] = [];
+    let n = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const v = value as Uint8Array;
+      n += v.length;
+      if (n > 30_000_000) return null; // bombe de décompression
+      parts.push(v);
+    }
+    const out = new Uint8Array(n);
+    let k = 0; for (const p of parts) { out.set(p, k); k += p.length; }
+    return out;
   } catch { return null; }
 }
 

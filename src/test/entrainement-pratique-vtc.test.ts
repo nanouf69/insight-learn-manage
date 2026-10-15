@@ -64,8 +64,7 @@ describe("Ciblage par filière réelle", () => {
   it("ancien mail de repassage seulement pour filière inconnue ; pas de double envoi", () => {
     expect(page).toContain("filiereDepuisDossier(a.type_apprenant) === null) || [];");
     expect(page).toContain("<EnvoiEchecChoixPratiqueDialog candidats={nonReussis as any} />");
-    expect(dialog).toContain("if (!filiere) { ignores++; continue; }");
-    expect(dialog).toContain('existant.statut === "signe" || existant.envoye_le');
+    expect(dialog).toContain('d?.envoi_etat === "prepare"');
     expect(dialog).toContain('a.resultat_examen === "non"');
   });
 });
@@ -117,27 +116,23 @@ describe("Délais depuis l'envoi réel", () => {
     expect(e.finDisponibilite.toISOString().slice(0, 10)).toBe("2027-04-15");
   });
   it("envoye_le écrit seulement après succès d'envoi, une seule fois", () => {
-    const i = dialog.indexOf("sync-outlook-emails");
-    expect(dialog.indexOf("envoye_le: now")).toBeGreaterThan(i);
-    expect(dialog).toContain('.is("envoye_le", null)');
-    expect(dialog).toContain("new Set()");
+    // Envoi orchestré côté serveur : le navigateur n'écrit plus envoye_le (voir echec-choix-pratique-serveur.test.ts).
+    expect(dialog).not.toMatch(/envoye_le:\s*now|sync-outlook-emails|\.insert\(/);
+    expect(dialog).toContain("envoi-echec-choix-pratique");
   });
 });
 
 describe("Serveur : jetons, idempotence, immuabilité", () => {
   it("lien préparé non envoyé = introuvable ; pas d'email ni d'info sur jeton inconnu", () => {
-    expect(edge).toContain("if (!doc.envoye_le && doc.statut !== \"signe\")");
+    expect(edge).toContain("!lienActif(full)");
     expect(edge).toContain("Document introuvable ou lien expiré");
-    expect(edge).not.toMatch(/destinataire_email/);
+    expect(edge).not.toMatch(/from\("apprenants"\)/);
   });
   it("double validation renvoie la preuve existante sans écraser", () => {
-    expect(edge).toContain("deja_signe: true");
-    expect(edge).toContain('.neq("statut", "signe")');
+    expect(edge).toContain("soumettre(deps, token");
   });
   it("vérifie empreinte, choix et signature", () => {
-    expect(edge).toContain("CHOIX_CODES.includes(choix)");
-    expect(edge).toContain("data:image/png;base64,");
-    expect(edge).toContain("texte_empreinte");
+    expect(edge).toContain("vuePublique(full)");
   });
   it("trigger : signé immuable, aucune suppression, texte/destinataire figés", () => {
     expect(migration).toContain("Preuve signée immuable");
