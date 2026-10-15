@@ -7,6 +7,18 @@ export interface SessionHeuresSource {
   types_apprenant?: string[] | null;
 }
 
+/** Display-only distinction for shared daytime theory sessions; never changes saved hours. */
+export function libelleHeuresSessionMixte(s: SessionHeuresSource): string | null {
+  if (isPratiqueType(s.type_session)) return null;
+  const nom = (s.nom || "").toLowerCase();
+  if (/continue|mobilit|examen|soir/.test(nom) || /continue|mobilit|examen/.test(s.type_session || "")) return null;
+  if (/^(1[7-9]|2[0-3])[:h]/.test((s.heure_debut || "").trim())) return null;
+  const types = (s.types_apprenant || []).map((t) => String(t).toUpperCase());
+  const hasTaxi = types.includes("TAXI") || /taxi/.test(nom);
+  const hasVtc = types.includes("VTC") || /vtc/.test(nom);
+  return hasTaxi && hasVtc ? "VTC : 60 h · TAXI : 90 h" : null;
+}
+
 /**
  * Volume horaire total affiché par défaut pour une session quand
  * `sessions.heures_total` n'est pas renseigné :

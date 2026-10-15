@@ -64,7 +64,7 @@ import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { isPratiqueType } from "@/lib/sessionTypes";
-import { heuresSessionAffichees } from "@/lib/sessionHeures";
+import { heuresSessionAffichees, libelleHeuresSessionMixte } from "@/lib/sessionHeures";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
@@ -750,6 +750,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [savingHeuresTotal, setSavingHeuresTotal] = useState(false);
   useEffect(() => { setHeuresTotal(session?.heures_total ?? null); }, [session?.id, session?.heures_total]);
   const heuresAffichees = heuresSessionAffichees({ ...session, heures_total: heuresTotal });
+  const libelleHeuresMixte = libelleHeuresSessionMixte({ ...session, nom: (session as Session & { nom?: string }).nom || session.title });
   const saveHeuresTotal = async () => {
     if (!session?.id) return;
     const v = Number(String(heuresTotalInput).replace(",", "."));
@@ -4987,15 +4988,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 ) : (
                   <Badge variant="secondary" className="text-xs gap-1">
                     <Clock className="w-3 h-3" />
-                    Total : {heuresAffichees} h{heuresTotal == null ? " (par défaut)" : ""}
-                    <button
-                      type="button"
+                    {libelleHeuresMixte ?? <>Total : {heuresAffichees} h{heuresTotal == null ? " (par défaut)" : ""}</>}
+                    {!libelleHeuresMixte && <Button
+                      variant="ghost"
+                      size="icon"
                       aria-label="Modifier le total d'heures de la session"
-                      className="ml-1 rounded hover:bg-foreground/10 p-0.5"
+                      className="ml-1 h-5 w-5 p-0.5"
                       onClick={() => { setHeuresTotalInput(String(heuresAffichees)); setHeuresTotalEdit(true); }}
                     >
                       <Pencil className="w-3 h-3" />
-                    </button>
+                    </Button>}
                   </Badge>
                 )}
               </div>
