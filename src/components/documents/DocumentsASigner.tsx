@@ -34,6 +34,7 @@ import {
   newChampId,
 } from "@/lib/documentsASigner";
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
+import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
 
 
 ensurePdfWorker();
@@ -83,6 +84,18 @@ export function DocumentsASigner() {
     async (doc: DocRow) => {
       setDownloadingId(doc.id);
       try {
+        const m = doc as any;
+        if (m.modele_code) {
+          // Modèle à choix unique : PDF de preuve depuis le texte figé.
+          const [prenomNom] = [doc.destinataire_nom || ""];
+          const bytes = await genererPreuveChoixPdf({
+            texte: JSON.parse(m.texte_fige || "null"), version: m.modele_version, empreinte: m.texte_empreinte,
+            nom: prenomNom, prenom: "", choix: m.choix, signature: m.reponses?.signature ?? null,
+            signeLeParis: m.signe_le_paris, signedAt: doc.signed_at, envoyeLe: m.envoye_le,
+          });
+          telechargerPdf(bytes, `${doc.nom}_${doc.statut === "signe" ? "signe" : "non_signe"}.pdf`);
+          return;
+        }
         const { data, error } = await supabase.storage
           .from("documents-a-signer")
           .createSignedUrl(doc.file_path, 600);
@@ -122,6 +135,10 @@ export function DocumentsASigner() {
   }, [chargerDocs]);
 
   const ouvrirDoc = async (doc: DocRow) => {
+    if ((doc as any).modele_code) {
+      toast({ title: "Document modèle", description: "Suivi et envoi depuis Examens → Non réussi (mail échec VTC + choix pratique)." });
+      return;
+    }
     setSelected(doc);
     setChamps(Array.isArray(doc.champs) ? doc.champs : []);
     setEmail(doc.destinataire_email || "");
@@ -294,6 +311,10 @@ export function DocumentsASigner() {
   const [resendingId, setResendingId] = useState<string | null>(null);
 
   const renvoyer = async (doc: DocRow) => {
+    if ((doc as any).modele_code) {
+      toast({ title: "Renvoi non disponible ici", description: "Ce document se gère depuis la page Examens.", variant: "destructive" });
+      return;
+    }
     if (!doc.destinataire_email) {
       toast({ title: "Aucun destinataire", description: "Ouvrez le document pour renseigner une adresse email.", variant: "destructive" });
       return;
@@ -325,6 +346,10 @@ export function DocumentsASigner() {
   };
 
   const supprimer = async (doc: DocRow) => {
+    if ((doc as any).modele_code) {
+      toast({ title: "Conservé", description: "Les preuves de choix ne sont jamais supprimées.", variant: "destructive" });
+      return;
+    }
     if (!window.confirm(`Supprimer « ${doc.nom} » ?`)) return;
     await supabase.storage.from("documents-a-signer").remove([doc.file_path]);
     await supabase.from("documents_a_signer").delete().eq("id", doc.id);

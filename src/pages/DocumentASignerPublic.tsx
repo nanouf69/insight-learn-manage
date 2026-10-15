@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { ChampDocument } from "@/lib/documentsASigner";
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
+import { ChoixPratiqueForm, type ChoixDocData } from "@/components/documents/ChoixPratiqueForm";
 
 
 ensurePdfWorker();
@@ -41,6 +42,7 @@ export default function DocumentASignerPublic() {
   const [numPages, setNumPages] = useState(0);
   const [largeur, setLargeur] = useState(720);
   const [downloading, setDownloading] = useState(false);
+  const [choixDoc, setChoixDoc] = useState<ChoixDocData | null>(null);
 
   const telecharger = async () => {
     if (!doc?.fileUrl) return;
@@ -64,6 +66,21 @@ export default function DocumentASignerPublic() {
     return () => window.removeEventListener("resize", maj);
   }, [doc]);
 
+  const appel = async (body: Record<string, unknown>) => {
+    const res = await fetch(FN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: API_KEY, Authorization: `Bearer ${API_KEY}` },
+      body: JSON.stringify({ ...body, token }),
+    });
+    const json = await res.json().catch(() => ({}));
+    return { ok: res.ok, json };
+  };
+
+  const rechargerChoix = async () => {
+    const { ok, json } = await appel({ action: "get" });
+    if (ok && json.document?.modele_code) setChoixDoc(json.document);
+  };
+
   useEffect(() => {
     const charger = async () => {
       try {
@@ -74,6 +91,7 @@ export default function DocumentASignerPublic() {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Document indisponible");
+        if (json.document?.modele_code) { setChoixDoc(json.document); return; }
         setDoc(json.document);
         setReponses(json.document.reponses || {});
       } catch (e: any) {
@@ -119,6 +137,19 @@ export default function DocumentASignerPublic() {
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
+    );
+  }
+
+  if (choixDoc) {
+    return (
+      <ChoixPratiqueForm
+        doc={choixDoc}
+        recharger={rechargerChoix}
+        soumettre={async (choix, signature) => {
+          const { ok, json } = await appel({ action: "submit", choix, signature });
+          return ok ? json : { error: json.error || "Envoi impossible" };
+        }}
+      />
     );
   }
 

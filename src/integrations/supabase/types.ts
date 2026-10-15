@@ -2937,50 +2937,74 @@ export type Database = {
       }
       documents_a_signer: {
         Row: {
+          apprenant_id: string | null
           champs: Json
+          choix: string | null
           created_at: string
           created_by: string | null
           destinataire_email: string | null
           destinataire_nom: string | null
+          envoye_le: string | null
           file_path: string
           id: string
+          modele_code: string | null
+          modele_version: string | null
           nom: string
           reponses: Json
           sent_at: string | null
+          signe_le_paris: string | null
           signed_at: string | null
           statut: string
+          texte_empreinte: string | null
+          texte_fige: string | null
           token: string
           updated_at: string
         }
         Insert: {
+          apprenant_id?: string | null
           champs?: Json
+          choix?: string | null
           created_at?: string
           created_by?: string | null
           destinataire_email?: string | null
           destinataire_nom?: string | null
+          envoye_le?: string | null
           file_path: string
           id?: string
+          modele_code?: string | null
+          modele_version?: string | null
           nom: string
           reponses?: Json
           sent_at?: string | null
+          signe_le_paris?: string | null
           signed_at?: string | null
           statut?: string
+          texte_empreinte?: string | null
+          texte_fige?: string | null
           token?: string
           updated_at?: string
         }
         Update: {
+          apprenant_id?: string | null
           champs?: Json
+          choix?: string | null
           created_at?: string
           created_by?: string | null
           destinataire_email?: string | null
           destinataire_nom?: string | null
+          envoye_le?: string | null
           file_path?: string
           id?: string
+          modele_code?: string | null
+          modele_version?: string | null
           nom?: string
           reponses?: Json
           sent_at?: string | null
+          signe_le_paris?: string | null
           signed_at?: string | null
           statut?: string
+          texte_empreinte?: string | null
+          texte_fige?: string | null
           token?: string
           updated_at?: string
         }
