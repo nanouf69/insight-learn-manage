@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Cohérence signatures VTC journée — 15/10
+- [x] Diagnostic lecture seule : objectif erroné 40 + 2 ; nouvelle règle utilisateur 20 + 2 = 22, heures inchangées.
+- [ ] Accord sur le plan, correction de l’objectif partagé et vérification de l’écart compteur 22 / PDF 20 avec données fictives ; tests et journal, aucune donnée élève modifiée.
+
 ## ZIP Contrôle — signatures présentiel (15/10)
 - [x] Diagnostic lecture seule : raccorder le PDF « Signatures session + pratique » existant au ZIP des formations présentielles.
 - [x] Plan approuvé, raccordement réalisé ; 131 tests PASS, bouton réel avec sources fictives → ZIP téléchargé → PDF inspecté (3 signatures, versions session + pratique), build automatique OK ; journal ajouté. Aucune donnée élève modifiée, aucune publication ; parcours réel NON PROUVÉ.
