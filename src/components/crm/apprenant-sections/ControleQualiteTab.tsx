@@ -31,6 +31,7 @@ import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
 import { isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 import { ReleveJalonsPedagogiquesButton } from "./ReleveJalonsPedagogiquesButton";
 import { JalonsPonderesCard } from "./JalonsPonderesCard";
+import { ajouterSignaturesPresentielAuZip } from "@/lib/controleZipSignatures";
 
 
 /** Renders donnees content with real question texts instead of raw JSON */
@@ -390,6 +391,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
         const zip = new JSZip();
         const slug = `${apprenant.prenom || ""}-${apprenant.nom || ""}`
           .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "apprenant";
+
+        // Same PDF as « Signatures session + pratique »; no changes to existing pieces.
+        await ajouterSignaturesPresentielAuZip(zip, apprenant);
 
         // 1) Contrôle qualité PDF — n'inclut que les formulaires stagiaire
         // (Suivi pédagogique et Documents administratifs restent affichés sur la plateforme mais pas dans le PDF)
