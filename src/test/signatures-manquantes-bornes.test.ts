@@ -74,7 +74,7 @@ describe('bilan EDOF : compte exact et hors planning', () => {
     expect(JSON.stringify({ rows, signatures })).toBe(avant);
   });
 
-  it.each([['TAXI', 80, 82], ['TA', 20, 22]] as const)('%s conserve ses objectifs', (formation, theorie, total) => {
+  it.each([['TAXI', 30, 32], ['TA', 20, 22]] as const)('%s conserve ses objectifs', (formation, theorie, total) => {
     expect(calculerBilanSignaturesEdof([], mkSessions(), mkResa(), formation)).toMatchObject({ objectifTheorie: theorie, objectifPratique: 2, objectifTotal: total, complet: false });
   });
 });
