@@ -36,6 +36,8 @@ import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.ass
 import { TauxElearningCell } from './TauxElearningCell';
 import { DossierBienvenueButton } from './DossierBienvenueButton';
 import { PratiqueApprenantLink } from './PratiqueApprenantLink';
+import { EnvoiEchecVtcDialog } from './EnvoiEchecVtcDialog';
+import { estCandidatVtc } from '@/lib/modeles/entrainementPratiqueVtc';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -1186,7 +1188,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
 
   const handleSendRepassageEmails = async () => {
-    const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
+    // VTC : mail unique « résultat + choix pratique » envoyé via EnvoiEchecVtcDialog (sélection manuelle).
+    const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email && !estCandidatVtc(a.type_apprenant)) || [];
     if (echoues.length === 0) return;
     setSendingRepassage(true);
     let sent = 0;
@@ -2766,14 +2769,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <AlertDialogTrigger asChild>
                   <Button size="sm" variant="outline" disabled={sendingRepassage || sentRepassage} className={`mt-2 w-full gap-1.5 text-xs ${sentRepassage ? 'text-green-700 border-green-300' : ''}`}>
                     {sentRepassage ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                    {sendingRepassage ? 'Envoi...' : sentRepassage ? 'Envoyé ✓' : `Email repassage (${nonReussis.filter(a => a.email).length})`}
+                    {sendingRepassage ? 'Envoi...' : sentRepassage ? 'Envoyé ✓' : `Email repassage hors VTC (${nonReussis.filter(a => a.email && !estCandidatVtc(a.type_apprenant)).length})`}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Envoyer l'email de repassage théorique ?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      L'email "Repassage examen théorique" sera envoyé à {nonReussis.filter(a => a.email).length} apprenant(s) ayant échoué. Il contient le lien vers exament3p.fr et l'obligation de choisir le département 69.
+                      L'email "Repassage examen théorique" sera envoyé à {nonReussis.filter(a => a.email && !estCandidatVtc(a.type_apprenant)).length} apprenant(s) non VTC ayant échoué (les VTC reçoivent le mail avec choix pratique). Il contient le lien vers exament3p.fr et l'obligation de choisir le département 69.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -2782,7 +2785,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-
+              <EnvoiEchecVtcDialog candidats={nonReussis as any} />
               </>
             )}
           </CardContent>
