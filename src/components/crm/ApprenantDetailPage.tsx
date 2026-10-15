@@ -48,6 +48,7 @@ import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/He
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
 import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
+import { TauxPresenceSessionsCard } from "@/components/crm/TauxPresenceSessionsCard";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
@@ -699,6 +700,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
             ))}
           </div>
+          {regleSuiviFormation(apprenant).presentiel && <TauxPresenceSessionsCard apprenantId={apprenant.id} />}
         </div>
       )}
 
