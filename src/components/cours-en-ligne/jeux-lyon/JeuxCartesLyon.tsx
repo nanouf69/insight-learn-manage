@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { CheckCircle2, MapPin, Map as MapIcon, Landmark, RefreshCw, XCircle, Trophy } from "lucide-react";
 import { CarteLyon, type Touche } from "./CarteLyon";
 import { LYON_GEO, type LieuLyon } from "./lyon-geo-data";
@@ -76,7 +77,7 @@ function Correction({ lignes, total, onRejouer, suite }: { lignes: Ligne[]; tota
 }
 
 // ================= JEU 1 =================
-function JeuArrondissements({ compteId }: { compteId?: string | null }) {
+function JeuArrondissements({ compteId, agrandi }: { compteId?: string | null; agrandi?: boolean }) {
   const [niveau, setNiveau] = useState<1 | 2>(1);
   const [apprentissage, setApprentissage] = useState(false);
   const [tour, setTour] = useState(0);
@@ -181,7 +182,7 @@ function JeuArrondissements({ compteId }: { compteId?: string | null }) {
           {retour && <p role="status" className={`text-sm font-medium ${retour.ton === "ok" ? "text-success" : retour.ton === "ko" ? "text-destructive" : "text-muted-foreground"}`}>{retour.texte}</p>}
         </>
       )}
-      <CarteLyon cible={niveau === 1 ? "arr" : "zones"} onTouche={onTouche} surlignerArr={sArr} surlignerZones={sZones}
+      <CarteLyon cible={niveau === 1 ? "arr" : "zones"} onTouche={onTouche} surlignerArr={sArr} surlignerZones={sZones} agrandi={agrandi}
         afficherNumerosArr={apprentissage || niveau === 2} afficherZones={niveau === 2 && apprentissage} desactive={termine}
         calques={niveau === 2 && apprentissage ? (k) => LYON_GEO.zones.map((z) => {
           const p = new Path2DCentre(z.d);
@@ -202,7 +203,7 @@ class Path2DCentre {
 }
 
 // ================= JEU 2 =================
-function JeuLieux({ compteId }: { compteId?: string | null }) {
+function JeuLieux({ compteId, agrandi }: { compteId?: string | null; agrandi?: boolean }) {
   const [tour, setTour] = useState(0);
   const [apprentissage, setApprentissage] = useState(false);
   const lieux = useMemo(() => melanger(LYON_GEO.lieux), [tour]);
@@ -264,7 +265,7 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
           {retour.fiche && <p className="mt-1 flex gap-1"><MapPin className="h-4 w-4 shrink-0 mt-0.5" />{retour.fiche}</p>}
         </div>
       )}
-      <CarteLyon cible="point" onTouche={onTouche} afficherNumerosArr desactive={termine}
+      <CarteLyon cible="point" onTouche={onTouche} afficherNumerosArr desactive={termine} agrandi={agrandi}
         calques={(k) => (
           <>
             <text x={845} y={425} textAnchor="middle" className="fill-muted-foreground italic" style={{ fontSize: 20 * k }}>Villeurbanne (commune)</text>
@@ -294,6 +295,7 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
 // ================= ENTRÉE DANS LE MODULE =================
 export default function JeuxCartesLyon({ compteId }: { compteId?: string | null }) {
   const [ouvert, setOuvert] = useState<null | "arr" | "lieux">(null);
+  const [agrandi, setAgrandi] = useState(false);
   const jeux = [
     { id: "arr" as const, titre: "Lyon : arrondissements et quartiers", desc: "Placez les 9 arrondissements puis les principaux quartiers sur la carte.", Icone: MapIcon },
     { id: "lieux" as const, titre: "Lyon : monuments, musées et lieux touristiques", desc: `Placez ${LYON_GEO.lieux.length} lieux et retenez leur quartier et arrondissement.`, Icone: Landmark },
@@ -305,7 +307,7 @@ export default function JeuxCartesLyon({ compteId }: { compteId?: string | null 
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         {jeux.map(({ id, titre, desc, Icone }) => (
-          <button key={id} type="button" onClick={() => setOuvert(id)}
+          <button key={id} type="button" onClick={() => { setOuvert(id); setAgrandi(false); }}
             className="text-left rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <div className="flex items-center gap-2 font-semibold text-primary"><Icone className="h-5 w-5" />{titre}</div>
             <p className="text-sm text-muted-foreground mt-1">{desc}</p>
@@ -313,13 +315,21 @@ export default function JeuxCartesLyon({ compteId }: { compteId?: string | null 
         ))}
       </div>
       <Dialog open={ouvert !== null} onOpenChange={(o) => !o && setOuvert(null)}>
-        <DialogContent className="max-w-5xl w-[98vw] max-h-[96vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className={agrandi
+          ? "max-w-none w-[100vw] h-[100vh] max-h-none rounded-none border-0 p-3 sm:p-4 overflow-y-auto"
+          : "max-w-5xl w-[98vw] max-h-[96vh] overflow-y-auto p-4 sm:p-6"}>
           <DialogHeader>
             <DialogTitle>{jeux.find((j) => j.id === ouvert)?.titre}</DialogTitle>
             <DialogDescription>Glissez la carte pour la déplacer, pincez ou utilisez + / − pour zoomer.</DialogDescription>
           </DialogHeader>
-          {ouvert === "arr" && <JeuArrondissements compteId={compteId} />}
-          {ouvert === "lieux" && <JeuLieux compteId={compteId} />}
+          <Button type="button" variant="outline" size="sm" onClick={() => setAgrandi((a) => !a)}
+            className="gap-2 self-start" aria-pressed={agrandi}
+            aria-label={agrandi ? "Réduire la carte" : "Agrandir la carte (plein écran)"}>
+            {agrandi ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {agrandi ? "Réduire" : "Agrandir"}
+          </Button>
+          {ouvert === "arr" && <JeuArrondissements compteId={compteId} agrandi={agrandi} />}
+          {ouvert === "lieux" && <JeuLieux compteId={compteId} agrandi={agrandi} />}
         </DialogContent>
       </Dialog>
     </section>

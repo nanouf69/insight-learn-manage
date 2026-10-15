@@ -15,6 +15,8 @@ type Props = {
   afficherZones?: boolean;
   calques?: (k: number) => ReactNode;
   desactive?: boolean;
+  /** Mode agrandi (plein écran) : la carte occupe beaucoup plus de hauteur. */
+  agrandi?: boolean;
 };
 
 const W = LYON_GEO.W, H = LYON_GEO.H;
@@ -25,7 +27,7 @@ const TON: Record<string, string> = {
 };
 const LETTRES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones = [], afficherNumerosArr, afficherZones, calques, desactive }: Props) {
+export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones = [], afficherNumerosArr, afficherZones, calques, desactive, agrandi }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const arrRefs = useRef<Record<number, SVGPathElement | null>>({});
   const zoneRefs = useRef<Record<string, SVGPathElement | null>>({});
@@ -137,7 +139,7 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
       <svg
         ref={svgRef}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className="w-full h-auto max-h-[58vh] touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={`w-full h-auto touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring ${agrandi ? "max-h-[82vh]" : "max-h-[58vh]"}`}
         style={{ aspectRatio: `${W} / ${H}` }}
         role="application"
         aria-label={cible === "point" ? "Carte de Lyon : flèches pour déplacer le repère, Entrée pour placer" : "Carte de Lyon"}
