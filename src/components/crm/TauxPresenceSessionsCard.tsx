@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
-import { heuresSessionAffichees } from "@/lib/sessionHeures";
+import { heuresSessionPourApprenant } from "@/lib/sessionHeures";
 import { isPratiqueType } from "@/lib/sessionTypes";
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
@@ -13,7 +13,7 @@ const signatureValide = (e: any) =>
 export interface TauxHeures { faites: number; prevues: number }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
-export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[]) {
+export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null) {
   const res = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
   const vus = new Set<string>();
   for (const row of inscriptions) {
@@ -22,7 +22,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     const pratique = isPratiqueType(s.type_session);
     if (!pratique && !/theorique/i.test(s.type_session ?? "")) continue;
     const cible = pratique ? res.pratique : res.session;
-    cible.prevues += heuresSessionAffichees(s) ?? 0;
+    cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
     const debut = d10(s.date_debut), fin = d10(s.date_fin || s.date_debut);
     for (const e of emargements) {
       const date = d10(e.date_emargement);
@@ -38,10 +38,12 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   return res;
 }
 
-export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true) {
+export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true, filiere?: string | null) {
   const [data, setData] = useState<ReturnType<typeof calculerTauxPresenceHeures> | null>(null);
   const [erreur, setErreur] = useState(false);
   useEffect(() => {
+    setData(null);
+    setErreur(false);
     if (!apprenantId || !actif) return;
     let annule = false;
     (async () => {
@@ -50,18 +52,18 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
           fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
           fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
         ]);
-        if (!annule) setData(calculerTauxPresenceHeures(em, ins));
+        if (!annule) setData(calculerTauxPresenceHeures(em, ins, filiere));
       } catch {
         if (!annule) setErreur(true);
       }
     })();
     return () => { annule = true; };
-  }, [apprenantId, actif]);
+  }, [apprenantId, actif, filiere]);
   return { data, erreur };
 }
 
-export function TauxPresenceSessionsCard({ apprenantId }: { apprenantId: string }) {
-  const { data, erreur } = useTauxPresenceHeures(apprenantId);
+export function TauxPresenceSessionsCard({ apprenantId, filiere }: { apprenantId: string; filiere?: string | null }) {
+  const { data, erreur } = useTauxPresenceHeures(apprenantId, true, filiere);
 
   const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} h`;
   const tuiles: [string, TauxHeures | undefined][] = [
