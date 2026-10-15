@@ -331,22 +331,44 @@ const GrilleNotationConduite = ({
       const doc = await buildPdf();
       const b64 = doc.output("datauristring").split(",")[1];
 
+      const subject = `Grille d'évaluation pratique ${formation.toUpperCase()} — ${passage || "passage"}`;
+      const debutEnvoi = new Date(Date.now() - 5000).toISOString();
       const { error } = await supabase.functions.invoke("send-document-email", {
         body: {
           apprenantId,
           recipientEmail: email,
           recipientName: `${apprenantPrenom} ${apprenantNom}`,
-          subject: `Grille d'évaluation pratique ${formation.toUpperCase()} — ${passage || "passage"}`,
+          subject,
           htmlBody: `<p>Bonjour ${apprenantPrenom} ${apprenantNom},</p><p>Veuillez trouver ci-joint votre grille d'évaluation de conduite du ${date}.</p><p>Avis du formateur : <strong>${avis === "favorable" ? "FAVORABLE" : "DÉFAVORABLE"}</strong>.</p><p>Cordialement,<br/>FTRANSPORT</p>`,
           attachmentName: `grille-notation-${apprenantNom}-${apprenantPrenom}.pdf`,
           attachmentBase64: b64,
           attachmentContentType: "application/pdf",
         },
       });
-      if (error) throw error;
+      if (error) {
+        // Réponse perdue (réseau) : le mail a pu partir quand même. On vérifie
+        // l'archive serveur avant de conclure, pour éviter un second envoi.
+        const reseau = (error as any)?.name === "FunctionsFetchError" || /Failed to send a request/i.test(String((error as any)?.message || ""));
+        if (reseau) {
+          const { data: archive } = await supabase
+            .from("emails")
+            .select("id")
+            .eq("apprenant_id", apprenantId)
+            .eq("subject", subject)
+            .gte("created_at", debutEnvoi)
+            .limit(1);
+          if (archive && archive.length > 0) {
+            toast.success(`Grille validée et envoyée à ${email} (confirmée par l'archive)`);
+            await resetForm();
+            return;
+          }
+          throw new Error("connexion au serveur d'envoi impossible. Aucun mail confirmé : la grille est enregistrée et conservée, réessayez dans un instant.");
+        }
+        throw error;
+      }
 
       toast.success(`Grille validée et envoyée à ${email}`);
-      resetForm();
+      await resetForm();
     } catch (e: any) {
       console.error("[GrilleNotation] send error", e);
       toast.error(`Erreur d'envoi : ${e?.message || "inconnue"}`);
