@@ -38,7 +38,7 @@ export function instantValidationModule(row: { status?: string | null; completed
 /** Activités exigées pour un module : celles du registre à la date, bornées à sa validation si validé. */
 export function activitesRequisesModule(moduleId: number, row: { status?: string | null; completed_at?: string | null } | undefined | null, a: string = new Date().toISOString()): ActiviteCode[] {
   const gel = instantValidationModule(row);
-  return activitesDuModule(moduleId, a).filter((x) => !gel || x.ajouteeLe <= gel);
+  return activitesDuModule(moduleId, a).filter((x) => !gel || Date.parse(x.ajouteeLe) <= Date.parse(gel));
 }
 export const idsActivites = (moduleIds: number[]) => moduleIds.flatMap((m) => activitesDuModule(m).map((x) => x.id));
 
@@ -67,7 +67,7 @@ export function completionAvecActivites(
   // Gel par module : activités ajoutées après la validation = acquises pour CE module
   // (volume courant conservé pour les poids, jamais exigées, jamais marquées « faites »).
   const gel = instantValidationModule(row);
-  const apres = gel ? activites.filter((a) => a.ajouteeLe > gel) : [];
+  const apres = gel ? activites.filter((a) => Date.parse(a.ajouteeLe) > Date.parse(gel)) : [];
   const requises = activites.filter((a) => !apres.includes(a));
   const faits = activites.filter((a) => termines.has(a.id)).map((a) => a.id);
   const faitsRequis = requises.filter((a) => termines.has(a.id));
