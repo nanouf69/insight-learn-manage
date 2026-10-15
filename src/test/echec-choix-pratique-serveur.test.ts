@@ -150,7 +150,11 @@ describe("Signature et preuve figée", () => {
     const { deps, docs, tok } = await pret();
     const [r1, r2] = await Promise.all([soumettre(deps, tok, "maintenant", SIG, ""), soumettre(deps, tok, "renonce", SIG, "")]);
     expect([r1.body, r2.body].filter((b: any) => b.deja_signe)).toHaveLength(1);
-    expect(docs[0].choix).toBe("maintenant");
+    const gagnant = (r1.body as any).deja_signe ? "renonce" : "maintenant";
+    expect(docs[0].choix).toBe(gagnant);
+    // 3e appel après coup : rien n'est réécrit
+    await soumettre(deps, tok, gagnant === "renonce" ? "maintenant" : "renonce", SIG, "");
+    expect(docs[0].choix).toBe(gagnant);
   });
   it("identité figée : la fiche modifiée ne change ni la page ni la preuve", async () => {
     const { deps, a, tok } = await pret();
