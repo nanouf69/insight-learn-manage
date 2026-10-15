@@ -852,7 +852,7 @@ function PassageMatiere({
     expireRef.current = true;
     setExpire(true);
     if (matiereTermineeRef.current || expirationEnCoursRef.current) return;
-    const refusAvant = getAnswerSaveRejectionFor(exerciceKey);
+    const refusAvant = getAnswerSaveRejectionFor(apprenantId, exerciceKey);
     if (finalisationBloqueeParRefus(refusAvant, exerciceKey)) {
       setFinalisationEnAttente(false);
       setFinalisationRefusee(refusAvant?.message ?? "Le serveur a refusé la clôture de cette matière.");
@@ -917,7 +917,7 @@ function PassageMatiere({
       } catch (error) {
         console.error("[AutoSave] Expiration: finalisation en attente", error);
         setSaveStatus("error");
-        const refus = getAnswerSaveRejectionFor(exerciceKey);
+        const refus = getAnswerSaveRejectionFor(apprenantId, exerciceKey);
         if (finalisationBloqueeParRefus(refus, exerciceKey)) {
           setFinalisationEnAttente(false);
           setFinalisationRefusee(refus?.message ?? "Le serveur a refusé la clôture de cette matière.");
@@ -1120,8 +1120,8 @@ function PassageMatiere({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <p>{finalisationRefusee}</p>
-          <p>Rien n'a été supprimé : vos réponses restent conservées sur cet appareil. Aucune note n'a été calculée. L'équipe pédagogique a été alertée.</p>
+          <p>{finalisationRefusee.replace(/\s*Une alerte technique a été envoyée automatiquement\.?/g, "")}</p>
+          <p>Rien n'a été supprimé : vos réponses restent conservées sur cet appareil. Aucune note n'a été calculée.</p>
           <Button variant="outline" onClick={() => window.location.reload()}>Recharger normalement la page</Button>
         </CardContent>
       </Card>

@@ -298,11 +298,42 @@ export const clearAnswerSaveRejection = (): void => {
   emitRejection();
 };
 
-/** Dernier refus définitif connu pour CET exercice (lecture seule, file intacte). */
-export const getAnswerSaveRejectionFor = (exerciceId: string): AnswerSaveRejection | null =>
-  lastRejection && lastRejection.exerciceId === exerciceId && lastRejection.reason !== "frozen"
-    ? lastRejection
-    : null;
+/**
+ * Refus DÉFINITIFS du serveur, mémorisés par compte + dossier + exercice.
+ * Jamais par exercice seul : sur une tablette partagée, le refus de l'élève A
+ * ne bloque ni n'est montré à l'élève B. Levé par une sauvegarde confirmée du
+ * même couple, et effacé au changement de compte. Ne touche jamais la file.
+ */
+const definitiveRejections = new Map<string, AnswerSaveRejection>();
+const rejectionKey = (userId: string | null | undefined, apprenantId: string, exerciceId: string) =>
+  `${userId ?? ""}|${apprenantId}|${exerciceId}`;
+
+function recordDefinitiveRejection(
+  userId: string | null | undefined,
+  apprenantId: string,
+  exerciceId: string,
+  reason: AnswerSaveRejection["reason"],
+  message?: string,
+) {
+  if (!userId || reason === "frozen") return;
+  definitiveRejections.set(rejectionKey(userId, apprenantId, exerciceId), {
+    exerciceId, reason, at: new Date().toISOString(), message,
+  });
+}
+
+/** Refus définitif connu pour le compte ACTIF, ce dossier et cet exercice (lecture seule). */
+export const getAnswerSaveRejectionFor = (
+  apprenantId: string | null | undefined,
+  exerciceId: string,
+): AnswerSaveRejection | null => {
+  if (!authUserId || !apprenantId) return null;
+  return definitiveRejections.get(rejectionKey(authUserId, apprenantId, exerciceId)) ?? null;
+};
+
+/** Tests uniquement : enregistre/réinitialise un refus sans réseau. */
+export const __testRecordDefinitiveRejection = recordDefinitiveRejection;
+export const __testConfirmSave = (userId: string, apprenantId: string, exerciceId: string) =>
+  definitiveRejections.delete(rejectionKey(userId, apprenantId, exerciceId));
 
 function readQueue(): QueueItem[] {
   if (memoryQueue) return memoryQueue;
@@ -539,6 +570,12 @@ export function setAnswerSaveAuthToken(token: string | null, userId: string | nu
   const sessionOuverte = !authToken && !!token;
   authToken = token;
   authUserId = userId;
+  if (userChanged) {
+    // Tablette partagée : aucun refus (ni message) d'un compte n'est visible
+    // ou bloquant pour le compte suivant. Les éléments en file sont intacts.
+    definitiveRejections.clear();
+    if (lastRejection) { lastRejection = null; emitRejection(); }
+  }
   if (userChanged || sessionOuverte) {
     // Les éventuels éléments bloqués du compte sont réessayés une fois
     // (rien n'est jamais supprimé de la file).
@@ -749,6 +786,8 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           // Un refus d'identité reste affiché jusqu'au rechargement de la page.
           clearAnswerSaveRejection();
         }
+        // Une sauvegarde confirmée lève le refus définitif mémorisé pour CE couple.
+        definitiveRejections.delete(rejectionKey(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id));
         // Compteur anonyme : prouve un succès APRÈS réessai (aucune réponse/jeton/personne).
         if ((item.attempts ?? 0) > 0) {
           retrySuccessCount += 1;
@@ -766,6 +805,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     const verdict = classifyAnswerSaveFailure(res.status, text);
     if (verdict.definitif) {
       notifyAnswerSaveRejected(item.payload.exercice_id, verdict.reason, verdict.message);
+      recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, verdict.reason, verdict.message);
       return "blocked";
     }
     return "retry";

@@ -98,6 +98,9 @@ Deno.serve(async (req) => {
 
     if (dbError) {
       console.error("DB error:", dbError);
+      // Nettoyage du SEUL nouveau fichier orphelin (jamais d'une version précédente).
+      const { error: cleanupError } = await supabase.storage.from("documents-inscription").remove([storagePath]);
+      if (cleanupError) console.error("Cleanup new file error:", cleanupError);
       return new Response(JSON.stringify({ error: "Erreur base de données: " + dbError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
