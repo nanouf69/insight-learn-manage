@@ -40,7 +40,20 @@ export function getAccessCutoffMs(dateFin?: string | null): number | null {
   const base = String(dateFin).slice(0, 10);
   const [y, m, d] = base.split("-").map(Number);
   if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+  return finJourneeParisMs(y, m, d);
+}
+
+/** Décalage Europe/Paris (ms) à un instant donné, indépendant du fuseau de l'appareil. */
+function decalageParisMs(t: number): number {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    .formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(t / 1000) * 1000;
+}
+/** 23:59:59.999 heure de Paris du jour donné (hiver UTC+1, été UTC+2). */
+export function finJourneeParisMs(y: number, m: number, d: number): number {
+  const naif = Date.UTC(y, m - 1, d, 23, 59, 59, 999);
+  return naif - decalageParisMs(naif - decalageParisMs(naif));
 }
 
 /** true si la session doit être totalement ignorée (démarrée après la fin d'accès). */

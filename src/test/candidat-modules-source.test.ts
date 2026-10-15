@@ -27,7 +27,8 @@ describe('Candidats : même parcours et preuves que l’élève, lecture simulé
     fake.rows.apprenants.data = { type_apprenant: 'va-e', modules_autorises: null };
     fake.rows.apprenant_module_completion.data = [33,41,3,29,30,38,63,73,8,53].map(module_id => ({ module_id, status: 'completed' }));
     expect(await chargerCandidatModules('bf12b32a-f8a2-434c-b855-f6033de38c2f')).toMatchObject({ total: 10, termines: 10, restants: [] });
-    expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 11, termines: 9 });
+    // Module 8 « completed » sans date : acquis conservé (règle 15/10), seul l'émargement 83 reste.
+    expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 11, termines: 10 });
     expect(fake.rows.reponses_apprenants.data).toEqual([]);
   });
   it.each(['vtc-elearning', 'taxi-elearning', 'taxi-pour-vtc-elearning', 'vtc-pour-taxi'] as const)('conserve les modules par défaut %s', formation => {
@@ -39,7 +40,8 @@ describe('Candidats : même parcours et preuves que l’élève, lecture simulé
     if (!formation) return;
     expect(modulesAttribuesDashboard(formation, [2, 2, 25, 14]).map(m => m.id)).toEqual([2]);
   });
-  it('ancienne validation pratique VTC : jeux non faits => module restant', async () => {
+  it('validation pratique VTC après l\'ajout des jeux : jeux non faits => module restant', async () => {
+    fake.rows.apprenant_module_completion.data = [{ module_id: 8, status: 'completed', completed_at: '2026-10-13T12:00:00Z' }];
     expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 1, termines: 0, restants: [{ id: 8, raison: 'nouvelles_activites' }] });
     fake.rows.reponses_apprenants.data = ACTIVITES_CODE.filter(a => a.moduleId === 8).map(a => ({ exercice_id: a.id, completed: true }));
     expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 1, termines: 1, restants: [] });
