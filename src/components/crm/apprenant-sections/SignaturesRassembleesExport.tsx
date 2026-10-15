@@ -36,7 +36,7 @@ function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, 
     </Button>
     {query.isError && <p role="alert" className="text-xs text-destructive">Signatures indisponibles : aucun PDF incomplet n’a été produit.</p>}
     {requested && query.isSuccess && !query.data && <p className="text-xs text-muted-foreground">Aucune signature enregistrée.</p>}
-    {query.data && !query.isError && <p className="text-xs text-muted-foreground">PDF prêt — {query.data.pages} page(s), pratique incluse.</p>}
+    {query.data && !query.isError && <p className="text-xs text-muted-foreground">PDF prêt — {query.data.pages} page(s), images disponibles de session et pratique.</p>}
     {compte && (
       <p
         data-testid="signatures-pdf-compte"
@@ -47,7 +47,7 @@ function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, 
           : 'text-xs text-muted-foreground'
         }
       >
-        {compte.texte}
+        {compte.texte} — images présentes dans le PDF ; une date de signature sans image n’est pas reproduite.
       </p>
     )}
   </div>;

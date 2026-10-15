@@ -158,7 +158,7 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 }
 
 // ── Objectif EDOF : nombre de signatures attendues selon la formation ──
-// VTC soir : 20 théorie + 2 pratique = 22 ; VTC journée : 40 + 2 = 42 ;
+// VTC journée et soir : 20 théorie + 2 pratique = 22 ;
 // TAXI : 80 + 2 = 82. Signature comptée une seule fois par date + créneau.
 
 /** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
@@ -236,7 +236,7 @@ export function calculerBilanSignaturesEdof(
     else horsPlanning.push({ date, creneau: DEMI_LABELS[demi] ?? demi });
   }
   horsPlanning.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
-  const objectifTheorie = filiere === 'TAXI' ? 80 : filiere === 'TA' ? 20 : soir ? 20 : 40;
+  const objectifTheorie = filiere === 'TAXI' ? 80 : 20;
   const objectifPratique = 2;
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning,

@@ -61,4 +61,20 @@ describe('bilan EDOF : compte exact et hors planning', () => {
     const emargs = [...soirs.flatMap(d => [sig(d, 'soir_1'), sig(d, 'soir_2')]), sig('2026-10-13', 'matin')];
     expect(calculerBilanSignaturesEdof(emargs, mkSessions(), mkResa(), 'VTC').complet).toBe(false);
   });
+
+  it.each(['09:00', '17:00'])('VTC %s : 20 session + 2 pratique = 22 sans mutation', heure => {
+    const jours = ['2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25'];
+    const creneaux = heure === '09:00' ? ['matin', 'apres_midi'] : ['soir_1', 'soir_2'];
+    const rows = mkSessions().map(r => ({ ...r, heure_debut_personnalisee: heure, sessions: { ...r.sessions, heure_debut: heure } }));
+    const signatures = [...jours.flatMap(d => creneaux.map(c => sig(d, c))), sig('2026-10-13', 'matin'), sig('2026-10-13', 'apres_midi')];
+    const avant = JSON.stringify({ rows, signatures });
+    const bilan = calculerBilanSignaturesEdof(signatures, rows, mkResa(), 'VTC');
+    expect(bilan).toMatchObject({ theorie: 20, pratique: 2, total: 22, objectifTheorie: 20, objectifPratique: 2, objectifTotal: 22, complet: true, excedent: false });
+    expect(calculerBilanSignaturesEdof(signatures.slice(0, -1), rows, mkResa(), 'VTC').complet).toBe(false);
+    expect(JSON.stringify({ rows, signatures })).toBe(avant);
+  });
+
+  it.each([['TAXI', 80, 82], ['TA', 20, 22]] as const)('%s conserve ses objectifs', (formation, theorie, total) => {
+    expect(calculerBilanSignaturesEdof([], mkSessions(), mkResa(), formation)).toMatchObject({ objectifTheorie: theorie, objectifPratique: 2, objectifTotal: total, complet: false });
+  });
 });
