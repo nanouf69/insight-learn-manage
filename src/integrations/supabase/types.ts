@@ -3081,6 +3081,33 @@ export type Database = {
         }
         Relationships: []
       }
+      edof_fin_formation: {
+        Row: {
+          apprenant_id: string
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          mis_fin_formation: boolean
+        }
+        Insert: {
+          apprenant_id: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mis_fin_formation: boolean
+        }
+        Update: {
+          apprenant_id?: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mis_fin_formation?: boolean
+        }
+        Relationships: []
+      }
       email_accuses: {
         Row: {
           apprenant_id: string | null
