@@ -5,8 +5,10 @@ export interface PreuveChoix {
   texte: TexteFige;
   version: string | null;
   empreinte: string | null;
+  /** Identité FIGÉE à la préparation (jamais la fiche courante). */
   nom: string;
   prenom: string;
+  email?: string | null;
   choix: string | null;
   signature: string | null;
   signeLeParis: string | null;
@@ -55,6 +57,7 @@ export async function genererPreuveChoixPdf(p: PreuveChoix): Promise<Uint8Array>
   p.texte.suite.forEach((t) => { ligne(t); espace(4); });
   espace(8);
   ligne(`Nom, prénom : ${p.nom} ${p.prenom}`, bold);
+  if (p.email) ligne(`Destinataire : ${p.email}`, font, 9);
   ligne(`Date : ${p.signeLeParis ?? "non signé"}`, bold);
   if (p.signedAt) ligne(`Horodatage serveur (UTC) : ${p.signedAt}`, font, 8, rgb(0.4, 0.4, 0.4));
   if (p.envoyeLe) ligne(`Date d'envoi enregistrée du mail (UTC, pas une preuve de réception) : ${p.envoyeLe}`, font, 8, rgb(0.4, 0.4, 0.4));

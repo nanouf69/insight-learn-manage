@@ -2940,13 +2940,20 @@ export type Database = {
           apprenant_id: string | null
           champs: Json
           choix: string | null
+          cle_envoi: string | null
           created_at: string
           created_by: string | null
           destinataire_email: string | null
           destinataire_nom: string | null
+          envoi_erreur: string | null
+          envoi_etat: string | null
+          envoi_tente_le: string | null
           envoye_le: string | null
           file_path: string
           id: string
+          identite_figee: Json | null
+          mail_html_fige: string | null
+          mail_objet_fige: string | null
           modele_code: string | null
           modele_version: string | null
           nom: string
@@ -2964,13 +2971,20 @@ export type Database = {
           apprenant_id?: string | null
           champs?: Json
           choix?: string | null
+          cle_envoi?: string | null
           created_at?: string
           created_by?: string | null
           destinataire_email?: string | null
           destinataire_nom?: string | null
+          envoi_erreur?: string | null
+          envoi_etat?: string | null
+          envoi_tente_le?: string | null
           envoye_le?: string | null
           file_path: string
           id?: string
+          identite_figee?: Json | null
+          mail_html_fige?: string | null
+          mail_objet_fige?: string | null
           modele_code?: string | null
           modele_version?: string | null
           nom: string
@@ -2988,13 +3002,20 @@ export type Database = {
           apprenant_id?: string | null
           champs?: Json
           choix?: string | null
+          cle_envoi?: string | null
           created_at?: string
           created_by?: string | null
           destinataire_email?: string | null
           destinataire_nom?: string | null
+          envoi_erreur?: string | null
+          envoi_etat?: string | null
+          envoi_tente_le?: string | null
           envoye_le?: string | null
           file_path?: string
           id?: string
+          identite_figee?: Json | null
+          mail_html_fige?: string | null
+          mail_objet_fige?: string | null
           modele_code?: string | null
           modele_version?: string | null
           nom?: string
