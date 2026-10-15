@@ -373,11 +373,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     queryFn: async () => {
       const { data, error } = await supabase
         .from("session_apprenants")
-        .select("session_id, sessions:session_id (id, nom, date_debut, date_fin, type_session, lieu, statut)")
+        .select("liste_attente, heure_debut_personnalisee, sessions:session_id (id, nom, date_debut, date_fin, type_session, lieu, statut, heure_debut, heure_fin)")
         .eq("apprenant_id", apprenantId);
       if (error) return [];
       return (data ?? [])
-        .map((r: any) => r.sessions)
+        .map((r: any) => ({ ...r.sessions, heure_debut_personnalisee: r.heure_debut_personnalisee, liste_attente: r.liste_attente }))
         .filter(Boolean)
         .sort((a: any, b: any) => (b.date_debut || "").localeCompare(a.date_debut || ""));
     },
