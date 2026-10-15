@@ -63,6 +63,7 @@ import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { isPratiqueType } from "@/lib/sessionTypes";
+import { heuresSessionAffichees } from "@/lib/sessionHeures";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
@@ -93,6 +94,10 @@ interface Session {
   status: string;
   type_session?: string;
   creneaux?: string[] | string | null;
+  nom?: string | null;
+  heure_debut?: string | null;
+  types_apprenant?: string[] | null;
+  heures_total?: number | null;
 }
 
 interface SessionDetailProps {
