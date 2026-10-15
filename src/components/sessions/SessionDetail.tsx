@@ -4137,8 +4137,27 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
 
                           <span className="flex items-center gap-1 group/copy">
-                            <Phone className="w-3 h-3 shrink-0" />
-                            {apprenant.telephone || "—"}
+                            {(() => {
+                              const raw = apprenant.telephone || "";
+                              const normalized = raw.trim().startsWith("+")
+                                ? "+" + raw.replace(/[^\d]/g, "")
+                                : raw.replace(/[^\d]/g, "");
+                              const isCallable = normalized.replace(/^\+/, "").length >= 8;
+                              if (!raw) return <><Phone className="w-3 h-3 shrink-0" />—</>;
+                              if (!isCallable) return <><Phone className="w-3 h-3 shrink-0" />{raw}</>;
+                              return (
+                                <a
+                                  href={`tel:${normalized}`}
+                                  aria-label={`Appeler ${apprenant.prenom || ''} ${apprenant.nom || ''} au ${raw}`}
+                                  title={`Appeler le ${raw}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-1 min-h-[28px] px-1 -mx-1 rounded text-primary hover:underline touch-manipulation"
+                                >
+                                  <Phone className="w-3 h-3 shrink-0" />
+                                  <span className="select-all">{raw}</span>
+                                </a>
+                              );
+                            })()}
                             {apprenant.telephone && (
                               <button
                                 type="button"
