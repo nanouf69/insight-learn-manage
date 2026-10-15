@@ -440,6 +440,22 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     }
   }, [resolvedTypeFromApprenant, selectedFormationForModules]);
 
+  // Format des cours théoriques (journée / soir) d'après les horaires réels des sessions.
+  const formatsCours = useMemo((): string[] => {
+    const formats: string[] = [];
+    for (const s of apprenantSessions ?? []) {
+      if (!s || (s as any).liste_attente === true) continue;
+      const type = String((s as any).type_session ?? "").toLowerCase();
+      if (!type.includes("theorique")) continue;
+      if (/annul/i.test(String((s as any).statut ?? ""))) continue;
+      const h = String((s as any).heure_debut_personnalisee ?? (s as any).heure_debut ?? "").slice(0, 5);
+      if (!/^\d{2}:\d{2}$/.test(h)) continue;
+      const format = h >= "17:00" ? "Cours du soir" : "Cours de journée";
+      if (!formats.includes(format)) formats.push(format);
+    }
+    return formats;
+  }, [apprenantSessions]);
+
   const createDialogInitialized = useRef(false);
   useEffect(() => {
     if (!showCreateDialog) {
