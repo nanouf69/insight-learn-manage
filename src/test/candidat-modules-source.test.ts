@@ -39,7 +39,8 @@ describe('Candidats : même parcours et preuves que l’élève, lecture simulé
     if (!formation) return;
     expect(modulesAttribuesDashboard(formation, [2, 2, 25, 14]).map(m => m.id)).toEqual([2]);
   });
-  it('ancienne validation pratique VTC : jeux non faits => module restant', async () => {
+  it('validation pratique VTC après l\'ajout des jeux : jeux non faits => module restant', async () => {
+    fake.rows.apprenant_module_completion.data = [{ module_id: 8, status: 'completed', completed_at: '2026-10-13T12:00:00Z' }];
     expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 1, termines: 0, restants: [{ id: 8, raison: 'nouvelles_activites' }] });
     fake.rows.reponses_apprenants.data = ACTIVITES_CODE.filter(a => a.moduleId === 8).map(a => ({ exercice_id: a.id, completed: true }));
     expect(await chargerCandidatModules('fictif')).toMatchObject({ total: 1, termines: 1, restants: [] });

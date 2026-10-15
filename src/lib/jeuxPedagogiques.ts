@@ -28,7 +28,8 @@ export function activitesDuModule(moduleId: number, a: string = new Date().toISO
  * Gel PAR MODULE (règle 15/10/2026) : instant de validation serveur d'un module, si prouvé
  * (status completed + completed_at lisible). Une activité ajoutée APRÈS cet instant ne
  * rouvre jamais ce module ni ne baisse son acquis ; elle reste faisable en révision facultative.
- * Absent/illisible => null : le module suit le contenu courant (aucune date inventée).
+ * Absent/illisible => null (aucune date inventée) ; un module « completed » sans date reste
+ * néanmoins acquis (aucune activité exigée) : une validation prouvée ne recule jamais.
  */
 export function instantValidationModule(row: { status?: string | null; completed_at?: string | null } | undefined | null): string | null {
   if (!row || row.status !== "completed" || !row.completed_at) return null;
@@ -37,6 +38,8 @@ export function instantValidationModule(row: { status?: string | null; completed
 }
 /** Activités exigées pour un module : celles du registre à la date, bornées à sa validation si validé. */
 export function activitesRequisesModule(moduleId: number, row: { status?: string | null; completed_at?: string | null } | undefined | null, a: string = new Date().toISOString()): ActiviteCode[] {
+  // Validation serveur prouvée mais date absente/illisible : l'acquis est conservé (aucune date inventée).
+  if (row?.status === "completed" && !instantValidationModule(row)) return [];
   const gel = instantValidationModule(row);
   return activitesDuModule(moduleId, a).filter((x) => !gel || Date.parse(x.ajouteeLe) <= Date.parse(gel));
 }
@@ -47,7 +50,7 @@ export const JEUX_LYON = ACTIVITES_CODE.filter((x) => x.moduleId === 8);
 export const IDS_JEUX_LYON = JEUX_LYON.map((j) => j.id);
 export const UNITES_JEUX_LYON = JEUX_LYON.reduce((s, j) => s + j.unites, 0);
 
-export interface EtatActivites { moduleId: number; termines: string[]; requises: string[]; versionAnterieureValidee: boolean; progressionModuleSeul: number; ajouteesApresValidation?: string[]; valideLe?: string | null }
+export interface EtatActivites { moduleId: number; termines: string[]; requises: string[]; versionAnterieureValidee: boolean; progressionModuleSeul: number; ajouteesApresValidation?: string[]; valideLe?: string | null; valideSansDate?: boolean }
 
 const unitesModule = (v: VolumeModule) => v.points ?? 4 * Math.max(0, v.pages) + Math.max(0, v.questions);
 
@@ -65,14 +68,16 @@ export function completionAvecActivites(
 ): { completion: CompletionLite; etat: EtatActivites } {
   const moduleId = Number(row?.module_id ?? activites[0]?.moduleId);
   // Gel par module : activités ajoutées après la validation = acquises pour CE module
-  // (volume courant conservé pour les poids, jamais exigées, jamais marquées « faites »).
+  // Unités gardées dans le volume COURANT (pas un volume historique figé) et comptées
+  // acquises pour garantir 100 % à ce module ; jamais marquées « faites ».
   const gel = instantValidationModule(row);
-  const apres = gel ? activites.filter((a) => Date.parse(a.ajouteeLe) > Date.parse(gel)) : [];
+  const valideSansDate = row?.status === "completed" && !gel;
+  const apres = valideSansDate ? [...activites] : gel ? activites.filter((a) => Date.parse(a.ajouteeLe) > Date.parse(gel)) : [];
   const requises = activites.filter((a) => !apres.includes(a));
   const faits = activites.filter((a) => termines.has(a.id)).map((a) => a.id);
   const faitsRequis = requises.filter((a) => termines.has(a.id));
   const progModule = row?.status === "completed" ? 100 : Math.max(0, Math.min(100, Number(row?.progress) || 0));
-  const etat: EtatActivites = { moduleId, termines: faits, requises: requises.map((a) => a.id), versionAnterieureValidee: row?.status === "completed" && faitsRequis.length < requises.length, progressionModuleSeul: progModule, ajouteesApresValidation: apres.map((a) => a.id), valideLe: gel };
+  const etat: EtatActivites = { moduleId, termines: faits, requises: requises.map((a) => a.id), versionAnterieureValidee: row?.status === "completed" && faitsRequis.length < requises.length, progressionModuleSeul: progModule, ajouteesApresValidation: apres.map((a) => a.id), valideLe: gel, valideSansDate };
   const um = unitesModule(volume);
   const ua = activites.reduce((s, a) => s + a.unites, 0);
   const uf = activites.reduce((s, a) => s + (termines.has(a.id) || apres.includes(a) ? a.unites : 0), 0);
