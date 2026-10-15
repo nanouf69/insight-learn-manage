@@ -1,5 +1,5 @@
 /**
- * Mail unique « Résultat théorique VTC + choix entraînement pratique ».
+ * Mail unique « Résultat théorique (VTC/TAXI) + choix entraînement pratique ».
  * Texte du bloc pratique fourni par le gérant (15/10/2026), repris fidèlement.
  * Aucune conséquence administrative n'est déclenchée par le choix : modèle fourni,
  * aucune déclaration automatique (Caisse des Dépôts, France Travail, abandon).
@@ -11,7 +11,7 @@ export const MODELE_NOM = "Choix entraînement pratique";
 
 export type Filiere = "vtc" | "taxi" | "ta";
 /** Libellé de filière inséré dans le texte fourni (seul élément adapté). */
-export const LIBELLE_FILIERE: Record<Filiere, string> = { vtc: "VTC", taxi: "TAXI", ta: "TAXI (passerelle VTC vers TAXI)" };
+export const LIBELLE_FILIERE: Record<Filiere, string> = { vtc: "VTC", taxi: "TAXI", ta: "TAXI (passerelle)" };
 const COURT: Record<Filiere, string> = { vtc: "VTC", taxi: "TAXI", ta: "TAXI" };
 
 /**
@@ -21,7 +21,8 @@ const COURT: Record<Filiere, string> = { vtc: "VTC", taxi: "TAXI", ta: "TAXI" };
 export function filiereDepuisDossier(typeApprenant: string | null | undefined): Filiere | null {
   const t = (typeApprenant || "").toLowerCase().trim();
   if (!t || t.includes("+")) return null;
-  if (t === "ta" || t.startsWith("ta-") || t.includes("ta-e") || t.includes("ta-i")) return "ta";
+  if (t.includes("ta-i")) return "taxi";
+  if (t === "ta" || t.startsWith("ta-") || t.includes("ta-e")) return "ta";
   if (t.includes("taxi")) return t.includes("vtc") ? null : "taxi";
   if (t === "va" || t.startsWith("va-")) return null;
   if (t.includes("vtc")) return "vtc";

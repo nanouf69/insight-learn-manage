@@ -42,7 +42,7 @@ export async function genererPreuveChoixPdf(p: PreuveChoix): Promise<Uint8Array>
   };
   const espace = (h = 6) => { y -= h; };
 
-  ligne("FTRANSPORT SERVICES PRO – Choix entraînement pratique VTC", bold, 13);
+  ligne(`FTRANSPORT SERVICES PRO – ${p.texte.titre ?? "Choix entraînement pratique"}`, bold, 13);
   ligne(`Modèle ${p.version ?? "?"} – empreinte du texte : ${p.empreinte ?? "?"}`, font, 8, rgb(0.4, 0.4, 0.4));
   espace(8);
   p.texte.intro.forEach((t) => { ligne(t); espace(4); });
