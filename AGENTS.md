@@ -31,3 +31,4 @@
 - Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 ; why: anti-réécriture.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
+- Gel PAR MODULE : une activité du registre ajoutée après completed_at d'un module validé n'est ni exigée ni comptée « faite » (acquise, volume courant conservé) via activitesRequisesModule/completionAvecActivites ; heures jamais figées avant fin d'accès ; why: un module terminé ne doit jamais être rouvert par du contenu ultérieur.
