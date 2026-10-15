@@ -9,7 +9,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
 import { generateText } from "npm:ai";
 import {
-  CONSIGNE_IA, MARQUEUR_IA, MODELE_IA_QRC, admissibilite, cleIdempotence, estElearning, estPauseGlobale,
+  CONSIGNE_IA, MARQUEUR_IA, MODELE_IA_QRC, admissibilite, cleIdempotence, estApprenantElearning, estElearning, estPauseGlobale,
   messageUtilisateur, texteReponse, validerResultatIa, type QuestionSnapshot,
 } from "../_shared/qrcIaRegles.ts";
 
@@ -78,8 +78,8 @@ Deno.serve(async (req) => {
     }
 
     // 3. E-learning uniquement
-    const { data: app } = await service.from("apprenants").select("type_apprenant").eq("id", att.apprenant_id).maybeSingle();
-    if (!estElearning(app?.type_apprenant)) return json({ ok: true, statut: "non_elearning" });
+    const { data: app } = await service.from("apprenants").select("type_apprenant, modalite_formation").eq("id", att.apprenant_id).maybeSingle();
+    if (!estApprenantElearning(app?.type_apprenant, app?.modalite_formation)) return json({ ok: true, statut: "non_elearning" });
 
     const questions: QuestionSnapshot[] = Array.isArray(att.snapshot?.questions) ? att.snapshot.questions : [];
     const { data: qrcs } = await service.from("qrc_instances_v2")

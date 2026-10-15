@@ -66,6 +66,7 @@ vi.mock("@/lib/answerPersistence", () => ({
   flushAnswerSavesOnUnload: () => {},
   mergeSavedAndPendingAnswers: (raw: any) => raw ?? {},
   getPendingAnswerSavesFor: () => 0,
+  getAnswerSaveRejectionFor: () => null,
   getBlockedAnswerSavesFor: () => 0,
   getConfirmedWriteSeq: () => 0,
   subscribeAnswerSaveState: () => () => {},
