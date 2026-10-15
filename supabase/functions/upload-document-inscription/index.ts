@@ -1,3 +1,4 @@
+import { cheminDocumentUnique } from "./chemin.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -61,14 +62,14 @@ Deno.serve(async (req) => {
 
     const timestamp = Date.now();
     const ext = file.name.split(".").pop() || "pdf";
-    const storagePath = `${apprenantId}/${typeDocument}-${timestamp}.${ext}`;
+    const storagePath = cheminDocumentUnique(apprenantId, typeDocument, ext, timestamp);
 
     const arrayBuffer = await file.arrayBuffer();
     const { error: uploadError } = await supabase.storage
       .from("documents-inscription")
       .upload(storagePath, arrayBuffer, {
         contentType: file.type || "application/pdf",
-        upsert: true,
+        upsert: false,
       });
 
     if (uploadError) {
