@@ -19,10 +19,10 @@ describe("Gel par module (règle 15/10/2026)", () => {
     const p: any = progressionModulesEleve(mods, () => true, new Set(), APRES, "fictif-B", [{ module_id: 8, status: "completed", completed_at: "2026-10-13T12:00:00Z" }]);
     expect(p.restants[0]).toMatchObject({ id: 8, raison: "nouvelles_activites" });
   });
-  it("completed sans date lisible : aucune date inventée, suit le contenu courant", () => {
+  it("completed sans date lisible : aucune date inventée, validation conservée", () => {
     expect(instantValidationModule({ status: "completed", completed_at: null })).toBeNull();
     expect(instantValidationModule({ status: "completed", completed_at: "pas-une-date" })).toBeNull();
-    expect(activitesRequisesModule(8, { status: "completed", completed_at: null }, APRES)).toHaveLength(2);
+    expect(activitesRequisesModule(8, { status: "completed", completed_at: null }, APRES)).toHaveLength(0);
   });
   it("module en cours : recalcul avec le contenu courant (jeux exigés)", () => {
     expect(activitesRequisesModule(8, { status: "in_progress", completed_at: AVANT }, APRES)).toHaveLength(2);
