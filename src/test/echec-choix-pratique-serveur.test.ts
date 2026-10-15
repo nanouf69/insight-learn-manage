@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 import { deflateSync } from "node:zlib";
 import { createHash } from "node:crypto";
