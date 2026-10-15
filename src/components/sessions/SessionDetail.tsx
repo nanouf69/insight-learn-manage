@@ -742,6 +742,31 @@ function PaiementPopover({
 
 export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant, asPage, onBack }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
+  // Total d'heures de la session (modifiable, enregistré en base ; défaut calculé sinon)
+  const [heuresTotal, setHeuresTotal] = useState<number | null>(session?.heures_total ?? null);
+  const [heuresTotalEdit, setHeuresTotalEdit] = useState(false);
+  const [heuresTotalInput, setHeuresTotalInput] = useState("");
+  const [savingHeuresTotal, setSavingHeuresTotal] = useState(false);
+  useEffect(() => { setHeuresTotal(session?.heures_total ?? null); }, [session?.id, session?.heures_total]);
+  const heuresAffichees = heuresSessionAffichees({ ...session, heures_total: heuresTotal });
+  const saveHeuresTotal = async () => {
+    if (!session?.id) return;
+    const v = Number(String(heuresTotalInput).replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0 || v > 1000) {
+      toast({ title: "Valeur invalide", description: "Saisissez un nombre d'heures positif.", variant: "destructive" });
+      return;
+    }
+    setSavingHeuresTotal(true);
+    const { error } = await supabase.from("sessions").update({ heures_total: v }).eq("id", session.id);
+    setSavingHeuresTotal(false);
+    if (error) {
+      toast({ title: "Erreur", description: error.message || "Enregistrement impossible", variant: "destructive" });
+      return;
+    }
+    setHeuresTotal(v);
+    setHeuresTotalEdit(false);
+    toast({ title: "Total d'heures enregistré", description: `Session : ${v} h.` });
+  };
   const [learnerSearch, setLearnerSearch] = useState("");
   const [learnerStatutFilter, setLearnerStatutFilter] = useState<string>("all");
   const [learnerIdentFilter, setLearnerIdentFilter] = useState<string>("all");
