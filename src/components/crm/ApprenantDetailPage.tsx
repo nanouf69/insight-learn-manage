@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3, Trash2, AlertTriangle, Eye } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3, Trash2, AlertTriangle, Eye, Sun, Moon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA, FORMATIONS, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { Button } from "@/components/ui/button";
@@ -373,11 +373,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     queryFn: async () => {
       const { data, error } = await supabase
         .from("session_apprenants")
-        .select("session_id, sessions:session_id (id, nom, date_debut, date_fin, type_session, lieu, statut)")
+        .select("liste_attente, heure_debut_personnalisee, sessions:session_id (id, nom, date_debut, date_fin, type_session, lieu, statut, heure_debut, heure_fin)")
         .eq("apprenant_id", apprenantId);
       if (error) return [];
       return (data ?? [])
-        .map((r: any) => r.sessions)
+        .map((r: any) => ({ ...r.sessions, heure_debut_personnalisee: r.heure_debut_personnalisee, liste_attente: r.liste_attente }))
         .filter(Boolean)
         .sort((a: any, b: any) => (b.date_debut || "").localeCompare(a.date_debut || ""));
     },
@@ -439,6 +439,22 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       setSelectedFormationForModules(resolvedTypeFromApprenant);
     }
   }, [resolvedTypeFromApprenant, selectedFormationForModules]);
+
+  // Format des cours théoriques (journée / soir) d'après les horaires réels des sessions.
+  const formatsCours = useMemo((): string[] => {
+    const formats: string[] = [];
+    for (const s of apprenantSessions ?? []) {
+      if (!s || (s as any).liste_attente === true) continue;
+      const type = String((s as any).type_session ?? "").toLowerCase();
+      if (!type.includes("theorique")) continue;
+      if (/annul/i.test(String((s as any).statut ?? ""))) continue;
+      const h = String((s as any).heure_debut_personnalisee ?? (s as any).heure_debut ?? "").slice(0, 5);
+      if (!/^\d{2}:\d{2}$/.test(h)) continue;
+      const format = h >= "17:00" ? "Cours du soir" : "Cours de journée";
+      if (!formats.includes(format)) formats.push(format);
+    }
+    return formats;
+  }, [apprenantSessions]);
 
   const createDialogInitialized = useRef(false);
   useEffect(() => {
@@ -507,6 +523,12 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               <Badge variant="outline">
                 {financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-'}
               </Badge>
+              {formatsCours.map((f) => (
+                <Badge key={f} variant="outline" className="gap-1">
+                  {f === "Cours du soir" ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+                  {f}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
