@@ -48,7 +48,7 @@ import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/He
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
 import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
-import { TauxPresenceSessionsCard } from "@/components/crm/TauxPresenceSessionsCard";
+import { TauxPresenceSessionsCard, useTauxPresenceHeures } from "@/components/crm/TauxPresenceSessionsCard";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
@@ -327,7 +327,19 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const modulesQuery = useCandidatModules(apprenantId);
   const modulesProgression = !modulesQuery.isError && !modulesQuery.isFetching && modulesQuery.data?.etat === "ok" ? modulesQuery.data : null;
   // Lecture en erreur : aucun ancien taux affiché, jamais un faux 0 h.
-  const taux = tauxErreur ? null : tauxData;
+  const tauxBrut = tauxErreur ? null : tauxData;
+  const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && regleSuiviFormation(apprenant).presentiel);
+  const taux = useMemo(() => {
+    const d = presenceHeures.data;
+    if (!tauxBrut || !tauxBrut.totalParSignatures || !d) return tauxBrut;
+    const prevues = d.session.prevues + d.pratique.prevues;
+    if (prevues <= 0) return tauxBrut;
+    const faites = d.session.faites + d.pratique.faites;
+    const pct = Math.min(100, (faites / prevues) * 100);
+    const f = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+    // Taux total présentiel = heures signées (session + pratique) / heures des sessions
+    return { ...tauxBrut, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h de sessions (session + pratique)` } };
+  }, [tauxBrut, presenceHeures.data]);
 
   const { data: photoDoc } = useQuery({
     queryKey: ['apprenant-photo', apprenantId],
