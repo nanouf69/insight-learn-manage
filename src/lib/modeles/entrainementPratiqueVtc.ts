@@ -5,14 +5,33 @@
  * aucune déclaration automatique (Caisse des Dépôts, France Travail, abandon).
  */
 
-export const MODELE_CODE = "echec_theorie_vtc_choix_pratique";
-export const MODELE_VERSION = "v1-2026-10-15";
-export const MODELE_NOM = "Choix entraînement pratique VTC";
+export const MODELE_CODE = "echec_theorie_choix_pratique";
+export const MODELE_VERSION = "v2-2026-10-15";
+export const MODELE_NOM = "Choix entraînement pratique";
+
+export type Filiere = "vtc" | "taxi" | "ta";
+/** Libellé de filière inséré dans le texte fourni (seul élément adapté). */
+export const LIBELLE_FILIERE: Record<Filiere, string> = { vtc: "VTC", taxi: "TAXI", ta: "TAXI (passerelle VTC vers TAXI)" };
+const COURT: Record<Filiere, string> = { vtc: "VTC", taxi: "TAXI", ta: "TAXI" };
+
+/**
+ * Filière déduite du dossier réel (type_apprenant). null = inconnue ou ambiguë :
+ * la préparation est bloquée, rien n'est inventé.
+ */
+export function filiereDepuisDossier(typeApprenant: string | null | undefined): Filiere | null {
+  const t = (typeApprenant || "").toLowerCase().trim();
+  if (!t || t.includes("+")) return null;
+  if (t === "ta" || t.startsWith("ta-") || t.includes("ta-e") || t.includes("ta-i")) return "ta";
+  if (t.includes("taxi")) return t.includes("vtc") ? null : "taxi";
+  if (t === "va" || t.startsWith("va-")) return null;
+  if (t.includes("vtc")) return "vtc";
+  return null;
+}
 /** Marqueur de stockage : ce document n'a pas de PDF source importé. */
 export const MODELE_FILE_PATH = `modele:${MODELE_CODE}`;
 
-export const OBJET_MAIL =
-  "Résultat de votre examen théorique VTC et votre entraînement pratique – réponse attendue sous 5 jours";
+export const objetMail = (f: Filiere) =>
+  `Résultat de votre examen théorique ${COURT[f]} et votre entraînement pratique – réponse attendue sous 5 jours`;
 
 export type ChoixCode = "maintenant" | "plus_tard" | "renonce";
 
@@ -32,8 +51,8 @@ export const CHOIX: ReadonlyArray<{ code: ChoixCode; label: string }> = [
   },
 ];
 
-export const INTRO_PRATIQUE = [
-  "Vous avez suivi la partie théorique de votre formation VTC chez FTRANSPORT SERVICES PRO. Malheureusement, vous n'avez pas obtenu l'examen théorique cette fois-ci.",
+export const introPratique = (f: Filiere) => [
+  `Vous avez suivi la partie théorique de votre formation ${LIBELLE_FILIERE[f]} chez FTRANSPORT SERVICES PRO. Malheureusement, vous n'avez pas obtenu l'examen théorique cette fois-ci.`,
   "Nous vous rappelons que l'entraînement pratique est compris dans votre formation. Vous y avez droit, même sans avoir encore réussi la théorie.",
 ];
 
@@ -55,6 +74,8 @@ export const SIGNATURE_GERANT = [
 
 export interface TexteFige {
   modele: string;
+  filiere?: Filiere;
+  titre?: string;
   version: string;
   intro: string[];
   consigne: string;
@@ -63,11 +84,13 @@ export interface TexteFige {
   signataire: string[];
 }
 
-export function texteFige(): TexteFige {
+export function texteFige(f: Filiere): TexteFige {
   return {
     modele: MODELE_CODE,
+    filiere: f,
+    titre: `Votre entraînement pratique ${COURT[f]}`,
     version: MODELE_VERSION,
-    intro: [...INTRO_PRATIQUE],
+    intro: introPratique(f),
     consigne: CONSIGNE_CHOIX,
     choix: CHOIX.map((c) => ({ ...c })),
     suite: [...SUITE_PRATIQUE],
@@ -78,18 +101,12 @@ export function texteFige(): TexteFige {
 export const estChoixValide = (v: unknown): v is ChoixCode =>
   typeof v === "string" && CHOIX.some((c) => c.code === v);
 
-/** Candidat VTC uniquement (exclut TAXI, TA, VA, mobilité). */
-export function estCandidatVtc(typeApprenant: string | null | undefined): boolean {
-  const t = (typeApprenant || "").toLowerCase();
-  if (!t.includes("vtc")) return false;
-  if (t.includes("taxi") || t === "ta" || t.startsWith("ta-") || t.includes("ta-e") || t.includes("ta-i")) return false;
-  if (t === "va" || t.startsWith("va-")) return false;
-  return true;
-}
+/** Candidat VTC (garde l'ancien sens pour compatibilité). */
+export const estCandidatVtc = (t: string | null | undefined) => filiereDepuisDossier(t) === "vtc";
 
-/** Éligible au mail unique : échec théorique ET VTC. */
-export function estEligibleMailEchecVtc(a: { resultat_examen?: string | null; type_apprenant?: string | null; email?: string | null }) {
-  return a.resultat_examen === "non" && estCandidatVtc(a.type_apprenant) && !!a.email;
+/** Éligible au mail unique : échec théorique, filière connue, email présent. */
+export function estEligibleMailEchec(a: { resultat_examen?: string | null; type_apprenant?: string | null; email?: string | null }) {
+  return a.resultat_examen === "non" && filiereDepuisDossier(a.type_apprenant) !== null && !!a.email;
 }
 
 export async function empreinteTexte(texte: string): Promise<string> {
@@ -105,13 +122,14 @@ const esc = (s: string) =>
  * puis bloc pratique fourni, puis bouton « Choisir et signer ».
  * Aucune case cochable dans le mail : le choix se fait sur la page sécurisée.
  */
-export function construireMailEchecVtc(params: { prenom: string; lien: string }): { subject: string; html: string } {
+export function construireMailEchec(params: { prenom: string; lien: string; filiere: Filiere }): { subject: string; html: string } {
+  const intro = introPratique(params.filiere);
   const p = esc(params.prenom || "");
   const lien = esc(params.lien);
   const para = (t: string) => `<p style="margin:0 0 14px">${esc(t)}</p>`;
   const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.55;color:#1f2937;max-width:640px">
 <p style="margin:0 0 14px">Bonjour ${p},</p>
-${para(INTRO_PRATIQUE[0])}
+${para(intro[0])}
 <p style="margin:0 0 14px">Ce résultat ne remet pas en cause vos capacités : beaucoup de nos stagiaires réussissent lors d'un nouveau passage. Nous restons à vos côtés pour la suite.</p>
 <p style="margin:18px 0 8px"><strong>1. Repasser l'examen théorique</strong></p>
 <p style="margin:0 0 8px">Pour vous réinscrire :</p>
@@ -123,7 +141,7 @@ ${para(INTRO_PRATIQUE[0])}
 <p style="margin:0 0 14px;color:#b91c1c;font-weight:bold">Important : lors de votre réinscription, vous devez impérativement sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</p>
 <p style="margin:0 0 14px">Une fois votre réinscription effectuée, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite (Tél : <strong>04 28 29 60 91</strong> – contact@ftransport.fr).</p>
 <p style="margin:18px 0 8px"><strong>2. Votre entraînement pratique</strong></p>
-${para(INTRO_PRATIQUE[1])}
+${para(intro[1])}
 <p style="margin:0 0 8px">Merci de nous indiquer votre choix (une seule réponse possible) parmi les trois propositions suivantes, en cliquant sur le bouton « Choisir et signer » en bas de ce message :</p>
 <ul style="margin:0 0 14px;padding-left:22px">
 ${CHOIX.map((c) => `<li style="margin-bottom:6px">${esc(c.label)}</li>`).join("\n")}
@@ -135,7 +153,7 @@ ${SUITE_PRATIQUE.map(para).join("\n")}
 <p style="margin:0 0 4px">Cordialement,</p>
 <p style="margin:0">${SIGNATURE_GERANT.map(esc).join("<br>")}</p>
 </div>`;
-  return { subject: OBJET_MAIL, html };
+  return { subject: objetMail(params.filiere), html };
 }
 
 /** Échéances calculées UNIQUEMENT depuis la date d'envoi réelle enregistrée (pas une preuve de réception). */
