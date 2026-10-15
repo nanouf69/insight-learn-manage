@@ -53,6 +53,7 @@ import {
   ChevronLeft,
   ArrowRightLeft,
   Video,
+  Clock,
 } from "lucide-react";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
