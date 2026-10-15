@@ -327,13 +327,15 @@ export const getExpectedEmargements = async (params: {
 
   let fcStart: Date | null = null;
   let fcEnd: Date | null = null;
+  // Présentiel : bornes des sessions théoriques réelles (jamais au-delà de la session).
+  const sessionRanges: Array<[string, string]> = [];
 
   if (apprenantId) {
     const startISO = formatISO(effectiveStart);
     const endISO = formatISO(end);
     const { data: sessionRows } = await supabase
       .from("session_apprenants")
-      .select("sessions:session_id(nom, creneaux, date_debut, date_fin)")
+      .select("sessions:session_id(nom, creneaux, date_debut, date_fin, type_session)")
       .eq("apprenant_id", apprenantId);
     const sessions = ((sessionRows as any[]) || []).map((row) => row?.sessions).filter(Boolean);
     const matchingSession = sessions.find((s) => {
@@ -342,6 +344,12 @@ export const getExpectedEmargements = async (params: {
       return debut <= endISO && fin >= startISO;
     }) || sessions[sessions.length - 1];
     if (matchingSession && isEveningSession(matchingSession)) wantEvening = true;
+    for (const s of sessions) {
+      if (String(s.type_session || "").toLowerCase().includes("pratique")) continue;
+      const d = String(s.date_debut || "").slice(0, 10);
+      const f = String(s.date_fin || s.date_debut || "").slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d) && /^\d{4}-\d{2}-\d{2}$/.test(f)) sessionRanges.push([d, f]);
+    }
     // Pour la Formation Continue : borner strictement aux dates de la session
     // (2 jours = 4 signatures). Ne pas déborder sur d'autres jours.
     if (mode === "fc" && matchingSession?.date_debut) {
@@ -377,7 +385,8 @@ export const getExpectedEmargements = async (params: {
   while (cur2 <= end) {
     const iso = formatISO(cur2);
     const dow = todayDow(cur2);
-    if (dow <= 4) {
+    const inSession = sessionRanges.length === 0 || sessionRanges.some(([d, f]) => iso >= d && iso <= f);
+    if (dow <= 4 && inSession) {
       const candidates: CreneauKey[] = wantEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
       const today = formatISO(new Date());
       const now = new Date();
