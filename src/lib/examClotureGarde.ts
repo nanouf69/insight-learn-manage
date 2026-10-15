@@ -28,10 +28,23 @@ export function deciderCloture(input: {
 }
 
 /** Nombre de réponses réellement renseignées (QCM non vide, texte non blanc). */
+/**
+ * Même définition que la garde serveur `eb_reponses_renseignees` (P0530) :
+ * une réponse compte seulement si elle contient, à n'importe quelle
+ * profondeur, un texte non vide, un nombre ou un booléen. Sinon le
+ * navigateur croyait avoir des réponses (`[""]`, `{}`, `[null]`) et tentait
+ * une clôture que le serveur refusait (KEVIN FERNANDES, 14/10, P0530).
+ */
+export function valeurRenseignee(v: unknown): boolean {
+  if (typeof v === "string") return /\S/.test(v);
+  if (typeof v === "number" || typeof v === "boolean") return true;
+  if (Array.isArray(v)) return v.some(valeurRenseignee);
+  if (v && typeof v === "object") return Object.values(v as Record<string, unknown>).some(valeurRenseignee);
+  return false;
+}
+
 export function compterReponsesSaisies(reponses: Record<string, unknown> | null | undefined): number {
-  return Object.values(reponses ?? {}).filter((v) =>
-    Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim() !== "" : v != null,
-  ).length;
+  return Object.values(reponses ?? {}).filter(valeurRenseignee).length;
 }
 
 /**
