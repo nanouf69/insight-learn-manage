@@ -53,3 +53,12 @@ export function heuresSessionAffichees(
   if (Number.isFinite(v) && v > 0) return v;
   return heuresSessionDefaut(s);
 }
+
+/** Shared theory denominator follows the learner, without rewriting session hours. */
+export function heuresSessionPourApprenant(s: SessionHeuresSource & { heures_total?: number | null }, filiere?: string | null): number | null {
+  if (libelleHeuresSessionMixte(s)) {
+    if (filiere === "vtc") return 60;
+    if (filiere === "taxi") return 90;
+  }
+  return heuresSessionAffichees(s);
+}

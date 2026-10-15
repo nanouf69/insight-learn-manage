@@ -328,7 +328,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const modulesProgression = !modulesQuery.isError && !modulesQuery.isFetching && modulesQuery.data?.etat === "ok" ? modulesQuery.data : null;
   // Lecture en erreur : aucun ancien taux affiché, jamais un faux 0 h.
   const tauxBrut = tauxErreur ? null : tauxData;
-  const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && regleSuiviFormation(apprenant).presentiel);
+  const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && regleSuiviFormation(apprenant).presentiel, regleSuiviFormation(apprenant).filiere);
   const taux = useMemo(() => {
     const d = presenceHeures.data;
     if (!tauxBrut || !tauxBrut.totalParSignatures || !d) return tauxBrut;
@@ -712,7 +712,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
             ))}
           </div>
-          {regleSuiviFormation(apprenant).presentiel && <TauxPresenceSessionsCard apprenantId={apprenant.id} />}
+          {regleSuiviFormation(apprenant).presentiel && <TauxPresenceSessionsCard apprenantId={apprenant.id} filiere={regleSuiviFormation(apprenant).filiere} />}
         </div>
       )}
 

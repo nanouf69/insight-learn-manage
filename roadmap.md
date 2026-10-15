@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Base de présence VTC journée — 15/10
+- [x] Accord : corriger les bases communes par filière, sans modifier heures ni signatures enregistrées.
+- [x] 46 tests fictifs réussis ; carte VTC isolée 60/60 et pratique 0/6 vérifiées, aucune erreur JS ; compilation automatique OK ; journal ; aucune publication. Parcours réel élève non testé.
+
 ## Indicateurs à compter du 01/07/2026
 - [ ] Affichage uniquement : objectifs présentiels VTC 66/TAXI 96/TA 36 ; total = signatures apprenant valides / créneaux attendus du planning, sans connexion/quiz.
 - [ ] Rouge pour jalons e-learning et total présentiel ; tests fictifs, anciennes formations conservées, contrôle et publication autorisée.
