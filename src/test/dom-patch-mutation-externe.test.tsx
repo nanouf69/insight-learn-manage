@@ -8,8 +8,9 @@ import { installDomPatch } from "@/lib/domPatch";
 function Bouton({ etat }: { etat: boolean }) {
   return (
     <button>
-      {etat && "Reprendre"}
-      <span>Module 8</span>
+      {etat && <span>!</span>}
+      {"Module "}
+      {"8"}
     </button>
   );
 }
