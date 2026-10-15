@@ -338,6 +338,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         .eq('type_document', 'photo_identite')
         .in('statut', ['valid', 'recu'])
         .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
