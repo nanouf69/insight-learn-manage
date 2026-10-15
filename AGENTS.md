@@ -17,7 +17,7 @@
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
 - Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
 - Jours de formation pratique : toujours ceil(candidats / 3) partout ; why: max_per_day enregistré donnait un faux nombre.
-- Page élève de réservation pratique : tout jour auquel l'admin a fixé un type VTC/TAXI dans le planning (même samedi/dimanche) est proposé tel quel ; why: l'élève doit voir exactement le planning admin.
+- Practical booking page offers every day the admin typed VTC/TAXI (weekends too); why: learner sees the exact admin planning.
 - Practical notes: admin-only append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: preserve history and reject stale/cross-session writes.
 - Exam selectors share sessions/handler; all-dates paginates separately; planning names use CRM callback; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
