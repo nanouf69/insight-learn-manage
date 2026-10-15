@@ -50,7 +50,8 @@ import {
   recommencerMatiereNoyau,
 } from "@/features/noyau-passage/pontV2";
 import { captureError } from "@/lib/monitoring/errorLogger";
-import { deciderCloture, compterReponsesSaisies } from "@/lib/examClotureGarde";
+import { deciderCloture, compterReponsesSaisies, finalisationBloqueeParRefus } from "@/lib/examClotureGarde";
+import { getAnswerSaveRejectionFor } from "@/lib/answerPersistence";
 
 
 
@@ -104,6 +105,9 @@ function PassageMatiere({
   const ligneServeurTermineeRef = useRef(false);
   const expirationDiffereeRef = useRef(false);
   const [clotureEtat, setClotureEtat] = useState<null | "expire_sans_reponse" | "interruption_sans_reponse" | "deja_terminee">(null);
+  // Refus définitif du serveur pendant la finalisation (ex. P0530) : plus de
+  // relance automatique ; la file locale reste intacte.
+  const [finalisationRefusee, setFinalisationRefusee] = useState<string | null>(null);
   // Lecture serveur ratée : jamais d'autorisation de clôture, erreur visible, relecture non destructive.
   const [lectureEchec, setLectureEchec] = useState(false);
   const [lectureEssai, setLectureEssai] = useState(0);
@@ -848,6 +852,12 @@ function PassageMatiere({
     expireRef.current = true;
     setExpire(true);
     if (matiereTermineeRef.current || expirationEnCoursRef.current) return;
+    const refusAvant = getAnswerSaveRejectionFor(exerciceKey);
+    if (finalisationBloqueeParRefus(refusAvant, exerciceKey)) {
+      setFinalisationEnAttente(false);
+      setFinalisationRefusee(refusAvant?.message ?? "Le serveur a refusé la clôture de cette matière.");
+      return;
+    }
     if (apprenantId) {
       const decision = deciderCloture({
         reponsesChargees: initialLoadedRef.current,
@@ -907,6 +917,12 @@ function PassageMatiere({
       } catch (error) {
         console.error("[AutoSave] Expiration: finalisation en attente", error);
         setSaveStatus("error");
+        const refus = getAnswerSaveRejectionFor(exerciceKey);
+        if (finalisationBloqueeParRefus(refus, exerciceKey)) {
+          setFinalisationEnAttente(false);
+          setFinalisationRefusee(refus?.message ?? "Le serveur a refusé la clôture de cette matière.");
+          return;
+        }
         setFinalisationEnAttente(true);
         toast.error("Temps écoulé. Vos réponses sont figées et conservées : la matière sera finalisée dès le rétablissement de la connexion.");
         return;
