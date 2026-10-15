@@ -1120,7 +1120,7 @@ function PassageMatiere({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <p>{finalisationRefusee}</p>
+          <p>{finalisationRefusee.replace(/\s*Une alerte technique a été envoyée automatiquement\.?/g, "")}</p>
           <p>Rien n'a été supprimé : vos réponses restent conservées sur cet appareil. Aucune note n'a été calculée.</p>
           <Button variant="outline" onClick={() => window.location.reload()}>Recharger normalement la page</Button>
         </CardContent>
