@@ -523,6 +523,12 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               <Badge variant="outline">
                 {financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-'}
               </Badge>
+              {formatsCours.map((f) => (
+                <Badge key={f} variant="outline" className="gap-1">
+                  {f === "Cours du soir" ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+                  {f}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
