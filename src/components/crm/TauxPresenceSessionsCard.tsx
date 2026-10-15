@@ -38,10 +38,11 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   return res;
 }
 
-export function TauxPresenceSessionsCard({ apprenantId }: { apprenantId: string }) {
+export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true) {
   const [data, setData] = useState<ReturnType<typeof calculerTauxPresenceHeures> | null>(null);
   const [erreur, setErreur] = useState(false);
   useEffect(() => {
+    if (!apprenantId || !actif) return;
     let annule = false;
     (async () => {
       try {
@@ -55,7 +56,12 @@ export function TauxPresenceSessionsCard({ apprenantId }: { apprenantId: string 
       }
     })();
     return () => { annule = true; };
-  }, [apprenantId]);
+  }, [apprenantId, actif]);
+  return { data, erreur };
+}
+
+export function TauxPresenceSessionsCard({ apprenantId }: { apprenantId: string }) {
+  const { data, erreur } = useTauxPresenceHeures(apprenantId);
 
   const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} h`;
   const tuiles: [string, TauxHeures | undefined][] = [
