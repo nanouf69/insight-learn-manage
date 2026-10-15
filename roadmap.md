@@ -1,5 +1,9 @@
 # Feuille de route
 
+## ZIP Contrôle — signatures présentiel (15/10)
+- [x] Diagnostic lecture seule : raccorder le PDF « Signatures session + pratique » existant au ZIP des formations présentielles.
+- [ ] Accord sur le périmètre, raccordement, tests fictifs, inspection ZIP/PDF et journal ; aucune donnée élève modifiée, aucune publication.
+
 ## Base de présence VTC journée — 15/10
 - [x] Accord : corriger les bases communes par filière, sans modifier heures ni signatures enregistrées.
 - [x] 46 tests fictifs réussis ; carte VTC isolée 60/60 et pratique 0/6 vérifiées, aucune erreur JS ; compilation automatique OK ; journal ; aucune publication. Parcours réel élève non testé.
