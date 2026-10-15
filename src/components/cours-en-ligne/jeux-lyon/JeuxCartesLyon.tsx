@@ -77,7 +77,7 @@ function Correction({ lignes, total, onRejouer, suite }: { lignes: Ligne[]; tota
 }
 
 // ================= JEU 1 =================
-function JeuArrondissements({ compteId }: { compteId?: string | null }) {
+function JeuArrondissements({ compteId, agrandi }: { compteId?: string | null; agrandi?: boolean }) {
   const [niveau, setNiveau] = useState<1 | 2>(1);
   const [apprentissage, setApprentissage] = useState(false);
   const [tour, setTour] = useState(0);
@@ -182,7 +182,7 @@ function JeuArrondissements({ compteId }: { compteId?: string | null }) {
           {retour && <p role="status" className={`text-sm font-medium ${retour.ton === "ok" ? "text-success" : retour.ton === "ko" ? "text-destructive" : "text-muted-foreground"}`}>{retour.texte}</p>}
         </>
       )}
-      <CarteLyon cible={niveau === 1 ? "arr" : "zones"} onTouche={onTouche} surlignerArr={sArr} surlignerZones={sZones}
+      <CarteLyon cible={niveau === 1 ? "arr" : "zones"} onTouche={onTouche} surlignerArr={sArr} surlignerZones={sZones} agrandi={agrandi}
         afficherNumerosArr={apprentissage || niveau === 2} afficherZones={niveau === 2 && apprentissage} desactive={termine}
         calques={niveau === 2 && apprentissage ? (k) => LYON_GEO.zones.map((z) => {
           const p = new Path2DCentre(z.d);
@@ -203,7 +203,7 @@ class Path2DCentre {
 }
 
 // ================= JEU 2 =================
-function JeuLieux({ compteId }: { compteId?: string | null }) {
+function JeuLieux({ compteId, agrandi }: { compteId?: string | null; agrandi?: boolean }) {
   const [tour, setTour] = useState(0);
   const [apprentissage, setApprentissage] = useState(false);
   const lieux = useMemo(() => melanger(LYON_GEO.lieux), [tour]);
@@ -265,7 +265,7 @@ function JeuLieux({ compteId }: { compteId?: string | null }) {
           {retour.fiche && <p className="mt-1 flex gap-1"><MapPin className="h-4 w-4 shrink-0 mt-0.5" />{retour.fiche}</p>}
         </div>
       )}
-      <CarteLyon cible="point" onTouche={onTouche} afficherNumerosArr desactive={termine}
+      <CarteLyon cible="point" onTouche={onTouche} afficherNumerosArr desactive={termine} agrandi={agrandi}
         calques={(k) => (
           <>
             <text x={845} y={425} textAnchor="middle" className="fill-muted-foreground italic" style={{ fontSize: 20 * k }}>Villeurbanne (commune)</text>
