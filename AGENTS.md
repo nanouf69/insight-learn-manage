@@ -23,12 +23,10 @@
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Course/quiz labels use permanent IDs and dated baselines; why: no drift.
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
-- Student counters share progressionModulesEleve and account proofs; attendance uses milestone ID; why: no divergence or account leakage.
-- CRM/current jalons and student counters share Lyon waivers; frozen reads stay unchanged; why: preserve proofs.
+- Student counters/CRM jalons share progressionModulesEleve, account proofs and Lyon waivers; attendance uses milestone ID; why: no divergence or leakage.
 - Consolidated attendance PDF uses original signature IDs and account-scoped readonly export; missing/ambiguous times stay explicit; why: preserve every version without invented proofs.
 - Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
-- Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 - Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 ; why: anti-réécriture.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
-- Gel PAR MODULE : une activité du registre ajoutée après completed_at d'un module validé n'est ni exigée ni comptée « faite » (acquise, volume courant conservé) via activitesRequisesModule/completionAvecActivites ; heures jamais figées avant fin d'accès ; why: un module terminé ne doit jamais être rouvert par du contenu ultérieur.
+- Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
