@@ -1,4 +1,4 @@
-import { activitesDuModule } from "@/lib/jeuxPedagogiques";
+import { activitesRequisesModule } from "@/lib/jeuxPedagogiques";
 import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 import { exceptionModulesEleve, activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
 import type { CompletionLite } from "@/lib/moduleUnlockLogic";
@@ -29,7 +29,9 @@ export function progressionModulesEleve(
   const restants: ModuleRestant[] = [];
   let termines = 0;
   for (const m of vus.values()) {
-    const acts = activitesDuModule(m.id, date).filter(a => !exception?.activitesDispensees.includes(a.id) && !dispensesHistoriques.has(a.id));
+    // Gel par module : une activité ajoutée après la validation serveur de CE module n'est pas exigée.
+    const ligne = completions.find((c) => Number(c.module_id) === Number(m.id) && c.status === "completed");
+    const acts = activitesRequisesModule(m.id, ligne, date).filter(a => !exception?.activitesDispensees.includes(a.id) && !dispensesHistoriques.has(a.id));
     if (acts.length && !activitesTerminees) return { etat: "indisponible" };
     const actsOk = acts.every((a) => activitesTerminees?.has(a.id) === true);
     const serveur = estTermineServeur(m.id);

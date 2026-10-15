@@ -24,6 +24,22 @@ export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du
 export function activitesDuModule(moduleId: number, a: string = new Date().toISOString()): ActiviteCode[] {
   return ACTIVITES_CODE.filter((x) => x.moduleId === moduleId && x.ajouteeLe <= a && (!x.retireeLe || x.retireeLe > a));
 }
+/**
+ * Gel PAR MODULE (règle 15/10/2026) : instant de validation serveur d'un module, si prouvé
+ * (status completed + completed_at lisible). Une activité ajoutée APRÈS cet instant ne
+ * rouvre jamais ce module ni ne baisse son acquis ; elle reste faisable en révision facultative.
+ * Absent/illisible => null : le module suit le contenu courant (aucune date inventée).
+ */
+export function instantValidationModule(row: { status?: string | null; completed_at?: string | null } | undefined | null): string | null {
+  if (!row || row.status !== "completed" || !row.completed_at) return null;
+  const t = Date.parse(row.completed_at);
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+/** Activités exigées pour un module : celles du registre à la date, bornées à sa validation si validé. */
+export function activitesRequisesModule(moduleId: number, row: { status?: string | null; completed_at?: string | null } | undefined | null, a: string = new Date().toISOString()): ActiviteCode[] {
+  const gel = instantValidationModule(row);
+  return activitesDuModule(moduleId, a).filter((x) => !gel || x.ajouteeLe <= gel);
+}
 export const idsActivites = (moduleIds: number[]) => moduleIds.flatMap((m) => activitesDuModule(m).map((x) => x.id));
 
 // Compatibilité (jeux de Lyon)
@@ -31,7 +47,7 @@ export const JEUX_LYON = ACTIVITES_CODE.filter((x) => x.moduleId === 8);
 export const IDS_JEUX_LYON = JEUX_LYON.map((j) => j.id);
 export const UNITES_JEUX_LYON = JEUX_LYON.reduce((s, j) => s + j.unites, 0);
 
-export interface EtatActivites { moduleId: number; termines: string[]; requises: string[]; versionAnterieureValidee: boolean; progressionModuleSeul: number }
+export interface EtatActivites { moduleId: number; termines: string[]; requises: string[]; versionAnterieureValidee: boolean; progressionModuleSeul: number; ajouteesApresValidation?: string[]; valideLe?: string | null }
 
 const unitesModule = (v: VolumeModule) => v.points ?? 4 * Math.max(0, v.pages) + Math.max(0, v.questions);
 
@@ -48,14 +64,20 @@ export function completionAvecActivites(
   termines: Set<string>,
 ): { completion: CompletionLite; etat: EtatActivites } {
   const moduleId = Number(row?.module_id ?? activites[0]?.moduleId);
+  // Gel par module : activités ajoutées après la validation = acquises pour CE module
+  // (volume courant conservé pour les poids, jamais exigées, jamais marquées « faites »).
+  const gel = instantValidationModule(row);
+  const apres = gel ? activites.filter((a) => a.ajouteeLe > gel) : [];
+  const requises = activites.filter((a) => !apres.includes(a));
   const faits = activites.filter((a) => termines.has(a.id)).map((a) => a.id);
+  const faitsRequis = requises.filter((a) => termines.has(a.id));
   const progModule = row?.status === "completed" ? 100 : Math.max(0, Math.min(100, Number(row?.progress) || 0));
-  const etat: EtatActivites = { moduleId, termines: faits, requises: activites.map((a) => a.id), versionAnterieureValidee: row?.status === "completed" && faits.length < activites.length, progressionModuleSeul: progModule };
+  const etat: EtatActivites = { moduleId, termines: faits, requises: requises.map((a) => a.id), versionAnterieureValidee: row?.status === "completed" && faitsRequis.length < requises.length, progressionModuleSeul: progModule, ajouteesApresValidation: apres.map((a) => a.id), valideLe: gel };
   const um = unitesModule(volume);
   const ua = activites.reduce((s, a) => s + a.unites, 0);
-  const uf = activites.reduce((s, a) => s + (termines.has(a.id) ? a.unites : 0), 0);
+  const uf = activites.reduce((s, a) => s + (termines.has(a.id) || apres.includes(a) ? a.unites : 0), 0);
   const total = um + ua;
-  const tout = progModule >= 100 && faits.length === activites.length;
+  const tout = progModule >= 100 && faitsRequis.length === requises.length;
   const p = total > 0 ? (((progModule * um) / 100 + uf) / total) * 100 : 0;
   return { completion: { module_id: moduleId, status: tout ? "completed" : "in_progress", progress: tout ? 100 : Math.min(99.9, p) }, etat };
 }
