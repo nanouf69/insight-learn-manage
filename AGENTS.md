@@ -31,3 +31,4 @@
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
+- Mail échec théorique VTC + choix pratique : un seul mail (`src/lib/modeles/entrainementPratiqueVtc.ts`), lien vers la page de signature existante ; preuve dans `documents_a_signer` (modele_code, texte figé + empreinte), trigger `trg_documents_a_signer_preuve_immuable` ; why: une seule réponse signée, jamais écrasée ni supprimée, aucun effet administratif automatique.
