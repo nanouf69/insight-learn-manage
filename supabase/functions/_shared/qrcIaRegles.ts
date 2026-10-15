@@ -21,6 +21,17 @@ export function estElearning(type?: string | null): boolean {
   return t.includes("e-learning") || t.includes("elearning") || /(^|[\s-])[a-z]{2,4}-e($|-)/.test(t) || t.endsWith("-e");
 }
 
+/**
+ * Source unique de l'app (src/lib/examenElearningRelance.ts) : un apprenant est
+ * e-learning si son type l'indique OU si sa modalité est elearning_* (synchrone
+ * ou asynchrone). Modalité manquante/présentielle = repli sur le type seul.
+ */
+export function estApprenantElearning(type?: string | null, modalite?: string | null): boolean {
+  const m = (modalite ?? "").trim().toLowerCase();
+  if (/^elearning_(synchrone|asynchrone)$/.test(m)) return true;
+  return estElearning(type);
+}
+
 export const texteReponse = (v: unknown): string =>
   typeof v === "string" ? v : v == null ? "" : typeof v === "number" ? String(v) : JSON.stringify(v);
 
