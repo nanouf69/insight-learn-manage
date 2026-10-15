@@ -1149,6 +1149,13 @@
       "when": 1791979907003,
       "tag": "0163_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "7",
+      "when": 1792053538530,
+      "tag": "0164_sessions_heures_total",
+      "breakpoints": true
     }
   ]
 }

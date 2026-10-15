@@ -1,0 +1,1 @@
+ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS heures_total numeric; COMMENT ON COLUMN public.sessions.heures_total IS 'Volume horaire total de la session (modifiable admin). Défauts affichés si NULL : VTC journée 60, VTC soirée 40, TAXI 90, TA présentiel 30, pratique 6.';
