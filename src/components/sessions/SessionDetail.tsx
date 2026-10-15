@@ -4954,15 +4954,50 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
           <div className="flex items-center justify-between">
             {asPage ? (
-              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
+              <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight flex-wrap">
                 {session.title}
                 {getStatusBadge(session.status)}
               </h1>
             ) : (
-              <DialogTitle className="flex items-center gap-3">
+              <DialogTitle className="flex items-center gap-3 flex-wrap">
                 {session.title}
                 {getStatusBadge(session.status)}
               </DialogTitle>
+            )}
+            {heuresAffichees != null && (
+              <div className="flex items-center gap-1.5">
+                {heuresTotalEdit ? (
+                  <>
+                    <Input
+                      type="number"
+                      min={1}
+                      step="0.5"
+                      value={heuresTotalInput}
+                      onChange={(e) => setHeuresTotalInput(e.target.value)}
+                      className="h-7 w-20 text-xs"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") saveHeuresTotal(); if (e.key === "Escape") setHeuresTotalEdit(false); }}
+                    />
+                    <span className="text-xs text-muted-foreground">h</span>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" disabled={savingHeuresTotal} onClick={saveHeuresTotal}>
+                      {savingHeuresTotal ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </Button>
+                  </>
+                ) : (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Clock className="w-3 h-3" />
+                    Total : {heuresAffichees} h{heuresTotal == null ? " (par défaut)" : ""}
+                    <button
+                      type="button"
+                      aria-label="Modifier le total d'heures de la session"
+                      className="ml-1 rounded hover:bg-foreground/10 p-0.5"
+                      onClick={() => { setHeuresTotalInput(String(heuresAffichees)); setHeuresTotalEdit(true); }}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
             )}
             <div className="flex gap-2 flex-wrap items-center">
               <Button
