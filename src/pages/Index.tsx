@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { RappelAuditQualiopi } from "@/components/layout/RappelAuditQualiopi";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
@@ -537,7 +538,7 @@ const Index = () => {
           canGoBack={pageHistory.length > 0}
           onGoBack={handleGoBack}
         />
-        
+        <RappelAuditQualiopi />
         <main className="flex-1 overflow-auto p-3 sm:p-6">
           <ErrorBoundary>
             {renderContent()}
