@@ -2,7 +2,7 @@
 
 ## ZIP Contrôle — signatures présentiel (15/10)
 - [x] Diagnostic lecture seule : raccorder le PDF « Signatures session + pratique » existant au ZIP des formations présentielles.
-- [ ] Accord sur le périmètre, raccordement, tests fictifs, inspection ZIP/PDF et journal ; aucune donnée élève modifiée, aucune publication.
+- [x] Plan approuvé, raccordement réalisé ; 131 tests PASS, bouton réel avec sources fictives → ZIP téléchargé → PDF inspecté (3 signatures, versions session + pratique), build automatique OK ; journal ajouté. Aucune donnée élève modifiée, aucune publication ; parcours réel NON PROUVÉ.
 
 ## Base de présence VTC journée — 15/10
 - [x] Accord : corriger les bases communes par filière, sans modifier heures ni signatures enregistrées.
