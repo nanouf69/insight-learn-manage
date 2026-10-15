@@ -1111,6 +1111,23 @@ function PassageMatiere({
     );
   }
 
+  if (finalisationRefusee) {
+    return (
+      <Card className="border-destructive" data-finalisation-refusee="true">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Timer className="h-5 w-5" /> Clôture refusée par le serveur
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>{finalisationRefusee}</p>
+          <p>Rien n'a été supprimé : vos réponses restent conservées sur cet appareil. Aucune note n'a été calculée. L'équipe pédagogique a été alertée.</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>Recharger normalement la page</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (clotureEtat) {
     const titre = clotureEtat === "expire_sans_reponse"
       ? "Temps écoulé sans réponse"
