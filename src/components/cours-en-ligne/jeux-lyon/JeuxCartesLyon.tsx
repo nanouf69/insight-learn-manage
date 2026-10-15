@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { CheckCircle2, MapPin, Map as MapIcon, Landmark, RefreshCw, XCircle, Trophy } from "lucide-react";
 import { CarteLyon, type Touche } from "./CarteLyon";
 import { LYON_GEO, type LieuLyon } from "./lyon-geo-data";
