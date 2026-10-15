@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   MODELE_CODE, MODELE_VERSION, MODELE_NOM, MODELE_FILE_PATH, CHOIX,
-  texteFige, empreinteTexte, construireMailEchecVtc, estEligibleMailEchecVtc,
+  texteFige, empreinteTexte, construireMailEchec, filiereDepuisDossier, LIBELLE_FILIERE,
   echeancesDepuisEnvoi, formatParis, type TexteFige,
 } from "@/lib/modeles/entrainementPratiqueVtc";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
@@ -23,8 +23,10 @@ interface DocModele {
   texte_empreinte: string | null; modele_version: string | null; reponses: any; destinataire_nom: string | null;
 }
 
-export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
-  const eligibles = useMemo(() => candidats.filter((a) => estEligibleMailEchecVtc(a as any)), [candidats]);
+export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candidat[] }) {
+  const enEchec = useMemo(() => candidats.filter((a) => a.resultat_examen === "non" && !!a.email), [candidats]);
+  const eligibles = useMemo(() => enEchec.filter((a) => filiereDepuisDossier(a.type_apprenant) !== null), [enEchec]);
+  const bloques = useMemo(() => enEchec.filter((a) => filiereDepuisDossier(a.type_apprenant) === null), [enEchec]);
   const [open, setOpen] = useState(false);
   const [docs, setDocs] = useState<DocModele[]>([]);
   const [selection, setSelection] = useState<Set<string>>(new Set());
@@ -49,7 +51,7 @@ export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
 
   const docDe = (id: string) => docs.find((d) => d.apprenant_id === id && d.statut === "signe") || docs.find((d) => d.apprenant_id === id);
   const apercu = eligibles.find((e) => e.id === apercuId) || null;
-  const apercuMail = apercu ? construireMailEchecVtc({ prenom: apercu.prenom, lien: `${PUBLIC_BASE_URL}/document-a-signer/(lien-securise-genere-a-l-envoi)` }) : null;
+  const apercuMail = apercu ? construireMailEchec({ filiere: filiereDepuisDossier(apercu.type_apprenant)!, prenom: apercu.prenom, lien: `${PUBLIC_BASE_URL}/document-a-signer/(lien-securise-genere-a-l-envoi)` }) : null;
 
   const toggle = (id: string) => setSelection((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
@@ -57,7 +59,7 @@ export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
     if (lectureErreur) { toast.error("Lecture du suivi impossible : envoi bloqué."); return; }
     const cibles = eligibles.filter((e) => selection.has(e.id));
     if (cibles.length === 0) return;
-    if (!window.confirm(`Envoyer le mail « résultat théorique + choix pratique » à ${cibles.length} candidat(s) VTC sélectionné(s) ?`)) return;
+    if (!window.confirm(`Envoyer le mail « résultat théorique + choix pratique » à ${cibles.length} candidat(s) sélectionné(s) ?`)) return;
     setEnvoi(true);
     let ok = 0, ko = 0, ignores = 0;
     const { data: u } = await supabase.auth.getUser();
@@ -65,9 +67,11 @@ export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
       try {
         const existant = docDe(a.id);
         if (existant && (existant.statut === "signe" || existant.envoye_le)) { ignores++; continue; }
+        const filiere = filiereDepuisDossier(a.type_apprenant);
+        if (!filiere) { ignores++; continue; }
         let doc = existant;
         if (!doc) {
-          const tf = JSON.stringify(texteFige());
+          const tf = JSON.stringify(texteFige(filiere));
           const { data, error } = await supabase.from("documents_a_signer").insert({
             nom: `${MODELE_NOM} – ${a.nom} ${a.prenom}`,
             file_path: MODELE_FILE_PATH,
@@ -85,7 +89,7 @@ export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
           if (error) throw error;
           doc = data as any;
         }
-        const { subject, html } = construireMailEchecVtc({ prenom: a.prenom, lien: `${PUBLIC_BASE_URL}/document-a-signer/${doc!.token}` });
+        const { subject, html } = construireMailEchec({ filiere, prenom: a.prenom, lien: `${PUBLIC_BASE_URL}/document-a-signer/${doc!.token}` });
         const { data: res, error: errEnvoi } = await supabase.functions.invoke("sync-outlook-emails", {
           body: { action: "send", userEmail: "contact@ftransport.fr", to: a.email, subject, body: html, apprenantId: a.id },
         });
@@ -115,18 +119,23 @@ export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
     telechargerPdf(bytes, `choix_pratique_${a.nom}_${a.prenom}.pdf`);
   };
 
-  if (eligibles.length === 0) return null;
+  if (enEchec.length === 0) return null;
 
   return (
     <>
       <Button size="sm" variant="outline" className="mt-2 w-full gap-1.5 text-xs" onClick={() => setOpen(true)}>
-        <Mail className="h-3 w-3" /> Mail échec VTC + choix pratique ({eligibles.length})
+        <Mail className="h-3 w-3" /> Mail échec + choix pratique ({eligibles.length})
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Mail échec théorique VTC + choix entraînement pratique</DialogTitle></DialogHeader>
-          <p className="text-xs text-muted-foreground">Candidats VTC en échec uniquement. Aucun n'est sélectionné d'avance : cochez vous-même les destinataires. Rien n'est envoyé automatiquement et le choix de l'élève ne déclenche aucune déclaration.</p>
+          <DialogHeader><DialogTitle>Mail échec théorique + choix entraînement pratique</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">Candidats en échec uniquement (VTC, TAXI, passerelle TAXI), texte adapté à la filière du dossier. Aucun n'est sélectionné d'avance : cochez vous-même les destinataires. Rien n'est envoyé automatiquement et le choix de l'élève ne déclenche aucune déclaration.</p>
           {lectureErreur && <p className="text-sm text-destructive">Suivi illisible ({lectureErreur}) : envoi bloqué.</p>}
+          {bloques.length > 0 && (
+            <div className="text-sm text-destructive border border-destructive/40 rounded p-2">
+              Filière absente ou ambiguë dans le dossier : préparation bloquée pour {bloques.map((b) => `${b.nom} ${b.prenom} (${b.type_apprenant || "vide"})`).join(", ")}.
+            </div>
+          )}
           <div className="border rounded-lg divide-y">
             {eligibles.map((a) => {
               const d = docDe(a.id);
@@ -136,6 +145,7 @@ export function EnvoiEchecVtcDialog({ candidats }: { candidats: Candidat[] }) {
                 <div key={a.id} className="flex flex-wrap items-center gap-3 p-2 text-sm">
                   <Checkbox checked={selection.has(a.id)} disabled={bloque || envoi} onCheckedChange={() => toggle(a.id)} aria-label={`Sélectionner ${a.nom} ${a.prenom}`} />
                   <span className="font-medium min-w-[160px]">{a.nom} {a.prenom}</span>
+                  <Badge variant="secondary">{LIBELLE_FILIERE[filiereDepuisDossier(a.type_apprenant)!]}</Badge>
                   <span className="text-xs text-muted-foreground">{a.email}</span>
                   <span className="ml-auto flex items-center gap-2">
                     {d?.statut === "signe" ? (

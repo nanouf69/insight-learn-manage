@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import {
-  CHOIX, OBJET_MAIL, SUITE_PRATIQUE, INTRO_PRATIQUE, texteFige, estChoixValide, estCandidatVtc,
-  estEligibleMailEchecVtc, construireMailEchecVtc, echeancesDepuisEnvoi, empreinteTexte,
+  CHOIX, objetMail, SUITE_PRATIQUE, introPratique, texteFige, estChoixValide, estCandidatVtc,
+  estEligibleMailEchec, construireMailEchec, echeancesDepuisEnvoi, empreinteTexte, filiereDepuisDossier,
 } from "@/lib/modeles/entrainementPratiqueVtc";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
 
 const edge = readFileSync("supabase/functions/document-signature-public/index.ts", "utf8");
 const migration = readFileSync("drizzle/migrations/0166_documents_a_signer_modele_choix.sql", "utf8");
-const dialog = readFileSync("src/components/examens/EnvoiEchecVtcDialog.tsx", "utf8");
+const dialog = readFileSync("src/components/examens/EnvoiEchecChoixPratiqueDialog.tsx", "utf8");
 const form = readFileSync("src/components/documents/ChoixPratiqueForm.tsx", "utf8");
 const page = readFileSync("src/components/examens/ExamenReussitePage.tsx", "utf8");
 
@@ -42,42 +42,67 @@ describe("Choix unique", () => {
   });
 });
 
-describe("Ciblage VTC en échec seulement", () => {
-  it("VTC oui ; TAXI/TA/VA non", () => {
-    expect(estCandidatVtc("vtc")).toBe(true);
-    expect(estCandidatVtc("VTC-E")).toBe(true);
-    for (const t of ["taxi", "ta", "ta-e", "TA-I", "va", "taxi + vtc", "", null]) expect(estCandidatVtc(t as any)).toBe(false);
+describe("Ciblage par filière réelle", () => {
+  it("VTC, TAXI, passerelle ; inconnu/ambigu = bloqué", () => {
+    expect(filiereDepuisDossier("vtc")).toBe("vtc");
+    expect(filiereDepuisDossier("VTC-E")).toBe("vtc");
+    expect(filiereDepuisDossier("taxi")).toBe("taxi");
+    expect(filiereDepuisDossier("TA-I")).toBe("taxi");
+    expect(filiereDepuisDossier("ta")).toBe("ta");
+    expect(filiereDepuisDossier("ta-e")).toBe("ta");
+    for (const t of ["", null, "va", "taxi + vtc", "inconnu"]) expect(filiereDepuisDossier(t as any)).toBeNull();
+    expect(estCandidatVtc("taxi")).toBe(false);
   });
-  it("réussite ou absence d'email exclue", () => {
-    expect(estEligibleMailEchecVtc({ resultat_examen: "non", type_apprenant: "vtc", email: "x@y.fr" })).toBe(true);
-    expect(estEligibleMailEchecVtc({ resultat_examen: "oui", type_apprenant: "vtc", email: "x@y.fr" })).toBe(false);
-    expect(estEligibleMailEchecVtc({ resultat_examen: "non", type_apprenant: "taxi", email: "x@y.fr" })).toBe(false);
-    expect(estEligibleMailEchecVtc({ resultat_examen: "non", type_apprenant: "vtc", email: "" })).toBe(false);
+  it("réussite, absence d'email ou filière inconnue exclues", () => {
+    expect(estEligibleMailEchec({ resultat_examen: "non", type_apprenant: "vtc", email: "x@y.fr" })).toBe(true);
+    expect(estEligibleMailEchec({ resultat_examen: "non", type_apprenant: "taxi", email: "x@y.fr" })).toBe(true);
+    expect(estEligibleMailEchec({ resultat_examen: "oui", type_apprenant: "vtc", email: "x@y.fr" })).toBe(false);
+    expect(estEligibleMailEchec({ resultat_examen: "oui", type_apprenant: "taxi", email: "x@y.fr" })).toBe(false);
+    expect(estEligibleMailEchec({ resultat_examen: "non", type_apprenant: "", email: "x@y.fr" })).toBe(false);
+    expect(estEligibleMailEchec({ resultat_examen: "non", type_apprenant: "vtc", email: "" })).toBe(false);
   });
-  it("ancien mail de repassage garde TAXI/TA, exclut VTC", () => {
-    expect(page).toContain("!estCandidatVtc(a.type_apprenant)) || [];");
-    expect(page).toContain("<EnvoiEchecVtcDialog candidats={nonReussis as any} />");
+  it("ancien mail de repassage seulement pour filière inconnue ; pas de double envoi", () => {
+    expect(page).toContain("filiereDepuisDossier(a.type_apprenant) === null) || [];");
+    expect(page).toContain("<EnvoiEchecChoixPratiqueDialog candidats={nonReussis as any} />");
+    expect(dialog).toContain("if (!filiere) { ignores++; continue; }");
+    expect(dialog).toContain('existant.statut === "signe" || existant.envoye_le');
+    expect(dialog).toContain('a.resultat_examen === "non"');
   });
 });
 
-describe("Mail unique", () => {
-  const m = construireMailEchecVtc({ prenom: "Fictif<script>", lien: "https://gestion.ftransport.fr/document-a-signer/abc" });
-  it("objet unique résultat + choix 5 jours", () => {
-    expect(m.subject).toBe(OBJET_MAIL);
-    expect(m.subject).toMatch(/théorique VTC.*pratique.*5 jours/);
+describe("Mail unique adapté", () => {
+  const vtc = construireMailEchec({ filiere: "vtc", prenom: "Fictif<script>", lien: "https://gestion.ftransport.fr/document-a-signer/abc" });
+  const taxi = construireMailEchec({ filiere: "taxi", prenom: "Fictif", lien: "https://x/abc" });
+  const ta = construireMailEchec({ filiere: "ta", prenom: "Fictif", lien: "https://x/abc" });
+  it("objet par filière", () => {
+    expect(vtc.subject).toBe(objetMail("vtc"));
+    expect(vtc.subject).toMatch(/théorique VTC.*pratique.*5 jours/);
+    expect(taxi.subject).toMatch(/théorique TAXI.*pratique.*5 jours/);
   });
-  it("garde les infos de réexamen existantes puis le bloc pratique et le bouton à la fin", () => {
-    const h = m.html;
+  it("aucun mot VTC chez TAXI ni passerelle", () => {
+    for (const m of [taxi, ta]) { expect(m.subject).not.toContain("VTC"); expect(m.html).not.toContain("VTC"); }
+    expect(taxi.html).toContain("formation TAXI chez FTRANSPORT");
+    expect(JSON.stringify(texteFige("taxi"))).not.toContain("VTC");
+    expect(texteFige("taxi").titre).toBe("Votre entraînement pratique TAXI");
+  });
+  it("3 choix, délais et avertissement identiques pour toutes filières", () => {
+    for (const f of ["vtc", "taxi", "ta"] as const) {
+      const t = texteFige(f);
+      expect(t.choix).toEqual(CHOIX.map((c) => ({ ...c })));
+      expect(t.suite).toEqual(SUITE_PRATIQUE);
+    }
+  });
+  it("infos de réexamen conservées, bouton à la fin", () => {
+    const h = vtc.html;
     expect(h).toContain("www.exament3p.fr");
     expect(h).toContain("département 69");
     expect(h).toContain("04 28 29 60 91");
     expect(h.indexOf("exament3p")).toBeLessThan(h.indexOf("Choisir et signer"));
     expect(h).toContain("Naoufal Guenichi");
-    expect(h).toContain("06 12 32 20 50");
   });
   it("aucune case cochable dans le mail, prénom échappé", () => {
-    expect(m.html).not.toMatch(/<input|<form|☐/);
-    expect(m.html).not.toContain("<script>");
+    expect(vtc.html).not.toMatch(/<input|<form|☐/);
+    expect(vtc.html).not.toContain("<script>");
   });
 });
 
@@ -127,16 +152,16 @@ describe("Serveur : jetons, idempotence, immuabilité", () => {
 
 describe("Preuve PDF", () => {
   it("empreinte stable", async () => {
-    const t = JSON.stringify(texteFige());
+    const t = JSON.stringify(texteFige("vtc"));
     expect(await empreinteTexte(t)).toBe(await empreinteTexte(t));
     expect(await empreinteTexte(t)).toHaveLength(64);
   });
   it("génère un PDF avec texte figé", async () => {
     const bytes = await genererPreuveChoixPdf({
-      texte: texteFige(), version: "v1", empreinte: "x", nom: "FICTIF", prenom: "Test", choix: "plus_tard",
+      texte: texteFige("taxi"), version: "v1", empreinte: "x", nom: "FICTIF", prenom: "Test", choix: "plus_tard",
       signature: null, signeLeParis: "jeudi 15 octobre 2026 21:00:00", signedAt: "2026-10-15T19:00:00Z", envoyeLe: null,
     });
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
-    expect(INTRO_PRATIQUE).toHaveLength(2);
+    expect(introPratique("taxi")).toHaveLength(2);
   });
 });

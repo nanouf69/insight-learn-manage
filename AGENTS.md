@@ -16,7 +16,7 @@
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
 - Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
-- Jours de formation pratique : toujours ceil(candidats / 3) partout ; why: max_per_day enregistré donnait un faux nombre.
+- Practical training days = ceil(candidates/3) everywhere; why: stored max_per_day was wrong.
 - Practical booking page offers every day the admin typed VTC/TAXI (weekends too); why: learner sees the exact admin planning.
 - Practical notes: admin-only append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: preserve history and reject stale/cross-session writes.
 - Exam selectors share sessions/handler; all-dates paginates separately; planning names use CRM callback; why: no cross-session writes.
@@ -31,4 +31,4 @@
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
-- VTC theory-fail mail + practice choice: one mail (`src/lib/modeles/entrainementPratiqueVtc.ts`), proof in `documents_a_signer` (modele_code, frozen text hash), immutable trigger; why: single signed answer, no auto admin effect.
+- Theory-fail mail (VTC/TAXI/TA by filiereDepuisDossier, unknown = blocked) + practice choice: one mail (`src/lib/modeles/entrainementPratiqueVtc.ts`), proof in `documents_a_signer` (modele_code, frozen text hash), immutable trigger; why: single signed answer, no auto admin effect.

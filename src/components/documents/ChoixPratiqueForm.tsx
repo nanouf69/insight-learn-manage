@@ -77,7 +77,7 @@ export function ChoixPratiqueForm({ doc, soumettre, recharger }: Props) {
       <div className="max-w-2xl mx-auto space-y-5">
         <header className="text-center space-y-2">
           <FileSignature className="h-8 w-8 mx-auto text-primary" />
-          <h1 className="text-xl sm:text-2xl font-bold">Votre entraînement pratique VTC</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">{texte.titre ?? "Votre entraînement pratique"}</h1>
         </header>
 
         {signe && (
