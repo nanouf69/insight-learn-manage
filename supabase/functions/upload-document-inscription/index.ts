@@ -79,31 +79,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const oldIds = (previousDocs ?? []).map((doc) => doc.id);
-    if (oldIds.length > 0) {
-      const { error: deleteRowsError } = await supabase
-        .from("documents_inscription")
-        .delete()
-        .in("id", oldIds);
-
-      if (deleteRowsError) {
-        console.error("Delete previous rows error:", deleteRowsError);
-      }
-
-      const oldPaths = (previousDocs ?? [])
-        .map((doc) => doc.url)
-        .filter((path): path is string => Boolean(path) && path !== storagePath);
-
-      if (oldPaths.length > 0) {
-        const { error: removeOldFilesError } = await supabase.storage
-          .from("documents-inscription")
-          .remove(oldPaths);
-
-        if (removeOldFilesError) {
-          console.error("Remove old files error:", removeOldFilesError);
-        }
-      }
-    }
+    // AUCUNE DONNÉE ÉLÈVE NE DISPARAÎT : les versions précédentes (ligne + fichier)
+    // sont conservées. Les lectures prennent la plus récente (created_at desc).
+    // Avant le 15/10/2026, chaque nouvel envoi supprimait ligne ET fichier
+    // précédents (3 récapitulatifs perdus le 14/10/2026 09:59 UTC, 11:59 Paris).
+    void previousDocs;
 
     const { error: dbError } = await supabase
       .from("documents_inscription")
