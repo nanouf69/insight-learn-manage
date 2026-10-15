@@ -497,22 +497,6 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const solde = (apprenant.montant_ttc || 0) - (apprenant.montant_paye || 0);
   const hasExistingAccount = Boolean((apprenant as any).auth_user_id);
 
-  // Format des cours théoriques (journée / soir) d'après les horaires réels des sessions.
-  const formatsCours = useMemo((): string[] => {
-    const formats: string[] = [];
-    for (const s of apprenantSessions ?? []) {
-      if (!s || (s as any).liste_attente === true) continue;
-      const type = String((s as any).type_session ?? "").toLowerCase();
-      if (!type.includes("theorique")) continue;
-      if (/annul/i.test(String((s as any).statut ?? ""))) continue;
-      const h = String((s as any).heure_debut_personnalisee ?? (s as any).heure_debut ?? "").slice(0, 5);
-      if (!/^\d{2}:\d{2}$/.test(h)) continue;
-      const format = h >= "17:00" ? "Cours du soir" : "Cours de journée";
-      if (!formats.includes(format)) formats.push(format);
-    }
-    return formats;
-  }, [apprenantSessions]);
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
