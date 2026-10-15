@@ -31,4 +31,4 @@
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
-- Theory-fail mail (VTC/TAXI/TA by filiereDepuisDossier, unknown = blocked) + practice choice: one mail (`src/lib/modeles/entrainementPratiqueVtc.ts`), proof in `documents_a_signer` (modele_code, frozen text hash), immutable trigger; why: single signed answer, no auto admin effect.
+- Subdirectories may have their own `AGENTS.md`: read first (theory-fail mail: `supabase/functions/_shared/`).

@@ -87,10 +87,12 @@ export function DocumentsASigner() {
         const m = doc as any;
         if (m.modele_code) {
           // Modèle à choix unique : PDF de preuve depuis le texte figé.
-          const [prenomNom] = [doc.destinataire_nom || ""];
+          // Identité figée dans la preuve (jamais la fiche courante).
+          const idf = m.identite_figee || {};
           const bytes = await genererPreuveChoixPdf({
             texte: JSON.parse(m.texte_fige || "null"), version: m.modele_version, empreinte: m.texte_empreinte,
-            nom: prenomNom, prenom: "", choix: m.choix, signature: m.reponses?.signature ?? null,
+            nom: idf.nom ?? doc.destinataire_nom ?? "", prenom: idf.prenom ?? "", email: idf.email ?? null,
+            choix: m.choix, signature: m.reponses?.signature ?? null,
             signeLeParis: m.signe_le_paris, signedAt: doc.signed_at, envoyeLe: m.envoye_le,
           });
           telechargerPdf(bytes, `${doc.nom}_${doc.statut === "signe" ? "signe" : "non_signe"}.pdf`);
