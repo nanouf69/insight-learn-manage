@@ -19,3 +19,8 @@ Requête agrégée sur le dossier indiqué : 22 lignes visibles, 20 images compa
 
 ## Limites et conservation
 Parcours authentifié complet et export réel NON PROUVÉS : aucun test sur un vrai apprenant. Les 2 images absentes restent absentes, aucun faux PDF à 22 images. Aucun changement des heures (VTC journée 60 h session / 66 h total), signatures, versions, réponses, notes, planning ou dossiers. Aucun envoi, écriture serveur ni publication.
+## 15/10/2026 — Objectif TAXI corrigé : 30 + 2 = 32
+- Correction explicite utilisateur : TAXI = 30 signatures de session + 2 de pratique = 32 au total (remplace 80 + 2 = 82).
+- Source unique `calculerBilanSignaturesEdof` (`src/lib/signaturesManquantes.ts`) : `objectifTheorie` TAXI 80 → 30.
+- Test `src/test/signatures-manquantes-bornes.test.ts` mis à jour ; 23/23 tests PASS (bornes + compte PDF).
+- Inchangé : VTC journée/soir 20 + 2 = 22, TA 20 + 2 = 22 ; aucune signature ni heure modifiée ; non publié.
