@@ -48,6 +48,19 @@ export function compterReponsesSaisies(reponses: Record<string, unknown> | null 
 }
 
 /**
+ * Finalisation après expiration : un refus DÉFINITIF du serveur (ex. P0530)
+ * ne doit jamais relancer la finalisation toutes les 15 s — chaque relance
+ * réenfilait la même clôture (KEVIN FERNANDES 14/10 : 48 refus P0530 entre
+ * 10:33 et 11:16, count=48, last_seen 11:16:04). La file n'est pas touchée.
+ */
+export function finalisationBloqueeParRefus(
+  refus: { exerciceId: string; reason: string } | null | undefined,
+  exerciceKey: string,
+): boolean {
+  return !!refus && refus.exerciceId === exerciceKey && refus.reason !== "frozen";
+}
+
+/**
  * Les résultats pré-chargés d'une reprise doivent appartenir à la MÊME
  * tentative que le passage repris. Sinon une matière déjà terminée dans le
  * passage repris paraît « à faire » et s'ouvre sur une clé déjà close dont le
