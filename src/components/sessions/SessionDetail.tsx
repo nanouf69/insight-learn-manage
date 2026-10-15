@@ -750,7 +750,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [savingHeuresTotal, setSavingHeuresTotal] = useState(false);
   useEffect(() => { setHeuresTotal(session?.heures_total ?? null); }, [session?.id, session?.heures_total]);
   const heuresAffichees = heuresSessionAffichees({ ...session, heures_total: heuresTotal });
-  const libelleHeuresMixte = libelleHeuresSessionMixte({ ...session, nom: (session as Session & { nom?: string }).nom || session.title });
+  const libelleHeuresMixte = session
+    ? libelleHeuresSessionMixte({ ...session, nom: (session as Session & { nom?: string }).nom || session.title })
+    : null;
   const saveHeuresTotal = async () => {
     if (!session?.id) return;
     const v = Number(String(heuresTotalInput).replace(",", "."));
