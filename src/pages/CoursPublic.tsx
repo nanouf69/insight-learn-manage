@@ -1957,7 +1957,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  // Compute per-module quiz stats: how many quizzes completed vs total
+  // Completed counters use the validation evidence, not today's edited questions.
   const moduleQuizStatsById = modules.reduce<Record<number, { completedQuizzes: number; totalQuizzes: number; completedLabels: string[]; remainingLabels: string[] }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
     const allLabels = new Set<string>();
@@ -1975,7 +1975,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           if (detail?.questionId !== undefined && detail?.questionId !== null) {
             const cle = String(detail.exerciceId);
             if (!questionsRepondues.has(cle)) questionsRepondues.set(cle, new Set());
-            questionsRepondues.get(cle)!.add(String(detail.questionId));
+            questionsRepondues.get(cle)?.add(String(detail.questionId));
           }
         }
         const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
@@ -1990,21 +1990,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Quiz attendus = liste réelle du module, comptée quiz par quiz (comme la page du module).
     const attendus = quizAttendusParModule[module.id];
     if (attendus && attendus.length > 0) {
-      // Un quiz est « fait » seulement si toutes ses questions actives ont une réponse (affichage uniquement).
-      const quizFini = (q: { id: string; questionIds: string[] }) => {
-        if (!exosRepondus.has(q.id)) return false;
-        if (!q.questionIds || q.questionIds.length === 0) return true;
-        const rep = questionsRepondues.get(q.id);
-        return !!rep && q.questionIds.every((qid) => rep.has(qid));
-      };
-      const faits = attendus.filter(quizFini);
-      const restants = attendus.filter((q) => !quizFini(q));
-      acc[module.id] = {
-        completedQuizzes: faits.length,
-        totalQuizzes: attendus.length,
-        completedLabels: faits.map((q) => q.label),
-        remainingLabels: restants.map((q) => q.label),
-      };
+      acc[module.id] = compterQuizModule(rows, attendus);
       return acc;
     }
     const completedLabelsArr = Array.from(doneLabels).sort();
