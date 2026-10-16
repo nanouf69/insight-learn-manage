@@ -19,15 +19,21 @@ describe("registre d'activités → jalons", () => {
     expect(idsActivites(parcours("taxi-e"))).toEqual([]);
     expect(idsActivites(parcours("ta-e"))).toEqual([]);
   });
-  it("module validé (version antérieure) sans les nouvelles activités : pas 100 %, statut signalé", () => {
+  it("module validé AVANT l'ajout des jeux : reste acquis 100 %, jeux facultatifs (règle gel par module)", () => {
     const r = completionAvecActivites({ module_id: 8, status: "completed", progress: 100, completed_at: "2026-10-01T08:00:00Z" }, v8, acts, new Set());
-    expect(r.completion.status).not.toBe("completed");
-    expect(r.completion.progress).toBeCloseTo(120 / 166 * 100, 5);
-    expect(r.etat.versionAnterieureValidee).toBe(true);
+    expect(r.completion).toMatchObject({ status: "completed", progress: 100 });
+    expect(r.etat.versionAnterieureValidee).toBe(false);
+    expect(r.etat.ajouteesApresValidation).toEqual([J1, J2]);
   });
-  it("un seul jeu : partiel ; module + deux jeux : 100 %", () => {
-    expect(completionAvecActivites({ module_id: 8, status: "completed" }, v8, acts, new Set([J1])).completion.progress).toBeCloseTo(142 / 166 * 100, 5);
-    expect(completionAvecActivites({ module_id: 8, status: "completed" }, v8, acts, new Set([J1, J2])).completion).toMatchObject({ status: "completed", progress: 100 });
+  it("module validé APRÈS l'ajout : un seul jeu = partiel ; deux jeux = 100 %", () => {
+    const c = { module_id: 8, status: "completed", completed_at: "2026-10-14T08:00:00Z" };
+    expect(completionAvecActivites(c, v8, acts, new Set([J1])).completion.progress).toBeCloseTo(142 / 166 * 100, 5);
+    expect(completionAvecActivites(c, v8, acts, new Set([J1, J2])).completion).toMatchObject({ status: "completed", progress: 100 });
+  });
+  it("activité retirée après validation : aucune régression", () => {
+    const apres = activitesDuModule(8, "2026-10-14T00:00:00Z").filter((a) => a.id !== J2);
+    const r = completionAvecActivites({ module_id: 8, status: "completed", completed_at: "2026-10-14T08:00:00Z" }, v8, apres, new Set([J1]));
+    expect(r.completion).toMatchObject({ status: "completed", progress: 100 });
   });
   it("jeux faits sans module terminé : jamais 100 %", () => {
     const r = completionAvecActivites({ module_id: 8, status: "in_progress", progress: 50 }, v8, acts, new Set([J1, J2]));
