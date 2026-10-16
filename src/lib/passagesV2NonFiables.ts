@@ -91,33 +91,9 @@ export async function fetchPassagesV2NonFiables(
         if (!data || data.length < PAGE) break;
       }
     }
-    const fiche = new Map<string, { reponses: Record<string, unknown>; updatedAt: string }>();
-    const apprenantIds = Array.from(new Set(candidats.map((c) => c.apprenantId)));
-    const exerciceIds = Array.from(new Set(candidats.map((c) => `${c.s.examId}__${c.s.matiereId}`)));
-    for (let i = 0; i < apprenantIds.length; i += 100) {
-      const chunk = apprenantIds.slice(i, i + 100);
-      for (let from = 0; ; from += PAGE) {
-        const { data, error } = await supabase
-          .from("reponses_apprenants")
-          .select("apprenant_id, exercice_id, reponses, updated_at")
-          .in("apprenant_id", chunk)
-          .in("exercice_id", exerciceIds)
-          .range(from, from + PAGE - 1);
-        if (error) throw error;
-        ((data as any[]) || []).forEach((r) => {
-          const key = `${r.apprenant_id}|${r.exercice_id}`;
-          const prev = fiche.get(key);
-          if (!prev || String(r.updated_at) > prev.updatedAt) {
-            fiche.set(key, { reponses: (r.reponses as any) || {}, updatedAt: String(r.updated_at) });
-          }
-        });
-        if (!data || data.length < PAGE) break;
-      }
-    }
-    candidats.forEach(({ apprenantId, s }) => {
-      const f = fiche.get(`${apprenantId}|${s.examId}__${s.matiereId}`);
-      if (f && estPassageNonFiable(s.matiereId, f.reponses, moteur.get(s.attemptId) || {})) out.add(s.attemptId);
-    });
+    // Enrich the precise attempt. Comparison is made against EACH result's
+    // frozen answers in attacherSourceUnique, never a mutable EB__subject row.
+    candidats.forEach(({ s }) => { s.answers = moteur.get(s.attemptId) || {}; });
     return out;
   } catch (e) {
     console.warn("[passagesV2NonFiables] lecture impossible:", e);

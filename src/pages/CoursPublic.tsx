@@ -42,6 +42,7 @@ import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker
 import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/components/cours-en-ligne/ModulesProgressionEleve";
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
+import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
