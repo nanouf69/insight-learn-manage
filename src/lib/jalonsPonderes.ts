@@ -73,9 +73,22 @@ function arrondirSomme(valeurs: number[], cible: number): number[] {
 }
 
 /** Durées prévisionnelles (minutes entières) par jalon ; somme = total CPF exact. */
-export function calculerDureesPrevisionnelles(filiere: Filiere, volumes: Record<number, VolumeModule>): Record<number, number> {
-  const b = BUDGET_CPF[filiere];
+/**
+ * `attribues` (optionnel) : modules réellement attribués à l'élève (même règle que
+ * l'écran élève). Les modules pondérés non attribués sont retirés et le budget
+ * restant (total CPF − examens blancs − présentiel, inchangés) est renormalisé
+ * sur le parcours réel. Absent/null = grille complète (calculs figés inchangés).
+ */
+export function grilleAttribuee(filiere: Filiere, attribues?: ReadonlySet<number> | null) {
   const grille = GRILLE_DUREES[filiere];
+  if (!attribues) return grille;
+  const f = grille.filter(([id]) => id === INTRO || attribues.has(id));
+  return f.length ? f : grille;
+}
+
+export function calculerDureesPrevisionnelles(filiere: Filiere, volumes: Record<number, VolumeModule>, attribues?: ReadonlySet<number> | null): Record<number, number> {
+  const b = BUDGET_CPF[filiere];
+  const grille = grilleAttribuee(filiere, attribues);
   const brut = grille.map(([id, minutes, ref]) => {
     const v = volumes[id];
     if (!v) throw new Error(`Volume indisponible pour le module ${id}`);
@@ -89,10 +102,12 @@ export function calculerDureesPrevisionnelles(filiere: Filiere, volumes: Record<
 }
 
 /** Poids (somme 100) = durée prévisionnelle / durée CPF totale ; clé INTRO pour l'introduction. */
-export function calculerPoids(filiere: Filiere, volumes: Record<number, VolumeModule>): Record<number, number> {
-  const durees = calculerDureesPrevisionnelles(filiere, volumes);
+export function calculerPoids(filiere: Filiere, volumes: Record<number, VolumeModule>, attribues?: ReadonlySet<number> | null): Record<number, number> {
+  const durees = calculerDureesPrevisionnelles(filiere, volumes, attribues);
   const total = BUDGET_CPF[filiere].total;
-  return Object.fromEntries(MODULES_PONDERES[filiere].map((id) => [id, ((durees[id] ?? 0) / total) * 100]));
+  const garde = new Set(grilleAttribuee(filiere, attribues).map(([id]) => id));
+  const ids = MODULES_PONDERES[filiere].filter((id) => !attribues || garde.has(id) || id === PRATIQUE_PHYSIQUE || id === EXAMENS_BLANCS_FILIERE[filiere].moduleId);
+  return Object.fromEntries(ids.map((id) => [id, ((durees[id] ?? 0) / total) * 100]));
 }
 
 export function avecJalonPratique(modulesParcours: number[]): number[] {

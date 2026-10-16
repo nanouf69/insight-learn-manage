@@ -9,6 +9,7 @@ import {
   calculerPoids,
   calculerDureesPrevisionnelles,
   completionPratique,
+  GRILLE_DUREES,
   type CompletionLite,
   type Filiere,
 } from "@/lib/jalonsPonderes";
@@ -33,7 +34,15 @@ export function assemblerCalculJalons(i: {
   dateActivites?: string;
   /** Explicit current-path waivers, never interpreted as completed answers. */
   activitesDispensees?: readonly string[];
+  /** Modules réellement attribués (règle écran élève). Absent = parcours par défaut (calculs figés inchangés). */
+  modulesAttribues?: readonly number[] | null;
 }) {
+  const attribues = i.modulesAttribues?.length ? new Set(i.modulesAttribues) : null;
+  const ponderesFiliere = new Set(GRILLE_DUREES[i.filiere].map(([id]) => id));
+  // Retire seulement les modules PONDÉRÉS non attribués ; introduction, examens blancs,
+  // pratique et jalons obligatoires sans poids (50–53, 83, 84) restent dans le parcours.
+  const parcours = attribues ? i.parcours.filter((id) => !ponderesFiliere.has(id) || attribues.has(id)) : i.parcours;
+  i = { ...i, parcours };
   const volumes = construireVolumes(i.filiere, i.parcoursInitial, i.editorRows as any, i.initialDe, i.examens as any);
   const emargements = (i.emargements ?? []) as EmargementRowLike[];
   // Même présence que le « taux présentiel » : théorie signée + pratique signée
@@ -61,8 +70,8 @@ export function assemblerCalculJalons(i: {
     }
   }
   const completions = [...completionsBase, completionPratique(pratiqueMinutes)];
-  const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes);
-  const poids = calculerPoids(i.filiere, volumes.volumes);
+  const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes, attribues);
+  const poids = calculerPoids(i.filiere, volumes.volumes, attribues);
   const resultat = calculerJalonsPonderes(i.filiere, i.parcours, completions, poids);
   const datesPratique = [
     ...(emargements as Array<EmargementRowLike & { signed_at?: string | null }>)
@@ -76,6 +85,7 @@ export function assemblerCalculJalons(i: {
     gelId: i.gelId ?? null,
     filiere: i.filiere,
     parcours: i.parcours,
+    modulesAttribues: attribues ? [...attribues] : null,
     volumes: volumes.volumes,
     limites: volumes.limites,
     pagesNonRecomptees: volumes.pagesNonRecomptees ?? [],

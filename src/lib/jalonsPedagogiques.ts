@@ -16,6 +16,8 @@ import {
 } from "@/lib/jalonsPonderes";
 
 export const FORMATIONS_JALONS_ELEARNING = new Set(["vtc-e", "taxi-e", "ta-e", "va-e"]);
+/** Exclusion demandée par l'utilisateur (16/10/2026) : ce dossier garde l'ancien calcul, aucun changement. */
+const EXCLUS_PARCOURS_ATTRIBUE = new Set(["c0844007-b999-4385-9665-918e5077c3b5"]);
 
 export function formationJalonsElearning(typeApprenant?: string | null, formationChoisie?: string | null) {
   const type = String(typeApprenant ?? "").toLowerCase().trim();
@@ -85,12 +87,15 @@ export async function chargerCalculJalons(params: {
   if (completionsResult.error) throw completionsResult.error;
   if (heuresValideesResult.error) throw heuresValideesResult.error;
   const examens = await examensModule.fetchLiveExamens();
+  // Parcours réel attribué (même règle que l'écran élève, parents/enfants normalisés).
+  const modulesAttribues = modulesAttribuesDashboard(formation, affectation.data.modules_autorises).map((m) => m.id);
   return assemblerCalculJalons({
     key, filiere, parcours, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
     initialDe: (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),
     pratiqueDetails, emargements: (emargementsResult.data as any[]) ?? [], completions: (completionsResult.data as JalonCompletion[]) ?? [],
     heuresValidees: (heuresValideesResult.data as any[]) ?? [],
     jeuxTermines: ((jeuxResult.data as any[]) ?? []).filter((r) => r.completed === true).map((r) => String(r.exercice_id)),
+    modulesAttribues: EXCLUS_PARCOURS_ATTRIBUE.has(params.apprenantId) ? null : modulesAttribues,
     activitesDispensees: [...activitesDispenseesPourParcours(modulesAttribuesDashboard(formation, affectation.data.modules_autorises), (completionsResult.data as JalonCompletion[]) ?? [], params.apprenantId)],
   });
 }
