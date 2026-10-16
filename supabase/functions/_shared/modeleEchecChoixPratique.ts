@@ -143,6 +143,14 @@ const esc = (s: string) =>
  * puis bloc pratique fourni, puis bouton « Choisir et signer ».
  * Aucune case cochable dans le mail : le choix se fait sur la page sécurisée.
  */
+/** Passage mis en évidence (rouge + gras) dans le HTML ; le texte lui-même est inchangé. */
+export const PASSAGE_6_MOIS = "celui-ci reste à votre disposition pendant 6 mois à compter de ce message";
+const paraSuite = (t: string) => {
+  const e = esc(t);
+  const m = esc(PASSAGE_6_MOIS);
+  return `<p style="margin:0 0 14px">${e.replace(m, `<strong style="color:#b91c1c;font-weight:bold">${m}</strong>`)}</p>`;
+};
+
 export function construireMailEchec(params: { prenom: string; lien: string; filiere: Filiere }): { subject: string; html: string } {
   const intro = introPratique(params.filiere);
   const p = esc(params.prenom || "");
@@ -167,7 +175,7 @@ ${para(intro[1])}
 <ul style="margin:0 0 14px;padding-left:22px">
 ${CHOIX.map((c) => `<li style="margin-bottom:6px">${esc(c.label)}</li>`).join("\n")}
 </ul>
-${SUITE_PRATIQUE.map(para).join("\n")}
+${SUITE_PRATIQUE.map(paraSuite).join("\n")}
 <p style="margin:22px 0;text-align:center"><a href="${lien}" target="_blank" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px">Choisir et signer</a></p>
 <p style="margin:0 0 14px;font-size:13px;color:#4b5563">Sur la page sécurisée, votre nom et votre prénom sont déjà indiqués ; vous cochez une seule case, puis vous signez. La date est enregistrée automatiquement. Si le bouton ne fonctionne pas, copiez ce lien : <a href="${lien}">${lien}</a></p>
 <p style="margin:0 0 14px">Nous restons à votre disposition pour toute question.</p>
