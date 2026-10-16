@@ -95,7 +95,7 @@ export async function chargerCalculJalons(params: {
     pratiqueDetails, emargements: (emargementsResult.data as any[]) ?? [], completions: (completionsResult.data as JalonCompletion[]) ?? [],
     heuresValidees: (heuresValideesResult.data as any[]) ?? [],
     jeuxTermines: ((jeuxResult.data as any[]) ?? []).filter((r) => r.completed === true).map((r) => String(r.exercice_id)),
-    modulesAttribues,
+    modulesAttribues: EXCLUS_PARCOURS_ATTRIBUE.has(params.apprenantId) ? null : modulesAttribues,
     activitesDispensees: [...activitesDispenseesPourParcours(modulesAttribuesDashboard(formation, affectation.data.modules_autorises), (completionsResult.data as JalonCompletion[]) ?? [], params.apprenantId)],
   });
 }
