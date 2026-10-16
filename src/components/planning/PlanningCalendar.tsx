@@ -348,7 +348,9 @@ export function PlanningCalendar() {
         if (!a) return;
         const list = examByDate[l.date_examen] || (examByDate[l.date_examen] = []);
         const nom = `${a.prenom} ${a.nom}`;
-        if (list.some(c => c.name === nom && c.heure === l.heure)) return;
+        // Même candidat déjà affiché ce jour-là (fiche) : pas de doublon, quelle que soit l'écriture de l'heure.
+        const existant = list.find(c => c.name === nom);
+        if (existant) { if (!existant.heure || existant.heure === 'À définir') existant.heure = l.heure; return; }
         list.push({ name: nom, type: l.filiere === 'TAXI' ? 'TAXI' : 'VTC', heure: l.heure, telephone: a.telephone || '' });
       });
       Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
