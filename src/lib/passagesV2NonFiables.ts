@@ -38,11 +38,20 @@ export function estPassageConcerne(s: Pick<CoreMatiereState, "finishedAt" | "res
 
 /** Same-attempt proof: result answers must match that attempt; missing proof is unreliable. */
 export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown): "fiable" | "non_fiable" | "non_verifiable" {
-  if (!estPassageConcerne(core)) return "fiable";
-  if (!core.answers || !reponsesLigne || typeof reponsesLigne !== "object" || Array.isArray(reponsesLigne)) return "non_verifiable";
+  if (!reponsesLigne || typeof reponsesLigne !== "object" || Array.isArray(reponsesLigne)) return "non_verifiable";
+  const source = core.resultId ? core.historicalDetails?.reponses : core.answers;
+  if (!source) return "non_verifiable";
   const nonVides = Object.values(reponsesLigne as Record<string, unknown>).some((v) => normaliserValeurReponse(v) != null);
   if (!nonVides) return "non_verifiable";
-  return estPassageNonFiable(core.matiereId, reponsesLigne as Record<string, unknown>, core.answers) ? "non_fiable" : "fiable";
+  const moteur = core.resultId ? Object.fromEntries(Object.entries(source).map(([id, v]) => [`${core.matiereId}:${id}`, v])) : source;
+  if (estPassageNonFiable(core.matiereId, reponsesLigne as Record<string, unknown>, moteur)) return "non_fiable";
+  if (core.qrcTotal > 0 && (!core.qrcProofs || core.qrcProofs.length !== core.qrcTotal)) return "non_verifiable";
+  for (const q of core.qrcProofs ?? []) {
+    const id = q.questionId.startsWith(`${core.matiereId}:`) ? q.questionId.slice(core.matiereId.length + 1) : q.questionId;
+    if (!Object.prototype.hasOwnProperty.call(reponsesLigne, id)) return "non_verifiable";
+    if (normaliserValeurReponse((reponsesLigne as Record<string, unknown>)[id]) !== normaliserValeurReponse(q.reponse)) return "non_fiable";
+  }
+  return "fiable";
 }
 
 /**
@@ -76,7 +85,7 @@ export async function fetchPassagesV2NonFiables(
   const out = new Set<string>();
   const candidats: { apprenantId: string; s: CoreMatiereState }[] = [];
   statesParApprenant.forEach((list, apprenantId) => {
-    (list || []).forEach((s) => { if (estPassageConcerne(s)) candidats.push({ apprenantId, s }); });
+    (list || []).forEach((s) => { if (!s.resultId) candidats.push({ apprenantId, s }); });
   });
   if (candidats.length === 0) return out;
   try {
