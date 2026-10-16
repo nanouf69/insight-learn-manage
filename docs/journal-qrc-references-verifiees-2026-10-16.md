@@ -10,3 +10,11 @@ Autorisation : « Corrige les pb » + références vérifiées par l'utilisateur
 - Nouveau moteur : 5 QRC passées par `core_correct_qrc_publish` (identifiants d'opération déterministes). Exclusion G(T) globale inchangée.
 - Restent en attente : VALENTIN EB6 Q1 (tarif de 2022 : un arrêté Rhône de revalorisation infra-annuelle en 2022 n'est pas exclu, et la répartition des bagages n'est pas connue) ; VTC2 Q1 Thierno t1/t2 et CATANIA EB4 (question abîmée dans toutes les versions archivées, y compris la sauvegarde du 21/09 : énoncé d'origine introuvable).
 - Empreintes identiques avant/après : 5 231 autres résultats, 4 213 autres QRC v2, 1 760 passages/snapshots, réponses/snapshots des copies ciblées, 14 lignes d'Ismail Amar.
+
+## Suite — VALENTIN EB6-TAXI TAXI 2 Q1 (16/10/2026, 15 h 30 Paris)
+
+- Références : arrêté 69-2022-04-22-00004 (RAA 69-2022-062 du 26/04/2022, art. 1-2 : prise en charge 2,50 €) ; art. 6 de l'arrêté RAA 69-2022-014 non modifié (2,50 € par passager à partir du 5e ; bagages seulement dans des conditions précises).
+- Raisonnement : prise en charge attendue 5 € (2,50 + 2,50 du 5e passager) ; aucun supplément bagage exigé (répartition des 15 bagages inconnue) ; frais km hors prise en charge. Réponse « 2,50 € + frais km » : base correcte, supplément omis → 2/4.
+- Écriture unique gardée (copie ef72f5a0 / instance aac84649, passage 88e4fab5) : ancienne correction automatique 2/4 archivée, correction validée 2/4, journal complété, drapeau d'attente de cette copie levé. Copie 16/20 inchangée (16 → 16), réussie ; nouveau moteur 14 provisoire → 16 définitif, 0 QRC restante.
+- Empreintes identiques : 5 235 autres résultats, 4 217 autres QRC v2, 1 723 autres résultats du nouveau moteur, 1 760 passages, 14 lignes d'Ismail Amar, réponses/questions de la copie.
+- Restent en attente : VTC2 Q1 EB4 (Thierno t1/t2, CATANIA), énoncé corrompu, non neutralisées.
