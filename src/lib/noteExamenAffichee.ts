@@ -1,6 +1,6 @@
 import { matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
-import { MENTION_NOTE_RECALCULEE } from "@/lib/passagesV2NonFiables";
+import { MENTION_NOTE_RECALCULEE, verifierPassageV2 } from "@/lib/passagesV2NonFiables";
 
 /**
  * FONCTION COMMUNE — note et statut affichés d'un résultat d'examen blanc.
@@ -35,11 +35,19 @@ export function attacherSourceUnique<T extends Record<string, any>>(
 ): T & { __core: any; __noteRecalculee?: boolean } {
   if (!estExamenBlanc(row)) return { ...row, __core: null };
   if (coreStates === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
-  const core = matchCoreState(coreStates, row.quiz_id, row.matiere_id, row.completed_at, row.id);
+  const core = matchCoreState(coreStates, row.quiz_id, row.matiere_id, row.completed_at, row.id, row.tentative, row.apprenant_id);
   if (!core) return { ...row, __core: null };
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
-  if (nonFiables.has(core.attemptId)) return { ...row, __core: null, __noteRecalculee: true };
+  if (nonFiables.has(core.attemptId) || verifierPassageV2(core, row?.details?.reponses ?? row?.reponses) !== "fiable") {
+    return { ...row, __core: null, __noteRecalculee: true };
+  }
   return { ...row, __core: core };
+}
+
+/** Screens with mapped rows use the same strict same-attempt rule. */
+export function coreFiablePourLigne(states: CoreMatiereState[] | null, row: any): CoreMatiereState | null {
+  const core = matchCoreState(states, row?.quiz_id ?? row?.quizId, row?.matiere_id ?? row?.matiereId, row?.completed_at ?? row?.completedAt, row?.id ?? row?.resultId, row?.tentative, row?.apprenant_id);
+  return core && verifierPassageV2(core, row?.details?.reponses ?? row?.reponses) === "fiable" ? core : null;
 }
 
 export type NoteAffichee =

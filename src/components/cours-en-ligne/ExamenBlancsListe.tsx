@@ -17,7 +17,8 @@ import {
   selectLatestAttemptRows, parseExamAnswerKey,
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring } from "./examens-blancs-scoring";
-import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
+import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
@@ -285,7 +286,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               correctionsIA: r?.details?.correctionsIA ?? null,
               details: r?.details ?? null,
               // Source unique : état serveur du passage nouveau système, s'il existe.
-              __core: matchCoreState(coreStates, r.quiz_id, r.matiere_id, r.completed_at, r.id),
+              __core: coreFiablePourLigne(coreStates, r),
             } as ExamScoreItem);
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {

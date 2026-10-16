@@ -36,6 +36,15 @@ export function estPassageConcerne(s: Pick<CoreMatiereState, "finishedAt" | "res
   return Number.isFinite(t) && t >= new Date(DEBUT_DEFAUT_SYNCHRO_V2).getTime();
 }
 
+/** Same-attempt proof: result answers must match that attempt; missing proof is unreliable. */
+export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown): "fiable" | "non_fiable" | "non_verifiable" {
+  if (!estPassageConcerne(core)) return "fiable";
+  if (!core.answers || !reponsesLigne || typeof reponsesLigne !== "object" || Array.isArray(reponsesLigne)) return "non_verifiable";
+  const nonVides = Object.values(reponsesLigne as Record<string, unknown>).some((v) => normaliserValeurReponse(v) != null);
+  if (!nonVides) return "non_verifiable";
+  return estPassageNonFiable(core.matiereId, reponsesLigne as Record<string, unknown>, core.answers) ? "non_fiable" : "fiable";
+}
+
 /**
  * Fonction pure : true si au moins une réponse non vide de la fiche élève est
  * absente ou différente dans le nouveau moteur.
