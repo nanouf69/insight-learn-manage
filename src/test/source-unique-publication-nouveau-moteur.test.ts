@@ -149,7 +149,7 @@ describe("CRM « Résultats par session » lit la source unique", () => {
   it("rattache le passage nouveau système et affiche sa note", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../components/cours-en-ligne/ResultatsSessionPage.tsx"), "utf8");
     expect(src).toContain("fetchCoreMatiereStatesBulk");
-    expect(src).toContain("matchCoreState(coreMap.get(String(r.apprenant_id))");
+    expect(src).toContain("coreFiablePourLigne(coreMap.get(String(r.apprenant_id))");
     expect(src).toContain("coreStateScore(core)");
   });
 });
