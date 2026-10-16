@@ -2528,7 +2528,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                               )}
                               {!introLockedDone && moduleScores[mod.id]?.score_obtenu != null && moduleScores[mod.id]?.score_max != null && (
                                 <span className="ml-2 font-semibold">
-                                  — Score : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max} ({Math.round((moduleScores[mod.id].score_obtenu! / moduleScores[mod.id].score_max!) * 100)}%)
+                                  — Score de bonnes réponses : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max} ({Math.round((moduleScores[mod.id].score_obtenu! / moduleScores[mod.id].score_max!) * 100)}%)
                                 </span>
                               )}
                             </p>

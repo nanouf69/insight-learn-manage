@@ -7,7 +7,7 @@ export const formatDureeJalon = (minutes: number) => {
   const arrondi = Math.round(minutes);
   return `${Math.floor(arrondi / 60)}h${String(arrondi % 60).padStart(2, "0")}`;
 };
-export const EXPLICATION_JALONS = "Poids : part du jalon dans la formation. Progression : avancement enregistré de l’élève. Contribution : poids × progression / 100, en points de pourcentage. Les heures CPF et leur couverture sont prévisionnelles, pas un chronomètre ni des heures réellement effectuées.";
+export const EXPLICATION_JALONS = "Poids : part du jalon dans la formation. Progression (avancement) : activités réellement réalisées par l’élève — un module validé compte 100 %, les mauvaises réponses comptent comme faites ; le score de bonnes réponses n’entre jamais dans les jalons. Contribution : poids × progression / 100, en points de pourcentage. Les heures CPF et leur couverture sont prévisionnelles, pas un chronomètre ni des heures réellement effectuées.";
 
 /** Présentation uniquement : aucune modification des calculs ou des progressions. */
 export function tableauAffichageJalons(calcul: Calcul) {
