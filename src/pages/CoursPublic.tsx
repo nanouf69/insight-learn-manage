@@ -1990,8 +1990,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     // Quiz attendus = liste réelle du module, comptée quiz par quiz (comme la page du module).
     const attendus = quizAttendusParModule[module.id];
-    if (attendus && attendus.length > 0) {
-      acc[module.id] = compterQuizModule(rows, attendus);
+    if ((attendus && attendus.length > 0) || rows.some((r) => r.status === "completed" && Array.isArray(r.details) && r.details.some((d: any) => d.exerciceId != null && d.questionId != null))) {
+      acc[module.id] = compterQuizModule(rows, attendus ?? []);
       return acc;
     }
     const completedLabelsArr = Array.from(doneLabels).sort();

@@ -1,6 +1,6 @@
 import { matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
-import { MENTION_NOTE_RECALCULEE, verifierPassageV2 } from "@/lib/passagesV2NonFiables";
+import { MENTION_NOTE_RECALCULEE, verifierPassageV2, verifierContenuPassage } from "@/lib/passagesV2NonFiables";
 
 /**
  * FONCTION COMMUNE — note et statut affichés d'un résultat d'examen blanc.
@@ -42,7 +42,8 @@ export function attacherSourceUnique<T extends Record<string, any>>(
     return { ...row, __core: plausible ? CORE_LECTURE_IMPOSSIBLE : null };
   }
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
-  if (nonFiables.has(core.attemptId) || verifierPassageV2(core, row?.details?.reponses ?? row?.reponses) !== "fiable") {
+  const original = row?.__preuveOriginaleDetails ?? row?.details;
+  if (nonFiables.has(core.attemptId) || verifierPassageV2(core, original?.reponses ?? row?.reponses) !== "fiable" || !verifierContenuPassage(core, original)) {
     if (core.pending) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE, __noteRecalculee: true };
     return { ...row, __core: null, __noteRecalculee: true };
   }

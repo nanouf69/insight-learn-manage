@@ -408,6 +408,7 @@ export function mergePassageSiblingRows<T extends Record<string, any>>(rows: T[]
     const details = r?.details || {};
     return {
       ...r,
+      __preuveOriginaleDetails: r?.__preuveOriginaleDetails ?? details,
       details: {
         ...details,
         reponses: (() => {

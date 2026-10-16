@@ -31,6 +31,7 @@ export interface CoreMatiereState {
   qrcProofs?: Array<{ questionId: string; reponse: unknown; etat: string; note: number | null }>;
   answers?: Record<string, unknown>;
   historicalDetails?: any;
+  questions?: any[];
 }
 
 /** Fenêtre de rapprochement entre la fin du passage et la ligne de résultat. */
@@ -72,7 +73,7 @@ export async function fetchCoreMatiereStatesBulk(
     for (let i = 0; i < ids.length; i += CHUNK) {
       const chunk = ids.slice(i, i + CHUNK);
       const [attempts, qrcs, results, neutres] = await Promise.all([
-        all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, result_id:snapshot->source_historique->>result_id, historique:snapshot->source_historique, tentative:snapshot->>tentative", chunk, (q) => q.eq("etat", "terminee")),
+        all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, questions:snapshot->questions, result_id:snapshot->source_historique->>result_id, historique:snapshot->source_historique, tentative:snapshot->>tentative", chunk, (q) => q.eq("etat", "terminee")),
         all("qrc_instances_v2", "attempt_id, question_id, reponse, etat, note", chunk),
         all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes", chunk),
         // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
@@ -126,6 +127,7 @@ export async function fetchCoreMatiereStatesBulk(
             apprenantId: key,
             tentative: a.tentative != null ? Number(a.tentative) : a.historique?.tentative ?? null,
             historicalDetails: a.historique?.details,
+            questions: a.questions,
             qrcProofs: qrcs.filter((q) => q.attempt_id === a.attempt_id).map((q) => ({ questionId: String(q.question_id), reponse: q.reponse, etat: q.etat, note: q.note == null ? null : Number(q.note) })),
           });
           out.set(key, list);

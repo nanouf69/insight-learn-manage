@@ -54,6 +54,18 @@ export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown
   return "fiable";
 }
 
+export function verifierContenuPassage(core: CoreMatiereState, details: any): boolean {
+  const legacy = details?.snapshot?.questions ?? details?.questions;
+  const moteur = core.resultId ? core.historicalDetails?.snapshot?.questions ?? core.historicalDetails?.questions : core.questions;
+  if (!Array.isArray(legacy) || !legacy.length || !Array.isArray(moteur) || !moteur.length) return false;
+  const key = (q: any) => String(q.questionId ?? q.id ?? "").replace(`${core.matiereId}:`, "");
+  const same = (a: any, b: any) => String(a.type).toUpperCase() === String(b.type).toUpperCase() && String(a.enonce ?? "").trim() === String(b.enonce ?? "").trim();
+  return legacy.length === moteur.length && legacy.every((q: any) => {
+    const matches = moteur.filter((m: any) => key(m) === key(q));
+    return matches.length === 1 && same(q, matches[0]);
+  });
+}
+
 /**
  * Fonction pure : true si au moins une réponse non vide de la fiche élève est
  * absente ou différente dans le nouveau moteur.
