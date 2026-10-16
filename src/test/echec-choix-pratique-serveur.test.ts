@@ -178,3 +178,43 @@ describe("Validation PNG serveur", () => {
     expect((await validerSignaturePng(png(10, 10, true))).ok).toBe(false);
   });
 });
+
+describe("Mail échec : passage 6 mois en rouge + parcours « Choisir et signer » (fictif)", () => {
+  const pret2 = async (type = "vtc") => { const f = fake([base({ type_apprenant: type })], ok); const p: any = await preparer(f.deps, "a1", null); await envoyer(f.deps, p.doc.id); return { ...f, tok: f.docs[0].token }; };
+  it("VTC et TAXI : passage 6 mois en rouge et gras, texte inchangé", async () => {
+    const { construireMailEchec, PASSAGE_6_MOIS, SUITE_PRATIQUE } = await import("../../supabase/functions/_shared/modeleEchecChoixPratique");
+    for (const filiere of ["vtc", "taxi"] as const) {
+      const { html } = construireMailEchec({ prenom: "Fictif", lien: "https://x.test/t", filiere });
+      expect(html).toContain(`<strong style="color:#b91c1c;font-weight:bold">${PASSAGE_6_MOIS}</strong>`);
+      expect(html.replace(/<[^>]+>/g, "")).toContain(SUITE_PRATIQUE[0].replace(/'/g, "'"));
+    }
+    expect(SUITE_PRATIQUE[0]).toContain(PASSAGE_6_MOIS);
+  });
+  it("jeton inconnu → 404, aucune écriture", async () => {
+    const { deps, docs } = await pret2();
+    expect((await soumettre(deps, "inexistant".padEnd(48, "z"), "plus_tard", SIG, "")).status).toBe(404);
+    expect(docs[0].statut).not.toBe("signe");
+  });
+  it("plusieurs choix envoyés à la fois → refus", async () => {
+    const { deps, tok, docs } = await pret2();
+    expect((await soumettre(deps, tok, ["maintenant", "renonce"], SIG, "")).status).toBe(400);
+    expect((await soumettre(deps, tok, "", SIG, "")).status).toBe(400);
+    expect(docs[0].choix).toBeNull();
+  });
+  it("chaque choix valide : choix + signature + date serveur cohérents ; rechargement = déjà signé", async () => {
+    for (const choix of ["maintenant", "plus_tard", "renonce"]) {
+      const { deps, tok, docs } = await pret2("taxi");
+      const r: any = await soumettre(deps, tok, choix, SIG, "UA");
+      expect(r.status).toBe(200);
+      expect(docs[0].choix).toBe(choix);
+      expect((docs[0].reponses as any).choix).toBe(choix);
+      expect((docs[0].reponses as any).signature).toBe(SIG);
+      expect(docs[0].signed_at).toBe("2026-10-16T08:00:00.000Z");
+      const vue: any = vuePublique(docs[0]);
+      expect(JSON.stringify(vue)).toContain(choix);
+      const again: any = await soumettre(deps, tok, choix === "renonce" ? "maintenant" : "renonce", SIG, "");
+      expect(again.body.deja_signe).toBe(true);
+      expect(docs[0].choix).toBe(choix);
+    }
+  });
+});
