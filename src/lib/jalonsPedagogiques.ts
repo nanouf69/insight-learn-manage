@@ -16,6 +16,8 @@ import {
 } from "@/lib/jalonsPonderes";
 
 export const FORMATIONS_JALONS_ELEARNING = new Set(["vtc-e", "taxi-e", "ta-e", "va-e"]);
+/** Exclusion demandée par l'utilisateur (16/10/2026) : ce dossier garde l'ancien calcul, aucun changement. */
+const EXCLUS_PARCOURS_ATTRIBUE = new Set(["c0844007-b999-4385-9665-918e5077c3b5"]);
 
 export function formationJalonsElearning(typeApprenant?: string | null, formationChoisie?: string | null) {
   const type = String(typeApprenant ?? "").toLowerCase().trim();
