@@ -14,13 +14,13 @@ describe("Formats archivés réels, sans données personnelles", () => {
     expect(verifierContenuPassage(core, { questions: fixture.legacyQuestions, snapshot: fixture.snapshot })).toBe(true);
   });
   it("clé JSON réordonnée compatible, choix déplacé ou bonne réponse divergente refusés", () => {
-    const qs = structuredClone(fixture.coreQuestions);
-    qs[0].choix = qs[0].choix.map((c) => ({ texte: c.texte, lettre: c.lettre, ...("correct" in c ? { correct: c.correct } : {}) }));
+    const qs: any[] = structuredClone(fixture.coreQuestions);
+    qs[0].choix = qs[0].choix.map((c: any) => ({ texte: c.texte, lettre: c.lettre, ...("correct" in c ? { correct: c.correct } : {}) }));
     expect(verifierContenuPassage({ ...core, questions: qs }, { snapshot: fixture.snapshot })).toBe(true);
     qs[0].choix.reverse();
     expect(verifierContenuPassage({ ...core, questions: qs }, { snapshot: fixture.snapshot })).toBe(false);
-    const bad = structuredClone(fixture.coreQuestions);
-    bad[0].choix.forEach((c) => { if ("correct" in c) c.correct = false; });
+    const bad: any[] = structuredClone(fixture.coreQuestions);
+    bad[0].choix.forEach((c: any) => { if ("correct" in c) c.correct = false; });
     expect(verifierContenuPassage({ ...core, questions: bad }, { snapshot: fixture.snapshot })).toBe(false);
   });
   it("ordre relatif, type, énoncé, image et identités dupliquées restent protégés", () => {
