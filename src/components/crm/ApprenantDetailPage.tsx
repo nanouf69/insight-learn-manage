@@ -543,6 +543,22 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   {f}
                 </Badge>
               ))}
+              {([
+                ["Théorie", (apprenant as any).resultat_examen],
+                ["Pratique", (apprenant as any).resultat_examen_pratique],
+              ] as const).map(([label, r]) => {
+                const v = String(r || "").toLowerCase();
+                const txt = v === "oui" ? "réussie" : v === "non" ? "non réussie" : v === "absent" ? "absent" : v === "deplace" ? "déplacé" : "en attente";
+                return (
+                  <Badge
+                    key={label}
+                    variant={v === "non" ? "destructive" : v === "oui" ? "default" : "outline"}
+                    className="gap-1"
+                  >
+                    {label} : {txt}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         </div>
