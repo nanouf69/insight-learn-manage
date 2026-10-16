@@ -30,8 +30,9 @@ describe("Compteur accueil d’un module validé", () => {
 });
 
 const fin = "2026-09-27T13:28:27.779Z";
-const row = (o: any = {}) => ({ id: "r1", apprenant_id: "a", quiz_type: "examen_blanc", quiz_id: "EB5", matiere_id: "t3p", completed_at: "2026-09-27T13:28:28.272Z", score_obtenu: null, score_max: 20, note_sur_20: null, details: { qrc_pending_correction: true, reponses: { 1: "réponse complète", 2: ["B", "A"] }, questions: [{ questionId: 1, type: "QRC", reponseEleve: "réponse complète" }], correctionsIA: { 1: { explication: "Correction déterministe", pointsObtenus: 1 } } }, ...o });
-const core = (o: Partial<CoreMatiereState> = {}): CoreMatiereState => ({ attemptId: "att", apprenantId: "a", examId: "EB5", matiereId: "t3p", finishedAt: fin, qrcTotal: 1, qrcRestantes: 0, status: "definitif", note20: 14.5, pending: false, answers: { "t3p:1": "réponse complète", "t3p:2": ["A", "B"] }, qrcProofs: [{ questionId: "t3p:1", reponse: "réponse complète", etat: "corrigee", note: 1 }], ...o });
+const questions = [{ questionId: 1, type: "QRC", enonce: "Question" }, { questionId: 2, type: "QCM", enonce: "Choix" }];
+const row = (o: any = {}) => ({ id: "r1", apprenant_id: "a", quiz_type: "examen_blanc", quiz_id: "EB5", matiere_id: "t3p", completed_at: "2026-09-27T13:28:28.272Z", score_obtenu: null, score_max: 20, note_sur_20: null, details: { qrc_pending_correction: true, reponses: { 1: "réponse complète", 2: ["B", "A"] }, questions, correctionsIA: { 1: { explication: "Correction déterministe", pointsObtenus: 1 } } }, ...o });
+const core = (o: Partial<CoreMatiereState> = {}): CoreMatiereState => ({ attemptId: "att", apprenantId: "a", examId: "EB5", matiereId: "t3p", finishedAt: fin, qrcTotal: 1, qrcRestantes: 0, status: "definitif", note20: 14.5, pending: false, questions, answers: { "t3p:1": "réponse complète", "t3p:2": ["A", "B"] }, qrcProofs: [{ questionId: "t3p:1", reponse: "réponse complète", etat: "corrigee", note: 1 }], ...o });
 const show = (r: any, states: CoreMatiereState[] | null, nf: Set<string> | null = new Set()) => noteExamenAffichee(attacherSourceUnique(r, states, nf));
 const exam = { matieres: [{ id: "t3p", questions: [{ id: 1, type: "QRC" }] }] };
 
@@ -43,6 +44,10 @@ describe("QRC : preuve du même passage", () => {
     expect(coreFiablePourLigne([core()], row())?.attemptId).toBe("att");
   });
   it("vraie attente noyau conservée", () => expect(show(row(), [core({ pending: true, qrcRestantes: 1, note20: null })]).etat).toBe("en_attente"));
+  it("contenu différent ou identité de compte différente : aucune validation empruntée", () => {
+    expect(show(row(), [core({ questions: [{ ...questions[0], enonce: "Autre sujet" }, questions[1]] })]).etat).toBe("en_attente");
+    expect(show(row(), [core({ apprenantId: "autre" })]).etat).not.toBe("note");
+  });
   it("autre tentative et ambiguïté : rien emprunté", () => {
     expect(show(row({ tentative: 2 }), [core({ tentative: 1 })]).etat).toBe("lecture_impossible");
     expect(show(row(), [core(), core({ attemptId: "att2", finishedAt: "2026-09-27T13:28:29Z" })]).etat).toBe("lecture_impossible");
