@@ -27,7 +27,7 @@ describe("parité UI / serveur au gel (activités du registre)", () => {
     const serveur = base(activitesTermineesDepuisGel({ reponses }) ?? undefined, d);
     expect(serveur.resultat).toEqual(ui.resultat);
     expect(serveur.volumes[8].jeux).toBe(UNITES_JEUX_LYON);
-    expect(serveur.activites[0].versionAnterieureValidee).toBe(true);
+    expect(serveur.activites[0].versionAnterieureValidee).toBe(false); // gel par module : validé avant l'ajout = acquis
   });
   it("gel antérieur à l'ajout des jeux : aucune activité, calcul identique à la méthode v3", () => {
     const avant = base(activitesTermineesDepuisGel({ reponses }) ?? undefined, "2026-10-01T00:00:00Z");
