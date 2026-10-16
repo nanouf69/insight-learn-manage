@@ -85,12 +85,15 @@ export async function chargerCalculJalons(params: {
   if (completionsResult.error) throw completionsResult.error;
   if (heuresValideesResult.error) throw heuresValideesResult.error;
   const examens = await examensModule.fetchLiveExamens();
+  // Parcours réel attribué (même règle que l'écran élève, parents/enfants normalisés).
+  const modulesAttribues = modulesAttribuesDashboard(formation, affectation.data.modules_autorises).map((m) => m.id);
   return assemblerCalculJalons({
     key, filiere, parcours, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
     initialDe: (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),
     pratiqueDetails, emargements: (emargementsResult.data as any[]) ?? [], completions: (completionsResult.data as JalonCompletion[]) ?? [],
     heuresValidees: (heuresValideesResult.data as any[]) ?? [],
     jeuxTermines: ((jeuxResult.data as any[]) ?? []).filter((r) => r.completed === true).map((r) => String(r.exercice_id)),
+    modulesAttribues,
     activitesDispensees: [...activitesDispenseesPourParcours(modulesAttribuesDashboard(formation, affectation.data.modules_autorises), (completionsResult.data as JalonCompletion[]) ?? [], params.apprenantId)],
   });
 }
