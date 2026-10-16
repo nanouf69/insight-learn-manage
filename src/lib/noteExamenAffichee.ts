@@ -43,6 +43,7 @@ export function attacherSourceUnique<T extends Record<string, any>>(
   }
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
   if (nonFiables.has(core.attemptId) || verifierPassageV2(core, row?.details?.reponses ?? row?.reponses) !== "fiable") {
+    if (core.pending) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE, __noteRecalculee: true };
     return { ...row, __core: null, __noteRecalculee: true };
   }
   return { ...row, __core: core };

@@ -3,10 +3,10 @@ import { describe, it, expect } from "vitest";
 import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
 import type { CoreMatiereState } from "@/lib/coreExamPublication";
 
-const row = { id: "r1", quiz_type: "examen_blanc", quiz_id: "EB4", matiere_id: "securite", completed_at: "2026-09-26T10:00:30Z", score_obtenu: 18, score_max: 20, note_sur_20: 18, details: {} };
+const row = { id: "r1", quiz_type: "examen_blanc", quiz_id: "EB4", matiere_id: "securite", completed_at: "2026-09-26T10:00:30Z", score_obtenu: 18, score_max: 20, note_sur_20: 18, details: { reponses: { 1: ["A"] } } };
 const core = (o: Partial<CoreMatiereState>): CoreMatiereState => ({
   attemptId: "a1", examId: "EB4", matiereId: "securite", finishedAt: "2026-09-26T10:00:00Z",
-  qrcTotal: 0, qrcRestantes: 0, status: "definitif", note20: 11, pending: false, ...o,
+  qrcTotal: 0, qrcRestantes: 0, status: "definitif", note20: 11, pending: false, answers: { "securite:1": ["A"] }, ...o,
 });
 
 describe("Fonction commune note/statut (Mes notes = écran admin)", () => {
