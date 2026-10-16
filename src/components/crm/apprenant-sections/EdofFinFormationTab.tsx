@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Ligne = { id: string; mis_fin_formation: boolean; commentaire: string | null; created_at: string };
 
 /** Historique append-only : chaque changement ajoute une ligne, rien n'est écrasé. */
 export function EdofFinFormationTab({ apprenantId }: { apprenantId: string }) {
+  const qc = useQueryClient();
   const [lignes, setLignes] = useState<Ligne[] | null>(null);
   const [erreur, setErreur] = useState(false);
   const [commentaire, setCommentaire] = useState("");
@@ -44,7 +46,7 @@ export function EdofFinFormationTab({ apprenantId }: { apprenantId: string }) {
 
   return (
     <Card>
-      <CardHeader><CardTitle>EDOF — Mis en fin de formation</CardTitle></CardHeader>
+      <CardHeader><CardTitle>EDOF — Déjà validé ?</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         {erreur ? (
           <p className="text-destructive">Statut indisponible (erreur de lecture).</p>
@@ -54,15 +56,15 @@ export function EdofFinFormationTab({ apprenantId }: { apprenantId: string }) {
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">Statut actuel :</span>
             {!actuel ? <Badge variant="outline">Non renseigné</Badge>
-              : actuel.mis_fin_formation ? <Badge>OUI — mis en fin de formation</Badge>
-              : <Badge variant="destructive">NON — pas encore mis en fin de formation</Badge>}
+              : actuel.mis_fin_formation ? <Badge>OUI — déjà validé sur EDOF</Badge>
+              : <Badge variant="destructive">NON — pas encore validé sur EDOF</Badge>}
             {actuel && <span className="text-xs text-muted-foreground">le {fmt(actuel.created_at)}</span>}
           </div>
         )}
         <Input placeholder="Commentaire (facultatif)" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
         <div className="flex gap-2">
-          <Button disabled={envoi || erreur} onClick={() => enregistrer(true)}>Oui, mis en fin de formation</Button>
-          <Button disabled={envoi || erreur} variant="outline" onClick={() => enregistrer(false)}>Non</Button>
+          <Button disabled={envoi || erreur} onClick={() => enregistrer(true).then(() => qc.invalidateQueries({ queryKey: ["edof-fin-formation-dernier", apprenantId] }))}>Oui, déjà validé sur EDOF</Button>
+          <Button disabled={envoi || erreur} variant="outline" onClick={() => enregistrer(false).then(() => qc.invalidateQueries({ queryKey: ["edof-fin-formation-dernier", apprenantId] }))}>Non</Button>
         </div>
         {!!lignes?.length && (
           <div className="space-y-1">
