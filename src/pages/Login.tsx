@@ -26,9 +26,14 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return error instanceof Error ? error.message : fallback;
 };
 
+// Saisie gardée en mémoire (jamais stockée) : un échec de connexion ne vide pas les champs.
+const saisieMemoire = { email: '', password: '' };
+
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmailState] = useState(saisieMemoire.email);
+  const [password, setPasswordState] = useState(saisieMemoire.password);
+  const setEmail = (v: string) => { saisieMemoire.email = v; setEmailState(v); };
+  const setPassword = (v: string) => { saisieMemoire.password = v; setPasswordState(v); };
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'forgot'>('login');
@@ -92,6 +97,7 @@ export default function Login() {
 
       const userId = data.user?.id;
       if (!userId) throw new Error('Session utilisateur introuvable');
+      saisieMemoire.password = '';
 
       redirectAfterLogin();
     } catch (error: unknown) {
