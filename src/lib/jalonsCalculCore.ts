@@ -16,6 +16,8 @@ import {
 
 /** Version de la méthode de calcul enregistrée avec chaque calcul figé. */
 export const METHODE_CALCUL_JALONS = "jalons-calcul v3 — 13/10/2026";
+/** Formalités de fin de formation : exigées seulement si attribuées (même liste que l'espace élève). */
+export const FORMALITES_IDS = new Set([50, 51, 52, 53, 83, 84]);
 
 export interface CompletionCalc extends CompletionLite { completed_at?: string | null }
 
