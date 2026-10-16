@@ -16,7 +16,7 @@
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
 - Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
 - Practical training days = ceil(candidates/3) everywhere; why: stored max_per_day was wrong.
-- Practical booking page offers every day the admin typed VTC/TAXI (weekends too); why: learner sees the exact admin planning.
+- Practical booking offers every admin-typed VTC/TAXI day (weekends too); why: exact admin planning.
 - Practical notes: admin-only append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: preserve history and reject stale/cross-session writes.
 - Exam selectors share sessions/handler; all-dates paginates separately; planning names use CRM callback; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
@@ -24,9 +24,9 @@
 - Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters/CRM jalons share progressionModulesEleve, account proofs and Lyon waivers; attendance uses milestone ID; why: no divergence or leakage.
 - Signatures PDF/Contrôle ZIP share readonly planning loader; retain IDs/versions, unknown hours, abort read errors; EDOF targets shared, PDF counts images not timestamps; why: no fabricated proof or mutations.
-- Accès élève : créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
+- Accès élève créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
 - Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 ; why: anti-réécriture.
-- Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
+- Échecs validation : RPC `signaler_echec_validation_quiz` (clé publique), 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Live jalons list = attributed modules (modulesAttribuesDashboard); unattributed 50–53/83/84 dropped, attributed required, EB/practice kept, renormalised; why: match learner space.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
