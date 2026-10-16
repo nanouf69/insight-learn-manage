@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { EdofFinFormationTab } from "@/components/crm/apprenant-sections/EdofFinFormationTab";
+import { EdofStatutInfos } from "@/components/crm/apprenant-sections/EdofStatutInfos";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3, Trash2, AlertTriangle, Eye, Sun, Moon } from "lucide-react";
@@ -1187,7 +1188,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
           <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
-          <TabsTrigger value="edof-fin" className="text-sm">EDOF fin de formation</TabsTrigger>
+          <TabsTrigger value="edof-fin" className="text-sm">EDOF déjà validé</TabsTrigger>
           <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
           <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
           <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
@@ -1215,6 +1216,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         <div className="space-y-4">
           {activeTab === "infos" && (
             <div className="space-y-6">
+              <EdofStatutInfos apprenant={apprenant} onOuvrirOnglet={() => setActiveTab("edof-fin")} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
