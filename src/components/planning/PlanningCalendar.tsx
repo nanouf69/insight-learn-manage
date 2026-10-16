@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2, Users, AlertTriangle, CheckCircle2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { RapprochementAttenteCmaDialog } from "./RapprochementAttenteCmaDialog";
 import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -98,6 +99,7 @@ export function PlanningCalendar() {
   const [syncingSessions, setSyncingSessions] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
   const [configDay, setConfigDay] = useState<DayInfo | null>(null);
+  const [rapprochement, setRapprochement] = useState<ExamCandidate | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Aligne les sessions "pratique" sur le planning : crée les sessions manquantes
@@ -852,6 +854,8 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
           onSaved={() => setRefreshKey(k => k + 1)}
         />
       )}
+      <RapprochementAttenteCmaDialog attente={rapprochement?.attente ?? null} heure={rapprochement?.heure}
+        onClose={() => setRapprochement(null)} onDone={() => setRefreshKey(k => k + 1)} />
     </div>
   );
 }
