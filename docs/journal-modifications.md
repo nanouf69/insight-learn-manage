@@ -6,7 +6,7 @@ Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions 
 ## 2026-10-16 — Compteur validé et preuve QRC du même passage
 - Accueil : quiz depuis les identifiants/questions de la première ligne completed, sans compter un quiz jamais répondu ; ajouts et révisions n'étendent pas le périmètre validé ; score/heures inchangés.
 - QRC : passage unique du même compte/examen/matière/tentative connue/date ; comparaison avec le résultat précis (jamais EB__matière mutable), réponses QRC et contenu. Ancienne note si noyau tronqué ; aucune correction déterministe reconnue comme finale.
-- 75 tests fictifs PASS initialement ; build production PASS ; aucune écriture production, aucune IA/envoi/publication. Résultat réel UI non testé sur apprenant.
+- 87 tests fictifs PASS, typecheck et build production PASS ; aucune écriture production, aucune IA/envoi/publication. Résultat réel UI non testé sur apprenant.
 
 ## 2026-10-13 — Formulaires : PDF des signatures rassemblées
 - Demande explicite : nouveau téléchargement global des émargements réels, pratique incluse, dates de présence et horaires séparés de la date/heure de signature (Paris).
