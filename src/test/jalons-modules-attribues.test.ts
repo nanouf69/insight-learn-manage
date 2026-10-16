@@ -39,7 +39,7 @@ describe("jalons sur le parcours réellement attribué", () => {
     expect(reel[PRATIQUE_PHYSIQUE]).toBe(complet[PRATIQUE_PHYSIQUE]);
     expect(sum(calculerDureesPrevisionnelles("vtc", v, new Set(ATTR_VTC)))).toBe(BUDGET_CPF.vtc.total);
   });
-  it("tous modules attribués completed : 100 % pédagogique, module 50 et pratique restent à faire", () => {
+  it("tous modules attribués completed : 100 % pédagogique, 50 non attribué non exigé, pratique reste à faire", () => {
     const comp = ATTR_VTC.map((id) => ({ module_id: id, status: "completed" }));
     const avant = calc(comp);
     const apres = calc(comp, ATTR_VTC);
@@ -47,7 +47,9 @@ describe("jalons sur le parcours réellement attribué", () => {
     expect(apres.resultat.lignes.some((l) => l.moduleId === 60 || l.moduleId === 70)).toBe(false);
     const peda = apres.resultat.lignes.filter((l) => l.moduleId !== PRATIQUE_PHYSIQUE && l.poids > 0);
     expect(peda.every((l) => l.progression === 100)).toBe(true);
-    expect(apres.resultat.jalonsObligatoiresManquants).toContain(50);
+    expect(apres.resultat.lignes.some((l) => l.moduleId === 50)).toBe(false);
+    expect(apres.resultat.jalonsObligatoiresManquants).not.toContain(50);
+    expect(apres.resultat.lignes.find((l) => l.moduleId === PRATIQUE_PHYSIQUE)?.valide).toBe(false);
     expect(apres.resultat.taux).toBeLessThan(100);
     expect(apres.resultat.taux).toBeGreaterThan(avant.resultat.taux);
   });
@@ -59,5 +61,30 @@ describe("jalons sur le parcours réellement attribué", () => {
   it("le score n'intervient pas : in_progress compte la progression réalisée", () => {
     const r = calc([{ module_id: 2, status: "in_progress", progress: 50 }], ATTR_VTC);
     expect(r.resultat.lignes.find((l) => l.moduleId === 2)?.progression).toBe(50);
+  });
+});
+
+describe("même liste de modules que l'espace élève (16/10/2026)", () => {
+  const ATTR50 = modulesAttribuesDashboard("vtc-elearning", [26, 2, 3, 4, 35, 5, 8, 50]).map((m) => m.id);
+  const tout = (a: number[]) => a.map((id) => ({ module_id: id, status: "completed" }));
+  it("formalité attribuée et non faite reste exigée", () => {
+    const comp = tout(ATTR50.filter((id) => id !== 50));
+    expect(calc(comp, ATTR50).resultat.jalonsObligatoiresManquants).toContain(50);
+  });
+  it("formalité attribuée hors parcours par défaut (83) est exigée", () => {
+    const r = calc(tout(ATTR_VTC), [...ATTR_VTC, 83]);
+    expect(r.resultat.jalonsObligatoiresManquants).toContain(83);
+  });
+  it("aucune ligne hors modules attribués, sauf la pratique (jalon distinct)", () => {
+    const r = calc(tout(ATTR_VTC), ATTR_VTC);
+    const intro = new Set([1, 26, 31, 32, 33, 34]);
+    const hors = r.resultat.lignes.filter((l) => l.moduleId !== PRATIQUE_PHYSIQUE && !ATTR_VTC.includes(l.moduleId) && !intro.has(l.moduleId));
+    expect(hors).toEqual([]);
+  });
+  it("pratique non faite : jamais 100 %", () => {
+    expect(calc(tout(ATTR_VTC), ATTR_VTC).resultat.taux).toBeLessThan(100);
+  });
+  it("sans attribution (dossier exclu / figé) : 50 reste exigé comme avant", () => {
+    expect(calc(tout(ATTR_VTC)).resultat.jalonsObligatoiresManquants).toContain(50);
   });
 });

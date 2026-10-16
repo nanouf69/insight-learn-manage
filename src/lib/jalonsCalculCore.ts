@@ -16,6 +16,8 @@ import {
 
 /** Version de la méthode de calcul enregistrée avec chaque calcul figé. */
 export const METHODE_CALCUL_JALONS = "jalons-calcul v3 — 13/10/2026";
+/** Formalités de fin de formation : exigées seulement si attribuées (même liste que l'espace élève). */
+export const FORMALITES_IDS = new Set([50, 51, 52, 53, 83, 84]);
 
 export interface CompletionCalc extends CompletionLite { completed_at?: string | null }
 
@@ -39,9 +41,14 @@ export function assemblerCalculJalons(i: {
 }) {
   const attribues = i.modulesAttribues?.length ? new Set(i.modulesAttribues) : null;
   const ponderesFiliere = new Set(GRILLE_DUREES[i.filiere].map(([id]) => id));
-  // Retire seulement les modules PONDÉRÉS non attribués ; introduction, examens blancs,
-  // pratique et jalons obligatoires sans poids (50–53, 83, 84) restent dans le parcours.
-  const parcours = attribues ? i.parcours.filter((id) => !ponderesFiliere.has(id) || attribues.has(id)) : i.parcours;
+  // Même liste de modules que l'espace élève : retire les modules PONDÉRÉS et les formalités
+  // (50–53, 83, 84) non attribués. Une formalité attribuée reste exigée. Introduction,
+  // examens blancs et pratique (jalon virtuel distinct, jamais un module) restent.
+  const parcours = attribues
+    ? i.parcours.filter((id) => FORMALITES_IDS.has(id) ? attribues.has(id) : (!ponderesFiliere.has(id) || attribues.has(id)))
+    : i.parcours;
+  // Formalité attribuée et visible chez l'élève mais absente du parcours par défaut : exigée aussi.
+  if (attribues) for (const id of FORMALITES_IDS) if (attribues.has(id) && !parcours.includes(id)) parcours.push(id);
   i = { ...i, parcours };
   const volumes = construireVolumes(i.filiere, i.parcoursInitial, i.editorRows as any, i.initialDe, i.examens as any);
   const emargements = (i.emargements ?? []) as EmargementRowLike[];

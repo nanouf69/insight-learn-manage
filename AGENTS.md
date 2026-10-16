@@ -28,7 +28,7 @@
 - Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 ; why: anti-réécriture.
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
-- Live jalons weigh only attributed modules (modulesAttribuesDashboard), budget renormalised, EB/practice/50–53 kept; why: never penalise inaccessible modules.
+- Live jalons list = attributed modules (modulesAttribuesDashboard); unattributed 50–53/83/84 dropped, attributed required, EB/practice kept, renormalised; why: match learner space.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Completed quiz counters use first validated question IDs/answers via moduleQuizCounter; why: later revisions never regress proof.
 - Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
