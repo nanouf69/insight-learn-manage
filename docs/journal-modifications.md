@@ -3,6 +3,13 @@
 Entrées chronologiques conservées : ajouter une nouvelle entrée, ne pas remplacer les précédentes.
 Ce journal commence le 7 octobre 2026 ; il ne reconstitue pas les interventions antérieures.
 
+## 2026-10-16 — Contrelecture des formats legacy / snapshot
+- Comparaison depuis le snapshot complet prioritaire, ordre relatif 0/1, choix lettre/texte dans l'ordre et bonnes réponses explicitement vraies ; absence de false compatible, absence de choix QCM refusée. Réponses tronquées et divergences toujours refusées.
+- Harness opt-in SELECT → données en mémoire → fetchCoreMatiereStates / fetchPassagesV2NonFiables / attacherSourceUnique / coreFiablePourLigne / noteExamenAffichee / isExamAttemptPublicationPending ; aucune session élève ni écriture. Fixture de deux questions archivées sans identité/réponse élève.
+- 93 tests PASS (14 fichiers), dont le harness réellement exécuté. Thierno : compteur 15/15, 735/847 (87%) ; EB5/6 cinq attentes chacune → zéro. EB4 conserve six lignes en attente : tentative 2 T3P/gestion/français/réglementation VTC/réglementation VTC2 tronquées ; tentative 1 réglementation VTC2 sans preuve appariée. Anciennes notes visibles : zéro nouvellement masquée.
+- Sécurité routière EB5 Q6 / EB6 Q10 et Q20 : choix/bonnes réponses divergents, notes anciennes 12 et 19 conservées. EB1/2/3 aucune attente nouvelle.
+- Empreintes SHA256 canonisées avant/après SELECT identiques : 7 modules 4d4f035db205335c56885503b37eec7b916f100dd547be0379d1a6a912bc7314 ; 83 notes cd548ea9d1964958fb40352fe8f9f02590d28edb028ad3a561f086a7589e23bb ; 86 QRC 13720ec8192f14d12ba6d730628adef3d8de1dea4e892c9b33623feaee280bdb. Aucune IA, aucun envoi, aucune publication.
+
 ## 2026-10-16 — Compteur validé et preuve QRC du même passage
 - Accueil : quiz depuis les identifiants/questions de la première ligne completed, sans compter un quiz jamais répondu ; ajouts et révisions n'étendent pas le périmètre validé ; score/heures inchangés.
 - QRC : passage unique du même compte/examen/matière/tentative connue/date ; comparaison avec le résultat précis (jamais EB__matière mutable), réponses QRC et contenu. Ancienne note si noyau tronqué ; aucune correction déterministe reconnue comme finale.
