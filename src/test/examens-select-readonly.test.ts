@@ -30,11 +30,14 @@ it.skipIf(!file)("SELECT réel → chargeurs applicatifs → sources et attentes
   expect(states).not.toBeNull();
   const proofs = await fetchPassagesV2NonFiables(new Map([[id, states ?? []]]));
   expect(proofs).not.toBeNull();
+  const groups = new Map<string, any[]>();
   const results = tables.apprenant_quiz_results.filter((r: any) => /^EB[1-6]$/.test(r.quiz_id))
     .sort((a: any, b: any) => `${a.quiz_id}/${a.completed_at}/${a.matiere_id}`.localeCompare(`${b.quiz_id}/${b.completed_at}/${b.matiere_id}`))
     .map((r: any) => {
       const core = matchCoreState(states, r.quiz_id, r.matiere_id, r.completed_at, r.id, r.tentative, r.apprenant_id);
       const attached = attacherSourceUnique(r, states, proofs);
+      const groupKey = `${r.quiz_id}/${r.tentative}`;
+      groups.set(groupKey, [...(groups.get(groupKey) ?? []), attached]);
       const guarded = coreFiablePourLigne(states, r);
       expect(guarded?.pending ?? null).toEqual(attached.__core?.pending ?? null);
       return { exam: r.quiz_id, subject: r.matiere_id, attempt: r.tentative, date: r.completed_at,
@@ -48,6 +51,7 @@ it.skipIf(!file)("SELECT réel → chargeurs applicatifs → sources et attentes
   expect(counter.totalQuizzes).toBe(15);
   expect(fingerprint()).toBe(before);
   const report = { counts: { modules: tables.apprenant_module_completion.length, notes: tables.apprenant_quiz_results.length, qrc: tables.qrc_instances_v2.length }, unchangedInMemory: true,
-    counter: { done: counter.completedQuizzes, total: counter.totalQuizzes, score: modules[0].score_obtenu, max: modules[0].score_max }, results };
+    counter: { done: counter.completedQuizzes, total: counter.totalQuizzes, score: modules[0].score_obtenu, max: modules[0].score_max },
+    attempts: [...groups].map(([key, rows]) => ({ key, pending: isExamAttemptPublicationPending(rows) })), results };
   if (process.env.EXAM_SELECT_REPORT) writeFileSync(process.env.EXAM_SELECT_REPORT, JSON.stringify(report, null, 2));
 });

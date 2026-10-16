@@ -30,7 +30,7 @@ describe("Compteur accueil d’un module validé", () => {
 });
 
 const fin = "2026-09-27T13:28:27.779Z";
-const questions = [{ questionId: 1, type: "QRC", enonce: "Question" }, { questionId: 2, type: "QCM", enonce: "Choix" }];
+const questions = [{ questionId: 1, type: "QRC", enonce: "Question" }, { questionId: 2, type: "QCM", enonce: "Choix", choix: [{ lettre: "A", texte: "Une", correct: true }, { lettre: "B", texte: "Deux", correct: true }] }];
 const row = (o: any = {}) => ({ id: "r1", apprenant_id: "a", quiz_type: "examen_blanc", quiz_id: "EB5", matiere_id: "t3p", completed_at: "2026-09-27T13:28:28.272Z", score_obtenu: null, score_max: 20, note_sur_20: null, details: { qrc_pending_correction: true, reponses: { 1: "réponse complète", 2: ["B", "A"] }, questions, correctionsIA: { 1: { explication: "Correction déterministe", pointsObtenus: 1 } } }, ...o });
 const core = (o: Partial<CoreMatiereState> = {}): CoreMatiereState => ({ attemptId: "att", apprenantId: "a", examId: "EB5", matiereId: "t3p", finishedAt: fin, qrcTotal: 1, qrcRestantes: 0, status: "definitif", note20: 14.5, pending: false, questions, answers: { "t3p:1": "réponse complète", "t3p:2": ["A", "B"] }, qrcProofs: [{ questionId: "t3p:1", reponse: "réponse complète", etat: "corrigee", note: 1 }], ...o });
 const show = (r: any, states: CoreMatiereState[] | null, nf: Set<string> | null = new Set()) => noteExamenAffichee(attacherSourceUnique(r, states, nf));
