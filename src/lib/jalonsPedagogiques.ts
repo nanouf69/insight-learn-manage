@@ -18,6 +18,16 @@ import {
 export const FORMATIONS_JALONS_ELEARNING = new Set(["vtc-e", "taxi-e", "ta-e", "va-e"]);
 /** Exclusion demandée par l'utilisateur (16/10/2026) : ce dossier garde l'ancien calcul, aucun changement. */
 const EXCLUS_PARCOURS_ATTRIBUE = new Set(["c0844007-b999-4385-9665-918e5077c3b5"]);
+/**
+ * Exemption nominative demandée par l'utilisateur (16/10/2026) : Thierno Diallo n'a jamais eu
+ * la fin de formation (50–53) attribuée ni visible ; elle n'est plus exigée pour lui seul.
+ * Aucune validation fictive : pratique et autres jalons restent exigés sur preuve.
+ */
+export const EXEMPTION_FORMALITES_NON_ATTRIBUEES = new Set(["8313311b-3d05-4057-a8f8-3b4f7d64db46"]);
+export function parcoursAvecExemptionFormalites(apprenantId: string, parcours: number[], attribues: readonly number[]) {
+  if (!EXEMPTION_FORMALITES_NON_ATTRIBUEES.has(apprenantId)) return parcours;
+  return parcours.filter((id) => !(id >= 50 && id <= 53) || attribues.includes(id));
+}
 
 export function formationJalonsElearning(typeApprenant?: string | null, formationChoisie?: string | null) {
   const type = String(typeApprenant ?? "").toLowerCase().trim();
@@ -89,8 +99,9 @@ export async function chargerCalculJalons(params: {
   const examens = await examensModule.fetchLiveExamens();
   // Parcours réel attribué (même règle que l'écran élève, parents/enfants normalisés).
   const modulesAttribues = modulesAttribuesDashboard(formation, affectation.data.modules_autorises).map((m) => m.id);
+  const parcoursRetenu = parcoursAvecExemptionFormalites(params.apprenantId, parcours, modulesAttribues);
   return assemblerCalculJalons({
-    key, filiere, parcours, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
+    key, filiere, parcours: parcoursRetenu, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
     initialDe: (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),
     pratiqueDetails, emargements: (emargementsResult.data as any[]) ?? [], completions: (completionsResult.data as JalonCompletion[]) ?? [],
     heuresValidees: (heuresValideesResult.data as any[]) ?? [],
