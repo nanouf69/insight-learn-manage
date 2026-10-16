@@ -139,7 +139,7 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
       <svg
         ref={svgRef}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className={`block mx-auto touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring ${agrandi ? "h-[84vh]" : "h-[70vh]"} max-w-full`}
+        className={`block mx-auto touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring ${agrandi ? "h-[86vh]" : "h-[75vh]"} max-w-full`}
         role="application"
         aria-label={cible === "point" ? "Carte de Lyon : flèches pour déplacer le repère, Entrée pour placer" : "Carte de Lyon"}
         tabIndex={cible === "point" ? 0 : -1}
