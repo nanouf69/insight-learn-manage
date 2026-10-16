@@ -30,6 +30,6 @@
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Live jalons list = attributed modules (modulesAttribuesDashboard); unattributed 50–53/83/84 dropped, attributed required, EB/practice kept, renormalised; why: match learner space.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
-- Completed quiz counters use first validated question IDs/answers via moduleQuizCounter; why: later revisions never regress proof.
-- Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
+- Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
+- Shared theory attendance: sessionHeures with learner track; why: no cross-track denominators.
 - Subdirectories may have their own `AGENTS.md`: read first (theory-fail mail: `supabase/functions/_shared/`).
