@@ -2314,6 +2314,102 @@ export type Database = {
         }
         Relationships: []
       }
+      cma_planning_attente: {
+        Row: {
+          candidats_ids: string[]
+          created_at: string
+          created_by: string | null
+          date_examen: string
+          filiere: string
+          heure: string
+          id: string
+          jury: string
+          nom_normalise: string
+          nom_pdf: string
+          numero: number
+          prenom_pdf: string
+          raison: string | null
+          source_fichier: string
+          statut_rapprochement: string
+        }
+        Insert: {
+          candidats_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          date_examen: string
+          filiere: string
+          heure: string
+          id?: string
+          jury?: string
+          nom_normalise: string
+          nom_pdf: string
+          numero?: number
+          prenom_pdf: string
+          raison?: string | null
+          source_fichier?: string
+          statut_rapprochement: string
+        }
+        Update: {
+          candidats_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          date_examen?: string
+          filiere?: string
+          heure?: string
+          id?: string
+          jury?: string
+          nom_normalise?: string
+          nom_pdf?: string
+          numero?: number
+          prenom_pdf?: string
+          raison?: string | null
+          source_fichier?: string
+          statut_rapprochement?: string
+        }
+        Relationships: []
+      }
+      cma_planning_attente_rattachements: {
+        Row: {
+          apprenant_id: string
+          attente_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          ligne_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          attente_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ligne_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          attente_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ligne_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cma_planning_attente_rattachements_attente_id_fkey"
+            columns: ["attente_id"]
+            isOneToOne: true
+            referencedRelation: "cma_planning_attente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cma_planning_attente_rattachements_ligne_id_fkey"
+            columns: ["ligne_id"]
+            isOneToOne: false
+            referencedRelation: "cma_planning_lignes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cma_planning_lignes: {
         Row: {
           apprenant_id: string
@@ -8637,6 +8733,10 @@ export type Database = {
           passages: number
           qrc_repondues: number
         }[]
+      }
+      rattacher_attente_cma: {
+        Args: { p_apprenant: string; p_attente: string }
+        Returns: string
       }
       releve_demander_resolution: { Args: never; Returns: undefined }
       releve_figer_contenu: { Args: never; Returns: Json }

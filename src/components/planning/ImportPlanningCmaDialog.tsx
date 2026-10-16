@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
-  analyserPlanning, construireApercu,
+  analyserPlanning, construireApercu, normaliser,
   type FicheApprenant, type LigneDejaImportee, type LignePlanningPdf,
 } from "@/lib/cmaPlanningImport";
 import { extraireLignesPdf } from "@/lib/cmaPlanningPdfText";
@@ -75,22 +75,52 @@ export function ImportPlanningCmaDialog({ file, onClose, onImported }: Props) {
   const compte = (k: string, v: string) => apercu.filter((r) => (r as any)[k] === v).length;
   const selection = apercu.map((r, i) => ({ r, i })).filter(({ r, i }) => r.import === "a_ajouter" && coches[i] !== false);
 
+  // Lignes sans fiche certaine : enregistrées « À rapprocher » (jamais oubliées, aucun compte créé).
+  const enAttente = apercu.filter((r) => !r.apprenantId);
+
   const importer = async () => {
-    if (!selection.length) return;
+    if (!selection.length && !enAttente.length) return;
     setImporting(true);
     try {
-      const payload = selection.map(({ r }) => ({
+      const cleSansSource = (l: LignePlanningPdf) => [l.date, l.heure, l.filiere, l.jury ?? "", l.numero ?? 0, normaliser(`${l.nom} ${l.prenom}`)].join("|");
+      const { data: attentes, error: eA } = await supabase.from("cma_planning_attente")
+        .select("id, date_examen, heure, filiere, jury, numero, nom_normalise").gte("date_examen", lignes.reduce((m, l) => (l.date < m ? l.date : m), "9999"));
+      if (eA) throw eA;
+      const attenteParCle = new Map((attentes || []).map((a: any) => [[a.date_examen, a.heure, a.filiere, a.jury, a.numero, a.nom_normalise].join("|"), a.id as string]));
+
+      // 1) Choix manuel d'une ligne déjà en attente : rattachement atomique (pas de 2e entrée).
+      const viaAttente = selection.filter(({ r }) => attenteParCle.has(cleSansSource(r.ligne)));
+      for (const { r } of viaAttente) {
+        const { error } = await supabase.rpc("rattacher_attente_cma", { p_attente: attenteParCle.get(cleSansSource(r.ligne))!, p_apprenant: r.apprenantId! });
+        if (error) throw error;
+      }
+      const directs = selection.filter((x) => !viaAttente.includes(x));
+      const payload = directs.map(({ r }) => ({
         apprenant_id: r.apprenantId!, date_examen: r.ligne.date, heure: r.ligne.heure, filiere: r.ligne.filiere,
         jury: r.ligne.jury, numero: r.ligne.numero, prenom_pdf: r.ligne.prenom, nom_pdf: r.ligne.nom,
         raison_rapprochement: r.raison, source_fichier: file?.name ?? null,
       }));
-      const { error } = await supabase.from("cma_planning_lignes")
-        .upsert(payload, { onConflict: "apprenant_id,date_examen,heure,filiere", ignoreDuplicates: true });
-      if (error) throw error;
+      if (payload.length) {
+        const { error } = await supabase.from("cma_planning_lignes")
+          .upsert(payload, { onConflict: "apprenant_id,date_examen,heure,filiere", ignoreDuplicates: true });
+        if (error) throw error;
+      }
+      // 2) Lignes non rattachées : ajout idempotent, sauf si déjà en attente (même date/heure/filière/jury/n°/nom).
+      const nouvellesAttentes = enAttente.filter((r) => !attenteParCle.has(cleSansSource(r.ligne))).map((r) => ({
+        date_examen: r.ligne.date, heure: r.ligne.heure, filiere: r.ligne.filiere, jury: r.ligne.jury ?? "", numero: r.ligne.numero ?? 0,
+        prenom_pdf: r.ligne.prenom, nom_pdf: r.ligne.nom, nom_normalise: normaliser(`${r.ligne.nom} ${r.ligne.prenom}`),
+        statut_rapprochement: r.statut === "lie" ? "a_verifier" : r.statut, raison: r.raison,
+        candidats_ids: r.candidats.map((c) => c.id), source_fichier: file?.name ?? "",
+      }));
+      if (nouvellesAttentes.length) {
+        const { error } = await supabase.from("cma_planning_attente")
+          .upsert(nouvellesAttentes, { onConflict: "source_fichier,date_examen,heure,filiere,jury,numero,nom_normalise", ignoreDuplicates: true });
+        if (error) throw error;
+      }
       const d = await chargerDeja();
       setDeja(d);
-      const confirmes = payload.filter((p) => d.some((x) => x.apprenant_id === p.apprenant_id && x.date_examen === p.date_examen && x.heure === p.heure && x.filiere === p.filiere)).length;
-      toast.success(`${confirmes} candidat(s) ajouté(s) au planning (fiches élèves inchangées)`);
+      const confirmes = selection.filter(({ r }) => d.some((x) => x.apprenant_id === r.apprenantId && x.date_examen === r.ligne.date && x.heure === r.ligne.heure && x.filiere === r.ligne.filiere)).length;
+      toast.success(`${confirmes} candidat(s) ajouté(s) ; ${enAttente.length} ligne(s) « À rapprocher » conservée(s) au planning (fiches inchangées)`);
       onImported?.();
     } catch (e: any) {
       toast.error("Import refusé : " + (e?.message || "erreur"));
@@ -167,8 +197,8 @@ export function ImportPlanningCmaDialog({ file, onClose, onImported }: Props) {
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Fermer</Button>
-          <Button onClick={importer} disabled={importing || loading || !selection.length}>
-            {importing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Ajouter {selection.length} candidat(s) au planning
+          <Button onClick={importer} disabled={importing || loading || (!selection.length && !enAttente.length)}>
+            {importing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Ajouter {selection.length} candidat(s) + conserver {enAttente.length} « À rapprocher »
           </Button>
         </DialogFooter>
       </DialogContent>

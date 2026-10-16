@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2, Users, AlertTriangle, CheckCircle2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { RapprochementAttenteCmaDialog } from "./RapprochementAttenteCmaDialog";
 import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -44,6 +45,11 @@ type CandidateInfo = {
 };
 
 type ExamCandidate = {
+  apprenantId?: string;
+  /** Ligne du PDF CMA non rattachée (aucune fiche) : affichée « À rapprocher ». */
+  attente?: { id: string; candidatsIds: string[]; raison: string | null; prenom: string; nom: string };
+  /** Heure différente entre fiche et PDF : à vérifier, rien n'est écrasé. */
+  conflitHeure?: string;
   name: string;
   type: string;
   heure: string;
@@ -93,6 +99,7 @@ export function PlanningCalendar() {
   const [syncingSessions, setSyncingSessions] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
   const [configDay, setConfigDay] = useState<DayInfo | null>(null);
+  const [rapprochement, setRapprochement] = useState<ExamCandidate | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Aligne les sessions "pratique" sur le planning : crée les sessions manquantes
@@ -329,6 +336,7 @@ export function PlanningCalendar() {
           if (!examByDate[a.date_examen_pratique]) examByDate[a.date_examen_pratique] = [];
           const type = (a.formation_choisie || '').toLowerCase().includes('taxi') ? 'TAXI' : 'VTC';
           examByDate[a.date_examen_pratique].push({
+            apprenantId: a.id,
             name: `${a.prenom} ${a.nom}`,
             type,
             heure: a.heure_examen_pratique || 'À définir',
@@ -348,10 +356,29 @@ export function PlanningCalendar() {
         if (!a) return;
         const list = examByDate[l.date_examen] || (examByDate[l.date_examen] = []);
         const nom = `${a.prenom} ${a.nom}`;
-        // Même candidat déjà affiché ce jour-là (fiche) : pas de doublon, quelle que soit l'écriture de l'heure.
-        const existant = list.find(c => c.name === nom);
-        if (existant) { if (!existant.heure || existant.heure === 'À définir') existant.heure = l.heure; return; }
-        list.push({ name: nom, type: l.filiere === 'TAXI' ? 'TAXI' : 'VTC', heure: l.heure, telephone: a.telephone || '' });
+        // Dédoublonnage par identifiant de fiche uniquement (jamais par nom : homonymes).
+        const existant = list.find(c => c.apprenantId === l.apprenant_id);
+        if (existant) {
+          if (!existant.heure || existant.heure === 'À définir') existant.heure = l.heure;
+          else if (existant.heure.slice(0, 5) !== l.heure) existant.conflitHeure = `PDF CMA : ${l.heure} (fiche : ${existant.heure})`;
+          return;
+        }
+        list.push({ apprenantId: l.apprenant_id, name: nom, type: l.filiere === 'TAXI' ? 'TAXI' : 'VTC', heure: l.heure, telephone: a.telephone || '' });
+      });
+      // Lignes du PDF non rattachées : visibles « À rapprocher » tant qu'aucun rattachement admin n'existe.
+      const [{ data: attentes }, { data: rattachements }] = await Promise.all([
+        supabase.from("cma_planning_attente").select("id, date_examen, heure, filiere, prenom_pdf, nom_pdf, raison, candidats_ids")
+          .gte("date_examen", monthStart).lte("date_examen", monthEnd),
+        supabase.from("cma_planning_attente_rattachements").select("attente_id"),
+      ]);
+      const rattachees = new Set((rattachements || []).map((r: any) => r.attente_id));
+      (attentes || []).forEach((l: any) => {
+        if (rattachees.has(l.id)) return;
+        const list = examByDate[l.date_examen] || (examByDate[l.date_examen] = []);
+        list.push({
+          attente: { id: l.id, candidatsIds: l.candidats_ids || [], raison: l.raison, prenom: l.prenom_pdf, nom: l.nom_pdf },
+          name: `${l.prenom_pdf} ${l.nom_pdf}`, type: l.filiere === 'TAXI' ? 'TAXI' : 'VTC', heure: l.heure,
+        });
       });
       Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
 
@@ -635,6 +662,11 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
                               {candidates.map((c, i) => (
                                 <span key={i} className={`text-xs leading-tight block ${c.type === 'TAXI' ? 'text-amber-600' : 'text-primary'}`}>
                                   {c.name} <span className="text-[10px] font-medium">({c.type})</span>
+                                  {c.attente && (
+                                    <button type="button" className="ml-1 text-[10px] font-bold text-destructive underline"
+                                      onClick={(e) => { e.stopPropagation(); setRapprochement(c); }}>À rapprocher</button>
+                                  )}
+                                  {c.conflitHeure && <span className="block text-[10px] font-bold text-destructive">À vérifier — {c.conflitHeure}</span>}
                                   {c.telephone && (
                                     <span className="block text-[10px] text-muted-foreground font-medium">☎ {c.telephone}</span>
                                   )}
@@ -808,7 +840,7 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
           }
           initialSlots={
             configDay.expectedType === 'examen'
-              ? configDay.examCandidates.map(c => {
+              ? configDay.examCandidates.filter(c => !c.attente).map(c => {
                   const parts = c.name.split(' ');
                   return { apprenant_id: '', nom: parts.slice(1).join(' '), prenom: parts[0], heure: c.heure };
                 })
@@ -822,6 +854,8 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
           onSaved={() => setRefreshKey(k => k + 1)}
         />
       )}
+      <RapprochementAttenteCmaDialog attente={rapprochement?.attente ?? null} heure={rapprochement?.heure}
+        onClose={() => setRapprochement(null)} onDone={() => setRefreshKey(k => k + 1)} />
     </div>
   );
 }
