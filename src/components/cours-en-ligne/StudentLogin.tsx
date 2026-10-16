@@ -11,9 +11,15 @@ interface StudentLoginProps {
   onLogin: () => void;
 }
 
+// Saisie gardée en mémoire (jamais stockée) : un mauvais mot de passe ou un
+// réaffichage de la page ne vide pas les champs.
+const saisieMemoire = { email: "", password: "" };
+
 const StudentLogin = ({ onLogin }: StudentLoginProps) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmailState] = useState(saisieMemoire.email);
+  const [password, setPasswordState] = useState(saisieMemoire.password);
+  const setEmail = (v: string) => { saisieMemoire.email = v; setEmailState(v); };
+  const setPassword = (v: string) => { saisieMemoire.password = v; setPasswordState(v); };
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "change-password" | "forgot-password">("login");
@@ -41,6 +47,7 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
         return;
       }
 
+      saisieMemoire.password = "";
       onLogin();
     } catch {
       toast({
