@@ -47,6 +47,8 @@ export function assemblerCalculJalons(i: {
   const parcours = attribues
     ? i.parcours.filter((id) => FORMALITES_IDS.has(id) ? attribues.has(id) : (!ponderesFiliere.has(id) || attribues.has(id)))
     : i.parcours;
+  // Formalité attribuée et visible chez l'élève mais absente du parcours par défaut : exigée aussi.
+  if (attribues) for (const id of FORMALITES_IDS) if (attribues.has(id) && !parcours.includes(id)) parcours.push(id);
   i = { ...i, parcours };
   const volumes = construireVolumes(i.filiere, i.parcoursInitial, i.editorRows as any, i.initialDe, i.examens as any);
   const emargements = (i.emargements ?? []) as EmargementRowLike[];
