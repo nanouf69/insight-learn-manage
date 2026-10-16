@@ -336,6 +336,21 @@ export function PlanningCalendar() {
           });
         }
       });
+      // Lignes du planning CMA importées depuis le PDF (ajout seul, fiches inchangées).
+      const { data: cmaLignes } = await supabase
+        .from("cma_planning_lignes")
+        .select("apprenant_id, date_examen, heure, filiere")
+        .gte("date_examen", monthStart)
+        .lte("date_examen", monthEnd);
+      const appById = new Map(allApprenants.map((a: any) => [a.id, a]));
+      (cmaLignes || []).forEach((l: any) => {
+        const a: any = appById.get(l.apprenant_id);
+        if (!a) return;
+        const list = examByDate[l.date_examen] || (examByDate[l.date_examen] = []);
+        const nom = `${a.prenom} ${a.nom}`;
+        if (list.some(c => c.name === nom && c.heure === l.heure)) return;
+        list.push({ name: nom, type: l.filiere === 'TAXI' ? 'TAXI' : 'VTC', heure: l.heure, telephone: a.telephone || '' });
+      });
       Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
 
       // Fetch all planning configs and merge their day_time_slots (per-day AM/PM creneaux)

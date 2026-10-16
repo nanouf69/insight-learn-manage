@@ -2314,6 +2314,54 @@ export type Database = {
         }
         Relationships: []
       }
+      cma_planning_lignes: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string | null
+          date_examen: string
+          filiere: string
+          heure: string
+          id: string
+          jury: string | null
+          nom_pdf: string
+          numero: number | null
+          prenom_pdf: string
+          raison_rapprochement: string | null
+          source_fichier: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by?: string | null
+          date_examen: string
+          filiere: string
+          heure: string
+          id?: string
+          jury?: string | null
+          nom_pdf: string
+          numero?: number | null
+          prenom_pdf: string
+          raison_rapprochement?: string | null
+          source_fichier?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string | null
+          date_examen?: string
+          filiere?: string
+          heure?: string
+          id?: string
+          jury?: string | null
+          nom_pdf?: string
+          numero?: number | null
+          prenom_pdf?: string
+          raison_rapprochement?: string | null
+          source_fichier?: string | null
+        }
+        Relationships: []
+      }
       comptes_test_techniques: {
         Row: {
           apprenant_id: string

@@ -1,3 +1,4 @@
+import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
@@ -1541,6 +1542,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     }
   };
 
+  const [cmaPlanningFile, setCmaPlanningFile] = useState<File | null>(null);
   const handlePlanningUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1548,6 +1550,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       toast.error("Le fichier est trop volumineux (max 4 Mo)");
       return;
     }
+    // Import déterministe (sans IA) avec aperçu et rapprochement prudent.
+    setCmaPlanningFile(file);
+    if (planningFileInputRef.current) planningFileInputRef.current.value = '';
+    if (file) return;
     setUploadingPlanning(true);
     try {
       const fileName = `planning-${Date.now()}.pdf`;
@@ -2217,6 +2223,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
   return (
     <div className={fullscreen ? "fixed inset-0 z-40 bg-background overflow-auto p-6 space-y-6 animate-fade-in" : "space-y-6 animate-fade-in"} style={{ zoom }}>
+      <ImportPlanningCmaDialog file={cmaPlanningFile} onClose={() => setCmaPlanningFile(null)} onImported={() => { queryClient.invalidateQueries({ queryKey: ['apprenants'] }); }} />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>

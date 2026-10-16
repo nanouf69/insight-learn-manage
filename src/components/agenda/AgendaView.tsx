@@ -1,3 +1,4 @@
+import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -526,6 +527,7 @@ export function AgendaView() {
     return `${h}:${m === 0 ? '00' : '30'}`;
   };
 
+  const [cmaPlanningFile, setCmaPlanningFile] = useState<File | null>(null);
   const handlePlanningUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -533,6 +535,10 @@ export function AgendaView() {
       toast.error("Le fichier est trop volumineux (max 4 Mo)");
       return;
     }
+    // Import déterministe (sans IA) avec aperçu et rapprochement prudent.
+    setCmaPlanningFile(file);
+    if (planningFileInputRef.current) planningFileInputRef.current.value = '';
+    if (file) return;
     setUploadingPlanning(true);
     try {
       const fileName = `planning-${Date.now()}.pdf`;
@@ -569,6 +575,7 @@ export function AgendaView() {
 
   return (
     <Card className="animate-fade-in">
+      <ImportPlanningCmaDialog file={cmaPlanningFile} onClose={() => setCmaPlanningFile(null)} onImported={() => { loadBlocks(); }} />
       <CardHeader>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <CardTitle className="flex items-center gap-2">
