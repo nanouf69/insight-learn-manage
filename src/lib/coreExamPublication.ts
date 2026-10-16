@@ -32,6 +32,7 @@ export interface CoreMatiereState {
   answers?: Record<string, unknown>;
   historicalDetails?: any;
   questions?: any[];
+  candidateResultIds?: string[];
 }
 
 /** Fenêtre de rapprochement entre la fin du passage et la ligne de résultat. */
@@ -72,13 +73,14 @@ export async function fetchCoreMatiereStatesBulk(
   try {
     for (let i = 0; i < ids.length; i += CHUNK) {
       const chunk = ids.slice(i, i + CHUNK);
-      const [attempts, qrcs, results, neutres] = await Promise.all([
+      const [attempts, qrcs, results, neutres, legacyResults] = await Promise.all([
         all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, questions:snapshot->questions, result_id:snapshot->source_historique->>result_id, historique:snapshot->source_historique, tentative:snapshot->>tentative", chunk, (q) => q.eq("etat", "terminee")),
         all("qrc_instances_v2", "attempt_id, question_id, reponse, etat, note", chunk),
         all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes", chunk),
         // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
         // jamais prises en compte dans la notation ni l'affichage.
         all("core_tentatives_neutralisees", "attempt_id", chunk),
+        all("apprenant_quiz_results", "id, apprenant_id, quiz_id, matiere_id, completed_at, tentative", chunk),
       ]);
       const neutralises = new Set(neutres.map((n) => String(n.attempt_id)));
       const qrcByAttempt = new Map<string, { total: number; pending: number }>();
@@ -128,6 +130,7 @@ export async function fetchCoreMatiereStatesBulk(
             tentative: a.tentative != null ? Number(a.tentative) : a.historique?.tentative ?? null,
             historicalDetails: a.historique?.details,
             questions: a.questions,
+            candidateResultIds: legacyResults.filter((l) => String(l.apprenant_id) === key && l.quiz_id === a.exam_id && l.matiere_id === a.matiere && Math.abs(new Date(l.completed_at).getTime() - new Date(a.finished_at).getTime()) <= CORE_MATCH_WINDOW_MS && (a.tentative == null || l.tentative == null || Number(a.tentative) === Number(l.tentative))).map((l) => String(l.id)),
             qrcProofs: qrcs.filter((q) => q.attempt_id === a.attempt_id).map((q) => ({ questionId: String(q.question_id), reponse: q.reponse, etat: q.etat, note: q.note == null ? null : Number(q.note) })),
           });
           out.set(key, list);
@@ -166,6 +169,7 @@ export function matchCoreState(
     if (s.examId !== String(quizId) || s.matiereId !== String(matiereId)) continue;
     // Un passage copié est lié à SA ligne d'origine : jamais rapproché par l'heure.
     if (s.resultId) continue;
+    if (resultId && s.candidateResultIds && (s.candidateResultIds.length !== 1 || s.candidateResultIds[0] !== String(resultId))) continue;
     if (tentative != null && s.tentative != null && Number(tentative) !== s.tentative) continue;
     const diff = Math.abs(new Date(s.finishedAt).getTime() - t);
     if (diff <= CORE_MATCH_WINDOW_MS) candidates.push(s);

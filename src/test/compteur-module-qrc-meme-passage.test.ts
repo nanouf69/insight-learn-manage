@@ -51,6 +51,7 @@ describe("QRC : preuve du même passage", () => {
   it("autre tentative et ambiguïté : rien emprunté", () => {
     expect(show(row({ tentative: 2 }), [core({ tentative: 1 })]).etat).toBe("lecture_impossible");
     expect(show(row(), [core(), core({ attemptId: "att2", finishedAt: "2026-09-27T13:28:29Z" })]).etat).toBe("lecture_impossible");
+    expect(show(row(), [core({ candidateResultIds: ["r1", "r2"] })]).etat).toBe("lecture_impossible");
   });
   it("réponse tronquée ou QRC divergente : note noyau masquée, préfixe déterministe refusé", () => {
     expect(show(row(), [core({ answers: { "t3p:1": "r", "t3p:2": ["A", "B"] } })])).toMatchObject({ etat: "en_attente", source: "ancien" });

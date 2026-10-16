@@ -59,7 +59,9 @@ export function verifierContenuPassage(core: CoreMatiereState, details: any): bo
   const moteur = core.resultId ? core.historicalDetails?.snapshot?.questions ?? core.historicalDetails?.questions : core.questions;
   if (!Array.isArray(legacy) || !legacy.length || !Array.isArray(moteur) || !moteur.length) return false;
   const key = (q: any) => String(q.questionId ?? q.id ?? "").replace(`${core.matiereId}:`, "");
-  const same = (a: any, b: any) => String(a.type).toUpperCase() === String(b.type).toUpperCase() && String(a.enonce ?? "").trim() === String(b.enonce ?? "").trim();
+  const same = (a: any, b: any) => String(a.type).toUpperCase() === String(b.type).toUpperCase() && String(a.enonce ?? "").trim() === String(b.enonce ?? "").trim()
+    && JSON.stringify(a.choix ?? []) === JSON.stringify(b.choix ?? [])
+    && String(a.image ?? "") === String(b.image ?? "");
   return legacy.length === moteur.length && legacy.every((q: any) => {
     const matches = moteur.filter((m: any) => key(m) === key(q));
     return matches.length === 1 && same(q, matches[0]);

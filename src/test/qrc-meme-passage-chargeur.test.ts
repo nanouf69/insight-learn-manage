@@ -20,6 +20,7 @@ beforeEach(() => {
     qrc_instances_v2: [{ attempt_id: "att", question_id: "t3p:1", reponse: "réponse", etat: "corrigee", note: 1 }],
     core_exam_results: [{ attempt_id: "att", result_revision: 1, status: "definitif", score: 14.5, total: 20, qrc_restantes: 0 }],
     core_tentatives_neutralisees: [], answer_state: [{ attempt_id: "att", question_id: "t3p:1", valeur: "réponse" }],
+    apprenant_quiz_results: [row],
   });
 });
 async function chargerEtAfficher() {
