@@ -197,8 +197,8 @@ export function ImportPlanningCmaDialog({ file, onClose, onImported }: Props) {
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Fermer</Button>
-          <Button onClick={importer} disabled={importing || loading || !selection.length}>
-            {importing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Ajouter {selection.length} candidat(s) au planning
+          <Button onClick={importer} disabled={importing || loading || (!selection.length && !enAttente.length)}>
+            {importing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Ajouter {selection.length} candidat(s) + conserver {enAttente.length} « À rapprocher »
           </Button>
         </DialogFooter>
       </DialogContent>
