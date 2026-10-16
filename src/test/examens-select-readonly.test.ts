@@ -38,7 +38,7 @@ it.skipIf(!file)("SELECT réel → chargeurs applicatifs → sources et attentes
       const guarded = coreFiablePourLigne(states, r);
       expect(guarded?.pending ?? null).toEqual(attached.__core?.pending ?? null);
       return { exam: r.quiz_id, subject: r.matiere_id, attempt: r.tentative, date: r.completed_at,
-        ...noteExamenAffichee(attached), pending: isExamAttemptPublicationPending(attached.__core, r.details),
+        ...noteExamenAffichee(attached), pending: isExamAttemptPublicationPending([attached]),
         contentProof: core ? verifierContenuPassage(core, r.details) : null,
         answerProof: core ? verifierPassageV2(core, r.details?.reponses) : null };
     });
