@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
 import type { CoreMatiereState } from "@/lib/coreExamPublication";
 
-const questions = [{ id: 1, type: "QCM", enonce: "Question" }];
+const questions = [{ id: 1, type: "QCM", enonce: "Question", choix: [{ lettre: "A", texte: "Réponse", correct: true }, { lettre: "B", texte: "Autre", correct: false }] }];
 const row = { id: "r1", quiz_type: "examen_blanc", quiz_id: "EB4", matiere_id: "securite", completed_at: "2026-09-26T10:00:30Z", score_obtenu: 18, score_max: 20, note_sur_20: 18, details: { reponses: { 1: ["A"] }, questions } };
 const core = (o: Partial<CoreMatiereState>): CoreMatiereState => ({
   attemptId: "a1", examId: "EB4", matiereId: "securite", finishedAt: "2026-09-26T10:00:00Z",

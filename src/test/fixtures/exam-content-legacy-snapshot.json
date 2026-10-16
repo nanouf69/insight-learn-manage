@@ -1,0 +1,137 @@
+{
+  "legacyQuestions": [
+    {
+      "type": "QCM",
+      "enonce": "I was told to say anything concerning this new advert :",
+      "questionId": 1,
+      "reponseCorrecte": [
+        "C"
+      ]
+    },
+    {
+      "type": "QCM",
+      "enonce": "Bonjour, êtes-vous disponible pour m'emmener à la gare ?",
+      "questionId": 2,
+      "reponseCorrecte": [
+        "C"
+      ]
+    }
+  ],
+  "snapshot": {
+    "questions": [
+      {
+        "choix": [
+          {
+            "correct": false,
+            "lettre": "A",
+            "texte": "je n'avais rien à dire concernant ce nouvel adversaire"
+          },
+          {
+            "correct": false,
+            "lettre": "B",
+            "texte": "je n'ai rien à dire à propos de ce nouvel avertissement"
+          },
+          {
+            "correct": true,
+            "lettre": "C",
+            "texte": "on m'a dis de ne rien dire de cette nouvelle publicité"
+          }
+        ],
+        "enonce": "I was told to say anything concerning this new advert :",
+        "id": 1,
+        "image": null,
+        "imageSize": null,
+        "ordre": 0,
+        "points": 1,
+        "type": "QCM"
+      },
+      {
+        "choix": [
+          {
+            "correct": false,
+            "lettre": "A",
+            "texte": "hello, are you available to make me to the station ?"
+          },
+          {
+            "correct": false,
+            "lettre": "B",
+            "texte": "hello, are you disponible to get me to the station ?"
+          },
+          {
+            "correct": true,
+            "lettre": "C",
+            "texte": "hello, are you available to get me to the station ?"
+          },
+          {
+            "correct": false,
+            "lettre": "D",
+            "texte": "hello, are you disponible to make me to the station ?"
+          }
+        ],
+        "enonce": "Bonjour, êtes-vous disponible pour m'emmener à la gare ?",
+        "id": 2,
+        "image": null,
+        "imageSize": null,
+        "ordre": 1,
+        "points": 1,
+        "type": "QCM"
+      }
+    ]
+  },
+  "coreQuestions": [
+    {
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "je n'avais rien à dire concernant ce nouvel adversaire"
+        },
+        {
+          "lettre": "B",
+          "texte": "je n'ai rien à dire à propos de ce nouvel avertissement"
+        },
+        {
+          "correct": true,
+          "lettre": "C",
+          "texte": "on m'a dis de ne rien dire de cette nouvelle publicité"
+        }
+      ],
+      "enonce": "I was told to say anything concerning this new advert :",
+      "id": "anglais:1",
+      "image": null,
+      "matiere": "anglais",
+      "ordre": 1,
+      "points": 1,
+      "reponseQRC": null,
+      "type": "QCM"
+    },
+    {
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "hello, are you available to make me to the station ?"
+        },
+        {
+          "lettre": "B",
+          "texte": "hello, are you disponible to get me to the station ?"
+        },
+        {
+          "correct": true,
+          "lettre": "C",
+          "texte": "hello, are you available to get me to the station ?"
+        },
+        {
+          "lettre": "D",
+          "texte": "hello, are you disponible to make me to the station ?"
+        }
+      ],
+      "enonce": "Bonjour, êtes-vous disponible pour m'emmener à la gare ?",
+      "id": "anglais:2",
+      "image": null,
+      "matiere": "anglais",
+      "ordre": 2,
+      "points": 1,
+      "reponseQRC": null,
+      "type": "QCM"
+    }
+  ]
+}

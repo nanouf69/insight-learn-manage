@@ -11,7 +11,7 @@
 - Affichage module apprenant : via `getLearnerModuleDisplayState`/`isModuleDoneForDisplay` ; une ligne serveur `completed` reste « Terminé » ; compteurs complets sans serveur = « Validation en cours » ; why: jamais rétrogradé ni faux statut.
 - `trg_garde_correction_admin_quiz` refuses (42501) learner writes to admin/manual-corrected quiz scores; why: pending device notes never overwrite admin corrections.
 - Quiz de module : résultat « OK » affiché seulement après envoi + relecture + submitQuizAttempt ; révision d’un quiz validé sous `module_X_revision_exo_Y` (jamais la ligne validée) ; why: un quiz ne doit jamais paraître validé sans preuve serveur, et une révision ne doit jamais toucher une validation.
-- Exam source uses noteExamenAffichee and passagesV2NonFiables: unique same-attempt identity, matching answers/QRC/content or legacy fallback; why: no borrowed correction/truncated score.
+- Exam source uses noteExamenAffichee and passagesV2NonFiables: unique same-attempt identity, matching answers/QRC/content or legacy fallback; compare full snapshots with relative order and explicit correct choices (omitted false allowed, missing QCM choices rejected); why: no borrowed correction/truncated score or format-only rejection.
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
 - Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.

@@ -59,13 +59,33 @@ export function verifierContenuPassage(core: CoreMatiereState, details: any): bo
   const moteur = core.resultId ? core.historicalDetails?.snapshot?.questions ?? core.historicalDetails?.questions : core.questions;
   if (!Array.isArray(legacy) || !legacy.length || !Array.isArray(moteur) || !moteur.length) return false;
   const key = (q: any) => String(q.questionId ?? q.id ?? "").replace(`${core.matiereId}:`, "");
-  const same = (a: any, b: any) => String(a.type).toUpperCase() === String(b.type).toUpperCase() && String(a.enonce ?? "").trim() === String(b.enonce ?? "").trim()
-    && JSON.stringify(a.choix ?? []) === JSON.stringify(b.choix ?? [])
-    && String(a.image ?? "") === String(b.image ?? "");
-  return legacy.length === moteur.length && legacy.every((q: any) => {
-    const matches = moteur.filter((m: any) => key(m) === key(q));
-    return matches.length === 1 && same(q, matches[0]);
-  });
+  const text = (v: unknown) => String(v ?? "").trim();
+  // Snapshot formats use zero/one-based ordre. Compare relative order, not its base.
+  const ordered = (qs: any[]) => qs.every((q) => Number.isFinite(q.ordre))
+    ? [...qs].sort((a, b) => a.ordre - b.ordre) : qs;
+  const left = ordered(legacy), right = ordered(moteur);
+  const sameChoices = (a: any, b: any) => {
+    if (!Array.isArray(a.choix) || !Array.isArray(b.choix) || !a.choix.length || a.choix.length !== b.choix.length) return false;
+    // Native snapshots omit false, but MUST retain at least one explicit true.
+    // No choices in buildQuestionDetails is missing evidence, never an empty set.
+    if (!a.choix.some((c: any) => c.correct === true) || !b.choix.some((c: any) => c.correct === true)) return false;
+    return a.choix.every((c: any, i: number) => {
+      const d = b.choix[i];
+      return text(c.lettre) === text(d.lettre) && text(c.texte) === text(d.texte)
+        && (c.correct === true) === (d.correct === true);
+    });
+  };
+  const same = (a: any, b: any) => {
+    const type = text(a.type).toUpperCase();
+    if (type !== text(b.type).toUpperCase() || !text(a.enonce) || text(a.enonce) !== text(b.enonce)
+      || text(a.image) !== text(b.image)) return false;
+    if (type === "QCM") return sameChoices(a, b);
+    if (type === "QRC") return text(a.reponseQRC) === text(b.reponseQRC);
+    return false;
+  };
+  return left.length === right.length && new Set(left.map(key)).size === left.length
+    && new Set(right.map(key)).size === right.length
+    && left.every((q: any, i: number) => key(q) === key(right[i]) && same(q, right[i]));
 }
 
 /**

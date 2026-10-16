@@ -1,6 +1,7 @@
 # Feuille de route
 
 ## Compteurs validés et preuves QRC — 16/10
+- [x] Revue formats legacy/snapshots : harness SELECT réel avant/après, compatibilité stricte et 93 tests PASS ; EB5/6 débloqués, EB4 tronqué conservé ; 7/83/86 empreintes inchangées, sans publication.
 - [x] Corriger le compteur accueil depuis les identités du relevé validé, score et heures inchangés.
 - [x] Rapprocher strictement le même passage et ses réponses pour la source QRC commune élève/admin ; ambiguïtés et erreurs non vérifiables.
 - [x] Tests fictifs, lectures production SELECT uniquement et compilation ; aucune publication. Limite : QRC tronquée sans validation équivalente reste en attente.
