@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
 import { computeReussiForResult, isExamAttemptPublicationPending } from "./exam-helpers";
 import { fetchCoreMatiereStatesBulk, matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
+import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
+import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 
 interface SessionOption {
   id: string;
@@ -219,12 +221,13 @@ const ResultatsSessionPage = () => {
           .filter((r: any) => r.quiz_type === "examen_blanc" || r.quiz_type === "examen_blanc_taxi")
           .map((r: any) => String(r.apprenant_id))));
         const coreMap = await fetchCoreMatiereStatesBulk(examAppIds, { inclureNeutralises: true });
+        const proofs = coreMap === null ? null : await fetchPassagesV2NonFiables(coreMap);
         const rowsWithCore = quizRows.map((r: any) => ({
           ...r,
           // coreMap null = lecture impossible → ligne marquée comme en attente (fail-closed)
-          __core: coreMap === null
+          __core: coreMap === null || proofs === null
             ? { pending: true }
-            : matchCoreState(coreMap.get(String(r.apprenant_id)) ?? [], r.quiz_id, r.matiere_id, r.completed_at, r.id),
+            : coreFiablePourLigne(coreMap.get(String(r.apprenant_id)) ?? [], r),
         }))
           // Ligne liée à une tentative neutralisée (technique/incomplète) : conservée
           // en base, jamais comptée comme résultat.

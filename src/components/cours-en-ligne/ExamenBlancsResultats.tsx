@@ -29,7 +29,8 @@ import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoire
 import { isExamAttemptPublicationPending } from "./exam-helpers";
 import { choisirTentativeRevision, revisionBaseId } from "@/lib/revisionFaussesTentative";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
-import { fetchCoreMatiereStates, matchCoreState, type CoreMatiereState } from "@/lib/coreExamPublication";
+import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
+import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -82,7 +83,7 @@ function EcranResultats({
   // Les emplacements vides (matière sans résultat) restent à leur index : jamais de plantage.
   resultats = useMemo(() => resultatsSource.map((r) => (r == null ? r : {
     ...r,
-    __core: matchCoreState(coreStates, r.quizId ?? examen?.id, r.matiereId, r.completedAt, r.resultId),
+    __core: coreFiablePourLigne(coreStates, { ...r, quizId: r.quizId ?? examen?.id }),
   })), [resultatsSource, coreStates, examen?.id]);
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(

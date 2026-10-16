@@ -63,6 +63,8 @@ function safeQrcAnswerText(value: unknown): string {
 }
 import { auditQrcCoherence, reportQrcIncoherence } from "@/lib/examPassageIdentity";
 import { fetchCoreMatiereStates, matchCoreState } from "@/lib/coreExamPublication";
+import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
+import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMatiereRecovery";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 
@@ -871,8 +873,9 @@ export default function ExamensBlancsPage({
       try {
         const coreStates = await fetchCoreMatiereStates(apprenantId);
         if (coreStates === null) return;
+        if (await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]])) === null) return;
         const coherence = auditQrcCoherence(data as any[], {
-          couvertParNouveauMoteur: (r: any) => !!matchCoreState(coreStates, r?.quiz_id, r?.matiere_id, r?.completed_at, r?.id),
+          couvertParNouveauMoteur: (r: any) => !!coreFiablePourLigne(coreStates, r),
         });
         if (coherence.incoherences.length > 0) void reportQrcIncoherence(coherence, "examens-blancs/resultats");
       } catch { /* la surveillance ne doit jamais bloquer l'affichage */ }

@@ -11,8 +11,7 @@
 - Affichage module apprenant : via `getLearnerModuleDisplayState`/`isModuleDoneForDisplay` ; une ligne serveur `completed` reste « Terminé » ; compteurs complets sans serveur = « Validation en cours » ; why: jamais rétrogradé ni faux statut.
 - `trg_garde_correction_admin_quiz` refuses (42501) learner writes to admin/manual-corrected quiz scores; why: pending device notes never overwrite admin corrections.
 - Quiz de module : résultat « OK » affiché seulement après envoi + relecture + submitQuizAttempt ; révision d’un quiz validé sous `module_X_revision_exo_Y` (jamais la ligne validée) ; why: un quiz ne doit jamais paraître validé sans preuve serveur, et une révision ne doit jamais toucher une validation.
-- Note/statut d'examen blanc affichés via `src/lib/noteExamenAffichee.ts` (attacherSourceUnique + noteExamenAffichee) dans « Mes notes » et la fiche admin ; why: les deux écrans ne doivent jamais diverger.
-- Passages du nouveau moteur « non fiables » repérés à l'affichage par `src/lib/passagesV2NonFiables.ts` : note de l'ancien système + mention ; why: le moteur n'a parfois gardé que la première valeur.
+- Exam source uses noteExamenAffichee and passagesV2NonFiables: unique same-attempt identity, matching answers/QRC/content or legacy fallback; why: no borrowed correction/truncated score.
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
 - Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
@@ -30,5 +29,6 @@
 - Échecs de validation : RPC `signaler_echec_validation_quiz` (clé publique) ; 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
+- Completed quiz counters use first validated question IDs/answers via moduleQuizCounter; why: later revisions never regress proof.
 - Shared theory attendance uses sessionHeures with the learner track; why: prevent cross-track hour denominators.
 - Subdirectories may have their own `AGENTS.md`: read first (theory-fail mail: `supabase/functions/_shared/`).

@@ -36,6 +36,38 @@ export function estPassageConcerne(s: Pick<CoreMatiereState, "finishedAt" | "res
   return Number.isFinite(t) && t >= new Date(DEBUT_DEFAUT_SYNCHRO_V2).getTime();
 }
 
+/** Same-attempt proof: result answers must match that attempt; missing proof is unreliable. */
+export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown): "fiable" | "non_fiable" | "non_verifiable" {
+  if (!reponsesLigne || typeof reponsesLigne !== "object" || Array.isArray(reponsesLigne)) return "non_verifiable";
+  const source = core.resultId ? core.historicalDetails?.reponses : core.answers;
+  if (!source) return "non_verifiable";
+  const nonVides = Object.values(reponsesLigne as Record<string, unknown>).some((v) => normaliserValeurReponse(v) != null);
+  if (!nonVides) return "non_verifiable";
+  const moteur = core.resultId ? Object.fromEntries(Object.entries(source).map(([id, v]) => [`${core.matiereId}:${id}`, v])) : source;
+  if (estPassageNonFiable(core.matiereId, reponsesLigne as Record<string, unknown>, moteur)) return "non_fiable";
+  if (core.qrcTotal > 0 && (!core.qrcProofs || core.qrcProofs.length !== core.qrcTotal)) return "non_verifiable";
+  for (const q of core.qrcProofs ?? []) {
+    const id = q.questionId.startsWith(`${core.matiereId}:`) ? q.questionId.slice(core.matiereId.length + 1) : q.questionId;
+    if (!Object.prototype.hasOwnProperty.call(reponsesLigne, id)) return "non_verifiable";
+    if (normaliserValeurReponse((reponsesLigne as Record<string, unknown>)[id]) !== normaliserValeurReponse(q.reponse)) return "non_fiable";
+  }
+  return "fiable";
+}
+
+export function verifierContenuPassage(core: CoreMatiereState, details: any): boolean {
+  const legacy = details?.snapshot?.questions ?? details?.questions;
+  const moteur = core.resultId ? core.historicalDetails?.snapshot?.questions ?? core.historicalDetails?.questions : core.questions;
+  if (!Array.isArray(legacy) || !legacy.length || !Array.isArray(moteur) || !moteur.length) return false;
+  const key = (q: any) => String(q.questionId ?? q.id ?? "").replace(`${core.matiereId}:`, "");
+  const same = (a: any, b: any) => String(a.type).toUpperCase() === String(b.type).toUpperCase() && String(a.enonce ?? "").trim() === String(b.enonce ?? "").trim()
+    && JSON.stringify(a.choix ?? []) === JSON.stringify(b.choix ?? [])
+    && String(a.image ?? "") === String(b.image ?? "");
+  return legacy.length === moteur.length && legacy.every((q: any) => {
+    const matches = moteur.filter((m: any) => key(m) === key(q));
+    return matches.length === 1 && same(q, matches[0]);
+  });
+}
+
 /**
  * Fonction pure : true si au moins une réponse non vide de la fiche élève est
  * absente ou différente dans le nouveau moteur.
@@ -67,7 +99,7 @@ export async function fetchPassagesV2NonFiables(
   const out = new Set<string>();
   const candidats: { apprenantId: string; s: CoreMatiereState }[] = [];
   statesParApprenant.forEach((list, apprenantId) => {
-    (list || []).forEach((s) => { if (estPassageConcerne(s)) candidats.push({ apprenantId, s }); });
+    (list || []).forEach((s) => { if (!s.resultId) candidats.push({ apprenantId, s }); });
   });
   if (candidats.length === 0) return out;
   try {
@@ -91,33 +123,9 @@ export async function fetchPassagesV2NonFiables(
         if (!data || data.length < PAGE) break;
       }
     }
-    const fiche = new Map<string, { reponses: Record<string, unknown>; updatedAt: string }>();
-    const apprenantIds = Array.from(new Set(candidats.map((c) => c.apprenantId)));
-    const exerciceIds = Array.from(new Set(candidats.map((c) => `${c.s.examId}__${c.s.matiereId}`)));
-    for (let i = 0; i < apprenantIds.length; i += 100) {
-      const chunk = apprenantIds.slice(i, i + 100);
-      for (let from = 0; ; from += PAGE) {
-        const { data, error } = await supabase
-          .from("reponses_apprenants")
-          .select("apprenant_id, exercice_id, reponses, updated_at")
-          .in("apprenant_id", chunk)
-          .in("exercice_id", exerciceIds)
-          .range(from, from + PAGE - 1);
-        if (error) throw error;
-        ((data as any[]) || []).forEach((r) => {
-          const key = `${r.apprenant_id}|${r.exercice_id}`;
-          const prev = fiche.get(key);
-          if (!prev || String(r.updated_at) > prev.updatedAt) {
-            fiche.set(key, { reponses: (r.reponses as any) || {}, updatedAt: String(r.updated_at) });
-          }
-        });
-        if (!data || data.length < PAGE) break;
-      }
-    }
-    candidats.forEach(({ apprenantId, s }) => {
-      const f = fiche.get(`${apprenantId}|${s.examId}__${s.matiereId}`);
-      if (f && estPassageNonFiable(s.matiereId, f.reponses, moteur.get(s.attemptId) || {})) out.add(s.attemptId);
-    });
+    // Enrich the precise attempt. Comparison is made against EACH result's
+    // frozen answers in attacherSourceUnique, never a mutable EB__subject row.
+    candidats.forEach(({ s }) => { s.answers = moteur.get(s.attemptId) || {}; });
     return out;
   } catch (e) {
     console.warn("[passagesV2NonFiables] lecture impossible:", e);

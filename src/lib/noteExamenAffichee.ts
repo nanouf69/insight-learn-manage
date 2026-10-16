@@ -1,6 +1,6 @@
 import { matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
-import { MENTION_NOTE_RECALCULEE } from "@/lib/passagesV2NonFiables";
+import { MENTION_NOTE_RECALCULEE, verifierPassageV2, verifierContenuPassage } from "@/lib/passagesV2NonFiables";
 
 /**
  * FONCTION COMMUNE — note et statut affichés d'un résultat d'examen blanc.
@@ -35,11 +35,24 @@ export function attacherSourceUnique<T extends Record<string, any>>(
 ): T & { __core: any; __noteRecalculee?: boolean } {
   if (!estExamenBlanc(row)) return { ...row, __core: null };
   if (coreStates === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
-  const core = matchCoreState(coreStates, row.quiz_id, row.matiere_id, row.completed_at, row.id);
-  if (!core) return { ...row, __core: null };
+  const core = matchCoreState(coreStates, row.quiz_id, row.matiere_id, row.completed_at, row.id, row.tentative, row.apprenant_id);
+  if (!core) {
+    const t = new Date(String(row.completed_at)).getTime();
+    const plausible = coreStates.some((s) => s.examId === String(row.quiz_id) && s.matiereId === String(row.matiere_id) && (!s.resultId || s.resultId === row.id) && Math.abs(new Date(s.finishedAt).getTime() - t) <= 120000);
+    return { ...row, __core: plausible ? CORE_LECTURE_IMPOSSIBLE : null };
+  }
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
-  if (nonFiables.has(core.attemptId)) return { ...row, __core: null, __noteRecalculee: true };
+  const original = row?.__preuveOriginaleDetails ?? row?.details;
+  if (nonFiables.has(core.attemptId) || verifierPassageV2(core, original?.reponses ?? row?.reponses) !== "fiable" || !verifierContenuPassage(core, original)) {
+    if (core.pending) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE, __noteRecalculee: true };
+    return { ...row, __core: null, __noteRecalculee: true };
+  }
   return { ...row, __core: core };
+}
+
+/** Screens with mapped rows use the same strict same-attempt rule. */
+export function coreFiablePourLigne(states: CoreMatiereState[] | null, row: any): CoreMatiereState | null {
+  return attacherSourceUnique({ ...row, quiz_type: "examen_blanc", quiz_id: row?.quiz_id ?? row?.quizId, matiere_id: row?.matiere_id ?? row?.matiereId, completed_at: row?.completed_at ?? row?.completedAt, id: row?.id ?? row?.resultId }, states, states === null ? null : new Set()).__core;
 }
 
 export type NoteAffichee =
@@ -48,10 +61,10 @@ export type NoteAffichee =
   | { etat: "lecture_impossible"; note20: null; source: null; mention: null };
 
 function noteAncienSur20(row: any): number | null {
-  const score = Number(row?.score_obtenu ?? 0);
+  const score = row?.score_obtenu == null ? NaN : Number(row.score_obtenu);
   const max = Number(row?.score_max ?? 0);
-  if (Number.isFinite(max) && max > 0) {
-    const s = Math.min(Math.max(Number.isFinite(score) ? score : 0, 0), max);
+  if (Number.isFinite(score) && Number.isFinite(max) && max > 0) {
+    const s = Math.min(Math.max(score, 0), max);
     return Number(((s / max) * 20).toFixed(1));
   }
   if (row?.note_sur_20 == null) return null;
