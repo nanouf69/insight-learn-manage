@@ -302,6 +302,13 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 84, label: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
     { id: 86, label: "3.INFORMATIONS FINANCEUR TAXI" },
   ]},
+  // Formations pratiques seules : uniquement le module pratique existant (aucun autre module).
+  "pratique-taxi": { label: "Formation pratique TAXI", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
+    { id: 6, label: "PRATIQUE TAXI" },
+  ]},
+  "pratique-vtc": { label: "Formation pratique VTC", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [
+    { id: 8, label: "PRATIQUE VTC" },
+  ]},
 };
 
 // ======================================================================
