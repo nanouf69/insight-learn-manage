@@ -1184,6 +1184,13 @@
       "when": 1792164193506,
       "tag": "0168_capacite_pratique_periode_prioritaire",
       "breakpoints": true
+    },
+    {
+      "idx": 169,
+      "version": "7",
+      "when": 1792166708229,
+      "tag": "0169_cma_planning_lignes",
+      "breakpoints": true
     }
   ]
 }
