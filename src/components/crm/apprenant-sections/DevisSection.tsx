@@ -1067,7 +1067,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         client_mail: devisClient.email,
         client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
-        devis_ligne_produit_date1: sessionDate || formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        devis_ligne_produit_date1: sessionDate || '',
         montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
       };
@@ -1163,7 +1163,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         client_mail: devisClient.email,
         client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
-        devis_ligne_produit_date1: sessionDate || formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        devis_ligne_produit_date1: sessionDate || '',
         montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
       };
@@ -1551,7 +1551,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 <div><span className="text-muted-foreground">Email :</span> <strong>{apprenant.email || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Date devis :</span> <strong>{formatDateForDevis(dateDevis)}</strong></div>
                 <div><span className="text-muted-foreground">Montant :</span> <strong>{selectedTemplatePrix} €</strong></div>
-                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation || null)}</strong></div>
+                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{sessionDate || '—'}</strong></div>
               </div>
             </div>
           )}
