@@ -13,6 +13,45 @@ export interface TrainingContract {
   payments: ContractPayment[]; verified: boolean;
   // Only a verified signing service may establish these, never the generator.
   concludedAt: string | null; signedAt: string | null;
+  /** Conditions de pratique propres à ce document ; jamais recopiées dans la présence réelle. */
+  pratique?: PratiqueConditions;
+}
+export interface PratiqueConditions {
+  incluse: '' | 'oui' | 'non';
+  /** Heures pédagogiques de pratique prévues par apprenant (décimal). */
+  heures: string;
+  mode: '' | 'individuel' | 'groupe';
+  effectifPrevu: string; effectifMax: string;
+  /** Temps individuel de conduite par apprenant, seulement s'il est réellement garanti. */
+  conduiteIndividuelle: string;
+}
+export const emptyPratique = (): PratiqueConditions => ({ incluse: '', heures: '', mode: '', effectifPrevu: '', effectifMax: '', conduiteIndividuelle: '' });
+export function validatePratique(p: PratiqueConditions | undefined): string[] {
+  const issues: string[] = [];
+  if (!p || !p.incluse) return ['Pratique : préciser si elle est incluse ou non incluse.'];
+  const h = money(p.heures);
+  if (p.incluse === 'non') { if (h !== 0) issues.push('Pratique non incluse : 0 heure attendue.'); return issues; }
+  if (!Number.isFinite(h) || h <= 0) issues.push('Pratique incluse : heures pédagogiques par apprenant > 0 requises.');
+  if (!p.mode) issues.push('Pratique : choisir individuel ou groupe.');
+  const prevu = money(p.effectifPrevu); const max = money(p.effectifMax);
+  if (p.mode === 'individuel' && (prevu !== 1 || max !== 1)) issues.push('Pratique individuelle : effectif prévu et maximum = 1.');
+  if (p.mode === 'groupe') {
+    if (!Number.isInteger(prevu) || prevu < 2) issues.push('Pratique en groupe : effectif prévu entier ≥ 2.');
+    if (!Number.isInteger(max) || max < prevu) issues.push('Pratique en groupe : effectif maximum entier ≥ effectif prévu.');
+  }
+  if (p.conduiteIndividuelle.trim()) {
+    const c = money(p.conduiteIndividuelle);
+    if (!Number.isFinite(c) || c <= 0 || (Number.isFinite(h) && c > h)) issues.push('Temps individuel de conduite : décimal > 0 et ≤ heures de pratique.');
+  }
+  return issues;
+}
+export function pratiqueRecap(p: PratiqueConditions | undefined): string {
+  if (!p || !p.incluse) return 'Pratique : [À préciser — incluse ou non incluse]';
+  if (p.incluse === 'non') return 'Pratique : non incluse (0 h).';
+  const h = p.heures || '[heures]';
+  if (p.mode === 'individuel') return `Pratique incluse : ${h} h pédagogiques par apprenant, en individuel (1 apprenant par formateur et véhicule).${p.conduiteIndividuelle.trim() ? ` Temps individuel de conduite prévu : ${p.conduiteIndividuelle} h.` : ''}`;
+  if (p.mode === 'groupe') return `Pratique incluse : ${h} h pédagogiques par apprenant, en groupe (effectif prévu ${p.effectifPrevu || '[?]'}, maximum ${p.effectifMax || '[?]'}). Ce temps pédagogique est partagé : ${p.conduiteIndividuelle.trim() ? `temps individuel de conduite prévu par apprenant : ${p.conduiteIndividuelle} h ; le reste en observation et commentaires.` : 'le temps individuel au volant n’est pas garanti et n’est pas promis.'}`;
+  return `Pratique incluse : ${h} h — [mode individuel ou groupe à préciser]`;
 }
 export interface FieldGroup { title: string; fields: [string, string, string?][] }
 export const CONTRACT_FIELD_GROUPS: FieldGroup[] = [
@@ -130,6 +169,12 @@ export function validateContract(contract: TrainingContract, expectedLearner: st
   if (payments.some((p,i) => i > 0 && validDay(p.date) && (p.date < f.start || p.date > f.end || p.date < payments[i-1].date))) issues.push('Solde à échelonner pendant le déroulement et dans l’ordre des étapes.');
   if (payments[3]?.date !== f.end) issues.push('Le solde doit correspondre à l’achèvement de la formation.');
   if (Math.abs(payments.reduce((s,p) => s+money(p.amount),0) - price) > 0.01) issues.push('Total de l’échéancier différent du prix.');
+  if (contract.pratique) {
+    issues.push(...validatePratique(contract.pratique));
+    const ph = money(contract.pratique.incluse === 'non' ? '0' : contract.pratique.heures);
+    if (Number.isFinite(ph) && Math.abs(money(f.practiceHours ?? '') - ph) > 0.001) issues.push('Heures de pratique de l’article 3 différentes des conditions de pratique.');
+    if (contract.pratique.incluse === 'oui' && contract.pratique.mode === 'individuel' && money(f.headcount ?? '') !== 1) issues.push('Pratique individuelle : effectif prévu du contrat = 1.');
+  }
   if (!contract.verified) issues.push('Confirmer les informations du centre, du parcours, les annexes et les pièces effectivement remises.');
   return { today, earliestStart, issues, ready: issues.length === 0, status: f.start && validDay(f.start) && f.start <= today ? 'BROUILLON — RÉGULARISATION' : 'BROUILLON' };
 }
