@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContratLocationSection } from "./ContratLocationSection";
+import { ContratFormationSection } from "./ContratFormationSection";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -1434,8 +1435,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="devis" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="flex flex-wrap w-full h-auto">
           <TabsTrigger value="devis">📄 Devis</TabsTrigger>
+          <TabsTrigger value="contrat-formation">Contrat de formation</TabsTrigger>
           <TabsTrigger value="location">🚗 Contrat de location</TabsTrigger>
         </TabsList>
 
@@ -1912,6 +1914,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
         <TabsContent value="location" className="mt-4">
           <ContratLocationSection apprenant={apprenant} />
+        </TabsContent>
+        <TabsContent value="contrat-formation" className="mt-4">
+          <ContratFormationSection key={apprenant.id} apprenant={apprenant} />
         </TabsContent>
       </Tabs>
     </div>
