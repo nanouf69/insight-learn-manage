@@ -737,7 +737,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
             ))}
           </div>
-          {regleSuiviFormation(apprenant).presentiel && <TauxPresenceSessionsCard apprenantId={apprenant.id} filiere={regleSuiviFormation(apprenant).filiere} />}
+          {(regleSuiviFormation(apprenant).presentiel || /^(ta|taxi-pour-vtc|passerelle-taxi|ta-e-presentiel)$/i.test(String(apprenant.type_apprenant || apprenant.formation_choisie || '').trim())) && <TauxPresenceSessionsCard apprenantId={apprenant.id} filiere={regleSuiviFormation(apprenant).filiere} />}
         </div>
       )}
 
