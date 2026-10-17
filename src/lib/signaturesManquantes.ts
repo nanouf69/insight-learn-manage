@@ -319,7 +319,7 @@ export interface ClassificationSignatures {
 }
 
 const estSignee = (e: any) =>
-  (typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url)) || !!e?.signed_at;
+  typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url);
 
 export function classifierSignatures(
   emargements: any[],
@@ -411,4 +411,10 @@ export async function chargerClassificationSignatures(apprenantId: string): Prom
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
   ]);
   return classifierSignatures(emargRes, sessionsRes, reservationsRes, dateDuJourParis(), configs);
+}
+
+/** Live-only display filter. Never used to rewrite evidence or calculate frozen history. */
+export function signaturesRetenuesPourHeures(rows: any[], classification: ClassificationSignatures): any[] {
+  const validKeys = new Set(classification.valides.map(e => `${e.date}|${e.creneau}`));
+  return rows.filter(e => validKeys.has(`${normDate(e.date_emargement)}|${DEMI_LABELS[e.demi_journee] ?? e.demi_journee}`));
 }
