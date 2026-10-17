@@ -13,7 +13,7 @@ function harness(owner: string | null = 'owner', learnerOwner = 'owner') {
       if (files.has(path)) return { error: { message: 'exists' } };
       files.set(path, new Uint8Array(buffer)); effects.uploads++; return { error: null };
     },
-    download: async (path: string) => ({ data: files.has(path) ? new Blob([files.get(path) ?? new Uint8Array()]) : null }),
+    download: async (path: string) => ({ data: files.has(path) ? new Blob([new Uint8Array(files.get(path) ?? []).buffer]) : null }),
     getPublicUrl: (path: string) => ({ data: { publicUrl: `https://synthetic.test/${path}` } }),
   };
   const sb = {

@@ -36,14 +36,17 @@ const json = (b: unknown) => new Response(JSON.stringify(b), { headers: { ...cor
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return new Response('Service indisponible', { status: 503, headers: corsHeaders });
+  if (req.headers.get('Authorization') !== `Bearer ${key}`) return new Response('Non autorisé', { status: 401, headers: corsHeaders });
   const sb = createClient(url, key);
   const body = await req.json().catch(() => ({}));
   const jour: string = body.jour ?? new Date().toISOString().slice(0, 10);
   const saut: number = Number(body.saut ?? 0);
   const chaine = body.chaine === true;
   const reprise = body.reprise === true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
   const up = (path: string, content: unknown) =>
     sb.storage.from(BUCKET).upload(path, new Blob([JSON.stringify(content)], { type: "application/json" }), { upsert: true });
@@ -115,10 +118,10 @@ Deno.serve(async (req) => {
     await rotation(sb); // Scheduled retention unchanged; never invoked manually.
     const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs) };
     await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_termine.json`, manifeste);
-    if (etat.erreurs.length) {
-      await sb.from("alertes_systeme").insert({ type: "sauvegarde_incomplete", titre: "Sauvegarde nocturne incomplète", message: `Sauvegarde ${jour} incomplète : ${etat.erreurs.length} erreur(s)` } as any).then(() => {}, () => {});
+    if (manifeste.erreurs.length) {
+      await sb.from("alertes_systeme").insert({ type: "sauvegarde_incomplete", titre: "Sauvegarde nocturne incomplète", message: `Sauvegarde ${jour} incomplète : ${manifeste.erreurs.length} erreur(s)` } as any).then(() => {}, () => {});
     }
-    return json({ ok: !etat.erreurs.length, termine: true, ...manifeste });
+    return json({ ok: !manifeste.erreurs.length, termine: true, ...manifeste });
   }
 
   etat.maj = new Date().toISOString();
