@@ -33,7 +33,7 @@ Authentification du déclencheur historique inchangée : callbacks existants uti
 ## Vérifications
 - 54 tests PASS, 11 fichiers : limites/HMAC/session/changement de compte/refus/persistance, véritables handlers upload/export sous services intégralement simulés, héritage manifeste, stockage échoué, doublons, sauvegardes existantes, absence de redirection avec réponses pending.
 - Playwright, véritable DocumentUploadCard, réseau intercepté : deux refus puis bouton Réessayer et confirmation, desktop 1280x1800 et mobile 390x844, aucun débordement. Une écriture de monitoring de démarrage interceptée/simulée, zéro écriture réseau réelle. Captures sous /tmp/browser/technical-fixes.
-- Harness de compilation/typecheck automatique : dernière entrée observée build OK à 08:34:15 UTC ; nouvelle vérification requise après les derniers ajustements.
+- Tests ciblés rejoués après les derniers ajustements : 54/54 PASS à 08:40 UTC. Harness de compilation/typecheck automatique : dernière entrée observée build OK à 08:40:07 UTC.
 
 ## Limites non garanties
 La file locale complète de Nika n'est pas accessible : pas de restauration totale prouvée. Les écritures autosave concurrentes entre onglets n'ont pas de garde de révision serveur ; l'ordre final en cas de requête très tardive reste NON PROUVÉ. Aucun historique élève réécrit.
