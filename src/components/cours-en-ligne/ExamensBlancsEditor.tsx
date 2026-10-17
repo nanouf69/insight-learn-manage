@@ -390,6 +390,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   // Date réelle de dernière écriture Admin enregistrée par la base : sert de
   // référence de comparaison quand une question ne porte pas de marqueur de date.
   let adminLastWriteAt: string | null = null;
+  let compteLecture: string | undefined;
   
   
   try {
@@ -405,6 +406,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
     }
     // Compte de départ (comparé en mémoire seulement, jamais journalisé).
     const compteDepart = sess.session.user?.id ?? null;
+    compteLecture = compteDepart ?? undefined;
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
     const lireVersions = () => supabase
       .from("module_editor_state")
@@ -644,7 +646,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       .from("quiz_questions_overrides")
       .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
       .in("quiz_id", fournisseurQuizIds)
-      .order("updated_at", { ascending: false }));
+      .order("updated_at", { ascending: false }), compteLecture);
     if (overrideError) throw new ExamContentUnavailableError('Lecture des corrections indisponible ; aucun contenu de repli.');
     if (overridesData && overridesData.length > 0) {
       applyFournisseurOverridesToExamens(examens, overridesData as any, adminLastWriteAt);

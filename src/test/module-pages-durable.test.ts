@@ -31,4 +31,14 @@ describe('Pages retained until exact server readback', () => {
     expect(record.confirmed).toBe(true);
     expect(record.pages).toEqual([1, 2]);
   });
+  it('unavailable local storage never confirms a refused request', async () => {
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('synthetic storage blocked'); });
+    state.fail = true;
+    expect(await queueModulePages('synthetic-memory', 8, [7], 20)).toBe(false);
+    expect(pendingModulePages('synthetic-A', 'synthetic-memory', 8)).toEqual([7]);
+    state.fail = false;
+    await resumeModulePages();
+    expect(state.saved).toContain(7);
+    write.mockRestore();
+  });
 });
