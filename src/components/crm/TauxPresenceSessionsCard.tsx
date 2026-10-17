@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { heuresSessionPourApprenant } from "@/lib/sessionHeures";
 import { isPratiqueType } from "@/lib/sessionTypes";
+import { creneauxAttendus } from "@/lib/signaturesManquantes";
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -24,11 +25,16 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     const cible = pratique ? res.pratique : res.session;
     cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
     const debut = d10(s.date_debut), fin = d10(s.date_fin || s.date_debut);
+    // Seules les paires date + créneau réellement prévues par les horaires de la
+    // session comptent : une signature sur un créneau non prévu est conservée
+    // ailleurs (anomalie) mais jamais comptée ici.
+    const creneauxPrevus = new Set(creneauxAttendus(s.heure_debut, s.heure_fin));
     for (const e of emargements) {
       const date = d10(e.date_emargement);
       const creneau = String(e.demi_journee ?? "").trim().toLowerCase();
       const cle = `${date}|${creneau}`;
       if (!signatureValide(e) || date < debut || date > fin || vus.has(cle)) continue;
+      if (!creneauxPrevus.has(creneau)) continue;
       const h = HEURES_CRENEAU[creneau];
       if (!h) continue;
       vus.add(cle);
@@ -50,7 +56,7 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
       try {
         const [em, ins] = await Promise.all([
           fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
-          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,emargements_exclus,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
+          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,emargements_exclus,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
         ]);
         if (!annule) setData(calculerTauxPresenceHeures(em, ins, filiere));
       } catch {
