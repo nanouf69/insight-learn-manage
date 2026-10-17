@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Dates pratiques dans les devis — 17/10
+- [ ] Proposer les journées du planning de la bonne filière dans les devis pratiques, sans changer prix, réservations ou documents existants.
+- [ ] Tests fictifs et contrôle du choix puis aperçu PDF, sans envoi ni publication.
+
 ## Corrections techniques autorisées — 17/10
 - [x] Sessions fraîches, progression isolée, origine canonique manuelle, examens sans faux vide ; code frontend non publié.
 - [x] Documents 4 Mo, erreurs lisibles, reprise idempotente et conservation des versions ; mocks seulement.
