@@ -24,7 +24,7 @@
 - [x] Export append des trois tables CMA, manifeste versionné et reprise compatible ; fonction déployée sans invocation.
 - [x] Diagnostic Bilan non activé ; aucune QRC modifiée, trois corruptions restent hors correction.
 - [x] Tests isolés et trois empreintes strictement identiques ; journal détaillé, aucun frontend publié.
-- [ ] Déploiement upload bloqué : ancien site ne transmet pas le jeton onboarding ; nécessite publication coordonnée autorisée.
+- [ ] Finalisation « Continue » : revue version stable incluant devis/contrat protégés, tests upload propriétaire/admin/HMAC/ancien onglet/4 Mo/receipt, puis frontend et upload coordonnés ; aucun test réel.
 - Limites : reprise totale Nika, ordre serveur d’écritures autosave concurrentes et prochaine sauvegarde réelle NON PROUVÉS ; authentification du déclencheur nocturne historique non migrable automatiquement sur ce projet.
 
 ## Compteurs validés et preuves QRC — 16/10

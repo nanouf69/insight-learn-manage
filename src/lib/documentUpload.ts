@@ -30,6 +30,7 @@ export async function uploadInscriptionDocument(form: FormData, operationId: str
       });
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.success === true && data.confirmed === true && data.operationId === operationId) return data;
+      if (response.ok) throw Object.assign(new Error('Accusé de dépôt non confirmé : mise à jour du service en cours. Conservez le fichier ; attendez la fin de la mise à jour puis rechargez la page avant de vérifier votre dossier. Aucun nouvel envoi automatique.'), { permanent: true });
       lastError = data.error || `Envoi refusé (${response.status}). Votre fichier et les anciennes versions sont conservés.`;
       if ([400, 401, 403, 413].includes(response.status)) throw Object.assign(new Error(lastError), { permanent: true });
     } catch (error) {
