@@ -275,3 +275,139 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   ]);
   return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation);
 }
+
+// ── Classification attendu / valide / hors session ──
+// Lecture seule : chaque signature réelle est classée par rapport aux inscriptions
+// de sessions (théorique + pratique) et réservations. Les signatures hors périmètre
+// sont conservées et signalées, jamais effacées ni réattribuées ; les créneaux
+// signés qui ne correspondent pas aux horaires de la session du jour remontent en
+// anomalie explicite (aucune heure inventée, aucun antidatage).
+
+export interface SignatureClassee {
+  date: string;
+  creneau: string;
+  source?: string;
+}
+
+export interface AnomalieSignature {
+  date: string;
+  creneau: string;
+  detail: string;
+}
+
+export interface ClassificationSignatures {
+  /** Créneaux passés attendus sans signature (périmètre confirmé uniquement). */
+  attendus: SignatureManquante[];
+  /** Signatures réelles dans le périmètre des inscriptions retenues. */
+  valides: SignatureClassee[];
+  /** Signatures réelles hors du périmètre retenu (sessions exclues, anciennes dates) : conservées, non comptées. */
+  horsSession: SignatureClassee[];
+  /** Divergences explicites : créneau signé non prévu par les horaires de la session, ou réservation contredite par une session pratique. */
+  anomalies: AnomalieSignature[];
+}
+
+const estSignee = (e: any) =>
+  (typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url)) || !!e?.signed_at;
+
+export function classifierSignatures(
+  emargements: any[],
+  sessionRows: any[],
+  reservations: any[],
+  dateReference: string = dateDuJourParis(),
+): ClassificationSignatures {
+  const attendus = calculerSignaturesManquantes(emargements, sessionRows, reservations, dateReference);
+  const { datesTheorie, datesPratique } = datesDuPlanning(sessionRows, reservations);
+
+  // Créneaux prévus par date selon les horaires réels des sessions/réservations retenues.
+  const creneauxPrevusParDate = new Map<string, Set<string>>();
+  const prevu = (date: string, creneau: string) => {
+    if (!creneauxPrevusParDate.has(date)) creneauxPrevusParDate.set(date, new Set());
+    creneauxPrevusParDate.get(date)!.add(creneau);
+  };
+  const pratiqueSessionDates = new Set<string>();
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
+    const type = String(s.type_session ?? '').toLowerCase();
+    const debutH = row.heure_debut_personnalisee ?? s.heure_debut;
+    const finH = row.heure_fin_personnalisee ?? s.heure_fin;
+    if (type.includes('pratique')) {
+      const date = normDate(s.date_debut);
+      if (!estDate(date)) continue;
+      pratiqueSessionDates.add(date);
+      for (const c of creneauxAttendus(debutH, finH)) prevu(date, c);
+    } else if (type.includes('theorique')) {
+      const debutBrut = normDate(row.date_debut || s.date_debut);
+      const finBrute = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
+      const debutSession = normDate(s.date_debut);
+      const finSession = normDate(s.date_fin || s.date_debut);
+      const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
+      const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
+      if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
+      for (const date of joursOuvres(debut, fin)) for (const c of creneauxAttendus(debutH, finH)) prevu(date, c);
+    }
+  }
+  const anomalies: AnomalieSignature[] = [];
+  for (const r of reservations ?? []) {
+    const date = normDate(r?.date_choisie);
+    if (!estDate(date)) continue;
+    const v = String(r?.creneau ?? '').toLowerCase();
+    const creneaux = v.includes('apres') || v.includes('aprem') ? ['apres_midi'] : v.includes('matin') ? ['matin'] : ['matin', 'apres_midi'];
+    if (pratiqueSessionDates.has(date)) {
+      const prevus = creneauxPrevusParDate.get(date) ?? new Set<string>();
+      const enTrop = creneaux.filter((c) => !prevus.has(c));
+      if (enTrop.length > 0) {
+        anomalies.push({
+          date,
+          creneau: enTrop.map((c) => DEMI_LABELS[c] ?? c).join(' + '),
+          detail: `Réservation « ${r?.creneau ?? 'journee'} » plus large que les horaires de la session pratique du jour : seuls les créneaux de la session sont attendus.`,
+        });
+      }
+      continue;
+    }
+    for (const c of creneaux) prevu(date, c);
+  }
+
+  const valides: SignatureClassee[] = [];
+  const horsSession: SignatureClassee[] = [];
+  const vus = new Set<string>();
+  for (const e of emargements ?? []) {
+    if (e?.masque === true) continue;
+    const date = normDate(e?.date_emargement);
+    const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
+    if (!estDate(date) || !demi || !estSignee(e)) continue;
+    const key = `${date}|${demi}`;
+    if (vus.has(key)) continue;
+    vus.add(key);
+    const label = DEMI_LABELS[demi] ?? demi;
+    const dansPerimetre = datesTheorie.has(date) || datesPratique.has(date);
+    if (dansPerimetre) {
+      valides.push({ date, creneau: label });
+      const prevus = creneauxPrevusParDate.get(date);
+      if (prevus && !prevus.has(demi)) {
+        anomalies.push({
+          date,
+          creneau: label,
+          detail: 'Signature sur un créneau non prévu par les horaires de la session du jour — conservée, à vérifier (jamais effacée ni antidatée).',
+        });
+      }
+    } else {
+      horsSession.push({ date, creneau: label });
+    }
+  }
+  const tri = (a: SignatureClassee, b: SignatureClassee) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau);
+  valides.sort(tri);
+  horsSession.sort(tri);
+  anomalies.sort((a, b) => a.date.localeCompare(b.date));
+  return { attendus, valides, horsSession, anomalies };
+}
+
+export async function chargerClassificationSignatures(apprenantId: string): Promise<ClassificationSignatures> {
+  if (!apprenantId) throw new Error('Apprenant requis');
+  const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
+    paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+  ]);
+  return classifierSignatures(emargRes, sessionsRes, reservationsRes);
+}
