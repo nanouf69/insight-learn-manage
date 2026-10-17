@@ -684,7 +684,7 @@ export default function DevisPublic() {
             <div className="text-center text-xs text-gray-400 border-t pt-3 mt-4">
               Services Pro — FTransport — SASU au capital social de 5 000 € — 86 route de Genas, 69003 LYON — Tél : 04.28.29.60.91 — contact@ftransport.fr
             </div>
-          </div>
+          </div>}
 
           {/* ═══ PAGE RÉFÉRENTIEL THÉORIQUE ═══ */}
           <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6">
@@ -756,6 +756,24 @@ export default function DevisPublic() {
 
             <p className="text-sm"><strong>Fait à Lyon, le</strong> {today}</p>
 
+            {contrat ? (<>
+              <div className="border rounded p-3 space-y-3 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-900">Cases facultatives — vous pouvez signer sans les cocher</p>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={consentDemarrage} onChange={(e) => setConsentDemarrage(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" aria-label="Demande de commencement anticipé" />
+                  <span className="text-sm text-gray-800">{CONSENTEMENTS_SIGNATURE.demarrageAnticipe}</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={consentPerte} onChange={(e) => setConsentPerte(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" aria-label="Reconnaissance de perte après exécution complète" />
+                  <span className="text-sm text-gray-800">{CONSENTEMENTS_SIGNATURE.perteApresExecution}</span>
+                </label>
+                <p className="text-xs text-gray-600">Ces cases ne réduisent pas le délai de 10 jours du Code du travail (L6353-5) ni l'interdiction de tout paiement avant son expiration (L6353-6) et n'avancent pas la date de début prévue. Les refuser n'empêche pas votre inscription.</p>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={acceptCGV} onChange={(e) => setAcceptCGV(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" />
+                <span className="text-sm text-gray-800">J'accepte le contrat de formation {contrat.contract.reference} et ses annexes, dont j'ai pris connaissance.</span>
+              </label>
+            </>) : (<>
             {/* Renonciation rétractation */}
             <label className="flex items-start gap-3 border border-yellow-200 rounded p-3 bg-yellow-50 cursor-pointer">
               <input type="checkbox" checked={acceptEarlyStart} onChange={(e) => setAcceptEarlyStart(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" />
@@ -772,6 +790,7 @@ export default function DevisPublic() {
               </span>
             </label>
 
+            </>)}
             {/* Mention manuscrite */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-900">
@@ -842,6 +861,15 @@ export default function DevisPublic() {
               </ol>
             </div>
 
+            {contrat && dejaSigne && (
+              <div className="border rounded-lg p-4 space-y-2" aria-label="Rétractation">
+                <h3 className="font-semibold text-gray-900">Rétractation</h3>
+                {retractation ? <p className="text-sm text-green-800">Rétractation enregistrée le {new Date(retractation.horodatage_serveur).toLocaleString("fr-FR")}.</p> : <>
+                  <p className="text-sm text-gray-700">Vous pouvez vous rétracter sans motif ni frais pendant le délai indiqué à l'article 9, en ligne ci-dessous, ou à l'aide du formulaire de l'annexe 2.</p>
+                  <Button variant="outline" onClick={handleRetractation} disabled={retracting}>{retracting ? "Enregistrement…" : "Me rétracter"}</Button>
+                </>}
+              </div>
+            )}
             {uploaded ? (
               <div className="space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
@@ -860,7 +888,7 @@ export default function DevisPublic() {
                   </div>
                   <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 text-center space-y-2">
                     <p className="text-amber-800 font-bold text-base">
-                      ⚠️ Votre devis ne sera pris en compte qu'après avoir effectué le premier virement.
+                      {contrat ? "Aucun paiement n'est dû avant l'expiration du délai de rétractation ; ensuite, l'échéancier du contrat s'applique." : "⚠️ Votre devis ne sera pris en compte qu'après avoir effectué le premier virement."}
                     </p>
                     <p className="text-amber-700 text-sm">
                       Merci de nous recontacter au <strong className="text-lg">04.28.29.60.91</strong> après l'avoir effectué.
@@ -872,7 +900,7 @@ export default function DevisPublic() {
               <div className="flex items-center gap-3 flex-wrap">
                 <Button
                   onClick={handleSendDevis}
-                  disabled={uploading || !acceptCGV || !acceptEarlyStart || !hasSigned}
+                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || !hasSigned}
                   className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base"
                 >
                   {uploading ? (
