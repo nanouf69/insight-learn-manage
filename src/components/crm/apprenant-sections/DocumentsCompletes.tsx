@@ -23,7 +23,7 @@ import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/d
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
-import { chargerSignaturesManquantes, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
+import { chargerClassificationSignatures, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 
 interface Props {
@@ -444,13 +444,14 @@ export function DocumentsCompletes({ apprenant }: Props) {
     },
   });
 
-  // Signatures manquantes : créneaux passés (sessions théoriques + pratique réservée)
-  // sans signature enregistrée. Lecture seule, aucune donnée modifiée.
-  const { data: signaturesManquantes, isError: signaturesManquantesErreur } = useQuery({
+  // Signatures : classification attendu / valide / hors session à partir des
+  // inscriptions de sessions (théorique + pratique) et réservations. Lecture seule.
+  const { data: classificationSignatures, isError: signaturesManquantesErreur } = useQuery({
     queryKey: ["apprenant-signatures-manquantes", apprenant.id],
     enabled: !!apprenant?.id,
-    queryFn: () => chargerSignaturesManquantes(apprenant.id),
+    queryFn: () => chargerClassificationSignatures(apprenant.id),
   });
+  const signaturesManquantes = classificationSignatures?.attendus;
 
   const formationEdof = [apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.formation].filter(Boolean).join(" ");
   const { data: bilanEdof, isError: bilanEdofErreur } = useQuery({
