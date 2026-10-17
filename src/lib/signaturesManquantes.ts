@@ -137,6 +137,10 @@ export function calculerSignaturesManquantes(
     const v = String(r?.creneau ?? '').toLowerCase();
     const creneaux = v.includes('apres') || v.includes('aprem') ? ['apres_midi'] : v.includes('matin') ? ['matin'] : ['matin', 'apres_midi'];
     const type = String(r?.type_formation ?? '').toUpperCase() || 'PRATIQUE';
+    // Une session pratique du même jour avec horaires explicites prime : on n'attend
+    // que ses créneaux (une réservation « journée » ne crée pas d'après-midi fictif).
+    const sessionDuJour = pratiqueSessionParDate.get(date);
+    if (sessionDuJour) continue;
     for (const c of creneaux) attendre(date, c, `Pratique ${type} — réservation`);
   }
 
