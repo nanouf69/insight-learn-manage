@@ -16,4 +16,7 @@ describe('Date modifiable du devis à signer', () => {
   it('ne fabrique aucune date pour les anciens devis sans date', () => {
     expect(formatDevisDate(null)).toBe('');
   });
+  it('laisse les dates de formation absentes lorsqu’aucune date n’est choisie dans le devis', () => {
+    expect(devisDatesSignature('2026-10-17', '2026-10-24', '').dates_formation).toBeNull();
+  });
 });
