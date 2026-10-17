@@ -880,7 +880,9 @@ export function DocumentsCompletes({ apprenant }: Props) {
               const manquantes = signaturesManquantes.filter((m) => m.etat === "manquante");
               const absences = signaturesManquantes.filter((m) => m.etat === "absence_enregistree");
               const manqueObjectif = bilanEdof && !/e-?learning/i.test(formationEdof) ? Math.max(0, bilanEdof.objectifTotal - bilanEdof.total) : 0;
-              if (manquantes.length === 0 && absences.length === 0) {
+              const nbAnomalies = classificationSignatures?.anomalies?.length ?? 0;
+              const nbHorsSession = classificationSignatures?.horsSession?.length ?? 0;
+              if (manquantes.length === 0 && absences.length === 0 && nbAnomalies === 0 && nbHorsSession === 0) {
                 if (manqueObjectif > 0) {
                   return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof!.total} / {bilanEdof!.objectifTotal}).</p>;
                 }
