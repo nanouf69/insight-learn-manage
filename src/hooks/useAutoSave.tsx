@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
+import { bounded } from "@/lib/sessionRpc";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -39,7 +40,7 @@ async function saveWithRetry(
   retries = MAX_RETRIES
 ): Promise<boolean> {
   await assurerSessionFraiche();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await bounded(supabase.auth.getUser());
   if (!user) {
     console.warn("[AutoSave] No authenticated user, fallback to backend save-public-form");
     const backendSaved = await savePublicFormDocument({
@@ -68,9 +69,12 @@ async function saveWithRetry(
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      await assurerSessionFraiche();
+      const { data: current } = await bounded(supabase.auth.getUser());
+      if (current.user?.id !== user.id) return false;
       // BUG #4 FIX: single UPSERT instead of SELECT + INSERT/UPDATE
       // Avoids race condition where 2 parallel saves both see "no draft" and both INSERT
-      const { error } = await supabase
+      const { error } = await bounded(supabase
         .from("apprenant_documents_completes" as any)
         .upsert({
           apprenant_id: params.apprenantId,
@@ -80,7 +84,7 @@ async function saveWithRetry(
           donnees: params.donnees,
           module_id: params.moduleId || null,
           updated_at: new Date().toISOString(),
-        } as any, { onConflict: "apprenant_id,type_document,titre" });
+        } as any, { onConflict: "apprenant_id,type_document,titre" }));
 
       if (error) {
         console.error(`[AutoSave] Attempt ${attempt}/${retries} failed:`, error);
@@ -121,6 +125,8 @@ async function saveWithRetry(
 
 export function loadSavedDraft(apprenantId: string, typeDocument: string): Record<string, any> | null {
   try {
+    const pending = JSON.parse(localStorage.getItem(`autosave_pending_${apprenantId}_${typeDocument}`) ?? 'null');
+    if (pending?._pending) return pending;
     const raw = localStorage.getItem(`autosave_${apprenantId}_${typeDocument}`);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -137,6 +143,8 @@ export async function loadDraftFromSupabase(
   typeDocument: string
 ): Promise<Record<string, any> | null> {
   if (!apprenantId) return null;
+  const pending = loadSavedDraft(apprenantId, typeDocument);
+  if (pending?._pending) return pending;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -235,13 +243,16 @@ export function useAutoSave({
       titre,
       donnees: data,
       moduleId,
-    });
+    }).catch(() => false);
     if (identityRef.current !== identity) { isSavingRef.current = false; return false; }
 
     if (success) {
       setStatus("saved");
       setLastSavedAt(new Date());
-      if (pendingDataRef.current === data) pendingDataRef.current = null;
+      if (pendingDataRef.current === data) {
+        pendingDataRef.current = null;
+        try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: false })); } catch { /* server confirmed */ }
+      }
       // Reset status after 3s
       setTimeout(() => setStatus(prev => prev === "saved" ? "idle" : prev), 3000);
     } else {
@@ -251,11 +262,16 @@ export function useAutoSave({
     }
 
     isSavingRef.current = false;
+    if (success && pendingDataRef.current && pendingDataRef.current !== data) {
+      setStatus('saving');
+      debounceTimerRef.current = setTimeout(() => { if (pendingDataRef.current) void triggerSave(pendingDataRef.current); }, 0);
+    }
     return success;
   }, [apprenantId, typeDocument, titre, moduleId, enabled]);
 
   const queueSave = useCallback((data: Record<string, any>) => {
     pendingDataRef.current = data;
+    try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* memory guarded on unload */ }
     try { localStorage.setItem(`autosave_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* keep memory */ }
     // Debounce: save 2s after last change
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -291,7 +307,7 @@ export function useAutoSave({
           try {
             localStorage.setItem(
               `autosave_${apprenantId}_${typeDocument}`,
-              JSON.stringify({ ...pendingDataRef.current, _savedAt: new Date().toISOString() })
+              JSON.stringify({ ...pendingDataRef.current, _pending: true, _savedAt: new Date().toISOString() })
             );
           } catch {}
         }

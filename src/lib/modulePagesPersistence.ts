@@ -12,7 +12,7 @@ const read = (key: string): Entry | null => {
 };
 const write = (key: string, value: Entry) => {
   memory.set(key, value);
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { console.warn('[pages] stockage local indisponible, copie mémoire conservée'); }
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { console.warn('[pages] stockage local indisponible : ne fermez pas cette page avant confirmation serveur'); return false; }
 };
 export function pendingModulePages(owner: string, apprenant: string, module: number): number[] {
   return read(keyFor(owner, apprenant, module))?.pages ?? [];
@@ -55,6 +55,9 @@ export async function resumeModulePages() {
   } finally { running = false; }
 }
 export function installModulePagesPersistence() {
+  window.addEventListener('beforeunload', event => {
+    if ([...memory.values()].some(entry => !entry.confirmed)) { event.preventDefault(); event.returnValue = ''; }
+  });
   for (const event of ['online', 'focus', 'pageshow']) window.addEventListener(event, () => { void resumeModulePages(); });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void resumeModulePages(); });
   supabase.auth.onAuthStateChange(() => { setTimeout(() => { void resumeModulePages(); }, 0); });
