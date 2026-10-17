@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import { toast } from "sonner";
 import EmargementsSignesViewer from "@/components/cours-en-ligne/EmargementsSignesViewer";
+import { ContratFormationSection } from './ContratFormationSection';
 
 
 interface DocumentsFormationProps {
@@ -34,6 +35,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('__all__');
   const [showEmargementSigner, setShowEmargementSigner] = useState(false);
+  const [showTrainingContract, setShowTrainingContract] = useState(false);
   const queryClient = useQueryClient();
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -561,6 +563,10 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 space-y-4">
+          <Button variant="outline" onClick={() => setShowTrainingContract(v => !v)}><FileText className="h-4 w-4 mr-2" />Contrat de formation</Button>
+          {showTrainingContract && <ContratFormationSection key={apprenant.id} apprenant={apprenant} />}
+        </div>
         <div className="space-y-4">
           {documents.map((doc) => {
             const canUpload = doc.id === 'emargement' || doc.id === 'attestation-fin-formation' || doc.id === 'fin-formation';

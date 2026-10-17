@@ -27,6 +27,7 @@ import { ExamensSection } from "./apprenant-sections/ExamensSection";
 import { PreuvesExamensBlancsCard } from "./apprenant-sections/PreuvesExamensBlancsCard";
 import { EmailsSection } from "./apprenant-sections/EmailsSection";
 import { DevisSection } from "./apprenant-sections/DevisSection";
+import { ContratFormationSection } from "./apprenant-sections/ContratFormationSection";
 import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
 import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
 import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
@@ -1201,6 +1202,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="examens" className="text-sm">Examens</TabsTrigger>
           <TabsTrigger value="emails" className="text-sm">Emails &amp; contacts</TabsTrigger>
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
+          <TabsTrigger value="contrat-formation" className="text-sm">Contrat de formation</TabsTrigger>
           <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
           <TabsTrigger value="rapport-activite" className="text-sm">Rapport activité</TabsTrigger>
           <TabsTrigger value="suivi-ecran" className="text-sm">Suivi écran</TabsTrigger>
@@ -1337,6 +1339,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "examens" && (<div className="space-y-4"><ExamensSection apprenant={apprenant} /><PreuvesExamensBlancsCard apprenantId={apprenant.id} typeApprenant={apprenant.type_apprenant} formationChoisie={apprenant.formation_choisie} /></div>)}
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
+          {activeTab === "contrat-formation" && <ContratFormationSection key={apprenant.id} apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
           {activeTab === "rapport-activite" && <ApprenantActivityReport lockedApprenantId={apprenant.id} />}
           {activeTab === "suivi-ecran" && <SuiviEcranTab apprenantId={apprenant.id} />}
