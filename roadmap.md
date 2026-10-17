@@ -24,7 +24,8 @@
 - [x] Export append des trois tables CMA, manifeste versionné et reprise compatible ; fonction déployée sans invocation.
 - [x] Diagnostic Bilan non activé ; aucune QRC modifiée, trois corruptions restent hors correction.
 - [x] Tests isolés et trois empreintes strictement identiques ; journal détaillé, aucun frontend publié.
-- [ ] Finalisation « Continue » : revue version stable incluant devis/contrat protégés, tests upload propriétaire/admin/HMAC/ancien onglet/4 Mo/receipt, puis frontend et upload coordonnés ; aucun test réel.
+- [x] Finalisation « Continue » : revue indépendante version 6e0157ad, contrats incomplets bloqués, 100 tests PASS + navigateur ancien receipt sans renvoi, trois empreintes identiques.
+- [ ] Mise en service coordonnée : publication demandée mais asset nouveau non encore servi au contrôle 09:15:53 UTC ; upload non déployé seul. Confirmer frontend 6e0157ad servi, puis déployer upload-document-inscription aussitôt et vérifier sans dépôt réel.
 - Limites : reprise totale Nika, ordre serveur d’écritures autosave concurrentes et prochaine sauvegarde réelle NON PROUVÉS ; authentification du déclencheur nocturne historique non migrable automatiquement sur ce projet.
 
 ## Compteurs validés et preuves QRC — 16/10
