@@ -270,7 +270,7 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie').eq('apprenant_id', apprenantId).order('id').range(f, t)),
   ]);
   return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation);
