@@ -188,7 +188,7 @@ export function datesDuPlanning(sessionRows: any[], reservations: any[]): { date
   let soir = false;
   for (const row of sessionRows ?? []) {
     const s = row?.sessions;
-    if (!s || row?.liste_attente === true || annulee(s)) continue;
+    if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
     const type = String(s.type_session ?? '').toLowerCase();
     if (type.includes('pratique')) {
       const d = normDate(s.date_debut);
