@@ -89,13 +89,21 @@ export function calculerSignaturesManquantes(
   // Sessions pratiques par date : leurs horaires explicites priment sur une
   // réservation « journée » du même jour (9h-12h ne devient jamais matin + après-midi).
   const pratiqueSessionParDate = new Map<string, { creneaux: string[]; nom: string }>();
+  // Dates pratiques exclues du périmètre : une réservation du même jour ne doit
+  // jamais contourner l'exclusion confirmée par l'admin.
+  const pratiqueExclues = new Set<string>();
   for (const row of sessionRows ?? []) {
     const s = row?.sessions;
-    if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
+    if (!s) continue;
     const type = String(s.type_session ?? '').toLowerCase();
     if (!type.includes('pratique')) continue;
     const date = normDate(s.date_debut);
     if (!estDate(date)) continue;
+    if (inscriptionExclue(row)) {
+      pratiqueExclues.add(date);
+      continue;
+    }
+    if (row?.liste_attente === true || annulee(s)) continue;
     const creneaux = creneauxAttendus(row.heure_debut_personnalisee ?? s.heure_debut, row.heure_fin_personnalisee ?? s.heure_fin);
     if (!pratiqueSessionParDate.has(date)) pratiqueSessionParDate.set(date, { creneaux, nom: String(s.nom ?? 'Pratique') });
   }
@@ -139,6 +147,8 @@ export function calculerSignaturesManquantes(
     const type = String(r?.type_formation ?? '').toUpperCase() || 'PRATIQUE';
     // Une session pratique du même jour avec horaires explicites prime : on n'attend
     // que ses créneaux (une réservation « journée » ne crée pas d'après-midi fictif).
+    // Une inscription pratique exclue du périmètre n'est jamais contournée par sa réservation.
+    if (pratiqueExclues.has(date)) continue;
     const sessionDuJour = pratiqueSessionParDate.get(date);
     if (sessionDuJour) continue;
     for (const c of creneaux) attendre(date, c, `Pratique ${type} — réservation`);
@@ -181,20 +191,49 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 // VTC journée et soir : 20 théorie + 2 pratique = 22 ;
 // TAXI : 30 + 2 = 32. Signature comptée une seule fois par date + créneau.
 
-/** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
-export function datesDuPlanning(sessionRows: any[], reservations: any[]): { datesTheorie: Set<string>; datesPratique: Set<string>; soir: boolean } {
-  const datesPratique = new Set<string>();
-  const datesTheorie = new Set<string>();
+interface JourPlanning { creneaux: Set<string>; pratique: boolean }
+
+/**
+ * Créneaux réellement prévus par date, à partir des inscriptions retenues
+ * (horaires personnalisés prioritaires) et des réservations. Source unique pour
+ * les attentes, les bilans et la classification : une signature ne compte que si
+ * sa paire date + créneau est prévue ici. Une réservation ne contourne jamais
+ * une inscription pratique exclue du périmètre.
+ */
+export function planningCreneaux(sessionRows: any[], reservations: any[]): { parDate: Map<string, JourPlanning>; soir: boolean } {
+  const parDate = new Map<string, JourPlanning>();
   let soir = false;
+  const add = (date: string, creneaux: string[], pratique: boolean) => {
+    const cur = parDate.get(date);
+    if (cur) {
+      for (const c of creneaux) cur.creneaux.add(c);
+      cur.pratique = cur.pratique || pratique;
+    } else {
+      parDate.set(date, { creneaux: new Set(creneaux), pratique });
+    }
+  };
+  const pratiqueExclues = new Set<string>();
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || !inscriptionExclue(row)) continue;
+    if (!String(s.type_session ?? '').toLowerCase().includes('pratique')) continue;
+    const d = normDate(s.date_debut);
+    if (estDate(d)) pratiqueExclues.add(d);
+  }
+  const pratiqueRetenues = new Set<string>();
   for (const row of sessionRows ?? []) {
     const s = row?.sessions;
     if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
     const type = String(s.type_session ?? '').toLowerCase();
+    const debutH = row.heure_debut_personnalisee ?? s.heure_debut;
+    const finH = row.heure_fin_personnalisee ?? s.heure_fin;
     if (type.includes('pratique')) {
       const d = normDate(s.date_debut);
-      if (estDate(d)) datesPratique.add(d);
+      if (!estDate(d)) continue;
+      pratiqueRetenues.add(d);
+      add(d, creneauxAttendus(debutH, finH), true);
     } else if (type.includes('theorique')) {
-      const h = String(row.heure_debut_personnalisee ?? s.heure_debut ?? '').slice(0, 5);
+      const h = String(debutH ?? '').slice(0, 5);
       if (h >= '17:00') soir = true;
       // Mêmes bornes que les signatures manquantes : intersection inscription ∩ session.
       const debutBrut = normDate(row.date_debut || s.date_debut);
@@ -203,13 +242,29 @@ export function datesDuPlanning(sessionRows: any[], reservations: any[]): { date
       const finSession = normDate(s.date_fin || s.date_debut);
       const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
       const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
-      if (estDate(debut) && estDate(fin) && fin >= debut) for (const d of joursOuvres(debut, fin)) datesTheorie.add(d);
+      if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
+      const creneaux = creneauxAttendus(debutH, finH);
+      for (const d of joursOuvres(debut, fin)) add(d, creneaux, false);
     }
   }
   for (const r of reservations ?? []) {
     const d = normDate(r?.date_choisie);
-    if (estDate(d)) datesPratique.add(d);
+    if (!estDate(d)) continue;
+    // Session pratique du jour (retenue ou exclue) : la réservation ne crée rien de plus.
+    if (pratiqueExclues.has(d) || pratiqueRetenues.has(d)) continue;
+    const v = String(r?.creneau ?? '').toLowerCase();
+    const creneaux = v.includes('apres') || v.includes('aprem') ? ['apres_midi'] : v.includes('matin') ? ['matin'] : ['matin', 'apres_midi'];
+    add(d, creneaux, true);
   }
+  return { parDate, soir };
+}
+
+/** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
+export function datesDuPlanning(sessionRows: any[], reservations: any[]): { datesTheorie: Set<string>; datesPratique: Set<string>; soir: boolean } {
+  const { parDate, soir } = planningCreneaux(sessionRows, reservations);
+  const datesTheorie = new Set<string>();
+  const datesPratique = new Set<string>();
+  for (const [d, j] of parDate) (j.pratique ? datesPratique : datesTheorie).add(d);
   return { datesTheorie, datesPratique, soir };
 }
 export interface BilanSignaturesEdof {
@@ -235,7 +290,7 @@ export function calculerBilanSignaturesEdof(
 ): BilanSignaturesEdof {
   const f = String(formation ?? '').toLowerCase();
   const filiere: 'VTC' | 'TAXI' | 'TA' = /(^|[^a-z])ta([^a-z]|$)/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
-  const { datesTheorie, datesPratique, soir } = datesDuPlanning(sessionRows, reservations);
+  const { parDate, soir } = planningCreneaux(sessionRows, reservations);
   const vus = new Set<string>();
   let theorie = 0;
   let pratique = 0;
@@ -251,9 +306,15 @@ export function calculerBilanSignaturesEdof(
     const key = `${date}|${demi}`;
     if (!signe || vus.has(key)) continue;
     vus.add(key);
-    if (datesPratique.has(date)) pratique++;
-    else if (datesTheorie.has(date)) theorie++;
-    else horsPlanning.push({ date, creneau: DEMI_LABELS[demi] ?? demi });
+    // Seules les paires date + créneau réellement prévues comptent ; une signature
+    // sur un créneau non prévu est conservée mais classée hors planning (non comptée).
+    const jour = parDate.get(date);
+    if (jour && jour.creneaux.has(demi)) {
+      if (jour.pratique) pratique++;
+      else theorie++;
+    } else {
+      horsPlanning.push({ date, creneau: DEMI_LABELS[demi] ?? demi });
+    }
   }
   horsPlanning.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
   const objectifTheorie = filiere === 'TAXI' ? 30 : 20;
@@ -270,8 +331,8 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
   ]);
   return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation);
 }
@@ -316,56 +377,25 @@ export function classifierSignatures(
   dateReference: string = dateDuJourParis(),
 ): ClassificationSignatures {
   const attendus = calculerSignaturesManquantes(emargements, sessionRows, reservations, dateReference);
-  const { datesTheorie, datesPratique } = datesDuPlanning(sessionRows, reservations);
+  const { parDate } = planningCreneaux(sessionRows, reservations);
 
-  // Créneaux prévus par date selon les horaires réels des sessions/réservations retenues.
-  const creneauxPrevusParDate = new Map<string, Set<string>>();
-  const prevu = (date: string, creneau: string) => {
-    if (!creneauxPrevusParDate.has(date)) creneauxPrevusParDate.set(date, new Set());
-    creneauxPrevusParDate.get(date)!.add(creneau);
-  };
-  const pratiqueSessionDates = new Set<string>();
-  for (const row of sessionRows ?? []) {
-    const s = row?.sessions;
-    if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
-    const type = String(s.type_session ?? '').toLowerCase();
-    const debutH = row.heure_debut_personnalisee ?? s.heure_debut;
-    const finH = row.heure_fin_personnalisee ?? s.heure_fin;
-    if (type.includes('pratique')) {
-      const date = normDate(s.date_debut);
-      if (!estDate(date)) continue;
-      pratiqueSessionDates.add(date);
-      for (const c of creneauxAttendus(debutH, finH)) prevu(date, c);
-    } else if (type.includes('theorique')) {
-      const debutBrut = normDate(row.date_debut || s.date_debut);
-      const finBrute = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
-      const debutSession = normDate(s.date_debut);
-      const finSession = normDate(s.date_fin || s.date_debut);
-      const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
-      const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
-      if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
-      for (const date of joursOuvres(debut, fin)) for (const c of creneauxAttendus(debutH, finH)) prevu(date, c);
-    }
-  }
   const anomalies: AnomalieSignature[] = [];
+  // Divergence explicite : réservation plus large que les horaires de la session pratique du jour.
   for (const r of reservations ?? []) {
     const date = normDate(r?.date_choisie);
     if (!estDate(date)) continue;
+    const jour = parDate.get(date);
+    if (!jour?.pratique) continue;
     const v = String(r?.creneau ?? '').toLowerCase();
     const creneaux = v.includes('apres') || v.includes('aprem') ? ['apres_midi'] : v.includes('matin') ? ['matin'] : ['matin', 'apres_midi'];
-    if (pratiqueSessionDates.has(date)) {
-      const prevus = creneauxPrevusParDate.get(date) ?? new Set<string>();
-      const enTrop = creneaux.filter((c) => !prevus.has(c));
-      if (enTrop.length > 0) {
-        anomalies.push({
-          date,
-          creneau: enTrop.map((c) => DEMI_LABELS[c] ?? c).join(' + '),
-          detail: `Réservation « ${r?.creneau ?? 'journee'} » plus large que les horaires de la session pratique du jour : seuls les créneaux de la session sont attendus.`,
-        });
-      }
-      continue;
+    const enTrop = creneaux.filter((c) => !jour.creneaux.has(c));
+    if (enTrop.length > 0) {
+      anomalies.push({
+        date,
+        creneau: enTrop.map((c) => DEMI_LABELS[c] ?? c).join(' + '),
+        detail: `Réservation « ${r?.creneau ?? 'journee'} » plus large que les horaires de la session pratique du jour : seuls les créneaux de la session sont attendus.`,
+      });
     }
-    for (const c of creneaux) prevu(date, c);
   }
 
   const valides: SignatureClassee[] = [];
@@ -380,19 +410,20 @@ export function classifierSignatures(
     if (vus.has(key)) continue;
     vus.add(key);
     const label = DEMI_LABELS[demi] ?? demi;
-    const dansPerimetre = datesTheorie.has(date) || datesPratique.has(date);
-    if (dansPerimetre) {
+    const jour = parDate.get(date);
+    if (jour && jour.creneaux.has(demi)) {
+      // Paire date + créneau réellement prévue : seule signature comptée.
       valides.push({ date, creneau: label });
-      const prevus = creneauxPrevusParDate.get(date);
-      if (prevus && !prevus.has(demi)) {
+    } else {
+      // Conservée, jamais effacée ni réattribuée ; non comptée.
+      horsSession.push({ date, creneau: label });
+      if (jour) {
         anomalies.push({
           date,
           creneau: label,
           detail: 'Signature sur un créneau non prévu par les horaires de la session du jour — conservée, à vérifier (jamais effacée ni antidatée).',
         });
       }
-    } else {
-      horsSession.push({ date, creneau: label });
     }
   }
   const tri = (a: SignatureClassee, b: SignatureClassee) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau);
