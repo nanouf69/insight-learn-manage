@@ -86,9 +86,23 @@ export function calculerSignaturesManquantes(
     if (!attendus.has(key)) attendus.set(key, { creneau, source });
   };
 
+  // Sessions pratiques par date : leurs horaires explicites priment sur une
+  // réservation « journée » du même jour (9h-12h ne devient jamais matin + après-midi).
+  const pratiqueSessionParDate = new Map<string, { creneaux: string[]; nom: string }>();
   for (const row of sessionRows ?? []) {
     const s = row?.sessions;
-    if (!s || row?.liste_attente === true || annulee(s)) continue;
+    if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
+    const type = String(s.type_session ?? '').toLowerCase();
+    if (!type.includes('pratique')) continue;
+    const date = normDate(s.date_debut);
+    if (!estDate(date)) continue;
+    const creneaux = creneauxAttendus(row.heure_debut_personnalisee ?? s.heure_debut, row.heure_fin_personnalisee ?? s.heure_fin);
+    if (!pratiqueSessionParDate.has(date)) pratiqueSessionParDate.set(date, { creneaux, nom: String(s.nom ?? 'Pratique') });
+  }
+
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
     const type = String(s.type_session ?? '').toLowerCase();
     const debutH = row.heure_debut_personnalisee ?? s.heure_debut;
     const finH = row.heure_fin_personnalisee ?? s.heure_fin;
