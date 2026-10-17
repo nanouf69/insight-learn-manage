@@ -87,6 +87,7 @@ export const resolvePratiqueSlotParts = (
   slot: PlanningDaySlot,
   type: PratiqueFormationType,
   reservationCreneau: PratiqueReservationCreneau = "journee",
+  preserveArchivedFallback = false,
 ): PratiqueSlotPart[] => {
   const defaults = DEFAULT_SLOTS[type];
   const hasObjectSlot = typeof slot === "object" && slot !== null;
@@ -102,7 +103,7 @@ export const resolvePratiqueSlotParts = (
     if ((reservationCreneau === "apresmidi" || reservationCreneau === "journee") && rawApresmidi) {
       selected.push({ creneau: "apres_midi", label: rawApresmidi });
     }
-    {
+    if (selected.length > 0 || !preserveArchivedFallback) {
       return selected.map(({ creneau, label }) => {
         const parsed = parseRange(label);
         return { creneau, label: cleanLabel(label), minutes: parsed.minutes, startMinute: parsed.start, endMinute: parsed.end };
@@ -163,10 +164,10 @@ const normaliserReservations = (rows: any[]) => (rows || [])
   .filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
 
 /** Calcul pur des créneaux retenus (mêmes règles en direct et pour un relevé figé). */
-export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows: any[], daySlots: Map<string, PlanningDaySlot>): PratiqueSlotDetail[] => {
+export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows: any[], daySlots: Map<string, PlanningDaySlot>, preserveArchivedFallback = false): PratiqueSlotDetail[] => {
   const reservations = normaliserReservations(reservationRows);
   const out: PratiqueSlotDetail[] = reservations.map((row) => {
-    const parts = resolvePratiqueSlotParts(daySlots.get(row.date), row.typeFormation, row.reservationCreneau);
+    const parts = resolvePratiqueSlotParts(daySlots.get(row.date), row.typeFormation, row.reservationCreneau, preserveArchivedFallback);
     const minutes = parts.reduce((sum, part) => sum + part.minutes, 0);
     return { ...row, parts, minutes, label: parts.map((part) => part.label).join(" + ") || "Pratique" };
   });
@@ -179,7 +180,7 @@ export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows:
     if (!date || seenDates.has(date)) continue;
     const minutes = minutesFromSessionTimes(row.heure_debut_personnalisee || sess.heure_debut, row.heure_fin_personnalisee || sess.heure_fin, 180);
     const plannedSlot = daySlots.get(date);
-    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee") : undefined;
+    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee", preserveArchivedFallback) : undefined;
     out.push({
       date,
       typeFormation: normalizePratiqueType(sess.nom),
@@ -206,7 +207,7 @@ export const pratiqueSlotDetailsDepuisGel = (sources: Record<string, any>): Prat
     throw new Error("Planning pratique non archivé dans ce relevé figé : indisponible");
   }
   const dates = [...normaliserReservations(reservations_pratique).map((r) => r.date), ...datesSessionsPratique(sessions)];
-  return calculerPratiqueSlotDetails(reservations_pratique, sessions, daySlotsDepuisConfigs(dates, planning_configs));
+  return calculerPratiqueSlotDetails(reservations_pratique, sessions, daySlotsDepuisConfigs(dates, planning_configs), true);
 };
 
 export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<PratiqueSlotDetail[]> => {
