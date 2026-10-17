@@ -29,7 +29,7 @@ export function ContratFormationSection({ apprenant, value, onChange }: { appren
       const p = { ...(d.pratique ?? emptyPratique()), ...patch };
       if (p.incluse === 'non') { p.heures = '0'; p.mode = ''; p.effectifPrevu = ''; p.effectifMax = ''; p.conduiteIndividuelle = ''; }
       if (p.mode === 'individuel') { p.effectifPrevu = '1'; p.effectifMax = '1'; }
-      const fields = { ...d.fields, practiceHours: p.incluse ? p.heures : (d.fields.practiceHours ?? '') };
+      const fields: Record<string, string> = { ...d.fields, practiceHours: p.incluse ? p.heures : (d.fields.practiceHours ?? '') };
       if (p.mode === 'individuel') fields.headcount = '1';
       else if (p.mode === 'groupe' && p.effectifPrevu) fields.headcount = p.effectifPrevu;
       return { ...d, verified: false, pratique: p, fields };
