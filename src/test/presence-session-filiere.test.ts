@@ -4,7 +4,7 @@ import { calculerTauxPresenceHeures } from "../components/crm/TauxPresenceSessio
 import { heuresSessionPourApprenant } from "../lib/sessionHeures";
 const mixte = { nom: "Session VTC et TAXI", type_session: "theorique", heures_total: 90, date_debut: "2026-09-14", date_fin: "2026-09-27" };
 const inscriptions = [{ sessions: mixte }, { sessions: { type_session: "pratique", heures_total: 6, date_debut: "2026-10-15" } }];
-const signatures = Array.from({ length: 10 }, (_, i) => ["matin", "apres_midi"].map(demi_journee => ({ date_emargement: `2026-09-${14+i}`, demi_journee, signature_data_url: "data:image/png;base64,AAAA" }))).flat();
+const signatures = [14,15,16,17,18,21,22,23,24,25].map((jour) => ["matin", "apres_midi"].map(demi_journee => ({ date_emargement: `2026-09-${jour}`, demi_journee, signature_data_url: "data:image/png;base64,AAAA" }))).flat();
 describe("Présence selon la filière", () => {
   it.each([["vtc",60,66],["taxi",90,96]])("%s utilise sa base sans modifier les preuves", (filiere, session, total) => {
     const avant = JSON.stringify({ signatures, inscriptions });

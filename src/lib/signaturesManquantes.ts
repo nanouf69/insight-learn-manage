@@ -85,7 +85,7 @@ export function calculerSignaturesManquantes(
   const attendus = new Map<string, { creneau: string; source: string }>();
   const { parDate } = planningCreneaux(sessionRows, reservations, configs);
   for (const [date, jour] of parDate) {
-    for (const creneau of jour.creneaux) attendus.set(`${date}|${creneau}`, { creneau, source: jour.pratique ? 'Pratique — inscription / réservation' : 'Théorie — inscription de session' });
+    for (const creneau of jour.creneaux) attendus.set(`${date}|${creneau}`, { creneau, source: jour.pratique ? `Pratique ${String(reservations.find(r => normDate(r.date_choisie) === date)?.type_formation ?? '').toUpperCase()} — inscription / réservation` : 'Théorie — inscription de session' });
   }
 
   const manquantes: SignatureManquante[] = [];

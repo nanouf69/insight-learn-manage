@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { planningCreneaux } from "@/lib/signaturesManquantes";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 export type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
@@ -299,6 +301,26 @@ export const creneauHorairePratique = (k: CreneauKey): string =>
  *
  * Borne max : 90 jours en arrière pour limiter la charge.
  */
+/** Future theory sheets: actual assigned sessions intersected with dated teaching blocks.
+ * No learner global dates, waitlists, excluded sessions or inferred weekdays. */
+export function theorySlotsForAttendance(rows: any[], blocs: any[], filiere: string): Array<{ date: string; creneau: CreneauKey }> {
+  const plan = planningCreneaux(rows.filter(r => /theorique/i.test(r.sessions?.type_session ?? '')), []).parDate;
+  const out = new Map<string, { date: string; creneau: CreneauKey }>();
+  for (const b of blocs) {
+    const cibles = Array.isArray(b.publics_cibles) ? b.publics_cibles : [];
+    if (cibles.length ? !cibles.includes(filiere.toUpperCase()) : !new RegExp(`\\b${filiere}\\b`, 'i').test(b.formation ?? '')) continue;
+    const day = new Date(`${String(b.semaine_debut).slice(0,10)}T00:00:00Z`);
+    day.setUTCDate(day.getUTCDate() + Number(b.jour));
+    if (!Number.isFinite(day.getTime())) continue;
+    const date = day.toISOString().slice(0,10);
+    const a = timeToMin(b.heure_debut), z = timeToMin(b.heure_fin);
+    if (z <= a) continue;
+    const slots: CreneauKey[] = a >= 17*60 ? [...(a < 18*60+30 ? ['soir_1' as const] : []), ...(z > 18*60+30 ? ['soir_2' as const] : [])] : [...(a < 12*60 ? ['matin' as const] : []), ...(a < 17*60 && z > 13*60 ? ['apres_midi' as const] : [])];
+    for (const creneau of slots) if (plan.get(date)?.creneaux.has(creneau)) out.set(`${date}|${creneau}`, {date,creneau});
+  }
+  return [...out.values()].sort((a,b) => a.date.localeCompare(b.date));
+}
+
 export const getExpectedEmargements = async (params: {
   mode: "fc" | "presentiel";
   formationChoisie?: string | null;
@@ -309,6 +331,16 @@ export const getExpectedEmargements = async (params: {
   endDate: Date;
 }): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
   const { mode, startDate, endDate, apprenantId } = params;
+  if (mode === 'presentiel') {
+    if (!apprenantId) return [];
+    const [rows, blocs] = await Promise.all([
+      fetchAllRows<any>((f,t) => supabase.from('session_apprenants').select('id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)').eq('apprenant_id',apprenantId).order('id').range(f,t)),
+      fetchAllRows<any>((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    ]);
+    const filiere = String(params.typeApprenant ?? '').toLowerCase().split('-')[0];
+    const now = new Date();
+    return theorySlotsForAttendance(rows,blocs,filiere).filter(e => isCreneauDue(e.date,e.creneau,formatISO(now),now.getHours()*60+now.getMinutes()));
+  }
 
   const start = new Date(startDate); start.setHours(0, 0, 0, 0);
   const end = new Date(endDate); end.setHours(0, 0, 0, 0);
