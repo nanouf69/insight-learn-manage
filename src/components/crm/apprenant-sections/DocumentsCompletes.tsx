@@ -884,7 +884,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
               const nbHorsSession = classificationSignatures?.horsSession?.length ?? 0;
               if (manquantes.length === 0 && absences.length === 0 && nbAnomalies === 0 && nbHorsSession === 0) {
                 if (manqueObjectif > 0) {
-                  return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof!.total} / {bilanEdof!.objectifTotal}).</p>;
+                  return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof?.total} / {bilanEdof?.objectifTotal}).</p>;
                 }
                 return <p className="text-sm text-emerald-700">Aucune signature manquante.</p>;
               }
@@ -921,10 +921,10 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   {(classificationSignatures?.anomalies?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-sm font-semibold text-amber-700">
-                        Anomalies à vérifier ({classificationSignatures!.anomalies.length})
+                        Anomalies à vérifier ({classificationSignatures?.anomalies.length})
                       </p>
                       <ul className="mt-1 space-y-0.5">
-                        {classificationSignatures!.anomalies.map((a, i) => (
+                        {classificationSignatures?.anomalies.map((a, i) => (
                           <li key={`${a.date}|${a.creneau}|${i}`} className="text-sm text-amber-700">
                             {datePresenceAvecJour(a.date)} — {a.creneau} — {a.detail}
                           </li>
@@ -932,13 +932,18 @@ export function DocumentsCompletes({ apprenant }: Props) {
                       </ul>
                     </div>
                   )}
+                  {(classificationSignatures?.aVerifier?.length ?? 0) > 0 && (
+                    <div><p className="text-sm font-semibold text-muted-foreground">Signatures rattachées à une inscription en attente — à vérifier, non comptées</p>
+                      <ul>{classificationSignatures?.aVerifier.map(h => <li key={`${h.date}|${h.creneau}`} className="text-sm">{datePresenceAvecJour(h.date)} — {h.creneau} — {h.source}</li>)}</ul>
+                    </div>
+                  )}
                   {(classificationSignatures?.horsSession?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-sm font-semibold text-muted-foreground">
-                        Signatures hors périmètre retenu ({classificationSignatures!.horsSession.length}) — conservées, non comptées
+                        Signatures hors périmètre retenu ({classificationSignatures?.horsSession.length}) — conservées, non comptées
                       </p>
                       <ul className="mt-1 space-y-0.5">
-                        {classificationSignatures!.horsSession.map((h) => (
+                        {classificationSignatures?.horsSession.map((h) => (
                           <li key={`${h.date}|${h.creneau}`} className="text-sm text-muted-foreground">
                             {datePresenceAvecJour(h.date)} — {h.creneau}
                           </li>

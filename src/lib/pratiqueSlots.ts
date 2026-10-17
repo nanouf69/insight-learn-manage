@@ -102,7 +102,7 @@ export const resolvePratiqueSlotParts = (
     if ((reservationCreneau === "apresmidi" || reservationCreneau === "journee") && rawApresmidi) {
       selected.push({ creneau: "apres_midi", label: rawApresmidi });
     }
-    if (selected.length > 0) {
+    {
       return selected.map(({ creneau, label }) => {
         const parsed = parseRange(label);
         return { creneau, label: cleanLabel(label), minutes: parsed.minutes, startMinute: parsed.start, endMinute: parsed.end };
@@ -140,12 +140,13 @@ export const daySlotsDepuisConfigs = (dates: string[], configs: any[]) => {
 export const fetchPlanningDaySlotsForDates = async (dates: string[]) => {
   const normalizedDates = Array.from(new Set(dates.map(normalizeDate).filter(Boolean))).sort();
   if (normalizedDates.length === 0) return new Map<string, PlanningDaySlot>();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("planning_pratique_config" as any)
     .select("planning_start_date, planning_end_date, day_time_slots, updated_at")
     .lte("planning_start_date", normalizedDates[normalizedDates.length - 1])
     .gte("planning_end_date", normalizedDates[0])
     .order("updated_at", { ascending: false });
+  if (error) throw error;
   return daySlotsDepuisConfigs(normalizedDates, (data as any[]) || []);
 };
 
@@ -218,15 +219,17 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
       .order("date_choisie", { ascending: true }),
     supabase
       .from("session_apprenants")
-      .select("heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, date_debut, date_fin, heure_debut, heure_fin, statut)")
+      .select("liste_attente, emargements_exclus, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, date_debut, date_fin, heure_debut, heure_fin, statut)")
       .eq("apprenant_id", apprenantId),
   ]);
   if (reservationsRes.error) throw reservationsRes.error;
   if (sessionsRes.error) throw sessionsRes.error;
   const reservations = (reservationsRes.data as any[]) || [];
-  const sessionRows = (sessionsRes.data as any[]) || [];
+  const allSessionRows = (sessionsRes.data as any[]) || [];
+  const excludedDates = new Set(allSessionRows.filter(r => r.emargements_exclus === true).map(r => normalizeDate(r.sessions?.date_debut)));
+  const sessionRows = allSessionRows.filter(r => r.emargements_exclus !== true && r.liste_attente !== true);
   const daySlots = await fetchPlanningDaySlotsForDates([...normaliserReservations(reservations).map((r) => r.date), ...datesSessionsPratique(sessionRows)]);
-  return calculerPratiqueSlotDetails(reservations, sessionRows, daySlots);
+  return calculerPratiqueSlotDetails(reservations.filter(r => !excludedDates.has(normalizeDate(r.date_choisie))), sessionRows, daySlots);
 };
 
 export const pratiqueSlotDetailsToMinutes = (details: PratiqueSlotDetail[]) =>
