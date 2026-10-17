@@ -8,6 +8,22 @@ export function buildTrainingContractPdf(c: TrainingContract, now: Date, definit
   const validation = validateContract(c, c.learnerId, now);
   if (definitive && !validation.ready) throw new Error('Contrat incomplet ou dates incompatibles : brouillon uniquement');
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  renderContractInto(doc, c, now, definitive, false);
+  const count = doc.getNumberOfPages();
+  for (let i=1;i<=count;i++) {
+    doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text(printable(`${c.reference} | ${definitive ? 'Non signe - conclusion non etablie' : validation.status} | ${validation.today}`), left0, 12);
+    doc.text(`${i} / ${count}`, 192, 286, { align: 'right' });
+  }
+  return doc;
+}
+const left0 = 18;
+/** Écrit le contrat dans un PDF existant (devis valant contrat) ou neuf. */
+export function renderContractInto(doc: jsPDF, c: TrainingContract, now: Date, definitive: boolean, newPage = true) {
+  const validation = validateContract(c, c.learnerId, now);
+  if (definitive && !validation.ready) throw new Error('Contrat incomplet ou dates incompatibles : brouillon uniquement');
+  if (newPage) doc.addPage();
+  doc.setTextColor(0, 0, 0);
   let y = 22; const left = 18; const width = 174;
   const next = () => { doc.addPage(); y = 22; };
   const paragraph = (text: string, heading = false) => {
@@ -34,11 +50,4 @@ export function buildTrainingContractPdf(c: TrainingContract, now: Date, definit
       y = (last?.finalY ?? y) + 8;
     }
   }
-  const count = doc.getNumberOfPages();
-  for (let i=1;i<=count;i++) {
-    doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(8);
-    doc.text(printable(`${c.reference} | ${definitive ? 'Non signe - conclusion non etablie' : validation.status} | ${validation.today}`), left, 12);
-    doc.text(`${i} / ${count}`, 192, 286, { align: 'right' });
-  }
-  return doc;
 }

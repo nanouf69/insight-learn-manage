@@ -191,6 +191,8 @@ export type CanonicalDevisInput = {
   creneau?: string;
   notes?: string;
   signatureDataUrl?: string | null;
+  /** Devis valant contrat : CGV et bordereau de renonciation remplacés par le contrat. */
+  contractPages?: (doc: jsPDF) => void;
 };
 
 /** Génère le devis PDF canonique et retourne l'instance jsPDF prête à sauver / exporter. */
@@ -547,6 +549,9 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69", margin, 288);
   doc.text("Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon", margin, 293);
 
+  if (input.contractPages) {
+    input.contractPages(doc);
+  } else {
   // === CGV ===
   doc.addPage();
   doc.setFillColor(30, 58, 138);
@@ -686,6 +691,8 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   doc.setTextColor(140, 140, 140);
   doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69", margin, 288);
   doc.text("Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon", margin, 293);
+
+  }
 
   // === PAGE NUMBERS ===
   doc.setFontSize(7);
