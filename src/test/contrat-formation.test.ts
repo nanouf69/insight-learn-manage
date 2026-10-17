@@ -5,7 +5,7 @@ import { buildTrainingContractPdf } from '@/lib/contratFormation/pdf';
 const now = new Date('2026-10-17T09:02:00Z');
 function complete(): TrainingContract {
   const fields = Object.fromEntries(CONTRACT_FIELD_GROUPS.flatMap(g=>g.fields.map(([key])=>[key,'Référence fictive vérifiée'])));
-  Object.assign(fields, {start:'2026-11-02',end:'2026-11-10',totalHours:'6',presenceHours:'0',distanceHours:'0',practiceHours:'6',price:'100',priceHT:'100',vatRate:'0',vatAmount:'0',vat:'Article 261 CGI — référence fictive',headcount:'3'});
+  Object.assign(fields, {start:'2026-11-02',end:'2026-11-10',totalHours:'6',presenceHours:'0',distanceHours:'0',practiceHours:'6',price:'100',priceHT:'100',vatRate:'0',vatAmount:'0',vat:'Article 261 CGI — référence fictive',headcount:'3',conclusionMode:'sur place'});
   return {reference:'FICTIF',learnerId:'fictif-A',sessionId:'session-A',pathway:'pratique-taxi',funding:'personnel',fields,activities:[{id:'p',title:'Pratique TAXI',activities:'Conduite',modality:'Présentiel pratique',hours:'6',evaluation:'Mise en situation',value:'100'}],payments:[{amount:'30',date:'2026-11-01',milestone:'Après délai'},{amount:'20',date:'2026-11-02',milestone:'Début'},{amount:'20',date:'2026-11-05',milestone:'Milieu'},{amount:'30',date:'2026-11-10',milestone:'Fin'}],verified:true,concludedAt:null,signedAt:null};
 }
 describe('Contrat individuel — règles du modèle',()=>{

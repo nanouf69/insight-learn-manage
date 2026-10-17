@@ -99,6 +99,7 @@ export function validateContract(contract: TrainingContract, expectedLearner: st
   if (contract.learnerId !== expectedLearner || !expectedLearner) issues.push('Le contrat ne correspond pas au dossier apprenant ouvert.');
   if (contract.funding !== 'personnel') issues.push('Modèle réservé au financement personnel ; ne remplace pas les documents CPF, OPCO ou entreprise.');
   if (!contract.pathway) issues.push('Choisir le parcours effectivement vendu.');
+  if (!['sur place','à distance','hors établissement'].includes(f.conclusionMode ?? '')) issues.push('Choisir le mode de conclusion : sur place, à distance ou hors établissement.');
   if (!validDay(f.start ?? '') || !validDay(f.end ?? '')) issues.push('Dates de début et de fin absentes ou invalides.');
   else {
     if (f.end < f.start) issues.push('La fin précède le début de formation.');
