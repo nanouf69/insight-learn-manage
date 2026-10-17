@@ -22,7 +22,7 @@ describe("Texte fourni repris fidèlement", () => {
   });
   it("délais et avertissement CDC/France Travail présents", () => {
     const t = SUITE_PRATIQUE.join(" ");
-    expect(t).toContain("pendant 6 mois à compter de ce message");
+    expect(t).toContain("pendant 5 mois à compter de ce message");
     expect(t).toContain("Caisse des Dépôts (Mon Compte Formation)");
     expect(t).toContain("France Travail");
     expect(t).toContain("dans un délai de 5 jours à compter de la réception de ce message");
@@ -110,10 +110,10 @@ describe("Délais depuis l'envoi réel", () => {
     expect(echeancesDepuisEnvoi(null)).toBeNull();
     expect(echeancesDepuisEnvoi("pas une date")).toBeNull();
   });
-  it("5 jours et 6 mois depuis envoye_le", () => {
+  it("5 jours et 5 mois depuis envoye_le", () => {
     const e = echeancesDepuisEnvoi("2026-10-15T10:00:00Z")!;
     expect(e.reponseAttendue.toISOString()).toBe("2026-10-20T10:00:00.000Z");
-    expect(e.finDisponibilite.toISOString().slice(0, 10)).toBe("2027-04-15");
+    expect(e.finDisponibilite.toISOString().slice(0, 10)).toBe("2027-03-15");
   });
   it("envoye_le écrit seulement après succès d'envoi, une seule fois", () => {
     // Envoi orchestré côté serveur : le navigateur n'écrit plus envoye_le (voir echec-choix-pratique-serveur.test.ts).
