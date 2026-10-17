@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Contrat de formation individuel — 17/10 09:02 UTC
+- [ ] Intégrer près du devis, formulaire administratif personnel, modèle complet et annexes, aperçu/PDF communs.
+- [ ] Contrôler dates réelles, délai 14 jours, financement, identité/parcours, champs manquants et accès admin ; aucun effet sur ouverture pédagogique existante.
+- [ ] Tests fictifs, téléchargement PDF et inspection de toutes les pages ; journal, preuves et limites, sans envoi/publication.
+
 ## Source des dates du devis — 17/10 08:54 UTC
 - [x] Retirer le repli sur la fiche élève dans l’aperçu et les deux générations DOCX ; utiliser seulement le choix du devis, sans toucher aux historiques.
 - [x] 10 tests PASS ; aperçu vide malgré date de fiche, sélection 22 octobre identique au DOCX téléchargé et à la page de signature ; envoi/signature simulés, zéro erreur JS, compilation OK 08:55:28 UTC. Aucun envoi réel ni publication.
