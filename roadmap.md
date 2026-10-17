@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Dates pratiques dans les devis — 17/10
+- [x] Proposer les journées explicitement typées du planning dans les devis pratiques, sans changer prix, réservations ou documents existants.
+- [x] Cinq tests fictifs PASS, sélection navigateur 22 octobre confirmée parmi les 17/22/23 octobre TAXI, écritures bloquées ; compilation OK. Aperçu PDF et devis réel NON PROUVÉS ; aucun envoi ni publication.
+
 ## Corrections techniques autorisées — 17/10
 - [x] Sessions fraîches, progression isolée, origine canonique manuelle, examens sans faux vide ; code frontend non publié.
 - [x] Documents 4 Mo, erreurs lisibles, reprise idempotente et conservation des versions ; mocks seulement.

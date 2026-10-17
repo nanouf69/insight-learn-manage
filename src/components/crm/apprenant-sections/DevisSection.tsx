@@ -19,6 +19,7 @@ import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
+import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPratiqueDates";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
   if (!fichierUrl) return null;
@@ -843,6 +844,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [notes, setNotes] = useState("");
   const [sessionDate, setSessionDate] = useState<string>("");
   const [formationType, setFormationType] = useState<'vtc' | 'taxi' | null>(null);
+  const [practicalPlanning, setPracticalPlanning] = useState<DevisPratiquePlanning[]>([]);
+  const [practicalDatesLoading, setPracticalDatesLoading] = useState(true);
+  const [practicalDatesError, setPracticalDatesError] = useState(false);
+  const isPracticalQuote = /^formation pratique\b/i.test(lignes[0]?.designation?.trim() ?? '');
+  const practicalFiliere = /taxi/i.test(lignes[0]?.designation ?? '') ? 'taxi' : /vtc/i.test(lignes[0]?.designation ?? '') ? 'vtc' : formationType;
   const [tvaTaux, setTvaTaux] = useState<number>(0);
   const [generating, setGenerating] = useState(false);
   const [generatingDocx, setGeneratingDocx] = useState(false);
@@ -860,6 +866,30 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [organismeId, setOrganismeId] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const rows: DevisPratiquePlanning[] = [];
+        for (let offset = 0; ; offset += 500) {
+          const { data, error } = await supabase.from('planning_pratique_config')
+            .select('day_time_slots, excluded_days').order('id').range(offset, offset + 499);
+          if (error) throw error;
+          rows.push(...(data ?? []));
+          if ((data?.length ?? 0) < 500) break;
+        }
+        if (active) setPracticalPlanning(rows);
+      } catch {
+        if (active) setPracticalDatesError(true);
+      } finally {
+        if (active) setPracticalDatesLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => { setSessionDate(''); }, [isPracticalQuote, practicalFiliere]);
 
   useEffect(() => {
     (async () => {
@@ -1004,7 +1034,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     setSessionDate("");
   };
 
-  const availableSessionDates = formationType === 'taxi' ? DATES_TAXI : formationType === 'vtc' ? DATES_VTC : [];
+  const availableSessionDates = isPracticalQuote
+    ? practicalFiliere ? devisPratiqueDates(practicalPlanning, practicalFiliere) : []
+    : formationType === 'taxi' ? DATES_TAXI : formationType === 'vtc' ? DATES_VTC : [];
 
   const totalHT = lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
   const montantTVA = totalHT * (tvaTaux / 100);
@@ -1614,10 +1646,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             </Select>
           </div>
 
-          {availableSessionDates.length > 0 && (
+          {(availableSessionDates.length > 0 || isPracticalQuote) && (
             <div className="space-y-2">
-              <Label>Dates de formation à choisir ({formationType === 'taxi' ? 'TAXI' : 'VTC'})</Label>
-              <Select value={sessionDate} onValueChange={setSessionDate}>
+              <Label>Dates de formation {isPracticalQuote ? 'pratique ' : ''}à choisir ({(isPracticalQuote ? practicalFiliere : formationType) === 'taxi' ? 'TAXI' : 'VTC'})</Label>
+              <Select value={sessionDate} onValueChange={setSessionDate} disabled={isPracticalQuote && (practicalDatesLoading || practicalDatesError || availableSessionDates.length === 0)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une session..." />
                 </SelectTrigger>
@@ -1627,6 +1659,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                   ))}
                 </SelectContent>
               </Select>
+              {isPracticalQuote && practicalDatesLoading && <p className="text-sm text-muted-foreground">Chargement des dates pratiques…</p>}
+              {isPracticalQuote && practicalDatesError && <p className="text-sm text-destructive">Impossible de lire le planning pratique. Aucune date théorique proposée à sa place.</p>}
+              {isPracticalQuote && !practicalDatesLoading && !practicalDatesError && availableSessionDates.length === 0 && <p className="text-sm text-muted-foreground">Aucune journée pratique enregistrée pour cette filière.</p>}
               {sessionDate && (
                 <p className="text-xs text-muted-foreground">
                   ✓ Cette session sera imprimée dans les notes du devis.
