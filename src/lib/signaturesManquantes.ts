@@ -191,20 +191,49 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 // VTC journée et soir : 20 théorie + 2 pratique = 22 ;
 // TAXI : 30 + 2 = 32. Signature comptée une seule fois par date + créneau.
 
-/** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
-export function datesDuPlanning(sessionRows: any[], reservations: any[]): { datesTheorie: Set<string>; datesPratique: Set<string>; soir: boolean } {
-  const datesPratique = new Set<string>();
-  const datesTheorie = new Set<string>();
+interface JourPlanning { creneaux: Set<string>; pratique: boolean }
+
+/**
+ * Créneaux réellement prévus par date, à partir des inscriptions retenues
+ * (horaires personnalisés prioritaires) et des réservations. Source unique pour
+ * les attentes, les bilans et la classification : une signature ne compte que si
+ * sa paire date + créneau est prévue ici. Une réservation ne contourne jamais
+ * une inscription pratique exclue du périmètre.
+ */
+export function planningCreneaux(sessionRows: any[], reservations: any[]): { parDate: Map<string, JourPlanning>; soir: boolean } {
+  const parDate = new Map<string, JourPlanning>();
   let soir = false;
+  const add = (date: string, creneaux: string[], pratique: boolean) => {
+    const cur = parDate.get(date);
+    if (cur) {
+      for (const c of creneaux) cur.creneaux.add(c);
+      cur.pratique = cur.pratique || pratique;
+    } else {
+      parDate.set(date, { creneaux: new Set(creneaux), pratique });
+    }
+  };
+  const pratiqueExclues = new Set<string>();
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s || !inscriptionExclue(row)) continue;
+    if (!String(s.type_session ?? '').toLowerCase().includes('pratique')) continue;
+    const d = normDate(s.date_debut);
+    if (estDate(d)) pratiqueExclues.add(d);
+  }
+  const pratiqueRetenues = new Set<string>();
   for (const row of sessionRows ?? []) {
     const s = row?.sessions;
     if (!s || row?.liste_attente === true || annulee(s) || inscriptionExclue(row)) continue;
     const type = String(s.type_session ?? '').toLowerCase();
+    const debutH = row.heure_debut_personnalisee ?? s.heure_debut;
+    const finH = row.heure_fin_personnalisee ?? s.heure_fin;
     if (type.includes('pratique')) {
       const d = normDate(s.date_debut);
-      if (estDate(d)) datesPratique.add(d);
+      if (!estDate(d)) continue;
+      pratiqueRetenues.add(d);
+      add(d, creneauxAttendus(debutH, finH), true);
     } else if (type.includes('theorique')) {
-      const h = String(row.heure_debut_personnalisee ?? s.heure_debut ?? '').slice(0, 5);
+      const h = String(debutH ?? '').slice(0, 5);
       if (h >= '17:00') soir = true;
       // Mêmes bornes que les signatures manquantes : intersection inscription ∩ session.
       const debutBrut = normDate(row.date_debut || s.date_debut);
@@ -213,13 +242,29 @@ export function datesDuPlanning(sessionRows: any[], reservations: any[]): { date
       const finSession = normDate(s.date_fin || s.date_debut);
       const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
       const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
-      if (estDate(debut) && estDate(fin) && fin >= debut) for (const d of joursOuvres(debut, fin)) datesTheorie.add(d);
+      if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
+      const creneaux = creneauxAttendus(debutH, finH);
+      for (const d of joursOuvres(debut, fin)) add(d, creneaux, false);
     }
   }
   for (const r of reservations ?? []) {
     const d = normDate(r?.date_choisie);
-    if (estDate(d)) datesPratique.add(d);
+    if (!estDate(d)) continue;
+    // Session pratique du jour (retenue ou exclue) : la réservation ne crée rien de plus.
+    if (pratiqueExclues.has(d) || pratiqueRetenues.has(d)) continue;
+    const v = String(r?.creneau ?? '').toLowerCase();
+    const creneaux = v.includes('apres') || v.includes('aprem') ? ['apres_midi'] : v.includes('matin') ? ['matin'] : ['matin', 'apres_midi'];
+    add(d, creneaux, true);
   }
+  return { parDate, soir };
+}
+
+/** Dates réellement prévues au planning (théorie = jours ouvrés des sessions, pratique = sessions/réservations). */
+export function datesDuPlanning(sessionRows: any[], reservations: any[]): { datesTheorie: Set<string>; datesPratique: Set<string>; soir: boolean } {
+  const { parDate, soir } = planningCreneaux(sessionRows, reservations);
+  const datesTheorie = new Set<string>();
+  const datesPratique = new Set<string>();
+  for (const [d, j] of parDate) (j.pratique ? datesPratique : datesTheorie).add(d);
   return { datesTheorie, datesPratique, soir };
 }
 export interface BilanSignaturesEdof {
