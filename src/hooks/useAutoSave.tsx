@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
+import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -37,6 +38,7 @@ async function saveWithRetry(
   },
   retries = MAX_RETRIES
 ): Promise<boolean> {
+  await assurerSessionFraiche();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     console.warn("[AutoSave] No authenticated user, fallback to backend save-public-form");
@@ -48,7 +50,7 @@ async function saveWithRetry(
     });
 
     if (backendSaved) {
-      return true;
+      return false; // Local copy is not a server acknowledgement.
     }
 
     // Last-resort fallback to localStorage
@@ -225,7 +227,7 @@ export function useAutoSave({
     if (success) {
       setStatus("saved");
       setLastSavedAt(new Date());
-      pendingDataRef.current = null;
+      if (pendingDataRef.current === data) pendingDataRef.current = null;
       // Reset status after 3s
       setTimeout(() => setStatus(prev => prev === "saved" ? "idle" : prev), 3000);
     } else {
@@ -240,6 +242,7 @@ export function useAutoSave({
 
   const queueSave = useCallback((data: Record<string, any>) => {
     pendingDataRef.current = data;
+    try { localStorage.setItem(`autosave_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* keep memory */ }
     // Debounce: save 2s after last change
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
@@ -247,7 +250,7 @@ export function useAutoSave({
         triggerSave(pendingDataRef.current);
       }
     }, 2000);
-  }, [triggerSave]);
+  }, [triggerSave, apprenantId, typeDocument]);
 
   // Periodic save every 30s
   useEffect(() => {

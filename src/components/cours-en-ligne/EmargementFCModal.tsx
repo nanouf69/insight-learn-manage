@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { uploadInscriptionDocument } from "@/lib/documentUpload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -306,9 +307,8 @@ export const EmargementFCModal = ({
       formData.append("titre", titre);
       formData.append("type_document", docType);
 
-      const { data, error } = await supabase.functions.invoke("upload-document-inscription", {
-        body: formData,
-      });
+      const data = await uploadInscriptionDocument(formData);
+      const error = null;
       if (error || !data?.success) {
         throw new Error(error?.message || data?.error || "Upload échoué");
       }

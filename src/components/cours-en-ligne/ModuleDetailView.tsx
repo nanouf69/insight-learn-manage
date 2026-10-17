@@ -1,4 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { pendingModulePages, queueModulePages } from "@/lib/modulePagesPersistence";
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
@@ -7015,6 +7016,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!uiStateHydrated || !apprenantId || pages.length === 0) return;
       let cancelled = false;
       (async () => {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const owner = sessionData.session?.user?.id;
+        if (owner) {
+          const local = pendingModulePages(owner, apprenantId, module.id);
+          if (!cancelled && local.length) setCompletedPages(prev => new Set([...prev, ...local.map(pageFromStorage).filter(n => n >= 0 && n < pages.length)]));
+        }
         const { data, error } = await (supabase as any)
           .from("apprenant_module_completion")
           .select("pages_completees, status")
@@ -7756,37 +7763,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
     const markPageCompleted = (pageIndex: number) => {
-      let snapshot: number[] = [];
-      setCompletedPages(prev => {
-        const next = new Set(prev);
-        next.add(pageIndex);
-        snapshot = Array.from(next);
-        return next;
-      });
+      const snapshot = Array.from(new Set([...completedPages, pageIndex]));
+      setCompletedPages(new Set(snapshot));
 
       // Persistance serveur immédiate : la progression étape par étape ne doit
       // jamais dépendre du sessionStorage (perdue à la reconnexion / autre appareil).
       if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
         const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
         (async () => {
-          let lastError: any = null;
-          for (let attempt = 1; attempt <= 3; attempt++) {
-            const { error } = await (supabase as any).rpc("save_module_pages_progress", {
-              _apprenant_id: apprenantId,
-              _module_id: module.id,
-              _pages: pagesForStorage(snapshot),
-              _progress: progress,
-            });
-            if (!error) return;
-            lastError = error;
-            console.error(`[module ${module.id}] progression étape non enregistrée (essai ${attempt}/3)`, error);
-            await new Promise(r => setTimeout(r, 700 * attempt));
-          }
-          if (await isLearnerSessionExpired(lastError)) {
-            toast.error(SESSION_EXPIREE_MESSAGE, { duration: 15000 });
-          } else {
-            toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion.");
-          }
+          const confirmed = await queueModulePages(apprenantId, module.id, pagesForStorage(snapshot), progress);
+          if (!confirmed) toast.error("Progression conservée sur cet appareil, en attente de confirmation. Reconnectez-vous puis revenez sur cette page.", { duration: 15000 });
         })();
       }
     };

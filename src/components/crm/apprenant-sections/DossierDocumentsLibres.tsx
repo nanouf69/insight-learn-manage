@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { uploadInscriptionDocument } from "@/lib/documentUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,9 +62,8 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
           "type_document",
           `libre_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         );
-        const { data, error } = await supabase.functions.invoke("upload-document-inscription", {
-          body: formData,
-        });
+        const data = await uploadInscriptionDocument(formData);
+        const error = null;
         if (error || !(data as any)?.success) {
           throw new Error(error?.message || (data as any)?.error || "Upload échoué");
         }

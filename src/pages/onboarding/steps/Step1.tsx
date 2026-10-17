@@ -470,7 +470,7 @@ export default function Step1() {
         {/* Info format */}
         <div className="flex items-center gap-2 text-gray-500 text-sm">
           <Info className="w-4 h-4" />
-          <span>Formats acceptés : PDF, JPG, PNG, HEIC, WebP • Max 2Mo par fichier</span>
+          <span>Formats acceptés : PDF, JPG, PNG, HEIC, HEIF, WebP, BMP, TIFF, GIF • Max 4 Mo par fichier</span>
         </div>
 
 

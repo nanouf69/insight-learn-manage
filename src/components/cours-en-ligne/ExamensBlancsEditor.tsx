@@ -1,4 +1,6 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { freshSessionCall } from "@/lib/sessionRpc";
+import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { captureError } from "@/lib/monitoring/errorLogger";
 import { Button } from "@/components/ui/button";
@@ -44,12 +46,7 @@ const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
 // always see the exact same version of exam data after an admin edit.
 // ────────────────────────────────────────────────────────────────────────────
 
-// Purge any stale localStorage snapshot left by previous versions
-if (typeof window !== "undefined") {
-  try { window.localStorage.removeItem("examens_blancs_snapshot_v3"); } catch {}
-  try { window.localStorage.removeItem("examens_blancs_snapshot_v2"); } catch {}
-  try { window.localStorage.removeItem("examens_blancs_snapshot"); } catch {}
-}
+// Historical browser copies are retained but never served as active content.
 
 const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
   // VTC EB1-6
@@ -398,6 +395,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   try {
     // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
+    if (!lignesFigees) await assurerSessionFraiche();
     const { data: sess } = lignesFigees ? { data: { session: { user: null } } as any } : await supabase.auth.getSession();
     if (!sess?.session) {
       tracerChargementExamens({ phase: "verification", session: "absente", premiere: "non_lue", relecture: "non" });
@@ -413,13 +411,13 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
-    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await lireVersions();
+    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await freshSessionCall(lireVersions, compteDepart ?? undefined);
     
     if (error) {
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
-      console.error("[ExamensEditor] Error loading saved exams:", error);
+      console.error("[ExamensEditor] Lecture refusée", { code: error.code, origine: "versions-actives" });
       // AUCUN REPLI : jamais de contenu statique ni de copie par position.
-      throw new ExamContentUnavailableError(error.message);
+      throw new ExamContentUnavailableError(`Lecture des versions indisponible (${error.code ?? 'réseau/droits'}). Réessayez après reconnexion.`);
     }
 
     if (!data || data.length === 0) {

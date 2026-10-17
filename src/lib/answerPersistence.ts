@@ -761,6 +761,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   const abandon = controller ? setTimeout(() => controller.abort(), ENVOI_DELAI_MS) : undefined;
   try {
+    console.info('[answerPersistence] envoi', { operation: item.id, tentative: item.attempts + 1 });
     const res = await fetch(url, {
       method: "POST",
       headers,
@@ -770,6 +771,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
       if (confirmation?.success === true && confirmation?.confirmed === true) {
+        console.info('[answerPersistence] accusé serveur', { operation: item.id, tentative: item.attempts + 1, writeSeq: Number(confirmation.write_seq ?? 0) });
         rememberWriteSeq(
           item.payload.apprenant_id,
           item.payload.exercice_id,
@@ -798,7 +800,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
       return "retry";
     }
     const text = await res.text();
-    console.error("[answerPersistence] Échec sauvegarde", res.status, text);
+    console.error("[answerPersistence] Échec sauvegarde", { operation: item.id, status: res.status });
     // Un refus DÉFINITIF n'est jamais renvoyé en boucle : l'élément est
     // conservé (aucune réponse n'est supprimée) et l'apprenant voit la vraie
     // raison. Une erreur TEMPORAIRE reste en file et sera réessayée.
