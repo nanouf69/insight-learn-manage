@@ -52,6 +52,28 @@ function harness(owner: string | null = 'owner', learnerOwner = 'owner') {
 }
 const op = '22222222-2222-4222-8222-222222222222';
 describe('Real upload handler under mocked services', () => {
+  it('admin can upload for another owner', async () => {
+    const h = harness('admin', 'other'); h.effects.admins = true;
+    expect((await h.request(op)).status).toBe(200); expect(h.records.size).toBe(1);
+  });
+  it('valid onboarding HMAC permits its dossier, expired or old tab without token creates nothing', async () => {
+    const sign = async (exp: number) => {
+      const enc = new TextEncoder();
+      const key = await crypto.subtle.importKey('raw', enc.encode('synthetic-secret'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const bytes = await crypto.subtle.sign('HMAC', key, enc.encode(`onboarding:11111111-1111-4111-8111-111111111111:${exp}`));
+      return `${exp}.${Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('')}`;
+    };
+    const valid = harness(null);
+    expect((await valid.request(op, 'synthetic', await sign(Math.floor(Date.now()/1000)+3600))).status).toBe(200);
+    const expired = harness(null);
+    expect((await expired.request(op, 'synthetic', await sign(Math.floor(Date.now()/1000)-1))).status).toBe(401);
+    expect((await expired.request(op)).status).toBe(401); expect(expired.files.size).toBe(0);
+  });
+  it('handler accepts exactly 4 MiB and rejects one byte above without storage', async () => {
+    const h = harness(); expect((await h.request(op, 'x'.repeat(4194304))).status).toBe(200);
+    const oversized = harness(); expect((await oversized.request(op, 'x'.repeat(4194305))).status).toBe(413);
+    expect(oversized.files.size).toBe(0);
+  });
   it('preflight works without auth and creates nothing', async () => {
     const h = harness(null); const res = await h.handler(new Request('https://synthetic.test', { method: 'OPTIONS' }));
     expect(res.status).toBe(200); expect(await res.text()).toBe('ok'); expect(h.effects.inserts).toBe(0);
