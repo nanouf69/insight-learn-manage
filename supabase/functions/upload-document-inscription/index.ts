@@ -1,4 +1,3 @@
-import { cheminDocumentUnique } from "./chemin.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { DOCUMENT_MAX_BYTES, documentValidation, verifyOnboardingDocumentToken } from '../_shared/documentUploadRules.ts';

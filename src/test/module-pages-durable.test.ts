@@ -14,7 +14,9 @@ describe('Pages retained until exact server readback', () => {
     state.fail = true;
     expect(await queueModulePages('synthetic-learner', 8, [3], 25)).toBe(false);
     expect(pendingModulePages('synthetic-A', 'synthetic-learner', 8)).toEqual([3]);
-    expect(localStorage.getItem('module_pages_pending_v1:synthetic-A:synthetic-learner:8')).toContain('"confirmed"'); // remains pending, no fabricated true
+    const stored = JSON.parse(localStorage.getItem('module_pages_pending_v1:synthetic-A:synthetic-learner:8') ?? '{}');
+    expect(stored.pages).toEqual([3]);
+    expect(stored.confirmed).not.toBe(true);
   });
   it('account switch retains A, then owner reconnection confirms union', async () => {
     state.fail = true;

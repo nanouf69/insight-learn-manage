@@ -179,18 +179,21 @@ export function useLoadDraft(
   onLoaded: (data: Record<string, any>) => void,
   enabled = true
 ) {
-  const loadedRef = useRef(false);
+  const loadedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!enabled || !apprenantId || loadedRef.current) return;
-    loadedRef.current = true;
+    const identity = `${apprenantId}:${typeDocument}`;
+    if (!enabled || !apprenantId || loadedRef.current === identity) return;
+    loadedRef.current = identity;
+    let cancelled = false;
 
     loadDraftFromSupabase(apprenantId, typeDocument).then((draft) => {
-      if (draft) {
+      if (draft && !cancelled) {
         console.log(`[AutoSave] Restoring draft for ${typeDocument}:`, Object.keys(draft).length, "keys");
         onLoaded(draft);
       }
     });
+    return () => { cancelled = true; loadedRef.current = null; };
   }, [apprenantId, typeDocument, enabled]);
 }
 
@@ -208,12 +211,22 @@ export function useAutoSave({
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSavingRef = useRef(false);
+  const identityRef = useRef(`${apprenantId}:${typeDocument}`);
+  identityRef.current = `${apprenantId}:${typeDocument}`;
+  useEffect(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    pendingDataRef.current = null;
+    setStatus('idle'); setLastSavedAt(null);
+    const draft = loadSavedDraft(apprenantId, typeDocument);
+    if (draft?._pending) pendingDataRef.current = draft;
+  }, [apprenantId, typeDocument]);
 
   const triggerSave = useCallback(async (data: Record<string, any>): Promise<boolean> => {
     if (!apprenantId || !enabled) return false;
     if (isSavingRef.current) return false;
 
     isSavingRef.current = true;
+    const identity = `${apprenantId}:${typeDocument}`;
     setStatus("saving");
 
     const success = await saveWithRetry({
@@ -223,6 +236,7 @@ export function useAutoSave({
       donnees: data,
       moduleId,
     });
+    if (identityRef.current !== identity) { isSavingRef.current = false; return false; }
 
     if (success) {
       setStatus("saved");
