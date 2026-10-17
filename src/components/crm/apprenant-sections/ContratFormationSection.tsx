@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { CONTRACT_FIELD_GROUPS, type Funding, type TrainingContract, validateContract, contractAccess } from '@/lib/contratFormation/model';
+import { CONTRACT_FIELD_GROUPS, type Funding, type TrainingContract, type PratiqueConditions, validateContract, contractAccess, emptyPratique, pratiqueRecap } from '@/lib/contratFormation/model';
 import { newTrainingContract, contractProgramme, type ContractLearner } from '@/lib/contratFormation/prefill';
 import { contractSections } from '@/lib/contratFormation/text';
 import { buildTrainingContractPdf } from '@/lib/contratFormation/pdf';
@@ -15,8 +15,26 @@ import { FORMATIONS } from '@/components/cours-en-ligne/formations-data';
 import { toast } from 'sonner';
 
 interface SessionChoice { id: string; nom: string; date_debut: string | null; date_fin: string | null; lieu: string | null; heure_debut: string | null; heure_fin: string | null; trainers: string }
-export function ContratFormationSection({ apprenant }: { apprenant: ContractLearner }) {
-  const [draft, setDraft] = useState(() => newTrainingContract(apprenant));
+export function ContratFormationSection({ apprenant, value, onChange }: { apprenant: ContractLearner; value?: TrainingContract; onChange?: (c: TrainingContract) => void }) {
+  const [inner, setInner] = useState<TrainingContract>(() => ({ ...newTrainingContract(apprenant), pratique: emptyPratique() }));
+  const draft = value ?? inner;
+  const setDraft = (next: TrainingContract | ((d: TrainingContract) => TrainingContract)) => {
+    const resolved = typeof next === 'function' ? next(draft) : next;
+    if (onChange) onChange(resolved); else setInner(resolved);
+  };
+  const pratique = draft.pratique ?? emptyPratique();
+  const setPratique = (patch: Partial<PratiqueConditions>) => {
+    setPreview(false);
+    setDraft(d => {
+      const p = { ...(d.pratique ?? emptyPratique()), ...patch };
+      if (p.incluse === 'non') { p.heures = '0'; p.mode = ''; p.effectifPrevu = ''; p.effectifMax = ''; p.conduiteIndividuelle = ''; }
+      if (p.mode === 'individuel') { p.effectifPrevu = '1'; p.effectifMax = '1'; }
+      const fields: Record<string, string> = { ...d.fields, practiceHours: p.incluse ? p.heures : (d.fields.practiceHours ?? '') };
+      if (p.mode === 'individuel') fields.headcount = '1';
+      else if (p.mode === 'groupe' && p.effectifPrevu) fields.headcount = p.effectifPrevu;
+      return { ...d, verified: false, pratique: p, fields };
+    });
+  };
   const [access, setAccess] = useState<'loading'|'admin'|'denied'>('loading');
   const [sessions, setSessions] = useState<SessionChoice[]>([]);
   const [sourceError, setSourceError] = useState('');
@@ -24,7 +42,7 @@ export function ContratFormationSection({ apprenant }: { apprenant: ContractLear
   const [previewNow, setPreviewNow] = useState(new Date());
   useEffect(() => {
     let active = true;
-    setAccess('loading'); setDraft(newTrainingContract(apprenant)); setPreview(false); setSessions([]); setSourceError('');
+    setAccess('loading'); if (!onChange) setInner({ ...newTrainingContract(apprenant), pratique: emptyPratique() }); setPreview(false); setSessions([]); setSourceError('');
     async function load() {
       try {
         const { data: auth, error: authError } = await supabase.auth.getUser();
@@ -88,6 +106,19 @@ export function ContratFormationSection({ apprenant }: { apprenant: ContractLear
     {draft.funding !== 'personnel' && <p role="alert" className="text-destructive">Ce modèle individuel et son échéancier ne s’appliquent pas automatiquement à ce financement.</p>}
     <div className="space-y-2"><Label>Parcours effectivement vendu</Label><Select value={draft.pathway} onValueChange={v => { setPreview(false); setDraft(d => ({ ...d, pathway: v, verified: false, activities: contractProgramme(apprenant, v) })); }}><SelectTrigger><SelectValue placeholder="Choisir le parcours" /></SelectTrigger><SelectContent>{FORMATIONS.map(f => <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>)}<SelectItem value="pratique-taxi">Pratique seule TAXI</SelectItem><SelectItem value="pratique-vtc">Pratique seule VTC</SelectItem></SelectContent></Select></div>
     <div className="space-y-2"><Label>Session rattachée à cet apprenant</Label><Select value={draft.sessionId} onValueChange={chooseSession}><SelectTrigger><SelectValue placeholder={sessions.length ? 'Choisir la session' : 'Aucune session disponible — compléter les dates ci-dessous'} /></SelectTrigger><SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.nom} · {s.date_debut ?? 'date absente'} → {s.date_fin ?? 'date absente'}</SelectItem>)}</SelectContent></Select></div>
+    <div className="space-y-4 border-t pt-5"><h3 className="font-semibold">Formation pratique prévue par ce document</h3>
+      <div className="space-y-2"><Label>Pratique</Label><Select value={pratique.incluse} onValueChange={v => setPratique({ incluse: v as PratiqueConditions['incluse'] })}><SelectTrigger aria-label="Pratique incluse"><SelectValue placeholder="Incluse ou non incluse" /></SelectTrigger><SelectContent><SelectItem value="oui">Incluse</SelectItem><SelectItem value="non">Non incluse (0 h)</SelectItem></SelectContent></Select></div>
+      {pratique.incluse === 'oui' && <>
+        <div className="space-y-2"><Label htmlFor="cf-pratique-heures">Heures pédagogiques de pratique par apprenant</Label><Input id="cf-pratique-heures" type="number" min="0.25" step="0.25" value={pratique.heures} onChange={e => setPratique({ heures: e.target.value })} /></div>
+        <div className="space-y-2"><Label>Mode</Label><Select value={pratique.mode} onValueChange={v => setPratique({ mode: v as PratiqueConditions['mode'] })}><SelectTrigger aria-label="Mode de pratique"><SelectValue placeholder="Individuel ou groupe" /></SelectTrigger><SelectContent><SelectItem value="individuel">Individuel (solo)</SelectItem><SelectItem value="groupe">Groupe</SelectItem></SelectContent></Select></div>
+        {pratique.mode === 'groupe' && <>
+          <div className="space-y-2"><Label htmlFor="cf-pratique-prevu">Effectif prévu</Label><Input id="cf-pratique-prevu" type="number" min="2" step="1" value={pratique.effectifPrevu} onChange={e => setPratique({ effectifPrevu: e.target.value })} /></div>
+          <div className="space-y-2"><Label htmlFor="cf-pratique-max">Effectif maximum</Label><Input id="cf-pratique-max" type="number" min="2" step="1" value={pratique.effectifMax} onChange={e => setPratique({ effectifMax: e.target.value })} /></div>
+        </>}
+        <div className="space-y-2"><Label htmlFor="cf-pratique-conduite">Temps individuel de conduite garanti par apprenant (h) — facultatif</Label><Input id="cf-pratique-conduite" type="number" min="0" step="0.25" value={pratique.conduiteIndividuelle} onChange={e => setPratique({ conduiteIndividuelle: e.target.value })} placeholder="Laisser vide si non garanti" /></div>
+      </>}
+      <p className="text-sm text-muted-foreground">{pratiqueRecap(pratique)} Heures prévues seulement : aucune présence n’est créée.</p>
+    </div>
     {CONTRACT_FIELD_GROUPS.map(group => <div key={group.title} className="space-y-4 border-t pt-5"><h3 className="font-semibold">{group.title}</h3>{group.fields.map(([key,label,type]) => <div key={key} className="space-y-2"><Label htmlFor={`cf-${key}`}>{label}</Label>{type ? <Input id={`cf-${key}`} type={type} min={type === 'number' ? '0' : undefined} step={type === 'number' ? '0.01' : undefined} value={draft.fields[key] ?? ''} onChange={e => field(key,e.target.value)} /> : <Textarea id={`cf-${key}`} value={draft.fields[key] ?? ''} onChange={e => field(key,e.target.value)} placeholder="À compléter / sans objet si justifié" />}</div>)}</div>)}
     <div className="space-y-4 border-t pt-5"><h3 className="font-semibold">Annexe 1 · Modules et activités vendus</h3>
       {draft.activities.map((a,i) => <div key={a.id} className="border rounded-md p-4 space-y-3">

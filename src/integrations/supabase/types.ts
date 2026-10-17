@@ -2940,6 +2940,8 @@ export type Database = {
           client_nom: string | null
           client_telephone: string | null
           client_ville: string | null
+          consentements: Json | null
+          contrat_conditions: Json | null
           created_at: string
           date_devis: string | null
           date_validite: string | null
@@ -2951,6 +2953,7 @@ export type Database = {
           modele: string
           montant: string | null
           organisation_id: string | null
+          retractation: Json | null
           signed_at: string | null
           statut: string
           token: string
@@ -2963,6 +2966,8 @@ export type Database = {
           client_nom?: string | null
           client_telephone?: string | null
           client_ville?: string | null
+          consentements?: Json | null
+          contrat_conditions?: Json | null
           created_at?: string
           date_devis?: string | null
           date_validite?: string | null
@@ -2974,6 +2979,7 @@ export type Database = {
           modele: string
           montant?: string | null
           organisation_id?: string | null
+          retractation?: Json | null
           signed_at?: string | null
           statut?: string
           token?: string
@@ -2986,6 +2992,8 @@ export type Database = {
           client_nom?: string | null
           client_telephone?: string | null
           client_ville?: string | null
+          consentements?: Json | null
+          contrat_conditions?: Json | null
           created_at?: string
           date_devis?: string | null
           date_validite?: string | null
@@ -2997,6 +3005,7 @@ export type Database = {
           modele?: string
           montant?: string | null
           organisation_id?: string | null
+          retractation?: Json | null
           signed_at?: string | null
           statut?: string
           token?: string

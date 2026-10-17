@@ -23,6 +23,11 @@ import PizZip from "pizzip";
 import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPratiqueDates";
 import { devisDatesSignature, formatDevisDate } from "@/lib/devisDatesSignature";
 import { dureeDevisElearning, formationDevisAvecDuree } from "@/lib/devisDureesElearning";
+import type { TrainingContract } from "@/lib/contratFormation/model";
+import { emptyPratique, validateContract, pratiqueRecap } from "@/lib/contratFormation/model";
+import { newTrainingContract } from "@/lib/contratFormation/prefill";
+import { buildDevisContratSnapshot, devisValantContrat, draftFromSnapshot, parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
+import { renderContractInto } from "@/lib/contratFormation/pdf";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
   if (!fichierUrl) return null;
@@ -872,6 +877,34 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [organismeId, setOrganismeId] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+  // Devis valant contrat : un seul brouillon partagé par l'onglet contrat, l'aperçu, le PDF et l'envoi.
+  const [contratDraft, setContratDraft] = useState<TrainingContract>(() => ({ ...newTrainingContract(apprenant), pratique: emptyPratique() }));
+  const [contratRepris, setContratRepris] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase.from('devis_envois').select('contrat_conditions, created_at')
+        .eq('apprenant_id', apprenant.id).not('contrat_conditions', 'is', null)
+        .order('created_at', { ascending: false }).limit(1);
+      if (!active || error || !data?.[0]) return;
+      const snap = parseDevisContratSnapshot(data[0].contrat_conditions);
+      const draft = snap && draftFromSnapshot(snap, apprenant.id);
+      if (draft) { setContratDraft(draft); setContratRepris(data[0].created_at); }
+    })();
+    return () => { active = false; };
+  }, [apprenant.id]);
+  const contratActif = devisValantContrat(contratDraft);
+  /** Contrôle commun aux deux envois : renvoie le snapshot à figer, null si aucun contrat, false si bloqué. */
+  const contratAEnvoyer = (): Record<string, unknown> | null | false => {
+    if (!contratDraft.funding) { toast.error("Onglet Contrat de formation : choisir le financement avant d'envoyer le devis."); return false; }
+    if (!contratActif) return null;
+    const v = validateContract(contratDraft, apprenant.id, new Date());
+    if (!v.ready) {
+      toast.error(`Devis valant contrat incomplet (${v.issues.length} point(s)) : brouillon seulement. ${v.issues.slice(0, 3).join(' ')}`);
+      return false;
+    }
+    return buildDevisContratSnapshot(contratDraft, new Date()) as unknown as Record<string, unknown>;
+  };
 
   useEffect(() => {
     let active = true;
@@ -1151,6 +1184,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       return;
     }
 
+    if (contratAEnvoyer() !== null) {
+      if (contratActif) toast.error("Devis valant contrat : utiliser l'envoi PDF (le modèle Word contient d'anciennes CGV incompatibles).");
+      return;
+    }
     setSendingEmail(true);
     try {
       // 1. Generate the DOCX
@@ -1349,6 +1386,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         sessionDate,
         notes,
         signatureDataUrl,
+        contractPages: contratActif ? (pdf) => renderContractInto(pdf, contratDraft, new Date(), validateContract(contratDraft, apprenant.id, new Date()).ready) : undefined,
       });
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${format(new Date(), 'ddMMyyyy')}.pdf`;
@@ -1375,6 +1413,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       return;
     }
     if (!validateBeforeSend()) return;
+    const contratSnapshot = contratAEnvoyer();
+    if (contratSnapshot === false) return;
     setSendingDevisEmail(true);
     try {
       const result = await generateDevisPDF({ returnBase64: true });
@@ -1407,6 +1447,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         dates_formation: sessionDate || null,
         date_devis: dateDevis || null,
         date_validite: dateValidite || null,
+        contrat_conditions: (contratSnapshot ?? null) as never,
       }).select('token').single();
 
       const appUrl = 'https://insight-learn-manage.lovable.app';
@@ -1855,6 +1896,17 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             )}
           </div>
 
+          {/* Devis valant contrat */}
+          <div role="status" className="rounded-md border p-3 text-sm space-y-1">
+            {!contratDraft.funding ? <p className="text-destructive">Financement à choisir dans l'onglet « Contrat de formation » avant tout envoi.</p>
+              : contratActif ? (() => { const v = validateContract(contratDraft, apprenant.id, new Date()); return <>
+                <p className="font-medium">Devis valant contrat de formation (financement personnel) — {v.ready ? 'complet, signable après envoi' : `brouillon : ${v.issues.length} point(s) bloquant(s)`}</p>
+                <p>{pratiqueRecap(contratDraft.pratique)}</p>
+                {contratDraft.fields.start && contratDraft.fields.start <= v.today && <p className="text-destructive">Formation déjà commencée : aucune date antérieure ne sera inscrite ; régularisation datée du jour uniquement.</p>}
+                {!v.ready && <ul className="list-disc pl-5 text-destructive">{v.issues.slice(0, 8).map((i, k) => <li key={k}>{i}</li>)}{v.issues.length > 8 && <li>… voir l'onglet Contrat de formation</li>}</ul>}
+              </>; })()
+              : <p>Financement {contratDraft.funding} : régime du financeur distinct, ce devis n'applique pas le contrat individuel.</p>}
+          </div>
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
             <Button onClick={() => generateDevisPDF()} disabled={generating} className="flex items-center gap-2">
@@ -1924,7 +1976,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           <ContratLocationSection apprenant={apprenant} />
         </TabsContent>
         <TabsContent value="contrat-formation" className="mt-4">
-          <ContratFormationSection key={apprenant.id} apprenant={apprenant} />
+          {contratRepris && <p className="text-sm text-muted-foreground mb-3">Brouillon repris du dernier devis valant contrat ({new Date(contratRepris).toLocaleString('fr-FR')}) — nouvelle référence, à revérifier ; le document envoyé reste figé.</p>}
+          <ContratFormationSection key={apprenant.id} apprenant={apprenant} value={contratDraft} onChange={setContratDraft} />
         </TabsContent>
       </Tabs>
     </div>

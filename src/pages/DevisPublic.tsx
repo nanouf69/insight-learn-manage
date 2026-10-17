@@ -7,6 +7,9 @@ import { CheckCircle, AlertCircle, FileText, Loader2, Printer } from "lucide-rea
 import { toast } from "sonner";
 import { formatDevisDate } from "@/lib/devisDatesSignature";
 import { dureeDevisEnregistre } from "@/lib/devisDureesElearning";
+import { parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
+import { contractSections } from "@/lib/contratFormation/text";
+import { CONSENTEMENTS_SIGNATURE } from "@/lib/contratFormation/consentements";
 
 /* ─── DEVIS TYPE CONFIG ─── */
 interface DevisTypeConfig {
@@ -245,6 +248,11 @@ export default function DevisPublic() {
   const [mentionAccord, setMentionAccord] = useState("");
   const [acceptEarlyStart, setAcceptEarlyStart] = useState(false);
   const [acceptCGV, setAcceptCGV] = useState(false);
+  // Devis valant contrat : cases facultatives, indépendantes, jamais précochées.
+  const [consentDemarrage, setConsentDemarrage] = useState(false);
+  const [consentPerte, setConsentPerte] = useState(false);
+  const [retracting, setRetracting] = useState(false);
+  const [retractation, setRetractation] = useState<any>(null);
 
   // Signature canvas
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -290,6 +298,7 @@ export default function DevisPublic() {
       }
       const data = payload.devis;
       setDevis(data);
+      setRetractation(data.retractation ?? null);
       setApprenant(
         (data as any).apprenants || {
           nom: data.client_nom || "",
@@ -342,8 +351,9 @@ export default function DevisPublic() {
 
   const handleSendDevis = async () => {
     // Validation
-    if (!acceptCGV) { toast.error("Veuillez accepter les CGV"); return; }
-    if (!acceptEarlyStart) { toast.error("Veuillez cocher la clause de renonciation au délai de rétractation"); return; }
+    const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);
+    if (!acceptCGV) { toast.error(contrat ? "Veuillez accepter le contrat de formation" : "Veuillez accepter les CGV"); return; }
+    if (!contrat && !acceptEarlyStart) { toast.error("Veuillez cocher la clause de renonciation au délai de rétractation"); return; }
     if (!hasSigned) { toast.error("Veuillez signer le devis"); return; }
     if (!mentionAccord.toLowerCase().includes("lu et approuvé")) { toast.error("Veuillez écrire « Lu et approuvé, Bon pour accord »"); return; }
 
@@ -363,6 +373,10 @@ export default function DevisPublic() {
       const formData = new FormData();
       formData.append("token", token!);
       formData.append("file", signatureBlob, `${devis.id}_signature_${Date.now()}.png`);
+      if (contrat) {
+        formData.append("consentement_demarrage_anticipe", String(consentDemarrage));
+        formData.append("consentement_perte_apres_execution", String(consentPerte));
+      }
 
       const response = await fetch(`${baseUrl}/functions/v1/upload-devis-signe`, {
         method: "POST",
@@ -384,6 +398,22 @@ export default function DevisPublic() {
   };
 
   const handlePrint = () => window.print();
+
+  const handleRetractation = async () => {
+    if (!window.confirm("Confirmer votre rétractation du contrat de formation ? Cette déclaration est enregistrée avec la date et l'heure réelles.")) return;
+    setRetracting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/retractation-devis`, {
+        method: "POST", headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ token, confirmation: true }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Rétractation non enregistrée");
+      setRetractation(result.retractation);
+      toast.success("Rétractation enregistrée");
+    } catch (e: any) { toast.error(`${e.message} — vous pouvez aussi écrire à l'organisme (annexe 2).`); }
+    finally { setRetracting(false); }
+  };
 
   if (loading) {
     return (
@@ -408,6 +438,8 @@ export default function DevisPublic() {
   }
 
   const today = new Date().toLocaleDateString("fr-FR");
+  const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);
+  const dejaSigne = uploaded || !!devis?.signed_at;
   const nom = `${apprenant?.civilite || ""} ${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim();
   const formationLabel = devis?.formation || devis?.modele || "";
   const historiqueConfig = detectConfig(formationLabel);
@@ -613,8 +645,24 @@ export default function DevisPublic() {
             </div>
           </div>
 
+          {contrat && (
+            <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6" aria-label="Contrat de formation">
+              <h2 className="text-lg font-bold text-center text-gray-900">Contrat de formation — référence {contrat.contract.reference}</h2>
+              <p className="text-xs text-gray-600">Version {contrat.version} figée le {new Date(contrat.genere_le).toLocaleString("fr-FR")}. Le présent devis vaut contrat ; ses conditions remplacent les CGV générales.</p>
+              {contractSections(contrat.contract, new Date(contrat.genere_le)).map((sec) => (
+                <section key={sec.title} className="space-y-1">
+                  <h3 className="font-bold text-sm text-blue-900">{sec.title}</h3>
+                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line break-words">{sec.text}</p>
+                  {sec.title === "Annexe 1 Programme et valorisation" && (
+                    <div className="overflow-x-auto"><table className="w-full text-xs border-collapse"><thead><tr>{["Module / activités", "Modalité", "Durée (h)", "Évaluation / suivi", "Valeur (€)"].map((h) => <th key={h} className="border p-1 text-left">{h}</th>)}</tr></thead>
+                      <tbody>{contrat.contract.activities.map((a) => <tr key={a.id}>{[`${a.title} — ${a.activities}`, a.modality, a.hours, a.evaluation, a.value].map((v, i) => <td key={i} className="border p-1">{v}</td>)}</tr>)}</tbody></table></div>
+                  )}
+                </section>
+              ))}
+            </div>
+          )}
           {/* ═══ PAGE 3 : CGV ═══ */}
-          <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6">
+          {!contrat && <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6">
             <div className="text-center border-b pb-4">
               <h1 className="text-2xl font-bold text-blue-900">FTRANSPORT</h1>
               <p className="text-xs text-gray-500">Spécialiste Formations Transport</p>
@@ -636,7 +684,7 @@ export default function DevisPublic() {
             <div className="text-center text-xs text-gray-400 border-t pt-3 mt-4">
               Services Pro — FTransport — SASU au capital social de 5 000 € — 86 route de Genas, 69003 LYON — Tél : 04.28.29.60.91 — contact@ftransport.fr
             </div>
-          </div>
+          </div>}
 
           {/* ═══ PAGE RÉFÉRENTIEL THÉORIQUE ═══ */}
           <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6">
@@ -708,6 +756,24 @@ export default function DevisPublic() {
 
             <p className="text-sm"><strong>Fait à Lyon, le</strong> {today}</p>
 
+            {contrat ? (<>
+              <div className="border rounded p-3 space-y-3 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-900">Cases facultatives — vous pouvez signer sans les cocher</p>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={consentDemarrage} onChange={(e) => setConsentDemarrage(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" aria-label="Demande de commencement anticipé" />
+                  <span className="text-sm text-gray-800">{CONSENTEMENTS_SIGNATURE.demarrageAnticipe}</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={consentPerte} onChange={(e) => setConsentPerte(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" aria-label="Reconnaissance de perte après exécution complète" />
+                  <span className="text-sm text-gray-800">{CONSENTEMENTS_SIGNATURE.perteApresExecution}</span>
+                </label>
+                <p className="text-xs text-gray-600">Ces cases ne réduisent pas le délai de 10 jours du Code du travail (L6353-5) ni l'interdiction de tout paiement avant son expiration (L6353-6) et n'avancent pas la date de début prévue. Les refuser n'empêche pas votre inscription.</p>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={acceptCGV} onChange={(e) => setAcceptCGV(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" />
+                <span className="text-sm text-gray-800">J'accepte le contrat de formation {contrat.contract.reference} et ses annexes, dont j'ai pris connaissance.</span>
+              </label>
+            </>) : (<>
             {/* Renonciation rétractation */}
             <label className="flex items-start gap-3 border border-yellow-200 rounded p-3 bg-yellow-50 cursor-pointer">
               <input type="checkbox" checked={acceptEarlyStart} onChange={(e) => setAcceptEarlyStart(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" />
@@ -724,6 +790,7 @@ export default function DevisPublic() {
               </span>
             </label>
 
+            </>)}
             {/* Mention manuscrite */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-900">
@@ -794,6 +861,15 @@ export default function DevisPublic() {
               </ol>
             </div>
 
+            {contrat && dejaSigne && (
+              <div className="border rounded-lg p-4 space-y-2" aria-label="Rétractation">
+                <h3 className="font-semibold text-gray-900">Rétractation</h3>
+                {retractation ? <p className="text-sm text-green-800">Rétractation enregistrée le {new Date(retractation.horodatage_serveur).toLocaleString("fr-FR")}.</p> : <>
+                  <p className="text-sm text-gray-700">Vous pouvez vous rétracter sans motif ni frais pendant le délai indiqué à l'article 9, en ligne ci-dessous, ou à l'aide du formulaire de l'annexe 2.</p>
+                  <Button variant="outline" onClick={handleRetractation} disabled={retracting}>{retracting ? "Enregistrement…" : "Me rétracter"}</Button>
+                </>}
+              </div>
+            )}
             {uploaded ? (
               <div className="space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
@@ -812,7 +888,7 @@ export default function DevisPublic() {
                   </div>
                   <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 text-center space-y-2">
                     <p className="text-amber-800 font-bold text-base">
-                      ⚠️ Votre devis ne sera pris en compte qu'après avoir effectué le premier virement.
+                      {contrat ? "Aucun paiement n'est dû avant l'expiration du délai de rétractation ; ensuite, l'échéancier du contrat s'applique." : "⚠️ Votre devis ne sera pris en compte qu'après avoir effectué le premier virement."}
                     </p>
                     <p className="text-amber-700 text-sm">
                       Merci de nous recontacter au <strong className="text-lg">04.28.29.60.91</strong> après l'avoir effectué.
@@ -824,7 +900,7 @@ export default function DevisPublic() {
               <div className="flex items-center gap-3 flex-wrap">
                 <Button
                   onClick={handleSendDevis}
-                  disabled={uploading || !acceptCGV || !acceptEarlyStart || !hasSigned}
+                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || !hasSigned}
                   className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base"
                 >
                   {uploading ? (

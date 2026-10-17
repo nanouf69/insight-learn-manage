@@ -1219,6 +1219,13 @@
       "when": 1792241853602,
       "tag": "0173_emargements_futurs_journees_pedagogiques",
       "breakpoints": true
+    },
+    {
+      "idx": 174,
+      "version": "7",
+      "when": 1792247355559,
+      "tag": "0174_devis_valant_contrat",
+      "breakpoints": true
     }
   ]
 }

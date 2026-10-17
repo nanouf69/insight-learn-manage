@@ -32,5 +32,4 @@
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures with learner track; why: no cross-track denominators.
 - Read scoped AGENTS before edits, including src/lib and shared Edge code; why: local rules apply.
-- Quotes use selected dates, typed practical days, UUID originals without upsert; new e-learning totals share devisDureesElearning and are recorded in formation labels, legacy links unchanged; why: preserve sent terms/history.
-- Training contracts share validation/text for preview/PDF, check server admin role and have no signing/storage side effects; why: never fabricate conclusion or change student evidence.
+- Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
