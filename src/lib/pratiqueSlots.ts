@@ -175,7 +175,14 @@ export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows:
     if (!date || seenDates.has(date)) continue;
     const minutes = minutesFromSessionTimes(row.heure_debut_personnalisee || sess.heure_debut, row.heure_fin_personnalisee || sess.heure_fin, 180);
     const plannedSlot = daySlots.get(date);
-    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee", preserveArchivedFallback) : undefined;
+    const a = parseClockMinutes(row.heure_debut_personnalisee || sess.heure_debut);
+    const z = parseClockMinutes(row.heure_fin_personnalisee || sess.heure_fin);
+    const formatMinute = (v: number) => `${String(Math.floor(v/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`;
+    const actualParts: PratiqueSlotPart[] = a == null || z == null || z <= a ? [] : [
+      { creneau: 'matin' as const, start: a, end: Math.min(z,12*60) },
+      { creneau: 'apres_midi' as const, start: Math.max(a,13*60), end: z },
+    ].filter(p => p.end > p.start).map(p => ({ creneau: p.creneau, startMinute:p.start, endMinute:p.end, minutes:p.end-p.start, label:`${formatMinute(p.start)} - ${formatMinute(p.end)}` }));
+    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee", preserveArchivedFallback) : preserveArchivedFallback ? undefined : actualParts;
     out.push({
       date,
       typeFormation: normalizePratiqueType(sess.nom),
