@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Source des dates du devis — 17/10 08:54 UTC
-- [ ] Retirer le repli sur la fiche élève dans l’aperçu et les deux générations DOCX ; utiliser seulement le choix du devis, sans toucher aux historiques.
-- [ ] Tests fictifs ciblés et contrôle de l’affichage, sans envoi réel ni publication.
+- [x] Retirer le repli sur la fiche élève dans l’aperçu et les deux générations DOCX ; utiliser seulement le choix du devis, sans toucher aux historiques.
+- [x] 10 tests PASS ; aperçu vide malgré date de fiche, sélection 22 octobre identique au DOCX téléchargé et à la page de signature ; envoi/signature simulés, zéro erreur JS, compilation OK 08:55:28 UTC. Aucun envoi réel ni publication.
 
 ## Date et signature des devis — 17/10
 - [x] Date DOCX éditable, dates enregistrées et lien de signature explicite ; originaux UUID sans remplacement.
