@@ -417,7 +417,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
       console.error("[ExamensEditor] Lecture refusée", { code: error.code, origine: "versions-actives" });
       // AUCUN REPLI : jamais de contenu statique ni de copie par position.
-      throw new ExamContentUnavailableError(`Lecture des versions indisponible (${error.code ?? 'réseau/droits'}). Réessayez après reconnexion.`);
+      throw new ExamContentUnavailableError(`Lecture des versions indisponible (${error.code ?? 'réseau/droits'}): ${error.message}. Réessayez après reconnexion.`);
     }
 
     if (!data || data.length === 0) {

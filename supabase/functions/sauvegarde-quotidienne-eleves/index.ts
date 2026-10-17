@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     etat.termine = true;
     etat.maj = new Date().toISOString();
     await up(`${jour}/_etat.json`, etat);
-    // No purge in this correction: existing copies are retained.
+    await rotation(sb); // Scheduled retention unchanged; never invoked manually.
     const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs) };
     await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_termine.json`, manifeste);
     if (etat.erreurs.length) {

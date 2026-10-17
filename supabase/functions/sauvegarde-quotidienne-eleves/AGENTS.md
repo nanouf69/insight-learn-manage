@@ -1,0 +1,1 @@
+- Keep EXPORT_TABLES append-only and version manifests; do not move legacy cursors or upgrade completed legacy exports; why: resume indices and historical completeness stay truthful.

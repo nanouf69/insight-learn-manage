@@ -50,7 +50,7 @@ async function saveWithRetry(
     });
 
     if (backendSaved) {
-      return false; // Local copy is not a server acknowledgement.
+      return true;
     }
 
     // Last-resort fallback to localStorage
@@ -60,7 +60,7 @@ async function saveWithRetry(
         JSON.stringify({ ...params.donnees, _savedAt: new Date().toISOString() })
       );
       console.log(`[AutoSave] Saved to localStorage fallback: ${params.typeDocument}`);
-      return true;
+      return false; // Local copy is not a server acknowledgement.
     } catch {
       return false;
     }

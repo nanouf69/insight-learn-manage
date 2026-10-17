@@ -4,7 +4,7 @@ import { documentValidation } from '../../supabase/functions/_shared/documentUpl
 export { DOCUMENT_ACCEPT, DOCUMENT_MAX_BYTES, DOCUMENT_MAX_MB, documentValidation } from '../../supabase/functions/_shared/documentUploadRules';
 
 /** Same operation for bounded retries; no content, identity or token in diagnostics. */
-export async function uploadInscriptionDocument(form: FormData, operationId = crypto.randomUUID()) {
+export async function uploadInscriptionDocument(form: FormData, operationId: string = crypto.randomUUID()) {
   const file = form.get('file');
   if (!(file instanceof File)) throw new Error('Fichier requis');
   const type = String(form.get('type_document') ?? '');

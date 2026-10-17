@@ -1,6 +1,8 @@
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { freshSessionCall } from '@/lib/sessionRpc';
+import { getPendingAnswerSaves } from '@/lib/answerPersistence';
 
 
 const ACTION_CHECK_THROTTLE_MS = 20_000;
@@ -82,15 +84,15 @@ export function usePresenceCheck({
           _event: event,
         });
 
-      let { data, error } = await callRpc();
+      let { data, error } = await freshSessionCall(callRpc, userId).catch(() => ({ data: null, error: { code: '42501', message: 'Session expirée' } }));
 
       // Retry once after a short delay on transient network/timeout errors —
       // Android battery-saver / Doze mode can throttle a single request.
       // We treat ANY error as potentially transient: the worst case is one extra RPC.
-      if (error) {
+      if (error && !['42501', 'PGRST301', 'PGRST302'].includes(error.code ?? '')) {
         console.warn("[PresenceCheck] RPC error, retrying once in 2.5s:", error.message || error);
         await new Promise((r) => setTimeout(r, 2500));
-        const retry = await callRpc();
+        const retry = await freshSessionCall(callRpc, userId).catch(() => ({ data: null, error: { code: '42501', message: 'Session expirée' } }));
         data = retry.data;
         error = retry.error;
       }
@@ -124,6 +126,11 @@ export function usePresenceCheck({
 
       if (!validation.is_valid) {
         const reason = validation.disconnect_reason || "max_duration";
+        if (getPendingAnswerSaves() > 0) {
+          console.warn('[PresenceCheck] réponses en attente : aucune redirection automatique');
+          clearTimers();
+          return;
+        }
         // Benign reasons caused by React double-mount or another tab opening:
         // do NOT sign the user out, just silently stop polling.
         if (reason === "replaced_by_new_session" || reason === "no_active_session" || reason === "already_closed") {
