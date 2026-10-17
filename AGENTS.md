@@ -32,4 +32,4 @@
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures with learner track; why: no cross-track denominators.
 - Read scoped AGENTS before edits, including src/lib and shared Edge code; why: local rules apply.
-- Practical quote date options read explicitly typed planning days, excluding removed days and never falling back to theory ranges; why: quotes must reflect recorded practical planning without changing reservations.
+- Quotes use typed practical days, no theory fallback; selected dates persist to devis_envois and signing page, UUID originals never upsert; why: match sent terms and preserve history.
