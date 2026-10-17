@@ -24,7 +24,7 @@ import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPrati
 import { devisDatesSignature, formatDevisDate } from "@/lib/devisDatesSignature";
 import { dureeDevisElearning, formationDevisAvecDuree } from "@/lib/devisDureesElearning";
 import type { TrainingContract } from "@/lib/contratFormation/model";
-import { emptyPratique, validateContract } from "@/lib/contratFormation/model";
+import { emptyPratique, validateContract, pratiqueRecap } from "@/lib/contratFormation/model";
 import { newTrainingContract } from "@/lib/contratFormation/prefill";
 import { buildDevisContratSnapshot, devisValantContrat, draftFromSnapshot, parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
 import { renderContractInto } from "@/lib/contratFormation/pdf";
@@ -1386,7 +1386,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         sessionDate,
         notes,
         signatureDataUrl,
-        contractPages: contratActif ? (pdf) => renderContractInto(pdf, contratDraft, new Date(), false) : undefined,
+        contractPages: contratActif ? (pdf) => renderContractInto(pdf, contratDraft, new Date(), validateContract(contratDraft, apprenant.id, new Date()).ready) : undefined,
       });
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${format(new Date(), 'ddMMyyyy')}.pdf`;
@@ -1896,6 +1896,17 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             )}
           </div>
 
+          {/* Devis valant contrat */}
+          <div role="status" className="rounded-md border p-3 text-sm space-y-1">
+            {!contratDraft.funding ? <p className="text-destructive">Financement à choisir dans l'onglet « Contrat de formation » avant tout envoi.</p>
+              : contratActif ? (() => { const v = validateContract(contratDraft, apprenant.id, new Date()); return <>
+                <p className="font-medium">Devis valant contrat de formation (financement personnel) — {v.ready ? 'complet, signable après envoi' : `brouillon : ${v.issues.length} point(s) bloquant(s)`}</p>
+                <p>{pratiqueRecap(contratDraft.pratique)}</p>
+                {contratDraft.fields.start && contratDraft.fields.start <= v.today && <p className="text-destructive">Formation déjà commencée : aucune date antérieure ne sera inscrite ; régularisation datée du jour uniquement.</p>}
+                {!v.ready && <ul className="list-disc pl-5 text-destructive">{v.issues.slice(0, 8).map((i, k) => <li key={k}>{i}</li>)}{v.issues.length > 8 && <li>… voir l'onglet Contrat de formation</li>}</ul>}
+              </>; })()
+              : <p>Financement {contratDraft.funding} : régime du financeur distinct, ce devis n'applique pas le contrat individuel.</p>}
+          </div>
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
             <Button onClick={() => generateDevisPDF()} disabled={generating} className="flex items-center gap-2">
