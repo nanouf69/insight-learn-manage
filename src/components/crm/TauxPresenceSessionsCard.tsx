@@ -18,7 +18,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   const vus = new Set<string>();
   for (const row of inscriptions) {
     const s = row.sessions;
-    if (!s || row.liste_attente === true || /annul/i.test(String(s.statut ?? ""))) continue;
+    if (!s || row.liste_attente === true || row.emargements_exclus === true || /annul/i.test(String(s.statut ?? ""))) continue;
     const pratique = isPratiqueType(s.type_session);
     if (!pratique && !/theorique/i.test(s.type_session ?? "")) continue;
     const cible = pratique ? res.pratique : res.session;
@@ -50,7 +50,7 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
       try {
         const [em, ins] = await Promise.all([
           fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
-          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
+          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,emargements_exclus,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
         ]);
         if (!annule) setData(calculerTauxPresenceHeures(em, ins, filiere));
       } catch {

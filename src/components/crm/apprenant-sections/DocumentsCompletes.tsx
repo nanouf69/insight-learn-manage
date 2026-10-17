@@ -23,7 +23,7 @@ import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/d
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
-import { chargerSignaturesManquantes, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
+import { chargerClassificationSignatures, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 
 interface Props {
@@ -444,13 +444,14 @@ export function DocumentsCompletes({ apprenant }: Props) {
     },
   });
 
-  // Signatures manquantes : créneaux passés (sessions théoriques + pratique réservée)
-  // sans signature enregistrée. Lecture seule, aucune donnée modifiée.
-  const { data: signaturesManquantes, isError: signaturesManquantesErreur } = useQuery({
+  // Signatures : classification attendu / valide / hors session à partir des
+  // inscriptions de sessions (théorique + pratique) et réservations. Lecture seule.
+  const { data: classificationSignatures, isError: signaturesManquantesErreur } = useQuery({
     queryKey: ["apprenant-signatures-manquantes", apprenant.id],
     enabled: !!apprenant?.id,
-    queryFn: () => chargerSignaturesManquantes(apprenant.id),
+    queryFn: () => chargerClassificationSignatures(apprenant.id),
   });
+  const signaturesManquantes = classificationSignatures?.attendus;
 
   const formationEdof = [apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.formation].filter(Boolean).join(" ");
   const { data: bilanEdof, isError: bilanEdofErreur } = useQuery({
@@ -879,7 +880,9 @@ export function DocumentsCompletes({ apprenant }: Props) {
               const manquantes = signaturesManquantes.filter((m) => m.etat === "manquante");
               const absences = signaturesManquantes.filter((m) => m.etat === "absence_enregistree");
               const manqueObjectif = bilanEdof && !/e-?learning/i.test(formationEdof) ? Math.max(0, bilanEdof.objectifTotal - bilanEdof.total) : 0;
-              if (manquantes.length === 0 && absences.length === 0) {
+              const nbAnomalies = classificationSignatures?.anomalies?.length ?? 0;
+              const nbHorsSession = classificationSignatures?.horsSession?.length ?? 0;
+              if (manquantes.length === 0 && absences.length === 0 && nbAnomalies === 0 && nbHorsSession === 0) {
                 if (manqueObjectif > 0) {
                   return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof!.total} / {bilanEdof!.objectifTotal}).</p>;
                 }
@@ -910,6 +913,34 @@ export function DocumentsCompletes({ apprenant }: Props) {
                         {absences.map((m) => (
                           <li key={`${m.date}|${m.creneau}|${m.source}`} className="text-sm text-amber-700">
                             {datePresenceAvecJour(m.date)} — {m.creneau} — {m.source}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {(classificationSignatures?.anomalies?.length ?? 0) > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-amber-700">
+                        Anomalies à vérifier ({classificationSignatures!.anomalies.length})
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {classificationSignatures!.anomalies.map((a, i) => (
+                          <li key={`${a.date}|${a.creneau}|${i}`} className="text-sm text-amber-700">
+                            {datePresenceAvecJour(a.date)} — {a.creneau} — {a.detail}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {(classificationSignatures?.horsSession?.length ?? 0) > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        Signatures hors périmètre retenu ({classificationSignatures!.horsSession.length}) — conservées, non comptées
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {classificationSignatures!.horsSession.map((h) => (
+                          <li key={`${h.date}|${h.creneau}`} className="text-sm text-muted-foreground">
+                            {datePresenceAvecJour(h.date)} — {h.creneau}
                           </li>
                         ))}
                       </ul>

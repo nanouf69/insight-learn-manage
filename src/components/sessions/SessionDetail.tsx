@@ -883,6 +883,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           heure_debut_personnalisee,
           heure_fin_personnalisee,
           liste_attente,
+          emargements_exclus,
           apprenant:apprenants (
             id,
             nom,
@@ -2202,7 +2203,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
+    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null; emargements_exclus?: boolean }
   ) => {
     try {
       // Détection transition présence pratique -> present (pour envoi satisfaction)
@@ -4324,6 +4325,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </div>
                           </div>
                         )}
+
+                        {/* Ligne 3.6: Exclusion du périmètre d'émargements (inscription conservée, jamais supprimée) */}
+                        <div className="flex items-center gap-2 mb-3 pl-[52px]">
+                          <input
+                            type="checkbox"
+                            id={`emarg-exclus-${sessionApprenant.id}`}
+                            className="h-3.5 w-3.5"
+                            checked={sessionApprenant.emargements_exclus === true}
+                            onChange={(e) => updateSessionApprenant(sessionApprenant.id, { emargements_exclus: e.target.checked })}
+                          />
+                          <Label htmlFor={`emarg-exclus-${sessionApprenant.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                            Hors périmètre d'émargements (ancienne inscription conservée, signatures attendues non calculées)
+                          </Label>
+                        </div>
 
                         {/* Ligne 4: Boutons d'action sur ligne séparée */}
                         <div className="flex items-center gap-2 pt-3 border-t flex-wrap pl-[52px]">
