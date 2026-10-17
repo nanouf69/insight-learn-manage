@@ -6,20 +6,27 @@ export const authFailure = (error: { code?: string; status?: number; message?: s
 
 /** A retry only after verified refresh, never anonymous and never under another account. */
 export async function freshSessionCall<T>(call: () => PromiseLike<T>, owner?: string): Promise<T> {
-  const { data: initial } = await supabase.auth.getSession();
+  const { data: initial } = await bounded(supabase.auth.getSession());
   const expected = owner ?? initial.session?.user?.id;
-  if (!expected || !await assurerSessionFraiche()) throw new Error(SESSION_EXPIREE_MESSAGE);
+  if (!expected || !await assurerSessionFraiche()) throw sessionError();
   const sameAccount = async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session?.user?.id !== expected) throw new Error(SESSION_EXPIREE_MESSAGE);
+    const { data } = await bounded(supabase.auth.getSession());
+    if (data.session?.user?.id !== expected) throw sessionError();
   };
   await sameAccount();
-  let result = await call();
+  let result = await bounded(call());
   const error = (result as { error?: { code?: string; status?: number; message?: string } }).error;
   if (authFailure(error ?? null) && await assurerSessionFraiche(Number.MAX_SAFE_INTEGER)) {
     await sameAccount();
-    result = await call();
+    result = await bounded(call());
   }
   await sameAccount();
   return result;
+}
+function sessionError() { return Object.assign(new Error(SESSION_EXPIREE_MESSAGE), { sessionAbsente: true }); }
+export function bounded<T>(promise: PromiseLike<T>, ms = 15000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Délai réseau dépassé ; opération conservée en attente.')), ms);
+    Promise.resolve(promise).then(value => { clearTimeout(timer); resolve(value); }, error => { clearTimeout(timer); reject(error); });
+  });
 }

@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+vi.mock('@/lib/sessionRpc', () => ({ freshSessionCall: (call: () => unknown) => call() }));
+vi.mock('@/lib/sessionExpiree', () => ({ assurerSessionFraiche: async () => 'token-fictif' }));
 
 // Données 100 % fictives. Scénarios : session qui change ou disparaît entre
 // la vérification et la relecture ; vraie absence ; erreur de droits.

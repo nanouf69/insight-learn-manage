@@ -610,7 +610,9 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
     if (!(err as any)?.sessionAbsente) console.error("[ExamensEditor] Error loading saved exams:", err);
     // AUCUN REPLI : on propage l'échec, aucune question n'est servie.
     if (isExamContentUnavailable(err)) throw err;
-    throw new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
+    const converted = new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
+    if ((err as any)?.sessionAbsente) (converted as any).sessionAbsente = true;
+    throw converted;
   }
   
   // Repair any missing correct flags (serialization safety net).
@@ -638,16 +640,18 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   if (lignesFigees) return examens; // relevé figé : comptage seulement, aucune lecture actuelle
   try {
     const fournisseurQuizIds = Object.keys(FOURNISSEUR_QUIZ_TO_EXAM);
-    const { data: overridesData } = await supabase
+    const { data: overridesData, error: overrideError } = await freshSessionCall(() => supabase
       .from("quiz_questions_overrides")
       .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
       .in("quiz_id", fournisseurQuizIds)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false }));
+    if (overrideError) throw new ExamContentUnavailableError('Lecture des corrections indisponible ; aucun contenu de repli.');
     if (overridesData && overridesData.length > 0) {
       applyFournisseurOverridesToExamens(examens, overridesData as any, adminLastWriteAt);
     }
   } catch (err) {
-    console.error("[ExamensEditor] Error applying fournisseur overrides:", err);
+    if (isExamContentUnavailable(err)) throw err;
+    throw new ExamContentUnavailableError(err instanceof Error ? err.message : 'Lecture des corrections indisponible');
   }
 
   return examens;
