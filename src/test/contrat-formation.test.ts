@@ -5,7 +5,7 @@ import { buildTrainingContractPdf } from '@/lib/contratFormation/pdf';
 const now = new Date('2026-10-17T09:02:00Z');
 function complete(): TrainingContract {
   const fields = Object.fromEntries(CONTRACT_FIELD_GROUPS.flatMap(g=>g.fields.map(([key])=>[key,'Référence fictive vérifiée'])));
-  Object.assign(fields, {start:'2026-11-02',end:'2026-11-10',totalHours:'6',presenceHours:'0',distanceHours:'0',practiceHours:'6',price:'100',priceHT:'100'});
+  Object.assign(fields, {start:'2026-11-02',end:'2026-11-10',totalHours:'6',presenceHours:'0',distanceHours:'0',practiceHours:'6',price:'100',priceHT:'100',vatRate:'0',vatAmount:'0',vat:'Article 261 CGI — référence fictive',headcount:'3'});
   return {reference:'FICTIF',learnerId:'fictif-A',sessionId:'session-A',pathway:'pratique-taxi',funding:'personnel',fields,activities:[{id:'p',title:'Pratique TAXI',activities:'Conduite',modality:'Présentiel pratique',hours:'6',evaluation:'Mise en situation',value:'100'}],payments:[{amount:'30',date:'2026-11-01',milestone:'Après délai'},{amount:'20',date:'2026-11-02',milestone:'Début'},{amount:'20',date:'2026-11-05',milestone:'Milieu'},{amount:'30',date:'2026-11-10',milestone:'Fin'}],verified:true,concludedAt:null,signedAt:null};
 }
 describe('Contrat individuel — règles du modèle',()=>{
@@ -20,6 +20,9 @@ describe('Contrat individuel — règles du modèle',()=>{
   it('CPF prime sur indication personnelle contradictoire',()=>expect(fundingFromLearner({id:'a',mode_financement:'personnel',organisme_financeur:'Caisse des Dépôts CPF'})).toBe('cpf'));
   it('financement absent doit être sélectionné',()=>expect(newTrainingContract({id:'a'}).funding).toBe(''));
   it('médiateur absent bloque document complet',()=>{const c=complete();c.fields.mediator='';expect(validateContract(c,c.learnerId,now).ready).toBe(false);expect(()=>buildTrainingContractPdf(c,now,true)).toThrow();});
+  it('référence non vérifiée reste bloquante',()=>{const c=complete();c.fields.trainers='Diplômes à vérifier';expect(validateContract(c,c.learnerId,now).ready).toBe(false);});
+  it('TVA et total doivent correspondre',()=>{const c=complete();c.fields.vatAmount='20';expect(validateContract(c,c.learnerId,now).ready).toBe(false);});
+  it('TVA nulle exige fondement exact',()=>{const c=complete();c.fields.vat='Aucun';expect(validateContract(c,c.learnerId,now).ready).toBe(false);});
   it('aucun agrément ni TVA inventé',()=>{const c=newTrainingContract({id:'a'});expect(c.fields.approval).toBeUndefined();expect(c.fields.vat).toBeUndefined();});
   it('programme : seulement modules attribués du parcours',()=>{expect(contractProgramme({id:'a'},'taxi')).toEqual([]);expect(contractProgramme({id:'a',modules_autorises:[2,8]},'pratique-taxi')).toEqual([]);});
   it('premier versement 30 % maximum',()=>{const c=complete();c.payments[0].amount='31';c.payments[3].amount='29';expect(validateContract(c,c.learnerId,now).ready).toBe(false);});

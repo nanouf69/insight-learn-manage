@@ -56,7 +56,7 @@ export function ContratFormationSection({ apprenant }: { apprenant: ContractLear
   const now = new Date();
   const validation = validateContract(draft, apprenant.id, now);
   const allowed = contractAccess(access === 'admin', apprenant.id, draft.learnerId);
-  const field = (key: string, value: string) => { setPreview(false); setDraft(d => ({ ...d, verified: false, fields: { ...d.fields, [key]: value } })); };
+  const field = (key: string, value: string) => { setPreview(false); setDraft(d => ({ ...d, sessionId: key === 'start' || key === 'end' ? '' : d.sessionId, verified: false, fields: { ...d.fields, [key]: value } })); };
   const chooseSession = (id: string) => {
     const s = sessions.find(x => x.id === id); if (!s) return;
     setPreview(false); setDraft(d => ({ ...d, sessionId: id, verified: false, fields: { ...d.fields,

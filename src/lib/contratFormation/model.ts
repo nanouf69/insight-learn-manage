@@ -29,7 +29,7 @@ export const CONTRACT_FIELD_GROUPS: FieldGroup[] = [
     ['totalHours', 'Durée totale (h)', 'number'], ['presenceHours', 'Présentiel hors pratique (h)', 'number'],
     ['distanceHours', 'Distance (h)', 'number'], ['practiceHours', 'Pratique (h)', 'number'],
     ['modality', 'Modalité : présentiel, à distance ou mixte'], ['locations', 'Lieux des cours et de la pratique'],
-    ['headcount', 'Effectif prévu'], ['planning', 'Planning daté : référence, dates, horaires et lieux'],
+    ['headcount', 'Effectif prévu', 'number'], ['planning', 'Planning daté : référence, dates, horaires et lieux'],
     ['practice', 'Pratique incluse/non incluse : durée, contenu, véhicule, réservations et dates'],
     ['articulation', 'Articulation avec la théorie et l’examen'],
   ] },
@@ -48,6 +48,7 @@ export const CONTRACT_FIELD_GROUPS: FieldGroup[] = [
   ] },
   { title: '8 · Prix et échéancier', fields: [
     ['priceHT', 'Prix HT (€)', 'number'], ['vat', 'TVA : taux et montant, ou fondement exact de l’exonération'],
+    ['vatRate', 'Taux de TVA (%) — 0 si exonération justifiée', 'number'], ['vatAmount', 'Montant de TVA (€)', 'number'],
     ['price', 'Total à payer TTC ou net (€)', 'number'], ['taxLabel', 'TTC ou net de taxe'],
     ['examFees', 'Frais d’examen : inclus/non inclus, montant, bénéficiaire'], ['otherFees', 'Autres frais éventuels ou aucun'],
     ['examRegistration', 'Inscription examen : responsable, procédure et échéance'], ['paymentMode', 'Mode de paiement'],
@@ -92,12 +93,16 @@ export function validateContract(contract: TrainingContract, expectedLearner: st
   // An unsigned generated document is never evidence of conclusion or signature.
   if (contract.concludedAt || contract.signedAt) issues.push('Un horodatage de signature/conclusion ne peut pas être établi par ce générateur.');
   for (const group of CONTRACT_FIELD_GROUPS) for (const [key, label] of group.fields) {
-    if (!f[key]?.trim()) issues.push(`${label} : à compléter.`);
+    if (!f[key]?.trim() || /à compléter|\?|à vérifier|à confirmer/i.test(f[key])) issues.push(`${label} : à compléter / vérifier.`);
   }
   const duration = ['presenceHours', 'distanceHours', 'practiceHours'].map(k => money(f[k] ?? ''));
   const total = money(f.totalHours ?? ''); const price = money(f.price ?? '');
   if (!Number.isFinite(total) || total <= 0 || duration.some(x => !Number.isFinite(x) || x < 0) || Math.abs(duration.reduce((a,b) => a+b,0) - total) > 0.001) issues.push('Répartition des heures incohérente ou double comptage.');
   if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(money(f.priceHT ?? '')) || money(f.priceHT ?? '') < 0) issues.push('Prix invalide.');
+  const ht = money(f.priceHT ?? ''); const rate = money(f.vatRate ?? ''); const vat = money(f.vatAmount ?? '');
+  if (!Number.isFinite(rate) || rate < 0 || !Number.isFinite(vat) || vat < 0 || Math.abs(ht * rate / 100 - vat) > 0.01 || Math.abs(ht + vat - price) > 0.01) issues.push('TVA, HT et total incohérents.');
+  if (rate === 0 && !/article|art\.|293|261|exonération|exoneration/i.test(f.vat ?? '')) issues.push('TVA nulle : préciser le fondement exact de l’exonération.');
+  if (!Number.isInteger(money(f.headcount ?? '')) || money(f.headcount ?? '') < 1) issues.push('Effectif prévu : entier positif requis.');
   if (!contract.activities.length || contract.activities.some(a => !a.title.trim() || !a.activities.trim() || !a.modality.trim() || !a.evaluation.trim() || !Number.isFinite(money(a.hours)) || money(a.hours) <= 0 || !Number.isFinite(money(a.value)) || money(a.value) < 0)) issues.push('Annexe 1 : activités, modalités, durées, suivi et valeurs à compléter.');
   if (Math.abs(contract.activities.reduce((s,a) => s + money(a.hours),0) - total) > 0.001) issues.push('Total des durées de l’annexe différent de la durée vendue.');
   if (Math.abs(contract.activities.reduce((s,a) => s + money(a.value),0) - price) > 0.01) issues.push('Total des valeurs de l’annexe différent du prix.');
@@ -105,6 +110,7 @@ export function validateContract(contract: TrainingContract, expectedLearner: st
   if (payments.length !== 4 || payments.some(p => !Number.isFinite(money(p.amount)) || money(p.amount) < 0 || !validDay(p.date) || !p.milestone.trim())) issues.push('Échéancier : quatre étapes, montants et dates vérifiés requis (0 € possible).');
   if (money(payments[0]?.amount ?? '') > price * 0.3 + 0.001) issues.push('Premier versement supérieur à 30 %.');
   if (payments.some(p => validDay(p.date) && p.date < earliestStart)) issues.push('Aucun versement pendant le délai de rétractation de 14 jours.');
+  if (validDay(payments[0]?.date ?? '') && payments[0].date > f.end) issues.push('Premier versement postérieur à la fin de formation.');
   if (payments.some((p,i) => i > 0 && validDay(p.date) && (p.date < f.start || p.date > f.end || p.date < payments[i-1].date))) issues.push('Solde à échelonner pendant le déroulement et dans l’ordre des étapes.');
   if (payments[3]?.date !== f.end) issues.push('Le solde doit correspondre à l’achèvement de la formation.');
   if (Math.abs(payments.reduce((s,p) => s+money(p.amount),0) - price) > 0.01) issues.push('Total de l’échéancier différent du prix.');
