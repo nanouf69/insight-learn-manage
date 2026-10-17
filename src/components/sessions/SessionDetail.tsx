@@ -4326,6 +4326,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </div>
                         )}
 
+                        {/* Ligne 3.6: Exclusion du périmètre d'émargements (inscription conservée, jamais supprimée) */}
+                        <div className="flex items-center gap-2 mb-3 pl-[52px]">
+                          <input
+                            type="checkbox"
+                            id={`emarg-exclus-${sessionApprenant.id}`}
+                            className="h-3.5 w-3.5"
+                            checked={sessionApprenant.emargements_exclus === true}
+                            onChange={(e) => updateSessionApprenant(sessionApprenant.id, { emargements_exclus: e.target.checked })}
+                          />
+                          <Label htmlFor={`emarg-exclus-${sessionApprenant.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                            Hors périmètre d'émargements (ancienne inscription conservée, signatures attendues non calculées)
+                          </Label>
+                        </div>
+
                         {/* Ligne 4: Boutons d'action sur ligne séparée */}
                         <div className="flex items-center gap-2 pt-3 border-t flex-wrap pl-[52px]">
                           {[
