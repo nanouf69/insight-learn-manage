@@ -6,6 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Texte exact identique à src/lib/contratFormation/consentements.ts (contrôlé par test).
+const CONSENTEMENTS_VERSION = 'consentements-2026-10-17-v1';
+const CONSENTEMENTS_SIGNATURE = {
+  demarrageAnticipe: 'Je demande expressément que la prestation commence avant l’expiration du délai de rétractation applicable, sans renoncer aux droits qui subsistent.',
+  perteApresExecution: 'Je reconnais que, dans les cas prévus par la loi, je perdrai mon droit de rétractation lorsque la prestation aura été entièrement exécutée avec mon accord préalable et exprès.',
+} as const;
+function parisDay(d: Date): string {
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+  const g = (t: string) => p.find(x => x.type === t)?.value ?? '';
+  return `${g('year')}-${g('month')}-${g('day')}`;
+}
+function addDays(day: string, n: number): string { const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,7 +43,7 @@ Deno.serve(async (req) => {
     // Validate token
     const { data: devis, error: devisError } = await supabase
       .from("devis_envois")
-      .select("id, apprenant_id, devis_signe_url, modele, formation, montant, client_nom, client_email")
+      .select("id, apprenant_id, devis_signe_url, signed_at, modele, formation, montant, client_nom, client_email, contrat_conditions")
       .eq("token", token)
       .single();
 
@@ -41,23 +54,53 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (devis.devis_signe_url) {
+    if (devis.devis_signe_url || devis.signed_at) {
       return new Response(
         JSON.stringify({ error: "Le devis signé a déjà été envoyé" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Upload signed file
+    // Devis valant contrat : contrôles serveur au moment réel de la signature.
+    const signedAt = new Date();
+    let consentements: Record<string, unknown> | null = null;
+    let reportRequis = false;
+    const snap = devis.contrat_conditions as any;
+    if (snap) {
+      const c = snap.contract ?? {};
+      const start = String(c.fields?.start ?? '');
+      const today = parisDay(signedAt);
+      if (snap.validation?.ready !== true || c.funding !== 'personnel' || c.concludedAt || c.signedAt) {
+        return new Response(JSON.stringify({ error: "Contrat incomplet : signature impossible, contactez l'organisme." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // L6353-5 : 10 jours de rétractation avant tout commencement ; jamais de date antérieure inscrite.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || start <= addDays(today, 10)) {
+        return new Response(JSON.stringify({ error: "La date de début prévue ne respecte plus le délai de rétractation à la date d'aujourd'hui : l'organisme doit proposer un report avant signature." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      reportRequis = start <= addDays(today, 14);
+      const demarrage = formData.get("consentement_demarrage_anticipe") === "true";
+      const perte = formData.get("consentement_perte_apres_execution") === "true";
+      consentements = {
+        version: CONSENTEMENTS_VERSION,
+        horodatage_serveur: signedAt.toISOString(),
+        user_agent: req.headers.get("user-agent") ?? null,
+        demarrage_anticipe: { coche: demarrage, texte: CONSENTEMENTS_SIGNATURE.demarrageAnticipe },
+        perte_apres_execution: { coche: perte, texte: CONSENTEMENTS_SIGNATURE.perteApresExecution },
+        reserve: "Droits impératifs L6353-5 (10 jours) et L6353-6 (aucun paiement avant expiration) réservés ; ces cases n'avancent pas la date de début.",
+        report_a_examiner: reportRequis,
+      };
+    }
+
+    // Upload signed file (nouveau chemin unique, jamais d'écrasement)
     const ext = file.name.split(".").pop() || "pdf";
-    const filePath = `signes/${devis.id}.${ext}`;
+    const filePath = `signes/${devis.id}_${crypto.randomUUID()}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
 
     const { error: uploadError } = await supabase.storage
       .from("devis")
       .upload(filePath, arrayBuffer, {
         contentType: file.type || "application/octet-stream",
-        upsert: true,
+        upsert: false,
       });
 
     if (uploadError) {
@@ -78,9 +121,11 @@ Deno.serve(async (req) => {
       .update({
         devis_signe_url: urlData.publicUrl,
         statut: "signe",
-        signed_at: new Date().toISOString(),
+        signed_at: signedAt.toISOString(),
+        ...(consentements ? { consentements } : {}),
       })
-      .eq("id", devis.id);
+      .eq("id", devis.id)
+      .is("signed_at", null);
 
     if (updateError) {
       console.error("Update error:", updateError);
@@ -116,7 +161,8 @@ Deno.serve(async (req) => {
         devis_signe_url: urlData.publicUrl,
         fichier_url: urlData.publicUrl,
         statut: "signé",
-        signed_at: new Date().toISOString(),
+        signed_at: signedAt.toISOString(),
+        ...(snap ? { devis_id: devis.id, contrat_reference: snap.contract?.reference ?? null, contrat_version: snap.version ?? null, consentements } : {}),
       };
 
       const { data: existingSignedDocument } = await supabase
@@ -128,7 +174,7 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
-      if (existingSignedDocument) {
+      if (existingSignedDocument && !snap) {
         const { error: formUpdateError } = await supabase
           .from("apprenant_documents_completes")
           .update({
@@ -163,6 +209,7 @@ Deno.serve(async (req) => {
         apprenant_id: devis.apprenant_id,
         devis_id: devis.id,
         fichier: urlData.publicUrl,
+        report_a_examiner: reportRequis,
       }),
     });
 
