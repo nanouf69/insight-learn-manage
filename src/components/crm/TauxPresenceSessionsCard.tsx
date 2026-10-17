@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { heuresSessionPourApprenant } from "@/lib/sessionHeures";
 import { isPratiqueType } from "@/lib/sessionTypes";
-import { creneauxAttendus } from "@/lib/signaturesManquantes";
+import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueType, normalizePratiqueCreneau } from "@/lib/pratiqueSlots";
+import { planningCreneaux } from "@/lib/signaturesManquantes";
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -14,9 +15,11 @@ const signatureValide = (e: any) =>
 export interface TauxHeures { faites: number; prevues: number }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
-export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null) {
+export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = []) {
   const res = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
   const vus = new Set<string>();
+  const { parDate } = planningCreneaux(inscriptions, reservations, configs);
+  const daySlots = daySlotsDepuisConfigs([...parDate.keys()], configs);
   for (const row of inscriptions) {
     const s = row.sessions;
     if (!s || row.liste_attente === true || row.emargements_exclus === true || /annul/i.test(String(s.statut ?? ""))) continue;
@@ -24,18 +27,21 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     if (!pratique && !/theorique/i.test(s.type_session ?? "")) continue;
     const cible = pratique ? res.pratique : res.session;
     cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
-    const debut = d10(s.date_debut), fin = d10(s.date_fin || s.date_debut);
+    const debut = [d10(s.date_debut), d10(row.date_debut)].filter(Boolean).sort().at(-1) ?? "";
+    const fin = [d10(s.date_fin || s.date_debut), d10(row.date_fin_personnalisee || row.date_fin)].filter(Boolean).sort()[0] ?? "";
     // Seules les paires date + créneau réellement prévues par les horaires de la
     // session comptent : une signature sur un créneau non prévu est conservée
     // ailleurs (anomalie) mais jamais comptée ici.
-    const creneauxPrevus = new Set(creneauxAttendus(s.heure_debut, s.heure_fin));
+    const sessionPlanning = planningCreneaux([row], reservations, configs).parDate;
     for (const e of emargements) {
       const date = d10(e.date_emargement);
       const creneau = String(e.demi_journee ?? "").trim().toLowerCase();
       const cle = `${date}|${creneau}`;
       if (!signatureValide(e) || date < debut || date > fin || vus.has(cle)) continue;
-      if (!creneauxPrevus.has(creneau)) continue;
-      const h = HEURES_CRENEAU[creneau];
+      if (!sessionPlanning.get(date)?.creneaux.has(creneau)) continue;
+      const reservation = reservations.find(r => d10(r.date_choisie) === date);
+      const parts = pratique && (daySlots.has(date) || reservation) ? resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation ?? s.type_session), normalizePratiqueCreneau(reservation?.creneau)) : [];
+      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : HEURES_CRENEAU[creneau];
       if (!h) continue;
       vus.add(cle);
       cible.faites += h;
@@ -54,11 +60,13 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     let annule = false;
     (async () => {
       try {
-        const [em, ins] = await Promise.all([
+        const [em, ins, reservations, configs] = await Promise.all([
           fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
-          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,emargements_exclus,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
+          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
+          fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
+          fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
         ]);
-        if (!annule) setData(calculerTauxPresenceHeures(em, ins, filiere));
+        if (!annule) setData(calculerTauxPresenceHeures(em, ins, filiere, reservations, configs));
       } catch {
         if (!annule) setErreur(true);
       }

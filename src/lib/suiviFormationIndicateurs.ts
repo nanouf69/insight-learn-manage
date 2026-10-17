@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
-import { daySlotsDepuisConfigs, normalizePratiqueCreneau, parseClockMinutes } from '@/lib/pratiqueSlots';
+import { daySlotsDepuisConfigs, normalizePratiqueCreneau, parseClockMinutes, resolvePratiqueSlotParts, normalizePratiqueType } from '@/lib/pratiqueSlots';
 
 /** Display policy only: the stored contract and historical evidence are never rewritten. */
 export function regleSuiviFormation(row: any) {
@@ -46,12 +46,8 @@ export function calculerRatioSignatures(emargements: any[], inscriptions: any[],
   const ajouterPratique = (date: string, creneau: string, row?: any) => {
     const cfg = pratique.get(date);
     const selection = normalizePratiqueCreneau(creneau);
-    if (cfg) {
-      const keys: string[] = [];
-      const matin = typeof cfg === 'string' ? cfg : cfg.matin;
-      const aprem = typeof cfg === 'string' ? null : cfg.apresmidi;
-      if (selection !== 'apresmidi' && matin && /[-–—]/.test(matin)) keys.push('matin');
-      if (selection !== 'matin' && aprem && /[-–—]/.test(aprem)) keys.push('apres_midi');
+    if (pratique.has(date)) {
+      const keys = resolvePratiqueSlotParts(cfg, normalizePratiqueType(row?.sessions?.type_session ?? filiere), selection).filter(p => p.minutes > 0).map(p => p.creneau);
       ajouter(date, keys);
     } else if (row) {
       ajouter(date, slots(row.heure_debut_personnalisee ?? row.sessions.heure_debut, row.heure_fin_personnalisee ?? row.sessions.heure_fin).filter(k => k === 'matin' || k === 'apres_midi'));
@@ -59,7 +55,7 @@ export function calculerRatioSignatures(emargements: any[], inscriptions: any[],
   };
   for (const row of inscriptions) {
     const s = row.sessions;
-    if (!s || row.liste_attente === true || annule(s)) continue;
+    if (!s || row.liste_attente === true || row.emargements_exclus === true || annule(s)) continue;
     if (/pratique/i.test(s.type_session ?? '')) {
       const date = dateISO(s.date_debut);
       const rs = reservations.filter(r => dateISO(r.date_choisie) === date);
@@ -102,6 +98,7 @@ export function calculerRatioSignatures(emargements: any[], inscriptions: any[],
   }
   for (const r of reservations) {
     const date = dateISO(r.date_choisie);
+    if (inscriptions.some(row => row.emargements_exclus === true && /pratique/i.test(row.sessions?.type_session ?? "") && dateISO(row.sessions?.date_debut) === date)) continue;
     if (!inscriptions.some(row => !row.liste_attente && !annule(row.sessions) && /pratique/i.test(row.sessions?.type_session ?? '') && dateISO(row.sessions?.date_debut) === date)) ajouterPratique(date, r.creneau);
   }
   const signes = new Set<string>();
@@ -118,7 +115,7 @@ export function calculerRatioSignatures(emargements: any[], inscriptions: any[],
 export async function chargerRatioSignatures(apprenantId: string, filiere: string): Promise<RatioSignatures> {
   const [emargements, sessions, reservations, blocs, configs] = await Promise.all([
     fetchAllRows<any>((f,t) => supabase.from('emargements_fc').select('id,date_emargement,demi_journee,signature_data_url,absent,masque').eq('apprenant_id',apprenantId).order('id').range(f,t)),
-    fetchAllRows<any>((f,t) => supabase.from('session_apprenants').select('id,liste_attente,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)').eq('apprenant_id',apprenantId).order('id').range(f,t)),
+    fetchAllRows<any>((f,t) => supabase.from('session_apprenants').select('id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)').eq('apprenant_id',apprenantId).order('id').range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from('reservations_pratique').select('id,date_choisie,creneau').eq('apprenant_id',apprenantId).order('id').range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
