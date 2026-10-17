@@ -1,3 +1,5 @@
+import Holidays from 'date-holidays';
+const frenchHolidays = new Holidays('FR');
 export type Funding = '' | 'personnel' | 'cpf' | 'opco' | 'entreprise' | 'autre';
 export type ContractFields = Record<string, string>;
 export interface ContractActivity {
@@ -75,12 +77,25 @@ export function addDays(day: string, amount: number): string {
   const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + amount); return d.toISOString().slice(0, 10);
 }
 export function money(value: string): number { return value.trim() ? Number(value.replace(',', '.')) : NaN; }
+export function earliestContractStart(today: string, mode: string): string {
+  let deadline = addDays(today, 14);
+  if (/distance|hors établissement/i.test(mode)) {
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(`${deadline}T12:00:00+01:00`);
+      const day = date.getUTCDay();
+      const holidays = frenchHolidays.isHoliday(date);
+      if (day !== 0 && day !== 6 && (!holidays || !holidays.some(h => h.type === 'public'))) break;
+      deadline = addDays(deadline, 1);
+    }
+  }
+  return addDays(deadline, 1);
+}
 export function contractAccess(serverRole: boolean, expectedLearner: string, actualLearner: string): boolean {
   return serverRole && !!expectedLearner && expectedLearner === actualLearner;
 }
 export function validateContract(contract: TrainingContract, expectedLearner: string, now = new Date()) {
   const today = parisDay(now); const f = contract.fields; const issues: string[] = [];
-  const earliestStart = addDays(today, 15);
+  const earliestStart = earliestContractStart(today, f.conclusionMode ?? '');
   if (contract.learnerId !== expectedLearner || !expectedLearner) issues.push('Le contrat ne correspond pas au dossier apprenant ouvert.');
   if (contract.funding !== 'personnel') issues.push('Modèle réservé au financement personnel ; ne remplace pas les documents CPF, OPCO ou entreprise.');
   if (!contract.pathway) issues.push('Choisir le parcours effectivement vendu.');

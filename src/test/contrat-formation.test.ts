@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONTRACT_FIELD_GROUPS, validateContract, parisDay, deliveredValue, contractAccess, type TrainingContract } from '@/lib/contratFormation/model';
+import { CONTRACT_FIELD_GROUPS, validateContract, parisDay, deliveredValue, contractAccess, earliestContractStart, type TrainingContract } from '@/lib/contratFormation/model';
 import { fundingFromLearner, newTrainingContract, contractProgramme } from '@/lib/contratFormation/prefill';
 import { buildTrainingContractPdf } from '@/lib/contratFormation/pdf';
 const now = new Date('2026-10-17T09:02:00Z');
@@ -10,6 +10,8 @@ function complete(): TrainingContract {
 }
 describe('Contrat individuel — règles du modèle',()=>{
   it('jour courant Europe/Paris',()=>expect(parisDay(new Date('2026-10-17T22:30:00Z'))).toBe('2026-10-18'));
+  it('distance : échéance du samedi prolongée au lundi, début mardi',()=>expect(earliestContractStart('2026-10-17','à distance')).toBe('2026-11-03'));
+  it('hors établissement : échéance fériée prolongée',()=>expect(earliestContractStart('2026-10-28','hors établissement')).toBe('2026-11-13'));
   it('préparation future sans signature ni conclusion',()=>{const c=complete();expect(validateContract(c,c.learnerId,now).ready).toBe(true);expect(c.signedAt).toBeNull();expect(c.concludedAt).toBeNull();});
   it('14 jours complets : jour 14 refusé, jour 15 admis',()=>{const c=complete();c.fields.start='2026-10-31';expect(validateContract(c,c.learnerId,now).ready).toBe(false);c.fields.start='2026-11-01';expect(validateContract(c,c.learnerId,now).ready).toBe(true);});
   it.each(['2026-10-16','2026-10-17'])('formation passée %s régularisation du jour',start=>{const c=complete();c.fields.start=start;const v=validateContract(c,c.learnerId,now);expect(v.ready).toBe(false);expect(v.status).toBe('BROUILLON — RÉGULARISATION');expect(v.today).toBe('2026-10-17');});

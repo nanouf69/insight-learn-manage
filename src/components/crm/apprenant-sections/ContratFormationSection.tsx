@@ -81,7 +81,7 @@ export function ContratFormationSection({ apprenant }: { apprenant: ContractLear
   return <section className="space-y-6 min-w-0">
     <header className="space-y-2"><h2 className="text-xl font-semibold flex items-center gap-2"><FileText className="h-5 w-5" />Contrat de formation</h2>
       <p className="text-sm text-muted-foreground">{draft.reference} · {draft.fields.learnerName} · Génération : {validation.today} (Europe/Paris)</p>
-      <p className="text-sm">Conclusion non établie · Signature réelle non recueillie</p>
+      <p className="text-sm">Conclusion non établie · Signature réelle non recueillie · Saisie temporaire non enregistrée</p>
     </header>
     {sourceError && <p role="alert" className="text-destructive">{sourceError}</p>}
     <div className="space-y-2"><Label>Financement de ce contrat</Label><Select value={draft.funding} onValueChange={v => { setPreview(false); setDraft(d => ({ ...d, funding: v as Funding, verified: false })); }}><SelectTrigger><SelectValue placeholder="Choisir le financement" /></SelectTrigger><SelectContent>{[['personnel','Personnel — payé par le stagiaire'],['cpf','CPF'],['opco','OPCO'],['entreprise','Entreprise'],['autre','Autre financeur']].map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></div>
