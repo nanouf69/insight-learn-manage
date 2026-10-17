@@ -7,11 +7,14 @@ import { installAnswerPersistence, setAnswerSaveAuthToken } from "@/lib/answerPe
 import { initQuizResultPersistence } from "@/lib/quizResultPersistence";
 import { supabase } from "@/integrations/supabase/client";
 import { installDomPatch } from "@/lib/domPatch";
+import { installModulePagesPersistence } from "@/lib/modulePagesPersistence";
+import { CanonicalOriginNotice } from "@/components/CanonicalOriginNotice";
 
 installErrorMonitoring();
 
 // Persistance fiable des réponses apprenants (file durable + renvoi automatique).
 installAnswerPersistence();
+installModulePagesPersistence();
 // Persistance fiable des notes de matière (renvoi automatique jusqu'à confirmation).
 initQuizResultPersistence();
 supabase.auth.getSession().then(({ data }) =>
@@ -24,8 +27,10 @@ supabase.auth.onAuthStateChange((_e, session) =>
 // Protection contre les modifications du DOM hors React (traduction, extensions).
 installDomPatch();
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root");
+if (root) createRoot(root).render(
   <React.StrictMode>
+    <CanonicalOriginNotice />
     <App />
   </React.StrictMode>
 );

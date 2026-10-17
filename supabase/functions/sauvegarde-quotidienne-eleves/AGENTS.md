@@ -1,0 +1,2 @@
+- Keep EXPORT_TABLES append-only and version manifests; do not move legacy cursors or upgrade completed legacy exports; why: resume indices and historical completeness stay truthful.
+- Commit the final manifest before terminal checkpoint and check every checkpoint upload; preserve unmanaged scheduler authentication; why: failed storage must remain resumable and existing nightly callbacks must not break.

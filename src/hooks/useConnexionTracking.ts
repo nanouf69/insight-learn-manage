@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { freshSessionCall } from '@/lib/sessionRpc';
 
 type SessionCheckEvent = "heartbeat" | "action" | "confirm_presence";
 
@@ -35,6 +36,13 @@ function getClientSessionId(): string {
 
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
+  const unloadTokenRef = useRef<{ token: string; owner: string; expires: number } | null>(null);
+  useEffect(() => {
+    const update = (session: any) => { unloadTokenRef.current = session?.user?.id === userId && session.expires_at ? { token: session.access_token, owner: userId, expires: session.expires_at * 1000 } : null; };
+    void supabase.auth.getSession().then(({ data }) => update(data.session));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => update(session));
+    return () => data.subscription.unsubscribe();
+  }, [userId]);
   const startingRef = useRef(false);
   const [connexionId, setConnexionId] = useState<string | null>(null);
   const [alreadyConnected, setAlreadyConnected] = useState(false);
@@ -76,16 +84,16 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
   const closeConnexionServerSide = useCallback(
     async (id: string) => {
-      const { error } = await supabase.rpc("close_apprenant_connexion" as any, {
+      const { error } = await freshSessionCall(() => supabase.rpc("close_apprenant_connexion" as any, {
         _connexion_id: id,
         _apprenant_id: apprenantId,
-      });
+      }), userId ?? undefined).catch(() => ({ error: { message: 'Session expirée, fermeture non confirmée' } }));
 
       if (error) {
         console.error("close_apprenant_connexion error:", error);
       }
     },
-    [apprenantId],
+    [apprenantId, userId],
   );
 
   const endConnexion = useCallback(async () => {
@@ -100,11 +108,11 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     async (event: SessionCheckEvent): Promise<SessionCheckRow | null> => {
       if (!enabled || !apprenantId || !userId || !connexionIdRef.current) return null;
 
-      const { data, error } = await supabase.rpc("check_apprenant_session" as any, {
+      const { data, error } = await freshSessionCall(() => supabase.rpc("check_apprenant_session" as any, {
         _apprenant_id: apprenantId,
         _connexion_id: connexionIdRef.current,
         _event: event,
-      });
+      }), userId).catch(() => ({ data: null, error: { message: 'Session expirée, reconnectez-vous. Vos réponses sont conservées.' } }));
 
       if (error) {
         console.error("Session check error:", error);
@@ -130,11 +138,11 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     const startConnexion = async () => {
       if (connexionIdRef.current || startingRef.current) return;
       startingRef.current = true;
-      const { data, error } = await supabase.rpc("start_apprenant_connexion" as any, {
+      const { data, error } = await freshSessionCall(() => supabase.rpc("start_apprenant_connexion" as any, {
         _apprenant_id: apprenantId,
         _source: "cours",
         _client_session_id: getClientSessionId(),
-      });
+      }), userId).catch(() => ({ data: null, error: { message: 'Session expirée' } }));
       startingRef.current = false;
 
       if (cancelled) return;
@@ -208,6 +216,10 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     };
 
     void startConnexion();
+    const resume = () => { void startConnexion(); };
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => { setTimeout(resume, 0); });
+    window.addEventListener('online', resume);
+    window.addEventListener('focus', resume);
 
     // Close connection when tab/window/PWA is closed (best-effort, uses keepalive)
     const closeOnUnload = () => {
@@ -217,28 +229,16 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/close_apprenant_connexion`;
         const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
         const body = JSON.stringify({ _connexion_id: id, _apprenant_id: apprenantId });
-        const token = (supabase as any)?.auth?.session?.()?.access_token;
-        // Try to grab the current access token synchronously from storage
-        let accessToken: string | null = token ?? null;
-        if (!accessToken) {
-          try {
-            const key = Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
-            if (key) {
-              const raw = localStorage.getItem(key);
-              if (raw) {
-                const parsed = JSON.parse(raw);
-                accessToken = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null;
-              }
-            }
-          } catch { /* ignore */ }
-        }
+        const session = unloadTokenRef.current;
+        if (!session || session.owner !== userId || session.expires <= Date.now()) return;
+        const accessToken = session.token;
         void fetch(url, {
           method: "POST",
           keepalive: true,
           headers: {
             "Content-Type": "application/json",
             apikey,
-            Authorization: `Bearer ${accessToken ?? apikey}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body,
         });
@@ -254,6 +254,9 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     return () => {
       cancelled = true;
+      authListener.subscription.unsubscribe();
+      window.removeEventListener('online', resume);
+      window.removeEventListener('focus', resume);
       startingRef.current = false;
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onBeforeUnload);
@@ -272,8 +275,8 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     if (!apprenantId || !userId || !connexionIdRef.current) return;
 
     const validation = await checkSessionOnServer("action");
-    if (validation && !validation.is_valid) {
-      const reason = validation.disconnect_reason || "";
+    if (!validation || !validation.is_valid) {
+      const reason = validation?.disconnect_reason || "verification_indisponible";
       console.warn(`[ConnexionTracking] Session de suivi expirée sans déconnecter l'apprenant — raison: ${reason}`);
       return;
     }
@@ -303,8 +306,8 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     if (!apprenantId || !userId || !connexionIdRef.current) return false;
 
     const validation = await checkSessionOnServer("action");
-    if (validation && !validation.is_valid) {
-      const reason = validation.disconnect_reason || "";
+    if (!validation || !validation.is_valid) {
+      const reason = validation?.disconnect_reason || "verification_indisponible";
       console.warn(`[ConnexionTracking] Activité quiz ignorée — session de suivi expirée sans déconnecter l'apprenant — raison: ${reason}`);
       return false;
     }

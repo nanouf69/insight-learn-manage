@@ -1,4 +1,6 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { pendingModulePages, queueModulePages } from "@/lib/modulePagesPersistence";
+import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
@@ -7015,6 +7017,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!uiStateHydrated || !apprenantId || pages.length === 0) return;
       let cancelled = false;
       (async () => {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const owner = sessionData.session?.user?.id;
+        if (owner) {
+          const local = pendingModulePages(owner, apprenantId, module.id);
+          if (!cancelled && local.length) setCompletedPages(prev => new Set([...prev, ...local.map(pageFromStorage).filter(n => n >= 0 && n < pages.length)]));
+        }
         const { data, error } = await (supabase as any)
           .from("apprenant_module_completion")
           .select("pages_completees, status")
@@ -7756,37 +7764,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
     const markPageCompleted = (pageIndex: number) => {
-      let snapshot: number[] = [];
-      setCompletedPages(prev => {
-        const next = new Set(prev);
-        next.add(pageIndex);
-        snapshot = Array.from(next);
-        return next;
-      });
+      const snapshot = Array.from(new Set([...completedPages, pageIndex]));
+      setCompletedPages(new Set(snapshot));
 
       // Persistance serveur immédiate : la progression étape par étape ne doit
       // jamais dépendre du sessionStorage (perdue à la reconnexion / autre appareil).
       if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
         const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
         (async () => {
-          let lastError: any = null;
-          for (let attempt = 1; attempt <= 3; attempt++) {
-            const { error } = await (supabase as any).rpc("save_module_pages_progress", {
-              _apprenant_id: apprenantId,
-              _module_id: module.id,
-              _pages: pagesForStorage(snapshot),
-              _progress: progress,
-            });
-            if (!error) return;
-            lastError = error;
-            console.error(`[module ${module.id}] progression étape non enregistrée (essai ${attempt}/3)`, error);
-            await new Promise(r => setTimeout(r, 700 * attempt));
-          }
-          if (await isLearnerSessionExpired(lastError)) {
-            toast.error(SESSION_EXPIREE_MESSAGE, { duration: 15000 });
-          } else {
-            toast.error("Votre progression n'a pas pu être enregistrée. Vérifiez votre connexion.");
-          }
+          const confirmed = await queueModulePages(apprenantId, module.id, pagesForStorage(snapshot), progress);
+          if (!confirmed) toast.error("Progression conservée sur cet appareil, en attente de confirmation. Reconnectez-vous puis revenez sur cette page.", { duration: 15000 });
         })();
       }
     };
@@ -10102,78 +10089,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           )}
         </div>
         <div className="flex items-center gap-2">
-          {[4, 9, 81, 82].includes(Number(module.id)) && (
-            <Button
-              variant="default"
-              size="sm"
-              className="gap-2"
-              onClick={async () => {
-                const parentId = [4, 81].includes(Number(module.id)) ? 4 : 9;
-                const siblingId = parentId === 4 ? 9 : 4;
-                const SHARED = new Set([100, 101, 102, 103, 105]);
-                const t = toast.loading("Resynchronisation en cours…");
-                try {
-                  const { data: parentRow, error: parentErr } = await supabase
-                    .from("module_editor_state")
-                    .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
-                    .eq("module_id", parentId)
-                    .maybeSingle();
-                  if (parentErr) throw parentErr;
-                  const parentData: any = parentRow?.module_data ?? { exercices: [] };
-                  const parentExos: any[] = Array.isArray(parentData.exercices) ? parentData.exercices : [];
-                  const sharedFromParent = parentExos
-                    .filter((e) => SHARED.has(Number(e?.id)))
-                    .map((e) => JSON.parse(JSON.stringify(e)));
-
-                  // Miroir vers l'autre parent (4↔9)
-                  if (sharedFromParent.length > 0) {
-                    const { data: sibRow } = await supabase
-                      .from("module_editor_state")
-                      .select("module_data, deleted_cours, deleted_exercices, source_fingerprint, updated_at")
-                      .eq("module_id", siblingId)
-                      .maybeSingle();
-                    const sibData: any = sibRow?.module_data ?? { exercices: [] };
-                    const sibExos: any[] = Array.isArray(sibData.exercices) ? sibData.exercices : [];
-                    const kept = sibExos.filter((e) => !SHARED.has(Number(e?.id)));
-                    const nextData = { ...sibData, exercices: [...sharedFromParent, ...kept] };
-                    await saveModuleEditorStateWithCas({
-                      moduleId: siblingId,
-                      moduleData: nextData,
-                      deletedCours: sibRow?.deleted_cours ?? [],
-                      deletedExercices: sibRow?.deleted_exercices ?? [],
-                      sourceFingerprint: sibRow?.source_fingerprint ?? null,
-                      expectedUpdatedAt: sibRow?.updated_at ?? null,
-                    });
-                  }
-
-                  // Broadcast vers TOUS les modules concernés (parents + FC)
-                  const at = new Date().toISOString();
-                  for (const mid of [4, 9, 81, 82]) {
-                    try {
-                      const ch = supabase.channel(`module-editor-live-${mid}`);
-                      await new Promise<void>((resolve) => {
-                        const to = setTimeout(resolve, 350);
-                        ch.subscribe((s) => { if (s === "SUBSCRIBED") { clearTimeout(to); resolve(); } });
-                      });
-                      await ch.send({
-                        type: "broadcast",
-                        event: "module-updated",
-                        payload: { moduleId: mid, at, resyncFrom: parentId },
-                      });
-                      await supabase.removeChannel(ch);
-                    } catch {}
-                  }
-                  toast.success("✅ Réponses FC resynchronisées côté apprenant", { id: t });
-                } catch (e: any) {
-                  console.error("[Resync Bilan] échec:", e);
-                  toast.error(`Échec resynchronisation : ${e?.message ?? "erreur"}`, { id: t });
-                }
-              }}
-            >
-              <RefreshCw className="w-4 h-4" />
-              Resynchroniser maintenant
-            </Button>
-          )}
+          {!studentOnly && [4, 9, 81, 82].includes(Number(module.id)) && <BilanSyncDiagnostic />}
           <Button
             variant="outline"
             size="sm"

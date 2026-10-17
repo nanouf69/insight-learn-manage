@@ -1,45 +1,56 @@
-import { cheminDocumentUnique } from "./chemin.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { DOCUMENT_MAX_BYTES, documentValidation, verifyOnboardingDocumentToken } from '../_shared/documentUploadRules.ts';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { status: 200, headers: corsHeaders });
   }
 
   try {
+    if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405);
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const apprenantId = formData.get("apprenant_id") as string | null;
     const titre = (formData.get("titre") as string) || "Devis formation";
     const typeDocument = (formData.get("type_document") as string) || "devis";
 
-    if (!file || !apprenantId) {
+    if (!(file instanceof File) || !apprenantId || !/^[0-9a-f-]{36}$/i.test(apprenantId) || !/^[a-z0-9_-]{1,150}$/i.test(typeDocument) || titre.length > 500) {
       return new Response(JSON.stringify({ error: "file et apprenant_id requis" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (file.size > 4 * 1024 * 1024) {
+    if (file.size > DOCUMENT_MAX_BYTES) {
       return new Response(JSON.stringify({ error: "Fichier trop volumineux (max 4 Mo)" }), {
-        status: 400,
+        status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const url = Deno.env.get('SUPABASE_URL');
+    const secret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !secret) return json({ error: 'Service documentaire indisponible' }, 503);
+    const supabase = createClient(url, secret);
+    if (!typeDocument.startsWith('libre')) {
+      const invalid = documentValidation(file, typeDocument === 'photo_identite');
+      if (invalid) return json({ error: invalid }, 400);
+    }
+    const operation = String(formData.get('operation_id') ?? crypto.randomUUID());
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(operation)) return json({ error: 'Identifiant opération invalide' }, 400);
+    const token = String(formData.get('session_token') ?? '');
+    const onboardingAuthorized = await verifyOnboardingDocumentToken(apprenantId, token, secret);
+    const jwt = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+    const { data: userData } = jwt ? await supabase.auth.getUser(jwt) : { data: { user: null } };
+    const userId = userData.user?.id;
+    if (!onboardingAuthorized && !userId) return json({ error: 'Session expirée. Reconnectez-vous ou rouvrez votre lien de bienvenue ; le fichier est conservé.' }, 401);
 
     const { data: apprenant, error: appError } = await supabase
       .from("apprenants")
-      .select("id, nom, prenom")
+      .select("id, nom, prenom, auth_user_id")
       .eq("id", apprenantId)
       .single();
 
@@ -49,22 +60,24 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const { data: previousDocs, error: previousError } = await supabase
-      .from("documents_inscription")
-      .select("id, url")
-      .eq("apprenant_id", apprenantId)
-      .eq("type_document", typeDocument);
-
-    if (previousError) {
-      console.error("Previous docs query error:", previousError);
+    if (!onboardingAuthorized && apprenant.auth_user_id !== userId) {
+      const { data: admin, error: roleError } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
+      if (roleError || !admin) return json({ error: 'Vous ne pouvez pas déposer un document pour ce dossier.' }, 403);
     }
 
-    const timestamp = Date.now();
     const ext = file.name.split(".").pop() || "pdf";
-    const storagePath = cheminDocumentUnique(apprenantId, typeDocument, ext, timestamp);
-
     const arrayBuffer = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    const storagePath = `${apprenantId}/${typeDocument}-${operation}-${hash}.${ext.replace(/[^a-z0-9]/gi, '')}`;
+    const success = (path: string, name: string) => json({ success: true, confirmed: true, operationId: operation, storagePath: path, fileName: name, publicUrl: supabase.storage.from('documents-inscription').getPublicUrl(path).data.publicUrl });
+    const readOperation = () => supabase.from('documents_inscription').select('id, apprenant_id, type_document, url, nom_fichier').eq('id', operation).maybeSingle();
+    const { data: existing, error: existingError } = await readOperation();
+    if (existingError) return json({ error: 'Lecture de confirmation impossible. Réessayez le même fichier.' }, 503);
+    if (existing) {
+      if (existing.apprenant_id !== apprenantId || existing.type_document !== typeDocument || existing.url !== storagePath) return json({ error: 'Cette opération concerne un autre document ; aucun remplacement effectué.' }, 409);
+      return success(storagePath, existing.nom_fichier ?? file.name);
+    }
     const { error: uploadError } = await supabase.storage
       .from("documents-inscription")
       .upload(storagePath, arrayBuffer, {
@@ -73,8 +86,10 @@ Deno.serve(async (req) => {
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return new Response(JSON.stringify({ error: "Erreur upload: " + uploadError.message }), {
+      // A timed-out request may already have stored this exact operation/hash.
+      const { data: stored } = await supabase.storage.from('documents-inscription').download(storagePath);
+      const storedHash = stored ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await stored.arrayBuffer())), byte => byte.toString(16).padStart(2, '0')).join('') : null;
+      if (storedHash !== hash) return new Response(JSON.stringify({ error: "Stockage indisponible. Réessayez le fichier conservé." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -84,11 +99,11 @@ Deno.serve(async (req) => {
     // sont conservées. Les lectures prennent la plus récente (created_at desc).
     // Avant le 15/10/2026, chaque nouvel envoi supprimait ligne ET fichier
     // précédents (3 récapitulatifs perdus le 14/10/2026 09:59 UTC, 11:59 Paris).
-    void previousDocs;
 
     const { error: dbError } = await supabase
       .from("documents_inscription")
       .insert({
+        id: operation,
         apprenant_id: apprenantId,
         titre,
         type_document: typeDocument,
@@ -98,11 +113,11 @@ Deno.serve(async (req) => {
       });
 
     if (dbError) {
-      console.error("DB error:", dbError);
-      // Nettoyage du SEUL nouveau fichier orphelin (jamais d'une version précédente).
-      const { error: cleanupError } = await supabase.storage.from("documents-inscription").remove([storagePath]);
-      if (cleanupError) console.error("Cleanup new file error:", cleanupError);
-      return new Response(JSON.stringify({ error: "Erreur base de données: " + dbError.message }), {
+      const { data: confirmed } = await readOperation();
+      if (confirmed?.apprenant_id === apprenantId && confirmed.url === storagePath) return success(storagePath, confirmed.nom_fichier ?? file.name);
+      console.error('document confirmation failed', { operation, code: dbError.code });
+      // Retain the uploaded file for an idempotent retry, never remove a version.
+      return new Response(JSON.stringify({ error: "Confirmation impossible. Fichier conservé ; réessayez la même opération." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -115,23 +130,10 @@ Deno.serve(async (req) => {
       details: `Type: ${typeDocument} | Fichier: ${file.name}`,
     });
 
-    const { data: publicUrlData } = supabase.storage
-      .from("documents-inscription")
-      .getPublicUrl(storagePath);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Document "${titre}" ajouté au dossier de ${apprenant.prenom} ${apprenant.nom}`,
-        storagePath,
-        publicUrl: publicUrlData?.publicUrl ?? null,
-        fileName: file.name,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return success(storagePath, file.name);
   } catch (err) {
-    console.error("Error:", err);
-    return new Response(JSON.stringify({ error: "Erreur serveur: " + (err as Error).message }), {
+    console.error("Document upload interrupted", { type: err instanceof Error ? err.name : 'unknown' });
+    return new Response(JSON.stringify({ error: "Envoi interrompu. Votre fichier et les versions précédentes sont conservés ; réessayez." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

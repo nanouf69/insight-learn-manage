@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PhotoCropper } from "@/components/crm/apprenant-sections/PhotoCropper";
+import { Button } from '@/components/ui/button';
+import { DOCUMENT_ACCEPT, DOCUMENT_MAX_MB, DOCUMENT_MAX_BYTES, documentValidation, uploadInscriptionDocument } from '@/lib/documentUpload';
 
 interface DocumentUploadCardProps {
   docId: string;
@@ -17,10 +19,10 @@ interface DocumentUploadCardProps {
   onStatusChange?: (docId: string, status: 'pending' | 'valid' | 'rejected', reason?: string) => void;
 }
 
-const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.gif';
+const ACCEPTED_FORMATS = DOCUMENT_ACCEPT;
 const ACCEPTED_IMAGE_FORMATS = '.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.gif';
-const MAX_FILE_SIZE_MB = 10;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MAX_FILE_SIZE_MB = DOCUMENT_MAX_MB;
+const MAX_FILE_SIZE_BYTES = DOCUMENT_MAX_BYTES;
 
 export function DocumentUploadCard({
   docId,
@@ -42,14 +44,20 @@ export function DocumentUploadCard({
   const [cropperImageSrc, setCropperImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const restoredRef = useRef(false);
+  const pendingFileRef = useRef<File | null>(null);
+  const operationRef = useRef<string | null>(null);
+  const [uploadError, setUploadError] = useState('');
+  const cacheKey = apprenantId ? `onboarding_doc_${apprenantId}_${docId}` : null;
 
   // Restore document status from DB or localStorage on mount
   useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
+    let cancelled = false;
+    setStatus('empty'); setFileName(''); setFileUrl(''); setStoragePath('');
+    pendingFileRef.current = null; operationRef.current = null; setUploadError('');
 
     const restoreFromLocalStorage = () => {
-      const saved = localStorage.getItem(`onboarding_doc_${docId}`);
+      if (cancelled || !cacheKey) return;
+      const saved = localStorage.getItem(cacheKey);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -78,6 +86,7 @@ export function DocumentUploadCard({
         .order('created_at', { ascending: false })
         .limit(1);
 
+      if (cancelled) return;
       if (!error && data && data.length > 0) {
         const doc = data[0];
         const docStatus = doc.statut === 'valid' ? 'valid' : doc.statut === 'rejected' ? 'rejected' : 'pending';
@@ -97,6 +106,7 @@ export function DocumentUploadCard({
     };
 
     restoreFromDB();
+    return () => { cancelled = true; };
   }, [apprenantId, docId]);
 
   const handleFileSelect = () => {
@@ -106,6 +116,9 @@ export function DocumentUploadCard({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const invalid = documentValidation(file, docId === 'photo_identite');
+    if (invalid) { toast.error(invalid); return; }
+    operationRef.current = crypto.randomUUID();
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -126,9 +139,9 @@ export function DocumentUploadCard({
       }
     } else {
       // Validate file type for other documents
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif'];
       const fileExtension = file.name.toLowerCase().split('.').pop();
-      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'bmp', 'tiff', 'tif', 'gif'];
 
       if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
         toast.error("Format non accepté. Formats autorisés: PDF, JPG, PNG, HEIC, WebP");
@@ -159,42 +172,23 @@ export function DocumentUploadCard({
   }, []);
 
   const uploadFile = async (file: File) => {
+    const previous = { status, fileName, fileUrl, storagePath };
+    pendingFileRef.current = file;
+    operationRef.current ??= crypto.randomUUID();
+    setUploadError('');
     setStatus('uploading');
     setFileName(file.name);
 
     try {
       let effectiveApprenantId = apprenantId;
 
-      // Si pas d'apprenantId, essayer de le créer automatiquement à partir du localStorage
+      // Existing dossier only: uploads must never create an account or fiche.
       if (!effectiveApprenantId) {
         const storedId = localStorage.getItem('onboarding_apprenant_id');
         if (storedId) {
           effectiveApprenantId = storedId;
         } else {
-          // Créer l'apprenant à la volée
-          const nom = localStorage.getItem('onboarding_nom')?.trim();
-          const prenom = localStorage.getItem('onboarding_prenom')?.trim();
-          if (!nom || !prenom) {
-            throw new Error("Veuillez d'abord saisir votre nom et prénom sur la page de bienvenue");
-          }
-          const { data: newApprenant, error: insertError } = await supabase
-            .from('apprenants')
-            .insert({
-              nom,
-              prenom,
-              email: localStorage.getItem('onboarding_email')?.trim() || null,
-              telephone: localStorage.getItem('onboarding_telephone')?.trim() || null,
-              adresse: localStorage.getItem('onboarding_adresse')?.trim() || null,
-              code_postal: localStorage.getItem('onboarding_code_postal')?.trim() || null,
-              ville: localStorage.getItem('onboarding_ville')?.trim() || null,
-            })
-            .select()
-            .single();
-          if (insertError || !newApprenant) {
-            throw new Error("Impossible de créer votre dossier. Veuillez retourner à la page de bienvenue.");
-          }
-          effectiveApprenantId = newApprenant.id;
-          localStorage.setItem('onboarding_apprenant_id', newApprenant.id);
+          throw new Error('Dossier non reconnu. Rouvrez votre lien de bienvenue ; le fichier reste conservé.');
         }
       }
 
@@ -208,13 +202,7 @@ export function DocumentUploadCard({
       formData.append('titre', title);
       formData.append('type_document', docId);
 
-      const { data, error } = await supabase.functions.invoke('upload-document-inscription', {
-        body: formData,
-      });
-
-      if (error) {
-        throw new Error(error.message || "Erreur lors de l'enregistrement du document");
-      }
+      const data = await uploadInscriptionDocument(formData, operationRef.current);
 
       if (!data?.success) {
         throw new Error(data?.error || "Le document n'a pas pu être enregistré");
@@ -235,7 +223,7 @@ export function DocumentUploadCard({
       setFileName(uploadedFileName);
       setFileUrl(uploadedUrl);
 
-      localStorage.setItem(`onboarding_doc_${docId}`, JSON.stringify({
+      localStorage.setItem(`onboarding_doc_${effectiveApprenantId}_${docId}`, JSON.stringify({
         status: 'valid',
         fileName: uploadedFileName,
         fileUrl: uploadedUrl,
@@ -244,51 +232,21 @@ export function DocumentUploadCard({
 
       toast.success(`Document "${title}" uploadé avec succès`);
       setStatus('valid');
+      pendingFileRef.current = null; operationRef.current = null;
       onStatusChange?.(docId, 'valid');
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || "Erreur lors de l'upload du document");
-      setStatus('empty');
-      setFileName('');
-      setFileUrl('');
-      setStoragePath('');
+      setUploadError(error.message || 'Envoi interrompu. Fichier conservé, réessayez.');
+      setStatus(previous.status === 'uploading' ? 'empty' : previous.status);
+      setFileName(previous.fileName);
+      setFileUrl(previous.fileUrl);
+      setStoragePath(previous.storagePath);
     }
   };
 
   const handleDelete = async () => {
-    if (!storagePath && !fileUrl) return;
-
-    try {
-      const pathFromUrl = fileUrl.includes('/documents-inscription/')
-        ? fileUrl.split('/documents-inscription/')[1]
-        : '';
-      const pathToDelete = storagePath || pathFromUrl;
-
-      if (pathToDelete) {
-        await supabase.storage
-          .from('documents-inscription')
-          .remove([pathToDelete]);
-      }
-
-      if (apprenantId) {
-        await supabase
-          .from('documents_inscription')
-          .delete()
-          .eq('apprenant_id', apprenantId)
-          .eq('type_document', docId);
-      }
-
-      setStatus('empty');
-      setFileName('');
-      setFileUrl('');
-      setStoragePath('');
-      setRejectionReason('');
-      localStorage.removeItem(`onboarding_doc_${docId}`);
-      onStatusChange?.(docId, 'pending');
-      toast.success("Document supprimé");
-    } catch (error: any) {
-      toast.error("Erreur lors de la suppression");
-    }
+    toast.info('Les versions précédentes sont conservées. Utilisez Remplacer pour ajouter une nouvelle version.');
   };
 
 
@@ -338,6 +296,10 @@ export function DocumentUploadCard({
 
   return (
     <div className="space-y-2">
+      {uploadError && <div role="alert" className="text-destructive text-sm">
+        <p>{uploadError}</p>
+        <Button variant="outline" disabled={status === 'uploading'} onClick={() => { const file = pendingFileRef.current; if (file) void uploadFile(file); }}>Réessayer le fichier conservé</Button>
+      </div>}
       <div 
         className={cn(
           "bg-white border-2 rounded-xl p-4 transition-all",
@@ -404,18 +366,6 @@ export function DocumentUploadCard({
                     <Ban className="w-5 h-5 text-red-400" />
                   </div>
                 )}
-                
-                {/* Delete button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete();
-                  }}
-                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-5 h-5 text-red-400" />
-                </button>
                 
                 {/* Spacer */}
                 <div className="flex-1" />

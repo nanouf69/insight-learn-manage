@@ -57,7 +57,8 @@ export async function savePublicFormDocument({
       return false;
     }
 
-    return true;
+    const receipt = await response.json().catch(() => null);
+    return receipt?.success === true;
   } catch (error) {
     console.error("save-public-form exception:", error);
     return false;

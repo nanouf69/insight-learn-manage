@@ -5,8 +5,7 @@
 
 - save_module_completion refuses completion without proven answers for modules with questions (P0501); why: browser never decides alone.
 - Règles de fin des modules définis dans le code : table `module_regles_validation` (protection_serveur) lue par save_module_completion ; why: le serveur doit connaître les modules à questions absents de module_editor_state.
-- Comptes de test techniques : table `comptes_test_techniques` ; why: les exclure des signalements et statistiques sans deviner par le nom.
-- Comptes de test exclus des lectures via policies RESTRICTIVE `est_compte_test()` (apprenants, reponses, progression, notes) ; why: exclusion centrale de tous les écrans/statistiques, le compte ne voit que lui-même.
+- Technical test accounts use `comptes_test_techniques` and restrictive `est_compte_test()` policies; why: central exclusion without name guessing; each test account sees only itself.
 - Bilans: `trg_bilan_aa_controle_ids` rejects non-int32 exercise IDs (P0510); why: keep old IDs compatible.
 - Affichage module apprenant : via `getLearnerModuleDisplayState`/`isModuleDoneForDisplay` ; une ligne serveur `completed` reste « Terminé » ; compteurs complets sans serveur = « Validation en cours » ; why: jamais rétrogradé ni faux statut.
 - `trg_garde_correction_admin_quiz` refuses (42501) learner writes to admin/manual-corrected quiz scores; why: pending device notes never overwrite admin corrections.
@@ -32,4 +31,4 @@
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures with learner track; why: no cross-track denominators.
-- Subdirectories may have their own `AGENTS.md`: read first (theory-fail mail: `supabase/functions/_shared/`).
+- Read scoped AGENTS before edits, including src/lib and shared Edge code; why: local rules apply.

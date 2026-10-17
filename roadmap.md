@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Corrections techniques autorisées — 17/10
+- [ ] Sessions fraîches, progression durable isolée et origine canonique sûre ; examens sans faux diagnostic vide.
+- [ ] Documents 4 Mo, erreurs lisibles, reprise idempotente et conservation des versions.
+- [ ] Export append des trois tables CMA, manifeste versionné et reprise compatible.
+- [ ] Diagnostic Bilan non activé, trois QRC corrompues laissées en attente.
+- [ ] Tests isolés et contrôle empreintes ; déployer uniquement upload/export, frontend non publié.
+
 ## Compteurs validés et preuves QRC — 16/10
 - [x] Revue formats legacy/snapshots : harness SELECT réel avant/après, compatibilité stricte et 93 tests PASS ; EB5/6 débloqués, EB4 tronqué conservé ; 7/83/86 empreintes inchangées, sans publication.
 - [x] Corriger le compteur accueil depuis les identités du relevé validé, score et heures inchangés.

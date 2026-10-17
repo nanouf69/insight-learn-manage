@@ -1,4 +1,6 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { freshSessionCall } from "@/lib/sessionRpc";
+import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { captureError } from "@/lib/monitoring/errorLogger";
 import { Button } from "@/components/ui/button";
@@ -44,12 +46,7 @@ const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
 // always see the exact same version of exam data after an admin edit.
 // ────────────────────────────────────────────────────────────────────────────
 
-// Purge any stale localStorage snapshot left by previous versions
-if (typeof window !== "undefined") {
-  try { window.localStorage.removeItem("examens_blancs_snapshot_v3"); } catch {}
-  try { window.localStorage.removeItem("examens_blancs_snapshot_v2"); } catch {}
-  try { window.localStorage.removeItem("examens_blancs_snapshot"); } catch {}
-}
+// Historical browser copies are retained but never served as active content.
 
 const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
   // VTC EB1-6
@@ -393,11 +390,13 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   // Date réelle de dernière écriture Admin enregistrée par la base : sert de
   // référence de comparaison quand une question ne porte pas de marqueur de date.
   let adminLastWriteAt: string | null = null;
+  let compteLecture: string | undefined;
   
   
   try {
     // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
+    if (!lignesFigees) await assurerSessionFraiche();
     const { data: sess } = lignesFigees ? { data: { session: { user: null } } as any } : await supabase.auth.getSession();
     if (!sess?.session) {
       tracerChargementExamens({ phase: "verification", session: "absente", premiere: "non_lue", relecture: "non" });
@@ -407,19 +406,20 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
     }
     // Compte de départ (comparé en mémoire seulement, jamais journalisé).
     const compteDepart = sess.session.user?.id ?? null;
+    compteLecture = compteDepart ?? undefined;
     const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
     const lireVersions = () => supabase
       .from("module_editor_state")
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
-    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await lireVersions();
+    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await freshSessionCall(lireVersions, compteDepart ?? undefined);
     
     if (error) {
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
-      console.error("[ExamensEditor] Error loading saved exams:", error);
+      console.error("[ExamensEditor] Lecture refusée", { code: error.code, origine: "versions-actives" });
       // AUCUN REPLI : jamais de contenu statique ni de copie par position.
-      throw new ExamContentUnavailableError(error.message);
+      throw new ExamContentUnavailableError(`Lecture des versions indisponible (${error.code ?? 'réseau/droits'}): ${error.message}. Réessayez après reconnexion.`);
     }
 
     if (!data || data.length === 0) {
@@ -612,7 +612,9 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
     if (!(err as any)?.sessionAbsente) console.error("[ExamensEditor] Error loading saved exams:", err);
     // AUCUN REPLI : on propage l'échec, aucune question n'est servie.
     if (isExamContentUnavailable(err)) throw err;
-    throw new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
+    const converted = new ExamContentUnavailableError(err instanceof Error ? err.message : "Lecture impossible");
+    if ((err as any)?.sessionAbsente) (converted as any).sessionAbsente = true;
+    throw converted;
   }
   
   // Repair any missing correct flags (serialization safety net).
@@ -640,16 +642,18 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
   if (lignesFigees) return examens; // relevé figé : comptage seulement, aucune lecture actuelle
   try {
     const fournisseurQuizIds = Object.keys(FOURNISSEUR_QUIZ_TO_EXAM);
-    const { data: overridesData } = await supabase
+    const { data: overridesData, error: overrideError } = await freshSessionCall(() => supabase
       .from("quiz_questions_overrides")
       .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
       .in("quiz_id", fournisseurQuizIds)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false }), compteLecture);
+    if (overrideError) throw new ExamContentUnavailableError('Lecture des corrections indisponible ; aucun contenu de repli.');
     if (overridesData && overridesData.length > 0) {
       applyFournisseurOverridesToExamens(examens, overridesData as any, adminLastWriteAt);
     }
   } catch (err) {
-    console.error("[ExamensEditor] Error applying fournisseur overrides:", err);
+    if (isExamContentUnavailable(err)) throw err;
+    throw new ExamContentUnavailableError(err instanceof Error ? err.message : 'Lecture des corrections indisponible');
   }
 
   return examens;

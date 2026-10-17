@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { uploadInscriptionDocument } from "@/lib/documentUpload";
 import { filterFutureExamValues } from "@/lib/filterPastDates";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download, PenTool, KeyRound } from "lucide-react";
@@ -208,9 +209,8 @@ export default function Step12() {
     formData.append('type_document', 'recapitulatif_inscription');
 
     console.log('[persistRecapDocument] Appel edge function upload-document-inscription...');
-    const { data, error } = await supabase.functions.invoke('upload-document-inscription', {
-      body: formData,
-    });
+    const data = await uploadInscriptionDocument(formData);
+    const error = null;
 
     console.log('[persistRecapDocument] Réponse - data:', JSON.stringify(data), 'error:', error);
 

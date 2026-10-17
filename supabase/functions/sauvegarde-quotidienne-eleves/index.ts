@@ -11,19 +11,9 @@
 //    qu'à la fin complète sans erreur, sinon « _incomplet.json » + alerte.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { EXPORT_TABLES, EXPORT_VERSION, exportManifest } from './manifest.ts';
 
-const TABLES: [string, string][] = [
-  ["apprenants", "id"], ["session_apprenants", "id"], ["reponses_apprenants", "id"],
-  ["reponses_apprenants_historique", "id"], ["reponses_apprenants_journal", "id"],
-  ["apprenant_quiz_results", "id"], ["apprenant_module_completion", "id"],
-  ["apprenant_module_activites", "id"], ["apprenant_connexions", "id"],
-  ["apprenant_question_temps", "id"], ["apprenant_documents_completes", "id"],
-  ["documents_inscription", "id"], ["emargements_fc", "id"], ["answer_state", "response_id"],
-  ["answer_state_historique", "id"], ["answer_events", "event_id"], ["exam_attempts_v2", "attempt_id"],
-  ["qrc_instances_v2", "qrc_instance_id"], ["qrc_correction_events", "correction_event_id"],
-  ["core_exam_results", "result_id"], ["bilan_passage_snapshots", "id"], ["bilan_passages_figes", "id"],
-  ["donnees_eleves_suppressions", "id"],
-];
+const TABLES = EXPORT_TABLES;
 const BUCKET = "sauvegardes-eleves";
 const PAGE = 1000;
 const PART = 2000;
@@ -40,23 +30,29 @@ const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
 const RETENTION_JOURS = 30;
 
-type Etat = { jour: string; i: number; from: number; comptes: Record<string, number>; erreurs: string[]; maj: string; termine?: boolean; pos?: string; essais?: number };
+type Etat = { jour: string; i: number; from: number; comptes: Record<string, number>; erreurs: string[]; maj: string; termine?: boolean; pos?: string; essais?: number; version?: number; table_names?: string[] };
 
 const json = (b: unknown) => new Response(JSON.stringify(b), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return new Response('Service indisponible', { status: 503, headers: corsHeaders });
+  // Preserve existing unmanaged scheduled callbacks; auth migration requires managed scheduling support.
   const sb = createClient(url, key);
   const body = await req.json().catch(() => ({}));
   const jour: string = body.jour ?? new Date().toISOString().slice(0, 10);
   const saut: number = Number(body.saut ?? 0);
   const chaine = body.chaine === true;
   const reprise = body.reprise === true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
-  const up = (path: string, content: unknown) =>
-    sb.storage.from(BUCKET).upload(path, new Blob([JSON.stringify(content)], { type: "application/json" }), { upsert: true });
+  const up = async (path: string, content: unknown) => {
+    const result = await sb.storage.from(BUCKET).upload(path, new Blob([JSON.stringify(content)], { type: "application/json" }), { upsert: true });
+    if (result.error) throw new Error('Écriture du point de reprise impossible');
+    return result;
+  };
   const lireEtat = async (): Promise<Etat | null> => {
     const { data } = await sb.storage.from(BUCKET).download(`${jour}/_etat.json`);
     if (!data) return null;
@@ -64,15 +60,18 @@ Deno.serve(async (req) => {
   };
 
   let etat = await lireEtat();
-  if (etat?.termine) return json({ ok: true, deja_termine: true, jour });
+  if (etat?.termine) return json({ ok: true, deja_termine: true, jour, version: etat.version ?? 1, tables: etat.table_names?.length ?? Object.keys(etat.comptes).length });
   if (!etat) {
     if (reprise) return json({ ok: true, rien_a_reprendre: true, jour });
-    etat = { jour, i: 0, from: 0, comptes: {}, erreurs: [], maj: new Date(0).toISOString() };
+    etat = { jour, i: 0, from: 0, comptes: {}, erreurs: [], maj: new Date(0).toISOString(), version: EXPORT_VERSION, table_names: TABLES.map(([name]) => name) };
   } else if (!chaine && Date.now() - new Date(etat.maj).getTime() < BAIL_MS) {
     // Une chaîne est déjà active : ne jamais en lancer une deuxième en parallèle.
     return json({ ok: true, chaine_active: true, i: etat.i, from: etat.from });
   }
 
+  // An unfinished legacy export adopts appended tables without changing its cursor.
+  etat.version = EXPORT_VERSION;
+  etat.table_names = TABLES.map(([name]) => name);
   if (etat.i < TABLES.length) {
     const [t, pk] = TABLES[etat.i];
     const [page, part] = TAILLES[t] ?? [PAGE, PART];
@@ -116,16 +115,16 @@ Deno.serve(async (req) => {
   }
 
   if (etat.i >= TABLES.length) {
-    etat.termine = true;
     etat.maj = new Date().toISOString();
+    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs) };
+    await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_termine.json`, manifeste);
+    etat.termine = true;
     await up(`${jour}/_etat.json`, etat);
-    await rotation(sb);
-    const manifeste = { jour, fin: etat.maj, tables: TABLES.length, comptes: etat.comptes, erreurs: etat.erreurs };
-    await up(etat.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_termine.json`, manifeste);
-    if (etat.erreurs.length) {
-      await sb.from("alertes_systeme").insert({ type: "sauvegarde_incomplete", titre: "Sauvegarde nocturne incomplète", message: `Sauvegarde ${jour} incomplète : ${etat.erreurs.length} erreur(s)` } as any).then(() => {}, () => {});
+    await rotation(sb); // Scheduled retention unchanged; never invoked manually.
+    if (manifeste.erreurs.length) {
+      await sb.from("alertes_systeme").insert({ type: "sauvegarde_incomplete", titre: "Sauvegarde nocturne incomplète", message: `Sauvegarde ${jour} incomplète : ${manifeste.erreurs.length} erreur(s)` } as any).then(() => {}, () => {});
     }
-    return json({ ok: !etat.erreurs.length, termine: true, ...manifeste });
+    return json({ ok: !manifeste.erreurs.length, termine: true, ...manifeste });
   }
 
   etat.maj = new Date().toISOString();
