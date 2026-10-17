@@ -1212,6 +1212,13 @@
       "when": 1792241776622,
       "tag": "0172_pratique_horaires_planning_inscription_future",
       "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "7",
+      "when": 1792241853602,
+      "tag": "0173_emargements_futurs_journees_pedagogiques",
+      "breakpoints": true
     }
   ]
 }
