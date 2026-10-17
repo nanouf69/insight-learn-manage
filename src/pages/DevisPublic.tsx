@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, AlertCircle, FileText, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { formatDevisDate } from "@/lib/devisDatesSignature";
 
 /* ─── DEVIS TYPE CONFIG ─── */
 interface DevisTypeConfig {
@@ -472,6 +473,9 @@ export default function DevisPublic() {
             </div>
 
             <h2 className="text-xl font-bold text-center text-gray-900">DEVIS ET INSCRIPTION</h2>
+            {devis.date_devis && (
+              <p className="text-sm text-foreground">Date du devis : <strong>{formatDevisDate(devis.date_devis)}</strong></p>
+            )}
 
             {/* Tableau formation */}
             <table className="w-full border-collapse border text-sm">
@@ -511,7 +515,7 @@ export default function DevisPublic() {
                 </tr>
                 <tr>
                   <td className="border p-2"><strong>Dates</strong></td>
-                  <td className="border p-2" colSpan={2}><input type="text" className="border-b border-gray-400 px-1 w-full text-sm" placeholder="À compléter" /></td>
+                  <td className="border p-2" colSpan={2}>{devis.dates_formation || <input type="text" className="border-b border-gray-400 px-1 w-full text-sm" placeholder="À compléter" />}</td>
                 </tr>
                 <tr>
                   <td className="border p-2"><strong>Nom et Prénom du stagiaire</strong></td>
@@ -563,7 +567,7 @@ export default function DevisPublic() {
 
             <div className="space-y-1 text-sm">
               <p><strong>Intitulé formation :</strong> {formationLabel}</p>
-              <p><strong>Dates de formation :</strong> <input type="text" className="border-b border-gray-400 px-1 w-48 text-sm" placeholder="À compléter" /></p>
+              <p><strong>Dates de formation :</strong> {devis.dates_formation || <input type="text" className="border-b border-gray-400 px-1 w-48 text-sm" placeholder="À compléter" />}</p>
             </div>
 
             <h3 className="font-bold text-gray-900 text-sm mt-4">Coordonnées du stagiaire :</h3>

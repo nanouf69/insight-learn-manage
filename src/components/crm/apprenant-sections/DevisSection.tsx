@@ -20,6 +20,7 @@ import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPratiqueDates";
+import { devisDatesSignature, formatDevisDate } from "@/lib/devisDatesSignature";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
   if (!fichierUrl) return null;
@@ -1066,7 +1067,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         client_mail: devisClient.email,
         client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
-        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        devis_ligne_produit_date1: sessionDate || formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
         montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
       };
@@ -1110,6 +1111,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const validateBeforeSend = (): boolean => {
+    if (!formatDevisDate(dateDevis)) {
+      toast.error("Veuillez renseigner une date de devis valide");
+      return false;
+    }
     const intitule = lignes[0]?.designation?.trim();
     if (!intitule) {
       toast.error("Veuillez renseigner l'intitulé de la formation (désignation)");
@@ -1158,7 +1163,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         client_mail: devisClient.email,
         client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
-        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        devis_ligne_produit_date1: sessionDate || formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
         montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
       };
@@ -1174,10 +1179,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 
       // 2. Upload DOCX to storage
-      const fileName = `originaux/${apprenant.id}_${tmpl.id}_${format(new Date(), 'yyyyMMddHHmmss')}.docx`;
+      const fileName = `originaux/${apprenant.id}_${tmpl.id}_${crypto.randomUUID()}.docx`;
       const { error: uploadErr } = await supabase.storage
         .from("devis")
-        .upload(fileName, outBuf, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: true });
+        .upload(fileName, outBuf, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: false });
       if (uploadErr) throw new Error("Erreur upload du devis: " + uploadErr.message);
 
       const { data: urlData } = supabase.storage.from("devis").getPublicUrl(fileName);
@@ -1192,19 +1197,20 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           formation: tmpl.label,
           fichier_url: urlData.publicUrl,
           statut: "envoye",
+          ...devisDatesSignature(dateDevis, dateValidite, sessionDate),
         })
         .select("token")
         .single();
       if (insertErr) throw new Error("Erreur création devis: " + insertErr.message);
 
       // 4. Build email with link to public page (use published URL, not preview)
-      const appUrl = 'https://insight-learn-manage.lovable.app';
+      const appUrl = 'https://gestion.ftransport.fr';
       const devisLink = `${appUrl}/devis?token=${devisRecord.token}`;
 
       const bodyHtml = emailContent.body.replace(/\n/g, '<br/>') +
         `<br/><br/>📝 <strong>Pour compléter et signer votre devis :</strong><br/>` +
         `<a href="${devisLink}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:8px;">` +
-        `Accéder à mon devis</a><br/><br/>` +
+        `Compléter et signer mon devis</a><br/><br/>` +
         `<em style="font-size:12px;color:#888;">Ce lien vous permet de télécharger votre devis, le compléter, le signer et nous le renvoyer directement.</em>`;
 
       const { error } = await supabase.functions.invoke('sync-outlook-emails', {
@@ -1508,6 +1514,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="date-devis-docx">Date du devis</Label>
+            <Input id="date-devis-docx" type="date" value={dateDevis} onChange={(e) => setDateDevis(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
             <Label>Sélectionner le modèle de devis</Label>
             <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
               <SelectTrigger>
@@ -1549,7 +1559,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={generateDocxFromTemplate}
-              disabled={generatingDocx || !selectedTemplate}
+              disabled={generatingDocx || !selectedTemplate || !formatDevisDate(dateDevis)}
               className="flex items-center gap-2"
             >
               <FileDown className="w-4 h-4" />
@@ -1589,7 +1599,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               <div className="flex gap-2">
                 <Button
                   onClick={sendDevisEmail}
-                  disabled={sendingEmail || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite}
+                  disabled={sendingEmail || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite || !formatDevisDate(dateDevis)}
                   size="sm"
                   className="gap-2"
                 >
