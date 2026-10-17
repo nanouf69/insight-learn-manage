@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CONTRACT_FIELD_GROUPS, validateContract, validatePratique, pratiqueRecap, type TrainingContract, type PratiqueConditions } from '@/lib/contratFormation/model';
 import { buildDevisContratSnapshot, parseDevisContratSnapshot, draftFromSnapshot, devisValantContrat } from '@/lib/contratFormation/devisContrat';
-import { contractSections } from '@/lib/contratFormation/text';
+import { contractSections, PLANIFICATION_PRATIQUE } from '@/lib/contratFormation/text';
 import { buildTrainingContractPdf } from '@/lib/contratFormation/pdf';
 import { CONSENTEMENTS_SIGNATURE, CONSENTEMENTS_VERSION } from '@/lib/contratFormation/consentements';
 
@@ -82,5 +82,13 @@ describe('Devis valant contrat — documents et cases', () => {
   it('cases décochées : signature possible (aucune exigence côté serveur)', () => {
     const edge = readFileSync('supabase/functions/upload-devis-signe/index.ts', 'utf8');
     expect(edge).not.toMatch(/!demarrage|!perte/);
+  });
+  it('planification pratique : clause présente HTML et PDF si incluse, absente si non incluse', () => {
+    const c = complete();
+    expect(contractSections(c, now).map(s => s.text).join('\n')).toContain(PLANIFICATION_PRATIQUE);
+    expect(buildTrainingContractPdf(c, now, true).output()).toMatch(/responsable p.dagogique/);
+    expect(PLANIFICATION_PRATIQUE).toMatch(/ne vaut ni abandon/);
+    expect(PLANIFICATION_PRATIQUE).toMatch(/sans double paiement/);
+    expect(contractSections(complete({ ...solo(), incluse: 'non', heures: '0', mode: '' }), now).map(s => s.text).join('\n')).not.toContain(PLANIFICATION_PRATIQUE);
   });
 });
