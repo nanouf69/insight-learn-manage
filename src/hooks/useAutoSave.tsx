@@ -115,6 +115,8 @@ async function saveWithRetry(
       return true;
     } catch (err) {
       console.error(`[AutoSave] Attempt ${attempt}/${retries} exception:`, err);
+      // Unknown outcome: retain the pending draft instead of overlapping a timed-out write.
+      if (err instanceof Error && /Délai réseau/.test(err.message)) return false;
       if (attempt < retries) {
         await new Promise(r => setTimeout(r, RETRY_DELAY));
       }

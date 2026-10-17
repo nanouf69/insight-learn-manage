@@ -1,11 +1,13 @@
 # Feuille de route
 
 ## Corrections techniques autorisées — 17/10
-- [ ] Sessions fraîches, progression durable isolée et origine canonique sûre ; examens sans faux diagnostic vide.
-- [ ] Documents 4 Mo, erreurs lisibles, reprise idempotente et conservation des versions.
-- [ ] Export append des trois tables CMA, manifeste versionné et reprise compatible.
-- [ ] Diagnostic Bilan non activé, trois QRC corrompues laissées en attente.
-- [ ] Tests isolés et contrôle empreintes ; déployer uniquement upload/export, frontend non publié.
+- [x] Sessions fraîches, progression isolée, origine canonique manuelle, examens sans faux vide ; code frontend non publié.
+- [x] Documents 4 Mo, erreurs lisibles, reprise idempotente et conservation des versions ; mocks seulement.
+- [x] Export append des trois tables CMA, manifeste versionné et reprise compatible ; fonction déployée sans invocation.
+- [x] Diagnostic Bilan non activé ; aucune QRC modifiée, trois corruptions restent hors correction.
+- [x] Tests isolés et trois empreintes strictement identiques ; journal détaillé, aucun frontend publié.
+- [ ] Déploiement upload bloqué : ancien site ne transmet pas le jeton onboarding ; nécessite publication coordonnée autorisée.
+- Limites : reprise totale Nika, ordre serveur d’écritures autosave concurrentes et prochaine sauvegarde réelle NON PROUVÉS ; authentification du déclencheur nocturne historique non migrable automatiquement sur ce projet.
 
 ## Compteurs validés et preuves QRC — 16/10
 - [x] Revue formats legacy/snapshots : harness SELECT réel avant/après, compatibilité stricte et 93 tests PASS ; EB5/6 débloqués, EB4 tronqué conservé ; 7/83/86 empreintes inchangées, sans publication.

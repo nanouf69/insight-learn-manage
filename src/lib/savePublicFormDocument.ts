@@ -38,8 +38,11 @@ export async function savePublicFormDocument({
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(`${baseUrl}/functions/v1/save-public-form`, {
       method: "POST",
+      signal: controller.signal,
       headers,
       body: JSON.stringify({
         apprenantId,
@@ -49,11 +52,11 @@ export async function savePublicFormDocument({
         financeur,
         mode,
       }),
-    });
+    }).finally(() => clearTimeout(timer));
 
     if (!response.ok) {
-      const body = await response.text();
-      console.error("save-public-form failed:", response.status, body);
+      await response.text();
+      console.error("save-public-form failed:", { status: response.status });
       return false;
     }
 
