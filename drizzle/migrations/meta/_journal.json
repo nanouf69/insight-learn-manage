@@ -1205,6 +1205,13 @@
       "when": 1792238646489,
       "tag": "0171_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 172,
+      "version": "7",
+      "when": 1792241776622,
+      "tag": "0172_pratique_horaires_planning_inscription_future",
+      "breakpoints": true
     }
   ]
 }
