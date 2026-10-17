@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Écarts émargements — 17/10 12:52 UTC
+- [ ] Horaires planning pratique prioritaires, journée et demi-journée ; générateur futur sans reprise rétroactive.
+- [ ] Signatures listes d’attente et historique masqué classés à examiner, sans faux présentiel ni fausse absence.
+- [ ] Tests isolés, audit ciblé, empreintes avant/après, journal et mise en service après preuves.
+
 ## Durées des devis e-learning — 17/10 11:01 UTC
 - [x] Durées partagées VTC 66/TAXI 96/TA 36, Word/PDF et affichages correspondants ; anciens devis inchangés.
 - [ ] VA : total présentiel non prouvé ; programme source 7 h sans ventilation pratique, confirmation centre nécessaire.
