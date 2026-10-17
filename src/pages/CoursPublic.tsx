@@ -1179,17 +1179,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
         // never yields an empty progression (which re-locked validated modules).
-        fetchModuleCompletions(apprenant.id!),
+        fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
           .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
-          .eq("apprenant_id", apprenant.id!)
+          .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
         // Primary: use apprenant_module_activites (works even without active connexion)
         supabase
           .from("apprenant_module_activites" as any)
           .select("module_nom")
-          .eq("apprenant_id", apprenant.id!)
+          .eq("apprenant_id", apprenant.id)
           .eq("action_type", "open_module")
           .order("occurred_at", { ascending: false })
           .limit(1),
@@ -1197,7 +1197,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         supabase
           .from("apprenant_connexions" as any)
           .select("current_module")
-          .eq("apprenant_id", apprenant.id!)
+          .eq("apprenant_id", apprenant.id)
           .not("current_module", "is", null)
           .order("started_at", { ascending: false })
           .limit(1),
@@ -1335,14 +1335,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               formationChoisie: apprenant.formation_choisie,
               creneauHoraire: apprenant.creneau_horaire,
               typeApprenant: apprenant.type_apprenant,
-              apprenantId: apprenant.id!,
+              apprenantId: apprenant.id,
               startDate,
               endDate,
             })
           : Promise.resolve([] as Array<{ date: string; creneau: CreneauKey }>),
         // Journées de formation PRATIQUE : basées sur le planning (réservations
         // + sessions de type pratique), quel que soit le mode de formation.
-        getExpectedPratiqueEmargements(apprenant.id!),
+        getExpectedPratiqueEmargements(apprenant.id),
       ]);
       if (cancelled) return;
 
@@ -1365,13 +1365,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       // Récupère les créneaux déjà signés (ou déclarés absents) sur la plage
       const fromISO = expected[0].date;
       const toISO = expected[expected.length - 1].date;
-      const { data: signedData } = await supabase
+      const { data: signedData, error: signedError } = await supabase
         .from("emargements_fc" as any)
         .select("date_emargement, demi_journee, signature_data_url, absent").filter("masque", "eq", false)
-        .eq("apprenant_id", apprenant.id!)
+        .eq("apprenant_id", apprenant.id)
         .gte("date_emargement", fromISO)
         .lte("date_emargement", toISO);
       if (cancelled) return;
+      if (signedError) throw signedError;
       const signedSet = new Set<string>(
         (signedData || [])
           .filter((r: any) => Boolean(String(r.signature_data_url || "").trim()) || r.absent === true)
@@ -1405,7 +1406,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setEmargementDate(next.date);
       setEmargementFCStatus("needed");
     };
-    check();
+    check().catch(() => { if (!cancelled) setEmargementFCStatus("n/a"); });
     return () => {
       cancelled = true;
     };

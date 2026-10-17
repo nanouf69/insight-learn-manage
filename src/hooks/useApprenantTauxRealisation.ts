@@ -5,6 +5,7 @@ import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getSessionEndMs, clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
+import { chargerClassificationSignatures, signaturesRetenuesPourHeures } from "@/lib/signaturesManquantes";
 import { computePresentielHours, presentielProgress } from "@/lib/presentielHours";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
@@ -80,7 +81,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         ? await chargerRatioSignatures(apprenantId, regle.filiere).catch(() => ({ signees: 0, attendues: 0, taux: null, raison: "Signatures / planning indisponibles : lecture échouée" }))
         : undefined;
 
-      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, apprenantTypeRow] = await Promise.all([
+      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, apprenantTypeRow, classification] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
@@ -125,6 +126,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
           .eq("id", apprenantId)
           .maybeSingle()
           .then((r) => r.data, () => null),
+        chargerClassificationSignatures(apprenantId),
       ]);
 
       // Jours de pratique : 9h-12h / 13h-16h = formation pratique, pas d'e-learning.
@@ -193,7 +195,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       }
 
       // ---- Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
-      const { theorieHours, pratiqueMinutes } = computePresentielHours(emargAll as any[], pratiqueDetails as any[]);
+      const { theorieHours, pratiqueMinutes } = computePresentielHours(signaturesRetenuesPourHeures(emargAll as any[], classification), pratiqueDetails as any[]);
 
       // Heures validées manuellement par un admin : elles S'AJOUTENT aux heures
       // signées, sans jamais modifier ni remplacer les émargements existants.

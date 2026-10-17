@@ -8690,6 +8690,14 @@ export type Database = {
         Args: { _uid: string }
         Returns: boolean
       }
+      pratique_creneaux_planifies: {
+        Args: { p_creneau?: string; p_date: string }
+        Returns: {
+          creneau: string
+          debut: string
+          fin: string
+        }[]
+      }
       qrc_attempt_publication_state: {
         Args: { p_attempt_id: string }
         Returns: {

@@ -30,12 +30,12 @@ describe('Signatures rattachées aux inscriptions de session (théorie + pratiqu
     expect(jours.has('2026-10-03')).toBe(false); // samedi
   });
 
-  it('pratique 9h-12h : réservation « journee » du même jour ne crée pas d’après-midi ; après-midi signé conservé mais NON compté', () => {
+  it('planning explicite 9h-12h : après-midi signé conservé mais NON compté', () => {
     const rows = [insc({ type_session: 'pratique_taxi', nom: 'Formation pratique TAXI', statut: 'planifiee', date_debut: '2026-10-17', date_fin: '2026-10-17', heure_debut: '09:00', heure_fin: '12:00' })];
     const resas = [{ date_choisie: '2026-10-17', type_formation: 'taxi', creneau: 'journee' }];
-    const attendus = calculerSignaturesManquantes([], rows, resas, '2026-10-17');
+    const attendus = calculerSignaturesManquantes([], rows, resas, '2026-10-17', [{day_time_slots:{'2026-10-17':{matin:'9h-12h'}}}]);
     expect(attendus.map((a) => a.creneau)).toEqual(['Matin']);
-    const c = classifierSignatures([emarg('2026-10-17', 'matin'), emarg('2026-10-17', 'apres_midi')], rows, resas, '2026-10-17');
+    const c = classifierSignatures([emarg('2026-10-17', 'matin'), emarg('2026-10-17', 'apres_midi')], rows, resas, '2026-10-17', [{day_time_slots:{'2026-10-17':{matin:'9h-12h'}}}]);
     // Seul le matin (créneau prévu) est valide ; l'après-midi reste intact en horsSession + anomalie.
     expect(c.valides).toEqual([{ date: '2026-10-17', creneau: 'Matin' }]);
     expect(c.horsSession).toEqual([{ date: '2026-10-17', creneau: 'Après-midi' }]);
@@ -52,6 +52,7 @@ describe('Signatures rattachées aux inscriptions de session (théorie + pratiqu
       rows,
       [{ date_choisie: '2026-10-17', type_formation: 'taxi', creneau: 'journee' }],
       'TAXI',
+      [{day_time_slots:{'2026-10-17':{matin:'9h-12h'}}}],
     );
     expect(bilan.pratique).toBe(1);
     expect(bilan.horsPlanning).toEqual([{ date: '2026-10-17', creneau: 'Après-midi' }]);
@@ -60,7 +61,7 @@ describe('Signatures rattachées aux inscriptions de session (théorie + pratiqu
   it('inscription pratique exclue : sa réservation du même jour ne contourne pas l’exclusion', () => {
     const rows = [insc({ type_session: 'pratique_taxi', nom: 'Pratique', statut: 'planifiee', date_debut: '2026-07-10', date_fin: '2026-07-10', heure_debut: '09:00', heure_fin: '16:00' }, { emargements_exclus: true })];
     const resas = [{ date_choisie: '2026-07-10', type_formation: 'taxi', creneau: 'journee' }];
-    expect(calculerSignaturesManquantes([], rows, resas, '2026-10-17')).toHaveLength(0);
+    expect(calculerSignaturesManquantes([], rows, resas, '2026-10-17', [{day_time_slots:{'2026-10-17':{matin:'9h-12h'}}}])).toHaveLength(0);
     const bilan = calculerBilanSignaturesEdof([emarg('2026-07-10', 'matin')], rows, resas, 'TAXI');
     expect(bilan.pratique).toBe(0);
     expect(bilan.horsPlanning).toEqual([{ date: '2026-07-10', creneau: 'Matin' }]);

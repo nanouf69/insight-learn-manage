@@ -237,6 +237,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("created_at", { ascending: false }),
         fetchPratiqueSlotDetails(apprenant.id),
+        chargerClassificationSignatures(apprenant.id),
       ]);
 
       if (docsRes.error) throw docsRes.error;
@@ -427,16 +428,20 @@ export function DocumentsCompletes({ apprenant }: Props) {
     queryKey: ["apprenant-presence-heures", apprenant.id],
     enabled: !!apprenant?.id,
     queryFn: async () => {
-      const [emargRes, pratiqueDetails] = await Promise.all([
+      const [emargRes, pratiqueDetails, classification] = await Promise.all([
         supabase
           .from("emargements_fc" as any)
           .select("date_emargement, demi_journee, absent, signature_data_url")
           .filter("masque", "eq", false)
           .eq("apprenant_id", apprenant.id),
         fetchPratiqueSlotDetails(apprenant.id),
+        chargerClassificationSignatures(apprenant.id),
       ]);
+      if (emargRes.error) throw emargRes.error;
+      const labels: Record<string,string> = { matin:'Matin',apres_midi:'Après-midi',soir_1:'Soir 1 (17h-18h30)',soir_2:'Soir 2 (18h30-21h)' };
+      const validKeys = new Set(classification.valides.map(e => `${e.date}|${e.creneau}`));
       const { theorieHours, pratiqueMinutes } = computePresentielHours(
-        (emargRes.data as any[]) || [],
+        ((emargRes.data as any[]) || []).filter(e => validKeys.has(`${e.date_emargement}|${labels[e.demi_journee] ?? e.demi_journee}`)),
         pratiqueDetails,
       );
       const validees = await fetchHeuresValideesAdmin(apprenant.id); // erreur = indisponible, jamais 0 h
@@ -884,7 +889,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
               const nbHorsSession = classificationSignatures?.horsSession?.length ?? 0;
               if (manquantes.length === 0 && absences.length === 0 && nbAnomalies === 0 && nbHorsSession === 0) {
                 if (manqueObjectif > 0) {
-                  return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof!.total} / {bilanEdof!.objectifTotal}).</p>;
+                  return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof?.total} / {bilanEdof?.objectifTotal}).</p>;
                 }
                 return <p className="text-sm text-emerald-700">Aucune signature manquante.</p>;
               }
@@ -921,10 +926,10 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   {(classificationSignatures?.anomalies?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-sm font-semibold text-amber-700">
-                        Anomalies à vérifier ({classificationSignatures!.anomalies.length})
+                        Anomalies à vérifier ({classificationSignatures?.anomalies.length})
                       </p>
                       <ul className="mt-1 space-y-0.5">
-                        {classificationSignatures!.anomalies.map((a, i) => (
+                        {classificationSignatures?.anomalies.map((a, i) => (
                           <li key={`${a.date}|${a.creneau}|${i}`} className="text-sm text-amber-700">
                             {datePresenceAvecJour(a.date)} — {a.creneau} — {a.detail}
                           </li>
@@ -932,13 +937,18 @@ export function DocumentsCompletes({ apprenant }: Props) {
                       </ul>
                     </div>
                   )}
+                  {(classificationSignatures?.aVerifier?.length ?? 0) > 0 && (
+                    <div><p className="text-sm font-semibold text-muted-foreground">Signatures rattachées à une inscription en attente — à vérifier, non comptées</p>
+                      <ul>{classificationSignatures?.aVerifier.map(h => <li key={`${h.date}|${h.creneau}`} className="text-sm">{datePresenceAvecJour(h.date)} — {h.creneau} — {h.source}</li>)}</ul>
+                    </div>
+                  )}
                   {(classificationSignatures?.horsSession?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-sm font-semibold text-muted-foreground">
-                        Signatures hors périmètre retenu ({classificationSignatures!.horsSession.length}) — conservées, non comptées
+                        Signatures hors périmètre retenu ({classificationSignatures?.horsSession.length}) — conservées, non comptées
                       </p>
                       <ul className="mt-1 space-y-0.5">
-                        {classificationSignatures!.horsSession.map((h) => (
+                        {classificationSignatures?.horsSession.map((h) => (
                           <li key={`${h.date}|${h.creneau}`} className="text-sm text-muted-foreground">
                             {datePresenceAvecJour(h.date)} — {h.creneau}
                           </li>

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 export type PratiqueFormationType = "vtc" | "taxi";
 export type PratiqueReservationCreneau = "matin" | "apresmidi" | "journee";
@@ -87,6 +88,7 @@ export const resolvePratiqueSlotParts = (
   slot: PlanningDaySlot,
   type: PratiqueFormationType,
   reservationCreneau: PratiqueReservationCreneau = "journee",
+  preserveArchivedFallback = false,
 ): PratiqueSlotPart[] => {
   const defaults = DEFAULT_SLOTS[type];
   const hasObjectSlot = typeof slot === "object" && slot !== null;
@@ -102,7 +104,7 @@ export const resolvePratiqueSlotParts = (
     if ((reservationCreneau === "apresmidi" || reservationCreneau === "journee") && rawApresmidi) {
       selected.push({ creneau: "apres_midi", label: rawApresmidi });
     }
-    if (selected.length > 0) {
+    if (selected.length > 0 || !preserveArchivedFallback) {
       return selected.map(({ creneau, label }) => {
         const parsed = parseRange(label);
         return { creneau, label: cleanLabel(label), minutes: parsed.minutes, startMinute: parsed.start, endMinute: parsed.end };
@@ -140,13 +142,8 @@ export const daySlotsDepuisConfigs = (dates: string[], configs: any[]) => {
 export const fetchPlanningDaySlotsForDates = async (dates: string[]) => {
   const normalizedDates = Array.from(new Set(dates.map(normalizeDate).filter(Boolean))).sort();
   if (normalizedDates.length === 0) return new Map<string, PlanningDaySlot>();
-  const { data } = await supabase
-    .from("planning_pratique_config" as any)
-    .select("planning_start_date, planning_end_date, day_time_slots, updated_at")
-    .lte("planning_start_date", normalizedDates[normalizedDates.length - 1])
-    .gte("planning_end_date", normalizedDates[0])
-    .order("updated_at", { ascending: false });
-  return daySlotsDepuisConfigs(normalizedDates, (data as any[]) || []);
+  const data = await fetchAllRows<any>((f,t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t));
+  return daySlotsDepuisConfigs(normalizedDates, data);
 };
 
 const datesSessionsPratique = (sessionRows: any[]) => (sessionRows || [])
@@ -162,10 +159,10 @@ const normaliserReservations = (rows: any[]) => (rows || [])
   .filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
 
 /** Calcul pur des créneaux retenus (mêmes règles en direct et pour un relevé figé). */
-export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows: any[], daySlots: Map<string, PlanningDaySlot>): PratiqueSlotDetail[] => {
+export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows: any[], daySlots: Map<string, PlanningDaySlot>, preserveArchivedFallback = false): PratiqueSlotDetail[] => {
   const reservations = normaliserReservations(reservationRows);
   const out: PratiqueSlotDetail[] = reservations.map((row) => {
-    const parts = resolvePratiqueSlotParts(daySlots.get(row.date), row.typeFormation, row.reservationCreneau);
+    const parts = resolvePratiqueSlotParts(daySlots.get(row.date), row.typeFormation, row.reservationCreneau, preserveArchivedFallback);
     const minutes = parts.reduce((sum, part) => sum + part.minutes, 0);
     return { ...row, parts, minutes, label: parts.map((part) => part.label).join(" + ") || "Pratique" };
   });
@@ -178,7 +175,14 @@ export const calculerPratiqueSlotDetails = (reservationRows: any[], sessionRows:
     if (!date || seenDates.has(date)) continue;
     const minutes = minutesFromSessionTimes(row.heure_debut_personnalisee || sess.heure_debut, row.heure_fin_personnalisee || sess.heure_fin, 180);
     const plannedSlot = daySlots.get(date);
-    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee") : undefined;
+    const a = parseClockMinutes(row.heure_debut_personnalisee || sess.heure_debut);
+    const z = parseClockMinutes(row.heure_fin_personnalisee || sess.heure_fin);
+    const formatMinute = (v: number) => `${String(Math.floor(v/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`;
+    const actualParts: PratiqueSlotPart[] = a == null || z == null || z <= a ? [] : [
+      { creneau: 'matin' as const, start: a, end: Math.min(z,12*60) },
+      { creneau: 'apres_midi' as const, start: Math.max(a,13*60), end: z },
+    ].filter(p => p.end > p.start).map(p => ({ creneau: p.creneau, startMinute:p.start, endMinute:p.end, minutes:p.end-p.start, label:`${formatMinute(p.start)} - ${formatMinute(p.end)}` }));
+    const plannedParts = plannedSlot ? resolvePratiqueSlotParts(plannedSlot, normalizePratiqueType(sess.nom), "journee", preserveArchivedFallback) : preserveArchivedFallback ? undefined : actualParts;
     out.push({
       date,
       typeFormation: normalizePratiqueType(sess.nom),
@@ -205,7 +209,7 @@ export const pratiqueSlotDetailsDepuisGel = (sources: Record<string, any>): Prat
     throw new Error("Planning pratique non archivé dans ce relevé figé : indisponible");
   }
   const dates = [...normaliserReservations(reservations_pratique).map((r) => r.date), ...datesSessionsPratique(sessions)];
-  return calculerPratiqueSlotDetails(reservations_pratique, sessions, daySlotsDepuisConfigs(dates, planning_configs));
+  return calculerPratiqueSlotDetails(reservations_pratique, sessions, daySlotsDepuisConfigs(dates, planning_configs), true);
 };
 
 export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<PratiqueSlotDetail[]> => {
@@ -218,15 +222,17 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
       .order("date_choisie", { ascending: true }),
     supabase
       .from("session_apprenants")
-      .select("heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, date_debut, date_fin, heure_debut, heure_fin, statut)")
+      .select("liste_attente, emargements_exclus, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, date_debut, date_fin, heure_debut, heure_fin, statut)")
       .eq("apprenant_id", apprenantId),
   ]);
   if (reservationsRes.error) throw reservationsRes.error;
   if (sessionsRes.error) throw sessionsRes.error;
   const reservations = (reservationsRes.data as any[]) || [];
-  const sessionRows = (sessionsRes.data as any[]) || [];
+  const allSessionRows = (sessionsRes.data as any[]) || [];
+  const excludedDates = new Set(allSessionRows.filter(r => (r.emargements_exclus === true || r.liste_attente === true) && /pratique/i.test(r.sessions?.type_session ?? "")).map(r => normalizeDate(r.sessions?.date_debut)));
+  const sessionRows = allSessionRows.filter(r => r.emargements_exclus !== true && r.liste_attente !== true);
   const daySlots = await fetchPlanningDaySlotsForDates([...normaliserReservations(reservations).map((r) => r.date), ...datesSessionsPratique(sessionRows)]);
-  return calculerPratiqueSlotDetails(reservations, sessionRows, daySlots);
+  return calculerPratiqueSlotDetails(reservations.filter(r => !excludedDates.has(normalizeDate(r.date_choisie))), sessionRows, daySlots);
 };
 
 export const pratiqueSlotDetailsToMinutes = (details: PratiqueSlotDetail[]) =>
