@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## Durées des devis e-learning — 17/10 11:01 UTC
-- [ ] Source fiable VA, durée partagée VTC/TAXI/TA/VA, Word/PDF et affichages cohérents ; historiques inchangés.
-- [ ] Tests fictifs ciblés, comparaison XML Word hors durées, contrôle PDF et compilation ; aucun envoi ni publication.
+- [x] Durées partagées VTC 66/TAXI 96/TA 36, Word/PDF et affichages correspondants ; anciens devis inchangés.
+- [ ] VA : total présentiel non prouvé ; programme source 7 h sans ventilation pratique, confirmation centre nécessaire.
+- [x] 16 tests fictifs PASS, comparaison des 12 DOCX (seules trois mentions durée changées), PDF/Word inspectés, navigateur PC/mobile, compilation OK ; aucun envoi ni publication.
 
 ## Contrat de formation individuel — 17/10 09:02 UTC
 - [x] Intégrer près du devis et dans Documents formation, formulaire personnel, modèle et annexes, aperçu/PDF communs.
