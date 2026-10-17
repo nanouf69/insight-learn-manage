@@ -231,7 +231,11 @@ export function useAutoSave({
 
   const triggerSave = useCallback(async (data: Record<string, any>): Promise<boolean> => {
     if (!apprenantId || !enabled) return false;
-    if (isSavingRef.current) return false;
+    if (isSavingRef.current) {
+      pendingDataRef.current = data;
+      try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* unload guard retains memory */ }
+      return false;
+    }
 
     isSavingRef.current = true;
     const identity = `${apprenantId}:${typeDocument}`;
@@ -266,7 +270,7 @@ export function useAutoSave({
       setStatus('saving');
       debounceTimerRef.current = setTimeout(() => { if (pendingDataRef.current) void triggerSave(pendingDataRef.current); }, 0);
     }
-    return success;
+    return success && !pendingDataRef.current;
   }, [apprenantId, typeDocument, titre, moduleId, enabled]);
 
   const queueSave = useCallback((data: Record<string, any>) => {
