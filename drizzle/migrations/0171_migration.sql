@@ -1,0 +1,2 @@
+ALTER TABLE public.session_apprenants ADD COLUMN emargements_exclus boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.session_apprenants.emargements_exclus IS 'Exclusion confirmée par l admin du périmètre d émargements attendus (anciennes inscriptions conservées mais hors suivi). Aucune suppression.';

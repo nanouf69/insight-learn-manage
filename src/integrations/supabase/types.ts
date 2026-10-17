@@ -7504,6 +7504,7 @@ export type Database = {
           date_debut: string | null
           date_fin: string | null
           date_fin_personnalisee: string | null
+          emargements_exclus: boolean
           heure_debut_personnalisee: string | null
           heure_fin_personnalisee: string | null
           id: string
@@ -7523,6 +7524,7 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           date_fin_personnalisee?: string | null
+          emargements_exclus?: boolean
           heure_debut_personnalisee?: string | null
           heure_fin_personnalisee?: string | null
           id?: string
@@ -7542,6 +7544,7 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           date_fin_personnalisee?: string | null
+          emargements_exclus?: boolean
           heure_debut_personnalisee?: string | null
           heure_fin_personnalisee?: string | null
           id?: string
