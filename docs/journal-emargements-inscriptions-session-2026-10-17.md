@@ -37,6 +37,23 @@ Confirmé par l'admin : présent uniquement septembre et octobre 2026.
   fiche obsolète, signature masquée, timestamp ≠ date de cours, historique hors périmètre, examen).
 - Compilation OK 12:07 UTC. Non publié.
 
+## Correctif 12:15 UTC (revue indépendante bf5145f5)
+Défaut bloquant corrigé : une signature ne compte plus sur la seule date — seules les paires
+date + créneau réellement prévues par les inscriptions retenues comptent.
+- Nouvelle source unique `planningCreneaux` (créneaux prévus par date, horaires personnalisés
+  prioritaires) utilisée par `datesDuPlanning`, `calculerBilanSignaturesEdof` et
+  `classifierSignatures` ; `TauxPresenceSessionsCard` filtre aussi par créneau prévu.
+- Après-midi du 17/10 (Fiacre, hors horaires 9h–12h) : conservé, classé horsSession/horsPlanning
+  + anomalie, non compté dans les valides, le bilan EDOF ni la carte de taux.
+- `chargerBilanSignaturesEdof` sélectionne désormais heure_fin, heure_fin_personnalisee et
+  creneau/type_formation des réservations.
+- Une réservation ne contourne plus une inscription pratique exclue du périmètre.
+- Objectifs réglementaires (20+2 / 30+2) inchangés ; total fixe existant distinct des attentes.
+- Vérifications base : 16 émargements Fiacre (14 masqués, 16 signés), empreinte
+  124221b37b2dc85df660a610680613ae — aucune écriture sur emargements_fc ; 3 exclusions
+  (mai ×2, juillet) confirmées en base ; questions intactes ; Ismail non concerné.
+- 70 tests PASS (6 fichiers), compilation OK 12:15 UTC. Non publié.
+
 ## Reste à régulariser (humain)
 - La signature après-midi du 17/10 de Fiacre ne correspond à aucun créneau prévu : à confirmer
   avec le formateur (conservée en l'état, signalée en anomalie).
