@@ -22,7 +22,7 @@
 
 ## Preuves exécutées
 - Vitest : 30 tests contrat + 5 date/signature devis + 5 dates pratiques = **40 PASS**.
-- Compilation automatique : **build OK 09:11:04 UTC** (contrôle ultérieur requis après dernier ajustement brouillon).
+- Compilation automatique finale : **build OK 09:12:18 UTC** ; 40 tests de nouveau PASS à 09:12:25 UTC après ajustement du marquage brouillon.
 - Playwright : vrai panneau Devis monté avec un apprenant fictif, toutes les requêtes distantes interceptées ; aucun compte authentifié réel, appel de rôle et session simulés.
 - Choix CPF interdit au complet ; choix personnel/pratique TAXI ; dates de la session fictive 02–10/11 ; valeurs fictives complétées ; PDF complet téléchargé, puis date passée 16/10 : complet désactivé et brouillon de régularisation téléchargé.
 - Largeurs 1280 et 390 : aucun débordement horizontal ; non-admin simulé : aucun bouton téléchargement ; **0 erreur JavaScript**.
