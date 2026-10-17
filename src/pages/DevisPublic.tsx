@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, AlertCircle, FileText, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { formatDevisDate } from "@/lib/devisDatesSignature";
+import { dureeDevisEnregistre } from "@/lib/devisDureesElearning";
 
 /* ─── DEVIS TYPE CONFIG ─── */
 interface DevisTypeConfig {
@@ -409,7 +410,8 @@ export default function DevisPublic() {
   const today = new Date().toLocaleDateString("fr-FR");
   const nom = `${apprenant?.civilite || ""} ${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim();
   const formationLabel = devis?.formation || devis?.modele || "";
-  const typeConfig = detectConfig(formationLabel);
+  const historiqueConfig = detectConfig(formationLabel);
+  const typeConfig = { ...historiqueConfig, duree: dureeDevisEnregistre(formationLabel) ?? historiqueConfig.duree };
 
   /* ═══ YES/NO checkbox helper ═══ */
   const YesNo = ({ label, value, onChange }: { label: string; value: boolean | null; onChange: (v: boolean) => void }) => (

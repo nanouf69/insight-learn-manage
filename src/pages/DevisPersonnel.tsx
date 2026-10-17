@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
+import { dureeDevisElearning } from "@/lib/devisDureesElearning";
 
 /* ─── HELPER: parse "Du 12 au 25 janvier 2026" / "Du 26 octobre au 16 novembre 2026" ─── */
 const FR_MONTHS: Record<string, number> = {
@@ -80,7 +81,10 @@ const FORMATIONS = [
   { id: "taxi_pratique", label: "Formation pratique TAXI", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi", duree: "6h en groupe ou 3h solo", agrement: "n°69-18-001", type: "taxi" },
   { id: "fc_vtc", label: "Formation continue VTC", prix: 200, designation: "Formation continue obligatoire VTC - Prévention des discriminations et des violences sexuelles et sexistes (14h)", duree: "14 heures", agrement: "n° VTC16-15", type: "vtc" },
   { id: "fc_taxi", label: "Formation continue TAXI", prix: 299, designation: "Formation continue obligatoire TAXI (14h)", duree: "14 heures", agrement: "n°69-18-001", type: "taxi" },
-];
+].map(item => {
+  const total = dureeDevisElearning(item.id);
+  return total ? { ...item, duree: `${total} (plateforme 3 mois)` } : item;
+});
 
 /* ─── CGV TEXT ─── */
 const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT

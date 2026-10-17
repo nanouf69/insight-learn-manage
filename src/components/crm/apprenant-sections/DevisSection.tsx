@@ -22,6 +22,7 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPratiqueDates";
 import { devisDatesSignature, formatDevisDate } from "@/lib/devisDatesSignature";
+import { dureeDevisElearning, formationDevisAvecDuree } from "@/lib/devisDureesElearning";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
   if (!fichierUrl) return null;
@@ -415,6 +416,7 @@ Nous avons le plaisir de vous transmettre en pièce jointe votre devis pour la F
 
 📋 Détails de la formation :
 - Intitulé : Formation VTC E-learning
+- Durée totale : {{duree}}
 - Plateforme : www.gestion.ftransport.fr/cours (accès 3 mois)
 - Inclus : Formation pratique VTC 3h solo ou 6h en groupe + Frais d'examen + Mise à disposition du véhicule
 - Lieu : LYON (69)
@@ -441,7 +443,7 @@ Nous avons le plaisir de vous transmettre en pièce jointe votre devis pour la F
 
 📋 Détails de la formation :
 - Intitulé : Formation TAXI E-learning
-- Durée : 96h
+- Durée totale : {{duree}}
 - Plateforme : www.gestion.ftransport.fr/cours (accès 3 mois)
 - Inclus : Frais d'examen CMA + Mise à disposition du véhicule pour l'examen
 - Lieu : LYON
@@ -464,6 +466,7 @@ Veuillez trouver en pièce jointe votre devis pour la Formation TAXI pour chauff
 
 📋 Détails :
 - Intitulé : Formation passerelle TAXI pour chauffeurs VTC
+- Durée totale : {{duree}}
 - Plateforme E-learning : accès 3 mois
 - Inclus : Frais d'examen CMA + Formation pratique TAXI + Mise à disposition du véhicule
 - Montant : {{montant}} € TTC
@@ -831,6 +834,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>(detectedTemplate || "");
   const selectedTemplateConfig = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+  const dureeElearning = dureeDevisElearning(selectedTemplate);
   const selectedTemplatePrix = selectedTemplateConfig?.prix ?? apprenant.montant_ttc ?? 0;
   const detectedTemplatePrix = DEVIS_TEMPLATES.find(t => t.id === detectedTemplate)?.prix;
   const [lignes, setLignes] = useState<LigneDevis[]>([
@@ -1071,6 +1075,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         devis_ligne_produit_date1: sessionDate || '',
         montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
+        devis_duree_totale: dureeElearning || '',
       };
 
       const zip = new PizZip(arrayBuffer);
@@ -1107,7 +1112,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     const body = emailData.body
       .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
       .replace(/\{\{nom\}\}/g, apprenant.nom || '')
-      .replace(/\{\{montant\}\}/g, String(montant));
+      .replace(/\{\{montant\}\}/g, String(montant))
+      .replace(/\{\{duree\}\}/g, dureeElearning || '');
     return { subject, body };
   };
 
@@ -1167,6 +1173,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         devis_ligne_produit_date1: sessionDate || '',
         montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
+        devis_duree_totale: dureeElearning || '',
       };
 
       const zip = new PizZip(arrayBuffer);
@@ -1195,7 +1202,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           apprenant_id: apprenant.id,
           modele: tmpl.label,
           montant: `${selectedTemplatePrix} €`,
-          formation: tmpl.label,
+          formation: formationDevisAvecDuree(tmpl.label, tmpl.id),
           fichier_url: urlData.publicUrl,
           statut: "envoye",
           ...devisDatesSignature(dateDevis, dateValidite, sessionDate),
@@ -1328,7 +1335,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         } : undefined,
         formation: {
           designation: lignes[0]?.designation || apprenant.formation_choisie || 'Formation professionnelle',
-          duree: selectedTemplateConfig ? undefined : undefined,
+          duree: dureeElearning,
           agrement: undefined,
           type: formationType,
           isElearning,
@@ -1394,7 +1401,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         apprenant_id: apprenant.id,
         modele: selectedTemplate || 'devis',
         montant: `${totalTTC.toFixed(2)} €`,
-        formation: (selectedTemplateConfig as any)?.label || apprenant.formation_choisie || '',
+        formation: formationDevisAvecDuree(selectedTemplateConfig?.label || apprenant.formation_choisie || '', selectedTemplate || apprenant.formation_choisie || ''),
         fichier_url: urlData.publicUrl,
         statut: 'envoye',
         dates_formation: sessionDate || null,
@@ -1554,6 +1561,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 <div><span className="text-muted-foreground">Date devis :</span> <strong>{formatDateForDevis(dateDevis)}</strong></div>
                 <div><span className="text-muted-foreground">Montant :</span> <strong>{selectedTemplatePrix} €</strong></div>
                 <div><span className="text-muted-foreground">Dates formation :</span> <strong>{sessionDate || '—'}</strong></div>
+                {dureeElearning && <div><span className="text-muted-foreground">Durée totale :</span> <strong>{dureeElearning}</strong></div>}
               </div>
             </div>
           )}
