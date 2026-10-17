@@ -171,7 +171,7 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
   ]);
   return calculerSignaturesManquantes(emargRes, sessionsRes, reservationsRes);
