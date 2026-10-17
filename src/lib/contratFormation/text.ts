@@ -1,8 +1,9 @@
 import { TrainingContract, validateContract } from './model';
 export interface ContractSection { title: string; text: string }
-export function contractSections(c: TrainingContract, now: Date): ContractSection[] {
+export function contractSections(c: TrainingContract, now: Date, draft = false): ContractSection[] {
   const f = (key: string) => c.fields[key]?.trim() || '[À compléter]';
-  const v = validateContract(c, c.learnerId, now);
+  const checked = validateContract(c, c.learnerId, now);
+  const v = { ...checked, ready: checked.ready && !draft };
   return [
     { title: 'Contrat de formation professionnelle', text: `Formation Taxi ou VTC à titre individuel et aux frais du stagiaire\nRéférence : ${c.reference}\nGénéré le ${v.today} (Europe/Paris). ${v.ready ? 'DOCUMENT COMPLET NON SIGNÉ — conclusion non établie' : v.status}\nConclusion établie : non établie. Signature réelle : non recueillie.\nContrat soumis aux articles L6353-3 à L6353-8 du Code du travail. Il est conclu avant l’inscription définitive et tout règlement. Les champs entre crochets et les annexes sont à compléter avant signature ; indiquer « sans objet » pour les rubriques non applicables.\n${v.issues.length ? 'Points bloquants :\n' + v.issues.join('\n') : 'Les contrôles de préparation sont satisfaits ; ils ne constituent pas une preuve de signature ni de conformité juridique.'}` },
     { title: '1 Parties au contrat', text: `Organisme de formation : ${f('centre')}\nForme juridique et capital : ${f('legalForm')}\nSiège social et adresse de correspondance : ${f('centreAddress')}\nSIREN / SIRET et RCS : ${f('registration')}\nDéclaration d’activité : ${f('nda')}. Cet enregistrement ne vaut pas agrément de l’État.\nAgrément préfectoral Taxi / VTC applicable : ${f('approval')}\nReprésenté par : ${f('representative')}\nTéléphone : ${f('centrePhone')} — Courriel : ${f('centreEmail')}\nStagiaire : ${f('learnerName')}\nAdresse : ${f('learnerAddress')}\nTéléphone : ${f('learnerPhone')} — Courriel : ${f('learnerEmail')}` },

@@ -16,7 +16,7 @@ export function buildTrainingContractPdf(c: TrainingContract, now: Date, definit
     for (const line of lines) { if (y > 270) next(); doc.text(line, left, y); y += heading ? 6.5 : 4.7; }
     y += heading ? 3 : 5;
   };
-  for (const section of contractSections(c, now)) {
+  for (const section of contractSections(c, now, !definitive)) {
     if (section.title.startsWith('Annexe 2') || section.title === 'Références légales') next();
     else if (y > 242) next();
     paragraph(section.title, true); paragraph(section.text);
