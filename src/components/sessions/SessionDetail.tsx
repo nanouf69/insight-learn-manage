@@ -883,6 +883,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           heure_debut_personnalisee,
           heure_fin_personnalisee,
           liste_attente,
+          emargements_exclus,
           apprenant:apprenants (
             id,
             nom,
@@ -2202,7 +2203,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
+    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null; emargements_exclus?: boolean }
   ) => {
     try {
       // Détection transition présence pratique -> present (pour envoi satisfaction)
