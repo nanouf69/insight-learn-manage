@@ -30,6 +30,8 @@ export function dateDuJourParis(now: Date = new Date()): string {
 const normDate = (value: unknown) => String(value ?? '').slice(0, 10);
 const estDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const annulee = (s: any) => /annul/i.test(String(s?.statut ?? ''));
+/** Inscription confirmée par l'admin comme hors périmètre d'émargement (anciennes sessions conservées, jamais supprimées). */
+const inscriptionExclue = (row: any) => row?.emargements_exclus === true;
 
 /** Créneaux attendus pour une journée selon les horaires de session (jamais de pratique déduite du soir). */
 export function creneauxAttendus(heureDebut?: string | null, heureFin?: string | null): string[] {
