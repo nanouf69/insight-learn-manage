@@ -62,7 +62,7 @@ export const introPratique = (f: Filiere) => [
 export const CONSIGNE_CHOIX = "Merci de nous indiquer votre choix en cochant une seule case :";
 
 export const SUITE_PRATIQUE = [
-  "Si vous choisissez de faire l'entraînement pratique plus tard, celui-ci reste à votre disposition pendant 6 mois à compter de ce message. Il vous appartient de revenir vers nous pendant cette période pour convenir d'une date, que vous ayez réussi ou non l'examen théorique. Sans demande de votre part dans ce délai, l'entraînement pratique ne pourra plus être réalisé dans le cadre de cette formation.",
+  "Si vous choisissez de faire l'entraînement pratique plus tard, celui-ci reste à votre disposition pendant 5 mois à compter de ce message. Il vous appartient de revenir vers nous pendant cette période pour convenir d'une date, que vous ayez réussi ou non l'examen théorique. Sans demande de votre part dans ce délai, l'entraînement pratique ne pourra plus être réalisé dans le cadre de cette formation.",
   "Attention : si vous renoncez à l'entraînement pratique, votre sortie de formation sera déclarée comme un abandon de votre part auprès de la Caisse des Dépôts (Mon Compte Formation). Selon votre situation, notamment si vous êtes inscrit à France Travail, cela peut avoir des conséquences sur votre dossier.",
   "Merci de nous répondre par écrit (réponse à ce mail ou document signé) dans un délai de 5 jours à compter de la réception de ce message.",
 ];
@@ -144,7 +144,7 @@ const esc = (s: string) =>
  * Aucune case cochable dans le mail : le choix se fait sur la page sécurisée.
  */
 /** Passage mis en évidence (rouge + gras) dans le HTML ; le texte lui-même est inchangé. */
-export const PASSAGE_6_MOIS = "celui-ci reste à votre disposition pendant 6 mois à compter de ce message";
+export const PASSAGE_DELAI_MOIS = "celui-ci reste à votre disposition pendant 5 mois à compter de ce message";
 const paraSuite = (t: string) => {
   const e = esc(t);
   const m = esc(PASSAGE_6_MOIS);
@@ -191,9 +191,9 @@ export function echeancesDepuisEnvoi(envoyeLe: string | null | undefined) {
   const d = new Date(envoyeLe);
   if (isNaN(d.getTime())) return null;
   const j5 = new Date(d.getTime() + 5 * 86400000);
-  const m6 = new Date(d);
-  m6.setMonth(m6.getMonth() + 6);
-  return { envoi: d, reponseAttendue: j5, finDisponibilite: m6 };
+  const m5 = new Date(d);
+  m5.setMonth(m5.getMonth() + 5);
+  return { envoi: d, reponseAttendue: j5, finDisponibilite: m5 };
 }
 
 export const formatParis = (d: Date | string) =>
