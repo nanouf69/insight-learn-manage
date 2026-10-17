@@ -3,7 +3,8 @@
 ## Écarts émargements — 17/10 12:52 UTC
 - [x] Horaires planning pratique prioritaires, journée et demi-journée ; générateur futur sans reprise rétroactive.
 - [x] Signatures listes d’attente et historique masqué classés à examiner, sans faux présentiel ni fausse absence.
-- [ ] Mise en service après derniers tests ; attentes historiques Fiacre / statuts attente / inscription Aba-Bakre à confirmer par preuves humaines.
+- [x] 104 tests et compilation OK ; fonctions SQL appliquées, publication frontend demandée 13:05 UTC (asset public à confirmer).
+- [ ] Preuves humaines : attentes septembre Fiacre / statuts des trois listes attente / inscription théorie Aba-Bakre.
 
 ## Durées des devis e-learning — 17/10 11:01 UTC
 - [x] Durées partagées VTC 66/TAXI 96/TA 36, Word/PDF et affichages correspondants ; anciens devis inchangés.
