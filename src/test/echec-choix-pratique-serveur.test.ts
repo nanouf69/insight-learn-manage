@@ -179,16 +179,16 @@ describe("Validation PNG serveur", () => {
   });
 });
 
-describe("Mail échec : passage 6 mois en rouge + parcours « Choisir et signer » (fictif)", () => {
+describe("Mail échec : passage 5 mois en rouge + parcours « Choisir et signer » (fictif)", () => {
   const pret2 = async (type = "vtc") => { const f = fake([base({ type_apprenant: type })], ok); const p: any = await preparer(f.deps, "a1", null); await envoyer(f.deps, p.doc.id); return { ...f, tok: f.docs[0].token }; };
-  it("VTC et TAXI : passage 6 mois en rouge et gras, texte inchangé", async () => {
-    const { construireMailEchec, PASSAGE_6_MOIS, SUITE_PRATIQUE } = await import("../../supabase/functions/_shared/modeleEchecChoixPratique");
+  it("VTC et TAXI : passage 5 mois en rouge et gras, texte inchangé", async () => {
+    const { construireMailEchec, PASSAGE_DELAI_MOIS, SUITE_PRATIQUE } = await import("../../supabase/functions/_shared/modeleEchecChoixPratique");
     for (const filiere of ["vtc", "taxi"] as const) {
       const { html } = construireMailEchec({ prenom: "Fictif", lien: "https://x.test/t", filiere });
-      expect(html).toContain(`<strong style="color:#b91c1c;font-weight:bold">${PASSAGE_6_MOIS}</strong>`);
+      expect(html).toContain(`<strong style="color:#b91c1c;font-weight:bold">${PASSAGE_DELAI_MOIS}</strong>`);
       expect(html.replace(/<[^>]+>/g, "")).toContain(SUITE_PRATIQUE[0].replace(/'/g, "'"));
     }
-    expect(SUITE_PRATIQUE[0]).toContain(PASSAGE_6_MOIS);
+    expect(SUITE_PRATIQUE[0]).toContain(PASSAGE_DELAI_MOIS);
   });
   it("jeton inconnu → 404, aucune écriture", async () => {
     const { deps, docs } = await pret2();

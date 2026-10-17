@@ -147,7 +147,7 @@ const esc = (s: string) =>
 export const PASSAGE_DELAI_MOIS = "celui-ci reste à votre disposition pendant 5 mois à compter de ce message";
 const paraSuite = (t: string) => {
   const e = esc(t);
-  const m = esc(PASSAGE_6_MOIS);
+  const m = esc(PASSAGE_DELAI_MOIS);
   return `<p style="margin:0 0 14px">${e.replace(m, `<strong style="color:#b91c1c;font-weight:bold">${m}</strong>`)}</p>`;
 };
 
