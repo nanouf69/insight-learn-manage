@@ -237,6 +237,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           .eq("apprenant_id", apprenant.id)
           .order("created_at", { ascending: false }),
         fetchPratiqueSlotDetails(apprenant.id),
+        chargerClassificationSignatures(apprenant.id),
       ]);
 
       if (docsRes.error) throw docsRes.error;
@@ -427,16 +428,20 @@ export function DocumentsCompletes({ apprenant }: Props) {
     queryKey: ["apprenant-presence-heures", apprenant.id],
     enabled: !!apprenant?.id,
     queryFn: async () => {
-      const [emargRes, pratiqueDetails] = await Promise.all([
+      const [emargRes, pratiqueDetails, classification] = await Promise.all([
         supabase
           .from("emargements_fc" as any)
           .select("date_emargement, demi_journee, absent, signature_data_url")
           .filter("masque", "eq", false)
           .eq("apprenant_id", apprenant.id),
         fetchPratiqueSlotDetails(apprenant.id),
+        chargerClassificationSignatures(apprenant.id),
       ]);
+      if (emargRes.error) throw emargRes.error;
+      const labels: Record<string,string> = { matin:'Matin',apres_midi:'Après-midi',soir_1:'Soir 1 (17h-18h30)',soir_2:'Soir 2 (18h30-21h)' };
+      const validKeys = new Set(classification.valides.map(e => `${e.date}|${e.creneau}`));
       const { theorieHours, pratiqueMinutes } = computePresentielHours(
-        (emargRes.data as any[]) || [],
+        ((emargRes.data as any[]) || []).filter(e => validKeys.has(`${e.date_emargement}|${labels[e.demi_journee] ?? e.demi_journee}`)),
         pratiqueDetails,
       );
       const validees = await fetchHeuresValideesAdmin(apprenant.id); // erreur = indisponible, jamais 0 h
