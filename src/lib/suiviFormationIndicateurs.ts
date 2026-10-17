@@ -98,7 +98,7 @@ export function calculerRatioSignatures(emargements: any[], inscriptions: any[],
   }
   for (const r of reservations) {
     const date = dateISO(r.date_choisie);
-    if (inscriptions.some(row => row.emargements_exclus === true && /pratique/i.test(row.sessions?.type_session ?? "") && dateISO(row.sessions?.date_debut) === date)) continue;
+    if (inscriptions.some(row => (row.emargements_exclus === true || row.liste_attente === true) && /pratique/i.test(row.sessions?.type_session ?? "") && dateISO(row.sessions?.date_debut) === date)) continue;
     if (!inscriptions.some(row => !row.liste_attente && !annule(row.sessions) && /pratique/i.test(row.sessions?.type_session ?? '') && dateISO(row.sessions?.date_debut) === date)) ajouterPratique(date, r.creneau);
   }
   const signes = new Set<string>();

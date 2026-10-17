@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 export type PratiqueFormationType = "vtc" | "taxi";
 export type PratiqueReservationCreneau = "matin" | "apresmidi" | "journee";
@@ -141,14 +142,8 @@ export const daySlotsDepuisConfigs = (dates: string[], configs: any[]) => {
 export const fetchPlanningDaySlotsForDates = async (dates: string[]) => {
   const normalizedDates = Array.from(new Set(dates.map(normalizeDate).filter(Boolean))).sort();
   if (normalizedDates.length === 0) return new Map<string, PlanningDaySlot>();
-  const { data, error } = await supabase
-    .from("planning_pratique_config" as any)
-    .select("planning_start_date, planning_end_date, day_time_slots, updated_at")
-    .lte("planning_start_date", normalizedDates[normalizedDates.length - 1])
-    .gte("planning_end_date", normalizedDates[0])
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return daySlotsDepuisConfigs(normalizedDates, (data as any[]) || []);
+  const data = await fetchAllRows<any>((f,t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t));
+  return daySlotsDepuisConfigs(normalizedDates, data);
 };
 
 const datesSessionsPratique = (sessionRows: any[]) => (sessionRows || [])
@@ -227,7 +222,7 @@ export const fetchPratiqueSlotDetails = async (apprenantId: string): Promise<Pra
   if (sessionsRes.error) throw sessionsRes.error;
   const reservations = (reservationsRes.data as any[]) || [];
   const allSessionRows = (sessionsRes.data as any[]) || [];
-  const excludedDates = new Set(allSessionRows.filter(r => r.emargements_exclus === true).map(r => normalizeDate(r.sessions?.date_debut)));
+  const excludedDates = new Set(allSessionRows.filter(r => (r.emargements_exclus === true || r.liste_attente === true) && /pratique/i.test(r.sessions?.type_session ?? "")).map(r => normalizeDate(r.sessions?.date_debut)));
   const sessionRows = allSessionRows.filter(r => r.emargements_exclus !== true && r.liste_attente !== true);
   const daySlots = await fetchPlanningDaySlotsForDates([...normaliserReservations(reservations).map((r) => r.date), ...datesSessionsPratique(sessionRows)]);
   return calculerPratiqueSlotDetails(reservations.filter(r => !excludedDates.has(normalizeDate(r.date_choisie))), sessionRows, daySlots);
