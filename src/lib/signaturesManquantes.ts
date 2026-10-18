@@ -266,7 +266,8 @@ export function calculerBilanSignaturesEdof(
   const classification = classifierSignatures(emargements, sessionRows, reservations, dateDuJourParis(), configs);
   const verifierKeys = new Set(classification.aVerifier.map(e => `${e.date}|${e.creneau}`));
   const horsRetenu = horsPlanning.filter(e => !verifierKeys.has(`${e.date}|${e.creneau}`));
-  const objectifTheorie = filiere === 'TAXI' ? 30 : 20;
+  // TA actuel : 10 signatures de théorie (première semaine, lun–ven) + 2 de pratique = 12.
+  const objectifTheorie = filiere === 'TAXI' ? 30 : filiere === 'TA' ? 10 : 20;
   const objectifPratique = 2;
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning: horsRetenu, aVerifier: classification.aVerifier,

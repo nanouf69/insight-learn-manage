@@ -389,3 +389,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] 09/10 08:30 UTC Note générale pour la lettre CMA : colonne additive planning_pratique_config.note_lettre_cma (migration 0132) ; champ de saisie dans la carte Lettre CMA, enregistré par session + période pratique avec les mêmes garde-fous que le planning ; note incluse dans la lettre (aperçu, impression, e-mail CMA), omise si vide ; notes par candidat inchangées ; frontend non publié.
 
 - [x] 09/10 08:45 UTC Lettre CMA : retrait réversible des candidats sans résultat (bouton « Retirer de la lettre » / « Rétablir », colonne additive lettre_exclus_ids, migration 0133) ; débloque l'envoi du mail ; testé à l'écran, base relue vide ; frontend non publié.
+
+## 18/10 « Oui règle les pb »
+- [ ] P3 TA : objectif 10 théorie + 2 pratique = 12 (Fiacre 12 attendues, 2 rattachées, historique à régulariser)
+- [ ] P1 persistance/auth (Ferreira, Benjelloun) : diagnostic + correctif ciblé
+- [ ] P2 Riyad LABIOD EB2 t3 / délai 48 h : distinguer refus attendu et perte
+- [ ] Diagnostics lecture seule : 500 liens bilan_sync, 7 QRC vtc-e, mails identifiants
