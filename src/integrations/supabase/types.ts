@@ -7523,6 +7523,7 @@ export type Database = {
           montant_total: number | null
           moyen_paiement: string | null
           notes: string | null
+          objectif_signatures_ta_historique: number | null
           presence_pratique: string | null
           session_id: string
           statut_suivi: string | null
@@ -7543,6 +7544,7 @@ export type Database = {
           montant_total?: number | null
           moyen_paiement?: string | null
           notes?: string | null
+          objectif_signatures_ta_historique?: number | null
           presence_pratique?: string | null
           session_id: string
           statut_suivi?: string | null
@@ -7563,6 +7565,7 @@ export type Database = {
           montant_total?: number | null
           moyen_paiement?: string | null
           notes?: string | null
+          objectif_signatures_ta_historique?: number | null
           presence_pratique?: string | null
           session_id?: string
           statut_suivi?: string | null

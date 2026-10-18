@@ -1,0 +1,2 @@
+ALTER TABLE public.session_apprenants ADD COLUMN IF NOT EXISTS objectif_signatures_ta_historique smallint NULL CHECK (objectif_signatures_ta_historique IN (12, 14));
+COMMENT ON COLUMN public.session_apprenants.objectif_signatures_ta_historique IS 'Objectif total de signatures (théorie + 2 pratique) pour un ancien parcours TA, saisi explicitement par un admin (12 ou 14). NULL = règle TA actuelle 10 + 2 = 12. Aucun remplissage automatique.';
