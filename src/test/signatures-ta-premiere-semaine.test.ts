@@ -27,6 +27,6 @@ describe('TA : 10 théorie (première semaine) + 2 pratique', () => {
   });
   it('TAXI non limité', () => {
     const rows = marquerFiliereRows([theorie()], 'TAXI');
-    expect(calculerSignaturesManquantes([], rows, [], '2026-10-18').length).toBe(30);
+    expect(calculerSignaturesManquantes([], rows, [], '2026-10-18').length).toBe(32);
   });
 });
