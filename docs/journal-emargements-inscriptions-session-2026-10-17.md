@@ -75,3 +75,9 @@ Les paragraphes antérieurs 9–12 ci-dessus sont historiques et **supplantés**
 
 ### Mise en service demandée — 13:05 UTC
 Version validée `cc583e47cc58983b4529d4adb3f9c96f00b48efd` ; publication frontend demandée via outil, pas encore confirmée par asset public. Fonctions SQL 0172/0173 déjà appliquées, aucune Edge Function à déployer. Dernier test 104/104 PASS, compilation 13:04:35 OK, cinq empreintes identiques après contrôle UI. Taux principal admin/élève filtre aussi les signatures non retenues (`useApprenantTauxRealisation`) ; aucune modification du noyau jalons ni du calcul historique figé.
+
+## 18/10/2026 21:18 UTC — TA 10+2 et file de réponses
+- TA : objectif 10 théorie + 2 pratique = 12 ; théorie attendue limitée aux 5 premiers jours ouvrés de l'inscription (Fiacre : 7–11/09) dans manquantes, bilan EDOF, classification et taux session. Fin personnalisée explicite = ancien parcours conservé (12 ou 14 selon planning), rien inventé. Aucune signature déplacée ni modifiée.
+- File de réponses : cause observée = serveur lent (240 réponses > 15 s, max 3 min) ; abandon à 15 s puis renvoi en chaîne (file 8 → 13). Correctif : réessais avec 60 s, arrêt du tour après un délai dépassé. Rien n'est retiré de la file sans accusé serveur. Récupération complète des appareils de D. FERREIRA / A.-B. BENJELLOUN NON PROUVÉE (pas d'accès appareil).
+- Riyad : refus 48 h attendu (EB1 terminé 16/10 15:46 UTC) ; P0471 déjà classé refus définitif (pas de réessai infini). Aucun contournement.
+- Tests : 67 signatures + 42 file de réponses PASS. Non publié.
