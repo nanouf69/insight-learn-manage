@@ -81,3 +81,9 @@ Version validée `cc583e47cc58983b4529d4adb3f9c96f00b48efd` ; publication fronte
 - File de réponses : cause observée = serveur lent (240 réponses > 15 s, max 3 min) ; abandon à 15 s puis renvoi en chaîne (file 8 → 13). Correctif : réessais avec 60 s, arrêt du tour après un délai dépassé. Rien n'est retiré de la file sans accusé serveur. Récupération complète des appareils de D. FERREIRA / A.-B. BENJELLOUN NON PROUVÉE (pas d'accès appareil).
 - Riyad : refus 48 h attendu (EB1 terminé 16/10 15:46 UTC) ; P0471 déjà classé refus définitif (pas de réessai infini). Aucun contournement.
 - Tests : 67 signatures + 42 file de réponses PASS. Non publié.
+
+## 18/10/2026 21:22 UTC — revue 92a0c3 et mise en ligne
+- Objectif TA historique : champ facultatif par inscription (12 ou 14, NULL = 10 + 2), aucune valeur remplie automatiquement ; jamais déduit des signatures. Pas encore d'écran admin pour le saisir.
+- Devis valant contrat désactivé (DEVIS_VALANT_CONTRAT_ACTIF = false) : 0 devis-contrat en base, devis envoyés comme avant ; fonctions upload-devis-signe/retractation-devis non redéployées.
+- Site publié : asset index-CVIsnF89.js servi à 21:22 UTC (avant : index-CZVWE7Y1.js).
+- Empreintes : module_editor_state 62/4659cfa5…, exam_content_versions 57/614b47fc…, bilan_sync_liens 500/78817ad6… inchangées ; relevés figés 22 lignes ; emargements_fc 2 923 (+2 signatures d'élèves le 17/10 avant 22:53 UTC, aucune écriture de notre part).

@@ -27,6 +27,8 @@ import type { TrainingContract } from "@/lib/contratFormation/model";
 import { emptyPratique, validateContract, pratiqueRecap } from "@/lib/contratFormation/model";
 import { newTrainingContract } from "@/lib/contratFormation/prefill";
 import { buildDevisContratSnapshot, devisValantContrat, draftFromSnapshot, parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
+
+export const DEVIS_VALANT_CONTRAT_ACTIF = false;
 import { renderContractInto } from "@/lib/contratFormation/pdf";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
@@ -896,6 +898,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const contratActif = devisValantContrat(contratDraft);
   /** Contrôle commun aux deux envois : renvoie le snapshot à figer, null si aucun contrat, false si bloqué. */
   const contratAEnvoyer = (): Record<string, unknown> | null | false => {
+    // Devis valant contrat en préparation : désactivé tant que la page de signature et ses fonctions
+    // serveur ne sont pas mises en service ensemble. Devis envoyé comme avant (aucun contrat figé).
+    if (!DEVIS_VALANT_CONTRAT_ACTIF) return null;
     if (!contratDraft.funding) { toast.error("Onglet Contrat de formation : choisir le financement avant d'envoyer le devis."); return false; }
     if (!contratActif) return null;
     const v = validateContract(contratDraft, apprenant.id, new Date());
