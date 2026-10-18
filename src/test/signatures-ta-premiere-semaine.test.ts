@@ -30,3 +30,20 @@ describe('TA : 10 théorie (première semaine) + 2 pratique', () => {
     expect(calculerSignaturesManquantes([], rows, [], '2026-10-18').length).toBe(32);
   });
 });
+
+describe('TA ancien parcours : objectif historique explicite', () => {
+  const s = (d: string, m: string) => ({ date_emargement: d, demi_journee: m, signed_at: `${d}T10:00:00Z`, masque: false });
+  const jours = ['2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-14'];
+  const toutes = jours.flatMap(d => [s(d,'matin'), s(d,'apres_midi')]);
+  it('ancien 14 configuré : complet à 12 théorie + 2 pratique', () => {
+    const b = calculerBilanSignaturesEdof([...toutes, s('2026-10-17','matin'), s('2026-10-17','apres_midi')], [theorie({ date_fin_personnalisee: '2026-09-14', objectif_signatures_ta_historique: 14 }), pratique], [], 'ta');
+    expect(b.objectifTotal).toBe(14); expect(b.theorie).toBe(12); expect(b.complet).toBe(true);
+  });
+  it('sans configuration : signatures en plus ne changent pas l’objectif 12', () => {
+    const b = calculerBilanSignaturesEdof(toutes, [theorie(), pratique], [], 'ta');
+    expect(b.objectifTotal).toBe(12); expect(b.theorie).toBe(10);
+  });
+  it('valeur hors 12/14 ignorée', () => {
+    expect(calculerBilanSignaturesEdof([], [theorie({ objectif_signatures_ta_historique: 16 })], [], 'ta').objectifTotal).toBe(12);
+  });
+});

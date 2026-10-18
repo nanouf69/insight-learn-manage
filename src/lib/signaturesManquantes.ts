@@ -129,7 +129,7 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
   ]);
@@ -287,7 +287,13 @@ export function calculerBilanSignaturesEdof(
   const verifierKeys = new Set(classification.aVerifier.map(e => `${e.date}|${e.creneau}`));
   const horsRetenu = horsPlanning.filter(e => !verifierKeys.has(`${e.date}|${e.creneau}`));
   // TA actuel : 10 signatures de théorie (première semaine, lun–ven) + 2 de pratique = 12.
-  const objectifTheorie = filiere === 'TAXI' ? 30 : filiere === 'TA' ? 10 : 20;
+  // Ancien parcours TA : objectif total 12 ou 14 saisi explicitement par un admin sur l'inscription
+  // théorique retenue (jamais déduit des signatures). Sinon règle actuelle 10 + 2.
+  const historiqueTA = filiere === 'TA'
+    ? (sessionRows ?? []).filter(r => r?.liste_attente !== true && !inscriptionExclue(r) && /theorique/i.test(r?.sessions?.type_session ?? ''))
+        .map(r => Number(r?.objectif_signatures_ta_historique)).find(n => n === 12 || n === 14)
+    : undefined;
+  const objectifTheorie = filiere === 'TAXI' ? 30 : filiere === 'TA' ? (historiqueTA ? historiqueTA - 2 : 10) : 20;
   const objectifPratique = 2;
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning: horsRetenu, aVerifier: classification.aVerifier,
@@ -301,7 +307,7 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
   ]);
@@ -427,7 +433,7 @@ export async function chargerClassificationSignatures(apprenantId: string): Prom
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
   ]);
