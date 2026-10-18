@@ -4,7 +4,7 @@ import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { heuresSessionPourApprenant } from "@/lib/sessionHeures";
 import { isPratiqueType } from "@/lib/sessionTypes";
 import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueType, normalizePratiqueCreneau } from "@/lib/pratiqueSlots";
-import { planningCreneaux } from "@/lib/signaturesManquantes";
+import { planningCreneaux, marquerFiliereRows } from "@/lib/signaturesManquantes";
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -17,6 +17,7 @@ export interface TauxHeures { faites: number; prevues: number }
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
 export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = []) {
   const res = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
+  if (String(filiere ?? "").toLowerCase() === "ta") inscriptions = marquerFiliereRows(inscriptions, "TA");
   const vus = new Set<string>();
   const { parDate } = planningCreneaux(inscriptions, reservations, configs);
   const daySlots = daySlotsDepuisConfigs([...parDate.keys()], configs);
