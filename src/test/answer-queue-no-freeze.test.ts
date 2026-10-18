@@ -114,3 +114,13 @@ describe("File des réponses : jamais figée (incident du 10/10)", () => {
     expect(getPendingAnswerSaves()).toBe(0);
   });
 });
+
+import { delaiEnvoiPour, ENVOI_DELAI_MS as D1, ENVOI_DELAI_REESSAI_MS } from "@/lib/answerPersistence";
+describe("délai d'envoi adaptatif (serveur lent 17/10)", () => {
+  it("premier envoi 15 s, réessais 60 s", () => {
+    expect(delaiEnvoiPour(0)).toBe(D1);
+    expect(D1).toBe(15000);
+    expect(delaiEnvoiPour(1)).toBe(ENVOI_DELAI_REESSAI_MS);
+    expect(ENVOI_DELAI_REESSAI_MS).toBe(60000);
+  });
+});

@@ -618,6 +618,11 @@ export const getRetrySuccessCount = () => retrySuccessCount;
 
 /** Délai maximal d'un envoi au serveur avant abandon + réessai. */
 export const ENVOI_DELAI_MS = 15000;
+/** Réessai après un délai dépassé : le serveur peut répondre lentement (jusqu'à ~3 min
+ *  observés le 17/10) ; on lui laisse plus de temps au lieu d'abandonner puis renvoyer. */
+export const ENVOI_DELAI_REESSAI_MS = 60000;
+export const delaiEnvoiPour = (attempts: number) => (attempts > 0 ? ENVOI_DELAI_REESSAI_MS : ENVOI_DELAI_MS);
+let dernierEnvoiDelaiDepasse = false;
 
 /**
  * ÉTAPE 1 DU PLAN ANTI-PANNE — classification des erreurs serveur.
@@ -759,7 +764,9 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   // Un envoi qui ne répond jamais ne doit pas figer la file : abandon après
   // ENVOI_DELAI_MS puis réessai (la réponse reste en file, rien n'est perdu).
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-  const abandon = controller ? setTimeout(() => controller.abort(), ENVOI_DELAI_MS) : undefined;
+  const delaiEnvoi = delaiEnvoiPour(item.attempts ?? 0);
+  dernierEnvoiDelaiDepasse = false;
+  const abandon = controller ? setTimeout(() => controller.abort(), delaiEnvoi) : undefined;
   try {
     console.info('[answerPersistence] envoi', { operation: item.id, tentative: item.attempts + 1 });
     const res = await fetch(url, {
@@ -816,9 +823,10 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     // distingue l'abandon volontaire après ENVOI_DELAI_MS d'une coupure réseau.
     // Dans les deux cas l'élément RESTE en file et sera renvoyé.
     const delaiDepasse = !!controller?.signal.aborted;
+    dernierEnvoiDelaiDepasse = delaiDepasse;
     console.error(
       delaiDepasse
-        ? `[answerPersistence] Délai d'envoi dépassé (${ENVOI_DELAI_MS / 1000} s) — réponse conservée en file, nouvel essai`
+        ? `[answerPersistence] Délai d'envoi dépassé (${delaiEnvoi / 1000} s) — réponse conservée en file, nouvel essai`
         : "[answerPersistence] Erreur réseau sauvegarde — réponse conservée en file, nouvel essai",
       { tentative: (item.attempts ?? 0) + 1, enLigne: typeof navigator !== "undefined" ? navigator.onLine : null, enFile: readQueue().length },
       delaiDepasse ? "" : e,
@@ -875,6 +883,9 @@ async function processQueue(): Promise<void> {
           writeQueue(queue);
         }
         if (result === "retry") hadFailure = true;
+        // Serveur lent : ne pas enchaîner d'autres envois de 15 s chacun dans ce tour
+        // (la file grossissait 8 → 13) ; tout reste en file pour le prochain essai.
+        if (result === "retry" && dernierEnvoiDelaiDepasse) break;
       }
     }
     const remaining = queue.filter(isActivelyPending);
