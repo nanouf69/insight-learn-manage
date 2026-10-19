@@ -1,5 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
-import { pendingModulePages, queueModulePages } from "@/lib/modulePagesPersistence";
+import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
