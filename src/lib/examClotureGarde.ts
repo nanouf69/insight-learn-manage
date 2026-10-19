@@ -54,10 +54,20 @@ export function compterReponsesSaisies(reponses: Record<string, unknown> | null 
  * 10:33 et 11:16, count=48, last_seen 11:16:04). La file n'est pas touchée.
  */
 export function finalisationBloqueeParRefus(
-  refus: { exerciceId: string; reason: string } | null | undefined,
+  refus: { exerciceId: string; reason: string; code?: string } | null | undefined,
   exerciceKey: string,
+  nbReponsesSaisies?: number,
 ): boolean {
-  return !!refus && refus.exerciceId === exerciceKey && refus.reason !== "frozen";
+  if (!refus || refus.exerciceId !== exerciceKey || refus.reason === "frozen") return false;
+  // KEVIN FERNANDES 19/10 : d'anciennes clôtures vides (P0530) restées en file
+  // depuis le 14/10 sont rejouées à chaque ouverture de session. Si l'écran ne
+  // détient lui-même AUCUNE réponse renseignée, ce refus confirme simplement
+  // « temps écoulé sans réponse » : la garde de clôture (deciderCloture) décide,
+  // sans écriture ni note. S'il existe une réponse locale, la divergence reste bloquante.
+  if (refus.code === "cloture_vide" && nbReponsesSaisies !== undefined && Math.max(0, nbReponsesSaisies | 0) === 0) {
+    return false;
+  }
+  return true;
 }
 
 /**
