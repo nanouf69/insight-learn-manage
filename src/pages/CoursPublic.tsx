@@ -1830,7 +1830,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const modalSignature = signatureEnAttente && showSignatureModal && emargementFCStatus === "needed" && emargementCreneau ? (
     <EmargementFCModal
       key={`${emargementDate || "today"}|${emargementCreneau}`}
-      apprenantId={apprenant!.id!}
+      apprenantId={emargementApprenantId || apprenant!.id!}
       userId={effectiveUserId!}
       apprenantNom={apprenant!.nom}
       apprenantPrenom={apprenant!.prenom}
