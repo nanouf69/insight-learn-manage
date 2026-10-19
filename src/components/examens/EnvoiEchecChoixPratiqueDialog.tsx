@@ -79,6 +79,40 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
 
   const toggle = (id: string) => setSelection((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
+  const estSelectionnable = (a: Candidat, liste: DocModele[] = docs) => { const d = docCourant(liste, a); return d?.envoi_etat === "prepare" && d.statut !== "signe"; };
+  const prets = useMemo(() => eligibles.filter((a) => estSelectionnable(a)), [eligibles, docs]);
+
+  const toutSelectionner = () => setSelection(new Set(prets.map((p) => p.id)));
+  const toutDeselectionner = () => setSelection(new Set());
+
+  /** Prépare (comme l'aperçu) tous les candidats encore non relus, sans envoyer quoi que ce soit, puis les sélectionne. */
+  const toutPreparerEtSelectionner = async () => {
+    const aPreparer = eligibles.filter((a) => !estSelectionnable(a) && !raisons[a.id]);
+    if (aPreparer.length === 0) { toutSelectionner(); return; }
+    if (!window.confirm(`Préparer l'aperçu de ${aPreparer.length} mail(s) (aucun envoi) puis tout sélectionner ?`)) return;
+    setOccupe(true);
+    let echecs = 0;
+    for (const a of aPreparer) {
+      try {
+        const { data, error } = await supabase.functions.invoke("envoi-echec-choix-pratique", { body: { action: "preparer", apprenantId: a.id } });
+        if (error) throw error;
+        if (data?.etat === "bloque" || data?.etat === "erreur") { setRaisons((r) => ({ ...r, [a.id]: data.raison })); echecs++; }
+      } catch (e: any) {
+        setRaisons((r) => ({ ...r, [a.id]: e?.message ?? String(e) }));
+        echecs++;
+      }
+    }
+    const { data, error } = await supabase.from("documents_a_signer").select(COLS)
+      .eq("modele_code", MODELE_CODE).in("apprenant_id", eligibles.map((e) => e.id)).order("created_at", { ascending: false });
+    if (!error && data) setDocs((data as any[]) as DocModele[]);
+    const liste = (error || !data) ? docs : ((data as any[]) as DocModele[]);
+    setOccupe(false);
+    setSelection(new Set(eligibles.filter((a) => estSelectionnable(a, liste)).map((a) => a.id)));
+    if (echecs > 0) toast.warning(`${echecs} préparation(s) impossible(s) : la raison est affichée sur la ligne. Rien n'a été envoyé.`);
+    else toast.success("Tous les mails sont préparés (relus) et sélectionnés. Rien n'est envoyé avant votre confirmation.");
+  };
+
+
   const envoyer = async () => {
     if (lectureErreur) { toast.error("Lecture du suivi impossible : envoi bloqué."); return; }
     const cibles = eligibles.filter((e) => selection.has(e.id)).map((a) => ({ a, d: docCourant(docs, a) })).filter((x) => x.d?.envoi_etat === "prepare");
@@ -119,6 +153,19 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
               Filière absente, ambiguë ou sans pratique incluse : préparation bloquée pour {bloques.map((b) => `${b.nom} ${b.prenom} (${b.type_apprenant || "vide"})`).join(", ")}.
             </div>
           )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={occupe || prets.length === 0} onClick={toutSelectionner}>
+              Tout sélectionner ({prets.length})
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={occupe || eligibles.length === 0} onClick={toutPreparerEtSelectionner}>
+              Tout préparer puis tout sélectionner
+            </Button>
+            {selection.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={occupe} onClick={toutDeselectionner}>
+                Tout désélectionner
+              </Button>
+            )}
+          </div>
           <div className="border rounded-lg divide-y">
             {eligibles.map((a) => {
               const d = docCourant(docs, a);
