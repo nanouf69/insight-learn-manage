@@ -23,7 +23,7 @@ export function depsSupabase(db: SupabaseClient, opts: { authHeader?: string; su
     async findDoc(apprenantId, cle) {
       // Toutes versions : un mail déjà parti/en cours (quelle que soit la version) bloque tout nouvel envoi ;
       // un brouillon jamais envoyé d'une ancienne version est conservé intact mais n'est plus réutilisé.
-      const { data, error } = await db.from("documents_a_signer").select(`${COLS}, modele_version`)
+      const { data, error } = await db.from("documents_a_signer").select(COLS)
         .eq("modele_code", MODELE_CODE).eq("apprenant_id", apprenantId).eq("cle_envoi", cle)
         .order("created_at", { ascending: false });
       if (error) throw error;
