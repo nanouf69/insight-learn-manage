@@ -2599,7 +2599,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </p>
                             {!introLockedDone && activitesParModule[mod.id]?.etat === "ok" && (activitesParModule[mod.id] as any).facultatives.length > 0 && (
                               <p className="text-xs text-muted-foreground mt-0.5" data-testid={`jeux-facultatifs-${mod.id}`}>
-                                🗺️ Jeux facultatifs ajoutés après votre validation : {(activitesParModule[mod.id] as any).facultatives.map((a: any) => `${a.titre}${a.termine ? " (fait)" : ""}`).join(" · ")}
+                                🗺️ Jeux facultatifs — sans effet sur votre progression : {(activitesParModule[mod.id] as any).facultatives.map((a: any) => `${a.titre}${a.termine ? " (fait)" : ""}`).join(" · ")}
                               </p>
                             )}
                           </div>

@@ -32,7 +32,19 @@ describe("Jeux du module — présentation élève partagée", () => {
   it("lecture échouée : indisponible, jamais 0/2", () => {
     const e = activitesModuleEleve(8, parcours, apresJeux, null, "fictif", D);
     expect(e.etat).toBe("indisponible"); expect(libelleJeux(e)).not.toContain("0/2");
-    expect(libelleFinQuiz(e).bouton).toBe("Terminé");
+    expect(libelleFinQuiz(e, true).bouton).toBe("Quiz terminé — statut des jeux à vérifier");
+    expect(libelleFinQuiz(e, true).toast).not.toContain("Module terminé");
+  });
+  it("chargement (null) : module à jeux = à vérifier ; module sans jeux = Terminé", () => {
+    expect(libelleFinQuiz(null, true).bouton).toBe("Quiz terminé — statut des jeux à vérifier");
+    expect(libelleFinQuiz(null, false)).toEqual({ bouton: "Terminé", toast: "🎉 Module terminé !" });
+  });
+  it("demande d'ouverture faite avant le chargement du jeu : rejouée au montage", async () => {
+    const { demanderJeu, ecouterDemandeJeu } = await import("@/lib/demandeJeuRegistre");
+    demanderJeu("jeu_lyon_lieux");
+    const recus: string[] = []; const stop = ecouterDemandeJeu((id) => recus.push(id));
+    demanderJeu("jeu_lyon_arrondissements_quartiers"); stop();
+    expect(recus).toEqual(["jeu_lyon_lieux", "jeu_lyon_arrondissements_quartiers"]);
   });
   it("dispense individuelle : aucun jeu exigé", () => {
     const e: any = activitesModuleEleve(8, parcours, apresJeux, new Set(), "4c75ae96-9d4d-4c6f-8097-dd59d27fe9f5", D);
