@@ -6,7 +6,7 @@
  */
 
 export const MODELE_CODE = "echec_theorie_choix_pratique";
-export const MODELE_VERSION = "v2-2026-10-15";
+export const MODELE_VERSION = "v3-2026-10-19";
 export const MODELE_NOM = "Choix entraînement pratique";
 
 export type Filiere = "vtc" | "taxi" | "ta";
