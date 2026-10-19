@@ -853,7 +853,7 @@ function PassageMatiere({
     setExpire(true);
     if (matiereTermineeRef.current || expirationEnCoursRef.current) return;
     const refusAvant = getAnswerSaveRejectionFor(apprenantId, exerciceKey);
-    if (finalisationBloqueeParRefus(refusAvant, exerciceKey)) {
+    if (finalisationBloqueeParRefus(refusAvant, exerciceKey, compterReponsesSaisies(latestReponsesRef.current))) {
       setFinalisationEnAttente(false);
       setFinalisationRefusee(refusAvant?.message ?? "Le serveur a refusé la clôture de cette matière.");
       return;
@@ -918,7 +918,7 @@ function PassageMatiere({
         console.error("[AutoSave] Expiration: finalisation en attente", error);
         setSaveStatus("error");
         const refus = getAnswerSaveRejectionFor(apprenantId, exerciceKey);
-        if (finalisationBloqueeParRefus(refus, exerciceKey)) {
+        if (finalisationBloqueeParRefus(refus, exerciceKey, compterReponsesSaisies(reponses))) {
           setFinalisationEnAttente(false);
           setFinalisationRefusee(refus?.message ?? "Le serveur a refusé la clôture de cette matière.");
           return;

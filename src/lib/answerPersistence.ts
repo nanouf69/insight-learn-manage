@@ -828,8 +828,8 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     // raison. Une erreur TEMPORAIRE reste en file et sera réessayée.
     const verdict = classifyAnswerSaveFailure(res.status, text);
     if (verdict.definitif) {
-      notifyAnswerSaveRejected(item.payload.exercice_id, verdict.reason, verdict.message);
-      recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, verdict.reason, verdict.message);
+      notifyAnswerSaveRejected(item.payload.exercice_id, verdict.reason, verdict.message, verdict.code);
+      recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, verdict.reason, verdict.message, verdict.code);
       return "blocked";
     }
     return "retry";
