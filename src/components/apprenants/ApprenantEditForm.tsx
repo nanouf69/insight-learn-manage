@@ -464,7 +464,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     "passerelle-vtc-elearning": "va-e",
     "vtc-e-presentiel": "vtc-e-presentiel",
     "taxi-e-presentiel": "taxi-e-presentiel",
-    "ta-e-presentiel": "ta-e-presentiel"
+    "ta-e-presentiel": "ta-e-presentiel",
+    "pratique-taxi": "taxi",
+    "pratique-vtc": "vtc"
   };
 
   const normalizedFormType = normalizeTypeApprenant(formData.type_apprenant);
@@ -507,6 +509,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     if (newType && DEFAULT_MODULES_BY_TYPE[newType]) {
       setHasTouchedModules(false);
       setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[newType]]);
+    }
+    // Formation pratique seule : uniquement le module PRATIQUE de la filière.
+    if (value === "pratique-taxi" || value === "pratique-vtc") {
+      setHasTouchedModules(true);
+      setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
     }
     
     if (value === "vtc" || value === "vtc-exam") {
@@ -872,6 +879,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
+                    <SelectLabel>Formations pratiques seules</SelectLabel>
+                    <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
+                    <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
                     <SelectLabel>Services</SelectLabel>
                     <SelectItem value="location-vehicule">Location de véhicule</SelectItem>
                     <SelectItem value="formation-et-location">Formation et location de véhicule</SelectItem>
@@ -925,6 +937,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                       <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                       <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
                       <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Formations pratiques seules</SelectLabel>
+                      <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
+                      <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Marketing Digital</SelectLabel>

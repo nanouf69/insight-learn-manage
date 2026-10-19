@@ -177,6 +177,8 @@ export function ApprenantForm() {
     "ta-e-presentiel": "999",
     "continue-vtc": "200",
     "continue-taxi": "299",
+    "pratique-taxi": "299",
+    "pratique-vtc": "249",
     "marketing-digital-24h": "1500",
     "marketing-digital-26h": "2100",
     "marketing-digital-28h": "3300",
@@ -203,6 +205,8 @@ export function ApprenantForm() {
     "ta-e-presentiel": "ta-e-presentiel",
     "continue-vtc": "vtc",
     "continue-taxi": "taxi",
+    "pratique-taxi": "taxi",
+    "pratique-vtc": "vtc",
     "marketing-digital-24h": "marketing-digital",
     "marketing-digital-26h": "marketing-digital",
     "marketing-digital-28h": "marketing-digital",
@@ -224,6 +228,10 @@ export function ApprenantForm() {
       if (DEFAULT_MODULES_BY_TYPE[newType]) {
         setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[newType]]);
       }
+    }
+    // Formation pratique seule : uniquement le module PRATIQUE de la filière.
+    if (value === "pratique-taxi" || value === "pratique-vtc") {
+      setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
     }
 
     // Pour les RP, forcer le mode de financement à "personnel"
@@ -772,6 +780,11 @@ export function ApprenantForm() {
                     <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
+                    <SelectLabel>Formations pratiques seules</SelectLabel>
+                    <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
+                    <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
                     <SelectLabel>Marketing Digital</SelectLabel>
                     <SelectItem value="marketing-digital-24h">Marketing Digital 24H - 1 500 €</SelectItem>
                     <SelectItem value="marketing-digital-26h">Marketing Digital 26H - 2 100 €</SelectItem>
@@ -839,6 +852,11 @@ export function ApprenantForm() {
                       <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                       <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
                       <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Formations pratiques seules</SelectLabel>
+                      <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
+                      <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Marketing Digital</SelectLabel>
