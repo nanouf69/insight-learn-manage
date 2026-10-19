@@ -46,7 +46,7 @@ export async function traiterRegularisation(supabase: any, userId: string, body:
     .select("id, auth_user_id, apprenant_id, session_id, creneaux, expire_le").eq("id", String(body.regularisation_id)).maybeSingle();
   if (regErr) return json({ error: "Lecture de l'autorisation impossible" }, 500);
   const v = verifierDemande(reg, userId, body);
-  if (!v.ok) return json({ error: v.error }, v.status);
+  if (v.ok === false) return json({ error: v.error }, v.status);
 
   const { data: rows, error: rowsErr } = await supabase.from("emargements_fc")
     .select("id, date_emargement, demi_journee, signature_data_url, absent, signed_at, masque")
