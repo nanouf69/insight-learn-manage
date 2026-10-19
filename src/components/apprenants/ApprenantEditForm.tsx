@@ -869,6 +869,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectLabel>Formations Continues</SelectLabel>
                     <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                     <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Formations pratiques seules</SelectLabel>
+                    <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
+                    <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
                     <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
@@ -924,6 +929,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                       <SelectLabel>Formations Continues</SelectLabel>
                       <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                       <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Formations pratiques seules</SelectLabel>
+                      <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
+                      <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
                       <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
