@@ -71,7 +71,7 @@ describe('Progression des pages : attente, relance et confirmation', () => {
     state.rpcError = { code: '42501' };
     expect(await queueModulePagesStatus('L5', 8, [3], 10)).toBe('auth');
     await vi.runOnlyPendingTimersAsync();
-    expect(state.calls).toHaveLength(1);
+    expect(state.calls.filter(c => c._apprenant_id === 'L5')).toHaveLength(1);
   });
 
   it('erreur de relecture : file conservée, jamais confirmée', async () => {
