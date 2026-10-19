@@ -1,4 +1,5 @@
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
+import { candidatsAPayer } from "@/lib/candidatsAPayer";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
@@ -2721,6 +2722,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               {hasActiveFilters
                 ? `${filtered?.length ?? 0} apprenant(s) affiché(s) sur ${tableApprenants.length} inscrit(s)`
                 : `Total : ${tableApprenants.length} apprenant(s) inscrit(s)`}
+              {(() => {
+                const r = candidatsAPayer(
+                  tableApprenants as any[],
+                  (a: any) => statutsSession?.[a.id]?.statut ?? a.statut_suivi ?? null,
+                  (a: any) => a.type_apprenant,
+                );
+                return (
+                  <span className="ml-3 font-semibold text-destructive">
+                    — À payer : {r.nombre} candidat(s) — {r.montant.toLocaleString("fr-FR")} €
+                  </span>
+                );
+              })()}
             </div>
           )}
         </CardContent>
