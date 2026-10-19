@@ -69,6 +69,12 @@ Deno.serve(async (req) => {
     if (userError || !user) return json({ error: "Session apprenant invalide" }, 401);
 
     const body = await req.json();
+
+    // ── Régularisation autorisée par l'Admin (créneaux passés listés, compte exact) ──
+    if (body?.regularisation_id) {
+      return await traiterRegularisation(supabase, user.id, body);
+    }
+
     const apprenantId = String(body?.apprenant_id || "");
     const demi = String(body?.demi_journee || "") as CreneauKey;
     const dateEmargement = String(body?.date_emargement || "");
