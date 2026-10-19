@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { verifierDemande, isWeekend } from "./regularisation";
+import { verifierDemande, isWeekend } from "../../../supabase/functions/save-emargement-apprenant/regularisation";
 
 const reg = {
   auth_user_id: "u1",
