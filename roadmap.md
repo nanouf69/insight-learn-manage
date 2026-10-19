@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Avertissement e-learning 50 % — 19/10 15:43 UTC
-- [ ] Présenter le périmètre exact et obtenir l'accord avant code.
-- [ ] Après accord : bandeau accueil élève + rappel dernier jalon, indicateur TAUX E-LEARNING et filtre admin, sources horaires inchangées.
-- [ ] Tests fictifs seuil strict/erreurs/parcours/dernier jalon, contrôle non-régression et journal ; aucun blocage ni écriture pédagogique.
+- [x] Périmètre présenté et plan approuvé avant code.
+- [x] Bandeau accueil élève + rappel dernier jalon, indicateur TAUX E-LEARNING et filtre admin, sources horaires inchangées.
+- [x] 97 tests fictifs PASS, 12 fichiers ; rappel et fermeture inspectés ordinateur/téléphone, compilation automatique OK ; journal, aucun blocage ni écriture pédagogique.
+- Limites : parcours authentifié complet et filtre CRM à l'écran NON PROUVÉS ; aucun test réel élève, aucune publication demandée.
 
 ## Écarts émargements — 17/10 12:52 UTC
 - [x] Horaires planning pratique prioritaires, journée et demi-journée ; générateur futur sans reprise rétroactive.

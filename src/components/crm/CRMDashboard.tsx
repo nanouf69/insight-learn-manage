@@ -22,6 +22,9 @@ import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAvatarUrl } from "@/lib/avatarUrl";
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
+import { Checkbox } from '@/components/ui/checkbox';
+import { useSeuilsElearningCRM } from '@/hooks/useSeuilsElearningCRM';
+import { filtrerSeuilsElearning } from '@/lib/seuilElearning';
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
@@ -82,6 +85,7 @@ interface CRMDashboardProps {
 export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [formationFilter, setFormationFilter] = useState<string[]>([]);
+  const [seuilFilter, setSeuilFilter] = useState(false);
   const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(initialApprenantId || null);
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_APPRENANTS);
 
@@ -93,7 +97,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
 
   useEffect(() => {
     setVisibleLimit(searchQuery.trim() ? SEARCH_VISIBLE_APPRENANTS : INITIAL_VISIBLE_APPRENANTS);
-  }, [searchQuery, formationFilter.join("|")]);
+  }, [searchQuery, formationFilter.join("|"), seuilFilter]);
 
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
@@ -159,13 +163,14 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     [apprenants],
   );
 
+  const seuils = useSeuilsElearningCRM(apprenants, seuilFilter && !selectedApprenantId);
   const filteredApprenants = useMemo(() => {
-    let list = apprenants as any[];
+    let list = filtrerSeuilsElearning(apprenants as any[], seuils.data, seuilFilter);
     if (formationFilter.length > 0) {
       list = list.filter((a) => formationFilter.includes((a.formation_choisie || "").trim()));
     }
     return filterAndSortApprenants(list, searchQuery);
-  }, [apprenants, searchQuery, formationFilter]);
+  }, [apprenants, searchQuery, formationFilter, seuilFilter, seuils.data]);
 
   const displayedApprenants = useMemo(() => {
     const unique = dedupeByStableId(filteredApprenants);
@@ -288,7 +293,13 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       </div>
 
       {/* Apprenants Grid */}
-      {isLoading ? (
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox checked={seuilFilter} onCheckedChange={value => setSeuilFilter(value === true)} />
+        Seuil e-learning 50 % non atteint
+      </label>
+      {seuilFilter && !seuils.loading && (seuils.isError || Object.values(seuils.data).some(s => s.etat === 'indisponible')) &&
+        <p role="status" className="text-sm text-destructive">Certaines heures sont indisponibles : ces dossiers ne sont pas classés sous le seuil.</p>}
+      {isLoading || seuils.loading ? (
         <div className="text-center py-12 text-muted-foreground">Chargement...</div>
       ) : filteredApprenants.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">Aucun apprenant trouvé</div>
