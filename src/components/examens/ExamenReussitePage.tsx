@@ -1,4 +1,5 @@
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
+import { candidatsAPayer } from "@/lib/candidatsAPayer";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
