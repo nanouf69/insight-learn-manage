@@ -260,6 +260,8 @@ export interface AnswerSaveRejection {
   at: string;
   /** Message explicite destiné à l'apprenant (refus définitif). */
   message?: string;
+  /** `cloture_vide` : P0530, clôture d'examen blanc sans aucune réponse renseignée. */
+  code?: "cloture_vide";
 }
 
 let lastRejection: AnswerSaveRejection | null = null;
@@ -636,11 +638,22 @@ let dernierEnvoiDelaiDepasse = false;
  * TEMPORAIRE : réseau, timeout, serveur/base momentanément indisponibles,
  * 5xx sans refus fonctionnel identifié. → conservé en file + réessais espacés.
  */
+export const MESSAGE_CLOTURE_VIDE_REFUSEE =
+  "Aucune réponse n'est enregistrée pour cette matière : le serveur a refusé de la clôturer vide. Rien n'a été supprimé et aucune note n'a été calculée.";
+
 export function classifyAnswerSaveFailure(
   status: number,
   body: string,
-): { definitif: boolean; reason: AnswerSaveRejection["reason"]; message: string } {
+): { definitif: boolean; reason: AnswerSaveRejection["reason"]; message: string; code?: AnswerSaveRejection["code"] } {
   const t = (body ?? "").toLowerCase();
+
+  // Clôture d'examen blanc sans aucune réponse renseignée (garde serveur
+  // garde_eb_legacy_cloture_vide, SQLSTATE P0530). Définitif ; code dédié pour
+  // que l'écran distingue « temps écoulé sans réponse » d'une vraie divergence.
+  if (t.includes("p0530") || t.includes("eb_cloture_vide_refusee") || t.includes("sans aucune réponse enregistrée")) {
+    return { definitif: true, reason: "refused", code: "cloture_vide", message: MESSAGE_CLOTURE_VIDE_REFUSEE };
+  }
+
 
   // Règle des 48 h (trigger enforce_exam_retake_delay, SQLSTATE P0471).
   if (
