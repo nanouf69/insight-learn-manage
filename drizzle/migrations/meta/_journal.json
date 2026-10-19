@@ -1240,6 +1240,13 @@
       "when": 1792397974176,
       "tag": "0176_emargement_dossiers_lies",
       "breakpoints": true
+    },
+    {
+      "idx": 177,
+      "version": "7",
+      "when": 1792418462367,
+      "tag": "0177_emargement_regularisation_isam",
+      "breakpoints": true
     }
   ]
 }

@@ -3485,11 +3485,48 @@ export type Database = {
         }
         Relationships: []
       }
+      emargement_regularisations: {
+        Row: {
+          apprenant_id: string
+          auth_user_id: string
+          autorise_par: string
+          created_at: string
+          creneaux: Json
+          expire_le: string
+          id: string
+          motif: string
+          session_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          auth_user_id: string
+          autorise_par: string
+          created_at?: string
+          creneaux: Json
+          expire_le: string
+          id?: string
+          motif: string
+          session_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          auth_user_id?: string
+          autorise_par?: string
+          created_at?: string
+          creneaux?: Json
+          expire_le?: string
+          id?: string
+          motif?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       emargements_fc: {
         Row: {
           absent: boolean
           apprenant_id: string
           confirme_identite: boolean
+          confirme_presence_creneau: boolean
           confirme_presence_lieu: boolean
           created_at: string
           date_emargement: string
@@ -3500,6 +3537,7 @@ export type Database = {
           masque_at: string | null
           masque_motif: string | null
           motif_absence: string | null
+          regularisation_id: string | null
           signature_data_url: string | null
           signed_at: string
           user_agent: string | null
@@ -3509,6 +3547,7 @@ export type Database = {
           absent?: boolean
           apprenant_id: string
           confirme_identite?: boolean
+          confirme_presence_creneau?: boolean
           confirme_presence_lieu?: boolean
           created_at?: string
           date_emargement?: string
@@ -3519,6 +3558,7 @@ export type Database = {
           masque_at?: string | null
           masque_motif?: string | null
           motif_absence?: string | null
+          regularisation_id?: string | null
           signature_data_url?: string | null
           signed_at?: string
           user_agent?: string | null
@@ -3528,6 +3568,7 @@ export type Database = {
           absent?: boolean
           apprenant_id?: string
           confirme_identite?: boolean
+          confirme_presence_creneau?: boolean
           confirme_presence_lieu?: boolean
           created_at?: string
           date_emargement?: string
@@ -3538,6 +3579,7 @@ export type Database = {
           masque_at?: string | null
           masque_motif?: string | null
           motif_absence?: string | null
+          regularisation_id?: string | null
           signature_data_url?: string | null
           signed_at?: string
           user_agent?: string | null

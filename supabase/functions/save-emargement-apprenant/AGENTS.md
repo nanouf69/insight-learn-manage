@@ -1,0 +1,1 @@
+- Past attendance regularisation: append-only `emargement_regularisations` (one account, one dossier, closed slot list, expiry) checked in save-emargement-apprenant/regularisation.ts; per-slot presence confirmation, never replaces a signature, signed_at = real time; why: no fabricated or backdated attendance.
