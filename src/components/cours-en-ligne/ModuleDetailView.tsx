@@ -7772,8 +7772,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
         const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
         (async () => {
-          const confirmed = await queueModulePages(apprenantId, module.id, pagesForStorage(snapshot), progress);
-          if (!confirmed) toast.error("Progression conservée sur cet appareil, en attente de confirmation. Reconnectez-vous puis revenez sur cette page.", { duration: 15000 });
+          const status = await queueModulePagesStatus(apprenantId, module.id, pagesForStorage(snapshot), progress);
+          // « pending » (envoi en cours / relance automatique) est normal : aucun message d'échec.
+          if (status === "auth") toast.error("Votre session a expiré : progression conservée sur cet appareil. Reconnectez-vous pour l'enregistrer.", { id: "pages-auth", duration: 15000 });
+          else if (status === "error") toast.warning("Enregistrement de la progression retardé : elle est conservée sur cet appareil et sera renvoyée automatiquement.", { id: "pages-error", duration: 10000 });
         })();
       }
     };
