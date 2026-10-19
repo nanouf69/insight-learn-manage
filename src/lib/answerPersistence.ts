@@ -281,8 +281,9 @@ const notifyAnswerSaveRejected = (
   exerciceId: string,
   reason: AnswerSaveRejection["reason"],
   message?: string,
+  code?: AnswerSaveRejection["code"],
 ) => {
-  lastRejection = { exerciceId, reason, at: new Date().toISOString(), message };
+  lastRejection = { exerciceId, reason, at: new Date().toISOString(), message, ...(code ? { code } : {}) };
   emitRejection();
 };
 
@@ -316,10 +317,11 @@ function recordDefinitiveRejection(
   exerciceId: string,
   reason: AnswerSaveRejection["reason"],
   message?: string,
+  code?: AnswerSaveRejection["code"],
 ) {
   if (!userId || reason === "frozen") return;
   definitiveRejections.set(rejectionKey(userId, apprenantId, exerciceId), {
-    exerciceId, reason, at: new Date().toISOString(), message,
+    exerciceId, reason, at: new Date().toISOString(), message, ...(code ? { code } : {}),
   });
 }
 
