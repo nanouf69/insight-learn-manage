@@ -3458,6 +3458,33 @@ export type Database = {
           },
         ]
       }
+      emargement_dossiers_lies: {
+        Row: {
+          apprenant_id: string
+          auth_user_id: string
+          autorise_par: string
+          created_at: string
+          id: string
+          motif: string
+        }
+        Insert: {
+          apprenant_id: string
+          auth_user_id: string
+          autorise_par: string
+          created_at?: string
+          id?: string
+          motif: string
+        }
+        Update: {
+          apprenant_id?: string
+          auth_user_id?: string
+          autorise_par?: string
+          created_at?: string
+          id?: string
+          motif?: string
+        }
+        Relationships: []
+      }
       emargements_fc: {
         Row: {
           absent: boolean
@@ -8426,6 +8453,10 @@ export type Database = {
         }[]
       }
       est_compte_test: { Args: { _apprenant_id: string }; Returns: boolean }
+      est_dossier_lie_emargement: {
+        Args: { _apprenant_id: string }
+        Returns: boolean
+      }
       est_proprietaire_apprenant: {
         Args: { _apprenant_id: string }
         Returns: boolean
