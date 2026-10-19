@@ -12,11 +12,11 @@ const d10 = (v: unknown) => String(v ?? "").slice(0, 10);
 const signatureValide = (e: any) =>
   e.masque !== true && e.absent !== true && /^data:image\/(png|jpe?g);base64,/i.test(String(e.signature_data_url ?? ""));
 
-export interface TauxHeures { faites: number; prevues: number }
+export interface TauxHeures { faites: number; prevues: number; derniere?: string }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
 export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = []) {
-  const res = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
+  const res: { session: TauxHeures; pratique: TauxHeures } = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
   if (String(filiere ?? "").toLowerCase() === "ta") inscriptions = marquerFiliereRows(inscriptions, "TA");
   const vus = new Set<string>();
   const { parDate } = planningCreneaux(inscriptions, reservations, configs);
@@ -46,6 +46,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       if (!h) continue;
       vus.add(cle);
       cible.faites += h;
+      if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
   }
   return res;
@@ -101,6 +102,11 @@ export function TauxPresenceSessionsCard({ apprenantId, filiere }: { apprenantId
             <div className="mt-1 text-xs text-muted-foreground">
               {erreur ? "Indisponible (lecture impossible)" : !t ? "Chargement…" : t.prevues > 0 ? `${fmt(t.faites)} signées / ${fmt(t.prevues)} de session` : "Aucune session inscrite"}
             </div>
+            {t && !erreur && t.prevues > 0 && (
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                Dernière signature : <strong className="text-foreground">{t.derniere ? t.derniere.split("-").reverse().join("/") : "aucune"}</strong>
+              </div>
+            )}
           </div>
         );
       })}
