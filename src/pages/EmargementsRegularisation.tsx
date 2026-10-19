@@ -43,7 +43,7 @@ function Creneau({ slot, onSign }: { slot: Slot; onSign: (s: Slot, sig: string) 
   return (
     <div className="space-y-3 rounded-md border p-3">
       <p className="font-medium capitalize">{fmtDate(slot.date)} · {LIBELLE[slot.creneau]}</p>
-      <p className="text-sm text-destructive">Signez uniquement si vous étiais réellement présent à ce créneau. Sinon, laissez-le non signé.</p>
+      <p className="text-sm text-destructive">Signez uniquement si vous étiez réellement présent à ce créneau. Sinon, laissez-le non signé.</p>
       <label className="flex items-start gap-2 text-sm">
         <Checkbox checked={confirme} onCheckedChange={(v) => setConfirme(v === true)} />
         <span>Je confirme avoir été présent à ce créneau</span>
