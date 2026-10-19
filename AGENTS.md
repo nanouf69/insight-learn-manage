@@ -33,3 +33,4 @@
 - Shared theory attendance: sessionHeures with learner track; why: no cross-track denominators.
 - Read scoped AGENTS before edits, including src/lib and shared Edge code; why: local rules apply.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
+- Past attendance regularisation: append-only `emargement_regularisations` (one account, one dossier, closed slot list, expiry) checked in save-emargement-apprenant/regularisation.ts; per-slot presence confirmation, never replaces a signature, signed_at = real time; why: no fabricated or backdated attendance.
