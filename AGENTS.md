@@ -24,7 +24,7 @@
 - Student counters/CRM jalons share progressionModulesEleve, account proofs and Lyon waivers; attendance uses milestone ID; why: no divergence or leakage.
 - Signatures PDF/Contrôle ZIP share readonly planning loader; retain IDs/versions, unknown hours, abort read errors; EDOF targets shared, PDF counts images not timestamps; why: no fabricated proof or mutations.
 - Accès élève créés/envoyés par trigger serveur si aucun compte ; why: aucune fiche sans accès.
-- Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 ; why: anti-réécriture.
+- Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 (code client `cloture_vide` ; sans réponse locale renseignée, l'écran affiche « temps écoulé sans réponse », jamais un blocage permanent) ; why: anti-réécriture sans enfermer l'élève.
 - Échecs validation : RPC `signaler_echec_validation_quiz` (clé publique), 3/15 min = 1 alerte/h ; why: session expirée OK.
 - Frozen relevé: `releve_jalons_calcul_fige`, resoudre-releves-gel/releveCalculServeur.ts, ACTIVITES_CODE at gele_le + archived answers; admin practice = new version; why: immutable history.
 - Live jalons list = attributed modules (modulesAttribuesDashboard); unattributed 50–53/83/84 dropped, attributed required, EB/practice kept, renormalised; why: match learner space.
