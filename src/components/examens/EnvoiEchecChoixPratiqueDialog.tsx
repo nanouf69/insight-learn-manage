@@ -153,6 +153,19 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
               Filière absente, ambiguë ou sans pratique incluse : préparation bloquée pour {bloques.map((b) => `${b.nom} ${b.prenom} (${b.type_apprenant || "vide"})`).join(", ")}.
             </div>
           )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={occupe || prets.length === 0} onClick={toutSelectionner}>
+              Tout sélectionner ({prets.length})
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={occupe || eligibles.length === 0} onClick={toutPreparerEtSelectionner}>
+              Tout préparer puis tout sélectionner
+            </Button>
+            {selection.size > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={occupe} onClick={toutDeselectionner}>
+                Tout désélectionner
+              </Button>
+            )}
+          </div>
           <div className="border rounded-lg divide-y">
             {eligibles.map((a) => {
               const d = docCourant(docs, a);
