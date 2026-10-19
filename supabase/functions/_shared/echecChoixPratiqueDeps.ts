@@ -21,10 +21,16 @@ export function depsSupabase(db: SupabaseClient, opts: { authHeader?: string; su
       return data as any;
     },
     async findDoc(apprenantId, cle) {
+      // Toutes versions : un mail déjà parti/en cours (quelle que soit la version) bloque tout nouvel envoi ;
+      // un brouillon jamais envoyé d'une ancienne version est conservé intact mais n'est plus réutilisé.
       const { data, error } = await db.from("documents_a_signer").select(COLS)
-        .eq("modele_code", MODELE_CODE).eq("apprenant_id", apprenantId).eq("cle_envoi", cle).eq("modele_version", MODELE_VERSION).maybeSingle();
+        .eq("modele_code", MODELE_CODE).eq("apprenant_id", apprenantId).eq("cle_envoi", cle)
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as DocDb | null;
+      const rows = (data ?? []) as any[];
+      const dejaEngage = rows.find((r) => r.envoi_etat && r.envoi_etat !== "prepare");
+      if (dejaEngage) return dejaEngage as DocDb;
+      return (rows.find((r) => r.modele_version === MODELE_VERSION) ?? null) as DocDb | null;
     },
     async getDocById(id) {
       const { data, error } = await db.from("documents_a_signer").select(COLS).eq("id", id).maybeSingle();
