@@ -18,6 +18,7 @@ import {
 } from "./jeuxLyonLogic";
 import { useSuiviJeu, LIBELLE_SUIVI, type EtatSuivi } from "./useSuiviJeu";
 import { JEUX_LYON } from "@/lib/jeuxPedagogiques";
+import { ecouterDemandeJeu } from "@/lib/demandeJeuRegistre";
 
 function BadgeSuivi({ etat }: { etat: EtatSuivi }) {
   return <Badge variant={etat === "confirme" ? "default" : etat === "lecture_impossible" ? "destructive" : "outline"} role="status">{LIBELLE_SUIVI[etat]}</Badge>;
@@ -298,13 +299,10 @@ export default function JeuxCartesLyon({ compteId }: { compteId?: string | null 
   const [agrandi, setAgrandi] = useState(false);
   // Ouverture demandée par le bandeau des jeux du module (identifiants du registre).
   useEffect(() => {
-    const f = (ev: Event) => {
-      const id = (ev as CustomEvent<string>).detail;
+    return ecouterDemandeJeu((id) => {
       const cible = id === JEUX_LYON[0].id ? "arr" : id === JEUX_LYON[1].id ? "lieux" : null;
       if (cible) { setOuvert(cible); setAgrandi(false); }
-    };
-    window.addEventListener("ouvrir-jeu-registre", f);
-    return () => window.removeEventListener("ouvrir-jeu-registre", f);
+    });
   }, []);
   const jeux = [
     { id: "arr" as const, titre: "Lyon : arrondissements et quartiers", desc: "Placez les 9 arrondissements puis les principaux quartiers sur la carte.", Icone: MapIcon },

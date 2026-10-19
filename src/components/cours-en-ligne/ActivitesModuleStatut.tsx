@@ -43,7 +43,7 @@ export function ActivitesModuleBandeau({ onOuvrir }: { onOuvrir: (activiteId: st
       {e.requises.length > 0 && <ul className="space-y-2">{e.requises.map((a) => ligne(a, false))}</ul>}
       {e.facultatives.length > 0 && (
         <>
-          <p className="text-sm text-muted-foreground">Jeux facultatifs ajoutés après la validation de ce module : ils ne changent ni votre statut ni votre progression.</p>
+          <p className="text-sm text-muted-foreground">Jeux facultatifs — sans effet sur votre progression.</p>
           <ul className="space-y-2">{e.facultatives.map((a) => ligne(a, true))}</ul>
         </>
       )}
@@ -52,7 +52,11 @@ export function ActivitesModuleBandeau({ onOuvrir }: { onOuvrir: (activiteId: st
 }
 
 /** Libellé du bouton de fin : « Quiz terminé » quand des jeux requis restent. */
-export function libelleFinQuiz(e: EtatActivitesModuleEleve | null): { bouton: string; toast: string } {
+export function libelleFinQuiz(e: EtatActivitesModuleEleve | null, moduleAJeux = false): { bouton: string; toast: string } {
+  // Statut des jeux inconnu (chargement ou lecture échouée) : jamais « Module terminé ».
+  if (e?.etat === "indisponible" || (e === null && moduleAJeux)) {
+    return { bouton: "Quiz terminé — statut des jeux à vérifier", toast: "✅ Quiz enregistré. Statut des jeux momentanément indisponible : vérifiez-le en haut du module." };
+  }
   if (e?.etat === "ok" && e.restantes.length > 0) {
     const n = e.restantes.length;
     return { bouton: `Quiz terminé — ${n} jeu${n > 1 ? "x" : ""} restant${n > 1 ? "s" : ""}`, toast: `✅ Quiz terminé. Il reste ${n} jeu${n > 1 ? "x" : ""} à faire : ${e.restantes.map((a) => a.titre).join(" · ")}` };

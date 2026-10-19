@@ -40,7 +40,7 @@ export function activitesModuleEleve(
 export function libelleJeux(e: EtatActivitesModuleEleve): string | null {
   if (e.etat === "aucune") return null;
   if (e.etat === "indisponible") return "Jeux : statut momentanément indisponible";
-  if (!e.requises.length) return e.facultatives.length ? "Jeux facultatifs (entraînement, ne changent pas votre progression)" : null;
+  if (!e.requises.length) return e.facultatives.length ? "Jeux facultatifs — sans effet sur votre progression" : null;
   const faits = e.requises.length - e.restantes.length;
   const base = `Jeux : ${faits}/${e.requises.length} terminé${faits > 1 ? "s" : ""}`;
   return e.restantes.length ? `${base} — ${e.restantes.length} jeu${e.restantes.length > 1 ? "x" : ""} à faire` : base;

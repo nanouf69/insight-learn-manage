@@ -2058,7 +2058,8 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
-function LibelleFin() { return <>{libelleFinQuiz(useActivitesModule()).bouton}</>; }
+import { demanderJeu } from "@/lib/demandeJeuRegistre";
+function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
@@ -8634,9 +8635,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button size="lg" variant="secondary" className="gap-2" onClick={async () => {
                       const ok = await persistModuleCompletion();
                       onBack();
-                      if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current).toast);
+                      if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
                     }}>
-                      <CheckCircle2 className="w-4 h-4" /> <LibelleFin />
+                      <CheckCircle2 className="w-4 h-4" /> <LibelleFin moduleId={Number(module.id)} />
                     </Button>
                   )}
                 </div>
@@ -9265,9 +9266,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
                                 const ok = await persistModuleCompletion();
                                 onBack();
-                                if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current).toast);
+                                if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
                               }}>
-                                <CheckCircle2 className="w-4 h-4" /> <LibelleFin />
+                                <CheckCircle2 className="w-4 h-4" /> <LibelleFin moduleId={Number(module.id)} />
                               </Button>
                             )}
                             <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={async () => {
@@ -9598,7 +9599,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </div>
 
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
-          <ActivitesModuleBandeau onOuvrir={(id) => window.dispatchEvent(new CustomEvent("ouvrir-jeu-registre", { detail: id }))} />
+          <ActivitesModuleBandeau onOuvrir={demanderJeu} />
           {/* Jeux de cartes de Lyon — activités du module PRATIQUE VTC (8), non notées */}
           {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
             <Suspense fallback={null}>
@@ -9791,10 +9792,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const ok = await persistModuleCompletion();
               if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();
-              toast.success(libelleFinQuiz(activitesEtatRef.current).toast);
+              toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
             }}>
               <CheckCircle2 className="w-4 h-4" />
-              {savingCompletion ? "Enregistrement…" : <LibelleFin />}
+              {savingCompletion ? "Enregistrement…" : <LibelleFin moduleId={Number(module.id)} />}
             </Button>
 
           )}
