@@ -8,7 +8,7 @@
    - Exemple : 20 h réalisées sur 60 h prévues → seuil 30 h, reste 10 h.
    - À 30 h sur 60 h, le bandeau disparaît. Les minutes seront conservées dans l'affichage.
 
-2. **Dernier jalon terminé** : rappeler ce même message après confirmation des validations par le serveur, si le seuil reste non atteint. Le rappel sera refermable et ne bloquera ni la sortie ni la fin de formation. Une simple demande de validation ou un compteur en attente ne déclenchera pas ce rappel.
+2. **Dernier jalon terminé** : rappeler ce même message au retour à l'accueil après le dernier jalon, après relecture des validations par le serveur et actualisation des heures, si le seuil reste non atteint. Le rappel sera refermable et ne bloquera ni la sortie ni la fin de formation. Une simple demande de validation ou un compteur en attente ne déclenchera pas ce rappel ; il ne sera pas répété à chaque affichage.
 
 3. **Fiche CRM** : ajouter en rouge « Seuil 50 % non atteint » sous **TAUX E-LEARNING**, sans remplacer les heures ou le taux actuels.
 
@@ -25,7 +25,7 @@
 | `src/lib/seuilElearning.ts` — nouveau | Calcul commun d'avertissement : seuil, heures restantes et état indisponible. |
 | `src/hooks/useSeuilsElearningCRM.ts` — nouveau | Lecture groupée et paginée des heures nécessaires au filtre, sans charger une fiche complète par stagiaire. |
 | `src/lib/elearningHoursEvidence.ts` — nouveau, et `src/hooks/useApprenantTauxRealisation.ts` | Réutilisation à l'identique du calcul actuel des heures e-learning pour la lecture groupée : aucun changement de formule, de période ou de preuves retenues. |
-| `src/test/seuil-elearning.test.ts` et tests ciblés des affichages/du filtre | Vérifications fictives des nouvelles règles et de la parité des heures. |
+| `src/test/seuil-elearning.test.ts`, `src/test/crm-seuil-elearning.test.tsx` — nouveaux | Vérifications fictives des nouvelles règles, du rappel final, du filtre et de la parité des heures. |
 | `roadmap.md`, journal daté dans `docs/`, `AGENTS.md` | Périmètre, résultats des contrôles et règle de source commune. |
 
 ## Ce qui restera strictement inchangé
