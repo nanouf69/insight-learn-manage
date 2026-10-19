@@ -1306,6 +1306,8 @@ interface ModuleDetailViewProps {
   hideFormulaires?: boolean;
   onTrackCours?: (moduleId: number, coursTitle: string) => void;
   onLearnerActivity?: () => void;
+  /** Jeux du registre pour CE module (élève) ; null = chargement/aperçu. Affichage seulement. */
+  activitesEtat?: EtatActivitesModuleEleve | null;
   apprenantInfo?: {
     nom?: string;
     prenom?: string;
@@ -2054,6 +2056,9 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
 };
 
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
+import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
+import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
+function LibelleFin() { return <>{libelleFinQuiz(useActivitesModule()).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
@@ -4263,7 +4268,9 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity, activitesEtat = null }: ModuleDetailViewProps) => {
+  const activitesEtatRef = useRef(activitesEtat);
+  activitesEtatRef.current = activitesEtat;
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
   // Cleanup mode plein écran à la sortie du composant
@@ -8627,9 +8634,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button size="lg" variant="secondary" className="gap-2" onClick={async () => {
                       const ok = await persistModuleCompletion();
                       onBack();
-                      if (ok) toast.success("🎉 Module terminé !");
+                      if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current).toast);
                     }}>
-                      <CheckCircle2 className="w-4 h-4" /> Terminé
+                      <CheckCircle2 className="w-4 h-4" /> <LibelleFin />
                     </Button>
                   )}
                 </div>
@@ -9258,9 +9265,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
                                 const ok = await persistModuleCompletion();
                                 onBack();
-                                if (ok) toast.success("🎉 Module terminé !");
+                                if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current).toast);
                               }}>
-                                <CheckCircle2 className="w-4 h-4" /> Terminé
+                                <CheckCircle2 className="w-4 h-4" /> <LibelleFin />
                               </Button>
                             )}
                             <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={async () => {
@@ -9590,6 +9597,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
 
+          {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
+          <ActivitesModuleBandeau onOuvrir={(id) => window.dispatchEvent(new CustomEvent("ouvrir-jeu-registre", { detail: id }))} />
+          {/* Jeux de cartes de Lyon — activités du module PRATIQUE VTC (8), non notées */}
+          {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
+            <Suspense fallback={null}>
+              <JeuxCartesLyon compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
+
           {/* Grilles d'évaluation pratique (tous les passages) */}
           {[6, 8].includes(Number(module.id)) && apprenantId && (
             <GrillesPratiqueApprenant
@@ -9601,12 +9617,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             />
           )}
 
-          {/* Jeux de cartes de Lyon — entraînement complémentaire du module PRATIQUE VTC (8), non noté */}
-          {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
-            <Suspense fallback={null}>
-              <JeuxCartesLyon compteId={apprenantId ?? null} />
-            </Suspense>
-          )}
 
           {/* Print all revision sheets button for modules 70-73 */}
           {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
@@ -9781,10 +9791,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const ok = await persistModuleCompletion();
               if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();
-              toast.success("🎉 Module terminé !");
+              toast.success(libelleFinQuiz(activitesEtatRef.current).toast);
             }}>
               <CheckCircle2 className="w-4 h-4" />
-              {savingCompletion ? "Enregistrement…" : "Terminé"}
+              {savingCompletion ? "Enregistrement…" : <LibelleFin />}
             </Button>
 
           )}
@@ -9845,7 +9855,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <Button variant="outline" onClick={() => window.location.reload()}>Recharger</Button>
           </div>
         ) : (
-          <LearnerPreview secureMode />
+          <ActivitesModuleContext.Provider value={activitesEtat}>
+            <LearnerPreview secureMode />
+          </ActivitesModuleContext.Provider>
         )}
       </div>
     );
