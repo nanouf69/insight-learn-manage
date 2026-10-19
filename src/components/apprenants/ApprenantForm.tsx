@@ -205,6 +205,8 @@ export function ApprenantForm() {
     "ta-e-presentiel": "ta-e-presentiel",
     "continue-vtc": "vtc",
     "continue-taxi": "taxi",
+    "pratique-taxi": "taxi",
+    "pratique-vtc": "vtc",
     "marketing-digital-24h": "marketing-digital",
     "marketing-digital-26h": "marketing-digital",
     "marketing-digital-28h": "marketing-digital",
@@ -771,12 +773,12 @@ export function ApprenantForm() {
                     <SelectLabel>Formations Continues</SelectLabel>
                     <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                     <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                    <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Formations pratiques seules</SelectLabel>
                     <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
                     <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
-                    <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Marketing Digital</SelectLabel>
@@ -845,12 +847,12 @@ export function ApprenantForm() {
                       <SelectLabel>Formations Continues</SelectLabel>
                       <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
                       <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                      <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Formations pratiques seules</SelectLabel>
                       <SelectItem value="pratique-taxi">Formation pratique TAXI - 299 € (module PRATIQUE TAXI uniquement)</SelectItem>
                       <SelectItem value="pratique-vtc">Formation pratique VTC - 249 € (module PRATIQUE VTC uniquement)</SelectItem>
-                      <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Marketing Digital</SelectLabel>
