@@ -44,6 +44,7 @@ import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboar
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
+import { activitesModuleEleve, libelleJeux, jeuxRestants, type EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -1895,6 +1896,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         <ErrorBoundary>
           <StableModuleDetailView
             module={selectedModule}
+            activitesEtat={completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
+              ? activitesModuleEleve(selectedModule.id, modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises), moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)
+              : null}
             onBack={handleBackFromModule}
             studentOnly
             apprenantId={apprenant?.id || null}
