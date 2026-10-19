@@ -94,7 +94,18 @@ Deno.serve(async (req) => {
       _role: "admin",
     });
 
-    if (apprenantError || !apprenant || (apprenant.auth_user_id !== user.id && isAdmin !== true)) {
+    // Dossier lié (émargement seulement) : lien explicite posé par l'Admin, jamais déduit de l'e-mail.
+    let isLinked = false;
+    if (apprenant && !apprenant.auth_user_id && apprenant.auth_user_id !== user.id) {
+      const { data: lien } = await supabase
+        .from("emargement_dossiers_lies")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .eq("apprenant_id", apprenantId)
+        .maybeSingle();
+      isLinked = Boolean(lien);
+    }
+    if (apprenantError || !apprenant || (apprenant.auth_user_id !== user.id && isAdmin !== true && !isLinked)) {
       return json({ error: "Accès apprenant refusé" }, 403);
     }
     const ownerUserId = String(apprenant.auth_user_id || user.id);

@@ -906,6 +906,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementPratiquePending, setEmargementPratiquePending] = useState(false);
   const [emargementExtraCreneaux, setEmargementExtraCreneaux] = useState<CreneauKey[]>([]);
   const [emargementIsPratique, setEmargementIsPratique] = useState(false);
+  const [emargementApprenantId, setEmargementApprenantId] = useState<string | null>(null);
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
@@ -1345,6 +1346,41 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         getExpectedPratiqueEmargements(apprenant.id),
       ]);
       if (cancelled) return;
+
+      // Dossiers liés par l'Admin (émargement seulement, ex. dossier présentiel sans compte) :
+      // la feuille PRATIQUE à signer de ce dossier est proposée, signée sous SON identifiant.
+      const { data: liens } = await supabase
+        .from("emargement_dossiers_lies" as any)
+        .select("apprenant_id")
+        .eq("auth_user_id", user.id);
+      for (const lien of ((liens as any[]) || [])) {
+        const lieId = String(lien?.apprenant_id || "");
+        if (!lieId || lieId === apprenant.id) continue;
+        const lieExpected = await getExpectedPratiqueEmargements(lieId);
+        if (cancelled) return;
+        if (lieExpected.length === 0) continue;
+        const { data: lieSigned, error: lieErr } = await supabase
+          .from("emargements_fc" as any)
+          .select("date_emargement, demi_journee, signature_data_url, absent").filter("masque", "eq", false)
+          .eq("apprenant_id", lieId);
+        if (cancelled) return;
+        if (lieErr) throw lieErr;
+        const lieSet = new Set<string>(((lieSigned as any[]) || [])
+          .filter((r: any) => Boolean(String(r.signature_data_url || "").trim()) || r.absent === true)
+          .map((r: any) => `${r.date_emargement}|${r.demi_journee}`));
+        const pending = lieExpected.filter((e) => !lieSet.has(`${e.date}|${e.creneau}`));
+        const lieNext = pending.find((e) => e.date === todayStr) || pending[0];
+        if (!lieNext) continue;
+        setEmargementApprenantId(lieId);
+        setEmargementIsPratique(true);
+        setEmargementPratiquePending(true);
+        setEmargementExtraCreneaux(pending.filter((e) => e.date === lieNext.date && e.creneau !== lieNext.creneau).map((e) => e.creneau));
+        setEmargementCreneau(lieNext.creneau);
+        setEmargementDate(lieNext.date);
+        setEmargementFCStatus("needed");
+        return;
+      }
+      setEmargementApprenantId(null);
 
       const merged = new Map<string, { date: string; creneau: CreneauKey }>();
       for (const e of [...baseExpected, ...pratiqueExpected]) merged.set(`${e.date}|${e.creneau}`, e);
@@ -1794,7 +1830,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const modalSignature = signatureEnAttente && showSignatureModal && emargementFCStatus === "needed" && emargementCreneau ? (
     <EmargementFCModal
       key={`${emargementDate || "today"}|${emargementCreneau}`}
-      apprenantId={apprenant!.id!}
+      apprenantId={emargementApprenantId || apprenant!.id!}
       userId={effectiveUserId!}
       apprenantNom={apprenant!.nom}
       apprenantPrenom={apprenant!.prenom}
