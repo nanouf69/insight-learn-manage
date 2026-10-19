@@ -31,6 +31,5 @@
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures with learner track; why: no cross-track denominators.
-- Read scoped AGENTS before edits, including src/lib and shared Edge code; why: local rules apply.
+- Read scoped AGENTS before edits (src/lib, shared Edge code, save-emargement-apprenant); why: local rules apply.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
-- Past attendance regularisation: append-only `emargement_regularisations` (one account, one dossier, closed slot list, expiry) checked in save-emargement-apprenant/regularisation.ts; per-slot presence confirmation, never replaces a signature, signed_at = real time; why: no fabricated or backdated attendance.
