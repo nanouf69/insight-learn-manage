@@ -18,6 +18,11 @@ vi.mock('@/lib/suiviFormationIndicateurs', async () => ({
   ...(await vi.importActual<any>('@/lib/suiviFormationIndicateurs')),
   chargerRatioSignatures: async () => state.ratio,
 }));
+// These hook fixtures model already classified practice attendance, not a full CRM planning dataset.
+vi.mock('@/lib/signaturesManquantes', async () => ({
+  ...(await vi.importActual<any>('@/lib/signaturesManquantes')),
+  chargerClassificationSignatures: async () => ({ valides: state.rows.filter(r => !!r.signature_data_url && r.absent !== true).map(r => ({ date:r.date_emargement, creneau:r.demi_journee === 'matin' ? 'Matin' : r.demi_journee === 'apres_midi' ? 'Après-midi' : r.demi_journee })) }),
+}));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: (table: string) => {
     const data = () => table === "apprenants" ? state.learner
@@ -25,7 +30,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
       : table === "apprenant_connexions" ? state.connections
       : table === "apprenant_module_activites" ? state.activities : [];
     const builder: Record<string, unknown> = {};
-    for (const method of ["eq", "filter", "range"]) builder[method] = () => builder;
+    for (const method of ["eq", "filter", "range", "order"]) builder[method] = () => builder;
     builder.select = (columns: string) => { if (table === "emargements_fc") state.selects.push(columns); return builder; };
     builder.maybeSingle = () => builder;
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: data(), error: null }).then(resolve);
@@ -49,7 +54,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   // Keep channels until async cleanup completes, like the actual client.
   removeChannel: vi.fn((channel: unknown) => { state.removed.push(channel); return Promise.resolve("ok"); }),
 }}));
-vi.mock("@/lib/pratiqueSlots", () => ({ fetchPratiqueSlotDetails: async () => [{
+vi.mock("@/lib/pratiqueSlots", async () => ({ ...(await vi.importActual<any>('@/lib/pratiqueSlots')), fetchPratiqueSlotDetails: async () => [{
   date: "2026-10-09", typeFormation: "vtc", reservationCreneau: "journee", minutes: 360,
   parts: [{ creneau: "matin", minutes: 180, label: "9h-12h" }, { creneau: "apres_midi", minutes: 180, label: "13h-16h" }],
 }] }));

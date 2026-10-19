@@ -32,4 +32,5 @@
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures by learner track; why: no cross-track totals.
 - Read scoped AGENTS before edits (src/lib, shared Edge code, save-emargement-apprenant); why: local rules apply.
+- E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.

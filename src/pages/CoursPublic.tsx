@@ -807,6 +807,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [completionsReloadToken, setCompletionsReloadToken] = useState(0);
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
+  const seuilProgressionMemory = useRef<{ owner: string; total: number; termines: number } | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
   const [fetchNonce, setFetchNonce] = useState(0);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
@@ -2343,6 +2344,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                       resultatExamen={apprenant?.resultat_examen}
                       modulesCompleted={completedCount}
                       modulesTotal={progressionDisponible?.total}
+                      formationChoisie={apprenant?.formation_choisie}
+                      progressionMemory={seuilProgressionMemory}
                    />
                  </>
                );

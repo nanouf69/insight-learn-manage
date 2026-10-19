@@ -50,6 +50,7 @@ import { useCandidatModules } from "@/hooks/useCandidatModules";
 import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
+import { seuilElearning } from '@/lib/seuilElearning';
 import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
 import { TauxPresenceSessionsCard, useTauxPresenceHeures } from "@/components/crm/TauxPresenceSessionsCard";
 
@@ -718,6 +719,8 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       ? taux.signatures?.raison ?? `${taux.signatures?.signees} / ${taux.signatures?.attendues} signatures apprenant signées / attendues`
                       : `${formatLearningHours(t.done)} / ${t.req > 0 ? `${t.req}h` : "Heures non renseignées"}`}
                 </div>
+                {t.label === 'Taux e-learning' && seuilElearning(apprenant, taux.doneElearning, taux.reqElearning).etat === 'non_atteint' &&
+                  <p className="mt-2 text-xs font-semibold text-destructive">Seuil 50 % non atteint</p>}
                 {t.strong && taux.totalParSignatures && <div className="mt-1 text-xs text-muted-foreground">Heures prévues : {taux.reqTotal} h · Connexions et quiz exclus du taux total</div>}
                 {t.strong && !taux.totalParSignatures && (
                   <div className={`mt-0.5 text-xs font-medium ${taux.premiereActiviteAt ? "text-primary" : "text-muted-foreground"}`}>

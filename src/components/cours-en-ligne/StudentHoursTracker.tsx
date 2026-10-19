@@ -5,6 +5,11 @@ import { Clock, AlertCircle, CheckCircle2, CalendarDays } from "lucide-react";
 import { useStudentEffectiveHours } from "@/hooks/useStudentEffectiveHours";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
 import { parseFrenchDate } from "@/lib/filterPastDates";
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { dernierJalonConfirme, messageSeuilElearning, seuilElearning } from '@/lib/seuilElearning';
 
 interface StudentHoursTrackerProps {
   apprenantId: string | null | undefined;
@@ -19,6 +24,8 @@ interface StudentHoursTrackerProps {
   modulesCompleted?: number;
   /** Modules obligatoires du parcours */
   modulesTotal?: number;
+  formationChoisie?: string | null;
+  progressionMemory?: MutableRefObject<{ owner: string; total: number; termines: number } | null>;
 }
 
 export type EtatFormation = "terminee" | "presque" | "en_cours";
@@ -53,12 +60,34 @@ export default function StudentHoursTracker({
   resultatExamen,
   modulesCompleted,
   modulesTotal,
+  formationChoisie,
+  progressionMemory,
 }: StudentHoursTrackerProps) {
   const { loading, formattedDone, formattedRemaining, requis, pct, faitHeures } = useStudentEffectiveHours(
     apprenantId,
     typeApprenant,
     { dateDebutFormation, dateFinFormation, dateDebutCoursEnLigne, dateFinCoursEnLigne },
   );
+  const queryClient = useQueryClient();
+  const mounted = useRef(false);
+  const owner = useRef(apprenantId);
+  owner.current = apprenantId;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const [rappel, setRappel] = useState<{ owner: string; message: string } | null>(null);
+  const seuil = seuilElearning({ type_apprenant: typeApprenant, formation_choisie: formationChoisie }, faitHeures, requis, !loading);
+  useEffect(() => {
+    if (!progressionMemory || !apprenantId || modulesCompleted === undefined || modulesTotal === undefined) return;
+    const next = { owner: apprenantId, total: modulesTotal, termines: modulesCompleted };
+    const fin = dernierJalonConfirme(progressionMemory.current, next);
+    progressionMemory.current = next;
+    if (!fin) return;
+    void queryClient.refetchQueries({ queryKey: ['apprenant-taux-realisation', apprenantId], type: 'active' }).then(() => {
+      const state = queryClient.getQueryState(['apprenant-taux-realisation', apprenantId]);
+      const hours = queryClient.getQueryData<{ doneElearning: number; reqElearning: number }>(['apprenant-taux-realisation', apprenantId]);
+      const fresh = seuilElearning({ type_apprenant: typeApprenant, formation_choisie: formationChoisie }, hours?.doneElearning, hours?.reqElearning, state?.status === 'success');
+      if (mounted.current && owner.current === apprenantId && progressionMemory.current?.owner === apprenantId && fresh.etat === 'non_atteint') setRappel({ owner: apprenantId, message: messageSeuilElearning(fresh) });
+    });
+  }, [apprenantId, modulesCompleted, modulesTotal, progressionMemory, queryClient, typeApprenant, formationChoisie]);
 
   // Si l'élève a déjà un résultat à l'examen théorique (admis/ajourné), on ne le réinscrit pas
   const examAlreadyTaken = (() => {
@@ -85,6 +114,16 @@ export default function StudentHoursTracker({
   const displayPct = Math.min(100, Math.round(pct));
 
   return (
+    <>
+    {seuil.etat === 'non_atteint' && <div role="status" className="mb-4 flex items-start gap-3 border-l-4 border-destructive bg-destructive/10 px-4 py-3 text-sm text-foreground">
+      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+      <p>{messageSeuilElearning(seuil)}</p>
+    </div>}
+    <Dialog open={rappel?.owner === apprenantId} onOpenChange={open => { if (!open) setRappel(null); }}>
+      <DialogContent><DialogHeader><DialogTitle>Temps e-learning à compléter</DialogTitle><DialogDescription>{rappel?.message}</DialogDescription></DialogHeader>
+        <Button onClick={() => setRappel(null)}>Continuer</Button>
+      </DialogContent>
+    </Dialog>
     <Card className="mb-8 border shadow-sm overflow-hidden">
       <CardContent className="p-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -203,5 +242,6 @@ export default function StudentHoursTracker({
         })()}
       </CardContent>
     </Card>
+    </>
   );
 }
