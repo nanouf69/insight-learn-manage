@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Avertissement e-learning 50 % — 19/10 15:43 UTC
+- [ ] Présenter le périmètre exact et obtenir l'accord avant code.
+- [ ] Après accord : bandeau accueil élève + rappel dernier jalon, indicateur TAUX E-LEARNING et filtre admin, sources horaires inchangées.
+- [ ] Tests fictifs seuil strict/erreurs/parcours/dernier jalon, contrôle non-régression et journal ; aucun blocage ni écriture pédagogique.
+
 ## Écarts émargements — 17/10 12:52 UTC
 - [x] Horaires planning pratique prioritaires, journée et demi-journée ; générateur futur sans reprise rétroactive.
 - [x] Signatures listes d’attente et historique masqué classés à examiner, sans faux présentiel ni fausse absence.
