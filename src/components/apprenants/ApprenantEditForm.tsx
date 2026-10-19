@@ -464,7 +464,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     "passerelle-vtc-elearning": "va-e",
     "vtc-e-presentiel": "vtc-e-presentiel",
     "taxi-e-presentiel": "taxi-e-presentiel",
-    "ta-e-presentiel": "ta-e-presentiel"
+    "ta-e-presentiel": "ta-e-presentiel",
+    "pratique-taxi": "taxi",
+    "pratique-vtc": "vtc"
   };
 
   const normalizedFormType = normalizeTypeApprenant(formData.type_apprenant);
@@ -507,6 +509,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     if (newType && DEFAULT_MODULES_BY_TYPE[newType]) {
       setHasTouchedModules(false);
       setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[newType]]);
+    }
+    // Formation pratique seule : uniquement le module PRATIQUE de la filière.
+    if (value === "pratique-taxi" || value === "pratique-vtc") {
+      setHasTouchedModules(true);
+      setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
     }
     
     if (value === "vtc" || value === "vtc-exam") {

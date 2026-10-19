@@ -223,6 +223,8 @@ const formationLabels: Record<string, string> = {
   'taxi-e-presentiel': 'Formation TAXI E-learning + Présentiel - 1 799 €',
   'ta-e-presentiel': 'Formation TA E-learning + Présentiel - 999 €',
   'demande-carte-vtc-equivalence': 'Demande de carte VTC par équivalence - 100 €',
+  'pratique-taxi': 'Formation pratique TAXI - 299 €',
+  'pratique-vtc': 'Formation pratique VTC - 249 €',
 };
 
 const creneauLabels: Record<string, string> = {
