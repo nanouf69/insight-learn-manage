@@ -296,6 +296,16 @@ function JeuLieux({ compteId, agrandi }: { compteId?: string | null; agrandi?: b
 export default function JeuxCartesLyon({ compteId }: { compteId?: string | null }) {
   const [ouvert, setOuvert] = useState<null | "arr" | "lieux">(null);
   const [agrandi, setAgrandi] = useState(false);
+  // Ouverture demandée par le bandeau des jeux du module (identifiants du registre).
+  useEffect(() => {
+    const f = (ev: Event) => {
+      const id = (ev as CustomEvent<string>).detail;
+      const cible = id === JEUX_LYON[0].id ? "arr" : id === JEUX_LYON[1].id ? "lieux" : null;
+      if (cible) { setOuvert(cible); setAgrandi(false); }
+    };
+    window.addEventListener("ouvrir-jeu-registre", f);
+    return () => window.removeEventListener("ouvrir-jeu-registre", f);
+  }, []);
   const jeux = [
     { id: "arr" as const, titre: "Lyon : arrondissements et quartiers", desc: "Placez les 9 arrondissements puis les principaux quartiers sur la carte.", Icone: MapIcon },
     { id: "lieux" as const, titre: "Lyon : monuments, musées et lieux touristiques", desc: `Placez ${LYON_GEO.lieux.length} lieux et retenez leur quartier et arrondissement.`, Icone: Landmark },

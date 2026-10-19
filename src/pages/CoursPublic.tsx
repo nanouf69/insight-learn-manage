@@ -44,6 +44,7 @@ import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboar
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
+import { activitesModuleEleve, libelleJeux, jeuxRestants, type EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { useConnexionEleveConfirmee } from "@/hooks/useConnexionEleveConfirmee";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -1895,6 +1896,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         <ErrorBoundary>
           <StableModuleDetailView
             module={selectedModule}
+            activitesEtat={completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
+              ? activitesModuleEleve(selectedModule.id, modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises), moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)
+              : null}
             onBack={handleBackFromModule}
             studentOnly
             apprenantId={apprenant?.id || null}
@@ -2091,6 +2095,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const remainingIds = new Set(progressionDisponible?.restants.map((m) => m.id) ?? []);
   const remainingModules = progressionDisponible ? modules.filter((m) => remainingIds.has(m.id)) : [];
   const doneModules = progressionDisponible ? modules.filter((m) => !remainingIds.has(m.id) && !exceptionModulesEleve(apprenant?.id)?.rubriquesHorsCompteur.includes(m.id)) : [];
+  // Jeux du registre par module : même source que le compteur (requis/dispensés/facultatifs), lecture seule.
+  const activitesParModule: Record<number, EtatActivitesModuleEleve> = progressionModules
+    ? Object.fromEntries(modules.map((m) => [m.id, activitesModuleEleve(m.id, modules, moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)]))
+    : {};
   const inProgressModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone && moduleProgressById[m.id]?.hasProgress);
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
@@ -2472,6 +2480,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                   ⏳ Validation en cours
                                 </Badge>
                               )}
+                              {jeuxRestants(activitesParModule[mod.id]) > 0 && (
+                                <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0" data-testid={`badge-a-terminer-${mod.id}`}>
+                                  À terminer
+                                </Badge>
+                              )}
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-2">
                               {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
@@ -2479,11 +2492,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                   ? (examBlancStatsById[mod.id].completed > 0
                                     ? `📊 ${examBlancStatsById[mod.id].completed}/${examBlancStatsById[mod.id].total} examens blancs réalisés`
                                     : mod.description)
+                                  : activitesParModule[mod.id] && activitesParModule[mod.id].etat !== "aucune"
+                                    ? (moduleQuizStatsById[mod.id]?.totalQuizzes > 0
+                                      ? `📊 Quiz : ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} terminé${moduleQuizStatsById[mod.id].completedQuizzes > 1 ? "s" : ""}${moduleQuizStatsById[mod.id].remainingLabels.length ? ` — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ")}` : ""}`
+                                      : mod.description)
                                   : moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
                                     ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
                                     : mod.description
                               )}
                             </p>
+                            {!locked && activitesParModule[mod.id] && libelleJeux(activitesParModule[mod.id]) && (
+                              <div className="mt-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs" data-testid={`jeux-statut-${mod.id}`}>
+                                <p className="font-semibold text-primary">🗺️ {libelleJeux(activitesParModule[mod.id])}</p>
+                                {activitesParModule[mod.id].etat === "ok" && (activitesParModule[mod.id] as any).restantes.length > 0 && (
+                                  <p className="text-foreground mt-0.5">À faire : {(activitesParModule[mod.id] as any).restantes.map((a: any) => a.titre).join(" · ")} — ouvrez le module pour jouer</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="shrink-0 flex items-center gap-2">
                             {!locked && examBlancStatsById[mod.id] && examBlancStatsById[mod.id].completed > 0 && (
@@ -2572,6 +2597,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                 </span>
                               )}
                             </p>
+                            {!introLockedDone && activitesParModule[mod.id]?.etat === "ok" && (activitesParModule[mod.id] as any).facultatives.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-0.5" data-testid={`jeux-facultatifs-${mod.id}`}>
+                                🗺️ Jeux facultatifs ajoutés après votre validation : {(activitesParModule[mod.id] as any).facultatives.map((a: any) => `${a.titre}${a.termine ? " (fait)" : ""}`).join(" · ")}
+                              </p>
+                            )}
                           </div>
                           <div className="shrink-0">
                             {introLockedDone ? (
