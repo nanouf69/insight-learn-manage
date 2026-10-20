@@ -9026,9 +9026,9 @@ export type Database = {
       reconcilier_inscriptions_pratique: {
         Args: { p_depuis?: string }
         Returns: {
-          apprenant_id: string
-          date_pratique: string
-          session_id: string
+          out_apprenant_id: string
+          out_date_pratique: string
+          out_session_id: string
         }[]
       }
       releve_demander_resolution: { Args: never; Returns: undefined }
