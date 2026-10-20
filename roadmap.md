@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Panneau mail échec — 20/10 15:17 UTC
-- [ ] Corriger l’aperçu et le statut des documents existants de même examen, toutes versions ; aucun double envoi, écriture ou publication.
-- [ ] Tests ciblés et contrôle connecté en lecture seule, journal des preuves.
+- [x] Aperçu et statut des documents existants de même examen, toutes versions ; aucun double envoi, écriture ou publication.
+- [x] 50 tests PASS, compilation automatique OK ; contrôle CRM connecté : aperçu visible sans appel fonction, six mails envoyés et deux signés affichés, cases protégées. Journal conservé.
 
 ## Prévention générale QRC — 20/10 09:53 UTC
 - [x] Diagnostic frais, réservation atomique, un item streamé par invocation, continuation bornée nouveaux passages seulement ; aucun traitement historique.
