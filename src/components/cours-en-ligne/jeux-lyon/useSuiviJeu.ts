@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { enqueueAnswerSave, flushAnswerSavesAndWait } from "@/lib/answerPersistence";
 import { EXERCICE_TYPE_JEU } from "@/lib/jeuxPedagogiques";
+import { freshSessionCall } from "@/lib/sessionRpc";
 
 export type EtatSuivi = "inconnu" | "a_faire" | "envoi" | "attente_locale" | "confirme" | "lecture_impossible";
 
@@ -13,13 +14,18 @@ export function useSuiviJeu(compteId: string | null | undefined, exerciceId: str
 
   const relire = useCallback(async () => {
     if (!compteId) { setEtat("inconnu"); return null; }
-    const { data, error } = await supabase.from("reponses_apprenants")
-      .select("completed, reponses").eq("apprenant_id", compteId).eq("exercice_id", exerciceId).maybeSingle();
+    try {
+    const { data, error } = await freshSessionCall(() => supabase.from("reponses_apprenants")
+      .select("completed, reponses").eq("apprenant_id", compteId).eq("exercice_id", exerciceId).maybeSingle());
     if (error) { setEtat("lecture_impossible"); return null; }
     setReponses(((data as any)?.reponses as Record<string, unknown>) ?? {});
     setEtat((data as any)?.completed === true ? "confirme" : "a_faire");
     if ((data as any)?.completed === true) window.dispatchEvent(new Event("activite-registre-confirmee"));
     return data as any;
+    } catch {
+      setEtat("lecture_impossible");
+      return null;
+    }
   }, [compteId, exerciceId]);
 
   // Changement de compte : état réinitialisé puis relu pour le nouveau compte uniquement.

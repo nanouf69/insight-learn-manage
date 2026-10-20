@@ -1,5 +1,7 @@
 # Shared Edge code
 
+- QRC AI recovery uses append-only retry receipts, atomic server claims and publication; active expired work requires confirmed interruption; why: preserve original traces and prevent concurrent billing or overwriting definitive corrections.
+
 - Registration upload validates authenticated owner/admin or scoped onboarding HMAC, immutable UUID/content hash and explicit acknowledgement; why: retries never duplicate or replace prior versions.
 
 - Theory-fail mail + practice choice (VTC/TAXI/TA by filiereDepuisDossier; continue/PA/RP/unknown blocked): template in `supabase/functions/_shared/modeleEchecChoixPratique.ts` (re-exported to src); prepare/send only via Edge `envoi-echec-choix-pratique` (admin, eligibility re-read in DB, unique per learner+exam date+version, atomic claim, unknown outcome = `indetermine`, never auto-resent); signing via `document-signature-public` using frozen identity/text/mail snapshot and server PNG validation; immutable trigger; why: no duplicate mail, proofs never follow later file edits.

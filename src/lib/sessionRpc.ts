@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { assurerSessionFraiche, SESSION_EXPIREE_MESSAGE } from '@/lib/sessionExpiree';
 
 export const authFailure = (error: { code?: string; status?: number; message?: string } | null) =>
-  !!error && (['42501', 'PGRST301', 'PGRST302'].includes(error.code ?? '') || error.status === 401 || /jwt|session expir/i.test(error.message ?? ''));
+  !!error && (['42501', 'PGRST301', 'PGRST302', 'PGRST303'].includes(error.code ?? '') || error.status === 401 || /jwt|session expir/i.test(error.message ?? ''));
 
 /** A retry only after verified refresh, never anonymous and never under another account. */
 export async function freshSessionCall<T>(call: () => PromiseLike<T>, owner?: string): Promise<T> {

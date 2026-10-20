@@ -674,9 +674,9 @@ export function classifyAnswerSaveFailure(
   }
 
   // Session expirée : l'élève doit se reconnecter, réponses conservées.
-  if (status === 401 || t.includes("unauthorized") || t.includes("jwt")) {
+  if (status === 401 || t.includes("unauthorized") || t.includes("jwt") || t.includes("pgrst303")) {
     return {
-      definitif: true,
+      definitif: false,
       reason: "forbidden",
       message:
         "Session expirée, reconnectez-vous. Vos réponses restent affichées et conservées sur cet appareil.",
@@ -823,6 +823,13 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     }
     const text = await res.text();
     console.error("[answerPersistence] Échec sauvegarde", { operation: item.id, status: res.status });
+    // Expiration : une seule demande de renouvellement, puis renvoi espacé
+    // par le worker existant. Une réponse n'est jamais un refus définitif ici.
+    if (res.status === 401 || /pgrst303|jwt\s*expired/i.test(text)) {
+      const frais = await assurerSessionFraiche(Number.MAX_SAFE_INTEGER);
+      if (frais && authUserId === compteAvant && jetonAppartientA(frais, authUserId)) authToken = frais;
+      return "retry";
+    }
     // Un refus DÉFINITIF n'est jamais renvoyé en boucle : l'élément est
     // conservé (aucune réponse n'est supprimée) et l'apprenant voit la vraie
     // raison. Une erreur TEMPORAIRE reste en file et sera réessayée.

@@ -6,7 +6,7 @@ import { canonicalAppUrl } from '@/lib/canonicalOrigin';
 const fixture = vi.hoisted(() => ({ owner: 'synthetic-A', token: 'synthetic-token', refreshed: true }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: fixture.owner ? { user: { id: fixture.owner }, access_token: fixture.token } : null } }) } } }));
 vi.mock('@/lib/sessionExpiree', () => ({ SESSION_EXPIREE_MESSAGE: 'Session expirée', assurerSessionFraiche: vi.fn(async () => fixture.refreshed ? fixture.token : null) }));
-import { freshSessionCall, bounded } from '@/lib/sessionRpc';
+import { freshSessionCall, bounded, authFailure } from '@/lib/sessionRpc';
 
 describe('Technical boundaries without learner writes', () => {
   beforeEach(() => { fixture.owner = 'synthetic-A'; fixture.refreshed = true; });
@@ -70,5 +70,16 @@ describe('Technical boundaries without learner writes', () => {
     const promise = bounded(new Promise(() => {}), 50);
     const check = expect(promise).rejects.toThrow('Délai réseau');
     await vi.advanceTimersByTimeAsync(50); await check; vi.useRealTimers();
+  });
+  it('recognizes PGRST303 without message and retries at most once', async () => {
+    expect(authFailure({ code: 'PGRST303' })).toBe(true);
+    const call = vi.fn(async () => ({ error: { code: 'PGRST303' } }));
+    expect((await freshSessionCall(call, 'synthetic-A')).error.code).toBe('PGRST303');
+    expect(call).toHaveBeenCalledTimes(2);
+  });
+  it('never retries expired read after changing account', async () => {
+    const call = vi.fn(async () => { fixture.owner = 'synthetic-B'; return { error: { code: 'PGRST303' } }; });
+    await expect(freshSessionCall(call, 'synthetic-A')).rejects.toThrow('Session expirée');
+    expect(call).toHaveBeenCalledTimes(1);
   });
 });
