@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Changement présentiel vers e-learning — 20/10 15:44 UTC
-- [ ] Réactualiser les indicateurs après changement de mode, supprimer le rouge du total e-learning et garder visibles les présences réelles session/pratique.
-- [ ] Tests de changement sur données fictives et contrôle CRM lecture seule ; aucune modification de présence, ni publication.
+- [x] Identité de lecture liée au mode/heures + invalidation après modification ; total e-learning bleu, jalons rouges, présence session/pratique visible sur les deux modes et taux présentiel basé sur leurs heures prévues.
+- [x] 35 tests PASS dont bascule fictive sur la même fiche montée avec signatures intactes ; compilation automatique OK. CRM Aba-Bakre lu sans écriture : total 75 % bleu, pratique 6/6 = 100 %, session non inscrite, présentiel 6/6 = 100 %. Aucune publication ; pas de changement réel de dossier pour le test.
 
 ## Total présence session + pratique — 20/10 15:39 UTC
 - [x] Total live commun corrigé : heures prévues session + pratique, sans imposer 66 h au soir ; surplus théorie ne compense pas pratique manquante. Preuves et relevés inchangés.
