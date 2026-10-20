@@ -6372,6 +6372,59 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_ia_reprises: {
+        Row: {
+          base: Json
+          created_at: string
+          http_status: number | null
+          id: string
+          lease_until: string
+          message: string | null
+          numero: number
+          qrc_instance_id: string
+          resultat: Json | null
+          run_id: string | null
+          statut: string
+          termine_at: string | null
+        }
+        Insert: {
+          base: Json
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          lease_until?: string
+          message?: string | null
+          numero?: number
+          qrc_instance_id: string
+          resultat?: Json | null
+          run_id?: string | null
+          statut?: string
+          termine_at?: string | null
+        }
+        Update: {
+          base?: Json
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          lease_until?: string
+          message?: string | null
+          numero?: number
+          qrc_instance_id?: string
+          resultat?: Json | null
+          run_id?: string | null
+          statut?: string
+          termine_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qrc_ia_reprises_qrc_instance_id_fkey"
+            columns: ["qrc_instance_id"]
+            isOneToOne: false
+            referencedRelation: "qrc_instances_v2"
+            referencedColumns: ["qrc_instance_id"]
+          },
+        ]
+      }
       qrc_instances: {
         Row: {
           apprenant_id: string
@@ -8815,6 +8868,24 @@ export type Database = {
       qrc_ia_definir_actif: {
         Args: { p_actif: boolean; p_email?: string }
         Returns: Json
+      }
+      qrc_ia_publier_reprise: {
+        Args: {
+          p_id: string
+          p_justification: string
+          p_note: number
+          p_operation: string
+          p_run_id?: string
+        }
+        Returns: Json
+      }
+      qrc_ia_reserver_reprise: {
+        Args: {
+          p_base: Json
+          p_interruption_confirmee?: boolean
+          p_qrc: string
+        }
+        Returns: string
       }
       qrc_pilot_integrity: {
         Args: { p_quiz_id: string }

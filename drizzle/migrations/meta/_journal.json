@@ -1247,6 +1247,20 @@
       "when": 1792418462367,
       "tag": "0177_emargement_regularisation_isam",
       "breakpoints": true
+    },
+    {
+      "idx": 178,
+      "version": "7",
+      "when": 1792485979127,
+      "tag": "0178_qrc_ia_reprises_append_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 179,
+      "version": "7",
+      "when": 1792486129012,
+      "tag": "0179_qrc_reprise_guard_legacy_reservation",
+      "breakpoints": true
     }
   ]
 }

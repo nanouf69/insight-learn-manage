@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Kevin / Jean — 20/10, reprise ciblée autorisée
+- [x] Diagnostic frais : 503 upstream_stall 180 s, appel suivant annulé 70 s, trois QRC encore en attente ; Jean PGRST303 non capturé.
+- [x] Reprise IA atomique bornée, trois QRC uniquement corrigées 20/10 08:50–08:51 UTC ; Q17 intacte, résultat définitif 12.
+- [x] Expiration PGRST303 et rejet lecture jeux corrigés ; 75 tests PASS, compilation OK ; aucune publication frontend.
+- [ ] Ancienne trace Q3 créée à la réservation reste « en_cours » (append-only, non clôturable) : à afficher comme remplacée par la reprise.
+- [ ] Reconnexion réelle et files de la tablette Jean : NON PROUVÉES, appareil inaccessible.
+
 ## Avertissement e-learning 50 % — 19/10 15:43 UTC
 - [x] Périmètre présenté et plan approuvé avant code.
 - [x] Bandeau accueil élève + rappel dernier jalon, indicateur TAUX E-LEARNING et filtre admin, sources horaires inchangées.
