@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Kevin / Jean — 20/10, reprise ciblée autorisée
+- [x] Diagnostic frais : 503 upstream_stall 180 s, appel suivant annulé 70 s, trois QRC encore en attente ; Jean PGRST303 non capturé.
+- [ ] Reprise IA atomique bornée, traces originales conservées, trois QRC uniquement ; déploiement serveur ciblé après tests.
+- [ ] Gestion expiration/rejet lecture jeux, tests fictifs et contrôles avant/après ; aucune publication frontend.
+- [ ] Reconnexion réelle et files de la tablette Jean : NON PROUVÉES, appareil inaccessible.
+
 ## Avertissement e-learning 50 % — 19/10 15:43 UTC
 - [x] Périmètre présenté et plan approuvé avant code.
 - [x] Bandeau accueil élève + rappel dernier jalon, indicateur TAUX E-LEARNING et filtre admin, sources horaires inchangées.
