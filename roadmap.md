@@ -1,10 +1,18 @@
 # Feuille de route
 
+## Affichage questions / publication — 20/10 08:53 UTC
+- [x] Preuves SELECT Kevin et protections Jean ; limites tablette réelle conservées.
+- [x] Cartes agrandies, comparaison présentation uniquement et écran synthétique vérifiés.
+- [x] Bandeau temporaire publié puis retiré du code final.
+- [x] 93 tests/12 fichiers, compilation automatique OK, empreintes actuelles identiques avant/après, publication finale demandée.
+- [x] Déploiement final vérifié : index-P4KrySsp.js, sans bandeau, design présent.
+- [ ] Baseline historique 4fcc… NON REPRODUITE : ancien releve_jalons_gels vide ; source exacte requise.
+
 ## Kevin / Jean — 20/10, reprise ciblée autorisée
 - [x] Diagnostic frais : 503 upstream_stall 180 s, appel suivant annulé 70 s, trois QRC encore en attente ; Jean PGRST303 non capturé.
 - [x] Reprise IA atomique bornée, trois QRC uniquement corrigées 20/10 08:50–08:51 UTC ; Q17 intacte, résultat définitif 12.
 - [x] Expiration PGRST303 et rejet lecture jeux corrigés ; 75 tests PASS, compilation OK ; aucune publication frontend.
-- [ ] Ancienne trace Q3 créée à la réservation reste « en_cours » (append-only, non clôturable) : à afficher comme remplacée par la reprise.
+- [x] Trace Q3 conservée en base, affichée remplacée uniquement avec preuve finale serveur ; tests PASS.
 - [ ] Reconnexion réelle et files de la tablette Jean : NON PROUVÉES, appareil inaccessible.
 
 ## Avertissement e-learning 50 % — 19/10 15:43 UTC

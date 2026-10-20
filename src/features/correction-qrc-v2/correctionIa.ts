@@ -3,6 +3,7 @@
  * Aucune note n'est calculée ici : le serveur décide et écrit.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { reprisesProuvees, type RepriseAffichage } from './repriseAffichage';
 
 export type ConfigIa = { actif: boolean; actif_depuis: string | null; pause_motif: string | null; pause_depuis: string | null };
 export type CorrectionIa = { qrc_instance_id: string; statut: string; motif: string | null; note: number | null; bareme: number | null; justification: string | null; modele: string | null; created_at: string };
@@ -19,6 +20,7 @@ export const LIBELLES_MOTIF_IA: Record<string, string> = {
   resultat_invalide: "Résultat IA invalide",
   hors_bareme: "Note IA hors barème — refusée",
   appel_ia_en_erreur: "Service IA indisponible",
+  remplacee_par_reprise: "Ancienne trace — remplacée par une correction confirmée",
   cle_ia_absente: "Service IA non configuré",
 };
 
@@ -49,6 +51,20 @@ export async function lireCorrectionsIa(qrcIds: string[]): Promise<CorrectionIa[
     const { data } = await supabase.from("qrc_ia_corrections" as any)
       .select("qrc_instance_id, statut, motif, note, bareme, justification, modele, created_at").in("qrc_instance_id", lot);
     out.push(...((data ?? []) as unknown as CorrectionIa[]));
+    const { data: reprises, error } = await supabase.from('qrc_ia_reprises' as any)
+      .select('qrc_instance_id, statut, created_at, termine_at, base, resultat, message').in('qrc_instance_id', lot);
+    if (error) continue; // Existing history remains intact if retry history is unavailable.
+    for (const r of reprisesProuvees((reprises ?? []) as unknown as RepriseAffichage[])) {
+      for (const c of out) {
+        if (c.qrc_instance_id === r.qrc_instance_id && c.statut !== 'appliquee'
+          && Date.parse(c.created_at) < Date.parse(r.termine_at ?? '')) {
+          c.motif = 'remplacee_par_reprise';
+        }
+      }
+      out.push({qrc_instance_id:r.qrc_instance_id,statut:'appliquee',motif:null,
+        note:r.resultat?.note ?? null,bareme:r.base.bareme ?? null,
+        justification:r.message,modele:r.base.modele ?? null,created_at:r.termine_at ?? r.created_at});
+    }
   }
   return out;
 }

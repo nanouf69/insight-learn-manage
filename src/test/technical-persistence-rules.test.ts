@@ -82,4 +82,11 @@ describe('Technical boundaries without learner writes', () => {
     await expect(freshSessionCall(call, 'synthetic-A')).rejects.toThrow('Session expirée');
     expect(call).toHaveBeenCalledTimes(1);
   });
+  it('reads back the original response after one same-account renewal', async () => {
+    const call = vi.fn()
+      .mockResolvedValueOnce({data:null,error:{code:'PGRST303'}})
+      .mockResolvedValueOnce({data:{reponses:{'synthetic-q1':['B']}},error:null});
+    expect(await freshSessionCall(call,'synthetic-A')).toEqual({data:{reponses:{'synthetic-q1':['B']}},error:null});
+    expect(call).toHaveBeenCalledTimes(2);
+  });
 });
