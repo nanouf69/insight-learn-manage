@@ -186,6 +186,11 @@ Deno.serve(async (req) => {
           const text = await result.text;
           if (streamError) throw streamError;
           providerFinished = true;
+          if (await result.finishReason !== "stop") {
+            await finishError(200, "Flux IA incomplet ou refusé", "a_verifier");
+            await finirSuite("a_verifier", "Flux IA incomplet ou refusé ; aucune publication");
+            return json({ ok: false, message: "Flux IA incomplet ou refusé" }, 422);
+          }
           if (!text.trim()) {
             await finishError(200, "Réponse IA vide ou refusée", "a_verifier");
             await finirSuite("a_verifier", "Réponse IA vide ou refusée");
