@@ -110,7 +110,7 @@ describe("Envoi orchestré serveur", () => {
     expect((await envoyer(deps, p.doc.id)).etat).toBe("non_disponible");
     expect(sent).toHaveBeenCalledTimes(1);
     // le lien reste exploitable car le mail a pu partir
-    expect((await soumettre(deps, docs[0].token, "plus_tard", SIG, "ua")).status).toBe(200);
+    expect((await soumettre(deps, docs[0].token, "plus_tard", SIG, "ua", "oui")).status).toBe(200);
   });
   it("timeout → indéterminé ; refus explicite → retour à prêt", async () => {
     const t = fake([base()], async () => { throw new Error("timeout"); });
@@ -136,30 +136,30 @@ describe("Signature et preuve figée", () => {
   it("lien préparé non envoyé = introuvable", async () => {
     const { deps, docs } = fake([base()], ok);
     await preparer(deps, "a1", null);
-    expect((await soumettre(deps, docs[0].token, "plus_tard", SIG, "")).status).toBe(404);
+    expect((await soumettre(deps, docs[0].token, "plus_tard", SIG, "", "oui")).status).toBe(404);
   });
   it("sans choix, choix inconnu, signature vide ou falsifiée → refus", async () => {
     const { deps, tok } = await pret();
-    expect((await soumettre(deps, tok, null, SIG, "")).status).toBe(400);
-    expect((await soumettre(deps, tok, "autre", SIG, "")).status).toBe(400);
+    expect((await soumettre(deps, tok, null, SIG, "", "oui")).status).toBe(400);
+    expect((await soumettre(deps, tok, "autre", SIG, "", "oui")).status).toBe(400);
     expect((await soumettre(deps, tok, "renonce", png(300, 120, false), "")).status).toBe(400);
     expect((await soumettre(deps, tok, "renonce", "data:image/png;base64,AAAA", "")).status).toBe(400);
     expect((await soumettre(deps, tok, "renonce", "data:image/jpeg;base64," + SIG.split(",")[1], "")).status).toBe(400);
   });
   it("2 soumissions concurrentes : une preuve, la 2e = déjà signé, choix inchangé", async () => {
     const { deps, docs, tok } = await pret();
-    const [r1, r2] = await Promise.all([soumettre(deps, tok, "maintenant", SIG, ""), soumettre(deps, tok, "renonce", SIG, "")]);
+    const [r1, r2] = await Promise.all([soumettre(deps, tok, "maintenant", SIG, "", "oui"), soumettre(deps, tok, "renonce", SIG, "", "oui")]);
     expect([r1.body, r2.body].filter((b: any) => b.deja_signe)).toHaveLength(1);
     const gagnant = (r1.body as any).deja_signe ? "renonce" : "maintenant";
     expect(docs[0].choix).toBe(gagnant);
     // 3e appel après coup : rien n'est réécrit
-    await soumettre(deps, tok, gagnant === "renonce" ? "maintenant" : "renonce", SIG, "");
+    await soumettre(deps, tok, gagnant === "renonce" ? "maintenant" : "renonce", SIG, "", "oui");
     expect(docs[0].choix).toBe(gagnant);
   });
   it("identité figée : la fiche modifiée ne change ni la page ni la preuve", async () => {
     const { deps, a, tok } = await pret();
     a[0].nom = "CHANGE"; a[0].prenom = "Autre";
-    await soumettre(deps, tok, "plus_tard", SIG, "");
+    await soumettre(deps, tok, "plus_tard", SIG, "", "oui");
     const d = (await deps.getDocByToken(tok))!;
     expect(vuePublique(d).nom_eleve).toBe("TEST");
     expect(d.reponses.nom).toBe("TEST"); expect(d.reponses.email).toBe("fictif@example.test");
@@ -167,7 +167,7 @@ describe("Signature et preuve figée", () => {
   it("erreur base sans signature réelle → pas de faux « déjà signé »", async () => {
     const { deps, tok } = await pret();
     deps.updateIf = async () => ({ rows: [], error: { code: "42501", message: "x" } });
-    expect((await soumettre(deps, tok, "plus_tard", SIG, "")).status).toBe(500);
+    expect((await soumettre(deps, tok, "plus_tard", SIG, "", "oui")).status).toBe(500);
   });
 });
 
@@ -197,14 +197,14 @@ describe("Mail échec : passage 5 mois en rouge + parcours « Choisir et signer 
   });
   it("plusieurs choix envoyés à la fois → refus", async () => {
     const { deps, tok, docs } = await pret2();
-    expect((await soumettre(deps, tok, ["maintenant", "renonce"], SIG, "")).status).toBe(400);
-    expect((await soumettre(deps, tok, "", SIG, "")).status).toBe(400);
+    expect((await soumettre(deps, tok, ["maintenant", "renonce"], SIG, "", "oui")).status).toBe(400);
+    expect((await soumettre(deps, tok, "", SIG, "", "oui")).status).toBe(400);
     expect(docs[0].choix).toBeNull();
   });
   it("chaque choix valide : choix + signature + date serveur cohérents ; rechargement = déjà signé", async () => {
     for (const choix of ["maintenant", "plus_tard", "renonce"]) {
       const { deps, tok, docs } = await pret2("taxi");
-      const r: any = await soumettre(deps, tok, choix, SIG, "UA");
+      const r: any = await soumettre(deps, tok, choix, SIG, "UA", "oui");
       expect(r.status).toBe(200);
       expect(docs[0].choix).toBe(choix);
       expect((docs[0].reponses as any).choix).toBe(choix);
@@ -212,7 +212,7 @@ describe("Mail échec : passage 5 mois en rouge + parcours « Choisir et signer 
       expect(docs[0].signed_at).toBe("2026-10-16T08:00:00.000Z");
       const vue: any = vuePublique(docs[0]);
       expect(JSON.stringify(vue)).toContain(choix);
-      const again: any = await soumettre(deps, tok, choix === "renonce" ? "maintenant" : "renonce", SIG, "");
+      const again: any = await soumettre(deps, tok, choix === "renonce" ? "maintenant" : "renonce", SIG, "", "oui");
       expect(again.body.deja_signe).toBe(true);
       expect(docs[0].choix).toBe(choix);
     }

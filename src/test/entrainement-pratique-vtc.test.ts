@@ -37,7 +37,7 @@ describe("Choix unique", () => {
   it("formulaire : radiogroup, aucun pré-coché, signature obligatoire, anti double clic", () => {
     expect(form).toContain('role="radiogroup"');
     expect(form).toContain("useState<string | null>(null)");
-    expect(form).toContain("disabled={envoi || !choix || !signature}");
+    expect(form).toContain("disabled={envoi || !choix || !signature");
     expect(form).toContain("verrou.current");
   });
 });
@@ -132,7 +132,7 @@ describe("Serveur : jetons, idempotence, immuabilité", () => {
     expect(edge).toContain("soumettre(deps, token");
   });
   it("vérifie empreinte, choix et signature", () => {
-    expect(edge).toContain("vuePublique(full)");
+    expect(edge).toContain("vuePublique(full");
   });
   it("trigger : signé immuable, aucune suppression, texte/destinataire figés", () => {
     expect(migration).toContain("Preuve signée immuable");
