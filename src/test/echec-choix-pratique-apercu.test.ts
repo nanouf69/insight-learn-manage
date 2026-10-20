@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { docCourant, documentSelectionnable, type DocModele } from "@/components/examens/EnvoiEchecChoixPratiqueDialog";
+import { docCourant, documentSelectionnable, aVersionCourante, type DocModele } from "@/components/examens/EnvoiEchecChoixPratiqueDialog";
 import { MODELE_VERSION } from "@/lib/modeles/entrainementPratiqueVtc";
 
 const candidat = { id: "fictif", nom: "TEST", prenom: "Fictif", date_examen_theorique: "2026-09-29" };
