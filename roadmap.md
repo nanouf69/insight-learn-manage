@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Panneau mail échec — 20/10 15:17 UTC
+- [ ] Corriger l’aperçu et le statut des documents existants de même examen, toutes versions ; aucun double envoi, écriture ou publication.
+- [ ] Tests ciblés et contrôle connecté en lecture seule, journal des preuves.
+
 ## Prévention générale QRC — 20/10 09:53 UTC
 - [x] Diagnostic frais, réservation atomique, un item streamé par invocation, continuation bornée nouveaux passages seulement ; aucun traitement historique.
 - [x] 180 tests Vitest + 8 SQL locaux + 2 flux fictifs PASS ; Deno types PASS, compilation plateforme OK ; fonction déployée et mauvais token refusé 403, empreintes identiques.
