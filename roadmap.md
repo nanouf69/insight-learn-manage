@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Indicateur réinscription — 20/10 15:26 UTC
+- [x] Badges dans Examen et Réussite et panneau mails : réponse signée, attente, inconnu ou lecture indisponible ; aucune inscription déduite, écriture ou publication.
+- [x] 12 tests PASS ; compilation automatique OK ; huit badges Non renseigné contrôlés dans les deux vues connectées, aperçu accessible, zéro appel fonction.
+
 ## Panneau mail échec — 20/10 15:17 UTC
 - [x] Aperçu et statut des documents existants de même examen, toutes versions ; aucun double envoi, écriture ou publication.
 - [x] 50 tests PASS, compilation automatique OK ; contrôle CRM connecté : aperçu visible sans appel fonction, six mails envoyés et deux signés affichés, cases protégées. Journal conservé.
