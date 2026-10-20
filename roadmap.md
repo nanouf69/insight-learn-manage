@@ -1,7 +1,7 @@
 # Feuille de route
 
 ## Dossier bienvenue vert — 20/10 09:50 UTC
-- [ ] Dans Examen et Réussite, afficher le dossier bienvenue vert pour Payé, Dossier complet ou Inscription validée ; affichage uniquement, test ciblé.
+- [x] Dossier bienvenue vert pour Payé, Dossier complet ou Inscription validée ; affichage uniquement, 17 tests PASS, compilation OK. Non publié ; contrôle CRM connecté NON PROUVÉ.
 
 ## Affichage questions / publication — 20/10 08:53 UTC
 - [x] Preuves SELECT Kevin et protections Jean ; limites tablette réelle conservées.
