@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Changement présentiel vers e-learning — 20/10 15:44 UTC
+- [ ] Réactualiser les indicateurs après changement de mode, supprimer le rouge du total e-learning et garder visibles les présences réelles session/pratique.
+- [ ] Tests de changement sur données fictives et contrôle CRM lecture seule ; aucune modification de présence, ni publication.
+
 ## Total présence session + pratique — 20/10 15:39 UTC
 - [x] Total live commun corrigé : heures prévues session + pratique, sans imposer 66 h au soir ; surplus théorie ne compense pas pratique manquante. Preuves et relevés inchangés.
 - [x] 43 tests PASS (journée, soir, TAXI/TA, pratique absente, lecture impossible), compilation automatique OK. Deux fiches connectées lecture seule vérifiées : 46/46 = 100 %, 60/66 = 90,9 %. Non publié ; audit individuel de tous les dossiers NON PROUVÉ.
