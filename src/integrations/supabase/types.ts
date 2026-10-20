@@ -9023,6 +9023,14 @@ export type Database = {
         Args: { p_apprenant: string; p_attente: string }
         Returns: string
       }
+      reconcilier_inscriptions_pratique: {
+        Args: { p_depuis?: string }
+        Returns: {
+          out_apprenant_id: string
+          out_date_pratique: string
+          out_session_id: string
+        }[]
+      }
       releve_demander_resolution: { Args: never; Returns: undefined }
       releve_figer_contenu: { Args: never; Returns: Json }
       releve_sources_apprenant: { Args: { _id: string }; Returns: Json }

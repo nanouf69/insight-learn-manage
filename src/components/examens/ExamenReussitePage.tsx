@@ -1495,7 +1495,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           .from('reservations_pratique')
           .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation, creneau } as any);
       if (error) throw error;
+      // Le planning fait foi : on s'assure côté serveur que la personne est inscrite à la session pratique du jour.
+      try { await (supabase.rpc as any)('reconcilier_inscriptions_pratique', { p_depuis: null }); } catch { /* signalé par le contrôle de cohérence */ }
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session-apprenants-search'] });
       toast.success(`Date ${date} assignée à ${apprenantNom}`);
 
       // Send notification email
