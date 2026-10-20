@@ -145,8 +145,8 @@ export default function DocumentASignerPublic() {
       <ChoixPratiqueForm
         doc={choixDoc}
         recharger={rechargerChoix}
-        soumettre={async (choix, signature) => {
-          const { ok, json } = await appel({ action: "submit", choix, signature });
+        soumettre={async (choix, signature, reinscription, modification) => {
+          const { ok, json } = await appel({ action: modification ? "reviser" : "submit", choix, signature, reinscription });
           return ok ? json : { error: json.error || "Envoi impossible" };
         }}
       />
