@@ -14,7 +14,7 @@ import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { GEL_QUERY_KEY, chargerEtatGel, mentionGel } from "@/lib/releveJalonsGel";
 import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
-import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
+import { modeFormationAffichage } from "@/lib/modeFormationAffichage";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
 
@@ -106,7 +106,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const tableau = tableauAffichageJalons(calcul);
   const heures = heuresEnregistreesJalons(calcul, preuvesFetching ? null : preuves);
   const pct = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
-  const rouge = regleSuiviFormation(apprenant).elearning;
+  const rouge = modeFormationAffichage({ type_apprenant: typeApprenant, formation_choisie: formationChoisie }).jalonsEnRouge;
   const finIncomplete = r.taux < 100 && r.lignes.every((l) => l.obligatoireSansPoids || l.valide);
   return (
     <div className="mt-2 w-full rounded-md border bg-card px-3 py-2">
