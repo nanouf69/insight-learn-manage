@@ -21,7 +21,8 @@ describe("grille de notation conduite — critères demandés", () => {
     expect(tout).toContain("devis");
     expect(tout).toContain("tva");
     expect(tout).toContain("gps");
-    expect(tout).toContain("taximetre");
-    expect(tout).toContain("attente");
+    const taxi = ids("taxi");
+    expect(taxi).toContain("taximetre");
+    expect(taxi).toContain("attente");
   });
 });
