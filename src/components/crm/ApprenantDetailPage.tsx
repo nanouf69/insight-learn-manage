@@ -1,3 +1,4 @@
+import { ChoixPratiqueBadges } from "@/components/crm/apprenant-sections/ChoixPratiqueBadges";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { EdofFinFormationTab } from "@/components/crm/apprenant-sections/EdofFinFormationTab";
@@ -572,6 +573,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   </Badge>
                 );
               })}
+              <ChoixPratiqueBadges apprenantId={apprenant.id} />
             </div>
           </div>
         </div>

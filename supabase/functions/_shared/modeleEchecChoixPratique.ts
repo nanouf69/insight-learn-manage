@@ -6,7 +6,7 @@
  */
 
 export const MODELE_CODE = "echec_theorie_choix_pratique";
-export const MODELE_VERSION = "v3-2026-10-19";
+export const MODELE_VERSION = "v4-2026-10-20";
 export const MODELE_NOM = "Choix entraînement pratique";
 
 export type Filiere = "vtc" | "taxi" | "ta";
@@ -54,6 +54,23 @@ export const CHOIX: ReadonlyArray<{ code: ChoixCode; label: string }> = [
   },
 ];
 
+export type ReinscriptionCode = "oui" | "non";
+export const QUESTION_REINSCRIPTION = {
+  question: "Je me réinscris à l'examen théorique :",
+  options: [
+    { code: "oui" as ReinscriptionCode, label: "Oui" },
+    { code: "non" as ReinscriptionCode, label: "Non" },
+  ],
+};
+/** Délai pendant lequel l'élève peut modifier son choix signé (nouvelle signature conservée à côté). */
+export const DELAI_MODIFICATION_JOURS = 4;
+export const DELAI_MODIFICATION_MS = DELAI_MODIFICATION_JOURS * 24 * 3600 * 1000;
+export const modificationOuverte = (signedAt: string | null | undefined, now: Date) => {
+  const t = signedAt ? Date.parse(signedAt) : NaN;
+  return Number.isFinite(t) && now.getTime() - t <= DELAI_MODIFICATION_MS && now.getTime() >= t;
+};
+export const estReinscriptionValide = (v: unknown): v is ReinscriptionCode => v === "oui" || v === "non";
+
 export const introPratique = (f: Filiere) => [
   `Vous avez suivi la partie théorique de votre formation ${LIBELLE_FILIERE[f]} chez FTRANSPORT SERVICES PRO. Malheureusement, vous n'avez pas obtenu l'examen théorique cette fois-ci.`,
   "Nous vous rappelons que l'entraînement pratique est compris dans votre formation. Vous y avez droit, même sans avoir encore réussi la théorie.",
@@ -83,6 +100,8 @@ export interface TexteFige {
   intro: string[];
   consigne: string;
   choix: { code: ChoixCode; label: string }[];
+  /** Absent des documents antérieurs à v4 : la question n'y a jamais été posée. */
+  reinscription?: { question: string; options: { code: ReinscriptionCode; label: string }[] };
   suite: string[];
   signataire: string[];
 }
@@ -96,6 +115,7 @@ export function texteFige(f: Filiere): TexteFige {
     intro: introPratique(f),
     consigne: CONSIGNE_CHOIX,
     choix: CHOIX.map((c) => ({ ...c })),
+    reinscription: { question: QUESTION_REINSCRIPTION.question, options: QUESTION_REINSCRIPTION.options.map((o) => ({ ...o })) },
     suite: [...SUITE_PRATIQUE],
     signataire: [...SIGNATURE_GERANT],
   };
@@ -177,7 +197,7 @@ ${CHOIX.map((c) => `<li style="margin-bottom:6px">${esc(c.label)}</li>`).join("\
 </ul>
 ${SUITE_PRATIQUE.map(paraSuite).join("\n")}
 <p style="margin:22px 0;text-align:center"><a href="${lien}" target="_blank" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px">Choisir et signer</a></p>
-<p style="margin:0 0 14px;font-size:13px;color:#4b5563">Sur la page sécurisée, votre nom et votre prénom sont déjà indiqués ; vous cochez une seule case, puis vous signez. La date est enregistrée automatiquement. Si le bouton ne fonctionne pas, copiez ce lien : <a href="${lien}">${lien}</a></p>
+<p style="margin:0 0 14px;font-size:13px;color:#4b5563">Sur la page sécurisée, votre nom et votre prénom sont déjà indiqués ; vous cochez une seule case, vous indiquez si vous vous êtes réinscrit à l'examen théorique, puis vous signez. Vous pourrez modifier votre choix pendant 4 jours après la signature. La date est enregistrée automatiquement. Si le bouton ne fonctionne pas, copiez ce lien : <a href="${lien}">${lien}</a></p>
 <p style="margin:0 0 14px">Nous restons à votre disposition pour toute question.</p>
 <p style="margin:0 0 4px">Cordialement,</p>
 <p style="margin:0">${SIGNATURE_GERANT.map(esc).join("<br>")}</p>

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { lienActif, vuePublique, soumettre } from "../_shared/echecChoixPratiqueCore.ts";
+import { lienActif, vuePublique, soumettre, reviser } from "../_shared/echecChoixPratiqueCore.ts";
 import { depsSupabase } from "../_shared/echecChoixPratiqueDeps.ts";
 
 const corsHeaders = {
@@ -18,7 +18,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, token, reponses, choix, signature } = await req.json();
+    const { action, token, reponses, choix, signature, reinscription } = await req.json();
     if (!token || typeof token !== "string" || token.length < 10 || token.length > 200) {
       return json({ error: "Lien invalide" }, 400);
     }
@@ -43,9 +43,13 @@ serve(async (req) => {
       const deps = depsSupabase(supabase);
       const full = await deps.getDocByToken(token);
       if (!full || !lienActif(full)) return json({ error: "Document introuvable ou lien expiré" }, 404);
-      if (action === "get") return json({ document: vuePublique(full) });
+      if (action === "get") return json({ document: vuePublique(full, full.statut === "signe" ? await deps.listRevisions!(full.id) : []) });
+      if (action === "reviser") {
+        const r = await reviser(deps, token, choix, signature, req.headers.get("user-agent") || "", reinscription);
+        return json(r.body, r.status);
+      }
       if (action === "submit") {
-        const r = await soumettre(deps, token, choix, signature, req.headers.get("user-agent") || "");
+        const r = await soumettre(deps, token, choix, signature, req.headers.get("user-agent") || "", reinscription);
         return json(r.body, r.status);
       }
       return json({ error: "Action inconnue" }, 400);

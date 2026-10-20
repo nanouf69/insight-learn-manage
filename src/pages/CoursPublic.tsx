@@ -1,3 +1,4 @@
+import { MonChoixPratique } from "@/components/cours-en-ligne/MonChoixPratique";
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import MonDossierFormation from "@/components/cours-en-ligne/MonDossierFormation";
@@ -2336,6 +2337,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                    <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                    {apprenant?.id && <ModuleChangeNotificationsBanner apprenantId={apprenant.id} />}
+                   {apprenant?.id && <MonChoixPratique apprenantId={apprenant.id} />}
                    <ModulesProgressionEleve
                      progression={progressionModules}
                      estVerrouille={(id) => isModuleLocked(id)}

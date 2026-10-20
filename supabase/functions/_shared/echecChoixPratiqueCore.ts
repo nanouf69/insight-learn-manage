@@ -6,7 +6,7 @@
  */
 import {
   MODELE_CODE, MODELE_VERSION, MODELE_NOM, MODELE_FILE_PATH, CHOIX,
-  texteFige, construireMailEchec, eligibiliteServeur,
+  texteFige, construireMailEchec, eligibiliteServeur, estReinscriptionValide, modificationOuverte,
 } from "./modeleEchecChoixPratique.ts";
 import { validerSignaturePng } from "./signaturePng.ts";
 
@@ -21,7 +21,7 @@ export interface DocDb {
   mail_objet_fige: string | null; mail_html_fige: string | null; envoi_etat: string | null;
   envoi_tente_le: string | null; envoye_le: string | null; envoi_erreur: string | null;
   destinataire_email: string | null; destinataire_nom: string | null;
-  choix: string | null; signe_le_paris: string | null; signed_at: string | null; reponses: any;
+  choix: string | null; reinscription_examen?: string | null; signe_le_paris: string | null; signed_at: string | null; reponses: any;
 }
 export type ResultatEnvoiFournisseur =
   | { issue: "accepte" }
@@ -43,6 +43,9 @@ export interface Deps {
   updateIf(id: string, patch: Record<string, unknown>, cond: { envoi_etat?: string; statutNot?: string }): Promise<{ rows: DocDb[]; error?: { code?: string; message: string } }>;
   envoyerMail(p: { to: string; subject: string; html: string; apprenantId: string }): Promise<ResultatEnvoiFournisseur>;
   log(msg: string, extra?: unknown): void;
+  /** INSERT append-only d'une modification de choix (jamais d'UPDATE). */
+  insertRevision?(row: Record<string, unknown>): Promise<{ ok: boolean; error?: string }>;
+  listRevisions?(docId: string): Promise<{ choix: string; reinscription_examen: string | null; signature: string; signe_le: string; signe_le_paris: string | null }[]>;
 }
 
 const parisNow = (d: Date) =>
@@ -129,7 +132,10 @@ export async function envoyer(deps: Deps, docId: string) {
 /** Lien exploitable dès qu'un envoi a été tenté (le mail a pu partir) ou après signature. */
 export const lienActif = (d: DocDb) => d.statut === "signe" || !!d.envoye_le || !!d.envoi_tente_le;
 
-export function vuePublique(d: DocDb) {
+const texteDe = (d: DocDb): any => { try { return JSON.parse(d.texte_fige || "null"); } catch { return null; } };
+const demandeReinscription = (d: DocDb) => !!texteDe(d)?.reinscription;
+
+export function vuePublique(d: DocDb, revisions: Awaited<ReturnType<NonNullable<Deps["listRevisions"]>>> = [], now = new Date()) {
   let texte: unknown = null;
   try { texte = JSON.parse(d.texte_fige || "null"); } catch { texte = null; }
   const id = d.identite_figee;
@@ -140,22 +146,27 @@ export function vuePublique(d: DocDb) {
     signature: d.statut === "signe" ? d.reponses?.signature ?? null : null,
     signe_le_paris: d.signe_le_paris, signed_at: d.signed_at, envoye_le: d.envoye_le,
     texte_empreinte: d.texte_empreinte,
+    reinscription_examen: d.statut === "signe" ? d.reinscription_examen ?? d.reponses?.reinscription_examen ?? null : null,
+    revisions: d.statut === "signe" ? revisions : [],
+    modification_ouverte: d.statut === "signe" && modificationOuverte(d.signed_at, now),
   };
 }
 
-export async function soumettre(deps: Deps, token: string, choix: unknown, signature: unknown, userAgent: string) {
+export async function soumettre(deps: Deps, token: string, choix: unknown, signature: unknown, userAgent: string, reinscription?: unknown) {
   const d = await deps.getDocByToken(token);
   if (!d || !d.modele_code || !lienActif(d)) return { status: 404, body: { error: "Document introuvable ou lien expiré" } };
   if (d.statut === "signe") return { status: 200, body: { success: true, deja_signe: true, signe_le_paris: d.signe_le_paris } };
   if (typeof choix !== "string" || !CHOIX.some((c) => c.code === choix)) return { status: 400, body: { error: "Merci de cocher une seule case." } };
+  const reins = demandeReinscription(d) ? reinscription : null;
+  if (demandeReinscription(d) && !estReinscriptionValide(reins)) return { status: 400, body: { error: "Merci d'indiquer si vous vous réinscrivez à l'examen théorique." } };
   const sig = await validerSignaturePng(signature);
   if (!sig.ok) return { status: 400, body: { error: "Merci de signer dans le cadre prévu." } };
   if (!d.texte_fige || (await deps.sha256(d.texte_fige)) !== d.texte_empreinte || !d.identite_figee)
     return { status: 409, body: { error: "Document non conforme, contactez FTRANSPORT." } };
   const now = deps.now();
   const res = await deps.updateIf(d.id, {
-    choix,
-    reponses: { choix, signature, nom: d.identite_figee.nom, prenom: d.identite_figee.prenom, email: d.identite_figee.email, user_agent: userAgent.slice(0, 300) },
+    choix, reinscription_examen: reins,
+    reponses: { choix, reinscription_examen: reins, signature, nom: d.identite_figee.nom, prenom: d.identite_figee.prenom, email: d.identite_figee.email, user_agent: userAgent.slice(0, 300) },
     statut: "signe", signed_at: now.toISOString(), signe_le_paris: parisNow(now),
   }, { statutNot: "signe" });
   if (res.error || res.rows.length === 0) {
@@ -166,4 +177,27 @@ export async function soumettre(deps: Deps, token: string, choix: unknown, signa
     return { status: 500, body: { error: "Signature non enregistrée, merci de réessayer." } };
   }
   return { status: 200, body: { success: true, signe_le_paris: res.rows[0].signe_le_paris } };
+}
+
+/**
+ * Modification du choix pendant 4 jours après la première signature.
+ * La signature d'origine n'est jamais touchée : chaque modification est une nouvelle ligne conservée.
+ */
+export async function reviser(deps: Deps, token: string, choix: unknown, signature: unknown, userAgent: string, reinscription?: unknown) {
+  const d = await deps.getDocByToken(token);
+  if (!d || !d.modele_code || d.statut !== "signe") return { status: 404, body: { error: "Aucun choix signé à modifier." } };
+  if (!deps.insertRevision) return { status: 500, body: { error: "Modification indisponible." } };
+  const now = deps.now();
+  if (!modificationOuverte(d.signed_at, now)) return { status: 409, body: { error: "Le délai de 4 jours pour modifier votre choix est dépassé." } };
+  if (typeof choix !== "string" || !CHOIX.some((c) => c.code === choix)) return { status: 400, body: { error: "Merci de cocher une seule case." } };
+  const reins = demandeReinscription(d) ? reinscription : null;
+  if (demandeReinscription(d) && !estReinscriptionValide(reins)) return { status: 400, body: { error: "Merci d'indiquer si vous vous réinscrivez à l'examen théorique." } };
+  const sig = await validerSignaturePng(signature);
+  if (!sig.ok) return { status: 400, body: { error: "Merci de signer dans le cadre prévu." } };
+  const r = await deps.insertRevision({
+    document_id: d.id, apprenant_id: d.apprenant_id, choix, reinscription_examen: reins, signature,
+    signe_le: now.toISOString(), signe_le_paris: parisNow(now), user_agent: userAgent.slice(0, 300),
+  });
+  if (!r.ok) { deps.log("[echec-choix] révision non enregistrée", { id: d.id, err: r.error }); return { status: 500, body: { error: "Modification non enregistrée, merci de réessayer." } }; }
+  return { status: 200, body: { success: true, signe_le_paris: parisNow(now) } };
 }

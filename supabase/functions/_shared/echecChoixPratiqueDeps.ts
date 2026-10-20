@@ -2,7 +2,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { Deps, DocDb, ResultatEnvoiFournisseur } from "./echecChoixPratiqueCore.ts";
 import { MODELE_CODE, MODELE_VERSION } from "./modeleEchecChoixPratique.ts";
 
-const COLS = "id, token, statut, apprenant_id, modele_code, modele_version, cle_envoi, texte_fige, texte_empreinte, identite_figee, mail_objet_fige, mail_html_fige, envoi_etat, envoi_tente_le, envoye_le, envoi_erreur, destinataire_email, destinataire_nom, choix, signe_le_paris, signed_at, reponses";
+const COLS = "id, token, statut, apprenant_id, modele_code, modele_version, cle_envoi, texte_fige, texte_empreinte, identite_figee, mail_objet_fige, mail_html_fige, envoi_etat, envoi_tente_le, envoye_le, envoi_erreur, destinataire_email, destinataire_nom, choix, reinscription_examen, signe_le_paris, signed_at, reponses";
 
 export const sha256 = async (t: string) => {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
@@ -78,5 +78,15 @@ export function depsSupabase(db: SupabaseClient, opts: { authHeader?: string; su
       } finally { clearTimeout(t); }
     },
     log: (m, x) => console.error(m, x ?? ""),
+    async insertRevision(row) {
+      const { error } = await db.from("documents_a_signer_revisions").insert(row);
+      return error ? { ok: false, error: error.message } : { ok: true };
+    },
+    async listRevisions(docId) {
+      const { data, error } = await db.from("documents_a_signer_revisions")
+        .select("choix, reinscription_examen, signature, signe_le, signe_le_paris").eq("document_id", docId).order("signe_le");
+      if (error) throw error;
+      return (data ?? []) as any;
+    },
   };
 }
