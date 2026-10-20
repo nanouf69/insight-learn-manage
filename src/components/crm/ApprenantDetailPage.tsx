@@ -53,6 +53,7 @@ import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPo
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
 import { seuilElearning } from '@/lib/seuilElearning';
 import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
+import { tauxTotalPresence } from "@/lib/tauxTotalPresence";
 import { modeFormationAffichage } from "@/lib/modeFormationAffichage";
 import { TauxPresenceSessionsCard, useTauxPresenceHeures } from "@/components/crm/TauxPresenceSessionsCard";
 
@@ -345,17 +346,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && regleSuiviFormation(apprenant).presentiel, regleSuiviFormation(apprenant).filiere);
   const taux = useMemo(() => {
     const d = presenceHeures.data;
-    if (!tauxBrut || !tauxBrut.totalParSignatures || !d) return tauxBrut;
-    const inscrites = d.session.prevues + d.pratique.prevues;
-    // Le total couvre toujours session + pratique : une pratique pas encore inscrite
-    // garde ses heures prévues (jamais un faux 100 % sur la seule session).
-    const prevues = Math.max(inscrites, Number(tauxBrut.reqTotal) || 0);
-    if (prevues <= 0) return tauxBrut;
-    const faites = d.session.faites + d.pratique.faites;
-    const pct = Math.min(100, (faites / prevues) * 100);
+    if (!tauxBrut || !tauxBrut.totalParSignatures) return tauxBrut;
+    const total = tauxTotalPresence(d);
+    if (!total) return { ...tauxBrut, pctTotal: 0, signatures: { ...(tauxBrut.signatures as any), taux: null, raison: presenceHeures.erreur ? "Indisponible (lecture impossible)" : "Chargement des présences session et pratique…" } };
+    const { faites, prevues, pct, pratiquePrevues } = total;
     const f = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
-    return { ...tauxBrut, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d.session.faites)}/${f(d.session.prevues)} h + pratique ${f(d.pratique.faites)}/${f(d.pratique.prevues || Math.max(0, prevues - d.session.prevues))} h)` } };
-  }, [tauxBrut, presenceHeures.data]);
+    return { ...tauxBrut, reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)` } };
+  }, [tauxBrut, presenceHeures.data, presenceHeures.erreur]);
 
   const { data: photoDoc } = useQuery({
     queryKey: ['apprenant-photo', apprenantId],
