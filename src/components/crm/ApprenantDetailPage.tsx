@@ -572,6 +572,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   </Badge>
                 );
               })}
+              <ChoixPratiqueBadges apprenantId={apprenant.id} />
             </div>
           </div>
         </div>
