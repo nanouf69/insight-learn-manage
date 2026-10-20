@@ -39,6 +39,7 @@ import { TauxElearningCell } from './TauxElearningCell';
 import { DossierBienvenueButton } from './DossierBienvenueButton';
 import { PratiqueApprenantLink } from './PratiqueApprenantLink';
 import { EnvoiEchecChoixPratiqueDialog } from './EnvoiEchecChoixPratiqueDialog';
+import { ReinscriptionExamenBadge } from './ReinscriptionExamenBadge';
 import { filiereDepuisDossier } from '@/lib/modeles/entrainementPratiqueVtc';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
@@ -5972,6 +5973,14 @@ De 9h à 17h sur rendez-vous`;
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search & add */}
+          <div className="divide-y rounded-md border">
+            {nonReussis.map((a) => (
+              <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                <span className="font-medium">{a.nom} {a.prenom}</span>
+                <ReinscriptionExamenBadge apprenantId={a.id} dateExamen={a.date_examen_theorique} />
+              </div>
+            ))}
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input

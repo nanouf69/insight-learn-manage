@@ -12,6 +12,7 @@ import {
 } from "@/lib/modeles/entrainementPratiqueVtc";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
 import { telechargerPdf } from "@/lib/documentSigneDownload";
+import { ReinscriptionExamenBadge } from "./ReinscriptionExamenBadge";
 
 interface Candidat { id: string; nom: string; prenom: string; email?: string | null; type_apprenant?: string | null; resultat_examen?: string | null; date_examen_theorique?: string | null }
 export interface DocModele {
@@ -204,6 +205,7 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
                   <span className="font-medium min-w-[160px]">{a.nom} {a.prenom}</span>
                   <Badge variant="secondary">{filiere ? LIBELLE_FILIERE[filiere] : "À vérifier"}</Badge>
                   <span className="text-xs text-muted-foreground">{a.email}</span>
+                  <ReinscriptionExamenBadge apprenantId={a.id} dateExamen={a.date_examen_theorique} documentId={d?.id} />
                   {raisons[a.id] && <span className="text-xs text-destructive w-full">{raisons[a.id]}</span>}
                   <span className="ml-auto flex items-center gap-2">
                     {d?.statut === "signe" ? (
