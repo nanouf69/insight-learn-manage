@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Mode formation et jalons — 20/10 15:30 UTC
-- [ ] Afficher présentiel/e-learning/mixte sur la fiche ; mettre en rouge le taux de jalons e-learning sans changer les calculs.
-- [ ] Tests classification et contrôle fiche en lecture seule ; aucune publication.
+- [x] Afficher présentiel/e-learning/mixte sur la fiche ; mettre en rouge le taux de jalons e-learning sans changer les calculs.
+- [x] Trois tests classification PASS ; compilation automatique OK ; fiche ouverte contrôlée en lecture seule (Présentiel). Couleur sur une fiche e-learning réelle NON PROUVÉE ; aucune publication.
 
 ## Indicateur réinscription — 20/10 15:26 UTC
 - [x] Badges dans Examen et Réussite et panneau mails : réponse signée, attente, inconnu ou lecture indisponible ; aucune inscription déduite, écriture ou publication.
