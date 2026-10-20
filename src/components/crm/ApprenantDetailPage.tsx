@@ -344,13 +344,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const taux = useMemo(() => {
     const d = presenceHeures.data;
     if (!tauxBrut || !tauxBrut.totalParSignatures || !d) return tauxBrut;
-    const prevues = d.session.prevues + d.pratique.prevues;
+    const inscrites = d.session.prevues + d.pratique.prevues;
+    // Le total couvre toujours session + pratique : une pratique pas encore inscrite
+    // garde ses heures prévues (jamais un faux 100 % sur la seule session).
+    const prevues = Math.max(inscrites, Number(tauxBrut.reqTotal) || 0);
     if (prevues <= 0) return tauxBrut;
     const faites = d.session.faites + d.pratique.faites;
     const pct = Math.min(100, (faites / prevues) * 100);
     const f = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
-    // Taux total présentiel = heures signées (session + pratique) / heures des sessions
-    return { ...tauxBrut, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h de sessions (session + pratique)` } };
+    return { ...tauxBrut, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d.session.faites)}/${f(d.session.prevues)} h + pratique ${f(d.pratique.faites)}/${f(d.pratique.prevues || Math.max(0, prevues - d.session.prevues))} h)` } };
   }, [tauxBrut, presenceHeures.data]);
 
   const { data: photoDoc } = useQuery({
