@@ -3110,6 +3110,7 @@ export type Database = {
           modele_code: string | null
           modele_version: string | null
           nom: string
+          reinscription_examen: string | null
           reponses: Json
           sent_at: string | null
           signe_le_paris: string | null
@@ -3141,6 +3142,7 @@ export type Database = {
           modele_code?: string | null
           modele_version?: string | null
           nom: string
+          reinscription_examen?: string | null
           reponses?: Json
           sent_at?: string | null
           signe_le_paris?: string | null
@@ -3172,6 +3174,7 @@ export type Database = {
           modele_code?: string | null
           modele_version?: string | null
           nom?: string
+          reinscription_examen?: string | null
           reponses?: Json
           sent_at?: string | null
           signe_le_paris?: string | null
@@ -3183,6 +3186,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      documents_a_signer_revisions: {
+        Row: {
+          apprenant_id: string | null
+          choix: string
+          created_at: string
+          document_id: string
+          id: string
+          reinscription_examen: string | null
+          signature: string
+          signe_le: string
+          signe_le_paris: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          choix: string
+          created_at?: string
+          document_id: string
+          id?: string
+          reinscription_examen?: string | null
+          signature: string
+          signe_le?: string
+          signe_le_paris?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          choix?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          reinscription_examen?: string | null
+          signature?: string
+          signe_le?: string
+          signe_le_paris?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_a_signer_revisions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_a_signer"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents_inscription: {
         Row: {
