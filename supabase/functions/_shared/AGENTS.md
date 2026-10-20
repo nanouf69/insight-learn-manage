@@ -1,6 +1,6 @@
 # Shared Edge code
 
-- QRC AI recovery uses append-only retry receipts, atomic server claims and publication; active expired work requires confirmed interruption; why: preserve original traces and prevent concurrent billing or overwriting definitive corrections.
+- QRC AI uses one streamed item per invocation, durable bounded per-attempt continuation and append-only retry receipts; only finished transient upstream errors retry, unknown/active work requires review; why: prevent timeout chains, concurrent billing and overwriting definitive corrections.
 
 - Registration upload validates authenticated owner/admin or scoped onboarding HMAC, immutable UUID/content hash and explicit acknowledgement; why: retries never duplicate or replace prior versions.
 

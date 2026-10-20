@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Prévention générale QRC — 20/10 09:53 UTC
+- [x] Diagnostic frais, réservation atomique, un item streamé par invocation, continuation bornée nouveaux passages seulement ; aucun traitement historique.
+- [x] 180 tests Vitest + 8 SQL locaux + 2 flux fictifs PASS ; Deno types PASS, compilation plateforme OK ; fonction déployée et mauvais token refusé 403, empreintes identiques.
+- [x] Publication publique vérifiée en navigateur : index-BcmV7BPt.js HTTP200 SHA2567ebe759489f176e708d50842e58c627d85e150d0ac5bedc1a41430ab93211325 ; connexion visible, zéro erreur JS, sans maintenance.
+- [ ] Chaîne automatique réelle NON PROUVÉE : aucun autre appel IA élève autorisé ; reconnexion tablette Jean inaccessible, baseline historique4fcc… source exacte requise.
+
 ## Dossier bienvenue vert — 20/10 09:50 UTC
 - [x] Dossier bienvenue vert pour Payé, Dossier complet ou Inscription validée ; affichage uniquement, 17 tests PASS, compilation OK. Non publié ; contrôle CRM connecté NON PROUVÉ.
 

@@ -6425,6 +6425,42 @@ export type Database = {
           },
         ]
       }
+      qrc_ia_suites: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          dispatches: number
+          lease_until: string | null
+          message: string | null
+          next_at: string
+          remaining: number
+          statut: string
+          token: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          dispatches?: number
+          lease_until?: string | null
+          message?: string | null
+          next_at?: string
+          remaining?: number
+          statut?: string
+          token?: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          dispatches?: number
+          lease_until?: string | null
+          message?: string | null
+          next_at?: string
+          remaining?: number
+          statut?: string
+          token?: string
+        }
+        Relationships: []
+      }
       qrc_instances: {
         Row: {
           apprenant_id: string
@@ -8869,6 +8905,30 @@ export type Database = {
         Args: { p_actif: boolean; p_email?: string }
         Returns: Json
       }
+      qrc_ia_dispatch_suites: { Args: never; Returns: number }
+      qrc_ia_publier_auto: {
+        Args: {
+          p_attempt: string
+          p_id: string
+          p_initial: boolean
+          p_justification: string
+          p_note: number
+          p_operation: string
+          p_qrc: string
+          p_reponse: Json
+          p_run_id?: string
+        }
+        Returns: Json
+      }
+      qrc_ia_publier_initial: {
+        Args: {
+          p_id: string
+          p_justification: string
+          p_note: number
+          p_operation: string
+        }
+        Returns: Json
+      }
       qrc_ia_publier_reprise: {
         Args: {
           p_id: string
@@ -8879,6 +8939,10 @@ export type Database = {
         }
         Returns: Json
       }
+      qrc_ia_reserver_auto: {
+        Args: { p_base: Json; p_qrc: string }
+        Returns: Json
+      }
       qrc_ia_reserver_reprise: {
         Args: {
           p_base: Json
@@ -8886,6 +8950,10 @@ export type Database = {
           p_qrc: string
         }
         Returns: string
+      }
+      qrc_ia_suite_claim: {
+        Args: { p_attempt: string; p_token?: string }
+        Returns: boolean
       }
       qrc_pilot_integrity: {
         Args: { p_quiz_id: string }
