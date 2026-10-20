@@ -48,12 +48,14 @@ export function SignaturesManquantesTab({ apprenant }: Props) {
   const send = async () => {
     if (lock.current || !confirmed || !preview || !mail || !apprenant.email || excluded || attempted) return;
     lock.current = true; setBusy(true);
+    let invocationStarted = false;
     try {
       const fresh = creneauxRelancables(await chargerSignaturesManquantes(apprenant.id), dateDuJourParis());
       if (empreinteCreneauxRelance(fresh) !== empreinteCreneauxRelance(preview)) {
         setPreview(fresh.length ? fresh : null); setConfirmed(false); setOutcome('Les signatures ont changé : envoi annulé, vérifiez la liste.'); return;
       }
       setAttempted(true);
+      invocationStarted = true;
       const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: {
         action: 'send', apprenantId: apprenant.id, userEmail: 'contact@ftransport.fr', to: apprenant.email,
         subject: mail.subject, body: mail.html,
@@ -63,7 +65,7 @@ export function SignaturesManquantesTab({ apprenant }: Props) {
       setOutcome(result === 'envoye' ? 'Mail envoyé. La réception dans la boîte du destinataire reste à vérifier.' : result === 'doublon' ? 'Aucun nouvel envoi : une relance identique a déjà été envoyée dans les dernières 24 heures.' : 'Résultat d’envoi indéterminé : vérifiez l’historique Emails avant toute nouvelle relance.');
       setPreview(null); setConfirmed(false);
       void queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
-    } catch { setOutcome(attempted || lock.current ? 'Envoi non confirmé : aucun renvoi automatique. Vérifiez l’historique Emails avant de réessayer.' : 'Lecture indisponible : aucun mail envoyé.'); }
+    } catch { setOutcome(invocationStarted ? 'Envoi non confirmé : aucun renvoi automatique. Vérifiez l’historique Emails avant de réessayer.' : 'Lecture indisponible : aucun mail envoyé.'); }
     finally { setBusy(false); lock.current = false; }
   };
 
