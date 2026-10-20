@@ -12,10 +12,18 @@ const document = (patch: Partial<DocModele> = {}): DocModele => ({
 });
 
 describe("Historique mail du même examen", () => {
-  it("rend le mail v3 envoyé accessible malgré un modèle v4", () => {
+  it("un mail v3 déjà envoyé n'empêche pas d'envoyer une fois la v4 préparée", () => {
     const ancien = document({ id: "envoye-v3", modele_version: "v3-2026-10-19", envoi_etat: "envoye", envoye_le: "2026-10-20T09:38:06Z" });
-    expect(docCourant([document(), ancien], candidat)?.id).toBe("envoye-v3");
-    expect(documentSelectionnable(docCourant([document(), ancien], candidat))).toBe(false);
+    expect(docCourant([document(), ancien], candidat)?.id).toBe("courant");
+    expect(documentSelectionnable(docCourant([document(), ancien], candidat))).toBe(true);
+    // Sans v4 préparée, l'ancien mail reste affiché et non sélectionnable.
+    expect(docCourant([ancien], candidat)?.id).toBe("envoye-v3");
+    expect(aVersionCourante([ancien], candidat)).toBe(false);
+  });
+  it("la v4 déjà envoyée ne peut pas repartir", () => {
+    const v4 = document({ envoi_etat: "envoye", envoye_le: "2026-10-20T17:00:00Z" });
+    expect(aVersionCourante([v4], candidat)).toBe(true);
+    expect(documentSelectionnable(docCourant([v4], candidat))).toBe(false);
   });
   it("un autre examen et un autre candidat ne fournissent jamais l’aperçu", () => {
     expect(docCourant([document({ cle_envoi: "examen_theorique:2026-08-25" }), document({ apprenant_id: "autre" })], candidat)).toBeNull();
