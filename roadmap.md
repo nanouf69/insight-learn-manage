@@ -5,7 +5,8 @@
 - [x] Cartes agrandies, comparaison présentation uniquement et écran synthétique vérifiés.
 - [x] Bandeau temporaire publié puis retiré du code final.
 - [x] 93 tests/12 fichiers, compilation automatique OK, empreintes actuelles identiques avant/après, publication finale demandée.
-- [ ] Déploiement final : premier contrôle sert encore asset maintenance ; attendre service de publication, baseline historique gel non reproduite.
+- [x] Déploiement final vérifié : index-P4KrySsp.js, sans bandeau, design présent.
+- [ ] Baseline historique 4fcc… NON REPRODUITE : ancien releve_jalons_gels vide ; source exacte requise.
 
 ## Kevin / Jean — 20/10, reprise ciblée autorisée
 - [x] Diagnostic frais : 503 upstream_stall 180 s, appel suivant annulé 70 s, trois QRC encore en attente ; Jean PGRST303 non capturé.
