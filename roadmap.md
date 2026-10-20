@@ -1,5 +1,8 @@
 # Feuille de route
 
+## Dossier bienvenue vert — 20/10 09:50 UTC
+- [ ] Dans Examen et Réussite, afficher le dossier bienvenue vert pour Payé, Dossier complet ou Inscription validée ; affichage uniquement, test ciblé.
+
 ## Affichage questions / publication — 20/10 08:53 UTC
 - [x] Preuves SELECT Kevin et protections Jean ; limites tablette réelle conservées.
 - [x] Cartes agrandies, comparaison présentation uniquement et écran synthétique vérifiés.
