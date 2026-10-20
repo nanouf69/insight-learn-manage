@@ -7,7 +7,6 @@ import { etatChoixPratique } from "../lib/choixPratiqueEtat";
 const PNG = "data:image/png;base64," + Buffer.from(new Uint8Array([137,80,78,71,13,10,26,10,...new Array(400).fill(1)])).toString("base64");
 const signe = "2026-10-20T10:00:00Z";
 async function deps(statut: string, now: string, texte = JSON.stringify(texteFige("vtc"))) {
-  const { sha256 } = await import("../../supabase/functions/_shared/echecChoixPratiqueDeps").catch(() => ({ sha256: null as any }));
   const revs: any[] = []; const updates: any[] = [];
   const doc: any = { id: "d1", token: "tok", statut, apprenant_id: "a1", modele_code: "echec_theorie_choix_pratique", texte_fige: texte,
     texte_empreinte: null, identite_figee: { nom: "N", prenom: "P", email: "e@x.fr" }, envoye_le: "2026-10-19T00:00:00Z", signed_at: statut === "signe" ? signe : null, choix: statut === "signe" ? "plus_tard" : null };
@@ -15,7 +14,7 @@ async function deps(statut: string, now: string, texte = JSON.stringify(texteFig
   doc.texte_empreinte = await h(texte);
   return { revs, updates, doc, d: { now: () => new Date(now), sha256: h, getDocByToken: async () => doc, log: () => {},
     updateIf: async (_id: string, p: any) => { updates.push(p); return { rows: [{ ...doc, ...p }] }; },
-    insertRevision: async (r: any) => { revs.push(r); return { ok: true }; } } as any, sha256 };
+    insertRevision: async (r: any) => { revs.push(r); return { ok: true }; } } as any };
 }
 
 describe("Choix pratique modifiable 4 jours, réinscription", () => {
