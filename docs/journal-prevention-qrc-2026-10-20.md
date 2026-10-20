@@ -19,3 +19,6 @@
 ## Limites
 - Prévention ne répare pas une panne fournisseur. Succès de la nouvelle chaîne automatique avec un vrai élève NON PROUVÉ : aucun appel IA supplémentaire autorisé. Livraison dispatcher réelle non exercée (file vide) ; échecs de livraison bornés, résultat HTTP non stocké individuellement.
 - Pas de modification de questions, réponses élèves, notes définitives, signatures/heures/gels/Ismail ; aucun mail. Publication frontend demandée, preuve asset ajoutée séparément après contrôle.
+
+## Publication réelle
+Navigateur public 20/10 10:14 UTC : https://gestion.ftransport.fr/login, connexion affichée, zéro erreur JavaScript, maintenance absente. Asset `index-BcmV7BPt.js` HTTP200 SHA256 `7ebe759489f176e708d50842e58c627d85e150d0ac5bedc1a41430ab93211325`. Fonction finale source SHA256 `5726b2da771269a795322daa18c37d9533d6d29faa28158794867faaa0d0f5dc` déployée. Types Deno PASS et dernière suite34 tests PASS après ultime changement. Preuve fonctionnelle complète connecté non revendiquée.
