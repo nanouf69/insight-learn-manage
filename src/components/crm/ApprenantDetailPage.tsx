@@ -343,10 +343,14 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const modulesProgression = !modulesQuery.isError && !modulesQuery.isFetching && modulesQuery.data?.etat === "ok" ? modulesQuery.data : null;
   // Lecture en erreur : aucun ancien taux affiché, jamais un faux 0 h.
   const tauxBrut = tauxErreur ? null : tauxData;
-  const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && regleSuiviFormation(apprenant).presentiel, regleSuiviFormation(apprenant).filiere);
+  const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && !!regleSuiviFormation(apprenant).filiere, regleSuiviFormation(apprenant).filiere);
   const taux = useMemo(() => {
     const d = presenceHeures.data;
-    if (!tauxBrut || !tauxBrut.totalParSignatures) return tauxBrut;
+    if (!tauxBrut) return tauxBrut;
+    if (!tauxBrut.totalParSignatures) {
+      const presence = tauxTotalPresence(d);
+      return presence ? { ...tauxBrut, reqPresentiel: presence.prevues, pctPresentiel: Math.min(100, tauxBrut.donePresentiel / presence.prevues * 100) } : tauxBrut;
+    }
     const total = tauxTotalPresence(d);
     if (!total) return { ...tauxBrut, pctTotal: 0, signatures: { ...(tauxBrut.signatures as any), taux: null, raison: presenceHeures.erreur ? "Indisponible (lecture impossible)" : "Chargement des présences session et pratique…" } };
     const { faites, prevues, pct, pratiquePrevues } = total;
@@ -747,7 +751,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
             ))}
           </div>
-          {(regleSuiviFormation(apprenant).presentiel || /^(ta|taxi-pour-vtc|passerelle-taxi|ta-e-presentiel)$/i.test(String(apprenant.type_apprenant || apprenant.formation_choisie || '').trim())) && <TauxPresenceSessionsCard apprenantId={apprenant.id} filiere={regleSuiviFormation(apprenant).filiere} />}
+          {regleSuiviFormation(apprenant).filiere && <TauxPresenceSessionsCard apprenantId={apprenant.id} filiere={regleSuiviFormation(apprenant).filiere} />}
         </div>
       )}
 

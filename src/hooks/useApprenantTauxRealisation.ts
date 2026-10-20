@@ -59,7 +59,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     return () => { supabase.removeChannel(channel); };
   }, [apprenantId, queryClient]);
   return useQuery<TauxRealisation | null>({
-    queryKey: ["apprenant-taux-realisation", apprenantId],
+    queryKey: ["apprenant-taux-realisation", apprenantId, apprenantProp?.type_apprenant ?? null, apprenantProp?.formation_choisie ?? null, apprenantProp?.heures_elearning ?? null, apprenantProp?.heures_presentiel ?? null, apprenantProp?.heures_totales ?? null],
     enabled: !!apprenantId,
     // La fiche Admin doit refléter l'état réel courant, pas un cache de 5 minutes
     staleTime: 30 * 1000,
