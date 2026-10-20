@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Total présence session + pratique — 20/10 15:39 UTC
+- [ ] Corriger le dénominateur live du total : session réelle + pratique, sans imposer 66 h aux cours du soir ; préserver les preuves et les relevés.
+- [ ] Tester journée, soir, TAXI/TA, pratique manquante et lecture impossible ; contrôler la fiche signalée et un autre cas, sans publication ni écriture élève.
+
 ## Cohérence signatures — 20/10 15:35 UTC
 - [x] Diagnostic : signed_at automatique à la création ; deux feuilles du 20/10 créées le 09/10 sans image. Compteurs harmonisés et anomalies signalées, données conservées.
 - [x] 78 tests PASS ; compilation automatique OK ; CRM et PDF vérifiés 20/22, pratique 0/2, mention EDOF absente ; empreinte des 25 lignes inchangée. Pas de publication ni envoi.
