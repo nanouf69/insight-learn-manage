@@ -226,3 +226,84 @@
 .learners-list::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.7);
 }
+
+/* Learner questions only; editor and persistence are untouched. */
+[data-learner-question] {
+  width: 100%;
+  max-width: 1400px;
+  min-width: 0;
+  margin-inline: auto;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+div[data-learner-question] {
+  padding: 24px;
+  border-width: 2px;
+  border-color: hsl(var(--border));
+  background-color: hsl(var(--card));
+}
+div[data-learner-question][class*="border-destructive"] {
+  border-color: hsl(var(--destructive));
+}
+.learner-question-title {
+  font-size: 20px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+[data-learner-question] button.w-full,
+[data-learner-question] .learner-question-choice {
+  padding: 16px;
+  min-height: 60px;
+  align-items: flex-start;
+  gap: 16px;
+}
+[data-learner-question] button.w-full > span.text-sm {
+  font-size: 18px;
+  line-height: 1.5;
+  white-space: normal;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+[data-learner-question] button.w-full > span.shrink-0 {
+  min-width: 28px;
+  min-height: 28px;
+}
+[data-learner-question] textarea {
+  font-size: 18px;
+  line-height: 1.5;
+  min-height: 160px;
+}
+[data-learner-question] img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 480px;
+  object-fit: contain;
+  margin-block: 16px;
+}
+@media (min-width: 640px) {
+  div[data-learner-question] { padding: 32px; }
+  .learner-question-title { font-size: 24px; }
+}
+@media (max-width: 479px) {
+  div[data-learner-question] { padding: 16px; }
+  [data-learner-question] button.w-full,
+  [data-learner-question] .learner-question-choice { padding: 12px; gap: 10px; }
+  [data-learner-question] button.w-full > span.text-sm { font-size: 16px; }
+}
+[data-learner-question] [role="checkbox"] {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  flex-shrink: 0;
+}
+@media (max-width: 639px) {
+  [data-learner-passage] { grid-template-columns: minmax(0, 1fr); }
+  [data-learner-passage] > aside { position: static; }
+  [data-learner-passage] > aside > div { position: static; max-height: none; }
+  [data-learner-passage] > aside .grid { grid-template-columns: repeat(auto-fill, minmax(44px, 44px)); }
+  [data-learner-passage] > div > div.flex.justify-between.items-center { flex-wrap: wrap; gap: 12px; }
+  [data-learner-passage] > div > div:first-child > div { flex-wrap: wrap; }
+}

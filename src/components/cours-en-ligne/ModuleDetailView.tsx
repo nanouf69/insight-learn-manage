@@ -1279,7 +1279,7 @@ const buildExerciseQuestionPrompts = <T extends { enonce: string }>(questions: T
 
 const renderExerciseQuestionPrompt = (questionNumber: number, prompt: ExerciseQuestionPrompt) => (
   <div className="space-y-2">
-    <p className="font-medium whitespace-pre-line">
+    <p className="learner-question-title font-medium whitespace-pre-line">
       <span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">
         Q{questionNumber}
       </span>
@@ -8324,7 +8324,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const selected = inlineQuizAnswers[key];
                   const prompt = inlineQuizPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce);
                   return (
-                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
+                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} data-learner-question data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
                       {renderExerciseQuestionPrompt(qi + 1, prompt)}
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
@@ -8741,7 +8741,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (isQrc) {
                   const isQrcWrong = isInRevision || (qrcResult && qrcResult !== "loading" && !qrcResult.indisponible && !qrcResult.estCorrect);
                   return (
-                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isQrcWrong ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
+                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-learner-question className={`space-y-2 p-4 border rounded-lg scroll-mt-20 ${isQrcWrong ? 'border-destructive border-4 bg-destructive/10' : ''}`}>
                       {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
@@ -8794,7 +8794,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
                 return (
-                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-learner-question data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
                       const sizeMap: Record<string, string> = {
@@ -9576,12 +9576,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     return (
       <>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1760px] mx-auto">
         <AnswerSaveIndicator className="mb-2" />
       </div>
-      <div className="flex gap-4 lg:gap-6 max-w-6xl mx-auto">
+      <div className="flex gap-4 lg:gap-6 max-w-[1760px] mx-auto">
         {/* Vertical progress sidebar — desktop */}
-        <div className="hidden md:block shrink-0 w-56 lg:w-72 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <div className="hidden md:block shrink-0 w-48 lg:w-56 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="rounded-xl border bg-card shadow-sm p-5 space-y-2">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Progression</h3>
             {renderProgressionSteps()}

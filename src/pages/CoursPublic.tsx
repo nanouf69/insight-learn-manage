@@ -2246,7 +2246,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className={activeTab === "examens" ? "max-w-[1760px] mx-auto px-4 py-8" : "max-w-6xl mx-auto px-4 py-8"}>
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
           <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes.filter((r) => r.status === "completed") as any} />

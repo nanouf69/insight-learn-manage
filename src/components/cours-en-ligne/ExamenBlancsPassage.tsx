@@ -1178,7 +1178,7 @@ function PassageMatiere({
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
+    <div data-learner-passage className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
       <div className="space-y-4 min-w-0">
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
@@ -1321,21 +1321,21 @@ function PassageMatiere({
       )}
 
       {/* Question */}
-      <Card className="border-2 border-primary/10">
+      <Card data-learner-question className="border-2 border-primary/40 bg-card">
 
-        <CardContent className="pt-5 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 flex-1">
+        <CardContent className="p-6 sm:p-8 space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-start gap-3 flex-1 min-w-0">
               <Badge variant={question?.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
                 {question?.type || "QCM"}
               </Badge>
-              <div>
-                <p className="font-medium leading-relaxed">{question?.enonce ? <RichText value={question.enonce} /> : "Question indisponible"}</p>
+              <div className="min-w-0 flex-1">
+                <p className="learner-question-title font-medium leading-relaxed">{question?.enonce ? <RichText value={question.enonce} /> : "Question indisponible"}</p>
                 {currentQuestionImage && (
                   <ExamQuestionImage
                     image={currentQuestionImage}
                     alt={`Illustration de la question ${question.id}`}
-                    className="mt-3 max-h-40 rounded-lg border"
+                    className="mt-4 w-full h-auto max-h-[480px] object-contain rounded-lg border"
                     fallbackClassName="mt-3 text-xs text-muted-foreground italic"
                   />
                 )}
@@ -1372,16 +1372,17 @@ function PassageMatiere({
                     return (
                       <div
                         key={choix.lettre}
-                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
+                        className={`learner-question-choice flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
                         onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, isMultiple(question)); }}
                       >
                         <Checkbox
+                          className="h-6 w-6 shrink-0"
                           checked={checked}
                           onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), isMultiple(question))}
                           onClick={(e) => e.stopPropagation()}
                         />
                         <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
-                        <span className="text-sm"><RichText value={choix.texte} /></span>
+                        <span className="min-w-0 flex-1 text-base sm:text-lg leading-[1.5] break-words"><RichText value={choix.texte} /></span>
                       </div>
                     );
                   })}
@@ -1404,7 +1405,7 @@ function PassageMatiere({
                     rows={4}
                     value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
                     onChange={e => handleQRCChange(question.id, e.target.value)}
-                    className="resize-none"
+                    className="min-h-40 resize-y text-base leading-[1.5]"
                   />
                 </div>
               )}

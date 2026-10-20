@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Affichage questions / publication — 20/10 08:53 UTC
+- [ ] Terminer preuves Kevin trois QRC et protections Jean ; conserver les limites tablette réelle.
+- [ ] Cartes élève plus larges, textes/choix/images lisibles ; aucun changement pédagogique.
+- [ ] Bandeau maintenance temporaire non bloquant ; retrait avant livraison finale.
+- [ ] Tests ciblés, compilation automatique, contrôle empreintes avant/après, publication et asset public.
+
 ## Kevin / Jean — 20/10, reprise ciblée autorisée
 - [x] Diagnostic frais : 503 upstream_stall 180 s, appel suivant annulé 70 s, trois QRC encore en attente ; Jean PGRST303 non capturé.
 - [x] Reprise IA atomique bornée, trois QRC uniquement corrigées 20/10 08:50–08:51 UTC ; Q17 intacte, résultat définitif 12.

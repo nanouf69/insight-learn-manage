@@ -1657,7 +1657,7 @@ export default function ExamensBlancsPage({
     const matiere = examenChoisi.matieres[matiereIndex];
     if (!matiere) return null;
     return (
-      <div className="flex gap-6 max-w-[1200px] mx-auto">
+      <div className="flex gap-4 xl:gap-6 max-w-[1760px] mx-auto">
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
@@ -1691,7 +1691,7 @@ export default function ExamensBlancsPage({
           <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}_${resumeExerciceIds[matiere.id] ?? ""}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} onSansReponse={handleMatiereSansResultat} />
 
         </div>
-        <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
+        <div className="hidden xl:block w-56 shrink-0">
           <div className="sticky top-4 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Progression</p>
             <div className="relative">
