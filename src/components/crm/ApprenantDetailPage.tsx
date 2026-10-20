@@ -53,6 +53,7 @@ import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPo
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
 import { seuilElearning } from '@/lib/seuilElearning';
 import { regleSuiviFormation } from "@/lib/suiviFormationIndicateurs";
+import { modeFormationAffichage } from "@/lib/modeFormationAffichage";
 import { TauxPresenceSessionsCard, useTauxPresenceHeures } from "@/components/crm/TauxPresenceSessionsCard";
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -548,6 +549,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               <Badge variant="secondary">
                 {typeLabels[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-'}
               </Badge>
+              <Badge variant="outline" className="font-semibold">
+                Formation : {modeFormationAffichage(apprenant).libelle}
+              </Badge>
               <Badge variant="outline">
                 {financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-'}
               </Badge>
@@ -741,7 +745,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               </div>
               {/* Jalons pondérés : juste sous « Modules (jalons) », indicatif interne admin */}
               {(t as any).unit === "modules" && (
-                <JalonsPonderesCard apprenant={apprenant} apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} titre={regleSuiviFormation(apprenant).elearning ? "TAUX DE JALONS" : undefined} />
+                <JalonsPonderesCard apprenant={apprenant} apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} titre={modeFormationAffichage(apprenant).jalonsEnRouge ? "TAUX DE JALONS" : undefined} />
               )}
               </div>
             ))}
