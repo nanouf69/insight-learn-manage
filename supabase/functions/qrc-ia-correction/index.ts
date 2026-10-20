@@ -149,9 +149,12 @@ Deno.serve(async (req) => {
           if (error) throw error;
           return json({ ok: true, statut: "reprise_terminee", preuve: proof, run_id: runId });
         } catch (e) {
-          const status = Number((e as { statusCode?: number }).statusCode ?? 500);
+          // Sans statut fournisseur, l'issue (et la facturation) est inconnue :
+          // terminal pour cette reprise, jamais assimilée à un 5xx rejouable.
+          const upstreamStatus = (e as { statusCode?: number }).statusCode;
+          const status = Number(upstreamStatus ?? 499);
           const message = String((e as { message?: string }).message ?? "Service IA indisponible").slice(0, 600);
-          await finishError(status, message);
+          await finishError(status, message, upstreamStatus ? "erreur" : "a_verifier");
           if (estPauseGlobale(status)) {
             await service.from("qrc_ia_config").update({ pause_motif: message, pause_depuis: new Date().toISOString() }).eq("id", true);
           }
