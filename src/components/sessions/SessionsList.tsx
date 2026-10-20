@@ -98,6 +98,9 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
   const { data: sessions = [], isLoading, refetch } = useQuery({
     queryKey: ['sessions'],
     queryFn: async () => {
+      // Planning pratique = référence : ajoute côté serveur les inscrits du planning
+      // manquants dans leur session pratique (jamais de retrait ni de modification).
+      try { await (supabase.rpc as any)('reconcilier_inscriptions_pratique', { p_depuis: null }); } catch { /* lecture des sessions quand même */ }
       const { data, error } = await supabase
         .from('sessions')
         .select('*')
