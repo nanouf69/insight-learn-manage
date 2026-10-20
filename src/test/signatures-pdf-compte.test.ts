@@ -35,7 +35,7 @@ describe('Compte de signatures sous le bouton PDF', () => {
     expect(export_.match(/totalAttendu=\{totalAttendu\}/g)).toHaveLength(2);
   });
 
-  it('22 validations dont 2 sans image : objectif 22, PDF 20 sans fausse signature', () => {
+  it('20 signatures et 2 dates automatiques sans image : bilan et PDF comptent 20 sur 22', () => {
     const dates = ['2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18','2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25'];
     const rows = dates.flatMap(d => ['matin', 'apres_midi'].map(c => ({ id: `${d}-${c}`, date_emargement: d, demi_journee: c, masque: false, signature_data_url: 'data:image/png;base64,AAA', signed_at: `${d}T07:00:00Z` })));
     const pratique = ['matin', 'apres_midi'].map(c => ({ id: `pratique-${c}`, date_emargement: '2026-10-13', demi_journee: c, masque: false, signature_data_url: '', signed_at: '2026-10-13T07:00:00Z' }));
@@ -44,7 +44,9 @@ describe('Compte de signatures sous le bouton PDF', () => {
     const sessions = [{ sessions: { type_session: 'theorique', date_debut: dates[0], date_fin: dates[9], heure_debut: '09:00', heure_fin: '16:00' } }];
     const bilan = calculerBilanSignaturesEdof(source, sessions, [{ date_choisie: '2026-10-13' }], 'VTC');
     const images = rassemblerSignatures(source, [], sessions);
-    expect(bilan.total).toBe(22);
+    expect(bilan.total).toBe(20);
+    expect(bilan.pratique).toBe(0);
+    expect(bilan.complet).toBe(false);
     expect(bilan.objectifTotal).toBe(22);
     expect(images).toHaveLength(20);
     expect(formaterCompteSignaturesPdf(images.length, bilan.objectifTotal).texte).toBe('20 signatures signées sur 22');

@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Cohérence signatures — 20/10 15:35 UTC
+- [x] Diagnostic : signed_at automatique à la création ; deux feuilles du 20/10 créées le 09/10 sans image. Compteurs harmonisés et anomalies signalées, données conservées.
+- [x] 78 tests PASS ; compilation automatique OK ; CRM et PDF vérifiés 20/22, pratique 0/2, mention EDOF absente ; empreinte des 25 lignes inchangée. Pas de publication ni envoi.
+
 ## Mode formation et jalons — 20/10 15:30 UTC
 - [x] Afficher présentiel/e-learning/mixte sur la fiche ; mettre en rouge le taux de jalons e-learning sans changer les calculs.
 - [x] Trois tests classification PASS ; compilation automatique OK ; fiche ouverte contrôlée en lecture seule (Présentiel). Couleur sur une fiche e-learning réelle NON PROUVÉE ; aucune publication.

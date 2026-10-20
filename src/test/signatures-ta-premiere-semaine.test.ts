@@ -4,7 +4,7 @@ import { calculerBilanSignaturesEdof, calculerSignaturesManquantes, marquerFilie
 const theorie = (extra: any = {}) => ({ id: 't', liste_attente: false, emargements_exclus: false, date_debut: '2026-09-07', date_fin: '2026-09-28', ...extra,
   sessions: { type_session: 'theorique', statut: 'planifiee', date_debut: '2026-09-07', date_fin: '2026-09-28', heure_debut: '09:00', heure_fin: '16:00' } });
 const pratique = { id: 'p', liste_attente: false, emargements_exclus: false, sessions: { type_session: 'pratique', statut: 'planifiee', date_debut: '2026-10-17', date_fin: '2026-10-17', heure_debut: '09:00', heure_fin: '16:00' } };
-const sig = (date: string, demi: string) => ({ date_emargement: date, demi_journee: demi, signed_at: `${date}T10:00:00Z`, masque: false });
+const sig = (date: string, demi: string) => ({ date_emargement: date, demi_journee: demi, signed_at: `${date}T10:00:00Z`, signature_data_url: 'data:image/png;base64,AAA', masque: false });
 
 describe('TA : 10 théorie (première semaine) + 2 pratique', () => {
   it('objectif 12 et manquants limités au 7–11 septembre', () => {
@@ -32,7 +32,7 @@ describe('TA : 10 théorie (première semaine) + 2 pratique', () => {
 });
 
 describe('TA ancien parcours : objectif historique explicite', () => {
-  const s = (d: string, m: string) => ({ date_emargement: d, demi_journee: m, signed_at: `${d}T10:00:00Z`, masque: false });
+  const s = sig;
   const jours = ['2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-14'];
   const toutes = jours.flatMap(d => [s(d,'matin'), s(d,'apres_midi')]);
   it('ancien 14 configuré : complet à 12 théorie + 2 pratique', () => {

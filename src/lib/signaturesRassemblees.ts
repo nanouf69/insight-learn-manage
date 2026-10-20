@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculerPratiqueSlotDetails, daySlotsDepuisConfigs, type PratiqueSlotDetail } from '@/lib/pratiqueSlots';
 import { pratiqueDocumentHours } from '@/lib/pratiqueDocumentHours';
 import { datesDuPlanning } from '@/lib/signaturesManquantes';
+import { aImageSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
 export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; signedAt: string | null; signature: string; absent: boolean }
 const labels: Record<string, string> = { matin: 'Matin', apres_midi: 'Après-midi', soir: 'Soir', soir_1: 'Soir 1', soir_2: 'Soir 2' };
@@ -11,7 +12,7 @@ const order: Record<string, number> = { Matin: 0, 'Après-midi': 1, Soir: 2, 'So
 /** Preserve every stored signature ID, including multiple versions on the same date. */
 export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[], sessions: any[]): SignatureRassemblee[] {
   const seen = new Set<string>();
-  return rows.filter(r => r.masque !== true && typeof r.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(r.signature_data_url) && !seen.has(r.id) && !!seen.add(r.id)).map(r => {
+  return rows.filter(r => r.masque !== true && aImageSignatureEmargement(r) && !seen.has(r.id) && !!seen.add(r.id)).map(r => {
     const date = String(r.date_emargement ?? '').slice(0, 10);
     const demi = String(r.demi_journee ?? '');
     const planning = pratique.filter(p => p.date === date && p.parts.some(x => x.creneau === demi));

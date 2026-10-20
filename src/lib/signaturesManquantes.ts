@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from '@/lib/pratiqueSlots';
 // complet = compte EXACT atteint (jamais « >= ») : la mention EDOF ne s'affiche qu'au nombre précis.
 
@@ -75,9 +76,7 @@ export function calculerSignaturesManquantes(
     const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
     if (!estDate(date) || !demi) continue;
     const key = `${date}|${demi}`;
-    const signe =
-      (typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url)) ||
-      !!e?.signed_at;
+    const signe = aPreuveSignatureEmargement(e);
     if (signe) signes.add(key);
     else if (e?.absent === true) absents.add(key);
   }
@@ -266,9 +265,7 @@ export function calculerBilanSignaturesEdof(
     const date = normDate(e?.date_emargement);
     const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
     if (!estDate(date) || !demi) continue;
-    const signe =
-      (typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url)) ||
-      !!e?.signed_at;
+    const signe = aPreuveSignatureEmargement(e);
     const key = `${date}|${demi}`;
     if (!signe || vus.has(key)) continue;
     vus.add(key);
@@ -345,8 +342,7 @@ export interface ClassificationSignatures {
   aVerifier: SignatureClassee[];
 }
 
-const estSignee = (e: any) =>
-  typeof e?.signature_data_url === 'string' && /^data:image\/(png|jpeg|jpg);base64,/i.test(e.signature_data_url);
+const estSignee = aPreuveSignatureEmargement;
 
 export function classifierSignatures(
   emargements: any[],
@@ -367,6 +363,9 @@ export function classifierSignatures(
     return s && /theorique|pratique/i.test(s.type_session ?? '') && date >= normDate(r.date_debut || s.date_debut) && date <= normDate(r.date_fin_personnalisee || s.date_fin || s.date_debut);
   });
   for (const e of emargements) {
+    if (e.masque !== true && e.absent !== true && e.signed_at && !estSignee(e)) {
+      anomalies.push({ date: normDate(e.date_emargement), creneau: DEMI_LABELS[e.demi_journee] ?? e.demi_journee, detail: 'Date enregistrée sans image de signature : preuve à vérifier, non comptée. Une date de création automatique ne prouve pas une signature.' });
+    }
     if (e.masque === true && estSignee(e) && normDate(e.signed_at) !== normDate(e.date_emargement)) {
       anomalies.push({ date: normDate(e.date_emargement), creneau: DEMI_LABELS[e.demi_journee] ?? e.demi_journee, detail: `Historique masqué : signature effectuée le ${normDate(e.signed_at)} sur cette feuille ; rattachement à examiner, aucune présence réattribuée.` });
     }

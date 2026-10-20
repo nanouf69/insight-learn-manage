@@ -25,6 +25,7 @@ import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
 import { chargerClassificationSignatures, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
+import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
 interface Props {
   apprenant: any;
@@ -288,7 +289,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
       const emargDocs = emargements.map((e) => ({
         id: `emarg-${e.id}`,
         type_document: "emargement-fc",
-        titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : "Présent"}`,
+        titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : aPreuveSignatureEmargement(e) ? "Présent" : "Signature à vérifier (image absente)"}`,
         donnees: {
           date_emargement: e.date_emargement,
           demi_journee: e.demi_journee,
@@ -330,7 +331,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         return {
           id: `emarg-semaine-${key}`,
           type_document: "emargement-fc-semaine",
-          titre: `Semaine ${w.week} (${format(w.weekStart, "dd/MM")} → ${format(w.weekEnd, "dd/MM/yyyy")}) — ${w.sigs.length} signature(s)`,
+          titre: `Semaine ${w.week} (${format(w.weekStart, "dd/MM")} → ${format(w.weekEnd, "dd/MM/yyyy")}) — ${w.sigs.filter(s => aPreuveSignatureEmargement({ signature_data_url: s.signature })).length} signature(s) avec image`,
           donnees: {
             week_label: `Semaine ${w.week} - ${w.year}`,
             week_start: wsStr,
@@ -796,7 +797,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
   // Calcul des heures de présence basé sur les signatures d'émargement
   const emargementsRaw = (documents || []).filter((d: any) => {
-    const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
+    const hasSignature = aPreuveSignatureEmargement({ signature_data_url: d.donnees?.signature, absent: d.donnees?.absent });
     return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
   });
   // Même calcul que la carte « Taux présentiel » (computePresentielHours) :
