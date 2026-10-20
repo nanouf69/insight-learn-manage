@@ -98,8 +98,9 @@ describe("Correction IA — anti-double facturation et pannes", () => {
   it("réservation atomique en base avant tout appel payant, clé unique", () => {
     expect(migration).toMatch(/cle_idempotence text NOT NULL UNIQUE/);
     expect(fonction).toMatch(/onConflict: "cle_idempotence", ignoreDuplicates: true/);
-    expect(fonction.indexOf('statut: "en_cours"')).toBeLessThan(fonction.indexOf("generateText({"));
-    expect(fonction).toMatch(/deja_traitee/);
+    expect(fonction.indexOf('rpc("qrc_ia_reserver_auto"')).toBeGreaterThan(0);
+    expect(fonction.indexOf('rpc("qrc_ia_reserver_auto"')).toBeLessThan(fonction.indexOf("streamText({"));
+    expect(fonction).not.toContain("generateText(");
   });
   it("aucune boucle d'appels payants ; crédits épuisés / accès refusé = pause globale", () => {
     expect(fonction).toMatch(/maxRetries: 0/);
@@ -113,8 +114,8 @@ describe("Correction IA — anti-double facturation et pannes", () => {
     expect(pont).toMatch(/\.catch\(\(\) => undefined\)/);
   });
   it("la note IA passe par le même circuit de note que le formateur (core_correct_qrc_publish)", () => {
-    expect(fonction).toMatch(/core_correct_qrc_publish/);
-    expect(fonction).toMatch(/p_corrige_email: MARQUEUR_IA/);
+    expect(fonction).toMatch(/qrc_ia_publier_auto/);
+    expect(readFileSync(join(migDir, '0182_qrc_ia_auto_publication_guard.sql'), 'utf8')).toContain('public.core_correct_qrc_publish(');
   });
 });
 

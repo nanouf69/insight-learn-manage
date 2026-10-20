@@ -1261,6 +1261,55 @@
       "when": 1792486129012,
       "tag": "0179_qrc_reprise_guard_legacy_reservation",
       "breakpoints": true
+    },
+    {
+      "idx": 180,
+      "version": "7",
+      "when": 1792490402981,
+      "tag": "0180_qrc_ia_reservation_auto",
+      "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1792490482513,
+      "tag": "0181_qrc_ia_suite_bornee",
+      "breakpoints": true
+    },
+    {
+      "idx": 182,
+      "version": "7",
+      "when": 1792490684744,
+      "tag": "0182_qrc_ia_auto_publication_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 183,
+      "version": "7",
+      "when": 1792490766764,
+      "tag": "0183_qrc_ia_dispatch_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 184,
+      "version": "7",
+      "when": 1792490815786,
+      "tag": "0184_qrc_ia_dispatch_due",
+      "breakpoints": true
+    },
+    {
+      "idx": 185,
+      "version": "7",
+      "when": 1792490892266,
+      "tag": "0185_qrc_ia_suite_lease_longue",
+      "breakpoints": true
+    },
+    {
+      "idx": 186,
+      "version": "7",
+      "when": 1792490948092,
+      "tag": "0186_qrc_ia_publication_auto_fenced",
+      "breakpoints": true
     }
   ]
 }

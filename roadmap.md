@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Prévention générale QRC — 20/10 09:53 UTC
+- [ ] Diagnostic frais, reprise atomique bornée pour futurs passages, un item par invocation et continuation.
+- [ ] Tests concurrence/erreur/interruption/propriétaire/définitif ; déploiement et publication vérifiés, empreintes lecture seule.
+
 ## Dossier bienvenue vert — 20/10 09:50 UTC
 - [x] Dossier bienvenue vert pour Payé, Dossier complet ou Inscription validée ; affichage uniquement, 17 tests PASS, compilation OK. Non publié ; contrôle CRM connecté NON PROUVÉ.
 

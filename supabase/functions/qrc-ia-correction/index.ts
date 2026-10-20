@@ -3,12 +3,12 @@
 // - nouveaux passages uniquement (fin après l'activation) ;
 // - règles déterministes côté serveur (jamais le niveau de confiance de l'IA) ;
 // - une seule analyse payante par QRC/version de réponse (clé d'idempotence unique en base) ;
-// - aucune nouvelle tentative automatique ; 402/403 = pause globale ;
+// - reprise bornée uniquement après 429/5xx fournisseur terminé ; 402/403 = pause globale ;
 // - la note IA passe par core_correct_qrc_publish (même calcul de note que le formateur).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
-import { generateText } from "npm:ai";
 import { streamText } from "npm:ai";
+import { prochaineActionIa } from "../_shared/qrcIaSuite.ts";
 import { z } from "npm:zod@3";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
@@ -39,9 +39,12 @@ Deno.serve(async (req) => {
     const auth = req.headers.get("Authorization") ?? "";
     const utilisateur = createClient(url, anonKey, { global: { headers: { Authorization: auth } } });
 
-    const parsed = z.object({ attempt_id: z.string().uuid(), rattrapage: z.boolean().optional(), reprise_qrc_id: z.string().uuid().optional(), interruption_confirmee: z.boolean().optional() }).strict().safeParse(await req.json().catch(() => ({})));
+    const parsed = z.object({ attempt_id: z.string().uuid(), rattrapage: z.boolean().optional(), reprise_qrc_id: z.string().uuid().optional(), interruption_confirmee: z.boolean().optional(), suite_token: z.string().uuid().optional() }).strict().safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) return json({ ok: false, message: "Paramètres de correction invalides" }, 400);
-    const { attempt_id, rattrapage, reprise_qrc_id, interruption_confirmee } = parsed.data;
+    const { attempt_id, rattrapage, reprise_qrc_id, interruption_confirmee, suite_token } = parsed.data;
+    if (suite_token && (rattrapage || reprise_qrc_id || interruption_confirmee)) return json({ ok: false, message: "Continuation invalide" }, 400);
+    const { data: suite, error: suiteError } = suite_token ? await service.from("qrc_ia_suites").select("attempt_id").eq("attempt_id", attempt_id).eq("token", suite_token).maybeSingle() : { data: null, error: null };
+    if (suite_token && (suiteError || !suite)) return json({ ok: false, message: "Continuation non autorisée" }, 403);
     // RATTRAPAGES EXCEPTIONNELS, déclenchés par un administrateur uniquement :
     // - autorisé le 25/09/2026 : passages e-learning de septembre 2026 ;
     // - autorisé le 10/10/2026 : passages e-learning du 01/10 au 10/10/2026 14 h 28 (Paris).
@@ -70,7 +73,7 @@ Deno.serve(async (req) => {
       const { data: r } = await service.from("user_roles").select("role").eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
       admin = !!r;
     }
-    if (!proprio && !admin) return json({ ok: false, message: "non autorisé" }, 403);
+    if (!proprio && !admin && !suite) return json({ ok: false, message: "non autorisé" }, 403);
     if (estRattrapage && !admin) return json({ ok: false, message: "rattrapage réservé à un administrateur" }, 403);
     if (reprise_qrc_id && !admin) return json({ ok: false, message: "reprise réservée à un administrateur" }, 403);
     if (reprise_qrc_id && (attempt_id !== "3464d018-c56b-4b54-ae83-816add723b94" || ![
@@ -97,6 +100,25 @@ Deno.serve(async (req) => {
     if (lectureErreur) throw lectureErreur;
 
     const key = Deno.env.get("LOVABLE_API_KEY");
+    if (!reprise_qrc_id && !estRattrapage && new Date(att.finished_at) < new Date("2026-10-20T09:53:00Z")) return json({ ok: true, statut: "historique_sans_reprise_auto" });
+    const automatique = !reprise_qrc_id;
+    if (automatique) {
+      const { data: acquired, error } = await service.rpc("qrc_ia_suite_claim", { p_attempt: attempt_id, p_token: suite_token ?? null });
+      if (error) throw error;
+      if (!acquired) return json({ ok: true, statut: "suite_non_acquise" });
+    }
+    const finirSuite = async (statut: string, message: string | null, delay = 60000) => {
+      if (!automatique) return;
+      const { data: job, error: readError } = await service.from("qrc_ia_suites").select("remaining").eq("attempt_id", attempt_id).single();
+      if (readError) throw readError;
+      if (statut === "attente" && job.remaining <= 0) { statut = "a_verifier"; message = "Budget de continuation épuisé"; }
+      const { error } = await service.from("qrc_ia_suites").update({ statut, message, next_at: new Date(Date.now() + delay).toISOString(), lease_until: null }).eq("attempt_id", attempt_id).eq("statut", "en_cours");
+      if (error) throw error;
+      if (statut === "a_verifier" || statut === "pause") {
+        const { error: alertError } = await service.from("alertes_systeme").insert({ type: "qrc_ia_suite", titre: "Correction QRC à vérifier", message: message ?? "Correction à vérifier", details: JSON.stringify({ attempt_id }), lu: false });
+        if (alertError) throw alertError;
+      }
+    };
     const bilan: Record<string, number> = {};
     const compter = (s: string) => { bilan[s] = (bilan[s] ?? 0) + 1; };
 
@@ -114,133 +136,97 @@ Deno.serve(async (req) => {
         cle_idempotence: cle, qrc_instance_id: inst.qrc_instance_id, attempt_id, apprenant_id: att.apprenant_id,
         question_id: inst.question_id, exam_id: att.exam_id, matiere, reponse_hash: reponseHash, modele: MODELE_IA_QRC,
       };
-      if (reprise_qrc_id) {
-        if (!decision.admissible || !q) return json({ ok: false, message: decision.admissible ? "Question absente" : decision.motif }, 400);
-        if (!key) return json({ ok: false, message: "Service IA non configuré" }, 401);
-        const { data: lease, error: claimError } = await service.rpc("qrc_ia_reserver_reprise", {
-          p_qrc: inst.qrc_instance_id, p_base: { ...base, bareme: decision.bareme }, p_interruption_confirmee: interruption_confirmee === true,
-        });
+      if (!decision.admissible) {
+        const { error } = await service.from("qrc_ia_corrections").upsert({ ...base, statut: decision.statut, motif: decision.motif, termine_at: new Date().toISOString() }, { onConflict: "cle_idempotence", ignoreDuplicates: true });
+        if (error) throw error;
+        compter(decision.motif); continue;
+      }
+      if (decision.admissible) {
+        if (!q) { await finirSuite("a_verifier", "Question absente du snapshot"); return json({ ok: false, message: "Question absente" }, 400); }
+        if (!key) { await finirSuite("a_verifier", "Service IA non configuré"); return json({ ok: false, message: "Service IA non configuré" }, 401); }
+        if (automatique) {
+          const { data: old, error: oldError } = await service.from("qrc_ia_corrections").select("statut,http_status,termine_at,created_at").eq("qrc_instance_id", inst.qrc_instance_id).maybeSingle();
+          const { data: retries, error: retriesError } = await service.from("qrc_ia_reprises").select("statut,http_status,termine_at,created_at,numero").eq("qrc_instance_id", inst.qrc_instance_id).order("numero", { ascending: false }).limit(1);
+          if (oldError || retriesError) throw oldError ?? retriesError;
+          const action = prochaineActionIa(retries?.[0] ?? old);
+          if (action.action === "fin") continue;
+          if (action.action !== "appel") { await finirSuite(action.action === "attendre" ? "attente" : "a_verifier", "Correction en attente de reprise contrôlée ou de revue", Math.max(action.delai, 60000)); return json({ ok: true, statut: action.action }); }
+        }
+        const { data: claim, error: claimError } = automatique
+          ? await service.rpc("qrc_ia_reserver_auto", { p_qrc: inst.qrc_instance_id, p_base: { ...base, bareme: decision.bareme } })
+          : await service.rpc("qrc_ia_reserver_reprise", { p_qrc: inst.qrc_instance_id, p_base: { ...base, bareme: decision.bareme }, p_interruption_confirmee: interruption_confirmee === true });
         if (claimError) throw claimError;
-        if (!lease) return json({ ok: true, statut: "reprise_non_acquise" });
+        if (!claim) { await finirSuite("a_verifier", "Réservation non acquise ; aucune relance payante"); return json({ ok: true, statut: "reprise_non_acquise" }); }
+        const lease = typeof claim === "string" ? claim : String((claim as { id: string }).id);
+        const initial = typeof claim !== "string" && (claim as { type: string }).type === "initial";
         let runId: string | null = null;
+        let retryAfterMs = 120000;
+        let providerFinished = false;
+        let streamError: unknown;
         const finishError = async (status: number, message: string, statut = "erreur") => {
-          const { error } = await service.from("qrc_ia_reprises").update({ statut, http_status: status, message, termine_at: new Date().toISOString(), run_id: runId }).eq("id", lease).eq("statut", "en_cours");
+          const { error } = initial
+            ? await service.from("qrc_ia_corrections").update({ statut, http_status: status, motif: message, termine_at: new Date().toISOString() }).eq("id", lease).eq("statut", "en_cours")
+            : await service.from("qrc_ia_reprises").update({ statut, http_status: status, message, termine_at: new Date().toISOString(), run_id: runId }).eq("id", lease).eq("statut", "en_cours");
           if (error) throw error;
         };
         try {
           const gateway = createOpenAICompatible({ name: "lovable", baseURL: "https://ai.gateway.lovable.dev/v1", headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" }, fetch: async (input, init) => {
             const response = await fetch(input, init);
             runId = response.headers.get("X-Lovable-AIG-Run-ID");
+            const retryAfter = response.headers.get("Retry-After");
+            if (retryAfter) {
+              const delay = Number.isFinite(Number(retryAfter)) ? Number(retryAfter) * 1000 : Date.parse(retryAfter) - Date.now();
+              if (Number.isFinite(delay)) retryAfterMs = Math.max(retryAfterMs, delay);
+            }
             return response;
           } });
           // Un seul item par invocation explicite. Flux fournisseur, aucun timer
           // ni retry SDK : une issue inconnue reste verrouillée pour revue humaine.
-          const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(q, decision.bareme, inst.reponse), maxRetries: 0 });
+          const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(q, decision.bareme, inst.reponse), maxRetries: 0, onError: ({ error }) => { streamError = error; } });
           const text = await result.text;
+          if (streamError) throw streamError;
+          providerFinished = true;
           if (!text.trim()) {
             await finishError(200, "Réponse IA vide ou refusée", "a_verifier");
+            await finirSuite("a_verifier", "Réponse IA vide ou refusée");
             return json({ ok: false, message: "Réponse IA vide ou refusée" }, 422);
           }
           const validated = validerResultatIa(text, decision.bareme);
           if (!validated.valide) {
             await finishError(200, validated.motif, "a_verifier");
+            await finirSuite("a_verifier", validated.motif);
             return json({ ok: false, message: validated.motif }, 422);
           }
-          const { data: proof, error } = await service.rpc("qrc_ia_publier_reprise", {
+          const { data: proof, error } = automatique ? await service.rpc("qrc_ia_publier_auto", {
+            p_id: lease, p_initial: initial, p_attempt: attempt_id, p_qrc: inst.qrc_instance_id, p_reponse: inst.reponse,
+            p_operation: uuidDepuis(await sha256(`qrc-ia:${cle}`)), p_note: validated.note, p_justification: validated.justification, p_run_id: runId,
+          }) : await service.rpc("qrc_ia_publier_reprise", {
             p_id: lease, p_operation: uuidDepuis(await sha256(`qrc-ia:${cle}`)), p_note: validated.note, p_justification: validated.justification, p_run_id: runId,
           });
           if (error) throw error;
+          // One paid item per invocation. The durable queue dispatches the next item after cooldown.
+          await finirSuite((qrcs?.length ?? 0) > 1 ? "attente" : "terminee", null);
           return json({ ok: true, statut: "reprise_terminee", preuve: proof, run_id: runId });
         } catch (e) {
           // Sans statut fournisseur, l'issue (et la facturation) est inconnue :
           // terminal pour cette reprise, jamais assimilée à un 5xx rejouable.
-          const upstreamStatus = (e as { statusCode?: number }).statusCode;
+          // Publication/readback failure after successful AI must never rebill.
+          const upstreamStatus = providerFinished ? undefined : (e as { statusCode?: number }).statusCode;
           const status = Number(upstreamStatus ?? 499);
           const message = String((e as { message?: string }).message ?? "Service IA indisponible").slice(0, 600);
           await finishError(status, message, upstreamStatus ? "erreur" : "a_verifier");
           if (estPauseGlobale(status)) {
-            await service.from("qrc_ia_config").update({ pause_motif: message, pause_depuis: new Date().toISOString() }).eq("id", true);
+            const { error: pauseError } = await service.from("qrc_ia_config").update({ pause_motif: message, pause_depuis: new Date().toISOString() }).eq("id", true);
+            if (pauseError) { await finirSuite("pause", message); throw pauseError; }
           }
+          const retryable = status === 429 || (status >= 500 && status <= 599 && upstreamStatus !== undefined);
+          await finirSuite(estPauseGlobale(status) ? "pause" : retryable ? "attente" : "a_verifier", message, retryAfterMs + Math.floor(Math.random() * 5000));
           return json({ ok: false, message, run_id: runId }, status >= 400 && status <= 599 ? status : 500);
         }
       }
 
-      if (!decision.admissible) {
-        // Aucun appel IA : trace seulement (la QRC reste à corriger par le formateur).
-        await service.from("qrc_ia_corrections").upsert(
-          { ...base, statut: decision.statut, motif: decision.motif, termine_at: new Date().toISOString() },
-          { onConflict: "cle_idempotence", ignoreDuplicates: true },
-        );
-        compter(decision.motif);
-        continue;
-      }
-
-      // Réservation atomique : une seule analyse payante par clé (F5, double clic, reconnexion…).
-      const { data: reserve } = await service.from("qrc_ia_corrections")
-        .upsert({ ...base, statut: "en_cours", bareme: decision.bareme }, { onConflict: "cle_idempotence", ignoreDuplicates: true })
-        .select("id");
-      if (!reserve || reserve.length === 0) { compter("deja_traitee"); continue; }
-      const idLigne = reserve[0].id;
-      const clore = (maj: Record<string, unknown>) =>
-        service.from("qrc_ia_corrections").update({ ...maj, termine_at: new Date().toISOString() }).eq("id", idLigne);
-
-      if (!key) { await clore({ statut: "erreur", motif: "cle_ia_absente" }); compter("erreur"); continue; }
-
-      let texte = "";
-      let status = 200;
-      let cout: number | null = null;
-      try {
-        const gateway = createOpenAICompatible({
-          name: "lovable",
-          baseURL: "https://ai.gateway.lovable.dev/v1",
-          headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-        });
-        const r = await generateText({
-          model: gateway(MODELE_IA_QRC),
-          system: CONSIGNE_IA,
-          prompt: messageUtilisateur(q ?? {}, decision.bareme, inst.reponse),
-          maxRetries: 0, // jamais de boucle d'appels payants
-        });
-        texte = r.text;
-        const u = r.usage as any;
-        if (u) cout = (Number(u.inputTokens ?? u.promptTokens ?? 0) * 0.75e-6) + (Number(u.outputTokens ?? u.completionTokens ?? 0) * 3.75e-6);
-      } catch (e) {
-        status = Number((e as any)?.statusCode ?? 500);
-        await clore({ statut: "erreur", motif: "appel_ia_en_erreur", http_status: status });
-        compter("erreur");
-        if (estPauseGlobale(status)) {
-          await service.from("qrc_ia_config").update({
-            pause_motif: status === 402 ? "credits_ia_epuises" : "acces_ia_refuse", pause_depuis: new Date().toISOString(),
-          }).eq("id", true);
-          break; // pause globale : plus aucun appel
-        }
-        continue;
-      }
-
-      const res = validerResultatIa(texte, decision.bareme);
-      if (!res.valide) {
-        await clore({ statut: "a_verifier", motif: res.motif, http_status: status, cout_estime: cout, justification: texte.slice(0, 600) });
-        compter(res.motif);
-        continue;
-      }
-
-      const { error: errCorr } = await service.rpc("core_correct_qrc_publish", {
-        p_operation_id: uuidDepuis(await sha256(`qrc-ia:${cle}`)),
-        p_qrc_instance_id: inst.qrc_instance_id,
-        p_note: res.note,
-        p_commentaire: `🤖 ${res.justification}`,
-        p_corrige_email: MARQUEUR_IA,
-      });
-      if (errCorr) {
-        // ex. déjà corrigée par un formateur entre-temps : la correction humaine prime.
-        await clore({ statut: "ignoree", motif: `ecriture_refusee: ${errCorr.message.slice(0, 120)}`, note: res.note, justification: res.justification, cout_estime: cout });
-        compter("ignoree");
-        continue;
-      }
-      await clore({ statut: "appliquee", note: res.note, justification: res.justification, http_status: status, cout_estime: cout });
-      compter("appliquee");
     }
-
+    await finirSuite("terminee", null);
     return json({ ok: true, statut: "traite", bilan });
   } catch (e) {
     console.error("[qrc-ia-correction]", e);
