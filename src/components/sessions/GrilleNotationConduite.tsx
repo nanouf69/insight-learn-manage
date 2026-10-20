@@ -30,7 +30,8 @@ interface Theme {
   criteres: Critere[];
 }
 
-const THEMES: Theme[] = [
+/** Critères partagés (exportés pour test de contenu) : chaque case cochée = élément non assimilé. */
+export const THEMES: Theme[] = [
   {
     id: "preparation",
     titre: "1. Préparation du poste de conduite",
@@ -67,6 +68,7 @@ const THEMES: Theme[] = [
       { id: "pietons", label: "Ne laisse pas la priorité aux piétons" },
       { id: "angle_mort", label: "Ne regarde pas l'angle mort lors des changements de direction" },
       { id: "velos", label: "Ne fait pas attention aux vélos" },
+      { id: "consolider_connaissances", label: "Consolider les connaissances" },
     ],
   },
   {
@@ -92,6 +94,7 @@ const THEMES: Theme[] = [
     titre: "6. Gestion / administratif",
     criteres: [
       { id: "devis", label: "Ne remplit pas tout le devis (VTC)", only: "vtc" },
+      { id: "devis_remplir", label: "Ne sait pas remplir un devis" },
       { id: "tva", label: "Ne sait pas calculer la TVA" },
       { id: "taximetre", label: "Ne sait pas utiliser le taximètre (TAXI)", only: "taxi" },
       { id: "attente", label: "Ne sait pas calculer un temps d'attente (TAXI)", only: "taxi" },
