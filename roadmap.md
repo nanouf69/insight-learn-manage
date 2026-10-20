@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Cohérence signatures — 20/10 15:35 UTC
+- [ ] Diagnostiquer dates sans image en lecture seule ; harmoniser compteurs et liste des manquantes, conserver toutes les données.
+- [ ] Tests ciblés et contrôle CRM/PDF lecture seule ; pas de publication ni envoi.
+
 ## Mode formation et jalons — 20/10 15:30 UTC
 - [x] Afficher présentiel/e-learning/mixte sur la fiche ; mettre en rouge le taux de jalons e-learning sans changer les calculs.
 - [x] Trois tests classification PASS ; compilation automatique OK ; fiche ouverte contrôlée en lecture seule (Présentiel). Couleur sur une fiche e-learning réelle NON PROUVÉE ; aucune publication.

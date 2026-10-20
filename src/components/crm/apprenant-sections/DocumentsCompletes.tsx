@@ -25,6 +25,7 @@ import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
 import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
 import { chargerClassificationSignatures, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
+import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
 interface Props {
   apprenant: any;
@@ -796,7 +797,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
 
   // Calcul des heures de présence basé sur les signatures d'émargement
   const emargementsRaw = (documents || []).filter((d: any) => {
-    const hasSignature = !!d.donnees?.signature || !!d.donnees?.signed_at || !!d.completed_at;
+    const hasSignature = aPreuveSignatureEmargement({ signature_data_url: d.donnees?.signature, absent: d.donnees?.absent });
     return d.type_document === "emargement-fc" && hasSignature && !d.donnees?.absent;
   });
   // Même calcul que la carte « Taux présentiel » (computePresentielHours) :
