@@ -77,6 +77,7 @@ export const THEMES: Theme[] = [
       { id: "ville", label: "Ne connaît pas suffisamment la ville" },
       { id: "destination", label: "N'est pas arrivé à destination" },
       { id: "carte", label: "Ne sait pas lire une carte" },
+      { id: "consolider_connaissances", label: "Consolider les connaissances" },
     ],
   },
   {
