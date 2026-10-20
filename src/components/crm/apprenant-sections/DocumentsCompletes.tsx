@@ -289,7 +289,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
       const emargDocs = emargements.map((e) => ({
         id: `emarg-${e.id}`,
         type_document: "emargement-fc",
-        titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : "Présent"}`,
+        titre: `Émargement — ${e.date_emargement} (${e.demi_journee}) — ${e.absent ? "ABSENT" : aPreuveSignatureEmargement(e) ? "Présent" : "Signature à vérifier (image absente)"}`,
         donnees: {
           date_emargement: e.date_emargement,
           demi_journee: e.demi_journee,
@@ -331,7 +331,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
         return {
           id: `emarg-semaine-${key}`,
           type_document: "emargement-fc-semaine",
-          titre: `Semaine ${w.week} (${format(w.weekStart, "dd/MM")} → ${format(w.weekEnd, "dd/MM/yyyy")}) — ${w.sigs.length} signature(s)`,
+          titre: `Semaine ${w.week} (${format(w.weekStart, "dd/MM")} → ${format(w.weekEnd, "dd/MM/yyyy")}) — ${w.sigs.filter(s => aPreuveSignatureEmargement({ signature_data_url: s.signature })).length} signature(s) avec image`,
           donnees: {
             week_label: `Semaine ${w.week} - ${w.year}`,
             week_start: wsStr,
