@@ -1206,6 +1206,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         {/* Onglets en haut */}
         <TabsList className="flex flex-wrap w-full gap-0 bg-transparent border-b border-border rounded-none p-0 h-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary">
           <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
+          <TabsTrigger value="signatures-manquantes" className="text-sm font-semibold text-destructive">✉ Signatures manquantes</TabsTrigger>
           <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
@@ -1231,7 +1232,6 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="vue-apprenant" className="text-sm">Vue apprenant</TabsTrigger>
           <TabsTrigger value="sessions" className="text-sm">Session</TabsTrigger>
-          <TabsTrigger value="signatures-manquantes" className="text-sm">Signatures manquantes</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
         </TabsList>
