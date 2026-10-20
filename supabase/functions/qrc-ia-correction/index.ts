@@ -73,6 +73,9 @@ Deno.serve(async (req) => {
     if (!proprio && !admin) return json({ ok: false, message: "non autorisé" }, 403);
     if (estRattrapage && !admin) return json({ ok: false, message: "rattrapage réservé à un administrateur" }, 403);
     if (reprise_qrc_id && !admin) return json({ ok: false, message: "reprise réservée à un administrateur" }, 403);
+    if (reprise_qrc_id && (attempt_id !== "3464d018-c56b-4b54-ae83-816add723b94" || ![
+      "ebb0b941-9189-4af3-896d-3c605c8ed461", "308b5a5f-c71e-4857-856d-c35e84c58cad", "270acb2e-fa25-46c6-831c-216d8b1506b0",
+    ].includes(reprise_qrc_id))) return json({ ok: false, message: "Hors périmètre de reprise autorisé" }, 403);
     if (att.apprenant_id === "c0844007-b999-4385-9665-918e5077c3b5") return json({ ok: true, statut: "exclu" });
 
     if (att.etat !== "terminee" || !att.finished_at) return json({ ok: true, statut: "passage_non_termine" });
