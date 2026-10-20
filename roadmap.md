@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Indicateur réinscription — 20/10 15:26 UTC
-- [ ] Badges dans Examen et Réussite et panneau mails : réponse signée, attente, inconnu ou lecture indisponible ; aucune inscription déduite, écriture ou publication.
-- [ ] Tests et contrôle connecté lecture seule.
+- [x] Badges dans Examen et Réussite et panneau mails : réponse signée, attente, inconnu ou lecture indisponible ; aucune inscription déduite, écriture ou publication.
+- [x] 12 tests PASS ; compilation automatique OK ; huit badges Non renseigné contrôlés dans les deux vues connectées, aperçu accessible, zéro appel fonction.
 
 ## Panneau mail échec — 20/10 15:17 UTC
 - [x] Aperçu et statut des documents existants de même examen, toutes versions ; aucun double envoi, écriture ou publication.
