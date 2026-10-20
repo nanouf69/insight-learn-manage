@@ -28,7 +28,12 @@ export function depsSupabase(db: SupabaseClient, opts: { authHeader?: string; su
         .order("created_at", { ascending: false });
       if (error) throw error;
       const rows = (data ?? []) as any[];
-      const dejaEngage = rows.find((r) => r.envoi_etat && r.envoi_etat !== "prepare");
+      // Issue inconnue (toutes versions) : jamais de nouvel envoi automatique.
+      const incertain = rows.find((r) => ["envoi_en_cours", "indetermine"].includes(r.envoi_etat));
+      if (incertain) return incertain as DocDb;
+      // Une version déjà envoyée ne bloque que cette même version : la nouvelle version (question de
+      // réinscription) peut partir une fois ; les anciens mails et signatures restent intacts.
+      const dejaEngage = rows.find((r) => r.modele_version === MODELE_VERSION && r.envoi_etat && r.envoi_etat !== "prepare");
       if (dejaEngage) return dejaEngage as DocDb;
       return (rows.find((r) => r.modele_version === MODELE_VERSION) ?? null) as DocDb | null;
     },

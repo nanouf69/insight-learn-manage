@@ -28,10 +28,15 @@ const LIB_CHOIX: Record<string, string> = { maintenant: "Dès maintenant", plus_
 /** Une preuve envoyée/signée de cet examen reste visible même si le modèle a changé. */
 export const docCourant = (docs: DocModele[], a: Candidat) => {
   const memeExamen = docs.filter((d) => d.apprenant_id === a.id && d.cle_envoi === cleDe(a));
-  return memeExamen.find((d) => d.envoye_le || d.statut === "signe" ||
-    ["envoye", "envoi_en_cours", "indetermine"].includes(d.envoi_etat ?? "")) ??
-    memeExamen.find((d) => d.modele_version === MODELE_VERSION) ?? null;
+  return memeExamen.find((d) => ["envoi_en_cours", "indetermine"].includes(d.envoi_etat ?? "")) ??
+    memeExamen.find((d) => d.modele_version === MODELE_VERSION) ??
+    memeExamen.find((d) => d.envoye_le || d.statut === "signe" || d.envoi_etat === "envoye") ?? null;
 };
+
+/** Le document de la version actuelle existe (préparé ou envoyé) ; sinon un nouvel envoi de cette version reste possible. */
+export const aVersionCourante = (docs: DocModele[], a: Candidat) =>
+  docs.some((d) => d.apprenant_id === a.id && d.cle_envoi === cleDe(a) &&
+    (d.modele_version === MODELE_VERSION || ["envoi_en_cours", "indetermine"].includes(d.envoi_etat ?? "")));
 
 export const documentSelectionnable = (d: DocModele | null) =>
   d?.envoi_etat === "prepare" && d.statut !== "signe" && !d.envoye_le && d.modele_version === MODELE_VERSION;
@@ -77,7 +82,7 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
     setApercuServeur(null);
     setApercuId(null);
     if (lectureErreur) { toast.error("Lecture du suivi impossible : aperçu indisponible."); return; }
-    const existant = docCourant(docs, a);
+    const existant = aVersionCourante(docs, a) ? docCourant(docs, a) : null;
     if (existant) {
       if (!existant.mail_html_fige) { toast.error("Le mail enregistré ne contient pas d’aperçu disponible."); return; }
       setApercuServeur(existant);
@@ -111,7 +116,7 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
   /** Prépare (comme l'aperçu) tous les candidats encore non relus, sans envoyer quoi que ce soit, puis les sélectionne. */
   const toutPreparerEtSelectionner = async () => {
     if (lectureErreur) { toast.error("Lecture du suivi impossible : préparation bloquée."); return; }
-    const aPreparer = eligibles.filter((a) => !docCourant(docs, a) && !raisons[a.id]);
+    const aPreparer = eligibles.filter((a) => !aVersionCourante(docs, a) && !raisons[a.id]);
     if (aPreparer.length === 0) { toutSelectionner(); return; }
     if (!window.confirm(`Préparer l'aperçu de ${aPreparer.length} mail(s) (aucun envoi) puis tout sélectionner ?`)) return;
     setOccupe(true);
@@ -214,6 +219,10 @@ export function EnvoiEchecChoixPratiqueDialog({ candidats }: { candidats: Candid
                         <Badge>{LIB_CHOIX[d.choix ?? ""] ?? "?"}</Badge>
                         <Button size="sm" variant="ghost" className="h-7 gap-1" onClick={() => telechargerPreuveDoc(d)}><Download className="h-3 w-3" /> PDF</Button>
                       </>
+                    ) : d?.envoye_le && ech && d.modele_version !== MODELE_VERSION ? (
+                      <Badge variant="outline" title="Ancien mail conservé ; la nouvelle version avec la question de réinscription peut être préparée via Aperçu">
+                        Ancienne version envoyée le {formatParis(ech.envoi)} · nouvelle version possible
+                      </Badge>
                     ) : d?.envoye_le && ech ? (
                       <Badge variant="outline" title="Date serveur d'acceptation par le circuit mail, pas une preuve de réception">
                         Envoyé le {formatParis(ech.envoi)} · non sélectionnable
