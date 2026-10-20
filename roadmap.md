@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Onglet signatures manquantes — 20/10 15:49 UTC
-- [ ] Onglet individuel avec liste lecture seule, aperçu, relecture et confirmation ; circuit mail existant sans envoi collectif ni modification des preuves.
-- [ ] Tests fictifs et navigateur sans envoi réel ; compilation automatique, journal ; aucune publication.
+- [x] Onglet individuel avec liste lecture seule, aperçu, relecture et confirmation ; circuit mail existant sans envoi collectif ni modification des preuves.
+- [x] 23 tests fictifs PASS ; navigateur CRM connecté : deux créneaux, aperçu et confirmation puis annulation, zéro erreur JS, écritures bloquées ; compilation automatique OK. 25 émargements et empreinte identiques avant/après ; journal ; aucune publication. Envoi réel NON PROUVÉ, volontairement non exécuté.
 
 ## Changement présentiel vers e-learning — 20/10 15:44 UTC
 - [x] Identité de lecture liée au mode/heures + invalidation après modification ; total e-learning bleu, jalons rouges, présence session/pratique visible sur les deux modes et taux présentiel basé sur leurs heures prévues.
