@@ -637,6 +637,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
 
       queryClient.invalidateQueries({ queryKey: ['apprenants'] });
       queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenant.id] });
+      queryClient.invalidateQueries({ queryKey: ['apprenant-taux-realisation', apprenant.id] });
       onOpenChange(false);
     } catch (error) {
       console.error(error);

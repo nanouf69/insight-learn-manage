@@ -64,6 +64,23 @@ import { useStudentEffectiveHours } from "../hooks/useStudentEffectiveHours";
 import StudentHoursTracker from "../components/cours-en-ligne/StudentHoursTracker";
 
 describe("Taux présentiel de la fiche, lecture seule", () => {
+  it('réactualise le mode sans perdre la présence signée après passage en e-learning', async () => {
+    state.learner = { type_apprenant: 'vtc', date_debut_formation:'2026-07-01', heures_elearning:60, heures_presentiel:6, heures_totales:66 };
+    state.rows = [{ date_emargement:'2026-10-09', demi_journee:'matin', absent:false, signature_data_url:'data:image/png;base64,fictif' }];
+    state.connections=[]; state.activities=[];
+    const before=JSON.stringify(state.rows);
+    const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+    const wrapper=({children}:{children:ReactNode})=><QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view=renderHook(({type})=>useApprenantTauxRealisation('changement-fictif',{type_apprenant:type}),{wrapper,initialProps:{type:'vtc'}});
+    await waitFor(()=>expect(view.result.current.data?.totalParSignatures).toBe(true));
+    state.learner={...state.learner,type_apprenant:'vtc-e'};
+    view.rerender({type:'vtc-e'});
+    await waitFor(()=>expect(view.result.current.data?.totalParSignatures).toBe(false));
+    expect(view.result.current.data?.donePresentiel).toBe(3);
+    expect(view.result.current.data?.signatures).toBeUndefined();
+    expect(JSON.stringify(state.rows)).toBe(before);
+    view.unmount();client.clear();
+  });
   beforeEach(() => {
     state.channels.clear(); state.removed = []; state.subscription = undefined;
   });
