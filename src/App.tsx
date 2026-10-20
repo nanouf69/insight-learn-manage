@@ -82,9 +82,6 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <div role="status" className="border-b border-warning bg-warning/10 px-4 py-3 text-center text-sm font-semibold text-foreground">
-            Maintenance en cours — amélioration de l’affichage. Vos réponses sont conservées.
-          </div>
           <BrowserRouter>
             <ErrorBoundary>
               <Routes>
