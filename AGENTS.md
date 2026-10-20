@@ -7,9 +7,9 @@
 - Règles de fin des modules définis dans le code : table `module_regles_validation` (protection_serveur) lue par save_module_completion ; why: le serveur doit connaître les modules à questions absents de module_editor_state.
 - Technical test accounts use `comptes_test_techniques` and restrictive `est_compte_test()` policies; why: central exclusion without name guessing; each test account sees only itself.
 - Bilans: `trg_bilan_aa_controle_ids` rejects non-int32 exercise IDs (P0510); why: keep old IDs compatible.
-- Affichage module apprenant : via `getLearnerModuleDisplayState`/`isModuleDoneForDisplay` ; une ligne serveur `completed` reste « Terminé » ; compteurs complets sans serveur = « Validation en cours » ; why: jamais rétrogradé ni faux statut.
+- Learner status uses getLearnerModuleDisplayState/isModuleDoneForDisplay: completed stays done, counters without proof stay pending; why: no false status.
 - `trg_garde_correction_admin_quiz` refuses (42501) learner writes to admin/manual-corrected quiz scores; why: pending device notes never overwrite admin corrections.
-- Quiz de module : résultat « OK » affiché seulement après envoi + relecture + submitQuizAttempt ; révision d’un quiz validé sous `module_X_revision_exo_Y` (jamais la ligne validée) ; why: un quiz ne doit jamais paraître validé sans preuve serveur, et une révision ne doit jamais toucher une validation.
+- Quiz OK requires send, readback and submitQuizAttempt; validated quiz revisions use module_X_revision_exo_Y; why: no unproven validation or overwritten proof.
 - Exam source = noteExamenAffichee + passagesV2NonFiables: same-attempt identity, matching answers/content else legacy; snapshots compared by relative order and explicit correct choices; why: no borrowed or truncated score.
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
@@ -34,3 +34,5 @@
 - Read scoped AGENTS before edits (src/lib, shared Edge code, save-emargement-apprenant); why: local rules apply.
 - E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
+- Learner question CSS uses data-learner-question/passage; why: isolate presentation from content and persistence.
+- QRC retry history supersedes old traces only with matching final server proof; why: reservations never prove completion.
