@@ -68,7 +68,6 @@ export const THEMES: Theme[] = [
       { id: "pietons", label: "Ne laisse pas la priorité aux piétons" },
       { id: "angle_mort", label: "Ne regarde pas l'angle mort lors des changements de direction" },
       { id: "velos", label: "Ne fait pas attention aux vélos" },
-      { id: "consolider_connaissances", label: "Consolider les connaissances" },
     ],
   },
   {
