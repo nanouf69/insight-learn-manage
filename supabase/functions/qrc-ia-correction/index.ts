@@ -231,7 +231,12 @@ Deno.serve(async (req) => {
       }
 
     }
-    await finirSuite("terminee", null);
+    const revueNecessaire = (qrcs ?? []).some((inst) => {
+      const question = questions.find((q) => String(q.id) === String(inst.question_id)) ?? null;
+      const decision = admissibilite(question, inst.reponse);
+      return !decision.admissible && decision.statut === "a_verifier";
+    });
+    await finirSuite(revueNecessaire ? "a_verifier" : "terminee", revueNecessaire ? "QRC non admissible : correction formateur requise" : null);
     return json({ ok: true, statut: "traite", bilan });
   } catch (e) {
     console.error("[qrc-ia-correction]", e);

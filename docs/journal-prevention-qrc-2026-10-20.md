@@ -13,6 +13,7 @@
 - Fonction déployée ; test live mauvais token 403 « Continuation non autorisée », sans appel IA. Aucun test payant supplémentaire ni travail global lancé. File production vide et aucun cron actif au contrôle.
 - Kevin SELECT : Q1=2 (08:50:10.593301Z), Q2=2 (08:50:57.988551Z), Q3=0 (08:51:09.270758Z), reprises appliquee ; Q17=2 le 19/10 14:03:53.103415Z intacte. Ancienne trace Q3 remplacée à l'affichage seulement par preuve finale.
 - Jean : correctif PGRST303 et retry unique après refresh même compte conservé ; files intactes, jeux jamais réputés terminés sans preuve. Tablette/reconnexion réelle inaccessible, NON PROUVÉES.
+- Vérification Jean supplémentaire : 21 tests dans 5 fichiers PASS (PGRST303, jeux, pages concurrentes et identité propriétaire), sans compte réel.
 - Empreintes SELECT avant/après identiques : modules62 `6dcdf347cd039743c67774ed064fbbb6`, versions57 `614b47fc7749ae2f0130745ce042e8c8`, fin_acces22 `80fc8b42ea7e59cb4f98d91ca51ba064`, calcul_fige22 `eaaf8b4238abd56039cf4a978dab7821`. Méthode md5(string_agg(md5(to_jsonb(t)::text),'' ORDER BY id)), gel_id pour calcul_fige. Baseline historique4fcc… non reproduite, source exacte requise.
 
 ## Limites
