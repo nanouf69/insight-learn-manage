@@ -14,7 +14,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: mocks.from,
   auth: { getSession: async () => ({ data: { session: mocks.auth.user ? { user: mocks.auth.user } : null } }) },
 } }));
-import { DossierBienvenueButton } from "@/components/examens/DossierBienvenueButton";
+import { DossierBienvenueButton, statutBienvenueVert } from "@/components/examens/DossierBienvenueButton";
 
 const learner = { id: "candidat-fictif", nom: "EXEMPLE", prenom: "Test" };
 const doc = { type_document: "dossier-bienvenue", titre: "Dossier enregistré", donnees: { signature: "fictive" }, completed_at: "2026-10-12T08:00:00Z" };
@@ -30,6 +30,19 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Dossier de bienvenue — liste examens, données fictives", () => {
+  it("Payé permet la couleur de suivi sans prouver un dépôt", () => {
+    expect(statutBienvenueVert("paye")).toBe(true);
+  });
+  it("Dossier complet permet la couleur de suivi", () => {
+    expect(statutBienvenueVert("document_complet")).toBe(true);
+  });
+  it("Inscription validée permet la couleur de suivi", () => {
+    expect(statutBienvenueVert("inscription_validee")).toBe(true);
+  });
+  it("un statut absent ou À payer ne permet pas la couleur positive", () => {
+    expect(statutBienvenueVert(null)).toBe(false);
+    expect(statutBienvenueVert("a_payer")).toBe(false);
+  });
   it("génère le PDF uniquement au clic avec le dossier CRM intact", async () => {
     render(<DossierBienvenueButton apprenant={learner} />);
     fireEvent.click(screen.getByRole("button", { name: "Dossier de bienvenue" }));

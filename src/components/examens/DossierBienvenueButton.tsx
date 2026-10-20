@@ -11,14 +11,16 @@ interface Props {
   statutSuivi?: string | null;
 }
 
-/** Statuts qui prouvent que le dossier est en règle : vert même sans dépôt CRM du dossier. */
-const STATUTS_VERTS = new Set(["paye", "document_complet"]);
+/** Couleur de suivi uniquement : ces statuts ne prouvent pas le dépôt du document. */
+const STATUTS_VERTS = new Set(["paye", "document_complet", "inscription_validee"]);
+export const statutBienvenueVert = (statut?: string | null): boolean =>
+  STATUTS_VERTS.has(statut?.toLowerCase().trim() ?? "");
 
 /**
  * Bouton « Dossier de bienvenue » de la liste des examens.
  * Au chargement : une seule lecture (SELECT, limite 1) pour savoir si le
  * dossier est rempli. Vert si le dossier est déposé OU si le statut de
- * l'apprenant est « Payé » ou « Dossier complet » ; rouge seulement quand
+ * l'apprenant est « Payé », « Dossier complet » ou « Inscription validée » ; rouge seulement quand
  * le dossier n'est pas déposé ET que le statut ne prouve rien.
  * Une lecture impossible laisse le bouton neutre : aucune couleur affirmée.
  * Aucune écriture, aucun PDF généré automatiquement ; le PDF n'est produit
@@ -33,7 +35,7 @@ export function DossierBienvenueButton({ apprenant, statutSuivi }: Props) {
   // « inconnu » = lecture pas encore faite ou échouée : aucune couleur affirmée.
   const [etat, setEtat] = useState<"inconnu" | "rempli" | "absent">("inconnu");
 
-  const statutVert = !!statutSuivi && STATUTS_VERTS.has(statutSuivi.toLowerCase().trim());
+  const statutVert = statutBienvenueVert(statutSuivi);
 
   // Présence du dossier (lecture seule, silencieuse en cas d'erreur).
   useEffect(() => {
@@ -79,7 +81,7 @@ export function DossierBienvenueButton({ apprenant, statutSuivi }: Props) {
       if (!document) {
         toast.info(
           statutVert
-            ? "Statut « Payé / Dossier complet » mais dossier de bienvenue non déposé dans le CRM."
+            ? "Statut « Payé / Dossier complet / Inscription validée » mais dossier de bienvenue non déposé dans le CRM."
             : "Dossier de bienvenue non déposé dans le CRM.",
         );
         return;
@@ -120,7 +122,7 @@ export function DossierBienvenueButton({ apprenant, statutSuivi }: Props) {
       title={
         vert
           ? statutVert && etat !== "rempli"
-            ? "Statut Payé / Dossier complet — cliquer pour télécharger le dossier de bienvenue s'il est déposé"
+            ? "Statut Payé / Dossier complet / Inscription validée — cliquer pour télécharger le dossier de bienvenue s'il est déposé"
             : "Dossier de bienvenue rempli — cliquer pour le télécharger"
           : rouge
             ? "Dossier de bienvenue non rempli"
