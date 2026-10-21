@@ -4917,12 +4917,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     (async () => {
       try {
         const fetchStartedAt = Date.now();
-        const requestTimestamp = new Date().toISOString();
+        // Aucune borne par l'heure de l'appareil : une tablette mal réglée
+        // recevrait sinon une version absente/ancienne (diagnostic 21/10).
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at, source_fingerprint")
           .eq("module_id", module.id)
-          .lte("updated_at", requestTimestamp)
           .order("updated_at", { ascending: false })
           .limit(1);
 
