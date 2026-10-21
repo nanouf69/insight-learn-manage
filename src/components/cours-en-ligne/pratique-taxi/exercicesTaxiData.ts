@@ -89,7 +89,7 @@ export interface Scenario {
   acceptes: { reservation: number[]; tarif: string[]; supplements: number[]; attente: number[] };
   justification: Record<ChampRtst, string>;
 }
-const ATT = (m: number) => Math.round((41.3 / 60) * m * 100) / 100;
+const ATT = (m: number) => Math.round((41.3 * m / 60) * 100 + 1e-6) / 100;
 const att = (m: number) => `41,3 / 60 × ${m} = ${ATT(m).toFixed(2).replace(".", ",")} €`;
 const s = (x: Scenario) => x;
 
