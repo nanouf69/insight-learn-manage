@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { LYON_GEO } from "./lyon-geo-data";
+import { facteurZoomMolette, zoomViewBox } from "./jeuxLyonLogic";
 
 export type Touche = { x: number; y: number; arrondissement: number | null; zones: string[] };
 
@@ -41,14 +42,7 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
   const ordreZones = useMemo(() => [...LYON_GEO.zones].sort(() => Math.random() - 0.5), []);
 
   const zoomer = useCallback((f: number, cx?: number, cy?: number) => {
-    setVb((v) => {
-      const w = Math.min(W, Math.max(W / 8, v.w * f));
-      const h = (w * H) / W;
-      const px = cx ?? v.x + v.w / 2, py = cy ?? v.y + v.h / 2;
-      const x = Math.min(W - w, Math.max(0, px - ((px - v.x) * w) / v.w));
-      const y = Math.min(H - h, Math.max(0, py - ((py - v.y) * h) / v.h));
-      return { x, y, w, h };
-    });
+    setVb((v) => zoomViewBox(v, v.w * f, cx ?? v.x + v.w / 2, cy ?? v.y + v.h / 2, W, H));
   }, []);
 
   const versCarte = (clientX: number, clientY: number) => {
@@ -112,14 +106,17 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
 
   useEffect(() => {
     const svg = svgRef.current; if (!svg) return;
+    // Zoom molette / pincement trackpad (ctrlKey) : amplitude proportionnelle au
+    // geste, ancrée sous le curseur, jamais de saut brutal au min/max.
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
       const p = versCarte(e.clientX, e.clientY);
-      zoomer(e.deltaY > 0 ? 1.2 : 1 / 1.2, p?.x, p?.y);
+      const f = facteurZoomMolette(e);
+      setVb((v) => zoomViewBox(v, v.w * f, p?.x ?? v.x + v.w / 2, p?.y ?? v.y + v.h / 2, W, H));
     };
     svg.addEventListener("wheel", wheel, { passive: false });
     return () => svg.removeEventListener("wheel", wheel);
-  }, [zoomer]);
+  }, []);
 
   const onKeySvg = (e: RKE<SVGSVGElement>) => {
     if (cible !== "point" || desactive) return;
@@ -139,7 +136,7 @@ export function CarteLyon({ cible, onTouche, surlignerArr = [], surlignerZones =
       <svg
         ref={svgRef}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className={`block mx-auto touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring ${agrandi ? "h-[86vh]" : "h-[75vh]"} max-w-full`}
+        className={`block w-full touch-none select-none bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring ${agrandi ? "h-[calc(100dvh-15rem)]" : "h-[min(72vh,46rem)]"}`}
         role="application"
         aria-label={cible === "point" ? "Carte de Lyon : flèches pour déplacer le repère, Entrée pour placer" : "Carte de Lyon"}
         tabIndex={cible === "point" ? 0 : -1}

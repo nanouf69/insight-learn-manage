@@ -41,7 +41,7 @@ function useMeilleur(compteId: string | null | undefined, jeu: string) {
 
 function Etiquettes({ items, choisi, onChoisir, desactive }: { items: Item[]; choisi: string | null; onChoisir: (id: string) => void; desactive?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1 rounded-lg" role="listbox" aria-label="Étiquettes à placer">
+    <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto p-1 rounded-lg" role="listbox" aria-label="Étiquettes à placer">
       {items.map((it) => (
         <button key={it.id} type="button" role="option" aria-selected={choisi === it.id} disabled={desactive}
           onClick={() => onChoisir(it.id)}
@@ -296,12 +296,13 @@ function JeuLieux({ compteId, agrandi }: { compteId?: string | null; agrandi?: b
 // ================= ENTRÉE DANS LE MODULE =================
 export default function JeuxCartesLyon({ compteId }: { compteId?: string | null }) {
   const [ouvert, setOuvert] = useState<null | "arr" | "lieux">(null);
-  const [agrandi, setAgrandi] = useState(false);
+  // Ouvert par défaut en mode agrandi : la carte est l'élément principal du jeu.
+  const [agrandi, setAgrandi] = useState(true);
   // Ouverture demandée par le bandeau des jeux du module (identifiants du registre).
   useEffect(() => {
     return ecouterDemandeJeu((id) => {
       const cible = id === JEUX_LYON[0].id ? "arr" : id === JEUX_LYON[1].id ? "lieux" : null;
-      if (cible) { setOuvert(cible); setAgrandi(false); }
+      if (cible) { setOuvert(cible); setAgrandi(true); }
     });
   }, []);
   const jeux = [
@@ -315,7 +316,7 @@ export default function JeuxCartesLyon({ compteId }: { compteId?: string | null 
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         {jeux.map(({ id, titre, desc, Icone }) => (
-          <button key={id} type="button" onClick={() => { setOuvert(id); setAgrandi(false); }}
+          <button key={id} type="button" onClick={() => { setOuvert(id); setAgrandi(true); }}
             className="text-left rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <div className="flex items-center gap-2 font-semibold text-primary"><Icone className="h-5 w-5" />{titre}</div>
             <p className="text-sm text-muted-foreground mt-1">{desc}</p>
@@ -325,7 +326,7 @@ export default function JeuxCartesLyon({ compteId }: { compteId?: string | null 
       <Dialog open={ouvert !== null} onOpenChange={(o) => !o && setOuvert(null)}>
         <DialogContent className={agrandi
           ? "max-w-none w-[100vw] h-[100vh] max-h-none rounded-none border-0 p-3 sm:p-4 overflow-y-auto"
-          : "max-w-5xl w-[98vw] max-h-[96vh] overflow-y-auto p-4 sm:p-6"}>
+          : "max-w-7xl w-[99vw] max-h-[98vh] overflow-y-auto p-3 sm:p-5"}>
           <DialogHeader>
             <DialogTitle>{jeux.find((j) => j.id === ouvert)?.titre}</DialogTitle>
             <DialogDescription>Glissez la carte pour la déplacer, pincez ou utilisez + / − pour zoomer.</DialogDescription>

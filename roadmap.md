@@ -1,5 +1,16 @@
 # Feuille de route
 
+## Carte des jeux Lyon agrandie — 21/10 12:45 UTC
+- [x] Jeux MONUMENTS et QUARTIERS (module 8 PRATIQUE VTC uniquement ; module 6 TAXI sans jeu, vérifié en base) : carte nettement plus grande, largeur disponible, hauteur confortable tablette, responsive ordinateur/mobile, panneaux sans écraser la carte, mode plein écran, zoom/déplacement faciles, recentrage.
+- [x] Aucune modification de monuments, quartiers, questions, réponses, corrections, progressions ou signatures ; règles et scores préservés ; aucun message aux apprenants.
+- [x] Vérifier rendu tablette portrait/paysage et fonctionnement du jeu après agrandissement ; indiquer si publié ou non.
+- Fait 21/10 12:57 UTC : fenêtre du jeu ouverte d'office en mode agrandi (bouton Réduire/Agrandir conservé) ; carte en pleine largeur, hauteur ~72 % de l'écran (plein écran : tout l'écran moins les consignes) ; zoom molette/pincement proportionnel au geste et ancré sous le doigt/le curseur (plus de saut brutal), boutons +/−/recentrage inchangés ; étiquettes et retours au-dessus de la carte sans l'écraser.
+- Preuves : 25 tests PASS (10 jeux Lyon dont 2 nouveaux sur le zoom : point sous le curseur fixe, bornes, amplitude proportionnelle ; 8 activités module ; 7 horloge appareil). Contrôle visuel Playwright sur page temporaire (supprimée après) : tablette portrait 800×1280 (carte 766×1040), tablette paysage 1280×800 (1246×560), ordinateur 1280×1800, mobile 390×844 ; jeu joué (étiquette + toucher + retour « Encore un essai »), zoom molette, recentrage, réduire/agrandir — captures /tmp/browser/jeux-carte/screenshots.
+- Aucune écriture base : uniquement 3 fichiers frontend (CarteLyon.tsx, JeuxCartesLyon.tsx, jeuxLyonLogic.ts) + tests. Avertissements console forwardRef préexistants (TooltipProvider/Toaster), sans rapport.
+- Limites NON PROUVÉES : pas testé sur une vraie tablette physique ; pas testé avec un compte élève réel connecté (mentaillage de session refusé sans accord) ; NON PUBLIÉ.
+
+## Onglet signatures manquantes — 20/10 15:49 UTC
+
 ## Onglet signatures manquantes — 20/10 15:49 UTC
 - [x] Onglet individuel avec liste lecture seule, aperçu, relecture et confirmation ; circuit mail existant sans envoi collectif ni modification des preuves.
 - [x] 23 tests fictifs PASS ; navigateur CRM connecté : deux créneaux, aperçu et confirmation puis annulation, zéro erreur JS, écritures bloquées ; compilation automatique OK. 25 émargements et empreinte identiques avant/après ; journal ; aucune publication. Envoi réel NON PROUVÉ, volontairement non exécuté.
