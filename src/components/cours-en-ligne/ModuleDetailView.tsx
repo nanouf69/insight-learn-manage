@@ -2062,6 +2062,7 @@ import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
+const ExercicesPratiqueTaxi = lazy(() => import("./pratique-taxi/ExercicesPratiqueTaxi"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -9605,6 +9606,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
             <Suspense fallback={null}>
               <JeuxCartesLyon compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
+          {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("exo_taxi_")) && (
+            <Suspense fallback={null}>
+              <ExercicesPratiqueTaxi compteId={apprenantId ?? null} />
             </Suspense>
           )}
 
