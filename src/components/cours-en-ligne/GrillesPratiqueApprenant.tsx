@@ -45,6 +45,7 @@ const GrillesPratiqueApprenant = ({
         .from("grilles_notation_conduite" as any)
         .select("id, session_id, date_passage, passage, avis, type_formation")
         .eq("apprenant_id", apprenantId)
+        .eq("statut", "validee")
         .order("date_passage", { ascending: true });
       if (!active) return;
       if (error) console.error("[GrillesPratiqueApprenant]", error);
