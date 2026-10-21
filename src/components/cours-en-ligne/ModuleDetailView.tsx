@@ -6872,7 +6872,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     useEffect(() => {
       if (exoCourantId != null) ouvrirMatiereBilanRef.current(exoCourantId);
     }, [exoCourantId]);
-    const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
+    const progressPercent = pourcentagePagesActuelles(completedPages, totalPages);
 
     // --- Restore learner UI state (page + results) to prevent unwanted reset ---
     useEffect(() => {
