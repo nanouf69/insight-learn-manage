@@ -113,6 +113,9 @@ interface Props {
   readOnly?: boolean;
 }
 
+const canonCriteres = (c: any) =>
+  JSON.stringify(Object.keys(c || {}).filter(k => c[k]).sort());
+
 const GrilleNotationConduite = ({
   apprenantId,
   apprenantNom,
@@ -136,6 +139,7 @@ const GrilleNotationConduite = ({
   const [grillesCount, setGrillesCount] = useState(0);
   const [avis, setAvis] = useState<"favorable" | "defavorable" | null>(null);
   const [tempsPreparation, setTempsPreparation] = useState("");
+  const [nonSauvegarde, setNonSauvegarde] = useState(false);
   const [formateurs, setFormateurs] = useState<{ id: string; nom: string; prenom: string }[]>([]);
 
   const themes = useMemo(
@@ -319,7 +323,7 @@ const GrilleNotationConduite = ({
       .maybeSingle();
     if (rErr) throw rErr;
     const r: any = relu;
-    if (!r || r.statut !== statut || JSON.stringify(r.criteres || {}) !== JSON.stringify(coches) || (r.observations || null) !== (observations || null) || (r.avis ?? null) !== (avis ?? null)) {
+    if (!r || r.statut !== statut || canonCriteres(r.criteres) !== canonCriteres(coches) || (r.observations || null) !== (observations || null) || (r.avis ?? null) !== (avis ?? null)) {
       throw new Error("relecture serveur différente de la saisie");
     }
     setNonSauvegarde(false);
@@ -330,11 +334,12 @@ const GrilleNotationConduite = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveGrille();
-      toast.success("Grille de notation enregistrée");
+      await saveGrille("brouillon");
+      toast.success("Grille enregistrée (non envoyée à l'élève) — elle sera reprise à la prochaine ouverture");
     } catch (e: any) {
       console.error("[GrilleNotation] save error", e);
-      toast.error(`Erreur d'enregistrement : ${e?.message || "inconnue"}`);
+      setNonSauvegarde(true);
+      toast.error(`Erreur d'enregistrement : ${e?.message || "inconnue"}. Votre saisie est conservée à l'écran, réessayez.`);
     } finally {
       setSaving(false);
     }
@@ -351,7 +356,8 @@ const GrilleNotationConduite = ({
     const { count } = await supabase
       .from("grilles_notation_conduite" as any)
       .select("id", { count: "exact", head: true })
-      .eq("apprenant_id", apprenantId);
+      .eq("apprenant_id", apprenantId)
+      .eq("statut", "validee");
     const total = count || 0;
     setGrillesCount(total);
     setHasGrille(total > 0);
@@ -366,7 +372,7 @@ const GrilleNotationConduite = ({
     }
     setSending(true);
     try {
-      await saveGrille();
+      await saveGrille("validee");
 
       const { data: appr } = await supabase
         .from("apprenants")
