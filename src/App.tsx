@@ -15,6 +15,7 @@ import ReservationPratique from "./pages/ReservationPratique";
 import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
 import FournisseurPortal from "./pages/FournisseurPortal";
 import CoursPublic from "./pages/CoursPublic";
+import TmpJeuCarteCheck from "./pages/TmpJeuCarteCheck";
 import EmargementsRegularisation from "./pages/EmargementsRegularisation";
 import ResetPassword from "./pages/ResetPassword";
 import PreInformationPublic from "./pages/PreInformationPublic";
