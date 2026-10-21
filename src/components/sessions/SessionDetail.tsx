@@ -80,6 +80,9 @@ import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable"
 import GrilleNotationConduite from "./GrilleNotationConduite";
 import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
+import { calculerAccesCours } from "@/lib/accesCoursFenetre";
+import { construireConvocationHtml } from "@/lib/convocationFormation";
+import { isPresentielType } from "@/lib/agendaSlots";
 
 
 interface Session {
@@ -3451,6 +3454,46 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
 
+  // Convocation de formation : mise en page professionnelle + période d'accès réelle.
+  // Lecture seule : aucune date ni aucun droit n'est modifié.
+  const estModeleConvocationFormation = (templateId?: string | null) =>
+    !!templateId && templateId.startsWith('convocation-') && templateId !== 'convocation-examen';
+  const habillerConvocation = (a: any, corps: string): { html: string; accesManquant: boolean } => {
+    const sa = apprenantsInSession.find((x: any) => x.apprenant?.id === a.id) as any;
+    const presentiel = isPresentielType(a.type_apprenant, a.formation_choisie, a.creneau_horaire);
+    const isFC = isFormationContinueValue(a.type_apprenant, a.formation_choisie);
+    const acces = calculerAccesCours({
+      apprenant: a,
+      isFC,
+      isPresentiel: presentiel,
+      fenetreSession: presentiel && session?.dateDebut
+        ? { date_debut: session.dateDebut, date_fin: sa?.date_fin_personnalisee || session.dateFin || session.dateDebut }
+        : null,
+    });
+    const hDeb = sa?.heure_debut_personnalisee || (session as any)?.heure_debut;
+    const hFin = sa?.heure_fin_personnalisee || (session as any)?.heure_fin;
+    const html = construireConvocationHtml({
+      civilite: a.civilite, prenom: a.prenom, nom: a.nom,
+      referenceDossier: a.id ? `FT-${String(a.id).slice(0, 8).toUpperCase()}` : null,
+      intituleFormation: getFormationTypeLocal(a.type_apprenant),
+      presentiel,
+      dateDebut: session?.dateDebut ? formatDateFr(session.dateDebut) : null,
+      dateFin: session?.dateFin ? formatDateFr(sa?.date_fin_personnalisee || session.dateFin) : null,
+      horaires: hDeb && hFin ? `${String(hDeb).slice(0, 5)} – ${String(hFin).slice(0, 5)}` : null,
+      lieu: session?.lieu || null,
+      acces,
+      corpsModele: corps,
+    });
+    return { html, accesManquant: acces.statut === 'manquant' };
+  };
+  const alerterAccesManquant = (noms: string[]) => {
+    if (noms.length) toast({
+      title: "Période d'accès aux cours non définie",
+      description: `${noms.join(', ')} : dates d'accès manquantes. Aucun accès ne sera ouvert automatiquement ; complétez la fiche avant envoi.`,
+      variant: "destructive",
+    });
+  };
+
   const getPreInformationTemplateId = (a: any): string => {
     const { isTA, isVA, isTaxi } = getSessionTrainingFlags(a?.type_apprenant);
     const hasDate = Boolean(a?.date_debut_formation || session.dateDebut);
@@ -3484,7 +3527,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
 
     const subject = replaceTemplateVars(template.subject_template, apprenant);
-    const body = replaceTemplateVars(template.body_template, apprenant);
+    let body = replaceTemplateVars(template.body_template, apprenant);
+    if (estModeleConvocationFormation(templateId)) {
+      const r = habillerConvocation(apprenant, body);
+      body = r.html;
+      if (r.accesManquant) alerterAccesManquant([`${apprenant.prenom} ${apprenant.nom}`]);
+    }
 
     setEmailPreview({ templateId, apprenant, subject, body, label: template.label });
   };
@@ -3590,7 +3638,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     // Show preview with first apprenant as example
     const previewSubject = replaceTemplateVars(template.subject_template, selectedList[0]);
-    const previewBody = replaceTemplateVars(template.body_template, selectedList[0]);
+    const previewBodyBrut = replaceTemplateVars(template.body_template, selectedList[0]);
+    const previewBody = estModeleConvocationFormation(template.id) ? habillerConvocation(selectedList[0], previewBodyBrut).html : previewBodyBrut;
+    if (estModeleConvocationFormation(template.id)) alerterAccesManquant(selectedList.filter((x: any) => habillerConvocation(x, '').accesManquant).map((x: any) => `${x.prenom} ${x.nom}`));
     setBulkPreview({ template, apprenants: selectedList, previewSubject, previewBody });
   };
 
@@ -3607,7 +3657,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
     for (const apprenant of apprenants) {
       const subject = useEditedSubject ? replaceTemplateVars(editedSubject, apprenant) : replaceTemplateVars(template.subject_template, apprenant);
-      const body = useEditedBody ? replaceTemplateVars(editedBody, apprenant) : replaceTemplateVars(template.body_template, apprenant);
+      const bodyBrut = useEditedBody ? replaceTemplateVars(editedBody, apprenant) : replaceTemplateVars(template.body_template, apprenant);
+      // Le corps édité reste un modèle brut : la mise en page convocation est appliquée par élève.
+      const body = estModeleConvocationFormation(template.id) ? habillerConvocation(apprenant, bodyBrut).html : bodyBrut;
       try {
         await supabase.functions.invoke('sync-outlook-emails', {
           body: {
@@ -3653,10 +3705,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         return {
           apprenant,
           subject: replaceTemplateVars(template.subject_template, apprenant),
-          body: replaceTemplateVars(template.body_template, apprenant),
+          body: habillerConvocation(apprenant, replaceTemplateVars(template.body_template, apprenant)).html,
         };
       })
       .filter(Boolean) as { apprenant: any; subject: string; body: string }[];
+    alerterAccesManquant(selectedList.filter((x: any) => habillerConvocation(x, '').accesManquant).map((x: any) => `${x.prenom} ${x.nom}`));
 
     if (items.length === 0) {
       toast({ title: "Aucun modèle de convocation trouvé", variant: "destructive" });
@@ -6672,7 +6725,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               {bulkPreviewEditing ? (
                 <Textarea 
                   value={bulkPreview.editedBody ?? bulkPreview.template.body_template}
-                  onChange={(e) => setBulkPreview({...bulkPreview, editedBody: e.target.value, previewBody: replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])})}
+                  onChange={(e) => setBulkPreview({...bulkPreview, editedBody: e.target.value, previewBody: estModeleConvocationFormation(bulkPreview.template?.id) ? habillerConvocation(bulkPreview.apprenants[0], replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])).html : replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])})}
                   className="min-h-[300px] font-mono text-xs"
                 />
               ) : (
