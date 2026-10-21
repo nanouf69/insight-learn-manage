@@ -68,6 +68,32 @@ export function pointsEssai(essai: number, juste: boolean): number {
 
 export const MAX_ESSAIS = 2;
 
+// ---- Zoom de la carte (viewBox SVG) ----
+export type VueCarte = { x: number; y: number; w: number; h: number };
+
+/**
+ * Nouveau viewBox après un zoom de facteur `wNouvelle/v.w`, ancré sur le point
+ * (px, py) en coordonnées carte : le point sous le curseur ne bouge pas.
+ * Borné : largeur entre W/8 et W, jamais hors de la carte.
+ */
+export function zoomViewBox(v: VueCarte, wNouvelle: number, px: number, py: number, W: number, H: number): VueCarte {
+  const w = Math.min(W, Math.max(W / 8, wNouvelle));
+  const h = (w * H) / W;
+  const x = Math.min(W - w, Math.max(0, px - ((px - v.x) * w) / v.w));
+  const y = Math.min(H - h, Math.max(0, py - ((py - v.y) * h) / v.h));
+  return { x, y, w, h };
+}
+
+/**
+ * Facteur de zoom pour un événement molette, proportionnel à l'amplitude
+ * (deltaMode normalisé : lignes Firefox ×16, pages ×100). Un geste de trackpad
+ * qui envoie beaucoup d'événements ne slame plus la vue au min/max.
+ */
+export function facteurZoomMolette(e: { deltaY: number; deltaMode: number }): number {
+  const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+  return Math.exp(dy * 0.002);
+}
+
 // ---- Meilleur score local (par compte, jamais effacé, jamais envoyé au serveur) ----
 export function cleMeilleurScore(compteId: string, jeu: string): string {
   return `jeux-lyon:v1:${compteId}:${jeu}`;

@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Carte des jeux Lyon agrandie — 21/10 12:45 UTC
+- [ ] Jeux MONUMENTS et QUARTIERS (module 8 PRATIQUE VTC uniquement ; module 6 TAXI sans jeu, vérifié en base) : carte nettement plus grande, largeur disponible, hauteur confortable tablette, responsive ordinateur/mobile, panneaux sans écraser la carte, mode plein écran, zoom/déplacement faciles, recentrage.
+- [ ] Aucune modification de monuments, quartiers, questions, réponses, corrections, progressions ou signatures ; règles et scores préservés ; aucun message aux apprenants.
+- [ ] Vérifier rendu tablette portrait/paysage et fonctionnement du jeu après agrandissement ; indiquer si publié ou non.
+
+## Onglet signatures manquantes — 20/10 15:49 UTC
+
 ## Onglet signatures manquantes — 20/10 15:49 UTC
 - [x] Onglet individuel avec liste lecture seule, aperçu, relecture et confirmation ; circuit mail existant sans envoi collectif ni modification des preuves.
 - [x] 23 tests fictifs PASS ; navigateur CRM connecté : deux créneaux, aperçu et confirmation puis annulation, zéro erreur JS, écritures bloquées ; compilation automatique OK. 25 émargements et empreinte identiques avant/après ; journal ; aucune publication. Envoi réel NON PROUVÉ, volontairement non exécuté.
