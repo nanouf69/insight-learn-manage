@@ -41,26 +41,20 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   handleHardReload = () => {
-    // Vide le cache local puis recharge proprement
+    // Rechargement « cache-bust » SANS effacer aucune donnée persistante :
+    // les files de réponses/notes/pages non envoyées, la session et tout
+    // stockage local sont conservés intégralement. On recharge simplement la
+    // page avec un paramètre horodaté ajouté à l'URL courante (les paramètres
+    // existants sont préservés) pour forcer le navigateur à recharger les
+    // fichiers à jour.
     try {
-      // Conserve uniquement la session Supabase pour éviter d'être déconnecté
-      // Conserve aussi la file des réponses apprenants non encore enregistrées
-      // (answer_save_queue_v1) : elle ne doit JAMAIS être vidée.
-      const keysToKeep = Object.keys(localStorage).filter((k) =>
-        k.startsWith('sb-') || k.includes('supabase') || k === 'answer_save_queue_v1',
-      );
-      const saved: Record<string, string> = {};
-      keysToKeep.forEach((k) => {
-        const v = localStorage.getItem(k);
-        if (v) saved[k] = v;
-      });
-      sessionStorage.clear();
-      localStorage.clear();
-      Object.entries(saved).forEach(([k, v]) => localStorage.setItem(k, v));
+      const url = new URL(window.location.href);
+      url.searchParams.set('_t', String(Date.now()));
+      window.location.href = url.toString();
     } catch (e) {
-      console.warn('Cache clear failed', e);
+      console.warn('Cache-bust reload failed', e);
+      window.location.reload();
     }
-    window.location.href = window.location.pathname + '?_t=' + Date.now();
   };
 
   render() {
@@ -81,7 +75,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 Oups, un problème d'affichage est survenu
               </h2>
               <p className="text-sm text-muted-foreground">
-                Pas d'inquiétude, votre progression est sauvegardée. Voici ce que vous pouvez faire :
+                Vos réponses déjà confirmées par le serveur sont conservées. Voici ce que vous
+                pouvez faire :
               </p>
             </div>
 
@@ -92,11 +87,11 @@ export class ErrorBoundary extends Component<Props, State> {
                 </p>
                 <ol className="text-sm text-blue-900 dark:text-blue-100 space-y-2 list-decimal list-inside">
                   <li>
-                    <strong>Cliquez sur « Réessayer »</strong> ci-dessous (résout le problème dans
-                    90% des cas)
+                    <strong>Cliquez sur « Réessayer »</strong> ci-dessous
                   </li>
                   <li>
-                    Si ça ne marche pas, cliquez sur <strong>« Vider le cache et recharger »</strong>
+                    Si ça ne marche pas, cliquez sur <strong>« Recharger la version à jour »</strong>{' '}
+                    (vos données sur cet appareil sont conservées)
                   </li>
                   <li>
                     Toujours bloqué ? <strong>Fermez complètement votre navigateur</strong> (toutes
@@ -138,7 +133,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={this.handleHardReload}
                 className="px-5 py-3 min-h-[44px] text-sm font-semibold bg-orange-600 text-white rounded-lg hover:bg-orange-700 active:bg-orange-800"
               >
-                🧹 Vider le cache et recharger
+                🔄 Recharger la version à jour
               </button>
             </div>
 

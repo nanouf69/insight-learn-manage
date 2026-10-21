@@ -47,13 +47,17 @@ Deno.serve(async (req) => {
     if (suite_token && (suiteError || !suite)) return json({ ok: false, message: "Continuation non autorisée" }, 403);
     // RATTRAPAGES EXCEPTIONNELS, déclenchés par un administrateur uniquement :
     // - autorisé le 25/09/2026 : passages e-learning de septembre 2026 ;
-    // - autorisé le 10/10/2026 : passages e-learning du 01/10 au 10/10/2026 14 h 28 (Paris).
+    // - autorisé le 10/10/2026 : passages e-learning du 01/10 au 10/10/2026 14 h 28 (Paris) ;
+    // - autorisé le 21/10/2026 : 64 QRC (EB1/EB4/EB5/EB6) du 17–18/10/2026,
+    //   apprenant d2393741-4007-42ca-93c7-6c0b24d4f55e uniquement.
     // L'interrupteur général n'est ni lu ni modifié ; toutes les autres règles
     // restent actives (QRC en attente seulement, idempotence, jamais d'écrasement).
     const estRattrapage = rattrapage === true;
-    const PERIODES_RATTRAPAGE: Array<[Date, Date]> = [
+    // [début, fin, apprenantId?] — apprenantId restreint la période à un seul élève.
+    const PERIODES_RATTRAPAGE: Array<[Date, Date, string?]> = [
       [new Date("2026-08-31T22:00:00Z"), new Date("2026-09-30T22:00:00Z")],
       [new Date("2026-09-30T22:00:00Z"), new Date("2026-10-10T12:28:00Z")],
+      [new Date("2026-10-17T00:00:00Z"), new Date("2026-10-19T00:00:00Z"), "d2393741-4007-42ca-93c7-6c0b24d4f55e"],
     ];
     if (!attempt_id || typeof attempt_id !== "string") return json({ ok: false, message: "attempt_id requis" }, 400);
 
@@ -83,10 +87,15 @@ Deno.serve(async (req) => {
 
     if (att.etat !== "terminee" || !att.finished_at) return json({ ok: true, statut: "passage_non_termine" });
     if (att.is_test) return json({ ok: true, statut: "compte_test_exclu" });
+    const finPassage = new Date(att.finished_at);
+    const dansPeriodeRattrapage = PERIODES_RATTRAPAGE.some(([d, f, apprenantId]) => finPassage >= d && finPassage < f && (!apprenantId || apprenantId === att.apprenant_id));
     if (estRattrapage) {
-      const fin = new Date(att.finished_at);
-      if (!PERIODES_RATTRAPAGE.some(([d, f]) => fin >= d && fin < f)) return json({ ok: true, statut: "hors_periode_rattrapage" });
-    } else if (!cfg.actif_depuis || new Date(att.finished_at) < new Date(cfg.actif_depuis)) {
+      if (!dansPeriodeRattrapage) return json({ ok: true, statut: "hors_periode_rattrapage" });
+    } else if (suite && dansPeriodeRattrapage) {
+      // Continuation d'un rattrapage autorisé : la suite n'a pu être créée que
+      // par le service après validation administrateur ; toutes les bornes
+      // (un item payant par appel, budget, idempotence) restent actives.
+    } else if (!cfg.actif_depuis || finPassage < new Date(cfg.actif_depuis)) {
       return json({ ok: true, statut: "passage_anterieur_activation" });
     }
 
@@ -100,7 +109,7 @@ Deno.serve(async (req) => {
     if (lectureErreur) throw lectureErreur;
 
     const key = Deno.env.get("LOVABLE_API_KEY");
-    if (!reprise_qrc_id && !estRattrapage && new Date(att.finished_at) < new Date("2026-10-20T09:53:00Z")) return json({ ok: true, statut: "historique_sans_reprise_auto" });
+    if (!reprise_qrc_id && !estRattrapage && !(suite && dansPeriodeRattrapage) && finPassage < new Date("2026-10-20T09:53:00Z")) return json({ ok: true, statut: "historique_sans_reprise_auto" });
     const automatique = !reprise_qrc_id;
     if (automatique) {
       const { data: acquired, error } = await service.rpc("qrc_ia_suite_claim", { p_attempt: attempt_id, p_token: suite_token ?? null });
