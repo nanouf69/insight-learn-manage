@@ -2056,6 +2056,7 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
 };
 
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
+import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
