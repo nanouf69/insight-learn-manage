@@ -65,6 +65,7 @@ import { IdentityConfirmModal } from "@/components/cours-en-ligne/IdentityConfir
 import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
+import { calculerAccesCours } from "@/lib/accesCoursFenetre";
 import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
