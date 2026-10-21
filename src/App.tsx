@@ -15,7 +15,6 @@ import ReservationPratique from "./pages/ReservationPratique";
 import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
 import FournisseurPortal from "./pages/FournisseurPortal";
 import CoursPublic from "./pages/CoursPublic";
-import TmpJeuCarteCheck from "./pages/TmpJeuCarteCheck";
 import EmargementsRegularisation from "./pages/EmargementsRegularisation";
 import ResetPassword from "./pages/ResetPassword";
 import PreInformationPublic from "./pages/PreInformationPublic";
@@ -121,7 +120,6 @@ function App() {
                 <Route path="/inscription-formation-continue" element={<ErrorBoundary><InscriptionFormationContinue /></ErrorBoundary>} />
                 <Route path="/pre-information" element={<ErrorBoundary><PreInformationPublic /></ErrorBoundary>} />
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
-                <Route path="/tmp-jeu-carte-check" element={<TmpJeuCarteCheck />} />
                 <Route path="/emargements-regularisation/:id" element={<ErrorBoundary><EmargementsRegularisation /></ErrorBoundary>} />
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 {/* Anciens liens encore en circulation (404 observés) : redirection, aucun contenu changé. */}
