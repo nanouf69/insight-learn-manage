@@ -2062,6 +2062,7 @@ import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
+const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2026"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -9609,6 +9610,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           )}
 
           {/* Grilles d'évaluation pratique (tous les passages) */}
+          {Number(module.id) === 6 && (
+            <Suspense fallback={<p role="status">Chargement des exercices TAXI…</p>}>
+              <ExercicesTaxi2026 compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
           {[6, 8].includes(Number(module.id)) && apprenantId && (
             <GrillesPratiqueApprenant
               apprenantId={apprenantId}

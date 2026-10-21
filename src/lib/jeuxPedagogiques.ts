@@ -16,6 +16,9 @@ export interface ActiviteCode { id: string; moduleId: number; titre: string; uni
 export const ACTIVITES_CODE: ActiviteCode[] = [
   { id: "jeu_lyon_arrondissements_quartiers", moduleId: 8, titre: "Lyon : arrondissements et quartiers", unites: 22, ajouteeLe: "2026-10-13T10:41:00Z" },
   { id: "jeu_lyon_lieux", moduleId: 8, titre: "Lyon : monuments, musées et lieux touristiques", unites: 24, ajouteeLe: "2026-10-13T10:41:00Z" },
+  { id: "jeu_taxi_2026_feries_v1", moduleId: 6, titre: "Calendrier des jours fériés 2026", unites: 11, ajouteeLe: "2026-10-21T16:35:40.331Z" },
+  { id: "jeu_taxi_2026_tarifs_v1", moduleId: 6, titre: "Tarifs TAXI du Rhône 2026", unites: 30, ajouteeLe: "2026-10-21T16:35:40.331Z" },
+  { id: "jeu_taxi_2026_rtst_v1", moduleId: 6, titre: "13 situations pratiques — RTST", unites: 13, ajouteeLe: "2026-10-21T16:35:40.331Z" },
 ];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";
