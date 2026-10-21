@@ -52,6 +52,40 @@ describe("Jeux cartes de Lyon", () => {
     expect(lireMeilleurScore(s, "B", "lieux")).toBeNull();
     expect(lireMeilleurScore(s, "A", "lieux")?.score).toBe(3);
   });
+  it("zoom : le point sous le curseur reste fixe, bornes W/8 à W, jamais hors carte", () => {
+    const W = LYON_GEO.W, H = LYON_GEO.H;
+    const v0 = { x: 0, y: 0, w: W, h: H };
+    // Zoom ×2 ancré au centre : le centre reste le centre.
+    const v1 = zoomViewBox(v0, W / 2, W / 2, H / 2, W, H);
+    expect(v1.w).toBe(W / 2);
+    expect(v1.x + v1.w / 2).toBeCloseTo(W / 2);
+    expect(v1.y + v1.h / 2).toBeCloseTo(H / 2);
+    // Zoom ancré dans un coin : le point d'ancrage reste à la même position relative.
+    const px = W * 0.25, py = H * 0.75;
+    const v2 = zoomViewBox(v0, W / 4, px, py, W, H);
+    expect((px - v2.x) / v2.w).toBeCloseTo((px - v0.x) / v0.w);
+    expect((py - v2.y) / v2.h).toBeCloseTo((py - v0.y) / v0.h);
+    // Bornes : jamais plus large que W, jamais plus petit que W/8, jamais hors carte.
+    expect(zoomViewBox(v0, W * 4, 0, 0, W, H).w).toBe(W);
+    const vmin = zoomViewBox(v0, W / 100, W / 2, H / 2, W, H);
+    expect(vmin.w).toBe(W / 8);
+    expect(vmin.x).toBeGreaterThanOrEqual(0);
+    expect(vmin.x + vmin.w).toBeLessThanOrEqual(W);
+    expect(vmin.y).toBeGreaterThanOrEqual(0);
+    expect(vmin.y + vmin.h).toBeLessThanOrEqual(H);
+  });
+  it("molette : amplitude proportionnelle au geste, deltaMode normalisé, jamais de saut brutal", () => {
+    // Petit cran de molette : zoom doux (~1,22), pas de facteur fixe brutal.
+    const petit = facteurZoomMolette({ deltaY: 100, deltaMode: 0 });
+    expect(petit).toBeGreaterThan(1);
+    expect(petit).toBeLessThan(1.5);
+    // Grand geste trackpad : amplitude plus forte mais continue.
+    const grand = facteurZoomMolette({ deltaY: 800, deltaMode: 0 });
+    expect(grand).toBeGreaterThan(petit);
+    // deltaMode lignes (Firefox) ×16, pages ×100 ; sens inverse = dézoom.
+    expect(facteurZoomMolette({ deltaY: 10, deltaMode: 1 })).toBeCloseTo(facteurZoomMolette({ deltaY: 160, deltaMode: 0 }));
+    expect(facteurZoomMolette({ deltaY: -100, deltaMode: 0 })).toBeLessThan(1);
+  });
   it("écriture uniquement via la file durable existante, jamais dans les quiz/exercices/notes", () => {
     const src = readFileSync("src/components/cours-en-ligne/jeux-lyon/JeuxCartesLyon.tsx", "utf8") + readFileSync("src/components/cours-en-ligne/jeux-lyon/jeuxLyonLogic.ts", "utf8");
     expect(src).not.toMatch(/supabase|fetch\(|module_editor_state|apprenant_quiz_results/);
