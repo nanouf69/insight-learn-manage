@@ -20,8 +20,14 @@ export const ACTIVITES_CODE: ActiviteCode[] = [
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";
 
-/** Activités actives (non retirées) d'un module à une date donnée. */
-export function activitesDuModule(moduleId: number, a: string = new Date().toISOString()): ActiviteCode[] {
+/**
+ * Activités d'un module. Sans date explicite (affichage élève courant) : toutes les
+ * activités non retirées du registre — JAMAIS l'horloge de l'appareil, qui peut être
+ * fausse sur une tablette (21/10). Une date explicite (relevé gelé, gele_le serveur)
+ * reste appliquée telle quelle.
+ */
+export function activitesDuModule(moduleId: number, a?: string): ActiviteCode[] {
+  if (a === undefined) return ACTIVITES_CODE.filter((x) => x.moduleId === moduleId && !x.retireeLe);
   return ACTIVITES_CODE.filter((x) => x.moduleId === moduleId && x.ajouteeLe <= a && (!x.retireeLe || x.retireeLe > a));
 }
 /**
@@ -37,7 +43,7 @@ export function instantValidationModule(row: { status?: string | null; completed
   return Number.isFinite(t) ? new Date(t).toISOString() : null;
 }
 /** Activités exigées pour un module : celles du registre à la date, bornées à sa validation si validé. */
-export function activitesRequisesModule(moduleId: number, row: { status?: string | null; completed_at?: string | null } | undefined | null, a: string = new Date().toISOString()): ActiviteCode[] {
+export function activitesRequisesModule(moduleId: number, row: { status?: string | null; completed_at?: string | null } | undefined | null, a?: string): ActiviteCode[] {
   // Validation serveur prouvée mais date absente/illisible : l'acquis est conservé (aucune date inventée).
   if (row?.status === "completed" && !instantValidationModule(row)) return [];
   const gel = instantValidationModule(row);

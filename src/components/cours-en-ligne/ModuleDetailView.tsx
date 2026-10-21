@@ -2056,6 +2056,7 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
 };
 
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
+import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
@@ -4917,12 +4918,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     (async () => {
       try {
         const fetchStartedAt = Date.now();
-        const requestTimestamp = new Date().toISOString();
+        // Aucune borne par l'heure de l'appareil : une tablette mal réglée
+        // recevrait sinon une version absente/ancienne (diagnostic 21/10).
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at, source_fingerprint")
           .eq("module_id", module.id)
-          .lte("updated_at", requestTimestamp)
           .order("updated_at", { ascending: false })
           .limit(1);
 
@@ -6872,7 +6873,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     useEffect(() => {
       if (exoCourantId != null) ouvrirMatiereBilanRef.current(exoCourantId);
     }, [exoCourantId]);
-    const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
+    const progressPercent = pourcentagePagesActuelles(completedPages, totalPages);
 
     // --- Restore learner UI state (page + results) to prevent unwanted reset ---
     useEffect(() => {

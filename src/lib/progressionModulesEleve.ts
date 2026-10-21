@@ -18,7 +18,7 @@ export function progressionModulesEleve(
   modules: ModuleEleveLite[],
   estTermineServeur: (id: number) => boolean,
   activitesTerminees: Set<string> | null,
-  date: string = new Date().toISOString(),
+  date?: string,
   apprenantId?: string | null,
   completions: readonly CompletionLite[] = [],
 ): ProgressionModules {

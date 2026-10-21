@@ -20,7 +20,7 @@ export function activitesModuleEleve(
   completions: readonly CompletionLite[],
   terminees: Set<string> | null,
   apprenantId?: string | null,
-  date: string = new Date().toISOString(),
+  date?: string,
 ): EtatActivitesModuleEleve {
   const toutes = activitesDuModule(moduleId, date);
   if (!toutes.length) return { etat: "aucune" };

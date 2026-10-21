@@ -483,3 +483,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Rattrapage Aba-Bakre limité à l'allowlist figée 64 QRC / 20 passages (direct + suite)
 - [x] Tests hors allowlist refusés
 - [x] Fonction qrc-ia-correction déployée, état des 64 et empreintes relus
+
+- 21/10 09h: tablettes — jeux et contenu module indépendants de la date appareil, compteur pages borné 100 %; file QRC: suites sans passage → à vérifier (fait).
