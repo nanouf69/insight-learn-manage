@@ -1,3 +1,4 @@
+import { EdofValideBadge } from "./EdofValideBadge";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { candidatsAPayer } from "@/lib/candidatsAPayer";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
@@ -5114,6 +5115,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                   <div className="flex items-start gap-1">
                                     <span className="text-[9px] font-bold opacity-60 mt-[1px]">{idx + 1}.</span>
                                     <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
+                                    <EdofValideBadge apprenantId={a.id} />
                                     <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                       <X className="h-3 w-3" />
                                     </button>
@@ -5162,6 +5164,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                   <div className="flex items-start gap-1">
                                     <span className="text-[9px] font-bold opacity-60 mt-[1px]">{idx + 1}.</span>
                                     <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
+                                    <EdofValideBadge apprenantId={a.id} />
                                     <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="text-red-500 hover:text-red-700 shrink-0" title="Annuler">
                                       <X className="h-3 w-3" />
                                     </button>
