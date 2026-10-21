@@ -1,5 +1,13 @@
 # Feuille de route
 
+## Pratique TAXI — exactement 3 exercices Rhône 2026 — 21/10 16:34 UTC
+- [ ] Recherche officielle indépendante : arrêté Rhône 2026, conditions et dossier de preuves ; corrections ambiguës conditionnelles non pénalisantes.
+- [ ] Ajout limité au module 6 : calendrier/QCM 11 jours fériés, quiz tarifs ≥25 questions, un exercice RTST de 13 scénarios complets.
+- [ ] Préserver tous les travaux antérieurs, contenus et preuves ; activités post-validation visibles mais facultatives, 100 % et date initiale inchangés.
+- [ ] Tests fictifs seulement : backend partagé confirmé par contexte projet (même instance production/prévisualisation), aucune écriture élève ni test de droits.
+- [ ] Tests règles, gel, horloges, persistance isolée et interface ordinateur/tablettes/mobile ; journal et bilan exact des limites.
+- NON PUBLIÉ ; aucune acceptation du brouillon, aucun envoi ni correction IA élève.
+
 ## Carte des jeux Lyon agrandie — 21/10 12:45 UTC
 - [x] Jeux MONUMENTS et QUARTIERS (module 8 PRATIQUE VTC uniquement ; module 6 TAXI sans jeu, vérifié en base) : carte nettement plus grande, largeur disponible, hauteur confortable tablette, responsive ordinateur/mobile, panneaux sans écraser la carte, mode plein écran, zoom/déplacement faciles, recentrage.
 - [x] Aucune modification de monuments, quartiers, questions, réponses, corrections, progressions ou signatures ; règles et scores préservés ; aucun message aux apprenants.
