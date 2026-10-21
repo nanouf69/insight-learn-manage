@@ -37,3 +37,10 @@ END $$;
 REVOKE ALL ON FUNCTION public.garde_activites_taxi_2026_v1() FROM PUBLIC;
 CREATE TRIGGER trg_garde_activites_taxi_2026_v1 BEFORE INSERT OR UPDATE ON public.reponses_apprenants
 FOR EACH ROW EXECUTE FUNCTION public.garde_activites_taxi_2026_v1();
+
+CREATE FUNCTION public.activites_taxi_2026_protection_prete()
+RETURNS boolean LANGUAGE sql STABLE SET search_path=public AS $$
+  SELECT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_garde_activites_taxi_2026_v1' AND tgenabled='O');
+$$;
+REVOKE ALL ON FUNCTION public.activites_taxi_2026_protection_prete() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.activites_taxi_2026_protection_prete() TO authenticated, service_role;

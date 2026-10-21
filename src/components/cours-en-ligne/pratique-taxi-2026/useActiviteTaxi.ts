@@ -13,6 +13,10 @@ export interface TransportTaxi {
 }
 const transportReel: TransportTaxi = {
   async lire(compte,id) {
+    // This additive RPC exists only once the staged protection is accepted.
+    // No silent simulation of a working server in a shared draft.
+    const protection = await freshSessionCall(() => (supabase as any).rpc("activites_taxi_2026_protection_prete"));
+    if (protection.error || protection.data !== true) throw new Error("Protection serveur TAXI non disponible.");
     const {data,error} = await freshSessionCall(()=>supabase.from("reponses_apprenants").select("completed,reponses").eq("apprenant_id",compte).eq("exercice_id",id).maybeSingle());
     if(error) throw error;
     return data;
@@ -33,7 +37,7 @@ export function useActiviteTaxi(compte: string | null | undefined, id: string, t
   const valeursRef = useRef<SaisiesTaxi>({});
   const relire = useCallback(async()=> {
     const g=++generation.current;
-    setCharge(false); setConfirme(false); setValeurs({}); valeursRef.current={};
+    setCharge(false); setConfirme(false); setBusy(false); setValeurs({}); valeursRef.current={}; revision.current="";
     if(!compte) {setStatut("Aperçu — aucune sauvegarde élève");setCharge(true);return;}
     let local: BrouillonTaxi | null = null;
     let erreurLocale = false;
@@ -45,7 +49,8 @@ export function useActiviteTaxi(compte: string | null | undefined, id: string, t
       if(g!==generation.current)return;
       if(raw?.reponses && raw.reponses.version!==VERSION_TAXI) throw new Error("Version du suivi incompatible : aucune ancienne réponse remplacée.");
       const pending=transport===transportReel ? getPendingAnswers(compte,id) as {valeurs?:SaisiesTaxi;revision?:string}|null : null;
-      if(!local) appliquer(pending?.valeurs ?? raw?.reponses?.valeurs ?? {},pending?.revision ?? raw?.reponses?.revision ?? "");
+      if(raw?.completed===true) appliquer(raw.reponses?.valeurs ?? {}, raw.reponses?.revision ?? "");
+      else if(!local) appliquer(pending?.valeurs ?? raw?.reponses?.valeurs ?? {},pending?.revision ?? raw?.reponses?.revision ?? "");
       setConfirme(raw?.completed===true);
       setStatut(erreurLocale ? "Lecture locale impossible — anciennes saisies conservées, ne validez pas." : raw?.completed ? "Activité terminée — preuve serveur" : local && !accuseTaxiCorrespond(raw,local,false) ? "Saisie conservée sur cet appareil — à enregistrer" : "Suivi chargé");
       setCharge(!erreurLocale);
