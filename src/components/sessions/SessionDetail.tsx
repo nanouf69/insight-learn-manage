@@ -3658,8 +3658,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     for (const apprenant of apprenants) {
       const subject = useEditedSubject ? replaceTemplateVars(editedSubject, apprenant) : replaceTemplateVars(template.subject_template, apprenant);
       const bodyBrut = useEditedBody ? replaceTemplateVars(editedBody, apprenant) : replaceTemplateVars(template.body_template, apprenant);
-      // Corps édité = déjà habillé dans l'aperçu ; sinon on applique la mise en page convocation.
-      const body = !useEditedBody && estModeleConvocationFormation(template.id) ? habillerConvocation(apprenant, bodyBrut).html : bodyBrut;
+      // Le corps édité reste un modèle brut : la mise en page convocation est appliquée par élève.
+      const body = estModeleConvocationFormation(template.id) ? habillerConvocation(apprenant, bodyBrut).html : bodyBrut;
       try {
         await supabase.functions.invoke('sync-outlook-emails', {
           body: {
@@ -6725,7 +6725,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               {bulkPreviewEditing ? (
                 <Textarea 
                   value={bulkPreview.editedBody ?? bulkPreview.template.body_template}
-                  onChange={(e) => setBulkPreview({...bulkPreview, editedBody: e.target.value, previewBody: replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])})}
+                  onChange={(e) => setBulkPreview({...bulkPreview, editedBody: e.target.value, previewBody: estModeleConvocationFormation(bulkPreview.template?.id) ? habillerConvocation(bulkPreview.apprenants[0], replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])).html : replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])})}
                   className="min-h-[300px] font-mono text-xs"
                 />
               ) : (
