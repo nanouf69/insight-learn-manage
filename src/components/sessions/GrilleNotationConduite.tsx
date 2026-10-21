@@ -160,12 +160,15 @@ const GrilleNotationConduite = ({
 
 
   const loadGrille = async () => {
+    // Saisie non confirmée par le serveur (échec d'enregistrement) : on ne l'écrase jamais.
+    if (!readOnly && nonSauvegarde) return;
     setLoading(true);
     try {
       let query = supabase
         .from("grilles_notation_conduite" as any)
         .select("*")
         .eq("apprenant_id", apprenantId)
+        .eq("statut", "validee")
         .order("created_at", { ascending: false })
         .limit(1);
       if (sessionId) query = query.eq("session_id", sessionId);
@@ -174,30 +177,55 @@ const GrilleNotationConduite = ({
       if (error) throw error;
       const row: any = data?.[0];
 
-      // Compte réel des grilles déjà enregistrées pour cet apprenant
+      // Compte réel des grilles validées pour cet apprenant (brouillons exclus)
       const { count } = await supabase
         .from("grilles_notation_conduite" as any)
         .select("id", { count: "exact", head: true })
-        .eq("apprenant_id", apprenantId);
+        .eq("apprenant_id", apprenantId)
+        .eq("statut", "validee");
       const total = count || 0;
       setGrillesCount(total);
       setHasGrille(total > 0);
 
-      if (readOnly && row) {
-        // Vue apprenant : on affiche la dernière grille telle quelle
-        setGrilleId(row.id);
-        setCoches((row.criteres as Record<string, boolean>) || {});
-        setPassage(row.passage || "");
-        setDate(row.date_passage || date);
-        setObservations(row.observations || "");
-        setEvaluateur(row.evaluateur || "");
-        setTempsPreparation(row.temps_preparation || "");
-        setAvis(row.avis === "favorable" || row.avis === "defavorable" ? row.avis : null);
+      if (readOnly) {
+        if (row) {
+          setGrilleId(row.id);
+          setCoches((row.criteres as Record<string, boolean>) || {});
+          setPassage(row.passage || "");
+          setDate(row.date_passage || date);
+          setObservations(row.observations || "");
+          setEvaluateur(row.evaluateur || "");
+          setTempsPreparation(row.temps_preparation || "");
+          setAvis(row.avis === "favorable" || row.avis === "defavorable" ? row.avis : null);
+        }
         return;
       }
 
-      // Vue formateur : chaque ouverture démarre un NOUVEAU passage
-      // (sinon la 2e grille écrasait la 1re et le compteur restait à 1).
+      // Vue formateur : reprendre le brouillon enregistré pour CET élève,
+      // CE type (TAXI/VTC) et CETTE session, sinon démarrer un nouveau passage.
+      let dq = supabase
+        .from("grilles_notation_conduite" as any)
+        .select("*")
+        .eq("apprenant_id", apprenantId)
+        .eq("type_formation", formation)
+        .eq("statut", "brouillon")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      dq = sessionId ? dq.eq("session_id", sessionId) : dq.is("session_id", null);
+      const { data: drafts, error: dErr } = await dq;
+      if (dErr) throw dErr;
+      const draft: any = drafts?.[0];
+      if (draft) {
+        setGrilleId(draft.id);
+        setCoches((draft.criteres as Record<string, boolean>) || {});
+        setPassage(draft.passage || String(Math.min(total + 1, 10)));
+        setDate(draft.date_passage || datePassage || new Date().toISOString().slice(0, 10));
+        setObservations(draft.observations || "");
+        setEvaluateur(draft.evaluateur || "");
+        setTempsPreparation(draft.temps_preparation || "");
+        setAvis(draft.avis === "favorable" || draft.avis === "defavorable" ? draft.avis : null);
+        return;
+      }
       setGrilleId(null);
       setCoches({});
       setObservations("");
@@ -206,8 +234,9 @@ const GrilleNotationConduite = ({
       setDate(datePassage || new Date().toISOString().slice(0, 10));
       setPassage(String(Math.min(total + 1, 10)));
       setEvaluateur(row?.evaluateur || "");
-    } catch (e) {
+    } catch (e: any) {
       console.error("[GrilleNotation] load error", e);
+      toast.error(`Impossible de charger la grille enregistrée : ${e?.message || "erreur inconnue"}`);
     } finally {
       setLoading(false);
     }
@@ -218,7 +247,8 @@ const GrilleNotationConduite = ({
     const { count } = await supabase
       .from("grilles_notation_conduite" as any)
       .select("id", { count: "exact", head: true })
-      .eq("apprenant_id", apprenantId);
+      .eq("apprenant_id", apprenantId)
+      .eq("statut", "validee");
     setGrillesCount(count || 0);
     setHasGrille((count || 0) > 0);
   };
@@ -243,7 +273,7 @@ const GrilleNotationConduite = ({
     if (open) loadGrille();
   }, [open]);
 
-  const saveGrille = async (): Promise<boolean> => {
+  const saveGrille = async (statut: "brouillon" | "validee"): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     const payload: any = {
       apprenant_id: apprenantId,
@@ -257,15 +287,19 @@ const GrilleNotationConduite = ({
       observations: observations || null,
       evaluateur: evaluateur || null,
       temps_preparation: tempsPreparation || null,
+      statut,
       created_by: user?.id || null,
     };
 
-    if (grilleId) {
-      const { error } = await supabase
+    let id = grilleId;
+    if (id) {
+      const { data, error } = await supabase
         .from("grilles_notation_conduite" as any)
         .update(payload)
-        .eq("id", grilleId);
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || (data as any[]).length === 0) throw new Error("aucune ligne mise à jour (droits ou grille introuvable)");
     } else {
       const { data, error } = await supabase
         .from("grilles_notation_conduite" as any)
@@ -273,8 +307,22 @@ const GrilleNotationConduite = ({
         .select("id")
         .single();
       if (error) throw error;
-      setGrilleId((data as any)?.id || null);
+      id = (data as any)?.id || null;
+      if (!id) throw new Error("le serveur n'a pas confirmé l'enregistrement");
+      setGrilleId(id);
     }
+    // Relecture serveur : succès seulement si la saisie est réellement enregistrée
+    const { data: relu, error: rErr } = await supabase
+      .from("grilles_notation_conduite" as any)
+      .select("criteres, observations, avis, statut")
+      .eq("id", id)
+      .maybeSingle();
+    if (rErr) throw rErr;
+    const r: any = relu;
+    if (!r || r.statut !== statut || JSON.stringify(r.criteres || {}) !== JSON.stringify(coches) || (r.observations || null) !== (observations || null) || (r.avis ?? null) !== (avis ?? null)) {
+      throw new Error("relecture serveur différente de la saisie");
+    }
+    setNonSauvegarde(false);
     await refreshCount();
     return true;
   };
