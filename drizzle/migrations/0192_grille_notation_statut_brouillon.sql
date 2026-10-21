@@ -1,0 +1,2 @@
+ALTER TABLE public.grilles_notation_conduite ADD COLUMN IF NOT EXISTS statut text NOT NULL DEFAULT 'validee';
+ALTER TABLE public.grilles_notation_conduite ADD CONSTRAINT grilles_notation_conduite_statut_chk CHECK (statut IN ('brouillon','validee'));

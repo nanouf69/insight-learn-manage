@@ -5055,6 +5055,7 @@ export type Database = {
           observations: string | null
           passage: string | null
           session_id: string | null
+          statut: string
           temps_preparation: string | null
           type_formation: string
           updated_at: string
@@ -5073,6 +5074,7 @@ export type Database = {
           observations?: string | null
           passage?: string | null
           session_id?: string | null
+          statut?: string
           temps_preparation?: string | null
           type_formation?: string
           updated_at?: string
@@ -5091,6 +5093,7 @@ export type Database = {
           observations?: string | null
           passage?: string | null
           session_id?: string | null
+          statut?: string
           temps_preparation?: string | null
           type_formation?: string
           updated_at?: string

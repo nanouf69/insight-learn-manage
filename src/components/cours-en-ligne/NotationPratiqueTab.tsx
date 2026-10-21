@@ -60,6 +60,7 @@ const NotationPratiqueTab = () => {
           supabase
             .from("grilles_notation_conduite" as any)
             .select("apprenant_id, session_id, avis, passage")
+            .eq("statut", "validee")
             .range(from, to)
         );
         const byKey = new Map<string, any>();
