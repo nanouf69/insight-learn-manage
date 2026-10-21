@@ -5,6 +5,7 @@
 // - une seule analyse payante par QRC/version de réponse (clé d'idempotence unique en base) ;
 // - reprise bornée uniquement après 429/5xx fournisseur terminé ; 402/403 = pause globale ;
 // - la note IA passe par core_correct_qrc_publish (même calcul de note que le formateur).
+import { passageAutoriseAbaBakre, qrcAutoriseeAbaBakre } from "../_shared/qrcRattrapageAbaBakre.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
 import { streamText } from "npm:ai";
@@ -53,11 +54,11 @@ Deno.serve(async (req) => {
     // L'interrupteur général n'est ni lu ni modifié ; toutes les autres règles
     // restent actives (QRC en attente seulement, idempotence, jamais d'écrasement).
     const estRattrapage = rattrapage === true;
-    // [début, fin, apprenantId?] — apprenantId restreint la période à un seul élève.
-    const PERIODES_RATTRAPAGE: Array<[Date, Date, string?]> = [
+    // [début, fin, restreint?] — restreint = allowlist figée (passages + QRC exactes).
+    const PERIODES_RATTRAPAGE: Array<[Date, Date, boolean?]> = [
       [new Date("2026-08-31T22:00:00Z"), new Date("2026-09-30T22:00:00Z")],
       [new Date("2026-09-30T22:00:00Z"), new Date("2026-10-10T12:28:00Z")],
-      [new Date("2026-10-17T00:00:00Z"), new Date("2026-10-19T00:00:00Z"), "d2393741-4007-42ca-93c7-6c0b24d4f55e"],
+      [new Date("2026-10-17T00:00:00Z"), new Date("2026-10-19T00:00:00Z"), true],
     ];
     if (!attempt_id || typeof attempt_id !== "string") return json({ ok: false, message: "attempt_id requis" }, 400);
 
@@ -88,7 +89,9 @@ Deno.serve(async (req) => {
     if (att.etat !== "terminee" || !att.finished_at) return json({ ok: true, statut: "passage_non_termine" });
     if (att.is_test) return json({ ok: true, statut: "compte_test_exclu" });
     const finPassage = new Date(att.finished_at);
-    const dansPeriodeRattrapage = PERIODES_RATTRAPAGE.some(([d, f, apprenantId]) => finPassage >= d && finPassage < f && (!apprenantId || apprenantId === att.apprenant_id));
+    const dansPeriodeRattrapage = PERIODES_RATTRAPAGE.some(([d, f, restreint]) => finPassage >= d && finPassage < f && (!restreint || passageAutoriseAbaBakre(attempt_id, att.apprenant_id)));
+    // Passage de la liste figée : seules ses QRC listées sont traitées (direct ou suite).
+    const filtreAllowlist = (estRattrapage || !!suite) && passageAutoriseAbaBakre(attempt_id, att.apprenant_id);
     if (estRattrapage) {
       if (!dansPeriodeRattrapage) return json({ ok: true, statut: "hors_periode_rattrapage" });
     } else if (suite && dansPeriodeRattrapage) {
@@ -133,6 +136,7 @@ Deno.serve(async (req) => {
 
     for (const inst of qrcs ?? []) {
       if (reprise_qrc_id && inst.qrc_instance_id !== reprise_qrc_id) continue;
+      if (filtreAllowlist && !qrcAutoriseeAbaBakre(inst.qrc_instance_id, attempt_id)) { compter("hors_allowlist"); continue; }
       const q = questions.find((x) => String(x.id) === String(inst.question_id)) ?? null;
       const matiere = String(q?.matiere ?? att.snapshot?.matiere ?? "");
       const reponseHash = await sha256(texteReponse(inst.reponse));
