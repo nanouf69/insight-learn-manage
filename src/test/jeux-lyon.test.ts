@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { LYON_GEO } from "@/components/cours-en-ligne/jeux-lyon/lyon-geo-data";
-import { evaluerArrondissement, evaluerLieu, evaluerQuartier, ficheLieu, melanger, pointsEssai, enregistrerMeilleurScore, lireMeilleurScore, METRES_PAR_UNITE } from "@/components/cours-en-ligne/jeux-lyon/jeuxLyonLogic";
+import { evaluerArrondissement, evaluerLieu, evaluerQuartier, ficheLieu, melanger, pointsEssai, enregistrerMeilleurScore, lireMeilleurScore, METRES_PAR_UNITE, zoomViewBox, facteurZoomMolette } from "@/components/cours-en-ligne/jeux-lyon/jeuxLyonLogic";
 
 const lieu = (id: string) => LYON_GEO.lieux.find((l) => l.id === id)!;
 const zone = (id: string) => LYON_GEO.zones.find((z) => z.id === id)!;
