@@ -1,11 +1,13 @@
 # Feuille de route
 
 ## Pratique TAXI — exactement 3 exercices Rhône 2026 — 21/10 16:34 UTC
-- [ ] Recherche officielle indépendante : arrêté Rhône 2026, conditions et dossier de preuves ; corrections ambiguës conditionnelles non pénalisantes.
-- [ ] Ajout limité au module 6 : calendrier/QCM 11 jours fériés, quiz tarifs ≥25 questions, un exercice RTST de 13 scénarios complets.
-- [ ] Préserver tous les travaux antérieurs, contenus et preuves ; activités post-validation visibles mais facultatives, 100 % et date initiale inchangés.
-- [ ] Tests fictifs seulement : backend partagé confirmé par contexte projet (même instance production/prévisualisation), aucune écriture élève ni test de droits.
-- [ ] Tests règles, gel, horloges, persistance isolée et interface ordinateur/tablettes/mobile ; journal et bilan exact des limites.
+- [x] Recherche indépendante : copie de l’arrêté 69-2026-02-19-00002 lue, extraits articles/pages et limites dans docs/preuves/taxi-rhone-2026/sources.md ; site préfectoral en maintenance.
+- [x] Ajout module 6 uniquement : calendrier/QCM 11 dates, quiz unique 30 questions, un exercice RTST 13 étapes/52 saisies. Les 10 cours et 1 quiz préexistants inchangés.
+- [x] Gel prouvé fictivement : 100 %, date initiale, activités facultatives visibles ; VTC/VA inchangés ; TAXI/TA utilisent leur module 6 réel.
+- [x] Backend explicitement partagé : configuration même instance ; aucune écriture élève/test droits. Garde serveur additive préparée uniquement, pas appliquée ; suivi réel indisponible tant que protection absente, aucun faux succès.
+- [x] 90 tests unitaires/persistance/gel/files + 32 tests travaux antérieurs après adaptation cible TAXI ; PostgreSQL local jetable (11 assertions) ; Playwright quatre dimensions, trois exercices, réouverture/rechargement/isolement/panne et 13 étapes terminées avec transport fictif. Compilation automatique OK.
+- [x] Empreintes avant/après : 62 modules bbb6f08b16f0d4f4ef29e3d9db32edbd ; 57 versions d4971facecd63dca241b9007da361b36 ; releve_jalons_gels 0 lignes ; 7 fichiers protégés inchangés. Journal détaillé conservé.
+- [ ] NON PROUVÉ : sauvegarde/validation sur Cloud avec vraie session et tous triggers existants (protection non appliquée) ; vraie tablette physique ; annexe ZUPC actuelle, fauteuil, refus sécurité ivresse. Aucun chantier antérieur abandonné ni publié.
 - NON PUBLIÉ ; aucune acceptation du brouillon, aucun envoi ni correction IA élève.
 
 ## Carte des jeux Lyon agrandie — 21/10 12:45 UTC

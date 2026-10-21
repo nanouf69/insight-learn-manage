@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { completionAvecActivites, activitesDuModule, ACTIVITES_CODE, UNITES_JEUX_LYON, idsActivites } from "@/lib/jeuxPedagogiques";
 import { calculerPoids, unites, MODULES_PONDERES, PRATIQUE_PHYSIQUE, type VolumeModule } from "@/lib/jalonsPonderes";
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
+import { IDS_TAXI } from "@/components/cours-en-ligne/pratique-taxi-2026/donnees";
 
 const v8: VolumeModule = { pages: 20, questions: 40 }; // 120 unités fictives
 const acts = activitesDuModule(8);
@@ -13,11 +14,11 @@ describe("registre d'activités → jalons", () => {
     expect(UNITES_JEUX_LYON).toBe(46);
     expect(unites({ ...v8, jeux: 46 })).toBe(166);
   });
-  it("cibles = parcours réels : VTC et VA, jamais TAXI/TA", () => {
+  it("cibles = parcours réels : Lyon VTC/VA, nouvelles activités TAXI/TA module 6", () => {
     expect(idsActivites(parcours("vtc-e"))).toEqual([J1, J2]);
     expect(idsActivites(parcours("va-e"))).toEqual([J1, J2]);
-    expect(idsActivites(parcours("taxi-e"))).toEqual([]);
-    expect(idsActivites(parcours("ta-e"))).toEqual([]);
+    expect(idsActivites(parcours("taxi-e"))).toEqual([...IDS_TAXI]);
+    expect(idsActivites(parcours("ta-e"))).toEqual([...IDS_TAXI]);
   });
   it("module validé AVANT l'ajout des jeux : reste acquis 100 %, jeux facultatifs (règle gel par module)", () => {
     const r = completionAvecActivites({ module_id: 8, status: "completed", progress: 100, completed_at: "2026-10-01T08:00:00Z" }, v8, acts, new Set());
