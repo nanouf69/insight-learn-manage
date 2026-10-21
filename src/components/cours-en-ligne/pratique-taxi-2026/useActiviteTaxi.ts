@@ -15,7 +15,7 @@ const transportReel: TransportTaxi = {
   async lire(compte,id) {
     // This additive RPC exists only once the staged protection is accepted.
     // No silent simulation of a working server in a shared draft.
-    const protection = await freshSessionCall(() => (supabase as any).rpc("activites_taxi_2026_protection_prete"));
+    const protection = await freshSessionCall<{data:unknown;error:unknown}>(() => (supabase as any).rpc("activites_taxi_2026_protection_prete"));
     if (protection.error || protection.data !== true) throw new Error("Protection serveur TAXI non disponible.");
     const {data,error} = await freshSessionCall(()=>supabase.from("reponses_apprenants").select("completed,reponses").eq("apprenant_id",compte).eq("exercice_id",id).maybeSingle());
     if(error) throw error;

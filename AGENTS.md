@@ -31,8 +31,9 @@
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures by learner track; why: no cross-track totals.
-- Read scoped AGENTS before edits (src/lib, shared Edge code, save-emargement-apprenant); why: local rules apply.
+- Read local AGENTS before edits; why: scoped rules apply.
 - E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
 - Learner question CSS uses data-learner-question/passage; why: isolate presentation from content and persistence.
 - QRC retry history supersedes old traces only with matching final server proof; why: reservations never prove completion.
+- TAXI 2026: isolated versioned drafts, owned queue/readback, staged server guard; why: additive proofs only. See courses AGENTS.

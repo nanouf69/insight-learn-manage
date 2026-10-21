@@ -42,7 +42,7 @@ describe("Gel module TAXI et isolement",()=>{
   it("exactement trois activités module 6",()=>expect(activitesDuModule(6).map(a=>a.id)).toEqual([...IDS_TAXI]));
   it("100% date initiale et historique inchangés après ajout",()=>{
     const before=JSON.stringify(row);
-    const r=completionAvecActivites(row,{moduleId:6,pages:10,questions:99},activitesDuModule(6),new Set());
+    const r=completionAvecActivites(row,{pages:10,questions:99},activitesDuModule(6),new Set());
     expect(r.completion).toMatchObject({status:"completed",progress:100});expect(r.etat.valideLe).toBe("2026-09-17T10:00:00.000Z");expect(JSON.stringify(row)).toBe(before);
   });
   it("facultatives mais toutes visibles",()=>{const e=activitesModuleEleve(6,[{id:6}],[row],new Set());expect(e.etat).toBe("ok");if(e.etat==="ok"){expect(e.requises).toHaveLength(0);expect(e.facultatives.map(a=>a.id)).toEqual([...IDS_TAXI]);}});
