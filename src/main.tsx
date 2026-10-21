@@ -8,9 +8,12 @@ import { initQuizResultPersistence } from "@/lib/quizResultPersistence";
 import { supabase } from "@/integrations/supabase/client";
 import { installDomPatch } from "@/lib/domPatch";
 import { installModulePagesPersistence } from "@/lib/modulePagesPersistence";
+import { installChunkVersionGuard } from "@/lib/chunkVersionGuard";
 import { CanonicalOriginNotice } from "@/components/CanonicalOriginNotice";
 
 installErrorMonitoring();
+// Ancien onglet après mise en ligne : notification + rechargement manuel sûr.
+installChunkVersionGuard();
 
 // Persistance fiable des réponses apprenants (file durable + renvoi automatique).
 installAnswerPersistence();
