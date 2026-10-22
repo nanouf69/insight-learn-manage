@@ -9,6 +9,7 @@ export async function genererPdfRempli(
   fileUrl: string,
   champs: ChampDocument[],
   reponses: Record<string, string>,
+  options?: { largeurEcranPx?: number; taillePoliceEcranPx?: number },
 ): Promise<Uint8Array> {
   const res = await fetch(fileUrl);
   if (!res.ok) throw new Error("Impossible de récupérer le document original");
@@ -53,6 +54,14 @@ export async function genererPdfRempli(
     }
 
     const texte = String(valeur);
+    if (options?.largeurEcranPx) {
+      // Reproduit l'aperçu écran : police proportionnelle, texte centré dans la zone.
+      let t = ((options.taillePoliceEcranPx ?? 10) / options.largeurEcranPx) * width;
+      while (t > 4 && font.widthOfTextAtSize(texte, t) > w - 2) t -= 0.25;
+      const tw = font.widthOfTextAtSize(texte, t);
+      page.drawText(texte, { x: x + (w - tw) / 2, y: yBas + (h - t * 0.72) / 2, size: t, font, color: rgb(0, 0, 0) });
+      continue;
+    }
     let taille = Math.min(14, Math.max(7, h * 0.6));
     while (taille > 6 && font.widthOfTextAtSize(texte, taille) > w - 4) {
       taille -= 0.5;
