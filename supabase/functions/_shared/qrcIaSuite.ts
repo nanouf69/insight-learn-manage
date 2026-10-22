@@ -33,13 +33,13 @@ export type EchecIa = { status: number; statut: 'erreur' | 'a_verifier'; code: s
 /**
  * Classement d'un échec d'appel IA :
  * - après réponse complète du fournisseur (publication/relecture) : jamais refacturé → revue ;
- * - délai local dépassé (abandon par nous, rien publié) : 504 reprisable, borné ;
+ * - délai local dépassé : abandon local seulement, le fournisseur a pu traiter/facturer → revue, jamais rejoué ;
  * - statut fournisseur connu : 429/5xx reprisables, autres terminaux ;
  * - sans statut : issue inconnue → revue (dead letter), jamais rejoué.
  */
 export function classerEchecIa(e: { providerFinished: boolean; timeoutLocal: boolean; statusCode?: number }): EchecIa {
   if (e.providerFinished) return { status: 499, statut: 'a_verifier', code: 'publication_ou_relecture_echouee', reprisable: false };
-  if (e.timeoutLocal) return { status: 504, statut: 'erreur', code: 'timeout_local', reprisable: true };
+  if (e.timeoutLocal) return { status: 504, statut: 'a_verifier', code: 'timeout_local_issue_inconnue', reprisable: false };
   if (typeof e.statusCode === 'number' && e.statusCode >= 100) {
     const s = e.statusCode;
     return { status: s, statut: 'erreur', code: `http_${s}`, reprisable: s === 429 || (s >= 500 && s <= 599) };
