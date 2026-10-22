@@ -326,7 +326,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
-  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
+  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean; extras?: CreneauKey[] } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [pratiqueDates, setPratiqueDates] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -738,6 +738,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           mode={isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ? "fc" : "presentiel"}
           dateEmargement={signTarget.date}
           pratique={pratiqueDates.has(signTarget.date)}
+          extraCreneaux={signTarget.extras}
           replaceExisting={signTarget.replaceExisting}
           onSigned={() => { setSignTarget(null); setRefreshTick((t) => t + 1); }}
           onSkipped={() => setSignTarget(null)}
