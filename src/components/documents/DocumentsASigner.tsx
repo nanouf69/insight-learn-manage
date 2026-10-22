@@ -111,7 +111,7 @@ export function DocumentsASigner() {
         const reponsesDoc = (doc.reponses || {}) as Record<string, string>;
         const bytes = await genererPdfRempli(data.signedUrl, champsDoc, reponsesDoc);
         const suffixe = doc.statut === "signe" ? "_signe" : doc.statut === "pre_rempli" ? "" : "_vierge";
-        telechargerPdf(bytes, `${doc.nom}${suffixe}.pdf`);
+        telechargerPdf(bytes, `${doc.nom}${doc.nom.endsWith("_rempli") ? "" : suffixe}.pdf`);
       } catch (e: any) {
         toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
       } finally {
@@ -633,16 +633,17 @@ export function DocumentsASigner() {
                 </Button>
                 {(() => {
                   const serveur = docs.find((d) => d.id === selected.id) || selected;
-                  if (serveur.statut !== "signe") return null;
+                  const aReponses = Object.values(serveur.reponses || {}).some((v) => !!v);
+                  if (serveur.statut !== "signe" && !aReponses) return null;
                   return (
                     <Button
                       variant="outline"
                       className="gap-2"
                       disabled={downloadingId === selected.id}
-                      onClick={() => telechargerDocument(serveur)}
+                      onClick={() => telechargerDocument({ ...serveur, statut: "signe", nom: `${serveur.nom}_rempli` })}
                     >
                       <FileSignature className="h-4 w-4" />
-                      Télécharger la version signée
+                      Télécharger la version remplie (par mail)
                     </Button>
                   );
                 })()}
