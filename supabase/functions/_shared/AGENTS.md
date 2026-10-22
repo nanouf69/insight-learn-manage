@@ -1,6 +1,6 @@
 # Shared Edge code
 
-- QRC AI: tasks are queued server-side (trigger at passage end + bounded 10-min reconciliation since auto cutoff, e-learning only); the learner-tab call only enqueues; the queue runs one streamed item per invocation in background with a 60 s deadline, append-only retry receipts, per-QRC dead letter that never blocks other QRC; only finished 429/5xx or local deadline retry (max 2), unknown outcome requires review; why: no tab dependency, no hung queue, no double billing or overwritten corrections.
+- QRC AI: tasks are queued server-side (trigger at passage end + bounded 10-min reconciliation since auto cutoff, e-learning only); the learner-tab call only enqueues; the queue runs one streamed item per invocation in background with a 60 s deadline, append-only retry receipts, per-QRC dead letter that never blocks other QRC; only finished 429/5xx retry (max 2); local deadline or other unknown outcome goes to review, never replayed (local abort does not prove provider cancellation); qrc_ia_bilan_statuts trusts SQL only via auth.uid() IS NULL + session_user, never definer current_user; why: no tab dependency, no hung queue, no double billing or overwritten corrections.
 
 - Registration upload validates authenticated owner/admin or scoped onboarding HMAC, immutable UUID/content hash and explicit acknowledgement; why: retries never duplicate or replace prior versions.
 
