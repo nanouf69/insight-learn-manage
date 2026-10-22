@@ -1359,6 +1359,13 @@
       "when": 1792651430858,
       "tag": "0193_fix_compteur_modules_statut_serveur",
       "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1792658189279,
+      "tag": "0194_taxi_2026_activity_proof",
+      "breakpoints": true
     }
   ]
 }
