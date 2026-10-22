@@ -1,6 +1,6 @@
 # Shared Edge code
 
-- QRC AI uses one streamed item per invocation, durable bounded per-attempt continuation and append-only retry receipts; only finished transient upstream errors retry, unknown/active work requires review; why: prevent timeout chains, concurrent billing and overwriting definitive corrections.
+- QRC AI: tasks are queued server-side (trigger at passage end + bounded 10-min reconciliation since auto cutoff, e-learning only); the learner-tab call only enqueues; the queue runs one streamed item per invocation in background with a 60 s deadline, append-only retry receipts, per-QRC dead letter that never blocks other QRC; only finished 429/5xx or local deadline retry (max 2), unknown outcome requires review; why: no tab dependency, no hung queue, no double billing or overwritten corrections.
 
 - Registration upload validates authenticated owner/admin or scoped onboarding HMAC, immutable UUID/content hash and explicit acknowledgement; why: retries never duplicate or replace prior versions.
 
