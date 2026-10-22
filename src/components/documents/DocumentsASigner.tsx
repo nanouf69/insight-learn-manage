@@ -110,8 +110,8 @@ export function DocumentsASigner() {
         const champsDoc = Array.isArray(doc.champs) ? doc.champs : [];
         const reponsesDoc = (doc.reponses || {}) as Record<string, string>;
         const bytes = await genererPdfRempli(data.signedUrl, champsDoc, reponsesDoc);
-        const suffixe = doc.statut === "signe" ? "signe" : "vierge";
-        telechargerPdf(bytes, `${doc.nom}_${suffixe}.pdf`);
+        const suffixe = doc.statut === "signe" ? "_signe" : doc.statut === "pre_rempli" ? "" : "_vierge";
+        telechargerPdf(bytes, `${doc.nom}${suffixe}.pdf`);
       } catch (e: any) {
         toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
       } finally {
