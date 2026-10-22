@@ -110,8 +110,8 @@ export function DocumentsASigner() {
         const champsDoc = Array.isArray(doc.champs) ? doc.champs : [];
         const reponsesDoc = (doc.reponses || {}) as Record<string, string>;
         const bytes = await genererPdfRempli(data.signedUrl, champsDoc, reponsesDoc);
-        const suffixe = doc.statut === "signe" ? "signe" : "vierge";
-        telechargerPdf(bytes, `${doc.nom}_${suffixe}.pdf`);
+        const suffixe = doc.statut === "signe" ? "_signe" : doc.statut === "pre_rempli" ? "" : "_vierge";
+        telechargerPdf(bytes, `${doc.nom}${suffixe}.pdf`);
       } catch (e: any) {
         toast({ title: "Téléchargement impossible", description: e.message, variant: "destructive" });
       } finally {
@@ -617,6 +617,8 @@ export function DocumentsASigner() {
                   onClick={() =>
                     telechargerDocument({
                       ...selected,
+                      statut: "pre_rempli",
+                      nom: `${selected.nom}_pre_rempli`,
                       champs,
                       reponses: reponsesApercu,
                     })
@@ -627,8 +629,23 @@ export function DocumentsASigner() {
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  Télécharger le document
+                  Télécharger la version pré-remplie
                 </Button>
+                {(() => {
+                  const serveur = docs.find((d) => d.id === selected.id) || selected;
+                  if (serveur.statut !== "signe") return null;
+                  return (
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                      disabled={downloadingId === selected.id}
+                      onClick={() => telechargerDocument(serveur)}
+                    >
+                      <FileSignature className="h-4 w-4" />
+                      Télécharger la version signée
+                    </Button>
+                  );
+                })()}
                 <Button
                   variant="ghost"
                   size="sm"
