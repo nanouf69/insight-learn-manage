@@ -537,6 +537,20 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Dates d'accès aux cours en ligne obligatoires (hors prospect / carte VTC par équivalence)
+    if (
+      typeApprenant !== "prospect" &&
+      formData.selected_formation !== "demande-carte-vtc-equivalence" &&
+      (!dateDebutCours || !dateFinCours)
+    ) {
+      toast.error("Choisissez la date de début et la date de fin d'accès aux cours en ligne avant d'enregistrer.");
+      return;
+    }
+    if (dateDebutCours && dateFinCours && dateFinCours < dateDebutCours) {
+      toast.error("La date de fin d'accès doit être après la date de début.");
+      return;
+    }
+
     // Protection contre les doubles clics
     if (submitInProgressRef.current || isLoading) return;
     submitInProgressRef.current = true;
