@@ -465,8 +465,14 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
     const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
-    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
-  }, [rowBySlot]);
+    // Pratique : une seule signature couvre matin + après-midi du même jour.
+    // Seules les demi-journées prévues ET encore non signées sont ajoutées :
+    // une signature existante n'est jamais remplacée.
+    const extras = pratiqueDates.has(slot.date)
+      ? missingSlots.filter((s) => s.date === slot.date && s.creneau !== slot.creneau && (s.creneau === "matin" || s.creneau === "apres_midi")).map((s) => s.creneau)
+      : [];
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing), extras });
+  }, [rowBySlot, pratiqueDates, missingSlots]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
