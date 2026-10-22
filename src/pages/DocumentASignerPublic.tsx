@@ -13,6 +13,7 @@ import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { ChampDocument } from "@/lib/documentsASigner";
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { ChoixPratiqueForm, type ChoixDocData } from "@/components/documents/ChoixPratiqueForm";
+import { DocumentZoneEditor, dateDuJourDocument } from "@/components/documents/DocumentZoneEditor";
 
 
 ensurePdfWorker();
@@ -43,6 +44,7 @@ export default function DocumentASignerPublic() {
   const [largeur, setLargeur] = useState(720);
   const [downloading, setDownloading] = useState(false);
   const [choixDoc, setChoixDoc] = useState<ChoixDocData | null>(null);
+  const [zoneActive, setZoneActive] = useState<ChampDocument | null>(null);
 
   const telecharger = async () => {
     if (!doc?.fileUrl) return;
@@ -211,17 +213,17 @@ export default function DocumentASignerPublic() {
                   {doc.champs
                     .filter((c) => c.page === p)
                     .map((c) => (
-                      <div
+                      <Button
+                        variant="ghost"
                         key={c.id}
                         style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${c.w}%`, height: `${c.h}%` }}
-                        role={!signe ? "button" : undefined}
+                        aria-label={`Compléter ${c.label}`}
+                        disabled={signe}
                         onClick={() => {
                           if (signe) return;
-                          const el = document.getElementById(`champ-${c.id}`);
-                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                          setTimeout(() => el?.querySelector<HTMLInputElement>("input")?.focus(), 400);
+                          setZoneActive(c);
                         }}
-                        className={`absolute border-2 border-dashed border-primary/60 bg-primary/5 rounded ${!signe ? "cursor-pointer" : ""}`}
+                        className="absolute min-h-0 p-0 border-2 border-dashed border-destructive bg-destructive/10 rounded whitespace-normal overflow-hidden"
                       >
                         {reponses[c.id] && c.type === "signature" ? (
                           <img src={reponses[c.id]} alt={c.label} className="w-full h-full object-contain" />
@@ -230,7 +232,7 @@ export default function DocumentASignerPublic() {
                         ) : (
                           <span className="text-[10px] px-1 text-primary flex items-center h-full">{c.label}</span>
                         )}
-                      </div>
+                      </Button>
                     ))}
                 </div>
               ))}
@@ -259,6 +261,7 @@ export default function DocumentASignerPublic() {
                     onChange={(e) => setReponses((prev) => ({ ...prev, [c.id]: e.target.value }))}
                   />
                 )}
+                {c.type === "texte" && <Button variant="outline" size="sm" onClick={() => setReponses((prev) => ({ ...prev, [c.id]: dateDuJourDocument() }))}>Date d’aujourd’hui</Button>}
               </div>
             ))}
 
@@ -269,6 +272,8 @@ export default function DocumentASignerPublic() {
           </div>
         )}
       </div>
+      {!signe && zoneActive && <DocumentZoneEditor key={zoneActive.id} champ={zoneActive} valeur={reponses[zoneActive.id] || ""}
+        onClose={() => setZoneActive(null)} onApply={(value) => setReponses((prev) => ({ ...prev, [zoneActive.id]: value }))} />}
     </div>
   );
 }

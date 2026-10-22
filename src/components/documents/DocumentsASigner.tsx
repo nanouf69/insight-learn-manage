@@ -35,6 +35,7 @@ import {
 } from "@/lib/documentsASigner";
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
+import { DocumentZoneEditor } from "@/components/documents/DocumentZoneEditor";
 
 
 ensurePdfWorker();
@@ -77,6 +78,9 @@ export function DocumentsASigner() {
   const [email, setEmail] = useState("");
   const [nomDest, setNomDest] = useState("");
   const [expediteur, setExpediteur] = useState("contact@ftransport.fr");
+  const [remplir, setRemplir] = useState(false);
+  const [zoneActive, setZoneActive] = useState<ChampDocument | null>(null);
+  const [reponsesApercu, setReponsesApercu] = useState<Record<string, string>>({});
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -142,6 +146,8 @@ export function DocumentsASigner() {
       return;
     }
     setSelected(doc);
+    setReponsesApercu(doc.reponses || {});
+    setZoneActive(null);
     setChamps(Array.isArray(doc.champs) ? doc.champs : []);
     setEmail(doc.destinataire_email || "");
     setNomDest(doc.destinataire_nom || "");
@@ -185,6 +191,7 @@ export function DocumentsASigner() {
   };
 
   const ajouterChamp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (remplir) return;
     if ((e.target as HTMLElement).closest("[data-champ]")) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -475,14 +482,17 @@ export function DocumentsASigner() {
       ) : (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg border bg-muted/40">
+            <Button variant={remplir ? "default" : "outline"} size="sm" onClick={() => setRemplir((v) => !v)} disabled={selected.statut === "signe"}>
+              <Type className="h-3.5 w-3.5" /> {remplir ? "Remplir le document" : "Remplir"}
+            </Button>
             <span className="text-sm font-medium mr-2">Zone à placer :</span>
-            <Button variant={outil === "signature" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => setOutil("signature")}>
+            <Button variant={outil === "signature" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => { setRemplir(false); setOutil("signature"); }}>
               <PenTool className="h-3.5 w-3.5" /> Signature
             </Button>
-            <Button variant={outil === "texte" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => setOutil("texte")}>
+            <Button variant={outil === "texte" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => { setRemplir(false); setOutil("texte"); }}>
               <Type className="h-3.5 w-3.5" /> Texte
             </Button>
-            <Button variant={outil === "nombre" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => setOutil("nombre")}>
+            <Button variant={outil === "nombre" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => { setRemplir(false); setOutil("nombre"); }}>
               <Hash className="h-3.5 w-3.5" /> Chiffre
             </Button>
             <span className="text-xs text-muted-foreground ml-2">Cliquez sur le document pour poser la zone, glissez pour la déplacer.</span>
@@ -502,11 +512,16 @@ export function DocumentsASigner() {
                       <div
                         key={c.id}
                         data-champ
-                        onMouseDown={(e) => deplacerChamp(c, e)}
+                        onMouseDown={(e) => { if (!remplir) deplacerChamp(c, e); }}
+                        role={remplir ? "button" : undefined}
+                        tabIndex={remplir ? 0 : undefined}
+                        aria-label={remplir ? `Compléter ${c.label}` : undefined}
+                        onClick={(e) => { e.stopPropagation(); if (remplir && selected.statut !== "signe") setZoneActive(c); }}
+                        onKeyDown={(e) => { if (remplir && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setZoneActive(c); } }}
                         style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${c.w}%`, height: `${c.h}%` }}
                         className={`group absolute border-2 border-dashed rounded flex items-center justify-center text-[10px] font-medium cursor-move ${CHAMP_COLORS[c.type]}`}
                       >
-                        {c.label}
+                        {reponsesApercu[c.id] && c.type === "signature" ? <img src={reponsesApercu[c.id]} alt={c.label} className="w-full h-full object-contain" /> : reponsesApercu[c.id] || c.label}
                         <button
                           type="button"
                           aria-label={`Supprimer ${c.label}`}
@@ -603,7 +618,7 @@ export function DocumentsASigner() {
                     telechargerDocument({
                       ...selected,
                       champs,
-                      reponses: (selected.reponses || {}) as Record<string, string>,
+                      reponses: reponsesApercu,
                     })
                   }
                 >
@@ -631,6 +646,8 @@ export function DocumentsASigner() {
           </div>
         </div>
       )}
+      {zoneActive && <DocumentZoneEditor key={zoneActive.id} champ={zoneActive} valeur={reponsesApercu[zoneActive.id] || ""}
+        onClose={() => setZoneActive(null)} onApply={(value) => setReponsesApercu((prev) => ({ ...prev, [zoneActive.id]: value }))} />}
     </div>
   );
 }
