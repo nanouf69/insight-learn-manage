@@ -42,7 +42,7 @@ Deno.test("silent provider is aborted by the local deadline, one call, no text",
   const ctl = new AbortController();
   const provider = createOpenAICompatible({ name: "lovable", baseURL: "https://offline.invalid/v1", fetch: async (_i, init) => {
     calls++;
-    return new Response(new ReadableStream({ start(c) { init?.signal?.addEventListener("abort", () => c.error(new DOMException("aborted", "AbortError"))); } }), { headers: { "Content-Type": "text/event-stream" } });
+    return new Response(new ReadableStream({ start(c) { (init as { signal?: AbortSignal } | undefined)?.signal?.addEventListener("abort", () => c.error(new DOMException("aborted", "AbortError"))); } }), { headers: { "Content-Type": "text/event-stream" } });
   } });
   setTimeout(() => ctl.abort(), 200);
   const result = streamText({ model: provider("unchanged-model"), prompt: "offline test", maxRetries: 0, abortSignal: ctl.signal, onError: ({ error }) => { failure = error; } });
