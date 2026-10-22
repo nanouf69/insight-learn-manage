@@ -326,7 +326,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
-  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
+  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean; extras?: CreneauKey[] } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [pratiqueDates, setPratiqueDates] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -465,8 +465,14 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
     const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
-    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
-  }, [rowBySlot]);
+    // Pratique : une seule signature couvre matin + après-midi du même jour.
+    // Seules les demi-journées prévues ET encore non signées sont ajoutées :
+    // une signature existante n'est jamais remplacée.
+    const extras = pratiqueDates.has(slot.date)
+      ? missingSlots.filter((s) => s.date === slot.date && s.creneau !== slot.creneau && (s.creneau === "matin" || s.creneau === "apres_midi")).map((s) => s.creneau)
+      : [];
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing), extras });
+  }, [rowBySlot, pratiqueDates, missingSlots]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -732,6 +738,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           mode={isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie) ? "fc" : "presentiel"}
           dateEmargement={signTarget.date}
           pratique={pratiqueDates.has(signTarget.date)}
+          extraCreneaux={signTarget.extras}
           replaceExisting={signTarget.replaceExisting}
           onSigned={() => { setSignTarget(null); setRefreshTick((t) => t + 1); }}
           onSkipped={() => setSignTarget(null)}
