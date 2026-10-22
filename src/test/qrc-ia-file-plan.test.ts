@@ -23,7 +23,7 @@ describe('Plan de suite par passage', () => {
 
 describe("Classement des échecs d'appel IA", () => {
   it('délai local dépassé : 504 reprisable (rien publié)', () => {
-    expect(classerEchecIa({ providerFinished: false, timeoutLocal: true })).toMatchObject({ status: 504, statut: 'erreur', reprisable: true, code: 'timeout_local' });
+    expect(classerEchecIa({ providerFinished: false, timeoutLocal: true })).toMatchObject({ status: 504, statut: 'a_verifier', reprisable: false, code: 'timeout_local_issue_inconnue' });
     expect(TIMEOUT_IA_MS).toBe(60000);
   });
   it('429 et 5xx reprisables, 402/403/400 non', () => {
