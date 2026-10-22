@@ -1352,6 +1352,13 @@
       "when": 1792589111080,
       "tag": "0192_grille_notation_statut_brouillon",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1792651430858,
+      "tag": "0193_fix_compteur_modules_statut_serveur",
+      "breakpoints": true
     }
   ]
 }
