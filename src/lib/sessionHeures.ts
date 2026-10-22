@@ -16,7 +16,11 @@ export function libelleHeuresSessionMixte(s: SessionHeuresSource): string | null
   const types = (s.types_apprenant || []).map((t) => String(t).toUpperCase());
   const hasTaxi = types.includes("TAXI") || /taxi/.test(nom);
   const hasVtc = types.includes("VTC") || /vtc/.test(nom);
-  return hasTaxi && hasVtc ? "VTC : 60 h · TAXI : 90 h" : null;
+  const hasTA = types.includes("TA") || /\bta\b/.test(nom);
+  if (hasTaxi && hasVtc) return "VTC : 60 h · TAXI : 90 h";
+  // Session commune TAXI + TA : le TA suit 30 h par défaut, le TAXI 90 h.
+  if (hasTaxi && hasTA) return "TAXI : 90 h · TA : 30 h";
+  return null;
 }
 
 /**
@@ -59,6 +63,7 @@ export function heuresSessionPourApprenant(s: SessionHeuresSource & { heures_tot
   if (libelleHeuresSessionMixte(s)) {
     if (filiere === "vtc") return 60;
     if (filiere === "taxi") return 90;
+    if (filiere === "ta") return 30;
   }
   return heuresSessionAffichees(s);
 }

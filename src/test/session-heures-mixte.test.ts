@@ -35,3 +35,10 @@ describe("Durées affichées des sessions communes", () => {
     expect(heuresSessionAffichees({ nom: String(nom) })).toBe(heures);
   });
 });
+import { heuresSessionPourApprenant } from "../lib/sessionHeures";
+describe("Session TAXI + TA : TA 30 h par défaut", () => {
+  const s = { nom: "Session TAXI et TA - Du 7 au 28 septembre 2026", type_session: "theorique", types_apprenant: ["TAXI", "TA"] };
+  it("libellé distingue TAXI 90 h et TA 30 h", () => expect(libelleHeuresSessionMixte(s)).toBe("TAXI : 90 h · TA : 30 h"));
+  it("apprenant TA = 30 h, TAXI = 90 h", () => { expect(heuresSessionPourApprenant(s, "ta")).toBe(30); expect(heuresSessionPourApprenant(s, "taxi")).toBe(90); });
+  it("heures enregistrées non modifiées", () => expect(heuresSessionAffichees({ ...s, heures_total: 90 })).toBe(90));
+});
