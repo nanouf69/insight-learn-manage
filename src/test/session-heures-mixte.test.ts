@@ -42,3 +42,10 @@ describe("Session TAXI + TA : TA 30 h par défaut", () => {
   it("apprenant TA = 30 h, TAXI = 90 h", () => { expect(heuresSessionPourApprenant(s, "ta")).toBe(30); expect(heuresSessionPourApprenant(s, "taxi")).toBe(90); });
   it("heures enregistrées non modifiées", () => expect(heuresSessionAffichees({ ...s, heures_total: 90 })).toBe(90));
 });
+
+import { tauxTotalPresence } from "../lib/tauxTotalPresence";
+it("TA : 30 h présentiel + 6 h pratique = 36 h au total", () => {
+  const s = { nom: "Session TAXI et TA", type_session: "theorique", types_apprenant: ["TAXI", "TA"] };
+  const r = tauxTotalPresence({ session: { faites: 30, prevues: heuresSessionPourApprenant(s, "ta")! }, pratique: { faites: 6, prevues: 6 } });
+  expect(r?.prevues).toBe(36); expect(r?.pct).toBe(100);
+});
