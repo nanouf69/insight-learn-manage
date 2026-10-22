@@ -192,6 +192,16 @@ export default function DocumentASignerPublic() {
         )}
 
 
+        {!signe && doc.champs.length > 0 && (
+          <button
+            type="button"
+            onClick={() => document.getElementById(`champ-${doc.champs[0].id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            className="w-full rounded-xl border border-primary bg-primary/10 p-3 text-sm font-medium text-primary"
+          >
+            Pour écrire ou signer, touchez une zone du document ou appuyez ici : les cases à remplir sont en bas de la page.
+          </button>
+        )}
+
         <div ref={containerRef} className="bg-card border rounded-xl p-3 overflow-auto">
           {doc.fileUrl && (
             <Document file={doc.fileUrl} onLoadSuccess={({ numPages: n }) => setNumPages(n)}>
@@ -204,7 +214,14 @@ export default function DocumentASignerPublic() {
                       <div
                         key={c.id}
                         style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${c.w}%`, height: `${c.h}%` }}
-                        className="absolute border-2 border-dashed border-primary/60 bg-primary/5 rounded"
+                        role={!signe ? "button" : undefined}
+                        onClick={() => {
+                          if (signe) return;
+                          const el = document.getElementById(`champ-${c.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          setTimeout(() => el?.querySelector<HTMLInputElement>("input")?.focus(), 400);
+                        }}
+                        className={`absolute border-2 border-dashed border-primary/60 bg-primary/5 rounded ${!signe ? "cursor-pointer" : ""}`}
                       >
                         {reponses[c.id] && c.type === "signature" ? (
                           <img src={reponses[c.id]} alt={c.label} className="w-full h-full object-contain" />
@@ -225,7 +242,7 @@ export default function DocumentASignerPublic() {
           <div className="bg-card border rounded-xl p-5 space-y-5">
             <h2 className="font-semibold">Zones à compléter</h2>
             {doc.champs.map((c) => (
-              <div key={c.id} className="space-y-2">
+              <div key={c.id} id={`champ-${c.id}`} className="space-y-2 scroll-mt-24">
                 <Label>
                   {c.label} {c.requis && <span className="text-destructive">*</span>}
                 </Label>
