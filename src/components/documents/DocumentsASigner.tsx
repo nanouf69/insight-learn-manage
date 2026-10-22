@@ -504,9 +504,19 @@ export function DocumentsASigner() {
                         data-champ
                         onMouseDown={(e) => deplacerChamp(c, e)}
                         style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${c.w}%`, height: `${c.h}%` }}
-                        className={`absolute border-2 border-dashed rounded flex items-center justify-center text-[10px] font-medium cursor-move ${CHAMP_COLORS[c.type]}`}
+                        className={`group absolute border-2 border-dashed rounded flex items-center justify-center text-[10px] font-medium cursor-move ${CHAMP_COLORS[c.type]}`}
                       >
                         {c.label}
+                        <button
+                          type="button"
+                          aria-label={`Supprimer ${c.label}`}
+                          title="Supprimer cette zone"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => { e.stopPropagation(); setChamps((prev) => prev.filter((x) => x.id !== c.id)); }}
+                          className="absolute -top-2.5 -right-2.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     ))}
                   </div>
