@@ -8118,6 +8118,7 @@ export type Database = {
       }
     }
     Functions: {
+      activites_taxi_2026_protection_prete: { Args: never; Returns: boolean }
       admin_signalements_validation_modules: {
         Args: never
         Returns: {
