@@ -6482,10 +6482,14 @@ export type Database = {
         Row: {
           attempt_id: string
           created_at: string
+          dernier_code: string | null
+          dernier_run_id: string | null
           dispatches: number
           lease_until: string | null
+          maj_at: string | null
           message: string | null
           next_at: string
+          origine: string | null
           remaining: number
           statut: string
           token: string
@@ -6493,10 +6497,14 @@ export type Database = {
         Insert: {
           attempt_id: string
           created_at?: string
+          dernier_code?: string | null
+          dernier_run_id?: string | null
           dispatches?: number
           lease_until?: string | null
+          maj_at?: string | null
           message?: string | null
           next_at?: string
+          origine?: string | null
           remaining?: number
           statut?: string
           token?: string
@@ -6504,10 +6512,14 @@ export type Database = {
         Update: {
           attempt_id?: string
           created_at?: string
+          dernier_code?: string | null
+          dernier_run_id?: string | null
           dispatches?: number
           lease_until?: string | null
+          maj_at?: string | null
           message?: string | null
           next_at?: string
+          origine?: string | null
           remaining?: number
           statut?: string
           token?: string
@@ -8944,6 +8956,21 @@ export type Database = {
         Returns: boolean
       }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
+      qrc_ia_bilan_statuts: {
+        Args: never
+        Returns: {
+          apprenant_id: string
+          attempt_id: string
+          exam_id: string
+          finished_at: string
+          qrc_instance_id: string
+          statut: string
+          suite_code: string
+          suite_statut: string
+          trace_http: number
+          trace_statut: string
+        }[]
+      }
       qrc_ia_compter_copies_en_attente: { Args: never; Returns: Json }
       qrc_ia_copies_en_attente_elearning: {
         Args: { p_min_age?: string }
@@ -8960,6 +8987,10 @@ export type Database = {
         Returns: Json
       }
       qrc_ia_dispatch_suites: { Args: never; Returns: number }
+      qrc_ia_enfiler: {
+        Args: { p_attempt: string; p_origine?: string }
+        Returns: string
+      }
       qrc_ia_publier_auto: {
         Args: {
           p_attempt: string
@@ -8993,6 +9024,8 @@ export type Database = {
         }
         Returns: Json
       }
+      qrc_ia_raison_file: { Args: { p_attempt: string }; Returns: string }
+      qrc_ia_reconcilier: { Args: never; Returns: Json }
       qrc_ia_reserver_auto: {
         Args: { p_base: Json; p_qrc: string }
         Returns: Json
@@ -9007,6 +9040,10 @@ export type Database = {
       }
       qrc_ia_suite_claim: {
         Args: { p_attempt: string; p_token?: string }
+        Returns: boolean
+      }
+      qrc_ia_type_elearning: {
+        Args: { p_modalite: string; p_type: string }
         Returns: boolean
       }
       qrc_pilot_integrity: {
