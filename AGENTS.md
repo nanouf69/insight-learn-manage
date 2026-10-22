@@ -37,3 +37,4 @@
 - Learner question CSS uses data-learner-question/passage; why: isolate presentation from content and persistence.
 - QRC retry history supersedes old traces only with matching final server proof; why: reservations never prove completion.
 - TAXI 2026: isolated versioned drafts, owned queue/readback, staged server guard; why: additive proofs only. See courses AGENTS.
+- Document zones share a touch-friendly editor; admin filling is a local PDF preview/export, while recipient submission keeps its existing server workflow; why: never overwrite recorded signed documents from the layout editor.
