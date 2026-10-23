@@ -130,7 +130,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         chargerClassificationSignatures(apprenantId),
       ]);
 
-      const { onlineMin, pedagogicalActTs, firstActualActivityStart } = elearningHoursEvidence({
+      const { onlineMin, premiereActiviteAt, derniereActiviteAt } = elearningHoursEvidence({
         apprenantId, apprenant, acts, quizzes, exos, cnxAll,
         pratiqueDates: pratiqueDetails.map(p => p.date),
       });
@@ -177,17 +177,8 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         pctTotal: regle.presentiel ? signatures?.taux ?? 0 : pct(doneElearning + donePresentiel, reqTotal),
         signatures,
         totalParSignatures: regle.presentiel,
-        premiereActiviteAt: firstActualActivityStart !== undefined
-          ? new Date(firstActualActivityStart).toISOString()
-          : pedagogicalActTs.length > 0
-            ? new Date(pedagogicalActTs[0]).toISOString()
-            : null,
-        derniereActiviteAt: (() => {
-          // Dernier cours ouvert / exercice / quiz, jamais après la fin d'accès.
-          const cutoff = getAccessCutoffMs(apprenant?.date_fin_cours_en_ligne || apprenant?.date_fin_formation);
-          const valid = cutoff ? pedagogicalActTs.filter((t) => t <= cutoff) : pedagogicalActTs;
-          return valid.length > 0 ? new Date(valid[valid.length - 1]).toISOString() : null;
-        })(),
+        premiereActiviteAt,
+        derniereActiviteAt,
       };
     },
   });

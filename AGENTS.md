@@ -34,6 +34,7 @@
 - Shared theory attendance: sessionHeures by learner track; why: no cross-track totals.
 - Read local AGENTS before edits; why: scoped rules apply.
 - E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
+- E-learning first/last activity dates use recorded pedagogical events in elearningHoursEvidence, not connection boundaries; why: a login alone must never invent activity dates, and hours arithmetic remains unchanged.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
 - Learner question CSS uses data-learner-question/passage; why: isolate presentation from content and persistence.
 - QRC retry history supersedes old traces only with matching final server proof; why: reservations never prove completion.

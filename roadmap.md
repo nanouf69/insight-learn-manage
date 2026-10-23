@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Dates des activités e-learning — 23/10
+- [x] Afficher première/dernière activité réelle dans TAUX E-LEARNING pour tous les dossiers, connexions seules exclues ; heures et données inchangées.
+- [ ] Tests ciblés et vérification CRM en lecture seule ; aucune publication.
+
 ## IA QRC : traçabilité et reprise des 6 QRC Aba — 23/10 09:05 UTC
 - [x] Trace par appel, budget de 140 s, migration 0199, fonction déployée, reprise unique des 6 : toutes corrigées, empreintes identiques. Journal : docs/journal-qrc-ia-trace-reprise-6-2026-10-23.md
 
