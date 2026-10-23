@@ -2858,7 +2858,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
                 {absents.map(a => (
                   <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
-                    <span>{a.nom} {a.prenom}</span>
+                    {onNavigateToApprenant ? (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToApprenant(a.id)}
+                        className="underline-offset-2 hover:underline text-left"
+                        title="Ouvrir la fiche CRM de l'apprenant"
+                      >
+                        {a.nom} {a.prenom}
+                      </button>
+                    ) : (
+                      <span>{a.nom} {a.prenom}</span>
+                    )}
                     {!a.numero_dossier_cma && <Badge variant="destructive" className="text-[10px] px-1">Pas de CMA</Badge>}
                   </div>
                 ))}
