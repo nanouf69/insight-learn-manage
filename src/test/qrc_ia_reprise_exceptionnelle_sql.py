@@ -18,7 +18,6 @@ def sql(query, role='service_role'):
     pre = f"SET app.role='{role}';" + ('' if role == 'service_role' else f'SET ROLE {role};')
     return subprocess.check_output(['psql','-X','-h',TEMP,'-p',PORT,'-U','lovable','-d','postgres','-At','-v','ON_ERROR_STOP=1','-c',pre+query], text=True, stderr=subprocess.STDOUT).strip()
 
-def _x(): pass
 
 def reserve(q=Q, base=BASE, role='service_role'):
     return sql(f"SELECT qrc_ia_reserver_reprise_exceptionnelle('{q}','{base}'::jsonb)", role)
@@ -90,7 +89,7 @@ def main():
         CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$SELECT NULL::uuid$$;
         CREATE TYPE public.app_role AS ENUM ('admin','moderator','user');
         CREATE TABLE published(q uuid);''')
-        sql((ROOT/'src/test/fixtures/qrc_ia_catalogue_live.sql').read_text())
+        sql('SET check_function_bodies=off;' + (ROOT/'src/test/fixtures/qrc_ia_catalogue_live.sql').read_text())
         sql('''CREATE OR REPLACE FUNCTION public.core_correct_qrc_publish(uuid,uuid,numeric,text,text) RETURNS jsonb LANGUAGE plpgsql AS $$
           BEGIN INSERT INTO published VALUES($2); RETURN jsonb_build_object('qrc_instance_id',$2,'etat','corrigee','note',$3); END $$;''')
         sql(f"SET session_replication_role=replica; INSERT INTO qrc_ia_config(id,actif) VALUES(true,true) ON CONFLICT DO NOTHING;"
