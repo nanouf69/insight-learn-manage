@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Heures des sessions — 23/10 15:38 UTC
+- [ ] Corriger le double comptage des sessions théoriques chevauchantes dans la présence CRM ; vérifier les heures affichées dans les sessions, TAXI 90 h + pratique 6 h, autres filières et sessions distinctes conservées.
+- [ ] Tests fictifs et contrôle lecture seule de Yasin ; signatures/données inchangées ; aucune publication demandée.
+
 ## Dates des activités e-learning — 23/10
 - [x] Afficher première/dernière activité réelle dans TAUX E-LEARNING pour tous les dossiers, connexions seules exclues ; heures et données inchangées.
 - [x] 39 tests ciblés réussis (4 fichiers), compilation automatique OK. Vérification CRM authentifiée non prouvée : session injectée reconnue comme apprenant introuvable, fiche admin inaccessible. Aucune publication ni écriture Cloud.
