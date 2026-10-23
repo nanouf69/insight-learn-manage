@@ -27,12 +27,11 @@ export function ChoixPratiqueBadges({ apprenantId }: { apprenantId: string }) {
   if (isLoading) return null;
   if (isError) return <Badge variant="outline">Choix pratique : lecture impossible</Badge>;
   const e = etatChoixPratique(data?.doc ?? null, data?.revs ?? []);
-  if (!e || (!e.signe && !e.envoyeLe)) return null;
-  if (!e.signe) {
+  if (!e || !e.signe) {
     return (
       <>
-        <Badge variant="outline">Choix pratique : en attente de réponse</Badge>
-        <Badge variant="outline">Réinscription examen : {e.demandeReinscription ? "en attente" : "non demandée"}</Badge>
+        <Badge variant="outline" className="border-amber-500 text-amber-700">Choix pratique : pas répondu</Badge>
+        <Badge variant="outline" className="border-amber-500 text-amber-700">Réinscription examen : pas répondu</Badge>
       </>
     );
   }
