@@ -134,7 +134,10 @@ def build(db, schema_sql, migration=None):
     for fn in DEPS:
         sql(DEPS_SQL[fn], db)
     sql(schema_sql, db)
-    if migration: sql(migration, db)
+    # Schéma réel déjà corrigé (après déploiement) : on teste ce qui tourne, sans rejouer 0197.
+    deja = sql(f"SELECT NOT attnotnull FROM pg_attribute WHERE attrelid='public.{TABLE}'::regclass AND attname='completed_at'", db) == 't'
+    if migration and not deja: sql(migration, db)
+    print(f'[{db}] 0197', 'déjà présente dans le schéma réel' if deja else ('appliquée' if migration else 'non appliquée'))
     sql(f"""INSERT INTO apprenants VALUES ('{A}','{U}'),('{A2}','{U2}'),('{ISMAIL}','{UI}');
       INSERT INTO user_roles VALUES ('{ADMIN}','admin');
       INSERT INTO apprenant_connexions VALUES ('{A}','{U}',now(),now(),now(),NULL),('{A2}','{U2}',now(),now(),now(),NULL);
