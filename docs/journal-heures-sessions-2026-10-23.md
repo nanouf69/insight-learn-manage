@@ -23,3 +23,8 @@ Yasin LAIDAOUI est rattaché à deux sessions distinctes mais communes et chevau
 - NON PROUVÉ : visite de chaque autre dossier, ordre complet des modules/quiz (aucun fichier pédagogique touché), appareils physiques.
 
 Aucune publication, aucun mail/SMS/IA, aucune création/édition/suppression de signature ou de dossier.
+## 23/10 15:55 UTC — Contrôle Mohamed ISSAOUNE (lecture seule)
+- Apprenant 3055b5f9-bdde-4d52-b00c-98ba738b333d, filière taxi, mêmes deux sessions théoriques communes chevauchantes que Yasin : Session TAXI et TA 7-28 sept (90 h) + Session VTC et TAXI 14-27 sept (90 h), plus formation pratique TAXI du 23/10 (réservation journée, type taxi).
+- Le correctif de déduplication (heuresTheorieInscrites) s'applique : 90 h de session au lieu de 180 h + 6 h pratique = 96 h prévues.
+- Fiche CRM ouverte en lecture seule (Playwright, session administrateur injectée) : Taux présence session 80 % (72 h signées / 90 h, dernière 28/09/2026) ; Taux présence pratique 100 % (6/6, dernière 23/10/2026) ; Taux présentiel 78 h / 96 h ; Taux total 81,3 %. Capture : /tmp/browser/isaouine/screenshots/3_fiche.png.
+- Aucune écriture base, aucune modification code ni publication ; le correctif reste en attente d'accord.

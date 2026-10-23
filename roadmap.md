@@ -3,7 +3,8 @@
 ## Heures des sessions — 23/10 15:38 UTC
 - [x] Corriger le double comptage des sessions théoriques communes chevauchantes dans la présence CRM ; TAXI 90 h + pratique 6 h, filières VTC/TA et sessions distinctes conservées.
 - [x] 55 tests ciblés PASS ; compilation automatique OK ; fiche réelle admin Yasin contrôlée en lecture seule : 90 h théorie / 6 h pratique / 96 h total, taux total 100 %. Aucun changement de données ni publication.
-- Limite : un test annexe existant sur l'anomalie d'une feuille masquée échoue (attend une anomalie absente) ; code de classification non modifié. Contrôle individuel de tous les autres dossiers non exécuté. Journal : docs/journal-heures-sessions-2026-10-23.md.
+- [x] Même contrôle pour Mohamed ISSAOUNE (23/10) : mêmes deux sessions de septembre chevauchantes ; fiche lue en lecture seule : session 72 h signées / 90 h (80 %), pratique 6/6 (100 %), total 78/96 = 81,3 %, dernière signature 23/10/2026. Aucun changement de code ni de données.
+- Limite : un test annexe existant sur l'anomalie d'une feuille masquée échoue (attend une anomalie absente) ; code de classification non modifié. Contrôle individuel de tous les autres dossiers non exécuté. Journal : docs/journal-heures-sessions-2026-10-23.md. Correctif NON PUBLIÉ (en attente d'accord).
 
 ## Dates des activités e-learning — 23/10
 - [x] Afficher première/dernière activité réelle dans TAUX E-LEARNING pour tous les dossiers, connexions seules exclues ; heures et données inchangées.
