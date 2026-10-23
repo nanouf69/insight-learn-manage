@@ -4,6 +4,7 @@
 
 
 - save_module_completion refuses completion without proven answers for modules with questions (P0501); why: browser never decides alone.
+- Module completion: completed_at NULL = not validated, set only at real server validation (CHECK completed ⇒ date); changes to its RPCs/schema must pass `python3 src/test/module_completion_sql_contract.py` (disposable Postgres built from the live catalog); why: mocked/regex tests missed the 0193 NOT NULL 23502 regression.
 - Règles de fin des modules définis dans le code : table `module_regles_validation` (protection_serveur) lue par save_module_completion ; why: le serveur doit connaître les modules à questions absents de module_editor_state.
 - Technical test accounts use `comptes_test_techniques` and restrictive `est_compte_test()` policies; why: central exclusion without name guessing; each test account sees only itself.
 - Bilans: `trg_bilan_aa_controle_ids` rejects non-int32 exercise IDs (P0510); why: keep old IDs compatible.

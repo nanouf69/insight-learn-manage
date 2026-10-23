@@ -768,7 +768,7 @@ export type Database = {
       apprenant_module_completion: {
         Row: {
           apprenant_id: string
-          completed_at: string
+          completed_at: string | null
           created_at: string
           details: Json | null
           id: string
@@ -782,7 +782,7 @@ export type Database = {
         }
         Insert: {
           apprenant_id: string
-          completed_at?: string
+          completed_at?: string | null
           created_at?: string
           details?: Json | null
           id?: string
@@ -796,7 +796,7 @@ export type Database = {
         }
         Update: {
           apprenant_id?: string
-          completed_at?: string
+          completed_at?: string | null
           created_at?: string
           details?: Json | null
           id?: string
@@ -9193,7 +9193,7 @@ export type Database = {
         }
         Returns: {
           apprenant_id: string
-          completed_at: string
+          completed_at: string | null
           created_at: string
           details: Json | null
           id: string
@@ -9234,7 +9234,7 @@ export type Database = {
         }
         Returns: {
           apprenant_id: string
-          completed_at: string
+          completed_at: string | null
           created_at: string
           details: Json | null
           id: string
