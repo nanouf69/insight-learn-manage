@@ -1,5 +1,8 @@
 # Feuille de route
 
+## IA QRC : traçabilité et reprise des 6 QRC Aba — 23/10 09:05 UTC
+- [x] Trace par appel, budget de 140 s, migration 0199, fonction déployée, reprise unique des 6 : toutes corrigées, empreintes identiques. Journal : docs/journal-qrc-ia-trace-reprise-6-2026-10-23.md
+
 ## Pratique TAXI — exactement 3 exercices Rhône 2026 — 21/10 16:34 UTC
 - [x] Recherche indépendante : copie de l’arrêté 69-2026-02-19-00002 lue, extraits articles/pages et limites dans docs/preuves/taxi-rhone-2026/sources.md ; site préfectoral en maintenance.
 - [x] Ajout module 6 uniquement : calendrier/QCM 11 dates, quiz unique 30 questions, un exercice RTST 13 étapes/52 saisies. Les 10 cours et 1 quiz préexistants inchangés.
