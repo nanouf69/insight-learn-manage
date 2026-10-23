@@ -11,14 +11,23 @@ import type { CompletionLite, VolumeModule } from "@/lib/jalonsPonderes";
  * Terminé = réalisation complète confirmée par le serveur (reponses_apprenants,
  * completed = true) — jamais un score, jamais un stockage local.
  */
-export interface ActiviteCode { id: string; moduleId: number; titre: string; unites: number; ajouteeLe: string; retireeLe?: string }
+export interface ActiviteCode { id: string; moduleId: number; titre: string; unites: number; ajouteeLe: string; retireeLe?: string; exigeeSiValideApres?: string }
+
+/**
+ * Dispense historique module 6 (demande Naoufal, horodatage serveur du message 23/10/2026 09:51:00 UTC) :
+ * « sauf ceux qui ont fini le module » = tout module validé AVANT cet instant garde son acquis,
+ * même validé entre l'ajout (21/10) et la demande. Bornée : un module validé après doit faire les 3.
+ */
+export const BORNE_DISPENSE_TAXI_2026 = "2026-10-23T09:51:00Z";
+/** Instant à partir duquel une validation de module n'exempte plus l'activité. */
+export const bornePourGel = (a: ActiviteCode) => Date.parse(a.exigeeSiValideApres ?? a.ajouteeLe);
 
 export const ACTIVITES_CODE: ActiviteCode[] = [
   { id: "jeu_lyon_arrondissements_quartiers", moduleId: 8, titre: "Lyon : arrondissements et quartiers", unites: 22, ajouteeLe: "2026-10-13T10:41:00Z" },
   { id: "jeu_lyon_lieux", moduleId: 8, titre: "Lyon : monuments, musées et lieux touristiques", unites: 24, ajouteeLe: "2026-10-13T10:41:00Z" },
-  { id: "jeu_taxi_2026_feries_v1", moduleId: 6, titre: "Calendrier des jours fériés 2026", unites: 11, ajouteeLe: "2026-10-21T16:35:40.331Z" },
-  { id: "jeu_taxi_2026_tarifs_v1", moduleId: 6, titre: "Tarifs TAXI du Rhône 2026", unites: 30, ajouteeLe: "2026-10-21T16:35:40.331Z" },
-  { id: "jeu_taxi_2026_rtst_v1", moduleId: 6, titre: "13 situations pratiques — RTST", unites: 13, ajouteeLe: "2026-10-21T16:35:40.331Z" },
+  { id: "jeu_taxi_2026_feries_v1", moduleId: 6, titre: "Calendrier des jours fériés 2026", unites: 11, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
+  { id: "jeu_taxi_2026_tarifs_v1", moduleId: 6, titre: "Tarifs TAXI du Rhône 2026", unites: 30, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
+  { id: "jeu_taxi_2026_rtst_v1", moduleId: 6, titre: "13 situations pratiques — RTST", unites: 13, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
 ];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";
@@ -50,7 +59,7 @@ export function activitesRequisesModule(moduleId: number, row: { status?: string
   // Validation serveur prouvée mais date absente/illisible : l'acquis est conservé (aucune date inventée).
   if (row?.status === "completed" && !instantValidationModule(row)) return [];
   const gel = instantValidationModule(row);
-  return activitesDuModule(moduleId, a).filter((x) => !gel || Date.parse(x.ajouteeLe) <= Date.parse(gel));
+  return activitesDuModule(moduleId, a).filter((x) => !gel || bornePourGel(x) <= Date.parse(gel));
 }
 export const idsActivites = (moduleIds: number[]) => moduleIds.flatMap((m) => activitesDuModule(m).map((x) => x.id));
 
@@ -81,7 +90,7 @@ export function completionAvecActivites(
   // acquises pour garantir 100 % à ce module ; jamais marquées « faites ».
   const gel = instantValidationModule(row);
   const valideSansDate = row?.status === "completed" && !gel;
-  const apres = valideSansDate ? [...activites] : gel ? activites.filter((a) => Date.parse(a.ajouteeLe) > Date.parse(gel)) : [];
+  const apres = valideSansDate ? [...activites] : gel ? activites.filter((a) => bornePourGel(a) > Date.parse(gel)) : [];
   const requises = activites.filter((a) => !apres.includes(a));
   const faits = activites.filter((a) => termines.has(a.id)).map((a) => a.id);
   const faitsRequis = requises.filter((a) => termines.has(a.id));
