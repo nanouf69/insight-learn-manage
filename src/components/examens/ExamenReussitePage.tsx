@@ -2855,7 +2855,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{absents.length}</div>
             {absents.length > 0 && (
-              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+              <div className="mt-2 space-y-1 max-h-64 overflow-y-auto pr-1">
                 {absents.map(a => (
                   <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
                     {onNavigateToApprenant ? (
