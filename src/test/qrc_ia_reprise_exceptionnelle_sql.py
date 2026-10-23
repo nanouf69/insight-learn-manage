@@ -16,7 +16,7 @@ BASE = '{"attempt_id":"%s","apprenant_id":"%s","question_id":"q_%s","reponse_has
 
 def sql(query, role='service_role'):
     pre = f"SET app.role='{role}';" + ('' if role == 'service_role' else f'SET ROLE {role};')
-    return subprocess.check_output(['psql','-X','-h',TEMP,'-p',PORT,'-U','lovable','-d','postgres','-At','-v','ON_ERROR_STOP=1','-c',pre+query], text=True, stderr=subprocess.STDOUT).strip()
+    return subprocess.check_output(['psql','-X','-h',TEMP,'-p',PORT,'-U','lovable','-d','postgres','-qAt','-v','ON_ERROR_STOP=1','-c',pre+query], text=True, stderr=subprocess.STDOUT).strip()
 
 
 def reserve(q=Q, base=BASE, role='service_role'):
