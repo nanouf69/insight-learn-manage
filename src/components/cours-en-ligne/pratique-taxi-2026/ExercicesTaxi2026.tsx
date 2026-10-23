@@ -99,13 +99,31 @@ export default function ExercicesTaxi2026({compteId,transport}:{compteId?:string
   const etat=useActivitesModule();
   useEffect(()=>ecouterDemandeJeu(id=>{if(IDS_TAXI.includes(id as typeof IDS_TAXI[number]))setOuvert(id);}),[]);
   const icons=[CalendarDays,Calculator,ClipboardList];
-  return <section className="space-y-4" aria-label="Exercices pratiques TAXI 2026">
-    <h3 className="text-xl font-bold">Pratique TAXI — Rhône 2026</h3>
-    <div className="grid gap-3 lg:grid-cols-3">{IDS_TAXI.map((id,i)=>{
-      const Icon=icons[i];const facultatif=etat?.etat==="ok" && etat.facultatives.some(a=>a.id===id);
-      return <Button key={id} variant="outline" onClick={()=>setOuvert(id)} className="h-auto min-h-24 whitespace-normal text-left items-start justify-start p-4 gap-3">
-        <Icon className="h-6 w-6 shrink-0 text-primary"/><span className="space-y-2 min-w-0"><span className="block font-bold">{TITRES_TAXI[i]}</span><span className="block text-xs text-muted-foreground">{i===0?"11 jours fériés":i===1?"30 questions • tarifs maximaux":"13 étapes • corrigés conditionnels"}{facultatif?" • Facultatif":""}</span></span>
-      </Button>;
+  const indications=["Placez les 11 jours fériés 2026","30 questions sur les tarifs maximaux","13 étapes avec corrigés"];
+  const ok=etat?.etat==="ok"?etat:null;
+  const requisIds=ok?ok.requises.map(a=>a.id):etat?.etat==="indisponible"?etat.requises.map(a=>a.id):[];
+  const nbRequis=IDS_TAXI.filter(id=>requisIds.includes(id)).length;
+  const nbFaits=ok?IDS_TAXI.filter(id=>ok.requises.some(a=>a.id===id&&a.termine)).length:0;
+  const toutFacultatif=ok!==null&&nbRequis===0;
+  return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" aria-labelledby="taxi-2026-titre" data-testid="taxi-2026-section">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <h3 id="taxi-2026-titre" className="text-xl font-bold">🚕 Exercices obligatoires — Pratique TAXI</h3>
+      {ok && nbRequis>0 && <Badge variant={nbFaits===nbRequis?"default":"destructive"} className="text-sm w-fit" data-testid="taxi-2026-compteur">{nbFaits}/{nbRequis} terminé{nbFaits>1?"s":""}</Badge>}
+    </div>
+    <p className="text-sm">{etat?.etat==="indisponible"?"Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant.":toutFacultatif?"Votre module est déjà validé : ces exercices sont facultatifs, sans effet sur votre progression.":ok?"Faites ces 3 exercices pour terminer le module. Ils sont validés une fois confirmés par le serveur.":"Chargement du statut…"}</p>
+    <div className="grid gap-3 md:grid-cols-3">{IDS_TAXI.map((id,i)=>{
+      const Icon=icons[i];
+      const termine=!!ok&&[...ok.requises,...ok.facultatives].some(a=>a.id===id&&a.termine);
+      const facultatif=!!ok&&ok.facultatives.some(a=>a.id===id);
+      const statut=!ok?"Statut à vérifier":termine?"Terminé":facultatif?"Facultatif":"À faire";
+      return <button type="button" key={id} onClick={()=>setOuvert(id)} data-testid={`taxi-2026-carte-${id}`} aria-label={`${TITRES_TAXI[i]} — ${statut}`}
+        className={`flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-left min-h-40 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${termine?"border-primary":facultatif||!ok?"border-border":"border-destructive/60"}`}>
+        <span className="flex items-start justify-between gap-2"><Icon className="h-8 w-8 shrink-0 text-primary" aria-hidden/>
+          <Badge variant={termine?"default":facultatif||!ok?"outline":"destructive"}>{termine?<CheckCircle2 className="h-3 w-3 mr-1" aria-hidden/>:null}{statut}</Badge></span>
+        <span className="block font-bold text-base break-words">{TITRES_TAXI[i]}</span>
+        <span className="block text-sm text-muted-foreground">{indications[i]}</span>
+        <span className="mt-auto inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">{termine?"Revoir":"Commencer / reprendre"}</span>
+      </button>;
     })}</div>
     <p className="text-xs text-muted-foreground">Arrêté du {SOURCE_RHONE.date} : copie du document préfectoral consultée ; téléchargement préfectoral actuellement indisponible. Zone de réservation et exceptions non établies : hypothèses explicites dans les situations.</p>
     <a href={SOURCE_RHONE.url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Source préfectorale</a>
