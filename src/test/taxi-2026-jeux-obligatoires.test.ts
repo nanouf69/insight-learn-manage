@@ -28,3 +28,26 @@ describe("Module 6 Pratique TAXI — 3 exercices", () => {
     expect(e.requises.some((a: any) => IDS_TAXI.includes(a.id))).toBe(false);
   });
 });
+
+import { completionAvecActivites, activitesDuModule } from "@/lib/jeuxPedagogiques";
+describe("Dispense historique module 6 bornée au 23/10/2026 09:51 UTC", () => {
+  const ligne = (completed_at: string | null, status = "completed") => ({ module_id: 6, status, completed_at, progress: status === "completed" ? 100 : 40 });
+  const jalon = (row: any) => completionAvecActivites(row, activitesDuModule(6, D), new Set(), {} as any);
+  it("completed 22/10 sans jeux : acquis, aucun requis, jalon non abaissé", () => {
+    const e: any = activitesModuleEleve(6, parcours, [ligne("2026-10-22T14:00:00Z")] as any, new Set(), "fictif", D);
+    expect(e.requises).toEqual([]);
+    const j: any = jalon(ligne("2026-10-22T14:00:00Z"));
+    expect(j.requises).toEqual([]);
+  });
+  it("completed avant 21/10 : jalon sans requis", () => {
+    expect((jalon(ligne("2026-10-01T09:00:00Z")) as any).requises).toEqual([]);
+  });
+  it("in_progress au 23/10 : les 3 restent requis", () => {
+    expect((jalon(ligne(null, "in_progress")) as any).requises.sort()).toEqual([...IDS_TAXI].sort());
+  });
+  it("nouveau completed après la borne sans les 3 jeux : jamais dispensé", () => {
+    const e: any = activitesModuleEleve(6, parcours, [ligne("2026-10-23T09:52:00Z")] as any, new Set(), "fictif", "2026-10-24T00:00:00Z");
+    expect(e.requises).toHaveLength(3); expect(jeuxRestants(e)).toBe(3);
+    expect((jalon(ligne("2026-10-23T09:52:00Z")) as any).requises).toHaveLength(3);
+  });
+});
