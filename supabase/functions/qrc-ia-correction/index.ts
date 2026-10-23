@@ -10,6 +10,8 @@
 // file. Le travail payant n'est exécuté que par la file durable, en arrière-plan,
 // avec un délai maximal par appel IA.
 import { passageAutoriseAbaBakre, qrcAutoriseeAbaBakre } from "../_shared/qrcRattrapageAbaBakre.ts";
+import { repriseExceptionnelleAutorisee } from "../_shared/qrcRepriseExceptionnelle.ts";
+import { marquerAbort, marquerEntetes, marquerPremierJeton, nouvelleTrace } from "../_shared/qrcIaTrace.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
 import { streamText } from "npm:ai";
@@ -33,7 +35,7 @@ function uuidDepuis(hex: string) {
   return [hex.slice(0, 8), hex.slice(8, 12), "4" + hex.slice(13, 16), "8" + hex.slice(17, 20), hex.slice(20, 32)].join("-");
 }
 
-const Corps = z.object({ attempt_id: z.string().uuid(), rattrapage: z.boolean().optional(), reprise_qrc_id: z.string().uuid().optional(), interruption_confirmee: z.boolean().optional(), suite_token: z.string().uuid().optional() }).strict();
+const Corps = z.object({ attempt_id: z.string().uuid(), rattrapage: z.boolean().optional(), reprise_qrc_id: z.string().uuid().optional(), interruption_confirmee: z.boolean().optional(), reprise_exceptionnelle: z.boolean().optional(), suite_token: z.string().uuid().optional() }).strict();
 type CorpsT = z.infer<typeof Corps>;
 
 Deno.serve(async (req) => {
@@ -63,7 +65,9 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     const utilisateur = createClient(url, anonKey, { global: { headers: { Authorization: auth } } });
 
     const { attempt_id, rattrapage, reprise_qrc_id, interruption_confirmee, suite_token } = body;
-    if (suite_token && (rattrapage || reprise_qrc_id || interruption_confirmee)) return json({ ok: false, message: "Continuation invalide" }, 400);
+    const exceptionnelle = body.reprise_exceptionnelle === true;
+    if (suite_token && (rattrapage || reprise_qrc_id || interruption_confirmee || exceptionnelle)) return json({ ok: false, message: "Continuation invalide" }, 400);
+    if (exceptionnelle && (!repriseExceptionnelleAutorisee(reprise_qrc_id, attempt_id) || rattrapage || interruption_confirmee)) return json({ ok: false, message: "Hors périmètre de reprise exceptionnelle" }, 403);
     const { data: suite, error: suiteError } = suite_token ? await service.from("qrc_ia_suites").select("attempt_id").eq("attempt_id", attempt_id).eq("token", suite_token).maybeSingle() : { data: null, error: null };
     if (suite_token && (suiteError || !suite)) return json({ ok: false, message: "Continuation non autorisée" }, 403);
     // RATTRAPAGES EXCEPTIONNELS, déclenchés par un administrateur uniquement :
@@ -104,7 +108,7 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     if (!proprio && !admin && !suite) return json({ ok: false, message: "non autorisé" }, 403);
     if (estRattrapage && !admin) return json({ ok: false, message: "rattrapage réservé à un administrateur" }, 403);
     if (reprise_qrc_id && !admin) return json({ ok: false, message: "reprise réservée à un administrateur" }, 403);
-    if (reprise_qrc_id && (attempt_id !== "3464d018-c56b-4b54-ae83-816add723b94" || ![
+    if (reprise_qrc_id && !exceptionnelle && (attempt_id !== "3464d018-c56b-4b54-ae83-816add723b94" || ![
       "ebb0b941-9189-4af3-896d-3c605c8ed461", "308b5a5f-c71e-4857-856d-c35e84c58cad", "270acb2e-fa25-46c6-831c-216d8b1506b0",
     ].includes(reprise_qrc_id))) return json({ ok: false, message: "Hors périmètre de reprise autorisé" }, 403);
     if (att.apprenant_id === "c0844007-b999-4385-9665-918e5077c3b5") return json({ ok: true, statut: "exclu" });
