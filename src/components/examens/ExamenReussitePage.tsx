@@ -41,6 +41,7 @@ import { DossierBienvenueButton } from './DossierBienvenueButton';
 import { PratiqueApprenantLink } from './PratiqueApprenantLink';
 import { EnvoiEchecChoixPratiqueDialog } from './EnvoiEchecChoixPratiqueDialog';
 import { ReinscriptionExamenBadge } from './ReinscriptionExamenBadge';
+import { ChoixPratiqueBadges } from '@/components/crm/apprenant-sections/ChoixPratiqueBadges';
 import { filiereDepuisDossier } from '@/lib/modeles/entrainementPratiqueVtc';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
@@ -2782,9 +2783,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             {nonReussis.length > 0 && (
               <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
                 {nonReussis.map(a => (
-                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
-                    <span>{a.nom} {a.prenom}</span>
-                    <Badge variant="outline" className="text-[10px] px-1">{a.date_examen_theorique}</Badge>
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between items-start gap-2">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span>{a.nom} {a.prenom}</span>
+                      <div className="flex flex-wrap gap-1 [&_*]:text-[10px]">
+                        <ChoixPratiqueBadges apprenantId={a.id} />
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] px-1 shrink-0">{a.date_examen_theorique}</Badge>
                   </div>
                 ))}
               </div>
