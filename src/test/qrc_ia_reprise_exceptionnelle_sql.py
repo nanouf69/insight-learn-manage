@@ -18,6 +18,8 @@ def sql(query, role='service_role'):
     pre = f"SET app.role='{role}';" + ('' if role == 'service_role' else f'SET ROLE {role};')
     return subprocess.check_output(['psql','-X','-h',TEMP,'-p',PORT,'-U','lovable','-d','postgres','-At','-v','ON_ERROR_STOP=1','-c',pre+query], text=True, stderr=subprocess.STDOUT).strip()
 
+def _x(): pass
+
 def reserve(q=Q, base=BASE, role='service_role'):
     return sql(f"SELECT qrc_ia_reserver_reprise_exceptionnelle('{q}','{base}'::jsonb)", role)
 
