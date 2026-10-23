@@ -2863,19 +2863,22 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             {absents.length > 0 && (
               <div className="mt-2 space-y-1 max-h-64 overflow-y-auto pr-1">
                 {absents.map(a => (
-                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
-                    {onNavigateToApprenant ? (
-                      <button
-                        type="button"
-                        onClick={() => onNavigateToApprenant(a.id)}
-                        className="underline-offset-2 hover:underline text-left"
-                        title="Ouvrir la fiche CRM de l'apprenant"
-                      >
-                        {a.nom} {a.prenom}
-                      </button>
-                    ) : (
-                      <span>{a.nom} {a.prenom}</span>
-                    )}
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between items-center gap-2">
+                    <span className="flex items-center gap-1 min-w-0">
+                      {onNavigateToApprenant ? (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToApprenant(a.id)}
+                          className="underline-offset-2 hover:underline text-left truncate"
+                          title="Ouvrir la fiche CRM de l'apprenant"
+                        >
+                          {a.nom} {a.prenom}
+                        </button>
+                      ) : (
+                        <span className="truncate">{a.nom} {a.prenom}</span>
+                      )}
+                      <EdofValideBadge apprenantId={a.id} />
+                    </span>
                     {!a.numero_dossier_cma && <Badge variant="destructive" className="text-[10px] px-1">Pas de CMA</Badge>}
                   </div>
                 ))}
