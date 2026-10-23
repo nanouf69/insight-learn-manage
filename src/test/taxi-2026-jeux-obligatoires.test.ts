@@ -32,7 +32,7 @@ describe("Module 6 Pratique TAXI — 3 exercices", () => {
 import { completionAvecActivites, activitesDuModule } from "@/lib/jeuxPedagogiques";
 describe("Dispense historique module 6 bornée au 23/10/2026 09:51 UTC", () => {
   const ligne = (completed_at: string | null, status = "completed") => ({ module_id: 6, status, completed_at, progress: status === "completed" ? 100 : 40 });
-  const jalon = (row: any) => completionAvecActivites(row, activitesDuModule(6, D), new Set(), {} as any);
+  const jalon = (row: any) => completionAvecActivites(row, {} as any, activitesDuModule(6, D), new Set()).etat;
   it("completed 22/10 sans jeux : acquis, aucun requis, jalon non abaissé", () => {
     const e: any = activitesModuleEleve(6, parcours, [ligne("2026-10-22T14:00:00Z")] as any, new Set(), "fictif", D);
     expect(e.requises).toEqual([]);
