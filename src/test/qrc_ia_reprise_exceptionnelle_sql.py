@@ -6,7 +6,7 @@ Aucune connexion à la production."""
 import os, pathlib, subprocess, tempfile, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-MIG = ROOT / 'drizzle/migrations/0198_qrc_ia_trace_reprise_exceptionnelle.sql'
+MIG = ROOT / 'drizzle/migrations/0199_qrc_ia_trace_reprise_exceptionnelle_reelle.sql'
 TEMP = tempfile.mkdtemp(prefix='qrc-0198-', dir='/tmp'); os.chown(TEMP, 1000, 1000)
 DATA, PORT = TEMP + '/data', '55441'
 Q, A, C = '4814bf89-d0e3-484f-9a94-143eaa113ec9', 'f129b372-951f-42a8-95b0-d6421ace164b', 'fb39976a-d884-477a-b556-b13a97476ef9'
