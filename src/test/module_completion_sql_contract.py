@@ -80,7 +80,7 @@ DATA = TEMP + '/data'; PORT = '55447'
 AS_USER = ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
 
 def sql(q, db='t'):
-    return subprocess.check_output(['psql', '-X', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', db, '-At', '-v', 'ON_ERROR_STOP=1', '-c', q], text=True, stderr=subprocess.STDOUT).strip()
+    return subprocess.check_output(['psql', '-X', '-q', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', db, '-At', '-v', 'ON_ERROR_STOP=1', '-c', q], text=True, stderr=subprocess.STDOUT).strip()
 
 def err(q):
     try:
