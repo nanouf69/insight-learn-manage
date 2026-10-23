@@ -107,10 +107,10 @@ export default function ExercicesTaxi2026({compteId,transport}:{compteId?:string
   const toutFacultatif=ok!==null&&nbRequis===0;
   return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" aria-labelledby="taxi-2026-titre" data-testid="taxi-2026-section">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <h3 id="taxi-2026-titre" className="text-xl font-bold">🚕 Exercices obligatoires — Pratique TAXI</h3>
+      <h3 id="taxi-2026-titre" className="text-xl font-bold">🚕 {ok&&nbRequis>0?`Exercice${nbRequis>1?"s":""} obligatoire${nbRequis>1?"s":""}`:toutFacultatif?"Exercices facultatifs":"Exercices"} — Pratique TAXI</h3>
       {ok && nbRequis>0 && <Badge variant={nbFaits===nbRequis?"default":"destructive"} className="text-sm w-fit" data-testid="taxi-2026-compteur">{nbFaits}/{nbRequis} terminé{nbFaits>1?"s":""}</Badge>}
     </div>
-    <p className="text-sm">{etat?.etat==="indisponible"?"Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant.":toutFacultatif?"Votre module est déjà validé : ces exercices sont facultatifs, sans effet sur votre progression.":ok?"Faites ces 3 exercices pour terminer le module. Ils sont validés une fois confirmés par le serveur.":"Chargement du statut…"}</p>
+    <p className="text-sm">{etat?.etat==="indisponible"?"Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant.":toutFacultatif?"Votre module est déjà validé : ces exercices sont facultatifs, sans effet sur votre progression.":ok?nbRequis===3?"Faites ces 3 exercices pour terminer le module. Ils sont validés une fois confirmés par le serveur.":`${nbRequis} exercice${nbRequis>1?"s sont requis":" est requis"} pour terminer le module (marqués « À faire » ou « Terminé »). Les autres sont facultatifs.`:"Chargement du statut…"}</p>
     <div className="grid gap-3 md:grid-cols-3">{IDS_TAXI.map((id,i)=>{
       const Icon=icons[i];
       const termine=!!ok&&[...ok.requises,...ok.facultatives].some(a=>a.id===id&&a.termine);
