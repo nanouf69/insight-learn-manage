@@ -12,7 +12,7 @@ DATA, PORT = TEMP + '/data', '55441'
 Q, A, C = '4814bf89-d0e3-484f-9a94-143eaa113ec9', 'f129b372-951f-42a8-95b0-d6421ace164b', 'fb39976a-d884-477a-b556-b13a97476ef9'
 P = 'd2393741-4007-42ca-93c7-6c0b24d4f55e'
 H = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8'
-BASE = '{"attempt_id":"%s","apprenant_id":"%s","question_id":"q1","reponse_hash":"%s","bareme":2,"modele":"m"}' % (A, P, H)
+BASE = '{"attempt_id":"%s","apprenant_id":"%s","question_id":"q_%s","reponse_hash":"%s","bareme":2,"modele":"m"}' % (A, P, Q, H)
 
 def sql(query, role='service_role'):
     pre = f"SET app.role='{role}';" + ('' if role == 'service_role' else f'SET ROLE {role};')
@@ -27,7 +27,7 @@ class Exceptionnelle(unittest.TestCase):
         sql("SET session_replication_role=replica; TRUNCATE qrc_ia_reprises, qrc_ia_corrections, published; DELETE FROM qrc_instances_v2 WHERE qrc_instance_id NOT IN (SELECT qrc_instance_id FROM qrc_ia_reprise_exceptionnelle_constats);"
             f"UPDATE qrc_instances_v2 SET etat='en_attente', apprenant_id='{P}';"
             f"INSERT INTO qrc_ia_corrections(id,cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,exam_id,matiere,reponse_hash,modele,statut,http_status,motif,termine_at) "
-            f"VALUES('{C}','k1','{Q}','{A}','{P}','q1','EB5','m','{H}','m','a_verifier',504,'timeout_local_issue_inconnue : aborted',now());")
+            f"VALUES('{C}','k1','{Q}','{A}','{P}','q_{Q}','EB5','m','{H}','m','a_verifier',504,'timeout_local_issue_inconnue : aborted',now());")
 
     def test_reserve_une_seule_fois(self):
         self.assertRegex(reserve(), r'^[0-9a-f-]{36}$')
@@ -36,7 +36,7 @@ class Exceptionnelle(unittest.TestCase):
         self.assertEqual(sql(f"SELECT statut||'|'||http_status FROM qrc_ia_corrections WHERE id='{C}'"), 'a_verifier|504')
 
     def test_qrc_hors_constat_refusee(self):
-        sql(f"SET session_replication_role=replica; INSERT INTO qrc_instances_v2(qrc_instance_id,attempt_id,apprenant_id,question_id,etat) VALUES('99999999-9999-4999-8999-999999999999','{A}','{P}','q1','en_attente')")
+        sql(f"SET session_replication_role=replica; INSERT INTO qrc_instances_v2(qrc_instance_id,attempt_id,apprenant_id,question_id,etat) VALUES('99999999-9999-4999-8999-999999999999','{A}','{P}','qx','en_attente')")
         self.assertEqual(reserve('99999999-9999-4999-8999-999999999999'), '')
 
     def test_reponse_changee_refusee(self):
@@ -94,7 +94,7 @@ def main():
           BEGIN INSERT INTO published VALUES($2); RETURN jsonb_build_object('qrc_instance_id',$2,'etat','corrigee','note',$3); END $$;''')
         sql(f"SET session_replication_role=replica; INSERT INTO qrc_ia_config(id,actif) VALUES(true,true) ON CONFLICT DO NOTHING;"
             "INSERT INTO qrc_instances_v2(qrc_instance_id,attempt_id,apprenant_id,question_id,etat) SELECT x.q::uuid, x.a::uuid, "
-            f"'{P}','q1','en_attente' FROM (VALUES {','.join(repr((q,a)) for q,a in PAIRES)}) x(q,a);")
+            f"'{P}','q_'||x.q,'en_attente' FROM (VALUES {','.join(repr((q,a)) for q,a in PAIRES)}) x(q,a);")
         sql(MIG.read_text())
         r = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Exceptionnelle))
         if not r.wasSuccessful(): raise SystemExit(1)
