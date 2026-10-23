@@ -67,3 +67,29 @@ export function heuresSessionPourApprenant(s: SessionHeuresSource & { heures_tot
   }
   return heuresSessionAffichees(s);
 }
+
+/** Read-only denominator: overlapping shared-track enrollments are one training period. */
+export function heuresTheorieInscrites(inscriptions: any[], filiere?: string | null): number {
+  const sessionsVues = new Set<string>();
+  const periodes: { debut: string; fin: string; heures: number; partagee: boolean }[] = [];
+  for (const row of inscriptions) {
+    const s = row.sessions;
+    if (!s || row.liste_attente === true || row.emargements_exclus === true || /annul/i.test(String(s.statut ?? "")) || !/theorique/i.test(s.type_session ?? "")) continue;
+    const id = s.id ?? row.session_id;
+    if (id && sessionsVues.has(id)) continue;
+    if (id) sessionsVues.add(id);
+    const debut = [s.date_debut, row.date_debut].filter(Boolean).map(v => String(v).slice(0, 10)).sort().at(-1) ?? "";
+    const fin = [s.date_fin || s.date_debut, row.date_fin_personnalisee || row.date_fin].filter(Boolean).map(v => String(v).slice(0, 10)).sort()[0] ?? "";
+    periodes.push({ debut, fin, heures: heuresSessionPourApprenant(s, filiere) ?? 0, partagee: !!filiere && !!libelleHeuresSessionMixte(s) && !!debut && !!fin });
+  }
+  periodes.sort((a, b) => a.debut.localeCompare(b.debut));
+  const groupes: typeof periodes = [];
+  for (const p of periodes) {
+    const groupe = p.partagee ? groupes.find(g => g.partagee && p.debut <= g.fin && p.fin >= g.debut) : undefined;
+    if (groupe) {
+      groupe.fin = groupe.fin > p.fin ? groupe.fin : p.fin;
+      groupe.heures = Math.max(groupe.heures, p.heures);
+    } else groupes.push({ ...p });
+  }
+  return groupes.reduce((total, p) => total + p.heures, 0);
+}

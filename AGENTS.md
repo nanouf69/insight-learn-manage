@@ -32,6 +32,7 @@
 - Per-module freeze: registry activities added after a module's completed_at are acquired, not required (activitesRequisesModule); hours freeze only at access end; why: never reopen a finished module.
 - Completed quiz counters: first validated IDs/answers (moduleQuizCounter); why: revisions never regress proof.
 - Shared theory attendance: sessionHeures by learner track; why: no cross-track totals.
+- CRM theory denominators group overlapping shared-track sessions by training period and deduplicate session IDs; separate periods still add up, and signed evidence is unchanged; why: cross-enrollment must not double the same training obligation.
 - Read local AGENTS before edits; why: scoped rules apply.
 - E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
 - E-learning first/last activity dates use recorded pedagogical events in elearningHoursEvidence, not connection boundaries; why: a login alone must never invent activity dates, and hours arithmetic remains unchanged.
