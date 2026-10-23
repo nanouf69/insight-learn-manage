@@ -9601,7 +9601,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </div>
 
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
-          <ActivitesModuleBandeau onOuvrir={demanderJeu} />
+          {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
+          {Number(module.id) !== 6 && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
           {/* Jeux de cartes de Lyon — activités du module PRATIQUE VTC (8), non notées */}
           {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
             <Suspense fallback={null}>
