@@ -53,3 +53,21 @@ Deno.test("silent provider is aborted by the local deadline, one call, no text",
   assert(ctl.signal.aborted, "Deadline fired");
   void failure;
 });
+Deno.test("slow provider (headers then silence) is marked entetes_sans_jeton, one call", async () => {
+  const { nouvelleTrace, marquerEntetes, marquerPremierJeton, marquerAbort } = await import("../_shared/qrcIaTrace.ts");
+  const t = nouvelleTrace(150);
+  let calls = 0;
+  const ctl = new AbortController();
+  const provider = createOpenAICompatible({ name: "lovable", baseURL: "https://offline.invalid/v1", fetch: async (_i, init) => {
+    calls++;
+    const r = new Response(new ReadableStream({ start(c) { (init as { signal?: AbortSignal } | undefined)?.signal?.addEventListener("abort", () => c.error(new DOMException("aborted", "AbortError"))); } }), { headers: { "Content-Type": "text/event-stream", "X-Lovable-AIG-Run-ID": "fake-run" } });
+    marquerEntetes(t, r.status, r.headers.get("X-Lovable-AIG-Run-ID"));
+    return r;
+  } });
+  setTimeout(() => { marquerAbort(t); ctl.abort(); }, 150);
+  const result = streamText({ model: provider("unchanged-model"), prompt: "offline", maxRetries: 0, abortSignal: ctl.signal, onChunk: () => marquerPremierJeton(t), onError: () => {} });
+  try { await result.text; } catch { /* attendu */ }
+  assert(calls === 1, "no replay");
+  assert(t.code_local === "abort_local_entetes_sans_jeton", `got ${t.code_local}`);
+  assert(t.run_id === "fake-run" && t.http_passerelle === 200, "gateway status/run id kept separately from local code");
+});
