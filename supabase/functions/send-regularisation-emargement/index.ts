@@ -19,8 +19,18 @@ serve(async (req) => {
   try {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const auth = req.headers.get("Authorization") ?? "";
-    if (!serviceKey || auth !== `Bearer ${serviceKey}`) {
+    if (!auth) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    const callerClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", { global: { headers: { Authorization: auth } } });
+    const { data: claims, error: claimsErr } = await callerClient.auth.getClaims(auth.replace("Bearer ", ""));
+    if (claimsErr || !claims?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    const adminCheck = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceKey);
+    const { data: isAdmin } = await adminCheck.rpc("has_role", { _user_id: claims.claims.sub, _role: "admin" });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Réservé aux administrateurs" }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
     const { regularisation_id } = await req.json();
