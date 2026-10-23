@@ -108,7 +108,7 @@ serve(async (req) => {
       apprenant_id: a.id,
       subject,
       body_html: html,
-      body_preview: `Régularisation émargements 22–25/09/2026 (regularisation:${reg.id})`,
+      body_preview: `Régularisation émargements ${plage} (regularisation:${reg.id})`,
       sender_email: FROM,
       sender_name: "FTRANSPORT",
       recipients: [a.email],
