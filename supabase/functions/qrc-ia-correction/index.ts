@@ -126,10 +126,11 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     const finPassage = new Date(att.finished_at);
     const dansPeriodeRattrapage = PERIODES_RATTRAPAGE.some(([d, f, restreint]) => finPassage >= d && finPassage < f && (!restreint || passageAutoriseAbaBakre(attempt_id, att.apprenant_id)));
     // Passage de la liste figée : seules ses QRC listées sont traitées (direct ou suite).
-    const filtreAllowlist = (estRattrapage || !!suite) && passageAutoriseAbaBakre(attempt_id, att.apprenant_id);
+    const filtreAllowlist = (estRattrapage || !!suite || exceptionnelle) && passageAutoriseAbaBakre(attempt_id, att.apprenant_id);
+    if (exceptionnelle && !filtreAllowlist) return json({ ok: false, message: "Hors périmètre de reprise exceptionnelle" }, 403);
     if (estRattrapage) {
       if (!dansPeriodeRattrapage) return json({ ok: true, statut: "hors_periode_rattrapage" });
-    } else if (suite && dansPeriodeRattrapage) {
+    } else if ((suite || exceptionnelle) && dansPeriodeRattrapage) {
       // Continuation d'un rattrapage autorisé (bornes, idempotence, budget actifs).
     } else if (!cfg.actif_depuis || finPassage < new Date(cfg.actif_depuis)) {
       return json({ ok: true, statut: "passage_anterieur_activation" });
