@@ -1,6 +1,7 @@
 export const MAX_ITEMS_SUITE = 24;
-/** Délai maximal d'un appel fournisseur ; au-delà, abandon local, rien n'est publié. */
-export const TIMEOUT_IA_MS = 60000;
+import { BUDGET_APPEL_IA_MS } from "./qrcIaTrace.ts";
+/** Délai maximal d'un appel fournisseur (justifié dans qrcIaTrace.ts) ; au-delà, abandon local, rien n'est publié. */
+export const TIMEOUT_IA_MS = BUDGET_APPEL_IA_MS;
 export type TraceIa = { statut: string; http_status: number | null; termine_at: string | null; created_at: string; numero?: number };
 /** Only completed upstream transient failures are retryable; unknown work is terminal for automation. */
 export function prochaineActionIa(trace: TraceIa | null, now = Date.now()): { action: 'appel' | 'attendre' | 'revue' | 'fin'; delai: number } {
