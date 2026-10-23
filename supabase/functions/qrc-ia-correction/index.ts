@@ -269,7 +269,7 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       } });
       // Flux fournisseur, aucun retry SDK, délai maximal : un abandon local
       // n'écrit aucune note ; une issue inconnue reste en revue.
-      const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(c.q, c.bareme, c.inst.reponse), maxRetries: 0, abortSignal: delai.signal, onChunk: () => marquerPremierJeton(trace), onError: ({ error }) => { streamError = error; } });
+      const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(c.q, c.bareme, c.inst.reponse), maxRetries: 0, abortSignal: delai.signal, onChunk: ({ chunk }) => { if (chunk.type === "text-delta" || chunk.type === "reasoning-delta") marquerPremierJeton(trace); }, onError: ({ error }) => { streamError = error; } });
       const text = await result.text;
       if (streamError) throw streamError;
       if (timeoutLocal) throw new Error("Délai IA dépassé");

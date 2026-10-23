@@ -65,7 +65,7 @@ Deno.test("slow provider (headers then silence) is marked entetes_sans_jeton, on
     return r;
   } });
   setTimeout(() => { marquerAbort(t); ctl.abort(); }, 150);
-  const result = streamText({ model: provider("unchanged-model"), prompt: "offline", maxRetries: 0, abortSignal: ctl.signal, onChunk: () => marquerPremierJeton(t), onError: () => {} });
+  const result = streamText({ model: provider("unchanged-model"), prompt: "offline", maxRetries: 0, abortSignal: ctl.signal, onChunk: ({ chunk }) => { if (chunk.type === "text-delta" || chunk.type === "reasoning-delta") marquerPremierJeton(t); }, onError: () => {} });
   try { await result.text; } catch { /* attendu */ }
   assert(calls === 1, "no replay");
   assert(t.code_local === "abort_local_entetes_sans_jeton", `got ${t.code_local}`);
