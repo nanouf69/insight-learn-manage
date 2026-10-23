@@ -732,16 +732,16 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 {t.label === 'Taux e-learning' && seuilElearning(apprenant, taux.doneElearning, taux.reqElearning).etat === 'non_atteint' &&
                   <p className="mt-2 text-xs font-semibold text-destructive">Seuil 50 % non atteint</p>}
                 {t.strong && taux.totalParSignatures && <div className="mt-1 text-xs text-muted-foreground">Heures prévues : {taux.reqTotal} h · Connexions et quiz exclus du taux total</div>}
-                {t.strong && !taux.totalParSignatures && (
+                {t.label === "Taux e-learning" && (
                   <div className={`mt-0.5 text-xs font-medium ${taux.premiereActiviteAt ? "text-primary" : "text-muted-foreground"}`}>
                     {taux.premiereActiviteAt
-                      ? `Début des cours le ${new Date(taux.premiereActiviteAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`
-                      : "Aucune activité commencée"}
+                      ? `Première activité : ${new Date(taux.premiereActiviteAt).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "long", year: "numeric" })}`
+                      : "Aucune activité pédagogique enregistrée"}
                   </div>
                 )}
-                {t.strong && !taux.totalParSignatures && taux.derniereActiviteAt && (
+                {t.label === "Taux e-learning" && taux.derniereActiviteAt && (
                   <div className="mt-0.5 text-xs font-medium text-primary">
-                    {`Dernière activité (cours/quiz) le ${new Date(taux.derniereActiviteAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`}
+                    {`Dernière activité : ${new Date(taux.derniereActiviteAt).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "long", year: "numeric" })}`}
                   </div>
                 )}
               </div>

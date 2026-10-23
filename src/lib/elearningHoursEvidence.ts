@@ -1,4 +1,4 @@
-import { clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
+import { clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
 
@@ -71,5 +71,19 @@ for (const c of cnxRows as any[]) {
   onlineMin += Math.floor(ms / 60000);
 }
 
-  return { onlineMin, pedagogicalActTs, firstActualActivityStart };
+  // Dates affichées : preuves d'activité uniquement, jamais current_module ou
+  // début/fin d'une connexion. Le calcul historique des heures reste inchangé.
+  const cutoff = getAccessCutoffMs(apprenant?.date_fin_cours_en_ligne || apprenant?.date_fin_formation);
+  const datedActivities = [
+    ...acts.filter((a: any) =>
+      ["open_module", "open_section", "open_cours"].includes(a.action_type) &&
+      !isAccueil(a.module_nom) && !/^syst[eè]me$/i.test(String(a.module_nom ?? "").trim()))
+      .map((a: any) => Date.parse(a.occurred_at)),
+    ...exos.map((e: any) => Date.parse(e.updated_at)),
+    ...quizzes.map((q: any) => Date.parse(q.completed_at)),
+  ].filter(t => Number.isFinite(t) && t >= (getLearningHoursStartMs(apprenantId) ?? -Infinity) && (cutoff === null || t <= cutoff))
+    .sort((a, b) => a - b);
+  const premiereActiviteAt = datedActivities.length ? new Date(datedActivities[0]).toISOString() : null;
+  const derniereActiviteAt = datedActivities.length ? new Date(datedActivities[datedActivities.length - 1]).toISOString() : null;
+  return { onlineMin, pedagogicalActTs, firstActualActivityStart, premiereActiviteAt, derniereActiviteAt };
 }
