@@ -84,10 +84,15 @@ serve(async (req) => {
       .join("");
     const expire = new Date(reg.expire_le).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
-    const subject = "Signatures manquantes — vos émargements de septembre";
+    const datesTriees = [...parJour.keys()].sort();
+    const moisFr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+    const moisUniques = [...new Set(datesTriees.map((d) => `${moisFr[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}`))];
+    const periode = moisUniques.length === 1 ? `de ${moisUniques[0]}` : `de ${moisUniques.join(", ")}`;
+    const plage = datesTriees.length ? `${datesTriees[0]}→${datesTriees[datesTriees.length - 1]}` : "";
+    const subject = "Signatures manquantes — vos émargements de formation";
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a">
   <p>Bonjour ${a.prenom},</p>
-  <p>Il nous manque vos signatures de présence pour les journées suivantes de votre formation de septembre 2026 :</p>
+  <p>Il nous manque vos signatures de présence pour les journées suivantes de votre formation ${periode} :</p>
   <ul style="color:#b91c1c">${lignes}</ul>
   <p><strong>Ne signez que les créneaux auxquels vous étiez réellement présent.</strong> Si vous n'étiez pas présent à une journée, ne la signez pas.</p>
   <p>Pour signer, cliquez sur le bouton ci-dessous. Vous devrez être connecté avec votre compte. Pour chaque créneau, vous cocherez vous-même la confirmation de présence avant de signer.</p>
