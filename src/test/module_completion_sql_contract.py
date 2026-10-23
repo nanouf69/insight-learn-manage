@@ -218,9 +218,9 @@ class Apres0197(unittest.TestCase):
     def test_09_autovalidation_preuve_complete(self):
         sql(smc(U, 2, False, 50))
         sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1\":\"B\"}}')")
-        self.assertEqual(sql(f"SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 1)"), 't')
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 1)"), 't')
         self.assertTrue(row(2).startswith('completed|100|'))
-        self.assertEqual(sql(f"SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 2)"), 'f')
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 2)"), 'f')
 
     def test_10_date_terminee_historique_intacte(self):
         sql(f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at) VALUES ('{A}',2,'completed',100,'2026-09-17T08:00:00Z')")
