@@ -2799,18 +2799,21 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 {nonReussis.map(a => (
                   <div key={a.id} className="text-xs text-muted-foreground flex justify-between items-start gap-2">
                     <div className="flex flex-col gap-1 min-w-0">
-                      {onNavigateToApprenant ? (
-                        <button
-                          type="button"
-                          onClick={() => onNavigateToApprenant(a.id)}
-                          className="underline-offset-2 hover:underline text-left"
-                          title="Ouvrir la fiche CRM de l'apprenant"
-                        >
-                          {a.nom} {a.prenom}
-                        </button>
-                      ) : (
-                        <span>{a.nom} {a.prenom}</span>
-                      )}
+                      <span className="flex items-center gap-1 min-w-0">
+                        {onNavigateToApprenant ? (
+                          <button
+                            type="button"
+                            onClick={() => onNavigateToApprenant(a.id)}
+                            className="underline-offset-2 hover:underline text-left truncate"
+                            title="Ouvrir la fiche CRM de l'apprenant"
+                          >
+                            {a.nom} {a.prenom}
+                          </button>
+                        ) : (
+                          <span className="truncate">{a.nom} {a.prenom}</span>
+                        )}
+                        <EdofValideBadge apprenantId={a.id} />
+                      </span>
                       <div className="flex flex-wrap gap-1 [&_*]:text-[10px]">
                         <ChoixPratiqueBadges apprenantId={a.id} />
                       </div>
