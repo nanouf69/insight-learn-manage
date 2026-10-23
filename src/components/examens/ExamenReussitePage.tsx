@@ -2759,21 +2759,24 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">{reussis.length}</div>
             {reussis.length > 0 && (
-              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+              <div className="mt-2 space-y-1 max-h-64 overflow-y-auto pr-1">
                 {reussis.map(a => (
-                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
-                    {onNavigateToApprenant ? (
-                      <button
-                        type="button"
-                        onClick={() => onNavigateToApprenant(a.id)}
-                        className="underline-offset-2 hover:underline text-left"
-                        title="Ouvrir la fiche CRM de l'apprenant"
-                      >
-                        {a.nom} {a.prenom}
-                      </button>
-                    ) : (
-                      <span>{a.nom} {a.prenom}</span>
-                    )}
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between items-center gap-2">
+                    <span className="flex items-center gap-1 min-w-0">
+                      {onNavigateToApprenant ? (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToApprenant(a.id)}
+                          className="underline-offset-2 hover:underline text-left truncate"
+                          title="Ouvrir la fiche CRM de l'apprenant"
+                        >
+                          {a.nom} {a.prenom}
+                        </button>
+                      ) : (
+                        <span className="truncate">{a.nom} {a.prenom}</span>
+                      )}
+                      <EdofValideBadge apprenantId={a.id} />
+                    </span>
                     <Badge variant="outline" className="text-[10px] px-1">{a.date_examen_theorique}</Badge>
                   </div>
                 ))}
@@ -2792,22 +2795,25 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{nonReussis.length}</div>
             {nonReussis.length > 0 && (
-              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+              <div className="mt-2 space-y-1 max-h-64 overflow-y-auto pr-1">
                 {nonReussis.map(a => (
                   <div key={a.id} className="text-xs text-muted-foreground flex justify-between items-start gap-2">
                     <div className="flex flex-col gap-1 min-w-0">
-                      {onNavigateToApprenant ? (
-                        <button
-                          type="button"
-                          onClick={() => onNavigateToApprenant(a.id)}
-                          className="underline-offset-2 hover:underline text-left"
-                          title="Ouvrir la fiche CRM de l'apprenant"
-                        >
-                          {a.nom} {a.prenom}
-                        </button>
-                      ) : (
-                        <span>{a.nom} {a.prenom}</span>
-                      )}
+                      <span className="flex items-center gap-1 min-w-0">
+                        {onNavigateToApprenant ? (
+                          <button
+                            type="button"
+                            onClick={() => onNavigateToApprenant(a.id)}
+                            className="underline-offset-2 hover:underline text-left truncate"
+                            title="Ouvrir la fiche CRM de l'apprenant"
+                          >
+                            {a.nom} {a.prenom}
+                          </button>
+                        ) : (
+                          <span className="truncate">{a.nom} {a.prenom}</span>
+                        )}
+                        <EdofValideBadge apprenantId={a.id} />
+                      </span>
                       <div className="flex flex-wrap gap-1 [&_*]:text-[10px]">
                         <ChoixPratiqueBadges apprenantId={a.id} />
                       </div>
@@ -2855,21 +2861,24 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{absents.length}</div>
             {absents.length > 0 && (
-              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+              <div className="mt-2 space-y-1 max-h-64 overflow-y-auto pr-1">
                 {absents.map(a => (
-                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
-                    {onNavigateToApprenant ? (
-                      <button
-                        type="button"
-                        onClick={() => onNavigateToApprenant(a.id)}
-                        className="underline-offset-2 hover:underline text-left"
-                        title="Ouvrir la fiche CRM de l'apprenant"
-                      >
-                        {a.nom} {a.prenom}
-                      </button>
-                    ) : (
-                      <span>{a.nom} {a.prenom}</span>
-                    )}
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between items-center gap-2">
+                    <span className="flex items-center gap-1 min-w-0">
+                      {onNavigateToApprenant ? (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToApprenant(a.id)}
+                          className="underline-offset-2 hover:underline text-left truncate"
+                          title="Ouvrir la fiche CRM de l'apprenant"
+                        >
+                          {a.nom} {a.prenom}
+                        </button>
+                      ) : (
+                        <span className="truncate">{a.nom} {a.prenom}</span>
+                      )}
+                      <EdofValideBadge apprenantId={a.id} />
+                    </span>
                     {!a.numero_dossier_cma && <Badge variant="destructive" className="text-[10px] px-1">Pas de CMA</Badge>}
                   </div>
                 ))}
