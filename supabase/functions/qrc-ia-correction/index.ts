@@ -226,7 +226,9 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     if (!key) { await finirSuite("a_verifier", "Service IA non configuré", 60000, "cle_absente"); return json({ ok: false, message: "Service IA non configuré" }, 401); }
     const { data: claim, error: claimError } = automatique
       ? await service.rpc("qrc_ia_reserver_auto", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme } })
-      : await service.rpc("qrc_ia_reserver_reprise", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme }, p_interruption_confirmee: interruption_confirmee === true });
+      : exceptionnelle
+        ? await service.rpc("qrc_ia_reserver_reprise_exceptionnelle", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme } })
+        : await service.rpc("qrc_ia_reserver_reprise", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme }, p_interruption_confirmee: interruption_confirmee === true });
     if (claimError) throw claimError;
     if (!claim) { await finirSuite("a_verifier", "Réservation non acquise ; aucune relance payante", 60000, "reservation_non_acquise"); return json({ ok: true, statut: "reprise_non_acquise" }); }
     const lease = typeof claim === "string" ? claim : String((claim as { id: string }).id);
@@ -236,17 +238,28 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     let streamError: unknown;
     const delai = new AbortController();
     let timeoutLocal = false;
-    const minuteur = setTimeout(() => { timeoutLocal = true; delai.abort(); }, TIMEOUT_IA_MS);
-    const finishError = async (status: number, message: string, statut = "erreur") => {
+    const trace = nouvelleTrace(TIMEOUT_IA_MS);
+    const minuteur = setTimeout(() => { timeoutLocal = true; marquerAbort(trace); delai.abort(); }, TIMEOUT_IA_MS);
+    // Trace écrite tant que la ligne est « en_cours » (lignes terminées immuables).
+    const ecrireTrace = async () => {
       const { error } = initial
-        ? await service.from("qrc_ia_corrections").update({ statut, http_status: status, motif: message, termine_at: new Date().toISOString() }).eq("id", lease).eq("statut", "en_cours")
-        : await service.from("qrc_ia_reprises").update({ statut, http_status: status, message, termine_at: new Date().toISOString(), run_id: runId }).eq("id", lease).eq("statut", "en_cours");
+        ? await service.from("qrc_ia_corrections").update({ trace, run_id: runId }).eq("id", lease).eq("statut", "en_cours")
+        : await service.from("qrc_ia_reprises").update({ trace, run_id: runId }).eq("id", lease).eq("statut", "en_cours");
+      if (error) throw error;
+    };
+    const finishError = async (status: number, message: string, statut = "erreur") => {
+      trace.fin_raison ??= statut;
+      const { error } = initial
+        ? await service.from("qrc_ia_corrections").update({ statut, http_status: status, motif: message, termine_at: new Date().toISOString(), trace, run_id: runId }).eq("id", lease).eq("statut", "en_cours")
+        : await service.from("qrc_ia_reprises").update({ statut, http_status: status, message, termine_at: new Date().toISOString(), run_id: runId, trace }).eq("id", lease).eq("statut", "en_cours");
       if (error) throw error;
     };
     try {
       const gateway = createOpenAICompatible({ name: "lovable", baseURL: "https://ai.gateway.lovable.dev/v1", headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" }, fetch: async (input, init) => {
+        trace.requete_at ??= new Date().toISOString();
         const response = await fetch(input, init);
         runId = response.headers.get("X-Lovable-AIG-Run-ID");
+        marquerEntetes(trace, response.status, runId);
         const retryAfter = response.headers.get("Retry-After");
         if (retryAfter) {
           const d = Number.isFinite(Number(retryAfter)) ? Number(retryAfter) * 1000 : Date.parse(retryAfter) - Date.now();
@@ -256,11 +269,14 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       } });
       // Flux fournisseur, aucun retry SDK, délai maximal : un abandon local
       // n'écrit aucune note ; une issue inconnue reste en revue.
-      const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(c.q, c.bareme, c.inst.reponse), maxRetries: 0, abortSignal: delai.signal, onError: ({ error }) => { streamError = error; } });
+      const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(c.q, c.bareme, c.inst.reponse), maxRetries: 0, abortSignal: delai.signal, onChunk: () => marquerPremierJeton(trace), onError: ({ error }) => { streamError = error; } });
       const text = await result.text;
       if (streamError) throw streamError;
       if (timeoutLocal) throw new Error("Délai IA dépassé");
       providerFinished = true;
+      trace.fin_at = new Date().toISOString();
+      trace.fin_raison = String(await result.finishReason);
+      await ecrireTrace();
       clearTimeout(minuteur);
       if (await result.finishReason !== "stop") {
         await finishError(200, "Flux IA incomplet ou refusé", "a_verifier");
