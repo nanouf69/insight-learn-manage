@@ -6378,8 +6378,10 @@ export type Database = {
           qrc_instance_id: string
           question_id: string
           reponse_hash: string
+          run_id: string | null
           statut: string
           termine_at: string | null
+          trace: Json | null
         }
         Insert: {
           apprenant_id: string
@@ -6399,8 +6401,10 @@ export type Database = {
           qrc_instance_id: string
           question_id: string
           reponse_hash: string
+          run_id?: string | null
           statut?: string
           termine_at?: string | null
+          trace?: Json | null
         }
         Update: {
           apprenant_id?: string
@@ -6420,15 +6424,71 @@ export type Database = {
           qrc_instance_id?: string
           question_id?: string
           reponse_hash?: string
+          run_id?: string | null
           statut?: string
           termine_at?: string | null
+          trace?: Json | null
         }
         Relationships: []
+      }
+      qrc_ia_reprise_exceptionnelle_constats: {
+        Row: {
+          attempt_id: string
+          autorisation: string
+          constate_at: string
+          correction_id: string
+          passerelle_duree_ms: number
+          passerelle_fin_at: string
+          passerelle_jetons_sortie: number
+          passerelle_log_id: string
+          passerelle_run_id: string
+          passerelle_statut: number
+          qrc_instance_id: string
+          reponse_hash: string
+        }
+        Insert: {
+          attempt_id: string
+          autorisation: string
+          constate_at?: string
+          correction_id: string
+          passerelle_duree_ms: number
+          passerelle_fin_at: string
+          passerelle_jetons_sortie: number
+          passerelle_log_id: string
+          passerelle_run_id: string
+          passerelle_statut: number
+          qrc_instance_id: string
+          reponse_hash: string
+        }
+        Update: {
+          attempt_id?: string
+          autorisation?: string
+          constate_at?: string
+          correction_id?: string
+          passerelle_duree_ms?: number
+          passerelle_fin_at?: string
+          passerelle_jetons_sortie?: number
+          passerelle_log_id?: string
+          passerelle_run_id?: string
+          passerelle_statut?: number
+          qrc_instance_id?: string
+          reponse_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qrc_ia_reprise_exceptionnelle_constats_qrc_instance_id_fkey"
+            columns: ["qrc_instance_id"]
+            isOneToOne: true
+            referencedRelation: "qrc_instances_v2"
+            referencedColumns: ["qrc_instance_id"]
+          },
+        ]
       }
       qrc_ia_reprises: {
         Row: {
           base: Json
           created_at: string
+          exceptionnelle: boolean
           http_status: number | null
           id: string
           lease_until: string
@@ -6439,10 +6499,12 @@ export type Database = {
           run_id: string | null
           statut: string
           termine_at: string | null
+          trace: Json | null
         }
         Insert: {
           base: Json
           created_at?: string
+          exceptionnelle?: boolean
           http_status?: number | null
           id?: string
           lease_until?: string
@@ -6453,10 +6515,12 @@ export type Database = {
           run_id?: string | null
           statut?: string
           termine_at?: string | null
+          trace?: Json | null
         }
         Update: {
           base?: Json
           created_at?: string
+          exceptionnelle?: boolean
           http_status?: number | null
           id?: string
           lease_until?: string
@@ -6467,6 +6531,7 @@ export type Database = {
           run_id?: string | null
           statut?: string
           termine_at?: string | null
+          trace?: Json | null
         }
         Relationships: [
           {
@@ -9036,6 +9101,10 @@ export type Database = {
           p_interruption_confirmee?: boolean
           p_qrc: string
         }
+        Returns: string
+      }
+      qrc_ia_reserver_reprise_exceptionnelle: {
+        Args: { p_base: Json; p_qrc: string }
         Returns: string
       }
       qrc_ia_suite_claim: {

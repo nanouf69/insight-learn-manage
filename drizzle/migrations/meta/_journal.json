@@ -1387,6 +1387,20 @@
       "when": 1792741610094,
       "tag": "0197_module_completion_date_facultative",
       "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1792746798694,
+      "tag": "0198_qrc_ia_trace_reprise_exceptionnelle",
+      "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1792746844468,
+      "tag": "0199_qrc_ia_trace_reprise_exceptionnelle_reelle",
+      "breakpoints": true
     }
   ]
 }
