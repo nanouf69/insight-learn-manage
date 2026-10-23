@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Heures des sessions — 23/10 15:38 UTC
+- [x] Corriger le double comptage des sessions théoriques communes chevauchantes dans la présence CRM ; TAXI 90 h + pratique 6 h, filières VTC/TA et sessions distinctes conservées.
+- [x] 55 tests ciblés PASS ; compilation automatique OK ; fiche réelle admin Yasin contrôlée en lecture seule : 90 h théorie / 6 h pratique / 96 h total, taux total 100 %. Aucun changement de données ni publication.
+- Limite : un test annexe existant sur l'anomalie d'une feuille masquée échoue (attend une anomalie absente) ; code de classification non modifié. Contrôle individuel de tous les autres dossiers non exécuté. Journal : docs/journal-heures-sessions-2026-10-23.md.
+
 ## Dates des activités e-learning — 23/10
 - [x] Afficher première/dernière activité réelle dans TAUX E-LEARNING pour tous les dossiers, connexions seules exclues ; heures et données inchangées.
 - [x] 39 tests ciblés réussis (4 fichiers), compilation automatique OK. Vérification CRM authentifiée non prouvée : session injectée reconnue comme apprenant introuvable, fiche admin inaccessible. Aucune publication ni écriture Cloud.
