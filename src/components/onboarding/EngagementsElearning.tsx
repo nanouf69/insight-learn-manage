@@ -8,7 +8,7 @@ export function EngagementsElearning({ dossier, acces, pratique, disabled, onCha
   onChange: (acces: boolean, pratique: boolean) => void;
 }) {
   const dates = datesAccesBienvenue(dossier);
-  return <section className="mb-6 space-y-4 border-t border-border pt-5" aria-label="Engagements e-learning">
+  return <section className="mb-6 scroll-mt-24 space-y-4 border-t border-border pt-5" aria-label="Engagements e-learning">
     <h3 className="font-semibold text-foreground">Votre formation e-learning</h3>
     <div className="space-y-2 text-foreground">
       <p>Début d’accès : <strong>{formatDateFROrRaw(dates.debut) || 'Non renseigné'}</strong></p>
