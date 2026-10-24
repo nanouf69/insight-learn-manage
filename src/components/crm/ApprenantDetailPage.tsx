@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 import { parseDateRange } from "@/lib/parseDateRange";
+import { formatDateFROrRaw } from "@/lib/safeDateParse";
 import { toast } from "sonner";
 import { DocumentsFormation } from "./apprenant-sections/DocumentsFormation";
 import { DocumentsDossier } from "./apprenant-sections/DocumentsDossier";
@@ -1287,11 +1288,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Date de début</p>
-                      <p className="text-2xl font-bold text-destructive break-words">{apprenant.date_debut_formation || '-'}</p>
+                      <p className="text-2xl font-bold text-destructive break-words">{formatDateFROrRaw(apprenant.date_debut_formation) || '-'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Date de fin</p>
-                      <p className="text-2xl font-bold text-destructive break-words">{apprenant.date_fin_formation || '-'}</p>
+                      <p className="text-2xl font-bold text-destructive break-words">{formatDateFROrRaw(apprenant.date_fin_formation) || '-'}</p>
                     </div>
                     {apprenantSessions && apprenantSessions.length > 0 && (
                       <div className="pt-2 border-t">
