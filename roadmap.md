@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Dossier de bienvenue e-learning — 24/10
+- [ ] Afficher les dates réelles d’accès à l’étape 12 par lecture sécurisée du dossier.
+- [ ] Ajouter deux confirmations obligatoires avant génération : accès non reçus/contact centre ; journée pratique dans les trois semaines à compter du lendemain de l’examen théorique.
+- [ ] Conserver les confirmations et dates dans les futurs dossiers/PDF uniquement ; contrôler sur données fictives, sans mail ni modification des documents existants.
+- Périmètre en attente de validation du plan ; aucune publication demandée.
+
 ## Heures des sessions — 23/10 15:38 UTC
 - [x] Corriger le double comptage des sessions théoriques communes chevauchantes dans la présence CRM ; TAXI 90 h + pratique 6 h, filières VTC/TA et sessions distinctes conservées.
 - [x] 55 tests ciblés PASS ; compilation automatique OK ; fiche réelle admin Yasin contrôlée en lecture seule : 90 h théorie / 6 h pratique / 96 h total, taux total 100 %. Aucun changement de données ni publication.
