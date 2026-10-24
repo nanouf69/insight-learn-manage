@@ -33,7 +33,7 @@ function dateValide(v: string | null | undefined): v is string {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }
 export function datesAccesBienvenue(a: AccesBienvenue) {
-  const debut = a.date_debut_cours_en_ligne || a.date_debut_formation || '';
+  const debut = a.date_debut_cours_en_ligne || '';
   const fin = a.date_fin_cours_en_ligne || '';
   return { debut, fin, valides: dateValide(debut) && dateValide(fin) && fin >= debut };
 }

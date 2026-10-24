@@ -23,6 +23,11 @@ describe('Engagements bienvenue e-learning', () => {
     for (const a of [{ ...dossier, date_fin_cours_en_ligne: null }, { ...dossier, date_fin_cours_en_ligne: '2026-01-01' }, { ...dossier, date_debut_cours_en_ligne: '2026-02-30' }]) expect(peutConfirmerBienvenue(a, true, true)).toBe(false);
     expect(peutConfirmerBienvenue(null, true, true)).toBe(false);
   });
+  it('ne remplace jamais une date d’accès absente par une date de formation', () => {
+    const a = { ...dossier, date_debut_cours_en_ligne: null };
+    expect(datesAccesBienvenue(a).debut).toBe('');
+    expect(peutConfirmerBienvenue(a, true, true)).toBe(false);
+  });
   it('ne restaure les cases que pour le même dossier et les mêmes dates', () => {
     const saved = JSON.stringify(engagementsBienvenue(dossier, true, true));
     expect(restaurerEngagements(dossier, saved)).toEqual([true, true]);
