@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-vi.mock('@/lib/sessionRpc', () => ({ freshSessionCall: (call: () => unknown) => call() }));
+vi.mock('@/lib/sessionRpc', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/sessionRpc')>()), freshSessionCall: (call: () => unknown) => call() }));
 vi.mock('@/lib/sessionExpiree', () => ({ assurerSessionFraiche: async () => 'token-fictif' }));
 
 const state = { user: null as null | { id: string } };

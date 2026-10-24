@@ -559,7 +559,7 @@ export async function flushAnswerSavesAndWait(
       (item) =>
         item.payload.apprenant_id === apprenantId &&
         item.payload.exercice_id === exerciceId &&
-        isSendableInCurrentContext(item)
+        isActivelyPending(item)
     );
     if (!pending) return getBlockedAnswerSavesFor(apprenantId, exerciceId) === 0;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -927,7 +927,7 @@ async function processQueue(): Promise<void> {
     }
     const remaining = queue.filter(isActivelyPending);
     if (remaining.length === 0) {
-      setState(getBlockedAnswerSavesFor(sessionApprenantId ?? '', '') > 0 || queue.some(item => item.blocked && item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item)) ? "error" : "saved");
+      setState(queue.some(item => item.blocked && item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item)) ? "error" : "saved");
     } else {
       setState("error");
       const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
