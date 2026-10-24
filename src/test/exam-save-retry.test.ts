@@ -79,7 +79,7 @@ describe("Renvoi automatique — file durable", () => {
       flushed = await persistence.flushAnswerSavesAndWait("apprenant-001", "exam-abc", 1500);
     });
     expect(flushed).toBe(false);
-    expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(mockFetch.mock.calls.length).toBe(1);
     expect(persistence.getPendingAnswers("apprenant-001", "exam-abc")).toEqual({ "1": ["A"] });
     expect(persistence.getPendingAnswerSavesFor("apprenant-001", "exam-abc")).toBe(1);
   });
@@ -95,7 +95,7 @@ describe("Renvoi automatique — file durable", () => {
     let flushed = false;
     await act(async () => {
       hook.result.current.saveReponses({ "1": ["A"] }, 10);
-      flushed = await persistence.flushAnswerSavesAndWait("apprenant-001", "exam-abc", 3000);
+      flushed = await persistence.flushAnswerSavesAndWait("apprenant-001", "exam-abc", 11000);
     });
     expect(flushed).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(3);

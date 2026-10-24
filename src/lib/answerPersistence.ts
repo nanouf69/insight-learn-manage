@@ -930,8 +930,7 @@ async function processQueue(): Promise<void> {
       setState(queue.some(item => item.blocked && item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item)) ? "error" : "saved");
     } else {
       setState("error");
-      const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
-      const delay = computeRetryDelay(attempts);
+      const delay = Math.max(0, Math.min(...remaining.map(item => Math.max(0, (item.retry_after ?? Date.now()) - Date.now()))));
       if (hadFailure) setTimeout(() => void processQueue(), delay);
       // Réponses ajoutées PENDANT cet envoi (autre quiz, autre question) : elles
       // n'étaient pas dans ce tour. Sans échec, on les envoie tout de suite au lieu
