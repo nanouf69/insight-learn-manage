@@ -714,7 +714,7 @@ export function classifyAnswerSaveFailure(
 
   // Certains anciens endpoints renvoyaient 400 pour une panne SQL. Un délai
   // technique ne prouve jamais un refus métier ; préserver les gardes ci-dessus.
-  const codeTemporaire = /\b(?:(?:08|40|53|57|58|xx)[a-z0-9]{3}|pgrst00[a-z0-9])\b/.test(t);
+  const codeTemporaire = /\b(?:(?:08|40|53|57|58|xx)[a-z0-9]{3}|55p03|pgrst00[a-z0-9])\b/.test(t);
   if (codeTemporaire || status === 408 || status === 429 || status >= 500) {
     return {
       definitif: false,
