@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
 import { parseFrenchDate } from '@/lib/filterPastDates';
+import { lignesEngagementsBienvenue, type EngagementsBienvenue } from '@/lib/bienvenueElearning';
 
 function getNextUpcomingExamTheorique(today: Date = new Date()): { date: string; lieu: string; horaire: string } | null {
   const t = new Date(today); t.setHours(0, 0, 0, 0);
@@ -27,6 +28,7 @@ interface RecapitulatifData {
   isTaxi?: boolean;
   mobiliteTaxiAck?: boolean;
   contactSiDeplaceAck?: boolean;
+  engagementsElearning?: EngagementsBienvenue;
 }
 
 
@@ -288,6 +290,27 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   const importantText = "Ne payez pas les frais d'examen si dans votre formule CPF il est écrit \"avec frais d'examen\". En cas de réussite à l'épreuve d'admissibilité, contactez-nous dans les 48h.";
   const importantLines = doc.splitTextToSize(importantText, pageWidth - 2 * margin - 10);
   doc.text(importantLines, margin + 5, yPos);
+
+  if (data.engagementsElearning) {
+    doc.addPage();
+    yPos = 25;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('VOTRE FORMATION E-LEARNING', margin, yPos);
+    yPos += 12;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    for (const text of lignesEngagementsBienvenue(data.engagementsElearning)) {
+      const lines: string[] = doc.splitTextToSize(text, pageWidth - 2 * margin);
+      for (const line of lines) {
+        if (yPos > pageH - 35) { doc.addPage(); yPos = 25; }
+        doc.text(line, margin, yPos);
+        yPos += 6;
+      }
+      yPos += 6;
+    }
+  }
 
   // Pied de page
   const footerY = doc.internal.pageSize.getHeight() - 20;

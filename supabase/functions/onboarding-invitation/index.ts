@@ -315,6 +315,21 @@ Deno.serve(async (req) => {
       return genericOk;
     }
 
+    // Lecture seule des dates actuelles : même jeton personnel, aucun accès anonyme par ID.
+    if (action === "access_dates") {
+      const apprenantId = typeof body?.apprenant_id === "string" ? body.apprenant_id : "";
+      const sessionToken = typeof body?.session_token === "string" ? body.session_token : "";
+      if (!apprenantId || !(await verifySessionToken(apprenantId, sessionToken))) {
+        return json({ error: "Session d'inscription expirée." }, 403);
+      }
+      const { data, error } = await supabase.from("apprenants")
+        .select("id, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation")
+        .eq("id", apprenantId).is("deleted_at", null).maybeSingle();
+      if (error) return json({ error: "Lecture des dates d’accès indisponible." }, 500);
+      if (!data) return json({ error: "Dossier introuvable." }, 404);
+      return json({ dossier: data });
+    }
+
     // ---------- PUBLIC : reprise du dossier déjà enregistré (lecture seule) ----------
     if (action === "load_state") {
       const apprenantId = typeof body?.apprenant_id === "string" ? body.apprenant_id : "";

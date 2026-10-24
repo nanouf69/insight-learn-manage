@@ -5,6 +5,7 @@ import logoImage from '@/assets/logo-ftransport.png';
 import { getCompetencesForFormation } from '@/components/cours-en-ligne/competences-checklist-data';
 import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
 import { parseFrenchDate } from '@/lib/filterPastDates';
+import { lignesEngagementsBienvenue } from '@/lib/bienvenueElearning';
 import {
   ensureDocumentSignatures,
   getStagiaireSignatureImage,
@@ -516,6 +517,23 @@ function renderCGV(doc: jsPDF, donnees: any, y: number, margin: number, pw: numb
 // ---- Dispatch ----
 function renderDocContent(doc: jsPDF, typeDocument: string, donnees: any, y: number, margin: number, pw: number): number {
   switch (typeDocument) {
+    case 'dossier-bienvenue': {
+      const { engagements_elearning, ...historique } = donnees ?? {};
+      y = renderGenericContent(doc, historique, y, margin, pw);
+      if (engagements_elearning?.version === 1) {
+        y = renderSectionHeader(doc, 'VOTRE FORMATION E-LEARNING', y, margin, pw);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 30, 30);
+        for (const text of lignesEngagementsBienvenue(engagements_elearning)) {
+          for (const line of doc.splitTextToSize(text, pw - margin * 2 - 12)) {
+            y = ensureSpace(doc, y, 6); doc.text(line, margin + 6, y); y += 5;
+          }
+          y += 5;
+        }
+      }
+      return y;
+    }
     case 'test-competences': return renderTestCompetences(doc, donnees, y, margin, pw);
     case 'satisfaction': return renderSatisfaction(doc, donnees, y, margin, pw);
     case 'evaluation-acquis': return renderEvaluationAcquis(doc, donnees, y, margin, pw);

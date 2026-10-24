@@ -49,6 +49,7 @@ const ONBOARDING_KEYS = [
   // Step 12 — signature & B2
   "onboarding_signature",
   "onboarding_b2_vierge",
+  "onboarding_engagements_elearning",
 ];
 
 const TYPE_DOCUMENT = "onboarding_state";
