@@ -534,7 +534,7 @@ export function answersAreEqual(left: unknown, right: unknown): boolean {
  */
 export async function flushOwnAnswerSavesBeforeLogout(timeoutMs = 8000): Promise<boolean> {
   if (!canSynchronizeAnswers()) return true;
-  const hasOwn = () => readQueue().some(isSendableInCurrentContext);
+  const hasOwn = () => readQueue().some(item => item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item));
   if (!hasOwn()) return true;
   void processQueue();
   const startedAt = Date.now();
@@ -574,10 +574,6 @@ export async function flushAnswerSavesAndWait(
  */
 export function setAnswerSaveAuthToken(token: string | null, userId: string | null = null) {
   const userChanged = userId !== authUserId;
-  // Nouvelle session ouverte (rechargement de l'application) : les éléments
-  // refusés précédemment méritent un nouvel essai, car la cause du refus a pu
-  // être corrigée côté serveur entre-temps.
-  const sessionOuverte = !authToken && !!token;
   authToken = token;
   authUserId = userId;
   if (token !== rejectedAuthToken) rejectedAuthToken = null;
@@ -587,18 +583,8 @@ export function setAnswerSaveAuthToken(token: string | null, userId: string | nu
     definitiveRejections.clear();
     if (lastRejection) { lastRejection = null; emitRejection(); }
   }
-  if (userChanged || sessionOuverte) {
-    // Les éventuels éléments bloqués du compte sont réessayés une fois
-    // (rien n'est jamais supprimé de la file).
-    const queue = readQueue();
-    if (queue.some((item) => item.blocked && !item.rejection && isOwnedByCurrentUser(item))) {
-      writeQueue(
-        queue.map((item) =>
-          item.blocked && !item.rejection && isOwnedByCurrentUser(item) ? { ...item, blocked: false } : item
-        )
-      );
-    }
-  }
+  // Une reconnexion ne prouve pas qu'un refus définitif a disparu : conserver
+  // tous les anciens éléments bloqués, sans rejeu automatique ni mutation.
   emit();
   if (token && canSynchronizeAnswers() && readQueue().some(isSendableInCurrentContext)) {
     void processQueue();
