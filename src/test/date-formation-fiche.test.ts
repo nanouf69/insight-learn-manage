@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { formatDateFROrRaw } from "@/lib/safeDateParse";
 
 describe("Dates de formation de la fiche apprenant", () => {
@@ -25,5 +26,3 @@ describe("Dates de formation de la fiche apprenant", () => {
     expect(page).toContain("{formatDateFROrRaw(apprenant.date_fin_formation) || '-'}");
   });
 });
-
-import { readFileSync } from "node:fs";
