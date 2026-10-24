@@ -36,3 +36,17 @@ export function formatDateShortFR(dateStr: string): string {
     month: 'short',
   });
 }
+
+/**
+ * Date de formation en français long : « mardi 3 novembre 2026 ».
+ * Une valeur qui n'est pas AAAA-MM-JJ (vide, texte libre, date déjà rédigée)
+ * est renvoyée telle quelle : aucune valeur enregistrée n'est modifiée.
+ */
+export function formatDateFROrRaw(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) return dateStr;
+  const [y, m, d] = dateStr.trim().split('-').map(Number);
+  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return dateStr;
+  return formatDateFR(dateStr.trim());
+}
+
