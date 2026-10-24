@@ -1,5 +1,10 @@
 # Feuille de route
 
+## EB2 Khalfoun et chargement examens — 24/10, accord explicite
+- [ ] Corréler logs historiques disponibles et contrôler empreintes/dossiers en lecture seule.
+- [ ] Corriger refus persistants, reprise session et lectures bornées sans modifier données pédagogiques.
+- [ ] Tests fictifs avant/après, contrôle transversal et journal ; aucune publication frontend globale.
+
 ## Dossier de bienvenue e-learning — 24/10
 - [x] Afficher les dates réelles d’accès à l’étape 12 par lecture sécurisée du dossier, sans repli sur les dates de formation.
 - [x] Ajouter deux confirmations obligatoires avant génération : accès non reçus/contact centre ; journée pratique dans les trois semaines à compter du lendemain de l’examen théorique.
