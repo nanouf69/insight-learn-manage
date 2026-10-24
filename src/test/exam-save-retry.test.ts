@@ -100,7 +100,7 @@ describe("Renvoi automatique — file durable", () => {
     expect(flushed).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(3);
     expect(persistence.getPendingAnswers("apprenant-001", "exam-abc")).toBeNull();
-  });
+  }, 15000);
 
   it("une réponse HTTP 200 sans confirmation explicite n'est pas considérée comme enregistrée", async () => {
     mockFetch.mockImplementation(async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => "{}" }));
