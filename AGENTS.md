@@ -42,3 +42,4 @@
 - TAXI 2026: isolated versioned drafts, owned queue/readback, staged server guard; why: additive proofs only. See courses AGENTS.
 - Document zones share a touch-friendly editor; admin filling is a local PDF preview/export, while recipient submission keeps its existing server workflow; why: never overwrite recorded signed documents from the layout editor.
 - Welcome e-learning commitments share screen/PDF text, store the displayed access-window snapshot, and restore only for the same dossier and dates; why: no invented dates or cross-learner acknowledgments, and historical signed PDFs remain unchanged.
+- Answer queue persists definitive rejection metadata across reloads, respects per-item backoff even during flush, and pauses rejected tokens until replacement; read retries verify the same account and remain bounded; why: no refusal loops, false finalization or cross-account replay.

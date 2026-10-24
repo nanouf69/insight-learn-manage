@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-vi.mock('@/lib/sessionRpc', () => ({ freshSessionCall: (call: () => unknown) => call() }));
+vi.mock('@/lib/sessionRpc', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/sessionRpc')>()), freshSessionRead: (call: () => unknown) => call(), freshSessionCall: (call: () => unknown) => call() }));
 vi.mock('@/lib/sessionExpiree', () => ({ assurerSessionFraiche: async () => 'token-fictif' }));
 
 // Données 100 % fictives. Scénarios : session qui change ou disparaît entre

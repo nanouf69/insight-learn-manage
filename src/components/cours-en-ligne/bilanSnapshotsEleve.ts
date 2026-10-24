@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { freshSessionCall } from '@/lib/sessionRpc';
 
 // Modules Bilan Examen concernés par les passages figés (VTC = 5, TAXI = 11).
 export const MODULES_BILAN_SNAPSHOT = new Set([5, 11]);
@@ -72,9 +73,14 @@ export function calculerEtatSnapshots(
 
 /** Ouverture d'une matière Bilan : le serveur fige un nouveau passage ou ouvre une tentative autorisée. */
 export async function ouvrirPassageEleve(moduleId: number, exoId: number): Promise<"fige" | "ancien" | "rouge_bloque" | "erreur"> {
-  const { data, error } = await (supabase as any).rpc("bilan_ouvrir_passage_eleve", { p_module_id: moduleId, p_exercice_id: exoId });
-  if (error) { console.error("[BilanSnapshot] ouverture passage", error); return "erreur"; }
-  return (data?.statut as any) ?? "erreur";
+  try {
+    const { data, error } = await freshSessionCall<any>(() => (supabase as any).rpc("bilan_ouvrir_passage_eleve", { p_module_id: moduleId, p_exercice_id: exoId }));
+    if (error) { console.error("[BilanSnapshot] ouverture passage", { code: error.code }); return "erreur"; }
+    return (data?.statut as any) ?? "erreur";
+  } catch (error) {
+    console.error('[BilanSnapshot] ouverture indisponible', { sessionAbsente: (error as any)?.sessionAbsente === true, code: (error as any)?.code ?? null });
+    return 'erreur';
+  }
 }
 
 export function useBilanSnapshotsEleve(apprenantId: string | undefined, moduleId: number, actif: boolean, rev = 0): EtatSnapshotsEleve {
@@ -86,18 +92,23 @@ export function useBilanSnapshotsEleve(apprenantId: string | undefined, moduleId
     // Rechargement après ouverture d'un passage : silencieux (pas de démontage de l'écran).
     if (rev === 0) setEtat({ statut: "chargement" });
     (async () => {
-      const [s, c] = await Promise.all([
+      try {
+      const [s, c] = await freshSessionCall<any>(() => Promise.all([
         (supabase as any).from("bilan_passage_snapshots")
           .select("id, exercice_id, tentative, nb_questions, empreinte, questions")
           .eq("apprenant_id", apprenantId).eq("module_id", moduleId),
         (supabase as any).from("bilan_passage_categories")
           .select("exercice_id, tentative, categorie")
           .eq("apprenant_id", apprenantId).eq("module_id", moduleId),
-      ]);
+      ]).then(([s, c]) => ({ data: [s, c], error: s.error ?? c.error }))).then(result => result.data);
       if (annule) return;
       const e = calculerEtatSnapshots(s.data ?? null, c.data ?? null, !!(s.error || c.error));
       if (e.statut === "bloque") console.error("[BilanSnapshot] passage figé illisible", e.raison, s.error ?? c.error ?? null);
       setEtat(e);
+      } catch (error) {
+        if (annule) return;
+        setEtat({ statut: 'bloque', raison: (error as any)?.sessionAbsente ? 'session' : 'lecture' });
+      }
     })();
     return () => { annule = true; };
   }, [concerne, apprenantId, moduleId, rev]);

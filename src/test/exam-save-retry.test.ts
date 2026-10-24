@@ -79,7 +79,7 @@ describe("Renvoi automatique — file durable", () => {
       flushed = await persistence.flushAnswerSavesAndWait("apprenant-001", "exam-abc", 1500);
     });
     expect(flushed).toBe(false);
-    expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(mockFetch.mock.calls.length).toBe(1);
     expect(persistence.getPendingAnswers("apprenant-001", "exam-abc")).toEqual({ "1": ["A"] });
     expect(persistence.getPendingAnswerSavesFor("apprenant-001", "exam-abc")).toBe(1);
   });
@@ -95,12 +95,12 @@ describe("Renvoi automatique — file durable", () => {
     let flushed = false;
     await act(async () => {
       hook.result.current.saveReponses({ "1": ["A"] }, 10);
-      flushed = await persistence.flushAnswerSavesAndWait("apprenant-001", "exam-abc", 3000);
+      flushed = await persistence.flushAnswerSavesAndWait("apprenant-001", "exam-abc", 11000);
     });
     expect(flushed).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(3);
     expect(persistence.getPendingAnswers("apprenant-001", "exam-abc")).toBeNull();
-  });
+  }, 15000);
 
   it("une réponse HTTP 200 sans confirmation explicite n'est pas considérée comme enregistrée", async () => {
     mockFetch.mockImplementation(async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => "{}" }));

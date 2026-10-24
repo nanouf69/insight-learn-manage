@@ -1,5 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
-import { freshSessionCall } from "@/lib/sessionRpc";
+import { freshSessionCall, freshSessionRead, bounded } from "@/lib/sessionRpc";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { captureError } from "@/lib/monitoring/errorLogger";
@@ -397,7 +397,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
     // Sans session, la base renvoie 0 ligne (droits) : ce n'est PAS une version
     // manquante. On refuse proprement sans journaliser une fausse anomalie.
     if (!lignesFigees) await assurerSessionFraiche();
-    const { data: sess } = lignesFigees ? { data: { session: { user: null } } as any } : await supabase.auth.getSession();
+    const { data: sess } = lignesFigees ? { data: { session: { user: null } } as any } : await bounded(supabase.auth.getSession());
     if (!sess?.session) {
       tracerChargementExamens({ phase: "verification", session: "absente", premiere: "non_lue", relecture: "non" });
       const e = new ExamContentUnavailableError("Session absente : reconnexion nécessaire");
@@ -413,7 +413,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
-    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await freshSessionCall(lireVersions, compteDepart ?? undefined);
+    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await freshSessionRead(lireVersions, compteDepart ?? undefined);
     
     if (error) {
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
@@ -428,7 +428,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       // disparu ou changé (autre onglet, autre élève sur la tablette).
       let compteActuel: string | null = null;
       try {
-        const { data: u } = await supabase.auth.getUser();
+        const { data: u } = await bounded(supabase.auth.getUser());
         compteActuel = u?.user?.id ?? null;
       } catch { compteActuel = null; }
       if (!compteActuel || (compteDepart && compteActuel !== compteDepart)) {
@@ -441,12 +441,12 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       // La vérification a pu renouveler le jeton : la première lecture est
       // alors partie avec l'ancien. Une seule relecture (lecture seule) ;
       // toujours 0 ligne → vraie alerte conservée.
-      const relecture = await lireVersions();
+      const relecture = await freshSessionRead(lireVersions, compteActuel);
       // La connexion doit être restée la même pendant la relecture.
       let sessionFinale = false;
       let compteFinal: string | null = null;
       try {
-        const { data: s2 } = await supabase.auth.getSession();
+        const { data: s2 } = await bounded(supabase.auth.getSession());
         sessionFinale = !!s2?.session;
         compteFinal = s2?.session?.user?.id ?? null;
       } catch { sessionFinale = false; }

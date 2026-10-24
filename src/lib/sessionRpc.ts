@@ -5,7 +5,7 @@ export const authFailure = (error: { code?: string; status?: number; message?: s
   !!error && (['42501', 'PGRST301', 'PGRST302', 'PGRST303'].includes(error.code ?? '') || error.status === 401 || /jwt|session expir/i.test(error.message ?? ''));
 
 /** A retry only after verified refresh, never anonymous and never under another account. */
-export async function freshSessionCall<T>(call: () => PromiseLike<T>, owner?: string): Promise<T> {
+export async function freshSessionCall<T>(call: () => PromiseLike<T>, owner?: string, timeoutMs = 15000): Promise<T> {
   const { data: initial } = await bounded(supabase.auth.getSession());
   const expected = owner ?? initial.session?.user?.id;
   if (!expected || !await assurerSessionFraiche()) throw sessionError();
@@ -14,19 +14,32 @@ export async function freshSessionCall<T>(call: () => PromiseLike<T>, owner?: st
     if (data.session?.user?.id !== expected) throw sessionError();
   };
   await sameAccount();
-  let result = await bounded(call());
+  let result = await bounded(call(), timeoutMs);
   const error = (result as { error?: { code?: string; status?: number; message?: string } }).error;
   if (authFailure(error ?? null) && await assurerSessionFraiche(Number.MAX_SAFE_INTEGER)) {
     await sameAccount();
-    result = await bounded(call());
+    result = await bounded(call(), timeoutMs);
   }
   await sameAccount();
   return result;
 }
+/** Read-only recovery: one longer retry for a transient failure, never for a write. */
+export async function freshSessionRead<T>(call: () => PromiseLike<T>, owner?: string): Promise<T> {
+  const { data } = await bounded(supabase.auth.getSession());
+  const expected = owner ?? data.session?.user?.id;
+  if (!expected) throw sessionError();
+  const transient = (error: any) => !error?.sessionAbsente && (error?.code === 'READ_TIMEOUT' || /^08|^53|^57|^PGRST00/.test(error?.code ?? '') || error?.status >= 500 || /failed to fetch|network|fetch failed/i.test(error?.message ?? ''));
+  try {
+    const result = await freshSessionCall(call, expected);
+    if (!transient((result as any)?.error)) return result;
+  } catch (error) { if (!transient(error)) throw error; }
+  await new Promise(resolve => setTimeout(resolve, 500));
+  return freshSessionCall(call, expected, 30000);
+}
 function sessionError() { return Object.assign(new Error(SESSION_EXPIREE_MESSAGE), { sessionAbsente: true }); }
 export function bounded<T>(promise: PromiseLike<T>, ms = 15000): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Délai réseau dépassé ; opération conservée en attente.')), ms);
+    const timer = setTimeout(() => reject(Object.assign(new Error('Délai réseau dépassé ; aucune confirmation reçue. Réessayez après le rétablissement de la connexion.'), { code: 'READ_TIMEOUT' })), ms);
     Promise.resolve(promise).then(value => { clearTimeout(timer); resolve(value); }, error => { clearTimeout(timer); reject(error); });
   });
 }
