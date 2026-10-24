@@ -1,11 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { statutEchecPersistance, traceSauvegarde } from './diagnostic.ts';
 
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID();
+  let operation: unknown;
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,6 +17,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+    operation = body?.operation_id;
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -27,6 +28,7 @@ Deno.serve(async (req) => {
     const tokenFromQuery = new URL(req.url).searchParams.get("access_token") ?? "";
     const token = authorization.replace(/^Bearer\s+/i, "") || tokenFromQuery;
     if (!token) {
+      traceSauvegarde(requestId, 'auth_missing', 401, operation);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -34,13 +36,13 @@ Deno.serve(async (req) => {
     }
     const { data: authData, error: authError } = await supabase.auth.getUser(token);
     if (authError || !authData.user) {
+      traceSauvegarde(requestId, 'auth_rejected', 401, operation, authError?.code);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const body = await req.json();
     const {
       apprenant_id,
       user_id,
@@ -56,7 +58,8 @@ Deno.serve(async (req) => {
       module_total_questions,
     } = body ?? {};
 
-    if (!apprenant_id || !exercice_id || !exercice_type || typeof reponses !== "object" || Array.isArray(reponses)) {
+    if (typeof apprenant_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apprenant_id) || typeof exercice_id !== 'string' || !exercice_id || exercice_id.length > 255 || typeof exercice_type !== 'string' || !exercice_type || exercice_type.length > 100 || !reponses || typeof reponses !== "object" || Array.isArray(reponses)) {
+      traceSauvegarde(requestId, 'input_rejected', 400, operation, 'INVALID_INPUT');
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -70,19 +73,21 @@ Deno.serve(async (req) => {
       .eq("id", apprenant_id)
       .maybeSingle();
     if (learnerError) {
-      console.error("[upsert-reponse-apprenant] learner lookup error:", learnerError);
+      traceSauvegarde(requestId, 'owner_lookup', 500, operation, learnerError.code);
       return new Response(JSON.stringify({ error: "Learner lookup failed", code: learnerError.code }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (!learner) {
+      traceSauvegarde(requestId, 'owner_missing', 403, operation);
       return new Response(JSON.stringify({ error: "Forbidden", reason: "apprenant_not_found" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (learner.auth_user_id !== effectiveUserId) {
+      traceSauvegarde(requestId, 'owner_mismatch', 403, operation);
       return new Response(JSON.stringify({ error: "Forbidden", reason: "auth_user_id_mismatch" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -112,14 +117,16 @@ Deno.serve(async (req) => {
     });
 
     if (error || !data?.[0]?.saved) {
+      const status = statutEchecPersistance(error?.code);
+      traceSauvegarde(requestId, 'persistence_refused', status, operation, error?.code);
       return new Response(
         JSON.stringify({
           error: error?.message ?? "Save was not confirmed",
           code: error?.code,
-          details: error?.details,
+          request_id: requestId,
         }),
         {
-          status: 400,
+          status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -139,15 +146,17 @@ Deno.serve(async (req) => {
         _total_questions: Math.round(totalQuestions),
       });
       if (avError) {
-        console.error("[upsert-reponse-apprenant] autovalidation error:", avError);
+        traceSauvegarde(requestId, 'autovalidation_refused', 500, operation, avError.code);
       } else {
         autoValidation = av?.[0] ?? null;
       }
     }
 
+    traceSauvegarde(requestId, confirmation.frozen ? 'confirmed_frozen' : 'confirmed', 200, operation);
     return new Response(JSON.stringify({
       success: true,
       confirmed: true,
+      request_id: requestId,
       exercice_id,
       tentative: confirmation.stored_tentative,
       updated_at: confirmation.stored_updated_at,
@@ -160,7 +169,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("[upsert-reponse-apprenant] error:", err);
+    traceSauvegarde(requestId, 'unexpected', 500, operation);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
