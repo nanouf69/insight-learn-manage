@@ -1,5 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
-import { freshSessionCall, bounded } from "@/lib/sessionRpc";
+import { freshSessionCall, freshSessionRead, bounded } from "@/lib/sessionRpc";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { captureError } from "@/lib/monitoring/errorLogger";
@@ -413,7 +413,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       .select("module_id, module_data, updated_at")
       .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
-    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await freshSessionCall(lireVersions, compteDepart ?? undefined);
+    let { data, error } = lignesFigees ? { data: lignesFigees as any[], error: null as any } : await freshSessionRead(lireVersions, compteDepart ?? undefined);
     
     if (error) {
       tracerChargementExamens({ phase: "premiere_lecture", session: "stable", premiere: "erreur", relecture: "non" });
@@ -441,7 +441,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
       // La vérification a pu renouveler le jeton : la première lecture est
       // alors partie avec l'ancien. Une seule relecture (lecture seule) ;
       // toujours 0 ligne → vraie alerte conservée.
-      const relecture = await freshSessionCall(lireVersions, compteActuel);
+      const relecture = await freshSessionRead(lireVersions, compteActuel);
       // La connexion doit être restée la même pendant la relecture.
       let sessionFinale = false;
       let compteFinal: string | null = null;
