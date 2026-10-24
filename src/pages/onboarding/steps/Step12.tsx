@@ -30,6 +30,9 @@ import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 import { supabase } from "@/integrations/supabase/client";
 import parcoursChauffeurImg from "@/assets/parcours-chauffeur-vtc-taxi.png.asset.json";
 import type { Database } from "@/integrations/supabase/types";
+import { callOnboardingInvitation } from '@/lib/onboardingInvitation';
+import { EngagementsElearning } from '@/components/onboarding/EngagementsElearning';
+import { CLE_ENGAGEMENTS, estBienvenueElearning, engagementsBienvenue, peutConfirmerBienvenue, restaurerEngagements, type AccesBienvenue } from '@/lib/bienvenueElearning';
 
 // Dates centralisées
 import { ALL_DATES_EXAMEN_THEORIQUE_VALUES, getProchaineDateExamenTheorique } from '@/lib/examDatesConfig';
@@ -91,6 +94,59 @@ export default function Step12() {
   const [b2Vierge, setB2Vierge] = useState(false);
   const [parcoursAck, setParcoursAck] = useState(false);
   const [signature, setSignature] = useState('');
+  const [dossierAcces, setDossierAcces] = useState<AccesBienvenue | null>(null);
+  const [lectureAcces, setLectureAcces] = useState<'chargement' | 'ok' | 'erreur'>('chargement');
+  const [accesAck, setAccesAck] = useState(false);
+  const [pratiqueAck, setPratiqueAck] = useState(false);
+  const engagementsOk = lectureAcces === 'ok' && peutConfirmerBienvenue(dossierAcces, accesAck, pratiqueAck);
+
+  useEffect(() => {
+    let alive = true;
+    const id = localStorage.getItem('onboarding_apprenant_id');
+    const token = localStorage.getItem('onboarding_session_token');
+    (async () => {
+      try {
+        if (!id) throw new Error('Dossier manquant');
+        let dossier: AccesBienvenue;
+        if (token) {
+          const res = await callOnboardingInvitation({ action: 'access_dates', apprenant_id: id, session_token: token });
+          dossier = res.dossier;
+        } else {
+          const { data, error } = await supabase.from('apprenants')
+            .select('id, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation')
+            .eq('id', id).maybeSingle();
+          if (error || !data) throw new Error('Lecture indisponible');
+          dossier = data;
+        }
+        if (!dossier || dossier.id !== id) throw new Error('Dossier différent');
+        if (!alive) return;
+        setDossierAcces(dossier);
+        setLectureAcces('ok');
+        const restore = () => {
+          const [acces, pratique] = restaurerEngagements(dossier, localStorage.getItem(CLE_ENGAGEMENTS));
+          setAccesAck(acces); setPratiqueAck(pratique);
+        };
+        restore();
+      } catch { if (alive) setLectureAcces('erreur'); }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    const restore = () => {
+      if (!dossierAcces) return;
+      const [acces, pratique] = restaurerEngagements(dossierAcces, localStorage.getItem(CLE_ENGAGEMENTS));
+      setAccesAck(acces); setPratiqueAck(pratique);
+    };
+    window.addEventListener('onboarding:restored', restore);
+    return () => window.removeEventListener('onboarding:restored', restore);
+  }, [dossierAcces]);
+
+  const changeEngagements = (acces: boolean, pratique: boolean) => {
+    if (!dossierAcces) return;
+    setAccesAck(acces); setPratiqueAck(pratique);
+    localStorage.setItem(CLE_ENGAGEMENTS, JSON.stringify(engagementsBienvenue(dossierAcces, acces, pratique)));
+  };
   
   // Edit dialogs state
   const [editCoordonneesOpen, setEditCoordonneesOpen] = useState(false);
@@ -180,6 +236,8 @@ export default function Step12() {
       isTaxi: typeExamen.startsWith('taxi'),
       mobiliteTaxiAck,
       contactSiDeplaceAck,
+      engagementsElearning: dossierAcces && estBienvenueElearning(dossierAcces)
+        ? engagementsBienvenue(dossierAcces, accesAck, pratiqueAck) : undefined,
     };
   };
 
@@ -231,6 +289,10 @@ export default function Step12() {
   };
 
   const handleSubmit = async () => {
+    if (!engagementsOk) {
+      toast.error('Veuillez vérifier vos dates d’accès et confirmer les deux engagements e-learning avant de finaliser.');
+      return;
+    }
       if (!parcoursAck) {
       toast.error("Veuillez confirmer avoir pris en compte le parcours pour devenir chauffeur Taxi ou VTC");
       return;
@@ -329,6 +391,7 @@ export default function Step12() {
             lieu_examen: selectedExamFinal?.lieu || '',
             b2_vierge: b2Vierge,
             parcours_chauffeur_ack: parcoursAck,
+            ...(buildRecapData().engagementsElearning ? { engagements_elearning: buildRecapData().engagementsElearning } : {}),
             etapes_confirmees: {
               etape_3_departement: localStorage.getItem('onboarding_step3_confirmed') === 'true',
               etape_4_type_epreuve: localStorage.getItem('onboarding_step4_confirmed') === 'true',
@@ -464,6 +527,10 @@ export default function Step12() {
 
 
   const handleDownloadRecap = async () => {
+    if (!engagementsOk) {
+      toast.error('Veuillez confirmer vos engagements e-learning avant de générer le PDF.');
+      return;
+    }
     if (!motDePasseCma.trim()) {
       toast.error("Impossible de télécharger le dossier : le mot de passe CMA est obligatoire.");
       return;
@@ -702,15 +769,19 @@ export default function Step12() {
           </div>
 
 
+          {lectureAcces === 'chargement' && <p role="status" className="mb-6 text-muted-foreground">Lecture de votre formation et de vos dates d’accès…</p>}
+          {lectureAcces === 'erreur' && <p role="alert" className="mb-6 text-destructive">Impossible de vérifier votre formation et vos dates d’accès. Merci de recharger la page ou de contacter le centre ; aucune date n’a été inventée.</p>}
+          {dossierAcces && estBienvenueElearning(dossierAcces) && <EngagementsElearning dossier={dossierAcces} acces={accesAck} pratique={pratiqueAck} disabled={isSubmitted || isSubmitting} onChange={changeEngagements} />}
+
           {/* Boutons d'action */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge || !parcoursAck || !signature || !motDePasseCma.trim() || !identifiantCma.trim()}
+              disabled={isSubmitting || isSubmitted || !engagementsOk || !b2Vierge || !parcoursAck || !signature || !motDePasseCma.trim() || !identifiantCma.trim()}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : (b2Vierge && parcoursAck && signature && motDePasseCma.trim() && identifiantCma.trim())
+                  : (engagementsOk && b2Vierge && parcoursAck && signature && motDePasseCma.trim() && identifiantCma.trim())
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
@@ -735,7 +806,7 @@ export default function Step12() {
             
             <button
               onClick={handleDownloadRecap}
-              disabled={!isSubmitted}
+              disabled={!isSubmitted || !engagementsOk}
               className={`inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-medium text-base transition-colors ${
                 isSubmitted
                   ? "bg-gray-100 hover:bg-gray-200 text-gray-700"

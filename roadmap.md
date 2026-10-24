@@ -1,10 +1,10 @@
 # Feuille de route
 
 ## Dossier de bienvenue e-learning — 24/10
-- [ ] Afficher les dates réelles d’accès à l’étape 12 par lecture sécurisée du dossier.
-- [ ] Ajouter deux confirmations obligatoires avant génération : accès non reçus/contact centre ; journée pratique dans les trois semaines à compter du lendemain de l’examen théorique.
-- [ ] Conserver les confirmations et dates dans les futurs dossiers/PDF uniquement ; contrôler sur données fictives, sans mail ni modification des documents existants.
-- Périmètre en attente de validation du plan ; aucune publication demandée.
+- [x] Afficher les dates réelles d’accès à l’étape 12 par lecture sécurisée du dossier, sans repli sur les dates de formation.
+- [x] Ajouter deux confirmations obligatoires avant génération : accès non reçus/contact centre ; journée pratique dans les trois semaines à compter du lendemain de l’examen théorique.
+- [x] Conserver les confirmations et dates dans les futurs dossiers/PDF uniquement ; contrôle complet sur données fictives, sans mail ni modification des documents existants.
+- Fonction de lecture sécurisée déployée seule ; interface non publiée. Contrôles ordinateur/téléphone avec transports interceptés, tests ciblés et compilation automatique réussis. Enregistrement réel volontairement non testé ; journal : docs/journal-bienvenue-engagements-2026-10-24.md.
 
 ## Heures des sessions — 23/10 15:38 UTC
 - [x] Corriger le double comptage des sessions théoriques communes chevauchantes dans la présence CRM ; TAXI 90 h + pratique 6 h, filières VTC/TA et sessions distinctes conservées.
