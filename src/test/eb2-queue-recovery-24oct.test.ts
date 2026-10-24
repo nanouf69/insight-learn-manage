@@ -12,6 +12,14 @@ beforeEach(async () => {
   p = await import('@/lib/answerPersistence');
 });
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+it('anciens blocked même avec erreur temporaire restent intacts et jamais rejoués', async () => {
+  const blocked = { ...item, blocked: true, rejection: { reason: 'retake_delay', message: 'Délai réseau dépassé' } };
+  localStorage.setItem('answer_save_queue_v1', JSON.stringify([blocked]));
+  p.setAnswerSaveOwnership({ apprenantId: learner }); p.setAnswerSaveAuthToken('new', A);
+  await vi.advanceTimersByTimeAsync(40000);
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(JSON.parse(localStorage.getItem('answer_save_queue_v1') || '[]')).toEqual([blocked]);
+});
 const start = async () => {
   localStorage.setItem('answer_save_queue_v1', JSON.stringify([item]));
   p.setAnswerSaveOwnership({ apprenantId: learner }); p.setAnswerSaveAuthToken('old', A);

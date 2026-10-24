@@ -654,10 +654,9 @@ export function classifyAnswerSaveFailure(
   // Règle des 48 h (trigger enforce_exam_retake_delay, SQLSTATE P0471).
   if (
     t.includes("p0471") ||
-    t.includes("48 h") ||
-    t.includes("48h") ||
-    t.includes("délai") ||
-    t.includes("delai")
+    (/\b48\s*h(?:eures?)?\b/.test(t) &&
+      /nouveau passage|nouvelle tentative|nouvel examen|retake/.test(t) &&
+      /interdit|non autoris|attendre|avant|minimum|must wait|not allowed/.test(t))
   ) {
     return {
       definitif: true,
@@ -710,6 +709,17 @@ export function classifyAnswerSaveFailure(
       reason: "refused",
       message:
         "Un problème de synchronisation a été détecté. Vos réponses sont conservées sur cet appareil. Une alerte technique a été envoyée automatiquement.",
+    };
+  }
+
+  // Certains anciens endpoints renvoyaient 400 pour une panne SQL. Un délai
+  // technique ne prouve jamais un refus métier ; préserver les gardes ci-dessus.
+  const codeTemporaire = /\b(?:(?:08|40|53|57|58|xx)[a-z0-9]{3}|55p03|pgrst00[a-z0-9])\b/.test(t);
+  if (codeTemporaire || status === 408 || status === 429 || status >= 500) {
+    return {
+      definitif: false,
+      reason: "refused",
+      message: "Service temporairement indisponible. Vos réponses sont conservées sur cet appareil et seront envoyées automatiquement dès le rétablissement.",
     };
   }
 
