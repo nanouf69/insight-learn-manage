@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Revue 8beeefc1 — délais français, 24/10
+- [ ] Corriger uniquement la classification délai/48h et codes SQL temporaires ; conserver les anciennes files bloquées.
+- [ ] Tests réels avant/après et journal ciblé ; aucune requête production/publication. Compilation et types via contrôles automatiques obligatoires.
+
 ## EB2 Khalfoun et chargement examens — 24/10, accord explicite
 - [x] Corréler logs disponibles : traces navigateur présentes, logs serveur 22/23 absents ; HTTP400 exact NON PROUVÉ. Empreintes de référence exactes identiques avant/après.
 - [x] Corriger refus persistants, reprise session et lectures bornées sans modifier données pédagogiques ; diagnostics sans réponses/secrets et 503 temporaire dans la fonction ciblée déployée.
