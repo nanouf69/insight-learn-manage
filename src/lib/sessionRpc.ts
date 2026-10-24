@@ -26,7 +26,7 @@ export async function freshSessionCall<T>(call: () => PromiseLike<T>, owner?: st
 function sessionError() { return Object.assign(new Error(SESSION_EXPIREE_MESSAGE), { sessionAbsente: true }); }
 export function bounded<T>(promise: PromiseLike<T>, ms = 15000): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Délai réseau dépassé ; opération conservée en attente.')), ms);
+    const timer = setTimeout(() => reject(Object.assign(new Error('Délai réseau dépassé ; aucune confirmation reçue. Réessayez après le rétablissement de la connexion.'), { code: 'READ_TIMEOUT' })), ms);
     Promise.resolve(promise).then(value => { clearTimeout(timer); resolve(value); }, error => { clearTimeout(timer); reject(error); });
   });
 }

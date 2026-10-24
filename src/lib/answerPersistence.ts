@@ -116,6 +116,8 @@ interface QueueItem {
   owner_user_id?: string | null;
   /** Refusé par le serveur (403) : conservé, mais plus renvoyé en boucle. */
   blocked?: boolean;
+  rejection?: AnswerSaveRejection;
+  retry_after?: number;
   /**
    * Comptes auxquels le serveur a déjà refusé cet élément (403). Utile pour les
    * éléments anciens, mis en file avant l'enregistrement du propriétaire : sur
@@ -132,6 +134,7 @@ let state: AnswerSaveState = "idle";
 let processing = false;
 let authToken: string | null = null;
 let authUserId: string | null = null;
+let rejectedAuthToken: string | null = null;
 
 /**
  * Dossier apprenant réellement rattaché à la session en cours.
@@ -182,7 +185,8 @@ const isSendableInCurrentContext = (item: QueueItem): boolean =>
   canSynchronizeAnswers() &&
   item.payload.apprenant_id === sessionApprenantId &&
   isOwnedByCurrentUser(item) &&
-  !item.blocked;
+  !item.blocked &&
+  (item.retry_after ?? 0) <= Date.now();
 
 /**
  * Un élément appartient au compte actuellement connecté (ou provient d'une
@@ -203,7 +207,7 @@ const isOwnedByCurrentUser = (item: QueueItem): boolean => {
  * que les nouvelles réponses s'enregistrent normalement.
  */
 const isActivelyPending = (item: QueueItem): boolean =>
-  isOwnedByCurrentUser(item) && !item.blocked;
+  item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item) && !item.blocked;
 
 
 const makeEventId = (): string => {
@@ -331,7 +335,9 @@ export const getAnswerSaveRejectionFor = (
   exerciceId: string,
 ): AnswerSaveRejection | null => {
   if (!authUserId || !apprenantId) return null;
-  return definitiveRejections.get(rejectionKey(authUserId, apprenantId, exerciceId)) ?? null;
+  return definitiveRejections.get(rejectionKey(authUserId, apprenantId, exerciceId)) ?? readQueue().find(item =>
+    item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId && isOwnedByCurrentUser(item) && item.blocked && item.rejection
+  )?.rejection ?? null;
 };
 
 /** Tests uniquement : enregistre/réinitialise un refus sans réseau. */
@@ -555,7 +561,7 @@ export async function flushAnswerSavesAndWait(
         item.payload.exercice_id === exerciceId &&
         isSendableInCurrentContext(item)
     );
-    if (!pending) return true;
+    if (!pending) return getBlockedAnswerSavesFor(apprenantId, exerciceId) === 0;
     await new Promise((resolve) => setTimeout(resolve, 100));
     if (!processing) void processQueue();
   }
@@ -574,6 +580,7 @@ export function setAnswerSaveAuthToken(token: string | null, userId: string | nu
   const sessionOuverte = !authToken && !!token;
   authToken = token;
   authUserId = userId;
+  if (token !== rejectedAuthToken) rejectedAuthToken = null;
   if (userChanged) {
     // Tablette partagée : aucun refus (ni message) d'un compte n'est visible
     // ou bloquant pour le compte suivant. Les éléments en file sont intacts.
@@ -584,10 +591,10 @@ export function setAnswerSaveAuthToken(token: string | null, userId: string | nu
     // Les éventuels éléments bloqués du compte sont réessayés une fois
     // (rien n'est jamais supprimé de la file).
     const queue = readQueue();
-    if (queue.some((item) => item.blocked && isOwnedByCurrentUser(item))) {
+    if (queue.some((item) => item.blocked && !item.rejection && isOwnedByCurrentUser(item))) {
       writeQueue(
         queue.map((item) =>
-          item.blocked && isOwnedByCurrentUser(item) ? { ...item, blocked: false } : item
+          item.blocked && !item.rejection && isOwnedByCurrentUser(item) ? { ...item, blocked: false } : item
         )
       );
     }
@@ -615,7 +622,7 @@ const buildHeaders = (): Record<string, string> | null => {
   return headers;
 };
 
-type SendResult = "ok" | "retry" | "blocked";
+type SendResult = "ok" | "retry" | "blocked" | "paused";
 let retrySuccessCount = 0;
 /** Nombre (anonyme) de réponses confirmées après au moins un réessai, depuis le chargement. */
 export const getRetrySuccessCount = () => retrySuccessCount;
@@ -776,6 +783,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   if (authToken && authUserId && !jetonAppartientA(authToken, authUserId)) return "retry";
   const headers = buildHeaders();
   if (!url || !headers) return "retry";
+  const sentToken = authToken;
   // Un envoi qui ne répond jamais ne doit pas figer la file : abandon après
   // ENVOI_DELAI_MS puis réessai (la réponse reste en file, rien n'est perdu).
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -787,9 +795,10 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     const res = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify(item.payload),
+      body: JSON.stringify({ ...item.payload, operation_id: item.id }),
       signal: controller?.signal,
     });
+    if (authUserId !== compteAvant || item.payload.apprenant_id !== sessionApprenantId) return "paused";
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
       if (confirmation?.success === true && confirmation?.confirmed === true) {
@@ -827,8 +836,11 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     // par le worker existant. Une réponse n'est jamais un refus définitif ici.
     if (res.status === 401 || /pgrst303|jwt\s*expired/i.test(text)) {
       const frais = await assurerSessionFraiche(Number.MAX_SAFE_INTEGER);
-      if (frais && authUserId === compteAvant && jetonAppartientA(frais, authUserId)) authToken = frais;
-      return "retry";
+      if (authUserId !== compteAvant) return "paused";
+      if (frais && frais !== sentToken && jetonAppartientA(frais, authUserId)) { authToken = frais; return "retry"; }
+      rejectedAuthToken = sentToken;
+      notifyAnswerSaveRejected(item.payload.exercice_id, "forbidden", "Session expirée : reconnectez-vous pour reprendre. Vos réponses restent conservées sur cet appareil.");
+      return "paused";
     }
     // Un refus DÉFINITIF n'est jamais renvoyé en boucle : l'élément est
     // conservé (aucune réponse n'est supprimée) et l'apprenant voit la vraie
@@ -836,6 +848,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     const verdict = classifyAnswerSaveFailure(res.status, text);
     if (verdict.definitif) {
       notifyAnswerSaveRejected(item.payload.exercice_id, verdict.reason, verdict.message, verdict.code);
+      item.rejection = { exerciceId: item.payload.exercice_id, reason: verdict.reason, message: verdict.message, code: verdict.code, at: new Date().toISOString() };
       recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, verdict.reason, verdict.message, verdict.code);
       return "blocked";
     }
@@ -863,7 +876,7 @@ async function processQueue(): Promise<void> {
   if (processing) return;
   if (!canSynchronizeAnswers()) return;
   // Sans session valide, on n'envoie rien : la file attend la reconnexion.
-  if (!authToken) {
+  if (!authToken || authToken === rejectedAuthToken) {
     if (readQueue().some(isActivelyPending)) setState("error");
     return;
   }
@@ -898,6 +911,8 @@ async function processQueue(): Promise<void> {
             ...queue[idx],
             attempts: (queue[idx].attempts ?? 0) + 1,
             blocked: result === "blocked" ? true : queue[idx].blocked,
+            rejection: result === "blocked" ? item.rejection : queue[idx].rejection,
+            retry_after: result === "retry" ? Date.now() + computeRetryDelay((queue[idx].attempts ?? 0) + 1) : queue[idx].retry_after,
             refused_user_ids: refused.size > 0 ? [...refused] : undefined,
           };
           queue.splice(idx, 1);
@@ -912,7 +927,7 @@ async function processQueue(): Promise<void> {
     }
     const remaining = queue.filter(isActivelyPending);
     if (remaining.length === 0) {
-      setState("saved");
+      setState(getBlockedAnswerSavesFor(sessionApprenantId ?? '', '') > 0 || queue.some(item => item.blocked && item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item)) ? "error" : "saved");
     } else {
       setState("error");
       const attempts = Math.max(...remaining.map((item) => item.attempts ?? 1), 1);
