@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## EB2 Khalfoun et chargement examens — 24/10, accord explicite
-- [ ] Corréler logs historiques disponibles et contrôler empreintes/dossiers en lecture seule.
-- [ ] Corriger refus persistants, reprise session et lectures bornées sans modifier données pédagogiques.
-- [ ] Tests fictifs avant/après, contrôle transversal et journal ; aucune publication frontend globale.
+- [x] Corréler logs disponibles : traces navigateur présentes, logs serveur 22/23 absents ; HTTP400 exact NON PROUVÉ. Empreintes de référence exactes identiques avant/après.
+- [x] Corriger refus persistants, reprise session et lectures bornées sans modifier données pédagogiques ; diagnostics sans réponses/secrets et 503 temporaire dans la fonction ciblée déployée.
+- [x] Tests fictifs avant/après (4 échecs reproduits puis réussis), 244 tests, navigateur file conservée/refus non confirmé ; journal. Aucune publication frontend globale.
+- Limites : appareil de Khalfoun inaccessible, cause historique 400/401 non prouvée ; version EB2 VTC V2 non publiée réellement, aucune version créée. Interface corrigée seulement dans aperçu, publication ciblée à décider sans autres brouillons.
 
 ## Dossier de bienvenue e-learning — 24/10
 - [x] Afficher les dates réelles d’accès à l’étape 12 par lecture sécurisée du dossier, sans repli sur les dates de formation.

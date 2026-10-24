@@ -431,6 +431,7 @@ export function getBlockedAnswerSavesFor(apprenantId: string, exerciceId: string
     (item) =>
       item.payload.apprenant_id === apprenantId &&
       item.payload.exercice_id === exerciceId &&
+      isOwnedByCurrentUser(item) &&
       item.blocked === true,
   ).length;
 }
