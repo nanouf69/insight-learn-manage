@@ -1,0 +1,659 @@
+[
+  {
+    "position": 1,
+    "id": 1,
+    "uuid": "1043b589-72e1-4fb3-92fa-5f1fdd3577f1",
+    "notion": "Le nombre maximal de personnes dans un taxi, conducteur compris est de :",
+    "slides": "3",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 2,
+    "id": 2,
+    "uuid": "d0762023-24f7-4f10-b59b-589559e27226",
+    "notion": "Le préfet délivre les ADS dans toutes les communes de son département :",
+    "slides": "5",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 3,
+    "id": 3,
+    "uuid": "7cb8fdba-5351-4e4d-ad2c-077e297809ec",
+    "notion": "L'artisan taxi est :",
+    "slides": "4",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 4,
+    "id": 4,
+    "uuid": "a309bf70-a0ee-42ac-9998-47f69a2de99b",
+    "notion": "Le salarié taxi :",
+    "slides": "4",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 5,
+    "id": 5,
+    "uuid": "bb6c919a-de75-417b-a117-d12c105dd8e6",
+    "notion": "Le coopérateur :",
+    "slides": "4",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 6,
+    "id": 6,
+    "uuid": "5b1d9d44-5613-4ce0-8482-c426e5b4d905",
+    "notion": "Le locataire gérant :",
+    "slides": "4",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 7,
+    "id": 7,
+    "uuid": "8bd54473-0d65-4dc3-9ffb-0628442c2798",
+    "notion": "La location d'une licence (ADS) SEULE, sans le véhicule, est :",
+    "slides": "4",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 8,
+    "id": 8,
+    "uuid": "f3190251-45c2-4575-9753-44091617302e",
+    "notion": "Quelles sont les Différences entre un artisan taxi et un locataire-gérant :",
+    "slides": "4",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 9,
+    "id": 9,
+    "uuid": "d63c56e2-0511-4981-85ea-249ee31fecc5",
+    "notion": "Quelle autorité délivre l'ADS ?",
+    "slides": "5",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 10,
+    "id": 10,
+    "uuid": "4039266d-8e44-46d2-8764-44d57cf2d620",
+    "notion": "La délivrance d'une ADS sur un aéroport est de la compétence :",
+    "slides": "5",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 11,
+    "id": 11,
+    "uuid": "e4c38fe2-2d54-4619-b014-76e25e6afd6a",
+    "notion": "Les nouvelles ADS sont attribuées par le maire :",
+    "slides": "5,7",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 12,
+    "id": 12,
+    "uuid": "d3f98adc-eb1c-43b7-b0b7-ba95b490c3fb",
+    "notion": "L'ADS délivrée après le 1er octobre 2014 est :",
+    "slides": "6,9,10",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 13,
+    "id": 18,
+    "uuid": "520557d4-a749-4a20-99bb-7d477119b4ee",
+    "notion": "Un candidat peut être inscrit sur combien de listes d'attente ?",
+    "slides": "6,7",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 14,
+    "id": 19,
+    "uuid": "a935f650-c2e9-4fa2-b3a1-c27f7f1217ae",
+    "notion": "La liste d'attente est-elle communicable (accessible au public) ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "16"
+    ]
+  },
+  {
+    "position": 15,
+    "id": 24,
+    "uuid": "3f907ffe-a120-4a9e-b685-f6c140a45db6",
+    "notion": "Délai minimum pour revendre une ADS jamais revendue :",
+    "slides": "6,9,10",
+    "etat": "Couverte",
+    "complements": [
+      "18"
+    ]
+  },
+  {
+    "position": 16,
+    "id": 25,
+    "uuid": "459e1da1-c530-4557-84f4-9f2d41339f0b",
+    "notion": "Délai minimum pour revendre une ADS déjà revendue au moins une fois :",
+    "slides": "6,9,10",
+    "etat": "Couverte",
+    "complements": [
+      "18"
+    ]
+  },
+  {
+    "position": 17,
+    "id": 27,
+    "uuid": "bcf4b3b9-c101-4e01-a59c-d1874a1fe9be",
+    "notion": "En cas de décès du titulaire d'une ADS, ses ayants-droit peuvent présenter un successeur pendant :",
+    "slides": "9,10",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 18,
+    "id": 36,
+    "uuid": "e0b3f5cb-7e7a-438b-8be0-a946c45da837",
+    "notion": "Quelle autorité délivre la carte professionnelle de conducteur de taxi ?",
+    "slides": "12",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 19,
+    "id": 38,
+    "uuid": "3d081d1d-51c9-4e7b-9ebb-add523de49ff",
+    "notion": "Quel organisme fabrique les cartes professionnelles TAXI ?",
+    "slides": "12",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 20,
+    "id": 39,
+    "uuid": "4064e0c8-70cc-4c25-ac10-2bd0f9b97b28",
+    "notion": "La carte professionnelle doit être renouvelée tous les :",
+    "slides": "12,13",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 21,
+    "id": 22,
+    "uuid": "82d9cb81-3348-4de8-bb4f-794aee387d73",
+    "notion": "Peut-on vendre une ADS délivrée AVANT octobre 2014 ?",
+    "slides": "6,9,10",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 22,
+    "id": 40,
+    "uuid": "f67fd2d0-2469-41ac-98b4-883705fbb13a",
+    "notion": "La carte professionnelle doit être apposée :",
+    "slides": "12",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 23,
+    "id": 46,
+    "uuid": "0b5359e7-214d-43cc-82b4-215ba9919000",
+    "notion": "Que doit faire un chauffeur de taxi qui cesse son activité ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "23"
+    ]
+  },
+  {
+    "position": 24,
+    "id": 58,
+    "uuid": "b205194a-f65a-480a-8780-1eea4db8ce41",
+    "notion": "Visites médicales : fréquence pour un conducteur de moins de 60 ans :",
+    "slides": "13",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 25,
+    "id": 59,
+    "uuid": "c774f242-45b2-4234-8d1c-0d8b415a6692",
+    "notion": "Visites médicales : fréquence entre 60 et 76 ans :",
+    "slides": "13",
+    "etat": "Couverte ; divergence/portée juridique à revoir",
+    "complements": [
+      "29"
+    ]
+  },
+  {
+    "position": 26,
+    "id": 60,
+    "uuid": "e77ec507-5a4b-4921-8a20-c9003f312946",
+    "notion": "Visites médicales : fréquence au-delà de 76 ans :",
+    "slides": "13",
+    "etat": "Couverte ; divergence/portée juridique à revoir",
+    "complements": [
+      "29"
+    ]
+  },
+  {
+    "position": 27,
+    "id": 61,
+    "uuid": "9313895f-28e3-4843-9e8a-7517a1d1f030",
+    "notion": "La durée de validité de l'attestation de formation continue est de :",
+    "slides": "13",
+    "etat": "Couverte",
+    "complements": [
+      "26"
+    ]
+  },
+  {
+    "position": 28,
+    "id": 62,
+    "uuid": "28587423-112a-4853-8150-8e5765b68d21",
+    "notion": "A compter du 3 octobre 2014, pour vous inscrire sur une liste d’attente communale, vous devez : ",
+    "slides": "6,7",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 29,
+    "id": 63,
+    "uuid": "572ba14d-3ca6-433b-830f-49125e789fc9",
+    "notion": "La délivrance, le renouvellement et le retrait de chaque autorisation de stationnement font l'objet : ",
+    "slides": "—",
+    "etat": "Absente ; divergence/portée juridique à revoir",
+    "complements": [
+      "16",
+      "29"
+    ]
+  },
+  {
+    "position": 30,
+    "id": 64,
+    "uuid": "c11d5741-54f5-4cf1-be4f-314d6b2b37ba",
+    "notion": "La condition de l’exploitation effective et continue de l’autorisation de stationnement est justifiée par : ",
+    "slides": "11",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 31,
+    "id": 65,
+    "uuid": "f9f649fb-067d-4c38-92ab-0a998ad760bf",
+    "notion": "Je suis titulaire d’une autorisation de stationnement délivrée par un maire le 27 août 2015. A compter du 1er janvier 2017,",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "17"
+    ]
+  },
+  {
+    "position": 32,
+    "id": 66,
+    "uuid": "80be7fbb-e20d-4191-8365-84706bf58a32",
+    "notion": "Quand renouveler une autorisation de stationnement délivrée après 2015 ?",
+    "slides": "6,15",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 33,
+    "id": 67,
+    "uuid": "63e92181-5d66-46b3-b3fb-d91319b711a6",
+    "notion": "La mairie m’a attribué une autorisation de stationnement le 15 janvier 2015.Pour combien de temps est-elle accordée ? ",
+    "slides": "6 (tableau image),15",
+    "etat": "Couverte",
+    "complements": [
+      "17"
+    ]
+  },
+  {
+    "position": 34,
+    "id": 68,
+    "uuid": "97642758-93f4-4b27-a278-a685570eb30f",
+    "notion": "Je souhaite m’inscrire sur une liste d’attente dans une commune .Quelles sont les conditions ?",
+    "slides": "6,7",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 35,
+    "id": 69,
+    "uuid": "5a9c8197-fad8-4ea1-811f-b645aa52a028",
+    "notion": "La mairie m’a attribué une autorisation de stationnement le 03 janvier 2011. Le 22 mars 2016, je souhaite présenter un successeur à titre onéreux.",
+    "slides": "9,10",
+    "etat": "Insuffisante",
+    "complements": [
+      "18"
+    ]
+  },
+  {
+    "position": 36,
+    "id": 70,
+    "uuid": "26bed144-bd41-49f6-be4e-c2184dfb3e77",
+    "notion": "En cas de décès du titulaire d’une autorisation de stationnement : ",
+    "slides": "9,10",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 37,
+    "id": 90,
+    "uuid": "e1105064-f5ec-4208-ba74-462fa356eebe",
+    "notion": "Nul ne peut exercer la profession de conducteur de taxi si figure sur le bulletin n°2 de son casier judiciaire :",
+    "slides": "12",
+    "etat": "Insuffisante",
+    "complements": [
+      "24"
+    ]
+  },
+  {
+    "position": 38,
+    "id": 91,
+    "uuid": "b1a65f85-3868-43cf-a8c7-e41608291678",
+    "notion": "Quelles sont les conditions pour un chauffeur de taxi, lors d’un changement de département pour poursuivre son activité ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "25"
+    ]
+  },
+  {
+    "position": 39,
+    "id": 92,
+    "uuid": "9279a847-8860-46b2-9d1b-cdf7d91b954c",
+    "notion": "Auprès de quel organisme demander sa carte professionnelle TAXI ?",
+    "slides": "12",
+    "etat": "Couverte",
+    "complements": [
+      "25"
+    ]
+  },
+  {
+    "position": 40,
+    "id": 93,
+    "uuid": "9a494880-8a2f-4b8c-8e5b-e44cc5c8b666",
+    "notion": "Quelles sont les obligations du titulaire de la carte professionnelle de conducteur de taxi ?",
+    "slides": "12,13",
+    "etat": "Insuffisante",
+    "complements": [
+      "23"
+    ]
+  },
+  {
+    "position": 41,
+    "id": 94,
+    "uuid": "e7ed49c2-39db-4fae-8f84-33104a135e3a",
+    "notion": "Le délai de remise de la carte professionnelle par l’autorité administrative compétente est de :",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "23"
+    ]
+  },
+  {
+    "position": 42,
+    "id": 95,
+    "uuid": "5a300048-883b-4344-b079-de27a91871de",
+    "notion": "Quel élément de la carte professionnelle TAXI ne figure pas au verso ?",
+    "slides": "13",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 43,
+    "id": 96,
+    "uuid": "185d0700-345d-4855-87b9-de5d61116342",
+    "notion": "Quelle est la durée de validité d’un agrément d’exploitation d’un centre de formation en vue de la formation, initiale ou continue, des chauffeurs de taxi ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "26"
+    ]
+  },
+  {
+    "position": 44,
+    "id": 97,
+    "uuid": "1960a8ba-1d7c-4e06-92e5-8d4f64d525f0",
+    "notion": "L’attestation de formation continue est délivrée par :",
+    "slides": "13",
+    "etat": "Insuffisante",
+    "complements": [
+      "26"
+    ]
+  },
+  {
+    "position": 45,
+    "id": 98,
+    "uuid": "d3bc8d40-5ff5-4315-992d-2f623b5696c1",
+    "notion": "Qu’est-ce qui empêcherait un candidat à s’inscrire à l’examen en vue de la délivrance de la carte professionnelle de conducteur de taxi ?",
+    "slides": "12",
+    "etat": "Insuffisante",
+    "complements": [
+      "24"
+    ]
+  },
+  {
+    "position": 46,
+    "id": 71,
+    "uuid": "109f15af-2d0d-46bd-952c-050774d71bc2",
+    "notion": "Un artisan taxi qui est titulaire de quatre autorisations de stationnement de taxi doit utiliser combien de véhicules équipés en taxi ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "19"
+    ]
+  },
+  {
+    "position": 47,
+    "id": 72,
+    "uuid": "c60d1f17-7666-4261-865e-62162ec1e1a6",
+    "notion": "Les autorisations de stationnement délivrées avant le 1er octobre 2014 peuvent être exploitées :",
+    "slides": "4",
+    "etat": "Insuffisante",
+    "complements": [
+      "17",
+      "19"
+    ]
+  },
+  {
+    "position": 48,
+    "id": 73,
+    "uuid": "15663adf-def6-4bac-ac33-d0d1a4dcef85",
+    "notion": "En cas d’immobilisation d’origine mécanique du véhicule, le taxi peut être remplacé temporairement par un véhicule disposant des équipements. L’autorisation de stationnement et la plaque portant le numéro de l’autorisation seront :",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "20"
+    ]
+  },
+  {
+    "position": 49,
+    "id": 74,
+    "uuid": "2f12ea45-d73e-4c1c-a16b-bfdee079d199",
+    "notion": "Les transactions prévues par l’article L. 3121.2 du Code des Transports sont répertoriées dans un registre tenu par l’autorité administrative compétente pour délivrer l’autorisation de stationnement. Doit figurer sur ce registre :",
+    "slides": "11",
+    "etat": "Couverte",
+    "complements": [
+      "21"
+    ]
+  },
+  {
+    "position": 50,
+    "id": 75,
+    "uuid": "5a0587f1-b386-4a34-8cb2-e448744a425b",
+    "notion": "Dans quelle circonstance pouvez-vous céder à titre onéreux une autorisation de stationnement délivrée avant le 1er septembre 2014 sans attendre les délais réglementaires ?",
+    "slides": "9,10",
+    "etat": "Couverte ; divergence/portée juridique à revoir",
+    "complements": [
+      "18",
+      "29"
+    ]
+  },
+  {
+    "position": 51,
+    "id": 76,
+    "uuid": "c636f64c-28d9-44d2-80b4-3811816b5294",
+    "notion": "Une autorisation de stationnement m’a été délivrée le 30 décembre 2014. Le maire peut m’imposer une ou plusieurs conditions d’exploitation. Lesquelles ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "22"
+    ]
+  },
+  {
+    "position": 52,
+    "id": 77,
+    "uuid": "783ac46a-e45a-4697-9978-de5072aa126a",
+    "notion": "Vous êtes titulaire de plusieurs autorisations de stationnement. Sachant qu’elles doivent être exploitées de façon effective et continue, quelles sont les possibilités prévues par la réglementation des taxis vous permettant de respecter cette obligation ?",
+    "slides": "4,11",
+    "etat": "Insuffisante",
+    "complements": [
+      "17",
+      "19"
+    ]
+  },
+  {
+    "position": 53,
+    "id": 78,
+    "uuid": "9fa45a4e-9897-4455-a238-2e4641137e76",
+    "notion": "Dans le cas d’une location de l’autorisation de stationnement, celle-ci est répertoriée dans un registre contenant les informations relatives à l’état-civil du locataire et son n° de carte professionnelle. Qui tient ce registre ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "21"
+    ]
+  },
+  {
+    "position": 54,
+    "id": 79,
+    "uuid": "6d28edc4-b0c3-47ec-b0d0-a3f1a497f4cf",
+    "notion": "Dans quel cas les demandes de délivrance d’autorisation cessent de figurer sur la liste d’attente d’une zone géographique ?",
+    "slides": "6,7",
+    "etat": "Insuffisante",
+    "complements": [
+      "16"
+    ]
+  },
+  {
+    "position": 55,
+    "id": 80,
+    "uuid": "deea2f07-e8b2-4c15-a5e5-ea86a9f44219",
+    "notion": "Quels sont les documents à fournir pour justifier de l’exploitation effective et continue de l’autorisation de stationnement ?",
+    "slides": "11",
+    "etat": "Couverte",
+    "complements": []
+  },
+  {
+    "position": 56,
+    "id": 81,
+    "uuid": "febf91a8-edd6-41b2-bbb0-948a981f2dda",
+    "notion": "Lorsqu’un titulaire ne peut exploiter lui-même son autorisation de stationnement, quelles sont les deux possibilités qui s’offrent à lui pour que son entreprise reste active ?",
+    "slides": "4,11",
+    "etat": "Insuffisante",
+    "complements": [
+      "17",
+      "19"
+    ]
+  },
+  {
+    "position": 57,
+    "id": 82,
+    "uuid": "59f36a0f-dd61-4eb4-9d69-f80068ce508b",
+    "notion": "En cas de vol des équipements spéciaux du véhicule taxi, peuvent-ils être remplacés ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "20"
+    ]
+  },
+  {
+    "position": 58,
+    "id": 83,
+    "uuid": "8dbdba12-366c-4db6-98b8-d4c983ce1aa1",
+    "notion": "Le nombre maximum de taxis autorisés sur une commune est fixé par :",
+    "slides": "5",
+    "etat": "Insuffisante",
+    "complements": [
+      "16",
+      "22"
+    ]
+  },
+  {
+    "position": 59,
+    "id": 84,
+    "uuid": "659f2c91-98d0-452f-9979-5ec5061e7a97",
+    "notion": "L’inscription au registre des transports de personnes dans le cadre d’une activité accessoire de transport de personnes permet d’exploiter :",
+    "slides": "—",
+    "etat": "Absente ; divergence/portée juridique à revoir",
+    "complements": [
+      "28"
+    ]
+  },
+  {
+    "position": 60,
+    "id": 85,
+    "uuid": "bc536695-541c-4571-bec2-dff5004aeb49",
+    "notion": "Le préfet du département est l’autorité compétente pour :",
+    "slides": "12",
+    "etat": "Insuffisante",
+    "complements": [
+      "26"
+    ]
+  },
+  {
+    "position": 61,
+    "id": 86,
+    "uuid": "ab138e7b-4d46-409b-ab40-9eeddb6b9b59",
+    "notion": "Quels animaux les conducteurs de taxi sont-ils tenus d’autoriser à monter dans leur véhicule ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "27"
+    ]
+  },
+  {
+    "position": 62,
+    "id": 87,
+    "uuid": "641e40a6-d5b7-49f6-a323-39d32e8c01ca",
+    "notion": "Dans quels cas est admis un refus de prise en charge pour les taxis ?",
+    "slides": "—",
+    "etat": "Absente ; divergence/portée juridique à revoir",
+    "complements": [
+      "27",
+      "29"
+    ]
+  },
+  {
+    "position": 63,
+    "id": 88,
+    "uuid": "5addcf98-6a63-4034-9729-7e4cdb7a9925",
+    "notion": "Le préfet dans le département peut définir des modalités particulières de mise en œuvre ?",
+    "slides": "—",
+    "etat": "Absente",
+    "complements": [
+      "22"
+    ]
+  },
+  {
+    "position": 64,
+    "id": 89,
+    "uuid": "d29886a8-bf5e-4269-a3a6-534972034b20",
+    "notion": "Quelles sont les conditions à satisfaire pour s’inscrire au registre des transports routier de personnes en activité ?",
+    "slides": "—",
+    "etat": "Absente ; divergence/portée juridique à revoir",
+    "complements": [
+      "28"
+    ]
+  }
+]
