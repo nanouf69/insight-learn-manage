@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Bilan = somme des cours par matière — 26/10, accord explicite
+- [x] Locale TAXI+TA : projection canonique 73/76/74/75 (29+29+22+25=105) vers section 204, identités historiques conservées, 242 lignes intactes en base.
+- [x] T3P (133) et Gestion (150) : projection JSON depuis module 10 vers module 9, identités par source_exercice_id/source_question_id, protection d'enregistrement (version serveur rétablie avant toute sauvegarde).
+- [x] 30 tests projection + 72 tests voisins PASS, tsgo OK, build OK ; aperçu admin vérifié : TAXI 133/150/241/103/126/98/105, TA 98/105 ; module_editor_state 9/27 inchangés (aucune écriture Cloud).
+- Publication en attente d'accord distinct ; réponses élèves individuelles relues non prouvées. Rapport docs/bilan-somme-cours-2026-10-26.md.
+
 ## Bilan TA nationale — périmètre exclusif 26/10 14:54 UTC
 - [x] Affichage national TA seul : mêmes 64 + 34 questions actuelles ; ancienne liste TA non rattachée et 195 lignes partagées conservées, TAXI et enregistrement inchangés.
 - [x] 32 tests PASS, diff avant/après, aperçu admin TAXI98/TA98 et sections locales à 242 identiques ; empreintes Cloud identiques, zéro écriture Cloud, aucune publication. Rapport docs/bilan-ta-nationale-selection-2026-10-26.md ; chaque résultat individuel NON PROUVÉ.
