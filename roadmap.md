@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Rectification attestation Documents de formation — 26/10 17:16 UTC
+- [x] Présentiel : premier jour des cours, dernier jour incluant la pratique ; supprimer les heures e-learning du PDF, total présentiel seul.
+- [x] Signature et tampon privés de Documents dans la nouvelle attestation ; originaux préservés, aucun envoi/publication.
+- [x] 25 tests PASS ; deux PDF téléchargés depuis Documents Formation admin et inspectés sur toutes leurs pages. Hakim ZAOUI : 14 septembre–21 octobre 2026, théorie 40 h + pratique 6 h = 46 h, aucune ligne e-learning. Hedy Khalfoun : jalons 41,7 %, aucune heure. Mise en page corrigée (total sorti du cadre et seconde page inutile), signature/tampon visibles sur une page ; compilation automatique OK. Contrôle exhaustif de tous les dossiers NON PROUVÉ.
+
 ## Signature et tampon séparés — 26/10
 - [x] Extraction fidèle du PDF fourni, PNG transparents ajoutés comme nouveaux objets privés admin uniquement, sans remplacement.
 - [x] Onglet adjacent à « À remplir / signer », téléchargement séparé, insertion/déplacement/taille dans une nouvelle version PDF locale ; circuit destinataire et originaux inchangés.
