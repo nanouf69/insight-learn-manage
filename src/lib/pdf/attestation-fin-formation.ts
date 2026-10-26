@@ -228,7 +228,7 @@ export async function generateAttestationFinFormation(
   // Formation box — hauteur selon le contenu réellement écrit
   const boxHeight = estElearning
     ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8)
-    : 64;
+    : 74;
   doc.setFillColor(232, 245, 233);
   doc.roundedRect(15, y - 5, pageWidth - 30, boxHeight, 3, 3, 'F');
 
@@ -275,11 +275,11 @@ export async function generateAttestationFinFormation(
     doc.setFontSize(12);
     doc.text(`Durée totale de la formation : ${formatHours(heuresTotal)}`, 20, y + 5);
     doc.setFontSize(11);
-    y += boxHeight - 48; // position after box
+    y += 8;
   }
   
   // Saut de page si le détail des jalons approche du bas de page.
-  if (y > 185) {
+  if (y > 220) {
     doc.addPage();
     y = 30;
   }
@@ -294,17 +294,16 @@ export async function generateAttestationFinFormation(
   doc.setFont('helvetica', 'normal');
   const today = format(new Date(), 'dd MMMM yyyy', { locale: fr });
   doc.text(`Fait à Lyon, le ${today}`, 20, y);
-  y += 20;
+  y += 10;
   
   doc.text('Le Directeur,', pageWidth - 60, y);
   y += 5;
   
   // Signature
   try {
-    doc.addImage(signatureImage, 'PNG', pageWidth - 80, y, 60, 10);
-    y += 16;
+    doc.addImage(signatureImage, 'PNG', 35, y + 5, 60, 10);
   } catch (e) {
-    y += 30;
+    // No substitute signature is fabricated.
   }
   
   // Tampon
