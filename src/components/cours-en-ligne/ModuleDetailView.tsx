@@ -1,5 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
-import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot } from "@/lib/bilanTaxiNationaleSelection";
+import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
@@ -4690,7 +4690,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     const configuredQuizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)];
     if (!editorStateHydrated || !configuredQuizIds?.length) return;
-    const quizIds = canonicalQuizIdsForDisplay(Number(module.id), configuredQuizIds);
+    const quizIds = canonicalQuizIdsForNationalDisplay(Number(module.id), configuredQuizIds);
     let cancelled = false;
     let relectureEnAttente = false;
 
@@ -4730,7 +4730,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const moduleBindings = (bindings ?? []) as unknown as CanonicalQuestionBinding[];
       let selectedRows: CanonicalQuestionRow[];
       try {
-        selectedRows = selectBilanTaxiNationaleRows(Number(module.id), sourceRows);
+        selectedRows = selectBilanNationalDisplayRows(Number(module.id), sourceRows);
       } catch (selectionError) {
         console.error("[CanonicalQuiz] Sélection TAXI indisponible", selectionError);
         return; // Lecture incohérente : conserver l'affichage précédent, jamais fabriquer un vide.

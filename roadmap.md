@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Bilan TA nationale — périmètre exclusif 26/10 14:54 UTC
+- [x] Affichage national TA seul : mêmes 64 + 34 questions actuelles ; ancienne liste TA non rattachée et 195 lignes partagées conservées, TAXI et enregistrement inchangés.
+- [x] 32 tests PASS, diff avant/après, aperçu admin TAXI98/TA98 et sections locales à 242 identiques ; empreintes Cloud identiques, zéro écriture Cloud, aucune publication. Rapport docs/bilan-ta-nationale-selection-2026-10-26.md ; chaque résultat individuel NON PROUVÉ.
+
 ## Bilan TAXI nationale — autorisation ciblée 26/10
 - [x] Sélection seule : 64 Partie 1 + 34 Partie 2 actuelles, sans l'ancienne question 15 ; identités Bilan existantes conservées, TA et les 195 lignes intacts.
 - [x] 50 tests PASS ; aperçu admin réel TAXI98 / TA195, résultats accessibles ; compilation automatique OK, empreintes Cloud identiques. Rapport docs/bilan-taxi-nationale-selection-2026-10-26.md.

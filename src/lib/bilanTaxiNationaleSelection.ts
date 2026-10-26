@@ -43,3 +43,15 @@ export function selectBilanTaxiNationaleRows<T extends BilanCanonicalRow>(
 export function preserveTaxiNationalSnapshot(moduleId: number, exerciseId: number): boolean {
   return moduleId === 9 && exerciseId === 203;
 }
+
+/** TA display only. Keep the TAXI helpers and all save/readback paths unchanged.
+ * Its existing binding maps shared section 203 to TA exercise 250; section 204
+ * (TA exercise 251) passes through untouched. The unbound old TA set is not read.
+ */
+export function canonicalQuizIdsForNationalDisplay(moduleId: number, quizIds: string[]): string[] {
+  return canonicalQuizIdsForDisplay(moduleId === 27 ? 9 : moduleId, quizIds);
+}
+
+export function selectBilanNationalDisplayRows<T extends BilanCanonicalRow>(moduleId: number, rows: T[]): T[] {
+  return selectBilanTaxiNationaleRows(moduleId === 27 ? 9 : moduleId, rows);
+}

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot } from '@/lib/bilanTaxiNationaleSelection';
+import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from '@/lib/bilanTaxiNationaleSelection';
 
 const source = [70, 71].flatMap(section => Array.from({ length: section === 70 ? 64 : 34 }, (_, i) => {
   const id = section === 71 && i >= 14 ? i + 2 : i + 1;
@@ -53,5 +53,44 @@ describe('sélection nationale TAXI seule', () => {
     expect(preserveTaxiNationalSnapshot(9,203)).toBe(true);
     expect(preserveTaxiNationalSnapshot(27,250)).toBe(false);
     expect(preserveTaxiNationalSnapshot(9,204)).toBe(false);
+  });
+});
+
+describe('affichage national TA exclusivement, sans modifier les chemins TAXI/enregistrement', () => {
+  const taNational = () => selectBilanNationalDisplayRows(27, rows).filter(row => row.quiz_id === 'bilan-exercices-taxi' && row.section_id === 203);
+  it('TA affiche les mêmes 98 identités uniques, 64 Partie 1 puis 34 Partie 2 actuelles que TAXI', () => {
+    expect(taNational()).toHaveLength(98);
+    expect(new Set(taNational().map(row => row.question_id)).size).toBe(98);
+    expect(taNational()).toEqual(national());
+    expect(taNational().slice(0, 64).map(row => row.legacy_question_id)).toEqual(source.slice(0,64).map(row => 70000 + row.legacy_question_id));
+    expect(taNational().slice(64).map(row => row.legacy_question_id)).toEqual(source.slice(64).map(row => 71000 + row.legacy_question_id));
+    expect(taNational().some(row => row.legacy_question_id === 71015)).toBe(false);
+    expect(taNational().find(row => row.legacy_question_id === 71007)?.enonce).toBe('TICPE 30,55 €');
+    expect(taNational().find(row => row.legacy_question_id === 71010)?.choix[0].texte).toBe('DGFIP');
+  });
+  it('lit la source actuelle sans la liste TA ancienne non rattachée', () => {
+    expect(canonicalQuizIdsForNationalDisplay(27, ['bilan-exercices-taxi'])).toEqual(['bilan-exercices-taxi', 'reglementation-nationale']);
+    expect(canonicalQuizIdsForDisplay(27, ['bilan-exercices-taxi'])).toEqual(['bilan-exercices-taxi']);
+    expect(selectBilanTaxiNationaleRows(27, rows)).toBe(rows);
+  });
+  it('laisse toutes les lignes hors section nationale identiques, sans mutation', () => {
+    const before = JSON.stringify(rows);
+    const selected = selectBilanNationalDisplayRows(27, rows);
+    const outside = rows.filter(row => !(row.quiz_id === 'bilan-exercices-taxi' && row.section_id === 203));
+    expect(selected.slice(0, outside.length)).toEqual(outside);
+    outside.forEach((row, index) => expect(selected[index]).toBe(row));
+    expect(JSON.stringify(rows)).toBe(before);
+  });
+  it('ne change aucun autre module, y compris le correctif TAXI', () => {
+    for (let moduleId = 1; moduleId <= 100; moduleId++) {
+      if (moduleId === 27) continue;
+      expect(selectBilanNationalDisplayRows(moduleId, rows)).toEqual(selectBilanTaxiNationaleRows(moduleId, rows));
+      expect(canonicalQuizIdsForNationalDisplay(moduleId, ['bilan-exercices-taxi'])).toEqual(canonicalQuizIdsForDisplay(moduleId, ['bilan-exercices-taxi']));
+    }
+  });
+  it('refuse une source incomplète ou une identité absente, sans fabrication', () => {
+    expect(() => selectBilanNationalDisplayRows(27, rows.filter(row => row.question_id !== source[0].question_id))).toThrow();
+    expect(() => selectBilanNationalDisplayRows(27, [...rows, source[0]])).toThrow();
+    expect(() => selectBilanNationalDisplayRows(27, rows.filter(row => row.question_id !== bilan[0].question_id))).toThrow();
   });
 });
