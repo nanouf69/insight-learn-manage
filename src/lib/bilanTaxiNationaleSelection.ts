@@ -79,12 +79,21 @@ export function selectBilanTaxiLocaleRows<T extends BilanCanonicalRow>(
   return [...rows.filter(row => !(row.quiz_id === "bilan-exercices-taxi" && row.section_id === 204)), ...projected];
 }
 
-/** Projection complète du bilan TAXI : nationale (203) puis locale (204). */
+/** Projection complète du bilan TAXI : nationale (203) puis locale (204).
+ * La locale ne s'applique que si sa source canonique est réellement chargée ;
+ * une lecture partielle ne doit jamais masquer la nationale ni l'affichage
+ * précédent. */
 export function selectBilanTaxiDisplayRows<T extends BilanCanonicalRow>(
   moduleId: number,
   rows: T[],
 ): T[] {
-  return selectBilanTaxiLocaleRows(moduleId, selectBilanTaxiNationaleRows(moduleId, rows));
+  const nationale = selectBilanTaxiNationaleRows(moduleId, rows);
+  if (!rows.some(row => row.quiz_id === "reglementation-locale")) return nationale;
+  try {
+    return selectBilanTaxiLocaleRows(moduleId, nationale);
+  } catch {
+    return nationale;
+  }
 }
 
 /** Historical passages remain their original content, including retired questions. */
