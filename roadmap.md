@@ -2,13 +2,14 @@
 
 ## Attestation fin de formation — 26/10
 - [x] Présentiel : dates en toutes lettres françaises + durée totale ; e-learning : uniquement le taux total de jalons détaillé (relevé figé prioritaire, erreur de lecture = « indisponible », jamais de chiffre fabriqué).
-- [x] 5 tests PASS, tsgo OK ; PDF réels vérifiés dans l'aperçu : Yasin LAIDAOUI (présentiel, dates longues + 61h48) et Hedy Khalfoun (e-learning, taux 41,7 % + détail par jalon, sans dates ni heures). NON PUBLIÉ.
+- [x] 5 tests PASS, tsgo OK ; PDF réels vérifiés dans l'aperçu : Yasin LAIDAOUI (présentiel, dates longues + 61h48) et Hedy Khalfoun (e-learning, taux 41,7 % + détail par jalon, sans dates ni heures).
+- [x] Publié 26/10 17:05 UTC (demande explicite « tout publier »), site attendu https://gestion.ftransport.fr.
 
 ## Bilan = somme des cours par matière — 26/10, accord explicite
 - [x] Locale TAXI+TA : projection canonique 73/76/74/75 (29+29+22+25=105) vers section 204, identités historiques conservées, 242 lignes intactes en base.
 - [x] T3P (133) et Gestion (150) : projection JSON depuis module 10 vers module 9, identités par source_exercice_id/source_question_id, protection d'enregistrement (version serveur rétablie avant toute sauvegarde).
 - [x] 30 tests projection + 72 tests voisins PASS, tsgo OK, build OK ; aperçu admin vérifié : TAXI 133/150/241/103/126/98/105, TA 98/105 ; module_editor_state 9/27 inchangés (aucune écriture Cloud).
-- Publication en attente d'accord distinct ; réponses élèves individuelles relues non prouvées. Rapport docs/bilan-somme-cours-2026-10-26.md.
+- Publié 26/10 17:05 UTC (accord explicite) ; réponses élèves individuelles relues non prouvées. Rapport docs/bilan-somme-cours-2026-10-26.md.
 
 ## Bilan TA nationale — périmètre exclusif 26/10 14:54 UTC
 - [x] Affichage national TA seul : mêmes 64 + 34 questions actuelles ; ancienne liste TA non rattachée et 195 lignes partagées conservées, TAXI et enregistrement inchangés.
@@ -17,7 +18,7 @@
 ## Bilan TAXI nationale — autorisation ciblée 26/10
 - [x] Sélection seule : 64 Partie 1 + 34 Partie 2 actuelles, sans l'ancienne question 15 ; identités Bilan existantes conservées, TA et les 195 lignes intacts.
 - [x] 50 tests PASS ; aperçu admin réel TAXI98 / TA195, résultats accessibles ; compilation automatique OK, empreintes Cloud identiques. Rapport docs/bilan-taxi-nationale-selection-2026-10-26.md.
-- Publication en attente d'accord distinct ; lecture de chaque résultat individuel côté élève NON PROUVÉE, aucune donnée écrite.
+- Publié 26/10 17:05 UTC (accord explicite) ; lecture de chaque résultat individuel côté élève NON PROUVÉE, aucune donnée écrite.
 
 ## Refus P0520 éditeur TAXI — 26/10
 - [x] Cause reproductible : sept anciennes tombstones absentes de la projection (73:6, 74:14/15/16/18/19, 76:28) retransformées en suppressions ; 964 questions JSON, 34 Partie 2 actives.
