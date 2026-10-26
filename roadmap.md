@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Refus P0520 éditeur TAXI — 26/10
+- [ ] Audit lecture seule module 10, IDs/compteurs, hydratation canonique versus copie JSON.
+- [ ] Préserver la copie serveur complète lors des modifications par ID ; aucune suppression canonique implicite ni affaiblissement P0520.
+- [ ] Reproduction fictive avant/après, relecture et protection SQL jetable ; compte/empreinte après, rapport fichiers/tests ; aucune publication.
+
 ## Nationale TAXI Partie 1 — 26/10, ajout autorisé sans publication
 - [x] Inventaire canonique complet des 64 questions/réponses, comparaison des 11 thèmes et divergences officielles : docs/audit-nationale-taxi-partie1-2026-10-26.md.
 - [x] Coder 25 questions nouvelles dans une proposition interactive séparée de l'éditeur du module 10 ; 64 originaux et source active intacts.
