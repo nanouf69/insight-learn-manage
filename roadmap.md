@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## Bilan TAXI nationale — autorisation ciblée 26/10
-- [ ] Sélection seule : 64 Partie 1 + 34 Partie 2 actuelles, sans l'ancienne question 15 ; TA et les 195 lignes conservés.
-- [ ] Tests du décompte, ordre, versions 7/10, historique et isolation TA ; bilan avant/après sans publication.
+- [x] Sélection seule : 64 Partie 1 + 34 Partie 2 actuelles, sans l'ancienne question 15 ; identités Bilan existantes conservées, TA et les 195 lignes intacts.
+- [x] 50 tests PASS ; aperçu admin réel TAXI98 / TA195, résultats accessibles ; compilation automatique OK, empreintes Cloud identiques. Rapport docs/bilan-taxi-nationale-selection-2026-10-26.md.
+- Publication en attente d'accord distinct ; lecture de chaque résultat individuel côté élève NON PROUVÉE, aucune donnée écrite.
 
 ## Refus P0520 éditeur TAXI — 26/10
 - [x] Cause reproductible : sept anciennes tombstones absentes de la projection (73:6, 74:14/15/16/18/19, 76:28) retransformées en suppressions ; 964 questions JSON, 34 Partie 2 actives.
