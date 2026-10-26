@@ -49,3 +49,12 @@ it("TA : 30 h présentiel + 6 h pratique = 36 h au total", () => {
   const r = tauxTotalPresence({ session: { faites: 30, prevues: heuresSessionPourApprenant(s, "ta")! }, pratique: { faites: 6, prevues: 6 } });
   expect(r?.prevues).toBe(36); expect(r?.pct).toBe(100);
 });
+
+import { heuresTheorieInscrites as hti } from "@/lib/sessionHeures";
+import { it as it2, expect as ex2 } from "vitest";
+it2("cours du soir VTC = 40 h même si la session commune est en journée", () => {
+  const s = { id: "s1", type_session: "theorique", nom: "VTC TAXI", heure_debut: "09:00", types_apprenant: ["VTC", "TAXI"], date_debut: "2026-09-01", date_fin: "2026-10-01" };
+  ex2(hti([{ sessions: s, heure_debut_personnalisee: "17:00" }], "vtc")).toBe(40);
+  ex2(hti([{ sessions: s }], "vtc")).toBe(60);
+  ex2(hti([{ sessions: { ...s, id: "s2", heures_total: 60, nom: "VTC soir" } }], "vtc")).toBe(40);
+});
