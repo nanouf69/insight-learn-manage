@@ -80,7 +80,10 @@ export function heuresTheorieInscrites(inscriptions: any[], filiere?: string | n
     if (id) sessionsVues.add(id);
     const debut = [s.date_debut, row.date_debut].filter(Boolean).map(v => String(v).slice(0, 10)).sort().at(-1) ?? "";
     const fin = [s.date_fin || s.date_debut, row.date_fin_personnalisee || row.date_fin].filter(Boolean).map(v => String(v).slice(0, 10)).sort()[0] ?? "";
-    periodes.push({ debut, fin, heures: heuresSessionPourApprenant(s, filiere) ?? 0, partagee: !!filiere && !!libelleHeuresSessionMixte(s) && !!debut && !!fin });
+    // Cours du soir VTC (horaire de session ou horaire personnalisé de l'élève) : toujours 40 h.
+    const soir = /soir/i.test(s.nom || "") || /^(1[7-9]|2[0-3])[:h]/.test(String(row.heure_debut_personnalisee || s.heure_debut || "").trim());
+    const heures = soir && filiere !== "taxi" && filiere !== "ta" ? 40 : heuresSessionPourApprenant(s, filiere) ?? 0;
+    periodes.push({ debut, fin, heures, partagee: !!filiere && !!libelleHeuresSessionMixte(s) && !!debut && !!fin });
   }
   periodes.sort((a, b) => a.debut.localeCompare(b.debut));
   const groupes: typeof periodes = [];
