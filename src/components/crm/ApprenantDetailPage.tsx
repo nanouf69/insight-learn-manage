@@ -356,10 +356,10 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     const total = tauxTotalPresence(d);
     if (!total) return { ...tauxBrut, pctTotal: 0, signatures: { ...(tauxBrut.signatures as any), taux: null, raison: presenceHeures.erreur ? "Indisponible (lecture impossible)" : "Chargement des présences session et pratique…" } };
     const { faites, prevues, pct, pratiquePrevues } = total;
-    // Formation présentielle : taux présentiel = moyenne du taux de présence session et du taux de présence pratique.
-    const moyennePresence = (x: any, pp: number) => { const ps = (x?.session.prevues ?? 0) > 0 ? Math.min(100, (x.session.faites ?? 0) / x.session.prevues * 100) : 0; const pr = pp > 0 ? Math.min(100, (x?.pratique.faites ?? 0) / pp * 100) : 0; return (ps + pr) / 2; };
+    // Formation présentielle : taux présentiel = heures signées / heures prévues, pondéré par les heures de chaque part
+    // (session + pratique) pour rester cohérent avec la ligne d'heures affichée : 60 h / 66 h = 91 %, jamais 50 %.
     const f = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
-    return { ...tauxBrut, reqPresentiel: prevues, donePresentiel: faites, pctPresentiel: moyennePresence(d, pratiquePrevues), reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)` } };
+    return { ...tauxBrut, reqPresentiel: prevues, donePresentiel: faites, pctPresentiel: pct, reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)` } };
   }, [tauxBrut, presenceHeures.data, presenceHeures.erreur]);
 
   const { data: photoDoc } = useQuery({
