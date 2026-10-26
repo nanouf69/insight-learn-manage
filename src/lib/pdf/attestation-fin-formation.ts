@@ -130,7 +130,8 @@ export async function generateAttestationFinFormation(
   sessions: SessionInfo[] = [],
   connexions: ConnexionInfo[] = [],
   pratiqueDurations: PratiqueDurationInfo[] = [],
-) {
+  options: { datesSignatures?: { debut: string; fin: string } | null; returnBlob?: boolean } = {},
+): Promise<{ blob: Blob; fileName: string } | void> {
   // Fail before download if either official private image cannot be read.
   const [signatureImage, tamponImage] = await Promise.all([chargerElementAdmin('signature'), chargerElementAdmin('tampon')]);
   const doc = new jsPDF();
@@ -195,7 +196,8 @@ export async function generateAttestationFinFormation(
   const filiere = /^ta(?:$|-)/.test(type) ? 'ta' : type.includes('taxi') ? 'taxi' : 'vtc';
   const heuresTheorie = heuresTheorieInscrites(sessions.map((s) => ({ sessions: s })), filiere);
   const heuresTotal = heuresPratique + heuresTheorie;
-  const datesPresentiel = datesAttestationPresentiel(sessions, pratiqueDurations);
+  // Dates = première et dernière signature d'émargement réellement enregistrées ; repli sur les dates inscrites.
+  const datesPresentiel = options.datesSignatures ?? datesAttestationPresentiel(sessions, pratiqueDurations);
 
   const formationName = getFormationName(apprenant.type_apprenant);
   const estElearning = attestationEstElearning(apprenant);
@@ -227,7 +229,7 @@ export async function generateAttestationFinFormation(
 
   // Formation box — hauteur selon le contenu réellement écrit
   const boxHeight = estElearning
-    ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8)
+    ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8) + (options.datesSignatures ? 16 : 0)
     : 74;
   doc.setFillColor(232, 245, 233);
   doc.roundedRect(15, y - 5, pageWidth - 30, boxHeight, 3, 3, 'F');
@@ -238,6 +240,12 @@ export async function generateAttestationFinFormation(
 
   if (estElearning) {
     doc.setFont('helvetica', 'normal');
+    if (options.datesSignatures) {
+      doc.text(`Première signature : ${formatDateLongueFrancaise(options.datesSignatures.debut)}`, 20, y + 5);
+      y += 8;
+      doc.text(`Dernière signature : ${formatDateLongueFrancaise(options.datesSignatures.fin)}`, 20, y + 5);
+      y += 8;
+    }
     if (tauxJalons == null || !lignesJalons) {
       doc.text('Taux total de jalons : indisponible (lecture impossible, aucun chiffre fabriqué)', 20, y + 5);
       y += 8;
@@ -253,13 +261,13 @@ export async function generateAttestationFinFormation(
       }
       doc.setFontSize(11);
     }
-    y += boxHeight - (lignesJalons ? lignesJalons.length * 6 : 8) - 18;
+    y += boxHeight - (lignesJalons ? lignesJalons.length * 6 : 8) - 18 - (options.datesSignatures ? 16 : 0);
   } else {
     // Présentiel : dates réelles en toutes lettres et durée totale.
     doc.setFont('helvetica', 'normal');
-    doc.text(`Premier jour de formation : ${formatDateLongueFrancaise(datesPresentiel.debut)}`, 20, y + 5);
+    doc.text(`${options.datesSignatures ? 'Première signature' : 'Premier jour de formation'} : ${formatDateLongueFrancaise(datesPresentiel.debut)}`, 20, y + 5);
     y += 8;
-    doc.text(`Dernier jour de formation (pratique incluse) : ${formatDateLongueFrancaise(datesPresentiel.fin)}`, 20, y + 5);
+    doc.text(`${options.datesSignatures ? 'Dernière signature' : 'Dernier jour de formation (pratique incluse)'} : ${formatDateLongueFrancaise(datesPresentiel.fin)}`, 20, y + 5);
     y += 8;
     doc.text(`Lieu : ${COMPANY_INFO.address}`, 20, y + 5);
     y += 12;
@@ -320,5 +328,7 @@ export async function generateAttestationFinFormation(
   doc.text(`${COMPANY_INFO.name} - ${COMPANY_INFO.address}`, pageWidth / 2, footerY, { align: 'center' });
   doc.text(`SIRET: ${COMPANY_INFO.siret} - NAF: ${COMPANY_INFO.naf} - N° Déclaration: ${COMPANY_INFO.declaration}`, pageWidth / 2, footerY + 5, { align: 'center' });
   
-  doc.save(`attestation_fin_formation_${apprenant.nom}_${apprenant.prenom}.pdf`);
+  const fileName = `attestation_fin_formation_${apprenant.nom}_${apprenant.prenom}.pdf`;
+  if (options.returnBlob) return { blob: doc.output('blob'), fileName };
+  doc.save(fileName);
 }

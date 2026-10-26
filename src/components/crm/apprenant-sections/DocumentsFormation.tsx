@@ -100,20 +100,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         await generateAttestationInscription(apprenant);
         toast.success("Attestation d'inscription générée");
       } else if (type === 'fin-formation') {
-        // Récupérer les sessions de l'apprenant
-        const { data: saRows, error: sessionsError } = await supabase
-          .from('session_apprenants')
-          .select('session_id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, sessions(id, nom, types_apprenant, heures_total, statut, type_session, heure_debut, heure_fin, date_debut, date_fin)')
-          .eq('apprenant_id', apprenant.id);
-        if (sessionsError) throw sessionsError;
-        const inscriptions = (saRows || []).filter((r: any) => r.liste_attente !== true && r.emargements_exclus !== true && r.sessions && !/annul/i.test(r.sessions.statut || ''));
-        const sessions = inscriptions.map((r: any) => ({ ...r.sessions,
-          date_debut: [r.sessions.date_debut, r.date_debut].filter(Boolean).sort().at(-1),
-          date_fin: [r.sessions.date_fin, r.date_fin_personnalisee || r.date_fin].filter(Boolean).sort()[0],
-        }));
-
-        const pratiqueDurations = await fetchPratiqueSlotDetails(apprenant.id);
-        await generateAttestationFinFormation(apprenant, sessions, [], pratiqueDurations);
+        await genererAttestationFin();
         toast.success("Attestation de fin de formation générée");
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);
@@ -250,6 +237,53 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     } finally {
       setGeneratingDoc(null);
     }
+  };
+
+  // Attestation de fin : dates = première/dernière signature d'émargement enregistrée (feuilles masquées exclues).
+  const genererAttestationFin = async (returnBlob = false) => {
+    const { data: saRows, error: sessionsError } = await supabase
+      .from('session_apprenants')
+      .select('session_id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, sessions(id, nom, types_apprenant, heures_total, statut, type_session, heure_debut, heure_fin, date_debut, date_fin)')
+      .eq('apprenant_id', apprenant.id);
+    if (sessionsError) throw sessionsError;
+    const inscriptions = (saRows || []).filter((r: any) => r.liste_attente !== true && r.emargements_exclus !== true && r.sessions && !/annul/i.test(r.sessions.statut || ''));
+    const sessions = inscriptions.map((r: any) => ({ ...r.sessions,
+      date_debut: [r.sessions.date_debut, r.date_debut].filter(Boolean).sort().at(-1),
+      date_fin: [r.sessions.date_fin, r.date_fin_personnalisee || r.date_fin].filter(Boolean).sort()[0],
+    }));
+    const { data: em, error: emError } = await supabase
+      .from('emargements_fc')
+      .select('date_emargement, signature_data_url, absent, masque')
+      .eq('apprenant_id', apprenant.id)
+      .eq('masque', false);
+    if (emError) throw emError; // erreur de lecture : aucune date inventée
+    const dates = (em || []).filter((e: any) => e.signature_data_url && e.absent !== true).map((e: any) => String(e.date_emargement).slice(0, 10)).sort();
+    const datesSignatures = dates.length ? { debut: dates[0], fin: dates[dates.length - 1] } : null;
+    const pratiqueDurations = await fetchPratiqueSlotDetails(apprenant.id);
+    return generateAttestationFinFormation(apprenant, sessions, [], pratiqueDurations, { datesSignatures, returnBlob });
+  };
+
+  const handleSendAttestationFinByEmail = async () => {
+    if (!apprenant.email) { toast.error("Cet apprenant n'a pas d'adresse email"); return; }
+    if (!window.confirm(`Envoyer l'attestation de fin de formation à ${apprenant.email} ?`)) return;
+    setSendingEmail('fin-formation');
+    try {
+      const result = (await genererAttestationFin(true)) as { blob: Blob; fileName: string } | void as any;
+      if (!(result as any)?.blob) throw new Error("Impossible de générer le PDF");
+      const bytes = new Uint8Array(await result.blob.arrayBuffer());
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
+      const htmlBody = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Bonjour ${apprenant.prenom} ${apprenant.nom},</p><p>Veuillez trouver ci-joint votre <strong>attestation de fin de formation</strong>.</p><p>Cordialement,<br/>L'équipe FTRANSPORT</p><p style="font-size:13px;color:#6b7280">FTRANSPORT – 86 Route de Genas, 69003 Lyon – 04 28 29 60 91 – contact@ftransport.fr</p></div>`;
+      const { error } = await supabase.functions.invoke('send-document-email', {
+        body: { apprenantId: apprenant.id, recipientEmail: apprenant.email, recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+          subject: 'Votre attestation de fin de formation', htmlBody, attachmentName: result.fileName,
+          attachmentBase64: btoa(binary), attachmentContentType: 'application/pdf' },
+      });
+      if (error) throw error;
+      toast.success(`Attestation envoyée par email à ${apprenant.email}`);
+    } catch (error: any) {
+      toast.error(`Erreur lors de l'envoi : ${error?.message || 'inconnue'}`);
+    } finally { setSendingEmail(null); }
   };
 
   const handleSendAttestationFCByEmail = async () => {
@@ -663,6 +697,14 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                           <Download className="w-4 h-4 mr-2" />
                           {generatingDoc === doc.type ? 'Génération...' : 'Générer'}
                         </Button>
+                        {doc.type === 'fin-formation' && (
+                          <Button size="sm" variant="outline" onClick={handleSendAttestationFinByEmail}
+                            disabled={sendingEmail === 'fin-formation' || !apprenant.email}
+                            title={!apprenant.email ? "Aucune adresse email" : `Envoyer à ${apprenant.email}`}>
+                            <Send className="w-4 h-4 mr-2" />
+                            {sendingEmail === 'fin-formation' ? 'Envoi...' : 'Envoyer par email'}
+                          </Button>
+                        )}
                         {doc.id === 'attestation-fc' && (
                           <Button
                             size="sm"
