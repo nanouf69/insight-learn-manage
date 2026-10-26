@@ -12,6 +12,14 @@ describe('total présence session + pratique', () => {
     expect(r?.prevues).toBe(66);
     expect(r?.pct).toBeCloseTo(90.909);
   });
+  it('taux présentiel = heures signées / heures prévues : 60 h signées sur 66 h prévues ne fait jamais 50 %', () => {
+    // La carte « Taux présentiel » utilise ce pct (jamais la moyenne simple 100 % + 0 % = 50 %).
+    const r = tauxTotalPresence({session:{faites:60,prevues:60},pratique:{faites:0,prevues:6}});
+    expect(r?.faites).toBe(60);
+    expect(r?.prevues).toBe(66);
+    expect(r?.pct).toBeGreaterThan(50);
+    expect(r?.pct).toBeCloseTo(90.909);
+  });
   it('surplus théorie ne compense pas pratique manquante', () => {
     expect(tauxTotalPresence({session:{faites:66,prevues:60},pratique:{faites:0,prevues:6}})?.pct).toBeCloseTo(90.909);
   });
