@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Nationale TAXI Partie 1 — 26/10, ajout autorisé sans publication
+- [ ] Inventorier les 64 questions/réponses réelles et comparer aux 11 thèmes, vérifier les divergences juridiques officielles.
+- [ ] Ajouter seulement les notions absentes, sans toucher aux 64 originaux ni aux preuves élèves ; conserver les validations antérieures.
+- [ ] Tester complété/non complété, correction et sauvegarde fictive ; audit et journal ; aucune publication ni écriture élève.
+
 ## Revue 8beeefc1 — délais français, 24/10
 - [x] Corriger uniquement la classification délai/48h et codes SQL temporaires ; conserver les anciennes files bloquées.
 - [x] Tests réels avant/après (16 échecs avant, 54/54 réussites après), journal ciblé ; aucune requête production/publication. Compilation automatique OK ; typecheck manuel NON EXÉCUTÉ (interdit par l’environnement).
