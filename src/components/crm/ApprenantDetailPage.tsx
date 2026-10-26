@@ -357,7 +357,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     if (!total) return { ...tauxBrut, pctTotal: 0, signatures: { ...(tauxBrut.signatures as any), taux: null, raison: presenceHeures.erreur ? "Indisponible (lecture impossible)" : "Chargement des présences session et pratique…" } };
     const { faites, prevues, pct, pratiquePrevues } = total;
     const f = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
-    return { ...tauxBrut, reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)` } };
+    return { ...tauxBrut, reqPresentiel: prevues, pctPresentiel: prevues > 0 ? Math.min(100, tauxBrut.donePresentiel / prevues * 100) : 0, reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)` } };
   }, [tauxBrut, presenceHeures.data, presenceHeures.erreur]);
 
   const { data: photoDoc } = useQuery({
