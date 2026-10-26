@@ -3,7 +3,7 @@
 ## Signature et tampon séparés — 26/10
 - [x] Extraction fidèle du PDF fourni, PNG transparents ajoutés comme nouveaux objets privés admin uniquement, sans remplacement.
 - [x] Onglet adjacent à « À remplir / signer », téléchargement séparé, insertion/déplacement/taille dans une nouvelle version PDF locale ; circuit destinataire et originaux inchangés.
-- [ ] Vérification de l’aperçu et de l’export ; aucune publication demandée.
+- [x] Aperçu admin connecté : deux images privées chargées, insertion indépendante et nouvelle copie PDF téléchargée ; page PDF inspectée, chevauchement initial corrigé. Compilation automatique OK ; aucun envoi/enregistrement de document, aucune publication. Téléphone et déplacement tactile NON PROUVÉS.
 
 ## Attestation fin de formation — 26/10
 - [x] Présentiel : dates en toutes lettres françaises + durée totale ; e-learning : uniquement le taux total de jalons détaillé (relevé figé prioritaire, erreur de lecture = « indisponible », jamais de chiffre fabriqué).
