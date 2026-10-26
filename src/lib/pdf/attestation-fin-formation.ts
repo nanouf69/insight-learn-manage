@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import { isPratiqueType } from '@/lib/sessionTypes';
@@ -272,6 +272,12 @@ export async function generateAttestationFinFormation(
     y += boxHeight - 48; // position after box
   }
   
+  // Saut de page si le détail des jalons approche du bas de page.
+  if (y > 230) {
+    doc.addPage();
+    y = 30;
+  }
+
   // Mention
   y += 10;
   doc.setFont('helvetica', 'italic');
