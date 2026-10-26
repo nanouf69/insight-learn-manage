@@ -5,6 +5,7 @@ import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
+import { nationalePartie1CourseReview } from "@/lib/nationalePartie1CourseReview";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
@@ -10124,6 +10125,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 <Plus className="w-4 h-4" /> Ajouter un cours
               </Button>
             </div>
+            {moduleData.cours.some(cours => nationalePartie1CourseReview(Number(module.id), Number(cours.id), studentOnly)) && (
+              <section className="space-y-3 border-y py-4">
+                <h4 className="font-semibold">Cours Nationale Partie 1 — version enrichie à relire</h4>
+                <p className="text-sm text-muted-foreground">16 diapositives originales conservées et 14 compléments. Questions et supports élèves inchangés ; non publié.</p>
+                <div className="flex flex-wrap gap-3">
+                  {moduleData.cours.filter(cours => nationalePartie1CourseReview(Number(module.id), Number(cours.id), studentOnly)).map(cours => {
+                    const review = nationalePartie1CourseReview(Number(module.id), Number(cours.id), studentOnly);
+                    if (!review) return null;
+                    return <div key={cours.id} className="flex flex-wrap gap-3">
+                      <Button variant="outline" asChild><a href={review.pdfUrl} target="_blank" rel="noreferrer"><FileText className="mr-2 h-4 w-4" />Voir le cours enrichi PDF</a></Button>
+                      <Button variant="outline" asChild><a href={review.pptxUrl} download="Nationale_Partie1_cours_enrichi.pptx"><Download className="mr-2 h-4 w-4" />PowerPoint enrichi</a></Button>
+                    </div>;
+                  })}
+                </div>
+              </section>
+            )}
             {moduleData.cours.map((cours, index) =>
               editingCoursId === cours.id ? (
                 <CoursEditor
