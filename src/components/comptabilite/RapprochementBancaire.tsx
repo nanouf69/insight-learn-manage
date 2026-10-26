@@ -51,6 +51,8 @@ interface Justificatif {
   categorie: string | null;
   fournisseur: string | null;
   statut: string;
+  description?: string | null;
+  notes?: string | null;
 }
 
 const CATEGORIES = [
@@ -427,7 +429,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
     const [txs, { data: just }, { data: apprenantsData }, { data: saData }, { data: fourData }] = await Promise.all([
       fetchAllTxs(),
-      supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
+      supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut, description, notes"),
       supabase.from("apprenants").select("id, nom, prenom, civilite, email, adresse, code_postal, ville, formation_choisie, type_apprenant, montant_ttc, montant_paye, date_paiement, date_debut_formation, date_fin_formation").is("deleted_at", null),
       supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
       supabase.from("fournisseurs").select("id, nom").eq("actif", true).order("nom"),
@@ -1108,6 +1110,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const isCategoriseSansJustif = (tx: Transaction): boolean =>
     !!(tx.categorie && tx.categorie.trim() !== "") && !tx.justificatif_id;
 
+  const justifParId = new Map(justificatifs.map(j => [j.id, j]));
   const filtered = transactions.filter(tx => {
     const eff = effectiveStatut(tx);
     const matchStatut =
@@ -1118,10 +1121,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
     const normBanque = (b: string) => b.toLowerCase().replace(/\s+/g, "");
     const matchBanque = filterBanque === "tous" || normBanque(tx.banque) === normBanque(filterBanque);
-    const matchSearch = !search ||
-      tx.libelle.toLowerCase().includes(search.toLowerCase()) ||
-      (tx.fournisseur_client || "").toLowerCase().includes(search.toLowerCase()) ||
-      (tx.categorie || "").toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || rechercherTransaction(tx, justifParId, search).trouve;
     const d = tx.date_operation ? new Date(tx.date_operation) : null;
     const matchAnnee = filterAnnee === "tous" || (d && String(d.getFullYear()) === filterAnnee);
     const matchMois = filterMois === "tous" || (d && String(d.getMonth() + 1) === filterMois);
@@ -1616,6 +1616,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
                                 <p className="font-medium text-sm truncate">{tx.libelle}</p>
+                                {(() => {
+                                  const r = search ? rechercherTransaction(tx, justifParId, search) : null;
+                                  return r && r.trouve && r.source === "justificatif" ? (
+                                    <p className="text-xs text-primary truncate" title={r.extrait}>
+                                      Trouvé dans le justificatif ({r.champ}) : « {r.extrait} »
+                                    </p>
+                                  ) : null;
+                                })()}
                                 <p className="text-xs text-muted-foreground">
                                   {format(new Date(tx.date_operation), "dd MMMM yyyy", { locale: fr })}
                                   {tx.banque && (
