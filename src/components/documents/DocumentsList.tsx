@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye, Mail, X, FileSignature } from "lucide-react";
+import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye, Mail, X, FileSignature, Stamp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +28,7 @@ import { DocumentForm } from "./DocumentForm";
 import { EmailTemplatesEditor } from "./EmailTemplatesEditor";
 import { BulkDownloadDialog } from "./BulkDownloadDialog";
 import { DocumentsASigner } from "./DocumentsASigner";
+import { DocumentAdminElements } from "./DocumentAdminElements";
 
 
 const documents = [
@@ -117,7 +118,7 @@ export function DocumentsList() {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="documents" className="gap-2">
             <FileText className="h-4 w-4" />
             Documents
@@ -129,6 +130,9 @@ export function DocumentsList() {
           <TabsTrigger value="a-signer" className="gap-2">
             <FileSignature className="h-4 w-4" />
             À remplir / signer
+          </TabsTrigger>
+          <TabsTrigger value="signature-tampon" className="gap-2">
+            <Stamp className="h-4 w-4" /> Ma signature / tampon
           </TabsTrigger>
 
         </TabsList>
@@ -308,6 +312,9 @@ export function DocumentsList() {
 
         <TabsContent value="a-signer" className="mt-4">
           <DocumentsASigner />
+        </TabsContent>
+        <TabsContent value="signature-tampon" className="mt-4">
+          <DocumentAdminElements />
         </TabsContent>
 
       </Tabs>

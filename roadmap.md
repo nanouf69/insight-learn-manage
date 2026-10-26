@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Signature et tampon séparés — 26/10
+- [x] Extraction fidèle du PDF fourni, PNG transparents ajoutés comme nouveaux objets privés admin uniquement, sans remplacement.
+- [x] Onglet adjacent à « À remplir / signer », téléchargement séparé, insertion/déplacement/taille dans une nouvelle version PDF locale ; circuit destinataire et originaux inchangés.
+- [x] Aperçu admin connecté : deux images privées chargées, insertion indépendante et nouvelle copie PDF téléchargée ; page PDF inspectée, chevauchement initial corrigé. Compilation automatique OK ; aucun envoi/enregistrement de document, aucune publication. Téléphone et déplacement tactile NON PROUVÉS.
+
 ## Attestation fin de formation — 26/10
 - [x] Présentiel : dates en toutes lettres françaises + durée totale ; e-learning : uniquement le taux total de jalons détaillé (relevé figé prioritaire, erreur de lecture = « indisponible », jamais de chiffre fabriqué).
 - [x] 5 tests PASS, tsgo OK ; PDF réels vérifiés dans l'aperçu : Yasin LAIDAOUI (présentiel, dates longues + 61h48) et Hedy Khalfoun (e-learning, taux 41,7 % + détail par jalon, sans dates ni heures).
