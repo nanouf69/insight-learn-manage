@@ -7,6 +7,15 @@ const none = new Set<string>();
 const keys = (data: ReturnType<typeof server>) => data.exercices.flatMap(e => e.questions.map(q => `${e.id}:${q.id}`));
 
 describe('Admin : lot complet + intentions par identifiant, jamais par omission', () => {
+  it('reproduit exactement les sept retraits historiques 73:6, 74:14/15/16/18/19, 76:28 sans les rejouer', () => {
+    const original = { exercices: [{ id: 73, questions: [question(6), question(7)] }, { id: 74, questions: [14,15,16,18,19,21].map(question) }, { id: 76, questions: [question(28), question(29)] }] };
+    const tombstones: Record<number, number[]> = { 73: [6], 74: [14,15,16,18,19,20,24], 76: [28] };
+    const local = { exercices: original.exercices.map(e => ({ ...e, deletedQuestionIds: tombstones[e.id], questions: e.questions.filter(q => !tombstones[e.id].includes(q.id)) })) };
+    const legacyRemoved = original.exercices.flatMap(e => e.questions.filter(q => !local.exercices.find(x => x.id === e.id)?.questions.some(x => x.id === q.id) && tombstones[e.id].includes(q.id)).map(q => `${e.id}:${q.id}`));
+    expect(legacyRemoved).toEqual(['73:6','74:14','74:15','74:16','74:18','74:19','76:28']);
+    const result = applyQuestionSaveIntent(local, original, new Set(['71-10']), none, none);
+    expect(result.exercices.map(e => e.questions)).toEqual(original.exercices.map(e => e.questions));
+  });
   it('avant : projection 34 + 21 questions entraîne sept retraits ; après : zéro retrait pour une réponse', () => {
     const original = server();
     const local = structuredClone(original);
