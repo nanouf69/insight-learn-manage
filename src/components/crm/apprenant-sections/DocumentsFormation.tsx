@@ -268,8 +268,8 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     if (!window.confirm(`Envoyer l'attestation de fin de formation à ${apprenant.email} ?`)) return;
     setSendingEmail('fin-formation');
     try {
-      const result = await genererAttestationFin(true);
-      if (!result?.blob) throw new Error("Impossible de générer le PDF");
+      const result = (await genererAttestationFin(true)) as { blob: Blob; fileName: string } | void as any;
+      if (!(result as any)?.blob) throw new Error("Impossible de générer le PDF");
       const bytes = new Uint8Array(await result.blob.arrayBuffer());
       let binary = '';
       for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
