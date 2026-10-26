@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Refus P0520 éditeur TAXI — 26/10
+- [x] Cause reproductible : sept anciennes tombstones absentes de la projection (73:6, 74:14/15/16/18/19, 76:28) retransformées en suppressions ; 964 questions JSON, 34 Partie 2 actives.
+- [x] Copie serveur complète + intentions ID explicites, arrêt sur erreur de lecture, pas d'upsert canonique historique/renumérotation implicite ; P0520/CAS inchangés.
+- [x] 167 Vitest + 3 PostgreSQL jetable PASS ; navigateur fonction isolée PASS, module10 JSON strictement identique avant/après ; compilation automatique OK ; rapport docs/repair-admin-save-p0520-2026-10-26.md.
+- [ ] Vraie sauvegarde et réouverture Cloud de l'éditeur NON PROUVÉES : attend publication autorisée et protocole sans modification de questions réelles ; aucune publication effectuée.
+
 ## Nationale TAXI Partie 1 — 26/10, ajout autorisé sans publication
 - [x] Inventaire canonique complet des 64 questions/réponses, comparaison des 11 thèmes et divergences officielles : docs/audit-nationale-taxi-partie1-2026-10-26.md.
 - [x] Coder 25 questions nouvelles dans une proposition interactive séparée de l'éditeur du module 10 ; 64 originaux et source active intacts.
