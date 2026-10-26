@@ -69,7 +69,7 @@ describe('affichage national TA exclusivement, sans modifier les chemins TAXI/en
     expect(taNational().find(row => row.legacy_question_id === 71010)?.choix[0].texte).toBe('DGFIP');
   });
   it('lit la source actuelle sans la liste TA ancienne non rattachée', () => {
-    expect(canonicalQuizIdsForNationalDisplay(27, ['bilan-exercices-taxi'])).toEqual(['bilan-exercices-taxi', 'reglementation-nationale']);
+    expect(canonicalQuizIdsForNationalDisplay(27, ['bilan-exercices-taxi'])).toEqual(['bilan-exercices-taxi', 'reglementation-nationale', 'reglementation-locale']);
     expect(canonicalQuizIdsForDisplay(27, ['bilan-exercices-taxi'])).toEqual(['bilan-exercices-taxi']);
     expect(selectBilanTaxiNationaleRows(27, rows)).toBe(rows);
   });
