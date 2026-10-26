@@ -1,4 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot } from "@/lib/bilanTaxiNationaleSelection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
@@ -4687,8 +4688,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // lignes canoniques que le Fournisseur. Les copies JSON du module ne servent
   // plus qu'à conserver la structure du cours et les anciens identifiants.
   useEffect(() => {
-    const quizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)];
-    if (!editorStateHydrated || !quizIds?.length) return;
+    const configuredQuizIds = CANONICAL_QUIZ_IDS_BY_MODULE_ID[Number(module.id)];
+    if (!editorStateHydrated || !configuredQuizIds?.length) return;
+    const quizIds = canonicalQuizIdsForDisplay(Number(module.id), configuredQuizIds);
     let cancelled = false;
     let relectureEnAttente = false;
 
@@ -4726,7 +4728,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       const sourceRows = (data ?? []) as unknown as CanonicalQuestionRow[];
       const moduleBindings = (bindings ?? []) as unknown as CanonicalQuestionBinding[];
-      const rows = mapCanonicalRowsToModuleExercises(sourceRows, moduleBindings);
+      let selectedRows: CanonicalQuestionRow[];
+      try {
+        selectedRows = selectBilanTaxiNationaleRows(Number(module.id), sourceRows);
+      } catch (selectionError) {
+        console.error("[CanonicalQuiz] Sélection TAXI indisponible", selectionError);
+        return; // Lecture incohérente : conserver l'affichage précédent, jamais fabriquer un vide.
+      }
+      const rows = mapCanonicalRowsToModuleExercises(selectedRows, moduleBindings);
       const sectionIds = new Set(moduleBindings.map((binding) => Number(binding.exercise_id)));
       if (questionsEnEditionOuvertes > 0) {
         relectureEnAttente = true;
@@ -6001,7 +6010,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const { data: freshRows, error: freshError } = await supabase
             .from("quiz_questions")
             .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active,updated_at")
-            .in("quiz_id", canonicalQuizIds)
+            .in("quiz_id", canonicalQuizIdsForDisplay(Number(dataToSave.module_id), canonicalQuizIds))
             .order("section_id")
             .order("position");
           if (freshError) throw freshError;
@@ -6045,7 +6054,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // P0409 conclut que la suppression est déjà acquise ou n'a rien à rejouer.
         const confirmedRows = await readCanonicalRows();
         const mappedConfirmedRows = mapCanonicalRowsToModuleExercises(
-          confirmedRows,
+          selectBilanTaxiNationaleRows(Number(dataToSave.module_id), confirmedRows),
           (bindings ?? []) as unknown as CanonicalQuestionBinding[],
         );
         canonicalRowsRef.current = mappedConfirmedRows;
@@ -6497,7 +6506,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const snap = etat.parExo[Number(e.id)];
           // Corrections de l'éditeur (texte, réponses, photo) visibles pendant un passage en cours ;
           // liste/ordre du passage figé et réponses élève inchangés.
-          return snap ? { ...e, questions: questionsSnapshotCorrigees(snap.questions as any, e.questions as any) as any } : e;
+          return snap ? { ...e, questions: preserveTaxiNationalSnapshot(Number(module.id), Number(e.id))
+            ? snap.questions as any
+            : questionsSnapshotCorrigees(snap.questions as any, e.questions as any) as any } : e;
         }),
       };
     })();
