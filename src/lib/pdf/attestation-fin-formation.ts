@@ -229,7 +229,7 @@ export async function generateAttestationFinFormation(
 
   // Formation box — hauteur selon le contenu réellement écrit
   const boxHeight = estElearning
-    ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8) + (options.datesSignatures ? 16 : 0)
+    ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8)
     : 74;
   doc.setFillColor(232, 245, 233);
   doc.roundedRect(15, y - 5, pageWidth - 30, boxHeight, 3, 3, 'F');
@@ -240,12 +240,6 @@ export async function generateAttestationFinFormation(
 
   if (estElearning) {
     doc.setFont('helvetica', 'normal');
-    if (options.datesSignatures) {
-      doc.text(`Première signature : ${formatDateLongueFrancaise(options.datesSignatures.debut)}`, 20, y + 5);
-      y += 8;
-      doc.text(`Dernière signature : ${formatDateLongueFrancaise(options.datesSignatures.fin)}`, 20, y + 5);
-      y += 8;
-    }
     if (tauxJalons == null || !lignesJalons) {
       doc.text('Taux total de jalons : indisponible (lecture impossible, aucun chiffre fabriqué)', 20, y + 5);
       y += 8;
@@ -261,13 +255,13 @@ export async function generateAttestationFinFormation(
       }
       doc.setFontSize(11);
     }
-    y += boxHeight - (lignesJalons ? lignesJalons.length * 6 : 8) - 18 - (options.datesSignatures ? 16 : 0);
+    y += boxHeight - (lignesJalons ? lignesJalons.length * 6 : 8) - 18;
   } else {
     // Présentiel : dates réelles en toutes lettres et durée totale.
     doc.setFont('helvetica', 'normal');
-    doc.text(`${options.datesSignatures ? 'Première signature' : 'Premier jour de formation'} : ${formatDateLongueFrancaise(datesPresentiel.debut)}`, 20, y + 5);
+    doc.text(`Date de début de formation : ${formatDateLongueFrancaise(datesPresentiel.debut)}`, 20, y + 5);
     y += 8;
-    doc.text(`${options.datesSignatures ? 'Dernière signature' : 'Dernier jour de formation (pratique incluse)'} : ${formatDateLongueFrancaise(datesPresentiel.fin)}`, 20, y + 5);
+    doc.text(`Date de fin de formation : ${formatDateLongueFrancaise(datesPresentiel.fin)}`, 20, y + 5);
     y += 8;
     doc.text(`Lieu : ${COMPANY_INFO.address}`, 20, y + 5);
     y += 12;
