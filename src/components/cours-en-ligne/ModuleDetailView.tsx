@@ -1,4 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
 import NationalePartie1Proposition from './NationalePartie1Proposition';
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
@@ -603,41 +604,7 @@ function sansMeta(q: any) {
  * (ou ajoutées). Les autres questions restent exactement celles du serveur.
  */
 function appliquerSeulementQuestionsModifiees<T extends { exercices?: any[] }>(data: T, serveur: any): T {
-  const exosServeur = Array.isArray(serveur?.exercices) ? serveur.exercices : null;
-  if (!data || !Array.isArray(data.exercices) || !exosServeur) return data;
-  const localParId = new Map<number, any>(data.exercices.map((e: any) => [Number(e?.id), e]));
-  const resultat: any[] = [];
-  for (const srv of exosServeur) {
-    const loc = localParId.get(Number(srv?.id));
-    if (!loc) { resultat.push(srv); continue; }
-    const exId = Number(srv.id);
-    const srvQs: any[] = Array.isArray(srv.questions) ? srv.questions : [];
-    const locQs: any[] = Array.isArray(loc.questions) ? loc.questions : [];
-    const locParId = new Map<number, any>(locQs.map((q: any) => [Number(q?.id), q]));
-    const supprimees = new Set<number>((Array.isArray(loc.deletedQuestionIds) ? loc.deletedQuestionIds : []).map(Number));
-    const qs: any[] = [];
-    for (const sq of srvQs) {
-      const id = Number(sq?.id);
-      const lq = locParId.get(id);
-      if (!lq) {
-        if (supprimees.has(id)) continue;
-        qs.push(sq);
-        continue;
-      }
-      qs.push(questionsModifieesSession.has(`${exId}-${id}`) ? lq : sq);
-    }
-    const srvIds = new Set(srvQs.map((q: any) => Number(q?.id)));
-    for (const lq of locQs) {
-      const k = `${exId}-${Number(lq?.id)}`;
-      if (!srvIds.has(Number(lq?.id)) && (questionsAjouteesSession.has(k) || questionsModifieesSession.has(k))) qs.push(lq);
-    }
-    const { questions: _ignore, ...metaLocal } = loc;
-    resultat.push({ ...metaLocal, questions: qs });
-  }
-  // Exercices ajoutés dans la séance (déjà filtrés par garderExercicesDuServeur)
-  const srvExIds = new Set(exosServeur.map((e: any) => Number(e?.id)));
-  for (const e of data.exercices) if (!srvExIds.has(Number(e?.id))) resultat.push(e);
-  return { ...data, exercices: resultat };
+  return applyQuestionSaveIntent(data, serveur, questionsModifieesSession, questionsAjouteesSession, new Set());
 }
 
 let questionsEnEditionOuvertes = 0;
@@ -5676,6 +5643,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const exercicesAjoutesSessionRef = useRef<Set<number>>(new Set());
+  // Only this mounted editor can issue deletions; hydrated tombstones are not commands.
+  const questionsSupprimeesSessionRef = useRef<Set<string>>(new Set());
   // À l'ouverture : l'affichage part aussi de la version serveur (retire les
   // exercices d'une vieille copie embarquée qui n'existent plus sur le serveur).
   const nettoyageOuvertureFaitRef = useRef<number | null>(null);
@@ -5704,12 +5673,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         previousModuleData = currentRow?.module_data ?? null;
       } catch (readError) {
         console.warn("[ModuleEditor] Lecture pré-sauvegarde impossible:", readError);
+        throw readError;
       }
       // Le serveur est la source : on n'envoie jamais un exercice absent du serveur
       // (vieille copie embarquée dans l'application), sauf s'il a été ajouté
       // volontairement dans cette session.
       normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
-      normalizedModuleData = appliquerSeulementQuestionsModifiees(normalizedModuleData, previousModuleData);
+      normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, previousModuleData, questionsModifieesSession, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
@@ -5741,7 +5711,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ),
         );
         normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, latestRow?.module_data ?? null, exercicesAjoutesSessionRef.current);
-        normalizedModuleData = appliquerSeulementQuestionsModifiees(normalizedModuleData, latestRow?.module_data ?? null);
+        normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, latestRow?.module_data ?? null, questionsModifieesSession, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
 
         console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
           moduleId: dataToSave.module_id,
@@ -5972,6 +5942,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           if (!exercise) continue;
           const deletedIds = new Set((exercise.deletedQuestionIds ?? []).map(Number));
           for (const deletedId of deletedIds) {
+            if (!questionsSupprimeesSessionRef.current.has(`${Number(exercise.id)}-${deletedId}`)) continue;
             const current = rowByKey.get(`${binding.quiz_id}:${binding.section_id}:${deletedId}`);
             if (current?.active) {
               actions.push({
@@ -5986,13 +5957,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             }
           }
           (exercise.questions ?? []).forEach((question, index) => {
+            if (!isCanonicalQuestionSaveIntent(Number(exercise.id), Number(question.id), questionsModifieesSession, questionsAjouteesSession)) return;
             const current = rowByKey.get(`${binding.quiz_id}:${binding.section_id}:${question.id}`);
             // Une ligne canonique inactive est une suppression définitive. Une ancienne
             // copie encore présente dans module_editor_state ne doit jamais devenir un
             // upsert implicite susceptible de la réactiver.
             if (current && !current.active) return;
             const nextComparable = {
-              position: index + 1,
+              position: current ? Number(current.position) : index + 1,
               enonce: question.enonce,
               choix: question.choix ?? [],
               image: question.image ?? null,
@@ -6432,6 +6404,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const updated: any = { ...e, questions: stampedQuestions };
         // Track deleted question IDs so mergeSourceExercices won't restore them from source
         if (deletedQuestionId != null) {
+          questionsSupprimeesSessionRef.current.add(`${Number(exerciceId)}-${Number(deletedQuestionId)}`);
           const existing = Array.isArray((e as any).deletedQuestionIds) ? (e as any).deletedQuestionIds : [];
           updated.deletedQuestionIds = [...new Set([...existing, deletedQuestionId])];
         }
