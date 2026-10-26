@@ -4303,6 +4303,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
   const canonicalRowsRef = useRef<CanonicalQuestionRow[]>([]);
   const canonicalSectionIdsRef = useRef<Set<number>>(new Set());
+  // Bilan = somme exacte des questions du cours (matières sans quiz canonique :
+  // T3P, Gestion). Projection d'affichage en mémoire, jamais réécrite en base.
+  const coursSommeExercicesRef = useRef<any[] | null>(null);
+  const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
+    const config = BILAN_SOMME_COURS_SOURCES[Number(module.id)];
+    const coursExercices = coursSommeExercicesRef.current;
+    if (!config || !coursExercices || !Array.isArray(data?.exercices)) return data;
+    try {
+      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices) as any };
+    } catch (projectionError) {
+      // Source indisponible : conserver l'affichage précédent, jamais fabriquer un vide.
+      console.error("[BilanSommeCours] Projection indisponible", projectionError);
+      return data;
+    }
+  };
   // Statut de la connexion Realtime (visible uniquement côté apprenant)
   const [realtimeStatus, setRealtimeStatus] = useState<string>("CONNECTING");
   const [realtimeReconnectKey, setRealtimeReconnectKey] = useState(0);
@@ -5090,11 +5105,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 resolvedModuleData = applyManualExerciseEditsFromSource(resolvedModuleData, syncedVtcBilan);
               }
             }
-            setModuleData((prev) => applyCanonicalQuestionsToModule(
+            setModuleData((prev) => appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(
               preserveNewerLocalQuestionEdits(resolvedModuleData, prev, "initial module_editor_state load"),
               canonicalRowsRef.current,
               canonicalSectionIdsRef.current,
-            ));
+            )));
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
@@ -5556,11 +5571,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // Only update if data actually changed
         let didUpdate = false;
         setModuleData((prev) => {
-          const authoritativeResolved = applyCanonicalQuestionsToModule(
+          const authoritativeResolved = appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(
             preserveNewerLocalQuestionEdits(resolved, prev, "visibility module_editor_state refresh"),
             canonicalRowsRef.current,
             canonicalSectionIdsRef.current,
-          );
+          ));
           if (JSON.stringify(prev.exercices) === JSON.stringify(authoritativeResolved.exercices) &&
               JSON.stringify(prev.cours) === JSON.stringify(authoritativeResolved.cours)) {
             return prev;
@@ -5685,6 +5700,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // (vieille copie embarquée dans l'application), sauf s'il a été ajouté
       // volontairement dans cette session.
       normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
+      // La projection « somme des cours » est un affichage : avant toute
+      // écriture, les exercices projetés reprennent exactement la version serveur.
+      normalizedModuleData = {
+        ...normalizedModuleData,
+        exercices: retablirExercicesProjetesDuServeur(
+          Number(dataToSave.module_id),
+          (normalizedModuleData.exercices ?? []) as any,
+          (previousModuleData as any)?.exercices ?? null,
+        ) as any,
+      };
       normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, previousModuleData, questionsModifieesSession, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
@@ -6055,7 +6080,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // P0409 conclut que la suppression est déjà acquise ou n'a rien à rejouer.
         const confirmedRows = await readCanonicalRows();
         const mappedConfirmedRows = mapCanonicalRowsToModuleExercises(
-          selectBilanTaxiNationaleRows(Number(dataToSave.module_id), confirmedRows),
+          selectBilanNationalDisplayRows(Number(dataToSave.module_id), confirmedRows),
           (bindings ?? []) as unknown as CanonicalQuestionBinding[],
         );
         canonicalRowsRef.current = mappedConfirmedRows;
