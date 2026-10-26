@@ -45,3 +45,15 @@ export function lignesJalonsAttestation(tableau: ReturnType<typeof tableauAffich
 
 export const formatPctAttestation = (n: number) =>
   `${n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
+
+/** Recorded course dates plus practical training dates, never the exam/access deadline. */
+export function datesAttestationPresentiel(
+  sessions: Array<{ date_debut?: string | null; date_fin?: string | null }>,
+  pratique: Array<{ date?: string | null }>,
+) {
+  const valide = (v?: string | null) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.slice(0, 10)) ? v.slice(0, 10) : null;
+  const debuts = sessions.map((s) => valide(s.date_debut)).filter((v): v is string => !!v);
+  const fins = sessions.map((s) => valide(s.date_fin ?? s.date_debut)).filter((v): v is string => !!v);
+  const datesPratique = pratique.map((s) => valide(s.date)).filter((v): v is string => !!v);
+  return { debut: [...debuts, ...datesPratique].sort()[0] ?? null, fin: [...fins, ...datesPratique].sort().at(-1) ?? null };
+}

@@ -1,8 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { attestationEstElearning, formatDateLongueFrancaise, formatPctAttestation, lignesJalonsAttestation } from '@/lib/pdf/attestation-fin-formation-contenu';
+import { attestationEstElearning, datesAttestationPresentiel, formatDateLongueFrancaise, formatPctAttestation, lignesJalonsAttestation } from '@/lib/pdf/attestation-fin-formation-contenu';
 
 describe('attestation fin de formation — contenu selon le mode', () => {
+  it('retient le premier cours et le dernier jour pratique, pas la fin d’accès du 31 octobre', () => {
+    expect(datesAttestationPresentiel([{ date_debut: '2026-09-14', date_fin: '2026-09-25' }], [{ date: '2026-10-22' }])).toEqual({ debut: '2026-09-14', fin: '2026-10-22' });
+  });
+  it('ne fabrique aucune date sans cours ou pratique enregistrés', () => {
+    expect(datesAttestationPresentiel([], [])).toEqual({ debut: null, fin: null });
+  });
   it('écrit les dates en toutes lettres françaises, jamais au format ISO', () => {
     expect(formatDateLongueFrancaise('2026-09-14')).toBe('14 septembre 2026');
     expect(formatDateLongueFrancaise('2026-10-31')).toBe('31 octobre 2026');

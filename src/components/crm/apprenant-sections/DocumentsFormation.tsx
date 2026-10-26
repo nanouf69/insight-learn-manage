@@ -101,21 +101,19 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         toast.success("Attestation d'inscription générée");
       } else if (type === 'fin-formation') {
         // Récupérer les sessions de l'apprenant
-        const { data: saRows } = await supabase
+        const { data: saRows, error: sessionsError } = await supabase
           .from('session_apprenants')
-          .select('session_id, sessions(id, type_session, heure_debut, heure_fin, date_debut, date_fin)')
+          .select('session_id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, sessions(id, nom, types_apprenant, heures_total, statut, type_session, heure_debut, heure_fin, date_debut, date_fin)')
           .eq('apprenant_id', apprenant.id);
-        const sessions = (saRows || []).map((r: any) => r.sessions).filter(Boolean);
-
-        // Récupérer les connexions e-learning
-        const { data: connexions } = await supabase
-          .from('apprenant_connexions')
-          .select('started_at, ended_at, last_seen_at')
-          .eq('apprenant_id', apprenant.id)
-          .not('ended_at', 'is', null);
+        if (sessionsError) throw sessionsError;
+        const inscriptions = (saRows || []).filter((r: any) => r.liste_attente !== true && r.emargements_exclus !== true && r.sessions && !/annul/i.test(r.sessions.statut || ''));
+        const sessions = inscriptions.map((r: any) => ({ ...r.sessions,
+          date_debut: [r.sessions.date_debut, r.date_debut].filter(Boolean).sort().at(-1),
+          date_fin: [r.sessions.date_fin, r.date_fin_personnalisee || r.date_fin].filter(Boolean).sort()[0],
+        }));
 
         const pratiqueDurations = await fetchPratiqueSlotDetails(apprenant.id);
-        await generateAttestationFinFormation(apprenant, sessions, connexions || [], pratiqueDurations);
+        await generateAttestationFinFormation(apprenant, sessions, [], pratiqueDurations);
         toast.success("Attestation de fin de formation générée");
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);

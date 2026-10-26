@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Rectification attestation Documents de formation — 26/10 17:16 UTC
+- [ ] Présentiel : premier jour des cours, dernier jour incluant la pratique ; supprimer les heures e-learning du PDF, total présentiel seul.
+- [ ] Signature et tampon privés de Documents dans la nouvelle attestation ; originaux préservés, aucun envoi/publication.
+- [ ] Vérifier dates/heures et PDF téléchargé depuis la fiche admin.
+
 ## Signature et tampon séparés — 26/10
 - [x] Extraction fidèle du PDF fourni, PNG transparents ajoutés comme nouveaux objets privés admin uniquement, sans remplacement.
 - [x] Onglet adjacent à « À remplir / signer », téléchargement séparé, insertion/déplacement/taille dans une nouvelle version PDF locale ; circuit destinataire et originaux inchangés.

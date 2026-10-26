@@ -6,9 +6,9 @@ import { isPratiqueType } from '@/lib/sessionTypes';
 import { chargerCalculJalons } from '@/lib/jalonsPedagogiques';
 import { chargerEtatGel } from '@/lib/releveJalonsGel';
 import { tableauAffichageJalons } from '@/lib/affichageJalons';
-import { attestationEstElearning, formatDateLongueFrancaise, formatPctAttestation, lignesJalonsAttestation } from '@/lib/pdf/attestation-fin-formation-contenu';
-import signatureImage from '@/assets/signature-dirigeant.png';
-import tamponImage from '@/assets/tampon-entreprise.png';
+import { attestationEstElearning, datesAttestationPresentiel, formatDateLongueFrancaise, formatPctAttestation, lignesJalonsAttestation } from '@/lib/pdf/attestation-fin-formation-contenu';
+import { chargerElementAdmin } from '@/lib/documentAdminElements';
+import { heuresTheorieInscrites } from '@/lib/sessionHeures';
 import logoImage from '@/assets/logo-ftransport.png';
 
 const COMPANY_INFO = {
@@ -49,6 +49,7 @@ interface SessionInfo {
 
 interface PratiqueDurationInfo {
   minutes?: number | null;
+  date?: string | null;
 }
 
 interface ConnexionInfo {
@@ -130,6 +131,8 @@ export async function generateAttestationFinFormation(
   connexions: ConnexionInfo[] = [],
   pratiqueDurations: PratiqueDurationInfo[] = [],
 ) {
+  // Fail before download if either official private image cannot be read.
+  const [signatureImage, tamponImage] = await Promise.all([chargerElementAdmin('signature'), chargerElementAdmin('tampon')]);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
@@ -188,8 +191,11 @@ export async function generateAttestationFinFormation(
   // Calcul des heures
   const practicalSessions = sessions.filter(s => isPratiqueType(s.type_session));
   const heuresPratique = calculateSessionHours(sessions, 'pratique', pratiqueDurations);
-  const heuresElearning = calculateElearningHours(connexions);
-  const heuresTotal = heuresPratique + heuresElearning;
+  const type = String(apprenant.type_apprenant || '').toLowerCase();
+  const filiere = /^ta(?:$|-)/.test(type) ? 'ta' : type.includes('taxi') ? 'taxi' : 'vtc';
+  const heuresTheorie = heuresTheorieInscrites(sessions.map((s) => ({ sessions: s })), filiere);
+  const heuresTotal = heuresPratique + heuresTheorie;
+  const datesPresentiel = datesAttestationPresentiel(sessions, pratiqueDurations);
 
   const formationName = getFormationName(apprenant.type_apprenant);
   const estElearning = attestationEstElearning(apprenant);
@@ -222,7 +228,7 @@ export async function generateAttestationFinFormation(
   // Formation box — hauteur selon le contenu réellement écrit
   const boxHeight = estElearning
     ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8)
-    : 80;
+    : 64;
   doc.setFillColor(232, 245, 233);
   doc.roundedRect(15, y - 5, pageWidth - 30, boxHeight, 3, 3, 'F');
 
@@ -251,16 +257,16 @@ export async function generateAttestationFinFormation(
   } else {
     // Présentiel : dates réelles en toutes lettres et durée totale.
     doc.setFont('helvetica', 'normal');
-    doc.text(`Date de début : ${formatDateLongueFrancaise(apprenant.date_debut_formation)}`, 20, y + 5);
+    doc.text(`Premier jour de formation : ${formatDateLongueFrancaise(datesPresentiel.debut)}`, 20, y + 5);
     y += 8;
-    doc.text(`Date de fin : ${formatDateLongueFrancaise(apprenant.date_fin_formation)}`, 20, y + 5);
+    doc.text(`Dernier jour de formation (pratique incluse) : ${formatDateLongueFrancaise(datesPresentiel.fin)}`, 20, y + 5);
     y += 8;
     doc.text(`Lieu : ${COMPANY_INFO.address}`, 20, y + 5);
     y += 12;
 
     // Détail des heures
     doc.setFont('helvetica', 'bold');
-    doc.text(`Durée de la formation à distance (e-learning) : ${formatHours(heuresElearning)}`, 20, y + 5);
+    doc.text(`Durée de la formation théorique en présentiel : ${formatHours(heuresTheorie)}`, 20, y + 5);
     y += 8;
     doc.text(`Durée de la formation pratique : ${formatHours(heuresPratique)} (${practicalSessions.length} session${practicalSessions.length > 1 ? 's' : ''})`, 20, y + 5);
     y += 10;
@@ -273,7 +279,7 @@ export async function generateAttestationFinFormation(
   }
   
   // Saut de page si le détail des jalons approche du bas de page.
-  if (y > 230) {
+  if (y > 185) {
     doc.addPage();
     y = 30;
   }
@@ -295,15 +301,15 @@ export async function generateAttestationFinFormation(
   
   // Signature
   try {
-    doc.addImage(signatureImage, 'PNG', pageWidth - 80, y, 50, 25);
-    y += 30;
+    doc.addImage(signatureImage, 'PNG', pageWidth - 80, y, 60, 10);
+    y += 16;
   } catch (e) {
     y += 30;
   }
   
   // Tampon
   try {
-    doc.addImage(tamponImage, 'PNG', pageWidth - 90, y, 60, 30);
+    doc.addImage(tamponImage, 'PNG', pageWidth - 90, y, 65, 22);
   } catch (e) {
     console.log('Tampon non chargé');
   }
