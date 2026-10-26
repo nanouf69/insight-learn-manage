@@ -93,7 +93,7 @@ export function DocumentsASigner() {
       const image = await chargerElementAdmin(id);
       const element = DOCUMENT_ADMIN_ELEMENTS.find((item) => item.id === id);
       if (!element) return;
-      setElementsLocaux((prev) => [...prev, { image, champ: { id: newChampId(), type: "signature", label: element.label, page: currentPage, x: 60, y: 75, w: element.w, h: element.h, requis: false } }]);
+      setElementsLocaux((prev) => [...prev, { image, champ: { id: newChampId(), type: "signature", label: element.label, page: currentPage, x: 60, y: id === "signature" ? 75 : 85, w: element.w, h: element.h, requis: false } }]);
     } catch (error) {
       toast({ title: "Insertion impossible", description: error instanceof Error ? error.message : "Image indisponible", variant: "destructive" });
     } finally { setElementLoading(false); }
