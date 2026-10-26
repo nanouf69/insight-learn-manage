@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Attestation fin de formation — 26/10
+- [x] Présentiel : dates en toutes lettres françaises + durée totale ; e-learning : uniquement le taux total de jalons détaillé (relevé figé prioritaire, erreur de lecture = « indisponible », jamais de chiffre fabriqué).
+- [x] 5 tests PASS, tsgo OK ; PDF réels vérifiés dans l'aperçu : Yasin LAIDAOUI (présentiel, dates longues + 61h48) et Hedy Khalfoun (e-learning, taux 41,7 % + détail par jalon, sans dates ni heures). NON PUBLIÉ.
+
 ## Bilan = somme des cours par matière — 26/10, accord explicite
 - [x] Locale TAXI+TA : projection canonique 73/76/74/75 (29+29+22+25=105) vers section 204, identités historiques conservées, 242 lignes intactes en base.
 - [x] T3P (133) et Gestion (150) : projection JSON depuis module 10 vers module 9, identités par source_exercice_id/source_question_id, protection d'enregistrement (version serveur rétablie avant toute sauvegarde).

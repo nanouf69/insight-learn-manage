@@ -1,8 +1,12 @@
 import jsPDF from 'jspdf';
-import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import { isPratiqueType } from '@/lib/sessionTypes';
+import { chargerCalculJalons } from '@/lib/jalonsPedagogiques';
+import { chargerEtatGel } from '@/lib/releveJalonsGel';
+import { tableauAffichageJalons } from '@/lib/affichageJalons';
+import { attestationEstElearning, formatDateLongueFrancaise, formatPctAttestation, lignesJalonsAttestation } from '@/lib/pdf/attestation-fin-formation-contenu';
 import signatureImage from '@/assets/signature-dirigeant.png';
 import tamponImage from '@/assets/tampon-entreprise.png';
 import logoImage from '@/assets/logo-ftransport.png';
@@ -186,38 +190,94 @@ export async function generateAttestationFinFormation(
   const heuresPratique = calculateSessionHours(sessions, 'pratique', pratiqueDurations);
   const heuresElearning = calculateElearningHours(connexions);
   const heuresTotal = heuresPratique + heuresElearning;
-  
-  // Formation box — agrandir pour les heures
-  const boxHeight = 80;
+
+  const formationName = getFormationName(apprenant.type_apprenant);
+  const estElearning = attestationEstElearning(apprenant);
+
+  // E-learning : seul le taux total de jalons détaillé est écrit (lecture seule,
+  // relevé figé prioritaire ; aucune date ni durée sur l'attestation).
+  let lignesJalons: ReturnType<typeof lignesJalonsAttestation> | null = null;
+  let tauxJalons: number | null = null;
+  if (estElearning && apprenant.id) {
+    try {
+      const etatGel = await chargerEtatGel(apprenant.id);
+      const gel = etatGel?.etat === 'fige' ? etatGel.gel : null;
+      const calcul = await chargerCalculJalons({
+        apprenantId: apprenant.id,
+        typeApprenant: apprenant.type_apprenant,
+        formationChoisie: apprenant.formation_choisie,
+        gel,
+      });
+      const tableau = tableauAffichageJalons(calcul);
+      tauxJalons = tableau.taux;
+      lignesJalons = lignesJalonsAttestation(tableau);
+    } catch (lectureError) {
+      // Erreur de lecture ≠ zéro : aucun taux fabriqué sur un document officiel.
+      console.error('[Attestation] Taux de jalons indisponible', lectureError);
+      lignesJalons = null;
+      tauxJalons = null;
+    }
+  }
+
+  // Formation box — hauteur selon le contenu réellement écrit
+  const boxHeight = estElearning
+    ? 30 + (lignesJalons ? lignesJalons.length * 6 : 8)
+    : 80;
   doc.setFillColor(232, 245, 233);
   doc.roundedRect(15, y - 5, pageWidth - 30, boxHeight, 3, 3, 'F');
-  
-  const formationName = getFormationName(apprenant.type_apprenant);
+
   doc.setFont('helvetica', 'bold');
   doc.text(`Formation : ${formationName}`, 20, y + 5);
   y += 12;
+
+  if (estElearning) {
+    doc.setFont('helvetica', 'normal');
+    if (tauxJalons == null || !lignesJalons) {
+      doc.text('Taux total de jalons : indisponible (lecture impossible, aucun chiffre fabriqué)', 20, y + 5);
+      y += 8;
+    } else {
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Taux total de jalons : ${formatPctAttestation(tauxJalons)}`, 20, y + 5);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      for (const ligne of lignesJalons) {
+        doc.text(`- ${ligne.libelle} : ${formatPctAttestation(ligne.progression)} (poids ${formatPctAttestation(ligne.poidsAffiche)})`, 22, y + 5);
+        y += 6;
+      }
+      doc.setFontSize(11);
+    }
+    y += boxHeight - (lignesJalons ? lignesJalons.length * 6 : 8) - 18;
+  } else {
+    // Présentiel : dates réelles en toutes lettres et durée totale.
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date de début : ${formatDateLongueFrancaise(apprenant.date_debut_formation)}`, 20, y + 5);
+    y += 8;
+    doc.text(`Date de fin : ${formatDateLongueFrancaise(apprenant.date_fin_formation)}`, 20, y + 5);
+    y += 8;
+    doc.text(`Lieu : ${COMPANY_INFO.address}`, 20, y + 5);
+    y += 12;
+
+    // Détail des heures
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Durée de la formation à distance (e-learning) : ${formatHours(heuresElearning)}`, 20, y + 5);
+    y += 8;
+    doc.text(`Durée de la formation pratique : ${formatHours(heuresPratique)} (${practicalSessions.length} session${practicalSessions.length > 1 ? 's' : ''})`, 20, y + 5);
+    y += 10;
+
+    // Total
+    doc.setFontSize(12);
+    doc.text(`Durée totale de la formation : ${formatHours(heuresTotal)}`, 20, y + 5);
+    doc.setFontSize(11);
+    y += boxHeight - 48; // position after box
+  }
   
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Date de début : ${apprenant.date_debut_formation || '-'}`, 20, y + 5);
-  y += 8;
-  doc.text(`Date de fin : ${apprenant.date_fin_formation || '-'}`, 20, y + 5);
-  y += 8;
-  doc.text(`Lieu : ${COMPANY_INFO.address}`, 20, y + 5);
-  y += 12;
-  
-  // Détail des heures
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Durée de la formation à distance (e-learning) : ${formatHours(heuresElearning)}`, 20, y + 5);
-  y += 8;
-  doc.text(`Durée de la formation pratique : ${formatHours(heuresPratique)} (${practicalSessions.length} session${practicalSessions.length > 1 ? 's' : ''})`, 20, y + 5);
-  y += 10;
-  
-  // Total
-  doc.setFontSize(12);
-  doc.text(`Durée totale de la formation : ${formatHours(heuresTotal)}`, 20, y + 5);
-  doc.setFontSize(11);
-  y += boxHeight - 48; // position after box
-  
+  // Saut de page si le détail des jalons approche du bas de page.
+  if (y > 230) {
+    doc.addPage();
+    y = 30;
+  }
+
   // Mention
   y += 10;
   doc.setFont('helvetica', 'italic');
