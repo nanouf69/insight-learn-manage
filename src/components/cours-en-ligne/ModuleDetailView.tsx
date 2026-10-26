@@ -1,4 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import NationalePartie1Proposition from './NationalePartie1Proposition';
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
@@ -10220,6 +10221,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 partNumber={exercicePartNumberById.get(Number(exo.id)) ?? null}
               />
             ))}
+            {Number(module.id) === 10 && !studentOnly && <NationalePartie1Proposition />}
           </div>
         </TabsContent>
 
