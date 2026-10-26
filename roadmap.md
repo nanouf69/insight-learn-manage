@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Nationale TAXI Partie 1 — 26/10, ajout autorisé sans publication
+- [x] Inventaire canonique complet des 64 questions/réponses, comparaison des 11 thèmes et divergences officielles : docs/audit-nationale-taxi-partie1-2026-10-26.md.
+- [x] Coder 25 questions nouvelles dans une proposition interactive séparée de l'éditeur du module 10 ; 64 originaux et source active intacts.
+- [x] 83 tests distincts ciblés, ordinateur/téléphone aperçu isolé, saisie/restauration/correction ; compilation automatique OK, aucune écriture Cloud ni publication.
+- [ ] Activation dans l'exercice élève et sauvegarde Cloud NON PROUVÉES : bloquées par l'absence d'autorisation de publication et le partage canonique modules 10/24/40/42 ; revue serveur gel/volumes requise avant activation.
+
 ## Revue 8beeefc1 — délais français, 24/10
 - [x] Corriger uniquement la classification délai/48h et codes SQL temporaires ; conserver les anciennes files bloquées.
 - [x] Tests réels avant/après (16 échecs avant, 54/54 réussites après), journal ciblé ; aucune requête production/publication. Compilation automatique OK ; typecheck manuel NON EXÉCUTÉ (interdit par l’environnement).
