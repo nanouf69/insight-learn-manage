@@ -81,26 +81,18 @@ export function selectBilanTaxiLocaleRows<T extends BilanCanonicalRow>(
 
 /** Projection complète du bilan TAXI : nationale (203) puis locale (204).
  * Chaque projection ne s'applique que si sa source canonique est réellement
- * chargée et cohérente ; une lecture partielle ne doit jamais masquer l'autre
- * matière ni l'affichage précédent. */
+ * chargée ; une source chargée mais incohérente lève une erreur et l'appelant
+ * conserve l'affichage précédent, jamais un affichage fabriqué. */
 export function selectBilanTaxiDisplayRows<T extends BilanCanonicalRow>(
   moduleId: number,
   rows: T[],
 ): T[] {
   let result = rows;
   if (rows.some(row => row.quiz_id === "reglementation-nationale")) {
-    try {
-      result = selectBilanTaxiNationaleRows(moduleId, result);
-    } catch {
-      return rows;
-    }
+    result = selectBilanTaxiNationaleRows(moduleId, result);
   }
   if (rows.some(row => row.quiz_id === "reglementation-locale")) {
-    try {
-      result = selectBilanTaxiLocaleRows(moduleId, result);
-    } catch {
-      return result;
-    }
+    result = selectBilanTaxiLocaleRows(moduleId, result);
   }
   return result;
 }
