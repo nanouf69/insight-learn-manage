@@ -7,10 +7,11 @@
 - [ ] Vraie sauvegarde et réouverture Cloud de l'éditeur NON PROUVÉES : attend publication autorisée et protocole sans modification de questions réelles ; aucune publication effectuée.
 
 ## Nationale TAXI Partie 1 — rectification 26/10 : enrichir le COURS, pas les questions
-- [ ] Écarter la proposition des 25 questions 99–123 de l’interface, aucun changement des 64 questions canoniques.
-- [ ] Comparer question par question les 64 QCM au PowerPoint reçu (16 diapositives) ; indiquer positions, IDs, lacunes et divergences.
-- [ ] Préparer le cours Partie 1 enrichi avec explications, exemples et visuels dans le style existant, originaux conservés ; Partie 2 et suivi élèves inchangés.
-- [ ] Vérifier ressources, rendu et tests ciblés ; aucune écriture Cloud ni publication.
+- [x] Proposition 25 questions 99–123 retirée de l’interface ; anciens fichiers de travail non connectés, aucune suppression Cloud.
+- [x] Audit 64 positions/IDs/UUID versus PowerPoint reçu, 17 notions absentes et 11 insuffisantes ; docs/audit-cours-nationale-partie1-2026-10-26.md.
+- [x] PowerPoint/PDF 30 diapositives, 16 textes/images originaux identiques + 14 compléments avant conclusion ; relecture admin module10/cours10014 seulement, Partie2 et suivi élèves inchangés.
+- [x] 28 tests PASS, validation PPTX PASS, chevauchements corrigés puis 14 diapositives réinspectées ; compilation automatique OK, liens visibles ordinateur/téléphone. Fichiers publics valides ; téléchargement localhost renvoie HTML (assets non servis localement), donc téléchargement complet via aperçu NON PROUVÉ.
+- Activation élève/publication en attente d’accord ; actualité exhaustive des durées juridiques citées depuis le recueil officiel 2022 NON PROUVÉE. Aucun changement Cloud ni données élèves.
 
 ## Revue 8beeefc1 — délais français, 24/10
 - [x] Corriger uniquement la classification délai/48h et codes SQL temporaires ; conserver les anciennes files bloquées.
