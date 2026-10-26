@@ -5682,6 +5682,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       .catch(() => { nettoyageOuvertureFaitRef.current = null; });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, moduleData?.exercices?.length]);
+
+  // Bilan = somme des cours : charge une seule fois les exercices du module
+  // cours source (lecture seule) pour projeter les matières sans quiz canonique.
+  useEffect(() => {
+    const config = BILAN_SOMME_COURS_SOURCES[Number(module?.id)];
+    if (!config || !editorStateHydrated) return;
+    let cancelled = false;
+    loadModuleEditorStateRow(config.moduleCours)
+      .then((row) => {
+        if (cancelled || !row?.module_data?.exercices) return;
+        coursSommeExercicesRef.current = row.module_data.exercices as any;
+        setModuleData((prev) => appliquerSommeCoursBilan(prev));
+      })
+      .catch((lectureError) => console.error("[BilanSommeCours] Lecture du module cours impossible", lectureError));
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [module?.id, editorStateHydrated]);
+
   const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
     isSavingToDbRef.current = true;
     try {
