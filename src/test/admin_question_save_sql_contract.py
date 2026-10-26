@@ -14,7 +14,7 @@ PORT = '55449'
 USER = ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
 
 def sql(query):
-    return subprocess.check_output(['psql', '-X', '-q', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
+    return subprocess.check_output(['psql', '-X', '-q', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-v', 'VERBOSITY=verbose', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
 
 def literal(value):
     return "'" + json.dumps(value).replace("'", "''") + "'::jsonb"
@@ -35,7 +35,7 @@ try:
     initial = sql('SELECT module_data::text FROM module_editor_state WHERE module_id=10')
     incomplete = json.loads(json.dumps(data)); incomplete['exercices'][1]['questions'] = incomplete['exercices'][1]['questions'][:-7]
     try:
-        sql('\\set VERBOSITY verbose\n'+update(incomplete))
+        sql(update(incomplete))
         raise AssertionError('Seven removals unexpectedly accepted')
     except subprocess.CalledProcessError as error:
         assert 'P0520' in error.output and 'retirerait 7 questions' in error.output, error.output
@@ -50,7 +50,7 @@ try:
     print('PASS: after, targeted correct choice and explanation persisted, all IDs intact on fresh connection')
     incomplete3 = json.loads(json.dumps(corrected)); incomplete3['exercices'][1]['questions'] = incomplete3['exercices'][1]['questions'][:-3]
     try:
-        sql('\\set VERBOSITY verbose\n'+update(incomplete3))
+        sql(update(incomplete3))
         raise AssertionError('Three removals unexpectedly accepted')
     except subprocess.CalledProcessError as error:
         assert 'P0520' in error.output and 'maximum 2' in error.output
