@@ -191,15 +191,9 @@ export function selectLatestAttemptRows<T extends Record<string, any>>(rows: T[]
 
   const latestTentative = validRows.reduce((max, row) => Math.max(max, getAttemptNumber(row)), 1);
   const rowsForTentative = validRows.filter((row) => getAttemptNumber(row) === latestTentative);
-  const sorted = [...rowsForTentative].sort((a, b) => getScoreRowTimestamp(b) - getScoreRowTimestamp(a));
-  const latestTimestamp = getScoreRowTimestamp(sorted[0]);
-
-  const sameSessionRows = latestTimestamp > 0
-    ? sorted.filter((row) => {
-        const ts = getScoreRowTimestamp(row);
-        return ts <= 0 || latestTimestamp - ts <= SAME_ATTEMPT_SESSION_GAP_MS;
-      })
-    : sorted;
+  // Identité de passage = numéro de tentative enregistré, jamais une fenêtre horaire :
+  // un même passage peut s'étaler sur plusieurs jours (matières remises le 29/09 puis le 12/10).
+  const sameSessionRows = [...rowsForTentative].sort((a, b) => getScoreRowTimestamp(b) - getScoreRowTimestamp(a));
 
   const latestByMatiere = new Map<string, T>();
   sameSessionRows.forEach((row, index) => {
