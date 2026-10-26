@@ -603,10 +603,6 @@ function sansMeta(q: any) {
  * serveur et on n'y remplace que les questions touchées dans cette séance
  * (ou ajoutées). Les autres questions restent exactement celles du serveur.
  */
-function appliquerSeulementQuestionsModifiees<T extends { exercices?: any[] }>(data: T, serveur: any): T {
-  return applyQuestionSaveIntent(data, serveur, questionsModifieesSession, questionsAjouteesSession, new Set());
-}
-
 let questionsEnEditionOuvertes = 0;
 const EVENEMENT_EDITION_QUESTION_FERMEE = "editeur-question-fermee";
 
@@ -5756,7 +5752,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       } catch (confirmReadError) {
         console.warn("[ModuleEditor] Lecture confirmation sauvegarde impossible:", confirmReadError);
+        throw confirmReadError;
       }
+      if (!confirmedRow?.module_data) throw new Error("Sauvegarde non confirmée : relecture complète du module indisponible.");
 
       const savedAt = confirmedRow?.updated_at ?? persistedUpdatedAt;
 
