@@ -1,0 +1,286 @@
+[
+  {
+    "title": "ADS : décisions et liste d’attente",
+    "questions": [
+      14,
+      29,
+      54,
+      58
+    ],
+    "ids": [
+      19,
+      63,
+      79,
+      83
+    ],
+    "leftTitle": "Comprendre l’acte administratif",
+    "left": "L’autorité compétente fixe le nombre d’ADS et leur ressort par arrêté. Délivrance, renouvellement et retrait d’une ADS font également l’objet d’un arrêté.\nUn décret pose des règles générales : ce n’est pas l’acte individuel d’attribution de votre ADS.",
+    "rightTitle": "Une liste suivie, pas une inscription à vie",
+    "right": "La liste est communicable selon les règles applicables. L’inscription est valable un an : renouveler avant sa date anniversaire, avec preuve de réception.\nUne demande non renouvelée ou sans carte professionnelle valide cesse de figurer sur la liste.",
+    "example": "Exemple : inscription le 10 mai → renouvellement avant le 10 mai suivant. Ne pas confondre avec les trois mois du renouvellement de l’ADS.",
+    "source": "R3121-5 et R3121-13 ; forme des décisions : vérifier arrêté local — Code des transports",
+    "visual": "calendar"
+  },
+  {
+    "title": "Exploiter une ADS : deux régimes",
+    "questions": [
+      31,
+      33,
+      47,
+      52,
+      56
+    ],
+    "ids": [
+      65,
+      67,
+      72,
+      77,
+      81
+    ],
+    "leftTitle": "ADS du régime ancien",
+    "left": "Une ADS antérieure à la réforme peut être exploitée personnellement ou, dans le cadre légal, par des salariés, un locataire-gérant avec véhicule ou une coopérative.\nLa continuité de l’activité doit être prouvée : prêter une licence ne suffit pas.",
+    "rightTitle": "ADS du régime nouveau",
+    "right": "L’ADS récente est incessible, valable cinq ans renouvelables, et son titulaire l’exploite personnellement.\nUne solution admise pour une ancienne ADS ne doit pas être transposée automatiquement à une nouvelle ADS.",
+    "example": "Exemple : ADS attribuée le 15 janvier 2015 → régime nouveau ; vérifier l’échéance inscrite dans l’arrêté et demander le renouvellement au moins trois mois avant.",
+    "source": "L3121-1-2, L3121-2 ; R3121-14 — Code des transports",
+    "visual": "compare"
+  },
+  {
+    "title": "Cession : calculer sans confondre",
+    "questions": [
+      15,
+      16,
+      35,
+      50
+    ],
+    "ids": [
+      24,
+      25,
+      69,
+      75
+    ],
+    "leftTitle": "Attribution initiale : quinze ans",
+    "left": "Pour une ancienne ADS jamais cédée, la présentation d’un successeur à titre onéreux suppose quinze ans d’exploitation effective et continue après la délivrance, hors exception légale.\nCinq ans d’activité ne suffisent pas dans ce cas.",
+    "rightTitle": "Après une cession : cinq ans",
+    "right": "Pour une ADS ancienne déjà acquise à titre onéreux, le délai est de cinq ans depuis la mutation, sous réserve des conditions et exceptions légales.\nLe départ à la retraite ne constitue pas, à lui seul, une dispense générale de délai.",
+    "example": "Cas du QCM : ADS attribuée le 3 janvier 2011, projet de cession le 22 mars 2016 → quinze ans non atteints. Échéance illustrative : 3 janvier 2026 si exploitation continue.",
+    "source": "L3121-2 et L3121-3 — Code des transports ; divergence du corrigé ID75 signalée dans l’audit",
+    "visual": "timeline"
+  },
+  {
+    "title": "Plusieurs ADS : organiser l’exploitation",
+    "questions": [
+      46,
+      47,
+      52,
+      56
+    ],
+    "ids": [
+      71,
+      72,
+      77,
+      81
+    ],
+    "leftTitle": "Une ADS, un véhicule équipé",
+    "left": "Chaque autorisation exploitée correspond à un véhicule taxi équipé. Quatre ADS exploitées simultanément nécessitent quatre véhicules taxi.\nUne seule voiture ne matérialise pas l’exploitation simultanée de quatre autorisations.",
+    "rightTitle": "Des conducteurs, pas des licences prêtées",
+    "right": "Pour des anciennes ADS, l’organisation peut recourir à des salariés ou à une location-gérance régulière avec le véhicule.\nVérifier les cartes professionnelles, les contrats et le registre applicable. Les nouvelles ADS restent soumises à l’exploitation personnelle.",
+    "example": "Exemple : une entreprise exploite quatre anciennes ADS → quatre taxis et une organisation de conducteurs permettant de justifier l’activité de chacun.",
+    "source": "L3121-1-2 ; R3121-1 et R3121-8 — Code des transports",
+    "visual": "fleet"
+  },
+  {
+    "title": "Panne ou vol : remplacer le véhicule",
+    "questions": [
+      48,
+      57
+    ],
+    "ids": [
+      73,
+      82
+    ],
+    "leftTitle": "Remplacement temporaire autorisé",
+    "left": "En cas d’immobilisation mécanique, de vol du véhicule ou de vol de ses équipements spéciaux, un véhicule de remplacement équipé peut prendre le relais.\nCe mécanisme est temporaire ; il ne crée pas une nouvelle ADS.",
+    "rightTitle": "Conserver l’identité du taxi remplacé",
+    "right": "L’ADS et la plaque portant son numéro sont celles du taxi dont le véhicule de remplacement prend le relais.\nOn ne prend pas la plaque d’un confrère disponible. Le conducteur et le véhicule doivent rester conformes.",
+    "example": "Exemple : le taxi associé à l’ADS A est en panne → le véhicule relais équipé utilise l’ADS A et la plaque A, pas l’identité d’un autre taxi.",
+    "source": "R3121-2 — Code des transports",
+    "visual": "replacement"
+  },
+  {
+    "title": "Location : distinguer les deux registres",
+    "questions": [
+      49,
+      53
+    ],
+    "ids": [
+      74,
+      78
+    ],
+    "leftTitle": "Registre des transactions",
+    "left": "Tenu par l’autorité compétente pour délivrer l’ADS : montant de la transaction, identités ou raisons sociales du titulaire et du successeur, numéro SIREN.\nIl concerne la présentation du successeur à titre onéreux.",
+    "rightTitle": "Registre lié à la location",
+    "right": "Le titulaire de l’ADS tient le registre applicable aux locations, avec les informations sur le locataire et sa carte professionnelle.\nCe registre n’est pas le registre des ventes tenu par l’autorité administrative.",
+    "example": "Repère : VENTE → autorité ADS ; LOCATION → titulaire de l’ADS. L’identité du conducteur et son numéro de carte ne doivent pas être confondus avec le SIREN de l’entreprise.",
+    "source": "R3121-8 et R3121-10 — Code des transports",
+    "visual": "register"
+  },
+  {
+    "title": "ADS et véhicule : conditions particulières",
+    "questions": [
+      51,
+      58,
+      63
+    ],
+    "ids": [
+      76,
+      83,
+      88
+    ],
+    "leftTitle": "Conditions attachées à l’ADS",
+    "left": "L’autorité compétente peut notamment prévoir l’accessibilité aux personnes à mobilité réduite ainsi que des dates ou lieux d’exploitation.\nLire l’arrêté de l’ADS : une condition locale n’est pas une règle identique dans toutes les communes.",
+    "rightTitle": "Le rôle du préfet sur le véhicule",
+    "right": "La réglementation prévoit des modalités particulières concernant les caractéristiques des véhicules et la mise en œuvre du contrôle technique.\nLe TPE demeure un équipement imposé par la définition nationale : ce n’est pas une option locale.",
+    "example": "Exemple : une ADS prévoit un véhicule accessible et une présence sur certains créneaux → l’exploitant organise son activité selon ces conditions écrites.",
+    "source": "R3121-3, R3121-5 et R3121-12 — Code des transports",
+    "visual": "vehicle"
+  },
+  {
+    "title": "Carte professionnelle : gestes obligatoires",
+    "questions": [
+      23,
+      40,
+      41
+    ],
+    "ids": [
+      46,
+      93,
+      94
+    ],
+    "leftTitle": "Conserver et présenter",
+    "left": "La carte est personnelle. Elle doit être présentée lors d’un contrôle et affichée conformément aux règles dans le véhicule.\nElle ne se transmet pas au successeur de l’ADS et ne doit pas être détruite par le conducteur.",
+    "rightTitle": "Restituer à l’autorité compétente",
+    "right": "En cas de cessation d’activité ou de suspension ou annulation du permis, restituer la carte à l’autorité qui l’a délivrée.\nLe délai réglementaire de délivrance est au plus de trois mois à compter de la demande dans les conditions prévues par le texte.",
+    "example": "Exemple : vente du taxi et arrêt de l’activité → l’acquéreur demande sa propre carte ; le vendeur restitue la sienne, il ne la remet pas à l’acheteur.",
+    "source": "R3120-6 et R3121-16 — Code des transports",
+    "visual": "card"
+  },
+  {
+    "title": "Accès à la profession : B2 et examen",
+    "questions": [
+      37,
+      45
+    ],
+    "ids": [
+      90,
+      98
+    ],
+    "leftTitle": "B2 : des condamnations définies",
+    "left": "Le texte énumère des condamnations incompatibles avec l’exercice. Il ne suffit pas d’écrire « casier vierge » pour expliquer cette règle.\nNotamment : condamnation définitive pour un délit routier entraînant la perte de la moitié du capital maximal de points.",
+    "rightTitle": "Examen : distinguer les conditions",
+    "right": "L’inscription à l’examen peut être refusée à la personne ayant subi un retrait définitif de carte dans les dix ans précédant sa demande.\nL’absence de formation préparatoire ou d’expérience du transport n’est pas, à elle seule, une interdiction d’inscription.",
+    "example": "Repère : une condamnation provisoire n’est pas une condamnation définitive ; un contrôle de recevabilité n’est pas une décision automatique sur un dossier individuel.",
+    "source": "R3120-7 (examen) et R3120-8 (honorabilité) — Code des transports",
+    "visual": "check"
+  },
+  {
+    "title": "Mobilité : changer de département",
+    "questions": [
+      38,
+      39
+    ],
+    "ids": [
+      91,
+      92
+    ],
+    "leftTitle": "Se former dans le département d’accueil",
+    "left": "Le conducteur suit une formation à la mobilité dans un centre agréé du département où il souhaite exercer.\nDurée usuelle : quatorze heures ; trente-cinq heures pour la zone des taxis parisiens. Ce n’est pas un nouvel examen pratique CMA.",
+    "rightTitle": "Mettre à jour l’autorisation professionnelle",
+    "right": "Après l’attestation de mobilité, demander la mise à jour de la carte auprès de l’autorité compétente.\nNe pas confondre département de résidence, département de réussite à l’examen et département d’exercice autorisé.",
+    "example": "Exemple : un conducteur veut exercer dans un second département → formation de mobilité adaptée puis démarche de carte ; sa seule adresse personnelle ne suffit pas.",
+    "source": "Arrêté du 11 août 2017 relatif à la formation à la mobilité des conducteurs de taxi",
+    "visual": "mobility"
+  },
+  {
+    "title": "Formation continue : qui fait quoi ?",
+    "questions": [
+      27,
+      43,
+      44,
+      60
+    ],
+    "ids": [
+      61,
+      96,
+      97,
+      85
+    ],
+    "leftTitle": "Le préfet : carte et agrément",
+    "left": "Le préfet délivre la carte professionnelle et l’agrément des centres de formation. L’agrément du centre est valable cinq ans.\nLa CMA organise l’examen : elle n’est pas le médecin qui constate l’aptitude physique.",
+    "rightTitle": "Le centre agréé : former et attester",
+    "right": "La formation continue est suivie tous les cinq ans dans un centre agréé, qui délivre l’attestation.\nCarte, attestation de formation, visite médicale et agrément du centre sont quatre documents distincts.",
+    "example": "Exemple : formation continue suivie → attestation remise par le centre agréé ; cette attestation n’est pas une nouvelle carte fabriquée par l’Imprimerie nationale.",
+    "source": "R3120-6, R3120-8-2 et R3120-9 — Code des transports ; arrêté du 11 août 2017",
+    "visual": "roles"
+  },
+  {
+    "title": "Accueillir un client : guide et sécurité",
+    "questions": [
+      61,
+      62
+    ],
+    "ids": [
+      86,
+      87
+    ],
+    "leftTitle": "Chien guide ou d’assistance",
+    "left": "Le chien guide ou d’assistance accompagnant une personne bénéficiaire du droit d’accès doit être admis.\nCe n’est pas un animal de compagnie ordinaire : ne pas refuser le client uniquement à cause de son chien guide.",
+    "rightTitle": "Un refus doit être justifié",
+    "right": "La réglementation actuelle encadre les refus, notamment lorsqu’il existe un risque pour la sécurité ou un risque de dégradation du véhicule.\n« Sale » ou « ivre » ne sont pas des exclusions automatiques : apprécier un risque réel, sans discrimination.",
+    "example": "Exemple : un client malvoyant avec chien guide → accueil ; une situation de danger concret → expliquer le motif réglementaire du refus et garder une trace factuelle.",
+    "source": "R3121-23, 7° et 8° — Code des transports ; article 88 de la loi du 30 juillet 1987",
+    "visual": "guide"
+  },
+  {
+    "title": "Transport accessoire : ne pas confondre",
+    "questions": [
+      59,
+      64
+    ],
+    "ids": [
+      84,
+      89
+    ],
+    "leftTitle": "Taxi et transport routier collectif",
+    "left": "Une inscription au registre du transport routier de personnes ne remplace ni l’ADS ni la carte professionnelle du taxi.\nLe régime général distingue honorabilité, capacités professionnelle et financière et établissement, selon le champ applicable.",
+    "rightTitle": "Des formulations historiques à vérifier",
+    "right": "Les QCM sur l’activité accessoire ne précisent pas la date ni le régime exact de dispense. « Moins de neuf places » et « honorabilité seule » ne doivent pas devenir des règles universelles actuelles.\nVérifier le régime avec l’autorité du registre avant toute exploitation.",
+    "example": "Repère : les IDs84 et89 sont conservés, mais signalés à revoir ; ce complément ne réécrit pas leurs corrigés et ne reprend pas le cours LOTI de Partie 2.",
+    "source": "R3113-1 et suivants — Code des transports ; formulations des IDs84/89 insuffisamment contextualisées",
+    "visual": "compare"
+  },
+  {
+    "title": "Points de vigilance du support original",
+    "questions": [
+      25,
+      26,
+      29,
+      50,
+      62
+    ],
+    "ids": [
+      59,
+      60,
+      63,
+      75,
+      87
+    ],
+    "leftTitle": "Dates et actes : préciser les limites",
+    "left": "Visite médicale : cinq ans avant soixante ans, deux ans de soixante à moins de soixante-seize ans, annuelle dès soixante-seize ans (durées maximales).\nL’ADS individuelle relève d’un arrêté. Liste annuelle et renouvellement de l’ADS à trois mois sont différents.",
+    "rightTitle": "Ne pas transformer une simplification en règle",
+    "right": "Retraite : pas de dispense générale des délais de cession. Location-gérance : l’ancien minimum de deux ans a été abrogé en 2019.\nLe B2 n’est pas une exigence universelle de casier vierge. Les règles locales de cinquante mètres ne sont pas certifiées ici.",
+    "example": "Les seize diapositives originales sont conservées. Ces réserves explicites accompagnent la relecture ; aucune question, proposition ou bonne réponse n’a été modifiée.",
+    "source": "R221-11 ; L3121-3 ; R3121-12 ; loi 2019-744 ; R3120-7 — textes officiels et audit associé",
+    "visual": "check"
+  }
+]
