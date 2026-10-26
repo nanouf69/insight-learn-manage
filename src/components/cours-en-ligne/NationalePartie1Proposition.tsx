@@ -20,7 +20,7 @@ export default function NationalePartie1Proposition() {
       <p className="text-sm text-muted-foreground">{q.theme} · identifiant proposé {q.id}</p>
       <h4 className="text-lg font-semibold">{index + 65}. {q.enonce}</h4>
       {q.choix.map(c => <label key={c.lettre} className="flex min-h-11 items-start gap-3 py-2">
-        <Checkbox className="mt-1 h-5 w-5 shrink-0" aria-label={`Question ${q.id}, réponse ${c.lettre}`} checked={(answers[String(q.id)] ?? []).includes(c.lettre)} onCheckedChange={checked => {
+        <Checkbox className="mt-1 !h-5 !w-5 min-h-5 max-h-5 min-w-5 max-w-5 flex-none self-start" aria-label={`Question ${q.id}, réponse ${c.lettre}`} checked={(answers[String(q.id)] ?? []).includes(c.lettre)} onCheckedChange={checked => {
           setCorrected(false);
           setAnswers(prev => ({ ...prev, [q.id]: checked ? [...(prev[String(q.id)] ?? []), c.lettre] : (prev[String(q.id)] ?? []).filter(v => v !== c.lettre) }));
         }} />
