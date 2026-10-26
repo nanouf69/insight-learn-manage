@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Download,
   MailPlus,
+  Stamp,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import {
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
 import { DocumentZoneEditor } from "@/components/documents/DocumentZoneEditor";
+import { chargerElementAdmin, DOCUMENT_ADMIN_ELEMENTS, type AdminElementId } from "@/lib/documentAdminElements";
 
 
 ensurePdfWorker();
@@ -81,6 +83,21 @@ export function DocumentsASigner() {
   const [remplir, setRemplir] = useState(false);
   const [zoneActive, setZoneActive] = useState<ChampDocument | null>(null);
   const [reponsesApercu, setReponsesApercu] = useState<Record<string, string>>({});
+  const [elementsLocaux, setElementsLocaux] = useState<Array<{ champ: ChampDocument; image: string }>>([]);
+  const [elementLoading, setElementLoading] = useState(false);
+
+  const insererElement = async (id: AdminElementId) => {
+    if (!selected || selected.statut === "signe") return;
+    setElementLoading(true);
+    try {
+      const image = await chargerElementAdmin(id);
+      const element = DOCUMENT_ADMIN_ELEMENTS.find((item) => item.id === id);
+      if (!element) return;
+      setElementsLocaux((prev) => [...prev, { image, champ: { id: newChampId(), type: "signature", label: element.label, page: currentPage, x: 60, y: 75, w: element.w, h: element.h, requis: false } }]);
+    } catch (error) {
+      toast({ title: "Insertion impossible", description: error instanceof Error ? error.message : "Image indisponible", variant: "destructive" });
+    } finally { setElementLoading(false); }
+  };
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -147,6 +164,7 @@ export function DocumentsASigner() {
       return;
     }
     setSelected(doc);
+    setElementsLocaux([]);
     setReponsesApercu(doc.reponses || {});
     setZoneActive(null);
     setChamps(Array.isArray(doc.champs) ? doc.champs : []);
@@ -486,6 +504,12 @@ export function DocumentsASigner() {
             <Button variant={remplir ? "default" : "outline"} size="sm" onClick={() => setRemplir((v) => !v)} disabled={selected.statut === "signe"}>
               <Type className="h-3.5 w-3.5" /> {remplir ? "Remplir le document" : "Remplir"}
             </Button>
+            <Button variant="outline" size="sm" onClick={() => insererElement("signature")} disabled={elementLoading || selected.statut === "signe"}>
+              <PenTool className="h-3.5 w-3.5" /> Insérer ma signature
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => insererElement("tampon")} disabled={elementLoading || selected.statut === "signe"}>
+              <Stamp className="h-3.5 w-3.5" /> Insérer mon tampon
+            </Button>
             <span className="text-sm font-medium mr-2">Zone à placer :</span>
             <Button variant={outil === "signature" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => { setRemplir(false); setOutil("signature"); }}>
               <PenTool className="h-3.5 w-3.5" /> Signature
@@ -509,6 +533,18 @@ export function DocumentsASigner() {
                 >
                   <div ref={pageWrapRef} className="relative inline-block cursor-crosshair" onClick={ajouterChamp}>
                     <Page pageNumber={currentPage} width={PAGE_WIDTH} renderTextLayer={false} renderAnnotationLayer={false} />
+                    {elementsLocaux.filter(({ champ }) => champ.page === currentPage).map(({ champ, image }) => <div key={champ.id} data-champ
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ left: `${champ.x}%`, top: `${champ.y}%`, width: `${champ.w}%`, height: `${champ.h}%` }}
+                      className="absolute border border-primary touch-none cursor-move"
+                      onPointerDown={(e) => {
+                        e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId);
+                        const rect = pageWrapRef.current?.getBoundingClientRect(); if (!rect) return;
+                        const startX = e.clientX, startY = e.clientY;
+                        const move = (ev: PointerEvent) => setElementsLocaux((prev) => prev.map((item) => item.champ.id === champ.id ? { ...item, champ: { ...item.champ, x: Math.max(0, Math.min(100 - champ.w, champ.x + (ev.clientX - startX) / rect.width * 100)), y: Math.max(0, Math.min(100 - champ.h, champ.y + (ev.clientY - startY) / rect.height * 100)) } } : item));
+                        const stop = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", stop); window.removeEventListener("pointercancel", stop); };
+                        window.addEventListener("pointermove", move); window.addEventListener("pointerup", stop); window.addEventListener("pointercancel", stop);
+                      }}><img src={image} alt={champ.label} draggable={false} className="h-full w-full object-contain pointer-events-none" /></div>)}
                     {champsPage.map((c) => (
                       <div
                         key={c.id}
@@ -555,6 +591,13 @@ export function DocumentsASigner() {
             </div>
 
             <div className="space-y-4">
+              {elementsLocaux.map(({ champ }) => <div key={champ.id} className="space-y-2 border border-border rounded p-2">
+                <div className="flex items-center justify-between text-sm"><span>{champ.label} · p.{champ.page}</span><Button variant="ghost" size="icon" aria-label={`Retirer ${champ.label}`} onClick={() => setElementsLocaux((prev) => prev.filter((item) => item.champ.id !== champ.id))}><Trash2 className="h-4 w-4" /></Button></div>
+                <Label htmlFor={`size-${champ.id}`}>Taille (%)</Label><Input id={`size-${champ.id}`} type="number" min={5} max={80} value={champ.w} onChange={(e) => {
+                  const w = Math.max(5, Math.min(80, Number(e.target.value))); const h = w * champ.h / champ.w;
+                  setElementsLocaux((prev) => prev.map((item) => item.champ.id === champ.id ? { ...item, champ: { ...item.champ, w, h, x: Math.min(item.champ.x, 100 - w), y: Math.min(item.champ.y, 100 - h) } } : item));
+                }} />
+              </div>)}
               <div className="space-y-2">
                 <Label>Zones définies ({champs.length})</Label>
                 <div className="space-y-2 max-h-64 overflow-auto">
@@ -620,8 +663,8 @@ export function DocumentsASigner() {
                       ...selected,
                       statut: "pre_rempli",
                       nom: `${selected.nom}_pre_rempli`,
-                      champs,
-                      reponses: reponsesApercu,
+                      champs: [...champs, ...elementsLocaux.map((item) => item.champ)],
+                      reponses: { ...reponsesApercu, ...Object.fromEntries(elementsLocaux.map((item) => [item.champ.id, item.image])) },
                     })
                   }
                 >
