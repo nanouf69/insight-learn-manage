@@ -240,7 +240,7 @@ export default function ExamensBlancsPage({
         const row = (data ?? []).find((r: any) => r.matiere_id === m.id);
         return row ? {resultId: row.id, matiereId: m.id, nomMatiere: m.nom, noteObtenue: row.score_obtenu ?? 0,
           maxPoints: row.score_max ?? 0, noteSur: 20, noteEliminatoire: m.noteEliminatoire,
-          coefficient: m.coefficient, admis: row.reussi ?? false, reponses: row.details?.reponses ?? {},
+          coefficient: m.coefficient, admis: row.reussi ?? false, reponses: (row.details as any)?.reponses ?? {},
           details: row.details, tentative: row.tentative} as ResultatMatiere : null;
       });
       setExamenChoisi(filtered); setMatiereIndex(navigation.index); setTousResultats(results as ResultatMatiere[]);
@@ -265,7 +265,7 @@ export default function ExamensBlancsPage({
         const receipt = data as unknown as SubjectRetakeReceipt;
         activateSubjectRetake(receipt);
       }).catch(() => { if (!cancelled) toast.error('Reprise non confirmée ; reconnectez-vous pour relire votre passage.'); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; subjectRetakeRestored.current = null; };
   }, [apprenantId, userId, liveExamensLoaded]);
   // Identité du passage en cours : "new" = tentative neuve, "resume" = reprise.
   const currentPassageModeRef = useRef<"resume" | "new">("new");
