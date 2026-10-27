@@ -22,7 +22,7 @@ class LiveCatalog(unittest.TestCase):
   # Local initdb already contains public. External extensions are not exercised.
   dump=dump.replace('CREATE SCHEMA public;','')
   result=cls.sql(dump,check=False);Path(cls.d+'/restore-errors.log').write_text(result.stderr)
-  cls.sql(Path('docs/subject-retake.sql').read_text())
+  if 'exam_subject_retakes' not in dump: cls.sql(Path('docs/subject-retake.sql').read_text())  # already live after 0212
   cls.sql(f"INSERT INTO auth.users VALUES('{U}','fictif@example.invalid'); INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','ISOLÉ','fictif@example.invalid');")
  @classmethod
  def cleanup(cls):
