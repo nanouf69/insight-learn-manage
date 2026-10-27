@@ -81,13 +81,13 @@ const DEVIS_TYPE_CONFIGS: Record<string, DevisTypeConfig> = {
   },
   "vtc_soir_avec_examen": {
     description: ["Formation VTC soir", "Formation théorique et pratique", "Mise à disposition du véhicule pour l'examen sur Lyon", "Frais d'examen de la chambre des métiers et de l'artisanat"],
-    duree: "Nombre d'heures : 66h",
+    duree: "Nombre d'heures : 46h",
     agrement: "n° VTC16-15",
     formationDejaLabel: "Formation VTC déjà réalisée ?",
   },
   "vtc_soir_sans_examen": {
     description: ["Formation VTC soir", "Formation théorique et pratique", "Mise à disposition du véhicule pour l'examen sur Lyon"],
-    duree: "Nombre d'heures : 66h",
+    duree: "Nombre d'heures : 46h",
     agrement: "n° VTC16-15",
     formationDejaLabel: "Formation VTC déjà réalisée ?",
   },
