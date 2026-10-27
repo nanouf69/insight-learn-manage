@@ -80,6 +80,6 @@ class LiveCatalog(unittest.TestCase):
   # Non-regression hors nouveau flux : ancien comportement MAX(tentative) conservé.
   self.seed('EB2')
   self.sql(f"INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative) VALUES('{A}','{U}','EB2__francais','examen_blanc',1); INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,quiz_type,details) VALUES('{A}','{U}','EB2','Fictif','francais','Français',1,'examen_blanc','{{}}')")
-  self.sql("UPDATE reponses_apprenants SET completed=true WHERE exercice_id='EB2__francais'")
+  self.sql("UPDATE reponses_apprenants SET reponses='{\"1\":[\"A\"]}',completed=true WHERE exercice_id='EB2__francais'")
   self.assertEqual(self.sql("SELECT details->>'source_exercice_id' FROM apprenant_quiz_results WHERE quiz_id='EB2' AND matiere_id='francais'").stdout.strip(),'EB2__francais')
 if __name__=='__main__':unittest.main(verbosity=2)
