@@ -107,12 +107,25 @@ BEGIN
   IF p_source_attempt_id IS NOT NULL THEN
     SELECT * INTO old_attempt FROM public.exam_attempts_v2 WHERE attempt_id=p_source_attempt_id FOR UPDATE;
     IF NOT FOUND OR old_attempt.apprenant_id<>p_apprenant_id OR old_attempt.exam_id<>p_exam_id
-       OR old_attempt.snapshot->>'matiere' IS DISTINCT FROM p_matiere_id THEN
+       OR coalesce(old_attempt.snapshot->>'matiere',p_matiere_id)<>p_matiere_id THEN
       RAISE EXCEPTION 'Le passage ne correspond pas à cette matière et à ce compte.' USING ERRCODE='42501';
     END IF;
-    -- Exact mapping is required; never infer a V2 identity from a time window.
-    IF NOT EXISTS (SELECT 1 FROM public.exam_subject_retakes r
-         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id) THEN
+    source_number := coalesce(nullif(substring(p_source_exercice_id FROM '__t([0-9]+)$'),'')::integer,1);
+    -- Exact proof only, never a time window: (a) receipt of an earlier retake, (b) imported copy whose
+    -- result_id is this learner/subject/tentative, (c) sole native copy of a first passage.
+    IF NOT (
+      EXISTS (SELECT 1 FROM public.exam_subject_retakes r
+         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id)
+      OR EXISTS (SELECT 1 FROM public.apprenant_quiz_results q
+         WHERE (old_attempt.snapshot->'source_historique'->>'result_id') ~* '^[0-9a-f-]{36}$'
+           AND q.id=(old_attempt.snapshot->'source_historique'->>'result_id')::uuid
+           AND q.apprenant_id=p_apprenant_id AND q.quiz_id=p_exam_id AND q.matiere_id=p_matiere_id
+           AND q.tentative=source_number)
+      OR (source_number=1 AND old_attempt.snapshot->>'matiere'=p_matiere_id
+          AND NOT old_attempt.snapshot ? 'source_historique' AND NOT old_attempt.snapshot ? 'subject_retake_source'
+          AND (SELECT count(*) FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id
+                AND a.exam_id=p_exam_id AND a.snapshot->>'matiere'=p_matiere_id)=1)
+    ) THEN
       RAISE EXCEPTION 'Correspondance copie/passage non prouvée ; contactez l’administration.' USING ERRCODE='P0482';
     END IF;
     IF old_attempt.etat IS DISTINCT FROM 'terminee' OR old_attempt.finished_at IS NULL THEN
