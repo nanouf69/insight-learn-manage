@@ -4,7 +4,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (...a: unkno
 import { controlerAttestationFC, messageRefusAttestationFC } from "@/lib/attestationFcVerrou";
 
 describe("Verrou attestation FC (côté écran)", () => {
-  beforeEach(() => rpc.mockReset());
+  beforeEach(() => { rpc.mockReset(); });
   it("3/4 signatures : refus avec créneau manquant nommé", async () => {
     rpc.mockResolvedValue({ data: { autorise: false, requis: 4, signes: 3, manquants: [{ date: "2026-07-22", creneau: "apres_midi" }] }, error: null });
     const c = await controlerAttestationFC("a");
