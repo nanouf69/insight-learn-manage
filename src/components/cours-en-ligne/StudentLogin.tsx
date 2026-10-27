@@ -152,7 +152,7 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
             </div>
             <CardTitle className="text-2xl">Modifier le mot de passe</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Entrez vos identifiants actuels puis choisissez un nouveau mot de passe
+              Entrez votre email : vous recevrez un lien pour choisir votre nouveau mot de passe. L'ancien mot de passe n'est jamais demandé.
             </p>
           </CardHeader>
           <CardContent>
@@ -161,21 +161,9 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
                 <Label htmlFor="cp-email">Email</Label>
                 <Input id="cp-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="cp-current">Mot de passe actuel</Label>
-                <Input id="cp-current" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cp-new">Nouveau mot de passe</Label>
-                <Input id="cp-new" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder="Min. 6 caractères" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cp-confirm">Confirmer le nouveau mot de passe</Label>
-                <Input id="cp-confirm" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                Modifier le mot de passe
+                Envoyer le lien
               </Button>
               <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("login")}>
                 <ArrowLeft className="w-4 h-4 mr-2" /> Retour à la connexion
