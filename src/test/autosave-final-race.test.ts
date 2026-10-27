@@ -134,6 +134,7 @@ describe("compléments : correction après échec, identité, double validation"
     await act(async () => {
       const p1 = result.current.triggerSave({ nom: "v1", _status: "completed" });
       const p2 = result.current.triggerSave({ nom: "v2", _status: "completed" });
+      await vi.advanceTimersByTimeAsync(5000);
       [a, b] = await Promise.all([p1, p2]);
     });
     expect(a && b).toBe(true);
