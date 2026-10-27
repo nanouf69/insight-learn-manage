@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Refaire une matière d’examen blanc — 27/10 22:52 UTC, autorisation ciblée
+- [x] Relire les circuits actuels et protections Kevin/QRC ; ne pas réutiliser la reprise neutralisante.
+- [x] Préparer bouton résultat/temps écoulé, reçu serveur idempotent, copies/files conservées ; SQL non appliqué au backend partagé.
+- [x] Tests isolés SQL et 36 tests frontend, bouton PC/mobile fictif, compilation OK ; aucun IA/mail/publication.
+- [ ] Activer et vérifier le circuit complet uniquement dans un backend isolé : indisponible ici, backend partagé avec production. Consultation de toutes les anciennes copies et transition entre matières encore à compléter avant livraison ; détails `docs/refaire-matiere-etat-2026-10-27.md`.
+
 ## Questions ambiguës TAXI/TA vérifiées — 27/10 15:56 UTC, accord explicite
 - [x] Appliquer seulement 70-11, 71-47 (explication), 71-10 (choix B DGFiP/TVA), 73-27 (énoncé le.taxi suspendu), 75-19 (exception ALD) si réponses/notes/terminés intacts ; journal avant/après.
 - [x] Bloqués et signalés : 70-73 B, 74-6 D, 73-25 relettrage (réponses déjà enregistrées sur ces lettres) ; 70-19/65/78/87 et 74-17 inchangées.

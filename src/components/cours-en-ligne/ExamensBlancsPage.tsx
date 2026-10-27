@@ -67,6 +67,8 @@ import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMatiereRecovery";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
+import { subjectRetakeStorageKey, validateSubjectRetakeReceipt, type SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
+import { freshSessionRead } from '@/lib/sessionRpc';
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -184,6 +186,50 @@ export default function ExamensBlancsPage({
   const [currentTentative, setCurrentTentative] = useState<number>(1);
   const currentTentativeRef = useRef<number>(1);
   const [resumeExerciceIds, setResumeExerciceIds] = useState<Record<string, string>>({});
+  const [subjectRetake, setSubjectRetake] = useState<SubjectRetakeReceipt | null>(null);
+  const subjectRetakeRestored = useRef<string | null>(null);
+  const activateSubjectRetake = (receipt: SubjectRetakeReceipt) => {
+    if (!apprenantId || !userId) return;
+    validateSubjectRetakeReceipt(receipt, apprenantId, receipt.exam_id, receipt.matiere_id);
+    const exam = liveExamens.find(e => e.id === receipt.exam_id);
+    if (!exam) { toast.error('Examen indisponible. Le nouveau passage reste conservé sur le serveur.'); return; }
+    // Archive navigation only; no answer queue, parked draft or old passage is moved/deleted.
+    const previous = sessionStorage.getItem(EXAM_SESSION_KEY);
+    if (previous) sessionStorage.setItem(`${EXAM_SESSION_KEY}_before_${receipt.operation_id}`, previous);
+    sessionStorage.setItem(subjectRetakeStorageKey(userId, apprenantId), receipt.operation_id);
+    setSubjectRetake(receipt);
+    setSessionRestored(true);
+    setMatiereFilter([receipt.matiere_id]);
+    setExamenChoisi({ ...exam, matieres: [receipt.matiere] });
+    setMatiereIndex(0);
+    setTousResultats([]);
+    setLastMatiereResult(null);
+    setCurrentTentative(receipt.tentative);
+    currentTentativeRef.current = receipt.tentative;
+    currentPassageModeRef.current = 'new';
+    setResumeExerciceIds({ [receipt.matiere_id]: receipt.exercice_id });
+    setIsViewingSavedResults(false);
+    examStartTimeRef.current = Date.now();
+    setPhase('examen');
+  };
+
+  useEffect(() => {
+    if (!apprenantId || !userId || !liveExamensLoaded) return;
+    const scope = `${userId}:${apprenantId}`;
+    if (subjectRetakeRestored.current === scope) return;
+    subjectRetakeRestored.current = scope;
+    const operation = sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId));
+    if (!operation) return;
+    let cancelled = false;
+    void freshSessionRead(() => supabase.from('exam_subject_retakes' as never).select('*')
+      .eq('operation_id', operation).eq('apprenant_id', apprenantId).single(), userId).then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) { toast.error('Relecture de la reprise impossible. Aucun brouillon transféré.'); return; }
+        const receipt = data as unknown as SubjectRetakeReceipt;
+        activateSubjectRetake(receipt);
+      }).catch(() => { if (!cancelled) toast.error('Reprise non confirmée ; reconnectez-vous pour relire votre passage.'); });
+    return () => { cancelled = true; };
+  }, [apprenantId, userId, liveExamensLoaded]);
   // Identité du passage en cours : "new" = tentative neuve, "resume" = reprise.
   const currentPassageModeRef = useRef<"resume" | "new">("new");
   const phaseRef = useRef(phase);
@@ -276,6 +322,7 @@ export default function ExamensBlancsPage({
   const [sessionRestored, setSessionRestored] = useState(false);
   useEffect(() => {
     if (sessionRestored || !liveExamensLoaded) return;
+    if (userId && apprenantId && sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId))) return;
     let cancelled = false;
 
     const restore = async () => {
@@ -537,6 +584,8 @@ export default function ExamensBlancsPage({
   }, [defaultBilanId]);
 
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    setSubjectRetake(null);
+    if (userId && apprenantId) sessionStorage.removeItem(subjectRetakeStorageKey(userId, apprenantId));
     // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
     if (matiereIds !== undefined) setMatiereFilter(matiereIds);
 
@@ -780,6 +829,8 @@ export default function ExamensBlancsPage({
 
   const handleViewResults = async (examen: ExamenBlanc) => {
     if (!apprenantId) return;
+    setSubjectRetake(null);
+    if (userId) sessionStorage.removeItem(subjectRetakeStorageKey(userId, apprenantId));
     const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
@@ -1131,7 +1182,7 @@ export default function ExamensBlancsPage({
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", examen.id)
         .eq("quiz_type", quizType);
-      effectiveTentative = resolveIdempotentTentative({
+      effectiveTentative = subjectRetake ? desiredTentative : resolveIdempotentTentative({
         rows: (existingRows as any[]) || [],
         quizId: examen.id,
         quizType,
@@ -1153,6 +1204,7 @@ export default function ExamensBlancsPage({
         reponses: resultat.reponses,
         correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
         snapshot,
+        ...(subjectRetake?.attempt_id ? { attempt_id: subjectRetake.attempt_id } : {}),
         ...(hasQrc ? { qrc_pending_correction: true } : {}),
       },
       tentative: effectiveTentative,
@@ -1287,7 +1339,7 @@ export default function ExamensBlancsPage({
       // côté noyau. Aucune réponse n'est écrasée ni recalculée ici.
       let confirmeParNoyau = false;
       let tentativeNoyauId: string | null = null;
-      if (apprenantId) {
+      if (apprenantId && !subjectRetake) {
         try {
           const { data: tentativeNoyau } = await supabase
             .from("exam_attempts_v2")
@@ -1312,6 +1364,13 @@ export default function ExamensBlancsPage({
         } catch (erreurNoyau) {
           console.warn("[ExamSubmission][EB] Vérification noyau impossible:", erreurNoyau);
         }
+      }
+
+      if (apprenantId && subjectRetake?.attempt_id) {
+        const { data: confirmed, error } = await supabase.from('exam_attempts_v2').select('attempt_id, etat')
+          .eq('attempt_id', subjectRetake.attempt_id).eq('apprenant_id', apprenantId).single();
+        tentativeNoyauId = subjectRetake.attempt_id;
+        confirmeParNoyau = !error && confirmed?.etat === 'terminee';
       }
 
       if (apprenantId && userId && !confirmeParNoyau) {
@@ -1372,7 +1431,9 @@ export default function ExamensBlancsPage({
           // BUG #7 FIX: backup result to localStorage for recovery
           try {
             localStorage.setItem(
-              `exam_result_backup_${examenChoisi.id}_${matiere.id}_${apprenantId}`,
+              subjectRetake
+                ? `exam_result_backup_${userId}_${apprenantId}_${subjectRetake.exercice_id}_${subjectRetake.attempt_id ?? 'legacy'}`
+                : `exam_result_backup_${examenChoisi.id}_${matiere.id}_${apprenantId}`,
               JSON.stringify(resultat)
             );
           } catch (_) {}
@@ -1688,7 +1749,7 @@ export default function ExamensBlancsPage({
               <ArrowLeft className="w-6 h-6" /> Retour à la liste
             </Button>
           </div>
-          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}_${resumeExerciceIds[matiere.id] ?? ""}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} onSansReponse={handleMatiereSansResultat} />
+          <PassageMatiere key={`${examenChoisi.id}_${matiere.id}_t${currentTentative}_${resumeExerciceIds[matiere.id] ?? ""}_${subjectRetake?.attempt_id ?? ''}`} matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} tentative={currentTentative} exerciceIdOverride={resumeExerciceIds[matiere.id]} onLearnerActivity={onLearnerActivity} onSansReponse={handleMatiereSansResultat} subjectRetake={subjectRetake ?? undefined} onSubjectRetake={activateSubjectRetake} />
 
         </div>
         <div className="hidden xl:block w-56 shrink-0">
@@ -1737,7 +1798,7 @@ export default function ExamensBlancsPage({
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
-        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} currentTentative={currentTentative} />
+        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} currentTentative={currentTentative} onSubjectRetake={activateSubjectRetake} />
       </div>
     );
   }
