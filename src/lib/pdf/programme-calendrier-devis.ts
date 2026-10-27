@@ -103,7 +103,15 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
       manquants.push(...c.anomalies.map((a) => `Calendrier : ${a}`));
     }
   }
-  if (!(session && p.mode === "presentiel" && !input.erreurLecture && calendrierSession(session, p.filiere).valide && calendrierSession(session, p.filiere).pratique.length)) {
+  const calPratique = session && p.mode === "presentiel" && !input.erreurLecture ? calendrierSession(session, p.filiere) : null;
+  if (calPratique && !calPratique.valide && calPratique.pratique.length) {
+    const j = calPratique.pratique[0];
+    para(`Journée pratique (6 h) : ${dateLongue(j.jour)}, ${j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / ")}.`);
+  } else if (calPratique && calPratique.valide && calPratique.pratique.length) {
+    // déjà présente dans le calendrier journalier
+  } else if (calPratique && !calPratique.pratique.length) {
+    para("Journée pratique (6 h) : date à confirmer."); manquants.push("Date de la journée pratique");
+  } else {
     const pratiques = sessionsPratique(input.sessions, p.filiere).filter((s) => !session || s.date_debut >= session.date_fin);
     if (pratiques.length) {
       const s = pratiques[0];
