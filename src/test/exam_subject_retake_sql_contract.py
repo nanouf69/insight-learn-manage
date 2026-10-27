@@ -78,8 +78,9 @@ class SubjectRetake(unittest.TestCase):
     def test_v2_snapshot_and_source_intact(self):
         s='55555555-5555-5555-5555-555555555555'
         self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{s}','{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"tentative\":1,\"source_historique\":{{\"exercice_id\":\"EB1__gestion\"}},\"questions\":[{{\"id\":\"gestion:1\",\"type\":\"QCM\",\"enonce\":\"Fictive\",\"choix\":[]}}]}}','old','terminee',now()-interval '48 hours')")
+        self.sql(f"INSERT INTO exam_subject_retakes(operation_id,apprenant_id,exam_id,matiere_id,source_exercice_id,attempt_id,exercice_id,tentative,moteur,matiere) VALUES('{O}','{A}','EB1','gestion','seed__isolated','{s}','EB1__gestion',1,'v2','{{}}')")
         before=self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout
-        r=self.receipt(attempt=f"'{s}'");self.assertNotEqual(r['attempt_id'],s);self.assertEqual(r['moteur'],'v2')
+        r=self.receipt(attempt=f"'{s}'",op='44444444-4444-4444-4444-444444444444');self.assertNotEqual(r['attempt_id'],s);self.assertEqual(r['moteur'],'v2')
         self.assertEqual(self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout,before)
     def test_ambiguous_identity_refused(self):
         self.assertNotEqual(self.call(attempt=f"'{O}'",check=False).returncode,0)
@@ -93,5 +94,11 @@ class SubjectRetake(unittest.TestCase):
     def test_same_tentative_without_exact_v2_binding_refused(self):
         self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{O}','{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"tentative\":1,\"questions\":[]}}','old','terminee',now()-interval '48 hours')")
         self.assertNotEqual(self.call(attempt=f"'{O}'",check=False).returncode,0)
+    def test_concurrent_calls_single_receipt(self):
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(lambda op:self.receipt(op=op),[O,'44444444-4444-4444-4444-444444444444']))
+        self.assertEqual(results[0]['exercice_id'],results[1]['exercice_id'])
+        self.assertEqual(self.sql('SELECT count(*) FROM exam_subject_retakes').stdout.strip(),'1')
 
 if __name__=='__main__': unittest.main(verbosity=2)

@@ -203,7 +203,7 @@ export default function ExamensBlancsPage({
     });
     // Archive navigation only; no answer queue, parked draft or old passage is moved/deleted.
     const previous = sessionStorage.getItem(EXAM_SESSION_KEY);
-    if (previous) sessionStorage.setItem(`${EXAM_SESSION_KEY}_before_${receipt.operation_id}`, previous);
+    if (previous && !sessionStorage.getItem(`${EXAM_SESSION_KEY}_before_${receipt.operation_id}`)) sessionStorage.setItem(`${EXAM_SESSION_KEY}_before_${receipt.operation_id}`, previous);
     sessionStorage.setItem(subjectRetakeStorageKey(userId, apprenantId), receipt.operation_id);
     setSubjectRetake(receipt);
     setSessionRestored(true);

@@ -112,8 +112,7 @@ BEGIN
     END IF;
     -- Exact mapping is required; never infer a V2 identity from a time window.
     IF NOT EXISTS (SELECT 1 FROM public.exam_subject_retakes r
-         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id)
-       AND old_attempt.snapshot#>>'{source_historique,exercice_id}' IS DISTINCT FROM p_source_exercice_id THEN
+         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id) THEN
       RAISE EXCEPTION 'Correspondance copie/passage non prouvée ; contactez l’administration.' USING ERRCODE='P0482';
     END IF;
     IF old_attempt.etat IS DISTINCT FROM 'terminee' OR old_attempt.finished_at IS NULL THEN
