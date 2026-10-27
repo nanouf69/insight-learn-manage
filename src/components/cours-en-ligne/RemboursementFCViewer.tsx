@@ -18,6 +18,7 @@ import { buildEmargementHTML } from "./EmargementsSignesViewer";
 import { EmargementFCModal } from "./EmargementFCModal";
 import { creneauHoraire, creneauLabel, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import { controlerAttestationFC, messageRefusAttestationFC, type ControleAttestationFC } from "@/lib/attestationFcVerrou";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
@@ -206,6 +207,10 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [factures, setFactures] = useState<FactureDoc[]>([]);
   const [attestations, setAttestations] = useState<FactureDoc[]>([]);
+  // Verrou serveur : attestations (y compris déjà déposées) visibles seulement si les 4 émargements sont signés.
+  const [controleAttestation, setControleAttestation] = useState<ControleAttestationFC | null>(null);
+  useEffect(() => { let actif = true; controlerAttestationFC(apprenantId).then((c) => { if (actif) setControleAttestation(c); }); return () => { actif = false; }; }, [apprenantId]);
+  const attestationsVisibles = controleAttestation?.autorise ? attestations : [];
   const [dbFactures, setDbFactures] = useState<DbFacture[]>([]);
   const [generatingFactureId, setGeneratingFactureId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -395,6 +400,9 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
     if (!apprenant) return;
     setDownloading("attestation");
     try {
+      const ctrl = await controlerAttestationFC(apprenantId);
+      setControleAttestation(ctrl);
+      if (!ctrl.autorise) { toast.error(messageRefusAttestationFC(ctrl)); return; }
       await generateAttestationFCVTC({
         nom: apprenant.nom || "",
         prenom: apprenant.prenom || "",
@@ -700,7 +708,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">3. Attestation de fin de formation continue {formation}</h3>
-              {attestations.length > 0 && (
+              {attestationsVisibles.length > 0 && (
                 <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
                   <CheckCircle2 className="h-3 w-3" />
                   Émise par le centre
@@ -710,9 +718,9 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
             <p className="text-xs text-muted-foreground mt-0.5">
               Attestation de présence et de suivi, signée et datée par le représentant légal du centre (article 3 de l'arrêté du 11 août 2017).
             </p>
-            {attestations.length > 0 ? (
+            {attestationsVisibles.length > 0 ? (
               <div className="mt-2 space-y-2">
-                {attestations.map((a) => (
+                {attestationsVisibles.map((a) => (
                   <div key={a.id} className="flex items-center justify-between gap-2 border rounded-md p-2 bg-slate-50/50">
                     <div className="text-xs">
                       <div className="font-medium">{a.titre}</div>
