@@ -1463,6 +1463,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => window.clearInterval(interval);
   }, [embedded, user?.id, apprenant?.id, selectedModule, isInExam]);
 
+  // Ouverture automatique de la feuille due : une fois par connexion et par créneau
+  // (nouvelle connexion ou nouveau créneau ouvert = nouvelle présentation). Jamais bloquant.
+  const emargementAutoOuvertRef = useRef<{ user: string | null; cles: Set<string> }>({ user: null, cles: new Set() });
+  useEffect(() => {
+    const uid = user?.id ?? null;
+    if (emargementAutoOuvertRef.current.user !== uid) emargementAutoOuvertRef.current = { user: uid, cles: new Set() };
+    if (!uid || embedded || selectedModule || isInExam) return;
+    if (emargementFCStatus !== "needed" || !emargementCreneau) return;
+    const cle = `${emargementApprenantId || apprenant?.id}|${emargementDate}|${emargementCreneau}`;
+    if (emargementAutoOuvertRef.current.cles.has(cle)) return;
+    emargementAutoOuvertRef.current.cles.add(cle);
+    setShowSignatureModal(true);
+  }, [user?.id, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
+
 
   // Track section navigation (Accueil / Examens / Notes) so the activity report
   // always knows which area of the platform the student was on, even when no
