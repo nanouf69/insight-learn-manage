@@ -54,7 +54,9 @@ import {
   ArrowRightLeft,
   Video,
   Clock,
+  Landmark,
 } from "lucide-react";
+import { RIB_INFO } from "@/lib/pdf/devis-canonical";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -83,6 +85,7 @@ import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { calculerAccesCours } from "@/lib/accesCoursFenetre";
 import { construireConvocationHtml } from "@/lib/convocationFormation";
 import { isPresentielType } from "@/lib/agendaSlots";
+import { buildRibEmailHtml, RIB_EMAIL_SUBJECT } from "@/lib/ribEmail";
 
 
 interface Session {
@@ -1362,6 +1365,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   );
   const hasRelanceBienvenueEmail = (apprenantId: string) => relanceBienvenueApprenantIds.has(apprenantId);
 
+  // RIB de la société (Revolut) envoyé à l'apprenant — détection par objet du mail
+  const ribApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => normalizeSubj(e.subject).includes('rib '))
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+  const hasRibEmail = (apprenantId: string) => ribApprenantIds.has(apprenantId);
+
 
    // Charger les identifiants envoyés pour les apprenants de cette session
     const { data: identifiantsSent = [] } = useQuery({
@@ -2195,6 +2211,42 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       toast({ title: "Échec de l'envoi", description: err instanceof Error ? err.message : "Erreur inconnue", variant: "destructive" });
     } finally {
       setInviteSending(null);
+    }
+  };
+
+  // Envoi du RIB de la société (Revolut) par e-mail à l'apprenant
+  const [ribDialogApprenant, setRibDialogApprenant] = useState<any | null>(null);
+  const [ribSending, setRibSending] = useState(false);
+  const confirmSendRib = async () => {
+    const apprenant = ribDialogApprenant;
+    if (!apprenant?.email) return;
+    setRibSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          apprenantId: apprenant.id,
+          recipientEmail: apprenant.email,
+          recipientName: `${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+          subject: RIB_EMAIL_SUBJECT,
+          htmlBody: buildRibEmailHtml(`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim()),
+        },
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['convocations-sent', session?.id] });
+      toast({
+        title: "✅ RIB envoyé",
+        description: `Coordonnées bancaires de la société envoyées à ${apprenant.email}`,
+      });
+      setRibDialogApprenant(null);
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Erreur d'envoi",
+        description: err?.message || "Impossible d'envoyer le RIB.",
+        variant: "destructive",
+      });
+    } finally {
+      setRibSending(false);
     }
   };
   const mdpMailDialog = useMdpChangeMail(async (_apprenantId, to) => {
@@ -4720,6 +4772,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <span className="text-xs">💻 Mail e-learning synchrone</span>
                           </Button>
 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasRibEmail(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasRibEmail(apprenant.id) ? "RIB déjà envoyé — cliquer pour renvoyer" : "Envoyer le RIB de la société (Revolut) par e-mail"}
+                            disabled={ribSending}
+                            onClick={() => setRibDialogApprenant(apprenant)}
+                          >
+                            {hasRibEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Landmark className="w-4 h-4" />}
+                            <span className="text-xs">🏦 RIB</span>
+                          </Button>
+
 
 
                           <Button
@@ -7125,6 +7189,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     </Dialog>
 
     {mdpMailDialog.dialog}
+
+    <Dialog open={!!ribDialogApprenant} onOpenChange={(o) => { if (!o && !ribSending) setRibDialogApprenant(null); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>🏦 Envoyer le RIB de la société</DialogTitle>
+        </DialogHeader>
+        {ribDialogApprenant && (
+          <div className="space-y-3 text-sm">
+            <p>
+              Destinataire : <strong>{ribDialogApprenant.prenom} {ribDialogApprenant.nom}</strong> — {ribDialogApprenant.email}
+            </p>
+            <div className="rounded-md border bg-muted/40 p-3">
+              <p><strong>Titulaire :</strong> {RIB_INFO.titulaire}</p>
+              <p><strong>IBAN :</strong> {RIB_INFO.iban}</p>
+              <p><strong>BIC / SWIFT :</strong> {RIB_INFO.swift}</p>
+              <p><strong>Banque :</strong> {RIB_INFO.banque}</p>
+            </div>
+            <p className="text-muted-foreground">
+              Les coordonnées sont écrites dans le corps du mail, sans pièce jointe.
+            </p>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" disabled={ribSending} onClick={() => setRibDialogApprenant(null)}>Annuler</Button>
+          <Button disabled={ribSending} onClick={() => void confirmSendRib()}>
+            {ribSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+            Envoyer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <TeamsLinkSender
       open={teamsLinkOpen}
