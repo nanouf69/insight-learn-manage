@@ -45,7 +45,7 @@ class LiveCatalog(unittest.TestCase):
   self.assertNotEqual(r.returncode,0)
  def test_production_completion_preserves_other_tentative(self):
   # Demonstrates whether production trigger silently modifies T1 while T2 closes.
-  self.sql(f"""INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,matiere_id,tentative,quiz_type,details) VALUES('{A}','{U}','EB1','gestion',1,'examen_blanc','{{"historical":"must-stay-identical"}}');
+  self.sql(f"""INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,quiz_type,details) VALUES('{A}','{U}','EB1','Fictif','gestion','Gestion',1,'examen_blanc','{{"historical":"must-stay-identical"}}');
   INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative) VALUES('{A}','{U}','EB1__gestion__t2','examen_blanc',2);""")
   before=self.sql(f"SELECT details FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND tentative=1").stdout
   self.sql(f"SET request.jwt.claim.sub='{U}'; UPDATE reponses_apprenants SET reponses='{{\"1\":[\"A\"]}}',completed=true WHERE apprenant_id='{A}' AND exercice_id='EB1__gestion__t2'")
