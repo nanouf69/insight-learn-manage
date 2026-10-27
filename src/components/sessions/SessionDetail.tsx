@@ -2628,8 +2628,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
       toast({
         title: "Envoi terminé",
-        description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
+        description: `${sent} envoyée(s)${skipped - bloquesEnvoi.length ? `, ${skipped - bloquesEnvoi.length} sans email` : ''}${bloquesEnvoi.length ? `, ${bloquesEnvoi.length} bloquée(s) (émargements manquants)` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
       });
+      if (bloquesEnvoi.length) toast({ title: "Attestations non envoyées", description: bloquesEnvoi.join("\n"), variant: "destructive" });
     } finally {
       setBulkSendingAttestations(false);
     }
