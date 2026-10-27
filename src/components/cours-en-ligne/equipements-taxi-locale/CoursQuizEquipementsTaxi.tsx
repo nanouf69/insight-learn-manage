@@ -53,7 +53,7 @@ export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT 
 }
 
 /** Module 64 : questions complémentaires (support remplacé directement dans la page de cours). */
-function SectionSerie({ compteId, transport, serie, titre, intro }: { compteId?: string | null; transport?: TransportEquipements; serie: SerieEquipements; titre: string; intro: string }) {
+function SectionSerie({ compteId, transport, serie, titre, intro, inline = false }: { compteId?: string | null; transport?: TransportEquipements; serie: SerieEquipements; titre: string; intro: string; inline?: boolean }) {
   const ID_QUIZ_EQUIPEMENTS = serie.id;
   const [ouvert, setOuvert] = useState(false);
   const etat = useActivitesModule();
@@ -72,11 +72,12 @@ function SectionSerie({ compteId, transport, serie, titre, intro }: { compteId?:
       : ok && !requis ? `Votre module est déjà validé : ces ${nb} questions sont accessibles en révision, sans effet sur votre progression.`
       : ok ? `${nb} ${intro}`
       : "Chargement du statut…"}</p>
+    {inline ? <div className="rounded-lg border bg-background p-4" data-testid="equipements-taxi-inline"><QuizEquipements key={compteId ?? "apercu"} compteId={compteId} transport={transport} serie={serie} /></div> : <>
     <Button onClick={() => setOuvert(true)} data-testid="equipements-taxi-ouvrir">{termine ? "Revoir les questions" : "Commencer / reprendre"}</Button>
     <Dialog open={ouvert} onOpenChange={setOuvert}><DialogContent className="max-w-3xl w-[96vw] max-h-[94dvh] overflow-y-auto p-4 sm:p-6">
       <DialogHeader><DialogTitle>{titre}</DialogTitle><DialogDescription>{nb} questions · réalisation non notée, corrigé après chaque réponse.</DialogDescription></DialogHeader>
       {ouvert && <QuizEquipements key={compteId ?? "apercu"} compteId={compteId} transport={transport} serie={serie} />}
-    </DialogContent></Dialog>
+    </DialogContent></Dialog></>}
   </section>;
 }
 
@@ -84,6 +85,6 @@ function SectionSerie({ compteId, transport, serie, titre, intro }: { compteId?:
 export default function CoursQuizEquipementsTaxi({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
   return <div className="space-y-4">
     <SectionSerie compteId={compteId} transport={transport} serie={SERIE_COMPLEMENT} titre={`Questions complémentaires — ${COURS_EQUIPEMENTS.titre}`} intro="nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module." />
-    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." />
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." inline />
   </div>;
 }

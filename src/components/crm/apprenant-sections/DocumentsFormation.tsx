@@ -14,6 +14,7 @@ import { generateEmargementIndividuelPDF } from "@/components/sessions/Emargemen
 import { buildSessionAgendaDays } from "@/lib/buildSessionAgendaDays";
 import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import { controlerAttestationFC, messageRefusAttestationFC } from "@/lib/attestationFcVerrou";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +107,8 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         await generateAttestationFranceTravail(apprenant);
         toast.success("Attestation France Travail générée");
       } else if (type === 'attestation-fc') {
+        const ctrl = await controlerAttestationFC(apprenant.id);
+        if (!ctrl.autorise) { toast.error(messageRefusAttestationFC(ctrl)); return; }
         const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
         const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
         const dateFin = apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
@@ -293,6 +296,8 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     }
     setSendingEmail('attestation-fc');
     try {
+      const ctrl = await controlerAttestationFC(apprenant.id);
+      if (!ctrl.autorise) { toast.error(messageRefusAttestationFC(ctrl)); return; }
       const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
       const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
       const dateFin = apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0];

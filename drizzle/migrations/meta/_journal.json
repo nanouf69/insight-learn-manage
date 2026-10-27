@@ -1464,6 +1464,20 @@
       "when": 1793121314102,
       "tag": "0208_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 209,
+      "version": "7",
+      "when": 1793122537820,
+      "tag": "0209_verrou_attestation_fc",
+      "breakpoints": true
+    },
+    {
+      "idx": 210,
+      "version": "7",
+      "when": 1793122557259,
+      "tag": "0210_verrou_attestation_fc_acces_eleve",
+      "breakpoints": true
     }
   ]
 }

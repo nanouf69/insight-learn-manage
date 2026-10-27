@@ -71,6 +71,7 @@ import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import { saveAttestationToCRM } from "@/lib/saveAttestationToCRM";
+import { controlerAttestationFC, messageRefusAttestationFC } from "@/lib/attestationFcVerrou";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import { getPratiqueDatesForFormation, getTheoriqueDateForFormation } from "@/lib/pratiquePeriodes";
 import JSZip from "jszip";
@@ -2481,9 +2482,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     try {
       let mergedDoc: any = null;
       let count = 0;
+      const bloques: string[] = [];
       for (const sa of list) {
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
+        const ctrl = await controlerAttestationFC(apprenant.id);
+        if (!ctrl.autorise) { bloques.push(`${apprenant.prenom} ${apprenant.nom} — ${messageRefusAttestationFC(ctrl)}`); continue; }
         const { data } = buildAttestationDataForApprenant(apprenant, sa);
         const result: any = await generateAttestationFCVTC(data, {
           returnDoc: true,
@@ -2495,8 +2499,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           count++;
         }
       }
+      if (bloques.length) toast({ title: `${bloques.length} attestation(s) bloquée(s)`, description: bloques.join("\n"), variant: "destructive" });
       if (!mergedDoc || count === 0) {
-        toast({ title: "Aucune attestation", description: "Aucune attestation n'a pu être générée.", variant: "destructive" });
+        toast({ title: "Aucune attestation", description: bloques.length ? "Aucune attestation autorisée : émargements manquants." : "Aucune attestation n'a pu être générée.", variant: "destructive" });
         return;
       }
       const safeTitle = (session.title || 'session').replace(/[^a-zA-Z0-9_-]+/g, '_');
@@ -2551,12 +2556,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     let sent = 0;
     let skipped = 0;
     let failed = 0;
+    const bloquesEnvoi: string[] = [];
     try {
       for (const sa of list) {
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
         if (!apprenant.email) { skipped++; continue; }
         try {
+          const ctrl = await controlerAttestationFC(apprenant.id);
+          if (!ctrl.autorise) { skipped++; bloquesEnvoi.push(`${apprenant.prenom} ${apprenant.nom} — ${messageRefusAttestationFC(ctrl)}`); continue; }
           const { data, formation } = buildAttestationDataForApprenant(apprenant, sa);
           const result = await generateAttestationFCVTC(data, { returnBlob: true });
           if (!result?.blob) { failed++; continue; }
@@ -2620,8 +2628,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       }
       toast({
         title: "Envoi terminé",
-        description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
+        description: `${sent} envoyée(s)${skipped - bloquesEnvoi.length ? `, ${skipped - bloquesEnvoi.length} sans email` : ''}${bloquesEnvoi.length ? `, ${bloquesEnvoi.length} bloquée(s) (émargements manquants)` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
       });
+      if (bloquesEnvoi.length) toast({ title: "Attestations non envoyées", description: bloquesEnvoi.join("\n"), variant: "destructive" });
     } finally {
       setBulkSendingAttestations(false);
     }
@@ -4638,7 +4647,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               variant="ghost"
                               className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
                               title="Attestation Formation Continue VTC"
-                              onClick={() => {
+                              onClick={async () => {
+                                const ctrl = await controlerAttestationFC(apprenant.id);
+                                if (!ctrl.autorise) { toast({ title: "Attestation bloquée", description: messageRefusAttestationFC(ctrl), variant: "destructive" }); return; }
                                 const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
                                 const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
                                 generateAttestationFCVTC({
