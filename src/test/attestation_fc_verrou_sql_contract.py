@@ -6,16 +6,17 @@ import os, subprocess, tempfile, unittest, json, shutil
 FNS = ['attestation_fc_controle', 'attestation_fc_autorisee', 'garde_attestation_fc_emargements']
 def live(q): return subprocess.check_output(['psql', '-X', '-At', '-v', 'ON_ERROR_STOP=1', '-c', q], text=True).strip()
 SIG = 'data:image/png;base64,' + 'A' * 400
+AS = ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
 A = '11111111-1111-1111-1111-111111111111'
 
 class Contrat(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         defs = [live(f"select pg_get_functiondef('public.{f}'::regproc)") for f in FNS]
-        cls.dir = tempfile.mkdtemp(); env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
+        cls.dir = tempfile.mkdtemp(dir='/tmp'); os.chown(cls.dir, 1000, 1000); env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
         cls.env = env; d = cls.dir
-        subprocess.run(['initdb', '-D', d + '/db', '-U', 'postgres', '-A', 'trust'], check=True, capture_output=True, env=env)
-        subprocess.run(['pg_ctl', '-D', d + '/db', '-o', f'-k {d} -p 55439 -c listen_addresses=', '-w', 'start'], check=True, capture_output=True, env=env)
+        subprocess.run(AS + ['initdb', '-D', d + '/db', '-U', 'postgres', '-A', 'trust'], check=True, capture_output=True, env=env)
+        subprocess.run(AS + ['pg_ctl', '-D', d + '/db', '-o', f'-k {d} -p 55439 -c listen_addresses=', '-w', 'start'], check=True, capture_output=True, env=env)
         cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role;
           CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ select nullif(current_setting('test.uid', true),'')::uuid $$;
           CREATE TABLE apprenants (id uuid primary key, auth_user_id uuid);
@@ -30,7 +31,7 @@ class Contrat(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        subprocess.run(['pg_ctl', '-D', cls.dir + '/db', '-m', 'immediate', 'stop'], capture_output=True, env=cls.env); shutil.rmtree(cls.dir, True)
+        subprocess.run(AS + ['pg_ctl', '-D', cls.dir + '/db', '-m', 'immediate', 'stop'], capture_output=True, env=cls.env); shutil.rmtree(cls.dir, True)
 
     @classmethod
     def sql(cls, q, check=True):
