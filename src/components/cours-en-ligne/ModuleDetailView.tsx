@@ -5,6 +5,7 @@ import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/ad
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
+import { learnerQuizLabel } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
 import { nationalePartie1CourseReview } from "@/lib/nationalePartie1CourseReview";
@@ -3528,7 +3529,7 @@ function ExerciceCard({
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-base flex items-center gap-2">
                   {partNumber && (
-                    <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-sm font-bold align-middle">{partNumber}</span>
+                    <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-sm font-bold align-middle" title="Numéro du quiz côté élève">Quiz élève {partNumber}</span>
                   )}
                   {item.titre}
                   {onUpdateMeta && (
@@ -10260,7 +10261,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onUpdateMeta={(id, meta) => updateExerciceMeta(id, meta)}
                 moduleId={moduleData.id}
                 overrideWarnings={trainerOverrideWarnings}
-                partNumber={exercicePartNumberById.get(Number(exo.id)) ?? null}
+                partNumber={learnerQuizLabel(Number(moduleData.id), exercicePartNumberById.get(Number(exo.id)))}
               />
             ))}
           </div>
