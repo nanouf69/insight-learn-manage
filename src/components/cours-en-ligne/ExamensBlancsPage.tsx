@@ -187,7 +187,7 @@ export default function ExamensBlancsPage({
   const currentTentativeRef = useRef<number>(1);
   const [resumeExerciceIds, setResumeExerciceIds] = useState<Record<string, string>>({});
   const [subjectRetake, setSubjectRetake] = useState<SubjectRetakeReceipt | null>(null);
-  const subjectRetakeRestored = useRef(false);
+  const subjectRetakeRestored = useRef<string | null>(null);
   const activateSubjectRetake = (receipt: SubjectRetakeReceipt) => {
     if (!apprenantId || !userId) return;
     validateSubjectRetakeReceipt(receipt, apprenantId, receipt.exam_id, receipt.matiere_id);
@@ -214,8 +214,10 @@ export default function ExamensBlancsPage({
   };
 
   useEffect(() => {
-    if (!apprenantId || !userId || !liveExamensLoaded || subjectRetakeRestored.current) return;
-    subjectRetakeRestored.current = true;
+    if (!apprenantId || !userId || !liveExamensLoaded) return;
+    const scope = `${userId}:${apprenantId}`;
+    if (subjectRetakeRestored.current === scope) return;
+    subjectRetakeRestored.current = scope;
     const operation = sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId));
     if (!operation) return;
     let cancelled = false;
@@ -320,6 +322,7 @@ export default function ExamensBlancsPage({
   const [sessionRestored, setSessionRestored] = useState(false);
   useEffect(() => {
     if (sessionRestored || !liveExamensLoaded) return;
+    if (userId && apprenantId && sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId))) return;
     let cancelled = false;
 
     const restore = async () => {
@@ -581,6 +584,8 @@ export default function ExamensBlancsPage({
   }, [defaultBilanId]);
 
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    setSubjectRetake(null);
+    if (userId && apprenantId) sessionStorage.removeItem(subjectRetakeStorageKey(userId, apprenantId));
     // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
     if (matiereIds !== undefined) setMatiereFilter(matiereIds);
 
@@ -824,6 +829,8 @@ export default function ExamensBlancsPage({
 
   const handleViewResults = async (examen: ExamenBlanc) => {
     if (!apprenantId) return;
+    setSubjectRetake(null);
+    if (userId) sessionStorage.removeItem(subjectRetakeStorageKey(userId, apprenantId));
     const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
@@ -1424,7 +1431,9 @@ export default function ExamensBlancsPage({
           // BUG #7 FIX: backup result to localStorage for recovery
           try {
             localStorage.setItem(
-              `exam_result_backup_${examenChoisi.id}_${matiere.id}_${apprenantId}`,
+              subjectRetake
+                ? `exam_result_backup_${userId}_${apprenantId}_${subjectRetake.exercice_id}_${subjectRetake.attempt_id ?? 'legacy'}`
+                : `exam_result_backup_${examenChoisi.id}_${matiere.id}_${apprenantId}`,
               JSON.stringify(resultat)
             );
           } catch (_) {}

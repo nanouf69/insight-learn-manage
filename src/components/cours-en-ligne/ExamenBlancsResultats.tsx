@@ -854,11 +854,11 @@ function EcranResultats({
 
 
               {/* Correction détaillée inline */}
-              {!examen.id.startsWith('bilan-') && !isAdmin && apprenantId && userId && onSubjectRetake && (
+              {!examen.id.startsWith('bilan-') && !r.nonPassee && !isAdmin && apprenantId && userId && onSubjectRetake && (
                 <div className="px-4 pb-3">
                   <RefaireMatiereButton owner={userId} account={apprenantId} exam={examen.id} subject={r.matiereId}
                     sourceExercise={buildExamMatiereExerciceId(examen.id, r.matiereId, r.tentative ?? currentTentative ?? 1)}
-                    sourceAttempt={r.__core?.attemptId ?? null} onStarted={onSubjectRetake} />
+                    sourceAttempt={r.details?.attempt_id ?? r.__core?.attemptId ?? null} onStarted={onSubjectRetake} />
                 </div>
               )}
               {isExpanded && (
