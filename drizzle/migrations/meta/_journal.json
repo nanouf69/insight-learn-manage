@@ -1450,6 +1450,13 @@
       "when": 1793109530828,
       "tag": "0206_garde_quiz_equipements_taxi_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 207,
+      "version": "7",
+      "when": 1793110401734,
+      "tag": "0207_migration",
+      "breakpoints": true
     }
   ]
 }
