@@ -4053,6 +4053,54 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_subject_retakes: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string | null
+          authorization_id: string | null
+          created_at: string
+          exam_id: string
+          exercice_id: string
+          matiere: Json
+          matiere_id: string
+          moteur: string
+          operation_id: string
+          source_attempt_id: string | null
+          source_exercice_id: string
+          tentative: number
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id?: string | null
+          authorization_id?: string | null
+          created_at?: string
+          exam_id: string
+          exercice_id: string
+          matiere: Json
+          matiere_id: string
+          moteur: string
+          operation_id: string
+          source_attempt_id?: string | null
+          source_exercice_id: string
+          tentative: number
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string | null
+          authorization_id?: string | null
+          created_at?: string
+          exam_id?: string
+          exercice_id?: string
+          matiere?: Json
+          matiere_id?: string
+          moteur?: string
+          operation_id?: string
+          source_attempt_id?: string | null
+          source_exercice_id?: string
+          tentative?: number
+        }
+        Relationships: []
+      }
       examen_theorique_decalages: {
         Row: {
           ancienne_date: string
@@ -9519,6 +9567,37 @@ export type Database = {
               started_at: string
             }[]
           }
+      start_exam_subject_retake: {
+        Args: {
+          p_apprenant_id: string
+          p_exam_id: string
+          p_matiere_id: string
+          p_operation_id: string
+          p_source_attempt_id?: string
+          p_source_exercice_id: string
+        }
+        Returns: {
+          apprenant_id: string
+          attempt_id: string | null
+          authorization_id: string | null
+          created_at: string
+          exam_id: string
+          exercice_id: string
+          matiere: Json
+          matiere_id: string
+          moteur: string
+          operation_id: string
+          source_attempt_id: string | null
+          source_exercice_id: string
+          tentative: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_subject_retakes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       start_or_get_exam_timer:
         | {
             Args: {
