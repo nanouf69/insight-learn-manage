@@ -20,6 +20,7 @@ export function SubjectCopyHistory({ owner, account, exam }: {owner: string; acc
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    setCopies([]); setSelected(''); setError('');
     const readAll = async (table: string, cols: string, filters: Record<string,string>) => {
       const rows: any[] = [];
       for (let offset = 0; ; offset += 500) {
@@ -38,7 +39,8 @@ export function SubjectCopyHistory({ owner, account, exam }: {owner: string; acc
     ]).then(async ([results, attempts]) => {
       const entries = results.map(historicalResultCopy);
       for (const a of attempts) {
-        if (results.some(r => r.details?.attempt_id === a.attempt_id || a.snapshot?.source_historique?.result_id === r.id)) continue;
+        // Keep both records when the link is learner-supplied. Only the immutable imported-source link merges display entries.
+        if (results.some(r => a.snapshot?.source_historique?.result_id === r.id)) continue;
         const {data, error} = await freshSessionRead(() => supabase.from('answer_state').select('question_id,valeur')
           .eq('apprenant_id', account).eq('attempt_id', a.attempt_id), owner);
         if (error) throw new Error('Lecture des réponses historiques impossible.');
@@ -62,6 +64,7 @@ export function SubjectCopyHistory({ owner, account, exam }: {owner: string; acc
         {(copy.questions.length ? copy.questions : Object.keys(copy.answers).map(id => ({id}))).map((q: any, i: number) =>
           <article key={String(q.id ?? i)} className="border-b pb-4 space-y-2">
             <p className="font-semibold">{i+1}. {q.enonce ?? `Question ${q.id}`}</p>
+            {Array.isArray(q.choix) && <ul className="space-y-1">{q.choix.map((ch: any,j: number) => <li key={j}>{ch.lettre ?? String.fromCharCode(65+j)}. {ch.texte ?? ch.text ?? ch.enonce ?? ''}{ch.correct ? ' — Réponse attendue' : ''}</li>)}</ul>}
             <p className="break-words">{JSON.stringify(copy.answers[q.id] ?? copy.answers[String(q.id).split(':').at(-1) ?? ''] ?? 'Sans réponse')}</p>
           </article>)}
       </div>}

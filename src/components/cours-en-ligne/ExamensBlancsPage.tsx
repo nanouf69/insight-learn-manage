@@ -626,6 +626,18 @@ export default function ExamensBlancsPage({
   }, [defaultBilanId]);
 
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    if (!forceRetake && userId && apprenantId) {
+      const operation = sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId));
+      if (operation) {
+        try {
+          const {data,error} = await freshSessionRead(() => supabase.from('exam_subject_retakes' as never).select('*')
+            .eq('operation_id',operation).eq('apprenant_id',apprenantId).single(),userId);
+          if (error || !data) { toast.error('Reprise non confirmée : aucune ancienne copie ouverte à sa place.'); return; }
+          const receipt=data as unknown as SubjectRetakeReceipt;
+          if (receipt.exam_id === examen.id) { activateSubjectRetake(receipt); return; }
+        } catch { toast.error('Impossible de relire la reprise ; aucun nouveau passage créé.'); return; }
+      }
+    }
     setSubjectRetake(null);
     if (userId && apprenantId) sessionStorage.removeItem(subjectRetakeStorageKey(userId, apprenantId));
     // matiereIds === undefined → on conserve le filtre courant ; null → mode complet
