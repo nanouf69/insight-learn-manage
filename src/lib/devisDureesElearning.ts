@@ -1,7 +1,7 @@
 /** Quote display totals, practical training included (never added again).
- * VA remains undefined: the 7-hour programme does not prove a presential total.
+ * VA = 36 h like TA (30 h theory + 6 h practice), approved 27/10/2026.
  */
-export const DEVIS_DUREES_ELEARNING = { vtc: 66, taxi: 96, ta: 36, va: undefined } as const;
+export const DEVIS_DUREES_ELEARNING = { vtc: 66, taxi: 96, ta: 36, va: 36 } as const;
 export type ParcoursDevisElearning = keyof typeof DEVIS_DUREES_ELEARNING;
 
 export function parcoursDevisElearning(identity: string): ParcoursDevisElearning | null {

@@ -38,7 +38,7 @@ describe('Durées affichées des nouveaux devis e-learning', () => {
   });
   it('VA : ne transforme ni les 7 h de programme ni le budget CPF en total présentiel', () => {
     expect(parcoursDevisElearning('va_elearning')).toBe('va');
-    expect(dureeDevisElearning('va_elearning')).toBeUndefined();
+    expect(dureeDevisElearning('va_elearning')).toBe('36 heures');
     expect(formationDevisAvecDuree('Formation VA E-learning')).toBe('Formation VA E-learning');
   });
   it('sépare le sens des passerelles sans confondre TAXI et VTC', () => {

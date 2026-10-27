@@ -69,12 +69,11 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     table(["Module", "Durée prévisionnelle"], m.lignes.map((l) => [l.intitule, hm(l.minutes)]), ["Durée totale", hm(m.totalMinutes)]);
     if (!m.coherent) manquants.push("Total des modules différent du total de la formation");
     para("Durées prévisionnelles du tableau des jalons de la plateforme : elles indiquent le temps de travail attendu, pas des heures réellement effectuées.");
-    if (p.filiere === "va") manquants.push("Durée totale VA (36 h au tableau des jalons) à confirmer pour le devis");
   } else if (p.mode === "pratique") {
     table(["Module", "Durée"], [["Formation pratique en véhicule à double commande", "6 h en groupe ou 3 h en solo"]]);
   } else {
     const heuresSession = session ? calendrierSession(session, p.filiere).heuresAttendues : null;
-    const theorie = heuresSession ?? (p.filiere === "ta" ? 30 : p.filiere === "taxi" ? 90 : p.soir ? 40 : 60);
+    const theorie = heuresSession ?? (p.filiere === "ta" || p.filiere === "va" ? 30 : p.filiere === "taxi" ? 90 : p.soir ? 40 : 60);
     const intitules = modulesElearning(p.filiere).lignes.filter((l) => l.moduleId !== PRATIQUE_PHYSIQUE && !/examens blancs/i.test(l.intitule)).map((l) => [l.intitule]);
     table(["Modules enseignés"], [...intitules, ["Formation pratique en véhicule à double commande"]]);
     table(["Partie", "Durée"], [["Formation théorique en salle", h(theorie)], ["Formation pratique", h(HEURES_PRATIQUE)]], ["Durée totale", h(theorie + HEURES_PRATIQUE)]);
