@@ -62,3 +62,32 @@ describe("course brouillon / validation", () => {
     expect(upserts.at(-1)).toEqual({ nom: "final", _status: "completed" });
   });
 });
+
+describe("validation normale et échec réel", () => {
+  beforeEach(() => { upserts.length = 0; localStorage.clear(); vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+  it("validation normale : un seul envoi, statut validé", async () => {
+    const { result } = renderHook(() => useAutoSave(params));
+    let ok = false;
+    await act(async () => { ok = await result.current.triggerSave({ nom: "x", _status: "completed" }); });
+    expect(ok).toBe(true);
+    expect(upserts).toEqual([{ nom: "x", _status: "completed" }]);
+  });
+  it("échec réel : renvoie false, aucun brouillon ensuite, la version validée est réessayée", async () => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { savePublicFormDocument } = await import("@/lib/savePublicFormDocument");
+    const fail = { upsert: vi.fn(() => Promise.resolve({ error: { message: "réseau" } })) };
+    (supabase.from as any).mockImplementation(() => fail);
+    (savePublicFormDocument as any).mockResolvedValueOnce(false);
+    const { result } = renderHook(() => useAutoSave(params));
+    let ok = true;
+    await act(async () => { const p = result.current.triggerSave({ nom: "final", _status: "completed" }); await vi.advanceTimersByTimeAsync(10000); ok = await p; });
+    expect(ok).toBe(false);
+    const sent: any[] = [];
+    (supabase.from as any).mockImplementation(() => ({ upsert: vi.fn((row: any) => { sent.push(row.donnees); return Promise.resolve({ error: null }); }) }));
+    act(() => result.current.queueSave({ nom: "brouillon" }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(31000); });
+    expect(sent.every((d) => d._status === "completed")).toBe(true);
+    expect(sent.length).toBeGreaterThan(0);
+  });
+});
