@@ -32,6 +32,7 @@ import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionElearningPage from "./pages/SessionElearningPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
 import AdminErrorLogs from "./pages/AdminErrorLogs";
+import AdminCalendrierDevis from "./pages/AdminCalendrierDevis";
 import AdminHistoriqueQuestions from "./pages/AdminHistoriqueQuestions";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminAuditModules from "./pages/AdminAuditModules";
@@ -167,6 +168,12 @@ function App() {
 
                 <Route path="/diagnostic-examens-blancs" element={
                   <ErrorBoundary><DiagnosticExamensBlancs /></ErrorBoundary>
+                } />
+
+                <Route path="/admin/calendrier-devis" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminCalendrierDevis /></ErrorBoundary>
+                  </ProtectedRoute>
                 } />
 
                 <Route path="/admin/erreurs" element={

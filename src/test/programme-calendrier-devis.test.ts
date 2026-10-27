@@ -1,0 +1,74 @@
+import { describe, expect, it } from "vitest";
+import {
+  calendrierSession, formationProgramme, joursOuvres, modulesElearning, PLAGES_JOURNEE, PLAGES_SOIREE,
+  sessionsPourFormation, type SessionPublique,
+} from "@/lib/programmeCalendrierDevis";
+import { buildProgrammeCalendrierPDF } from "@/lib/pdf/programme-calendrier-devis";
+
+const taxi4janv: SessionPublique = {
+  id: "t", nom: "Session TAXI et TA - Du 4 au 25 janvier 2027", type_session: "theorique",
+  date_debut: "2027-01-04", date_fin: "2027-01-25", heure_debut: null, heure_fin: null, heures_total: null,
+  lieu: "86 route de Genas 69003 Lyon", types_apprenant: ["TAXI", "TA"], jours: [],
+};
+const soir: SessionPublique = { ...taxi4janv, id: "s", nom: "Session VTC cours du soir", types_apprenant: ["VTC"], date_debut: "2027-02-01", date_fin: "2027-02-12" };
+const examen: SessionPublique = { ...taxi4janv, id: "e", nom: "Session examen — 26 janvier 2027", type_session: "examen", date_debut: "2027-01-26", date_fin: "2027-01-26", heure_debut: "14:00", heure_fin: "16:00", types_apprenant: [] };
+
+describe("totaux du programme e-learning", () => {
+  it("TAXI = 96 h", () => expect(modulesElearning("taxi")).toMatchObject({ totalMinutes: 96 * 60, coherent: true }));
+  it("VTC = 66 h", () => expect(modulesElearning("vtc")).toMatchObject({ totalMinutes: 66 * 60, coherent: true }));
+  it("TA = 36 h", () => expect(modulesElearning("ta")).toMatchObject({ totalMinutes: 36 * 60, coherent: true }));
+  it("VA = 36 h", () => expect(modulesElearning("va")).toMatchObject({ totalMinutes: 36 * 60, coherent: true }));
+});
+
+describe("calendrier journalier", () => {
+  it("TAXI 4 janvier : 16 jours de 6 h = 90 h, publié", () => {
+    const jours = joursOuvres("2027-01-04", "2027-01-25").slice(0, 15).map((jour) => ({ jour, plages: PLAGES_JOURNEE, nature: "cours" as const }));
+    const c = calendrierSession({ ...taxi4janv, jours }, "taxi");
+    expect(c.heuresAttendues).toBe(90);
+    expect(c.heuresSaisies).toBe(90);
+    expect(c.valide).toBe(true);
+  });
+  it("16 jours ouvrés = 96 h ≠ 90 h : calendrier bloqué", () => {
+    const jours = joursOuvres("2027-01-04", "2027-01-25").map((jour) => ({ jour, plages: PLAGES_JOURNEE, nature: "cours" as const }));
+    expect(jours).toHaveLength(16);
+    expect(calendrierSession({ ...taxi4janv, jours }, "taxi").valide).toBe(false);
+  });
+  it("aucun jour saisi : bloqué", () => expect(calendrierSession(taxi4janv, "taxi").valide).toBe(false));
+  it("soirée VTC : 10 soirs de 4 h = 40 h", () => {
+    const jours = joursOuvres(soir.date_debut, soir.date_fin).map((jour) => ({ jour, plages: PLAGES_SOIREE, nature: "cours" as const }));
+    const c = calendrierSession({ ...soir, jours }, "vtc");
+    expect(c.heuresAttendues).toBe(40);
+    expect(c.valide).toBe(true);
+  });
+  it("jour hors dates : bloqué", () => {
+    const c = calendrierSession({ ...soir, jours: [{ jour: "2027-03-01", plages: PLAGES_SOIREE, nature: "cours" }] }, "vtc");
+    expect(c.valide).toBe(false);
+  });
+});
+
+describe("sessions par formation", () => {
+  it("TAXI présentiel retrouve la session du 4 janvier, pas l'examen", () => {
+    const f = formationProgramme("taxi_presential")!;
+    expect(sessionsPourFormation([taxi4janv, examen, soir], f).map((s) => s.id)).toEqual(["t"]);
+  });
+  it("VTC soir ne propose que les sessions du soir", () => {
+    expect(sessionsPourFormation([taxi4janv, soir], formationProgramme("vtc_soir")!).map((s) => s.id)).toEqual(["s"]);
+    expect(sessionsPourFormation([soir], formationProgramme("vtc_complet")!)).toEqual([]);
+  });
+  it("formation continue hors périmètre", () => expect(formationProgramme("fc_taxi")).toBeNull());
+});
+
+describe("PDF", () => {
+  const formation = { id: "taxi_presential", label: "TAXI", designation: "Formation initiale TAXI en présentiel", agrement: "n°69-18-001" };
+  it("sans calendrier : PDF généré et éléments signalés", () => {
+    const { doc, manquants } = buildProgrammeCalendrierPDF({ formation, programme: formationProgramme("taxi_presential")!, session: taxi4janv, sessions: [taxi4janv, examen] });
+    expect(doc.getNumberOfPages()).toBeGreaterThan(0);
+    expect(manquants.some((m) => m.startsWith("Calendrier"))).toBe(true);
+    expect(manquants).toContain("Date du stage pratique");
+    expect(manquants).not.toContain("Date d'examen");
+  });
+  it("erreur de lecture signalée, jamais « aucune session »", () => {
+    const { manquants } = buildProgrammeCalendrierPDF({ formation, programme: formationProgramme("taxi_presential")!, session: null, sessions: [], erreurLecture: true });
+    expect(manquants).toContain("Lecture des sessions impossible");
+  });
+});

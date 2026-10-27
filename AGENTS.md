@@ -52,3 +52,4 @@
 - TA national Bilan loading uses display-only wrappers of the TAXI projection via its existing binding to exercise 250; TAXI helpers, save/readback, snapshot behavior and TA local section remain unchanged; why: isolate TA display selection without modifying persisted shared or historical data.
 
 - Legacy EB copies reach QRC AI only via admin RPC qrc_ia_rattrapage_historique (displayed copy, same-tentative submit proof, append-only authorization, refused if trainer-corrected); imported passages never count as a finished EB; why: no tentative confusion, no forced module 35.
+- Devis programme/calendar PDF reads sessions only via `sessions_publiques_devis()` (catalog fields + admin-entered `session_calendrier_jours`); the daily calendar prints only when entered days total the session hours exactly; why: no invented dates or exposed learner data.
