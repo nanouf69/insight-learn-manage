@@ -16,7 +16,7 @@ class Contrat(unittest.TestCase):
         cls.dir = tempfile.mkdtemp(dir='/tmp'); os.chown(cls.dir, 1000, 1000); env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
         cls.env = env; d = cls.dir
         subprocess.run(AS + ['initdb', '-D', d + '/db', '-U', 'postgres', '-A', 'trust', '--no-locale'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
-        subprocess.run(AS + ['pg_ctl', '-D', d + '/db', '-l', d + '/pg.log', '-o', f'-k {d} -p 55439 -h ""', '-w', 'start'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+        subprocess.run(AS + ['pg_ctl', '-D', d + '/db', '-l', d + '/pg.log', '-o', f'-k {d} -p 55471 -h ""', '-w', 'start'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
         cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role;
           CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ select nullif(current_setting('test.uid', true),'')::uuid $$;
           CREATE TABLE apprenants (id uuid primary key, auth_user_id uuid);
@@ -35,7 +35,7 @@ class Contrat(unittest.TestCase):
 
     @classmethod
     def sql(cls, q, check=True):
-        return subprocess.run(['psql', '-X', '-At', '-h', cls.dir, '-p', '55439', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True, check=check, env=cls.env)
+        return subprocess.run(['psql', '-X', '-At', '-h', cls.dir, '-p', '55471', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True, check=check, env=cls.env)
 
     def setUp(self):
         self.sql(f"""TRUNCATE apprenants, sessions, session_apprenants, emargements_fc, documents_inscription, user_roles;
