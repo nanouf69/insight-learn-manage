@@ -17,8 +17,8 @@ describe("registre d'activités → jalons", () => {
   it("cibles = parcours réels : Lyon VTC/VA, nouvelles activités TAXI/TA module 6", () => {
     expect(idsActivites(parcours("vtc-e"))).toEqual([J1, J2]);
     expect(idsActivites(parcours("va-e"))).toEqual([J1, J2]);
-    expect(idsActivites(parcours("taxi-e"))).toEqual(["quiz_taxi_equipements_m64_complement_v1", ...IDS_TAXI]);
-    expect(idsActivites(parcours("ta-e"))).toEqual(["quiz_taxi_equipements_m64_complement_v1", ...IDS_TAXI]);
+    expect(idsActivites(parcours("taxi-e"))).toEqual(["quiz_taxi_equipements_m64_complement_v1", "quiz_taxi_equipements_m64_sanctions_v1", ...IDS_TAXI]);
+    expect(idsActivites(parcours("ta-e"))).toEqual(["quiz_taxi_equipements_m64_complement_v1", "quiz_taxi_equipements_m64_sanctions_v1", ...IDS_TAXI]);
   });
   it("module validé AVANT l'ajout des jeux : reste acquis 100 %, jeux facultatifs (règle gel par module)", () => {
     const r = completionAvecActivites({ module_id: 8, status: "completed", progress: 100, completed_at: "2026-10-01T08:00:00Z" }, v8, acts, new Set());
