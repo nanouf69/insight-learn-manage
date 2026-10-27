@@ -4770,6 +4770,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <span className="text-xs">💻 Mail e-learning synchrone</span>
                           </Button>
 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 gap-1.5 ${hasRibEmail(apprenant.id) ? 'text-green-700 bg-green-100 hover:bg-green-200 hover:text-green-800' : 'text-muted-foreground hover:text-primary'}`}
+                            title={hasRibEmail(apprenant.id) ? "RIB déjà envoyé — cliquer pour renvoyer" : "Envoyer le RIB de la société (Revolut) par e-mail"}
+                            disabled={ribSending}
+                            onClick={() => setRibDialogApprenant(apprenant)}
+                          >
+                            {hasRibEmail(apprenant.id) ? <CheckCircle2 className="w-4 h-4" /> : <Landmark className="w-4 h-4" />}
+                            <span className="text-xs">🏦 RIB</span>
+                          </Button>
+
 
 
                           <Button
@@ -7175,6 +7187,37 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     </Dialog>
 
     {mdpMailDialog.dialog}
+
+    <Dialog open={!!ribDialogApprenant} onOpenChange={(o) => { if (!o && !ribSending) setRibDialogApprenant(null); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>🏦 Envoyer le RIB de la société</DialogTitle>
+        </DialogHeader>
+        {ribDialogApprenant && (
+          <div className="space-y-3 text-sm">
+            <p>
+              Destinataire : <strong>{ribDialogApprenant.prenom} {ribDialogApprenant.nom}</strong> — {ribDialogApprenant.email}
+            </p>
+            <div className="rounded-md border bg-muted/40 p-3">
+              <p><strong>Titulaire :</strong> {RIB_INFO.titulaire}</p>
+              <p><strong>IBAN :</strong> {RIB_INFO.iban}</p>
+              <p><strong>BIC / SWIFT :</strong> {RIB_INFO.swift}</p>
+              <p><strong>Banque :</strong> {RIB_INFO.banque}</p>
+            </div>
+            <p className="text-muted-foreground">
+              Les coordonnées sont écrites dans le corps du mail, sans pièce jointe.
+            </p>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" disabled={ribSending} onClick={() => setRibDialogApprenant(null)}>Annuler</Button>
+          <Button disabled={ribSending} onClick={() => void confirmSendRib()}>
+            {ribSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+            Envoyer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <TeamsLinkSender
       open={teamsLinkOpen}
