@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, CheckCircle2, Save } from "lucide-react";
+import { CheckCircle2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -16,38 +16,35 @@ export const SERIE_SANCTIONS: SerieEquipements = { id: ID_QUIZ_SANCTIONS, versio
 export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT }: { compteId?: string | null; transport?: TransportEquipements; serie?: SerieEquipements }) {
   const QUESTIONS_EQUIPEMENTS = serie.questions;
   const s = useQuizEquipements(compteId, transport, serie);
-  const [index, setIndex] = useState(0);
-  const [corrige, setCorrige] = useState(false);
-  const q = QUESTIONS_EQUIPEMENTS[index];
-  const rep = s.valeurs[q.id] ?? "";
-  const aller = (n: number) => { setIndex(n); setCorrige(false); };
+  const [corriges, setCorriges] = useState<Record<string, boolean>>({});
   return <div className="space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <Badge variant="outline">Question {index + 1} / {QUESTIONS_EQUIPEMENTS.length}</Badge>
+      <Badge variant="outline">{QUESTIONS_EQUIPEMENTS.length} questions</Badge>
       <p role="status" className="text-sm font-medium">{s.statut}</p>
     </div>
     {!s.charge && compteId && <Button variant="outline" onClick={() => void s.relire()}>Réessayer la lecture</Button>}
     {s.confirme && <p className="text-sm text-muted-foreground">Réalisation confirmée conservée : consultation du corrigé, aucune réponse ne sera réécrite.</p>}
-    <fieldset disabled={s.confirme || s.busy || !s.charge} className="space-y-4 min-w-0">
-      <h3 className="text-lg font-bold leading-relaxed">{q.enonce}</h3>
-      <div className="space-y-3">{q.choix.map((texte, i) => <Label key={texte} className="flex items-start gap-3 border rounded-lg p-4 cursor-pointer leading-relaxed">
-        <Checkbox checked={rep === String(i)} onCheckedChange={(c) => s.modifier(q.id, c ? String(i) : "")} aria-label={texte} /><span>{texte}</span>
-      </Label>)}</div>
-    </fieldset>
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" disabled={!rep} onClick={() => setCorrige((v) => !v)}>{corrige ? "Masquer le corrigé" : "Voir le corrigé"}</Button>
+    {QUESTIONS_EQUIPEMENTS.map((q, index) => {
+      const rep = s.valeurs[q.id] ?? "";
+      const corrige = !!corriges[q.id];
+      return <div key={q.id} className="space-y-3 border-b pb-5" data-testid={`equipements-question-${index + 1}`}>
+        <fieldset disabled={s.confirme || s.busy || !s.charge} className="space-y-4 min-w-0">
+          <h3 className="text-lg font-bold leading-relaxed"><span className="text-primary mr-2">Q{index + 1}</span>{q.enonce}</h3>
+          <div className="space-y-3">{q.choix.map((texte, i) => <Label key={texte} className="flex items-start gap-3 border rounded-lg p-4 cursor-pointer leading-relaxed">
+            <Checkbox checked={rep === String(i)} onCheckedChange={(c) => s.modifier(q.id, c ? String(i) : "")} aria-label={texte} /><span>{texte}</span>
+          </Label>)}</div>
+        </fieldset>
+        <Button variant="outline" size="sm" disabled={!rep} onClick={() => setCorriges((v) => ({ ...v, [q.id]: !v[q.id] }))}>{corrige ? "Masquer le corrigé" : "Voir le corrigé"}</Button>
+        {corrige && <div className="border-l-4 border-primary bg-muted p-4 space-y-2" role="region" aria-label="Corrigé">
+          <p className="font-bold">{rep === String(q.correct) ? "✅ Exact" : "Réponse à retenir"} : {q.choix[q.correct]}</p>
+          <p className="leading-relaxed">{q.justification}</p>
+          <p className="text-xs text-muted-foreground">Diapositive {q.diapositive} du cours.</p>
+        </div>}
+      </div>;
+    })}
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Button variant="outline" disabled={!compteId || !s.charge || s.busy || s.confirme} onClick={() => void s.enregistrer(false)}><Save className="h-4 w-4 mr-2" />Enregistrer mes réponses</Button>
-    </div>
-    {corrige && <div className="border-l-4 border-primary bg-muted p-4 space-y-2" role="region" aria-label="Corrigé">
-      <p className="font-bold">{rep === String(q.correct) ? "✅ Exact" : "Réponse à retenir"} : {q.choix[q.correct]}</p>
-      <p className="leading-relaxed">{q.justification}</p>
-      <p className="text-xs text-muted-foreground">Diapositive {q.diapositive} du cours.</p>
-    </div>}
-    <div className="flex items-center justify-between gap-2 border-t pt-4">
-      <Button variant="outline" disabled={index === 0} onClick={() => aller(index - 1)}><ChevronLeft className="h-4 w-4 mr-1" />Précédent</Button>
-      {index < QUESTIONS_EQUIPEMENTS.length - 1
-        ? <Button onClick={() => aller(index + 1)}>Suivant<ChevronRight className="h-4 w-4 ml-1" /></Button>
-        : <Button disabled={!serieComplete(serie, s.valeurs) || !compteId || !s.charge || s.busy || s.confirme} onClick={() => void s.enregistrer(true)}><CheckCircle2 className="h-4 w-4 mr-2" />Terminer le quiz</Button>}
+      <Button disabled={!serieComplete(serie, s.valeurs) || !compteId || !s.charge || s.busy || s.confirme} onClick={() => void s.enregistrer(true)}><CheckCircle2 className="h-4 w-4 mr-2" />Terminer le quiz</Button>
     </div>
   </div>;
 }
