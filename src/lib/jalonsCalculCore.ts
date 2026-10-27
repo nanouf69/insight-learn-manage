@@ -1,7 +1,7 @@
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
-import { activitesDuModule, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
+import { activitesDuModule, activiteHorsVolume, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import type { ModuleContentLite } from "@/lib/volumeModules";
 import {
