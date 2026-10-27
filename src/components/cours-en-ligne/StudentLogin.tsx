@@ -24,8 +24,6 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "change-password" | "forgot-password">("login");
   const [forgotEmail, setForgotEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
