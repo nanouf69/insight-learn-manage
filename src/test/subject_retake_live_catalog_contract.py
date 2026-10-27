@@ -31,7 +31,8 @@ class LiveCatalog(unittest.TestCase):
    shutil.rmtree(cls.d+'/db',ignore_errors=True)
  @classmethod
  def sql(cls,q,check=True):
-  r=subprocess.run(['psql','-X','-At','-h',cls.d,'-p','55479','-U','postgres','-c',q],input=None,capture_output=True,text=True,env=cls.env)
+  r=subprocess.run(['psql','-X','-At','-h',cls.d,'-p','55479','-U','postgres'],input=q,capture_output=True,text=True,env=cls.env)
+  if 'ERROR:' in r.stderr: r.returncode=1
   if check and r.returncode:raise RuntimeError(r.stderr)
   return r
  def test_relevant_triggers_match_live(self):
