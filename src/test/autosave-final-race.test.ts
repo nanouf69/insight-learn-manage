@@ -142,3 +142,44 @@ describe("compléments : correction après échec, identité, double validation"
     expect(upserts.at(-1).d.nom).toBe("v2");
   });
 });
+
+describe("rechargement et identité après attente", () => {
+  beforeEach(async () => {
+    upserts.length = 0; localStorage.clear(); vi.useFakeTimers();
+    const { supabase } = await import("@/integrations/supabase/client");
+    (supabase.from as any).mockImplementation(() => ({
+      upsert: vi.fn((row: any) => { upserts.push({ id: row.apprenant_id, t: row.type_document, d: row.donnees }); return Promise.resolve({ error: null }); }),
+      select: () => ({ eq: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: [{ donnees: { nom: "final", _status: "completed" } }], error: null }) }) }) }) }),
+    }));
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("brouillon puis validation réussie, remontage : restaure la version validée, jamais l'ancien brouillon", async () => {
+    const { loadDraftFromSupabase, loadSavedDraft } = await import("@/hooks/useAutoSave");
+    const h = renderHook(() => useAutoSave(params));
+    act(() => h.result.current.queueSave({ nom: "brouillon" }));
+    await act(async () => { await h.result.current.triggerSave({ nom: "final", _status: "completed" }); });
+    h.unmount();
+    renderHook(() => useAutoSave(params));
+    expect(loadSavedDraft("a-fictif", "analyse-besoin")?.nom).toBe("final");
+    const d = await loadDraftFromSupabase("a-fictif", "analyse-besoin");
+    expect(d?._status).toBe("completed");
+    expect(d?.nom).toBe("final");
+  });
+
+  it("validation en attente d'un brouillon puis changement d'élève : rien n'est écrit", async () => {
+    const h = renderHook((p: any) => useAutoSave(p), { initialProps: params });
+    blockNext = true;
+    const { supabase } = await import("@/integrations/supabase/client");
+    (supabase.from as any).mockImplementation(() => ({ upsert: vi.fn((row: any) => new Promise((res) => {
+      releaseFirst = () => { upserts.push({ id: row.apprenant_id, d: row.donnees }); res({ error: null }); };
+    })) }));
+    let draftP: any, finalP: any;
+    act(() => { draftP = h.result.current.triggerSave({ nom: "brouillon" }); });
+    act(() => { finalP = h.result.current.triggerSave({ nom: "final", _status: "completed" }); });
+    h.rerender({ ...params, apprenantId: "b-fictif" });
+    await act(async () => { releaseFirst?.(); await draftP; await vi.advanceTimersByTimeAsync(500); });
+    expect(await finalP).toBe(false);
+    expect(upserts.filter((u) => u.d._status === "completed")).toHaveLength(0);
+  });
+});

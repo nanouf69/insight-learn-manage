@@ -236,6 +236,7 @@ export function useAutoSave({
   const triggerSave = useCallback(async (data: Record<string, any>): Promise<boolean> => {
     if (!apprenantId || !enabled) return false;
     const isFinal = data?._status === "completed";
+    const identity = `${apprenantId}:${typeDocument}`;
     // After a final validation, drafts can never be sent again for this document.
     if (finalizedRef.current && !isFinal) return false;
     if (isFinal) {
@@ -244,6 +245,8 @@ export function useAutoSave({
       pendingDataRef.current = null;
       // Wait for an in-flight draft instead of queuing the validation behind a false failure.
       while (isSavingRef.current) await new Promise((r) => setTimeout(r, 50));
+      // The learner/document may have changed while waiting: never write under another identity.
+      if (identityRef.current !== identity) return false;
     } else if (isSavingRef.current) {
       pendingDataRef.current = data;
       try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* unload guard retains memory */ }
@@ -251,7 +254,6 @@ export function useAutoSave({
     }
 
     isSavingRef.current = true;
-    const identity = `${apprenantId}:${typeDocument}`;
     setStatus("saving");
 
     const success = await saveWithRetry({
@@ -266,6 +268,11 @@ export function useAutoSave({
     if (success) {
       setStatus("saved");
       setLastSavedAt(new Date());
+      if (isFinal) {
+        // Replace any older on-disk draft so a reload restores the validated version.
+        const saved = JSON.stringify({ ...data, _pending: false });
+        try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, saved); localStorage.setItem(`autosave_${apprenantId}_${typeDocument}`, saved); } catch { /* server confirmed */ }
+      }
       if (pendingDataRef.current === data) {
         pendingDataRef.current = null;
         try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: false })); } catch { /* server confirmed */ }
@@ -275,7 +282,10 @@ export function useAutoSave({
     } else {
       setStatus("error");
       // A failed validation stays pending so periodic retries resend the validated version only.
-      if (isFinal) pendingDataRef.current = data;
+      if (isFinal) {
+        pendingDataRef.current = data;
+        try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* memory retry */ }
+      }
       // Reset error after 5s
       setTimeout(() => setStatus(prev => prev === "error" ? "idle" : prev), 5000);
     }
