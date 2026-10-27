@@ -41,6 +41,8 @@ export const ACTIVITES_CODE: ActiviteCode[] = [
   // Module 64 « 4. Équipements TAXI » (demande 27/10/2026 14:11 UTC, remplace l'ajout en partie locale du module 10, jamais utilisé) :
   // modules validés avant = acquis inchangé, hors volume ; les 10 questions de l'exercice 64100 restent intactes.
   { id: "quiz_taxi_equipements_m64_complement_v1", moduleId: 64, titre: "Questions complémentaires — Équipements et documents TAXI", unites: 11, ajouteeLe: BORNE_EQUIPEMENTS_TAXI_M64, horsVolumeSiValideAvant: true },
+  // 2e série (demande 27/10/2026 17:11 UTC) : usage, emplacement, sanctions — modules 64 validés avant = acquis inchangé.
+  { id: "quiz_taxi_equipements_m64_sanctions_v1", moduleId: 64, titre: "Équipements TAXI — usage, emplacement et sanctions", unites: 20, ajouteeLe: "2026-10-27T17:11:00Z", horsVolumeSiValideAvant: true },
 ];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";

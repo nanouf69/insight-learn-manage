@@ -7,11 +7,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ecouterDemandeJeu } from "@/lib/demandeJeuRegistre";
 import { useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
-import { COURS_EQUIPEMENTS, ID_QUIZ_EQUIPEMENTS, QUESTIONS_EQUIPEMENTS, quizEquipementsComplet } from "./donnees";
-import { useQuizEquipements, type TransportEquipements } from "./useQuizEquipements";
+import { COURS_EQUIPEMENTS } from "./donnees";
+import { ID_QUIZ_SANCTIONS, VERSION_QUIZ_SANCTIONS, QUESTIONS_SANCTIONS } from "./donneesSanctions";
+import { useQuizEquipements, SERIE_COMPLEMENT, serieComplete, type SerieEquipements, type TransportEquipements } from "./useQuizEquipements";
 
-export function QuizEquipements({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
-  const s = useQuizEquipements(compteId, transport);
+export const SERIE_SANCTIONS: SerieEquipements = { id: ID_QUIZ_SANCTIONS, version: VERSION_QUIZ_SANCTIONS, questions: QUESTIONS_SANCTIONS };
+
+export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT }: { compteId?: string | null; transport?: TransportEquipements; serie?: SerieEquipements }) {
+  const QUESTIONS_EQUIPEMENTS = serie.questions;
+  const s = useQuizEquipements(compteId, transport, serie);
   const [index, setIndex] = useState(0);
   const [corrige, setCorrige] = useState(false);
   const q = QUESTIONS_EQUIPEMENTS[index];
@@ -43,13 +47,14 @@ export function QuizEquipements({ compteId, transport }: { compteId?: string | n
       <Button variant="outline" disabled={index === 0} onClick={() => aller(index - 1)}><ChevronLeft className="h-4 w-4 mr-1" />Précédent</Button>
       {index < QUESTIONS_EQUIPEMENTS.length - 1
         ? <Button onClick={() => aller(index + 1)}>Suivant<ChevronRight className="h-4 w-4 ml-1" /></Button>
-        : <Button disabled={!quizEquipementsComplet(s.valeurs) || !compteId || !s.charge || s.busy || s.confirme} onClick={() => void s.enregistrer(true)}><CheckCircle2 className="h-4 w-4 mr-2" />Terminer le quiz</Button>}
+        : <Button disabled={!serieComplete(serie, s.valeurs) || !compteId || !s.charge || s.busy || s.confirme} onClick={() => void s.enregistrer(true)}><CheckCircle2 className="h-4 w-4 mr-2" />Terminer le quiz</Button>}
     </div>
   </div>;
 }
 
 /** Module 64 : questions complémentaires (support remplacé directement dans la page de cours). */
-export default function CoursQuizEquipementsTaxi({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
+function SectionSerie({ compteId, transport, serie, titre, intro }: { compteId?: string | null; transport?: TransportEquipements; serie: SerieEquipements; titre: string; intro: string }) {
+  const ID_QUIZ_EQUIPEMENTS = serie.id;
   const [ouvert, setOuvert] = useState(false);
   const etat = useActivitesModule();
   useEffect(() => ecouterDemandeJeu((id) => { if (id === ID_QUIZ_EQUIPEMENTS) setOuvert(true); }), []);
@@ -57,20 +62,28 @@ export default function CoursQuizEquipementsTaxi({ compteId, transport }: { comp
   const requis = !!ok?.requises.some((a) => a.id === ID_QUIZ_EQUIPEMENTS);
   const termine = !!ok && [...ok.requises, ...ok.facultatives].some((a) => a.id === ID_QUIZ_EQUIPEMENTS && a.termine);
   const statut = !ok ? "Statut à vérifier" : termine ? "Terminé" : requis ? "À faire" : "Facultatif";
-  const nb = QUESTIONS_EQUIPEMENTS.length;
-  return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" data-testid="equipements-taxi-section" aria-labelledby="equipements-taxi-titre">
+  const nb = serie.questions.length;
+  return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" data-testid={`equipements-taxi-section-${serie.id}`} aria-labelledby={`titre-${serie.id}`}>
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <h3 id="equipements-taxi-titre" className="text-xl font-bold">🚕 Questions complémentaires — {COURS_EQUIPEMENTS.titre}</h3>
+      <h3 id={`titre-${serie.id}`} className="text-xl font-bold">🚕 {titre}</h3>
       <Badge variant={termine ? "default" : requis ? "destructive" : "outline"} data-testid="equipements-taxi-statut">{statut}</Badge>
     </div>
     <p className="text-sm">{etat?.etat === "indisponible" ? "Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant."
       : ok && !requis ? `Votre module est déjà validé : ces ${nb} questions sont accessibles en révision, sans effet sur votre progression.`
-      : ok ? `${nb} nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module.`
+      : ok ? `${nb} ${intro}`
       : "Chargement du statut…"}</p>
     <Button onClick={() => setOuvert(true)} data-testid="equipements-taxi-ouvrir">{termine ? "Revoir les questions" : "Commencer / reprendre"}</Button>
     <Dialog open={ouvert} onOpenChange={setOuvert}><DialogContent className="max-w-3xl w-[96vw] max-h-[94dvh] overflow-y-auto p-4 sm:p-6">
-      <DialogHeader><DialogTitle>Questions complémentaires — Équipements et documents TAXI</DialogTitle><DialogDescription>{nb} questions · réalisation non notée, corrigé après chaque réponse.</DialogDescription></DialogHeader>
-      {ouvert && <QuizEquipements key={compteId ?? "apercu"} compteId={compteId} transport={transport} />}
+      <DialogHeader><DialogTitle>{titre}</DialogTitle><DialogDescription>{nb} questions · réalisation non notée, corrigé après chaque réponse.</DialogDescription></DialogHeader>
+      {ouvert && <QuizEquipements key={compteId ?? "apercu"} compteId={compteId} transport={transport} serie={serie} />}
     </DialogContent></Dialog>
   </section>;
+}
+
+/** Module 64 : séries complémentaires (support remplacé directement dans la page de cours). */
+export default function CoursQuizEquipementsTaxi({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
+  return <div className="space-y-4">
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_COMPLEMENT} titre={`Questions complémentaires — ${COURS_EQUIPEMENTS.titre}`} intro="nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module." />
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." />
+  </div>;
 }
