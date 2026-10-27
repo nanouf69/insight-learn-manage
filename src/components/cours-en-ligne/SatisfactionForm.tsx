@@ -133,7 +133,7 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
           prenom: "",
           donnees: { ...collectData(), _status: "completed" },
         });
-      } else toast.error("Erreur lors de la sauvegarde");
+      } else { toast.error("Erreur lors de la sauvegarde"); return; }
     }
     setSubmitted(true);
     toast.success("✅ Questionnaire de satisfaction envoyé avec succès !");

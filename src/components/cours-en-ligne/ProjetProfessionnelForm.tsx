@@ -610,7 +610,7 @@ export default function ProjetProfessionnelForm({
                   donnees: formData,
                 });
               }
-              else toast.error("Erreur lors de la sauvegarde finale");
+              else { toast.error("Erreur lors de la sauvegarde finale"); return; }
             }
             onComplete();
           }}
