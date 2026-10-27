@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
+import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 import {
   calendrierSession, heuresPlages, HEURES_PRATIQUE, modulesElearning, sessionsExamen, sessionsPratique,
   type FormationProgramme, type SessionPublique,

@@ -52,9 +52,9 @@ export default function AdminCalendrierDevis() {
   const plages = (): PlageHoraire[] => (preset === "soiree" ? PLAGES_SOIREE : PLAGES_JOURNEE);
   const apercu = useMemo(() => (session ? calendrierSession({ ...session, jours: [...lignes, ...brouillon] }, filiereSession(session)) : null), [session, lignes, brouillon]);
 
-  const ajouter = (dates: string[]) => {
-    const pris = new Set([...lignes, ...brouillon].filter((l) => l.nature === "cours").map((l) => l.jour));
-    setBrouillon((b) => [...b, ...dates.filter((d) => !pris.has(d)).map((d) => ({ jour: d, plages: plages(), nature: "cours" as const }))]);
+  const ajouter = (dates: string[], nature: "cours" | "pratique" = "cours") => {
+    const pris = new Set([...lignes, ...brouillon].filter((l) => l.nature === nature).map((l) => l.jour));
+    setBrouillon((b) => [...b, ...dates.filter((d) => !pris.has(d)).map((d) => ({ jour: d, plages: nature === "pratique" ? PLAGES_JOURNEE : plages(), nature }))]);
   };
 
   const enregistrer = async () => {
@@ -105,12 +105,17 @@ export default function AdminCalendrierDevis() {
                 <div className="flex gap-2"><Input type="date" min={session.date_debut} max={session.date_fin} value={jour} onChange={(e) => setJour(e.target.value)} />
                   <Button variant="outline" disabled={!jour} onClick={() => { ajouter([jour]); setJour(""); }}>Ajouter</Button></div>
               </div>
+              <div><Label>Ajouter le samedi de pratique (9h–12h / 13h–16h, 6 h)</Label>
+                <div className="flex gap-2"><Input type="date" min={session.date_debut} value={samedi} onChange={(e) => setSamedi(e.target.value)} />
+                  <Button variant="outline" disabled={!samedi} onClick={() => { ajouter([samedi], "pratique"); setSamedi(""); }}>Ajouter la pratique</Button></div>
+                <p className="text-xs text-muted-foreground mt-1">La date n'est jamais choisie automatiquement : saisissez le samedi réellement prévu.</p>
+              </div>
               <Button variant="outline" onClick={() => ajouter(joursOuvres(session.date_debut, session.date_fin))}>Proposer tous les jours du lundi au vendredi (à vérifier avant d'enregistrer)</Button>
             </div>
             <ul className="divide-y text-sm">
               {[...lignes, ...brouillon].sort((a, b) => a.jour.localeCompare(b.jour)).map((l, i) => (
                 <li key={l.id ?? `b${i}`} className="flex justify-between py-1.5">
-                  <span>{date(l.jour)} · {l.plages.map((p) => `${p.debut}–${p.fin}`).join(" / ")} · {heuresPlages(l.plages)} h {l.id ? "" : "(non enregistré)"}</span>
+                  <span>{date(l.jour)} · {l.nature === "pratique" ? "Pratique" : "Cours"} · {l.plages.map((p) => `${p.debut}–${p.fin}`).join(" / ")} · {heuresPlages(l.plages)} h {l.id ? "" : "(non enregistré)"}</span>
                   <Button size="sm" variant="ghost" onClick={() => retirer(l)}>Retirer</Button>
                 </li>
               ))}
