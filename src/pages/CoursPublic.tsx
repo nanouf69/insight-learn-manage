@@ -903,7 +903,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [examBlancRows, examResetRows, examensActuels]);
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
-  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a">("checking");
+  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a" | "erreur">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
   const [emargementDate, setEmargementDate] = useState<string | null>(null);
   const [emargementMode, setEmargementMode] = useState<"fc" | "presentiel">("fc");
@@ -1446,7 +1446,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setEmargementDate(next.date);
       setEmargementFCStatus("needed");
     };
-    check().catch(() => { if (!cancelled) setEmargementFCStatus("n/a"); });
+    // Lecture impossible ≠ « rien à signer » : on le signale à l'élève (jamais marqué signé).
+    check().catch(() => { if (!cancelled) { setEmargementFCStatus("erreur"); setEmargementCreneau(null); } });
     return () => {
       cancelled = true;
     };
@@ -1461,6 +1462,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }, 60000);
     return () => window.clearInterval(interval);
   }, [embedded, user?.id, apprenant?.id, selectedModule, isInExam]);
+
+  // Ouverture automatique de la feuille due : une fois par connexion et par créneau
+  // (nouvelle connexion ou nouveau créneau ouvert = nouvelle présentation). Jamais bloquant.
+  const emargementAutoOuvertRef = useRef<{ user: string | null; cles: Set<string> }>({ user: null, cles: new Set() });
+  useEffect(() => {
+    const uid = user?.id ?? null;
+    if (emargementAutoOuvertRef.current.user !== uid) emargementAutoOuvertRef.current = { user: uid, cles: new Set() };
+    if (!uid || embedded || selectedModule || isInExam) return;
+    if (emargementFCStatus !== "needed" || !emargementCreneau) return;
+    const cle = `${emargementApprenantId || apprenant?.id}|${emargementDate}|${emargementCreneau}`;
+    if (emargementAutoOuvertRef.current.cles.has(cle)) return;
+    emargementAutoOuvertRef.current.cles.add(cle);
+    setShowSignatureModal(true);
+  }, [user?.id, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
 
 
   // Track section navigation (Accueil / Examens / Notes) so the activity report
@@ -1791,12 +1806,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Règle définitive (30/09) : une signature manquante ne bloque jamais l'accès.
   // Rappel non bloquant affiché dans l'espace élève (bandeau + bouton Signer).
-  const signatureEnAttente = needsEmargement && emargementFCStatus !== "checking";
+  const signatureEnAttente = needsEmargement && emargementFCStatus !== "checking" && emargementFCStatus !== "erreur";
   const bandeauSignature = signatureEnAttente ? (
     <div data-testid="bandeau-signature-en-attente" className="bg-amber-100 border-b border-amber-300 text-amber-900">
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
         <span>📝 <strong>Signature en attente</strong> — merci de signer votre feuille d'émargement (obligatoire pour votre dossier de formation).</span>
         <Button size="sm" onClick={() => setShowSignatureModal(true)}>Signer</Button>
+      </div>
+    </div>
+  ) : emargementFCStatus === "erreur" && (isFC || isPres || emargementPratiquePending) ? (
+    <div data-testid="bandeau-signature-erreur" className="bg-amber-100 border-b border-amber-300 text-amber-900">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+        <span>⚠️ Impossible de vérifier vos feuilles d'émargement pour le moment (connexion ou serveur indisponible).</span>
+        <Button size="sm" variant="outline" onClick={() => setEmargementRefreshTick((t) => t + 1)}>Réessayer</Button>
       </div>
     </div>
   ) : null;
