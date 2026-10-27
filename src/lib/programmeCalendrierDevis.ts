@@ -102,6 +102,25 @@ export interface Calendrier {
   anomalies: string[];
 }
 
+/** Jours fériés légaux en France (métropole) : fixes + Pâques, Ascension, Pentecôte. */
+export function joursFeriesFrance(annee: number): Map<string, string> {
+  const a = annee % 19, b = Math.floor(annee / 100), c = annee % 100, d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mois = Math.floor((h + l - 7 * m + 114) / 31), jour = ((h + l - 7 * m + 114) % 31) + 1;
+  const paques = Date.UTC(annee, mois - 1, jour);
+  const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
+  const plus = (n: number) => iso(paques + n * 86400000);
+  const y = String(annee);
+  return new Map([
+    [`${y}-01-01`, "Jour de l'an"], [plus(1), "Lundi de Pâques"], [`${y}-05-01`, "Fête du Travail"],
+    [`${y}-05-08`, "Victoire 1945"], [plus(39), "Ascension"], [plus(50), "Lundi de Pentecôte"],
+    [`${y}-07-14`, "Fête nationale"], [`${y}-08-15`, "Assomption"], [`${y}-11-01`, "Toussaint"],
+    [`${y}-11-11`, "Armistice"], [`${y}-12-25`, "Noël"],
+  ]);
+}
+export const jourFerie = (iso: string) => joursFeriesFrance(Number(iso.slice(0, 4))).get(iso) ?? null;
+
 const jourSemaine = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
 
 /**
@@ -121,6 +140,8 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     if (j.jour < s.date_debut || j.jour > s.date_fin) anomalies.push(`Le ${j.jour} est hors des dates de la session`);
     const w = jourSemaine(j.jour);
     if (w === 0 || w === 6) anomalies.push(`Le ${j.jour} n'est pas un jour de semaine (cours du lundi au vendredi)`);
+    const ferie = jourFerie(j.jour);
+    if (ferie) anomalies.push(`Le ${j.jour} est un jour férié (${ferie}) : à confirmer`);
     jours.push({ ...j, heures: h });
     heuresSaisies += h;
   }
@@ -128,6 +149,8 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     const h = heuresPlages(j.plages);
     if (h === null || h === 0) { anomalies.push(`Horaire de pratique invalide le ${j.jour}`); continue; }
     if (jourSemaine(j.jour) !== 6) anomalies.push(`La pratique du ${j.jour} n'est pas un samedi`);
+    const ferieP = jourFerie(j.jour);
+    if (ferieP) anomalies.push(`La pratique du ${j.jour} tombe un jour férié (${ferieP}) : à confirmer`);
     if (j.jour < s.date_debut) anomalies.push(`La pratique du ${j.jour} est avant le début de la session`);
     pratique.push({ ...j, heures: h });
     heuresPratique += h;
