@@ -3234,6 +3234,39 @@ export type Database = {
           },
         ]
       }
+      documents_completes_brouillons_refuses: {
+        Row: {
+          apprenant_id: string | null
+          auth_uid: string | null
+          created_at: string
+          document_id: string
+          donnees_refusees: Json | null
+          id: string
+          role_auteur: string | null
+          type_document: string | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          auth_uid?: string | null
+          created_at?: string
+          document_id: string
+          donnees_refusees?: Json | null
+          id?: string
+          role_auteur?: string | null
+          type_document?: string | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          auth_uid?: string | null
+          created_at?: string
+          document_id?: string
+          donnees_refusees?: Json | null
+          id?: string
+          role_auteur?: string | null
+          type_document?: string | null
+        }
+        Relationships: []
+      }
       documents_inscription: {
         Row: {
           analyse_ia_date: string | null

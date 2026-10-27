@@ -247,7 +247,7 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
           prenom: "",
           donnees: { ...collectData(), _status: "completed" },
         });
-      } else toast.error("Erreur lors de la sauvegarde");
+      } else { toast.error("Erreur lors de la sauvegarde"); return; }
     }
     setSubmitted(true);
     toast.success("✅ Évaluation des acquis envoyée avec succès !");
