@@ -9218,6 +9218,7 @@ export type Database = {
           qrc_repondues: number
         }[]
       }
+      quiz_equipements_taxi_protection_prete: { Args: never; Returns: boolean }
       rattacher_attente_cma: {
         Args: { p_apprenant: string; p_attente: string }
         Returns: string

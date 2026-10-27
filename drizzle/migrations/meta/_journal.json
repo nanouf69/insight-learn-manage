@@ -1443,6 +1443,13 @@
       "when": 1793108771608,
       "tag": "0205_session_calendrier_jours",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1793109530828,
+      "tag": "0206_garde_quiz_equipements_taxi_v1",
+      "breakpoints": true
     }
   ]
 }
