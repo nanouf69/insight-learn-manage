@@ -1580,6 +1580,8 @@ function TransitionMatiere({
   numeroSuivant,
   total,
   onContinuer,
+  retakeAction,
+  onRetour,
 }: {
   matiereTerminee: string;
   scoreObtenu: number;
@@ -1589,6 +1591,8 @@ function TransitionMatiere({
   numeroSuivant: number;
   total: number;
   onContinuer: () => void;
+  retakeAction?: React.ReactNode;
+  onRetour?: () => void;
 }) {
   return (
     <div className="max-w-xl mx-auto space-y-6 py-8">
@@ -1600,6 +1604,7 @@ function TransitionMatiere({
         </div>
         <CardContent className="pt-4 pb-4 space-y-3">
           <p className="font-semibold text-lg">{matiereTerminee}</p>
+          {retakeAction}
           <p className="text-sm text-muted-foreground">Épreuve complétée avec succès. Vos résultats seront affichés à la fin de toutes les épreuves.</p>
         </CardContent>
       </Card>
@@ -1634,6 +1639,7 @@ function TransitionMatiere({
           </Button>
         </CardContent>
       </Card>
+      {onRetour && <Button variant="outline" onClick={onRetour}>Retour à la liste</Button>}
     </div>
   );
 }

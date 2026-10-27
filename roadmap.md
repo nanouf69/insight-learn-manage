@@ -4,7 +4,8 @@
 - [x] Relire les circuits actuels et protections Kevin/QRC ; ne pas réutiliser la reprise neutralisante.
 - [x] Préparer bouton résultat/temps écoulé, reçu serveur idempotent, copies/files conservées ; SQL non appliqué au backend partagé.
 - [x] Tests isolés SQL et 36 tests frontend, bouton PC/mobile fictif, compilation OK ; aucun IA/mail/publication.
-- [ ] Activer et vérifier le circuit complet uniquement dans un backend isolé : indisponible ici, backend partagé avec production. Consultation de toutes les anciennes copies et transition entre matières encore à compléter avant livraison ; détails `docs/refaire-matiere-etat-2026-10-27.md`.
+- [x] Ajouter historique par ID/snapshot lecture seule, bouton transition et retour/navigation par compte ; 38 tests frontend + 14 SQL simplifiés PASS, build OK.
+- [ ] Extension ciblée NON APPLIQUÉE : test catalogue réel FAIL (clôture T2 modifie détails T1 via ensure_quiz_result_on_matiere_completion). Mapping V2 initial et consommation admin multi-entrées à sécuriser avant parcours complet fictif/déploiement ; aucun front global publié. Rapport `docs/refaire-matiere-etat-2026-10-27.md`.
 
 ## Questions ambiguës TAXI/TA vérifiées — 27/10 15:56 UTC, accord explicite
 - [x] Appliquer seulement 70-11, 71-47 (explication), 71-10 (choix B DGFiP/TVA), 73-27 (énoncé le.taxi suspendu), 75-19 (exception ALD) si réponses/notes/terminés intacts ; journal avant/après.

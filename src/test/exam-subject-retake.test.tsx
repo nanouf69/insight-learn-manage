@@ -6,12 +6,27 @@ vi.mock('@/lib/sessionRpc', () => ({ freshSessionCall: mocks.session }));
 vi.mock('@/features/noyau-passage/pontV2', () => ({ operationId: async (value: string) => value }));
 import { startSubjectRetake, subjectRetakeStorageKey, validateSubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 import { RefaireMatiereButton } from '@/components/cours-en-ligne/RefaireMatiereButton';
+import { rememberRetakeReturn, readRetakeReturn } from '@/lib/subjectRetakeNavigation';
+import { historicalResultCopy } from '@/components/cours-en-ligne/SubjectCopyHistory';
 const receipt = { operation_id: 'op', apprenant_id: 'learner', exam_id: 'EB1', matiere_id: 'gestion',
   source_exercice_id: 'EB1__gestion', source_attempt_id: null, attempt_id: null, exercice_id: 'EB1__gestion__t2',
   tentative: 2, moteur: 'ancien', matiere: { id: 'gestion', questions: [{ id: 1 }] } };
 const args = { owner: 'owner', account: 'learner', exam: 'EB1', subject: 'gestion', sourceExercise: 'EB1__gestion' };
 beforeEach(() => { cleanup(); vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); });
 describe('Subject-only retake receipts and button', () => {
+  it('reload keeps original multi-subject filter and never overwrites return navigation with the new passage', () => {
+    const original = {examId:'EB1',phase:'transition' as const,index:1,filter:['gestion','anglais'],resultIds:['old'],exerciseIds:{gestion:'EB1__gestion'},tentative:1};
+    rememberRetakeReturn(sessionStorage,'owner','learner',original);
+    rememberRetakeReturn(sessionStorage,'owner','learner',{...original,filter:['gestion'],tentative:2});
+    expect(readRetakeReturn(sessionStorage,'owner','learner')).toEqual(original);
+    expect(readRetakeReturn(sessionStorage,'owner','other')).toBeNull();
+  });
+  it('history uses result ID and frozen questions, never replaces missing historical content with current content', () => {
+    const a=historicalResultCopy({id:'old',matiere_id:'gestion',details:{reponses:{1:'old'},snapshot:{questions:[{id:1,enonce:'old text'}]}}});
+    const b=historicalResultCopy({id:'new',matiere_id:'gestion',details:{reponses:{1:'new'}}});
+    expect(a.id).not.toBe(b.id);expect(a.questions[0].enonce).toBe('old text');expect(b.questions).toEqual([]);
+    expect(a.answers[1]).toBe('old');
+  });
   it('rejects another account or subject receipt', () => {
     expect(() => validateSubjectRetakeReceipt(receipt, 'other', 'EB1', 'gestion')).toThrow();
     expect(() => validateSubjectRetakeReceipt(receipt, 'learner', 'EB1', 'anglais')).toThrow();

@@ -112,15 +112,13 @@ BEGIN
     END IF;
     -- Exact mapping is required; never infer a V2 identity from a time window.
     IF NOT EXISTS (SELECT 1 FROM public.exam_subject_retakes r
-         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id)
-       AND NOT EXISTS (SELECT 1 FROM public.apprenant_quiz_results r
-         WHERE r.apprenant_id=p_apprenant_id AND r.quiz_id=p_exam_id AND r.matiere_id=p_matiere_id
-           AND r.details->>'attempt_id'=p_source_attempt_id::text
-           AND coalesce(r.tentative,1)=greatest(coalesce(answer.tentative,1),
-             coalesce(substring(p_source_exercice_id FROM '__t([0-9]+)$')::integer,1))) THEN
+         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id) THEN
       RAISE EXCEPTION 'Correspondance copie/passage non prouvée ; contactez l’administration.' USING ERRCODE='P0482';
     END IF;
-    IF old_attempt.etat='terminee' THEN closed_at:=coalesce(old_attempt.finished_at,closed_at); END IF;
+    IF old_attempt.etat IS DISTINCT FROM 'terminee' OR old_attempt.finished_at IS NULL THEN
+      RAISE EXCEPTION 'Clôture du passage serveur non prouvée ; reprenez la copie existante.' USING ERRCODE='P0478';
+    END IF;
+    closed_at:=old_attempt.finished_at;
     -- Refuse a changed subject, rather than borrowing current questions for an old snapshot.
     IF EXISTS (SELECT 1 FROM jsonb_array_elements(subject->'questions') q WHERE NOT EXISTS (
       SELECT 1 FROM jsonb_array_elements(old_attempt.snapshot->'questions') s
