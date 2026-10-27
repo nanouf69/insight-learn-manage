@@ -124,6 +124,23 @@ export const jourFerie = (iso: string) => joursFeriesFrance(Number(iso.slice(0, 
 const jourSemaine = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
 
 /**
+ * Règle pratique (présentiel) : 6 h le samedi de fin si la session finit un samedi,
+ * sinon le dernier samedi qui précède la date de fin, 9h–12h / 13h–16h.
+ * Refus (null + motif) si le samedi sort de la session, est férié ou est déjà un jour de cours.
+ */
+export function samediPratique(s: Pick<SessionPublique, "date_debut" | "date_fin" | "jours">): { jour: string | null; anomalie: string | null } {
+  if (!s.date_debut || !s.date_fin || !/^\d{4}-\d{2}-\d{2}$/.test(s.date_fin)) return { jour: null, anomalie: "Date de fin de session inconnue : date de pratique à confirmer" };
+  const d = new Date(`${s.date_fin}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7));
+  const jour = d.toISOString().slice(0, 10);
+  if (jour < s.date_debut) return { jour: null, anomalie: "Session trop courte : aucun samedi entre le début et la fin, date de pratique à confirmer" };
+  const ferie = jourFerie(jour);
+  if (ferie) return { jour: null, anomalie: `Le samedi ${jour} prévu pour la pratique est férié (${ferie}) : date de pratique à confirmer` };
+  if ((s.jours || []).some((j) => j.jour === jour && j.nature !== "pratique")) return { jour: null, anomalie: `Le samedi ${jour} est déjà occupé dans le calendrier : date de pratique à confirmer` };
+  return { jour, anomalie: null };
+}
+
+/**
  * Calendrier journalier : cours du lundi au vendredi, pratique le samedi (6 h).
  * Publié seulement si les heures de cours saisies égalent exactement les heures de la session
  * et si la pratique saisie fait 6 h. Aucune divergence n'est corrigée automatiquement.
@@ -154,6 +171,13 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     if (j.jour < s.date_debut) anomalies.push(`La pratique du ${j.jour} est avant le début de la session`);
     pratique.push({ ...j, heures: h });
     heuresPratique += h;
+  }
+  const regle = samediPratique(s);
+  if (!pratique.length) {
+    if (regle.jour) { pratique.push({ jour: regle.jour, plages: PLAGES_JOURNEE, nature: "pratique", libelle: "Pratique (dernier samedi de la session)", heures: HEURES_PRATIQUE }); heuresPratique = HEURES_PRATIQUE; }
+    else if (regle.anomalie) anomalies.push(regle.anomalie);
+  } else if (regle.jour && !pratique.some((j) => j.jour === regle.jour)) {
+    anomalies.push(`La pratique saisie (${pratique.map((j) => j.jour).join(", ")}) ne tombe pas le dernier samedi de la session (${regle.jour}) : à confirmer`);
   }
   if (heuresAttendues === null) anomalies.push("Durée totale de la session non déterminée");
   if (jours.length === 0) anomalies.push("Aucun jour de cours saisi par l'administration");
