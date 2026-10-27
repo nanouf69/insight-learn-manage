@@ -2057,9 +2057,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // Module 64 ajouté pour un parcours terminé avant la borne : consultable, hors compteur (aucune régression).
+  const idsModulesExiges = new Set(modulesExigesDashboard(selectedFormation, apprenant?.modules_autorises, (moduleCompletionsForNotes ?? []) as any[], apprenant?.date_fin_cours_en_ligne).map((m) => m.id));
   // Affichage élève : module terminé = serveur + activités requises du registre terminées.
   const progressionModules = completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
-    ? progressionModulesEleve(modules.map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id, moduleCompletionsForNotes)
+    ? progressionModulesEleve(modules.filter((m) => idsModulesExiges.has(m.id)).map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id, moduleCompletionsForNotes)
     : null;
   const progressionDisponible = progressionModules?.etat === "ok" ? progressionModules : null;
   const completedCount = progressionDisponible?.termines;
