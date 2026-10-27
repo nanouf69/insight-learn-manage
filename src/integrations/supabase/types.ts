@@ -8317,6 +8317,8 @@ export type Database = {
         Args: { _apprenant_id: string }
         Returns: boolean
       }
+      attestation_fc_autorisee: { Args: { p_apprenant: string }; Returns: Json }
+      attestation_fc_controle: { Args: { p_apprenant: string }; Returns: Json }
       autovalidate_module_if_complete: {
         Args: {
           _apprenant_id: string
