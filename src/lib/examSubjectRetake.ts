@@ -19,9 +19,10 @@ export interface SubjectRetakeReceipt {
 
 export function validateSubjectRetakeReceipt(value: unknown, account: string, exam: string, subject: string): SubjectRetakeReceipt {
   const r = value as SubjectRetakeReceipt | null;
-  if (!r || r.apprenant_id !== account || r.exam_id !== exam || r.matiere_id !== subject
+  if (!r || !r.operation_id || r.apprenant_id !== account || r.exam_id !== exam || r.matiere_id !== subject
     || !Number.isInteger(r.tentative) || r.tentative < 2 || r.matiere?.id !== subject
     || r.exercice_id !== `${exam}__${subject}__t${r.tentative}`
+    || !Array.isArray(r.matiere.questions) || r.matiere.questions.length === 0
     || !['ancien', 'v2'].includes(r.moteur) || (r.moteur === 'v2' && !r.attempt_id)) {
     throw new Error('La reprise reçue ne correspond pas à ce compte et à cette matière. Aucun transfert effectué.');
   }
@@ -39,5 +40,10 @@ export async function startSubjectRetake(p: {
     p_source_exercice_id: p.sourceExercise, p_source_attempt_id: p.sourceAttempt ?? null,
   } as never), p.owner);
   if (error) throw new Error(error.message);
-  return validateSubjectRetakeReceipt(data, p.account, p.exam, p.subject);
+  const receipt = validateSubjectRetakeReceipt(data, p.account, p.exam, p.subject);
+  if (receipt.source_exercice_id !== p.sourceExercise
+    || receipt.source_attempt_id !== (p.sourceAttempt ?? null)) {
+    throw new Error('Le passage source ne correspond pas au reçu serveur. Aucun brouillon transféré.');
+  }
+  return receipt;
 }

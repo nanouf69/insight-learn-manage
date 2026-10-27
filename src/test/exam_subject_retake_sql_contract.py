@@ -19,7 +19,7 @@ class SubjectRetake(unittest.TestCase):
         cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role;
         CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('test.uid',true),'')::uuid$$;
         CREATE TABLE apprenants(id uuid,auth_user_id uuid); CREATE TABLE module_editor_state(module_data jsonb);
-        CREATE TABLE apprenant_quiz_results(apprenant_id uuid,quiz_id text,tentative integer);
+        CREATE TABLE apprenant_quiz_results(apprenant_id uuid,quiz_id text,tentative integer,matiere_id text,details jsonb);
         CREATE FUNCTION has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;""")
         for table in ['reponses_apprenants','exam_attempts_v2','apprenant_examen_timers','exam_retake_authorizations']:
             cols=json.loads(live(f"SELECT json_agg(t) FROM (SELECT column_name,data_type,column_default,is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='{table}' ORDER BY ordinal_position)t"))
@@ -78,6 +78,7 @@ class SubjectRetake(unittest.TestCase):
     def test_v2_snapshot_and_source_intact(self):
         s='55555555-5555-5555-5555-555555555555'
         self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{s}','{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"tentative\":1,\"questions\":[{{\"id\":\"gestion:1\",\"type\":\"QCM\",\"enonce\":\"Fictive\",\"choix\":[]}}]}}','old','terminee',now()-interval '48 hours')")
+        self.sql(f"INSERT INTO apprenant_quiz_results VALUES('{A}','EB1',1,'gestion','{{\"attempt_id\":\"{s}\"}}')")
         before=self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout
         r=self.receipt(attempt=f"'{s}'");self.assertNotEqual(r['attempt_id'],s);self.assertEqual(r['moteur'],'v2')
         self.assertEqual(self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout,before)

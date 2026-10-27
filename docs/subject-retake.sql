@@ -47,9 +47,14 @@ BEGIN
     RAISE EXCEPTION 'Session ou droits insuffisants pour refaire cette matière.' USING ERRCODE='42501';
   END IF;
   PERFORM public.core_assert_session_owner(p_apprenant_id);
-  IF p_operation_id IS NULL OR p_source_exercice_id IS NULL OR p_matiere_id IS NULL
+  IF p_operation_id IS NULL OR p_source_exercice_id IS NULL OR p_matiere_id IS NULL OR p_exam_id IS NULL
      OR p_exam_id !~* '^(EB[1-6](-TAXI)?|eb[1-6]-(ta|va))$'
-     OR p_source_exercice_id !~ ('^'||p_exam_id||'__'||p_matiere_id||'(__t[0-9]+)?$') THEN
+     OR p_matiere_id !~ '^[a-zA-Z0-9_-]+$'
+     OR NOT (p_source_exercice_id=p_exam_id||'__'||p_matiere_id
+       OR (split_part(p_source_exercice_id,'__',1)=p_exam_id
+           AND split_part(p_source_exercice_id,'__',2)=p_matiere_id
+           AND split_part(p_source_exercice_id,'__',3) ~ '^t[0-9]+$'
+           AND array_length(string_to_array(p_source_exercice_id,'__'),1)=3)) THEN
     RAISE EXCEPTION 'Identité du passage non prouvée.' USING ERRCODE='P0482';
   END IF;
   -- Serialize all retakes for this learner/exam: unique numeric projection, atomic authorization.
@@ -72,7 +77,7 @@ BEGIN
     END IF;
     RETURN receipt;
   END IF;
-  SELECT e INTO subject FROM public.module_editor_state m,
+  SELECT e INTO STRICT subject FROM public.module_editor_state m,
     LATERAL jsonb_array_elements(coalesce(m.module_data->'matieres','[]'::jsonb)) e
     WHERE m.module_data->>'id'=p_exam_id AND e->>'id'=p_matiere_id;
   IF subject IS NULL OR jsonb_array_length(coalesce(subject->'questions','[]'::jsonb))=0 THEN
@@ -99,9 +104,13 @@ BEGIN
       RAISE EXCEPTION 'Le passage ne correspond pas à cette matière et à ce compte.' USING ERRCODE='42501';
     END IF;
     -- Exact mapping is required; never infer a V2 identity from a time window.
-    IF NOT EXISTS (SELECT 1 FROM public.exam_subject_retakes r WHERE r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id)
-       AND coalesce(old_attempt.snapshot->>'tentative', old_attempt.snapshot#>>'{source_historique,tentative}') IS DISTINCT FROM
-          greatest(coalesce(answer.tentative,1),coalesce(nullif(substring(p_source_exercice_id FROM '__t([0-9]+)$'),'')::integer,1))::text THEN
+    IF NOT EXISTS (SELECT 1 FROM public.exam_subject_retakes r
+         WHERE r.apprenant_id=p_apprenant_id AND r.attempt_id=p_source_attempt_id AND r.exercice_id=p_source_exercice_id)
+       AND NOT EXISTS (SELECT 1 FROM public.apprenant_quiz_results r
+         WHERE r.apprenant_id=p_apprenant_id AND r.quiz_id=p_exam_id AND r.matiere_id=p_matiere_id
+           AND r.details->>'attempt_id'=p_source_attempt_id::text
+           AND coalesce(r.tentative,1)=greatest(coalesce(answer.tentative,1),
+             coalesce(substring(p_source_exercice_id FROM '__t([0-9]+)$')::integer,1))) THEN
       RAISE EXCEPTION 'Correspondance copie/passage non prouvée ; contactez l’administration.' USING ERRCODE='P0482';
     END IF;
     IF old_attempt.etat='terminee' THEN closed_at:=coalesce(old_attempt.finished_at,closed_at); END IF;
@@ -120,6 +129,11 @@ BEGIN
   END IF;
   IF closed_at IS NULL THEN
     RAISE EXCEPTION 'Cette matière est encore en cours ; reprenez sa copie existante.' USING ERRCODE='P0478';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id
+      AND a.exam_id=p_exam_id AND a.snapshot->>'matiere'=p_matiere_id AND a.etat='en_cours'
+      AND a.attempt_id IS DISTINCT FROM p_source_attempt_id) THEN
+    RAISE EXCEPTION 'Une autre copie de cette matière est en cours ; aucun doublon créé.' USING ERRCODE='P0478';
   END IF;
   SELECT greatest(closed_at,
     (SELECT max(coalesce(r.submitted_at,r.updated_at)) FROM public.reponses_apprenants r
