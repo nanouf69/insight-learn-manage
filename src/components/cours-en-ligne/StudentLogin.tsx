@@ -58,43 +58,28 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     }
   };
 
+  // Modification du mot de passe : jamais de demande de l'ancien. Un lien
+  // sécurisé est envoyé par email ; l'élève choisit son nouveau mot de passe
+  // via ce lien (écran /reset-password).
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      toast({ title: "Erreur", description: "Le nouveau mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
-      return;
-    }
     setLoading(true);
     try {
-      // First sign in with current credentials
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (signInError) {
-        toast({ title: "Erreur", description: "Email ou mot de passe actuel incorrect", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      // Then update password
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-      if (updateError) {
-        toast({ title: "Erreur", description: "Impossible de modifier le mot de passe", variant: "destructive" });
-      } else {
-        toast({ title: "✅ Mot de passe modifié", description: "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe" });
-        setMode("login");
-        setPassword(newPassword);
-        setNewPassword("");
-        setConfirmPassword("");
-        // Sign out so user logs in fresh
-        await supabase.auth.signOut({ scope: "local" });
-      }
-    } catch {
-      toast({ title: "Erreur", description: "Une erreur est survenue", variant: "destructive" });
+      if (error) throw error;
+      toast({
+        title: "📧 Email envoyé",
+        description: "Cliquez sur le lien reçu pour choisir votre nouveau mot de passe",
+      });
+      setMode("login");
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'envoyer l'email",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
