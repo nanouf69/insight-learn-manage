@@ -916,7 +916,8 @@ export default function DevisPersonnel() {
         </Card>
 
         {/* Download button */}
-        <div className="flex flex-col md:flex-row items-center gap-3 pb-8 justify-center">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-3 pb-8 justify-center">
+          <div className="w-full md:w-auto flex flex-col gap-3" data-testid="bloc-devis-programme">
           <Button
             size="lg"
             className="w-full md:w-auto px-8 bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white text-lg"
@@ -929,6 +930,11 @@ export default function DevisPersonnel() {
               <><Download className="w-5 h-5 mr-2" /> Télécharger mon devis PDF</>
             )}
           </Button>
+          <ProgrammeCalendrierDownload
+            formation={formation}
+            dateDebutDevis={dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null}
+          />
+          </div>
           <Button
             size="lg"
             variant="outline"
@@ -938,10 +944,6 @@ export default function DevisPersonnel() {
           >
             <Send className="w-5 h-5 mr-2" /> Envoyer par mail
           </Button>
-          <ProgrammeCalendrierDownload
-            formation={formation}
-            dateDebutDevis={dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null}
-          />
         </div>
 
           {generated && (

@@ -75,9 +75,9 @@ export function ProgrammeCalendrierDownload({ formation, dateDebutDevis }: Props
           </Select>
         </div>
       )}
-      <Button size="lg" variant="outline" className="w-full md:w-auto px-6 text-lg" onClick={telecharger} disabled={busy || etat === "chargement"}>
+      <Button size="lg" variant="outline" className="w-full md:w-auto px-6 text-lg h-auto min-h-11 py-2 whitespace-normal" onClick={telecharger} disabled={busy || etat === "chargement"}>
         {busy ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <BookOpen className="w-5 h-5 mr-2" />}
-        Programme et calendrier (PDF)
+        Télécharger le programme et le calendrier
       </Button>
     </div>
   );
