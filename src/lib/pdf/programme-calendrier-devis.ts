@@ -45,7 +45,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
 
   const titre = (s: string) => {
     if (y > 260) { doc.addPage(); y = 18; }
-    doc.setFont("helvetica", "bold").setFontSize(11.5).text(t(s), 14, y); y += 2; doc.setFont("helvetica", "normal");
+    y += 3; doc.setFont("helvetica", "bold").setFontSize(11.5).text(t(s), 14, y); y += 6; doc.setFont("helvetica", "normal");
   };
   const para = (s: string) => {
     doc.setFontSize(9.5);
