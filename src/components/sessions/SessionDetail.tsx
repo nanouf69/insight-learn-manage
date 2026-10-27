@@ -2211,6 +2211,42 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       setInviteSending(null);
     }
   };
+
+  // Envoi du RIB de la société (Revolut) par e-mail à l'apprenant
+  const [ribDialogApprenant, setRibDialogApprenant] = useState<any | null>(null);
+  const [ribSending, setRibSending] = useState(false);
+  const confirmSendRib = async () => {
+    const apprenant = ribDialogApprenant;
+    if (!apprenant?.email) return;
+    setRibSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          apprenantId: apprenant.id,
+          recipientEmail: apprenant.email,
+          recipientName: `${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+          subject: RIB_EMAIL_SUBJECT,
+          htmlBody: buildRibEmailHtml(`${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim()),
+        },
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['convocations-sent', session?.id] });
+      toast({
+        title: "✅ RIB envoyé",
+        description: `Coordonnées bancaires de la société envoyées à ${apprenant.email}`,
+      });
+      setRibDialogApprenant(null);
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Erreur d'envoi",
+        description: err?.message || "Impossible d'envoyer le RIB.",
+        variant: "destructive",
+      });
+    } finally {
+      setRibSending(false);
+    }
+  };
   const mdpMailDialog = useMdpChangeMail(async (_apprenantId, to) => {
     const saId = mdpTargetRef.current;
     mdpTargetRef.current = null;
