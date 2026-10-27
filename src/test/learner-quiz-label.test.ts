@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { learnerQuizLabel } from "@/lib/exercicePartNumbers";
-describe("learnerQuizLabel", () => {
-  it("module matière n°6 TAXI, quiz 4 → 6.4", () => expect(learnerQuizLabel(24, "4")).toBe("6.4"));
-  it("module hors matière garde le numéro seul", () => expect(learnerQuizLabel(9, "3")).toBe("3"));
+import { computeLearnerQuizNumbers } from "@/lib/exercicePartNumbers";
+describe("numéro de quiz côté élève", () => {
+  it("matière F, 4e partie → 6.4 ; 5e → 6.5", () => {
+    const cours = [1,2,3,4,5].map(i => ({ id: i, titre: `F. RÉGLEMENTATION ${i}`, actif: true }));
+    const exos = [1,2,3,4,5].map(i => ({ id: 100+i, titre: `Quiz ${i}`, actif: true, questions: [{}] }));
+    const m = computeLearnerQuizNumbers(99, cours, exos);
+    expect(m.get(104)).toBe("6.4");
+    expect(m.get(105)).toBe("6.5");
+  });
 });

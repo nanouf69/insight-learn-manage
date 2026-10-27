@@ -5,7 +5,7 @@ import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/ad
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
-import { learnerQuizLabel } from "@/lib/exercicePartNumbers";
+import { computeLearnerQuizNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
 import { nationalePartie1CourseReview } from "@/lib/nationalePartie1CourseReview";
@@ -10094,7 +10094,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     );
   };
 
-  const exercicePartNumberById = computeExercicePartNumbers(Number(moduleData.id), moduleData.cours, moduleData.exercices);
+  const exercicePartNumberById = computeLearnerQuizNumbers(Number(moduleData.id), moduleData.cours, moduleData.exercices);
 
   if (studentOnly && contenuIndisponible) {
     return (
@@ -10261,7 +10261,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onUpdateMeta={(id, meta) => updateExerciceMeta(id, meta)}
                 moduleId={moduleData.id}
                 overrideWarnings={trainerOverrideWarnings}
-                partNumber={learnerQuizLabel(Number(moduleData.id), exercicePartNumberById.get(Number(exo.id)))}
+                partNumber={exercicePartNumberById.get(Number(exo.id)) ?? null}
               />
             ))}
           </div>
