@@ -585,4 +585,4 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - 21/10 09h: tablettes — jeux et contenu module indépendants de la date appareil, compteur pages borné 100 %; file QRC: suites sans passage → à vérifier (fait).
 
 ## Verrou attestations formation continue — 27/10 17:34 UTC
-- [ ] Aucune génération/téléchargement/envoi d'attestation FC (VTC, TAXI si même processus) sans les 4 signatures serveur (matin+après-midi × 2 jours) ; vérification serveur, refus par défaut, message des créneaux manquants ; tests 0–4 signatures, envois auto/manuels, accès directs ; aucun mail réel.
+- [x] Aucune génération/téléchargement/envoi d'attestation FC (VTC, TAXI si même processus) sans les 4 signatures serveur (matin+après-midi × 2 jours) ; vérification serveur, refus par défaut, message des créneaux manquants ; tests 0–4 signatures, envois auto/manuels, accès directs ; aucun mail réel.
