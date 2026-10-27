@@ -36,14 +36,14 @@ describe('Durées affichées des nouveaux devis e-learning', () => {
     writeFileSync(`/tmp/devis-durees-qa/${id}.pdf`, Buffer.from(pdf.output('arraybuffer')));
     writeFileSync(`/tmp/devis-durees-qa/${id}.docx`, docx.getZip().generate({ type: 'nodebuffer' }));
   });
-  it('VA : ne transforme ni les 7 h de programme ni le budget CPF en total présentiel', () => {
+  it('VA e-learning : 36 heures comme TA (décision du 27/10/2026)', () => {
     expect(parcoursDevisElearning('va_elearning')).toBe('va');
     expect(dureeDevisElearning('va_elearning')).toBe('36 heures');
-    expect(formationDevisAvecDuree('Formation VA E-learning')).toBe('Formation VA E-learning');
+    expect(formationDevisAvecDuree('Formation VA E-learning')).toBe('Formation VA E-learning — Durée totale : 36 heures');
   });
   it('sépare le sens des passerelles sans confondre TAXI et VTC', () => {
     expect(dureeDevisElearning('Formation TAXI pour chauffeurs VTC en E-learning')).toBe('36 heures');
-    expect(dureeDevisElearning('Formation VTC pour chauffeurs TAXI E-learning')).toBeUndefined();
+    expect(dureeDevisElearning('Formation VTC pour chauffeurs TAXI E-learning')).toBe('36 heures');
   });
   it('ne réinterprète pas un devis historique ni un devis présentiel/pratique', () => {
     expect(dureeDevisEnregistre('Formation VTC E-learning')).toBeUndefined();
