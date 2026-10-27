@@ -55,7 +55,7 @@ export function SubjectCopyHistory({ owner, account, exam }: {owner: string; acc
     {open && <>
       {error && <p role="alert" className="text-destructive">{error}</p>}
       <Select value={selected} onValueChange={setSelected}><SelectTrigger aria-label="Ancienne copie"><SelectValue placeholder="Choisir une copie" /></SelectTrigger>
-        <SelectContent>{copies.map(c => <SelectItem key={c.id} value={c.id}>{c.subject} · {c.date ? new Date(c.date).toLocaleString('fr-FR') : 'Date non enregistrée'} · {c.id}</SelectItem>)}</SelectContent>
+        <SelectContent>{copies.map((c,i) => <SelectItem key={c.id} value={c.id}>{c.subject} · Copie {i+1} · {c.date ? new Date(c.date).toLocaleString('fr-FR') : 'Date non enregistrée'}</SelectItem>)}</SelectContent>
       </Select>
       {copy && <div className="space-y-4"><p>{copy.score}</p>
         {!copy.questions.length && <p>Énoncés historiques non enregistrés. Réponses conservées :</p>}
