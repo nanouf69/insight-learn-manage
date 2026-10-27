@@ -74,19 +74,21 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
   } else {
     const heuresSession = session ? calendrierSession(session, p.filiere).heuresAttendues : null;
     const theorie = heuresSession ?? (p.filiere === "ta" ? 30 : p.filiere === "taxi" ? 90 : p.soir ? 40 : 60);
+    const intitules = modulesElearning(p.filiere).lignes.filter((l) => l.moduleId !== PRATIQUE_PHYSIQUE && !/examens blancs/i.test(l.intitule)).map((l) => [l.intitule]);
+    table(["Modules enseignés"], [...intitules, ["Formation pratique en véhicule à double commande"]]);
     table(["Partie", "Durée"], [["Formation théorique en salle", h(theorie)], ["Formation pratique", h(HEURES_PRATIQUE)]], ["Durée totale", h(theorie + HEURES_PRATIQUE)]);
-    manquants.push("Répartition des heures par matière en présentiel : non enregistrée");
   }
 
   // 2. Modalités d'enseignement
   titre("2. Modalités d'enseignement");
   if (p.mode === "elearning") para("Plateforme de cours en ligne accessible 24h/24 et 7j/7 pendant 3 mois à compter de l'inscription, avec cours, exercices, bilans et examens blancs. Une formation pratique de 6 h complète le parcours.");
   else if (p.mode === "pratique") para("Formation pratique : 3 h en solo ou 6 h en groupe, mise à disposition du véhicule à double commande le jour de l'examen pratique.");
-  else para(p.soir ? "Cours en salle le soir de 17h à 21h (4 h par soirée), puis formation pratique de 6 h." : "Cours en salle en journée de 9h à 12h et de 13h à 16h (6 h par jour), puis formation pratique de 6 h.");
+  else para(p.soir ? "Cours en salle le soir de 17h à 21h (4 h par soirée), puis formation pratique de 6 h." : "Cours en salle du lundi au vendredi, de 9h à 12h et de 13h à 16h (6 h par jour). Formation pratique le samedi, de 9h à 12h et de 13h à 16h (6 h).");
   if (session?.lieu) para(`Lieu : ${session.lieu}`);
 
   // 3. Calendrier
   titre("3. Calendrier");
+  para("Emploi du temps susceptible d'être modifié.");
   if (input.erreurLecture) { para("Les sessions n'ont pas pu être lues : calendrier indisponible, à demander au centre."); manquants.push("Lecture des sessions impossible"); }
   else if (p.mode !== "presentiel") para(p.mode === "elearning" ? "Formation à distance : pas de calendrier en salle. Date de la journée pratique : à confirmer." : "Date de la journée pratique : à confirmer avec le centre.");
   else if (!session) { para("Aucune session réelle sélectionnée : calendrier à confirmer."); manquants.push("Session non sélectionnée"); }
@@ -94,13 +96,14 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     para(`Session : ${session.nom}, du ${dateLongue(session.date_debut)} au ${dateLongue(session.date_fin)}.`);
     const c = calendrierSession(session, p.filiere);
     if (c.valide) {
-      table(["Date", "Horaires", "Heures"], c.jours.map((j) => [dateLongue(j.jour), j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", h(c.heuresSaisies)]);
+      const lignes = [...c.jours.map((j) => ({ ...j, lib: "Cours" })), ...c.pratique.map((j) => ({ ...j, lib: "Pratique" }))].sort((a, b) => a.jour.localeCompare(b.jour));
+      table(["Date", "Contenu", "Horaires", "Heures"], lignes.map((j) => [dateLongue(j.jour), j.lib, j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", "", h(c.heuresSaisies + c.heuresPratique)]);
     } else {
       para(`Calendrier journalier à confirmer : ${c.anomalies.join(" ; ")}.`);
       manquants.push(...c.anomalies.map((a) => `Calendrier : ${a}`));
     }
   }
-  {
+  if (!(session && p.mode === "presentiel" && !input.erreurLecture && calendrierSession(session, p.filiere).valide && calendrierSession(session, p.filiere).pratique.length)) {
     const pratiques = sessionsPratique(input.sessions, p.filiere).filter((s) => !session || s.date_debut >= session.date_fin);
     if (pratiques.length) {
       const s = pratiques[0];
