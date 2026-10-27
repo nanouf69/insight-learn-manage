@@ -135,11 +135,13 @@ export const MODULE_EQUIPEMENTS_TAXI = 64;
 export const BORNE_EQUIPEMENTS_TAXI_AFFECTATION = "2026-10-27T14:21:00Z";
 const FORMATIONS_EQUIPEMENTS_TAXI = new Set<FormationId>(["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"]);
 
-/** Vrai si le module 64 est ajouté par la règle d'affichage (liste explicite non vide qui ne le contient pas). */
+/** Vrai si le module 64 est ajouté par la règle d'affichage (liste explicite théorique TAXI/TA qui ne le contient pas). */
 export function equipementsTaxiAjoute(formation: FormationId, autorises?: number[] | null): boolean {
   if (!FORMATIONS_EQUIPEMENTS_TAXI.has(formation)) return false;
   const liste = expandModulesAutorises(autorises) ?? autorises ?? [];
-  return liste.length > 0 && !liste.map(normalizeModuleIdForDashboard).includes(MODULE_EQUIPEMENTS_TAXI);
+  const norm = liste.map(normalizeModuleIdForDashboard);
+  // Seulement un parcours théorique TAXI/TA (Cours et exercices TAXI 10 ou TA 40) : jamais une formation pratique seule.
+  return norm.length > 0 && (norm.includes(10) || norm.includes(40)) && !norm.includes(MODULE_EQUIPEMENTS_TAXI);
 }
 
 /**

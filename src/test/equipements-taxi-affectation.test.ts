@@ -19,6 +19,9 @@ describe("Module 64 Équipements TAXI pour les TAXI/TA sans affectation explicit
     expect(equipementsTaxiAjoute("taxi", l)).toBe(false);
     expect(ids(modulesAttribuesDashboard("taxi", l)).filter((x) => x === 64)).toHaveLength(1);
   });
+  it("formation pratique seule (module 6) : jamais ajouté", () => {
+    expect(ids(modulesAttribuesDashboard("taxi-elearning", [6]))).not.toContain(64);
+  });
   it("VTC / VA : jamais ajouté", () => {
     expect(ids(modulesAttribuesDashboard("vtc-elearning", [26, 2, 3, 4, 35, 5, 8]))).not.toContain(64);
     expect(ids(modulesAttribuesDashboard("vtc-pour-taxi", [33, 41, 3, 29, 30, 38, 8, 83]))).not.toContain(64);
