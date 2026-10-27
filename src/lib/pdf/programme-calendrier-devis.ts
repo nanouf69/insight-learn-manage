@@ -55,7 +55,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
   };
   const table = (head: string[], body: string[][], foot?: string[]) => {
     autoTable(doc, {
-      startY: y + 2, head: [head.map(t)], body: body.map((r) => r.map(t)), foot: foot ? [foot.map(t)] : undefined,
+      startY: y + 2, head: [head.map(t)], body: body.map((r) => r.map(t)), foot: foot ? [foot.map(t)] : undefined, showFoot: "lastPage",
       styles: { fontSize: 8.8, cellPadding: 1.6 }, headStyles: { fillColor: [30, 58, 138] }, footStyles: { fillColor: [226, 232, 240], textColor: 20 },
       margin: { left: 14, right: 14 }, theme: "grid",
     });
