@@ -39,11 +39,11 @@ export function SubjectCopyHistory({ owner, account, exam }: {owner: string; acc
       const entries = results.map(historicalResultCopy);
       for (const a of attempts) {
         if (results.some(r => r.details?.attempt_id === a.attempt_id || a.snapshot?.source_historique?.result_id === r.id)) continue;
-        const {data, error} = await freshSessionRead(() => supabase.from('answer_state').select('question_id,answer')
+        const {data, error} = await freshSessionRead(() => supabase.from('answer_state').select('question_id,valeur')
           .eq('apprenant_id', account).eq('attempt_id', a.attempt_id), owner);
         if (error) throw new Error('Lecture des réponses historiques impossible.');
         entries.push({id: `attempt:${a.attempt_id}`, subject: a.snapshot?.matiere ?? 'Matière', date: a.finished_at ?? a.started_at,
-          questions: a.snapshot?.questions ?? [], answers: Object.fromEntries((data ?? []).map((r: any) => [r.question_id, r.answer])), score: 'Note non rapprochée'});
+          questions: a.snapshot?.questions ?? [], answers: Object.fromEntries((data ?? []).map((r: any) => [r.question_id, r.valeur])), score: 'Note non rapprochée'});
       }
       if (!cancelled) { setCopies(entries); setSelected(entries[0]?.id ?? ''); setError(''); }
     }).catch(e => { if (!cancelled) setError(e.message); });

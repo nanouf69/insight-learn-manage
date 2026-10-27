@@ -69,6 +69,9 @@ import { recoverMatiereFromSavedAnswers, canFinalizeMatiere } from "@/lib/examMa
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { subjectRetakeStorageKey, validateSubjectRetakeReceipt, type SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 import { freshSessionRead } from '@/lib/sessionRpc';
+import { rememberRetakeReturn, readRetakeReturn, retakeReturnKey } from '@/lib/subjectRetakeNavigation';
+import { SubjectCopyHistory } from './SubjectCopyHistory';
+import { RefaireMatiereButton } from './RefaireMatiereButton';
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -193,13 +196,18 @@ export default function ExamensBlancsPage({
     validateSubjectRetakeReceipt(receipt, apprenantId, receipt.exam_id, receipt.matiere_id);
     const exam = liveExamens.find(e => e.id === receipt.exam_id);
     if (!exam) { toast.error('Examen indisponible. Le nouveau passage reste conservé sur le serveur.'); return; }
+    if (!subjectRetake && examenChoisi) rememberRetakeReturn(sessionStorage, userId, apprenantId, {
+      examId: examenChoisi.id, phase: phase === 'transition' ? 'transition' : 'resultats', index: matiereIndex,
+      filter: matiereFilterRef.current, resultIds: tousResultats.map(r => r?.resultId).filter((id): id is string => !!id),
+      exerciseIds: resumeExerciceIds, tentative: currentTentative,
+    });
     // Archive navigation only; no answer queue, parked draft or old passage is moved/deleted.
     const previous = sessionStorage.getItem(EXAM_SESSION_KEY);
     if (previous) sessionStorage.setItem(`${EXAM_SESSION_KEY}_before_${receipt.operation_id}`, previous);
     sessionStorage.setItem(subjectRetakeStorageKey(userId, apprenantId), receipt.operation_id);
     setSubjectRetake(receipt);
     setSessionRestored(true);
-    setMatiereFilter([receipt.matiere_id]);
+    // Do not overwrite the original multi-subject filter. The receipt alone scopes this passage.
     setExamenChoisi({ ...exam, matieres: [receipt.matiere] });
     setMatiereIndex(0);
     setTousResultats([]);
@@ -211,6 +219,35 @@ export default function ExamensBlancsPage({
     setIsViewingSavedResults(false);
     examStartTimeRef.current = Date.now();
     setPhase('examen');
+  };
+
+  const returnFromSubjectRetake = async () => {
+    if (!userId || !apprenantId) return;
+    const navigation = readRetakeReturn(sessionStorage, userId, apprenantId);
+    setSubjectRetake(null);
+    sessionStorage.removeItem(subjectRetakeStorageKey(userId, apprenantId));
+    if (!navigation) { setPhase('selection'); return; }
+    const exam = liveExamens.find(e => e.id === navigation.examId);
+    if (!exam) { setPhase('selection'); return; }
+    setMatiereFilter(navigation.filter);
+    if (navigation.phase === 'resultats') { await handleViewResults(exam); return; }
+    try {
+      const {data, error} = await freshSessionRead(() => supabase.from('apprenant_quiz_results').select('*')
+        .eq('apprenant_id', apprenantId).eq('quiz_id', navigation.examId).eq('tentative', navigation.tentative), userId);
+      if (error) throw error;
+      const filtered = navigation.filter ? {...exam, matieres: exam.matieres.filter(m => navigation.filter?.includes(m.id))} : exam;
+      const results = filtered.matieres.map(m => {
+        const row = (data ?? []).find((r: any) => r.matiere_id === m.id);
+        return row ? {resultId: row.id, matiereId: m.id, nomMatiere: m.nom, noteObtenue: row.score_obtenu ?? 0,
+          maxPoints: row.score_max ?? 0, noteSur: 20, noteEliminatoire: m.noteEliminatoire,
+          coefficient: m.coefficient, admis: row.reussi ?? false, reponses: row.details?.reponses ?? {},
+          details: row.details, tentative: row.tentative} as ResultatMatiere : null;
+      });
+      setExamenChoisi(filtered); setMatiereIndex(navigation.index); setTousResultats(results as ResultatMatiere[]);
+      setLastMatiereResult(results[navigation.index-1] ?? null); setResumeExerciceIds(navigation.exerciseIds);
+      setCurrentTentative(navigation.tentative); currentTentativeRef.current = navigation.tentative;
+      setPhase(navigation.phase); sessionStorage.removeItem(retakeReturnKey(userId, apprenantId));
+    } catch { toast.error('Retour non confirmé : anciennes copies conservées. Réessayez.'); }
   };
 
   useEffect(() => {
@@ -1710,6 +1747,11 @@ export default function ExamensBlancsPage({
         numeroSuivant={matiereIndex + 1}
         total={examenChoisi.matieres.length}
         onContinuer={() => { setLastMatiereResult(null); setPhase("examen"); }}
+        onRetour={() => { setPhase('selection'); setSelectionRefreshKey(k => k+1); }}
+        retakeAction={!examenChoisi.id.startsWith('bilan-') && userId && apprenantId ?
+          <RefaireMatiereButton owner={userId} account={apprenantId} exam={examenChoisi.id} subject={lastMatiereResult.matiereId}
+            sourceExercise={resumeExerciceIds[lastMatiereResult.matiereId] ?? buildExamMatiereExerciceId(examenChoisi.id, lastMatiereResult.matiereId, lastMatiereResult.tentative ?? currentTentative)}
+            sourceAttempt={lastMatiereResult.details?.attempt_id ?? null} onStarted={activateSubjectRetake} /> : undefined}
       />
     );
   }
@@ -1721,6 +1763,7 @@ export default function ExamensBlancsPage({
       <div className="flex gap-4 xl:gap-6 max-w-[1760px] mx-auto">
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
+            {subjectRetake && <Button variant="outline" onClick={() => void returnFromSubjectRetake()}>Retour aux autres matières</Button>}
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 {examenChoisi.matieres.map((_, i) => {
@@ -1798,6 +1841,8 @@ export default function ExamensBlancsPage({
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
+        {subjectRetake && <Button variant="outline" onClick={() => void returnFromSubjectRetake()}>Retour aux autres matières</Button>}
+        {!examenChoisi.id.startsWith('bilan-') && userId && apprenantId && <SubjectCopyHistory owner={userId} account={apprenantId} exam={examenChoisi.id} />}
         <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} currentTentative={currentTentative} onSubjectRetake={activateSubjectRetake} />
       </div>
     );
