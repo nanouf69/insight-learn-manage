@@ -230,7 +230,11 @@ export default function ExamensBlancsPage({
     const exam = liveExamens.find(e => e.id === navigation.examId);
     if (!exam) { setPhase('selection'); return; }
     setMatiereFilter(navigation.filter);
-    if (navigation.phase === 'resultats') { await handleViewResults(exam); return; }
+    if (navigation.phase === 'resultats') {
+      await handleViewResults(exam);
+      sessionStorage.removeItem(retakeReturnKey(userId, apprenantId));
+      return;
+    }
     try {
       const {data, error} = await freshSessionRead(() => supabase.from('apprenant_quiz_results').select('*')
         .eq('apprenant_id', apprenantId).eq('quiz_id', navigation.examId).eq('tentative', navigation.tentative), userId);
@@ -247,6 +251,7 @@ export default function ExamensBlancsPage({
       setLastMatiereResult(results[navigation.index-1] ?? null); setResumeExerciceIds(navigation.exerciseIds);
       setCurrentTentative(navigation.tentative); currentTentativeRef.current = navigation.tentative;
       setPhase(navigation.phase); sessionStorage.removeItem(retakeReturnKey(userId, apprenantId));
+      persistExamSession(navigation.phase, filtered.id, navigation.index, results as ResultatMatiere[]);
     } catch { toast.error('Retour non confirmé : anciennes copies conservées. Réessayez.'); }
   };
 

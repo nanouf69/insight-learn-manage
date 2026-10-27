@@ -29,21 +29,6 @@ END $$;
 CREATE TRIGGER subject_retake_immutable BEFORE UPDATE OR DELETE ON public.exam_subject_retakes
 FOR EACH ROW EXECUTE FUNCTION public.exam_subject_retake_immutable();
 
--- Scope the legacy completion hook to receipt-owned retakes ONLY. All unrelated behavior stays byte-identical.
-CREATE FUNCTION public.ensure_subject_retake_result_isolated() RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE r public.exam_subject_retakes;
-BEGIN
-  SELECT * INTO r FROM public.exam_subject_retakes
-   WHERE apprenant_id=NEW.apprenant_id AND exercice_id=NEW.exercice_id;
-  IF FOUND THEN
-    -- The explicit client/server finalization readback records the new score separately.
-    -- Never let the legacy MAX(tentative) hook modify a former copy.
-    RETURN NEW;
-  END IF;
-  RETURN NEW;
-END $$;
-
 CREATE FUNCTION public.start_exam_subject_retake(
   p_operation_id uuid, p_apprenant_id uuid, p_exam_id text, p_matiere_id text,
   p_source_exercice_id text, p_source_attempt_id uuid DEFAULT NULL
