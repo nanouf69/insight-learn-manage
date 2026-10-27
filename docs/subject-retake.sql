@@ -37,7 +37,7 @@ DECLARE
   subject jsonb;
   closed_at timestamptz;
   last_closed timestamptz;
-  authorization uuid;
+  v_authorization uuid;
   next_number integer;
   new_key text;
   engine text := 'ancien';
@@ -128,9 +128,9 @@ BEGIN
     (SELECT max(a.finished_at) FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id AND a.etat='terminee'))
     INTO last_closed;
   IF now()<last_closed+interval '48 hours' THEN
-    SELECT id INTO authorization FROM public.exam_retake_authorizations a WHERE a.apprenant_id=p_apprenant_id
+    SELECT id INTO v_authorization FROM public.exam_retake_authorizations a WHERE a.apprenant_id=p_apprenant_id
       AND a.exam_id=p_exam_id AND a.consumed_at IS NULL AND a.revoked_at IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE;
-    IF authorization IS NULL THEN
+    IF v_authorization IS NULL THEN
       RAISE EXCEPTION 'Demandez une autorisation à l’administration, ou attendez 48 heures après la fin du passage (%).',
         to_char((last_closed+interval '48 hours') AT TIME ZONE 'Europe/Paris','DD/MM/YYYY HH24:MI') USING ERRCODE='P0471';
     END IF;
@@ -152,13 +152,13 @@ BEGIN
   END IF;
   INSERT INTO public.apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,tentative)
     VALUES(p_apprenant_id,auth.uid(),new_key,duration_seconds,next_number);
-  IF authorization IS NOT NULL THEN
-    UPDATE public.exam_retake_authorizations SET consumed_at=now() WHERE id=authorization AND consumed_at IS NULL;
+  IF v_authorization IS NOT NULL THEN
+    UPDATE public.exam_retake_authorizations SET consumed_at=now() WHERE id=v_authorization AND consumed_at IS NULL;
   END IF;
   INSERT INTO public.exam_subject_retakes(operation_id,apprenant_id,exam_id,matiere_id,source_exercice_id,source_attempt_id,
       attempt_id,exercice_id,tentative,moteur,matiere,authorization_id)
     VALUES(p_operation_id,p_apprenant_id,p_exam_id,p_matiere_id,p_source_exercice_id,p_source_attempt_id,
-      new_attempt.attempt_id,new_key,next_number,engine,subject,authorization) RETURNING * INTO receipt;
+      new_attempt.attempt_id,new_key,next_number,engine,subject,v_authorization) RETURNING * INTO receipt;
   RETURN receipt;
 END $$;
 REVOKE ALL ON FUNCTION public.start_exam_subject_retake(uuid,uuid,text,text,text,uuid) FROM PUBLIC, anon;

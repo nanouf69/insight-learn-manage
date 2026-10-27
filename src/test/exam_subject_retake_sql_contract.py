@@ -12,6 +12,7 @@ class SubjectRetake(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.d=tempfile.mkdtemp(dir='/tmp'); os.chown(cls.d,1000,1000)
+        cls.addClassCleanup(cls.tearDownClass)
         cls.env={k:v for k,v in os.environ.items() if not k.startswith('PG')}
         subprocess.run(AS+['initdb','-D',cls.d+'/db','-U','postgres','-A','trust','--no-locale'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
         subprocess.run(AS+['pg_ctl','-D',cls.d+'/db','-l',cls.d+'/log','-o',f'-k {cls.d} -p 55478 -h ""','-w','start'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
@@ -31,10 +32,13 @@ class SubjectRetake(unittest.TestCase):
         cls.sql(Path('docs/subject-retake.sql').read_text())
     @classmethod
     def tearDownClass(cls):
+        if not os.path.exists(cls.d): return
         subprocess.run(AS+['pg_ctl','-D',cls.d+'/db','-m','immediate','stop'],capture_output=True,env=cls.env);shutil.rmtree(cls.d)
     @classmethod
     def sql(cls,q,check=True):
-        return subprocess.run(['psql','-X','-At','-h',cls.d,'-p','55478','-U','postgres','-v','ON_ERROR_STOP=1','-c',q],capture_output=True,text=True,check=check,env=cls.env)
+        result = subprocess.run(['psql','-X','-At','-h',cls.d,'-p','55478','-U','postgres','-v','ON_ERROR_STOP=1','-c',q],capture_output=True,text=True,check=False,env=cls.env)
+        if check and result.returncode: raise RuntimeError(result.stderr)
+        return result
     def setUp(self):
         self.sql(f"""TRUNCATE apprenants,module_editor_state,reponses_apprenants,exam_attempts_v2,apprenant_examen_timers,exam_retake_authorizations,exam_subject_retakes,apprenant_quiz_results;
         INSERT INTO apprenants VALUES('{A}','{U}');
