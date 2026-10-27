@@ -91,3 +91,54 @@ describe("validation normale et échec réel", () => {
     expect(sent.length).toBeGreaterThan(0);
   });
 });
+
+describe("compléments : correction après échec, identité, double validation", () => {
+  beforeEach(async () => {
+    upserts.length = 0; localStorage.clear(); vi.useFakeTimers();
+    const { supabase } = await import("@/integrations/supabase/client");
+    (supabase.from as any).mockImplementation(() => ({ upsert: vi.fn((row: any) => { upserts.push({ id: row.apprenant_id, d: row.donnees }); return Promise.resolve({ error: null }); }) }));
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("échec puis nouvelle validation corrigée : la dernière version de l'élève gagne", async () => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { savePublicFormDocument } = await import("@/lib/savePublicFormDocument");
+    const ok = (supabase.from as any).getMockImplementation();
+    (supabase.from as any).mockImplementation(() => ({ upsert: vi.fn(() => Promise.resolve({ error: { message: "réseau" } })) }));
+    (savePublicFormDocument as any).mockResolvedValue(false);
+    const { result } = renderHook(() => useAutoSave(params));
+    let r1 = true;
+    await act(async () => { const p = result.current.triggerSave({ choix: "ancien", _status: "completed" }); await vi.advanceTimersByTimeAsync(10000); r1 = await p; });
+    expect(r1).toBe(false);
+    (supabase.from as any).mockImplementation(ok);
+    (savePublicFormDocument as any).mockResolvedValue(true);
+    let r2 = false;
+    await act(async () => { r2 = await result.current.triggerSave({ choix: "nouveau", _status: "completed" }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(65000); });
+    expect(r2).toBe(true);
+    expect(upserts.at(-1).d.choix).toBe("nouveau");
+    expect(upserts.some((u) => u.d.choix === "ancien")).toBe(false);
+  });
+
+  it("changement d'élève pendant l'attente : aucune écriture croisée", async () => {
+    const { result, rerender } = renderHook((p: any) => useAutoSave(p), { initialProps: params });
+    act(() => result.current.queueSave({ nom: "de A" }));
+    rerender({ ...params, apprenantId: "b-fictif" });
+    await act(async () => { await vi.advanceTimersByTimeAsync(65000); });
+    expect(upserts.filter((u) => u.id === "b-fictif" && u.d.nom === "de A")).toHaveLength(0);
+  });
+
+  it("double validation : statut validé conservé, dernière valeur seule", async () => {
+    const { result } = renderHook(() => useAutoSave(params));
+    let a = false, b = false;
+    await act(async () => {
+      const p1 = result.current.triggerSave({ nom: "v1", _status: "completed" });
+      const p2 = result.current.triggerSave({ nom: "v2", _status: "completed" });
+      await vi.advanceTimersByTimeAsync(5000);
+      [a, b] = await Promise.all([p1, p2]);
+    });
+    expect(a && b).toBe(true);
+    expect(upserts.every((u) => u.d._status === "completed")).toBe(true);
+    expect(upserts.at(-1).d.nom).toBe("v2");
+  });
+});

@@ -33,7 +33,8 @@ class Garde(unittest.TestCase):
  def test_brouillon_tardif_ignore_et_journalise(self):
   avant=self.donnees()
   self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"brouillon"}}' WHERE id='{self.id}'""",ELEVE)
-  self.assertEqual(self.donnees(),avant)
+  self.assertEqual(self.donnees(),avant); self.assertIn('"completed"',self.donnees())
+  self.assertIn('brouillon',self.sql("SELECT donnees_refusees::text FROM documents_completes_brouillons_refuses"))
   self.assertEqual(self.sql("SELECT count(*) FROM documents_completes_brouillons_refuses").splitlines()[-1],'1')
  def test_brouillon_tardif_sans_session_service(self):
   avant=self.donnees(); self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"b"}}' WHERE id='{self.id}'""")
@@ -44,6 +45,10 @@ class Garde(unittest.TestCase):
  def test_admin_peut_modifier(self):
   self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"admin"}}' WHERE id='{self.id}'""",ADMIN)
   self.assertIn('"admin"',self.donnees())
+ def test_brouillon_vers_validation(self):
+  self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"d"}}' WHERE id='{self.id}'""",ADMIN)
+  self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"fin","_status":"completed"}}' WHERE id='{self.id}'""",ELEVE)
+  self.assertIn('"fin"',self.donnees())
  def test_brouillon_avant_validation_libre(self):
   self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"d1"}}' WHERE id='{self.id}'""",ADMIN)
   self.sql(f"""UPDATE apprenant_documents_completes SET donnees='{{"nom":"d2"}}' WHERE id='{self.id}'""",ELEVE)
