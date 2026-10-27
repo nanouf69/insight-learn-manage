@@ -107,3 +107,17 @@ describe("jours fériés", () => {
     expect(_jf("2027-01-04")).toBeNull();
   });
 });
+
+import { heuresSessionDefaut as __defautVA } from "@/lib/sessionHeures";
+import { dureeDevisElearning as __dureeVA } from "@/lib/devisDureesElearning";
+describe("VA 36 h (27/10/2026)", () => {
+  it("session VA présentiel = 30 h de cours (+6 h pratique = 36 h)", () => {
+    expect(__defautVA({ nom: "Session VA", type_session: "theorique", types_apprenant: ["VA"], heure_debut: "09:00" } as any)).toBe(30);
+  });
+  it("devis e-learning : VA 36, TA 36, TAXI 96, VTC 66", () => {
+    expect(__dureeVA("va_elearning")).toBe("36 heures");
+    expect(__dureeVA("ta_elearning")).toBe("36 heures");
+    expect(__dureeVA("taxi_elearning")).toBe("96 heures");
+    expect(__dureeVA("vtc_elearning")).toBe("66 heures");
+  });
+});

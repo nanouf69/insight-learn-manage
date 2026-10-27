@@ -27,7 +27,7 @@ export function libelleHeuresSessionMixte(s: SessionHeuresSource): string | null
  * Volume horaire total affiché par défaut pour une session quand
  * `sessions.heures_total` n'est pas renseigné :
  * - session pratique (VTC/TAXI/TA) : 6 h
- * - session présentiel TA (sans TAXI) : 30 h
+ * - session présentiel TA (sans TAXI) ou VA (sans VTC) : 30 h
  * - TAXI : 90 h
  * - VTC cours du soir : 40 h
  * - VTC journée : 60 h
@@ -41,6 +41,9 @@ export function heuresSessionDefaut(s: SessionHeuresSource): number | null {
   const hasTA = types.includes("TA") || /\bta\b/.test(nom);
   if (hasTA && !hasTaxi) return 30;
   if (hasTaxi) return 90;
+  const hasVA = types.includes("VA") || /\bva\b/.test(nom);
+  const hasVtcType = types.includes("VTC") || /vtc/.test(nom);
+  if (hasVA && !hasVtcType) return 30;
   const isSoir =
     /soir/.test(nom) || /^(1[7-9]|2[0-3])[:h]/.test((s.heure_debut || "").trim());
   const hasVtc = types.includes("VTC") || /vtc/.test(nom);
@@ -63,7 +66,7 @@ export function heuresSessionPourApprenant(s: SessionHeuresSource & { heures_tot
   if (libelleHeuresSessionMixte(s)) {
     if (filiere === "vtc") return 60;
     if (filiere === "taxi") return 90;
-    if (filiere === "ta") return 30;
+    if (filiere === "ta" || filiere === "va") return 30;
   }
   return heuresSessionAffichees(s);
 }
