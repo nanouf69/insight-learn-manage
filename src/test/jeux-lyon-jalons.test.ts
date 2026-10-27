@@ -17,7 +17,7 @@ describe("registre d'activités → jalons", () => {
   it("cibles = parcours réels : Lyon VTC/VA, nouvelles activités TAXI/TA module 6", () => {
     expect(idsActivites(parcours("vtc-e"))).toEqual([J1, J2]);
     expect(idsActivites(parcours("va-e"))).toEqual([J1, J2]);
-    expect(idsActivites(parcours("taxi-e"))).toEqual([...IDS_TAXI]);
+    expect(idsActivites(parcours("taxi-e"))).toEqual(["quiz_taxi_equipements_m64_complement_v1", ...IDS_TAXI]);
     expect(idsActivites(parcours("ta-e"))).toEqual([...IDS_TAXI]);
   });
   it("module validé AVANT l'ajout des jeux : reste acquis 100 %, jeux facultatifs (règle gel par module)", () => {
