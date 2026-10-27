@@ -17,6 +17,7 @@ import { fr } from "date-fns/locale";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 import { dureeDevisElearning } from "@/lib/devisDureesElearning";
+import { ProgrammeCalendrierDownload } from "@/components/devis/ProgrammeCalendrierDownload";
 
 /* ─── HELPER: parse "Du 12 au 25 janvier 2026" / "Du 26 octobre au 16 novembre 2026" ─── */
 const FR_MONTHS: Record<string, number> = {
@@ -937,6 +938,10 @@ export default function DevisPersonnel() {
           >
             <Send className="w-5 h-5 mr-2" /> Envoyer par mail
           </Button>
+          <ProgrammeCalendrierDownload
+            formation={formation}
+            dateDebutDevis={dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null}
+          />
         </div>
 
           {generated && (
