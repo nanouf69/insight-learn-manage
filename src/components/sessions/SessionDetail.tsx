@@ -83,6 +83,7 @@ import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { calculerAccesCours } from "@/lib/accesCoursFenetre";
 import { construireConvocationHtml } from "@/lib/convocationFormation";
 import { isPresentielType } from "@/lib/agendaSlots";
+import { buildRibEmailHtml, RIB_EMAIL_SUBJECT } from "@/lib/ribEmail";
 
 
 interface Session {
@@ -1361,6 +1362,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     [sentSessionEmails]
   );
   const hasRelanceBienvenueEmail = (apprenantId: string) => relanceBienvenueApprenantIds.has(apprenantId);
+
+  // RIB de la société (Revolut) envoyé à l'apprenant — détection par objet du mail
+  const ribApprenantIds = useMemo(
+    () =>
+      new Set(
+        sentSessionEmails
+          .filter((e: any) => normalizeSubj(e.subject).includes('rib '))
+          .map((e: any) => e.apprenant_id)
+          .filter(Boolean)
+      ),
+    [sentSessionEmails]
+  );
+  const hasRibEmail = (apprenantId: string) => ribApprenantIds.has(apprenantId);
 
 
    // Charger les identifiants envoyés pour les apprenants de cette session
