@@ -260,9 +260,12 @@ export const EmargementFCModal = ({
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Impossible d'enregistrer votre signature.";
       signalerEchecSignature({ apprenantId, nom: apprenantNom, prenom: apprenantPrenom, message, date: effectiveDate, creneau: String(demi) });
+      const refusRegle = /non autoris|non prévu|refusé/i.test(message);
       toast({
-        title: "Erreur",
-        description: message,
+        title: refusRegle ? "Signature impossible pour ce créneau" : "Erreur",
+        description: refusRegle
+          ? `${message}. Rien n'a été enregistré : contactez le centre de formation pour régulariser cette feuille.`
+          : `${message}. Rien n'a été enregistré : réessayez dans un instant.`,
         variant: "destructive",
       });
     } finally {
