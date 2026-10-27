@@ -96,28 +96,50 @@ export interface Calendrier {
   heuresAttendues: number | null;
   heuresSaisies: number;
   jours: Array<JourCalendrier & { heures: number }>;
+  pratique: Array<JourCalendrier & { heures: number }>;
+  heuresPratique: number;
   valide: boolean;
   anomalies: string[];
 }
 
-/** Calendrier journalier : publié seulement si les jours saisis totalisent exactement les heures de la session. */
+const jourSemaine = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
+
+/**
+ * Calendrier journalier : cours du lundi au vendredi, pratique le samedi (6 h).
+ * Publié seulement si les heures de cours saisies égalent exactement les heures de la session
+ * et si la pratique saisie fait 6 h. Aucune divergence n'est corrigée automatiquement.
+ */
 export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendrier {
   const heuresAttendues = heuresSessionPourApprenant(s, filiere);
   const anomalies: string[] = [];
   const jours: Calendrier["jours"] = [];
-  let heuresSaisies = 0;
+  const pratique: Calendrier["pratique"] = [];
+  let heuresSaisies = 0, heuresPratique = 0;
   for (const j of (s.jours || []).filter((x) => x.nature === "cours")) {
     const h = heuresPlages(j.plages);
     if (h === null || h === 0) { anomalies.push(`Horaire invalide le ${j.jour}`); continue; }
     if (j.jour < s.date_debut || j.jour > s.date_fin) anomalies.push(`Le ${j.jour} est hors des dates de la session`);
+    const w = jourSemaine(j.jour);
+    if (w === 0 || w === 6) anomalies.push(`Le ${j.jour} n'est pas un jour de semaine (cours du lundi au vendredi)`);
     jours.push({ ...j, heures: h });
     heuresSaisies += h;
   }
+  for (const j of (s.jours || []).filter((x) => x.nature === "pratique")) {
+    const h = heuresPlages(j.plages);
+    if (h === null || h === 0) { anomalies.push(`Horaire de pratique invalide le ${j.jour}`); continue; }
+    if (jourSemaine(j.jour) !== 6) anomalies.push(`La pratique du ${j.jour} n'est pas un samedi`);
+    if (j.jour < s.date_debut) anomalies.push(`La pratique du ${j.jour} est avant le début de la session`);
+    pratique.push({ ...j, heures: h });
+    heuresPratique += h;
+  }
   if (heuresAttendues === null) anomalies.push("Durée totale de la session non déterminée");
   if (jours.length === 0) anomalies.push("Aucun jour de cours saisi par l'administration");
-  else if (heuresAttendues !== null && Math.abs(heuresSaisies - heuresAttendues) > 1e-6)
-    anomalies.push(`Les jours saisis totalisent ${heuresSaisies} h au lieu de ${heuresAttendues} h`);
-  return { heuresAttendues, heuresSaisies, jours, valide: anomalies.length === 0, anomalies };
+  else if (heuresAttendues !== null && Math.abs(heuresSaisies - heuresAttendues) > 1e-6) {
+    const prevu = heuresAttendues + HEURES_PRATIQUE, saisi = heuresSaisies + (pratique.length ? heuresPratique : HEURES_PRATIQUE);
+    anomalies.push(`Divergence à arbitrer : ${jours.length} jour(s) de cours = ${heuresSaisies} h au lieu de ${heuresAttendues} h, soit ${saisi} h avec la pratique au lieu des ${prevu} h prévues`);
+  }
+  if (pratique.length && Math.abs(heuresPratique - HEURES_PRATIQUE) > 1e-6) anomalies.push(`La pratique saisie totalise ${heuresPratique} h au lieu de ${HEURES_PRATIQUE} h`);
+  return { heuresAttendues, heuresSaisies, jours, pratique, heuresPratique, valide: anomalies.length === 0, anomalies };
 }
 
 /** Jours ouvrés (lun–ven) de la période : simple proposition, jamais enregistrée sans action de l'admin. */

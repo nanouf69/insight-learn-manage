@@ -72,3 +72,27 @@ describe("PDF", () => {
     expect(manquants).toContain("Lecture des sessions impossible");
   });
 });
+
+describe("pratique le samedi et divergence 4 janvier", () => {
+  const cours16 = joursOuvres("2027-01-04", "2027-01-25").map((jour) => ({ jour, plages: PLAGES_JOURNEE, nature: "cours" as const }));
+  const samedi = { jour: "2027-01-23", plages: PLAGES_JOURNEE, nature: "pratique" as const };
+  it("16 jours + 1 samedi = 102 h au lieu de 96 h : divergence signalée, rien corrigé", () => {
+    const c = calendrierSession({ ...taxi4janv, jours: [...cours16, samedi] }, "taxi");
+    expect(c.heuresSaisies + c.heuresPratique).toBe(102);
+    expect(c.valide).toBe(false);
+    expect(c.anomalies.join(" ")).toContain("102 h avec la pratique au lieu des 96 h");
+  });
+  it("15 jours + samedi pratique 6 h = 96 h : publié", () => {
+    const c = calendrierSession({ ...taxi4janv, jours: [...cours16.slice(0, 15), samedi] }, "taxi");
+    expect(c.heuresPratique).toBe(6);
+    expect(c.valide).toBe(true);
+  });
+  it("pratique hors samedi refusée", () => {
+    const c = calendrierSession({ ...taxi4janv, jours: [...cours16.slice(0, 15), { ...samedi, jour: "2027-01-22" }] }, "taxi");
+    expect(c.valide).toBe(false);
+  });
+  it("cours un samedi refusé", () => {
+    const c = calendrierSession({ ...taxi4janv, jours: [...cours16.slice(0, 14), { ...samedi, nature: "cours" as const }] }, "taxi");
+    expect(c.valide).toBe(false);
+  });
+});
