@@ -8,6 +8,7 @@ import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { computeLearnerQuizNumbers } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
+import { projeterSupportTaxi } from "@/lib/taxiReglementationSupports";
 import { nationalePartie1CourseReview } from "@/lib/nationalePartie1CourseReview";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
@@ -9767,7 +9768,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         {/* Current page content */}
         <div className="animate-fade-in">
-          {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
+          {currentPageData?.type === "cours" && renderCoursPage(projeterSupportTaxi(Number(module.id), currentPageData.cours))}
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
 
