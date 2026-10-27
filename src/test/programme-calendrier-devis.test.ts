@@ -96,3 +96,14 @@ describe("pratique le samedi et divergence 4 janvier", () => {
     expect(c.valide).toBe(false);
   });
 });
+
+import { jourFerie as _jf } from "@/lib/programmeCalendrierDevis";
+describe("jours fériés", () => {
+  it("identifie Pâques, Ascension, Pentecôte 2027 et 11 novembre", () => {
+    expect(_jf("2027-03-29")).toBe("Lundi de Pâques");
+    expect(_jf("2027-05-06")).toBe("Ascension");
+    expect(_jf("2027-05-17")).toBe("Lundi de Pentecôte");
+    expect(_jf("2026-11-11")).toBe("Armistice");
+    expect(_jf("2027-01-04")).toBeNull();
+  });
+});
