@@ -1485,6 +1485,13 @@
       "when": 1793143051530,
       "tag": "0211_garde_brouillon_apres_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 212,
+      "version": "7",
+      "when": 1793143369246,
+      "tag": "0212_exam_subject_retake",
+      "breakpoints": true
     }
   ]
 }

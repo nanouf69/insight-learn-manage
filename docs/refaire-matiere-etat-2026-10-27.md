@@ -30,3 +30,5 @@ Finalisation du 27/10 après 23:04 UTC : nouveaux fichiers `SubjectCopyHistory.t
 - Parcours navigateur complet avec compte fictif isolé, historique après clôture et rechargement : NON PROUVÉ, bloqué par le FAIL de conservation et les garanties serveur restantes. Aucun PASS global annoncé.
 
 Aucun mail, SMS, appel de correction IA, écriture élève, migration ou publication exécuté. La fonctionnalité n'est **pas livrée comme opérationnelle**.
+## 27/10 23:23 UTC
+Migration 0212 appliquée : reçus, start_exam_subject_retake, branche de clôture par reçu. Empreintes copies/réponses/passages V2 identiques avant/après. 19 tests SQL + 5 tests catalogue réel + 8 Vitest PASS.

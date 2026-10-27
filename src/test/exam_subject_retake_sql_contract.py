@@ -19,7 +19,7 @@ class SubjectRetake(unittest.TestCase):
         cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role;
         CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('test.uid',true),'')::uuid$$;
         CREATE TABLE apprenants(id uuid,auth_user_id uuid); CREATE TABLE module_editor_state(module_data jsonb);
-        CREATE TABLE apprenant_quiz_results(apprenant_id uuid,quiz_id text,tentative integer,matiere_id text,details jsonb);
+        CREATE TABLE apprenant_quiz_results(id uuid DEFAULT gen_random_uuid(),apprenant_id uuid,quiz_id text,tentative integer,matiere_id text,details jsonb);
         CREATE FUNCTION has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;""")
         for table in ['reponses_apprenants','exam_attempts_v2','apprenant_examen_timers','exam_retake_authorizations']:
             cols=json.loads(live(f"SELECT json_agg(t) FROM (SELECT column_name,data_type,column_default,is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='{table}' ORDER BY ordinal_position)t"))
@@ -42,7 +42,7 @@ class SubjectRetake(unittest.TestCase):
     def setUp(self):
         self.sql(f"""TRUNCATE apprenants,module_editor_state,reponses_apprenants,exam_attempts_v2,apprenant_examen_timers,exam_retake_authorizations,exam_subject_retakes,apprenant_quiz_results;
         INSERT INTO apprenants VALUES('{A}','{U}');
-        INSERT INTO module_editor_state VALUES('{{"id":"EB1","matieres":[{{"id":"gestion","duree":30,"questions":[{{"id":1,"type":"QCM","enonce":"Fictive","choix":[]}}]}}]}}');
+        INSERT INTO module_editor_state VALUES('{{"id":"EB1","matieres":[{{"id":"gestion","duree":30,"questions":[{{"id":1,"type":"QCM","enonce":"Fictive","choix":[]}}]}},{{"id":"anglais","duree":30,"questions":[{{"id":1,"type":"QCM","enonce":"Fictive","choix":[]}}]}}]}}');
         INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at,updated_at) VALUES
         ('{A}','{U}','EB1__gestion','examen_blanc','{{"1":["A"]}}',true,'submitted',now()-interval '48 hours',now()-interval '48 hours'),
         ('{A}','{U}','EB1__anglais','examen_blanc','{{"1":"conservé"}}',true,'submitted',now()-interval '48 hours',now()-interval '48 hours');""")
@@ -100,5 +100,40 @@ class SubjectRetake(unittest.TestCase):
             results=list(pool.map(lambda op:self.receipt(op=op),[O,'44444444-4444-4444-4444-444444444444']))
         self.assertEqual(results[0]['exercice_id'],results[1]['exercice_id'])
         self.assertEqual(self.sql('SELECT count(*) FROM exam_subject_retakes').stdout.strip(),'1')
+
+    V='66666666-6666-6666-6666-666666666666'
+    def v2(self,snapshot):
+        self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{self.V}','{A}','EB1','{O}','{snapshot}','old','terminee',now()-interval '48 hours')")
+    Q='[{"id":"gestion:1","type":"QCM","enonce":"Fictive","choix":[]}]'
+    def test_v2_imported_first_copy_proved_by_result_id(self):
+        rid='77777777-7777-7777-7777-777777777777'
+        self.sql(f"INSERT INTO apprenant_quiz_results(id,apprenant_id,quiz_id,tentative,matiere_id) VALUES('{rid}','{A}','EB1',1,'gestion')")
+        self.v2('{"source_historique":{"result_id":"%s","tentative":1},"questions":%s}'%(rid,self.Q))
+        self.assertEqual(self.receipt(attempt=f"'{self.V}'")['moteur'],'v2')
+    def test_v2_imported_wrong_tentative_refused(self):
+        rid='77777777-7777-7777-7777-777777777777'
+        self.sql(f"INSERT INTO apprenant_quiz_results(id,apprenant_id,quiz_id,tentative,matiere_id) VALUES('{rid}','{A}','EB1',2,'gestion')")
+        self.v2('{"source_historique":{"result_id":"%s"},"questions":%s}'%(rid,self.Q))
+        r=self.call(attempt=f"'{self.V}'",check=False);self.assertIn('non prouvée',r.stderr)
+        self.assertEqual(self.sql('SELECT count(*) FROM exam_subject_retakes').stdout.strip(),'0')
+    def test_v2_sole_native_first_copy_accepted(self):
+        self.v2('{"matiere":"gestion","questions":%s}'%self.Q)
+        self.assertEqual(self.receipt(attempt=f"'{self.V}'")['moteur'],'v2')
+    def test_v2_native_without_proof_refused_when_ambiguous(self):
+        self.v2('{"matiere":"gestion","questions":%s}'%self.Q)
+        self.sql(f"INSERT INTO exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"questions\":[]}}','x','terminee',now()-interval '50 hours')")
+        r=self.call(attempt=f"'{self.V}'",check=False);self.assertIn('non prouvée',r.stderr)
+    def test_one_authorization_two_real_connections_one_retake(self):
+        from concurrent.futures import ThreadPoolExecutor
+        self.sql(f"UPDATE reponses_apprenants SET submitted_at=now(),updated_at=now(); INSERT INTO exam_retake_authorizations(apprenant_id,exam_id) VALUES('{A}','EB1')")
+        def go(args):
+            op,m=args
+            return self.sql(f"SET test.uid='{U}'; SELECT exercice_id FROM start_exam_subject_retake('{op}','{A}','EB1','{m}','EB1__{m}',NULL)",False)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            res=list(pool.map(go,[(O,'gestion'),('44444444-4444-4444-4444-444444444444','anglais')]))
+        self.assertEqual(sorted(r.returncode==0 for r in res),[False,True])
+        self.assertTrue(any('autorisation' in r.stderr for r in res))
+        self.assertEqual(self.sql('SELECT count(*) FROM exam_subject_retakes').stdout.strip(),'1')
+        self.assertEqual(self.sql('SELECT count(*) FROM exam_retake_authorizations WHERE consumed_at IS NOT NULL').stdout.strip(),'1')
 
 if __name__=='__main__': unittest.main(verbosity=2)

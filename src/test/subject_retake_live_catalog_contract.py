@@ -22,7 +22,7 @@ class LiveCatalog(unittest.TestCase):
   # Local initdb already contains public. External extensions are not exercised.
   dump=dump.replace('CREATE SCHEMA public;','')
   result=cls.sql(dump,check=False);Path(cls.d+'/restore-errors.log').write_text(result.stderr)
-  cls.sql(Path('docs/subject-retake.sql').read_text())
+  if 'exam_subject_retakes' not in dump: cls.sql(Path('docs/subject-retake.sql').read_text())  # already live after 0212
   cls.sql(f"INSERT INTO auth.users VALUES('{U}','fictif@example.invalid'); INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','ISOLÉ','fictif@example.invalid');")
  @classmethod
  def cleanup(cls):
@@ -43,12 +43,43 @@ class LiveCatalog(unittest.TestCase):
  def test_learner_receipt_direct_insert_refused(self):
   r=self.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{U}'; INSERT INTO exam_subject_retakes(operation_id,apprenant_id,exam_id,matiere_id,source_exercice_id,exercice_id,tentative,moteur,matiere) VALUES(gen_random_uuid(),'{A}','EB1','gestion','EB1__gestion','EB1__gestion__t2',2,'ancien','{{}}')",False)
   self.assertNotEqual(r.returncode,0)
- def test_production_completion_preserves_other_tentative(self):
-  # Demonstrates whether production trigger silently modifies T1 while T2 closes.
-  self.sql(f"""INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,quiz_type,details) VALUES('{A}','{U}','EB1','Fictif','gestion','Gestion',1,'examen_blanc','{{"historical":"must-stay-identical"}}');
-  INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative) VALUES('{A}','{U}','EB1__gestion__t2','examen_blanc',2);""")
-  before=self.sql(f"SELECT details FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND tentative=1").stdout
-  self.sql(f"SET request.jwt.claim.sub='{U}'; UPDATE reponses_apprenants SET reponses='{{\"1\":[\"A\"]}}',completed=true WHERE apprenant_id='{A}' AND exercice_id='EB1__gestion__t2'")
-  after=self.sql(f"SELECT details FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND tentative=1").stdout
-  self.assertEqual(after,before,'BLOCKER: live completion trigger rewrites an earlier result details when a new subject closes')
+ def q(self,sql,uid=None,check=True):
+  pre=f"SET ROLE authenticated; SET request.jwt.claim.sub='{uid}';" if uid else ''
+  return self.sql(pre+sql,check)
+ def seed(self,exam):
+  self.sql(f"""INSERT INTO module_editor_state(module_id,module_data) VALUES(9{exam[-1]}1,'{{"id":"{exam}","matieres":[{{"id":"gestion","duree":30,"questions":[{{"id":1,"type":"QCM","enonce":"Fictive","choix":[]}}]}}]}}');
+  INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative,reponses,completed,status,submitted_at,updated_at) VALUES
+   ('{A}','{U}','{exam}__gestion','examen_blanc',1,'{{"1":["A"]}}',true,'submitted',now()-interval '49 hours',now()-interval '49 hours'),
+   ('{A}','{U}','{exam}__anglais','examen_blanc',1,'{{"1":["B"]}}',true,'submitted',now()-interval '49 hours',now()-interval '49 hours');
+  INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,quiz_type,details) VALUES
+   ('{A}','{U}','{exam}','Fictif','gestion','Gestion',1,'examen_blanc','{{"historical":"T1"}}'),
+   ('{A}','{U}','{exam}','Fictif','anglais','Anglais',1,'examen_blanc','{{"historical":"autre"}}');""")
+ def history(self,exam):
+  return self.sql(f"SELECT json_agg(x ORDER BY x::text) FROM (SELECT to_jsonb(r)-'updated_at' x FROM reponses_apprenants r WHERE exercice_id IN ('{exam}__gestion','{exam}__anglais') UNION ALL SELECT to_jsonb(q) FROM apprenant_quiz_results q WHERE quiz_id='{exam}' AND tentative=1) z").stdout
+ def test_end_to_end_retake_close_reload_history(self):
+  self.seed('EB1'); before=self.history('EB1')
+  op='aaaaaaaa-0000-0000-0000-000000000001'
+  call=lambda o:self.q(f"SELECT exercice_id||'|'||tentative FROM start_exam_subject_retake('{o}','{A}','EB1','gestion','EB1__gestion',NULL)",U).stdout.strip().splitlines()[-1]
+  r=call(op); self.assertEqual(r,'EB1__gestion__t2|2')
+  self.assertEqual(call('aaaaaaaa-0000-0000-0000-000000000002'),r)  # double clic
+  self.q("UPDATE reponses_apprenants SET reponses='{\"1\":[\"C\"]}' WHERE exercice_id='EB1__gestion__t2'",U)
+  self.sql(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,quiz_type,details) VALUES('{A}','{U}','EB1','Fictif','gestion','Gestion',2,'examen_blanc','{{}}')")
+  self.q("UPDATE reponses_apprenants SET completed=true,status='submitted',submitted_at=now() WHERE exercice_id='EB1__gestion__t2'",U)
+  self.assertEqual(self.history('EB1'),before,'T1 et autres matières doivent rester identiques')
+  self.assertEqual(self.sql(f"SELECT details->>'source_tentative' FROM apprenant_quiz_results WHERE quiz_id='EB1' AND matiere_id='gestion' AND tentative=2").stdout.strip(),'2')
+  self.assertEqual(self.q(f"SELECT count(*) FROM exam_subject_retakes WHERE operation_id='{op}'",U).stdout.strip().splitlines()[-1],'1')  # rechargement
+  O2='99999999-9999-9999-9999-999999999999'
+  self.assertEqual(self.q("SELECT count(*) FROM exam_subject_retakes",O2).stdout.strip().splitlines()[-1],'0')
+  self.assertNotEqual(self.q(f"SELECT start_exam_subject_retake(gen_random_uuid(),'{A}','EB1','gestion','EB1__gestion',NULL)",O2,False).returncode,0)
+  self.assertEqual(self.sql("SELECT count(*) FROM reponses_apprenants WHERE exercice_id LIKE 'EB1__gestion%'").stdout.strip(),'2')
+ def test_too_early_refused_live(self):
+  self.seed('EB3'); self.sql("UPDATE reponses_apprenants SET submitted_at=now(),updated_at=now() WHERE exercice_id LIKE 'EB3__%'")
+  r=self.q(f"SELECT start_exam_subject_retake(gen_random_uuid(),'{A}','EB3','gestion','EB3__gestion',NULL)",U,False)
+  self.assertIn('autorisation',r.stderr)
+ def test_legacy_completion_without_receipt_unchanged(self):
+  # Non-regression hors nouveau flux : ancien comportement MAX(tentative) conservé.
+  self.seed('EB2')
+  self.sql(f"INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative) VALUES('{A}','{U}','EB2__francais','examen_blanc',1); INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,quiz_type,details) VALUES('{A}','{U}','EB2','Fictif','francais','Français',1,'examen_blanc','{{}}')")
+  self.sql("UPDATE reponses_apprenants SET reponses='{\"1\":[\"A\"]}',completed=true WHERE exercice_id='EB2__francais'")
+  self.assertEqual(self.sql("SELECT details->>'source_exercice_id' FROM apprenant_quiz_results WHERE quiz_id='EB2' AND matiere_id='francais'").stdout.strip(),'EB2__francais')
 if __name__=='__main__':unittest.main(verbosity=2)
