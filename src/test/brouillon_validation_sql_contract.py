@@ -23,7 +23,7 @@ class Garde(unittest.TestCase):
   subprocess.run(AS+['pg_ctl','-D',c.d+'/db','-m','immediate','stop'],capture_output=True,env=c.env);shutil.rmtree(c.d)
  @classmethod
  def sql(c,q,uid=''):
-  r=subprocess.run(['psql','-X','-At','-h',c.d,'-p','55491','-U','postgres','-v','ON_ERROR_STOP=1'],input=f"SET test.uid='{uid}';"+q,capture_output=True,text=True,env=c.env)
+  r=subprocess.run(['psql','-X','-q','-At','-h',c.d,'-p','55491','-U','postgres','-v','ON_ERROR_STOP=1'],input=f"SET test.uid='{uid}';"+q,capture_output=True,text=True,env=c.env)
   if r.returncode: raise RuntimeError(r.stderr)
   return r.stdout.strip()
  def setUp(self):
