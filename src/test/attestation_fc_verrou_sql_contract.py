@@ -15,8 +15,8 @@ class Contrat(unittest.TestCase):
         defs = [live(f"select pg_get_functiondef('public.{f}'::regproc)") for f in FNS]
         cls.dir = tempfile.mkdtemp(dir='/tmp'); os.chown(cls.dir, 1000, 1000); env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
         cls.env = env; d = cls.dir
-        subprocess.run(AS + ['initdb', '-D', d + '/db', '-U', 'postgres', '-A', 'trust'], check=True, capture_output=True, env=env)
-        subprocess.run(AS + ['pg_ctl', '-D', d + '/db', '-o', f'-k {d} -p 55439 -c listen_addresses=', '-w', 'start'], check=True, capture_output=True, env=env)
+        subprocess.run(AS + ['initdb', '-D', d + '/db', '-U', 'postgres', '-A', 'trust', '--no-locale'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+        subprocess.run(AS + ['pg_ctl', '-D', d + '/db', '-l', d + '/pg.log', '-o', f'-k {d} -p 55439 -h ""', '-w', 'start'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
         cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role;
           CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ select nullif(current_setting('test.uid', true),'')::uuid $$;
           CREATE TABLE apprenants (id uuid primary key, auth_user_id uuid);
