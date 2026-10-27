@@ -64,7 +64,9 @@ describe("PDF", () => {
     const { doc, manquants } = buildProgrammeCalendrierPDF({ formation, programme: formationProgramme("taxi_presential")!, session: taxi4janv, sessions: [taxi4janv, examen] });
     expect(doc.getNumberOfPages()).toBeGreaterThan(0);
     expect(manquants.some((m) => m.startsWith("Calendrier"))).toBe(true);
-    expect(manquants).toContain("Date du stage pratique");
+    // Date de fin connue → pratique le samedi 23 janvier 2027, plus « à confirmer ».
+    expect(manquants).not.toContain("Date du stage pratique");
+    expect(manquants).not.toContain("Date de la journée pratique");
     expect(manquants).not.toContain("Date d'examen");
   });
   it("erreur de lecture signalée, jamais « aucune session »", () => {
