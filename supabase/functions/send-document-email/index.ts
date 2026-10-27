@@ -37,6 +37,19 @@ serve(async (req) => {
       );
     }
 
+    // Verrou attestation formation continue : refus par défaut sans les signatures serveur requises.
+    const estAttestationFC = /attestation[\s_-]*(de[\s_-]*)?(formation[\s_-]*continue|fc)/i.test(`${subject} ${attachmentName ?? ""} ${attachmentPath ?? ""}`);
+    if (estAttestationFC) {
+      const refus = (motif: string, controle: unknown = null) => new Response(
+        JSON.stringify({ error: `Attestation refusée : ${motif}`, code: "P0540", controle }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (!apprenantId) return refus("apprenant non identifié");
+      const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: controle, error: ctrlErr } = await admin.rpc("attestation_fc_controle", { p_apprenant: apprenantId });
+      if (ctrlErr || !controle) return refus("vérification des émargements impossible");
+      if ((controle as any).autorise !== true) return refus("émargements manquants", controle);
+    }
+
     // Server-side fetch fallback (avoids client CORS/size issues)
     let resolvedBase64: string | undefined = typeof attachmentBase64 === "string" && attachmentBase64.length > 0
       ? attachmentBase64
