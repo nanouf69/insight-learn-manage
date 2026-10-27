@@ -7911,6 +7911,47 @@ export type Database = {
           },
         ]
       }
+      session_calendrier_jours: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          jour: string
+          libelle: string | null
+          nature: string
+          plages: Json
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          jour: string
+          libelle?: string | null
+          nature?: string
+          plages?: Json
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          jour?: string
+          libelle?: string | null
+          nature?: string
+          plages?: Json
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_calendrier_jours_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_formateurs: {
         Row: {
           created_at: string
@@ -9410,6 +9451,7 @@ export type Database = {
           ville: string
         }[]
       }
+      sessions_publiques_devis: { Args: never; Returns: Json }
       shared_exercice_key: { Args: { e: Json }; Returns: string }
       shared_exercice_strict_key: { Args: { e: Json }; Returns: string }
       signaler_echec_validation_quiz: {
