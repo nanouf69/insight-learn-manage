@@ -1,3 +1,4 @@
+import { maintenantParis } from "@/lib/heureParis";
 import { supabase } from "@/integrations/supabase/client";
 import { planningCreneaux } from "@/lib/signaturesManquantes";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
@@ -31,7 +32,7 @@ const isEveningText = (value?: string | null): boolean => {
 };
 
 const splitEveningCreneau = (now: Date = new Date()): CreneauKey => {
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowMin = maintenantParis(now).minutes;
   return nowMin < 18 * 60 + 30 ? "soir_1" : "soir_2";
 };
 
@@ -223,7 +224,7 @@ export const getCurrentCreneau = (
 ): CreneauKey | null => {
   if (!blocs || blocs.length === 0) return null;
 
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowMin = maintenantParis(now).minutes;
 
   // On considère qu'un créneau est "actif" entre son heure de début (-30 min)
   // et son heure de fin (+15 min) pour permettre d'émarger un peu avant/après.
@@ -338,8 +339,8 @@ export const getExpectedEmargements = async (params: {
       fetchAllRows<any>((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
     ]);
     const filiere = String(params.typeApprenant ?? '').toLowerCase().split('-')[0];
-    const now = new Date();
-    return theorySlotsForAttendance(rows,blocs,filiere).filter(e => isCreneauDue(e.date,e.creneau,formatISO(now),now.getHours()*60+now.getMinutes()));
+    const paris = maintenantParis();
+    return theorySlotsForAttendance(rows,blocs,filiere).filter(e => isCreneauDue(e.date,e.creneau,paris.dateISO,paris.minutes));
   }
 
   const start = new Date(startDate); start.setHours(0, 0, 0, 0);
@@ -403,7 +404,7 @@ export const getExpectedEmargements = async (params: {
         const iso = formatISO(cur);
         const candidates: CreneauKey[] = wantEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
         for (const creneau of candidates) {
-          if (isCreneauDue(iso, creneau, formatISO(new Date()), new Date().getHours() * 60 + new Date().getMinutes())) out.push({ date: iso, creneau });
+          if (isCreneauDue(iso, creneau, maintenantParis().dateISO, maintenantParis().minutes)) out.push({ date: iso, creneau });
         }
       }
       cur.setDate(cur.getDate() + 1);
@@ -420,9 +421,7 @@ export const getExpectedEmargements = async (params: {
     const inSession = sessionRanges.length === 0 || sessionRanges.some(([d, f]) => iso >= d && iso <= f);
     if (dow <= 4 && inSession) {
       const candidates: CreneauKey[] = wantEvening ? ["soir_1", "soir_2"] : ["matin", "apres_midi"];
-      const today = formatISO(new Date());
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
+      const { dateISO: today, minutes: nowMin } = maintenantParis();
       for (const creneau of candidates) {
         if (isCreneauDue(iso, creneau, today, nowMin)) out.push({ date: iso, creneau });
       }

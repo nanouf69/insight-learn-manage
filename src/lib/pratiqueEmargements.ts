@@ -1,3 +1,4 @@
+import { maintenantParis } from "@/lib/heureParis";
 import { supabase } from "@/integrations/supabase/client";
 import type { CreneauKey } from "@/lib/agendaSlots";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
@@ -76,9 +77,7 @@ export const getExpectedPratiqueEmargements = async (
   const details = await fetchPratiqueSlotDetails(apprenantId);
   if (details.length === 0) return [];
 
-  const now = new Date();
-  const todayISO = formatISO(now);
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const { dateISO: todayISO, minutes: nowMin } = maintenantParis();
 
   const out: Array<{ date: string; creneau: CreneauKey }> = [];
   for (const detail of details) {
