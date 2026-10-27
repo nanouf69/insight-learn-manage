@@ -121,3 +121,42 @@ describe("VA 36 h (27/10/2026)", () => {
     expect(__dureeVA("vtc_elearning")).toBe("66 heures");
   });
 });
+
+import { samediPratique } from "@/lib/programmeCalendrierDevis";
+describe("pratique automatique : dernier samedi de la session", () => {
+  const cours = (d: string, f: string, n: number, plages = PLAGES_JOURNEE) => joursOuvres(d, f).slice(0, n).map((jour) => ({ jour, plages, nature: "cours" as const }));
+  it("TAXI fin lundi 25 janvier 2027 → samedi 23 janvier, 90 + 6 = 96 h", () => {
+    const c = calendrierSession({ ...taxi4janv, jours: cours("2027-01-04", "2027-01-22", 15) }, "taxi");
+    expect(c.pratique.map((j) => [j.jour, j.plages])).toEqual([["2027-01-23", PLAGES_JOURNEE]]);
+    expect(c.heuresSaisies + c.heuresPratique).toBe(96);
+    expect(c.valide).toBe(true);
+  });
+  it("fin un samedi → ce samedi", () => expect(samediPratique({ date_debut: "2027-01-04", date_fin: "2027-01-16", jours: [] }).jour).toBe("2027-01-16"));
+  it("VTC jour fin vendredi 13 novembre 2026 → samedi 7, 60 + 6 = 66 h", () => {
+    const s = { ...taxi4janv, types_apprenant: ["VTC"], date_debut: "2026-11-02", date_fin: "2026-11-13", jours: cours("2026-11-02", "2026-11-13", 10) };
+    const c = calendrierSession(s, "vtc");
+    expect(c.pratique[0].jour).toBe("2026-11-07");
+    expect(c.heuresSaisies + c.heuresPratique).toBe(66);
+  });
+  it("VTC soir 40 + 6 = 46 h", () => {
+    const c = calendrierSession({ ...soir, jours: cours(soir.date_debut, soir.date_fin, 10, PLAGES_SOIREE) }, "vtc");
+    expect(c.pratique[0].jour).toBe("2027-02-06");
+    expect(c.heuresSaisies + c.heuresPratique).toBe(46);
+  });
+  it("session courte sans samedi : pas de date inventée", () => {
+    const r = samediPratique({ date_debut: "2027-02-01", date_fin: "2027-02-05", jours: [] });
+    expect(r.jour).toBeNull(); expect(r.anomalie).toMatch(/trop courte/);
+  });
+  it("samedi férié (14 juillet 2029) : à confirmer", () => {
+    const r = samediPratique({ date_debut: "2029-07-09", date_fin: "2029-07-16", jours: [] });
+    expect(r.jour).toBeNull(); expect(r.anomalie).toMatch(/férié/);
+  });
+  it("collision avec un jour de cours : à confirmer", () => {
+    const r = samediPratique({ date_debut: "2027-01-04", date_fin: "2027-01-25", jours: [{ jour: "2027-01-23", plages: PLAGES_JOURNEE, nature: "cours" }] });
+    expect(r.jour).toBeNull();
+  });
+  it("pratique saisie différente : signalée", () => {
+    const c = calendrierSession({ ...taxi4janv, jours: [...cours("2027-01-04", "2027-01-22", 15), { jour: "2027-01-16", plages: PLAGES_JOURNEE, nature: "pratique" }] }, "taxi");
+    expect(c.valide).toBe(false); expect(c.anomalies.join(" ")).toMatch(/dernier samedi/);
+  });
+});
