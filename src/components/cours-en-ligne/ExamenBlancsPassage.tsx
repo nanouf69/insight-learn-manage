@@ -52,6 +52,8 @@ import {
 import { captureError } from "@/lib/monitoring/errorLogger";
 import { deciderCloture, compterReponsesSaisies, finalisationBloqueeParRefus } from "@/lib/examClotureGarde";
 import { getAnswerSaveRejectionFor } from "@/lib/answerPersistence";
+import { RefaireMatiereButton } from './RefaireMatiereButton';
+import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 
 
 
@@ -69,6 +71,8 @@ function PassageMatiere({
   exerciceIdOverride,
   onLearnerActivity,
   onSansReponse,
+  subjectRetake,
+  onSubjectRetake,
 }: {
   matiere: Matiere;
   numero: number;
@@ -83,6 +87,8 @@ function PassageMatiere({
   onLearnerActivity?: () => void;
   /** Sortie sans résultat : temps écoulé sans réponse ou matière déjà close. Aucune note créée. */
   onSansReponse?: () => void;
+  subjectRetake?: SubjectRetakeReceipt;
+  onSubjectRetake?: (receipt: SubjectRetakeReceipt) => void;
 }) {
 
   const [reponses, setReponses] = useState<Reponses>({});
@@ -349,7 +355,11 @@ function PassageMatiere({
     (async () => {
       let decision: Awaited<ReturnType<typeof routerPassage>>;
       try {
-        decision = await routerPassage({
+        decision = subjectRetake
+          ? subjectRetake.moteur === 'v2' && subjectRetake.attempt_id
+            ? { moteur: 'v2', attemptId: subjectRetake.attempt_id }
+            : { moteur: 'ancien', motif: 'passage_deja_engage' }
+          : await routerPassage({
         apprenantId,
         examenId,
         matiereId: matiere.id,
@@ -376,7 +386,7 @@ function PassageMatiere({
         const matiereTentatives = ((tentativesV2 as { attempt_id?: string; etat?: string; snapshot?: { matiere?: string; questions?: { id?: string }[] } }[] | null) ?? [])
           .filter((row) => Boolean(row.attempt_id) && String(row.snapshot?.matiere ?? "") === String(matiere.id));
         const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
-        setTentativeChrono(indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1));
+        setTentativeChrono(subjectRetake?.tentative ?? (indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1)));
         setBlocageV2(null);
         const nouvelle = matiereTentatives.find((row) => row.attempt_id === decision.attemptId);
         const idsSnapshot = (nouvelle?.snapshot?.questions ?? [])
@@ -409,7 +419,7 @@ function PassageMatiere({
         const ancienneIds = matiereTentatives
           .filter((row) => row.etat === "terminee" && row.attempt_id !== decision.attemptId)
           .map((row) => String(row.attempt_id));
-        if (ancienneIds.length > 0) {
+        if (!subjectRetake && ancienneIds.length > 0) {
           // Toute tentative clôturée de la MÊME matière (neutralisée ou non)
           // peut détenir des réponses locales non envoyées : elles sont
           // rattachées à la tentative ouverte, uniquement si chaque question
@@ -1148,6 +1158,10 @@ function PassageMatiere({
               : "Aucune réponse n'a été saisie pour cette matière. Aucune note n'a été calculée et la matière n'est pas enregistrée comme terminée."}
           </p>
           <Button onClick={() => { if (monteRef.current) onSansReponse?.(); }} disabled={!onSansReponse}>Continuer</Button>
+          {!isBilan && apprenantId && userId && examenId && onSubjectRetake && (
+            <RefaireMatiereButton owner={userId} account={apprenantId} exam={examenId} subject={matiere.id}
+              sourceExercise={exerciceKey} sourceAttempt={attemptV2Ref.current} onStarted={onSubjectRetake} />
+          )}
         </CardContent>
       </Card>
     );

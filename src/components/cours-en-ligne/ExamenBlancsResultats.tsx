@@ -35,6 +35,9 @@ import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
+import { RefaireMatiereButton } from './RefaireMatiereButton';
+import { buildExamMatiereExerciceId } from '@/lib/quizAttempts';
+import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 
 
 function EcranResultats({
@@ -50,6 +53,7 @@ function EcranResultats({
   canRetry,
   isPresentiel,
   currentTentative,
+  onSubjectRetake,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -63,6 +67,7 @@ function EcranResultats({
   canRetry?: boolean;
   isPresentiel?: boolean;
   currentTentative?: number;
+  onSubjectRetake?: (receipt: SubjectRetakeReceipt) => void;
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
   resultats = safeArray<ResultatMatiere>(resultats);
@@ -849,6 +854,13 @@ function EcranResultats({
 
 
               {/* Correction détaillée inline */}
+              {!examen.id.startsWith('bilan-') && !isAdmin && apprenantId && userId && onSubjectRetake && (
+                <div className="px-4 pb-3">
+                  <RefaireMatiereButton owner={userId} account={apprenantId} exam={examen.id} subject={r.matiereId}
+                    sourceExercise={buildExamMatiereExerciceId(examen.id, r.matiereId, r.tentative ?? currentTentative ?? 1)}
+                    sourceAttempt={r.__core?.attemptId ?? null} onStarted={onSubjectRetake} />
+                </div>
+              )}
               {isExpanded && (
                 <CardContent className="pt-0 px-4 pb-4 space-y-3 border-t">
                   {questionsSafe.map((q) => {
