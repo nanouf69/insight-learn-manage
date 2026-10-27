@@ -9098,14 +9098,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             return true;
                           };
                           let timer: ReturnType<typeof setTimeout> | undefined;
+                          let delaiDepasse = false;
                           try {
                             const delai = new Promise<boolean>((resolve) => {
                               timer = setTimeout(() => {
+                                delaiDepasse = true;
                                 echec(`delai_depasse_20s_pendant_${etapeEnCours}`);
                                 resolve(false);
                               }, VALIDATION_QUIZ_DELAI_MS);
                             });
-                            const ok = await Promise.race([sequence(), delai]);
+                            const seq = sequence();
+                            // Réussite tardive : si le serveur confirme APRÈS le délai écran
+                            // (gros quiz, réseau lent), on affiche quand même le quiz validé.
+                            // Aucune écriture supplémentaire : seulement l'état écran.
+                            void seq.then((okTardif) => {
+                              if (!okTardif || !delaiDepasse) return;
+                              setValidationFailedFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
+                              setValidationSessionPerdueFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
+                              afficherResultatValide();
+                              toast.success("✅ Quiz validé (confirmation serveur reçue).");
+                            }).catch(() => {});
+                            const ok = await Promise.race([seq, delai]);
                             if (!ok || termine) return;
                             termine = true;
                           } catch (e) {
