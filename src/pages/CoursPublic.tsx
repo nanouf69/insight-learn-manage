@@ -912,6 +912,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementIsPratique, setEmargementIsPratique] = useState(false);
   const [emargementApprenantId, setEmargementApprenantId] = useState<string | null>(null);
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
+  const [emargementEnRetard, setEmargementEnRetard] = useState(0);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
   const emargementStatusRef = useRef(emargementFCStatus);
@@ -1442,6 +1443,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               .map((e) => e.creneau)
           : [],
       );
+      setEmargementEnRetard(expected.filter((e) => e.date < todayStr && !signedSet.has(`${e.date}|${e.creneau}`)).length);
       setEmargementCreneau(next.creneau);
       setEmargementDate(next.date);
       setEmargementFCStatus("needed");
@@ -1810,7 +1812,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const bandeauSignature = signatureEnAttente ? (
     <div data-testid="bandeau-signature-en-attente" className="bg-amber-100 border-b border-amber-300 text-amber-900">
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
-        <span>📝 <strong>Signature en attente</strong> — merci de signer votre feuille d'émargement (obligatoire pour votre dossier de formation).</span>
+        <span>📝 <strong>Signature en attente</strong> — merci de signer votre feuille d'émargement (obligatoire pour votre dossier de formation).{emargementEnRetard > 0 ? ` ${emargementEnRetard} créneau${emargementEnRetard > 1 ? "x" : ""} passé${emargementEnRetard > 1 ? "s" : ""} non signé${emargementEnRetard > 1 ? "s" : ""} : la date du cours est conservée et l'heure réelle de signature est enregistrée.` : ""}</span>
         <Button size="sm" onClick={() => setShowSignatureModal(true)}>Signer</Button>
       </div>
     </div>
