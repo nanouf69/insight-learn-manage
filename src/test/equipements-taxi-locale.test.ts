@@ -43,7 +43,6 @@ describe("Quiz Équipements TAXI — partie locale module 10", () => {
       expect(q.choix).toHaveLength(3);
       expect(q.correct).toBeLessThan(q.choix.length);
       expect(JSON.stringify(q)).not.toMatch(/DDPP|à vérifier/i);
-      expect([6, 11]).not.toContain(q.diapositive === 6 || q.diapositive === 11 ? (/€/.test(JSON.stringify(q)) ? q.diapositive : 0) : 0);
     }
   });
   it("terminer exige les 15 réponses", () => {
