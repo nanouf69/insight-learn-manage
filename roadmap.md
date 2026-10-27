@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Questions ambiguës TAXI/TA vérifiées — 27/10 15:56 UTC, accord explicite
+- [x] Appliquer seulement 70-11, 71-47 (explication), 71-10 (choix B DGFiP/TVA), 73-27 (énoncé le.taxi suspendu), 75-19 (exception ALD) si réponses/notes/terminés intacts ; journal avant/après.
+- [x] Bloqués et signalés : 70-73 B, 74-6 D, 73-25 relettrage (réponses déjà enregistrées sur ces lettres) ; 70-19/65/78/87 et 74-17 inchangées.
+- [x] Contrôle avant/après : 305 lignes de réponses identiques, 5 questions modifiées, 5 entrées de journal ; affichage écran élève NON PROUVÉ ; pas de publication.
+
 ## Rectification attestation Documents de formation — 26/10 17:16 UTC
 - [x] Présentiel : premier jour des cours, dernier jour incluant la pratique ; supprimer les heures e-learning du PDF, total présentiel seul.
 - [x] Signature et tampon privés de Documents dans la nouvelle attestation ; originaux préservés, aucun envoi/publication.
