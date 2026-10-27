@@ -49,17 +49,29 @@ export function computeExercicePartNumbers<C extends Course, E extends Exercise>
   });
   return result;
 }
-/** Subject number shown to learners for matière sub-modules (mirror of the learner stepper map). */
-const LEARNER_SUBJECT_NUM: Record<number, number> = {
-  2: 1, 25: 1, 14: 2, 15: 3, 16: 4, 17: 5, 18: 6, 19: 7,
-  10: 1, 39: 1, 20: 2, 21: 3, 22: 4, 23: 5, 24: 6,
-  40: 1, 42: 2, 41: 1, 43: 2,
-};
-
-/** Admin-only label: "6.4" when the module is matière n°6, else the part number alone. */
-export function learnerQuizLabel(moduleId: number, partNumber: string | null | undefined): string | null {
-  if (!partNumber) return null;
-  if (partNumber.includes(".")) return partNumber;
-  const s = LEARNER_SUBJECT_NUM[Number(moduleId)];
-  return s ? `${s}.${partNumber}` : partNumber;
+/** Admin-only: exact quiz number the learner stepper shows (e.g. "6.4" = matière F, partie 4). */
+export function computeLearnerQuizNumbers<C extends Course, E extends Exercise>(
+  moduleId: number, cours: C[], exercices: E[],
+): Map<number, string> {
+  const parts = computeExercicePartNumbers(moduleId, cours, exercices);
+  const interleaved = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
+  const bilan = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
+  const ac = (cours || []).filter(c => c.actif);
+  const ae = (exercices || []).filter(e => e.actif);
+  if (bilan.has(Number(moduleId)) || !ac.some(c => /^\s*[A-G]\./i.test(c.titre))) return parts;
+  const pages = interleaved.has(Number(moduleId))
+    ? orderedCoursePages(ac, ae)
+    : [...ac.map(c => ({ type: "cours" as const, cours: c })), ...ae.map(e => ({ type: "exercice-single" as const, exercice: e }))];
+  const out = new Map<number, string>();
+  let subj: number | undefined;
+  pages.forEach(p => {
+    if (p.type === "cours") {
+      const l = p.cours.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
+      subj = "ABCDEFG".indexOf(l) + 1;
+    } else if (subj !== undefined) {
+      const part = parts.get(Number(p.exercice.id));
+      if (part) out.set(Number(p.exercice.id), `${subj}.${part}`);
+    }
+  });
+  return out;
 }
