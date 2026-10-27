@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
-import { redactForHistory, HISTORY_ACCESS_NOTE, generateSetPasswordLink, setPasswordBlock } from "../_shared/credential-secrets.ts";
+import { redactForHistory, HISTORY_ACCESS_NOTE, generateSetPasswordLink, setPasswordBlock, generateEasyPassphrase } from "../_shared/credential-secrets.ts";
+import { MOTS_PHRASE_DE_PASSE } from "../_shared/passphrase-words.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -142,14 +143,9 @@ serve(async (req) => {
     let resetLink: string | null = null;
 
     if (mode === "temp_password") {
-      // Génère un mot de passe temporaire, l'applique au compte, ne le stocke JAMAIS.
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-      let generated = "";
-      const randomBytes = new Uint8Array(8);
-      crypto.getRandomValues(randomBytes);
-      for (let i = 0; i < 8; i++) {
-        generated += chars[randomBytes[i] % chars.length];
-      }
+      // Génère un mot de passe temporaire facile à saisir (mots minuscules + chiffres),
+      // l'applique au compte, ne le stocke JAMAIS.
+      const generated = generateEasyPassphrase(MOTS_PHRASE_DE_PASSE);
       const { error: pwdErr } = await supabaseAdmin.auth.admin.updateUserById(
         apprenant.auth_user_id,
         { password: generated }

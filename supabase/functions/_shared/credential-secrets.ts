@@ -14,6 +14,29 @@ export function generateUnsharedPassword(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Entier uniforme dans [0, n) via tirage cryptographique sans biais (rejet). */
+function randomIndex(n: number): number {
+  const max = Math.floor(0x100000000 / n) * n;
+  const buf = new Uint32Array(1);
+  while (true) {
+    crypto.getRandomValues(buf);
+    if (buf[0] < max) return buf[0] % n;
+  }
+}
+
+/**
+ * Mot de passe temporaire facile à saisir : 4 mots minuscules sans accents
+ * tirés au hasard (liste de 2 048) + 2 chiffres, séparés par des tirets.
+ * Environ 50 bits d'entropie. Jamais stocké.
+ */
+export function generateEasyPassphrase(words: readonly string[]): string {
+  if (words.length < 2048) throw new Error("Liste de mots insuffisante");
+  const parts: string[] = [];
+  for (let i = 0; i < 4; i++) parts.push(words[randomIndex(words.length)]);
+  parts.push(String(randomIndex(100)).padStart(2, "0"));
+  return parts.join("-");
+}
+
 /**
  * Durée unique du lien « Définir mon mot de passe ».
  * Source unique : sert au texte de l'e-mail. L'expiration réelle est appliquée
