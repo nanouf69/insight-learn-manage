@@ -6431,6 +6431,42 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_ia_rattrapages_historiques: {
+        Row: {
+          apprenant_id: string
+          attempt_id: string
+          autorise_par: string | null
+          created_at: string
+          exam_id: string
+          matiere_id: string
+          motif: string
+          result_id: string
+          tentative: number | null
+        }
+        Insert: {
+          apprenant_id: string
+          attempt_id: string
+          autorise_par?: string | null
+          created_at?: string
+          exam_id: string
+          matiere_id: string
+          motif: string
+          result_id: string
+          tentative?: number | null
+        }
+        Update: {
+          apprenant_id?: string
+          attempt_id?: string
+          autorise_par?: string | null
+          created_at?: string
+          exam_id?: string
+          matiere_id?: string
+          motif?: string
+          result_id?: string
+          tentative?: number | null
+        }
+        Relationships: []
+      }
       qrc_ia_reprise_exceptionnelle_constats: {
         Row: {
           attempt_id: string
@@ -9090,6 +9126,10 @@ export type Database = {
         Returns: Json
       }
       qrc_ia_raison_file: { Args: { p_attempt: string }; Returns: string }
+      qrc_ia_rattrapage_historique: {
+        Args: { p_motif: string; p_result_id: string }
+        Returns: Json
+      }
       qrc_ia_reconcilier: { Args: never; Returns: Json }
       qrc_ia_reserver_auto: {
         Args: { p_base: Json; p_qrc: string }

@@ -128,7 +128,14 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     // Passage de la liste figée : seules ses QRC listées sont traitées (direct ou suite).
     const filtreAllowlist = (estRattrapage || !!suite || exceptionnelle) && passageAutoriseAbaBakre(attempt_id, att.apprenant_id);
     if (exceptionnelle && !filtreAllowlist) return json({ ok: false, message: "Hors périmètre de reprise exceptionnelle" }, 403);
-    if (estRattrapage) {
+    // Copie héritée importée sur autorisation admin explicite (journal append-only) :
+    // seule la file durable (suite) peut la traiter, jamais un appel direct.
+    const { data: autHist, error: autHistErr } = await service.from("qrc_ia_rattrapages_historiques").select("attempt_id").eq("attempt_id", attempt_id).maybeSingle();
+    if (autHistErr) throw autHistErr;
+    const historiqueAutorise = !!suite && !!autHist && att.snapshot?.source_historique?.origine === "import-historique";
+    if (historiqueAutorise) {
+      // Rattrapage historique autorisé (bornes, idempotence, budget actifs).
+    } else if (estRattrapage) {
       if (!dansPeriodeRattrapage) return json({ ok: true, statut: "hors_periode_rattrapage" });
     } else if ((suite || exceptionnelle) && dansPeriodeRattrapage) {
       // Continuation d'un rattrapage autorisé (bornes, idempotence, budget actifs).
@@ -146,7 +153,7 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     if (lectureErreur) throw lectureErreur;
 
     const key = Deno.env.get("LOVABLE_API_KEY");
-    if (!reprise_qrc_id && !estRattrapage && !(suite && dansPeriodeRattrapage) && finPassage < new Date("2026-10-20T09:53:00Z")) return json({ ok: true, statut: "historique_sans_reprise_auto" });
+    if (!reprise_qrc_id && !estRattrapage && !(suite && dansPeriodeRattrapage) && !historiqueAutorise && finPassage < new Date("2026-10-20T09:53:00Z")) return json({ ok: true, statut: "historique_sans_reprise_auto" });
     const automatique = !reprise_qrc_id;
     if (automatique) {
       const { data: acquired, error } = await service.rpc("qrc_ia_suite_claim", { p_attempt: attempt_id, p_token: suite_token ?? null });
