@@ -9073,6 +9073,10 @@ export type Database = {
         }[]
       }
       qrc_ia_compter_copies_en_attente: { Args: never; Returns: Json }
+      qrc_ia_copie_rattrapable: {
+        Args: { p_result_id: string }
+        Returns: string
+      }
       qrc_ia_copies_en_attente_elearning: {
         Args: { p_min_age?: string }
         Returns: {
@@ -9128,6 +9132,10 @@ export type Database = {
       qrc_ia_raison_file: { Args: { p_attempt: string }; Returns: string }
       qrc_ia_rattrapage_historique: {
         Args: { p_motif: string; p_result_id: string }
+        Returns: Json
+      }
+      qrc_ia_rattrapage_historique_lot: {
+        Args: { p_limite?: number }
         Returns: Json
       }
       qrc_ia_reconcilier: { Args: never; Returns: Json }
