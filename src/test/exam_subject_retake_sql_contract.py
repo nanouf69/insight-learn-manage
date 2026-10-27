@@ -84,5 +84,15 @@ class SubjectRetake(unittest.TestCase):
         self.assertEqual(self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout,before)
     def test_ambiguous_identity_refused(self):
         self.assertNotEqual(self.call(attempt=f"'{O}'",check=False).returncode,0)
+    def test_receipt_cannot_be_rewritten_or_deleted(self):
+        self.receipt()
+        self.assertNotEqual(self.sql("UPDATE exam_subject_retakes SET tentative=99",check=False).returncode,0)
+        self.assertNotEqual(self.sql("DELETE FROM exam_subject_retakes",check=False).returncode,0)
+    def test_regex_subject_injection_refused(self):
+        r=self.sql(f"SET test.uid='{U}'; SELECT start_exam_subject_retake('{O}','{A}','EB1','.*','EB1__gestion')",check=False)
+        self.assertNotEqual(r.returncode,0)
+    def test_same_tentative_without_exact_v2_binding_refused(self):
+        self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{O}','{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"tentative\":1,\"questions\":[]}}','old','terminee',now()-interval '48 hours')")
+        self.assertNotEqual(self.call(attempt=f"'{O}'",check=False).returncode,0)
 
 if __name__=='__main__': unittest.main(verbosity=2)

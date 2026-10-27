@@ -21,6 +21,13 @@ GRANT ALL ON public.exam_subject_retakes TO service_role;
 ALTER TABLE public.exam_subject_retakes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY subject_retake_owner_read ON public.exam_subject_retakes FOR SELECT TO authenticated
 USING (public.core_est_proprietaire(apprenant_id) OR public.has_role(auth.uid(), 'admin'));
+CREATE FUNCTION public.exam_subject_retake_immutable() RETURNS trigger
+LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+  RAISE EXCEPTION 'Reçu de reprise immuable ; modification ou suppression interdite.' USING ERRCODE='P0482';
+END $$;
+CREATE TRIGGER subject_retake_immutable BEFORE UPDATE OR DELETE ON public.exam_subject_retakes
+FOR EACH ROW EXECUTE FUNCTION public.exam_subject_retake_immutable();
 
 CREATE FUNCTION public.start_exam_subject_retake(
   p_operation_id uuid, p_apprenant_id uuid, p_exam_id text, p_matiere_id text,
@@ -118,7 +125,9 @@ BEGIN
     IF EXISTS (SELECT 1 FROM jsonb_array_elements(subject->'questions') q WHERE NOT EXISTS (
       SELECT 1 FROM jsonb_array_elements(old_attempt.snapshot->'questions') s
       WHERE s->>'id'=p_matiere_id||':'||(q->>'id') AND s->>'enonce'=q->>'enonce'
-        AND s->>'type'=q->>'type' AND coalesce(s->'choix','null'::jsonb)=coalesce(q->'choix','null'::jsonb)))
+        AND s->>'type'=q->>'type' AND coalesce(s->'choix','null'::jsonb)=coalesce(q->'choix','null'::jsonb)
+        AND coalesce(s->'reponseQRC','null'::jsonb)=coalesce(q->'reponseQRC','null'::jsonb)
+        AND coalesce(s->'bareme','null'::jsonb)=coalesce(q->'bareme','null'::jsonb)))
        OR jsonb_array_length(subject->'questions')<>jsonb_array_length(old_attempt.snapshot->'questions') THEN
       RAISE EXCEPTION 'Sujet différent de la copie conservée ; contactez l’administration.' USING ERRCODE='P0487';
     END IF;
