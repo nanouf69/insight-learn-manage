@@ -124,7 +124,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
           donnees: collectData(),
         });
       }
-      else toast.error("Erreur lors de la sauvegarde");
+      else { toast.error("Erreur lors de la sauvegarde"); return; }
     }
     onComplete();
   };

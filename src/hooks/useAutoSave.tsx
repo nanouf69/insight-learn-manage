@@ -221,11 +221,13 @@ export function useAutoSave({
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSavingRef = useRef(false);
+  const finalizedRef = useRef(false);
   const identityRef = useRef(`${apprenantId}:${typeDocument}`);
   identityRef.current = `${apprenantId}:${typeDocument}`;
   useEffect(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     pendingDataRef.current = null;
+    finalizedRef.current = false;
     setStatus('idle'); setLastSavedAt(null);
     const draft = loadSavedDraft(apprenantId, typeDocument);
     if (draft?._pending) pendingDataRef.current = draft;
@@ -233,7 +235,16 @@ export function useAutoSave({
 
   const triggerSave = useCallback(async (data: Record<string, any>): Promise<boolean> => {
     if (!apprenantId || !enabled) return false;
-    if (isSavingRef.current) {
+    const isFinal = data?._status === "completed";
+    // After a final validation, drafts can never be sent again for this document.
+    if (finalizedRef.current && !isFinal) return false;
+    if (isFinal) {
+      finalizedRef.current = true;
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      pendingDataRef.current = null;
+      // Wait for an in-flight draft instead of queuing the validation behind a false failure.
+      while (isSavingRef.current) await new Promise((r) => setTimeout(r, 50));
+    } else if (isSavingRef.current) {
       pendingDataRef.current = data;
       try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* unload guard retains memory */ }
       return false;
@@ -263,6 +274,8 @@ export function useAutoSave({
       setTimeout(() => setStatus(prev => prev === "saved" ? "idle" : prev), 3000);
     } else {
       setStatus("error");
+      // A failed validation stays pending so periodic retries resend the validated version only.
+      if (isFinal) pendingDataRef.current = data;
       // Reset error after 5s
       setTimeout(() => setStatus(prev => prev === "error" ? "idle" : prev), 5000);
     }
@@ -276,6 +289,7 @@ export function useAutoSave({
   }, [apprenantId, typeDocument, titre, moduleId, enabled]);
 
   const queueSave = useCallback((data: Record<string, any>) => {
+    if (finalizedRef.current) return;
     pendingDataRef.current = data;
     try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* memory guarded on unload */ }
     try { localStorage.setItem(`autosave_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* keep memory */ }
