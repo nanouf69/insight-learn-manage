@@ -49,6 +49,7 @@ DECLARE
   new_key text;
   engine text := 'ancien';
   duration_seconds integer;
+  source_number integer;
 BEGIN
   IF auth.uid() IS NULL OR NOT public.core_est_proprietaire(p_apprenant_id) THEN
     RAISE EXCEPTION 'Session ou droits insuffisants pour refaire cette matière.' USING ERRCODE='42501';
@@ -197,3 +198,142 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.start_exam_subject_retake(uuid,uuid,text,text,text,uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.start_exam_subject_retake(uuid,uuid,text,text,text,uuid) TO authenticated;
+
+-- Completion isolation for receipts only (legacy branch byte-identical below the inserted block).
+CREATE OR REPLACE FUNCTION public.ensure_quiz_result_on_matiere_completion()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_quiz_id text;
+  v_matiere_raw text;
+  v_matiere text;
+  v_tentative integer := 1;
+  v_exists boolean;
+  v_apprenant_exists boolean;
+  m text[];
+  t text[];
+  v_retake_tentative integer;
+BEGIN
+  IF NEW.exercice_type IS DISTINCT FROM 'examen_blanc' THEN
+    RETURN NEW;
+  END IF;
+  IF COALESCE(NEW.completed, false) <> true THEN
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'UPDATE' AND COALESCE(OLD.completed, false) = true THEN
+    RETURN NEW;
+  END IF;
+
+  m := regexp_match(NEW.exercice_id, '^((?:EB|eb)\d+(?:-[a-zA-Z0-9]+)?|bilan-[^_]+)_+(.+)$');
+  IF m IS NULL THEN
+    INSERT INTO public.alertes_systeme (type, titre, message, details)
+    VALUES (
+      'exam_result_missing',
+      'Format exercice_id inconnu (examen blanc)',
+      'Impossible de rattacher la matière terminée pour exercice_id=' || NEW.exercice_id,
+      jsonb_build_object(
+        'apprenant_id', NEW.apprenant_id,
+        'exercice_id', NEW.exercice_id,
+        'user_id', NEW.user_id
+      )::text
+    );
+    RETURN NEW;
+  END IF;
+
+  v_quiz_id := m[1];
+  v_matiere_raw := m[2];
+
+  t := regexp_match(v_matiere_raw, '^(.+?)_+t(\d+)$');
+  IF t IS NOT NULL THEN
+    v_matiere := t[1];
+    v_tentative := GREATEST(1, t[2]::integer);
+  ELSE
+    v_matiere := v_matiere_raw;
+    v_tentative := 1;
+  END IF;
+
+  SELECT EXISTS(SELECT 1 FROM public.apprenants WHERE id = NEW.apprenant_id) INTO v_apprenant_exists;
+  IF NOT v_apprenant_exists THEN
+    RETURN NEW;
+  END IF;
+
+  -- Additive: an explicit subject-retake receipt binds this copy to ONE exact tentative.
+  -- Earlier tentatives are never touched; legacy copies without receipt keep the code below.
+  SELECT r.tentative INTO v_retake_tentative FROM public.exam_subject_retakes r
+   WHERE r.apprenant_id = NEW.apprenant_id AND r.exercice_id = NEW.exercice_id;
+  IF FOUND THEN
+    UPDATE public.apprenant_quiz_results
+       SET details = COALESCE(details, '{}'::jsonb)
+                     || jsonb_build_object(
+                          'auto_ensured_at', now(),
+                          'source_exercice_id', NEW.exercice_id,
+                          'source_tentative', v_retake_tentative,
+                          'last_raw_reponses', COALESCE(NEW.reponses, '{}'::jsonb)
+                        )
+     WHERE apprenant_id = NEW.apprenant_id
+       AND quiz_id = v_quiz_id
+       AND COALESCE(matiere_id, '') = COALESCE(v_matiere, '')
+       AND tentative = v_retake_tentative;
+    IF NOT FOUND THEN
+      INSERT INTO public.alertes_systeme (type, titre, message, details)
+      VALUES ('exam_result_missing',
+        'Matière refaite terminée sans note enregistrée (finalisation en attente)',
+        'Les réponses sont conservées pour ' || NEW.exercice_id || ' : aucune autre tentative n''a été modifiée.',
+        jsonb_build_object('apprenant_id', NEW.apprenant_id, 'quiz_id', v_quiz_id, 'matiere_id', v_matiere,
+          'tentative', v_retake_tentative, 'exercice_id', NEW.exercice_id)::text);
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  SELECT EXISTS(
+    SELECT 1 FROM public.apprenant_quiz_results
+    WHERE apprenant_id = NEW.apprenant_id
+      AND quiz_id = v_quiz_id
+      AND COALESCE(matiere_id, '') = COALESCE(v_matiere, '')
+  ) INTO v_exists;
+
+  IF v_exists THEN
+    -- Une note existe déjà : on ne touche ni au score, ni aux corrections.
+    UPDATE public.apprenant_quiz_results
+       SET details = COALESCE(details, '{}'::jsonb)
+                     || jsonb_build_object(
+                          'auto_ensured_at', now(),
+                          'source_exercice_id', NEW.exercice_id,
+                          'source_tentative', v_tentative,
+                          'last_raw_reponses', COALESCE(NEW.reponses, '{}'::jsonb)
+                        )
+     WHERE apprenant_id = NEW.apprenant_id
+       AND quiz_id = v_quiz_id
+       AND COALESCE(matiere_id, '') = COALESCE(v_matiere, '')
+       AND tentative = (
+         SELECT MAX(tentative) FROM public.apprenant_quiz_results
+         WHERE apprenant_id = NEW.apprenant_id
+           AND quiz_id = v_quiz_id
+           AND COALESCE(matiere_id, '') = COALESCE(v_matiere, '')
+       );
+    RETURN NEW;
+  END IF;
+
+  -- Aucune note écrite : on signale, on ne crée AUCUN résultat à 0.
+  INSERT INTO public.alertes_systeme (type, titre, message, details)
+  VALUES (
+    'exam_result_missing',
+    'Matière terminée sans note enregistrée (finalisation en attente)',
+    'Les réponses sont conservées pour ' || NEW.exercice_id || ' : la note doit être recalculée, aucun 0 n''a été enregistré.',
+    jsonb_build_object(
+      'apprenant_id', NEW.apprenant_id,
+      'user_id', NEW.user_id,
+      'quiz_id', v_quiz_id,
+      'matiere_id', v_matiere,
+      'tentative', v_tentative,
+      'exercice_id', NEW.exercice_id,
+      'raw_reponses', COALESCE(NEW.reponses, '{}'::jsonb)
+    )::text
+  );
+
+  RETURN NEW;
+END;
+$function$;
