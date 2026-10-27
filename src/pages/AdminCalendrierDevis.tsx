@@ -31,6 +31,7 @@ export default function AdminCalendrierDevis() {
   const [brouillon, setBrouillon] = useState<Ligne[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [jour, setJour] = useState("");
+  const [samedi, setSamedi] = useState("");
   const [preset, setPreset] = useState<"journee" | "soiree">("journee");
   const [saving, setSaving] = useState(false);
 
