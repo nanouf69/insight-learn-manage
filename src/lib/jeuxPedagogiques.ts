@@ -21,8 +21,8 @@ export interface ActiviteCode { id: string; moduleId: number; titre: string; uni
  * même validé entre l'ajout (21/10) et la demande. Bornée : un module validé après doit faire les 3.
  */
 export const BORNE_DISPENSE_TAXI_2026 = "2026-10-23T09:51:00Z";
-/** Ajout cours + quiz Équipements TAXI (partie locale module 10) : horodatage de la demande. */
-export const BORNE_EQUIPEMENTS_TAXI_LOCALE = "2026-10-27T13:52:00Z";
+/** Questions complémentaires du quiz Équipements TAXI (module 64) : horodatage de la demande corrigée (27/10 14:11 UTC). */
+export const BORNE_EQUIPEMENTS_TAXI_M64 = "2026-10-27T14:11:00Z";
 /** Instant à partir duquel une validation de module n'exempte plus l'activité. */
 export const bornePourGel = (a: ActiviteCode) => Date.parse(a.exigeeSiValideApres ?? a.ajouteeLe);
 /** Activité neutre pour ce module (validé avant sa borne, ou validé sans date) : hors volume. */
@@ -38,8 +38,9 @@ export const ACTIVITES_CODE: ActiviteCode[] = [
   { id: "jeu_taxi_2026_feries_v1", moduleId: 6, titre: "Calendrier des jours fériés 2026", unites: 11, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
   { id: "jeu_taxi_2026_tarifs_v1", moduleId: 6, titre: "Tarifs TAXI du Rhône 2026", unites: 30, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
   { id: "jeu_taxi_2026_rtst_v1", moduleId: 6, titre: "13 situations pratiques — RTST", unites: 13, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
-  // Partie locale module 10 (demande 27/10/2026 13:52 UTC) : modules validés avant = acquis inchangé, hors volume.
-  { id: "quiz_taxi_locale_equipements_v1", moduleId: 10, titre: "Quiz — Équipements et documents TAXI", unites: 15, ajouteeLe: BORNE_EQUIPEMENTS_TAXI_LOCALE, horsVolumeSiValideAvant: true },
+  // Module 64 « 4. Équipements TAXI » (demande 27/10/2026 14:11 UTC, remplace l'ajout en partie locale du module 10, jamais utilisé) :
+  // modules validés avant = acquis inchangé, hors volume ; les 10 questions de l'exercice 64100 restent intactes.
+  { id: "quiz_taxi_equipements_m64_complement_v1", moduleId: 64, titre: "Questions complémentaires — Équipements et documents TAXI", unites: 11, ajouteeLe: BORNE_EQUIPEMENTS_TAXI_M64, horsVolumeSiValideAvant: true },
 ];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";

@@ -9645,10 +9645,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
-          {![6, 10].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
-          {/* Module 10 : cours + quiz additifs de la partie locale (statut porté par la section). */}
-          {Number(module.id) === 10 && (
-            <Suspense fallback={<p role="status">Chargement du cours Équipements TAXI…</p>}>
+          {![6, 64].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
+          {/* Module 64 : questions complémentaires du quiz Équipements TAXI (statut porté par la section). */}
+          {Number(module.id) === 64 && (
+            <Suspense fallback={<p role="status">Chargement des questions complémentaires…</p>}>
               <CoursQuizEquipementsTaxi compteId={apprenantId ?? null} />
             </Suspense>
           )}
