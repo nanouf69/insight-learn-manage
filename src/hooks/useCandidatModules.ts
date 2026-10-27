@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { progressionModulesEleve } from '@/lib/progressionModulesEleve';
-import { resolveFormationId, modulesAttribuesDashboard, normalizeModuleIdForDashboard, DASHBOARD_PARENT_TO_CHILDREN } from '@/lib/parcoursModulesDashboard';
+import { resolveFormationId, modulesExigesDashboard, normalizeModuleIdForDashboard, DASHBOARD_PARENT_TO_CHILDREN } from '@/lib/parcoursModulesDashboard';
 import { computeServerCompletedModuleIds, type CompletionLite } from '@/lib/moduleUnlockLogic';
 import { ACTIVITES_CODE } from '@/lib/jeuxPedagogiques';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
@@ -13,7 +13,7 @@ export const CANDIDAT_MODULES_KEY = 'candidat-modules-confirmes';
 /** Read only: assigned learner modules, terminal states and confirmed code activities. */
 export async function chargerCandidatModules(apprenantId: string) {
   const { data: apprenant, error } = await supabase.from('apprenants')
-    .select('modules_autorises, type_apprenant, formation_choisie').eq('id', apprenantId).single();
+    .select('modules_autorises, type_apprenant, formation_choisie, date_fin_cours_en_ligne').eq('id', apprenantId).single();
   if (error) throw error;
   if (!apprenant) throw new Error('Parcours indisponible');
   const formation = resolveFormationId(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.modules_autorises);
@@ -26,7 +26,7 @@ export async function chargerCandidatModules(apprenantId: string) {
       .in('exercice_id', ACTIVITES_CODE.map(a => a.id)).order('exercice_id').range(from, to)),
   ]);
   const done = computeServerCompletedModuleIds(completions, DASHBOARD_PARENT_TO_CHILDREN, normalizeModuleIdForDashboard);
-  return progressionModulesEleve(modulesAttribuesDashboard(formation, apprenant.modules_autorises), id => done.has(id),
+  return progressionModulesEleve(modulesExigesDashboard(formation, apprenant.modules_autorises, completions, (apprenant as any).date_fin_cours_en_ligne), id => done.has(id),
     new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId, completions);
 }
 

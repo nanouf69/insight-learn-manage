@@ -120,7 +120,49 @@ export function modulesAttribuesDashboard(formation: FormationId, autorises?: nu
   const fallback = defaults.map(id => MODULES_DATA.find(m => m.id === id)).filter((m): m is (typeof MODULES_DATA)[number] => !!m);
   const modules = explicit.length ? explicit : fallback.length ? fallback : MODULES_DATA.filter(m => m.formations.includes(formation));
   const whitelist = new Set([82, 11, 92, 84, 86, 93, 94, 95, 96, 51]);
-  return formation === "continue-taxi" ? modules.filter(m => whitelist.has(m.id)) : modules;
+  if (formation === "continue-taxi") return modules.filter(m => whitelist.has(m.id));
+  // Équipements TAXI (64) absent d'une liste explicite TAXI/TA (formulaires admin antérieurs au 27/10/2026) :
+  // ajouté en FIN de liste (aucun module suivant verrouillé), sans écrire modules_autorises.
+  if (equipementsTaxiAjoute(formation, autorises)) {
+    const m64 = MODULES_DATA.find(m => m.id === MODULE_EQUIPEMENTS_TAXI);
+    if (m64 && !modules.some(m => m.id === MODULE_EQUIPEMENTS_TAXI)) return [...modules, m64];
+  }
+  return modules;
+}
+
+export const MODULE_EQUIPEMENTS_TAXI = 64;
+/** Instant de la demande (27/10/2026 14:21 UTC) : avant = parcours terminé conservé. */
+export const BORNE_EQUIPEMENTS_TAXI_AFFECTATION = "2026-10-27T14:21:00Z";
+const FORMATIONS_EQUIPEMENTS_TAXI = new Set<FormationId>(["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"]);
+
+/** Vrai si le module 64 est ajouté par la règle d'affichage (liste explicite théorique TAXI/TA qui ne le contient pas). */
+export function equipementsTaxiAjoute(formation: FormationId, autorises?: number[] | null): boolean {
+  if (!FORMATIONS_EQUIPEMENTS_TAXI.has(formation)) return false;
+  const liste = expandModulesAutorises(autorises) ?? autorises ?? [];
+  const norm = liste.map(normalizeModuleIdForDashboard);
+  // Seulement un parcours théorique TAXI/TA (Cours et exercices TAXI 10 ou TA 40) : jamais une formation pratique seule.
+  return norm.length > 0 && (norm.includes(10) || norm.includes(40)) && !norm.includes(MODULE_EQUIPEMENTS_TAXI);
+}
+
+/**
+ * Modules EXIGÉS (jalons, compteurs) : identiques aux modules attribués, sauf le module 64 ajouté par la règle
+ * pour un élève dont le parcours était terminé avant la borne (tous les modules attribués validés avant la borne)
+ * ou dont l'accès a pris fin avant la borne. Pour eux, le module reste consultable, jamais exigé.
+ */
+export function modulesExigesDashboard(
+  formation: FormationId, autorises: number[] | null | undefined,
+  completions: { module_id: number; status?: string | null; completed_at?: string | null }[],
+  dateFinAcces?: string | null,
+) {
+  const modules = modulesAttribuesDashboard(formation, autorises);
+  if (!equipementsTaxiAjoute(formation, autorises)) return modules;
+  const borne = Date.parse(BORNE_EQUIPEMENTS_TAXI_AFFECTATION);
+  if (completions.some(c => normalizeModuleIdForDashboard(Number(c.module_id)) === MODULE_EQUIPEMENTS_TAXI && c.status === "completed")) return modules;
+  const finAcces = dateFinAcces ? Date.parse(`${dateFinAcces.slice(0, 10)}T23:59:59Z`) : NaN;
+  const autres = modules.filter(m => m.id !== MODULE_EQUIPEMENTS_TAXI);
+  const termineAvant = autres.length > 0 && autres.every(m => completions.some(c => normalizeModuleIdForDashboard(Number(c.module_id)) === m.id
+    && c.status === "completed" && !!c.completed_at && Date.parse(c.completed_at) < borne));
+  return termineAvant || (Number.isFinite(finAcces) && finAcces < borne) ? autres : modules;
 }
 
 export const DASHBOARD_PARENT_TO_CHILDREN: Record<number, number[]> = {};

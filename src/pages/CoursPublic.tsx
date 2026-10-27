@@ -41,7 +41,7 @@ import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentHoursTracker from "@/components/cours-en-ligne/StudentHoursTracker";
 import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/components/cours-en-ligne/ModulesProgressionEleve";
-import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
+import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
@@ -2057,9 +2057,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // Module 64 ajouté pour un parcours terminé avant la borne : consultable, hors compteur (aucune régression).
+  const idsModulesExiges = new Set(modulesExigesDashboard(selectedFormation, apprenant?.modules_autorises, (moduleCompletionsForNotes ?? []) as any[], apprenant?.date_fin_cours_en_ligne).map((m) => m.id));
   // Affichage élève : module terminé = serveur + activités requises du registre terminées.
   const progressionModules = completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
-    ? progressionModulesEleve(modules.map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id, moduleCompletionsForNotes)
+    ? progressionModulesEleve(modules.filter((m) => idsModulesExiges.has(m.id)).map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id, moduleCompletionsForNotes)
     : null;
   const progressionDisponible = progressionModules?.etat === "ok" ? progressionModules : null;
   const completedCount = progressionDisponible?.termines;
@@ -2089,7 +2091,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
 
   // Modules always unlocked even in e-learning (no sequential gate)
-  const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
+  const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73, ...(equipementsTaxiAjoute(selectedFormation, apprenant?.modules_autorises) ? [64] : [])]);
 
   // Module Pratique (VTC = 8, TAXI = 6) : débloqué pour tous les apprenants
   // e-learning (accord du responsable, 13/10/2026), sans attendre les modules
