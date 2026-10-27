@@ -100,7 +100,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
       manquants.push(...c.anomalies.map((a) => `Calendrier : ${a}`));
     }
   }
-  if (p.mode !== "elearning" || true) {
+  {
     const pratiques = sessionsPratique(input.sessions, p.filiere).filter((s) => !session || s.date_debut >= session.date_fin);
     if (pratiques.length) {
       const s = pratiques[0];
