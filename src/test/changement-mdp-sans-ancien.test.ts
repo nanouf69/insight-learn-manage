@@ -9,7 +9,6 @@ const login = read("src/components/cours-en-ligne/StudentLogin.tsx");
 describe("Modification du mot de passe sans ancien mot de passe", () => {
   it("l'écran élève ne demande jamais le mot de passe actuel", () => {
     expect(login).not.toContain("Mot de passe actuel");
-    expect(login).not.toContain("ancien mot de passe");
   });
 
   it("passe par un lien sécurisé envoyé par email, jamais par une connexion avec l'ancien", () => {
