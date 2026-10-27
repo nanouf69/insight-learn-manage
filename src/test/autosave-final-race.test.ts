@@ -178,8 +178,9 @@ describe("rechargement et identité après attente", () => {
     act(() => { draftP = h.result.current.triggerSave({ nom: "brouillon" }); });
     act(() => { finalP = h.result.current.triggerSave({ nom: "final", _status: "completed" }); });
     h.rerender({ ...params, apprenantId: "b-fictif" });
-    await act(async () => { releaseFirst?.(); await draftP; await vi.advanceTimersByTimeAsync(500); });
-    expect(await finalP).toBe(false);
+    let r: any;
+    await act(async () => { await vi.advanceTimersByTimeAsync(20); releaseFirst?.(); await vi.advanceTimersByTimeAsync(20000); await draftP; r = await finalP; });
+    expect(r).toBe(false);
     expect(upserts.filter((u) => u.d._status === "completed")).toHaveLength(0);
   });
 });
