@@ -30,13 +30,8 @@ export async function saveAttestationToCRM(params: {
       .from("documents-inscription")
       .getPublicUrl(filePath);
 
-    // Supprimer les anciennes attestations FC pour ne garder que la dernière
-    await supabase
-      .from("documents_inscription")
-      .delete()
-      .eq("apprenant_id", params.apprenantId)
-      .eq("type_document", "attestation-fc");
-
+    // Aucune suppression des attestations déjà émises (historique conservé) ; le serveur
+    // refuse l'enregistrement si les émargements requis ne sont pas signés (P0540).
     const { error: insertError } = await supabase
       .from("documents_inscription")
       .insert({

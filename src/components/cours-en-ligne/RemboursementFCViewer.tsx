@@ -425,6 +425,9 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   };
 
   const handleOpenAttestation = async (url: string) => {
+    const ctrl = await controlerAttestationFC(apprenantId);
+    setControleAttestation(ctrl);
+    if (!ctrl.autorise) { toast.error(messageRefusAttestationFC(ctrl)); return; }
     try {
       // Extraire le chemin après /documents-inscription/
       const match = url.match(/\/documents-inscription\/(.+?)(\?|$)/);
@@ -718,7 +721,12 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
             <p className="text-xs text-muted-foreground mt-0.5">
               Attestation de présence et de suivi, signée et datée par le représentant légal du centre (article 3 de l'arrêté du 11 août 2017).
             </p>
-            {attestationsVisibles.length > 0 ? (
+            {controleAttestation && !controleAttestation.autorise ? (
+              <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900" data-testid="attestation-fc-bloquee">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{messageRefusAttestationFC(controleAttestation)} Signez vos feuilles d'émargement manquantes ou contactez le centre.</span>
+              </div>
+            ) : attestationsVisibles.length > 0 ? (
               <div className="mt-2 space-y-2">
                 {attestationsVisibles.map((a) => (
                   <div key={a.id} className="flex items-center justify-between gap-2 border rounded-md p-2 bg-slate-50/50">
