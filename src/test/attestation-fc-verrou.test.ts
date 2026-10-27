@@ -18,6 +18,8 @@ describe("Verrou attestation FC (côté écran)", () => {
   it("erreur serveur : refus par défaut", async () => {
     rpc.mockResolvedValue({ data: null, error: { message: "x" } });
     expect((await controlerAttestationFC("a")).autorise).toBe(false);
+  });
+  it("erreur réseau : refus par défaut", async () => {
     rpc.mockImplementation(() => { throw new TypeError("réseau"); });
     expect((await controlerAttestationFC("a")).autorise).toBe(false);
   });
