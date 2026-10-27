@@ -2030,6 +2030,7 @@ import { demanderJeu } from "@/lib/demandeJeuRegistre";
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2026"));
+const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -9643,7 +9644,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
-          {Number(module.id) !== 6 && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
+          {![6, 10].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
+          {/* Module 10 : cours + quiz additifs de la partie locale (statut porté par la section). */}
+          {Number(module.id) === 10 && (
+            <Suspense fallback={<p role="status">Chargement du cours Équipements TAXI…</p>}>
+              <CoursQuizEquipementsTaxi compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
           {/* Jeux de cartes de Lyon — activités du module PRATIQUE VTC (8), non notées */}
           {activitesDuModule(Number(module.id)).some((a) => a.id.startsWith("jeu_lyon_")) && (
             <Suspense fallback={null}>

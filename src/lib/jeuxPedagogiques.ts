@@ -11,7 +11,9 @@ import type { CompletionLite, VolumeModule } from "@/lib/jalonsPonderes";
  * Terminé = réalisation complète confirmée par le serveur (reponses_apprenants,
  * completed = true) — jamais un score, jamais un stockage local.
  */
-export interface ActiviteCode { id: string; moduleId: number; titre: string; unites: number; ajouteeLe: string; retireeLe?: string; exigeeSiValideApres?: string }
+export interface ActiviteCode { id: string; moduleId: number; titre: string; unites: number; ajouteeLe: string; retireeLe?: string; exigeeSiValideApres?: string;
+  /** Module validé avant la borne : activité exclue aussi du volume/poids/durée (jalons strictement inchangés). */
+  horsVolumeSiValideAvant?: boolean }
 
 /**
  * Dispense historique module 6 (demande Naoufal, horodatage serveur du message 23/10/2026 09:51:00 UTC) :
@@ -19,8 +21,16 @@ export interface ActiviteCode { id: string; moduleId: number; titre: string; uni
  * même validé entre l'ajout (21/10) et la demande. Bornée : un module validé après doit faire les 3.
  */
 export const BORNE_DISPENSE_TAXI_2026 = "2026-10-23T09:51:00Z";
+/** Ajout cours + quiz Équipements TAXI (partie locale module 10) : horodatage de la demande. */
+export const BORNE_EQUIPEMENTS_TAXI_LOCALE = "2026-10-27T13:52:00Z";
 /** Instant à partir duquel une validation de module n'exempte plus l'activité. */
 export const bornePourGel = (a: ActiviteCode) => Date.parse(a.exigeeSiValideApres ?? a.ajouteeLe);
+/** Activité neutre pour ce module (validé avant sa borne, ou validé sans date) : hors volume. */
+export function activiteHorsVolume(a: ActiviteCode, row: { status?: string | null; completed_at?: string | null } | undefined | null): boolean {
+  if (!a.horsVolumeSiValideAvant || row?.status !== "completed") return false;
+  const t = row.completed_at ? Date.parse(row.completed_at) : NaN;
+  return !Number.isFinite(t) || t < bornePourGel(a);
+}
 
 export const ACTIVITES_CODE: ActiviteCode[] = [
   { id: "jeu_lyon_arrondissements_quartiers", moduleId: 8, titre: "Lyon : arrondissements et quartiers", unites: 22, ajouteeLe: "2026-10-13T10:41:00Z" },
@@ -28,6 +38,8 @@ export const ACTIVITES_CODE: ActiviteCode[] = [
   { id: "jeu_taxi_2026_feries_v1", moduleId: 6, titre: "Calendrier des jours fériés 2026", unites: 11, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
   { id: "jeu_taxi_2026_tarifs_v1", moduleId: 6, titre: "Tarifs TAXI du Rhône 2026", unites: 30, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
   { id: "jeu_taxi_2026_rtst_v1", moduleId: 6, titre: "13 situations pratiques — RTST", unites: 13, ajouteeLe: "2026-10-21T16:35:40.331Z", exigeeSiValideApres: BORNE_DISPENSE_TAXI_2026 },
+  // Partie locale module 10 (demande 27/10/2026 13:52 UTC) : modules validés avant = acquis inchangé, hors volume.
+  { id: "quiz_taxi_locale_equipements_v1", moduleId: 10, titre: "Quiz — Équipements et documents TAXI", unites: 15, ajouteeLe: BORNE_EQUIPEMENTS_TAXI_LOCALE, horsVolumeSiValideAvant: true },
 ];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";

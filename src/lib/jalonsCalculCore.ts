@@ -1,7 +1,7 @@
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
-import { activitesDuModule, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
+import { activitesDuModule, activiteHorsVolume, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import type { ModuleContentLite } from "@/lib/volumeModules";
 import {
@@ -66,10 +66,10 @@ export function assemblerCalculJalons(i: {
     // Tout module du parcours RÉEL ayant des activités dans le registre (aucune liste parallèle).
     for (const [cle, v] of Object.entries(volumes.volumes)) {
       if (!i.parcours.includes(v.moduleId)) continue;
-      const acts = activitesDuModule(v.moduleId, i.dateActivites).filter(a => !i.activitesDispensees?.includes(a.id));
-      if (!acts.length) continue;
       const lignes = completionsBase.filter((c) => Number(c.module_id) === v.moduleId);
       const row = lignes.find((c) => c.status === "completed") ?? [...lignes].sort((x, y) => (Number(y.progress) || 0) - (Number(x.progress) || 0))[0];
+      const acts = activitesDuModule(v.moduleId, i.dateActivites).filter(a => !i.activitesDispensees?.includes(a.id) && !activiteHorsVolume(a, row as any));
+      if (!acts.length) continue;
       const r = completionAvecActivites((row ?? { module_id: v.moduleId }) as any, { ...v }, acts, termines);
       volumes.volumes[Number(cle)] = { ...v, jeux: acts.reduce((s2, x) => s2 + x.unites, 0) };
       completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), { ...r.completion, completed_at: (row as any)?.completed_at ?? null }];
