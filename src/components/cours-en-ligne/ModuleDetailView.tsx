@@ -4,7 +4,8 @@ import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesP
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
-import { computeExercicePartNumbers, learnerQuizLabel } from "@/lib/exercicePartNumbers";
+import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
+import { learnerQuizLabel } from "@/lib/exercicePartNumbers";
 import { legacyCoursePages, orderedCoursePages, translateCoursePageIndex } from "@/lib/courseQuizOrder";
 import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
 import { nationalePartie1CourseReview } from "@/lib/nationalePartie1CourseReview";
