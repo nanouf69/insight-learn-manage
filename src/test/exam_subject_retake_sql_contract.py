@@ -77,8 +77,7 @@ class SubjectRetake(unittest.TestCase):
         self.assertEqual(self.sql("SELECT count(*) FROM reponses_apprenants WHERE exercice_id LIKE 'EB1__gestion%'").stdout.strip(),'3')
     def test_v2_snapshot_and_source_intact(self):
         s='55555555-5555-5555-5555-555555555555'
-        self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{s}','{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"tentative\":1,\"questions\":[{{\"id\":\"gestion:1\",\"type\":\"QCM\",\"enonce\":\"Fictive\",\"choix\":[]}}]}}','old','terminee',now()-interval '48 hours')")
-        self.sql(f"UPDATE exam_attempts_v2 SET snapshot=snapshot||'{{\"source_historique\":{{\"exercice_id\":\"EB1__gestion\"}}}}' WHERE attempt_id='{s}'")
+        self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at) VALUES('{s}','{A}','EB1','{O}','{{\"matiere\":\"gestion\",\"tentative\":1,\"source_historique\":{{\"exercice_id\":\"EB1__gestion\"}},\"questions\":[{{\"id\":\"gestion:1\",\"type\":\"QCM\",\"enonce\":\"Fictive\",\"choix\":[]}}]}}','old','terminee',now()-interval '48 hours')")
         before=self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout
         r=self.receipt(attempt=f"'{s}'");self.assertNotEqual(r['attempt_id'],s);self.assertEqual(r['moteur'],'v2')
         self.assertEqual(self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{s}'").stdout,before)

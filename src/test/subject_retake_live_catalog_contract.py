@@ -10,7 +10,8 @@ class LiveCatalog(unittest.TestCase):
   cls.env={k:v for k,v in os.environ.items() if not k.startswith('PG')};cls.addClassCleanup(cls.cleanup)
   subprocess.run(AS+['initdb','-D',cls.d+'/db','-U','postgres','-A','trust','--no-locale'],check=True,capture_output=True,env=cls.env)
   subprocess.run(AS+['pg_ctl','-D',cls.d+'/db','-l',cls.d+'/log','-o',f'-k {cls.d} -p 55479 -h ""','-w','start'],check=True,capture_output=True,env=cls.env)
-  cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role; CREATE SCHEMA auth; CREATE SCHEMA storage;
+  cls.sql("""CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role; CREATE SCHEMA auth; CREATE SCHEMA storage; CREATE SCHEMA extensions;
+  CREATE EXTENSION pgcrypto WITH SCHEMA extensions;
   CREATE TABLE auth.users(id uuid PRIMARY KEY,email text);
   CREATE TABLE storage.buckets(id text PRIMARY KEY); CREATE TABLE storage.objects(id uuid);
   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
@@ -44,7 +45,7 @@ class LiveCatalog(unittest.TestCase):
   self.assertNotEqual(r.returncode,0)
  def test_production_completion_preserves_other_tentative(self):
   # Demonstrates whether production trigger silently modifies T1 while T2 closes.
-  self.sql(f"""INSERT INTO apprenant_quiz_results(apprenant_id,quiz_id,matiere_id,tentative,quiz_type,details) VALUES('{A}','EB1','gestion',1,'examen_blanc','{{"historical":"must-stay-identical"}}');
+  self.sql(f"""INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,matiere_id,tentative,quiz_type,details) VALUES('{A}','{U}','EB1','gestion',1,'examen_blanc','{{"historical":"must-stay-identical"}}');
   INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative) VALUES('{A}','{U}','EB1__gestion__t2','examen_blanc',2);""")
   before=self.sql(f"SELECT details FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND tentative=1").stdout
   self.sql(f"SET request.jwt.claim.sub='{U}'; UPDATE reponses_apprenants SET reponses='{{\"1\":[\"A\"]}}',completed=true WHERE apprenant_id='{A}' AND exercice_id='EB1__gestion__t2'")
