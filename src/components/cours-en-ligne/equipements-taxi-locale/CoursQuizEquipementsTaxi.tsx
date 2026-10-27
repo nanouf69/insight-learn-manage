@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, CheckCircle2, Save, FileText, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -48,33 +48,28 @@ export function QuizEquipements({ compteId, transport }: { compteId?: string | n
   </div>;
 }
 
-/** Section « partie locale » du module 10 : cours (PowerPoint/PDF) + quiz additif. */
+/** Module 64 : questions complémentaires (support remplacé directement dans la page de cours). */
 export default function CoursQuizEquipementsTaxi({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
   const [ouvert, setOuvert] = useState(false);
-  const [cours, setCours] = useState(false);
   const etat = useActivitesModule();
   useEffect(() => ecouterDemandeJeu((id) => { if (id === ID_QUIZ_EQUIPEMENTS) setOuvert(true); }), []);
   const ok = etat?.etat === "ok" ? etat : null;
   const requis = !!ok?.requises.some((a) => a.id === ID_QUIZ_EQUIPEMENTS);
   const termine = !!ok && [...ok.requises, ...ok.facultatives].some((a) => a.id === ID_QUIZ_EQUIPEMENTS && a.termine);
   const statut = !ok ? "Statut à vérifier" : termine ? "Terminé" : requis ? "À faire" : "Facultatif";
+  const nb = QUESTIONS_EQUIPEMENTS.length;
   return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" data-testid="equipements-taxi-section" aria-labelledby="equipements-taxi-titre">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <h3 id="equipements-taxi-titre" className="text-xl font-bold">🚕 {COURS_EQUIPEMENTS.titre}</h3>
+      <h3 id="equipements-taxi-titre" className="text-xl font-bold">🚕 Questions complémentaires — {COURS_EQUIPEMENTS.titre}</h3>
       <Badge variant={termine ? "default" : requis ? "destructive" : "outline"} data-testid="equipements-taxi-statut">{statut}</Badge>
     </div>
     <p className="text-sm">{etat?.etat === "indisponible" ? "Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant."
-      : ok && !requis ? "Votre module est déjà validé : ce cours et ce quiz sont accessibles en révision, sans effet sur votre progression."
-      : ok ? "Nouveau cours de la partie locale : consultez-le puis faites le quiz (15 questions) pour terminer le module."
+      : ok && !requis ? `Votre module est déjà validé : ces ${nb} questions sont accessibles en révision, sans effet sur votre progression.`
+      : ok ? `${nb} nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module.`
       : "Chargement du statut…"}</p>
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={() => setCours((v) => !v)}><FileText className="h-4 w-4 mr-2" />{cours ? "Masquer le cours" : "Voir le cours"}</Button>
-      <Button asChild variant="outline"><a href={COURS_EQUIPEMENTS.pptx} download><Download className="h-4 w-4 mr-2" />PowerPoint</a></Button>
-      <Button onClick={() => setOuvert(true)} data-testid="equipements-taxi-ouvrir">{termine ? "Revoir le quiz" : "Commencer / reprendre le quiz"}</Button>
-    </div>
-    {cours && <iframe title={COURS_EQUIPEMENTS.titre} src={COURS_EQUIPEMENTS.pdf} className="w-full h-[70vh] rounded-lg border bg-background" />}
+    <Button onClick={() => setOuvert(true)} data-testid="equipements-taxi-ouvrir">{termine ? "Revoir les questions" : "Commencer / reprendre"}</Button>
     <Dialog open={ouvert} onOpenChange={setOuvert}><DialogContent className="max-w-3xl w-[96vw] max-h-[94dvh] overflow-y-auto p-4 sm:p-6">
-      <DialogHeader><DialogTitle>Quiz — Équipements et documents TAXI</DialogTitle><DialogDescription>Partie locale · 15 questions · réalisation non notée, corrigé après chaque réponse.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Questions complémentaires — Équipements et documents TAXI</DialogTitle><DialogDescription>{nb} questions · réalisation non notée, corrigé après chaque réponse.</DialogDescription></DialogHeader>
       {ouvert && <QuizEquipements key={compteId ?? "apercu"} compteId={compteId} transport={transport} />}
     </DialogContent></Dialog>
   </section>;
