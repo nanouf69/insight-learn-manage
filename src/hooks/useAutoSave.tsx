@@ -274,6 +274,8 @@ export function useAutoSave({
       setTimeout(() => setStatus(prev => prev === "saved" ? "idle" : prev), 3000);
     } else {
       setStatus("error");
+      // A failed validation stays pending so periodic retries resend the validated version only.
+      if (isFinal) pendingDataRef.current = data;
       // Reset error after 5s
       setTimeout(() => setStatus(prev => prev === "error" ? "idle" : prev), 5000);
     }
@@ -287,6 +289,7 @@ export function useAutoSave({
   }, [apprenantId, typeDocument, titre, moduleId, enabled]);
 
   const queueSave = useCallback((data: Record<string, any>) => {
+    if (finalizedRef.current) return;
     pendingDataRef.current = data;
     try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* memory guarded on unload */ }
     try { localStorage.setItem(`autosave_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* keep memory */ }
