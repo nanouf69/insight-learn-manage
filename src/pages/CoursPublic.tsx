@@ -67,6 +67,8 @@ import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-li
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { calculerAccesCours } from "@/lib/accesCoursFenetre";
 import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
+import { maintenantParis } from "@/lib/heureParis";
+import { choisirFeuilleDue, clesTraitees, cleAuthentification, SuiviOuvertureEmargement } from "@/lib/emargementDu";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
@@ -1306,13 +1308,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const isPres = !isFC && isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
 
     let cancelled = false;
-    setEmargementFCStatus("checking");
+    // Rafraîchissement : une feuille déjà due reste affichée pendant la relecture.
+    setEmargementFCStatus((st) => (st === "needed" ? st : "checking"));
     const mode: "fc" | "presentiel" = isFC ? "fc" : "presentiel";
     setEmargementMode(mode);
 
     const check = async () => {
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const todayStr = maintenantParis().dateISO;
 
       // Détermine la plage : du début de formation jusqu'à aujourd'hui inclus.
       const startStr =
@@ -1354,10 +1356,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       // Dossiers liés par l'Admin (émargement seulement, ex. dossier présentiel sans compte) :
       // la feuille PRATIQUE à signer de ce dossier est proposée, signée sous SON identifiant.
-      const { data: liens } = await supabase
+      const { data: liens, error: liensErr } = await supabase
         .from("emargement_dossiers_lies" as any)
         .select("apprenant_id")
         .eq("auth_user_id", user.id);
+      if (liensErr) throw liensErr;
       for (const lien of ((liens as any[]) || [])) {
         const lieId = String(lien?.apprenant_id || "");
         if (!lieId || lieId === apprenant.id) continue;
@@ -1370,11 +1373,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .eq("apprenant_id", lieId);
         if (cancelled) return;
         if (lieErr) throw lieErr;
-        const lieSet = new Set<string>(((lieSigned as any[]) || [])
-          .filter((r: any) => Boolean(String(r.signature_data_url || "").trim()) || r.absent === true)
-          .map((r: any) => `${r.date_emargement}|${r.demi_journee}`));
-        const pending = lieExpected.filter((e) => !lieSet.has(`${e.date}|${e.creneau}`));
-        const lieNext = pending.find((e) => e.date === todayStr) || pending[0];
+        const { next: lieNext, dues: pending } = choisirFeuilleDue(lieExpected, clesTraitees((lieSigned as any[]) || []), todayStr);
         if (!lieNext) continue;
         setEmargementApprenantId(lieId);
         setEmargementIsPratique(true);
@@ -1414,17 +1413,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .lte("date_emargement", toISO);
       if (cancelled) return;
       if (signedError) throw signedError;
-      const signedSet = new Set<string>(
-        (signedData || [])
-          .filter((r: any) => Boolean(String(r.signature_data_url || "").trim()) || r.absent === true)
-          .map((r: any) => `${r.date_emargement}|${r.demi_journee}`),
-      );
-
-      // Créneau à signer : AUJOURD'HUI d'abord (la feuille du jour est prioritaire),
-      // puis les créneaux passés non signés. Aucun créneau en retard n'est retiré.
-      const next =
-        expected.find((e) => e.date === todayStr && !signedSet.has(`${e.date}|${e.creneau}`)) ||
-        expected.find((e) => !signedSet.has(`${e.date}|${e.creneau}`));
+      const signedSet = clesTraitees((signedData || []) as any[]);
+      // Créneau à signer : AUJOURD'HUI (heure de Paris) d'abord, puis les créneaux passés non signés.
+      const { next, enRetard } = choisirFeuilleDue(expected, signedSet, todayStr);
       if (!next) {
         setEmargementCreneau(null);
         setEmargementDate(null);
@@ -1443,7 +1434,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               .map((e) => e.creneau)
           : [],
       );
-      setEmargementEnRetard(expected.filter((e) => e.date < todayStr && !signedSet.has(`${e.date}|${e.creneau}`)).length);
+      setEmargementEnRetard(enRetard);
       setEmargementCreneau(next.creneau);
       setEmargementDate(next.date);
       setEmargementFCStatus("needed");
@@ -1458,7 +1449,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (embedded || !user || !apprenant?.id || selectedModule || isInExam || emargementStatusRef.current === "skipped") return;
     const interval = window.setInterval(() => {
-      if (emargementStatusRef.current !== "needed" && emargementStatusRef.current !== "skipped") {
+      if (emargementStatusRef.current !== "skipped" && !(emargementStatusRef.current === "needed" && signatureModalOuverteRef.current)) {
         setEmargementRefreshTick((t) => t + 1);
       }
     }, 60000);
@@ -1467,17 +1458,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Ouverture automatique de la feuille due : une fois par connexion et par créneau
   // (nouvelle connexion ou nouveau créneau ouvert = nouvelle présentation). Jamais bloquant.
-  const emargementAutoOuvertRef = useRef<{ user: string | null; cles: Set<string> }>({ user: null, cles: new Set() });
+  const emargementSuiviRef = useRef(new SuiviOuvertureEmargement());
+  const cleAuth = cleAuthentification(user as any);
   useEffect(() => {
-    const uid = user?.id ?? null;
-    if (emargementAutoOuvertRef.current.user !== uid) emargementAutoOuvertRef.current = { user: uid, cles: new Set() };
-    if (!uid || embedded || selectedModule || isInExam) return;
-    if (emargementFCStatus !== "needed" || !emargementCreneau) return;
-    const cle = `${emargementApprenantId || apprenant?.id}|${emargementDate}|${emargementCreneau}`;
-    if (emargementAutoOuvertRef.current.cles.has(cle)) return;
-    emargementAutoOuvertRef.current.cles.add(cle);
-    setShowSignatureModal(true);
-  }, [user?.id, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
+    const cle = emargementFCStatus === "needed" && emargementCreneau ? `${emargementApprenantId || apprenant?.id}|${emargementDate}|${emargementCreneau}` : null;
+    if (embedded) return;
+    if (emargementSuiviRef.current.doitOuvrir(cleAuth, cle, !!selectedModule || isInExam)) setShowSignatureModal(true);
+  }, [cleAuth, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
+  // Nouvelle authentification du même compte (sans remontage) : relire les feuilles dues.
+  useEffect(() => { if (cleAuth) setEmargementRefreshTick((t) => t + 1); }, [cleAuth]);
 
 
   // Track section navigation (Accueil / Examens / Notes) so the activity report
