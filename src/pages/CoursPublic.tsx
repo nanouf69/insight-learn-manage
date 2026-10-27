@@ -2089,7 +2089,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
 
   // Modules always unlocked even in e-learning (no sequential gate)
-  const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
+  const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73, ...(equipementsTaxiAjoute(selectedFormation, apprenant?.modules_autorises) ? [64] : [])]);
 
   // Module Pratique (VTC = 8, TAXI = 6) : débloqué pour tous les apprenants
   // e-learning (accord du responsable, 13/10/2026), sans attendre les modules

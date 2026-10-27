@@ -4,7 +4,7 @@ import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
 import { idsActivites } from "@/lib/jeuxPedagogiques";
 import { activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
-import { modulesAttribuesDashboard, resolveFormationId } from "@/lib/parcoursModulesDashboard";
+import { modulesAttribuesDashboard, modulesExigesDashboard, resolveFormationId } from "@/lib/parcoursModulesDashboard";
 import type { GelFinAcces } from "@/lib/releveJalonsGel";
 import {
   INTRO_IDS,
@@ -86,7 +86,7 @@ export async function chargerCalculJalons(params: {
     supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
     // Jeux du module 8 : seule une ligne serveur completed = true compte (jamais le score local).
     supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", idsActivites(parcoursInitial).length ? idsActivites(parcoursInitial) : ["__aucune__"]),
-    supabase.from("apprenants").select("modules_autorises, type_apprenant, formation_choisie").eq("id", params.apprenantId).single(),
+    supabase.from("apprenants").select("modules_autorises, type_apprenant, formation_choisie, date_fin_cours_en_ligne").eq("id", params.apprenantId).single(),
   ]);
   if (affectation.error) throw affectation.error;
   const formation = resolveFormationId(affectation.data.type_apprenant, affectation.data.formation_choisie, affectation.data.modules_autorises);
@@ -98,7 +98,7 @@ export async function chargerCalculJalons(params: {
   if (heuresValideesResult.error) throw heuresValideesResult.error;
   const examens = await examensModule.fetchLiveExamens();
   // Parcours réel attribué (même règle que l'écran élève, parents/enfants normalisés).
-  const modulesAttribues = modulesAttribuesDashboard(formation, affectation.data.modules_autorises).map((m) => m.id);
+  const modulesAttribues = modulesExigesDashboard(formation, affectation.data.modules_autorises, (completionsResult.data as JalonCompletion[]) ?? [], (affectation.data as any).date_fin_cours_en_ligne).map((m) => m.id);
   const parcoursRetenu = parcoursAvecExemptionFormalites(params.apprenantId, parcours, modulesAttribues);
   return assemblerCalculJalons({
     key, filiere, parcours: parcoursRetenu, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
