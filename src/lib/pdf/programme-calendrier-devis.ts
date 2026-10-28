@@ -6,7 +6,7 @@ import logoImage from "@/assets/logo-ftransport.png";
 import { REFERENTIEL } from "@/lib/referentielProgramme";
 import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 import {
-  calendrierSession, heuresPlages, HEURES_PRATIQUE, modulesElearning, sessionsExamen, sessionsPratique,
+  agendaAutomatique, calendrierSession, heuresPlages, HEURES_PRATIQUE, modulesElearning, sessionsExamen, sessionsPratique,
   type FormationProgramme, type SessionPublique,
 } from "@/lib/programmeCalendrierDevis";
 
@@ -96,7 +96,19 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
   else {
     para(`Session : ${session.nom}, du ${dateLongue(session.date_debut)} au ${dateLongue(session.date_fin)}.`);
     const c = calendrierSession(session, p.filiere);
-    if (c.valide) {
+    const auto = c.jours.length === 0 ? agendaAutomatique(session, p.filiere, p.soir) : null;
+    if (p.filiere === "va") {
+      para("30 h de théorie en e-learning (pas d'agenda en salle pour la théorie).");
+      const j = auto?.lignes.find((l) => l.nature === "Pratique");
+      table(["Date", "Type", "Horaires", "Heures", "Cumul"], [[j?.jour ? dateLongue(j.jour) : "Date à confirmer par le centre", "Pratique (au centre)", "09:00-12:00 / 13:00-16:00", h(HEURES_PRATIQUE), h(30 + HEURES_PRATIQUE)]], ["Total", "", "", "", h(30 + HEURES_PRATIQUE)]);
+    } else if (auto && auto.valide) {
+      titre("Agenda détaillé jour par jour");
+      table(["Date", "Type", "Horaires", "Heures", "Cumul"], auto.lignes.map((l) => [l.jour ? dateLongue(l.jour) : "Date à confirmer par le centre", l.nature === "Pratique" ? "Pratique (au centre)" : "Théorie", l.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(l.heures), h(l.cumul)]), ["Total", "", "", "", h(auto.total)]);
+      if (!auto.lignes.some((l) => l.nature === "Pratique" && l.jour)) manquants.push("Date de la journée pratique");
+    } else if (auto) {
+      para(`Avertissement : agenda jour par jour non édité. ${auto.anomalies.join(" ; ")}.`);
+      manquants.push(...auto.anomalies.map((a) => `Agenda : ${a}`));
+    } else if (c.valide) {
       const lignes = [...c.jours.map((j) => ({ ...j, lib: "Cours" })), ...c.pratique.map((j) => ({ ...j, lib: "Pratique" }))].sort((a, b) => a.jour.localeCompare(b.jour));
       table(["Date", "Contenu", "Horaires", "Heures"], lignes.map((j) => [dateLongue(j.jour), j.lib, j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", "", h(c.heuresSaisies + c.heuresPratique)]);
     } else {
@@ -105,7 +117,10 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     }
   }
   const calPratique = session && p.mode === "presentiel" && !input.erreurLecture ? calendrierSession(session, p.filiere) : null;
-  if (calPratique && !calPratique.valide && calPratique.pratique.length) {
+  const agendaUtilise = !!(calPratique && calPratique.jours.length === 0 && session && (p.filiere === "va" || agendaAutomatique(session, p.filiere, p.soir).valide));
+  if (agendaUtilise) {
+    // journée pratique déjà dans l'agenda détaillé
+  } else if (calPratique && !calPratique.valide && calPratique.pratique.length) {
     const j = calPratique.pratique[0];
     para(`Journée pratique (6 h) : ${dateLongue(j.jour)}, ${j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / ")}.`);
   } else if (calPratique && calPratique.valide && calPratique.pratique.length) {
