@@ -9710,7 +9710,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 size="sm"
                 className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
                 onClick={async () => {
-                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []);
+                  // Les livres protégés (livre-formation:*) se consultent page par page, jamais ouverts en PDF brut.
+                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []).filter(f => !LIVRE_SCHEME.test(f.url));
                   const printableFiles = allFiles.filter(f => 
                     f.nom.endsWith(".pdf") || f.url.endsWith(".pdf")
                   );
