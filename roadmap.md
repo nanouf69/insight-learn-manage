@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Support PDF Pratique VTC — 28/10 16:44 UTC
+- [x] Consultation complémentaire module 8 uniquement, 19 images hébergées ; aucun PDF original mis en ligne, bouton télécharger/imprimer absent.
+- [x] Aucun cours/page/activité/jalon ajouté ; 19 tests PASS, compilation OK. Aperçu admin connecté bureau/375 : ouverture et navigation jusqu'à 19/19, pages rendues visuellement vérifiées avec images exactes interceptées (médias CDN absents du serveur local).
+- [x] Non publié ; captures d'écran techniquement possibles. Journal docs/support-pratique-vtc-lyon-2026-10-28.md.
+- [ ] Chargement CDN et parcours compte élève réel NON PROUVÉS : accès aux domaines hébergés refusé 403 depuis le sandbox ; aucun droit ni donnée élève modifié.
+
 ## Régression affichage quiz module 7 — 28/10 14:44 UTC
 - [x] Cause lecture et aperçu réel : panneau communes inséré dans l'en-tête de toutes les pages, avant le quiz sélectionné ; pas de remplacement des données.
 - [x] Panneaux limités aux quiz 7020/7021 correspondants ; bandeau jeux global retiré des autres étapes du module 7, validation/données inchangées.
