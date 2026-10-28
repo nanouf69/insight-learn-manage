@@ -1,3 +1,4 @@
+import { datesVtcAVenir, datesTaxiAVenir, sessionsAVenir, SESSIONS_VTC, SESSIONS_TAXI } from "@/lib/sessionsCatalogue";
 import { useState } from "react";
 import { Search, Filter, MoreVertical, Clock, Users, Euro, Calendar, Download, Send, ChevronDown, ChevronUp, FileText, CheckCircle, MapPin, GraduationCap } from "lucide-react";
 import { generateFicheContenuFormation } from "@/lib/pdf/fiche-contenu-formation";
@@ -66,14 +67,7 @@ const formations: Formation[] = [
     image: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&h=250&fit=crop",
     cpfEligible: true,
     cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_VTC01",
-    dates: [
-      "Du 12 au 25 janvier 2026",
-      "Du 16 au 30 mars 2026",
-      "Du 11 au 24 mai 2026",
-      "Du 6 au 19 juillet 2026",
-      "Du 14 au 27 septembre 2026",
-      "Du 2 au 15 novembre 2026"
-    ],
+    dates: datesVtcAVenir(),
     prerequisites: [
       "Savoir lire et écrire le français",
       "Permis de conduire hors période probatoire (3 ans minimum)",
@@ -120,14 +114,7 @@ const formations: Formation[] = [
     image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=250&fit=crop",
     cpfEligible: true,
     cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_VTC02",
-    dates: [
-      "Du 12 au 25 janvier 2026",
-      "Du 16 au 30 mars 2026",
-      "Du 11 au 24 mai 2026",
-      "Du 6 au 19 juillet 2026",
-      "Du 14 au 27 septembre 2026",
-      "Du 2 au 15 novembre 2026"
-    ],
+    dates: datesVtcAVenir(),
     prerequisites: [
       "Savoir lire et écrire le français",
       "Permis de conduire hors période probatoire (3 ans minimum)",
@@ -174,14 +161,7 @@ const formations: Formation[] = [
     image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop",
     cpfEligible: true,
     cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_TAXI01",
-    dates: [
-      "Du 5 au 26 janvier 2026",
-      "Du 9 au 30 mars 2026",
-      "Du 4 au 25 mai 2026",
-      "Du 29 juin au 20 juillet 2026",
-      "Du 7 au 28 septembre 2026",
-      "Du 26 octobre au 16 novembre 2026"
-    ],
+    dates: datesTaxiAVenir(),
     prerequisites: [
       "Savoir lire et écrire le français",
       "Permis de conduire hors période probatoire (3 ans minimum)",
@@ -228,14 +208,7 @@ const formations: Formation[] = [
     image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=250&fit=crop",
     cpfEligible: true,
     cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_TAXI02",
-    dates: [
-      "Du 5 au 26 janvier 2026",
-      "Du 9 au 30 mars 2026",
-      "Du 4 au 25 mai 2026",
-      "Du 29 juin au 20 juillet 2026",
-      "Du 7 au 28 septembre 2026",
-      "Du 26 octobre au 16 novembre 2026"
-    ],
+    dates: datesTaxiAVenir(),
     prerequisites: [
       "Savoir lire et écrire le français",
       "Permis de conduire hors période probatoire (3 ans minimum)",
