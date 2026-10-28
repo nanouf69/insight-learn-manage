@@ -817,7 +817,7 @@ export const QUIZ_HOPITAUX: ExerciceItem = {
 export const QUIZ_MUSEES: ExerciceItem = {
   id: 7004, actif: true,
   titre: "Quiz Adresses Musées",
-  sousTitre: "21 questions sur les musées de Lyon",
+  sousTitre: "41 questions sur les musées de Lyon",
   questions: [
     {
       id: 1, enonce: "Où se trouve le Musée Lugdunum ?",
@@ -1006,6 +1006,186 @@ export const QUIZ_MUSEES: ExerciceItem = {
         { lettre: "B", texte: "Lyon 7ème" },
         { lettre: "C", texte: "Lyon 6ème" },
         { lettre: "D", texte: "Lyon 3ème" },
+      ],
+    },
+    {
+      id: 22, enonce: "Quel musée se trouve 13 Rue de la Poulaillerie, 69002 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée de l'Imprimerie et de la Banque", correct: true },
+        { lettre: "B", texte: "Musée Gadagne" },
+        { lettre: "C", texte: "Musée des Beaux-Arts" },
+        { lettre: "D", texte: "Musée des Confluences" },
+      ],
+    },
+    {
+      id: 23, enonce: "Quel musée se trouve 14 Avenue Berthelot, 69007 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée Urbain Tony Garnier" },
+        { lettre: "B", texte: "Musée de la Résistance et de la Déportation", correct: true },
+        { lettre: "C", texte: "Musée des Sapeurs-Pompiers" },
+        { lettre: "D", texte: "Institut Lumière" },
+      ],
+    },
+    {
+      id: 24, enonce: "Quel musée se trouve 4 Rue des Serpollières, 69008 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Institut Lumière" },
+        { lettre: "B", texte: "Musée d'Art Contemporain" },
+        { lettre: "C", texte: "Musée Urbain Tony Garnier", correct: true },
+        { lettre: "D", texte: "Maison des Canuts" },
+      ],
+    },
+    {
+      id: 25, enonce: "Quel musée se trouve 25 Rue du Premier Film, 69008 Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée Urbain Tony Garnier" },
+        { lettre: "B", texte: "Musée d'Art Contemporain" },
+        { lettre: "C", texte: "Musée des Confluences" },
+        { lettre: "D", texte: "Institut Lumière", correct: true },
+      ],
+    },
+    {
+      id: 26, enonce: "Quel musée se trouve 358 Avenue de Champagne, Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée des Sapeurs-Pompiers", correct: true },
+        { lettre: "B", texte: "Musée de la Résistance et de la Déportation" },
+        { lettre: "C", texte: "Lugdunum – Musée et Théâtres Romains" },
+        { lettre: "D", texte: "Musée de l'Imprimerie et de la Banque" },
+      ],
+    },
+    {
+      id: 27, enonce: "Dans quel arrondissement se trouve le Musée des Beaux-Arts ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 2ème" },
+        { lettre: "B", texte: "Lyon 1er", correct: true },
+        { lettre: "C", texte: "Lyon 5ème" },
+        { lettre: "D", texte: "Lyon 6ème" },
+      ],
+    },
+    {
+      id: 28, enonce: "Dans quel arrondissement se trouve le Musée d'Art Contemporain ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 3ème" },
+        { lettre: "B", texte: "Lyon 7ème" },
+        { lettre: "C", texte: "Lyon 6ème", correct: true },
+        { lettre: "D", texte: "Lyon 8ème" },
+      ],
+    },
+    {
+      id: 29, enonce: "Dans quel arrondissement se trouve le Musée Gadagne (Musée d'Histoire de Lyon) ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 5ème", correct: true },
+        { lettre: "B", texte: "Lyon 1er" },
+        { lettre: "C", texte: "Lyon 4ème" },
+        { lettre: "D", texte: "Lyon 2ème" },
+      ],
+    },
+    {
+      id: 30, enonce: "Dans quel arrondissement se trouve le Musée de l'Imprimerie et de la Banque ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 1er" },
+        { lettre: "B", texte: "Lyon 2ème", correct: true },
+        { lettre: "C", texte: "Lyon 5ème" },
+        { lettre: "D", texte: "Lyon 7ème" },
+      ],
+    },
+    {
+      id: 31, enonce: "Dans quel arrondissement se trouve le Musée de la Résistance et de la Déportation ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 3ème" },
+        { lettre: "B", texte: "Lyon 8ème" },
+        { lettre: "C", texte: "Lyon 7ème", correct: true },
+        { lettre: "D", texte: "Lyon 6ème" },
+      ],
+    },
+    {
+      id: 32, enonce: "Dans quel arrondissement se trouve le Musée Urbain Tony Garnier ?",
+      choix: [
+        { lettre: "A", texte: "Lyon 7ème" },
+        { lettre: "B", texte: "Lyon 8ème", correct: true },
+        { lettre: "C", texte: "Lyon 3ème" },
+        { lettre: "D", texte: "Lyon 6ème" },
+      ],
+    },
+    {
+      id: 33, enonce: "Quel musée se trouve dans le 1er arrondissement de Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée Gadagne" },
+        { lettre: "B", texte: "Musée des Confluences" },
+        { lettre: "C", texte: "Musée des Beaux-Arts", correct: true },
+        { lettre: "D", texte: "Maison des Canuts" },
+      ],
+    },
+    {
+      id: 34, enonce: "Quel musée se trouve dans le 4ème arrondissement de Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Maison des Canuts", correct: true },
+        { lettre: "B", texte: "Musée des Beaux-Arts" },
+        { lettre: "C", texte: "Lugdunum – Musée et Théâtres Romains" },
+        { lettre: "D", texte: "Musée d'Art Contemporain" },
+      ],
+    },
+    {
+      id: 35, enonce: "Quel musée se trouve dans le 6ème arrondissement de Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée des Confluences" },
+        { lettre: "B", texte: "Institut Lumière" },
+        { lettre: "C", texte: "Musée de l'Imprimerie et de la Banque" },
+        { lettre: "D", texte: "Musée d'Art Contemporain", correct: true },
+      ],
+    },
+    {
+      id: 36, enonce: "Quel musée se trouve dans le 7ème arrondissement de Lyon ?",
+      choix: [
+        { lettre: "A", texte: "Musée de la Résistance et de la Déportation", correct: true },
+        { lettre: "B", texte: "Musée des Beaux-Arts" },
+        { lettre: "C", texte: "Musée Gadagne" },
+        { lettre: "D", texte: "Musée Urbain Tony Garnier" },
+      ],
+    },
+    {
+      id: 37, enonce: "Quel musée est aussi appelé « Musée des Tissages » ?",
+      choix: [
+        { lettre: "A", texte: "Musée Gadagne" },
+        { lettre: "B", texte: "La Maison des Canuts", correct: true },
+        { lettre: "C", texte: "Musée de l'Imprimerie et de la Banque" },
+        { lettre: "D", texte: "Musée Urbain Tony Garnier" },
+      ],
+    },
+    {
+      id: 38, enonce: "Quel musée est aussi appelé « Musée d'Histoire de Lyon » ?",
+      choix: [
+        { lettre: "A", texte: "Lugdunum – Musée et Théâtres Romains" },
+        { lettre: "B", texte: "Musée des Confluences" },
+        { lettre: "C", texte: "Musée Gadagne", correct: true },
+        { lettre: "D", texte: "Musée de la Résistance et de la Déportation" },
+      ],
+    },
+    {
+      id: 39, enonce: "Quel musée porte le nom d'un célèbre architecte lyonnais ?",
+      choix: [
+        { lettre: "A", texte: "Musée Urbain Tony Garnier", correct: true },
+        { lettre: "B", texte: "Institut Lumière" },
+        { lettre: "C", texte: "Musée Gadagne" },
+        { lettre: "D", texte: "Musée des Beaux-Arts" },
+      ],
+    },
+    {
+      id: 40, enonce: "Quel musée est consacré au cinéma et aux frères Lumière ?",
+      choix: [
+        { lettre: "A", texte: "Musée d'Art Contemporain" },
+        { lettre: "B", texte: "Musée de l'Imprimerie et de la Banque" },
+        { lettre: "C", texte: "Institut Lumière", correct: true },
+        { lettre: "D", texte: "Lugdunum – Musée et Théâtres Romains" },
+      ],
+    },
+    {
+      id: 41, enonce: "Quel musée se trouve sur le site gallo-romain de la colline de Fourvière ?",
+      choix: [
+        { lettre: "A", texte: "Musée Gadagne" },
+        { lettre: "B", texte: "Lugdunum – Musée et Théâtres Romains", correct: true },
+        { lettre: "C", texte: "Musée des Beaux-Arts" },
+        { lettre: "D", texte: "Maison des Canuts" },
       ],
     },
   ],
