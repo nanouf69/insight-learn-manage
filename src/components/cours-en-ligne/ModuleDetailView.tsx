@@ -2033,6 +2033,7 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
 };
 
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
+import { module7CommunePanel } from "@/lib/module7ActivitiesDisplay";
 import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
@@ -9672,17 +9673,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
-          {![6, 64].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
+          {![6, 7, 64].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
           {/* Module 64 : questions complémentaires du quiz Équipements TAXI (statut porté par la section). */}
           {Number(module.id) === 64 && (
             <Suspense fallback={<p role="status">Chargement des questions complémentaires…</p>}>
               <CoursQuizEquipementsTaxi compteId={apprenantId ?? null} />
-            </Suspense>
-          )}
-          {/* Module 7 : quiz additifs des communes (Métropole 58 + ZUPC). */}
-          {Number(module.id) === 7 && (
-            <Suspense fallback={<p role="status">Chargement des quiz des communes…</p>}>
-              <CoursQuizCommunes compteId={apprenantId ?? null} />
             </Suspense>
           )}
           {/* Jeux de cartes de Lyon — activités du module PRATIQUE VTC (8), non notées */}
@@ -9802,6 +9797,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         {/* Current page content */}
         <div className="animate-fade-in">
+          {module7CommunePanel(Number(module.id), exoCourantId) !== null && (
+            <Suspense fallback={<p role="status">Chargement du quiz des communes…</p>}>
+              <CoursQuizCommunes
+                key={`${apprenantId ?? "preview"}:${exoCourantId}`}
+                compteId={apprenantId ?? null}
+                exerciceId={module7CommunePanel(Number(module.id), exoCourantId) ?? undefined}
+              />
+            </Suspense>
+          )}
           {currentPageData?.type === "cours" && renderCoursPage(projeterSupportTaxi(Number(module.id), currentPageData.cours))}
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
