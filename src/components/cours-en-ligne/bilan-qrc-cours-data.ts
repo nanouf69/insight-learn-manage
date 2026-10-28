@@ -215,7 +215,7 @@ const REGLEMENTATION_TAXI: QrcQuestion[] = [
 const REGLEMENTATION_NATIONALE_TA: QrcQuestion[] = [
   {
     question: "Quelles sont les différentes autorités administratives compétentes pour délivrer une ADS ?",
-    reponse: "Soit le maire, soit le préfet de police (dans sa zone de compétence).",
+    reponse: "Le maire, le président de l'EPCI ou de la Métropole (Lyon), le préfet de police à Paris, le préfet pour les aéroports.",
   },
   {
     question:
