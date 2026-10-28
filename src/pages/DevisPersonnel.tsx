@@ -392,7 +392,9 @@ export default function DevisPersonnel() {
 
       const fileName = `Devis_${prenom}_${nom}_${format(new Date(), "ddMMyyyy")}.pdf`;
       const { blob: devisComplet, programmeInclus } = await devisAvecProgramme(
-        doc, formation, dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null,
+        doc, formation,
+        dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null,
+        dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_fin ?? null : null,
       );
       if (!programmeInclus) toast.warning("Le programme et le calendrier n'ont pas pu être ajoutés au devis.");
       if (!opts.sendEmail) {
