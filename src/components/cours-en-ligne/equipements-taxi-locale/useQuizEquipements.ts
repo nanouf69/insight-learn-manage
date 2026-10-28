@@ -7,7 +7,9 @@ import { EXERCICE_TYPE_JEU } from "@/lib/jeuxPedagogiques";
 import { ID_QUIZ_EQUIPEMENTS, VERSION_QUIZ_EQUIPEMENTS, QUESTIONS_EQUIPEMENTS, type QuestionEquipement, type ReponsesEquipements } from "./donnees";
 
 /** Définition d'une série complémentaire (identité immuable : ID + version). */
-export interface SerieEquipements { id: string; version: string; questions: QuestionEquipement[] }
+export interface SerieEquipements { id: string; version: string; questions: QuestionEquipement[]; /** Série notée : 1 point par bonne réponse. */ notee?: boolean }
+/** Note brute (1 point par question exacte) calculée depuis les réponses. */
+export const noteSerie = (serie: SerieEquipements, v: ReponsesEquipements) => serie.questions.filter((q) => (v[q.id] ?? "") === String(q.correct)).length;
 export const SERIE_COMPLEMENT: SerieEquipements = { id: ID_QUIZ_EQUIPEMENTS, version: VERSION_QUIZ_EQUIPEMENTS, questions: QUESTIONS_EQUIPEMENTS };
 export const serieComplete = (serie: SerieEquipements, v: ReponsesEquipements) => serie.questions.every((x) => { const n = Number(v[x.id]); return v[x.id] !== undefined && v[x.id] !== "" && Number.isInteger(n) && n >= 0 && n < x.choix.length; });
 
@@ -23,7 +25,7 @@ export function accuseEquipementsCorrespond(data: unknown, draft: BrouillonEquip
 
 export interface TransportEquipements {
   lire(compte: string, serie?: SerieEquipements): Promise<unknown>;
-  envoyer(compte: string, draft: BrouillonEquipements, termine: boolean, serie?: SerieEquipements): Promise<boolean>;
+  envoyer(compte: string, draft: BrouillonEquipements, termine: boolean, serie?: SerieEquipements, score?: number | null): Promise<boolean>;
 }
 const transportReel: TransportEquipements = {
   async lire(compte, serie = SERIE_COMPLEMENT) {
@@ -33,8 +35,8 @@ const transportReel: TransportEquipements = {
     if (error) throw error;
     return data;
   },
-  async envoyer(compte, draft, termine, serie = SERIE_COMPLEMENT) {
-    enqueueAnswerSave({ apprenant_id: compte, module_id: null, exercice_id: serie.id, exercice_type: EXERCICE_TYPE_JEU, reponses: { version: serie.version, ...draft }, completed: termine, score: null });
+  async envoyer(compte, draft, termine, serie = SERIE_COMPLEMENT, score = null) {
+    enqueueAnswerSave({ apprenant_id: compte, module_id: null, exercice_id: serie.id, exercice_type: EXERCICE_TYPE_JEU, reponses: { version: serie.version, ...draft }, completed: termine, score: termine ? score : null });
     return flushAnswerSavesAndWait(compte, serie.id);
   },
 };
@@ -95,7 +97,9 @@ export function useQuizEquipements(compte: string | null | undefined, transport:
     try { window.localStorage.setItem(cleBrouillonEquipements(compte, serie), JSON.stringify(draft)); } catch { setStatut("Stockage appareil indisponible."); return; }
     setBusy(true); setStatut("Enregistrement en cours…");
     try {
-      const ok = await transport.envoyer(compte, draft, termine, serie);
+      // Série notée : même échelle que les autres quiz (score en %), écrit dans le même envoi que la fin.
+      const score = termine && serie.notee ? Math.round((noteSerie(serie, draft.valeurs) / serie.questions.length) * 100) : null;
+      const ok = await transport.envoyer(compte, draft, termine, serie, score);
       const row = await transport.lire(compte, serie);
       if (g !== generation.current) return;
       if (!ok || !accuseEquipementsCorrespond(row, draft, termine, serie.version)) throw new Error("Accusé non prouvé");

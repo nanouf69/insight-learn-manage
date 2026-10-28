@@ -9,9 +9,9 @@ import { ecouterDemandeJeu } from "@/lib/demandeJeuRegistre";
 import { useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import { COURS_EQUIPEMENTS } from "./donnees";
 import { ID_QUIZ_SANCTIONS, VERSION_QUIZ_SANCTIONS, QUESTIONS_SANCTIONS } from "./donneesSanctions";
-import { useQuizEquipements, SERIE_COMPLEMENT, serieComplete, type SerieEquipements, type TransportEquipements } from "./useQuizEquipements";
+import { useQuizEquipements, noteSerie, SERIE_COMPLEMENT, serieComplete, type SerieEquipements, type TransportEquipements } from "./useQuizEquipements";
 
-export const SERIE_SANCTIONS: SerieEquipements = { id: ID_QUIZ_SANCTIONS, version: VERSION_QUIZ_SANCTIONS, questions: QUESTIONS_SANCTIONS };
+export const SERIE_SANCTIONS: SerieEquipements = { id: ID_QUIZ_SANCTIONS, version: VERSION_QUIZ_SANCTIONS, questions: QUESTIONS_SANCTIONS, notee: true };
 
 export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT }: { compteId?: string | null; transport?: TransportEquipements; serie?: SerieEquipements }) {
   const QUESTIONS_EQUIPEMENTS = serie.questions;
@@ -24,10 +24,14 @@ export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT 
     </div>
     {!s.charge && compteId && <Button variant="outline" onClick={() => void s.relire()}>Réessayer la lecture</Button>}
     {s.confirme && (() => {
-      const exactes = QUESTIONS_EQUIPEMENTS.filter((q) => (s.valeurs[q.id] ?? "") === String(q.correct)).length;
+      const exactes = noteSerie(serie, s.valeurs);
       return <div role="region" aria-label="Résultats" data-testid="equipements-resultats" className="rounded-lg border-2 border-primary bg-background p-4 space-y-1">
-        <p className="text-lg font-bold">✅ Quiz terminé — {exactes} / {QUESTIONS_EQUIPEMENTS.length} réponses exactes</p>
-        <p className="text-sm text-muted-foreground">Série non notée. Le corrigé de chaque question est affiché ci-dessous ; aucune réponse ne sera réécrite.</p>
+        {serie.notee
+          ? <p className="text-2xl font-bold" data-testid="equipements-note">Note : {exactes} / {QUESTIONS_EQUIPEMENTS.length}</p>
+          : <p className="text-lg font-bold">✅ Quiz terminé — {exactes} / {QUESTIONS_EQUIPEMENTS.length} réponses exactes</p>}
+        <p className="text-sm text-muted-foreground">{serie.notee
+          ? "1 point par bonne réponse, calculé depuis vos réponses enregistrées. Le corrigé de chaque question est affiché ci-dessous ; aucune réponse ne sera réécrite."
+          : "Série non notée. Le corrigé de chaque question est affiché ci-dessous ; aucune réponse ne sera réécrite."}</p>
       </div>;
     })()}
     {QUESTIONS_EQUIPEMENTS.map((q, index) => {
