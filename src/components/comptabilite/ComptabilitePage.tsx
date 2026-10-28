@@ -1559,6 +1559,22 @@ export function ComptabilitePage() {
                     Écarts / non retrouvées : {rapprochementStats.rouge} · {formatMontant(rapprochementStats.totalRouge)}
                   </Button>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["vert", "Présentes dans EDOF"],
+                    ["cpf_absent", "Facturées Caisse des Dépôts, non présentes dans EDOF"],
+                    ["autres_org", "Autres organismes"],
+                    ["particulier", "Particuliers"],
+                    ["hors_cpf", "Toutes hors Caisse des Dépôts"],
+                  ] as const).map(([k, label]) => {
+                    const list = factures.filter((f) => matchCategorieRappr(f, k));
+                    return (
+                      <Button key={k} size="sm" variant={filterRapprochement === k ? "default" : "outline"} onClick={() => setFilterRapprochement(filterRapprochement === k ? "all" : k)}>
+                        {label} : {list.length} · {formatMontant(list.reduce((s, f) => s + Number(f.montant_ttc), 0))}
+                      </Button>
+                    );
+                  })}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Vert : concordance avec l'export (bénéficiaire + montant facturable d'un dossier « Service fait validé », un dossier pour une seule facture) — ce n'est pas une validation comptable certifiée.
                   Brouillons non émis exclus.
