@@ -13,7 +13,7 @@ export async function devisAvecProgramme(
   devis: jsPDF,
   formation: { id: string; label: string; designation: string; agrement: string },
   dateDebut: string | null,
-): Promise<{ blob: Blob; programmeInclus: boolean }> {
+): Promise<{ blob: Blob; programmeInclus: boolean; pages?: number }> {
   const devisBlob = devis.output("blob");
   try {
     const programme = formationProgramme(formation.id);
@@ -29,7 +29,7 @@ export async function devisAvecProgramme(
       (await fusion.copyPages(pdf, pdf.getPageIndices())).forEach((p) => fusion.addPage(p));
     }
     const bytes = await fusion.save();
-    return { blob: new Blob([bytes as BlobPart], { type: "application/pdf" }), programmeInclus: true };
+    return { blob: new Blob([bytes as BlobPart], { type: "application/pdf" }), programmeInclus: true, pages: fusion.getPageCount() };
   } catch (e) {
     console.error("[devisAvecProgramme]", e);
     return { blob: devisBlob, programmeInclus: false };
