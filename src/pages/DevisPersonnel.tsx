@@ -46,23 +46,23 @@ function parseFrenchDateRange(label: string): { date_debut: string; date_fin: st
 }
 
 /* ─── DATES DE FORMATION CATALOGUE ─── */
-const DATES_VTC = [
-  "Du 12 au 25 janvier 2026",
-  "Du 16 au 30 mars 2026",
-  "Du 11 au 24 mai 2026",
-  "Du 6 au 19 juillet 2026",
-  "Du 14 au 27 septembre 2026",
-  "Du 2 au 15 novembre 2026",
+// Chaque session : libellé + date de début (YYYY-MM-DD). Masquée dès son premier jour,
+// affichée seulement si elle commence dans les 6 prochains mois.
+const SESSIONS_VTC = [
+  { label: "Du 2 au 15 novembre 2026", debut: "2026-11-02" },
+  { label: "Du lundi 11 au vendredi 22 janvier 2027", debut: "2027-01-11" },
+  { label: "Du lundi 15 au vendredi 26 mars 2027", debut: "2027-03-15" },
 ];
-
-const DATES_TAXI = [
-  "Du 5 au 26 janvier 2026",
-  "Du 9 au 30 mars 2026",
-  "Du 4 au 25 mai 2026",
-  "Du 29 juin au 20 juillet 2026",
-  "Du 7 au 28 septembre 2026",
-  "Du 26 octobre au 16 novembre 2026",
+const SESSIONS_TAXI = [
+  { label: "Du lundi 4 au lundi 25 janvier 2027", debut: "2027-01-04" },
+  { label: "Du lundi 8 au lundi 29 mars 2027", debut: "2027-03-08" },
 ];
+function sessionsAVenir(list: { label: string; debut: string }[], now = new Date()): string[] {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(now);
+  const limite = new Date(now); limite.setMonth(limite.getMonth() + 6);
+  const max = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(limite);
+  return list.filter((s) => s.debut > today && s.debut <= max).map((s) => s.label);
+}
 
 /* ─── FORMATIONS CATALOGUE ─── */
 const FORMATIONS = [
