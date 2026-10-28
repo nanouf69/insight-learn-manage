@@ -2040,6 +2040,7 @@ import { demanderJeu } from "@/lib/demandeJeuRegistre";
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2026"));
+const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuizCommunes"));
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 
 const PRATIQUE_VTC_DATA: ModuleData = {
@@ -9676,6 +9677,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {Number(module.id) === 64 && (
             <Suspense fallback={<p role="status">Chargement des questions complémentaires…</p>}>
               <CoursQuizEquipementsTaxi compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
+          {/* Module 7 : quiz additifs des communes (Métropole 58 + ZUPC). */}
+          {Number(module.id) === 7 && (
+            <Suspense fallback={<p role="status">Chargement des quiz des communes…</p>}>
+              <CoursQuizCommunes compteId={apprenantId ?? null} />
             </Suspense>
           )}
           {/* Jeux de cartes de Lyon — activités du module PRATIQUE VTC (8), non notées */}

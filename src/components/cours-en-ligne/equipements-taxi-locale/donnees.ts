@@ -13,7 +13,7 @@ export const COURS_EQUIPEMENTS = {
   pptx: "/cours/taxi/F_Locale_Equipements_documents_TAXI.pptx?v=20261027",
 };
 
-export interface QuestionEquipement { id: string; enonce: string; choix: string[]; correct: number; justification: string; diapositive: number }
+export interface QuestionEquipement { id: string; enonce: string; choix: string[]; correct: number; justification: string; diapositive?: number }
 const q = (n: number, diapositive: number, enonce: string, choix: string[], correct: number, justification: string): QuestionEquipement =>
   ({ id: `q${String(n).padStart(2, "0")}`, enonce, choix, correct, justification, diapositive });
 

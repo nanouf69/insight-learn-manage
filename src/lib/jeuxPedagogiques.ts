@@ -43,6 +43,9 @@ export const ACTIVITES_CODE: ActiviteCode[] = [
   { id: "quiz_taxi_equipements_m64_complement_v1", moduleId: 64, titre: "Questions complémentaires — Équipements et documents TAXI", unites: 11, ajouteeLe: BORNE_EQUIPEMENTS_TAXI_M64, horsVolumeSiValideAvant: true },
   // 2e série (demande 27/10/2026 17:11 UTC) : usage, emplacement, sanctions — modules 64 validés avant = acquis inchangé.
   { id: "quiz_taxi_equipements_m64_sanctions_v1", moduleId: 64, titre: "Équipements TAXI — usage, emplacement et sanctions", unites: 20, ajouteeLe: "2026-10-27T17:11:00Z", horsVolumeSiValideAvant: true },
+  // Module 7 (demande 28/10/2026 14:17 UTC) : quiz additifs communes ; modules 7 validés avant = acquis inchangé, hors volume.
+  { id: "quiz_m7_58_communes_metropole_v1", moduleId: 7, titre: "Quiz — Les 58 communes de la Métropole de Lyon (une par une)", unites: 58, ajouteeLe: "2026-10-28T14:17:00Z", horsVolumeSiValideAvant: true },
+  { id: "quiz_m7_communes_zupc_v1", moduleId: 7, titre: "Quiz — Les communes de la ZUPC (une par une)", unites: 24, ajouteeLe: "2026-10-28T14:17:00Z", horsVolumeSiValideAvant: true },
 ];
 export const EXERCICE_TYPE_JEU = "jeu_carte";
 export const METHODE_ACTIVITES = "jalons-calcul v4 — 13/10/2026 (activités du registre incluses)";

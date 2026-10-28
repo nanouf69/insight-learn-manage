@@ -48,7 +48,7 @@ export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT 
         {corrige && <div className="border-l-4 border-primary bg-muted p-4 space-y-2" role="region" aria-label="Corrigé">
           <p className="font-bold">{rep === String(q.correct) ? "✅ Exact" : rep === "" ? "Réponse à retenir" : "❌ Votre réponse : " + (q.choix[Number(rep)] ?? "") + " — Bonne réponse"} : {q.choix[q.correct]}</p>
           <p className="leading-relaxed">{q.justification}</p>
-          <p className="text-xs text-muted-foreground">Diapositive {q.diapositive} du cours.</p>
+          {q.diapositive != null && <p className="text-xs text-muted-foreground">Diapositive {q.diapositive} du cours.</p>}
         </div>}
       </div>;
     })}
@@ -60,7 +60,7 @@ export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT 
 }
 
 /** Module 64 : questions complémentaires (support remplacé directement dans la page de cours). */
-function SectionSerie({ compteId, transport, serie, titre, intro, inline = false }: { compteId?: string | null; transport?: TransportEquipements; serie: SerieEquipements; titre: string; intro: string; inline?: boolean }) {
+export function SectionSerie({ compteId, transport, serie, titre, intro, inline = false }: { compteId?: string | null; transport?: TransportEquipements; serie: SerieEquipements; titre: string; intro: string; inline?: boolean }) {
   const ID_QUIZ_EQUIPEMENTS = serie.id;
   const [ouvert, setOuvert] = useState(false);
   const etat = useActivitesModule();
@@ -72,7 +72,7 @@ function SectionSerie({ compteId, transport, serie, titre, intro, inline = false
   const nb = serie.questions.length;
   return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" data-testid={`equipements-taxi-section-${serie.id}`} aria-labelledby={`titre-${serie.id}`}>
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <h3 id={`titre-${serie.id}`} className="text-xl font-bold">🚕 {titre}</h3>
+      <h3 id={`titre-${serie.id}`} className="text-xl font-bold">{titre}</h3>
       <Badge variant={termine ? "default" : requis ? "destructive" : "outline"} data-testid="equipements-taxi-statut">{statut}</Badge>
     </div>
     <p className="text-sm">{etat?.etat === "indisponible" ? "Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant."
@@ -91,7 +91,7 @@ function SectionSerie({ compteId, transport, serie, titre, intro, inline = false
 /** Module 64 : séries complémentaires (support remplacé directement dans la page de cours). */
 export default function CoursQuizEquipementsTaxi({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
   return <div className="space-y-4">
-    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_COMPLEMENT} titre={`Questions complémentaires — ${COURS_EQUIPEMENTS.titre}`} intro="nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module." />
-    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." inline />
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_COMPLEMENT} titre={`🚕 Questions complémentaires — ${COURS_EQUIPEMENTS.titre}`} intro="nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module." />
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="🚕 À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." inline />
   </div>;
 }
