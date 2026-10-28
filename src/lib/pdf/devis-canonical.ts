@@ -27,6 +27,7 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import tamponFtransport from "@/assets/tampon-ftransport.png?inline";
 
 export const RIB_INFO = {
   titulaire: "SERVICES PRO FTRANSPORT",
@@ -551,6 +552,8 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   cadresFtransport.push([doc.getCurrentPageInfo().pageNumber, sigFtransX, y, sigBoxW, sigBoxH]);
   doc.setFontSize(7);
   doc.text("Le responsable de formation", sigFtransX + 2, y + 9);
+  // Tampon SERVICES PRO FTRANSPORT sur chaque devis (choix utilisateur 28/10/2026)
+  doc.addImage(tamponFtransport, "PNG", sigFtransX + (sigBoxW - 46) / 2, y + 11, 46, 46 * (181 / 539));
 
   // === FOOTER ===
   doc.setFontSize(6.5);
@@ -696,6 +699,8 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   doc.text("Pour FTRANSPORT", sigFtransX2 + 2, y + 5);
   cadresFtransport.push([doc.getCurrentPageInfo().pageNumber, sigFtransX2, y, 80, 30]);
   doc.text("Le responsable de formation", sigFtransX2 + 2, y + 9);
+  // Tampon SERVICES PRO FTRANSPORT sur chaque devis (choix utilisateur 28/10/2026)
+  doc.addImage(tamponFtransport, "PNG", sigFtransX2 + 17, y + 11, 46, 46 * (181 / 539));
 
   doc.setFontSize(6.5);
   doc.setTextColor(140, 140, 140);
