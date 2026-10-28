@@ -164,8 +164,7 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     const h = heuresPlages(j.plages);
     if (h === null || h === 0) { anomalies.push(`Horaire de pratique invalide le ${j.jour}`); continue; }
     if (jourSemaine(j.jour) !== 6) anomalies.push(`La pratique du ${j.jour} n'est pas un samedi`);
-    const ferieP = jourFerie(j.jour);
-    if (ferieP) anomalies.push(`La pratique du ${j.jour} tombe un jour férié (${ferieP}) : à confirmer`);
+    // Jour férié = samedi de pratique comme les autres (le centre travaille les jours fériés).
     if (j.jour < s.date_debut) anomalies.push(`La pratique du ${j.jour} est avant le début de la session`);
     pratique.push({ ...j, heures: h });
     heuresPratique += h;
