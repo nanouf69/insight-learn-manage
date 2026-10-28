@@ -72,12 +72,14 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     para("Durées prévisionnelles du tableau des jalons de la plateforme : elles indiquent le temps de travail attendu, pas des heures réellement effectuées.");
   } else if (p.mode === "pratique") {
     table(["Module", "Durée"], [["Formation pratique en véhicule à double commande", "6 h en groupe ou 3 h en solo"]]);
+    para("Répartition des modules susceptible d'être modifiée par le centre.");
   } else {
     const heuresSession = session ? calendrierSession(session, p.filiere).heuresAttendues : null;
     const theorie = heuresSession ?? (p.filiere === "ta" || p.filiere === "va" ? 30 : p.filiere === "taxi" ? 90 : p.soir ? 40 : 60);
     const intitules = modulesElearning(p.filiere).lignes.filter((l) => l.moduleId !== PRATIQUE_PHYSIQUE && !/examens blancs/i.test(l.intitule)).map((l) => [l.intitule]);
     table(["Modules enseignés"], [...intitules, ["Formation pratique en véhicule à double commande"]]);
     table(["Partie", "Durée"], [["Formation théorique en salle", h(theorie)], ["Formation pratique", h(HEURES_PRATIQUE)]], ["Durée totale", h(theorie + HEURES_PRATIQUE)]);
+    para("Répartition des modules sur l'agenda et durées indicatives : susceptibles d'être modifiées par le centre.");
   }
 
   // 2. Modalités d'enseignement
