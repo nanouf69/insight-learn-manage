@@ -1,3 +1,4 @@
+import { ALL_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,7 +79,7 @@ const formationsList = [
 ];
 
 // Liste complète des matières avec leurs couleurs
-const defaultDisciplines: Discipline[] = [
+const legacyDisciplines: Discipline[] = [
   { id: "1", nom: "Anglais", color: "#6d7bf4" },
   { id: "2", nom: "Bilan QCM Examen", color: "#f2ef0c" },
   { id: "3", nom: "Bilan QRC Examen", color: "#ec9060" },
@@ -126,6 +127,15 @@ const defaultDisciplines: Discipline[] = [
   { id: "44", nom: "Correction contrôle de connaissances", color: "#3730a3" },
   { id: "45", nom: "Réglementation spécifique VTC", color: "#e11d48" },
 ];
+
+// Nouveaux créneaux : noms des modules e-learning (anciens créneaux gardent leur nom enregistré)
+const MODULE_COLORS = ["#6d7bf4", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#0d9488"];
+const moduleDisciplines: Discipline[] = ALL_MODULES.map((m, i) => ({
+  id: `module-${m.id}`,
+  nom: m.nom,
+  color: MODULE_COLORS[i % MODULE_COLORS.length],
+}));
+const defaultDisciplines: Discipline[] = [...moduleDisciplines, ...legacyDisciplines];
 
 // Heures de 8h à 18h (affichage par heure complète)
 const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8, 9, 10, ... 21
@@ -844,7 +854,7 @@ export function AgendaView() {
                       <SelectValue placeholder="Sélectionner une discipline" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
-                      {disciplines.map((discipline) => (
+                      {disciplines.filter((d) => !legacyDisciplines.some((l) => l.id === d.id)).map((discipline) => (
                         <SelectItem key={discipline.id} value={discipline.id}>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: discipline.color }} />
