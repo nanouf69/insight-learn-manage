@@ -112,6 +112,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     } else if (c.valide) {
       const lignes = [...c.jours.map((j) => ({ ...j, lib: "Cours" })), ...c.pratique.map((j) => ({ ...j, lib: "Pratique" }))].sort((a, b) => a.jour.localeCompare(b.jour));
       table(["Date", "Contenu", "Horaires", "Heures"], lignes.map((j) => [dateLongue(j.jour), j.lib, j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", "", h(c.heuresSaisies + c.heuresPratique)]);
+      para("Agenda susceptible d'être modifié : les dates peuvent être décalées en dehors de ces périodes.");
     } else {
       para(`Calendrier journalier à confirmer : ${c.anomalies.join(" ; ")}.`);
       manquants.push(...c.anomalies.map((a) => `Calendrier : ${a}`));
