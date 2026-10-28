@@ -27,7 +27,8 @@ const FR_MONTHS: Record<string, number> = {
 };
 function parseFrenchDateRange(label: string): { date_debut: string; date_fin: string } | null {
   if (!label) return null;
-  const s = label.toLowerCase().normalize("NFD").replace(/\u0300|\u0301|\u0302|\u0308/g, "");
+  const s = label.toLowerCase().normalize("NFD").replace(/\u0300|\u0301|\u0302|\u0308/g, "")
+    .replace(/\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+/g, "");
   // Try "du D1 [M1] au D2 M2 YYYY"
   const m = s.match(/du\s+(\d{1,2})(?:\s+([a-zéûôî]+))?\s+au\s+(\d{1,2})\s+([a-zéûôî]+)\s+(\d{4})/);
   if (!m) return null;
