@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Textes à trous jeu Lyon — 28/10 14:37 UTC
-- [ ] Identifier le projet effectif et auditer toutes les banques, interactions et sauvegardes en lecture seule.
-- [ ] Corriger dans le projet propriétaire uniquement, préserver historiques et jalons ; aucune publication globale.
-- [ ] Prouver banques/solutions, clics, tactile 375/768, doublons, anciennes sauvegardes et isolement joueurs sur compte technique.
+- [x] Projet propriétaire Lyon Explorer Map identifié ; audit des deux textes (31/28 trous, banques 46/45), aucune réponse absente initialement.
+- [x] Reproductions publiques anonymes bureau/375/768 : doublons limitent à 30/31 et 26/28 ; banque nationale copiée vers locale ; ancienne banque incomplète restaurée. Rapport docs/audit-textes-trous-lyon-2026-10-28.md.
+- [ ] Correction bloquée : l'autre projet est accessible uniquement en copie lecture seule depuis cette conversation ; ouvrir Lyon Explorer Map pour appliquer les correctifs, sans toucher historiques/jalons.
+- [ ] Après correction dans le projet propriétaire : preuve finale avec compte technique, clavier, changement joueur, remplacement/doublons, ancienne sauvegarde ; aucune publication globale ni correction livrée ici.
 
 ## Quiz communes visibles — 28/10 14:31 UTC
 - [x] Lecture seule : deux quiz déjà présents en aperçu module 7 ; absents de la liste admin Édition, source code indépendante du JSON serveur.
