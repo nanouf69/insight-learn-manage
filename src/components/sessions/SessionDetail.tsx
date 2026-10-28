@@ -5116,8 +5116,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               size="sm"
               variant="ghost"
               className="h-7 w-7 shrink-0 p-0"
-              title="Copy session name"
-              onClick={() => copyToClipboard(session.title, "Session name")}
+              title="Copier le nom de la session"
+              onClick={() => copyToClipboard(session.title, "Nom de la session")}
             >
               <Copy className="w-3.5 h-3.5" />
             </Button>
