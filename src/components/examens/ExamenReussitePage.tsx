@@ -2654,15 +2654,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             const ins = dateInscriptionAffichee(apprenant as any);
                             if (!ins) return <span className="text-xs text-muted-foreground">-</span>;
                             const tard = inscriptionRecente(ins.date);
-                            const edof = (apprenant as any).date_acceptation_cpf
-                              ? String((apprenant as any).date_acceptation_cpf).slice(0, 10).split("-").reverse().join("/")
-                              : null;
-                            const formation = (apprenant as any).created_at
-                              ? String((apprenant as any).created_at).slice(0, 10).split("-").reverse().join("/")
-                              : null;
-                            const complement = ins.source === "cpf"
-                              ? (formation ? `Formation : ${formation}` : null)
-                              : (edof ? `EDOF : ${edof}` : null);
+                            const fmt = (v: string | null | undefined) => (v ? String(v).slice(0, 10).split("-").reverse().join("/") : null);
+                            // Sous la date d'inscription : début de formation, sinon date EDOF (acceptation CPF).
+                            const complement = fmt((apprenant as any).date_debut_formation)
+                              ? `Formation : ${fmt((apprenant as any).date_debut_formation)}`
+                              : (fmt((apprenant as any).date_acceptation_cpf) ? `EDOF : ${fmt((apprenant as any).date_acceptation_cpf)}` : null);
                             return (
                               <span
                                 title={`${ins.source === "cpf" ? "Acceptation CPF (import Excel)" : "Inscription CRM"}${tard ? " — inscrit depuis moins de 15 jours ouvrés" : ""}`}
