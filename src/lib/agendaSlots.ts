@@ -352,7 +352,9 @@ export const getExpectedEmargements = async (params: {
     ]);
     const filiere = String(params.typeApprenant ?? '').toLowerCase().split('-')[0];
     const paris = maintenantParis();
-    return theorySlotsForAttendance(rows,blocs,filiere).filter(e => isCreneauDue(e.date,e.creneau,paris.dateISO,paris.minutes));
+    // Même règle que l'Admin (signaturesManquantes) : TA = première semaine de théorie seulement.
+    const rowsFiliere = filiere === 'ta' ? rows.map(r => ({ ...r, filiere_apprenant: 'TA' })) : rows;
+    return theorySlotsForAttendance(rowsFiliere,blocs,filiere).filter(e => isCreneauDue(e.date,e.creneau,paris.dateISO,paris.minutes));
   }
 
   const start = new Date(startDate); start.setHours(0, 0, 0, 0);
