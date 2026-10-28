@@ -36,7 +36,7 @@ describe("rapprochement export CPF", () => {
     expect(rapprocher([f("A", "Ana Petit", 999)], lignes).get("A")?.motif).toMatch(/non vérifiable/);
   });
   it("autre financement rouge hors périmètre", () => {
-    expect(rapprocher([f("A", "Jean Dupont", 1499, { type_financement: "particulier" })], lignes).get("A")?.motif).toMatch(/Hors périmètre/);
+    expect(rapprocher([f("A", "Jean Dupont", 1499, { type_financement: "particulier", client_nom: "Jean Dupont" })], lignes).get("A")?.motif).toMatch(/Hors périmètre/);
   });
   it("hors 2026, achats et avoirs ignorés", () => {
     const r = rapprocher([
