@@ -1659,6 +1659,11 @@ export function ComptabilitePage() {
                               </Button>
                             )}
                           </div>
+                          {rappr?.couleur === "vert" && rappr.dossiers[0] && (
+                            <div className="text-xs font-semibold text-success mt-0.5">
+                              Présent dans EDOF · {rappr.dossiers[0].numeroDossier}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div>{f.client_nom}</div>
