@@ -8585,28 +8585,56 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </div>
         );
       }
+      // Correction IA d'une QRC : appelée uniquement à la validation finale (jamais
+      // pendant la saisie). Une seule correction par question : verrou en mémoire +
+      // résultat conservé pour la même réponse. Échec = « indisponible », jamais 0.
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
-        const existingAnswer = selectedAnswers[key];
-        const reponse = (qrcAnswers[key] ?? (typeof existingAnswer === "string" ? existingAnswer : "")).trim();
-        if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
+        const reponse = reponseQrc(key, qrcAnswers, selectedAnswers);
+        if (!reponse) return;
+        if (qrcCorrectionsEnCoursRef.current.has(key)) return;
+        const cacheKey = cleCacheQrc(String(apprenantId ?? "anon"), key, reponse);
+        try {
+          const cached = window.sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (resultatIaValide(parsed)) { setQrcResults(prev => ({ ...prev, [key]: parsed })); return; }
+          }
+        } catch { /* cache illisible : on corrige */ }
+        qrcCorrectionsEnCoursRef.current.add(key);
         setQrcResults(prev => ({ ...prev, [key]: "loading" }));
         try {
-          const { data, error } = await supabase.functions.invoke("corriger-qrc", {
-            body: {
-              question: q.enonce,
-              reponseEtudiant: reponse,
-              reponsesAttendues: q.reponsesAttendues || [],
-              matiereId: "reglementation_taxi",
-              pointsQuestion: 2,
-            },
-          });
-          if (error) throw error;
-          setQrcResults(prev => ({ ...prev, [key]: data }));
+          for (let tentative = 0; tentative < 3; tentative++) {
+            if (tentative > 0) await new Promise(r => setTimeout(r, tentative === 1 ? 2000 : 5000));
+            const { data, error } = await supabase.functions.invoke("corriger-qrc", {
+              body: {
+                question: q.enonce,
+                reponseEtudiant: reponse,
+                reponsesAttendues: q.reponsesAttendues || [],
+                matiereId: "reglementation_taxi",
+                pointsQuestion: 2,
+              },
+            });
+            if (!error && resultatIaValide(data)) {
+              try { window.sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch { /* ignore */ }
+              setQrcResults(prev => ({ ...prev, [key]: data }));
+              return;
+            }
+            const status = (error as any)?.context?.status as number | undefined;
+            if (error && !echecRetentable(status)) break;
+          }
+          setQrcResults(prev => ({ ...prev, [key]: { indisponible: true } }));
         } catch (e) {
           console.error(e);
-          // Échec ou délai dépassé : aucune note inventée, la réponse reste enregistrée, l'élève peut réessayer.
           setQrcResults(prev => ({ ...prev, [key]: { indisponible: true } }));
-          toast.error("Correction indisponible, réessayez");
+        } finally {
+          qrcCorrectionsEnCoursRef.current.delete(key);
+        }
+      };
+      const corrigerToutesQrc = (exoId: number, questions: any[]) => {
+        const keys = qrcACorriger(exoId, questions, qrcAnswers, selectedAnswers, qrcResults);
+        for (const k of keys) {
+          const q = questions.find((qq: any) => `${exoId}-${qq.id}` === k);
+          if (q) void handleQrcCorrection(exoId, q, k);
         }
       };
 
