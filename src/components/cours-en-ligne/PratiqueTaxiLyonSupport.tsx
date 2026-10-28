@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, FileText, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supportPratiqueTaxiLyon } from "@/lib/pratiqueVtcLyonSupport";
+import { supportPratiqueTaxiLyon } from "@/lib/pratiqueTaxiLyonSupport";
 
 /** Supplementary reading only: no completion callback or persisted activity. */
 export default function PratiqueTaxiLyonSupport({ moduleId }: { moduleId: number }) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PRATIQUE_TAXI_LYON_SUPPORT, supportPratiqueTaxiLyon } from "@/lib/pratiqueVtcLyonSupport";
+import { PRATIQUE_TAXI_LYON_SUPPORT, supportPratiqueTaxiLyon } from "@/lib/pratiqueTaxiLyonSupport";
 import { activitesDuModule } from "@/lib/jeuxPedagogiques";
 
 describe("Support Pratique TAXI Lyon en consultation", () => {
