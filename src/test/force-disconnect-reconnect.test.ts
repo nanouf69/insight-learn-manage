@@ -19,6 +19,11 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (...args: any[]) => rpcMock(...args),
     from: (...args: any[]) => fromMock(...args),
+    // Le hook lit la session pour le jeton de fermeture d'onglet (ajout ultérieur au test).
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
   },
 }));
 
