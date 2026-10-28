@@ -32,7 +32,7 @@ export function numeroQuestionSnapshot(questions: any[], questionId: unknown): n
   return i >= 0 ? i + 1 : null;
 }
 
-export default function CorrectionsIaEleve({ attemptIds, nomsMatieres = {} }: { attemptIds: string[]; nomsMatieres?: Record<string, string> }) {
+export default function CorrectionsIaEleve({ attemptIds, nomsMatieres: nomsInitiaux = {} }: { attemptIds: string[]; nomsMatieres?: Record<string, string> }) {
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const cle = attemptIds.slice().sort().join(",");
 
@@ -50,10 +50,15 @@ export default function CorrectionsIaEleve({ attemptIds, nomsMatieres = {} }: { 
     ]);
     const snap = new Map(((att ?? []) as any[]).map((a) => [a.attempt_id, a.snapshot]));
     setLignes(ia.map((q) => {
+      let nomsMatieres = nomsInitiaux;
       const s = snap.get(q.attempt_id) as any;
       const qs = (Array.isArray(s?.questions) ? s.questions : []).find((x: any) => String(x.id) === String(q.question_id));
       const c = ((corr ?? []) as any[]).find((x) => x.qrc_instance_id === q.qrc_instance_id);
-      const code = String(s?.matiere ?? "");
+      const mats = Array.isArray(s?.matieres) ? s.matieres : [];
+      const seule = mats.length === 1 ? mats[0] : null;
+      const code = String(s?.matiere ?? qs?.matiere ?? seule?.subject_id ?? "");
+      const titre = seule && String(seule.subject_id) === code ? String(seule.titre ?? "") : "";
+      if (titre && !nomsMatieres[code]) nomsMatieres = { ...nomsMatieres, [code]: titre };
       return {
         qrcId: q.qrc_instance_id,
         matiere: code ? (nomsMatieres[code] && nomsMatieres[code] !== code ? `${nomsMatieres[code]} (${code})` : code) : "",
