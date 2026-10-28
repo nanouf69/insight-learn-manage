@@ -6,7 +6,7 @@ Méthode : texte des fiches Word (Definitions_*, Bilan_QRC_*) comparé question 
 | Formation | Élément | Fiche (avant) | Livre (page) | Décision |
 |---|---|---|---|---|
 | VTC + TAXI | Définition 1 « Honorabilité » | « Le fait d'avoir un casier judiciaire n°2 (B2) vierge. » | TAXI p.40 / VTC p.36 : « vierge de toute condamnation incompatible… » | **Corrigée** dans une nouvelle version `Definitions_VTC_2026-10-28.docx` / `Definitions_Taxi_2026-10-28.docx` (ancien fichier conservé) |
-| TA | QRC « autorités compétentes pour délivrer une ADS » (cours QRC affiché, module 37 / 28) | « Soit le maire, soit le préfet de police » | TA p.14 / TAXI p.67 : maire, président de l'EPCI ou de la Métropole (Lyon), préfet de police à Paris, préfet pour les aéroports | **Corrigée** à l'affichage du cours (texte de révision, pas de note) |
+| TA | QRC « autorités compétentes pour délivrer une ADS » (cours QRC affiché dans le module 27 « Bilan exercices TA ») | « Soit le maire, soit le préfet de police » | TA p.14 / TAXI p.67 : maire, président de l'EPCI ou de la Métropole (Lyon), préfet de police à Paris, préfet pour les aéroports | **Corrigée** à l'affichage du cours (texte de révision, pas de note) |
 | TAXI/TA examens blancs | Même question, réponse attendue « Les mairies. » (versions d'examen publiées, modules 90006/90012, 11, 13) | — | idem | **NON modifiée** : changer une réponse attendue d'examen blanc exige une nouvelle version + publication explicite (règle noyau). Proposition à valider. |
 | VA | QRC « 4 moyens de communication » | SMS au lieu de réseaux sociaux | p.9 | Les deux sont justes : inchangé |
 | VA | Monôme / binôme, mercatique, retard client | formulations plus courtes/longues | p.10–11 | Même sens : inchangé |
