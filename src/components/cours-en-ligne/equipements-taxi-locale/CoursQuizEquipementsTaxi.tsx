@@ -23,10 +23,16 @@ export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT 
       <p role="status" className="text-sm font-medium">{s.statut}</p>
     </div>
     {!s.charge && compteId && <Button variant="outline" onClick={() => void s.relire()}>Réessayer la lecture</Button>}
-    {s.confirme && <p className="text-sm text-muted-foreground">Réalisation confirmée conservée : consultation du corrigé, aucune réponse ne sera réécrite.</p>}
+    {s.confirme && (() => {
+      const exactes = QUESTIONS_EQUIPEMENTS.filter((q) => (s.valeurs[q.id] ?? "") === String(q.correct)).length;
+      return <div role="region" aria-label="Résultats" data-testid="equipements-resultats" className="rounded-lg border-2 border-primary bg-background p-4 space-y-1">
+        <p className="text-lg font-bold">✅ Quiz terminé — {exactes} / {QUESTIONS_EQUIPEMENTS.length} réponses exactes</p>
+        <p className="text-sm text-muted-foreground">Série non notée. Le corrigé de chaque question est affiché ci-dessous ; aucune réponse ne sera réécrite.</p>
+      </div>;
+    })()}
     {QUESTIONS_EQUIPEMENTS.map((q, index) => {
       const rep = s.valeurs[q.id] ?? "";
-      const corrige = !!corriges[q.id];
+      const corrige = s.confirme || !!corriges[q.id];
       return <div key={q.id} className="space-y-3 border-b pb-5" data-testid={`equipements-question-${index + 1}`}>
         <fieldset disabled={s.confirme || s.busy || !s.charge} className="space-y-4 min-w-0">
           <h3 className="text-lg font-bold leading-relaxed"><span className="text-primary mr-2">Q{index + 1}</span>{q.enonce}</h3>
@@ -34,9 +40,9 @@ export function QuizEquipements({ compteId, transport, serie = SERIE_COMPLEMENT 
             <Checkbox checked={rep === String(i)} onCheckedChange={(c) => s.modifier(q.id, c ? String(i) : "")} aria-label={texte} /><span>{texte}</span>
           </Label>)}</div>
         </fieldset>
-        <Button variant="outline" size="sm" disabled={!rep} onClick={() => setCorriges((v) => ({ ...v, [q.id]: !v[q.id] }))}>{corrige ? "Masquer le corrigé" : "Voir le corrigé"}</Button>
+        {!s.confirme && <Button variant="outline" size="sm" disabled={!rep} onClick={() => setCorriges((v) => ({ ...v, [q.id]: !v[q.id] }))}>{corrige ? "Masquer le corrigé" : "Voir le corrigé"}</Button>}
         {corrige && <div className="border-l-4 border-primary bg-muted p-4 space-y-2" role="region" aria-label="Corrigé">
-          <p className="font-bold">{rep === String(q.correct) ? "✅ Exact" : "Réponse à retenir"} : {q.choix[q.correct]}</p>
+          <p className="font-bold">{rep === String(q.correct) ? "✅ Exact" : rep === "" ? "Réponse à retenir" : "❌ Votre réponse : " + (q.choix[Number(rep)] ?? "") + " — Bonne réponse"} : {q.choix[q.correct]}</p>
           <p className="leading-relaxed">{q.justification}</p>
           <p className="text-xs text-muted-foreground">Diapositive {q.diapositive} du cours.</p>
         </div>}
