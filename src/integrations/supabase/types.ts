@@ -8366,6 +8366,18 @@ export type Database = {
           type_signalement: string
         }[]
       }
+      agenda_blocs_emargement_eleve: {
+        Args: { p_apprenant_id: string }
+        Returns: {
+          formation: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour: number
+          publics_cibles: string[]
+          semaine_debut: string
+        }[]
+      }
       alerter_qrc_ia_attente_24h: { Args: never; Returns: number }
       alerter_qrc_ia_coupee: { Args: never; Returns: number }
       apply_admin_canonical_quiz_actions: {

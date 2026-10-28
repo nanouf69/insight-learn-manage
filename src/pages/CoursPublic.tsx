@@ -1290,10 +1290,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // - Formation continue : matin / aprem (selon l'heure)
   // - Présentiel : matin / aprem / soir (selon l'agenda du jour)
   useEffect(() => {
-    // Ne jamais relancer l'émargement pendant un module / quiz / examen :
-    // cela démontait la page au bout du refresh 60s et donnait l'impression
-    // d'une déconnexion côté apprenant.
-    if (selectedModule || isInExam || emargementStatusRef.current === "skipped") {
+    // Jamais pendant un examen. Dans un module (ex. lien direct dès la connexion), une
+    // seule lecture à l'ouverture : bandeau non bloquant, pas de rafraîchissement 60 s,
+    // la fenêtre de signature s'ouvre seule en revenant à l'accueil.
+    if (isInExam || emargementStatusRef.current === "skipped") {
       return;
     }
 
@@ -1879,6 +1879,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Module 87 (Bilan fin de formation FC VTC) est désormais rendu comme un module quiz standard via StableModuleDetailView ci-dessous.
     return (
       <div className="min-h-screen bg-background">
+        {bandeauSignature}
+        {modalSignature}
         <ErrorBoundary>
           <StableModuleDetailView
             module={selectedModule}

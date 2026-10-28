@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Feuilles d’émargement invisibles après connexion — 28/10 09:00 UTC
+- [x] Cause prouvée : la lecture de l’agenda est réservée Admin ; côté élève elle revenait vide sans erreur → aucune feuille due (11/11 élèves session TAXI/TA, 0 signature depuis le 26/10).
+- [x] Lecture serveur dédiée (horaires des semaines de ses sessions seulement), refus = bandeau « vérification impossible » ; feuille contrôlée aussi en ouvrant un module directement (bandeau, fenêtre en revenant à l’accueil) ; TA = première semaine comme l’Admin.
+- [x] 6 tests nouveaux PASS ; calcul réel lecture seule : 55 feuilles dues (5 × 11) au 28/10 ~10h Paris ; navigateur isolé élève fictif : fenêtre + bandeau, panne, module direct, mobile.
+- [ ] Publication du site : en attente d’accord, car elle embarquerait aussi le travail Quiz Équipements 20 questions et le téléchargement PDF de ce matin.
+
 ## Refaire une matière d’examen blanc — 27/10 22:52 UTC, autorisation ciblée
 - [x] Relire les circuits actuels et protections Kevin/QRC ; ne pas réutiliser la reprise neutralisante.
 - [x] Préparer bouton résultat/temps écoulé, reçu serveur idempotent, copies/files conservées ; SQL non appliqué au backend partagé.
