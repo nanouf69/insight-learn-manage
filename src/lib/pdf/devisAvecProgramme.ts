@@ -29,7 +29,7 @@ export async function devisAvecProgramme(
       (await fusion.copyPages(pdf, pdf.getPageIndices())).forEach((p) => fusion.addPage(p));
     }
     const bytes = await fusion.save();
-    return { blob: new Blob([bytes], { type: "application/pdf" }), programmeInclus: true };
+    return { blob: new Blob([bytes as BlobPart], { type: "application/pdf" }), programmeInclus: true };
   } catch (e) {
     console.error("[devisAvecProgramme]", e);
     return { blob: devisBlob, programmeInclus: false };
