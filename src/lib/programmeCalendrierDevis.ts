@@ -205,3 +205,33 @@ export function sessionPourDates(candidates: SessionPublique[], debut?: string |
   if (!debut) return null;
   return candidates.find((s) => s.date_debut === debut) ?? null;
 }
+
+export interface LigneAgenda { jour: string | null; nature: "Théorie" | "Pratique"; plages: PlageHoraire[]; heures: number; cumul: number }
+export interface AgendaAutomatique { lignes: LigneAgenda[]; total: number; attendu: number | null; valide: boolean; anomalies: string[] }
+
+/**
+ * Agenda jour par jour déduit des dates réelles de la session (affichage du devis uniquement) :
+ * théorie du lundi au vendredi hors jours fériés, 6 h (journée) ou 4 h (soirée VTC),
+ * puis pratique 6 h le dernier samedi (ou « date à confirmer par le centre »).
+ * Si le nombre de jours ne donne pas exactement la durée de la session, l'agenda est refusé (aucun jour inventé ni retiré).
+ */
+export function agendaAutomatique(s: SessionPublique, filiere: Filiere, soir: boolean): AgendaAutomatique {
+  const anomalies: string[] = [];
+  const attendu = heuresSessionPourApprenant(s, filiere);
+  const plages = soir ? PLAGES_SOIREE : PLAGES_JOURNEE;
+  const parJour = heuresPlages(plages) ?? 0;
+  const lignes: LigneAgenda[] = [];
+  let cumul = 0;
+  if (!s.date_debut || !s.date_fin) anomalies.push("Dates de session inconnues");
+  else for (const j of joursOuvres(s.date_debut, s.date_fin)) {
+    if (jourFerie(j)) continue;
+    cumul += parJour;
+    lignes.push({ jour: j, nature: "Théorie", plages, heures: parJour, cumul });
+  }
+  if (attendu === null) anomalies.push("Durée de théorie de la session non déterminée");
+  else if (Math.abs(cumul - attendu) > 1e-6) anomalies.push(`Les ${lignes.length} jour(s) de cours de la session donnent ${cumul} h au lieu des ${attendu} h annoncées : agenda à confirmer par le centre`);
+  const p = samediPratique(s);
+  cumul += HEURES_PRATIQUE;
+  lignes.push({ jour: p.jour, nature: "Pratique", plages: PLAGES_JOURNEE, heures: HEURES_PRATIQUE, cumul });
+  return { lignes, total: cumul, attendu: attendu === null ? null : attendu + HEURES_PRATIQUE, valide: anomalies.length === 0, anomalies };
+}
