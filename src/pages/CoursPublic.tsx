@@ -1468,7 +1468,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Jamais pendant la confirmation d'identité ni le conflit de session : la fenêtre
     // d'émargement (modale) bloquerait les clics sur ces écrans prioritaires.
     if (!identityConfirmed || alreadyConnected) return;
-    if (emargementSuiviRef.current.doitOuvrir(cleAuth, cle, !!selectedModule || isInExam)) setShowSignatureModal(true);
+    // Aussi dans un module (reprise directe d'un cours) : des élèves n'ouvrent jamais
+    // l'accueil et ne signaient donc jamais. Seul un examen en cours bloque l'ouverture.
+    if (emargementSuiviRef.current.doitOuvrir(cleAuth, cle, isInExam)) setShowSignatureModal(true);
   }, [identityConfirmed, alreadyConnected, cleAuth, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
   // Nouvelle authentification du même compte (sans remontage) : relire les feuilles dues.
   useEffect(() => { if (cleAuth) setEmargementRefreshTick((t) => t + 1); }, [cleAuth]);
