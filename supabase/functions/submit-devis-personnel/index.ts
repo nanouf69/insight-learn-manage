@@ -1,3 +1,4 @@
+import { apposerSignatureTampon } from "../_shared/tamponFtransport.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -46,7 +47,20 @@ Deno.serve(async (req) => {
 
     const safeFile = (fileName || `${numDevis}.pdf`).replace(/[^a-zA-Z0-9._-]/g, "_");
     const storagePath = `public/${numDevis}_${safeFile}`;
-    const pdfBytes = base64ToBytes(pdfBase64);
+    let pdfBytes: Uint8Array = base64ToBytes(pdfBase64);
+    let pdfSigneBase64: string | null = null;
+    if (hasSigned) {
+      try {
+        const tamponne = await apposerSignatureTampon(supabase, pdfBytes.slice().buffer);
+        if (tamponne) {
+          await supabase.storage.from("devis").upload(storagePath.replace(/\.pdf$/i, "") + "_original_client.pdf", pdfBytes, { contentType: "application/pdf", upsert: false });
+          pdfBytes = tamponne;
+          let bin = "";
+          for (let i = 0; i < tamponne.length; i += 0x8000) bin += String.fromCharCode(...tamponne.subarray(i, i + 0x8000));
+          pdfSigneBase64 = btoa(bin);
+        }
+      } catch (e) { console.error("Signature/tampon FTRANSPORT non apposés :", e); }
+    }
 
     let uploadOk = false;
     for (let attempt = 0; attempt < 3 && !uploadOk; attempt++) {
@@ -285,7 +299,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, apprenantId, fichierUrl }),
+      JSON.stringify({ success: true, apprenantId, fichierUrl, pdfSigneBase64 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e: any) {
