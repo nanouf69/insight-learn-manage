@@ -57,6 +57,7 @@ import ImageCarouselViewer from "./ImageCarouselViewer";
 import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
 import LivreFormationViewer, { type FormationLivre } from "./LivreFormationViewer";
 import PratiqueVtcLyonSupport from "./PratiqueVtcLyonSupport";
+import PratiqueTaxiLyonSupport from "./PratiqueTaxiLyonSupport";
 import { NATIONALE_PARTIE1_IMAGES, NATIONALE_PARTIE2_IMAGES } from "./slides/nationale-slide-images";
 
 /** Cours dont les diapositives sont rendues à l'identique du PowerPoint (images) */
@@ -9765,6 +9766,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           {/* Grilles d'évaluation pratique (tous les passages) */}
           {Number(module.id) === 8 && <PratiqueVtcLyonSupport key={`support-vtc-${apprenantId ?? "apercu"}`} moduleId={8} />}
+          {Number(module.id) === 6 && <PratiqueTaxiLyonSupport key={`support-taxi-${apprenantId ?? "apercu"}`} moduleId={6} />}
           {Number(module.id) === 6 && (
             <Suspense fallback={<p role="status">Chargement des exercices TAXI…</p>}>
               <ExercicesTaxi2026 compteId={apprenantId ?? null} />

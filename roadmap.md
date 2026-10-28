@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Support PDF Pratique TAXI — 28/10 16:52 UTC
+- [x] Support consultable uniquement module 6, 19 images sans PDF original, sans activité ni callback de fin ; acquis et jalons inchangés.
+- [ ] Tests et vérification écran du lecteur TAXI ; non publié. Chargement CDN réel soumis à la même limite que le support VTC.
+
 ## Support PDF Pratique VTC — 28/10 16:44 UTC
 - [x] Consultation complémentaire module 8 uniquement, 19 images hébergées ; aucun PDF original mis en ligne, bouton télécharger/imprimer absent.
 - [x] Aucun cours/page/activité/jalon ajouté ; 19 tests PASS, compilation OK. Aperçu admin connecté bureau/375 : ouverture et navigation jusqu'à 19/19, pages rendues visuellement vérifiées avec images exactes interceptées (médias CDN absents du serveur local).
