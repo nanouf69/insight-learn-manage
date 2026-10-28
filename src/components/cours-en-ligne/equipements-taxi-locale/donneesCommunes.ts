@@ -52,6 +52,6 @@ export const QUESTIONS_METROPOLE = construire(COMMUNES_METROPOLE, HORS_METROPOLE
   "Laquelle de ces communes fait partie de la Métropole de Lyon ?",
   (c) => `${c} fait partie des 58 communes de la Métropole de Lyon. Les deux autres communes proposées n'en font pas partie.`);
 
-export const QUESTIONS_ZUPC = construire(COMMUNES_ZUPC, [...HORS_ZUPC, ...HORS_METROPOLE.filter((c) => c !== "Genas")],
+export const QUESTIONS_ZUPC = construire(COMMUNES_ZUPC, [...HORS_ZUPC, ...HORS_METROPOLE.filter((c) => c !== "Genas" && c !== "Colombier-Saugnieu")],
   "Laquelle de ces communes (ou lieu) fait partie de la ZUPC de Lyon ?",
   (c) => `${c} fait partie de la ZUPC de Lyon (23 communes + l'aéroport de Lyon-Saint-Exupéry). Les deux autres propositions n'en font pas partie.`);
