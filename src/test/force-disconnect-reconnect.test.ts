@@ -27,6 +27,12 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
+// Contrôle « même compte / session fraîche » testé ailleurs : ici simple passage.
+vi.mock("@/lib/sessionRpc", () => ({
+  freshSessionCall: (call: () => PromiseLike<unknown>) => Promise.resolve(call()),
+  freshSessionRead: (call: () => PromiseLike<unknown>) => Promise.resolve(call()),
+}));
+
 // Chainable builder that resolves to a given result when awaited.
 function makeChain(finalResult: any) {
   const chain: any = {};
