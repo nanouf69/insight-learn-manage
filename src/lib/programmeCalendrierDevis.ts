@@ -156,8 +156,7 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     if (j.jour < s.date_debut || j.jour > s.date_fin) anomalies.push(`Le ${j.jour} est hors des dates de la session`);
     const w = jourSemaine(j.jour);
     if (w === 0 || w === 6) anomalies.push(`Le ${j.jour} n'est pas un jour de semaine (cours du lundi au vendredi)`);
-    const ferie = jourFerie(j.jour);
-    if (ferie) anomalies.push(`Le ${j.jour} est un jour férié (${ferie}) : à confirmer`);
+    // Jour férié = jour de cours comme les autres (le centre travaille les jours fériés).
     jours.push({ ...j, heures: h });
     heuresSaisies += h;
   }
