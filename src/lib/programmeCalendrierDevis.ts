@@ -211,8 +211,8 @@ export interface AgendaAutomatique { lignes: LigneAgenda[]; total: number; atten
 
 /**
  * Agenda jour par jour déduit des dates réelles de la session (affichage du devis uniquement) :
- * théorie du lundi au vendredi hors jours fériés, 6 h (journée) ou 4 h (soirée VTC),
- * puis pratique 6 h le dernier samedi (ou « date à confirmer par le centre »).
+ * théorie du lundi au vendredi, jours fériés INCLUS (le centre travaille les jours fériés),
+ * 6 h (journée) ou 4 h (soirée VTC), puis pratique 6 h le dernier samedi (ou « date à confirmer par le centre »).
  * Si le nombre de jours ne donne pas exactement la durée de la session, l'agenda est refusé (aucun jour inventé ni retiré).
  */
 export function agendaAutomatique(s: SessionPublique, filiere: Filiere, soir: boolean): AgendaAutomatique {
@@ -224,7 +224,6 @@ export function agendaAutomatique(s: SessionPublique, filiere: Filiere, soir: bo
   let cumul = 0;
   if (!s.date_debut || !s.date_fin) anomalies.push("Dates de session inconnues");
   else for (const j of joursOuvres(s.date_debut, s.date_fin)) {
-    if (jourFerie(j)) continue;
     cumul += parJour;
     lignes.push({ jour: j, nature: "Théorie", plages, heures: parJour, cumul });
   }
