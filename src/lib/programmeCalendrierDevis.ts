@@ -126,16 +126,15 @@ const jourSemaine = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
 /**
  * Règle pratique (présentiel) : 6 h le samedi de fin si la session finit un samedi,
  * sinon le dernier samedi qui précède la date de fin, 9h–12h / 13h–16h.
- * Refus (null + motif) si le samedi sort de la session, est férié ou est déjà un jour de cours.
- */
+ * Le samedi peut tomber un jour férié : le centre travaille les jours fériés.
+ * Refus (null + motif) si le samedi sort de la session ou est déjà un jour de cours.
+  */
 export function samediPratique(s: Pick<SessionPublique, "date_debut" | "date_fin" | "jours">): { jour: string | null; anomalie: string | null } {
   if (!s.date_debut || !s.date_fin || !/^\d{4}-\d{2}-\d{2}$/.test(s.date_fin)) return { jour: null, anomalie: "Date de fin de session inconnue : date de pratique à confirmer" };
   const d = new Date(`${s.date_fin}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7));
   const jour = d.toISOString().slice(0, 10);
   if (jour < s.date_debut) return { jour: null, anomalie: "Session trop courte : aucun samedi entre le début et la fin, date de pratique à confirmer" };
-  const ferie = jourFerie(jour);
-  if (ferie) return { jour: null, anomalie: `Le samedi ${jour} prévu pour la pratique est férié (${ferie}) : date de pratique à confirmer` };
   if ((s.jours || []).some((j) => j.jour === jour && j.nature !== "pratique")) return { jour: null, anomalie: `Le samedi ${jour} est déjà occupé dans le calendrier : date de pratique à confirmer` };
   return { jour, anomalie: null };
 }
