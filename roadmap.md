@@ -1,5 +1,14 @@
 # Feuille de route
 
+## Livres de formation 70–73 — suite 28/10 13:20 UTC
+- [x] Audit fiches/définitions/QRC contre les 4 livres ; 2 corrections justifiées (définition honorabilité VTC/TAXI en nouvelle version, réponse ADS du cours TA) ; rapport docs/livres-formation-audit-2026-10-28.md.
+- [x] Accès testés (admin, anonyme, jeton invalide, page hors livre, expiration, stockage public) ; 2 erreurs serveur corrigées et déployées ; aperçu bureau/tablette/mobile 4 livres.
+- [x] Anciens livres archivés en privé ; références actives supprimées.
+- [ ] Anciennes adresses publiques encore valides : suppression en attente de la résolution du calcul figé.
+- [ ] Réponse attendue « Les mairies. » aux examens blancs TAXI/TA : nouvelle version + publication explicite, à valider.
+- [ ] Tests élèves réels TAXI/TA/VA et clics de connexion : bloqués (approbation de connexion indisponible, aucun compte technique de ces formations).
+- [ ] Publication des fiches/du correctif Imprimer : en attente d'accord.
+
 ## Kevin FERNANDES — « attente » sur EB4/EB5 — 28/10 09:10 UTC
 - [x] Cause prouvée : 0 QRC en attente côté serveur (toutes corrigées IA, notes définitives) ; l'écran rejetait le passage serveur car l'ancienne fiche ne garde qu'un résumé des questions, puis affichait l'ancienne copie jamais corrigée.
 - [x] Correctif d'affichage seul (matières à QRC, mêmes réponses, passage définitif) + 6 tests ; même cause chez 13 élèves / 61 matières, corrigée par le même affichage ; aucune IA relancée.

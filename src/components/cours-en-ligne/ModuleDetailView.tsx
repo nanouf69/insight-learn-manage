@@ -2811,7 +2811,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       cours: [
         { id: 1, titre: "Livre de formation VTC", description: "Livre complet de la formation VTC à consulter.", actif: true, fichiers: [{ nom: "Livre_VTC_FINAL_corrige.pdf", url: "livre-formation:vtc" }] },
         { id: 2, titre: "Télécharger le livre VTC", description: "Livre complet de la formation VTC à télécharger.", actif: false, fichiers: [{ nom: "Livre_VTC_FINAL_corrige.pdf", url: "livre-formation:vtc" }] },
-        { id: 3, titre: "Définitions VTC", description: "Glossaire et définitions clés de la formation VTC.", actif: true, fichiers: [{ nom: "Definitions_VTC.docx", url: "/cours/vtc/Definitions_VTC.docx" }] },
+        { id: 3, titre: "Définitions VTC", description: "Glossaire et définitions clés de la formation VTC.", actif: true, fichiers: [{ nom: "Definitions_VTC.docx", url: "/cours/vtc/Definitions_VTC_2026-10-28.docx" }] },
         { id: 4, titre: "Bilan QRC VTC", description: "Bilan des Questions à Réponse Courte pour la formation VTC.", actif: true, fichiers: [{ nom: "Bilan_QRC_VTC.docx", url: "/cours/vtc/Bilan_QRC_VTC.docx" }] },
       ],
       exercices: [],
@@ -2826,7 +2826,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       cours: [
         { id: 1, titre: "Livre de formation TAXI", description: "Livre complet de la formation TAXI à consulter.", actif: true, fichiers: [{ nom: "Livre_TAXI_FINAL_corrige_5.pdf", url: "livre-formation:taxi" }] },
         { id: 2, titre: "Télécharger le livre TAXI", description: "Livre complet de la formation TAXI à télécharger.", actif: false, fichiers: [{ nom: "Livre_TAXI_FINAL_corrige_5.pdf", url: "livre-formation:taxi" }] },
-        { id: 3, titre: "Définitions TAXI", description: "Glossaire et définitions clés de la formation TAXI.", actif: true, fichiers: [{ nom: "Definitions_Taxi.docx", url: "/cours/vtc/Definitions_Taxi.docx" }] },
+        { id: 3, titre: "Définitions TAXI", description: "Glossaire et définitions clés de la formation TAXI.", actif: true, fichiers: [{ nom: "Definitions_Taxi.docx", url: "/cours/vtc/Definitions_Taxi_2026-10-28.docx" }] },
         { id: 4, titre: "Bilan QRC TAXI", description: "Bilan des Questions à Réponse Courte pour la formation TAXI.", actif: true, fichiers: [{ nom: "Bilan_QRC_TAXI.docx", url: "/cours/vtc/Bilan_QRC_TAXI.docx" }] },
       ],
       exercices: [],
@@ -9710,7 +9710,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 size="sm"
                 className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
                 onClick={async () => {
-                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []);
+                  // Les livres protégés (livre-formation:*) se consultent page par page, jamais ouverts en PDF brut.
+                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []).filter(f => !LIVRE_SCHEME.test(f.url));
                   const printableFiles = allFiles.filter(f => 
                     f.nom.endsWith(".pdf") || f.url.endsWith(".pdf")
                   );
