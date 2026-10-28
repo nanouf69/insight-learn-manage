@@ -1,6 +1,8 @@
 # Feuille de route
 
 ## Textes à trous jeu Lyon — 28/10 14:37 UTC
+- [ ] Complément 14:41 : isoler résultats par joueur/jeu/quiz/tentative/version ; réidentifier à finishedAt + 24 h exactement, sans prolongation au reload ; changement joueur avant 24 h sans fuite ni déconnexion formation.
+- [ ] Tests fictifs requis : A quiz1→quiz2, B même appareil, 24 h−1/exact/+1, reload/multi-onglets, réponse lente A après B ; blocage identique : projet propriétaire lecture seule ici.
 - [x] Projet propriétaire Lyon Explorer Map identifié ; audit des deux textes (31/28 trous, banques 46/45), aucune réponse absente initialement.
 - [x] Reproductions publiques anonymes bureau/375/768 : doublons limitent à 30/31 et 26/28 ; banque nationale copiée vers locale ; ancienne banque incomplète restaurée. Rapport docs/audit-textes-trous-lyon-2026-10-28.md.
 - [ ] Correction bloquée : l'autre projet est accessible uniquement en copie lecture seule depuis cette conversation ; ouvrir Lyon Explorer Map pour appliquer les correctifs, sans toucher historiques/jalons.
