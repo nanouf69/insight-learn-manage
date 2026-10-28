@@ -322,6 +322,18 @@ export function theorySlotsForAttendance(rows: any[], blocs: any[], filiere: str
   return [...out.values()].sort((a,b) => a.date.localeCompare(b.date));
 }
 
+/**
+ * Blocs d'agenda (horaires seulement) des semaines des sessions de l'apprenant.
+ * La table agenda_blocs est réservée à l'Admin : un élève la lisait VIDE (sans erreur),
+ * donc aucune feuille n'était jamais due. Lecture serveur dédiée ; erreur = exception
+ * (affichée « vérification impossible », jamais « rien à signer »).
+ */
+export async function lireBlocsAgendaEmargement(apprenantId: string): Promise<any[]> {
+  const { data, error } = await (supabase.rpc as any)('agenda_blocs_emargement_eleve', { p_apprenant_id: apprenantId });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+
 export const getExpectedEmargements = async (params: {
   mode: "fc" | "presentiel";
   formationChoisie?: string | null;
@@ -336,7 +348,7 @@ export const getExpectedEmargements = async (params: {
     if (!apprenantId) return [];
     const [rows, blocs] = await Promise.all([
       fetchAllRows<any>((f,t) => supabase.from('session_apprenants').select('id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)').eq('apprenant_id',apprenantId).order('id').range(f,t)),
-      fetchAllRows<any>((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+      lireBlocsAgendaEmargement(apprenantId),
     ]);
     const filiere = String(params.typeApprenant ?? '').toLowerCase().split('-')[0];
     const paris = maintenantParis();
