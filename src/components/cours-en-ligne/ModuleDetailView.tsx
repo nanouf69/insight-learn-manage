@@ -4181,6 +4181,30 @@ const ContentCard = ({
                 <CourseFileLink fichier={f} compact />
                 <FileLastModified url={f.url} />
                 <FilePreviewDialog url={f.url} nom={f.nom} />
+                {/* Téléchargement : uniquement dans l'éditeur administrateur (lecture seule, aucun fichier modifié) */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ext = (f.url.split("?")[0].match(/\.(pptx?|pdf)$/i)?.[0] ?? "");
+                    const nomFichier = /\.(pptx?|pdf)$/i.test(f.nom) ? f.nom : `${f.nom}${ext}`;
+                    try {
+                      const r = await fetch(f.url);
+                      if (!r.ok) throw new Error(String(r.status));
+                      const blob = await r.blob();
+                      const u = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = u; a.download = nomFichier;
+                      document.body.appendChild(a); a.click(); a.remove();
+                      setTimeout(() => URL.revokeObjectURL(u), 30_000);
+                    } catch {
+                      window.open(f.url, "_blank", "noopener");
+                    }
+                  }}
+                  className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-primary/20 transition-colors"
+                  title="Télécharger ce fichier"
+                >
+                  <Download className="w-3.5 h-3.5" /> Télécharger
+                </button>
 
                 <button
                   onClick={() => onFileDeleted?.(item.id, i, f.url)}
