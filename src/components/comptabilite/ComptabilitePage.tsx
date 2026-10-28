@@ -912,7 +912,7 @@ export function ComptabilitePage() {
   const doublonsParId = useMemo(() => {
     const groupes = new Map<string, Facture[]>();
     for (const f of allFactures) {
-      if (f.type_financement === "fournisseur" || f.statut === "annulee") continue;
+      if (f.type_financement === "fournisseur" || f.statut === "annulee" || f.statut === "brouillon") continue;
       if (String(f.id).startsWith("draft-") || Number(f.montant_ttc) <= 0) continue;
       const qui = f.apprenant_id ? `a:${f.apprenant_id}` : `c:${(f.client_nom || "").trim().toLowerCase()}`;
       const key = `${qui}|${Number(f.montant_ttc).toFixed(2)}`;
@@ -939,7 +939,11 @@ export function ComptabilitePage() {
         montant_ttc: Number(f.montant_ttc),
         statut: f.statut,
         client_nom: f.client_nom,
-        beneficiaire: (f.apprenant_id && apprenantNames[f.apprenant_id]) || beneficiaireDepuisReference((f as any).numero_convention),
+        beneficiaire:
+          (f.apprenant_id && apprenantNames[f.apprenant_id]) ||
+          beneficiaireDepuisReference((f as any).numero_convention) ||
+          (/caisse des d/i.test(f.client_nom || "") ? "" : f.client_nom),
+        cleIdentite: f.apprenant_id ? `a:${f.apprenant_id}` : `c:${(f.client_nom || "").trim().toLowerCase()}`,
       })),
       exportCpf.lignes,
     );
@@ -948,7 +952,7 @@ export function ComptabilitePage() {
   const rapprochementStats = useMemo(() => {
     if (!rapprochement) return null;
     let vert = 0, rouge = 0, totalVert = 0, totalRouge = 0, doublons = 0, hors = 0;
-    const ventes2026 = factures.filter((f) => estVente2026({ ...f, montant_ttc: Number(f.montant_ttc) }));
+    const ventes2026 = factures.filter((f) => f.statut !== "brouillon" && estVente2026({ ...f, montant_ttc: Number(f.montant_ttc) }));
     for (const f of ventes2026) {
       const r = rapprochement.get(f.id);
       if (!r) continue;
@@ -1530,7 +1534,8 @@ export function ComptabilitePage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Vert : bénéficiaire + montant facturable d'un dossier « Service fait validé », un dossier pour une seule facture.
+                  Vert : concordance avec l'export (bénéficiaire + montant facturable d'un dossier « Service fait validé », un dossier pour une seule facture) — ce n'est pas une validation comptable certifiée.
+                  Brouillons non émis exclus.
                   Rouge : écart, non retrouvée, ambiguë, doublon potentiel ({rapprochementStats.doublons}) ou hors périmètre de l'export ({rapprochementStats.hors}).
                   Les factures n'ont pas de numéro de dossier CPF : la concordance repose sur le nom et le montant.
                 </p>

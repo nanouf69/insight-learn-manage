@@ -22,6 +22,7 @@ export interface FactureRapprochable {
   statut?: string | null;
   client_nom: string;
   beneficiaire: string; // nom/prénom élève lié, sinon tiré de la référence
+  cleIdentite?: string; // élève lié (ou client) pour détecter les doublons potentiels
 }
 
 export type CouleurRapprochement = "vert" | "rouge";
@@ -130,6 +131,7 @@ export function rapprocher(
     (a.date_emission ?? "").localeCompare(b.date_emission ?? "") || a.numero.localeCompare(b.numero),
   );
   for (const f of ventes) {
+    if (f.statut === "brouillon") continue; // jamais émise : hors rapprochement
     if (f.statut === "annulee") {
       res.set(f.id, { couleur: "rouge", motif: "Facture annulée : non rapprochée", dossiers: [] });
       continue;
@@ -186,6 +188,26 @@ export function rapprocher(
         });
       }
     });
+  });
+  // Doublons potentiels : même élève/client + même montant parmi les ventes 2026 actives.
+  // Jamais effacés ; seul un dossier distinct et validé pour chacune garde le vert.
+  const parIdentite = new Map<string, FactureRapprochable[]>();
+  for (const f of ventes) {
+    if (f.statut === "brouillon" || f.statut === "annulee" || !f.cleIdentite) continue;
+    const k = `${f.cleIdentite}|${Number(f.montant_ttc).toFixed(2)}`;
+    parIdentite.set(k, [...(parIdentite.get(k) ?? []), f]);
+  }
+  parIdentite.forEach((fs) => {
+    if (fs.length < 2) return;
+    const dossiersVerts = fs.map((f) => res.get(f.id)).filter((r) => r?.couleur === "vert").map((r) => r!.dossiers[0]?.numeroDossier);
+    const tousAppuyes = dossiersVerts.length === fs.length && new Set(dossiersVerts).size === fs.length;
+    if (tousAppuyes) return;
+    for (const f of fs) {
+      const r = res.get(f.id);
+      if (!r || r.motif.startsWith("Doublon")) continue;
+      const autres = fs.filter((o) => o.id !== f.id).map((o) => o.numero).join(", ");
+      res.set(f.id, { couleur: "rouge", motif: `Doublon potentiel avec ${autres} (même bénéficiaire et montant) · ${r.motif}`, dossiers: r.dossiers });
+    }
   });
   return res;
 }
