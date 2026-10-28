@@ -2038,6 +2038,15 @@ import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
+import { qrcACorriger, etatCorrectionQrc, pointsAvecQrc, reponseQrc, resultatIaValide, echecRetentable, cleCacheQrc } from "@/lib/qrcCorrectionFinale";
+
+/** Lance une action une seule fois à l'affichage (correction finale des QRC). */
+const LancerAuMontage = ({ run }: { run: () => void }) => {
+  const runRef = useRef(run);
+  runRef.current = run;
+  useEffect(() => { runRef.current(); }, []);
+  return null;
+};
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2026"));
@@ -6667,6 +6676,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string; indisponible?: boolean } | { indisponible: true; estCorrect?: undefined; pointsObtenus?: undefined; explication?: undefined } | "loading">>({});
+    const qrcCorrectionsEnCoursRef = useRef<Set<string>>(new Set());
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
