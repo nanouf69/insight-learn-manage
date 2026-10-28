@@ -104,3 +104,42 @@ Fichiers concernés : `src/data/reglementationTrousData.ts`, `src/components/Reg
 6. Tests de toutes les banques et de leurs occurrences, puis vrais clics/touches/clavier, doublons, retrait/remplacement, changement d'onglet/joueur, ancienne sauvegarde, 375/768/bureau et compte dédié. Publication isolée uniquement après vérification.
 
 La justesse juridique de chaque phrase n'a pas été certifiée par cet audit fonctionnel. Les énoncés parfois maladroits ne doivent pas être modifiés sans version distincte et revue pédagogique.
+
+## Complément identité/résultats — demande 28/10 14:41 UTC
+
+Exigence ajoutée au même périmètre : redemander l'identification **à 24 heures exactement après la fin réelle du quiz**, sans prolongation lors d'une navigation/recharge. Empêcher toute lecture de résultats d'un autre joueur avant comme après ce délai ; proposer Changer joueur/Déconnecter dans le jeu seul. Les comptes formation et leurs permissions restent indépendants.
+
+### Reproductions sur le jeu publié, données exclusivement fictives
+
+Script `/tmp/browser/lyon-identite/repro_resultats.py`, navigateur jetable, aucun joueur créé ni résultat serveur écrit :
+
+1. Injection locale d'une sauvegarde historique fictive nationale marquée terminée et datée de 48 heures : **résultat affiché sans réidentification**. Le champ fictif `finishedAt` est ignoré puis omis lors de l'enregistrement du moteur existant ; il ne constitue pas une preuve de fin serveur.
+2. Navigation nationale → locale : **écran « locale — terminé ! » hérité de la sauvegarde nationale**. Une sauvegarde incohérente `gameComplete: true`, un seul verrou, suffit même à afficher « Bravo » avec **1/28**, car la réussite restaurée n'est pas contrôlée.
+3. Un second onglet remplace l'identité locale fictive A par B : **le premier onglet continue d'afficher le résultat précédent**. Aucun bouton Changer joueur n'est présent sur cet écran. Il s'agit d'une simulation du changement de la clé existante, pas d'une connexion réelle B via un service d'authentification.
+
+Captures observées : `resultat-a-48h.png`, `resultat-local-herite.png`, `resultat-apres-changement-b.png` sous `/tmp/browser/lyon-identite/`.
+
+### État des protections
+
+- Le moteur textes à trous n'enregistre aucun horodatage fiable de fin ; pas de règle 24 h actuellement implémentée.
+- Il lit une identité nominative globale au navigateur, pas une identité vérifiée par jeu. Les états/sauvegardes ne contiennent ni tentative immuable ni version.
+- Le résultat reste visible pendant un changement d'identité inter-onglets ; absence de réaction au changement de stockage dans le moteur inspecté.
+- Pas de requête de résultats serveur ni de cache de requêtes dans ce moteur : inventer une correction de requête serveur ici ne traiterait pas la cause prouvée. Les autres jeux et leurs éventuels appels doivent être revus dans le projet propriétaire.
+
+### Tests restant obligatoires après correction
+
+NON PROUVÉS : vrai parcours fictif A termine quiz1 → quiz2, identification B via l'interface, seuils 24 h−1/24 h exact/24 h+1 depuis une vraie fin enregistrée, recharge sans prolongation, plusieurs onglets synchronisés, réponse asynchrone A tardive après B, ACL et historique autorisé. Les essais présents démontrent les défauts **avant correction**, pas la livraison ni une authentification sûre.
+
+Une date historique absente ou non fiable ne doit pas être inventée à la recharge : préserver la copie, exiger une nouvelle identification avant l'accès, et ne pas fabriquer une nouvelle preuve de fin. La politique d'expiration doit protéger chaque jeu/quiz indépendamment ; le changement d'identité retire uniquement l'état actif concerné et laisse les historiques conservés, avec lectures conditionnées au propriétaire autorisé.
+
+**Blocage inchangé : ouvrir Lyon Explorer Map pour appliquer la correction ; ce projet n'offre qu'une copie lecture seule de l'autre application. Aucun correctif fonctionnel ni publication effectué ici.**
+
+### Extension de l'audit aux autres jeux — preuves de code
+
+- `QuartiersQuiz.tsx:81-140` utilise l'identité du jeu Légende, pas celle du jeu Quartiers ; sa sauvegarde recalcule le nom de la clé sans restaurer un nouvel état. Une ancienne saisie peut donc être enregistrée sous une nouvelle identité lors d'un changement. Ce chemin n'a pas été reproduit avec une connexion via interface.
+- `QuartiersGame.tsx:674-688`, `CommunesGame.tsx:565-580` et `ZupcCommunesGame.tsx:490-505` retirent le joueur de l'état actif mais ne retirent pas sa sélection persistée. Un remontage peut restaurer cette identité malgré une déconnexion. Les historiques ne doivent pas être supprimés pour réparer cette sélection active.
+- Les callbacks différés de fin (`QuartiersGame.tsx:577-618`, `CommunesGame.tsx:441-482`, `ZupcCommunesGame.tsx:394-435`) ne sont pas invalidés par une déconnexion/nouvelle tentative. Ils capturent l'ancien joueur puis peuvent modifier l'écran et avancer l'onglet après un changement. Course démontrée par lecture de code, **NON PROUVÉE en navigateur**.
+- Aucun de ces états enregistrés ne possède de date de fin persistée ni de contrôle 24 h. La date ne peut pas être reconstituée honnêtement à partir du seul résultat sauvegardé.
+- Aucun cache de requêtes TanStack ni restauration par paramètre URL trouvé dans ces jeux. Les soumissions de résultats des jeux cartographiques utilisent un circuit serveur séparé avec prénom/nom, score, nombre et durée, sans identité jeu/tentative/version (`supabase/functions/submit-game-result/index.ts`). Ne pas le modifier dans le backend FTRANSPORT : il appartient à l'autre projet.
+
+Fichiers supplémentaires concernés par la correction dans le projet propriétaire : `QuartiersQuiz.tsx`, `ReglementationQuiz.tsx` (moteur non routé actuellement), `QuartiersGame.tsx`, `CommunesGame.tsx`, `ZupcCommunesGame.tsx`, `LegendBuilderGame.tsx` et, si des résultats privés serveur sont lus/écrits, leur circuit dédié avec contrôles d'autorisation et idempotence. Aucun type généré ne doit être édité manuellement.
