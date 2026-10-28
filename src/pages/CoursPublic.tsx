@@ -916,6 +916,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [emargementEnRetard, setEmargementEnRetard] = useState(0);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
+  // Confirmation d'identité (déclarée tôt : l'ouverture auto de l'émargement en dépend).
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
   const emargementStatusRef = useRef(emargementFCStatus);
   const lastQuizActivityAtRef = useRef(0);
@@ -1463,8 +1465,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     const cle = emargementFCStatus === "needed" && emargementCreneau ? `${emargementApprenantId || apprenant?.id}|${emargementDate}|${emargementCreneau}` : null;
     if (embedded) return;
+    // Jamais pendant la confirmation d'identité ni le conflit de session : la fenêtre
+    // d'émargement (modale) bloquerait les clics sur ces écrans prioritaires.
+    if (!identityConfirmed || alreadyConnected) return;
     if (emargementSuiviRef.current.doitOuvrir(cleAuth, cle, !!selectedModule || isInExam)) setShowSignatureModal(true);
-  }, [cleAuth, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
+  }, [identityConfirmed, alreadyConnected, cleAuth, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
   // Nouvelle authentification du même compte (sans remontage) : relire les feuilles dues.
   useEffect(() => { if (cleAuth) setEmargementRefreshTick((t) => t + 1); }, [cleAuth]);
 
@@ -1598,7 +1603,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Identity confirmation modal (shown at EVERY login, for all learners
   // including e-learning). State only, no persistence: reset on logout,
   // so the next login always re-prompts.
-  const [identityConfirmed, setIdentityConfirmed] = useState(false);
   // Règle définitive : une signature manquante ne bloque JAMAIS l'accès.
   // Bandeau « Signature en attente » + bouton qui ouvre la signature.
   const [showSignatureModal, setShowSignatureModal] = useState(false);
@@ -1815,7 +1819,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       </div>
     </div>
   ) : null;
-  const modalSignature = signatureEnAttente && showSignatureModal && emargementFCStatus === "needed" && emargementCreneau ? (
+  const modalSignature = signatureEnAttente && showSignatureModal && (embedded || (identityConfirmed && !alreadyConnected)) && emargementFCStatus === "needed" && emargementCreneau ? (
     <EmargementFCModal
       key={`${emargementDate || "today"}|${emargementCreneau}`}
       apprenantId={emargementApprenantId || apprenant!.id!}
