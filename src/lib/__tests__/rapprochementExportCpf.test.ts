@@ -47,3 +47,23 @@ describe("rapprochement export CPF", () => {
     expect(r.size).toBe(0);
   });
 });
+
+describe("doublons et brouillons", () => {
+  const lignes = parseExportCpf(csv);
+  it("même élève et montant hors CPF : les deux rouges doublon, aucune effacée", () => {
+    const r = rapprocher([
+      f("A", "Younes Languer", 200, { type_financement: "professionnel", cleIdentite: "a:1" }),
+      f("B", "Younes Languer", 200, { type_financement: "professionnel", cleIdentite: "a:1" }),
+    ], lignes);
+    expect(r.get("A")?.motif).toMatch(/^Doublon potentiel avec B/);
+    expect(r.get("B")?.motif).toMatch(/^Doublon potentiel avec A/);
+  });
+  it("brouillon non émis exclu, ne crée pas de doublon", () => {
+    const r = rapprocher([
+      f("A", "Jean Dupont", 1499, { cleIdentite: "a:2" }),
+      f("B", "Jean Dupont", 1499, { cleIdentite: "a:2", statut: "brouillon" }),
+    ], lignes);
+    expect(r.has("B")).toBe(false);
+    expect(r.get("A")?.couleur).toBe("vert");
+  });
+});
