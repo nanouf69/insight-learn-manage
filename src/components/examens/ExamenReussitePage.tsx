@@ -2515,6 +2515,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     return (
                       <TableRow key={apprenant.id} className="[&>td]:px-1.5 [&>td]:py-2">
                         <TableCell className="font-medium" title={apprenant.nom || undefined}>
+                          <div className="flex items-center gap-1 min-w-0">
                           {onNavigateToApprenant ? (
                             <button
                               type="button"
@@ -2524,13 +2525,28 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             >
                               {apprenant.nom}
                             </button>
-                          ) : apprenant.nom}
+                          ) : <span className="truncate">{apprenant.nom}</span>}
+                            <button
+                              type="button"
+                              title="Copier le nom"
+                              aria-label="Copier le nom"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try { await navigator.clipboard.writeText(apprenant.nom || ''); toast.success('Nom copié'); }
+                                catch { toast.error('Copie impossible'); }
+                              }}
+                              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                           <DossierBienvenueButton
                             apprenant={apprenant}
                             statutSuivi={statutsSession?.[apprenant.id]?.statut ?? (apprenant as any).statut_suivi ?? null}
                           />
                         </TableCell>
-                        <TableCell className="truncate" title={apprenant.prenom || undefined}>
+                        <TableCell title={apprenant.prenom || undefined}>
+                          <div className="flex items-center gap-1 min-w-0">
                           {onNavigateToApprenant ? (
                             <button
                               type="button"
@@ -2540,7 +2556,21 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             >
                               {apprenant.prenom}
                             </button>
-                          ) : apprenant.prenom}
+                          ) : <span className="truncate">{apprenant.prenom}</span>}
+                            <button
+                              type="button"
+                              title="Copier le prénom"
+                              aria-label="Copier le prénom"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try { await navigator.clipboard.writeText(apprenant.prenom || ''); toast.success('Prénom copié'); }
+                                catch { toast.error('Copie impossible'); }
+                              }}
+                              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </TableCell>
                         <TableCell><Badge className={`${tColor} max-w-full truncate px-1.5 text-[10px]`}>{tLabel}</Badge></TableCell>
                         <TableCell className="text-center">
