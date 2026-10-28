@@ -890,8 +890,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Formations Continues</SelectLabel>
-                    <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
-                    <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                    <SelectItem value="continue-vtc">FC VTC — Formation continue VTC - 200 €</SelectItem>
+                    <SelectItem value="continue-taxi">FC TAXI — Formation continue TAXI - 299 €</SelectItem>
                     <SelectItem value="mobilite-taxi">Formation Mobilité TAXI</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
@@ -1022,6 +1022,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectItem value="pa-taxi">PA TAXI</SelectItem>
                   <SelectItem value="rp-vtc">RP VTC</SelectItem>
                   <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                  <SelectItem value="continue-vtc">FC VTC (Formation continue VTC)</SelectItem>
+                  <SelectItem value="continue-taxi">FC TAXI (Formation continue TAXI)</SelectItem>
                 </SelectContent>
               </Select>
               {formData.type_apprenant && (
@@ -1056,6 +1058,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="pa-taxi">PA TAXI</SelectItem>
                     <SelectItem value="rp-vtc">RP VTC</SelectItem>
                     <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                    <SelectItem value="continue-vtc">FC VTC (Formation continue VTC)</SelectItem>
+                    <SelectItem value="continue-taxi">FC TAXI (Formation continue TAXI)</SelectItem>
                     <SelectItem value="vtc-e-presentiel">VTC E Présentiel</SelectItem>
                     <SelectItem value="taxi-e-presentiel">TAXI E Présentiel</SelectItem>
                     <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>

@@ -898,6 +898,8 @@ export function ApprenantForm() {
                   <SelectItem value="pa-taxi">PA TAXI</SelectItem>
                   <SelectItem value="rp-vtc">RP VTC</SelectItem>
                   <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                  <SelectItem value="continue-vtc">FC VTC (Formation continue VTC)</SelectItem>
+                  <SelectItem value="continue-taxi">FC TAXI (Formation continue TAXI)</SelectItem>
                   <SelectItem value="marketing-digital">Marketing Digital</SelectItem>
                   <SelectItem value="anglais">Anglais Professionnel</SelectItem>
                 </SelectContent>
@@ -934,6 +936,8 @@ export function ApprenantForm() {
                     <SelectItem value="pa-taxi">PA TAXI</SelectItem>
                     <SelectItem value="rp-vtc">RP VTC</SelectItem>
                     <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                    <SelectItem value="continue-vtc">FC VTC (Formation continue VTC)</SelectItem>
+                    <SelectItem value="continue-taxi">FC TAXI (Formation continue TAXI)</SelectItem>
                     <SelectItem value="vtc-e-presentiel">VTC E Présentiel</SelectItem>
                     <SelectItem value="taxi-e-presentiel">TAXI E Présentiel</SelectItem>
                     <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>

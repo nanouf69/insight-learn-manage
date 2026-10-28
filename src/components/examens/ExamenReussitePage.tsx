@@ -2209,6 +2209,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     'taxi': 'TAXI', 'taxi-e': 'TAXI E', 'taxi-e-presentiel': 'TAXI E Présentiel',
     'ta': 'TA', 'ta-e': 'TA E', 'va': 'VA', 'va-e': 'VA E',
     'pa-vtc': 'PA VTC', 'pa-taxi': 'PA TAXI', 'rp-vtc': 'RP VTC', 'rp-taxi': 'RP TAXI',
+    'continue-vtc': 'FC VTC', 'continue-taxi': 'FC TAXI',
   };
 
   const typeColor: Record<string, string> = {
