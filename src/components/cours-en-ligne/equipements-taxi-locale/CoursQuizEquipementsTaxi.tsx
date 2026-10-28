@@ -91,7 +91,7 @@ export function SectionSerie({ compteId, transport, serie, titre, intro, inline 
 /** Module 64 : séries complémentaires (support remplacé directement dans la page de cours). */
 export default function CoursQuizEquipementsTaxi({ compteId, transport }: { compteId?: string | null; transport?: TransportEquipements }) {
   return <div className="space-y-4">
-    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_COMPLEMENT} titre={`Questions complémentaires — ${COURS_EQUIPEMENTS.titre}`} intro="nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module." />
-    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." inline />
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_COMPLEMENT} titre={`🚕 Questions complémentaires — ${COURS_EQUIPEMENTS.titre}`} intro="nouvelles questions sur le nouveau support, à faire en plus du quiz de 10 questions pour terminer le module." />
+    <SectionSerie compteId={compteId} transport={transport} serie={SERIE_SANCTIONS} titre="🚕 À quoi ça sert, où ça se place, quelle sanction ?" intro="questions sur l'usage, l'emplacement et les sanctions de chaque équipement, à faire pour terminer le module." inline />
   </div>;
 }
