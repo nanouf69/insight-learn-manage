@@ -670,6 +670,13 @@ function apprenantMatchesSearch(apprenant: SearchableApprenant, term: string) {
 
 const APPRENANT_SEARCH_SELECT = 'id, nom, prenom, type_apprenant, formation_choisie, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma';
 
+// Les formations continues (FC VTC / FC TAXI) ne passent pas l'examen théorique CMA :
+// elles sont exclues de toute la page Examen et Réussite (affichage uniquement, données inchangées).
+const estTypeFormationContinue = (t?: string | null) => {
+  const s = (t || '').toLowerCase();
+  return s === 'continue-vtc' || s === 'continue-taxi' || s === 'formation-continue-vtc' || s === 'formation-continue-taxi';
+};
+
 function mergeApprenantSearchResults(
   loadedApprenants: ExamApprenant[] | undefined,
   directResults: ExamApprenant[] | undefined,
@@ -1608,7 +1615,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         .or('abandonnee.is.null,abandonnee.eq.false')
         .order('nom', { ascending: true });
       if (error) throw error;
-      return data;
+      return (data || []).filter((a: any) => !estTypeFormationContinue(a.type_apprenant));
     },
   });
 
@@ -1634,7 +1641,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         rows.push(...(data ?? []));
         if (!data || data.length < pageSize) break;
       }
-      return rows;
+      return rows.filter((a: any) => !estTypeFormationContinue(a.type_apprenant));
     },
   });
   const tableApprenants = showAllExamDates ? apprenantsToutesDates : apprenants;
