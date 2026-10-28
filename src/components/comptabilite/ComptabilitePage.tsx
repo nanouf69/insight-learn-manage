@@ -135,7 +135,7 @@ export function ComptabilitePage() {
   const [filterDoublons, setFilterDoublons] = useState(false);
   // Export CPF : lu dans le navigateur uniquement, jamais enregistré ni envoyé.
   const [exportCpf, setExportCpf] = useState<{ nom: string; lignes: LigneExportCpf[] } | null>(null);
-  const [filterRapprochement, setFilterRapprochement] = useState<"all" | "vert" | "rouge" | "csv_seul" | "cpf_absent" | "hors_cpf">("all");
+  const [filterRapprochement, setFilterRapprochement] = useState<"all" | "vert" | "rouge" | "csv_seul" | "cpf_absent" | "hors_cpf" | "autres_org" | "particulier">("all");
   const exportCpfInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
@@ -956,6 +956,15 @@ export function ComptabilitePage() {
     return r.couleur === "rouge" ? "cpf_absent" : null;
   };
 
+  const matchCategorieRappr = (f: Facture, k: "vert" | "cpf_absent" | "hors_cpf" | "autres_org" | "particulier"): boolean => {
+    const r = rapprochement?.get(f.id);
+    if (!r || f.statut === "annulee" || f.statut === "brouillon") return false;
+    if (k === "vert") return r.couleur === "vert";
+    if (k === "cpf_absent" || k === "hors_cpf") return categorieSynthese(f) === k;
+    if (k === "particulier") return f.type_financement === "particulier";
+    return f.type_financement !== "cpf" && f.type_financement !== "particulier";
+  };
+
   const rapprochementStats = useMemo(() => {
     if (!rapprochement || !exportCpf) return null;
     let vert = 0, rouge = 0, totalVert = 0, totalRouge = 0, doublons = 0, hors = 0;
@@ -1013,7 +1022,7 @@ export function ComptabilitePage() {
       const matchDoublon = !filterDoublons || doublonsParId.has(f.id);
       const matchRappr = !rapprochement || filterRapprochement === "all" ||
         (filterRapprochement === "csv_seul" ? false
-          : filterRapprochement === "cpf_absent" || filterRapprochement === "hors_cpf" ? categorieSynthese(f) === filterRapprochement
+          : filterRapprochement !== "vert" && filterRapprochement !== "rouge" ? matchCategorieRappr(f, filterRapprochement)
           : rapprochement.get(f.id)?.couleur === filterRapprochement);
       return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchDoublon && matchRappr;
     });
