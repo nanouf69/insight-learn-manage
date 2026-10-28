@@ -1492,6 +1492,13 @@
       "when": 1793143369246,
       "tag": "0212_exam_subject_retake",
       "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1793178027005,
+      "tag": "0213_agenda_blocs_emargement_eleve",
+      "breakpoints": true
     }
   ]
 }
