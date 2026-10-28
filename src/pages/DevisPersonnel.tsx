@@ -576,7 +576,8 @@ export default function DevisPersonnel() {
                     </div>
                   );
                 }
-                const dates = formation?.type === "taxi" ? DATES_TAXI : DATES_VTC;
+                const dates = sessionsAVenir(formation?.type === "taxi" ? SESSIONS_TAXI : SESSIONS_VTC);
+                const soireeAutorisee = formation?.type === "vtc" && !formation?.id?.includes("elearning");
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -592,11 +593,11 @@ export default function DevisPersonnel() {
                     </div>
                     <div>
                       <Label>Créneau souhaité</Label>
-                      <Select value={creneauSouhaite} onValueChange={setCreneauSouhaite}>
+                      <Select value={!soireeAutorisee && creneauSouhaite.startsWith("Soirée") ? "" : creneauSouhaite} onValueChange={setCreneauSouhaite}>
                         <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Journée (9h-12h / 13h-16h)">Journée (9h-12h / 13h-16h)</SelectItem>
-                          <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
+                          {soireeAutorisee && <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>}
                           
                         </SelectContent>
                       </Select>
