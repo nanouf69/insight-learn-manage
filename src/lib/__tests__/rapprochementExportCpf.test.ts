@@ -67,3 +67,11 @@ describe("doublons et brouillons", () => {
     expect(r.get("A")?.couleur).toBe("vert");
   });
 });
+
+import { estCpf } from "@/lib/rapprochementExportCpf";
+describe("estCpf", () => {
+  it("client Caisse des Dépôts = CPF même saisi Professionnel", () => {
+    expect(estCpf({ type_financement: "professionnel", client_nom: "Caisse des Dépôts et Consignations" })).toBe(true);
+    expect(estCpf({ type_financement: "opco", client_nom: "OPCO Mobilités" })).toBe(false);
+  });
+});
