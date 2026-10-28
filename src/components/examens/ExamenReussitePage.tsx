@@ -2655,10 +2655,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             if (!ins) return <span className="text-xs text-muted-foreground">-</span>;
                             const tard = inscriptionRecente(ins.date);
                             const fmt = (v: string | null | undefined) => (v ? String(v).slice(0, 10).split("-").reverse().join("/") : null);
-                            // Sous la date d'inscription : début de formation, sinon date EDOF (acceptation CPF).
-                            const complement = fmt((apprenant as any).date_debut_formation)
-                              ? `Formation : ${fmt((apprenant as any).date_debut_formation)}`
-                              : (fmt((apprenant as any).date_acceptation_cpf) ? `EDOF : ${fmt((apprenant as any).date_acceptation_cpf)}` : null);
+                            // Sous la date d'inscription : la date de début de formation du CRM (fiche apprenant).
+                            const complement = fmt((apprenant as any).date_debut_formation);
                             return (
                               <span
                                 title={`${ins.source === "cpf" ? "Acceptation CPF (import Excel)" : "Inscription CRM"}${tard ? " — inscrit depuis moins de 15 jours ouvrés" : ""}`}
