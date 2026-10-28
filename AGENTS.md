@@ -61,3 +61,4 @@
 - Fiches révisions books (modules 70–73) are served from private bucket livres-formation via edge function livre-formation (rendered pages, formation-checked; original PDF admin-only); why: learners read without downloading the original.
 - Code-defined communes quizzes appear in both module 7 learner view and admin exercise view, without copying them into editor JSON; why: make them discoverable while preserving stable activity IDs and historical milestone exclusions.
 - Module 7 additive communes panels are routed by the existing commune exercise IDs via module7ActivitiesDisplay, never by module ID alone; why: unrelated selected quizzes must not be obscured by a shared activities dashboard.
+- Supplementary Pratique VTC reading is rendered separately from course pages and activity registries, with image-only media and no completion callbacks; why: reading must not change any learner milestone or expose the original PDF.
