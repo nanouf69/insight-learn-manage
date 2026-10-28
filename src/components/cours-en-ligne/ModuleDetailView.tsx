@@ -8851,16 +8851,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       />
                       {qrcResult && qrcResult !== "loading" && qrcResult.indisponible && (
                         <div className="flex items-center gap-2 mt-1 text-sm text-destructive">
-                          <span>⚠️ Correction indisponible, réessayez</span>
-                          <Button size="sm" variant="outline" onClick={() => handleQrcCorrection(exo.id, q, key)}>
-                            🔄 Réessayer
+                          <span>⚠️ Correction momentanément indisponible — votre réponse est conservée</span>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setQrcResults(prev => { const next = { ...prev }; delete next[key]; return next; });
+                            void handleQrcCorrection(exo.id, q, key);
+                          }}>
+                            🔄 Relancer la correction
                           </Button>
                         </div>
-                      )}
-                      {!qrcResult && (
-                        <Button size="sm" onClick={() => handleQrcCorrection(exo.id, q, key)} className="gap-2 mt-1">
-                          🤖 Corriger par IA
-                        </Button>
                       )}
                       {qrcResult === "loading" && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
