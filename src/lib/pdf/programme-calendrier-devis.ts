@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
+import { REFERENTIEL } from "@/lib/referentielProgramme";
 import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 import {
   calendrierSession, heuresPlages, HEURES_PRATIQUE, modulesElearning, sessionsExamen, sessionsPratique,
@@ -130,6 +131,20 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
   else { para("Date d'examen : à confirmer."); manquants.push("Date d'examen"); }
   para("Détail des épreuves (durées, coefficients, notes éliminatoires) : à confirmer selon la réglementation CMA en vigueur.");
   manquants.push("Détail officiel des épreuves d'examen");
+
+  // 5. Référentiel (programme officiel publié sur ftransport.fr)
+  const ref = REFERENTIEL[p.filiere === "taxi" || p.filiere === "ta" ? "taxi" : "vtc"]
+    .filter((sec) => p.mode !== "pratique" || /pratique/i.test(sec.titre));
+  titre("5. Programme et référentiel de connaissances");
+  ref.forEach((sec) => {
+    if (y > 265) { doc.addPage(); y = 18; }
+    doc.setFont("helvetica", "bold").setFontSize(10); doc.splitTextToSize(t(sec.titre), W - 28).forEach((l: string) => { doc.text(l, 14, y + 2); y += 4.8; });
+    y += 1.5; doc.setFont("helvetica", "normal");
+    sec.groupes.forEach((g) => {
+      if (g.sousTitre) { if (y > 275) { doc.addPage(); y = 18; } doc.setFont("helvetica", "italic").setFontSize(9.5).text(t(g.sousTitre), 16, y); y += 5; doc.setFont("helvetica", "normal"); }
+      g.items.forEach((it) => para(`- ${it}`));
+    });
+  });
 
   if (manquants.length) {
     titre("Éléments à confirmer");
