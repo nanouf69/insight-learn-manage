@@ -36,7 +36,7 @@ describe("rapprochement export CPF", () => {
     expect(rapprocher([f("A", "Ana Petit", 999)], lignes).get("A")?.motif).toMatch(/non vérifiable/);
   });
   it("autre financement rouge hors périmètre", () => {
-    expect(rapprocher([f("A", "Jean Dupont", 1499, { type_financement: "particulier" })], lignes).get("A")?.motif).toMatch(/Hors périmètre/);
+    expect(rapprocher([f("A", "Jean Dupont", 1499, { type_financement: "particulier", client_nom: "Jean Dupont" })], lignes).get("A")?.motif).toMatch(/Hors périmètre/);
   });
   it("hors 2026, achats et avoirs ignorés", () => {
     const r = rapprocher([
@@ -65,5 +65,13 @@ describe("doublons et brouillons", () => {
     ], lignes);
     expect(r.has("B")).toBe(false);
     expect(r.get("A")?.couleur).toBe("vert");
+  });
+});
+
+import { estCpf } from "@/lib/rapprochementExportCpf";
+describe("estCpf", () => {
+  it("client Caisse des Dépôts = CPF même saisi Professionnel", () => {
+    expect(estCpf({ type_financement: "professionnel", client_nom: "Caisse des Dépôts et Consignations" })).toBe(true);
+    expect(estCpf({ type_financement: "opco", client_nom: "OPCO Mobilités" })).toBe(false);
   });
 });
