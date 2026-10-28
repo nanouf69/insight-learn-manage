@@ -2038,6 +2038,15 @@ import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
+import { estQuestionQrc, qrcACorriger, etatCorrectionQrc, pointsAvecQrc, reponseQrc, resultatIaValide, echecRetentable, cleCacheQrc } from "@/lib/qrcCorrectionFinale";
+
+/** Lance une action une seule fois à l'affichage (correction finale des QRC). */
+const LancerAuMontage = ({ run }: { run: () => void }) => {
+  const runRef = useRef(run);
+  runRef.current = run;
+  useEffect(() => { runRef.current(); }, []);
+  return null;
+};
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
 const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2026"));
@@ -6667,6 +6676,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string; indisponible?: boolean } | { indisponible: true; estCorrect?: undefined; pointsObtenus?: undefined; explication?: undefined } | "loading">>({});
+    const qrcCorrectionsEnCoursRef = useRef<Set<string>>(new Set());
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
@@ -8585,28 +8595,56 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </div>
         );
       }
+      // Correction IA d'une QRC : appelée uniquement à la validation finale (jamais
+      // pendant la saisie). Une seule correction par question : verrou en mémoire +
+      // résultat conservé pour la même réponse. Échec = « indisponible », jamais 0.
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
-        const existingAnswer = selectedAnswers[key];
-        const reponse = (qrcAnswers[key] ?? (typeof existingAnswer === "string" ? existingAnswer : "")).trim();
-        if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
+        const reponse = reponseQrc(key, qrcAnswers, selectedAnswers);
+        if (!reponse) return;
+        if (qrcCorrectionsEnCoursRef.current.has(key)) return;
+        const cacheKey = cleCacheQrc(String(apprenantId ?? "anon"), key, reponse);
+        try {
+          const cached = window.sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (resultatIaValide(parsed)) { setQrcResults(prev => ({ ...prev, [key]: parsed })); return; }
+          }
+        } catch { /* cache illisible : on corrige */ }
+        qrcCorrectionsEnCoursRef.current.add(key);
         setQrcResults(prev => ({ ...prev, [key]: "loading" }));
         try {
-          const { data, error } = await supabase.functions.invoke("corriger-qrc", {
-            body: {
-              question: q.enonce,
-              reponseEtudiant: reponse,
-              reponsesAttendues: q.reponsesAttendues || [],
-              matiereId: "reglementation_taxi",
-              pointsQuestion: 2,
-            },
-          });
-          if (error) throw error;
-          setQrcResults(prev => ({ ...prev, [key]: data }));
+          for (let tentative = 0; tentative < 3; tentative++) {
+            if (tentative > 0) await new Promise(r => setTimeout(r, tentative === 1 ? 2000 : 5000));
+            const { data, error } = await supabase.functions.invoke("corriger-qrc", {
+              body: {
+                question: q.enonce,
+                reponseEtudiant: reponse,
+                reponsesAttendues: q.reponsesAttendues || [],
+                matiereId: "reglementation_taxi",
+                pointsQuestion: 2,
+              },
+            });
+            if (!error && resultatIaValide(data)) {
+              try { window.sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch { /* ignore */ }
+              setQrcResults(prev => ({ ...prev, [key]: data }));
+              return;
+            }
+            const status = (error as any)?.context?.status as number | undefined;
+            if (error && !echecRetentable(status)) break;
+          }
+          setQrcResults(prev => ({ ...prev, [key]: { indisponible: true } }));
         } catch (e) {
           console.error(e);
-          // Échec ou délai dépassé : aucune note inventée, la réponse reste enregistrée, l'élève peut réessayer.
           setQrcResults(prev => ({ ...prev, [key]: { indisponible: true } }));
-          toast.error("Correction indisponible, réessayez");
+        } finally {
+          qrcCorrectionsEnCoursRef.current.delete(key);
+        }
+      };
+      const corrigerToutesQrc = (exoId: number, questions: any[]) => {
+        const keys = qrcACorriger(exoId, questions, qrcAnswers, selectedAnswers, qrcResults);
+        for (const k of keys) {
+          const q = questions.find((qq: any) => `${exoId}-${qq.id}` === k);
+          if (q) void handleQrcCorrection(exoId, q, k);
         }
       };
 
@@ -8808,21 +8846,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         placeholder="Écrivez votre réponse ici..."
                         value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
                         onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
-                        disabled={qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible}
+                        disabled={showResultsFor.has(exo.id) || (qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible)}
                         className="mt-2"
                       />
                       {qrcResult && qrcResult !== "loading" && qrcResult.indisponible && (
                         <div className="flex items-center gap-2 mt-1 text-sm text-destructive">
-                          <span>⚠️ Correction indisponible, réessayez</span>
-                          <Button size="sm" variant="outline" onClick={() => handleQrcCorrection(exo.id, q, key)}>
-                            🔄 Réessayer
+                          <span>⚠️ Correction momentanément indisponible — votre réponse est conservée</span>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setQrcResults(prev => { const next = { ...prev }; delete next[key]; return next; });
+                            void handleQrcCorrection(exo.id, q, key);
+                          }}>
+                            🔄 Relancer la correction
                           </Button>
                         </div>
-                      )}
-                      {!qrcResult && (
-                        <Button size="sm" onClick={() => handleQrcCorrection(exo.id, q, key)} className="gap-2 mt-1">
-                          🤖 Corriger par IA
-                        </Button>
                       )}
                       {qrcResult === "loading" && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -9178,7 +9214,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     </Button>
                     </div>
                   ) : (() => {
-                    const pct = exoTotalQ > 0 ? Math.round((exoCorrect / exoTotalQ) * 100) : 0;
+                    // Correction IA finale des QRC : note globale affichée seulement quand
+                    // toutes les QRC répondues sont corrigées (barème existant : 1 pt / question juste).
+                    const etatQrc = etatCorrectionQrc(exo.id, questionsCompteesExo, qrcAnswers, selectedAnswers, qrcResults);
+                    const qrcAFaire = qrcACorriger(exo.id, questionsCompteesExo, qrcAnswers, selectedAnswers, qrcResults);
+                    if (etatQrc === "en_cours" || etatQrc === "echec") {
+                      return (
+                        <div className="w-full space-y-3">
+                          {qrcAFaire.length > 0 && (
+                            <LancerAuMontage key={qrcAFaire.join("|")} run={() => corrigerToutesQrc(exo.id, questionsCompteesExo)} />
+                          )}
+                          {etatQrc === "en_cours" ? (
+                            <div role="status" className="flex flex-col items-center gap-2 rounded-lg border p-6 text-center">
+                              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                              <p className="font-semibold">Correction en cours</p>
+                              <p className="text-sm text-muted-foreground">Vos réponses sont enregistrées. La note globale s'affichera dès que toutes les réponses rédigées auront été corrigées.</p>
+                            </div>
+                          ) : (
+                            <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center">
+                              <p className="font-semibold">Correction momentanément indisponible</p>
+                              <p className="text-sm text-muted-foreground">Vos réponses sont conservées. Aucune note n'est attribuée tant que la correction n'a pas abouti.</p>
+                              <Button variant="outline" onClick={() => {
+                                const ko = questionsCompteesExo.filter((q: any) => {
+                                  const r = qrcResults[`${exo.id}-${q.id}`];
+                                  return r && r !== "loading" && r.indisponible;
+                                });
+                                setQrcResults(prev => { const next = { ...prev }; ko.forEach((q: any) => delete next[`${exo.id}-${q.id}`]); return next; });
+                                ko.forEach((q: any) => void handleQrcCorrection(exo.id, q, `${exo.id}-${q.id}`));
+                              }}>🔄 Relancer la correction</Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    const exoPoints = etatQrc === "terminee"
+                      ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
+                      : exoCorrect;
+                    const pct = exoTotalQ > 0 ? Math.round((exoPoints / exoTotalQ) * 100) : 0;
                     const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
                     const circleBg = pct >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pct >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
                     const circumference = 2 * Math.PI * 54;
@@ -9196,7 +9268,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           </svg>
                           <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
                         </div>
-                        <p className="text-lg font-bold">Points : {exoCorrect} / {exoTotalQ}</p>
+                        <p className="text-lg font-bold">Points : {exoPoints} / {exoTotalQ}</p>
                         {passageFigeExo && (
                           <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
                         )}
@@ -9210,7 +9282,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           {questionsSafe.map((q, qi) => {
                             const key = `${exo.id}-${q.id}`;
                             const selected = selectedAnswers[key];
-                            const isCorrect = isAnswerCorrect(selected, q as any);
+                            const qrcR = qrcResults[key];
+                            const isCorrect = estQuestionQrc(q)
+                              ? !!qrcR && qrcR !== "loading" && !qrcR.indisponible && qrcR.estCorrect === true
+                              : isAnswerCorrect(selected, q as any);
                             return (
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
