@@ -480,7 +480,13 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   doc.setTextColor(0, 0, 0);
   doc.text(`Titulaire : ${RIB_INFO.titulaire}`, margin, y); y += 3.5;
   doc.text(`IBAN : ${RIB_INFO.iban}`, margin, y); y += 3.5;
-  doc.text(`BIC / SWIFT : ${RIB_INFO.swift}  |  Banque : ${RIB_INFO.banque}`, margin, y); y += 8;
+  doc.text(`BIC / SWIFT : ${RIB_INFO.swift}  |  Banque : ${RIB_INFO.banque}`, margin, y); y += 5;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(30, 58, 138);
+  doc.text("Apres votre virement, merci de nous recontacter pour confirmer votre inscription.", margin, y);
+  y += 8;
 
   // === MENTIONS ===
   doc.setFont("helvetica", "italic");
