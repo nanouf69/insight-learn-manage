@@ -131,6 +131,7 @@ export function ComptabilitePage() {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
+  const [filterAnnee, setFilterAnnee] = useState<string>("all");
   const [filterTypeFlux, setFilterTypeFlux] = useState<"all" | "ventes" | "achats">("all");
   const [filterDoublons, setFilterDoublons] = useState(false);
   // Export CPF : lu dans le navigateur uniquement, jamais enregistré ni envoyé.
@@ -1019,14 +1020,15 @@ export function ComptabilitePage() {
         filterTypeFlux === "all" ||
         (filterTypeFlux === "achats" && isAchat) ||
         (filterTypeFlux === "ventes" && !isAchat);
+      const matchAnnee = filterAnnee === "all" || (f.date_emission ?? "").slice(0, 4) === filterAnnee;
       const matchDoublon = !filterDoublons || doublonsParId.has(f.id);
       const matchRappr = !rapprochement || filterRapprochement === "all" ||
         (filterRapprochement === "csv_seul" ? false
           : filterRapprochement !== "vert" && filterRapprochement !== "rouge" ? matchCategorieRappr(f, filterRapprochement)
           : rapprochement.get(f.id)?.couleur === filterRapprochement);
-      return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchDoublon && matchRappr;
+      return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchAnnee && matchDoublon && matchRappr;
     });
-  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, filterAnnee, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -1490,6 +1492,15 @@ export function ComptabilitePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher par numéro ou client..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
             </div>
+            <Select value={filterAnnee} onValueChange={setFilterAnnee}>
+              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Année" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les années</SelectItem>
+                {Array.from(new Set(allFactures.map((f) => (f.date_emission ?? "").slice(0, 4)).filter((y) => /^\d{4}$/.test(y)))).sort().reverse().map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={filterTypeFlux} onValueChange={(v) => setFilterTypeFlux(v as "all" | "ventes" | "achats")}>
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="Type" /></SelectTrigger>
               <SelectContent>
