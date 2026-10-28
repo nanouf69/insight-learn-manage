@@ -31,7 +31,7 @@ export async function devisAvecProgramme(
     const bytes = await fusion.save();
     return { blob: new Blob([bytes as BlobPart], { type: "application/pdf" }), programmeInclus: true };
   } catch (e) {
-    console.error("[devisAvecProgramme]", e);
+    console.error("[devisAvecProgramme]", e); (globalThis as any).__devisErr = e;
     return { blob: devisBlob, programmeInclus: false };
   }
 }
