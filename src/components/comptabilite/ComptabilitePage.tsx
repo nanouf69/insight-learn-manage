@@ -943,7 +943,7 @@ export function ComptabilitePage() {
           (f.apprenant_id && apprenantNames[f.apprenant_id]) ||
           beneficiaireDepuisReference((f as any).numero_convention) ||
           (/caisse des d/i.test(f.client_nom || "") ? "" : f.client_nom),
-        cleIdentite: f.apprenant_id ? `a:${f.apprenant_id}` : `c:${(f.client_nom || "").trim().toLowerCase()}`,
+        cleIdentite: f.apprenant_id ? `a:${f.apprenant_id}` : undefined, // sans élève lié : pas de doublon déduit du seul client
       })),
       exportCpf.lignes,
     );
