@@ -83,7 +83,7 @@ import { VILLE_FRESQUES_SLIDES } from "./slides/ville-fresques-data";
 import { VILLE_CONSULATS_SLIDES } from "./slides/ville-consulats-data";
 import { VILLE_COMMISSARIATS_SLIDES } from "./slides/ville-commissariats-data";
 import FileLastModified from "./FileLastModified";
-import FilePreviewDialog from "./FilePreviewDialog";
+import FilePreviewDialog, { telechargerFichierCours } from "./FilePreviewDialog";
 
 
 import { VILLE_HOTELS_SLIDES } from "./slides/ville-hotels-data";
