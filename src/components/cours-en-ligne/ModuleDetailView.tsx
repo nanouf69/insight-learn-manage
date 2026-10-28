@@ -55,10 +55,7 @@ import SlideViewer from "./slides/SlideViewer";
 import PdfSlideViewer from "./PdfSlideViewer";
 import ImageCarouselViewer from "./ImageCarouselViewer";
 import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
-import LIVRE_VTC from "@/assets/livres/livre-vtc.pdf.asset.json";
-import LIVRE_VA from "@/assets/livres/livre-va.pdf.asset.json";
-import LIVRE_TAXI from "@/assets/livres/livre-taxi.pdf.asset.json";
-import LIVRE_TA from "@/assets/livres/livre-ta.pdf.asset.json";
+import LivreFormationViewer, { type FormationLivre } from "./LivreFormationViewer";
 import { NATIONALE_PARTIE1_IMAGES, NATIONALE_PARTIE2_IMAGES } from "./slides/nationale-slide-images";
 
 /** Cours dont les diapositives sont rendues à l'identique du PowerPoint (images) */
@@ -320,7 +317,14 @@ function CourseImageLightbox({ src, alt, className }: { src: string; alt: string
   return <ImageLightbox src={displayUrl} alt={alt} className={className} />;
 }
 
-function CourseFileViewer({
+const LIVRE_SCHEME = /^livre-formation:(vtc|taxi|ta|va)$/;
+function CourseFileViewer(props: Parameters<typeof CourseFileViewerInner>[0]) {
+  const m = props.fichier.url.match(LIVRE_SCHEME);
+  if (m) return <LivreFormationViewer formation={m[1] as FormationLivre} />;
+  return <CourseFileViewerInner {...props} />;
+}
+
+function CourseFileViewerInner({
   fichier,
   pdfFallbackUrl,
   hasInteractiveSlides,
@@ -425,7 +429,12 @@ function CourseFileViewer({
   );
 }
 
-function CourseFileLink({ fichier, compact = false }: { fichier: { nom: string; url: string }; compact?: boolean }) {
+function CourseFileLink(props: { fichier: { nom: string; url: string }; compact?: boolean }) {
+  if (LIVRE_SCHEME.test(props.fichier.url)) return <span className="text-sm text-muted-foreground">{props.fichier.nom} — consultation dans le module</span>;
+  return <CourseFileLinkInner {...props} />;
+}
+
+function CourseFileLinkInner({ fichier, compact = false }: { fichier: { nom: string; url: string }; compact?: boolean }) {
   const displayUrl = useDisplayableCourseUrl(fichier.url);
   const isExternal = /^https?:\/\//i.test(fichier.url);
 
@@ -2800,8 +2809,8 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS VTC",
       description: "Fiches de révision pour la formation VTC : synthèse matières communes, spécialités VTC et définitions.",
       cours: [
-        { id: 1, titre: "Livre de formation VTC", description: "Livre complet de la formation VTC à consulter.", actif: true, fichiers: [{ nom: "Livre_VTC_FINAL.pdf", url: LIVRE_VTC.url }] },
-        { id: 2, titre: "Télécharger le livre VTC", description: "Livre complet de la formation VTC à télécharger.", actif: false, fichiers: [{ nom: "Livre_VTC_FINAL.pdf", url: LIVRE_VTC.url }] },
+        { id: 1, titre: "Livre de formation VTC", description: "Livre complet de la formation VTC à consulter.", actif: true, fichiers: [{ nom: "Livre_VTC_FINAL_corrige.pdf", url: "livre-formation:vtc" }] },
+        { id: 2, titre: "Télécharger le livre VTC", description: "Livre complet de la formation VTC à télécharger.", actif: false, fichiers: [{ nom: "Livre_VTC_FINAL_corrige.pdf", url: "livre-formation:vtc" }] },
         { id: 3, titre: "Définitions VTC", description: "Glossaire et définitions clés de la formation VTC.", actif: true, fichiers: [{ nom: "Definitions_VTC.docx", url: "/cours/vtc/Definitions_VTC.docx" }] },
         { id: 4, titre: "Bilan QRC VTC", description: "Bilan des Questions à Réponse Courte pour la formation VTC.", actif: true, fichiers: [{ nom: "Bilan_QRC_VTC.docx", url: "/cours/vtc/Bilan_QRC_VTC.docx" }] },
       ],
@@ -2815,8 +2824,8 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS TAXI",
       description: "Fiches de révision pour la formation TAXI : synthèse matières communes, spécialités TAXI et définitions.",
       cours: [
-        { id: 1, titre: "Livre de formation TAXI", description: "Livre complet de la formation TAXI à consulter.", actif: true, fichiers: [{ nom: "Livre_TAXI_FINAL.pdf", url: LIVRE_TAXI.url }] },
-        { id: 2, titre: "Télécharger le livre TAXI", description: "Livre complet de la formation TAXI à télécharger.", actif: false, fichiers: [{ nom: "Livre_TAXI_FINAL.pdf", url: LIVRE_TAXI.url }] },
+        { id: 1, titre: "Livre de formation TAXI", description: "Livre complet de la formation TAXI à consulter.", actif: true, fichiers: [{ nom: "Livre_TAXI_FINAL_corrige_5.pdf", url: "livre-formation:taxi" }] },
+        { id: 2, titre: "Télécharger le livre TAXI", description: "Livre complet de la formation TAXI à télécharger.", actif: false, fichiers: [{ nom: "Livre_TAXI_FINAL_corrige_5.pdf", url: "livre-formation:taxi" }] },
         { id: 3, titre: "Définitions TAXI", description: "Glossaire et définitions clés de la formation TAXI.", actif: true, fichiers: [{ nom: "Definitions_Taxi.docx", url: "/cours/vtc/Definitions_Taxi.docx" }] },
         { id: 4, titre: "Bilan QRC TAXI", description: "Bilan des Questions à Réponse Courte pour la formation TAXI.", actif: true, fichiers: [{ nom: "Bilan_QRC_TAXI.docx", url: "/cours/vtc/Bilan_QRC_TAXI.docx" }] },
       ],
@@ -2830,8 +2839,8 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS TA",
       description: "Fiches de synthèse pour la passerelle TA : uniquement Réglementation Nationale (spécificités) et Réglementation Locale.",
       cours: [
-        { id: 1, titre: "Livre de formation TA", description: "Livre complet de la passerelle TA à consulter.", actif: true, fichiers: [{ nom: "Livre_TA_FINAL.pdf", url: LIVRE_TA.url }] },
-        { id: 2, titre: "Télécharger le livre TA", description: "Livre complet de la passerelle TA à télécharger.", actif: false, fichiers: [{ nom: "Livre_TA_FINAL.pdf", url: LIVRE_TA.url }] },
+        { id: 1, titre: "Livre de formation TA", description: "Livre complet de la passerelle TA à consulter.", actif: true, fichiers: [{ nom: "Livre_TA_FINAL_corrige.pdf", url: "livre-formation:ta" }] },
+        { id: 2, titre: "Télécharger le livre TA", description: "Livre complet de la passerelle TA à télécharger.", actif: false, fichiers: [{ nom: "Livre_TA_FINAL_corrige.pdf", url: "livre-formation:ta" }] },
       ],
       exercices: [],
     };
@@ -2844,7 +2853,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS VA",
       description: "Fiches de révision pour la passerelle VA : synthèse spécialités VTC, définitions VA et bilan QRC.",
       cours: [
-        { id: 1, titre: "Livre de formation VA", description: "Livre complet de la passerelle VA à consulter et télécharger.", actif: true, fichiers: [{ nom: "Livre_VA_FINAL.pdf", url: LIVRE_VA.url }] },
+        { id: 1, titre: "Livre de formation VA", description: "Livre complet de la passerelle VA à consulter.", actif: true, fichiers: [{ nom: "Livre_VA_FINAL_corrige.pdf", url: "livre-formation:va" }] },
         { id: 2, titre: "Définitions VA", description: "Glossaire et définitions clés de la passerelle VA.", actif: true, fichiers: [{ nom: "Definitions_VA.docx", url: "/cours/vtc/Definitions_VA.docx" }] },
         { id: 3, titre: "Bilan QRC VA", description: "Bilan des Questions à Réponse Courte pour la passerelle VA.", actif: true, fichiers: [{ nom: "Bilan_QRC_VA.docx", url: "/cours/vtc/Bilan_QRC_VA.docx" }] },
       ],
