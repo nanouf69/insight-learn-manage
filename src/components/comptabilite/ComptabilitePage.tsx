@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, cleNom, STATUT_VALIDE, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
+import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, cleNom, STATUT_VALIDE, estCpf, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
 
 interface Releve {
   id: string;
@@ -953,7 +953,7 @@ export function ComptabilitePage() {
   const categorieSynthese = (f: Facture): "cpf_absent" | "hors_cpf" | null => {
     const r = rapprochement?.get(f.id);
     if (!r || f.statut === "annulee" || f.statut === "brouillon") return null;
-    if (f.type_financement !== "cpf") return "hors_cpf";
+    if (!estCpf(f)) return "hors_cpf";
     return r.couleur === "rouge" ? "cpf_absent" : null;
   };
 
@@ -962,8 +962,9 @@ export function ComptabilitePage() {
     if (!r || f.statut === "annulee" || f.statut === "brouillon") return false;
     if (k === "vert") return r.couleur === "vert";
     if (k === "cpf_absent" || k === "hors_cpf") return categorieSynthese(f) === k;
+    if (estCpf(f)) return false;
     if (k === "particulier") return f.type_financement === "particulier";
-    return f.type_financement !== "cpf" && f.type_financement !== "particulier";
+    return f.type_financement !== "particulier";
   };
 
   const rapprochementStats = useMemo(() => {
@@ -980,7 +981,7 @@ export function ComptabilitePage() {
       else { rouge++; totalRouge += Number(f.montant_ttc); }
       if (r.motif.startsWith("Doublon")) doublons++;
       if (r.motif.startsWith("Hors périmètre")) hors++;
-      if (f.type_financement === "cpf" && f.statut !== "annulee") {
+      if (estCpf(f) && f.statut !== "annulee") {
         const nom = (f.apprenant_id && apprenantNames[f.apprenant_id]) || beneficiaireDepuisReference((f as any).numero_convention);
         if (nom) nomsFactures.add(cleNom(nom));
       }

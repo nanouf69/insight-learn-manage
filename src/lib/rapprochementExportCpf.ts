@@ -112,6 +112,10 @@ export function beneficiaireDepuisReference(ref: string | null | undefined): str
   return parts.length >= 2 ? parts[1].trim() : "";
 }
 
+/** CPF = financement CPF OU client « Caisse des Dépôts » (quel que soit le type saisi). */
+export const estCpf = (f: { type_financement: string; client_nom?: string | null }): boolean =>
+  f.type_financement === "cpf" || /caisse\s+des\s+d[ée]p[ôo]ts?/i.test(f.client_nom ?? "");
+
 const memeMontant = (a: number, b: number) => Math.abs(a - b) < 0.005;
 
 export function rapprocher(
@@ -136,7 +140,7 @@ export function rapprocher(
       res.set(f.id, { couleur: "rouge", motif: "Facture annulée : non rapprochée", dossiers: [] });
       continue;
     }
-    if (f.type_financement !== "cpf") {
+    if (!estCpf(f)) {
       res.set(f.id, { couleur: "rouge", motif: "Hors périmètre de l'export CPF : à vérifier (autre financement)", dossiers: [] });
       continue;
     }
