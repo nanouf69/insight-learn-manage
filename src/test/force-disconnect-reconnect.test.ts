@@ -19,7 +19,18 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (...args: any[]) => rpcMock(...args),
     from: (...args: any[]) => fromMock(...args),
+    // Le hook lit la session pour le jeton de fermeture d'onglet (ajout ultérieur au test).
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
   },
+}));
+
+// Contrôle « même compte / session fraîche » testé ailleurs : ici simple passage.
+vi.mock("@/lib/sessionRpc", () => ({
+  freshSessionCall: (call: () => PromiseLike<unknown>) => Promise.resolve(call()),
+  freshSessionRead: (call: () => PromiseLike<unknown>) => Promise.resolve(call()),
 }));
 
 // Chainable builder that resolves to a given result when awaited.
