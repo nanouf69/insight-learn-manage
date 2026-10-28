@@ -24,14 +24,14 @@ export async function devisAvecProgramme(
     const session = (dateDebut && candidates.find((s) => s.date_debut === dateDebut)) || null;
     const { doc } = buildProgrammeCalendrierPDF({ formation, programme, session, sessions, erreurLecture: !!error });
     const fusion = await PDFDocument.create();
-    for (const src of [await devisBlob.arrayBuffer(), doc.output("arraybuffer")]) {
+    for (const src of [devis.output("arraybuffer"), doc.output("arraybuffer")]) {
       const pdf = await PDFDocument.load(src);
       (await fusion.copyPages(pdf, pdf.getPageIndices())).forEach((p) => fusion.addPage(p));
     }
     const bytes = await fusion.save();
     return { blob: new Blob([bytes as BlobPart], { type: "application/pdf" }), programmeInclus: true };
   } catch (e) {
-    console.error("[devisAvecProgramme]", e); (globalThis as any).__devisErr = e;
+    console.error("[devisAvecProgramme]", e);
     return { blob: devisBlob, programmeInclus: false };
   }
 }

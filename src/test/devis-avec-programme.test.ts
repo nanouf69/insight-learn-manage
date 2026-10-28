@@ -9,7 +9,7 @@ describe("devis + programme dans un seul PDF", () => {
     const devis = new jsPDF(); devis.text("Devis", 10, 10);
     const { blob, programmeInclus } = await devisAvecProgramme(devis, { id: "vtc_complet", label: "TAXI", designation: "Formation TAXI", agrement: "x" }, null);
     expect(programmeInclus).toBe(true);
-    const pdf = await PDFDocument.load(await blob.arrayBuffer());
+    const pdf = await PDFDocument.load(await new Response(blob).arrayBuffer());
     expect(pdf.getPageCount()).toBeGreaterThan(1);
   });
 });
