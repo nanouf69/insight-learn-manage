@@ -2038,7 +2038,7 @@ import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
-import { qrcACorriger, etatCorrectionQrc, pointsAvecQrc, reponseQrc, resultatIaValide, echecRetentable, cleCacheQrc } from "@/lib/qrcCorrectionFinale";
+import { estQuestionQrc, qrcACorriger, etatCorrectionQrc, pointsAvecQrc, reponseQrc, resultatIaValide, echecRetentable, cleCacheQrc } from "@/lib/qrcCorrectionFinale";
 
 /** Lance une action une seule fois à l'affichage (correction finale des QRC). */
 const LancerAuMontage = ({ run }: { run: () => void }) => {
@@ -9282,7 +9282,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           {questionsSafe.map((q, qi) => {
                             const key = `${exo.id}-${q.id}`;
                             const selected = selectedAnswers[key];
-                            const isCorrect = isAnswerCorrect(selected, q as any);
+                            const qrcR = qrcResults[key];
+                            const isCorrect = estQuestionQrc(q)
+                              ? !!qrcR && qrcR !== "loading" && !qrcR.indisponible && qrcR.estCorrect === true
+                              : isAnswerCorrect(selected, q as any);
                             return (
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
