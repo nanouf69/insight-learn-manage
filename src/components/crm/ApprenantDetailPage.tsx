@@ -252,8 +252,8 @@ const COMPTE_FORMATIONS = [
   { id: "ta-e", label: "TA E-learning" },
   { id: "va", label: "VA (Présentiel)" },
   { id: "va-e", label: "VA E-learning" },
-  { id: "continue-vtc", label: "Formation Continue VTC" },
-  { id: "continue-taxi", label: "Formation Continue TAXI" },
+  { id: "continue-vtc", label: "FC VTC — Formation Continue VTC" },
+  { id: "continue-taxi", label: "FC TAXI — Formation Continue TAXI" },
   { id: "pratique-taxi", label: "Formation pratique TAXI" },
   { id: "pratique-vtc", label: "Formation pratique VTC" },
 ] as const;

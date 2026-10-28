@@ -157,10 +157,10 @@ const ORDERED_FORMATION_MODULES = Object.fromEntries(
 const COMPTE_FORMATIONS = [
   { id: "vtc", label: "VTC (Présentiel)" },
   { id: "vtc-e", label: "VTC E-learning" },
-  { id: "continue-vtc", label: "Formation continue VTC" },
+  { id: "continue-vtc", label: "FC VTC — Formation continue VTC" },
   { id: "taxi", label: "TAXI (Présentiel)" },
   { id: "taxi-e", label: "TAXI E-learning" },
-  { id: "continue-taxi", label: "Formation continue TAXI" },
+  { id: "continue-taxi", label: "FC TAXI — Formation continue TAXI" },
   { id: "mobilite-taxi", label: "Formation Mobilité TAXI" },
   { id: "ta", label: "TA (Présentiel)" },
   { id: "ta-e", label: "TA E-learning" },
