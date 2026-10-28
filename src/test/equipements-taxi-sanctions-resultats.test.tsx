@@ -134,3 +134,60 @@ describe("Coupure puis reprise de connexion", () => {
     expect(screen.getByTestId("equipements-resultats").textContent).toContain(`${Q.length} / ${Q.length}`);
   });
 });
+
+describe("Note sur 20 — série sanctions uniquement", () => {
+  const avecScore = () => {
+    let row: any = null; const scores: (number | null | undefined)[] = [];
+    const t: TransportEquipements = {
+      async lire() { return row; },
+      async envoyer(_c, d, fin, _s, score) { scores.push(score); row = { completed: fin, score, reponses: { version: SERIE_SANCTIONS.version, ...d } }; return true; },
+    };
+    return { t, scores };
+  };
+  const cas: [string, (v: Record<string, string>) => void, number][] = [
+    ["20/20", () => {}, 20],
+    ["0/20", (v) => Q.forEach((q) => { v[q.id] = String((q.correct + 1) % 3); }), 0],
+    ["mixte 12/20", (v) => Q.slice(0, 8).forEach((q) => { v[q.id] = String((q.correct + 1) % 3); }), 12],
+  ];
+  for (const [nom, alterer, attendu] of cas) {
+    it(`${nom} : note affichée et score % envoyé une seule fois`, async () => {
+      const { t, scores } = avecScore();
+      render(<QuizEquipements compteId={`fictif-${nom}`} transport={t} serie={SERIE_SANCTIONS} />);
+      await screen.findByText("Suivi chargé");
+      const v = toutesJustes(); alterer(v); cocherToutes(v);
+      const fin = screen.getByRole("button", { name: /Terminer le quiz/ });
+      fireEvent.click(fin); fireEvent.click(fin);
+      expect((await screen.findByTestId("equipements-note")).textContent).toBe(`Note : ${attendu} / ${Q.length}`);
+      expect(scores).toEqual([Math.round((attendu / Q.length) * 100)]);
+    });
+  }
+  it("déjà soumis sans score (ancien envoi) : note dérivée affichée, aucun envoi", async () => {
+    const v = toutesJustes(); Q.slice(0, 3).forEach((q) => { v[q.id] = String((q.correct + 1) % 3); });
+    const { t, scores } = avecScore();
+    (t as any).lire = async () => ({ completed: true, score: null, reponses: { version: SERIE_SANCTIONS.version, revision: "r", valeurs: v } });
+    render(<QuizEquipements compteId="fictif-hist" transport={t} serie={SERIE_SANCTIONS} />);
+    expect((await screen.findByTestId("equipements-note")).textContent).toBe(`Note : ${Q.length - 3} / ${Q.length}`);
+    expect(scores).toEqual([]);
+  });
+  it("Enregistrer (sans terminer) : aucun score envoyé", async () => {
+    const { t, scores } = avecScore();
+    render(<QuizEquipements compteId="fictif-brouillon" transport={t} serie={SERIE_SANCTIONS} />);
+    await screen.findByText("Suivi chargé");
+    cocherToutes(toutesJustes());
+    fireEvent.click(screen.getByRole("button", { name: /Enregistrer mes réponses/ }));
+    await screen.findByText(/Réponses enregistrées/);
+    expect(scores).toEqual([null]);
+    expect(screen.queryByTestId("equipements-note")).toBeNull();
+  });
+  it("complément 11 : pas de note, score null", async () => {
+    let row: any = null; const scores: unknown[] = [];
+    const t: TransportEquipements = { async lire() { return row; }, async envoyer(_c, d, fin, _s, sc) { scores.push(sc); row = { completed: fin, reponses: { version: SERIE_COMPLEMENT.version, ...d } }; return true; } };
+    render(<QuizEquipements compteId="fictif-c" transport={t} serie={SERIE_COMPLEMENT} />);
+    await screen.findByText("Suivi chargé");
+    SERIE_COMPLEMENT.questions.forEach((q, i) => fireEvent.click(screen.getByTestId(`equipements-question-${i + 1}`).querySelector(`[aria-label="${CSS.escape(q.choix[q.correct])}"]`) as Element));
+    fireEvent.click(screen.getByRole("button", { name: /Terminer le quiz/ }));
+    await screen.findByTestId("equipements-resultats");
+    expect(screen.queryByTestId("equipements-note")).toBeNull();
+    expect(scores).toEqual([null]);
+  });
+});
