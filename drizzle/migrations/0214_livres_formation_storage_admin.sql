@@ -1,0 +1,2 @@
+CREATE POLICY "livres_formation_admin_select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'livres-formation' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "livres_formation_admin_insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'livres-formation' AND public.has_role(auth.uid(), 'admin'));
