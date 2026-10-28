@@ -89,6 +89,35 @@ export function verifierContenuPassage(core: CoreMatiereState, details: any): bo
 }
 
 /**
+ * Ancienne fiche TRONQUÉE (résumé sans choix ni réponse attendue) d'un passage NATIF :
+ * mêmes identités, ordre, types, énoncés et images, sans aucune divergence ; seul le
+ * corrigé manque côté fiche. Le passage moteur doit conserver ses preuves (au moins une
+ * bonne réponse explicite par QCM, réponse attendue non vide par QRC). Ce n'est jamais
+ * une preuve de mêmes choix : utilisé seulement pour une matière à QRC dont l'ancienne
+ * copie ne peut pas porter la correction (voir attacherSourceUnique).
+ */
+export function contenuFicheTronqueCompatible(core: CoreMatiereState, details: any): boolean {
+  if (core.resultId) return false;
+  if (details?.snapshot?.questions) return false;
+  const legacy = details?.questions;
+  const moteur = core.questions as any[] | undefined;
+  if (!Array.isArray(legacy) || !legacy.length || !Array.isArray(moteur) || legacy.length !== moteur.length) return false;
+  const key = (q: any) => String(q.questionId ?? q.id ?? "").replace(`${core.matiereId}:`, "");
+  const text = (v: unknown) => String(v ?? "").trim();
+  const ordered = (qs: any[]) => qs.every((q) => Number.isFinite(q.ordre)) ? [...qs].sort((a, b) => a.ordre - b.ordre) : qs;
+  const left = ordered(legacy), right = ordered(moteur);
+  if (new Set(left.map(key)).size !== left.length || new Set(right.map(key)).size !== right.length) return false;
+  return left.every((a: any, i: number) => {
+    const b = right[i];
+    const type = text(a.type).toUpperCase();
+    if (!key(a) || key(a) !== key(b) || type !== text(b.type).toUpperCase() || !text(a.enonce) || text(a.enonce) !== text(b.enonce) || text(a.image) !== text(b.image)) return false;
+    if (type === "QCM") return a.choix === undefined && Array.isArray(b.choix) && b.choix.some((c: any) => c.correct === true);
+    if (type === "QRC") return !text(a.reponseQRC) && !!text(b.reponseQRC);
+    return false;
+  });
+}
+
+/**
  * Fonction pure : true si au moins une réponse non vide de la fiche élève est
  * absente ou différente dans le nouveau moteur.
  * - `reponsesFiche` : clés « 1 », « 2 »… (reponses_apprenants.reponses)

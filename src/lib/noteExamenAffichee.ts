@@ -1,6 +1,6 @@
 import { matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
-import { MENTION_NOTE_RECALCULEE, verifierPassageV2, verifierContenuPassage } from "@/lib/passagesV2NonFiables";
+import { MENTION_NOTE_RECALCULEE, verifierPassageV2, verifierContenuPassage, contenuFicheTronqueCompatible } from "@/lib/passagesV2NonFiables";
 
 /**
  * FONCTION COMMUNE — note et statut affichés d'un résultat d'examen blanc.
@@ -43,7 +43,11 @@ export function attacherSourceUnique<T extends Record<string, any>>(
   }
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
   const original = row?.__preuveOriginaleDetails ?? row?.details;
-  if (nonFiables.has(core.attemptId) || verifierPassageV2(core, original?.reponses ?? row?.reponses) !== "fiable" || !verifierContenuPassage(core, original)) {
+  const reponsesFiables = !nonFiables.has(core.attemptId) && verifierPassageV2(core, original?.reponses ?? row?.reponses) === "fiable";
+  // Matière à QRC, passage natif définitif, mêmes réponses : une ancienne fiche tronquée
+  // (sans corrigé) ne peut pas porter la correction QRC ; le passage moteur fait foi.
+  const ficheTronqueQrc = reponsesFiables && core.qrcTotal > 0 && !core.pending && contenuFicheTronqueCompatible(core, original);
+  if (!reponsesFiables || (!ficheTronqueQrc && !verifierContenuPassage(core, original))) {
     if (core.pending) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE, __noteRecalculee: true };
     return { ...row, __core: null, __noteRecalculee: true };
   }
