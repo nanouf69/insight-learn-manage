@@ -318,7 +318,7 @@ function CourseImageLightbox({ src, alt, className }: { src: string; alt: string
 }
 
 const LIVRE_SCHEME = /^livre-formation:(vtc|taxi|ta|va)$/;
-function CourseFileViewer(props: React.ComponentProps<typeof CourseFileViewerInner>) {
+function CourseFileViewer(props: Parameters<typeof CourseFileViewerInner>[0]) {
   const m = props.fichier.url.match(LIVRE_SCHEME);
   if (m) return <LivreFormationViewer formation={m[1] as FormationLivre} />;
   return <CourseFileViewerInner {...props} />;
