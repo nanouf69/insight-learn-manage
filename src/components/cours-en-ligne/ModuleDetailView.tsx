@@ -8846,7 +8846,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         placeholder="Écrivez votre réponse ici..."
                         value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
                         onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
-                        disabled={qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible}
+                        disabled={showResultsFor.has(exo.id) || (qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible)}
                         className="mt-2"
                       />
                       {qrcResult && qrcResult !== "loading" && qrcResult.indisponible && (
@@ -9214,7 +9214,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     </Button>
                     </div>
                   ) : (() => {
-                    const pct = exoTotalQ > 0 ? Math.round((exoCorrect / exoTotalQ) * 100) : 0;
+                    // Correction IA finale des QRC : note globale affichée seulement quand
+                    // toutes les QRC répondues sont corrigées (barème existant : 1 pt / question juste).
+                    const etatQrc = etatCorrectionQrc(exo.id, questionsCompteesExo, qrcAnswers, selectedAnswers, qrcResults);
+                    const qrcAFaire = qrcACorriger(exo.id, questionsCompteesExo, qrcAnswers, selectedAnswers, qrcResults);
+                    if (etatQrc === "en_cours" || etatQrc === "echec") {
+                      return (
+                        <div className="w-full space-y-3">
+                          {qrcAFaire.length > 0 && (
+                            <LancerAuMontage key={qrcAFaire.join("|")} run={() => corrigerToutesQrc(exo.id, questionsCompteesExo)} />
+                          )}
+                          {etatQrc === "en_cours" ? (
+                            <div role="status" className="flex flex-col items-center gap-2 rounded-lg border p-6 text-center">
+                              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                              <p className="font-semibold">Correction en cours</p>
+                              <p className="text-sm text-muted-foreground">Vos réponses sont enregistrées. La note globale s'affichera dès que toutes les réponses rédigées auront été corrigées.</p>
+                            </div>
+                          ) : (
+                            <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center">
+                              <p className="font-semibold">Correction momentanément indisponible</p>
+                              <p className="text-sm text-muted-foreground">Vos réponses sont conservées. Aucune note n'est attribuée tant que la correction n'a pas abouti.</p>
+                              <Button variant="outline" onClick={() => {
+                                const ko = questionsCompteesExo.filter((q: any) => {
+                                  const r = qrcResults[`${exo.id}-${q.id}`];
+                                  return r && r !== "loading" && r.indisponible;
+                                });
+                                setQrcResults(prev => { const next = { ...prev }; ko.forEach((q: any) => delete next[`${exo.id}-${q.id}`]); return next; });
+                                ko.forEach((q: any) => void handleQrcCorrection(exo.id, q, `${exo.id}-${q.id}`));
+                              }}>🔄 Relancer la correction</Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    const exoPoints = etatQrc === "terminee"
+                      ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
+                      : exoCorrect;
+                    const pct = exoTotalQ > 0 ? Math.round((exoPoints / exoTotalQ) * 100) : 0;
                     const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
                     const circleBg = pct >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pct >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
                     const circumference = 2 * Math.PI * 54;
@@ -9232,7 +9268,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           </svg>
                           <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
                         </div>
-                        <p className="text-lg font-bold">Points : {exoCorrect} / {exoTotalQ}</p>
+                        <p className="text-lg font-bold">Points : {exoPoints} / {exoTotalQ}</p>
                         {passageFigeExo && (
                           <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
                         )}
