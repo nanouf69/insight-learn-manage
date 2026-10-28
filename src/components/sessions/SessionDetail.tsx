@@ -5111,6 +5111,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 {getStatusBadge(session.status)}
               </DialogTitle>
             )}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 shrink-0 p-0"
+              title="Copy session name"
+              onClick={() => copyToClipboard(session.title, "Session name")}
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
             {heuresAffichees != null && (
               <div className="flex items-center gap-1.5">
                 {heuresTotalEdit ? (
