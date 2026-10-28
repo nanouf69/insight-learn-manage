@@ -817,7 +817,7 @@ export const QUIZ_HOPITAUX: ExerciceItem = {
 export const QUIZ_MUSEES: ExerciceItem = {
   id: 7004, actif: true,
   titre: "Quiz Adresses Musées",
-  sousTitre: "21 questions sur les musées de Lyon",
+  sousTitre: "41 questions sur les musées de Lyon",
   questions: [
     {
       id: 1, enonce: "Où se trouve le Musée Lugdunum ?",
