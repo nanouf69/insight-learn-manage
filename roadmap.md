@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Support PDF Pratique VTC — 28/10 16:44 UTC
+- [ ] Ajouter une consultation complémentaire du PDF reçu dans module 8 uniquement, sans exposer le fichier PDF original.
+- [ ] Préserver cours/pages/activités/jalons existants, y compris modules terminés ; tester navigation et rendu du support.
+- [ ] Ne pas publier sans accord ; préciser la limite des captures d'écran.
+
 ## Régression affichage quiz module 7 — 28/10 14:44 UTC
 - [x] Cause lecture et aperçu réel : panneau communes inséré dans l'en-tête de toutes les pages, avant le quiz sélectionné ; pas de remplacement des données.
 - [x] Panneaux limités aux quiz 7020/7021 correspondants ; bandeau jeux global retiré des autres étapes du module 7, validation/données inchangées.
