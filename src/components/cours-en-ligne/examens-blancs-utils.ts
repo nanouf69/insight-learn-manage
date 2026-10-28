@@ -836,6 +836,16 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       return { ...sourceExo, ...loadedExo } as T;
     }
 
+    // Liste enregistrée vide SANS suppression explicite (deletedQuestionIds) :
+    // ce n'est pas une décision admin, c'est un état vide. Elle ne doit jamais
+    // masquer les questions du code (cas quiz 7004 « 0 questions » du 28/10).
+    const hasExplicitDeletions =
+      Array.isArray((loadedExo as any).deletedQuestionIds) &&
+      (loadedExo as any).deletedQuestionIds.length > 0;
+    if (loadedExo.questions.length === 0 && sourceExo.questions.length > 0 && !hasExplicitDeletions) {
+      return { ...sourceExo, ...loadedExo, questions: sourceExo.questions } as T;
+    }
+
     const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
     const deletedIds = new Set(
       Array.isArray((loadedExo as any).deletedQuestionIds)
