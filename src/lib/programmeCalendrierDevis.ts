@@ -126,16 +126,15 @@ const jourSemaine = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
 /**
  * Règle pratique (présentiel) : 6 h le samedi de fin si la session finit un samedi,
  * sinon le dernier samedi qui précède la date de fin, 9h–12h / 13h–16h.
- * Refus (null + motif) si le samedi sort de la session, est férié ou est déjà un jour de cours.
- */
+ * Le samedi peut tomber un jour férié : le centre travaille les jours fériés.
+ * Refus (null + motif) si le samedi sort de la session ou est déjà un jour de cours.
+  */
 export function samediPratique(s: Pick<SessionPublique, "date_debut" | "date_fin" | "jours">): { jour: string | null; anomalie: string | null } {
   if (!s.date_debut || !s.date_fin || !/^\d{4}-\d{2}-\d{2}$/.test(s.date_fin)) return { jour: null, anomalie: "Date de fin de session inconnue : date de pratique à confirmer" };
   const d = new Date(`${s.date_fin}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7));
   const jour = d.toISOString().slice(0, 10);
   if (jour < s.date_debut) return { jour: null, anomalie: "Session trop courte : aucun samedi entre le début et la fin, date de pratique à confirmer" };
-  const ferie = jourFerie(jour);
-  if (ferie) return { jour: null, anomalie: `Le samedi ${jour} prévu pour la pratique est férié (${ferie}) : date de pratique à confirmer` };
   if ((s.jours || []).some((j) => j.jour === jour && j.nature !== "pratique")) return { jour: null, anomalie: `Le samedi ${jour} est déjà occupé dans le calendrier : date de pratique à confirmer` };
   return { jour, anomalie: null };
 }
@@ -157,8 +156,7 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     if (j.jour < s.date_debut || j.jour > s.date_fin) anomalies.push(`Le ${j.jour} est hors des dates de la session`);
     const w = jourSemaine(j.jour);
     if (w === 0 || w === 6) anomalies.push(`Le ${j.jour} n'est pas un jour de semaine (cours du lundi au vendredi)`);
-    const ferie = jourFerie(j.jour);
-    if (ferie) anomalies.push(`Le ${j.jour} est un jour férié (${ferie}) : à confirmer`);
+    // Jour férié = jour de cours comme les autres (le centre travaille les jours fériés).
     jours.push({ ...j, heures: h });
     heuresSaisies += h;
   }
@@ -166,8 +164,7 @@ export function calendrierSession(s: SessionPublique, filiere: Filiere): Calendr
     const h = heuresPlages(j.plages);
     if (h === null || h === 0) { anomalies.push(`Horaire de pratique invalide le ${j.jour}`); continue; }
     if (jourSemaine(j.jour) !== 6) anomalies.push(`La pratique du ${j.jour} n'est pas un samedi`);
-    const ferieP = jourFerie(j.jour);
-    if (ferieP) anomalies.push(`La pratique du ${j.jour} tombe un jour férié (${ferieP}) : à confirmer`);
+    // Jour férié = samedi de pratique comme les autres (le centre travaille les jours fériés).
     if (j.jour < s.date_debut) anomalies.push(`La pratique du ${j.jour} est avant le début de la session`);
     pratique.push({ ...j, heures: h });
     heuresPratique += h;
@@ -211,8 +208,8 @@ export interface AgendaAutomatique { lignes: LigneAgenda[]; total: number; atten
 
 /**
  * Agenda jour par jour déduit des dates réelles de la session (affichage du devis uniquement) :
- * théorie du lundi au vendredi hors jours fériés, 6 h (journée) ou 4 h (soirée VTC),
- * puis pratique 6 h le dernier samedi (ou « date à confirmer par le centre »).
+ * théorie du lundi au vendredi, jours fériés INCLUS (le centre travaille les jours fériés),
+ * 6 h (journée) ou 4 h (soirée VTC), puis pratique 6 h le dernier samedi (ou « date à confirmer par le centre »).
  * Si le nombre de jours ne donne pas exactement la durée de la session, l'agenda est refusé (aucun jour inventé ni retiré).
  */
 export function agendaAutomatique(s: SessionPublique, filiere: Filiere, soir: boolean): AgendaAutomatique {
@@ -224,7 +221,6 @@ export function agendaAutomatique(s: SessionPublique, filiere: Filiere, soir: bo
   let cumul = 0;
   if (!s.date_debut || !s.date_fin) anomalies.push("Dates de session inconnues");
   else for (const j of joursOuvres(s.date_debut, s.date_fin)) {
-    if (jourFerie(j)) continue;
     cumul += parJour;
     lignes.push({ jour: j, nature: "Théorie", plages, heures: parJour, cumul });
   }

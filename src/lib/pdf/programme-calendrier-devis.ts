@@ -104,6 +104,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     } else if (auto && auto.valide) {
       titre("Agenda détaillé jour par jour");
       table(["Date", "Type", "Horaires", "Heures", "Cumul"], auto.lignes.map((l) => [l.jour ? dateLongue(l.jour) : "Date à confirmer par le centre", l.nature === "Pratique" ? "Pratique (au centre)" : "Théorie", l.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(l.heures), h(l.cumul)]), ["Total", "", "", "", h(auto.total)]);
+      para("Agenda susceptible d'être modifié : les dates peuvent être décalées en dehors de ces périodes.");
       if (!auto.lignes.some((l) => l.nature === "Pratique" && l.jour)) manquants.push("Date de la journée pratique");
     } else if (auto) {
       para(`Avertissement : agenda jour par jour non édité. ${auto.anomalies.join(" ; ")}.`);
@@ -111,6 +112,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     } else if (c.valide) {
       const lignes = [...c.jours.map((j) => ({ ...j, lib: "Cours" })), ...c.pratique.map((j) => ({ ...j, lib: "Pratique" }))].sort((a, b) => a.jour.localeCompare(b.jour));
       table(["Date", "Contenu", "Horaires", "Heures"], lignes.map((j) => [dateLongue(j.jour), j.lib, j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", "", h(c.heuresSaisies + c.heuresPratique)]);
+      para("Agenda susceptible d'être modifié : les dates peuvent être décalées en dehors de ces périodes.");
     } else {
       para(`Calendrier journalier à confirmer : ${c.anomalies.join(" ; ")}.`);
       manquants.push(...c.anomalies.map((a) => `Calendrier : ${a}`));

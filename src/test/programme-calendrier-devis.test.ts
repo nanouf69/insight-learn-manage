@@ -63,7 +63,8 @@ describe("PDF", () => {
   it("sans calendrier : PDF généré et éléments signalés", () => {
     const { doc, manquants } = buildProgrammeCalendrierPDF({ formation, programme: formationProgramme("taxi_presential")!, session: taxi4janv, sessions: [taxi4janv, examen] });
     expect(doc.getNumberOfPages()).toBeGreaterThan(0);
-    expect(manquants.some((m) => m.startsWith("Calendrier"))).toBe(true);
+    // 16 jours ouvrés (4–25 janvier) = 96 h ≠ 90 h annoncées : agenda non publié, divergence signalée.
+    expect(manquants.some((m) => m.startsWith("Agenda"))).toBe(true);
     // Date de fin connue → pratique le samedi 23 janvier 2027, plus « à confirmer ».
     expect(manquants).not.toContain("Date du stage pratique");
     expect(manquants).not.toContain("Date de la journée pratique");
@@ -149,9 +150,9 @@ describe("pratique automatique : dernier samedi de la session", () => {
     const r = samediPratique({ date_debut: "2027-02-01", date_fin: "2027-02-05", jours: [] });
     expect(r.jour).toBeNull(); expect(r.anomalie).toMatch(/trop courte/);
   });
-  it("samedi férié (14 juillet 2029) : à confirmer", () => {
+  it("samedi férié (14 juillet 2029) : pratique maintenue, le centre travaille les jours fériés", () => {
     const r = samediPratique({ date_debut: "2029-07-09", date_fin: "2029-07-16", jours: [] });
-    expect(r.jour).toBeNull(); expect(r.anomalie).toMatch(/férié/);
+    expect(r.jour).toBe("2029-07-14"); expect(r.anomalie).toBeNull();
   });
   it("collision avec un jour de cours : à confirmer", () => {
     const r = samediPratique({ date_debut: "2027-01-04", date_fin: "2027-01-25", jours: [{ jour: "2027-01-23", plages: PLAGES_JOURNEE, nature: "cours" }] });
