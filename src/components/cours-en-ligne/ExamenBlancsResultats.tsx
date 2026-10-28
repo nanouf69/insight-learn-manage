@@ -624,7 +624,6 @@ function EcranResultats({
       </TabsList>
 
       <TabsContent value="resultats" className="space-y-6">
-        <CorrectionsIaEleve attemptIds={resultats.map((r: any) => r.__core?.attemptId).filter(Boolean) as string[]} />
         {/* Bandeau correction IA en cours */}
       {!hasQrcPendingValidation && correctionEnCours && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
@@ -1206,6 +1205,8 @@ function EcranResultats({
           </Button>
         )}
       </div>
+      {/* Corrections IA : en fin de page, après le bilan et les résultats par matière. */}
+      <CorrectionsIaEleve attemptIds={resultats.map((r: any) => r.__core?.attemptId).filter(Boolean) as string[]} nomsMatieres={Object.fromEntries((examen?.matieres ?? []).map((m: any) => [String(m.id), String(m.nom ?? m.id)]))} />
       <RefaireExamenDialog
         open={retakeConfirmOpen}
         onOpenChange={setRetakeConfirmOpen}

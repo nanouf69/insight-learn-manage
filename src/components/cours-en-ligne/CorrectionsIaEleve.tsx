@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
  */
 type Ligne = {
   qrcId: string;
+  matiere: string;
+  numero: number | null;
+  ordreAttempt: number;
   enonce: string;
   corrige: string;
   reponse: string;
@@ -21,7 +24,15 @@ type Ligne = {
 const texte = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
 const fr = (n: number | null) => String(n ?? "").replace(".", ",");
 
-export default function CorrectionsIaEleve({ attemptIds }: { attemptIds: string[] }) {
+/** Numéro (1, 2, …) de la question dans le snapshot figé de CE passage ; null si introuvable (jamais inventé). */
+export function numeroQuestionSnapshot(questions: any[], questionId: unknown): number | null {
+  if (!Array.isArray(questions)) return null;
+  const ordonnees = questions.every((q) => Number.isFinite(q?.ordre)) ? [...questions].sort((a, b) => a.ordre - b.ordre) : questions;
+  const i = ordonnees.findIndex((x: any) => String(x?.id) === String(questionId));
+  return i >= 0 ? i + 1 : null;
+}
+
+export default function CorrectionsIaEleve({ attemptIds, nomsMatieres: nomsInitiaux = {} }: { attemptIds: string[]; nomsMatieres?: Record<string, string> }) {
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const cle = attemptIds.slice().sort().join(",");
 
@@ -39,11 +50,20 @@ export default function CorrectionsIaEleve({ attemptIds }: { attemptIds: string[
     ]);
     const snap = new Map(((att ?? []) as any[]).map((a) => [a.attempt_id, a.snapshot]));
     setLignes(ia.map((q) => {
+      let nomsMatieres = nomsInitiaux;
       const s = snap.get(q.attempt_id) as any;
       const qs = (Array.isArray(s?.questions) ? s.questions : []).find((x: any) => String(x.id) === String(q.question_id));
       const c = ((corr ?? []) as any[]).find((x) => x.qrc_instance_id === q.qrc_instance_id);
+      const mats = Array.isArray(s?.matieres) ? s.matieres : [];
+      const seule = mats.length === 1 ? mats[0] : null;
+      const code = String(s?.matiere ?? qs?.matiere ?? seule?.subject_id ?? "");
+      const titre = seule && String(seule.subject_id) === code ? String(seule.titre ?? "") : "";
+      if (titre && !nomsMatieres[code]) nomsMatieres = { ...nomsMatieres, [code]: titre };
       return {
         qrcId: q.qrc_instance_id,
+        matiere: code ? (nomsMatieres[code] && nomsMatieres[code] !== code ? `${nomsMatieres[code]} (${code})` : code) : "",
+        numero: numeroQuestionSnapshot(s?.questions, q.question_id),
+        ordreAttempt: attemptIds.indexOf(q.attempt_id),
         enonce: qs?.enonce ?? "",
         corrige: qs?.reponseQRC ?? "",
         reponse: texte(q.reponse),
@@ -52,7 +72,7 @@ export default function CorrectionsIaEleve({ attemptIds }: { attemptIds: string[
         justification: c?.justification ?? null,
         motsCles: (Array.isArray(qs?.motsCles) ? qs.motsCles : Array.isArray(qs?.mots_cles) ? qs.mots_cles : []).map((m: unknown) => String(m)).filter(Boolean),
       };
-    }));
+    }).sort((a, b) => a.ordreAttempt - b.ordreAttempt || (a.numero ?? 1e9) - (b.numero ?? 1e9)));
   };
 
   useEffect(() => { void charger(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [cle]);
@@ -64,6 +84,9 @@ export default function CorrectionsIaEleve({ attemptIds }: { attemptIds: string[
       <p className="text-base font-semibold text-ia">🤖 Correction proposée par intelligence artificielle</p>
       {lignes.map((l) => (
         <div key={l.qrcId} className="space-y-3 rounded border border-ia/30 bg-background p-3 text-sm" data-testid={`qrc-ia-${l.qrcId}`}>
+          <p className="text-xs font-semibold uppercase text-ia" data-testid="qrc-ia-reperes">
+            {l.matiere ? `Matière : ${l.matiere}` : "Matière non identifiée"} — {l.numero != null ? `Question ${l.numero}` : "Numéro de question non disponible"}
+          </p>
           <p className="font-medium">{l.enonce}</p>
           <div data-testid="bloc-reponse"><p className="text-xs font-semibold uppercase text-muted-foreground">Votre réponse</p><p className="whitespace-pre-wrap">{l.reponse}</p></div>
           <div className="rounded-lg border-4 border-success bg-success/10 p-4 shadow-md" data-testid="bloc-corrige-officiel">
