@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: async () => ({ data: [], error: null }) } }));
+// En vitest (node), « ?inline » rend un chemin de fichier : on fournit un PNG 1x1 en data URL.
+vi.mock("@/assets/tampon-ftransport.png?inline", () => ({
+  default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+}));
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 
 /**
