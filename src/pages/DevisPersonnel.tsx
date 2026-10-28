@@ -18,7 +18,7 @@ import { fr } from "date-fns/locale";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 import { dureeDevisElearning } from "@/lib/devisDureesElearning";
-import { ProgrammeCalendrierDownload } from "@/components/devis/ProgrammeCalendrierDownload";
+import { devisAvecProgramme } from "@/lib/pdf/devisAvecProgramme";
 
 /* ─── HELPER: parse "Du 12 au 25 janvier 2026" / "Du 26 octobre au 16 novembre 2026" ─── */
 const FR_MONTHS: Record<string, number> = {
@@ -390,8 +390,14 @@ export default function DevisPersonnel() {
       });
 
       const fileName = `Devis_${prenom}_${nom}_${format(new Date(), "ddMMyyyy")}.pdf`;
+      const { blob: devisComplet, programmeInclus } = await devisAvecProgramme(
+        doc, formation, dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null,
+      );
+      if (!programmeInclus) toast.warning("Le programme et le calendrier n'ont pas pu être ajoutés au devis.");
       if (!opts.sendEmail) {
-        doc.save(fileName);
+        const url = URL.createObjectURL(devisComplet);
+        const a = document.createElement("a"); a.href = url; a.download = fileName; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
       setGenerated(true);
       toast.success(opts.sendEmail ? "Envoi du devis par email..." : "Votre devis a été téléchargé !");
@@ -423,7 +429,7 @@ export default function DevisPersonnel() {
 
       // ── Persistance serveur (apprenant + devis + session + alerte) via edge function (service_role) ──
       try {
-        const pdfBlob = doc.output("blob");
+        const pdfBlob = devisComplet;
         const pdfArrayBuffer = await pdfBlob.arrayBuffer();
         // Convert to base64
         let binary = "";
@@ -915,10 +921,6 @@ export default function DevisPersonnel() {
               <><Download className="w-5 h-5 mr-2" /> Télécharger mon devis PDF</>
             )}
           </Button>
-          <ProgrammeCalendrierDownload
-            formation={formation}
-            dateDebutDevis={dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_debut ?? null : null}
-          />
           </div>
           <Button
             size="lg"
