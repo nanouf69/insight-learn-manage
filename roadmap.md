@@ -2,7 +2,8 @@
 
 ## Support PDF Pratique TAXI — 28/10 16:52 UTC
 - [x] Support consultable uniquement module 6, 19 images sans PDF original, sans activité ni callback de fin ; acquis et jalons inchangés.
-- [ ] Tests et vérification écran du lecteur TAXI ; non publié. Chargement CDN réel soumis à la même limite que le support VTC.
+- [x] 22 tests PASS, compilation OK ; aperçu administrateur bureau/mobile : ouverture et navigation 19/19 vérifiées avec les images exactes interceptées localement. Non publié.
+- [ ] Chargement CDN réel et compte élève NON PROUVÉS : même limitation d’accès hébergé que VTC ; aucune donnée ni droit modifié.
 
 ## Support PDF Pratique VTC — 28/10 16:44 UTC
 - [x] Consultation complémentaire module 8 uniquement, 19 images hébergées ; aucun PDF original mis en ligne, bouton télécharger/imprimer absent.
