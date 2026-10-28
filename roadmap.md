@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Textes à trous jeu Lyon — 28/10 14:37 UTC
+- [ ] Identifier le projet effectif et auditer toutes les banques, interactions et sauvegardes en lecture seule.
+- [ ] Corriger dans le projet propriétaire uniquement, préserver historiques et jalons ; aucune publication globale.
+- [ ] Prouver banques/solutions, clics, tactile 375/768, doublons, anciennes sauvegardes et isolement joueurs sur compte technique.
+
 ## Quiz communes visibles — 28/10 14:31 UTC
 - [x] Lecture seule : deux quiz déjà présents en aperçu module 7 ; absents de la liste admin Édition, source code indépendante du JSON serveur.
 - [x] Affichage ajouté aussi sous Exercices dans Édition, sans duplication de questions ni écriture élève.
