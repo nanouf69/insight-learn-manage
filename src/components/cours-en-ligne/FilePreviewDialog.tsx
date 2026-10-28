@@ -77,6 +77,24 @@ async function toDisplayableCourseUrl(fileUrl: string): Promise<string> {
 }
 
 /**
+ * Téléchargement admin d'un support de cours (lecture seule) : lien signé
+ * court avec nom d'origine (Content-Disposition: attachment). Le bucket est privé.
+ */
+export async function telechargerFichierCours(fileUrl: string, nomFichier: string): Promise<void> {
+  const resolvedUrl = resolveAppFileUrl(fileUrl);
+  const obj = extractCourseStorageObject(fileUrl) ?? extractCourseStorageObject(resolvedUrl);
+  let cible = resolvedUrl;
+  if (obj) {
+    const { data, error } = await supabase.storage.from(obj.bucket).createSignedUrl(obj.path, 120, { download: nomFichier });
+    if (error || !data?.signedUrl) throw new Error(error?.message ?? "Lien de téléchargement indisponible");
+    cible = normalizeSignedStorageUrl(data.signedUrl);
+  }
+  const a = document.createElement("a");
+  a.href = cible; a.download = nomFichier; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/**
  * Bouton "Aperçu" : ouvre le support (PDF/PowerPoint converti) dans une fenêtre
  * afin de contrôler visuellement qu'il s'agit bien du bon document.
  */
