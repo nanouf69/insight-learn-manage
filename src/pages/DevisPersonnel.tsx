@@ -1,3 +1,4 @@
+import { datesVtcAVenir, datesTaxiAVenir, sessionsAVenir, SESSIONS_VTC, SESSIONS_TAXI } from "@/lib/sessionsCatalogue";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams } from "react-router-dom";
@@ -46,23 +47,6 @@ function parseFrenchDateRange(label: string): { date_debut: string; date_fin: st
 }
 
 /* ─── DATES DE FORMATION CATALOGUE ─── */
-// Chaque session : libellé + date de début (YYYY-MM-DD). Masquée dès son premier jour,
-// affichée seulement si elle commence dans les 6 prochains mois.
-const SESSIONS_VTC = [
-  { label: "Du 2 au 15 novembre 2026", debut: "2026-11-02" },
-  { label: "Du lundi 11 au vendredi 22 janvier 2027", debut: "2027-01-11" },
-  { label: "Du lundi 15 au vendredi 26 mars 2027", debut: "2027-03-15" },
-];
-const SESSIONS_TAXI = [
-  { label: "Du lundi 4 au lundi 25 janvier 2027", debut: "2027-01-04" },
-  { label: "Du lundi 8 au lundi 29 mars 2027", debut: "2027-03-08" },
-];
-function sessionsAVenir(list: { label: string; debut: string }[], now = new Date()): string[] {
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(now);
-  const limite = new Date(now); limite.setMonth(limite.getMonth() + 6);
-  const max = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(limite);
-  return list.filter((s) => s.debut > today && s.debut <= max).map((s) => s.label);
-}
 
 /* ─── FORMATIONS CATALOGUE ─── */
 const FORMATIONS = [

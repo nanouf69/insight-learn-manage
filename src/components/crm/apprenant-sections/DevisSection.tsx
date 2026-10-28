@@ -1,3 +1,4 @@
+import { datesVtcAVenir, datesTaxiAVenir, sessionsAVenir, SESSIONS_VTC, SESSIONS_TAXI } from "@/lib/sessionsCatalogue";
 import { useState, useRef, useEffect } from "react";
 import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt, PenLine, RotateCcw, Send, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -692,22 +693,8 @@ const FORMATIONS_CATALOGUE = [
 ];
 
 /* ─── DATES DE FORMATION CATALOGUE (présentiel) ─── */
-const DATES_VTC = [
-  "Du 12 au 25 janvier 2026",
-  "Du 16 au 30 mars 2026",
-  "Du 11 au 24 mai 2026",
-  "Du 6 au 19 juillet 2026",
-  "Du 14 au 27 septembre 2026",
-  "Du 2 au 15 novembre 2026",
-];
-const DATES_TAXI = [
-  "Du 5 au 26 janvier 2026",
-  "Du 9 au 30 mars 2026",
-  "Du 4 au 25 mai 2026",
-  "Du 29 juin au 20 juillet 2026",
-  "Du 7 au 28 septembre 2026",
-  "Du 26 octobre au 16 novembre 2026",
-];
+const DATES_VTC = sessionsAVenir(SESSIONS_VTC);
+const DATES_TAXI = sessionsAVenir(SESSIONS_TAXI);
 
 const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
 
