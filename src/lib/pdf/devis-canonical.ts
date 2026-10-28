@@ -199,6 +199,8 @@ export type CanonicalDevisInput = {
 export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = 210;
+  // Repère des cadres « Pour FTRANSPORT » (page, x, y, w, h en mm) lu par le serveur après signature.
+  const cadresFtransport: number[][] = [];
   const margin = 15;
   const contentW = pageW - margin * 2;
 
@@ -540,6 +542,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   doc.setFontSize(7.5);
   doc.setTextColor(100, 100, 100);
   doc.text("Pour FTRANSPORT", sigFtransX + 2, y + 5);
+  cadresFtransport.push([doc.getCurrentPageInfo().pageNumber, sigFtransX, y, sigBoxW, sigBoxH]);
   doc.setFontSize(7);
   doc.text("Le responsable de formation", sigFtransX + 2, y + 9);
 
@@ -685,6 +688,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   const sigFtransX2 = pageW - margin - 80;
   doc.rect(sigFtransX2, y, 80, 30);
   doc.text("Pour FTRANSPORT", sigFtransX2 + 2, y + 5);
+  cadresFtransport.push([doc.getCurrentPageInfo().pageNumber, sigFtransX2, y, 80, 30]);
   doc.text("Le responsable de formation", sigFtransX2 + 2, y + 9);
 
   doc.setFontSize(6.5);
@@ -703,6 +707,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
     doc.setPage(i);
     doc.text(`Page ${i} / ${pageCount}`, pageW / 2, 297, { align: "center" });
   }
+  if (cadresFtransport.length) doc.setProperties({ keywords: `FT_CADRES:${JSON.stringify(cadresFtransport)}` });
 
   return doc;
 }

@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { apposerSignatureTampon } from "../_shared/tamponFtransport.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -94,7 +95,19 @@ Deno.serve(async (req) => {
     // Upload signed file (nouveau chemin unique, jamais d'écrasement)
     const ext = file.name.split(".").pop() || "pdf";
     const filePath = `signes/${devis.id}_${crypto.randomUUID()}.${ext}`;
-    const arrayBuffer = await file.arrayBuffer();
+    let arrayBuffer: ArrayBuffer | Uint8Array = await file.arrayBuffer();
+    if (ext.toLowerCase() === "pdf") {
+      try {
+        const tamponne = await apposerSignatureTampon(supabase, arrayBuffer as ArrayBuffer);
+        if (tamponne) {
+          // Original client conservé à part, jamais écrasé.
+          await supabase.storage.from("devis").upload(filePath.replace(/\.pdf$/i, "_original_client.pdf"), arrayBuffer, { contentType: "application/pdf", upsert: false });
+          arrayBuffer = tamponne;
+        }
+      } catch (e) {
+        console.error("Signature/tampon FTRANSPORT non apposés :", e);
+      }
+    }
 
     const { error: uploadError } = await supabase.storage
       .from("devis")

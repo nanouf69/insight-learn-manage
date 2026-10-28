@@ -397,11 +397,7 @@ export default function DevisPersonnel() {
         dateDebutSouhaitee ? parseFrenchDateRange(dateDebutSouhaitee)?.date_fin ?? null : null,
       );
       if (!programmeInclus) toast.warning("Le programme et le calendrier n'ont pas pu être ajoutés au devis.");
-      if (!opts.sendEmail) {
-        const url = URL.createObjectURL(devisComplet);
-        const a = document.createElement("a"); a.href = url; a.download = fileName; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      }
+      let devisFinal: Blob = devisComplet;
       setGenerated(true);
       toast.success(opts.sendEmail ? "Envoi du devis par email..." : "Votre devis a été téléchargé !");
       setTimeout(() => ribRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
@@ -463,15 +459,29 @@ export default function DevisPersonnel() {
         });
         if (!resp.ok) {
           console.error("submit-devis-personnel failed:", resp.status, await resp.text());
+        } else {
+          // Devis signé : version avec signature + tampon FTRANSPORT posés par le serveur.
+          const res = await resp.json().catch(() => null);
+          if (res?.pdfSigneBase64) {
+            const raw = atob(res.pdfSigneBase64);
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            devisFinal = new Blob([out], { type: "application/pdf" });
+          }
         }
       } catch (saveErr) {
         console.warn("Auto-save devis (edge) failed (non-blocking):", saveErr);
+      }
+      if (!opts.sendEmail) {
+        const url = URL.createObjectURL(devisFinal);
+        const a = document.createElement("a"); a.href = url; a.download = fileName; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
 
       // ── Envoi par email (client + copie contact@ftransport.fr) ──
       if (opts.sendEmail) {
         try {
-          const pdfBlob2 = doc.output("blob");
+          const pdfBlob2 = devisFinal;
           const buf2 = await pdfBlob2.arrayBuffer();
           let bin2 = "";
           const b2 = new Uint8Array(buf2);

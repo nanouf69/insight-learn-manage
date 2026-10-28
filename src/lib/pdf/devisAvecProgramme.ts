@@ -34,6 +34,9 @@ export async function devisAvecProgramme(
     }
     const { doc } = buildProgrammeCalendrierPDF({ formation, programme, session, sessions, erreurLecture: !!error });
     const fusion = await PDFDocument.create();
+    // Conserve le repère des cadres FTRANSPORT (pages du devis en tête, numéros inchangés).
+    const motsCles = (await PDFDocument.load(devis.output("arraybuffer"), { updateMetadata: false })).getKeywords();
+    if (motsCles) fusion.setKeywords([motsCles]);
     for (const src of [devis.output("arraybuffer"), doc.output("arraybuffer")]) {
       const pdf = await PDFDocument.load(src);
       (await fusion.copyPages(pdf, pdf.getPageIndices())).forEach((p) => fusion.addPage(p));
