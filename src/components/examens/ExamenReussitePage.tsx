@@ -2654,12 +2654,24 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             const ins = dateInscriptionAffichee(apprenant as any);
                             if (!ins) return <span className="text-xs text-muted-foreground">-</span>;
                             const tard = inscriptionRecente(ins.date);
+                            const edof = (apprenant as any).date_acceptation_cpf
+                              ? String((apprenant as any).date_acceptation_cpf).slice(0, 10).split("-").reverse().join("/")
+                              : null;
+                            const formation = (apprenant as any).created_at
+                              ? String((apprenant as any).created_at).slice(0, 10).split("-").reverse().join("/")
+                              : null;
+                            const complement = ins.source === "cpf"
+                              ? (formation ? `Formation : ${formation}` : null)
+                              : (edof ? `EDOF : ${edof}` : null);
                             return (
                               <span
                                 title={`${ins.source === "cpf" ? "Acceptation CPF (import Excel)" : "Inscription CRM"}${tard ? " — inscrit depuis moins de 15 jours ouvrés" : ""}`}
                                 className={tard ? "text-xs font-bold text-destructive whitespace-nowrap" : "text-xs whitespace-nowrap"}
                               >
                                 {ins.date.split("-").reverse().join("/")}{ins.source === "cpf" ? " (CPF)" : ""}
+                                {complement && (
+                                  <span className="block text-[10px] font-normal text-muted-foreground whitespace-nowrap">{complement}</span>
+                                )}
                               </span>
                             );
                           })()}
