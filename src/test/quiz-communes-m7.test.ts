@@ -1,8 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { QUESTIONS_METROPOLE, QUESTIONS_ZUPC, COMMUNES_METROPOLE, COMMUNES_ZUPC } from "@/components/cours-en-ligne/equipements-taxi-locale/donneesCommunes";
 import { activitesDuModule, activitesRequisesModule, activiteHorsVolume } from "@/lib/jeuxPedagogiques";
+import { module7CommunePanel } from "@/lib/module7ActivitiesDisplay";
 
 describe("quiz communes module 7", () => {
+  it("seules les étapes communes affichent leur propre panneau, jamais Musées/Consulats/Hôpitaux/jeux", () => {
+    expect(module7CommunePanel(7, 7020)).toBe(7020);
+    expect(module7CommunePanel(7, 7021)).toBe(7021);
+    for (const id of [7004, 7003, 7002, 7001, 17, 18, 19, 20, 21, null]) {
+      expect(module7CommunePanel(7, id)).toBeNull();
+    }
+    expect(module7CommunePanel(8, 7020)).toBeNull();
+  });
   it("les deux nouveaux quiz n'ajoutent ni exigence ni volume aux modules déjà terminés", () => {
     const termine = { status: "completed", completed_at: "2026-10-28T14:16:59Z" };
     const activites = activitesDuModule(7);

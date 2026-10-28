@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Régression affichage quiz module 7 — 28/10 14:44 UTC
+- [x] Cause lecture et aperçu réel : panneau communes inséré dans l'en-tête de toutes les pages, avant le quiz sélectionné ; pas de remplacement des données.
+- [x] Panneaux limités aux quiz 7020/7021 correspondants ; bandeau jeux global retiré des autres étapes du module 7, validation/données inchangées.
+- [x] Aperçu administrateur connecté bureau/375 : Consulats29/Hôpitaux30/Musées41, communes 58/24 ouvertes, lien Légende propre ; 17 tests PASS, compilation OK. Rapport docs/correction-affichage-module7-2026-10-28.md ; non publié.
+- [ ] Parcours élève technique module 7 et validation/navigation Précédent/Suivant : aucun compte technique autorisé module 7 disponible ; aucun droit ajouté ni faux quiz validé pour tester.
+
 ## Textes à trous jeu Lyon — 28/10 14:37 UTC
 - [ ] Complément 14:41 : isoler résultats par joueur/jeu/quiz/tentative/version ; réidentifier à finishedAt + 24 h exactement, sans prolongation au reload ; changement joueur avant 24 h sans fuite ni déconnexion formation.
 - [ ] Tests fictifs requis : A quiz1→quiz2, B même appareil, 24 h−1/exact/+1, reload/multi-onglets, réponse lente A après B ; blocage identique : projet propriétaire lecture seule ici.
