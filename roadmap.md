@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Kevin FERNANDES — « attente » sur EB4/EB5 — 28/10 09:10 UTC
+- [x] Cause prouvée : 0 QRC en attente côté serveur (toutes corrigées IA, notes définitives) ; l'écran rejetait le passage serveur car l'ancienne fiche ne garde qu'un résumé des questions, puis affichait l'ancienne copie jamais corrigée.
+- [x] Correctif d'affichage seul (matières à QRC, mêmes réponses, passage définitif) + 6 tests ; même cause chez 13 élèves / 61 matières, corrigée par le même affichage ; aucune IA relancée.
+- [ ] Publication en attente d'accord (embarquerait Quiz 20 questions, PDF, émargement).
+
 ## Feuilles d’émargement invisibles après connexion — 28/10 09:00 UTC
 - [x] Cause prouvée : la lecture de l’agenda est réservée Admin ; côté élève elle revenait vide sans erreur → aucune feuille due (11/11 élèves session TAXI/TA, 0 signature depuis le 26/10).
 - [x] Lecture serveur dédiée (horaires des semaines de ses sessions seulement), refus = bandeau « vérification impossible » ; feuille contrôlée aussi en ouvrant un module directement (bandeau, fenêtre en revenant à l’accueil) ; TA = première semaine comme l’Admin.
