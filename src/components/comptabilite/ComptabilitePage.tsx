@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
+import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, cleNom, STATUT_VALIDE, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
 
 interface Releve {
   id: string;
@@ -135,7 +135,7 @@ export function ComptabilitePage() {
   const [filterDoublons, setFilterDoublons] = useState(false);
   // Export CPF : lu dans le navigateur uniquement, jamais enregistré ni envoyé.
   const [exportCpf, setExportCpf] = useState<{ nom: string; lignes: LigneExportCpf[] } | null>(null);
-  const [filterRapprochement, setFilterRapprochement] = useState<"all" | "vert" | "rouge">("all");
+  const [filterRapprochement, setFilterRapprochement] = useState<"all" | "vert" | "rouge" | "csv_seul" | "cpf_absent" | "hors_cpf">("all");
   const exportCpfInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
@@ -949,20 +949,43 @@ export function ComptabilitePage() {
     );
   }, [exportCpf, factures, apprenantNames]);
 
+  const categorieSynthese = (f: Facture): "cpf_absent" | "hors_cpf" | null => {
+    const r = rapprochement?.get(f.id);
+    if (!r || f.statut === "annulee" || f.statut === "brouillon") return null;
+    if (f.type_financement !== "cpf") return "hors_cpf";
+    return r.couleur === "rouge" ? "cpf_absent" : null;
+  };
+
   const rapprochementStats = useMemo(() => {
-    if (!rapprochement) return null;
+    if (!rapprochement || !exportCpf) return null;
     let vert = 0, rouge = 0, totalVert = 0, totalRouge = 0, doublons = 0, hors = 0;
+    let cpfAbsent = 0, totalCpfAbsent = 0, horsCpf = 0, totalHorsCpf = 0;
     const ventes2026 = factures.filter((f) => f.statut !== "brouillon" && estVente2026({ ...f, montant_ttc: Number(f.montant_ttc) }));
+    const dossiersUtilises = new Set<string>();
+    const nomsFactures = new Set<string>();
     for (const f of ventes2026) {
       const r = rapprochement.get(f.id);
       if (!r) continue;
-      if (r.couleur === "vert") { vert++; totalVert += Number(f.montant_ttc); }
+      if (r.couleur === "vert") { vert++; totalVert += Number(f.montant_ttc); r.dossiers.forEach((d) => dossiersUtilises.add(d.numeroDossier)); }
       else { rouge++; totalRouge += Number(f.montant_ttc); }
       if (r.motif.startsWith("Doublon")) doublons++;
       if (r.motif.startsWith("Hors périmètre")) hors++;
+      if (f.type_financement === "cpf" && f.statut !== "annulee") {
+        const nom = (f.apprenant_id && apprenantNames[f.apprenant_id]) || beneficiaireDepuisReference((f as any).numero_convention);
+        if (nom) nomsFactures.add(cleNom(nom));
+      }
+      const c = categorieSynthese(f);
+      if (c === "cpf_absent") { cpfAbsent++; totalCpfAbsent += Number(f.montant_ttc); }
+      if (c === "hors_cpf") { horsCpf++; totalHorsCpf += Number(f.montant_ttc); }
     }
-    return { total: ventes2026.length, vert, rouge, totalVert, totalRouge, doublons, hors };
-  }, [rapprochement, factures]);
+    // Dossiers validés de session 2026 sans aucune facture CPF au nom du bénéficiaire (ni facture verte liée).
+    const csvSeuls = exportCpf.lignes.filter((l) =>
+      l.statut === STATUT_VALIDE && /2026/.test(`${l.dateDebut} ${l.dateFin}`) &&
+      !dossiersUtilises.has(l.numeroDossier) && !nomsFactures.has(cleNom(`${l.nom} ${l.prenom}`)),
+    );
+    const totalCsvSeuls = csvSeuls.reduce((s, l) => s + (l.montantFacturable ?? 0), 0);
+    return { total: ventes2026.length, vert, rouge, totalVert, totalRouge, doublons, hors, cpfAbsent, totalCpfAbsent, horsCpf, totalHorsCpf, csvSeuls, totalCsvSeuls };
+  }, [rapprochement, factures, exportCpf, apprenantNames]);
 
   const handleExportCpfFile = async (file: File) => {
     try {
@@ -988,7 +1011,10 @@ export function ComptabilitePage() {
         (filterTypeFlux === "achats" && isAchat) ||
         (filterTypeFlux === "ventes" && !isAchat);
       const matchDoublon = !filterDoublons || doublonsParId.has(f.id);
-      const matchRappr = !rapprochement || filterRapprochement === "all" || rapprochement.get(f.id)?.couleur === filterRapprochement;
+      const matchRappr = !rapprochement || filterRapprochement === "all" ||
+        (filterRapprochement === "csv_seul" ? false
+          : filterRapprochement === "cpf_absent" || filterRapprochement === "hors_cpf" ? categorieSynthese(f) === filterRapprochement
+          : rapprochement.get(f.id)?.couleur === filterRapprochement);
       return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchDoublon && matchRappr;
     });
   }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
@@ -1543,6 +1569,22 @@ export function ComptabilitePage() {
             </Card>
           )}
 
+          {exportCpf && rapprochementStats && filterRapprochement === "csv_seul" && (
+            <Card>
+              <CardContent className="p-4 text-sm space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Dossiers de l'export Caisse des Dépôts sans facture dans l'application ({rapprochementStats.csvSeuls.length} · {formatMontant(rapprochementStats.totalCsvSeuls)})</span>
+                  <Button size="sm" variant="ghost" onClick={() => setFilterRapprochement("all")}>Fermer</Button>
+                </div>
+                {rapprochementStats.csvSeuls.map((d, i) => (
+                  <div key={`${d.numeroDossier}-${i}`} className="border-l-2 border-destructive pl-2">
+                    {d.numeroDossier} · {d.nom} {d.prenom} · {d.intitule} · {d.dateDebut}–{d.dateFin} · facturable {d.montantFacturable?.toFixed(2) ?? "—"} €
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardContent className="p-0">
               {loading ? (
@@ -1810,6 +1852,29 @@ export function ComptabilitePage() {
           <div className="flex justify-end text-sm text-muted-foreground">
             {filteredFactures.length} facture{filteredFactures.length > 1 ? "s" : ""} — Total: {formatMontant(filteredFactures.reduce((s, f) => s + Number(f.montant_ttc), 0))}
           </div>
+
+          {exportCpf && rapprochementStats && (
+            <Card>
+              <CardContent className="p-0 text-sm">
+                <div className="px-4 py-2 font-semibold border-b">Synthèse CPF (Caisse des Dépôts) — ventes 2026 · cliquez sur une ligne pour voir les factures</div>
+                {([
+                  ["csv_seul", `Dossiers CPF « ${STATUT_VALIDE} » (session 2026) présents dans l'export Caisse des Dépôts mais sans facture dans l'application`, rapprochementStats.csvSeuls.length, rapprochementStats.totalCsvSeuls],
+                  ["cpf_absent", "Factures CPF (Caisse des Dépôts) non retrouvées / en écart dans l'export Excel", rapprochementStats.cpfAbsent, rapprochementStats.totalCpfAbsent],
+                  ["hors_cpf", "Factures hors CPF (autres financements que la Caisse des Dépôts)", rapprochementStats.horsCpf, rapprochementStats.totalHorsCpf],
+                ] as const).map(([key, label, nb, total]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => { const v = filterRapprochement === key ? "all" : key; setFilterRapprochement(v); if (v !== "all") window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={cn("w-full flex flex-wrap justify-between gap-2 px-4 py-3 border-b last:border-b-0 text-left hover:bg-muted/50", filterRapprochement === key && "bg-muted")}
+                  >
+                    <span>{label}</span>
+                    <span className="font-semibold whitespace-nowrap">{nb} · {formatMontant(total)}</span>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* === PAR CATÉGORIE === */}
