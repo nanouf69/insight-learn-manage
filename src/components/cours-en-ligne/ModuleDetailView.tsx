@@ -10295,6 +10295,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           {/* Exercices */}
           <div className="space-y-3">
+            {Number(module.id) === 7 && (
+              <Suspense fallback={<p role="status">Chargement des quiz des communes…</p>}>
+                <CoursQuizCommunes compteId={null} />
+              </Suspense>
+            )}
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold flex items-center gap-2">📝 Exercices ({moduleData.exercices.length})</h3>
               <Button size="sm" className="gap-1" onClick={() => addItem("exercices")}>

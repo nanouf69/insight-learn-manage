@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Quiz communes visibles — 28/10 14:31 UTC
+- [x] Lecture seule : deux quiz déjà présents en aperçu module 7 ; absents de la liste admin Édition, source code indépendante du JSON serveur.
+- [x] Affichage ajouté aussi sous Exercices dans Édition, sans duplication de questions ni écriture élève.
+- [ ] Vérifier ouverture des deux quiz et exclusion des jalons des modules terminés ; publication globale non autorisée.
+
 ## Livres de formation 70–73 — suite 28/10 13:20 UTC
 - [x] Audit fiches/définitions/QRC contre les 4 livres ; 2 corrections justifiées (définition honorabilité VTC/TAXI en nouvelle version, réponse ADS du cours TA) ; rapport docs/livres-formation-audit-2026-10-28.md.
 - [x] Accès testés (admin, anonyme, jeton invalide, page hors livre, expiration, stockage public) ; 2 erreurs serveur corrigées et déployées ; aperçu bureau/tablette/mobile 4 livres.
