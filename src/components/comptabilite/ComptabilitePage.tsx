@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
 
 interface Releve {
   id: string;
@@ -132,6 +133,10 @@ export function ComptabilitePage() {
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
   const [filterTypeFlux, setFilterTypeFlux] = useState<"all" | "ventes" | "achats">("all");
   const [filterDoublons, setFilterDoublons] = useState(false);
+  // Export CPF : lu dans le navigateur uniquement, jamais enregistré ni envoyé.
+  const [exportCpf, setExportCpf] = useState<{ nom: string; lignes: LigneExportCpf[] } | null>(null);
+  const [filterRapprochement, setFilterRapprochement] = useState<"all" | "vert" | "rouge">("all");
+  const exportCpfInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
@@ -592,10 +597,20 @@ export function ComptabilitePage() {
 
   const fetchFactures = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("factures")
-      .select("*")
-      .order("date_emission", { ascending: false });
+    // Pagination : sans elle, la lecture s'arrêtait silencieusement à 1000 factures.
+    let data: any[] = [];
+    let error: any = null;
+    for (let from = 0; ; from += 1000) {
+      const page = await supabase
+        .from("factures")
+        .select("*")
+        .order("date_emission", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, from + 999);
+      if (page.error) { error = page.error; break; }
+      data = data.concat(page.data || []);
+      if (!page.data || page.data.length < 1000) break;
+    }
     if (error) {
       toast.error("Erreur lors du chargement des factures");
     } else {
@@ -605,10 +620,14 @@ export function ComptabilitePage() {
         new Set((data || []).map((f: any) => f.apprenant_id).filter(Boolean)),
       ) as string[];
       if (ids.length) {
-        const { data: apprs } = await supabase
-          .from("apprenants")
-          .select("id, nom, prenom")
-          .in("id", ids);
+        const apprs: any[] = [];
+        for (let i = 0; i < ids.length; i += 200) {
+          const { data: part } = await supabase
+            .from("apprenants")
+            .select("id, nom, prenom")
+            .in("id", ids.slice(i, i + 200));
+          apprs.push(...(part || []));
+        }
         const map: Record<string, string> = {};
         (apprs || []).forEach((a: any) => {
           map[a.id] = `${a.prenom || ""} ${a.nom || ""}`.trim();
@@ -909,6 +928,48 @@ export function ComptabilitePage() {
     return map;
   }, [allFactures]);
 
+  const rapprochement = useMemo(() => {
+    if (!exportCpf) return null;
+    return rapprocher(
+      factures.map((f) => ({
+        id: f.id,
+        numero: f.numero,
+        date_emission: f.date_emission,
+        type_financement: f.type_financement,
+        montant_ttc: Number(f.montant_ttc),
+        statut: f.statut,
+        client_nom: f.client_nom,
+        beneficiaire: (f.apprenant_id && apprenantNames[f.apprenant_id]) || beneficiaireDepuisReference((f as any).numero_convention),
+      })),
+      exportCpf.lignes,
+    );
+  }, [exportCpf, factures, apprenantNames]);
+
+  const rapprochementStats = useMemo(() => {
+    if (!rapprochement) return null;
+    let vert = 0, rouge = 0, totalVert = 0, totalRouge = 0, doublons = 0, hors = 0;
+    const ventes2026 = factures.filter((f) => estVente2026({ ...f, montant_ttc: Number(f.montant_ttc) }));
+    for (const f of ventes2026) {
+      const r = rapprochement.get(f.id);
+      if (!r) continue;
+      if (r.couleur === "vert") { vert++; totalVert += Number(f.montant_ttc); }
+      else { rouge++; totalRouge += Number(f.montant_ttc); }
+      if (r.motif.startsWith("Doublon")) doublons++;
+      if (r.motif.startsWith("Hors périmètre")) hors++;
+    }
+    return { total: ventes2026.length, vert, rouge, totalVert, totalRouge, doublons, hors };
+  }, [rapprochement, factures]);
+
+  const handleExportCpfFile = async (file: File) => {
+    try {
+      const lignes = parseExportCpf(await file.text());
+      setExportCpf({ nom: file.name, lignes });
+      toast.success(`${lignes.length} dossiers lus (non enregistrés)`);
+    } catch (e: any) {
+      toast.error(e?.message || "Fichier illisible");
+    }
+  };
+
   const filteredFactures = useMemo(() => {
     return allFactures.filter((f) => {
       const matchSearch =
@@ -923,9 +984,10 @@ export function ComptabilitePage() {
         (filterTypeFlux === "achats" && isAchat) ||
         (filterTypeFlux === "ventes" && !isAchat);
       const matchDoublon = !filterDoublons || doublonsParId.has(f.id);
-      return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchDoublon;
+      const matchRappr = !rapprochement || filterRapprochement === "all" || rapprochement.get(f.id)?.couleur === filterRapprochement;
+      return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchDoublon && matchRappr;
     });
-  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames, filterDoublons, doublonsParId]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -1435,8 +1497,46 @@ export function ComptabilitePage() {
             >
               Doublons ({doublonsParId.size})
             </Button>
+            <input
+              ref={exportCpfInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => { const file = e.target.files?.[0]; if (file) handleExportCpfFile(file); e.target.value = ""; }}
+            />
+            <Button variant="outline" onClick={() => exportCpfInputRef.current?.click()}>
+              Rapprocher l'export CPF (CSV)
+            </Button>
 
           </div>
+
+          {exportCpf && rapprochementStats && (
+            <Card>
+              <CardContent className="p-4 space-y-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">Rapprochement export CPF — ventes émises en 2026</span>
+                  <span className="text-muted-foreground">({exportCpf.nom}, {exportCpf.lignes.length} dossiers, lu localement, non enregistré)</span>
+                  <Button size="sm" variant="ghost" onClick={() => { setExportCpf(null); setFilterRapprochement("all"); }}>Retirer</Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant={filterRapprochement === "all" ? "default" : "outline"} onClick={() => setFilterRapprochement("all")}>
+                    Toutes ({rapprochementStats.total})
+                  </Button>
+                  <Button size="sm" variant="outline" className={cn("border-2 border-success", filterRapprochement === "vert" && "bg-success/10")} onClick={() => setFilterRapprochement("vert")}>
+                    Concordantes : {rapprochementStats.vert} · {formatMontant(rapprochementStats.totalVert)}
+                  </Button>
+                  <Button size="sm" variant="outline" className={cn("border-2 border-destructive", filterRapprochement === "rouge" && "bg-destructive/10")} onClick={() => setFilterRapprochement("rouge")}>
+                    Écarts / non retrouvées : {rapprochementStats.rouge} · {formatMontant(rapprochementStats.totalRouge)}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Vert : bénéficiaire + montant facturable d'un dossier « Service fait validé », un dossier pour une seule facture.
+                  Rouge : écart, non retrouvée, ambiguë, doublon potentiel ({rapprochementStats.doublons}) ou hors périmètre de l'export ({rapprochementStats.hors}).
+                  Les factures n'ont pas de numéro de dossier CPF : la concordance repose sur le nom et le montant.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardContent className="p-0">
@@ -1461,10 +1561,16 @@ export function ComptabilitePage() {
                     const isAvoir = Number(f.montant_ttc) < 0;
                     const isDbFacture = !String(f.id).startsWith("draft-");
                     const rowClickable = isDraft || isDbFacture;
+                    const rappr = rapprochement?.get(f.id);
                     return (
                       <TableRow
                         key={f.id}
-                        className={rowClickable ? (isDraft ? "cursor-pointer hover:bg-amber-50" : "cursor-pointer hover:bg-muted/50") : ""}
+                        className={cn(
+                          rowClickable ? (isDraft ? "cursor-pointer hover:bg-amber-50" : "cursor-pointer hover:bg-muted/50") : "",
+                          rappr && "outline outline-2 -outline-offset-2",
+                          rappr?.couleur === "vert" && "outline-success",
+                          rappr?.couleur === "rouge" && "outline-destructive",
+                        )}
                         onClick={
                           isDraft
                             ? () => setDraftPreview(f)
@@ -1509,6 +1615,16 @@ export function ComptabilitePage() {
                         </TableCell>
                         <TableCell>
                           <div>{f.client_nom}</div>
+                          {rappr && (
+                            <div className={cn("text-xs mt-0.5 font-medium", rappr.couleur === "vert" ? "text-success" : "text-destructive")}>
+                              {rappr.motif}
+                              {rappr.dossiers.slice(0, 3).map((d) => (
+                                <div key={d.numeroDossier} className="font-normal text-muted-foreground">
+                                  CSV {d.numeroDossier} · {d.nom} {d.prenom} · {d.statut} · facturable {d.montantFacturable?.toFixed(2) ?? "—"} € · {d.dateDebut}–{d.dateFin}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {f.apprenant_id && apprenantNames[f.apprenant_id] && (
                             <div className="text-xs text-muted-foreground mt-0.5">
                               👤 {apprenantNames[f.apprenant_id]}
