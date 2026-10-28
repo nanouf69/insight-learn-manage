@@ -24,8 +24,12 @@ Deno.serve(async (req) => {
     if (!auth.startsWith("Bearer ")) return json(401, { error: "non_connecte" });
     const url = Deno.env.get("SUPABASE_URL")!;
     const userClient = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
-    const { data: claims, error: cErr } = await userClient.auth.getClaims(auth.slice(7));
-    const uid = claims?.claims?.sub;
+    let uid: string | undefined;
+    let cErr: unknown = null;
+    try {
+      const r = await userClient.auth.getClaims(auth.slice(7));
+      uid = r.data?.claims?.sub; cErr = r.error;
+    } catch (e) { cErr = e; }
     if (cErr || !uid) return json(401, { error: "non_connecte" });
 
     const body = await req.json().catch(() => ({}));
@@ -62,6 +66,7 @@ Deno.serve(async (req) => {
     }
 
     const debut = Math.max(1, Math.floor(Number(body?.debut) || 1));
+    if (debut > manifest.pages) return json(400, { error: "page_hors_livre" });
     const fin = Math.min(manifest.pages, debut + MAX_LOT - 1);
     const chemins = [];
     for (let p = debut; p <= fin; p++) chemins.push(`${base}/page-${String(p).padStart(3, "0")}.jpg`);
