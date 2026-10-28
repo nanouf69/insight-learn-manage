@@ -104,6 +104,7 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     } else if (auto && auto.valide) {
       titre("Agenda détaillé jour par jour");
       table(["Date", "Type", "Horaires", "Heures", "Cumul"], auto.lignes.map((l) => [l.jour ? dateLongue(l.jour) : "Date à confirmer par le centre", l.nature === "Pratique" ? "Pratique (au centre)" : "Théorie", l.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(l.heures), h(l.cumul)]), ["Total", "", "", "", h(auto.total)]);
+      para("Agenda susceptible d'être modifié : les dates peuvent être décalées en dehors de ces périodes.");
       if (!auto.lignes.some((l) => l.nature === "Pratique" && l.jour)) manquants.push("Date de la journée pratique");
     } else if (auto) {
       para(`Avertissement : agenda jour par jour non édité. ${auto.anomalies.join(" ; ")}.`);
