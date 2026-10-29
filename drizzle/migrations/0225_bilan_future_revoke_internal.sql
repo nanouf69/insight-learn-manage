@@ -1,0 +1,13 @@
+REVOKE EXECUTE ON FUNCTION public.bilan_future_grant_internal(uuid, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_sans_trace_ancienne(uuid, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_completion_bridge() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_immutable() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_route(integer) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_open(integer, integer) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_questions(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_resume(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_save_draft(uuid, uuid, integer, integer, jsonb, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_submit(uuid, jsonb) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_seed(integer, jsonb) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bilan_future_admin_grant(uuid, integer) FROM PUBLIC, anon;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.bilan_future_active, public.bilan_future_drafts, public.bilan_future_eligibility, public.bilan_future_opening, public.bilan_future_receipts, public.bilan_future_submissions, public.bilan_future_versions FROM anon, authenticated;
