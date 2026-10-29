@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Pratique signée à valider EDOF — 29/10
+- [x] Badge E = dernière validation EDOF ; liste de pratiques réellement signées, excluant E, absents/masqués/attente/théorie ; aucune écriture de dossier ou preuve.
+- [x] 8 tests PASS et tableau de bord Admin connecté : 38 personnes avec dates, capture vérifiée, compilation OK ; rafraîchissement du badge après sauvegarde CRM corrigé. Non publié.
+
 ## Quiz communes session TAXI/TA — 29/10
 - [x] SOUICI Ahlem identifiée ; onze élèves comparés, anciennes séries 7020/7021 10/6 vs activités 58/24, snapshots 241/282 expliqués. Rapport docs/quiz-communes-session-2026-10-29.md.
 - [x] Module 7 : second filtrage concurrent d'ouverture désactivé, accès directs par IDs et distinction historique ; aucune écriture de preuve/affectation/contenu.
