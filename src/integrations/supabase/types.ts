@@ -1426,6 +1426,222 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_future_active: {
+        Row: {
+          subject: number
+          version_id: string
+        }
+        Insert: {
+          subject: number
+          version_id: string
+        }
+        Update: {
+          subject?: number
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_active_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_future_drafts: {
+        Row: {
+          answer: Json
+          client_token: string
+          question_id: number
+          receipt_id: string
+          revision: number
+          saved_at: string
+          version_id: string
+        }
+        Insert: {
+          answer: Json
+          client_token: string
+          question_id: number
+          receipt_id: string
+          revision: number
+          saved_at?: string
+          version_id: string
+        }
+        Update: {
+          answer?: Json
+          client_token?: string
+          question_id?: number
+          receipt_id?: string
+          revision?: number
+          saved_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_drafts_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bilan_future_drafts_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_future_eligibility: {
+        Row: {
+          authorized_at: string
+          exercise_id: number
+          module_id: number
+          owner_id: string
+          version_id: string
+        }
+        Insert: {
+          authorized_at?: string
+          exercise_id: number
+          module_id: number
+          owner_id: string
+          version_id: string
+        }
+        Update: {
+          authorized_at?: string
+          exercise_id?: number
+          module_id?: number
+          owner_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_eligibility_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_future_opening: {
+        Row: {
+          changed_at: string
+          id: number
+          open_to_new: boolean
+        }
+        Insert: {
+          changed_at?: string
+          id: number
+          open_to_new?: boolean
+        }
+        Update: {
+          changed_at?: string
+          id?: number
+          open_to_new?: boolean
+        }
+        Relationships: []
+      }
+      bilan_future_receipts: {
+        Row: {
+          created_at: string
+          exercise_id: number
+          id: string
+          module_id: number
+          owner_id: string
+          version_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: number
+          id?: string
+          module_id: number
+          owner_id: string
+          version_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: number
+          id?: string
+          module_id?: number
+          owner_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_receipts_owner_id_module_id_exercise_id_fkey"
+            columns: ["owner_id", "module_id", "exercise_id"]
+            isOneToOne: true
+            referencedRelation: "bilan_future_eligibility"
+            referencedColumns: ["owner_id", "module_id", "exercise_id"]
+          },
+          {
+            foreignKeyName: "bilan_future_receipts_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_future_submissions: {
+        Row: {
+          answers: Json
+          correct_count: number
+          question_count: number
+          receipt_id: string
+          submitted_at: string
+        }
+        Insert: {
+          answers: Json
+          correct_count: number
+          question_count: number
+          receipt_id: string
+          submitted_at?: string
+        }
+        Update: {
+          answers?: Json
+          correct_count?: number
+          question_count?: number
+          receipt_id?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_submissions_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: true
+            referencedRelation: "bilan_future_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_future_versions: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          questions: Json
+          subject: number
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          questions: Json
+          subject: number
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          questions?: Json
+          subject?: number
+        }
+        Relationships: []
+      }
       bilan_identite_flags: {
         Row: {
           actif: boolean
@@ -8485,6 +8701,44 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      bilan_future_admin_grant: {
+        Args: { p_apprenant: string; p_module: number }
+        Returns: boolean
+      }
+      bilan_future_grant_internal: {
+        Args: { p_module: number; p_owner: string }
+        Returns: boolean
+      }
+      bilan_future_open: {
+        Args: { p_exercise: number; p_module: number }
+        Returns: Json
+      }
+      bilan_future_questions: { Args: { p_receipt: string }; Returns: Json }
+      bilan_future_resume: { Args: { p_receipt: string }; Returns: Json }
+      bilan_future_route: { Args: { p_module: number }; Returns: string }
+      bilan_future_sans_trace_ancienne: {
+        Args: { p_apprenant: string; p_module: number }
+        Returns: boolean
+      }
+      bilan_future_save_draft: {
+        Args: {
+          p_answer: Json
+          p_question: number
+          p_receipt: string
+          p_revision: number
+          p_token: string
+          p_version: string
+        }
+        Returns: Json
+      }
+      bilan_future_seed: {
+        Args: { p_questions: Json; p_subject: number }
+        Returns: string
+      }
+      bilan_future_submit: {
+        Args: { p_answers: Json; p_receipt: string }
+        Returns: Json
       }
       bilan_identite_creer: {
         Args: { p_exercice_id: number; p_module_id: number; p_question: Json }
