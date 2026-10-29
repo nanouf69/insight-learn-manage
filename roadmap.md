@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Intégrité montants Cas pratique — 29/10 10:19 UTC
+- [ ] Tracer module12/exercice306/question4, source JSON/canonique/audit et affichage ; audit monétaire plateforme en lecture seule.
+- [ ] Corriger uniquement le mécanisme prouvé, tests montants et conservation des saisies ; aucun écrasement ni renotation.
+- [ ] Vérifier navigateur dédié et reprise sync module13 ; rapport preuves/limites, publication uniquement si isolable sans travaux inachevés.
+
 ## Contrôle connaissances questions retirées — 29/10 10:04
 - [x] Lecture : retraits Admin 199/201/204/207, tombstone antérieur69 ; 221 questions actuelles, IDs226/227 de la capture conservés. Cause navigateur Ahlem NON PROUVÉE.
 - [x] Préparé module13 seul : membership/tombstones avant canonique, aucun fallback de liste ni prune concurrent, compteur écran courant, relecture événement/reconnexion sans polling ; aucun contenu Cloud modifié.
