@@ -774,6 +774,7 @@ const normalizeManualQuestionFlags = (data: ModuleData): ModuleData => ({
 
 type ModuleEditorSavePayload = {
   module_id: number;
+  local_revision?: number;
   module_data: any;
   deleted_cours: any;
   deleted_exercices: any;
@@ -5767,7 +5768,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }, [module?.id, editorStateHydrated]);
 
   const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
-    const savedLocalRevision = adminLocalRevisionRef.current;
+    const savedLocalRevision = dataToSave.local_revision ?? adminLocalRevisionRef.current;
     isSavingToDbRef.current = true;
     try {
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
@@ -6308,6 +6309,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Capture data for this save (avoids stale closure when timer fires)
     const dataToSave = {
       module_id: module.id,
+      local_revision: adminLocalRevisionRef.current,
       module_data: moduleData as any,
       deleted_cours: deletedCours as any,
       deleted_exercices: deletedExercices as any,
