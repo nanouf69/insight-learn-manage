@@ -4936,7 +4936,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const mergedModuleData: ModuleData = {
           ...parsed.moduleData,
           cours: reinjectSourceCoursMeta(parsed.moduleData.cours, initialData.cours),
-          exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
+          exercices: Number(module.id) === 13 ? parsed.moduleData.exercices.filter((e: ExerciceItem) => !deletedExerciceIdsLocal.includes(Number(e.id))) : mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
         };
 
         setModuleData(controleConnaissancesDisplay(forceSourceExerciseTitles(module.id, mergedModuleData, initialData)));
@@ -5135,7 +5135,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             const mergedModuleData: ModuleData = {
               ...md,
               cours: reinjectSourceCoursMeta(md.cours, initialData.cours),
-              exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
+              exercices: Number(module.id) === 13 ? md.exercices.filter(e => !deletedExerciceIdsFromDb.includes(Number(e.id))) : mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
             let resolvedModuleData = usesDatabaseOnlyEditorState(module.id)
               ? forceSourceExerciseTitles(module.id, mergedModuleData, initialData)
@@ -5312,7 +5312,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const mergedRealtimeModuleData: ModuleData = {
             ...md,
             cours: reinjectSourceCoursMeta(md.cours, sourceModuleData.cours),
-            exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
+            exercices: Number(module.id) === 13 ? md.exercices.filter(e => !deletedExoIdsRt.includes(Number(e.id))) : mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           };
           let resolvedRealtimeModuleData = usesDatabaseOnlyEditorState(module.id)
             ? forceSourceExerciseTitles(module.id, mergedRealtimeModuleData, sourceModuleData)
@@ -5607,7 +5607,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const merged: ModuleData = {
           ...md,
           cours: reinjectSourceCoursMeta(md.cours, sourceModuleData.cours),
-          exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
+          exercices: Number(module.id) === 13 ? md.exercices.filter(e => !deletedExoIdsPoll.includes(Number(e.id))) : mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
         let resolved = usesDatabaseOnlyEditorState(module.id)
           ? forceSourceExerciseTitles(module.id, merged, sourceModuleData)
