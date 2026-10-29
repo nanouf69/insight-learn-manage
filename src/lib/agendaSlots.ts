@@ -235,7 +235,7 @@ export const getCurrentCreneau = (
   const classify = (startMin: number): CreneauKey => {
     if (startMin < 12 * 60) return "matin";
     if (startMin < 17 * 60) return "apres_midi";
-    return splitEveningCreneau(now);
+    return nowMin >= 18 * 60 ? "soir_2" : "soir_1";
   };
 
   // 1. Bloc actuellement en cours (avec tolérance) → priorité
@@ -245,18 +245,6 @@ export const getCurrentCreneau = (
     return nowMin >= s - TOL_BEFORE && nowMin <= e + TOL_AFTER;
   });
   if (active) return classify(timeToMin(active.heure_debut));
-
-  // 2. Sinon, fallback : créneau qui correspond à l'heure courante
-  if (nowMin < 12 * 60) {
-    if (blocs.some((b) => timeToMin(b.heure_debut) < 12 * 60)) return "matin";
-  }
-  if (nowMin < 17 * 60) {
-    if (blocs.some((b) => {
-      const s = timeToMin(b.heure_debut);
-      return s >= 12 * 60 && s < 17 * 60;
-    })) return "apres_midi";
-  }
-  if (blocs.some((b) => timeToMin(b.heure_debut) >= 17 * 60)) return splitEveningCreneau(now);
 
   return null;
 };
