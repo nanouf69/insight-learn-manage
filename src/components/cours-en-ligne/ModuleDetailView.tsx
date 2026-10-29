@@ -3,7 +3,7 @@ import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/edito
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
-import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
+import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
@@ -3364,7 +3364,7 @@ function ExerciceCard({
   onMove: (index: number, direction: "up" | "down") => void;
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
-  onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
+  onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number, editedQuestionIds?: number[]) => void;
   onUpdateMeta?: (id: number, meta: { titre: string; sousTitre?: string }) => void;
   moduleId: number;
   overrideWarnings?: Map<string, TrainerOverrideInfo>;
@@ -3426,14 +3426,14 @@ function ExerciceCard({
   const saveQuestion = (updated: ExerciceQuestion) => {
     if (!item.questions) return;
     const newQ = item.questions.map(q => q.id === updated.id ? updated : q);
-    onUpdateQuestions(item.id, newQ);
+    onUpdateQuestions(item.id, newQ, undefined, [updated.id]);
     setEditingQId(null);
   };
 
   const saveQuestionDraft = (updated: ExerciceQuestion) => {
     if (!item.questions) return;
     const newQ = item.questions.map(q => q.id === updated.id ? updated : q);
-    onUpdateQuestions(item.id, newQ);
+    onUpdateQuestions(item.id, newQ, undefined, [updated.id]);
   };
 
 
@@ -3469,7 +3469,7 @@ function ExerciceCard({
     const target = direction === "up" ? idx - 1 : idx + 1;
     if (target < 0 || target >= item.questions.length) return;
     const reordered = moveQuestionToPosition(item.questions, qId, target);
-    onUpdateQuestions(item.id, reordered);
+    onUpdateQuestions(item.id, reordered, undefined, [qId]);
   };
 
   const addQuestion = () => {
@@ -3488,7 +3488,7 @@ function ExerciceCard({
       ],
     };
     questionsAjouteesSession.add(`${Number(item.id)}-${Number(newId)}`);
-    onUpdateQuestions(item.id, [...existing, newQ]);
+    onUpdateQuestions(item.id, [...existing, newQ], undefined, [newId]);
     setEditingQId(newId);
     setExpanded(true);
     setTimeout(() => {
@@ -4406,6 +4406,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const hydratedModuleIdRef = useRef<number | null>(null);
   const adminLocalEditAtRef = useRef(0);
   const adminLocalRevisionRef = useRef(0);
+  // Bilan intent belongs to this editor, never to a previous module opening.
+  const bilanQuestionEditsRef = useRef(new Set<string>());
+  const activeQuestionEdits = module.id === 11 || module.id === 28
+    ? bilanQuestionEditsRef.current : questionsModifieesSession;
   const lastQueuedAdminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
@@ -5797,7 +5801,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           (previousModuleData as any)?.exercices ?? null,
         ) as any,
       };
-      normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, previousModuleData, questionsModifieesSession, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
+      normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, previousModuleData, activeQuestionEdits, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
 
       // Compare-and-swap: refuse d'écraser une version en base plus récente que
       // celle que cet onglet a lue (protection contre les onglets admin restés
@@ -5829,7 +5833,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           ),
         );
         normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, latestRow?.module_data ?? null, exercicesAjoutesSessionRef.current);
-        normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, latestRow?.module_data ?? null, questionsModifieesSession, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
+        normalizedModuleData = applyQuestionSaveIntent(normalizedModuleData, latestRow?.module_data ?? null, activeQuestionEdits, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
 
         console.warn("[ModuleEditor] P0409 détecté : dernière version rechargée, modification locale refusionnée, retry unique", {
           moduleId: dataToSave.module_id,
@@ -6079,7 +6083,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             }
           }
           (exercise.questions ?? []).forEach((question, index) => {
-            if (!isCanonicalQuestionSaveIntent(Number(exercise.id), Number(question.id), questionsModifieesSession, questionsAjouteesSession)) return;
+            if (!isCanonicalQuestionSaveIntent(Number(exercise.id), Number(question.id), activeQuestionEdits, questionsAjouteesSession)) return;
             const current = rowByKey.get(`${binding.quiz_id}:${binding.section_id}:${question.id}`);
             // Une ligne canonique inactive est une suppression définitive. Une ancienne
             // copie encore présente dans module_editor_state ne doit jamais devenir un
@@ -6481,7 +6485,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }));
   };
 
-  const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
+  const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number, editedQuestionIds: number[] = []) => {
+    const bilan = module.id === 11 || module.id === 28;
+    const explicitEdits = explicitQuestionEditIds(exerciceId, editedQuestionIds);
+    if (studentOnly || (bilan && explicitEdits.size === 0 && deletedQuestionId == null)) return;
+    for (const key of explicitEdits) activeQuestionEdits.add(key);
     markAdminLocalEdit();
     // Save enonce-based overrides to localStorage for same-session cross-module cache invalidation.
     // DB propagation to sibling modules is handled by syncSharedExercisesToSiblingModules
@@ -6508,13 +6516,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const prevQ = e.questions?.find(pq => pq.id === q.id);
           const previousPosition = e.questions?.findIndex((pq) => pq.id === q.id) ?? -1;
           const nextPosition = questions.findIndex((candidate) => candidate.id === q.id);
-          const changed = !prevQ ||
+          const inferredChange = !prevQ ||
             prevQ.enonce !== q.enonce ||
             JSON.stringify(prevQ.choix) !== JSON.stringify(q.choix) ||
             (prevQ as any).image !== (q as any).image ||
             previousPosition !== nextPosition;
-          const contenuChange = !prevQ || JSON.stringify(sansMeta(prevQ)) !== JSON.stringify(sansMeta(q));
-          if (changed || contenuChange) questionsModifieesSession.add(`${Number(exerciceId)}-${Number(q.id)}`);
+          const changed = bilan ? explicitEdits.has(`${exerciceId}-${q.id}`) : inferredChange;
+          const contenuChange = !bilan && (!prevQ || JSON.stringify(sansMeta(prevQ)) !== JSON.stringify(sansMeta(q)));
+          if (changed || contenuChange) activeQuestionEdits.add(`${Number(exerciceId)}-${Number(q.id)}`);
           // Mark as manually_edited when admin changes the question, so the cross-module
           // propagation system never overwrites it. Once true, the flag is preserved.
             if (changed || contenuChange) return { ...q, _editedAt: now, manually_edited: true } as any;
@@ -10471,8 +10480,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onMove={(i, d) => moveItem("exercices", i, d)}
                 onDelete={(id) => deleteItem("exercices", id)}
                 onToggle={(id) => toggleItem("exercices", id)}
-                onUpdateQuestions={(id, questions, deletedQuestionId) =>
-                  updateExerciceQuestions(id, questions, deletedQuestionId)
+                onUpdateQuestions={(id, questions, deletedQuestionId, editedQuestionIds) =>
+                  updateExerciceQuestions(id, questions, deletedQuestionId, editedQuestionIds)
                 }
                 onUpdateMeta={(id, meta) => updateExerciceMeta(id, meta)}
                 moduleId={moduleData.id}
