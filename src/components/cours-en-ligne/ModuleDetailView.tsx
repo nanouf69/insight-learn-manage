@@ -176,6 +176,7 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
+import { BilanFutureExam, lireRouteBilanFuture } from "./BilanFutureExam";
 import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
@@ -6638,6 +6639,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Passages figés (snapshots) : l'élève lit exclusivement son snapshot quand il existe.
   const [snapshotsRev, setSnapshotsRev] = useState(0);
   const etatSnapshotsEleve = useBilanSnapshotsEleve(apprenantId, module.id, studentOnly, snapshotsRev);
+  // Bilan examen versionné futur (5/11) : la route serveur est connue AVANT tout rendu de l'ancien écran.
+  const routeFutureConcernee = studentOnly && (module.id === 5 || module.id === 11);
+  const [routeFuture, setRouteFuture] = useState<{ route: "future" | "legacy"; owner: string } | null>(null);
+  useEffect(() => {
+    if (!routeFutureConcernee) return;
+    let annule = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const owner = data.session?.user?.id ?? "";
+      const route = owner ? await lireRouteBilanFuture(module.id) : "legacy";
+      if (!annule) setRouteFuture({ route, owner });
+    })();
+    return () => { annule = true; };
+  }, [routeFutureConcernee, module.id]);
   // Ouverture d'une matière Bilan par l'élève : une seule demande par matière et par écran.
   const ouverturesDemandeesRef = useRef<Set<number>>(new Set());
   const ouvrirMatiereBilanRef = useRef<(exoId: number) => void>(() => {});
@@ -10143,7 +10158,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {/* Sync silencieuse côté apprenant : aucun indicateur ni bouton visible.
               Le realtime + refetch initial assurent l'actualisation automatique. */}
         </div>
-        {etatSnapshotsEleve.statut === "chargement" ? (
+        {routeFutureConcernee && !routeFuture ? (
+          <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
+        ) : routeFutureConcernee && routeFuture?.route === "future" ? (
+          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} />
+        ) : etatSnapshotsEleve.statut === "chargement" ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : etatSnapshotsEleve.statut === "bloque" ? (
           <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center space-y-3">
