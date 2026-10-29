@@ -1569,6 +1569,13 @@
       "when": 1793310532320,
       "tag": "0223_bilan_future_seed_revoke_temp",
       "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1793315357445,
+      "tag": "0224_bilan_future_admin_apercu",
+      "breakpoints": true
     }
   ]
 }
