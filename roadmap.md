@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Cas pratique TAXI absent — 29/10 09:12 UTC
+- [x] Lecture seule : module 12 absent des affectations de 12 dossiers théoriques avec accès actif ou session actuelle, dont 7 en session TAXI/TA 26/10–16/11 ; aucune validation module 12 enregistrée pour ces dossiers.
+- [x] Cause repérée : formulaire de création omet 12 dans les six listes TAXI/TA ; modification omet 12 dans les trois listes TA. Catalogue correct, dashboard respecte les listes explicites. Pratique seule [6] exclue.
+- [ ] Accord préalable pour réparer les accès ciblés et les listes des formulaires, en définissant le maintien des jalons historiques ; aucune écriture de dossier ni modification applicative faite.
+
 ## Quiz non réalisés en rouge — 29/10
 - [x] Cartes communes/équipements/pratique et listes d’activités : non réalisé en rouge, même facultatif ; dispense distincte de réalisation, jalons et preuves inchangés.
 - [x] 74 tests fictifs PASS, clics parties 32/33 et cartes rouges 58/24 vérifiés dans l’aperçu Admin fictif, téléphone et compilation OK ; aucune publication.
