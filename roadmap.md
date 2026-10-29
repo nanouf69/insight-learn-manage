@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Modules réellement complets — 29/10
+- [ ] Diagnostiquer en lecture seule les preuves, compteurs et obligations historiques sur tous les parcours.
+- [ ] Corriger uniquement le classement effectif et les éléments obligatoires manquants, conserver les preuves et heures acquises.
+- [ ] Tests ciblés et contrôles bureau/mobile sur compte technique ; rapport précis, sans publication.
+
 ## Support PDF Pratique TAXI — 28/10 16:52 UTC
 - [x] Support consultable uniquement module 6, 19 images sans PDF original, sans activité ni callback de fin ; acquis et jalons inchangés.
 - [x] 22 tests PASS, compilation OK ; aperçu administrateur bureau/mobile : ouverture et navigation 19/19 vérifiées avec les images exactes interceptées localement. Non publié.
