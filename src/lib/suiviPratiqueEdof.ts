@@ -53,7 +53,7 @@ function segmentsMailDerniereRelance(prenom: string | null | undefined, nom: str
     { texte: "Malgré nos précédentes relances, nous constatons que vous n'avez toujours pas terminé l'intégralité des modules obligatoires de votre formation.", rouge: false },
     { texte: `Votre progression actuelle : ${formatPourcentage(pourcentage)} des modules terminés.`, rouge: false },
     { texte: "CE MESSAGE CONSTITUE NOTRE DERNIER AVERTISSEMENT.", rouge: false },
-    { texte: `Nous vous demandons impérativement de terminer l'ensemble des modules, exercices et évaluations obligatoires de votre parcours dans un délai maximum de 3 jours calendaires à compter de la réception de cet email, soit au plus tard le ${dateLimite}.`, rouge: false },
+    { texte: `Vous disposez de 3 JOURS calendaires à compter de la réception de cet email pour terminer l'ensemble des modules, exercices et évaluations obligatoires de votre parcours, soit au plus tard le ${dateLimite}.`, rouge: true },
     ...PARAGRAPHES_SANCTIONS_ROUGES.map(texte => ({ texte, rouge: true as const })),
     { texte: PARAGRAPHE_SANCTIONS_NORMAL, rouge: false },
     { texte: "En cas de non-régularisation, notre centre pourra signaler aux organismes concernés les éléments factuels relatifs à votre participation et à votre progression.", rouge: false },
@@ -78,7 +78,8 @@ export function mailDerniereRelance(prenom: string | null | undefined, nom: stri
 export function mailDerniereRelanceHtml(prenom: string | null | undefined, nom: string | null | undefined, pourcentage: number, dateLimite: string): string {
   return segmentsMailDerniereRelance(prenom, nom, pourcentage, dateLimite)
     .map(s => {
-      const corps = echapperHtml(s.texte).replace(/\n/g, "<br>");
+      const corps = echapperHtml(s.texte).replace(/\n/g, "<br>")
+        .replace("3 JOURS", `<strong style="font-size:1.15em">3 JOURS</strong>`);
       return s.rouge
         ? `<p style="color:${ROUGE_SANCTIONS};font-weight:600">${corps}</p>`
         : `<p>${corps}</p>`;
