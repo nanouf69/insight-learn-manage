@@ -46,7 +46,7 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [apprenants, signatures, inscriptions, reservations, configs] = await Promise.all([
-        fetchAllRows<any>((f,t) => supabase.from("apprenants").select("id,nom,prenom,email,type_apprenant,formation_choisie,modalite_formation,mode_financement,formation").is("deleted_at",null).order("id").range(f,t)),
+        fetchAllRows<any>((f,t) => supabase.from("apprenants").select("id,nom,prenom,email,type_apprenant,formation_choisie,modalite_formation,mode_financement").is("deleted_at",null).order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("emargements_fc").select("id,apprenant_id,date_emargement,demi_journee,signature_data_url,signed_at,absent,masque").eq("masque",false).not("signature_data_url","is",null).order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("session_apprenants").select("id,apprenant_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)").order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,apprenant_id,date_choisie,type_formation,creneau").order("id").range(f,t)),
@@ -62,7 +62,7 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
       return Promise.all(lignes.map(async (a) => {
         if (a.elearning) return a;
         try {
-          const formation = [a.type_apprenant, a.formation_choisie, a.formation].filter(Boolean).join(" ");
+          const formation = [a.type_apprenant, a.formation_choisie].filter(Boolean).join(" ");
           const [bilan, classification] = await Promise.all([chargerBilanSignaturesEdof(a.id, formation), chargerClassificationSignatures(a.id)]);
           return { ...a, presentiel: compteurSignaturesFiche(bilan, classification.attendus) };
         } catch { return a; }
