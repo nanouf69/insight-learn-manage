@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { completionEvidenceAllowsDone, hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
+import { completionEvidenceAllowsDone, hasRecordedAnswer, withSubmittedModuleProof } from "@/lib/moduleCompletionEvidence";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { computeServerCompletedModuleIds, getLearnerModuleDisplayState } from "@/lib/moduleUnlockLogic";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
@@ -19,6 +19,15 @@ describe("Projection effective sans mutation", () => {
   });
   it("ajout ultérieur exclu du périmètre historique", () => {
     expect(compterQuizModule([row(31,[5],[5])],[{id:"2",label:"Ajout",questionIds:["1"]}])).toMatchObject({ completedQuizzes: 1, totalQuizzes: 1 });
+  });
+  it("relecture d'une soumission entière : restaure la preuve sans altérer le snapshot", () => {
+    const original = row(31,[5],[4]);
+    const proof = { exercice_id:"module_31_exo_1", status:"submitted", submitted_at:"2026-10-29T08:00:00Z", reponses:Object.fromEntries([1,2,3,4,5].map(q=>[`1-${q}`,["B"]])) };
+    expect(completionEvidenceAllowsDone(withSubmittedModuleProof(original,[proof]))).toBe(true);
+    expect(original.details[4].reponseEleve).toBeNull();
+    expect(completionEvidenceAllowsDone(withSubmittedModuleProof(original,[{...proof,status:"in_progress"}]))).toBe(false);
+    expect(completionEvidenceAllowsDone(withSubmittedModuleProof(original,[{...proof,exercice_id:"module_31_revision_exo_1"}]))).toBe(false);
+    expect(completionEvidenceAllowsDone(withSubmittedModuleProof(original,[{...proof,exercice_id:"module_32_exo_1"}]))).toBe(false);
   });
   it("file locale ou compteur complet ne remplace pas validation serveur", () => {
     expect(getLearnerModuleDisplayState({ loaded:true,serverCompleted:false,hasProgress:true,quizStats:{completedQuizzes:6,totalQuizzes:6}}).status).toBe("validation_en_cours");
