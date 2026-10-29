@@ -42,7 +42,7 @@ GRANT SELECT ON public.bilan_future_receipts TO authenticated;
 GRANT ALL ON public.bilan_future_receipts TO service_role;
 ALTER TABLE public.bilan_future_receipts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY future_receipt_owner ON public.bilan_future_receipts FOR SELECT TO authenticated USING(owner_id=auth.uid() OR public.has_role(auth.uid(),'admin'));
-CREATE POLICY future_version_receipt ON public.bilan_future_versions FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public.bilan_future_receipts r WHERE r.version_id=id AND r.owner_id=auth.uid()));
+CREATE POLICY future_version_receipt ON public.bilan_future_versions FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public.bilan_future_receipts r WHERE r.version_id=bilan_future_versions.id AND r.owner_id=auth.uid()));
 
 CREATE TABLE public.bilan_future_submissions (
   receipt_id uuid PRIMARY KEY REFERENCES public.bilan_future_receipts(id),
