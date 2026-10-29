@@ -6,6 +6,9 @@ import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { pratiqueEdofEnAttente, listePratiqueEdofVisible } from "@/lib/pratiqueEdofEnAttente";
 import { useEdofValides } from "@/components/examens/EdofValideBadge";
 import { Button } from "@/components/ui/button";
+import { estCandidatElearning } from "@/lib/examenElearningRelance";
+import { bilanSignaturesPresentiel } from "@/lib/suiviPratiqueEdof";
+import { SuiviElearningCell, SuiviPresentielCell } from "@/components/dashboard/SuiviPratiqueEdofCell";
 import { useAuth } from "@/contexts/AuthContext";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -42,7 +45,7 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [apprenants, signatures, inscriptions, reservations, configs] = await Promise.all([
-        fetchAllRows<any>((f,t) => supabase.from("apprenants").select("id,nom,prenom,type_apprenant,mode_financement").is("deleted_at",null).order("id").range(f,t)),
+        fetchAllRows<any>((f,t) => supabase.from("apprenants").select("id,nom,prenom,email,type_apprenant,formation_choisie,modalite_formation,mode_financement").is("deleted_at",null).order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("emargements_fc").select("id,apprenant_id,date_emargement,demi_journee,signature_data_url,signed_at,absent,masque").eq("masque",false).not("signature_data_url","is",null).order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("session_apprenants").select("id,apprenant_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)").order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,apprenant_id,date_choisie,type_formation,creneau").order("id").range(f,t)),
@@ -50,7 +53,11 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
       ]);
       return apprenants.flatMap(a => {
         const dates = pratiqueEdofEnAttente(signatures.filter(s=>s.apprenant_id===a.id),inscriptions.filter(s=>s.apprenant_id===a.id),reservations.filter(s=>s.apprenant_id===a.id),configs,false,a.mode_financement);
-        return dates.length ? [{...a,dates}] : [];
+        if (!dates.length) return [];
+        const elearning = estCandidatElearning(a);
+        let presentiel: { attendues: number; manquantes: number } | null = null;
+        if (!elearning) { try { presentiel = bilanSignaturesPresentiel(signatures.filter(s=>s.apprenant_id===a.id),inscriptions.filter(s=>s.apprenant_id===a.id),reservations.filter(s=>s.apprenant_id===a.id),configs); } catch { presentiel = null; } }
+        return [{...a,dates,elearning,presentiel}];
       });
     },
   });
@@ -70,13 +77,14 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
       : chargement ? <p role="status" className="text-muted-foreground">Chargement…</p>
       : !rows.length ? <p className="text-muted-foreground">Aucune pratique signée en attente de validation EDOF.</p>
       : <div className="divide-y">
-        <div className="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-2 pb-2 text-sm font-semibold text-muted-foreground sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_2.5rem]">
-          <span className="hidden sm:block">Apprenant</span><span className="sm:text-right">Dates de formation pratique</span><span />
+        <div className="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-2 pb-2 text-sm font-semibold text-muted-foreground sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.5fr)_2.5rem]">
+          <span className="hidden sm:block">Apprenant</span><span className="sm:text-right">Dates de formation pratique</span><span className="hidden sm:block sm:text-right">Suivi</span><span />
         </div>
-        {rows.map(a=><div key={a.id} className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_2.5rem]">
+        {rows.map(a=><div key={a.id} className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.5fr)_2.5rem]">
         <Button variant="link" className="h-auto whitespace-normal p-0 text-left" onClick={()=>onNavigateToApprenant(a.id)}>{[a.prenom,a.nom].filter(Boolean).join(" ")}</Button>
         <span className="col-start-1 row-start-2 text-sm text-muted-foreground sm:col-start-2 sm:row-start-1 sm:text-right">{[...a.dates].sort().reverse().map((d:string)=>new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Europe/Paris"})).join(" · ")}</span>
-        <Button variant="ghost" size="icon" className="col-start-2 row-start-1 text-destructive sm:col-start-3" disabled={!user} title="Retirer de cette liste uniquement" aria-label={`Retirer ${[a.prenom,a.nom].filter(Boolean).join(" ")} de la liste`} onClick={() => setARetirer({ id: a.id, nom: [a.prenom,a.nom].filter(Boolean).join(" ") })}><X className="h-4 w-4" /></Button>
+        <div className="col-start-1 row-start-3 text-sm sm:col-start-3 sm:row-start-1 sm:text-right">{a.elearning ? <SuiviElearningCell apprenant={a} /> : <SuiviPresentielCell bilan={a.presentiel} />}</div>
+        <Button variant="ghost" size="icon" className="col-start-2 row-start-1 text-destructive sm:col-start-4" disabled={!user} title="Retirer de cette liste uniquement" aria-label={`Retirer ${[a.prenom,a.nom].filter(Boolean).join(" ")} de la liste`} onClick={() => setARetirer({ id: a.id, nom: [a.prenom,a.nom].filter(Boolean).join(" ") })}><X className="h-4 w-4" /></Button>
       </div>)}</div>}
     <AlertDialog open={aRetirer !== null} onOpenChange={open => { if (!open) setARetirer(null); }}>
       <AlertDialogContent>
