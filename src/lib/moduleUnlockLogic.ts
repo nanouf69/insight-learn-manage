@@ -1,5 +1,6 @@
 // Pure helpers for module unlocking logic, extracted from CoursPublic.tsx
 // to enable unit testing without the heavy CoursPublic dependencies.
+import { completionEvidenceAllowsDone } from "./moduleCompletionEvidence";
 
 export interface ModuleLite {
   id: number;
@@ -34,6 +35,7 @@ export interface CompletionLite {
   module_id: number;
   status?: string | null;
   completed_at?: string | null;
+  details?: unknown;
 }
 
 /**
@@ -47,7 +49,7 @@ export function computeServerCompletedModuleIds(
 ): Set<number> {
   const doneRawIds = new Set(
     completionRows
-      .filter((row) => row.status === "completed" || (row.status == null && !!row.completed_at))
+      .filter((row) => (row.status === "completed" || (row.status == null && !!row.completed_at)) && completionEvidenceAllowsDone(row))
       .map((row) => Number(row.module_id)),
   );
   const result = new Set<number>();
@@ -195,6 +197,8 @@ export interface LearnerModuleDisplayInput {
   examStats?: ExamStatsLite;
   hasProgress: boolean;
   locked?: boolean;
+  /** Historical server evidence only; never a counter of subsequently added content. */
+  obligationsComplete?: boolean;
 }
 
 export interface LearnerModuleDisplayState {
@@ -223,8 +227,8 @@ export function isModuleAwaitingValidation(
   const hasQuizzes = (quizStats?.totalQuizzes ?? 0) > 0;
   const hasExams = (examStats?.total ?? 0) > 0;
   if (!hasQuizzes && !hasExams) return false;
-  const allQuizzes = !hasQuizzes || quizStats!.completedQuizzes >= quizStats!.totalQuizzes;
-  const allExams = !hasExams || examStats!.completed >= examStats!.total;
+  const allQuizzes = !hasQuizzes || (quizStats?.completedQuizzes ?? 0) >= (quizStats?.totalQuizzes ?? 0);
+  const allExams = !hasExams || (examStats?.completed ?? 0) >= (examStats?.total ?? 0);
   return allQuizzes && allExams;
 }
 
@@ -232,7 +236,7 @@ export function getLearnerModuleDisplayState(input: LearnerModuleDisplayInput): 
   if (!input.loaded) {
     return { status: "chargement", action: null, isDone: false, locked: true };
   }
-  const isDone = isModuleDoneForDisplay(input.serverCompleted, input.quizStats, input.examStats);
+  const isDone = input.obligationsComplete !== false && isModuleDoneForDisplay(input.serverCompleted, input.quizStats, input.examStats);
   if (isDone) {
     // Un module terminé n'est jamais verrouillé par un ancien état client.
     return { status: "termine", action: "revoir", isDone: true, locked: false };

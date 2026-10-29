@@ -20,7 +20,7 @@ export async function chargerCandidatModules(apprenantId: string) {
   if (!formation) throw new Error('Parcours non déterminé');
   const [completions, activites] = await Promise.all([
     fetchAllRows<CompletionLite>((from, to) => supabase.from('apprenant_module_completion')
-      .select('module_id, status, completed_at').eq('apprenant_id', apprenantId).order('module_id').range(from, to)),
+      .select('module_id, status, completed_at, details').eq('apprenant_id', apprenantId).order('module_id').range(from, to)),
     fetchAllRows<{ exercice_id: string; completed: boolean | null }>((from, to) => supabase.from('reponses_apprenants')
       .select('exercice_id, completed').eq('apprenant_id', apprenantId)
       .in('exercice_id', ACTIVITES_CODE.map(a => a.id)).order('exercice_id').range(from, to)),

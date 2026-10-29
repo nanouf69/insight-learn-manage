@@ -1,3 +1,4 @@
+import { hasRecordedAnswer } from "./moduleCompletionEvidence";
 export interface QuizCounterItem { id: string; label: string; questionIds: string[] }
 
 /** Completed rows carry the historical perimeter; revisions never extend it. */
@@ -12,7 +13,7 @@ export function compterQuizModule(rows: any[], current: QuizCounterItem[]) {
     const g = groups.get(id) ?? { ids: new Set<string>(), answered: new Set<string>(), label: String(d.exerciceTitre ?? id) };
     g.ids.add(String(d.questionId));
     const answer = d.reponseEleve;
-    if (answer != null && String(answer).trim() !== "") g.answered.add(String(d.questionId));
+    if (hasRecordedAnswer(answer)) g.answered.add(String(d.questionId));
     groups.set(id, g);
   }
   const required = terminal.length
@@ -23,5 +24,6 @@ export function compterQuizModule(rows: any[], current: QuizCounterItem[]) {
     return !!g && g.answered.size > 0 && q.questionIds.every((id) => g.answered.has(id));
   };
   return { completedQuizzes: required.filter(done).length, totalQuizzes: required.length,
-    completedLabels: required.filter(done).map((q) => q.label), remainingLabels: required.filter((q) => !done(q)).map((q) => q.label) };
+    completedLabels: required.filter(done).map((q) => q.label), remainingLabels: required.filter((q) => !done(q)).map((q) => q.label),
+    remainingQuizzes: required.filter((q) => !done(q)).map(q => ({ ...q, missingQuestionIds: q.questionIds.filter(id => !groups.get(q.id)?.answered.has(id)) })) };
 }

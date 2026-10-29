@@ -2,6 +2,7 @@ import { activitesRequisesModule } from "@/lib/jeuxPedagogiques";
 import { PRATIQUE_PHYSIQUE } from "@/lib/jalonsPonderes";
 import { exceptionModulesEleve, activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
 import type { CompletionLite } from "@/lib/moduleUnlockLogic";
+import { completionEvidenceAllowsDone } from "./moduleCompletionEvidence";
 
 export interface ModuleEleveLite { id: number; nom: string }
 export interface ModuleRestant { id: number; nom: string; raison: "module" | "nouvelles_activites"; pratique: boolean }
@@ -34,7 +35,7 @@ export function progressionModulesEleve(
     const acts = activitesRequisesModule(m.id, ligne, date).filter(a => !exception?.activitesDispensees.includes(a.id) && !dispensesHistoriques.has(a.id));
     if (acts.length && !activitesTerminees) return { etat: "indisponible" };
     const actsOk = acts.every((a) => activitesTerminees?.has(a.id) === true);
-    const serveur = estTermineServeur(m.id);
+    const serveur = estTermineServeur(m.id) && (!ligne || completionEvidenceAllowsDone(ligne));
     // Le jalon physique est distinct des modules pédagogiques en ligne 6/8.
     const pratique = m.id === PRATIQUE_PHYSIQUE;
     if (serveur && actsOk) termines++;
