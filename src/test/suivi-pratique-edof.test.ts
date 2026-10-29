@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pourcentageModules, mailDerniereRelance, OBJET_DERNIERE_RELANCE, dateLimiteRelance, bilanSignaturesPresentiel } from "@/lib/suiviPratiqueEdof";
+import { pourcentageModules, mailDerniereRelance, mailDerniereRelanceHtml, OBJET_DERNIERE_RELANCE, dateLimiteRelance, bilanSignaturesPresentiel, PARAGRAPHES_SANCTIONS_ROUGES, PARAGRAPHE_SANCTIONS_NORMAL, ROUGE_SANCTIONS } from "@/lib/suiviPratiqueEdof";
 
 describe("suivi pratique EDOF", () => {
   it("8 modules terminés sur 10 = 80 %", () => expect(pourcentageModules(8, 10)).toBe(80));
