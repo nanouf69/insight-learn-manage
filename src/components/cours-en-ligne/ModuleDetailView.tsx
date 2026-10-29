@@ -5801,7 +5801,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
       // La projection « somme des cours » est un affichage : avant toute
       // écriture, les exercices projetés reprennent exactement la version serveur.
-      normalizedModuleData = {
+      if (projectionSommeCoursActive(Number(dataToSave.module_id))) normalizedModuleData = {
         ...normalizedModuleData,
         exercices: retablirExercicesProjetesDuServeur(
           Number(dataToSave.module_id),
@@ -6670,9 +6670,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const snap = etat.parExo[Number(e.id)];
           // Corrections de l'éditeur (texte, réponses, photo) visibles pendant un passage en cours ;
           // liste/ordre du passage figé et réponses élève inchangés.
-          return snap ? { ...e, questions: preserveTaxiNationalSnapshot(Number(module.id), Number(e.id))
-            ? snap.questions as any
-            : questionsSnapshotCorrigees(snap.questions as any, e.questions as any) as any } : e;
+          // 29/10 : un passage figé s'affiche STRICTEMENT depuis sa copie (texte,
+          // choix, bonnes réponses) ; aucune modification future ne le change.
+          return snap ? { ...e, questions: snap.questions as any } : e;
         }),
       };
     })();
