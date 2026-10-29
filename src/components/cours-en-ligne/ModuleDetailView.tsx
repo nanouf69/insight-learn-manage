@@ -1,4 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
@@ -2972,15 +2973,19 @@ function QuestionEditor({
   // Auto-save live : uniquement après une vraie saisie de l'admin.
   // Ouvrir une question (ou une normalisation interne d'un champ) n'enregistre jamais rien.
   const saisieUtilisateurRef = useRef(false);
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const montantIncomplet = choix.some(c => isIncompleteCurrencyChoice(c.texte));
   const marquerSaisie = () => { saisieUtilisateurRef.current = true; };
   useEffect(() => {
-    if (!saisieUtilisateurRef.current) return;
+    if (!saisieUtilisateurRef.current || montantIncomplet) return;
     const t = setTimeout(() => {
+      draftTimerRef.current = null;
       onDraftSave(construire());
     }, 400);
-    return () => clearTimeout(t);
+    draftTimerRef.current = t;
+    return () => { clearTimeout(t); draftTimerRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, choix, image, imageSize, explication, reponsesTexte]);
+  }, [enonce, choix, image, imageSize, explication, reponsesTexte, montantIncomplet]);
 
 
   const handleChoixTexte = (i: number, val: string) => {
@@ -3013,11 +3018,16 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => (saisieUtilisateurRef.current ? onSave(construire()) : onCancel())} className="gap-1">
+          <Button size="sm" disabled={montantIncomplet} onClick={() => {
+            if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+            draftTimerRef.current = null;
+            saisieUtilisateurRef.current ? onSave(construire()) : onCancel();
+          }} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
       </div>
+      {montantIncomplet && <p role="alert" className="text-sm text-destructive">Montant incomplet : indiquez un nombre avant €.</p>}
       <div className="space-y-1">
         <label className="text-xs font-semibold">Énoncé</label>
         <ColoredTextField value={enonce} onChange={setEnonce} rows={2} className="text-sm" />
@@ -4394,6 +4404,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   } | null>(null);
   const hydratedModuleIdRef = useRef<number | null>(null);
   const adminLocalEditAtRef = useRef(0);
+  const adminLocalRevisionRef = useRef(0);
   const lastQueuedAdminLocalEditAtRef = useRef(0);
   const lastAppliedDbUpdatedAtRef = useRef(0);
   const lastDbUpdatedAtRef = useRef<string | null>(null);
@@ -4429,6 +4440,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const markAdminLocalEdit = () => {
     if (studentOnly) return;
+    adminLocalRevisionRef.current += 1;
     adminLocalEditAtRef.current = Date.now();
     // Throttled maintenance broadcast (max 1 every 3s) → learners voient
     // instantanément une bannière "Opération de maintenance" pendant que
@@ -5755,6 +5767,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   }, [module?.id, editorStateHydrated]);
 
   const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
+    const savedLocalRevision = adminLocalRevisionRef.current;
     isSavingToDbRef.current = true;
     try {
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
@@ -5853,9 +5866,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           lastSavedPayloadSignatureRef.current = confirmedSignature;
           // Ne jamais réinjecter ici le snapshot canonique antérieur à cette
           // sauvegarde. La relecture fraîche, plus bas, mettra l'éditeur à jour.
-          setModuleData(normalizedModuleData);
-          setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
-          setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
+          setModuleData(previous => acknowledgedEditorState(previous, normalizedModuleData, savedLocalRevision, adminLocalRevisionRef.current));
+          if (savedLocalRevision === adminLocalRevisionRef.current) {
+            setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
+            setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
+          }
         }
       } catch (confirmReadError) {
         console.warn("[ModuleEditor] Lecture confirmation sauvegarde impossible:", confirmReadError);
@@ -6156,7 +6171,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           (bindings ?? []) as unknown as CanonicalQuestionBinding[],
         );
         canonicalRowsRef.current = mappedConfirmedRows;
-        setModuleData((previous) => applyCanonicalQuestionsToModule(
+        setModuleData((previous) => savedLocalRevision !== adminLocalRevisionRef.current ? previous : applyCanonicalQuestionsToModule(
           previous,
           mappedConfirmedRows,
           canonicalSectionIdsRef.current,
