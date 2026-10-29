@@ -34,10 +34,10 @@ export function prepareBilanFutureBank(source: BilanSource): FutureSubject[] {
       if (!candidate) throw new Error('Missing question');
       // These eight approved questions explicitly concern T3P, business or general road safety.
       const approvedExclusive = subject === 0 && [59, 112, 113, 114].includes(id)
-        || subject === 1 && [198, 199].includes(id) || subject === 2 && [92, 213].includes(id);
+        || subject === 1 && [198, 199].includes(id);
       let reason: string | undefined;
       if ((!a || !b) && !approvedExclusive) reason = 'Exclusive question requires evidence';
-      if (subject === 2 && [79, 80, 177, 212, 213].includes(id)) reason = 'Road key or image requires independent verification';
+      if (subject === 2 && [79, 80, 92, 177, 212, 213].includes(id)) reason = 'Road key or image requires independent verification';
       if (a && b && a.enonce !== b.enonce) reason = 'Statement conflict';
       if (a && b && !same(choices(a), choices(b)) && !(subject === 1 && id === 48)) reason = 'Choice or key conflict';
       if (a && b && (a.image ?? null) !== (b.image ?? null) && !(subject === 2 && id === 73)) reason = 'Image correspondence not proven';
