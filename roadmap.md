@@ -1,10 +1,12 @@
 # Feuille de route
 
 ## Protection futurs bilans TAXI/TA — accord 29/10 13:49 UTC
-- [ ] Sécuriser les copies TA existantes avant tout ajout, sans reconstruction non prouvée ; futur-only testé isolément.
-- [ ] Corriger à la source les écritures Q68 lors d’une ouverture, avec reproduction et non-régression isolées.
-- [ ] Ajouter uniquement47/48/49 après protection démontrée ; six autres suspendues. Q73 historique inchangée si masquage risqué.
-- [ ] Contrôles calcul/affichage TAXI et TA sur compte technique uniquement, empreintes et rapport ; aucune publication ni envoi.
+- [x] Prototype futur-only TA testé PostgreSQL jetable : nouvelles listes84/40, copies existantes non migrées et toujours saisissables, réouverture figée, accès refusé hors propriétaire. NON activé.
+- [x] Corrigé les fausses intentions d’édition dans bilans11/28 : ID explicite, ensemble d’édition propre à l’instance ; ouverture réelle Q68 sans écriture +2 tests composant réel isolé PASS. Q68 rétablie A seule14:01:18Z après réécriture concurrente13:57:03Z, origine exacte NON PROUVÉE.
+- [x] Rapport docs/bilan-ta-future-only-2026-10-29.md ;214 snapshots inchangés. Aucun mail/publication ni compte élève réel utilisé.
+- [ ] Protection complète TA puis ajouts47/48/49 : bloqués,7 copies locales TA encore en cours, sans contenu initial complet ni garantie des brouillons navigateur ; aucune reconstruction effectuée. Six incertaines restent suspendues.
+- [ ] Q73 masquage et renotation : ne pas toucher, la liste affichée participe aux calculs. Tests soumission de bout en bout sous compte technique hébergé NON PROUVÉS.
+- [ ] Contrôle global :90/91 PASS, écart empreinte ancien module connaissances-ville hors périmètre non modifié. Cause concurrente Q68 et protection serveur durable nécessitent preuve de l’origine avant nouvelle modification.
 
 ## Cohérence bilans examen TAXI/TA nationale et locale — 29/10 13:35 UTC
 - [x] Neuf absences locales auditées :47/48/49 valides,45/51 mauvaises clés,53 aucune bonne option,52 ambiguë/doublon de notion,46/54 procédure non prouvée.
