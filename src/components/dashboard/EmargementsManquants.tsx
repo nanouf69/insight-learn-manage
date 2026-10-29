@@ -229,6 +229,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
 
   const renderNomCopiable = (a: ApprenantPresentiel) => {
     const nomComplet = [a.prenom, a.nom].filter(Boolean).join(" ").trim();
+    const nomSeul = a.nom?.trim() ?? "";
     return (
       <div className="flex min-w-0 items-center gap-1">
         <span className="min-w-0 select-text break-words font-medium">{nomComplet}</span>
@@ -237,13 +238,13 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
           variant="ghost"
           size="icon"
           className="h-8 w-8 shrink-0 text-muted-foreground"
-          title="Copier le nom complet"
-          aria-label={`Copier le nom de ${nomComplet}`}
-          disabled={!nomComplet}
+          title="Copier le nom de famille uniquement"
+          aria-label={`Copier uniquement le nom ${nomSeul}`}
+          disabled={!nomSeul}
           onClick={async (event) => {
             event.stopPropagation();
             try {
-              await navigator.clipboard.writeText(nomComplet);
+              await navigator.clipboard.writeText(nomSeul);
               toast.success("Nom copié");
             } catch {
               toast.error("Copie impossible. Sélectionnez le nom pour le copier.");
