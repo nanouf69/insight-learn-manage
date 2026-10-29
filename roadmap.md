@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## Quiz jours fériés Cas pratique — 29/10
-- [ ] Quiz complémentaire de 11 dates 2026 en haut du module 12, identité distincte et anciennes questions intactes.
-- [ ] Protection serveur, tests fictifs et ouverture visuelle ; aucune publication globale ni modification de jalons.
+- [x] Quiz complémentaire de 11 dates 2026 en haut du module 12, identité distincte ; anciens quiz serveur empreinte identique, aucune obligation/jalon ajouté.
+- [x] Protection serveur 0216 appliquée, 41 tests PASS et ouverture visuelle fictive 11 questions, compilation OK ; interface non publiée.
+- [ ] Enregistrement complet avec compte élève autonome NON PROUVÉ ; aucun test d’écriture sur données réelles.
 
 ## Cas pratique TAXI absent — 29/10 09:12 UTC
 - [x] Lecture seule : module 12 absent des affectations de 12 dossiers théoriques avec accès actif ou session actuelle, dont 7 en session TAXI/TA 26/10–16/11 ; aucune validation module 12 enregistrée pour ces dossiers.
