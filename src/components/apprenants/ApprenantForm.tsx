@@ -22,22 +22,22 @@ import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 
 // Mapping type d'apprenant → modules par défaut
-const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
+export const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation VTC — présentiel inclut module 83 (feuilles d'émargement VTC)
   "vtc":               [1, 2, 3, 4, 35, 5, 8, 83],
   "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 83],
   // Formation VTC E-learning — Intro e-learning (pas d'émargement)
   "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
   // Formation TAXI — présentiel inclut module 84 (feuilles d'émargement TAXI)
-  "taxi":              [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 84],
-  "taxi-e-presentiel": [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 84],
+  "taxi":              [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12, 84],
+  "taxi-e-presentiel": [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12, 84],
   // Formation TAXI E-learning — Intro e-learning (pas d'émargement)
-  "taxi-e":            [26, 10, 7, 64, 3, 9, 13, 11, 36, 6],
+  "taxi-e":            [26, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12],
   // Formation TA présentiel — passerelle TAXI inclut module 84
-  "ta":                [31, 40, 7, 64, 3, 27, 28, 37, 6, 84],
-  "ta-e-presentiel":   [31, 40, 7, 64, 3, 27, 28, 37, 6, 84],
+  "ta":                [31, 40, 7, 64, 3, 27, 28, 37, 6, 12, 84],
+  "ta-e-presentiel":   [31, 40, 7, 64, 3, 27, 28, 37, 6, 12, 84],
   // Formation TA E-learning (pas d'émargement)
-  "ta-e":              [32, 40, 7, 64, 3, 27, 13, 28, 37, 6],
+  "ta-e":              [32, 40, 7, 64, 3, 27, 13, 28, 37, 6, 12],
   // Formation VA — passerelle VTC inclut module 83
   "va":                [34, 41, 3, 29, 30, 38, 8, 83],
   "va-e-presentiel":   [34, 41, 3, 29, 30, 38, 8, 83],
