@@ -7,7 +7,6 @@ import { pratiqueEdofEnAttente, listePratiqueEdofVisible } from "@/lib/pratiqueE
 import { useEdofValides } from "@/components/examens/EdofValideBadge";
 import { Button } from "@/components/ui/button";
 import { estCandidatElearning } from "@/lib/examenElearningRelance";
-import { bilanSignaturesPresentiel } from "@/lib/suiviPratiqueEdof";
 import { chargerBilanSignaturesEdof, chargerClassificationSignatures } from "@/lib/signaturesManquantes";
 import { compteurSignaturesFiche } from "@/lib/suiviPratiqueEdof";
 import { SuiviElearningCell, SuiviPresentielCell } from "@/components/dashboard/SuiviPratiqueEdofCell";
@@ -70,12 +69,6 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
       }));
     },
   });
-  void 0;
-  const _unused = () => {
-      return [].flatMap(() => {
-        return [];
-      });
-  };
   const rows = listePratiqueEdofVisible((query.data ?? []).filter(a => !edof.data?.has(a.id)), retires);
   const erreur = query.isError || edof.isError;
   const chargement = query.isPending || edof.isPending;
