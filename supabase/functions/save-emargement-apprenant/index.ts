@@ -80,7 +80,6 @@ Deno.serve(async (req) => {
     const demi = String(body?.demi_journee || "") as CreneauKey;
     const dateEmargement = String(body?.date_emargement || "");
     const absent = Boolean(body?.absent);
-    const replaceExisting = Boolean(body?.replace_existing);
     const signature = typeof body?.signature_data_url === "string" ? body.signature_data_url : null;
     const justificatifUrl = typeof body?.justificatif_url === "string" ? body.justificatif_url : null;
 
@@ -118,62 +117,15 @@ Deno.serve(async (req) => {
     const ownerUserId = String(apprenant.auth_user_id || user.id);
 
     const signedDate = parseDate(dateEmargement);
-    const today = parseDate(formatISO(new Date()));
-    const start = parseDate(apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne);
-    const end = parseDate(apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne);
-    if (!signedDate || !today || signedDate.getTime() > today.getTime()) return json({ error: "Date d'émargement non autorisée" }, 403);
-    
-    const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
-    const isPres = isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
+    const today = parseDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date()));
+    if (!signedDate || !today) return json({ error: "Date d'émargement non autorisée" }, 403);
 
-    // Journée de formation PRATIQUE (planning) : émargement toujours autorisé,
-    // même pour un apprenant e-learning.
-    const { data: reservationRows } = await supabase
-      .from("reservations_pratique")
-      .select("date_choisie")
-      .eq("apprenant_id", apprenantId);
-    let isPratiqueDay = ((reservationRows as any[]) || []).some(
-      (r) => String(r?.date_choisie || "").slice(0, 10) === dateEmargement,
-    );
-
-    const { data: sessionRows } = await supabase
-      .from("session_apprenants")
-      .select("sessions:session_id(nom, creneaux, date_debut, date_fin, type_session)")
-      .eq("apprenant_id", apprenantId);
-    if (!isPratiqueDay) {
-      isPratiqueDay = ((sessionRows as any[]) || []).some((row) => {
-        const s = row?.sessions;
-        if (!s || String(s.type_session || "") !== "pratique") return false;
-        const debut = String(s.date_debut || "").slice(0, 10);
-        const fin = String(s.date_fin || debut).slice(0, 10);
-        return debut <= dateEmargement && fin >= dateEmargement;
-      });
-    }
-
-    if (!isFC && !isPres && !isPratiqueDay) return json({ error: "Émargement non prévu pour cette formation" }, 403);
-    if (isFC && !isPratiqueDay && ["soir", "soir_1", "soir_2"].includes(demi)) return json({ error: "Créneau du soir non prévu pour cette formation" }, 403);
-    const matchingSession = ((sessionRows as any[]) || []).map((row) => row?.sessions).find((s) => {
-      if (!s) return false;
-      const debut = String(s.date_debut || "").slice(0, 10);
-      const fin = String(s.date_fin || debut).slice(0, 10);
-      return debut <= dateEmargement && fin >= dateEmargement;
+    // Same central authorization as direct learner inserts and the popup schedule.
+    const { data: controle, error: controleError } = await supabase.rpc('emargement_controle_creneau', {
+      p_apprenant_id: apprenantId, p_date: dateEmargement, p_creneau: demi,
     });
-    if (isPratiqueDay) {
-      // Formation pratique : uniquement matin / après-midi, pas de contrôle soir.
-      if (["soir", "soir_1", "soir_2"].includes(demi)) {
-        return json({ error: "Émargement pratique : choisir matin ou après-midi" }, 403);
-      }
-    } else if (isPres && matchingSession) {
-      const creneaux = Array.isArray(matchingSession.creneaux) ? matchingSession.creneaux : [];
-      const isEveningSession = isEveningText(apprenant.creneau_horaire) || isEveningText(matchingSession.nom) || creneaux.some((c: string) => isEveningText(c));
-      const isEveningSignature = ["soir", "soir_1", "soir_2"].includes(demi);
-      if (isEveningSession && !isEveningSignature) return json({ error: "Signature de journée non autorisée pour un cours du soir" }, 403);
-      if (!isEveningSession && isEveningSignature) return json({ error: "Signature du soir non autorisée pour une session de journée" }, 403);
-      // Cours du soir : forcer soir_1 (17h-18h30) ou soir_2 (18h30-21h), refuser le "soir" unique legacy
-      if (isEveningSession && demi === "soir") return json({ error: "Émargement du soir : choisir soir_1 (17h-18h30) ou soir_2 (18h30-21h)" }, 403);
-    } else if (isPres && isEveningText(apprenant.creneau_horaire)) {
-      if (!["soir_1", "soir_2"].includes(demi)) return json({ error: "Émargement du soir : choisir soir_1 (17h-18h30) ou soir_2 (18h30-21h)" }, 403);
-    }
+    if (controleError) return json({ error: "Vérification des horaires impossible", code: controleError.code }, 503);
+    if (controle?.autorise !== true) return json({ error: controle?.motif || "Signature disponible trente minutes avant le début réel du créneau", code: 'P0541' }, 403);
 
     const row = {
       apprenant_id: apprenantId,
@@ -201,7 +153,7 @@ Deno.serve(async (req) => {
 
     const existing = existingRows?.[0];
     const hasFilledSignature = Boolean(String(existing?.signature_data_url || "").trim()) || existing?.absent === true;
-    if (existing && hasFilledSignature && !replaceExisting) return json({ success: true, duplicate: true });
+    if (existing && hasFilledSignature) return json({ success: true, duplicate: true });
 
     const rowToSave = existing
       ? { ...row, signed_at: new Date().toISOString() }

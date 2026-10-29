@@ -1,8 +1,7 @@
-import { maintenantParis } from "@/lib/heureParis";
 import { supabase } from "@/integrations/supabase/client";
 import type { CreneauKey } from "@/lib/agendaSlots";
-import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { isPratiqueType } from "@/lib/sessionTypes";
+import { lireFenetresEmargement, fenetresDues } from '@/lib/emargementFenetres';
 
 /**
  * Émargement numérique des journées de formation PRATIQUE.
@@ -19,12 +18,6 @@ const formatISO = (d: Date) => {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
-};
-
-const isDue = (iso: string, startMinute: number | null, todayISO: string, nowMin: number) => {
-  if (iso < todayISO) return true;
-  if (iso > todayISO) return false;
-  return nowMin >= Math.max(0, (startMinute ?? 9 * 60) - 30);
 };
 
 /** Toutes les dates de formation pratique planifiées pour un apprenant (ISO, triées). */
@@ -74,27 +67,8 @@ export const getPratiqueDates = async (apprenantId: string): Promise<string[]> =
 export const getExpectedPratiqueEmargements = async (
   apprenantId: string,
 ): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
-  const details = await fetchPratiqueSlotDetails(apprenantId);
-  if (details.length === 0) return [];
-
-  const { dateISO: todayISO, minutes: nowMin } = maintenantParis();
-
-  const out: Array<{ date: string; creneau: CreneauKey }> = [];
-  for (const detail of details) {
-    // Journée pratique : dès que la journée est commencée (créneau le plus tôt échu),
-    // on propose TOUS les créneaux du jour (matin ET après-midi) en une seule fois.
-    const earliestStart = detail.parts.reduce<number | null>((min, part) => {
-      const s = part.startMinute ?? 9 * 60;
-      return min == null || s < min ? s : min;
-    }, null);
-    const dayDue = isDue(detail.date, earliestStart, todayISO, nowMin);
-    if (!dayDue) continue;
-    for (const part of detail.parts) {
-      out.push({ date: detail.date, creneau: part.creneau as CreneauKey });
-    }
-  }
-  return out;
-
+  if (!apprenantId) return [];
+  return fenetresDues(await lireFenetresEmargement(apprenantId), true);
 };
 
 export interface PratiqueSignatureRow {

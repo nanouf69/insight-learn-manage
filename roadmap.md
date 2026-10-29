@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Émargement trente minutes avant — 29/10
+- [x] Règle centrale réelle −30 min, contrôles serveur et sélection théorie/pratique ; migration et fonction ciblées déployées, 2 996 lignes historiques empreinte identique.
+- [x] Minuteur prochaine ouverture + retour fenêtre, priorité identité/conflit/présence/inactivité, date et heures réelles dans la feuille.
+- [x] 11 tests SQL jetables + 36 frontend + 7 attestations PASS ; modal fictive vérifiée sans envoi, compilation OK. Rapport docs/emargement-trente-minutes-2026-10-29.md.
+- [ ] Parcours réel compte fictif et popup à la frontière bureau/mobile : session technique refusée (approbation indisponible). Un test historique de classification hors périmètre échoue.
+- [ ] Publication frontend ciblée bloquée : outil capture tout le projet, travaux Réalisés/autres inachevés ; aucune publication globale.
+
 ## Modules réellement complets — 29/10
 - [x] Diagnostic lecture seule : drapeau completed insuffisant, réponses null réelles, faux Réalisés des modules dispensés ; 466 copies candidates/214 dossiers, pas de mutation.
 - [x] Projection des vides historiques, compteurs CRM/élève, liens par quiz et cartes rouges ; 68 tests ciblés PASS, série élargie 77 PASS/1 FAIL contrat source ancien ; build OK. Rapport docs/modules-realises-preuves-2026-10-29.md.
