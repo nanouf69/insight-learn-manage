@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Protection futurs bilans TAXI/TA — accord 29/10 13:49 UTC
+- [ ] Sécuriser les copies TA existantes avant tout ajout, sans reconstruction non prouvée ; futur-only testé isolément.
+- [ ] Corriger à la source les écritures Q68 lors d’une ouverture, avec reproduction et non-régression isolées.
+- [ ] Ajouter uniquement47/48/49 après protection démontrée ; six autres suspendues. Q73 historique inchangée si masquage risqué.
+- [ ] Contrôles calcul/affichage TAXI et TA sur compte technique uniquement, empreintes et rapport ; aucune publication ni envoi.
+
 ## Cohérence bilans examen TAXI/TA nationale et locale — 29/10 13:35 UTC
 - [x] Neuf absences locales auditées :47/48/49 valides,45/51 mauvaises clés,53 aucune bonne option,52 ambiguë/doublon de notion,46/54 procédure non prouvée.
 - [x] Migration0219 appliquée : futurs TAXI11/606=40 canoniques, réouvertures intactes ;214 snapshots empreinte identique. Nationale84, sept ajouts antérieurs conservés, Q73 inactive.
