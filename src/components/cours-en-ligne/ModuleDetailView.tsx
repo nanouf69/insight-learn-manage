@@ -1,5 +1,6 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
+import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
@@ -4387,6 +4388,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
+  // Dernier enregistrement refusé : gardé à l'écran comme NON enregistré,
+  // réessai uniquement sur clic explicite (aucune répétition automatique).
+  const failedDbSaveRef = useRef<ModuleEditorSavePayload | null>(null);
+  const [echecSauvegarde, setEchecSauvegarde] = useState<{ at: string } | null>(null);
   const lastChangeToastAtRef = useRef<number>(0);
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flushImmediateRef = useRef(false);
@@ -5772,9 +5777,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, editorStateHydrated]);
 
-  const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
+  const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}): Promise<boolean> => {
     const savedLocalRevision = dataToSave.local_revision ?? adminLocalRevisionRef.current;
     isSavingToDbRef.current = true;
+    let succesAAfficher = false;
     try {
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
@@ -6019,14 +6025,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             moduleNom: module.nom,
             summary,
           });
-          // Toast admin : confirmer visuellement l'enregistrement des modifs/suppressions de questions
-          if (/question|exercice/i.test(summary)) {
-            const now = Date.now();
-            if (now - (lastChangeToastAtRef.current ?? 0) > 1500) {
-              lastChangeToastAtRef.current = now;
-              toast.success("✅ Changement enregistré");
-            }
-          }
+          // Toast admin affiché après la confirmation de la liste officielle (plus bas).
+          if (/question|exercice/i.test(summary)) succesAAfficher = true;
         }
       } catch (e) {
         console.error("[ModuleNotif] diff/publish error:", e);
@@ -6198,6 +6198,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      // Succès affiché seulement maintenant : module ET liste officielle des
+      // questions confirmés par relecture serveur.
+      if (succesAAfficher) {
+        const now = Date.now();
+        if (now - (lastChangeToastAtRef.current ?? 0) > 1500) {
+          lastChangeToastAtRef.current = now;
+          toast.success("✅ Changement enregistré");
+        }
+      }
+      return true;
+
       // Aucun miroir VTC↔TAXI automatique ici : chaque écriture implicite sur un
       // autre module crée un updated_at concurrent et peut réintroduire d'anciens
       // snapshots. Les modules FC continuent seulement de lire leur parent.
@@ -6215,7 +6226,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           { duration: 15000 },
         );
         saveErrorShownRef.current = true;
-        return;
+        return false;
       }
       if (/BILAN_SYNC_SUPPRESSION_LIEE/.test(rawMsg)) {
         toast.error(
@@ -6223,7 +6234,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           { duration: 15000 },
         );
         saveErrorShownRef.current = true;
-        return;
+        return false;
       }
       if (isStaleModuleEditorStateError(err)) {
         console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
@@ -6236,14 +6247,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           { duration: 10000 },
         );
         saveErrorShownRef.current = true;
-        return;
+        return false;
       }
       // Toujours afficher le message exact renvoyé par Supabase — plus de message générique masqué
-      toast.error(`❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
+      toast.error(isStatementTimeout(err)
+        ? `❌ Modification NON enregistrée : le serveur a mis trop de temps à répondre. Elle reste affichée ; cliquez sur « Réessayer l'enregistrement ».\n\nDétail : ${exactMsg}`
+        : `❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
       saveErrorShownRef.current = true;
     } finally {
       isSavingToDbRef.current = false;
     }
+    return false;
   };
 
   const enqueueDbSave = (payload: ModuleEditorSavePayload) => {
@@ -6257,12 +6271,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const nextPayload = latestQueuedDbSaveRef.current;
           if (!nextPayload) return;
           latestQueuedDbSaveRef.current = null;
-          await performDbSave(nextPayload, { retryStaleOnce: true });
+          const saved = await performDbSave(nextPayload, { retryStaleOnce: true });
+          // Échec : la modification reste à l'écran, signalée comme NON
+          // enregistrée, sans aucune répétition automatique.
+          const before = failedDbSaveRef.current;
+          failedDbSaveRef.current = nextFailedSave(before, nextPayload, saved);
+          if (!failedDbSaveRef.current) setEchecSauvegarde(null);
+          else if (failedDbSaveRef.current !== before) setEchecSauvegarde({ at: new Date().toISOString() });
           pendingDbSaveDataRef.current = latestQueuedDbSaveRef.current;
         }
       });
 
     return dbSaveQueueRef.current;
+  };
+
+  const reessayerSauvegarde = () => {
+    // Une modification plus récente en attente contient déjà tout l'état à l'écran.
+    const payload = retryPayload(failedDbSaveRef.current, pendingDbSaveDataRef.current as ModuleEditorSavePayload | null);
+    if (!payload) return;
+    lastSavedPayloadSignatureRef.current = null;
+    void enqueueDbSave(payload);
   };
 
   useEffect(() => {
@@ -6365,9 +6393,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
+    // Modification refusée par le serveur : le navigateur avertit avant de
+    // quitter, sinon elle serait perdue sans message.
+    const avertirSiNonEnregistre = (event: BeforeUnloadEvent) => {
+      if (!failedDbSaveRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
     window.addEventListener("beforeunload", flushPendingSave);
+    window.addEventListener("beforeunload", avertirSiNonEnregistre);
     return () => {
       window.removeEventListener("beforeunload", flushPendingSave);
+      window.removeEventListener("beforeunload", avertirSiNonEnregistre);
       // Sortie du module avant la fin du délai : l'enregistrement en attente
       // était annulé sans aucun message. On l'envoie maintenant ; un refus
       // éventuel s'affiche via le message d'erreur de performDbSave.
@@ -10328,6 +10365,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {!studentOnly && echecSauvegarde && (
+        <div role="alert" data-testid="echec-sauvegarde" className="sticky top-2 z-50 flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+          <span>
+            Modification NON enregistrée ({new Date(echecSauvegarde.at).toLocaleTimeString("fr-FR")}) : elle reste affichée ici mais les élèves ne la voient pas. Ne fermez pas cette page.
+          </span>
+          <Button size="sm" variant="destructive" onClick={reessayerSauvegarde}>Réessayer l'enregistrement</Button>
+        </div>
+      )}
       {!studentOnly && brouillonLocalAffiche && (
         <div role="status" className="rounded-lg border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-900">
           Brouillon local non enregistré : cet écran montre une copie gardée dans ce navigateur, différente de la version enregistrée que voient les élèves.

@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Sauvegarde Admin 57014 — Q2 « prise en charge » — 29/10 14:12 UTC
+- [x] Q2 identifiée : TAXI 11 / Bilan examen Réglementation locale (606) Q2, ligne officielle partagée TAXI 11/606 + TA 28/701 ; base déjà « 3,10€ » (module 14:11:32, liste officielle 14:11:41), journal humain 4 € → "? € → 3, € → 3,10€.
+- [x] Cause prouvée sur copie jetable : contrôle de liaison Bilans VTC↔TAXI (290 liens) ≈4 s sur ≈5 s par sauvegarde du module 11 ; limite serveur 8 s → 57014 sous charge.
+- [x] Correctif 0220 appliqué : même contrat en une passe, 12/12 cas équivalents (résultat, module, journal, liens), sauvegarde ≈1 s ; persistance/répétition/ancien onglet vérifiés sur copie jetable.
+- [x] Éditeur : succès seulement après relecture module + liste officielle ; refus = bandeau « NON enregistrée », Réessayer explicite, alerte avant fermeture ; 50 tests PASS. Non publié.
+- [ ] Clic réel Admin/élève sur Q2 en production NON fait (écrirait des valeurs intermédiaires dans le contenu réel pendant des bilans en cours).
+
 ## Protection futurs bilans TAXI/TA — accord 29/10 13:49 UTC
 - [x] Prototype futur-only TA testé PostgreSQL jetable : nouvelles listes84/40, copies existantes non migrées et toujours saisissables, réouverture figée, accès refusé hors propriétaire. NON activé.
 - [x] Corrigé les fausses intentions d’édition dans bilans11/28 : ID explicite, ensemble d’édition propre à l’instance ; ouverture réelle Q68 sans écriture +2 tests composant réel isolé PASS. Q68 rétablie A seule14:01:18Z après réécriture concurrente13:57:03Z, origine exacte NON PROUVÉE.
