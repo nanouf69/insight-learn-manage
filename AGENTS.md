@@ -22,7 +22,7 @@
 - Exam selectors share sessions/handler; all-dates paginates separately; planning names use CRM callback; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Labels: permanent IDs + dated baselines; why: no drift.
-- Supports corrigés et protection T3P : voir `src/components/cours-en-ligne/AGENTS.md`.
+- Course-specific rules (supports, T3P, module 7 communes, extra readings, books, question CSS, Part 1 enrichment): see `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters/CRM jalons share progressionModulesEleve, account proofs and Lyon waivers; attendance uses milestone ID; why: no divergence or leakage.
 - Signatures PDF/Contrôle ZIP share readonly planning loader; retain IDs/versions, unknown hours, abort read errors; EDOF targets shared, PDF counts images not timestamps; why: no fabricated proof or mutations.
 - Accès élève créés/envoyés par trigger serveur si aucun compte; why: toujours un accès.
@@ -38,7 +38,6 @@
 - E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
 - E-learning first/last activity dates use recorded pedagogical events in elearningHoursEvidence, not connection boundaries; why: a login alone must never invent activity dates, and hours arithmetic remains unchanged.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
-- Learner question CSS uses data-learner-question/passage; why: isolate presentation from content and persistence.
 - QRC retry history supersedes old traces only with matching final server proof; why: reservations never prove completion.
 - TAXI 2026: isolated versioned drafts, owned queue/readback, staged server guard; why: additive proofs only. See courses AGENTS.
 - Document zones share a touch-friendly editor; admin filling is a local PDF preview/export, while recipient submission keeps its existing server workflow; why: never overwrite recorded signed documents from the layout editor.
@@ -46,7 +45,6 @@
 - Training-completion PDF uses recorded enrolled course/practical dates and shared sessionHeures theory totals, plus private Documents signature/stamp; generation aborts on source/image read errors and only downloads a new copy; why: avoid access-deadline dates, connection-hour totals and altered historical attestations.
 - Welcome e-learning commitments share screen/PDF text, store the displayed access-window snapshot, and restore only for the same dossier and dates; why: no invented dates or cross-learner acknowledgments, and historical signed PDFs remain unchanged.
 - Answer queue persists definitive rejection metadata across reloads, respects per-item backoff even during flush, and pauses rejected tokens until replacement; read retries verify the same account and remain bounded; why: no refusal loops, false finalization or cross-account replay.
-- National TAXI Part 1 enrichment is course-only, staged as versioned media in the module 10 admin course view without changing moduleData, page identities or canonical questions; why: preserve original supports, shared modules and all completed evidence until explicit activation review.
 - Admin question saves rebuild the complete JSON from a successful server read and explicit stable-ID edit/add/delete intent; canonical commands exclude untouched JSON-only rows and retain existing positions, with CAS and fresh readback; why: rendered projections and historical tombstones must never imply bulk removal or republishing.
 - National Bilan display (TAXI 9/203, TA 27/250) is a read-only canonical projection with existing Bilan identities; frozen passages and TAXI save/readback stay unchanged; why: no duplicates, no change to shared or historical data.
 
@@ -57,9 +55,5 @@
 - Learner forms: once `_status: "completed"` is saved, `useAutoSave` blocks drafts and `trg_00_garde_brouillon_apres_validation` ignores (and logs) any non-admin non-completed overwrite; why: a late draft must never undo a validation.
 - Learner attendance eligibility and actual slot labels use `emargement_fenetres_eleve`, backed by `emargement_creneaux_reels` and the same write trigger/edge control; schedule boundaries use server Paris instants and a one-shot opening timer, never device clocks or fixed slot thresholds; why: direct agenda reads and separate timing rules hid due sheets or offered rejected signatures.
 - Native V2 QRC subjects whose legacy row only holds a truncated question summary (same ids/order/statements, no choices/expected answer) use the definitive V2 note when answers match (contenuFicheTronqueCompatible); QCM-only subjects keep the strict choice proof; why: legacy copies never carry server QRC corrections and stayed "en attente" forever.
-- Fiches révisions books (modules 70–73) are served from private bucket livres-formation via edge function livre-formation (rendered pages, formation-checked; original PDF admin-only); why: learners read without downloading the original.
-- Code-defined communes quizzes appear in both module 7 learner view and admin exercise view, without copying them into editor JSON; why: make them discoverable while preserving stable activity IDs and historical milestone exclusions.
-- Module 7 additive communes panels are routed by the existing commune exercise IDs via module7ActivitiesDisplay, never by module ID alone; why: unrelated selected quizzes must not be obscured by a shared activities dashboard.
-- Supplementary Pratique VTC/TAXI reading is rendered separately from course pages and activity registries, with image-only media and no completion callbacks; why: reading must not change any learner milestone or expose the original PDF.
 - Bilan11/605/606 future snapshots use ordered active canonical rows, no placeholders; existing snapshots unchanged. TA prototype stays test-only until legacy content/drafts are proven protected. Bilan11/28 editor writes require explicit question IDs and instance-owned intent, not projection differences; why: no Q68 replay or invented history.
-- Triggers/RPCs on admin module saves must stay set-based (one pass over the module JSON, no per-link or per-question rescans) and changes are checked by timing + equivalence on a disposable copy (`src/test/bilan_sync_router_equivalence.py`); the client shows success only after module and canonical readback, keeps refused edits flagged "NON enregistrée" with explicit retry only; why: module 11 saves exceeded the 8 s authenticated statement_timeout (57014) and refused edits vanished on reload.
+- Admin module-save triggers/RPCs stay set-based (one pass over module JSON), verified by timing + equivalence on a disposable copy (`src/test/bilan_sync_router_equivalence.py`); client shows success only after module + canonical readback, refused edits stay flagged with explicit retry; why: module 11 saves hit the 8 s timeout (57014) and refused edits vanished.
