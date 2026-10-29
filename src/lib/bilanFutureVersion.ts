@@ -70,7 +70,7 @@ export function prepareBilanFutureBank(source: BilanSource): FutureSubject[] {
       if (subject === 2 && id === 73) q.image = null;
       if (roadImage !== undefined) q.image = roadImage === 'none' ? null : (roadImage === 'vtc' ? a!.image ?? null : b!.image ?? null);
       // Q62: loaded image is the locomotive sign (A8) = level crossing WITHOUT barriers; future key = B only.
-      if (subject === 2 && id === 62) q.choix = q.choix.map(c => ({ ...c, correct: c.lettre === 'B' ? true : undefined }));
+      if (subject === 2 && id === 62) q.choix = q.choix.map(({ correct: _k, ...c }) => (c.lettre === 'B' ? { ...c, correct: true } : c));
       if (!q.choix.length || !q.choix.some(c => c.correct === true) || new Set(q.choix.map(c => c.lettre)).size !== q.choix.length)
         throw new Error(`Invalid verified QCM ${subject}/${id}`);
       questions.push(q);
