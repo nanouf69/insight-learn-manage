@@ -1,5 +1,6 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
+import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
@@ -6249,7 +6250,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return false;
       }
       // Toujours afficher le message exact renvoyé par Supabase — plus de message générique masqué
-      toast.error(`❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
+      toast.error(isStatementTimeout(err)
+        ? `❌ Modification NON enregistrée : le serveur a mis trop de temps à répondre. Elle reste affichée ; cliquez sur « Réessayer l'enregistrement ».\n\nDétail : ${exactMsg}`
+        : `❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
       saveErrorShownRef.current = true;
     } finally {
       isSavingToDbRef.current = false;
@@ -6271,15 +6274,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const saved = await performDbSave(nextPayload, { retryStaleOnce: true });
           // Échec : la modification reste à l'écran, signalée comme NON
           // enregistrée, sans aucune répétition automatique.
-          if (saved) {
-            if (failedDbSaveRef.current === nextPayload || (failedDbSaveRef.current?.local_revision ?? -1) <= (nextPayload.local_revision ?? -1)) {
-              failedDbSaveRef.current = null;
-              setEchecSauvegarde(null);
-            }
-          } else {
-            failedDbSaveRef.current = nextPayload;
-            setEchecSauvegarde({ at: new Date().toISOString() });
-          }
+          const before = failedDbSaveRef.current;
+          failedDbSaveRef.current = nextFailedSave(before, nextPayload, saved);
+          if (!failedDbSaveRef.current) setEchecSauvegarde(null);
+          else if (failedDbSaveRef.current !== before) setEchecSauvegarde({ at: new Date().toISOString() });
           pendingDbSaveDataRef.current = latestQueuedDbSaveRef.current;
         }
       });
@@ -6288,11 +6286,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const reessayerSauvegarde = () => {
-    const failed = failedDbSaveRef.current;
-    if (!failed) return;
     // Une modification plus récente en attente contient déjà tout l'état à l'écran.
-    const newer = pendingDbSaveDataRef.current as ModuleEditorSavePayload | null;
-    const payload = newer && (newer.local_revision ?? -1) >= (failed.local_revision ?? -1) ? newer : failed;
+    const payload = retryPayload(failedDbSaveRef.current, pendingDbSaveDataRef.current as ModuleEditorSavePayload | null);
+    if (!payload) return;
     lastSavedPayloadSignatureRef.current = null;
     void enqueueDbSave(payload);
   };
