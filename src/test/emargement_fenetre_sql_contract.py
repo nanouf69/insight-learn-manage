@@ -17,7 +17,7 @@ class Contrat(unittest.TestCase):
    cls.sql(f'CREATE TABLE public.{t} ({columns});')
   for f in ['pratique_creneaux_planifies','est_dossier_lie_emargement']:
    cls.sql(live(f"select pg_get_functiondef('public.{f}'::regproc)"))
-  cls.sql(Path(os.environ.get('ATTENDANCE_MIGRATION', 'drizzle/migrations/0215_emargement_fenetre_trente_minutes.sql')).read_text())
+  cls.sql(Path(os.environ.get('ATTENDANCE_MIGRATION', 'drizzle/migrations/0215_attendance_early_window.sql')).read_text())
  @classmethod
  def tearDownClass(cls):
   subprocess.run(AS+['pg_ctl','-D',cls.dir+'/db','-m','immediate','stop'],capture_output=True,env=cls.env); shutil.rmtree(cls.dir,True)
