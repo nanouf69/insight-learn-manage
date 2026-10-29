@@ -192,7 +192,6 @@ BEGIN
   SELECT * INTO v FROM public.bilan_future_versions WHERE id=r.version_id;
   RETURN jsonb_build_object('receipt_id',r.id,'version_id',v.id,'module_id',r.module_id,'exercise_id',r.exercise_id,'fingerprint',v.fingerprint,
     'questions',(SELECT jsonb_agg(jsonb_strip_nulls(jsonb_build_object('id',q->'id','enonce',q->'enonce','image',q->'image','imageSize',q->'imageSize',
-       'multiple',(SELECT count(*) FROM jsonb_array_elements(q->'choix') c WHERE c->>'correct'='true')>1,
        'choix',(SELECT jsonb_agg(jsonb_build_object('lettre',c->'lettre','texte',c->'texte') ORDER BY o) FROM jsonb_array_elements(q->'choix') WITH ORDINALITY AS x(c,o)))) ORDER BY n)
        FROM jsonb_array_elements(v.questions) WITH ORDINALITY AS y(q,n)));
 END $$;
