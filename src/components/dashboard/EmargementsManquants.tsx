@@ -227,11 +227,11 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const demiLabel = demi === "matin" ? "Matin" : "Après-midi";
   const DemiIcon = demi === "matin" ? Sun : Moon;
 
-  const renderNomCopiable = (a: ApprenantPresentiel) => {
+  const renderNomCopiable = (a: ApprenantPresentiel, dateCours: string) => {
     const nomComplet = [a.prenom, a.nom].filter(Boolean).join(" ").trim();
     const nomSeul = a.nom?.trim() ?? "";
     return (
-      <div className="flex min-w-0 items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
         <span className="min-w-0 select-text break-words font-medium">{nomComplet}</span>
         <Button
           type="button"
@@ -253,6 +253,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
         >
           <Copy className="h-4 w-4" />
         </Button>
+        <span className="text-xs text-muted-foreground">{formatDayLabel(dateCours)}</span>
       </div>
     );
   };
@@ -327,7 +328,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
                 className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
                 onClick={() => onNavigateToApprenant?.(a.id)}
               >
-                <div className="min-w-0 text-xs">{renderNomCopiable(a)}</div>
+                <div className="min-w-0 text-xs">{renderNomCopiable(a, s.date_emargement ?? selectedDay)}</div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {demiLbl && (
                     <span className="text-[10px] text-emerald-700">
@@ -361,7 +362,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
                   className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
                   onClick={() => onNavigateToApprenant?.(a.id)}
                 >
-                  <div className="min-w-0 text-xs">{renderNomCopiable(a)}</div>
+                  <div className="min-w-0 text-xs">{renderNomCopiable(a, selectedDay)}</div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[10px] text-amber-700">{demiLbl}</span>
                     <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700 bg-white">
@@ -418,7 +419,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
             onClick={() => onNavigateToApprenant?.(a.id)}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 text-sm">{renderNomCopiable(a)}</div>
+              <div className="min-w-0 text-sm">{renderNomCopiable(a, today)}</div>
               <Badge variant="outline" className="text-xs shrink-0">
                 {getTypeLabel(a)}
               </Badge>
