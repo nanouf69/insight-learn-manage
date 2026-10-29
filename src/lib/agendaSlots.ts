@@ -2,6 +2,7 @@ import { maintenantParis } from "@/lib/heureParis";
 import { supabase } from "@/integrations/supabase/client";
 import { planningCreneaux } from "@/lib/signaturesManquantes";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
+import { lireFenetresEmargement, fenetresDues } from '@/lib/emargementFenetres';
 
 export type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
@@ -344,6 +345,7 @@ export const getExpectedEmargements = async (params: {
   endDate: Date;
 }): Promise<Array<{ date: string; creneau: CreneauKey }>> => {
   const { mode, startDate, endDate, apprenantId } = params;
+  if (apprenantId) return fenetresDues(await lireFenetresEmargement(apprenantId), false);
   if (mode === 'presentiel') {
     if (!apprenantId) return [];
     const [rows, blocs] = await Promise.all([

@@ -13,6 +13,7 @@ import type { CreneauKey } from "@/lib/agendaSlots";
 import { creneauLabel, creneauHoraire, creneauHorairePratique } from "@/lib/agendaSlots";
 import { checkSignatureAgainstReferences } from "@/lib/signatureSimilarity";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
+import { maintenantParis } from '@/lib/heureParis';
 
 // Alerte signature : journal d'erreurs + e-mail à contact@ftransport.fr.
 // Ne bloque jamais l'élève ; au plus une alerte par élève toutes les 10 min.
@@ -53,6 +54,7 @@ interface EmargementFCModalProps {
   replaceExisting?: boolean;
   /** Journée de formation PRATIQUE (Planning pratique) : horaires 9h-12h / 13h-16h. */
   pratique?: boolean;
+  horairesReels?: Partial<Record<CreneauKey, string>>;
   required?: boolean;
   onSigned?: () => void;
   /** Appelé si l'apprenant ferme/refuse de signer. La signature reste optionnelle. */
@@ -60,8 +62,9 @@ interface EmargementFCModalProps {
 }
 
 const getCurrentCreneauFromHour = (): CreneauKey => {
-  const h = new Date().getHours();
-  const m = new Date().getMinutes();
+  const minutes = maintenantParis().minutes;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
   if (h < 12) return "matin";
   if (h < 17) return "apres_midi";
   return h < 18 || (h === 18 && m < 30) ? "soir_1" : "soir_2";
@@ -69,11 +72,7 @@ const getCurrentCreneauFromHour = (): CreneauKey => {
 
 
 const todayISO = () => {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return maintenantParis().dateISO;
 };
 
 const saveEmargement = async (payload: Record<string, unknown>) => {
@@ -137,6 +136,7 @@ export const EmargementFCModal = ({
   extraCreneaux,
   replaceExisting = false,
   pratique = false,
+  horairesReels,
   required = false,
   onSigned,
   onSkipped,
@@ -155,11 +155,11 @@ export const EmargementFCModal = ({
   const [identityConfirmed, setIdentityConfirmed] = useState(true);
   const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
-  const horaire = (c: CreneauKey) => (pratique ? creneauHorairePratique(c) : creneauHoraire(c));
+  const horaire = (c: CreneauKey) => horairesReels?.[c] ?? (pratique ? creneauHorairePratique(c) : creneauHoraire(c));
   const extras = (extraCreneaux || []).filter((c) => c && c !== demi);
   const allCreneaux: CreneauKey[] = [demi, ...extras];
   const isMultiCreneau = extras.length > 0;
-  const isRattrapage = effectiveDate !== todayISO();
+  const isRattrapage = effectiveDate < todayISO();
   const dateLabel = (() => {
     const [y, m, d] = effectiveDate.split("-").map((x) => parseInt(x, 10));
     const dt = new Date(y, (m || 1) - 1, d || 1);
@@ -359,7 +359,7 @@ export const EmargementFCModal = ({
 
   if (done) return null;
 
-  const formationLabel = mode === "presentiel" ? "formation en présentiel" : "formation continue";
+  const formationLabel = pratique ? "formation pratique en présentiel" : mode === "presentiel" ? "formation en présentiel" : "formation continue";
 
   const handleClose = () => {
     if (required) return;
