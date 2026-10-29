@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { texteMailVersHtml } from "@/lib/examenElearningRelance";
 import { dateDuJourParis } from "@/lib/signaturesManquantes";
-import { OBJET_DERNIERE_RELANCE, dateLimiteRelance, formatPourcentage, mailDerniereRelance, pourcentageModules } from "@/lib/suiviPratiqueEdof";
+import { OBJET_DERNIERE_RELANCE, dateLimiteRelance, formatPourcentage, mailDerniereRelance, mailDerniereRelanceHtml, pourcentageModules } from "@/lib/suiviPratiqueEdof";
 
 type Apprenant = { id: string; prenom?: string | null; nom?: string | null; email?: string | null };
 
