@@ -1,7 +1,5 @@
-import { maintenantParis } from "@/lib/heureParis";
 import { supabase } from "@/integrations/supabase/client";
 import type { CreneauKey } from "@/lib/agendaSlots";
-import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { isPratiqueType } from "@/lib/sessionTypes";
 import { lireFenetresEmargement, fenetresDues } from '@/lib/emargementFenetres';
 
@@ -20,12 +18,6 @@ const formatISO = (d: Date) => {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
-};
-
-const isDue = (iso: string, startMinute: number | null, todayISO: string, nowMin: number) => {
-  if (iso < todayISO) return true;
-  if (iso > todayISO) return false;
-  return nowMin >= Math.max(0, (startMinute ?? 9 * 60) - 30);
 };
 
 /** Toutes les dates de formation pratique planifiées pour un apprenant (ISO, triées). */
