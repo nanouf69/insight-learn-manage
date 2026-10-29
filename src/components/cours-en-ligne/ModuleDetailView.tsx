@@ -4387,6 +4387,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
+  // Dernier enregistrement refusé : gardé à l'écran comme NON enregistré,
+  // réessai uniquement sur clic explicite (aucune répétition automatique).
+  const failedDbSaveRef = useRef<ModuleEditorSavePayload | null>(null);
+  const [echecSauvegarde, setEchecSauvegarde] = useState<{ at: string } | null>(null);
   const lastChangeToastAtRef = useRef<number>(0);
   const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flushImmediateRef = useRef(false);
@@ -6221,7 +6225,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           { duration: 15000 },
         );
         saveErrorShownRef.current = true;
-        return;
+        return false;
       }
       if (/BILAN_SYNC_SUPPRESSION_LIEE/.test(rawMsg)) {
         toast.error(
@@ -6229,7 +6233,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           { duration: 15000 },
         );
         saveErrorShownRef.current = true;
-        return;
+        return false;
       }
       if (isStaleModuleEditorStateError(err)) {
         console.warn("[ModuleEditor] Stale write blocked by DB compare-and-swap", {
@@ -6242,7 +6246,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           { duration: 10000 },
         );
         saveErrorShownRef.current = true;
-        return;
+        return false;
       }
       // Toujours afficher le message exact renvoyé par Supabase — plus de message générique masqué
       toast.error(`❌ Sauvegarde refusée par la base : ${exactMsg}`, { duration: 10000 });
@@ -6390,9 +6394,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
+    // Modification refusée par le serveur : le navigateur avertit avant de
+    // quitter, sinon elle serait perdue sans message.
+    const avertirSiNonEnregistre = (event: BeforeUnloadEvent) => {
+      if (!failedDbSaveRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
     window.addEventListener("beforeunload", flushPendingSave);
+    window.addEventListener("beforeunload", avertirSiNonEnregistre);
     return () => {
       window.removeEventListener("beforeunload", flushPendingSave);
+      window.removeEventListener("beforeunload", avertirSiNonEnregistre);
       // Sortie du module avant la fin du délai : l'enregistrement en attente
       // était annulé sans aucun message. On l'envoie maintenant ; un refus
       // éventuel s'affiche via le message d'erreur de performDbSave.
@@ -10353,6 +10366,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {!studentOnly && echecSauvegarde && (
+        <div role="alert" data-testid="echec-sauvegarde" className="sticky top-2 z-50 flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+          <span>
+            Modification NON enregistrée ({new Date(echecSauvegarde.at).toLocaleTimeString("fr-FR")}) : elle reste affichée ici mais les élèves ne la voient pas. Ne fermez pas cette page.
+          </span>
+          <Button size="sm" variant="destructive" onClick={reessayerSauvegarde}>Réessayer l'enregistrement</Button>
+        </div>
+      )}
       {!studentOnly && brouillonLocalAffiche && (
         <div role="status" className="rounded-lg border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-900">
           Brouillon local non enregistré : cet écran montre une copie gardée dans ce navigateur, différente de la version enregistrée que voient les élèves.
