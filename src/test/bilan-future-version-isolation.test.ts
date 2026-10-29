@@ -64,6 +64,18 @@ describe('Isolated future Bilan preparation, never legacy mutations', () => {
     for (const id of [68, 70, 81, 107]) expect(q(id)?.image).toBeNull();
     expect(bank()[2].questions.some(x => /\/cours\/exercices\/securite\/image(59|6\d|[7-9]\d|10[0-4])\.png/.test(x.image ?? ''))).toBe(false);
     expect(q(1)?.image).toBe('/cours/exercices/securite/image1.png');
+    expect(q(79)?.image).toMatch(/^question-images\/module-5\/q79_/);
+  });
+  it('Q62 future key is "sans barrières" (B) only and Q63 is withheld', () => {
+    const q62 = bank()[2].questions.find(x => x.id === 62)!;
+    expect(q62.choix.filter(c => c.correct).map(c => c.lettre)).toEqual(['B']);
+    expect(bank()[2].questions.some(x => x.id === 63)).toBe(false);
+    expect(bank()[2].suspended.some(x => x.questionId === 63)).toBe(true);
+  });
+  it('never mutates the legacy source used by old passages', () => {
+    const src = structuredClone(source);
+    prepareBilanFutureBank(src);
+    expect(src).toEqual(source);
   });
   it('orders every candidate by stable source number with no duplicate IDs', () => {
     for (const subject of bank()) {
