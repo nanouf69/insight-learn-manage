@@ -77,3 +77,12 @@ Références : [R413-4](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT
 - Q79 : image VTC (tunnel + 50) correcte, clé A+B cohérente ; incluse avec image VTC (TAXI image77 décalée).
 - Sécurité future : 250 questions, suspendues Q63, Q80, Q92, Q177, Q212, Q213.
 - 25 tests Vitest + contrat SQL base jetable PASS. Aucune écriture Cloud, rien activé ni publié.
+
+## Installation base réelle — 29/10 21:50 UTC
+- Circuit installé (tables bilan_future_*, RPC route/open/questions/save_draft/resume/submit, pont de validation module, ouverture `bilan_future_opening.open_to_new = false`).
+- 5 banques chargées et actives : T3P 114, Gestion 200, Sécurité 249 (Q62=B, Q63 retirée, Q79 image VTC), Français 97, Anglais 194 ; empreintes vérifiées.
+- Exception temporaire du chargement (compte propriétaire) retirée immédiatement après.
+- Test intégré sur la vraie base, compte technique a001, annulé à la fin : route 5 future / 11 ancienne, aucune clé visible, ancien onglet/remise vide/brouillon tardif refusés, 5/5 remises → module 5 terminé 212/854, 854 réponses, 0 vide. Après : 0 ligne restante.
+- 64/64 images de la version future se chargent (200, image).
+- Empreintes anciennes identiques avant/après (module_editor_state 5/11, 216 snapshots, 392 réponses 5/11, 17 passages figés, 2032 passages EB).
+- NON PROUVÉ : écran élève cliqué avec un vrai compte technique (session non disponible). Ouverture fermée, non publié.
