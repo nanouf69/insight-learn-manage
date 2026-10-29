@@ -38,6 +38,13 @@ try:
     CREATE TABLE legacy_copies(id integer PRIMARY KEY,kind text,payload jsonb);
     INSERT INTO legacy_copies VALUES(1,'without_snapshot','{"question":"old Q104","key":"C","score":12,"status":"in_progress"}'),
       (2,'with_snapshot','{"question":"original Q104","key":"C","score":15,"status":"submitted","snapshot":[1,2,3]}');
+    CREATE TABLE apprenants(id uuid PRIMARY KEY, auth_user_id uuid, deleted_at timestamptz);
+    CREATE TABLE reponses_apprenants(id serial, apprenant_id uuid, exercice_id text);
+    CREATE TABLE bilan_passage_snapshots(apprenant_id uuid, module_id int);
+    CREATE TABLE bilan_passage_categories(apprenant_id uuid, module_id int);
+    CREATE TABLE bilan_passages_figes(apprenant_id uuid, module_id int);
+    CREATE TABLE apprenant_module_completion(id serial, apprenant_id uuid, module_id int, status text NOT NULL DEFAULT 'in_progress', progress int DEFAULT 0,
+      completed_at timestamptz, score_obtenu int, score_max int, details jsonb, updated_at timestamptz, UNIQUE(apprenant_id,module_id));
     """)
     sql((ROOT / 'src/test/fixtures/bilan-future-isolated-prototype.sql').read_text())
     old = sql('SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM legacy_copies l')
@@ -58,11 +65,14 @@ try:
     assert ra['version_id'] == rb['version_id'] == version
     assert ra['id'] != rb['id']
     print('PASS: concurrent opening idempotent, TAXI/VTC share one immutable version with separate receipts')
-    learner_questions = json.loads(sql(prefix(a) + f"SELECT questions FROM bilan_future_versions WHERE id='{version}'"))
+    assert sql(prefix(a) + 'SELECT count(*) FROM bilan_future_versions') == '0'
+    proj = json.loads(sql(prefix(a) + f"SELECT bilan_future_questions('{ra['id']}')"))
+    assert proj['version_id'] == version and [x['id'] for x in proj['questions']] == [104, 114]
+    assert 'correct' not in json.dumps(proj) and proj['questions'][0]['choix'][1] == {'lettre':'B','texte':'Racolage'}
     admin_questions = json.loads(sql("SET test.admin='1'; SET ROLE authenticated;" + f"SELECT questions FROM bilan_future_versions WHERE id='{version}'"))
-    assert learner_questions == admin_questions == q
-    assert sql(prefix(c) + 'SELECT count(*) FROM bilan_future_versions') == '0'
-    print('PASS: learner/admin exact content and key readback, unrelated learner cannot read bank')
+    assert admin_questions == q
+    refusal(prefix(c) + f"SELECT bilan_future_questions('{ra['id']}')", 'Receipt ownership required')
+    print('PASS: learner gets ordered projection WITHOUT keys, cannot read bank table; admin exact keys; other account refused')
     refusal(prefix(a) + 'SELECT bilan_future_open(11,605)', 'Outside common Bilan scope')
     refusal(prefix(c) + f"SELECT bilan_future_submit('{ra['id']}'," + literal({'104':['B'],'114':['C']}) + ')', 'Receipt ownership required')
     refusal(prefix(a) + f"INSERT INTO bilan_future_receipts(owner_id,module_id,exercise_id,version_id) VALUES('{a}',5,501,'{version}')", 'permission denied')
@@ -101,7 +111,47 @@ try:
     assert json.loads(sql(prefix(a) + f"SELECT bilan_future_submit('{ra['id']}'," + literal(ans) + ')')) == result
     assert json.loads(sql('SELECT payload FROM legacy_copies WHERE id=2'))['score'] == 15
     print('PASS: old copies unchanged through new opening/submission; late legacy save stays separate, old finished score unchanged')
-    print('NON PROUVE: real eligibility, real learner UI, completion bridge and old-device rollover. Prototype remains inactive.')
+    # ---- route, evidence-based grant, opening switch, completion bridge ----
+    u_new, u_old, u_done = ['00000000-0000-0000-0000-' + str(n).zfill(12) for n in (601, 602, 603)]
+    p_new, p_old, p_done = ['10000000-0000-0000-0000-' + str(n).zfill(12) for n in (601, 602, 603)]
+    sql(f"INSERT INTO apprenants VALUES('{p_new}','{u_new}',NULL),('{p_old}','{u_old}',NULL),('{p_done}','{u_done}',NULL)")
+    sql(f"INSERT INTO reponses_apprenants(apprenant_id,exercice_id) VALUES('{p_old}','module_11_revision_exo_602')")
+    vs = [sql('INSERT INTO bilan_future_versions(subject,questions,fingerprint) VALUES(' + str(k) + ',' + literal(q) + ',md5((' + literal(q) + ')::text)) RETURNING id') for k in range(5)]
+    sql('INSERT INTO bilan_future_active VALUES ' + ','.join(f"({k},'{vs[k]}')" for k in range(5)))
+    assert sql(prefix(u_new) + 'SELECT bilan_future_route(11)') == 'legacy'
+    assert sql('SELECT count(*) FROM bilan_future_eligibility WHERE owner_id=' + f"'{u_new}'") == '0'
+    print('PASS: opening closed -> legacy route, no eligibility created')
+    refusal(prefix(u_new) + f"SELECT bilan_future_admin_grant('{p_new}',11)", 'Admin required')
+    assert sql("SET test.admin='1'; SET ROLE authenticated;" + f"SELECT bilan_future_admin_grant('{p_old}',11)") == 'f'
+    assert sql(prefix(u_old) + 'SELECT bilan_future_route(11)') == 'legacy'
+    print('PASS: learner with a legacy trace (even a revision row) is refused future version')
+    sql('UPDATE bilan_future_opening SET open_to_new=true')
+    assert sql(prefix(u_old) + 'SELECT bilan_future_route(11)') == 'legacy'
+    assert sql(prefix(u_new) + 'SELECT bilan_future_route(11)') == 'future'
+    assert sql(prefix(u_new) + 'SELECT bilan_future_route(11)') == 'future'
+    assert sql(f"SELECT count(*) FROM bilan_future_eligibility WHERE owner_id='{u_new}'") == '5'
+    assert sql(prefix(u_new) + 'SELECT bilan_future_route(5)') == 'future'
+    print('PASS: opening on -> clean account gets 5 subjects, idempotent; traced account stays legacy')
+    recs = [json.loads(sql(prefix(u_new) + f'SELECT bilan_future_open(11,{600+k})')) for k in range(5)]
+    for k, rec in enumerate(recs):
+        assert rec['version_id'] == vs[k]
+        sql(prefix(u_new) + f"SELECT bilan_future_submit('{rec['id']}'," + literal({'104':['B'],'114':['A'] if k == 0 else ['C']}) + ')')
+        if k < 4: assert sql(f"SELECT count(*) FROM apprenant_module_completion WHERE apprenant_id='{p_new}'") == '0'
+    row = json.loads(sql(f"SELECT to_jsonb(c) FROM apprenant_module_completion c WHERE apprenant_id='{p_new}' AND module_id=11"))
+    assert row['status'] == 'completed' and row['score_obtenu'] == 9 and row['score_max'] == 10 and row['completed_at']
+    assert len(row['details']) == 10 and all(d['reponseEleve'] for d in row['details']) and {d['exerciceId'] for d in row['details']} == {600,601,602,603,604}
+    print('PASS: module 11 completed only after 5/5 subjects, server score 9/10, details accepted by evidence (no blank answer)')
+    sql(f"INSERT INTO apprenant_module_completion(apprenant_id,module_id,status,completed_at,score_obtenu,score_max,details) VALUES('{p_done}',5,'completed','2026-01-01',3,4,'[]')")
+    sql(f"INSERT INTO bilan_future_eligibility SELECT '{u_done}',5,500+subject,version_id FROM bilan_future_active")
+    for k in range(5):
+        rec = json.loads(sql(prefix(u_done) + f'SELECT bilan_future_open(5,{500+k})'))
+        sql(prefix(u_done) + f"SELECT bilan_future_submit('{rec['id']}'," + literal({'104':['B'],'114':['C']}) + ')')
+    row = json.loads(sql(f"SELECT to_jsonb(c) FROM apprenant_module_completion c WHERE apprenant_id='{p_done}' AND module_id=5"))
+    assert row['score_obtenu'] == 3 and row['details'] == [] and row['completed_at'].startswith('2026-01-01')
+    print('PASS: an already completed module is never rewritten by the bridge')
+    assert sql('SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM legacy_copies l') != '' 
+    assert sql(f"SELECT count(*) FROM reponses_apprenants") == '1'
+    print('PASS: legacy answer rows untouched (count 1, no writes)')
 finally:
     if started:
         subprocess.run(USER + ['pg_ctl', '-D', TEMP + '/data', '-m', 'fast', '-w', 'stop'], check=True, stdout=subprocess.DEVNULL)
