@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PenLine, Phone, Mail, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
+import { PenLine, Phone, Mail, Sun, Moon, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { isPratiqueType } from "@/lib/sessionTypes";
+import { toast } from "sonner";
 
 const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -226,6 +227,35 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
   const demiLabel = demi === "matin" ? "Matin" : "Après-midi";
   const DemiIcon = demi === "matin" ? Sun : Moon;
 
+  const renderNomCopiable = (a: ApprenantPresentiel) => {
+    const nomComplet = [a.prenom, a.nom].filter(Boolean).join(" ").trim();
+    return (
+      <div className="flex min-w-0 items-center gap-1">
+        <span className="min-w-0 select-text break-words font-medium">{nomComplet}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground"
+          title="Copier le nom complet"
+          aria-label={`Copier le nom de ${nomComplet}`}
+          disabled={!nomComplet}
+          onClick={async (event) => {
+            event.stopPropagation();
+            try {
+              await navigator.clipboard.writeText(nomComplet);
+              toast.success("Nom copié");
+            } catch {
+              toast.error("Copie impossible. Sélectionnez le nom pour le copier.");
+            }
+          }}
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -296,9 +326,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
                 className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors"
                 onClick={() => onNavigateToApprenant?.(a.id)}
               >
-                <p className="text-xs font-medium truncate">
-                  {a.prenom} {a.nom}
-                </p>
+                <div className="min-w-0 text-xs">{renderNomCopiable(a)}</div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {demiLbl && (
                     <span className="text-[10px] text-emerald-700">
@@ -332,9 +360,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
                   className="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
                   onClick={() => onNavigateToApprenant?.(a.id)}
                 >
-                  <p className="text-xs font-medium truncate">
-                    {a.prenom} {a.nom}
-                  </p>
+                  <div className="min-w-0 text-xs">{renderNomCopiable(a)}</div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[10px] text-amber-700">{demiLbl}</span>
                     <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700 bg-white">
@@ -391,9 +417,7 @@ export function EmargementsManquants({ onNavigateToApprenant }: Props) {
             onClick={() => onNavigateToApprenant?.(a.id)}
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="font-medium text-sm">
-                {a.prenom} {a.nom}
-              </p>
+              <div className="min-w-0 text-sm">{renderNomCopiable(a)}</div>
               <Badge variant="outline" className="text-xs shrink-0">
                 {getTypeLabel(a)}
               </Badge>
