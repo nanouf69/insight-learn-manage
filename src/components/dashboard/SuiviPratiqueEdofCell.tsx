@@ -65,7 +65,7 @@ export function SuiviElearningCell({ apprenant }: { apprenant: Apprenant }) {
     try {
       const { data, error } = await supabase.functions.invoke("sync-outlook-emails", {
         body: { action: "send", userEmail: "contact@ftransport.fr", to: apprenant.email, apprenantId: apprenant.id,
-          subject: mail.subject.trim(), body: texteMailVersHtml(mail.body), attachments: [] },
+          subject: mail.subject.trim(), body: htmlEnvoi(), attachments: [] },
       });
       if (error) throw new Error(error instanceof FunctionsHttpError ? await error.context.text() : error.message);
       if (data?.error || data?.success !== true) throw new Error(data?.error || "L'envoi n'a pas été confirmé");
@@ -98,7 +98,14 @@ export function SuiviElearningCell({ apprenant }: { apprenant: Apprenant }) {
         <div className="space-y-4">
           <div><Label>Destinataire</Label><p className="break-all text-sm">{apprenant.email}</p></div>
           <div><Label htmlFor={`dr-sub-${apprenant.id}`}>Objet</Label><Input id={`dr-sub-${apprenant.id}`} value={mail.subject} disabled={sending} onChange={e => setMail({ ...mail, subject: e.target.value })} /></div>
-          <div><Label htmlFor={`dr-body-${apprenant.id}`}>Message</Label><Textarea id={`dr-body-${apprenant.id}`} className="min-h-80" value={mail.body} disabled={sending} onChange={e => setMail({ ...mail, body: e.target.value })} /></div>
+          <div>
+            <Label>Aperçu du mail reçu</Label>
+            <div className="max-h-64 overflow-y-auto rounded-md border bg-background p-3 text-sm" data-testid={`dr-preview-${apprenant.id}`}
+              // Aperçu fidèle : HTML généré localement depuis le modèle vérifié ou le texte édité, jamais de contenu externe.
+              dangerouslySetInnerHTML={{ __html: htmlEnvoi() }} />
+            {mail.body !== corpsModele && <p className="mt-1 text-xs text-muted-foreground">Texte modifié : le mail sera envoyé sans mise en couleur.</p>}
+          </div>
+          <div><Label htmlFor={`dr-body-${apprenant.id}`}>Message (texte brut)</Label><Textarea id={`dr-body-${apprenant.id}`} className="min-h-80" value={mail.body} disabled={sending} onChange={e => setMail({ ...mail, body: e.target.value })} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" disabled={sending} onClick={() => setOpen(false)}>Annuler</Button>
