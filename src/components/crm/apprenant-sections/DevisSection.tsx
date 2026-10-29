@@ -16,6 +16,9 @@ import { ContratFormationSection } from "./ContratFormationSection";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
 import jsPDF from "jspdf";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
 import { saveAs } from "file-saver";
@@ -1712,6 +1715,25 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                   ))}
                 </SelectContent>
               </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full justify-start gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {sessionDate ? `Date choisie : ${sessionDate}` : "Choisir une date dans l'agenda"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    locale={fr}
+                    onSelect={(d) => d && setSessionDate(format(d, "d MMMM yyyy", { locale: fr }))}
+                    modifiers={{ dispo: (d: Date) => availableSessionDates.includes(format(d, "d MMMM yyyy", { locale: fr })) }}
+                    modifiersClassNames={{ dispo: "bg-primary/20 font-bold" }}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
               {isPracticalQuote && practicalDatesLoading && <p className="text-sm text-muted-foreground">Chargement des dates pratiques…</p>}
               {isPracticalQuote && practicalDatesError && <p className="text-sm text-destructive">Impossible de lire le planning pratique. Aucune date théorique proposée à sa place.</p>}
               {isPracticalQuote && !practicalDatesLoading && !practicalDatesError && availableSessionDates.length === 0 && <p className="text-sm text-muted-foreground">Aucune journée pratique enregistrée pour cette filière.</p>}
