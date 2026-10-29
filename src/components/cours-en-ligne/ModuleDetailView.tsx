@@ -4303,7 +4303,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity, activitesEtat = null, initialExerciseId = null }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, apercuAdmin = false, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity, activitesEtat = null, initialExerciseId = null }: ModuleDetailViewProps) => {
   const activitesEtatRef = useRef(activitesEtat);
   activitesEtatRef.current = activitesEtat;
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
