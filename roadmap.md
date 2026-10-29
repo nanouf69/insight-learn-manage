@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Quiz jours fériés Cas pratique — 29/10
+- [ ] Quiz complémentaire de 11 dates 2026 en haut du module 12, identité distincte et anciennes questions intactes.
+- [ ] Protection serveur, tests fictifs et ouverture visuelle ; aucune publication globale ni modification de jalons.
+
 ## Cas pratique TAXI absent — 29/10 09:12 UTC
 - [x] Lecture seule : module 12 absent des affectations de 12 dossiers théoriques avec accès actif ou session actuelle, dont 7 en session TAXI/TA 26/10–16/11 ; aucune validation module 12 enregistrée pour ces dossiers.
 - [x] Cause repérée : formulaire de création omet 12 dans les six listes TAXI/TA ; modification omet 12 dans les trois listes TA. Catalogue correct, dashboard respecte les listes explicites. Pratique seule [6] exclue.
