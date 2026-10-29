@@ -1,0 +1,112 @@
+-- Read-only schedule resolver. No generation or historical update.
+CREATE OR REPLACE FUNCTION public.emargement_creneaux_reels(p_apprenant_id uuid)
+RETURNS TABLE(date_cours date, creneau text, debut time, fin time, pratique boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+WITH app AS (
+ SELECT a.*,upper(split_part(coalesce(a.type_apprenant,''),'-',1)) filiere,
+ NOT (coalesce(a.creneau_horaire,'') ~* 'en[- ]?ligne|e[- ]?learning|online|distanciel'
+ OR (coalesce(a.type_apprenant,'') ~* '^(vtc|taxi|ta|va)-e$')) AS presentiel
+ FROM public.apprenants a WHERE a.id=p_apprenant_id AND a.deleted_at IS NULL AND NOT coalesce(a.abandonnee,false)
+), inscriptions AS (
+ SELECT sa.*,s.type_session,s.nom,s.date_debut sd,s.date_fin sf,
+ coalesce(nullif(sa.heure_debut_personnalisee,''),nullif(s.heure_debut,''))::time hd,
+ coalesce(nullif(sa.heure_fin_personnalisee,''),nullif(s.heure_fin,''))::time hf,
+ greatest(s.date_debut,coalesce(sa.date_debut,s.date_debut)) d,
+ least(coalesce(s.date_fin,s.date_debut),coalesce(sa.date_fin_personnalisee,sa.date_fin,s.date_fin,s.date_debut)) f
+ FROM public.session_apprenants sa JOIN public.sessions s ON s.id=sa.session_id
+ WHERE sa.apprenant_id=p_apprenant_id AND NOT coalesce(sa.liste_attente,false)
+ AND NOT coalesce(sa.emargements_exclus,false) AND coalesce(s.statut,'') !~* 'annul'
+), bornes AS (
+ SELECT 'matin'::text c,'00:00'::time a,'12:00'::time z UNION ALL
+ SELECT 'apres_midi','13:00'::time,'17:00'::time UNION ALL
+ SELECT 'soir_1','17:00'::time,'18:30'::time UNION ALL
+ SELECT 'soir_2','18:30'::time,'23:59:59'::time
+), theorie AS (
+ SELECT b.semaine_debut::date+b.jour date_cours,k.c creneau,
+ greatest(b.heure_debut::time,coalesce(i.hd,b.heure_debut::time),k.a) debut,
+ least(b.heure_fin::time,coalesce(i.hf,b.heure_fin::time),k.z) fin,false pratique
+ FROM inscriptions i CROSS JOIN app a JOIN public.agenda_blocs b
+ ON b.semaine_debut::date+b.jour BETWEEN i.d AND i.f CROSS JOIN bornes k
+ WHERE i.type_session ~* 'theorique' AND a.presentiel
+ AND (CASE WHEN cardinality(coalesce(b.publics_cibles,ARRAY[]::text[]))>0 THEN a.filiere=ANY(b.publics_cibles)
+ ELSE b.formation ~* ('\m'||lower(a.filiere)||'\M') END)
+ AND extract(isodow from b.semaine_debut::date+b.jour)<=5
+ AND (a.filiere<>'TA' OR i.date_fin_personnalisee IS NOT NULL OR
+ (SELECT count(*) FROM generate_series(i.d::timestamp,(b.semaine_debut::date+b.jour)::timestamp,interval '1 day') g WHERE extract(isodow from g)<=5)<=5)
+), fc AS (
+ SELECT g::date,k.c,greatest(i.hd,k.a),least(i.hf,k.z),false
+ FROM inscriptions i CROSS JOIN app a CROSS JOIN LATERAL generate_series(i.d::timestamp,i.f::timestamp,interval '1 day') g CROSS JOIN bornes k
+ WHERE i.type_session ~* 'theorique' AND a.presentiel
+ AND (coalesce(a.type_apprenant,'')||' '||coalesce(a.formation_choisie,'')||' '||coalesce(i.nom,'')) ~* 'continue|\mfc\M|fco'
+ AND i.hd IS NOT NULL AND i.hf IS NOT NULL AND extract(isodow from g)<=5
+), pratique_inscrite AS (
+ SELECT i.sd,k.c,
+ greatest(coalesce(nullif(i.heure_debut_personnalisee,'')::time,p.debut,i.hd),k.a),
+ least(coalesce(nullif(i.heure_fin_personnalisee,'')::time,p.fin,i.hf),k.z),true
+ FROM inscriptions i CROSS JOIN app a CROSS JOIN bornes k
+ LEFT JOIN public.reservations_pratique r ON r.apprenant_id=p_apprenant_id AND r.date_choisie=i.sd
+ LEFT JOIN LATERAL public.pratique_creneaux_planifies(i.sd,coalesce(r.creneau,'journee')) p ON p.creneau=k.c
+ WHERE i.type_session ~* 'pratique' AND k.c IN ('matin','apres_midi')
+ AND (r.id IS NULL OR p.creneau IS NOT NULL)
+), pratique_reservee AS (
+ SELECT r.date_choisie,p.creneau,p.debut,p.fin,true
+ FROM public.reservations_pratique r CROSS JOIN app a CROSS JOIN LATERAL public.pratique_creneaux_planifies(r.date_choisie,r.creneau) p
+ WHERE r.apprenant_id=p_apprenant_id
+ AND NOT EXISTS(SELECT 1 FROM public.session_apprenants sa JOIN public.sessions s ON s.id=sa.session_id
+ WHERE sa.apprenant_id=p_apprenant_id AND s.type_session ~* 'pratique' AND s.date_debut=r.date_choisie)
+), tous AS (SELECT * FROM theorie UNION ALL SELECT * FROM fc UNION ALL SELECT * FROM pratique_inscrite UNION ALL SELECT * FROM pratique_reservee)
+SELECT date_cours,creneau,min(debut),max(fin),bool_or(pratique) FROM tous
+WHERE debut IS NOT NULL AND fin>debut GROUP BY date_cours,creneau ORDER BY date_cours,min(debut)
+$$;
+REVOKE ALL ON FUNCTION public.emargement_creneaux_reels(uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.emargement_creneaux_reels(uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.emargement_fenetre_ouverte(p_date date,p_debut time,p_maintenant timestamptz)
+RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public AS $$
+ SELECT p_maintenant >= ((p_date+p_debut) AT TIME ZONE 'Europe/Paris')-interval '30 minutes'
+$$;
+REVOKE ALL ON FUNCTION public.emargement_fenetre_ouverte(date,time,timestamptz) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.emargement_fenetre_ouverte(date,time,timestamptz) TO authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.emargement_fenetres_eleve(p_apprenant_id uuid)
+RETURNS TABLE(date_cours date,creneau text,debut time,fin time,pratique boolean,ouvre_le timestamptz,serveur_le timestamptz,ouverte boolean)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+ IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(),'admin') OR EXISTS(SELECT 1 FROM public.apprenants a WHERE a.id=p_apprenant_id AND a.auth_user_id=auth.uid()) OR public.est_dossier_lie_emargement(p_apprenant_id)) THEN
+ RAISE EXCEPTION 'Accès aux feuilles refusé' USING ERRCODE='42501'; END IF;
+ RETURN QUERY SELECT r.date_cours,r.creneau,r.debut,r.fin,r.pratique,
+ ((r.date_cours+r.debut) AT TIME ZONE 'Europe/Paris')-interval '30 minutes',now(),
+ public.emargement_fenetre_ouverte(r.date_cours,r.debut,now())
+ FROM public.emargement_creneaux_reels(p_apprenant_id) r
+ WHERE r.date_cours <= (now() AT TIME ZONE 'Europe/Paris')::date+1;
+END $$;
+REVOKE ALL ON FUNCTION public.emargement_fenetres_eleve(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.emargement_fenetres_eleve(uuid) TO authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.emargement_controle_creneau(p_apprenant_id uuid,p_date date,p_creneau text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+ SELECT coalesce((SELECT jsonb_build_object('autorise',public.emargement_fenetre_ouverte(r.date_cours,r.debut,now()),'debut',r.debut,'fin',r.fin,'pratique',r.pratique,
+ 'ouvre_le',((r.date_cours+r.debut) AT TIME ZONE 'Europe/Paris')-interval '30 minutes')
+ FROM public.emargement_creneaux_reels(p_apprenant_id) r WHERE r.date_cours=p_date AND r.creneau=p_creneau),jsonb_build_object('autorise',false,'motif','Créneau non prévu pour cette inscription'))
+$$;
+REVOKE ALL ON FUNCTION public.emargement_controle_creneau(uuid,date,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.emargement_controle_creneau(uuid,date,text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.garde_emargement_fenetre()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE r jsonb;
+BEGIN
+ -- Unsigned generation and non-signature historical metadata never modified here.
+ IF nullif(trim(coalesce(NEW.signature_data_url,'')),'') IS NULL AND NOT coalesce(NEW.absent,false) THEN RETURN NEW; END IF;
+ IF TG_OP='UPDATE' AND NEW.signature_data_url IS NOT DISTINCT FROM OLD.signature_data_url AND NEW.absent IS NOT DISTINCT FROM OLD.absent AND NEW.date_emargement IS NOT DISTINCT FROM OLD.date_emargement AND NEW.demi_journee IS NOT DISTINCT FROM OLD.demi_journee THEN RETURN NEW; END IF;
+ IF public.has_role(coalesce(auth.uid(),NEW.user_id),'admin') THEN RETURN NEW; END IF;
+ -- Existing explicit past regularisation remains its own closed authorization.
+ IF NEW.regularisation_id IS NOT NULL AND EXISTS(SELECT 1 FROM public.emargement_regularisations e WHERE e.id=NEW.regularisation_id AND e.apprenant_id=NEW.apprenant_id AND e.auth_user_id=NEW.user_id AND e.expire_le>=now() AND e.creneaux @> jsonb_build_array(jsonb_build_object('date',NEW.date_emargement::text,'creneau',NEW.demi_journee)) AND NEW.date_emargement<(now() AT TIME ZONE 'Europe/Paris')::date) THEN RETURN NEW; END IF;
+ r:=public.emargement_controle_creneau(NEW.apprenant_id,NEW.date_emargement,NEW.demi_journee);
+ IF coalesce((r->>'autorise')::boolean,false) IS NOT TRUE THEN RAISE EXCEPTION 'Signature refusée : créneau non prévu ou ouverture trente minutes avant le début réel non atteinte' USING ERRCODE='P0541'; END IF;
+ NEW.signed_at:=clock_timestamp();
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.garde_emargement_fenetre() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.garde_emargement_fenetre() TO service_role;
+CREATE TRIGGER trg_garde_emargement_fenetre BEFORE INSERT OR UPDATE ON public.emargements_fc FOR EACH ROW EXECUTE FUNCTION public.garde_emargement_fenetre();
