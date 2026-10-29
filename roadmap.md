@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Émargement trente minutes avant — 29/10
+- [ ] Uniformiser début réel −30 min serveur et sélection théorie/pratique ; fins et preuves existantes inchangées.
+- [ ] Réévaluation à l'heure d'ouverture après identité et conflits, sans modales superposées.
+- [ ] Tests fictifs limites/DST/personnalisation/exclusions et rapport ; distinguer aperçu et disponibilité en ligne, aucune publication globale des travaux inachevés.
+
 ## Modules réellement complets — 29/10
 - [x] Diagnostic lecture seule : drapeau completed insuffisant, réponses null réelles, faux Réalisés des modules dispensés ; 466 copies candidates/214 dossiers, pas de mutation.
 - [x] Projection des vides historiques, compteurs CRM/élève, liens par quiz et cartes rouges ; 68 tests ciblés PASS, série élargie 77 PASS/1 FAIL contrat source ancien ; build OK. Rapport docs/modules-realises-preuves-2026-10-29.md.
