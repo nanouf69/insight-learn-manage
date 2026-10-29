@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## QCM document TAXI Bilan examen nationale — 29/10 10:31 UTC
-- [ ] Comparer les 12 QCM transcrits au Bilan examen TAXI uniquement ; QRC6/8/9/15 exclues, Q4 suspendue si non vérifiée.
-- [ ] Ajouter uniquement les manquants si écriture strictement isolée possible ; conserver identités, questions et preuves ; tests admin/élève, rapport exact, aucune publication.
+- [x] Module11/605 confirmé, 9 manquants ; Q2 équivalent605/40, Q12 équivalent605/65, Q4 suspendue et DGFiP déjà dans605/18 ; QRC exclues, clés B+C/C+D/B+D contrôlées. Rapport docs/qcm-taxi-bilan-national-2026-10-29.md.
+- [ ] Ajout BLOQUÉ : section canonique605 également liée à TA module28/exercice700 ; insertion toucherait un autre module. Attend accord séparation ciblée des sources ou ajout commun TAXI+TA ; aucun code/Cloud/publication modifié, tests d'ajout élève/admin NON PROUVÉS.
 
 ## Intégrité montants Cas pratique — 29/10 10:19 UTC
 - [x] Module12/exercice306/question4/A identifié ; JSON/canonique 8€ déjà enregistré, journal humain €/_€/8€ ; 31 848 choix JSON et 2 261 questions canoniques actifs inspectés, zéro € seul actuel. Rapport docs/integrite-montants-2026-10-29.md.
