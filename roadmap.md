@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Quiz communes session TAXI/TA — 29/10
+- [ ] Identifier SOUICI/SOUISSI Ahlem, comparer sources et preuves module 7 par élève de la session 26 octobre–16 novembre.
+- [ ] Corriger seulement incohérences de rendu/sources éligibles, préserver anciens quiz, snapshots et jalons acquis.
+- [ ] Tests fictifs avec clics quiz distincts, rapport avant/après et disponibilité ; poursuivre vérifications Réalisés/émargement sans publication globale.
+
 ## Émargement trente minutes avant — 29/10
 - [x] Règle centrale réelle −30 min, contrôles serveur et sélection théorie/pratique ; migration et fonction ciblées déployées, 2 996 lignes historiques empreinte identique.
 - [x] Minuteur prochaine ouverture + retour fenêtre, priorité identité/conflit/présence/inactivité, date et heures réelles dans la feuille.
