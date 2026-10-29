@@ -9,7 +9,7 @@ La transcription fournie dans le message est la référence ; le fichier DOCX no
 | N° document | Décision | Référence existante / clé à conserver |
 |---|---|---|
 | 1 | Manquant | A |
-| 2 | Ne pas dupliquer | 605/40, UUID 955cfdd0 à ne pas déduire : voir la copie exacte de contrôle ; énoncé équivalent sur avis d'imposition, clé C. 605/1 traite également la preuve d'exploitation avec plusieurs moyens. |
+| 2 | Ne pas dupliquer | 605/40, énoncé équivalent sur avis d'imposition, clé C. 605/1 traite également la preuve d'exploitation avec plusieurs moyens. |
 | 3 | Manquant | B+C |
 | 4 | Suspendu, aucun ajout obsolète | 605/18 existe déjà, réponse B « À la DGFIP, avant il s'agissait de la douane ». Aucune actualisation juridique ni modification de cette question effectuée. |
 | 5 | Manquant | C+D |
