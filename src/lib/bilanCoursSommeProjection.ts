@@ -34,6 +34,16 @@ export const BILAN_SOMME_COURS_SOURCES: Record<number, { moduleCours: number; co
   9: { moduleCours: 10, correspondances: { 100: [1, 2], 101: [60, 61, 62] } },
 };
 
+/**
+ * Modules dont la projection est ACTIVE à l'écran. Vide depuis le 29/10 :
+ * décision utilisateur, le Bilan exercices TAXI (module 9) affiche toutes les
+ * questions enregistrées T3P (206) et Gestion (171), comme le VTC (module 4).
+ * Aucune donnée n'est réécrite, supprimée ou dupliquée.
+ */
+export const BILAN_SOMME_COURS_ACTIFS: ReadonlySet<number> = new Set<number>();
+export const projectionSommeCoursActive = (moduleId: number): boolean =>
+  BILAN_SOMME_COURS_ACTIFS.has(Number(moduleId)) && !!BILAN_SOMME_COURS_SOURCES[Number(moduleId)];
+
 /** Préfixe d'identifiant d'affichage pour une question du cours sans historique bilan. */
 const ID_AFFICHAGE_NOUVEAU = 900000;
 

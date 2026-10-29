@@ -4,7 +4,7 @@ import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/edito
 import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
-import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
+import { BILAN_SOMME_COURS_SOURCES, projectionSommeCoursActive, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
@@ -4369,7 +4369,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // T3P, Gestion). Projection d'affichage en mémoire, jamais réécrite en base.
   const coursSommeExercicesRef = useRef<any[] | null>(null);
   const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
-    const config = BILAN_SOMME_COURS_SOURCES[Number(module.id)];
+    const config = projectionSommeCoursActive(Number(module.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module.id)] : undefined;
     const coursExercices = coursSommeExercicesRef.current;
     if (!config || !coursExercices || !Array.isArray(data?.exercices)) return data;
     try {
@@ -5765,7 +5765,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Bilan = somme des cours : charge une seule fois les exercices du module
   // cours source (lecture seule) pour projeter les matières sans quiz canonique.
   useEffect(() => {
-    const config = BILAN_SOMME_COURS_SOURCES[Number(module?.id)];
+    const config = projectionSommeCoursActive(Number(module?.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module?.id)] : undefined;
     if (!config || !editorStateHydrated) return;
     let cancelled = false;
     loadModuleEditorStateRow(config.moduleCours)
