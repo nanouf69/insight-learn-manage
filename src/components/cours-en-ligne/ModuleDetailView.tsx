@@ -7875,6 +7875,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
     const persistModuleCompletion = async () => {
+      if (historicalQuizProof?.remainingQuizzes.length) {
+        const missing = historicalQuizProof.remainingQuizzes.filter(q => !submittedExoIdsRef.current.has(Number(q.id)));
+        if (missing.length) {
+          toast.error("Module à terminer : des questions de votre passage restent sans réponse enregistrée.");
+          return false;
+        }
+      }
       if (completionPersistedRef.current) return true;
 
       if (!apprenantId) {
@@ -9914,7 +9921,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const totalQ = exercicesCorriges.reduce((s, e) => s + (e.questions?.length || 0), 0);
           const answeredQ = exercicesCorriges.reduce((s, e) => {
             if (!e.questions) return s;
-            return s + e.questions.filter(q => selectedAnswers[`${e.id}-${q.id}`]).length;
+            return s + e.questions.filter(q => hasRecordedAnswer(selectedAnswers[`${e.id}-${q.id}`])).length;
           }, 0);
           if (totalQ === 0) return null;
           const pctAnswered = Math.round((answeredQ / totalQ) * 100);
@@ -9982,7 +9989,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Button>
             );
           })() : (
-            <Button variant="secondary" className="gap-2" disabled={savingCompletion} onClick={async () => {
+            <Button variant="secondary" className="gap-2" disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
               const ok = await persistModuleCompletion();
               if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();
