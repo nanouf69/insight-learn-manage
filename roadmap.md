@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Contrôle connaissances questions retirées — 29/10 10:04
+- [ ] Identifier exactement les suppressions Admin, sources/canoniques et cause de réapparition module 13 en lecture seule.
+- [ ] Corriger uniquement synchronisation et compteur courant ; autres questions et preuves historiques intactes.
+- [ ] Tests isolés : suppression explicite, page ouverte/reload, deux profils fictifs, réponses conservées et empreintes ; préciser publication ciblée possible ou bloquée.
+
 ## Quiz jours fériés Cas pratique — 29/10
 - [x] Quiz complémentaire de 11 dates 2026 en haut du module 12, identité distincte ; anciens quiz serveur empreinte identique, aucune obligation/jalon ajouté.
 - [x] Protection serveur 0216 appliquée, 41 tests PASS et ouverture visuelle fictive 11 questions, compilation OK ; interface non publiée.
