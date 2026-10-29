@@ -13,6 +13,28 @@ describe("suivi pratique EDOF", () => {
     expect(OBJET_DERNIERE_RELANCE).toBe(m.subject);
   });
   it("date limite = envoi + 3 jours calendaires", () => expect(dateLimiteRelance(new Date("2026-10-29T12:00:00Z"))).toBe("dimanche 1 novembre 2026"));
+  it("texte brut : nouveaux paragraphes sanctions, sans couleur ni HTML", () => {
+    const m = mailDerniereRelance("Ali", "Ben", 80, "dimanche 1 novembre 2026");
+    for (const p of PARAGRAPHES_SANCTIONS_ROUGES) expect(m.body).toContain(p);
+    expect(m.body).toContain(PARAGRAPHE_SANCTIONS_NORMAL);
+    expect(m.body).toContain("Elles ne sont pas automatiques.");
+    expect(m.body).not.toContain("Le non-respect de vos obligations de formation peut entraîner des conséquences sur votre dossier de financement");
+    expect(m.body).not.toMatch(/<[^>]+>/);
+    expect(m.body).not.toContain(ROUGE_SANCTIONS);
+  });
+  it("HTML : seuls les 3 passages de sanctions sont en rouge, le reste ne l'est pas", () => {
+    const html = mailDerniereRelanceHtml("Ali", "Ben", 80, "dimanche 1 novembre 2026");
+    expect(html.match(new RegExp(`color:${ROUGE_SANCTIONS}`, "g"))).toHaveLength(3);
+    for (const p of PARAGRAPHES_SANCTIONS_ROUGES) expect(html).toContain(`<p style="color:${ROUGE_SANCTIONS};font-weight:600">${p}</p>`);
+    expect(html).toContain(`<p>${PARAGRAPHE_SANCTIONS_NORMAL}</p>`);
+    expect(html).toContain("<p>Bonjour Ali BEN,</p>");
+    expect(html).toContain("dimanche 1 novembre 2026");
+  });
+  it("HTML : les caractères spéciaux du nom sont échappés", () => {
+    const html = mailDerniereRelanceHtml("<b>Ali</b>", "Ben & Cie", 80, "x");
+    expect(html).toContain("&lt;b&gt;Ali&lt;/b&gt; BEN &amp; CIE");
+    expect(html).not.toContain("<b>Ali</b>");
+  });
   it("présentiel : journée 9h-16h sur 2 jours = 4 attendues, 1 signée = 3 manquantes", () => {
     const sessions = [{ liste_attente: false, sessions: { type_session: "theorique", statut: "en_cours", date_debut: "2026-10-26", date_fin: "2026-10-27", heure_debut: "09:00", heure_fin: "16:00" } }];
     const sig = [{ date_emargement: "2026-10-26", demi_journee: "matin", signature_data_url: "data:image/png;base64,AAAA", signed_at: "2026-10-26T08:00:00Z", masque: false }];
