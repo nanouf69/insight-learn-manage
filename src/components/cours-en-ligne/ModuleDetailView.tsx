@@ -3,8 +3,8 @@ import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
 import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
-import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
-import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
+import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
+import { BILAN_SOMME_COURS_SOURCES, projectionSommeCoursActive, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
@@ -176,7 +176,7 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
-import { useBilanSnapshotsEleve, questionsComptees, questionsSnapshotCorrigees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
+import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
 import {
@@ -4369,7 +4369,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // T3P, Gestion). Projection d'affichage en mémoire, jamais réécrite en base.
   const coursSommeExercicesRef = useRef<any[] | null>(null);
   const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
-    const config = BILAN_SOMME_COURS_SOURCES[Number(module.id)];
+    const config = projectionSommeCoursActive(Number(module.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module.id)] : undefined;
     const coursExercices = coursSommeExercicesRef.current;
     if (!config || !coursExercices || !Array.isArray(data?.exercices)) return data;
     try {
@@ -5765,7 +5765,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Bilan = somme des cours : charge une seule fois les exercices du module
   // cours source (lecture seule) pour projeter les matières sans quiz canonique.
   useEffect(() => {
-    const config = BILAN_SOMME_COURS_SOURCES[Number(module?.id)];
+    const config = projectionSommeCoursActive(Number(module?.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module?.id)] : undefined;
     if (!config || !editorStateHydrated) return;
     let cancelled = false;
     loadModuleEditorStateRow(config.moduleCours)
@@ -5801,7 +5801,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       normalizedModuleData = garderExercicesDuServeur(normalizedModuleData, previousModuleData, exercicesAjoutesSessionRef.current);
       // La projection « somme des cours » est un affichage : avant toute
       // écriture, les exercices projetés reprennent exactement la version serveur.
-      normalizedModuleData = {
+      if (projectionSommeCoursActive(Number(dataToSave.module_id))) normalizedModuleData = {
         ...normalizedModuleData,
         exercices: retablirExercicesProjetesDuServeur(
           Number(dataToSave.module_id),
@@ -6670,9 +6670,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const snap = etat.parExo[Number(e.id)];
           // Corrections de l'éditeur (texte, réponses, photo) visibles pendant un passage en cours ;
           // liste/ordre du passage figé et réponses élève inchangés.
-          return snap ? { ...e, questions: preserveTaxiNationalSnapshot(Number(module.id), Number(e.id))
-            ? snap.questions as any
-            : questionsSnapshotCorrigees(snap.questions as any, e.questions as any) as any } : e;
+          // 29/10 : un passage figé s'affiche STRICTEMENT depuis sa copie (texte,
+          // choix, bonnes réponses) ; aucune modification future ne le change.
+          return snap ? { ...e, questions: snap.questions as any } : e;
         }),
       };
     })();
