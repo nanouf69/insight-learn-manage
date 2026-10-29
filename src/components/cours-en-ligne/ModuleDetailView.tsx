@@ -1,4 +1,5 @@
 import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
@@ -684,8 +685,9 @@ const applyCanonicalQuestionsToModule = (
     rows.map((row) => Number(row.section_id)),
   ),
 ): ModuleData => {
+  const allowedRows = canonicalRowsControle(data, rows);
   const bySection = new Map<number, CanonicalQuestionRow[]>();
-  for (const row of rows) {
+  for (const row of allowedRows) {
     const sectionRows = bySection.get(Number(row.section_id)) ?? [];
     sectionRows.push(row);
     bySection.set(Number(row.section_id), sectionRows);
@@ -725,7 +727,7 @@ const applyCanonicalQuestionsToModule = (
     if (JSON.stringify(exercise.questions ?? []) !== JSON.stringify(questions)) changed = true;
     return { ...exercise, questions };
   });
-  return changed ? { ...data, exercices } : data;
+  return controleConnaissancesDisplay(changed ? { ...data, exercices } : data);
 };
 
 
@@ -4838,7 +4840,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Filet de sécurité : les questions canoniques (bilans/quiz) étaient
     // rafraîchies uniquement par le temps réel ou le focus. Un événement
     // manqué laissait l'ancienne version affichée plusieurs minutes.
-    const pollInterval = window.setInterval(() => {
+    const pollInterval = Number(module.id) === 13 ? null : window.setInterval(() => {
       if (!document.hidden) void loadCanonicalQuestions();
     }, 15_000);
     const onEditionFermee = () => {
@@ -4850,7 +4852,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     return () => {
       cancelled = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
-      window.clearInterval(pollInterval);
+      if (pollInterval) window.clearInterval(pollInterval);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener(EVENEMENT_EDITION_QUESTION_FERMEE, onEditionFermee);
@@ -4934,10 +4936,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const mergedModuleData: ModuleData = {
           ...parsed.moduleData,
           cours: reinjectSourceCoursMeta(parsed.moduleData.cours, initialData.cours),
-          exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
+          exercices: Number(module.id) === 13 ? parsed.moduleData.exercices.filter((e: ExerciceItem) => !deletedExerciceIdsLocal.includes(Number(e.id))) : mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
         };
 
-        setModuleData(forceSourceExerciseTitles(module.id, mergedModuleData, initialData));
+        setModuleData(controleConnaissancesDisplay(forceSourceExerciseTitles(module.id, mergedModuleData, initialData)));
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
         setLoadedModuleEditorState(false);
@@ -5133,7 +5135,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             const mergedModuleData: ModuleData = {
               ...md,
               cours: reinjectSourceCoursMeta(md.cours, initialData.cours),
-              exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
+              exercices: Number(module.id) === 13 ? md.exercices.filter(e => !deletedExerciceIdsFromDb.includes(Number(e.id))) : mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
             let resolvedModuleData = usesDatabaseOnlyEditorState(module.id)
               ? forceSourceExerciseTitles(module.id, mergedModuleData, initialData)
@@ -5310,7 +5312,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const mergedRealtimeModuleData: ModuleData = {
             ...md,
             cours: reinjectSourceCoursMeta(md.cours, sourceModuleData.cours),
-            exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
+            exercices: Number(module.id) === 13 ? md.exercices.filter(e => !deletedExoIdsRt.includes(Number(e.id))) : mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           };
           let resolvedRealtimeModuleData = usesDatabaseOnlyEditorState(module.id)
             ? forceSourceExerciseTitles(module.id, mergedRealtimeModuleData, sourceModuleData)
@@ -5498,6 +5500,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
         setRealtimeStatus(status);
+        if (Number(module.id) === 13 && status === "SUBSCRIBED") void refetchModuleFromDb();
         // Auto-reconnect on failure so students never miss admin corrections
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           setTimeout(() => setRealtimeReconnectKey((k) => k + 1), 3000);
@@ -5508,7 +5511,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // toute modification admin (suppression d'image, édition de réponse…)
     // soit visible en moins de 5 s même si Realtime rate un événement.
     const pollIntervalMs = studentOnly ? 5_000 : 15_000;
-    const pollTimer = setInterval(() => {
+    const pollTimer = Number(module.id) === 13 ? null : setInterval(() => {
       void refetchModuleFromDb();
       // Filet de sécurité identique pour les modifications formateur/fournisseur
       // (quiz_questions_overrides) : on redemande l'application des overrides.
@@ -5521,10 +5524,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       setTrainerOverridesReapplyKey((k) => k + 1);
     };
     window.addEventListener('focus', handleFocusRefresh);
+    if (Number(module.id) === 13) window.addEventListener('online', handleFocusRefresh);
 
     return () => {
-      clearInterval(pollTimer);
+      if (pollTimer) clearInterval(pollTimer);
       window.removeEventListener('focus', handleFocusRefresh);
+      window.removeEventListener('online', handleFocusRefresh);
       supabase.removeChannel(channel);
     };
 
@@ -5542,7 +5547,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const handleVisibilityChange = async () => {
       if (document.hidden) return;
       // Only re-check if at least 10s have passed since last check
-      if (Date.now() - lastCheckedAt < 10_000) return;
+      if (Number(module.id) !== 13 && Date.now() - lastCheckedAt < 10_000) return;
       lastCheckedAt = Date.now();
 
       try {
@@ -5602,7 +5607,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const merged: ModuleData = {
           ...md,
           cours: reinjectSourceCoursMeta(md.cours, sourceModuleData.cours),
-          exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
+          exercices: Number(module.id) === 13 ? md.exercices.filter(e => !deletedExoIdsPoll.includes(Number(e.id))) : mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
         let resolved = usesDatabaseOnlyEditorState(module.id)
           ? forceSourceExerciseTitles(module.id, merged, sourceModuleData)
@@ -5719,7 +5724,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const id = Number(module?.id);
     // Module 7 is already resolved by hydration (server + source + explicit
     // tombstones). A second raw-JSON prune raced it and erased valid fallback.
-    if (id === 7) return;
+    if (id === 7 || id === 13) return;
     if (!id || nettoyageOuvertureFaitRef.current === id) return;
     if (!Array.isArray(moduleData?.exercices) || moduleData.exercices.length === 0) return;
     nettoyageOuvertureFaitRef.current = id;
@@ -9776,7 +9781,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         <div className="space-y-3">
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold">{subjectInfo ? subjectInfo.parentTitle : moduleData.nom}</h2>
-            <p className="text-muted-foreground text-sm">{moduleData.description}</p>
+            <p className="text-muted-foreground text-sm">{Number(module.id) === 13 ? moduleData.description?.replace(/\b\d+\s+questions\b/i, `${totalQuestionsModule} questions`) : moduleData.description}</p>
           </div>
 
           {Number(module.id) === 12 && <Suspense fallback={<p role="status">Chargement du quiz des jours fériés…</p>}><QuizJoursFeries key={apprenantId ?? "apercu"} compteId={apprenantId ?? null} /></Suspense>}
