@@ -70,6 +70,7 @@ import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib
 import { calculerAccesCours } from "@/lib/accesCoursFenetre";
 import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { maintenantParis } from "@/lib/heureParis";
+import { lireFenetresEmargement, fenetresDues, delaiProchaineFenetre, horaireFenetre } from '@/lib/emargementFenetres';
 import { choisirFeuilleDue, clesTraitees, cleAuthentification, SuiviOuvertureEmargement } from "@/lib/emargementDu";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -918,6 +919,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementApprenantId, setEmargementApprenantId] = useState<string | null>(null);
   const [emargementRefreshTick, setEmargementRefreshTick] = useState(0);
   const [emargementEnRetard, setEmargementEnRetard] = useState(0);
+  const [emargementHorairesReels, setEmargementHorairesReels] = useState<Partial<Record<CreneauKey, string>>>({});
+  const [emargementProchaineOuverture, setEmargementProchaineOuverture] = useState<number | null>(null);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   // Confirmation d'identité (déclarée tôt : l'ouverture auto de l'émargement en dépend).
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
@@ -1344,23 +1347,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const endDate = endDateRaw < today ? endDateRaw : today;
 
       // Liste de tous les créneaux attendus sur la plage
-      const [baseExpected, pratiqueExpected] = await Promise.all([
-        isFC || isPres
-          ? getExpectedEmargements({
-              mode,
-              formationChoisie: apprenant.formation_choisie,
-              creneauHoraire: apprenant.creneau_horaire,
-              typeApprenant: apprenant.type_apprenant,
-              apprenantId: apprenant.id,
-              startDate,
-              endDate,
-            })
-          : Promise.resolve([] as Array<{ date: string; creneau: CreneauKey }>),
-        // Journées de formation PRATIQUE : basées sur le planning (réservations
-        // + sessions de type pratique), quel que soit le mode de formation.
-        getExpectedPratiqueEmargements(apprenant.id),
-      ]);
+      const fenetres = await lireFenetresEmargement(apprenant.id);
       if (cancelled) return;
+      const baseExpected = fenetresDues(fenetres, false);
+      const pratiqueExpected = fenetresDues(fenetres, true);
+      let prochainDelai = delaiProchaineFenetre(fenetres);
+      setEmargementProchaineOuverture(prochainDelai === null ? null : Date.now() + prochainDelai);
 
       // Dossiers liés par l'Admin (émargement seulement, ex. dossier présentiel sans compte) :
       // la feuille PRATIQUE à signer de ce dossier est proposée, signée sous SON identifiant.
@@ -1372,7 +1364,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       for (const lien of ((liens as any[]) || [])) {
         const lieId = String(lien?.apprenant_id || "");
         if (!lieId || lieId === apprenant.id) continue;
-        const lieExpected = await getExpectedPratiqueEmargements(lieId);
+        const lieFenetres = await lireFenetresEmargement(lieId);
+        const lieExpected = fenetresDues(lieFenetres, true);
+        const lieDelai = delaiProchaineFenetre(lieFenetres);
+        if (lieDelai !== null) prochainDelai = prochainDelai === null ? lieDelai : Math.min(prochainDelai, lieDelai);
+        setEmargementProchaineOuverture(prochainDelai === null ? null : Date.now() + prochainDelai);
         if (cancelled) return;
         if (lieExpected.length === 0) continue;
         const { data: lieSigned, error: lieErr } = await supabase
@@ -1389,6 +1385,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setEmargementExtraCreneaux(pending.filter((e) => e.date === lieNext.date && e.creneau !== lieNext.creneau).map((e) => e.creneau));
         setEmargementCreneau(lieNext.creneau);
         setEmargementDate(lieNext.date);
+        setEmargementHorairesReels(Object.fromEntries(lieFenetres.filter(f => f.date_cours === lieNext.date).map(f => [f.creneau, horaireFenetre(f)])));
         setEmargementFCStatus("needed");
         return;
       }
@@ -1445,6 +1442,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setEmargementEnRetard(enRetard);
       setEmargementCreneau(next.creneau);
       setEmargementDate(next.date);
+      setEmargementHorairesReels(Object.fromEntries(fenetres.filter(f => f.date_cours === next.date).map(f => [f.creneau, horaireFenetre(f)])));
       setEmargementFCStatus("needed");
     };
     // Lecture impossible ≠ « rien à signer » : on le signale à l'élève (jamais marqué signé).
@@ -1455,14 +1453,18 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire, apprenant?.date_debut_formation, apprenant?.date_fin_formation, emargementRefreshTick, selectedModule, isInExam]);
 
   useEffect(() => {
-    if (embedded || !user || !apprenant?.id || selectedModule || isInExam || emargementStatusRef.current === "skipped") return;
-    const interval = window.setInterval(() => {
+    if (embedded || !user || !apprenant?.id || isInExam || emargementStatusRef.current === "skipped") return;
+    const refresh = () => {
       if (emargementStatusRef.current !== "skipped" && !(emargementStatusRef.current === "needed" && signatureModalOuverteRef.current)) {
         setEmargementRefreshTick((t) => t + 1);
       }
-    }, 60000);
-    return () => window.clearInterval(interval);
-  }, [embedded, user?.id, apprenant?.id, selectedModule, isInExam]);
+    };
+    const timer = emargementProchaineOuverture === null ? null : window.setTimeout(refresh, Math.max(100, Math.min(2147483647, emargementProchaineOuverture - Date.now() + 100)));
+    const visible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', visible);
+    return () => { if (timer !== null) window.clearTimeout(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', visible); };
+  }, [embedded, user?.id, apprenant?.id, isInExam, emargementProchaineOuverture, showPresenceModal, showInactivityModal]);
 
   // Ouverture automatique de la feuille due : une fois par connexion et par créneau
   // (nouvelle connexion ou nouveau créneau ouvert = nouvelle présentation). Jamais bloquant.
@@ -1473,11 +1475,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (embedded) return;
     // Jamais pendant la confirmation d'identité ni le conflit de session : la fenêtre
     // d'émargement (modale) bloquerait les clics sur ces écrans prioritaires.
-    if (!identityConfirmed || alreadyConnected) return;
+    if (!identityConfirmed || alreadyConnected || showPresenceModal || showInactivityModal) return;
     // Aussi dans un module (reprise directe d'un cours) : des élèves n'ouvrent jamais
     // l'accueil et ne signaient donc jamais. Seul un examen en cours bloque l'ouverture.
     if (emargementSuiviRef.current.doitOuvrir(cleAuth, cle, isInExam)) setShowSignatureModal(true);
-  }, [identityConfirmed, alreadyConnected, cleAuth, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
+  }, [identityConfirmed, alreadyConnected, showPresenceModal, showInactivityModal, cleAuth, embedded, selectedModule, isInExam, emargementFCStatus, emargementCreneau, emargementDate, emargementApprenantId, apprenant?.id]);
   // Nouvelle authentification du même compte (sans remontage) : relire les feuilles dues.
   useEffect(() => { if (cleAuth) setEmargementRefreshTick((t) => t + 1); }, [cleAuth]);
 
@@ -1819,7 +1821,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     <div data-testid="bandeau-signature-en-attente" className="bg-amber-100 border-b border-amber-300 text-amber-900">
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
         <span>📝 <strong>Signature en attente</strong> — merci de signer votre feuille d'émargement (obligatoire pour votre dossier de formation).{emargementEnRetard > 0 ? ` ${emargementEnRetard} créneau${emargementEnRetard > 1 ? "x" : ""} passé${emargementEnRetard > 1 ? "s" : ""} non signé${emargementEnRetard > 1 ? "s" : ""} : la date du cours est conservée et l'heure réelle de signature est enregistrée.` : ""}</span>
-        <Button size="sm" onClick={() => setShowSignatureModal(true)}>Signer</Button>
+        <Button size="sm" disabled={!identityConfirmed || alreadyConnected || showPresenceModal || showInactivityModal || isInExam} onClick={() => setShowSignatureModal(true)}>Signer</Button>
       </div>
     </div>
   ) : emargementFCStatus === "erreur" && (isFC || isPres || emargementPratiquePending) ? (
@@ -1830,7 +1832,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       </div>
     </div>
   ) : null;
-  const modalSignature = signatureEnAttente && showSignatureModal && (embedded || (identityConfirmed && !alreadyConnected)) && emargementFCStatus === "needed" && emargementCreneau ? (
+  const modalSignature = signatureEnAttente && showSignatureModal && !isInExam && !showPresenceModal && !showInactivityModal && (embedded || (identityConfirmed && !alreadyConnected)) && emargementFCStatus === "needed" && emargementCreneau ? (
     <EmargementFCModal
       key={`${emargementDate || "today"}|${emargementCreneau}`}
       apprenantId={emargementApprenantId || apprenant!.id!}
@@ -1840,6 +1842,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       creneau={emargementCreneau}
       extraCreneaux={emargementExtraCreneaux}
       pratique={emargementIsPratique}
+      horairesReels={emargementHorairesReels}
       mode={emargementMode}
       dateEmargement={emargementDate || undefined}
       required={false}
@@ -2767,6 +2770,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     effectiveUserId,
     emargementCreneau,
     emargementDate,
+    emargementHorairesReels,
     emargementFCStatus,
     emargementMode,
     examBlancCompletedIds,

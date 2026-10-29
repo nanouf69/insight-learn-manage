@@ -118,10 +118,10 @@ Deno.serve(async (req) => {
     const ownerUserId = String(apprenant.auth_user_id || user.id);
 
     const signedDate = parseDate(dateEmargement);
-    const today = parseDate(formatISO(new Date()));
+    const today = parseDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date()));
     const start = parseDate(apprenant.date_debut_formation || apprenant.date_debut_cours_en_ligne);
     const end = parseDate(apprenant.date_fin_formation || apprenant.date_fin_cours_en_ligne);
-    if (!signedDate || !today || signedDate.getTime() > today.getTime()) return json({ error: "Date d'émargement non autorisée" }, 403);
+    if (!signedDate || !today) return json({ error: "Date d'émargement non autorisée" }, 403);
     
     const isFC = isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie);
     const isPres = isPresentielType(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.creneau_horaire);
@@ -174,6 +174,13 @@ Deno.serve(async (req) => {
     } else if (isPres && isEveningText(apprenant.creneau_horaire)) {
       if (!["soir_1", "soir_2"].includes(demi)) return json({ error: "Émargement du soir : choisir soir_1 (17h-18h30) ou soir_2 (18h30-21h)" }, 403);
     }
+
+    // Same central authorization as direct learner inserts and the popup schedule.
+    const { data: controle, error: controleError } = await supabase.rpc('emargement_controle_creneau', {
+      p_apprenant_id: apprenantId, p_date: dateEmargement, p_creneau: demi,
+    });
+    if (controleError) return json({ error: "Vérification des horaires impossible", code: controleError.code }, 503);
+    if (controle?.autorise !== true) return json({ error: controle?.motif || "Signature disponible trente minutes avant le début réel du créneau", code: 'P0541' }, 403);
 
     const row = {
       apprenant_id: apprenantId,
