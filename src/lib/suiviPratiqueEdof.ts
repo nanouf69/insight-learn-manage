@@ -28,7 +28,10 @@ export function bilanSignaturesPresentiel(emargements: any[], sessionRows: any[]
  * (classifierSignatures, état « manquante »). Aucun calcul parallèle.
  */
 export function compteurSignaturesFiche(bilan: { objectifTotal: number; total: number }, attendus: { etat?: string }[]) {
-  return { attendues: bilan.objectifTotal, signees: bilan.total, manquantes: attendus.filter((m) => m.etat === "manquante").length };
+  const liste = attendus.filter((m) => m.etat === "manquante").length;
+  // Même affichage que la fiche : liste rouge si elle existe, sinon « Il manque X pour atteindre l'objectif ».
+  const manquantes = liste > 0 ? liste : Math.max(0, bilan.objectifTotal - bilan.total);
+  return { attendues: bilan.objectifTotal, signees: bilan.total, manquantes };
 }
 
 /** Date limite = date d'envoi + 3 jours calendaires (Europe/Paris). */

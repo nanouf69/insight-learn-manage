@@ -54,4 +54,7 @@ describe("compteur EDOF = fiche apprenant", () => {
     const attendus = [...Array(10)].map(() => ({ etat: "manquante" })).concat([{ etat: "absence_enregistree" }]);
     expect(compteurSignaturesFiche({ objectifTotal: 12, total: 2 }, attendus)).toEqual({ attendues: 12, signees: 2, manquantes: 10 });
   });
+  it("liste vide mais objectif non atteint : même écart que la fiche (« Il manque 20 »)", () => {
+    expect(compteurSignaturesFiche({ objectifTotal: 22, total: 2 }, []).manquantes).toBe(20);
+  });
 });
