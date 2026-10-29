@@ -62,3 +62,11 @@ Références : [R413-4](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT
 - Client `src/lib/bilanFutureTransport.ts` : file locale à clé `bilan-future:v1:compte:reçu:version`, refus des clés `module_X_exo_Y`, retrait seulement après accusé serveur, refus définitifs non rejoués.
 - Tests : PostgreSQL jetable PASS (9 blocs), Vitest 22/22 PASS.
 - Toujours NON appliqué en Cloud, non branché à l'écran, non publié : éligibilité réelle, écran élève dédié, pont vers validation module/jalons et test compte technique hébergé restent à faire.
+
+## Audit images Sécurité routière 502/602 — 29/10 20:50 UTC (fichiers réellement chargés)
+- Q1–54, 56–58, 62–65 : même fichier VTC/TAXI, cohérent visuellement avec l'énoncé. Signalés sans changement : Q62 (locomotive = passage SANS barrières, clé actuelle A « avec barrières ») ; Q63 (panneau temporaire chaussée glissante, pas spécifique verglas).
+- Q55, Q60, Q61 : fichier VTC correct (dépassement interdit >3,5 t ; stationnement 1-15/16-31 ; route prioritaire) ; fichiers TAXI image55/59/60 faux (demi-tour interdit, carte texte, ski de fond).
+- Q68–107 (hors 79/80/92) : images TAXI DÉCALÉES (souvent l'image de la question n−2, ou capture d'explication) ; VTC sans image. Ex. Q70 montre « Je peux dépasser par la droite » (=Q68), Q81 montre le tunnel (=Q79).
+- Q79 : VTC = tunnel 50 (même fichier que TAXI image79 placé en Q81) ; TAXI image77 = carte « voie de bus » (faux). Q80 : VTC sans image, TAXI photo de route non probante.
+- Q214–255 : aucune image dans les deux parcours.
+- Candidate isolée : Q55/60/61 image VTC, 35 questions sans image, Q79/80/92/177/212/213 suspendues → Sécurité 249 questions. Inactive, non publiée. Les élèves TAXI actuels voient toujours les images décalées (non corrigé, anciens passages intouchés).
