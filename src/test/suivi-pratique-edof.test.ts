@@ -16,20 +16,24 @@ describe("suivi pratique EDOF", () => {
   it("texte brut : nouveaux paragraphes sanctions, sans couleur ni HTML", () => {
     const m = mailDerniereRelance("Ali", "Ben", 80, "dimanche 1 novembre 2026");
     for (const p of PARAGRAPHES_SANCTIONS_ROUGES) expect(m.body).toContain(p);
+    expect(m.body).toContain("Vous disposez de 3 JOURS calendaires à compter de la réception de cet email pour terminer l'ensemble des modules, exercices et évaluations obligatoires de votre parcours, soit au plus tard le dimanche 1 novembre 2026.");
+    expect(m.body).not.toContain("Nous vous demandons impérativement");
     expect(m.body).toContain(PARAGRAPHE_SANCTIONS_NORMAL);
     expect(m.body).toContain("Elles ne sont pas automatiques.");
     expect(m.body).not.toContain("Le non-respect de vos obligations de formation peut entraîner des conséquences sur votre dossier de financement");
     expect(m.body).not.toMatch(/<[^>]+>/);
     expect(m.body).not.toContain(ROUGE_SANCTIONS);
   });
-  it("HTML : seuls les 3 passages de sanctions sont en rouge, le reste ne l'est pas", () => {
+  it("HTML : délai 3 JOURS et les 2 paragraphes de financement en rouge, le reste non", () => {
     const html = mailDerniereRelanceHtml("Ali", "Ben", 80, "dimanche 1 novembre 2026");
     const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-    expect(html.match(new RegExp(`color:${ROUGE_SANCTIONS}`, "g"))).toHaveLength(3);
+    // 4 paragraphes rouges : ATTENTION, délai 3 JOURS, CPF, France Travail
+    expect(html.match(new RegExp(`color:${ROUGE_SANCTIONS}`, "g"))).toHaveLength(4);
     for (const p of PARAGRAPHES_SANCTIONS_ROUGES) expect(html).toContain(`<p style="color:${ROUGE_SANCTIONS};font-weight:600">${esc(p)}</p>`);
+    expect(html).toContain(`<p style="color:${ROUGE_SANCTIONS};font-weight:600">Vous disposez de <strong style="font-size:1.15em">3 JOURS</strong> calendaires`);
+    expect(html).toContain("soit au plus tard le dimanche 1 novembre 2026.");
     expect(html).toContain(`<p>${esc(PARAGRAPHE_SANCTIONS_NORMAL)}</p>`);
     expect(html).toContain("<p>Bonjour Ali BEN,</p>");
-    expect(html).toContain("dimanche 1 novembre 2026");
   });
   it("HTML : les caractères spéciaux du nom sont échappés", () => {
     const html = mailDerniereRelanceHtml("<b>Ali</b>", "Ben & Cie", 80, "x");
