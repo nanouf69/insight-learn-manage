@@ -8879,6 +8879,37 @@ export type Database = {
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
       eb_reponses_renseignees: { Args: { _r: Json }; Returns: boolean }
+      emargement_controle_creneau: {
+        Args: { p_apprenant_id: string; p_creneau: string; p_date: string }
+        Returns: Json
+      }
+      emargement_creneaux_reels: {
+        Args: { p_apprenant_id: string }
+        Returns: {
+          creneau: string
+          date_cours: string
+          debut: string
+          fin: string
+          pratique: boolean
+        }[]
+      }
+      emargement_fenetre_ouverte: {
+        Args: { p_date: string; p_debut: string; p_maintenant: string }
+        Returns: boolean
+      }
+      emargement_fenetres_eleve: {
+        Args: { p_apprenant_id: string }
+        Returns: {
+          creneau: string
+          date_cours: string
+          debut: string
+          fin: string
+          ouverte: boolean
+          ouvre_le: string
+          pratique: boolean
+          serveur_le: string
+        }[]
+      }
       enforce_apprenant_session_limits: {
         Args: never
         Returns: {
