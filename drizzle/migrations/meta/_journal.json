@@ -1534,6 +1534,13 @@
       "when": 1793278062066,
       "tag": "0218_bilan_taxi_605_garde_brouillon",
       "breakpoints": true
+    },
+    {
+      "idx": 219,
+      "version": "7",
+      "when": 1793281355733,
+      "tag": "0219_bilan_taxi_locale_futurs_canoniques",
+      "breakpoints": true
     }
   ]
 }

@@ -61,4 +61,4 @@
 - Code-defined communes quizzes appear in both module 7 learner view and admin exercise view, without copying them into editor JSON; why: make them discoverable while preserving stable activity IDs and historical milestone exclusions.
 - Module 7 additive communes panels are routed by the existing commune exercise IDs via module7ActivitiesDisplay, never by module ID alone; why: unrelated selected quizzes must not be obscured by a shared activities dashboard.
 - Supplementary Pratique VTC/TAXI reading is rendered separately from course pages and activity registries, with image-only media and no completion callbacks; why: reading must not change any learner milestone or expose the original PDF.
-- Bilan 11/605 (shared TA 28/700): new snapshots freeze active canonical questions in order, minus editor placeholders; opened ones unchanged; why: admin = learner.
+- Bilan 11/605 and 11/606 use active canonical questions in order for future snapshots, excluding editor placeholders; existing snapshots return unchanged, TA remains outside snapshot activation until its in-progress legacy copies can be preserved; why: admin alignment must not rewrite ongoing evidence.

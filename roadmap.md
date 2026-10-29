@@ -1,5 +1,13 @@
 # Feuille de route
 
+## Cohérence bilans examen TAXI/TA nationale et locale — 29/10 13:35 UTC
+- [x] Neuf absences locales auditées :47/48/49 valides,45/51 mauvaises clés,53 aucune bonne option,52 ambiguë/doublon de notion,46/54 procédure non prouvée.
+- [x] Migration0219 appliquée : futurs TAXI11/606=40 canoniques, réouvertures intactes ;214 snapshots empreinte identique. Nationale84, sept ajouts antérieurs conservés, Q73 inactive.
+- [x] 12 assertions SQL jetables +132 tests exhaustifs +23 tests existants PASS ; aperçu local TAXI/TA40 confirmé, national TA ouvert. Rapport docs/bilan-examen-coherence-2026-10-29.md. Aucun mail/publication.
+- [ ] Ajouts47/48/49 et circuit futur-only TA : STOP,8 copies locales TA actuellement en cours sans snapshot ; ajouts modifieraient leur liste. Autorisation de préparation sûre/arbitrage requis.
+- [ ] Q45/51/52/53 formulations/clés et46/54 suspendues : confirmation utilisateur nécessaire. Q73 historique non neutralisée : accord distinct requis.
+- [ ] Incident lecture : première ouverture éditeur réécritQ68 enA+D ; A seule rétablie avecCAS, suivantes protégées sans écritures. Cause exacte et correctif NON PROUVÉS. Parcours élève autonome/soumission réelle non vérifiés.
+
 ## QCM document TAXI Bilan examen nationale — 29/10 10:31 UTC
 - [x] Module11/605 confirmé, 9 manquants ; Q2 équivalent605/40, Q12 équivalent605/65, Q4 suspendue et DGFiP déjà dans605/18 ; QRC exclues, clés B+C/C+D/B+D contrôlées. Rapport docs/qcm-taxi-bilan-national-2026-10-29.md.
 - [x] Accord explicite 29/10 10:56 UTC : neuf QCM1/3/5/7/10/11/13/14/16 insérés seuls dans la section605 partagée TAXI11/605 + TA28/700 (IDs89–97). 68→77 actifs ;2 301 anciennes questions,62 modules et64 bindings strictement identiques. QRC exclues,2/12 non dupliquées, DGFiP conservée.29 tests PASS ; copie navigateur TAXI/TA77 questions, clics/corrections/reload/Admin PASS, zéro écriture élève. Aucun code applicatif ni publication. Rapport exact mis à jour ; compte élève hébergé/soumission Cloud/temps réel production NON PROUVÉS, nécessitent compte technique et contrôle distinct sans données réelles.
