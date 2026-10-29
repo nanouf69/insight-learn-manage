@@ -3,6 +3,7 @@
 ## Onze questions validées — cohérence ciblée 29/10 17:58 UTC
 - [x] Audit avant écriture : sections600/601/602 non partagées avec TA28 ; affichage snapshots5/11 remplacé par contenu actuel via questionsSnapshotCorrigees ; futurs600–602 figés depuisJSON, pas canonique.
 - [x] RisqueQ104 prouvé :15 snapshots TAXI600,9 ancienne cléC/6 cléB ; copies non terminées600/601/602=10/8/4. STOP : aucune donnée pédagogique modifiée.
+- [x] Trois tests fictifs réellement exécutés PASS : reproduction du remplacement rétroactif, snapshot source inchangé ; compilation automatique OK18:01:19Z. Aucun test compte hébergé ni envoi.
 - [ ] Q104, typographie48, Q206 et libellé73 suspendus : protection affichage/barème des passages commencés et copies héritées non garantie ; accord distinct pour préparer futur-only requis. Q53 conserveC ; aucun ajout des exclusives59/112–114/198–199.
 - [ ] Compte technique/UI/publication suspendus : aucune correction livrée avant protection prouvée ; rapport docs/onze-questions-coherence-2026-10-29.md et test diagnostic fictif conservés.
 

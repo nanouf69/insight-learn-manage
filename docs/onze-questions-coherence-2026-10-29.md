@@ -33,6 +33,7 @@ Les bindings600/601/602 ne sont pas partagés avec le module28 TA. Celui-ci ne p
 - Diagnostic isolé `bilan-q104-retroactive-risk.test.ts` : compare une copie fictive ancienneC et actuelleB via la fonction réelle, sans écriture Cloud.
 - Régressions diagnostiques existantes : `snapshot-corrections-editeur.test.ts` et `snapshot-photo-module-fictif.test.ts`.
 - Résultats exécutés consignés dans la feuille de route ; PASS signifie reproduction du risque, pas correction livrée.
+- Exécution18:01:25UTC :3/3 tests PASS ; compilation automatique18:01:19UTC :build OK.
 - Compte technique hébergé, clic Admin/futur apprenant et soumission réelle NON EXÉCUTÉS : arrêt avant mutation, aucune correction sûre à publier.
 
 ## Suite à autoriser
