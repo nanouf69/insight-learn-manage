@@ -1,5 +1,14 @@
 # Feuille de route
 
+## Publication en bloc et cohérence Bilan 5/11 — 29/10 19:24 UTC
+- [x] Autorisation explicite de publier la version courante en bloc ; aucune nouvelle intervention sur les examens blancs.
+- [x] Contrôle sécurité effectué ; trois alertes critiques de lecture de paramètres signalées, aucun changement de permissions.
+- [x] 20 tests de protection des passages et projection exécutés ; publication demandée vers gestion.ftransport.fr.
+- [ ] Vérifier la version effectivement servie et consigner les preuves.
+- [ ] Prouver admin → sauvegarde → futur passage et reprise historique sur copies isolées, sans écrire dans les dossiers élèves.
+- [ ] Appliquer seulement les divergences avérées et sûres des modules 5/11 ; laisser tout risque non maîtrisé en attente.
+
+
 ## Onze questions validées — cohérence ciblée 29/10 17:58 UTC
 - [x] Audit avant écriture : sections600/601/602 non partagées avec TA28 ; affichage snapshots5/11 remplacé par contenu actuel via questionsSnapshotCorrigees ; futurs600–602 figés depuisJSON, pas canonique.
 - [x] RisqueQ104 prouvé :15 snapshots TAXI600,9 ancienne cléC/6 cléB ; copies non terminées600/601/602=10/8/4. STOP : aucune donnée pédagogique modifiée.
