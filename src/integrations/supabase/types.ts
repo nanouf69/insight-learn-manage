@@ -8702,6 +8702,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      bilan_future_admin_apercu: {
+        Args: { p_apprenant: string; p_module: number }
+        Returns: Json
+      }
       bilan_future_admin_grant: {
         Args: { p_apprenant: string; p_module: number }
         Returns: boolean
