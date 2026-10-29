@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Bilans futurs isolés — 29/10 20:10 UTC
+- [ ] Diagnostiquer le circuit complet et la frontière serveur nouveaux/anciens sans modifier les banques existantes.
+- [ ] Préparer uniquement une version commune isolée et ses tests, suspendre les contenus ambigus.
+- [ ] Vérifier anciens avec/sans snapshot et nouveaux TAXI/VTC admin/élève avant activation ; publication interdite si non prouvé.
+- [ ] Rapporter les modifications, tests réellement exécutés et blocages ; aucun examen blanc ni donnée ancienne modifié.
+
 ## Publication en bloc et cohérence Bilan 5/11 — 29/10 19:24 UTC
 - [x] Autorisation explicite de publier la version courante en bloc ; aucune nouvelle intervention sur les examens blancs.
 - [x] Contrôle sécurité effectué ; trois alertes critiques de lecture de paramètres signalées, aucun changement de permissions.
