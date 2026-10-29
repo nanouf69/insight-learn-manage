@@ -6290,8 +6290,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const reessayerSauvegarde = () => {
     const failed = failedDbSaveRef.current;
     if (!failed) return;
+    // Une modification plus récente en attente contient déjà tout l'état à l'écran.
+    const newer = pendingDbSaveDataRef.current as ModuleEditorSavePayload | null;
+    const payload = newer && (newer.local_revision ?? -1) >= (failed.local_revision ?? -1) ? newer : failed;
     lastSavedPayloadSignatureRef.current = null;
-    void enqueueDbSave(failed);
+    void enqueueDbSave(payload);
   };
 
   useEffect(() => {
