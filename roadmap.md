@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## Contrôle connaissances questions retirées — 29/10 10:04
-- [ ] Identifier exactement les suppressions Admin, sources/canoniques et cause de réapparition module 13 en lecture seule.
-- [ ] Corriger uniquement synchronisation et compteur courant ; autres questions et preuves historiques intactes.
-- [ ] Tests isolés : suppression explicite, page ouverte/reload, deux profils fictifs, réponses conservées et empreintes ; préciser publication ciblée possible ou bloquée.
+- [x] Lecture : retraits Admin 199/201/204/207, tombstone antérieur69 ; 221 questions actuelles, IDs226/227 de la capture conservés. Cause navigateur Ahlem NON PROUVÉE.
+- [x] Préparé module13 seul : membership/tombstones avant canonique, aucun fallback de liste ni prune concurrent, compteur écran courant, relecture événement/reconnexion sans polling ; aucun contenu Cloud modifié.
+- [ ] 20 tests PASS et page ouverte fictive TAXI/TA 3→2 ; saisie TA, vrais comptes autonomes et événement realtime/reload restent NON PROUVÉS. Publication ciblée bloquée par travaux inachevés globaux ; rapport docs/controle-connaissances-sync-2026-10-29.md.
 
 ## Quiz jours fériés Cas pratique — 29/10
 - [x] Quiz complémentaire de 11 dates 2026 en haut du module 12, identité distincte ; anciens quiz serveur empreinte identique, aucune obligation/jalon ajouté.
