@@ -2796,7 +2796,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <ul className="space-y-1 text-sm">
                           {r.liste.map((a: any) => (
                             <li key={a.id} className="flex justify-between gap-2 border-b border-border pb-1">
-                              <span className="font-medium">{(a.nom || '').toUpperCase()} {a.prenom}</span>
+                              <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
                               <span className="text-muted-foreground">{a.type_apprenant} — {tarifExamen(a.type_apprenant)} €</span>
                             </li>
                           ))}
