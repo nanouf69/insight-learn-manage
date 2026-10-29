@@ -3,7 +3,9 @@
 ## Cas pratique TAXI absent — 29/10 09:12 UTC
 - [x] Lecture seule : module 12 absent des affectations de 12 dossiers théoriques avec accès actif ou session actuelle, dont 7 en session TAXI/TA 26/10–16/11 ; aucune validation module 12 enregistrée pour ces dossiers.
 - [x] Cause repérée : formulaire de création omet 12 dans les six listes TAXI/TA ; modification omet 12 dans les trois listes TA. Catalogue correct, dashboard respecte les listes explicites. Pratique seule [6] exclue.
-- [ ] Accord préalable pour réparer les accès ciblés et les listes des formulaires, en définissant le maintien des jalons historiques ; aucune écriture de dossier ni modification applicative faite.
+- [x] Accord « Oui, les 12 dossiers » : module 12 ajouté seul aux douze listes avec comparaison exacte avant écriture et douze événements audit ; formulaires création TAXI/TA et modification TA corrigés.
+- [x] Empreintes dossiers hors modules, réponses, validations et relevés figés identiques pour les 12 ; 39 tests PASS, ouverture module fictif avec 11 quiz/62 questions, compilation OK. Accès enregistrés en production ; formulaires non publiés.
+- [ ] Connexion élève autonome NON PROUVÉE ; Salem Rachid reste abandonné et Pndukyan Harutyun garde sa date d’accès expirée, aucune réactivation. Les dénominateurs live peuvent inclure le module rétabli, sans modification des jalons historiques.
 
 ## Quiz non réalisés en rouge — 29/10
 - [x] Cartes communes/équipements/pratique et listes d’activités : non réalisé en rouge, même facultatif ; dispense distincte de réalisation, jalons et preuves inchangés.
