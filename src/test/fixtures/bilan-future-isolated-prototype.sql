@@ -254,7 +254,7 @@ CREATE FUNCTION public.bilan_future_admin_grant(p_apprenant uuid,p_module intege
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE o uuid;
 BEGIN
-  IF NOT public.has_role(auth.uid(),'admin') THEN RAISE EXCEPTION 'Admin required' USING ERRCODE='42501'; END IF;
+  IF NOT coalesce(public.has_role(auth.uid(),'admin'),false) THEN RAISE EXCEPTION 'Admin required' USING ERRCODE='42501'; END IF;
   SELECT auth_user_id INTO o FROM public.apprenants WHERE id=p_apprenant;
   IF o IS NULL THEN RETURN false; END IF;
   RETURN public.bilan_future_grant_internal(o,p_module);
