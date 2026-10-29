@@ -30,30 +30,58 @@ export function dateLimiteRelance(envoi: Date = new Date()): string {
   return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
 }
 
-export function mailDerniereRelance(prenom: string | null | undefined, nom: string | null | undefined, pourcentage: number, dateLimite: string) {
+/** Rouge des passages de sanctions (contraste suffisant sur fond blanc). */
+export const ROUGE_SANCTIONS = "#C62828";
+
+/** Passages de sanctions affichés en rouge (sources : CGU Mon Compte Formation V15 2026, France Travail). */
+export const PARAGRAPHES_SANCTIONS_ROUGES = [
+  "ATTENTION : LE NON-RESPECT DE VOS OBLIGATIONS PEUT ENTRAÎNER DES SANCTIONS IMPORTANTES.",
+  "Financement CPF : en cas de manquements constatés, notamment d'absences répétées injustifiées, la Caisse des dépôts peut décider d'une suspension de l'utilisation de votre compte CPF allant de 7 jours à 1 an.",
+  "Financement France Travail : une absence ou un abandon de formation sans motif légitime peut entraîner une radiation de la liste des demandeurs d'emploi et une suppression de vos allocations. Le remboursement des sommes indûment perçues peut également être exigé.",
+] as const;
+
+/** Nuance obligatoire, en texte normal : jamais de sanction présentée comme automatique. */
+export const PARAGRAPHE_SANCTIONS_NORMAL =
+  "Ces mesures sont décidées par les organismes compétents, selon votre situation et les procédures applicables. Elles ne sont pas automatiques.";
+
+type SegmentMail = { texte: string; rouge: boolean };
+
+function segmentsMailDerniereRelance(prenom: string | null | undefined, nom: string | null | undefined, pourcentage: number, dateLimite: string): SegmentMail[] {
   const nomComplet = [prenom?.trim(), nom?.trim().toUpperCase()].filter(Boolean).join(" ");
+  return [
+    { texte: `Bonjour${nomComplet ? ` ${nomComplet}` : ""},`, rouge: false },
+    { texte: "Malgré nos précédentes relances, nous constatons que vous n'avez toujours pas terminé l'intégralité des modules obligatoires de votre formation.", rouge: false },
+    { texte: `Votre progression actuelle : ${formatPourcentage(pourcentage)} des modules terminés.`, rouge: false },
+    { texte: "CE MESSAGE CONSTITUE NOTRE DERNIER AVERTISSEMENT.", rouge: false },
+    { texte: `Nous vous demandons impérativement de terminer l'ensemble des modules, exercices et évaluations obligatoires de votre parcours dans un délai maximum de 3 jours calendaires à compter de la réception de cet email, soit au plus tard le ${dateLimite}.`, rouge: false },
+    ...PARAGRAPHES_SANCTIONS_ROUGES.map(texte => ({ texte, rouge: true as const })),
+    { texte: PARAGRAPHE_SANCTIONS_NORMAL, rouge: false },
+    { texte: "En cas de non-régularisation, notre centre pourra signaler aux organismes concernés les éléments factuels relatifs à votre participation et à votre progression.", rouge: false },
+    { texte: "Notre centre ne pourra être tenu responsable des conséquences directement liées à votre absence de participation ou à la non-réalisation des obligations qui vous incombent, sous réserve de ses propres obligations légales et contractuelles.", rouge: false },
+    { texte: "Si vous rencontrez une difficulté technique vous empêchant de terminer votre formation, signalez-la immédiatement avant l'expiration du délai.", rouge: false },
+    { texte: "Cordialement,\nLe service pédagogique – SERVICES PRO\nCentre de formation TAXI / VTC", rouge: false },
+  ];
+}
+
+const echapperHtml = (t: string) =>
+  t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+/** Version texte brut, sans couleur (éditable dans l'aperçu avant envoi). */
+export function mailDerniereRelance(prenom: string | null | undefined, nom: string | null | undefined, pourcentage: number, dateLimite: string) {
   return {
     subject: OBJET_DERNIERE_RELANCE,
-    body: `Bonjour${nomComplet ? ` ${nomComplet}` : ""},
-
-Malgré nos précédentes relances, nous constatons que vous n'avez toujours pas terminé l'intégralité des modules obligatoires de votre formation.
-
-Votre progression actuelle : ${formatPourcentage(pourcentage)} des modules terminés.
-
-CE MESSAGE CONSTITUE NOTRE DERNIER AVERTISSEMENT.
-
-Nous vous demandons impérativement de terminer l'ensemble des modules, exercices et évaluations obligatoires de votre parcours dans un délai maximum de 3 jours calendaires à compter de la réception de cet email, soit au plus tard le ${dateLimite}.
-
-Le non-respect de vos obligations de formation peut entraîner des conséquences sur votre dossier de financement, notamment dans le cadre du CPF ou d'un financement France Travail, selon les règles applicables à votre situation.
-
-En cas de non-régularisation, notre centre pourra signaler aux organismes concernés les éléments factuels relatifs à votre participation et à votre progression.
-
-Notre centre ne pourra être tenu responsable des conséquences directement liées à votre absence de participation ou à la non-réalisation des obligations qui vous incombent, sous réserve de ses propres obligations légales et contractuelles.
-
-Si vous rencontrez une difficulté technique vous empêchant de terminer votre formation, signalez-la immédiatement avant l'expiration du délai.
-
-Cordialement,
-Le service pédagogique – SERVICES PRO
-Centre de formation TAXI / VTC`,
+    body: segmentsMailDerniereRelance(prenom, nom, pourcentage, dateLimite).map(s => s.texte).join("\n\n"),
   };
+}
+
+/** Version HTML réellement reçue : seuls les passages de sanctions sont en rouge (et en gras, pas la couleur seule). */
+export function mailDerniereRelanceHtml(prenom: string | null | undefined, nom: string | null | undefined, pourcentage: number, dateLimite: string): string {
+  return segmentsMailDerniereRelance(prenom, nom, pourcentage, dateLimite)
+    .map(s => {
+      const corps = echapperHtml(s.texte).replace(/\n/g, "<br>");
+      return s.rouge
+        ? `<p style="color:${ROUGE_SANCTIONS};font-weight:600">${corps}</p>`
+        : `<p>${corps}</p>`;
+    })
+    .join("\n");
 }
