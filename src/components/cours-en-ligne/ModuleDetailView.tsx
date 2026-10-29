@@ -4777,6 +4777,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return;
       }
       relectureEnAttente = false;
+      const requestedLocalRevision = adminLocalRevisionRef.current;
       const [{ data, error }, { data: bindings, error: bindingsError }] = await Promise.all([
         supabase
           .from("quiz_questions")
@@ -4814,7 +4815,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       const rows = mapCanonicalRowsToModuleExercises(selectedRows, moduleBindings);
       const sectionIds = new Set(moduleBindings.map((binding) => Number(binding.exercise_id)));
-      if (questionsEnEditionOuvertes > 0) {
+      if (questionsEnEditionOuvertes > 0 || (!studentOnly && requestedLocalRevision !== adminLocalRevisionRef.current)) {
         relectureEnAttente = true;
         return;
       }
@@ -5660,7 +5661,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Periodic polling fallback (every 45s) — catches missed realtime events
     // when the tab stays visible for a long time (student watching a course).
-    const pollingInterval = window.setInterval(() => {
+    const pollingInterval = Number(module.id) === 13 ? null : window.setInterval(() => {
       if (!document.hidden) {
         lastCheckedAt = 0; // bypass the 10s throttle
         void handleVisibilityChange();
@@ -5669,7 +5670,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.clearInterval(pollingInterval);
+      if (pollingInterval !== null) window.clearInterval(pollingInterval);
     };
   }, [module.id, studentOnly, editorStateHydrated, apprenantType]);
 
