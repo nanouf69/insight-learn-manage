@@ -5716,6 +5716,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const nettoyageOuvertureFaitRef = useRef<number | null>(null);
   useEffect(() => {
     const id = Number(module?.id);
+    // Module 7 is already resolved by hydration (server + source + explicit
+    // tombstones). A second raw-JSON prune raced it and erased valid fallback.
+    if (id === 7) return;
     if (!id || nettoyageOuvertureFaitRef.current === id) return;
     if (!Array.isArray(moduleData?.exercices) || moduleData.exercices.length === 0) return;
     nettoyageOuvertureFaitRef.current = id;
@@ -9778,6 +9781,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
           {![6, 7, 64].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
+          {Number(module.id) === 7 && (
+            <nav aria-label="Quiz des communes" className="flex flex-wrap gap-2">
+              {([7020, 7021] as const).map(id => {
+                const page = pages.findIndex(p => p.type === "exercice-single" && Number(p.exercice.id) === id);
+                if (page < 0) return null;
+                return <Button key={id} variant={exoCourantId === id ? "secondary" : "outline"} onClick={() => goToPage(page)}>
+                  {id === 7020 ? "Métropole — 58 questions" : "ZUPC — 24 questions"}
+                </Button>;
+              })}
+            </nav>
+          )}
           {/* Module 64 : questions complémentaires du quiz Équipements TAXI (statut porté par la section). */}
           {Number(module.id) === 64 && (
             <Suspense fallback={<p role="status">Chargement des questions complémentaires…</p>}>
@@ -9913,7 +9927,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Suspense>
           )}
           {currentPageData?.type === "cours" && renderCoursPage(projeterSupportTaxi(Number(module.id), currentPageData.cours))}
-          {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
+          {currentPageData?.type === "exercice-single" && <>
+            {module7CommunePanel(Number(module.id), exoCourantId) !== null && (
+              <h3 className="mt-6 border-t pt-4 font-semibold text-muted-foreground">
+                Quiz historique — {currentPageData.exercice.questions?.length ?? 0} questions
+              </h3>
+            )}
+            {renderSingleExercicePage(currentPageData.exercice)}
+          </>}
         </div>
 
         {/* Quiz completion rate */}

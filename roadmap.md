@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Quiz communes session TAXI/TA — 29/10
+- [x] SOUICI Ahlem identifiée ; onze élèves comparés, anciennes séries 7020/7021 10/6 vs activités 58/24, snapshots 241/282 expliqués. Rapport docs/quiz-communes-session-2026-10-29.md.
+- [x] Module 7 : second filtrage concurrent d'ouverture désactivé, accès directs par IDs et distinction historique ; aucune écriture de preuve/affectation/contenu.
+- [x] 72 tests PASS ; aperçu Admin fictif TA/TAXI, clics réels parties32/33→58/24, téléphone vérifié, compilation OK. Preuves entières couvrent vides Ahlem/CIHAN/Pogos ; tests Réalisés/émargement repassés.
+- [ ] Connexion compte technique autonome et reproduction réseau dans deux ordres restent NON PROUVÉES ; production frontend non publiée pour ne pas embarquer les travaux globaux inachevés.
+
 ## Émargement trente minutes avant — 29/10
 - [x] Règle centrale réelle −30 min, contrôles serveur et sélection théorie/pratique ; migration et fonction ciblées déployées, 2 996 lignes historiques empreinte identique.
 - [x] Minuteur prochaine ouverture + retour fenêtre, priorité identité/conflit/présence/inactivité, date et heures réelles dans la feuille.

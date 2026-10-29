@@ -32,6 +32,14 @@ describe("Projection effective sans mutation", () => {
   it("file locale ou compteur complet ne remplace pas validation serveur", () => {
     expect(getLearnerModuleDisplayState({ loaded:true,serverCompleted:false,hasProgress:true,quizStats:{completedQuizzes:6,totalQuizzes:6}}).status).toBe("validation_en_cours");
   });
+  it.each([[7002,29,4],[7020,10,9]])("module 7 : soumission entière %s répare les vides historiques, pas une nouvelle série", (exo,n,empty) => {
+    const original = { module_id:7,status:"completed",completed_at:"2026-10-28T10:00:00Z",details:Array.from({length:n},(_,i)=>({exerciceId:exo,questionId:i+1,reponseEleve:i<empty?null:["A"]})) };
+    const before = JSON.stringify(original);
+    const proof = { exercice_id:`module_7_exo_${exo}`,status:"submitted",submitted_at:"2026-10-29T08:00:00Z",reponses:Object.fromEntries(Array.from({length:n},(_,i)=>[`${exo}-${i+1}`,["B"]])) };
+    expect(completionEvidenceAllowsDone(withSubmittedModuleProof(original,[proof]))).toBe(true);
+    expect(completionEvidenceAllowsDone(withSubmittedModuleProof(original,[{...proof,exercice_id:"quiz_m7_58_communes_metropole_v1"}]))).toBe(false);
+    expect(JSON.stringify(original)).toBe(before);
+  });
   it("tableau élève et compteur CRM rejettent les mêmes obligations absentes", () => {
     const r = row(40,[2,2],[2,1]);
     expect(progressionModulesEleve([{id:40,nom:"TA"}],()=>true,new Set(),undefined,"fictif",[r])).toMatchObject({termines:0});

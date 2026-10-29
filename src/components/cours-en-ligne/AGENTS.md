@@ -1,5 +1,6 @@
 # Supports pédagogiques et protection T3P
 
+- Module 7 hydration owns source/server/tombstone display resolution; never run a second raw-server opening prune there, and commune navigation uses exercise IDs with additive and historical series distinguished; why: avoid response-order dependent missing questions without changing saved proofs.
 - Corrected media use new assets, matching PDF/PPTX, exact historical-path selection, originals retained; why: fix clipping without replacing custom uploads.
 - CourseFileViewer selects corrected versioned media through courseDisplaySupport, without changing module data or page identities; why: serve matching PDF/PPTX while preserving learner history and custom uploads.
 - T3P 07/10 : sauvegarder un module ne doit jamais reconstruire globalement les Bilans ; migration 0128 conserve les objets questions inchangés et partage seulement les deltas de contenu. Réactivation limitée aux quiz 1/2 du module VTC 2 ; `shouldSyncVtcBilanFromCours` reste false ; why: préserver bilans, historiques et acquis.
