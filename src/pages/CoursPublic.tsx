@@ -1890,6 +1890,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               : null}
             onBack={() => { setSelectedExerciseTarget(null); void handleBackFromModule(); }}
             studentOnly
+            apercuAdmin={!!(embedded && apprenantOverride)}
             apprenantId={apprenant?.id || null}
             onModuleCompleted={handleModuleCompleted}
             apprenantType={apprenant?.type_apprenant || null}

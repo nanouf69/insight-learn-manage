@@ -177,6 +177,7 @@ import {
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
 import { BilanFutureExam, lireRouteBilanFuture } from "./BilanFutureExam";
+import { BilanFutureApercuAdmin, lireApercuFutureAdmin, type ApercuFuture } from "./BilanFutureApercuAdmin";
 import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
@@ -1289,6 +1290,8 @@ interface ModuleDetailViewProps {
   onBack: () => void;
   studentOnly?: boolean;
   apprenantId?: string | null;
+  /** CRM "Vue apprenant" (admin session): future Bilan shown read-only via admin RPC. */
+  apercuAdmin?: boolean;
   onModuleCompleted?: (moduleId: number) => void;
   apprenantType?: string | null;
   isPresentiel?: boolean;
@@ -6642,8 +6645,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Bilan examen versionné futur (5/11) : la route serveur est connue AVANT tout rendu de l'ancien écran.
   const routeFutureConcernee = studentOnly && (module.id === 5 || module.id === 11);
   const [routeFuture, setRouteFuture] = useState<{ route: "future" | "legacy"; owner: string } | null>(null);
+  const [apercuFuture, setApercuFuture] = useState<ApercuFuture | "erreur" | null>(null);
   useEffect(() => {
-    if (!routeFutureConcernee) return;
+    if (!routeFutureConcernee || !apercuAdmin || !apprenantId) return;
+    let annule = false;
+    void lireApercuFutureAdmin(apprenantId, module.id).then((r) => { if (!annule) setApercuFuture(r); });
+    return () => { annule = true; };
+  }, [routeFutureConcernee, apercuAdmin, apprenantId, module.id]);
+  useEffect(() => {
+    if (!routeFutureConcernee || apercuAdmin) return;
     let annule = false;
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -10158,7 +10168,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {/* Sync silencieuse côté apprenant : aucun indicateur ni bouton visible.
               Le realtime + refetch initial assurent l'actualisation automatique. */}
         </div>
-        {routeFutureConcernee && !routeFuture ? (
+        {routeFutureConcernee && apercuAdmin && apercuFuture === null ? (
+          <div className="p-8 text-center text-muted-foreground">Chargement de l'aperçu…</div>
+        ) : routeFutureConcernee && apercuAdmin && apercuFuture === "erreur" ? (
+          <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center">Lecture du Bilan impossible. Rechargez la page.</div>
+        ) : routeFutureConcernee && apercuAdmin && apercuFuture && apercuFuture !== "erreur" && apercuFuture.route === "future" ? (
+          <BilanFutureApercuAdmin apercu={apercuFuture} />
+        ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
           <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} />
