@@ -3,7 +3,7 @@ import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
 import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
-import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiNationalSnapshot, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
+import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projectionSommeCoursActive, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
@@ -176,7 +176,7 @@ import {
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
-import { useBilanSnapshotsEleve, questionsComptees, questionsSnapshotCorrigees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
+import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
 import { ReponsesHistoriquesVerrouillees } from "./ReponsesHistoriquesVerrouillees";
 import {
