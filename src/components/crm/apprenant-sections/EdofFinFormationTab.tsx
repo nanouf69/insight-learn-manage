@@ -38,6 +38,7 @@ export function EdofFinFormationTab({ apprenantId }: { apprenantId: string }) {
     if (error) { toast.error("Enregistrement refusé : " + error.message); return; }
     setCommentaire("");
     toast.success("Statut EDOF enregistré");
+    void qc.invalidateQueries({ queryKey: ["edof-fin-formation-tous"] });
     charger();
   };
 
