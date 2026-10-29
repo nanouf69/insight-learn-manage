@@ -14,7 +14,7 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
     queryFn: async () => {
       const [apprenants, signatures, inscriptions, reservations, configs] = await Promise.all([
         fetchAllRows<any>((f,t) => supabase.from("apprenants").select("id,nom,prenom,type_apprenant").is("deleted_at",null).order("id").range(f,t)),
-        fetchAllRows<any>((f,t) => supabase.from("emargements_fc").select("id,apprenant_id,date_emargement,demi_journee,signature_data_url,signed_at,absent,masque").eq("masque",false).eq("absent",false).not("signature_data_url","is",null).order("id").range(f,t)),
+        fetchAllRows<any>((f,t) => supabase.from("emargements_fc").select("id,apprenant_id,date_emargement,demi_journee,signature_data_url,signed_at,absent,masque").eq("masque",false).not("signature_data_url","is",null).order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("session_apprenants").select("id,apprenant_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)").order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,apprenant_id,date_choisie,type_formation,creneau").order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
@@ -22,7 +22,7 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
       return apprenants.flatMap(a => {
         const dates = pratiqueEdofEnAttente(signatures.filter(s=>s.apprenant_id===a.id),inscriptions.filter(s=>s.apprenant_id===a.id),reservations.filter(s=>s.apprenant_id===a.id),configs,false);
         return dates.length ? [{...a,dates}] : [];
-      }).sort((a,b)=>a.nom.localeCompare(b.nom,"fr"));
+      }).sort((a,b)=>(a.nom ?? "").localeCompare(b.nom ?? "","fr"));
     },
   });
   const rows = (query.data ?? []).filter(a => !edof.data?.has(a.id));
