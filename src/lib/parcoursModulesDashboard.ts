@@ -121,7 +121,7 @@ export function modulesAttribuesDashboard(formation: FormationId, autorises?: nu
 }
 
 /** Comptes de test autorisés à voir le module 11 hors parcours TAXI (pilote, aucun élève réel). */
-export const PILOTE_BILAN_TAXI_11 = new Set(["deb92ae7-09aa-4861-abfd-405e9d340d65"]);
+export const PILOTE_BILAN_TAXI_11 = new Set(["f49234ae-043d-46bb-8337-be760d62e694"]);
 
 function modulesAttribuesDashboardBase(formation: FormationId, autorises?: number[] | null) {
   const normalize = (ids: number[]) => [...new Set(ids.map(normalizeModuleIdForDashboard))].filter(id => MANAGED_MODULE_IDS.has(id));
