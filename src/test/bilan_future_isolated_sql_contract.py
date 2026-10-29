@@ -70,12 +70,30 @@ try:
     refusal(prefix(a) + f"SELECT bilan_future_submit('{ra['id']}'," + literal({'104':['B']}) + ')', 'Incomplete answers')
     refusal(prefix(a) + f"SELECT bilan_future_submit('{ra['id']}'," + literal({'104':['Z'],'114':['C']}) + ')', 'Unknown choice')
     print('PASS: receipt ownership, direct insert, foreign questions, unknown choices, incomplete answers rejected')
+    t1, t2 = '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222'
+    save = lambda owner, rec, ver, qid, rev, answer, tok: sql(prefix(owner) + f"SELECT bilan_future_save_draft('{rec}','{ver}',{qid},{rev}," + literal(answer) + f",'{tok}')")
+    d1 = json.loads(save(a, ra['id'], version, 104, 1, ['A'], t1))
+    assert json.loads(save(a, ra['id'], version, 104, 1, ['A'], t1)) == d1
+    refusal(prefix(a) + f"SELECT bilan_future_save_draft('{ra['id']}','{version}',104,1," + literal(['B']) + f",'{t2}')", 'Stale draft revision')
+    refusal(prefix(a) + f"SELECT bilan_future_save_draft('{ra['id']}','{version}',104,5," + literal(['B']) + f",'{t2}')", 'Stale draft revision')
+    save(a, ra['id'], version, 104, 2, ['B'], t2)
+    other_version = sql('INSERT INTO bilan_future_versions(subject,questions,fingerprint) VALUES(0,' + literal(q) + ",'x') RETURNING id")
+    refusal(prefix(a) + f"SELECT bilan_future_save_draft('{ra['id']}','{other_version}',104,3," + literal(['B']) + f",'{t2}')", 'Receipt version mismatch')
+    refusal(prefix(b) + f"SELECT bilan_future_save_draft('{ra['id']}','{version}',104,3," + literal(['B']) + f",'{t2}')", 'Receipt ownership required')
+    refusal(prefix(a) + f"SELECT bilan_future_save_draft('{ra['id']}','{version}',999,1," + literal(['A']) + f",'{t2}')", 'Answer outside frozen bank')
+    refusal(prefix(a) + f"INSERT INTO bilan_future_drafts VALUES('{ra['id']}','{version}',114,1,'[\"C\"]','{t1}')", 'permission denied')
+    resumed = json.loads(sql(prefix(a) + f"SELECT bilan_future_resume('{ra['id']}')"))
+    assert resumed['version_id'] == version and resumed['answers'] == {'104': {'revision': 2, 'answer': ['B']}} and not resumed['submitted']
+    refusal(prefix(b) + f"SELECT bilan_future_resume('{ra['id']}')", 'Receipt ownership required')
+    print('PASS: receipt+version scoped drafts: idempotent retry, stale/old-tab revision, foreign version/account/question and direct insert rejected; resume exact')
     ans = {'104':['B'],'114':['C']}
     result = json.loads(sql(prefix(a) + f"SELECT bilan_future_submit('{ra['id']}'," + literal(ans) + ')'))
     assert result['correct_count'] == result['question_count'] == 2
     assert json.loads(sql(prefix(a) + f"SELECT bilan_future_submit('{ra['id']}'," + literal(ans) + ')')) == result
     refusal(prefix(a) + f"SELECT bilan_future_submit('{ra['id']}'," + literal({'104':['A'],'114':['C']}) + ')', 'Submitted proof immutable')
     print('PASS: frozen-bank server correction 2/2, submit/readback/retry exact and append-only')
+    refusal(prefix(a) + f"SELECT bilan_future_save_draft('{ra['id']}','{version}',114,1," + literal(['C']) + f",'{t1}')", 'Passage already submitted')
+    print('PASS: late draft from an old tab after submission rejected')
     refusal(f"UPDATE bilan_future_versions SET questions='[]' WHERE id='{version}'", 'Future Bilan proof immutable')
     refusal(f"UPDATE bilan_future_receipts SET version_id='{version}' WHERE id='{ra['id']}'", 'Future Bilan proof immutable')
     assert sql('SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM legacy_copies l') == old

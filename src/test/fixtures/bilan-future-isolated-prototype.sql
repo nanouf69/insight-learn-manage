@@ -119,3 +119,65 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.bilan_future_submit(uuid,jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.bilan_future_submit(uuid,jsonb) TO authenticated;
+-- Receipt-scoped draft transport. Every write names receipt AND version; legacy module_X_exo_Y keys cannot reach it.
+CREATE TABLE public.bilan_future_drafts (
+  receipt_id uuid NOT NULL REFERENCES public.bilan_future_receipts(id),
+  version_id uuid NOT NULL REFERENCES public.bilan_future_versions(id),
+  question_id integer NOT NULL,
+  revision integer NOT NULL CHECK (revision > 0),
+  answer jsonb NOT NULL CHECK (jsonb_typeof(answer)='array'),
+  client_token uuid NOT NULL,
+  saved_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  PRIMARY KEY(receipt_id,question_id,revision)
+);
+GRANT SELECT ON public.bilan_future_drafts TO authenticated;
+GRANT ALL ON public.bilan_future_drafts TO service_role;
+ALTER TABLE public.bilan_future_drafts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY future_draft_owner ON public.bilan_future_drafts FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public.bilan_future_receipts r WHERE r.id=receipt_id AND r.owner_id=auth.uid()) OR public.has_role(auth.uid(),'admin'));
+CREATE TRIGGER future_draft_immutable BEFORE UPDATE OR DELETE ON public.bilan_future_drafts FOR EACH STATEMENT EXECUTE FUNCTION public.bilan_future_immutable();
+
+CREATE FUNCTION public.bilan_future_save_draft(p_receipt uuid,p_version uuid,p_question integer,p_revision integer,p_answer jsonb,p_token uuid) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE r public.bilan_future_receipts; v public.bilan_future_versions; d public.bilan_future_drafts; last_rev integer; q jsonb;
+BEGIN
+  SELECT * INTO r FROM public.bilan_future_receipts WHERE id=p_receipt AND owner_id=auth.uid();
+  IF r.id IS NULL THEN RAISE EXCEPTION 'Receipt ownership required' USING ERRCODE='42501'; END IF;
+  IF r.version_id IS DISTINCT FROM p_version THEN RAISE EXCEPTION 'Receipt version mismatch' USING ERRCODE='P0492'; END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('future-submit:'||p_receipt,0));
+  IF EXISTS(SELECT 1 FROM public.bilan_future_submissions WHERE receipt_id=p_receipt) THEN
+    RAISE EXCEPTION 'Passage already submitted' USING ERRCODE='P0491';
+  END IF;
+  SELECT * INTO v FROM public.bilan_future_versions WHERE id=r.version_id;
+  SELECT z INTO q FROM jsonb_array_elements(v.questions) z WHERE (z->>'id')::int=p_question;
+  IF q IS NULL THEN RAISE EXCEPTION 'Answer outside frozen bank' USING ERRCODE='22023'; END IF;
+  IF jsonb_typeof(p_answer) IS DISTINCT FROM 'array' OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(p_answer) x WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(q->'choix') c WHERE c->>'lettre'=x)) THEN
+    RAISE EXCEPTION 'Unknown choice' USING ERRCODE='22023';
+  END IF;
+  SELECT * INTO d FROM public.bilan_future_drafts WHERE receipt_id=p_receipt AND question_id=p_question AND revision=p_revision;
+  IF d.receipt_id IS NOT NULL THEN
+    IF d.client_token=p_token AND d.answer=p_answer THEN RETURN to_jsonb(d); END IF;
+    RAISE EXCEPTION 'Stale draft revision' USING ERRCODE='P0493';
+  END IF;
+  SELECT coalesce(max(revision),0) INTO last_rev FROM public.bilan_future_drafts WHERE receipt_id=p_receipt AND question_id=p_question;
+  IF p_revision <> last_rev+1 THEN RAISE EXCEPTION 'Stale draft revision' USING ERRCODE='P0493'; END IF;
+  INSERT INTO public.bilan_future_drafts(receipt_id,version_id,question_id,revision,answer,client_token)
+  VALUES(p_receipt,p_version,p_question,p_revision,p_answer,p_token) RETURNING * INTO d;
+  RETURN to_jsonb(d);
+END $$;
+REVOKE ALL ON FUNCTION public.bilan_future_save_draft(uuid,uuid,integer,integer,jsonb,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.bilan_future_save_draft(uuid,uuid,integer,integer,jsonb,uuid) TO authenticated;
+
+-- Resume: latest revision per question for this receipt only.
+CREATE FUNCTION public.bilan_future_resume(p_receipt uuid) RETURNS jsonb
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+DECLARE r public.bilan_future_receipts;
+BEGIN
+  SELECT * INTO r FROM public.bilan_future_receipts WHERE id=p_receipt AND owner_id=auth.uid();
+  IF r.id IS NULL THEN RAISE EXCEPTION 'Receipt ownership required' USING ERRCODE='42501'; END IF;
+  RETURN jsonb_build_object('receipt_id',r.id,'version_id',r.version_id,
+    'submitted',EXISTS(SELECT 1 FROM public.bilan_future_submissions s WHERE s.receipt_id=r.id),
+    'answers',coalesce((SELECT jsonb_object_agg(question_id::text,jsonb_build_object('revision',revision,'answer',answer))
+      FROM (SELECT DISTINCT ON(question_id) question_id,revision,answer FROM public.bilan_future_drafts WHERE receipt_id=r.id ORDER BY question_id,revision DESC) t),'{}'::jsonb));
+END $$;
+REVOKE ALL ON FUNCTION public.bilan_future_resume(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.bilan_future_resume(uuid) TO authenticated;
