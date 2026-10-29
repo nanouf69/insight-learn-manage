@@ -15,7 +15,7 @@ export interface FenetreEmargement {
 
 /** Server clock and real inscription determine eligibility; device timezone never grants access. */
 export async function lireFenetresEmargement(apprenantId: string): Promise<FenetreEmargement[]> {
-  const { data, error } = await freshSessionRead(() => (supabase.rpc as any)('emargement_fenetres_eleve', { p_apprenant_id: apprenantId }));
+  const { data, error } = await freshSessionRead<{ data: unknown; error: { message: string } | null }>(() => (supabase.rpc as any)('emargement_fenetres_eleve', { p_apprenant_id: apprenantId }));
   if (error) throw error;
   if (!Array.isArray(data)) throw new Error('Horaires des feuilles indisponibles');
   return data;

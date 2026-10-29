@@ -1327,26 +1327,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const check = async () => {
       const todayStr = maintenantParis().dateISO;
 
-      // Détermine la plage : du début de formation jusqu'à aujourd'hui inclus.
-      const startStr =
-        (apprenant.date_debut_formation as string | undefined) ||
-        (apprenant.date_debut_cours_en_ligne as string | undefined) ||
-        todayStr;
-      const endStr =
-        (apprenant.date_fin_formation as string | undefined) ||
-        (apprenant.date_fin_cours_en_ligne as string | undefined) ||
-        todayStr;
-
-      const parseISO = (s: string) => {
-        const [y, m, d] = s.split("-").map((x) => parseInt(x, 10));
-        return new Date(y, (m || 1) - 1, d || 1);
-      };
-      const startDate = parseISO(startStr.slice(0, 10));
-      const endDateRaw = parseISO(endStr.slice(0, 10));
-      const today = parseISO(todayStr);
-      const endDate = endDateRaw < today ? endDateRaw : today;
-
-      // Liste de tous les créneaux attendus sur la plage
+      // Server-owned real slots include the next day for a window opening before midnight.
       const fenetres = await lireFenetresEmargement(apprenant.id);
       if (cancelled) return;
       const baseExpected = fenetresDues(fenetres, false);
