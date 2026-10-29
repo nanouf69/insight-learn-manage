@@ -7,7 +7,7 @@ const fake = vi.hoisted(() => ({ rows: {} as Record<string, any>, calls: [] as s
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => {
   fake.calls.push(table);
   const q: any = {};
-  for (const method of ['select', 'eq', 'order', 'in']) q[method] = () => q;
+  for (const method of ['select', 'eq', 'order', 'in', 'like']) q[method] = () => q;
   q.single = async () => fake.rows[table];
   q.range = async (from: number, to: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(from, to + 1) });
   return q;
