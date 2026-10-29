@@ -18,6 +18,8 @@
 - [ ] Connexion autonome élève et contrôle de chaque quiz historique masqué NON PROUVÉS ; limites du chantier Réalisés conservées.
 
 ## Pratique signée à valider EDOF — 29/10
+- [ ] Demande 09:51 : tri dernière date pratique décroissante, en-tête « Dates de formation pratique », retrait réversible de la liste uniquement (aucun dossier/signature supprimé), vérification navigateur.
+- [x] Financements personnels exclus : 12 tests PASS, liste Admin 25 personnes vérifiée ; non publié.
 - [x] Badge E = dernière validation EDOF ; liste de pratiques réellement signées, excluant E, absents/masqués/attente/théorie ; aucune écriture de dossier ou preuve.
 - [x] 8 tests PASS et tableau de bord Admin connecté : 38 personnes avec dates, capture vérifiée, compilation OK ; rafraîchissement du badge après sauvegarde CRM corrigé. Non publié.
 
