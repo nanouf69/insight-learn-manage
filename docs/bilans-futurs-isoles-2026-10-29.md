@@ -70,3 +70,10 @@ Références : [R413-4](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT
 - Q79 : VTC = tunnel 50 (même fichier que TAXI image79 placé en Q81) ; TAXI image77 = carte « voie de bus » (faux). Q80 : VTC sans image, TAXI photo de route non probante.
 - Q214–255 : aucune image dans les deux parcours.
 - Candidate isolée : Q55/60/61 image VTC, 35 questions sans image, Q79/80/92/177/212/213 suspendues → Sécurité 249 questions. Inactive, non publiée. Les élèves TAXI actuels voient toujours les images décalées (non corrigé, anciens passages intouchés).
+
+## Corrections images futures — 29/10 21:40 UTC
+- Q62 : image chargée = panneau locomotive (A8) = passage à niveau SANS barrières ; clé future = B seule (anciens passages gardent A).
+- Q63 : image = panneau temporaire « chaussée glissante » (AK4), non spécifique au verglas ; question retirée de la future banque.
+- Q79 : image VTC (tunnel + 50) correcte, clé A+B cohérente ; incluse avec image VTC (TAXI image77 décalée).
+- Sécurité future : 250 questions, suspendues Q63, Q80, Q92, Q177, Q212, Q213.
+- 25 tests Vitest + contrat SQL base jetable PASS. Aucune écriture Cloud, rien activé ni publié.
