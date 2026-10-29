@@ -18,6 +18,19 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 const choices = (q: FutureQuestion) => q.choix.map(c => ({ lettre: c.lettre, texte: c.texte, correct: c.correct === true }));
 
 /** Build a detached candidate, never write to either legacy source. Unresolved images/keys stay suspended. */
+/**
+ * Road-safety image decisions from the 29/10 visual audit (actual loaded files, not paths).
+ * 'vtc'  = VTC storage file shows the sign the statement/key describe (Q55 overtaking ban >3.5 t,
+ *          Q60 alternate parking 1-15/16-31, Q61 priority road).
+ * 'none' = TAXI file is shifted (shows another question's text card, an explanation screenshot or an
+ *          unrelated photo) and VTC has no image; the statement is self-sufficient without it.
+ * Q79/Q80/Q92 stay suspended (key or image still to confirm).
+ */
+export const ROAD_IMAGE_DECISIONS: Record<number, 'vtc' | 'taxi' | 'none'> = {
+  55: 'vtc', 60: 'vtc', 61: 'vtc',
+  ...Object.fromEntries([68,69,70,71,72,74,75,76,77,78,81,82,83,84,85,87,88,89,90,91,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107].map(id => [id, 'none' as const])),
+};
+
 export function prepareBilanFutureBank(source: BilanSource): FutureSubject[] {
   const exercise = (module: number, id: number) => {
     const found = source.find(m => m.module_id === module)?.exercices.find(e => e.id === id);
@@ -40,7 +53,8 @@ export function prepareBilanFutureBank(source: BilanSource): FutureSubject[] {
       if (subject === 2 && [79, 80, 92, 177, 212, 213].includes(id)) reason = 'Road key or image requires independent verification';
       if (a && b && a.enonce !== b.enonce) reason = 'Statement conflict';
       if (a && b && !same(choices(a), choices(b)) && !(subject === 1 && id === 48)) reason = 'Choice or key conflict';
-      if (a && b && (a.image ?? null) !== (b.image ?? null) && !(subject === 2 && id === 73)) reason = 'Image correspondence not proven';
+      const roadImage = subject === 2 ? ROAD_IMAGE_DECISIONS[id] : undefined;
+      if (a && b && (a.image ?? null) !== (b.image ?? null) && !(subject === 2 && id === 73) && roadImage === undefined) reason = 'Image correspondence not proven';
       if (reason) { suspended.push({ questionId: id, reason }); continue; }
       const q: FutureQuestion = {
         id, enonce: candidate.enonce, choix: structuredClone(candidate.choix), type: 'QCM',
@@ -52,6 +66,7 @@ export function prepareBilanFutureBank(source: BilanSource): FutureSubject[] {
       if (subject === 1 && id === 53) q.choix = q.choix.map(({ explication: _unused, ...c }) => c);
       else if (a?.explication === b?.explication && candidate.explication) q.explication = candidate.explication;
       if (subject === 2 && id === 73) q.image = null;
+      if (roadImage !== undefined) q.image = roadImage === 'none' ? null : (roadImage === 'vtc' ? a!.image ?? null : b!.image ?? null);
       if (!q.choix.length || !q.choix.some(c => c.correct === true) || new Set(q.choix.map(c => c.lettre)).size !== q.choix.length)
         throw new Error(`Invalid verified QCM ${subject}/${id}`);
       questions.push(q);
