@@ -44,7 +44,8 @@ import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/component
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
-import { completionEvidenceAllowsDone } from "@/lib/moduleCompletionEvidence";
+import { completionEvidenceAllowsDone, withSubmittedModuleProof } from "@/lib/moduleCompletionEvidence";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
 import { activitesModuleEleve, libelleJeux, jeuxRestants, type EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -1188,7 +1189,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const requestId = ++completionsRequestRef.current;
     let cancelled = false;
     const fetchCompletions = async () => {
-      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
+      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }, submittedProofs] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
         // never yields an empty progression (which re-locked validated modules).
         fetchModuleCompletions(apprenant.id),
