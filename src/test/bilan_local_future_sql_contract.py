@@ -10,7 +10,7 @@ TEMP = tempfile.mkdtemp(prefix='bilan-local-', dir='/tmp')
 os.chown(TEMP, 1000, 1000)
 PORT = '55459'
 USER = ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
-SQL_FILE = Path(os.environ.get('BILAN_FUTURE_SQL', '/tmp/bilan-future-local.sql'))
+SQL_FILE = Path(os.environ.get('BILAN_FUTURE_SQL', str(ROOT / 'drizzle/migrations/0219_bilan_taxi_locale_futurs_canoniques.sql')))
 
 def sql(query):
     return subprocess.check_output(['psql', '-X', '-q', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
