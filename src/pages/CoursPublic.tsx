@@ -1214,6 +1214,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .not("current_module", "is", null)
           .order("started_at", { ascending: false })
           .limit(1),
+        fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants")
+          .select("exercice_id,status,submitted_at,reponses").eq("apprenant_id", apprenant.id)
+          .eq("status", "submitted").like("exercice_id", "module_%").order("exercice_id").range(from, to)),
       ]);
 
       // Liste vide = peut-être une lecture faite avant que la connexion soit prête
@@ -1235,7 +1238,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         return;
       }
       if (completionsResult.ok && !cancelled && requestId === completionsRequestRef.current) {
-        const completionRows = completionsResult.rows as any[];
+        const completionRows = completionsResult.rows.map(row => withSubmittedModuleProof(row, submittedProofs));
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
 
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
@@ -1548,16 +1551,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
       const requestId = ++completionsRequestRef.current;
-      const [completionsResult, { data: examData }] = await Promise.all([
+      const [completionsResult, { data: examData }, submittedProofs] = await Promise.all([
         fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
           .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
+        fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants")
+          .select("exercice_id,status,submitted_at,reponses").eq("apprenant_id", apprenant.id)
+          .eq("status", "submitted").like("exercice_id", "module_%").order("exercice_id").range(from, to)),
       ]);
       if (completionsResult.ok && requestId === completionsRequestRef.current) {
-        const completionRows = completionsResult.rows as any[];
+        const completionRows = completionsResult.rows.map(row => withSubmittedModuleProof(row, submittedProofs));
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 

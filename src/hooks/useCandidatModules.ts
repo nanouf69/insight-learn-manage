@@ -7,6 +7,7 @@ import { resolveFormationId, modulesExigesDashboard, normalizeModuleIdForDashboa
 import { computeServerCompletedModuleIds, type CompletionLite } from '@/lib/moduleUnlockLogic';
 import { ACTIVITES_CODE } from '@/lib/jeuxPedagogiques';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
+import { withSubmittedModuleProof } from '@/lib/moduleCompletionEvidence';
 
 export const CANDIDAT_MODULES_KEY = 'candidat-modules-confirmes';
 
@@ -18,13 +19,17 @@ export async function chargerCandidatModules(apprenantId: string) {
   if (!apprenant) throw new Error('Parcours indisponible');
   const formation = resolveFormationId(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.modules_autorises);
   if (!formation) throw new Error('Parcours non déterminé');
-  const [completions, activites] = await Promise.all([
+  const [recordedCompletions, activites, submittedProofs] = await Promise.all([
     fetchAllRows<CompletionLite>((from, to) => supabase.from('apprenant_module_completion')
       .select('module_id, status, completed_at, details').eq('apprenant_id', apprenantId).order('module_id').range(from, to)),
     fetchAllRows<{ exercice_id: string; completed: boolean | null }>((from, to) => supabase.from('reponses_apprenants')
       .select('exercice_id, completed').eq('apprenant_id', apprenantId)
       .in('exercice_id', ACTIVITES_CODE.map(a => a.id)).order('exercice_id').range(from, to)),
+    fetchAllRows<any>((from, to) => supabase.from('reponses_apprenants')
+      .select('exercice_id,status,submitted_at,reponses').eq('apprenant_id', apprenantId)
+      .eq('status', 'submitted').like('exercice_id', 'module_%').order('exercice_id').range(from, to)),
   ]);
+  const completions = recordedCompletions.map(row => withSubmittedModuleProof(row, submittedProofs));
   const done = computeServerCompletedModuleIds(completions, DASHBOARD_PARENT_TO_CHILDREN, normalizeModuleIdForDashboard);
   return progressionModulesEleve(modulesExigesDashboard(formation, apprenant.modules_autorises, completions, (apprenant as any).date_fin_cours_en_ligne), id => done.has(id),
     new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId, completions);
