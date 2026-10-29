@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Modules réellement complets — 29/10
-- [ ] Diagnostiquer en lecture seule les preuves, compteurs et obligations historiques sur tous les parcours.
-- [ ] Corriger uniquement le classement effectif et les éléments obligatoires manquants, conserver les preuves et heures acquises.
-- [ ] Tests ciblés et contrôles bureau/mobile sur compte technique ; rapport précis, sans publication.
+- [x] Diagnostic lecture seule : drapeau completed insuffisant, réponses null réelles, faux Réalisés des modules dispensés ; 466 copies candidates/214 dossiers, pas de mutation.
+- [x] Projection des vides historiques, compteurs CRM/élève, liens par quiz et cartes rouges ; 68 tests ciblés PASS, série élargie 77 PASS/1 FAIL contrat source ancien ; build OK. Rapport docs/modules-realises-preuves-2026-10-29.md.
+- [ ] Connexion compte technique et contrôle mobile réel bloqués par approbation indisponible ; premier aperçu simulé bureau concluant, mobile masqué et nouvelles recherches échouées.
+- [ ] Périmètre historique complet pages/archives tronquées et règles facultatives à vérifier avant publication ; aucun calcul d'heures ni jalon historique modifié. Non publié.
 
 ## Support PDF Pratique TAXI — 28/10 16:52 UTC
 - [x] Support consultable uniquement module 6, 19 images sans PDF original, sans activité ni callback de fin ; acquis et jalons inchangés.
