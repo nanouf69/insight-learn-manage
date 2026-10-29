@@ -1,3 +1,4 @@
+import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
 import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
 import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
@@ -8714,7 +8715,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               body: {
                 question: q.enonce,
                 reponseEtudiant: reponse,
-                reponsesAttendues: q.reponsesAttendues || [],
+                reponsesAttendues: qrcReponsesAttendues(q),
                 matiereId: "reglementation_taxi",
                 pointsQuestion: 2,
               },
@@ -8768,7 +8769,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }).length;
       const isQuestionAnsweredForSidebar = (q: any) => {
         const key = `${exo.id}-${q.id}`;
-        const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+        const isQrc = isQuestionQrc(q);
         if (isQrc) {
           const qrcValue = qrcAnswers[key] ?? selectedAnswers[key];
           return typeof qrcValue === "string" && qrcValue.trim().length > 0;
@@ -8926,7 +8927,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               }).map(({ q, originalIdx }: any, _filteredIdx: number) => {
                 const qi = originalIdx;
                 const key = `${exo.id}-${q.id}`;
-                const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                const isQrc = isQuestionQrc(q);
                 const selected = selectedAnswers[key];
                 const qrcResult = qrcResults[key];
                 const isInRevision = !!revisionEffective(exo.id, questionsSafe);
@@ -9056,7 +9057,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         questionsSafe.forEach((q: any, qi: number) => {
                           if (!questionsCompteesExo.includes(q)) return;
                           const k = `${exo.id}-${q.id}`;
-                          const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                          const isQrc = isQuestionQrc(q);
                           const ans = selectedAnswers[k];
                           const hasAnswer = Array.isArray(ans) ? ans.length > 0 : !!ans;
                           if (!isQrc && !hasAnswer) {
@@ -9540,7 +9541,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 const learner = selectedAnswers[key];
                                 const learnerLetters = Array.isArray(learner) ? learner : learner ? [learner] : [];
                                 const choix = getQuestionChoices(q);
-                                const isQrc = q?.type === "qrc" || (choix.length === 0 && q.reponsesAttendues);
+                                const isQrc = isQuestionQrc({ ...q, choix });
                                 return (
                                   <div key={q.id} className="rounded-lg border border-red-200 bg-red-50/50 p-3 space-y-2">
                                     <div className="font-semibold text-sm">Question {idx + 1} — {q.enonce}</div>
@@ -9624,7 +9625,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const isAnswered = isQuestionAnsweredForSidebar(q);
                 // Après validation (ou mode révision), les erreurs s'affichent en rouge
                 const sidebarKey = `${exo.id}-${q.id}`;
-                const isQrcQ = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                const isQrcQ = isQuestionQrc(q);
                 const sidebarShowResults = showResultsFor.has(exo.id);
                 const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
                 let isWrong = false;
