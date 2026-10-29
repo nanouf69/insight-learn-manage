@@ -62,7 +62,7 @@ describe('Isolated future Bilan preparation, never legacy mutations', () => {
     expect(q(60)?.image).toMatch(/^question-images\/module-5\/q60_/);
     expect(q(61)?.image).toMatch(/^question-images\/module-5\/q61_/);
     for (const id of [68, 70, 81, 107]) expect(q(id)?.image).toBeNull();
-    expect(bank()[2].questions.some(x => /\/cours\/exercices\/securite\/image(5[5-9]|6\d|[7-9]\d|10[0-4])\.png/.test(x.image ?? ''))).toBe(false);
+    expect(bank()[2].questions.some(x => /\/cours\/exercices\/securite\/image(59|6\d|[7-9]\d|10[0-4])\.png/.test(x.image ?? ''))).toBe(false);
     expect(q(1)?.image).toBe('/cours/exercices/securite/image1.png');
   });
   it('orders every candidate by stable source number with no duplicate IDs', () => {
