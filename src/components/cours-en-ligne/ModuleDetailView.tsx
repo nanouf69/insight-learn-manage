@@ -3,6 +3,8 @@ import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, preserveTaxiN
 import { BILAN_SOMME_COURS_SOURCES, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
+import { compterQuizModule } from "@/lib/moduleQuizCounter";
+import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
 import { computeLearnerQuizNumbers } from "@/lib/exercicePartNumbers";
@@ -1276,6 +1278,7 @@ const renderExerciseQuestionPrompt = (questionNumber: number, prompt: ExerciseQu
 
 interface ModuleDetailViewProps {
   module: { id: number; nom: string };
+  initialExerciseId?: string | null;
   onBack: () => void;
   studentOnly?: boolean;
   apprenantId?: string | null;
@@ -4279,7 +4282,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity, activitesEtat = null }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours, onLearnerActivity, activitesEtat = null, initialExerciseId = null }: ModuleDetailViewProps) => {
   const activitesEtatRef = useRef(activitesEtat);
   activitesEtatRef.current = activitesEtat;
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
@@ -6620,6 +6623,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [passagesFiges, setPassagesFiges] = useState<Record<number, PassageFige>>({});
+    const [historicalQuizProof, setHistoricalQuizProof] = useState<ReturnType<typeof compterQuizModule> | null>(null);
     // Les réponses archivées priment toujours sur toute restauration ultérieure.
     useEffect(() => {
       const figees: Record<string, string | string[]> = {};
@@ -6939,6 +6943,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       Array.from(indices, pageForStorage).filter(index => index >= 0);
 
     const totalPages = pages.length;
+    const exerciseTargetApplied = useRef(false);
+    useEffect(() => {
+      if (!uiStateHydrated || exerciseTargetApplied.current || initialExerciseId == null) return;
+      const target = pages.findIndex(p => p?.type === "exercice-single" && String(p.exercice.id) === initialExerciseId);
+      if (target < 0) return;
+      exerciseTargetApplied.current = true;
+      setPendingResultRestore(null);
+      setCurrentPage(target);
+    }, [uiStateHydrated, initialExerciseId, pages]);
     const currentPageData = pages[currentPage];
     const exoCourantId = currentPageData?.type === "exercice-single" ? Number(currentPageData.exercice.id) : null;
     useEffect(() => {
@@ -7438,6 +7451,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             .maybeSingle();
 
           const isAlreadyValidated = isCompletionDone(completionData as any);
+          if (isAlreadyValidated && completionData) {
+            setHistoricalQuizProof(compterQuizModule([completionData], []));
+          }
 
 
           if (isAlreadyValidated) {
@@ -7450,7 +7466,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               const answeredByExercice = new Map<number, number>();
 
               (completionData.details as any[]).forEach((d: any) => {
-                if (d.reponseEleve) {
+                if (hasRecordedAnswer(d.reponseEleve)) {
                   restored[`${d.exerciceId}-${d.questionId}`] = d.reponseEleve;
                   const exoId = Number(d.exerciceId);
                   if (Number.isFinite(exoId)) {
@@ -7471,13 +7487,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               }
 
               if (completionData.score_obtenu !== null) {
-                const validatedExoIds = activeExercices
-                  .filter((exo) => {
-                    const totalExoQuestions = exo.questions?.length || 0;
-                    if (totalExoQuestions === 0) return false;
-                    return (answeredByExercice.get(Number(exo.id)) || 0) >= totalExoQuestions;
-                  })
-                  .map((exo) => Number(exo.id));
+                const snapshotStats = compterQuizModule([completionData], []);
+                const missingIds = new Set(snapshotStats.remainingQuizzes.map(q => q.id));
+                const historicalIds = new Set((completionData.details as any[]).map(d => String(d.exerciceId)));
+                const validatedExoIds = activeExercices.filter(exo => historicalIds.has(String(exo.id)) && !missingIds.has(String(exo.id))).map(exo => Number(exo.id));
 
                 if (validatedExoIds.length > 0) {
                   setShowResultsFor((prev) => {
@@ -9594,8 +9607,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [mobileProgressOpen, setMobileProgressOpen] = useState(false);
 
     // Quiz « fait » seulement si le serveur l'a validé (relu), ou passage figé / module terminé serveur.
-    const quizValideServeur = (exoId: number) =>
-      savedAnswersLoaded && (submittedExoIdsRef.current.has(exoId) || !!passagesFiges?.[exoId] || moduleAlreadyValidatedRef.current);
+    const quizValideServeur = (exoId: number) => {
+      if (!savedAnswersLoaded) return false;
+      if (submittedExoIdsRef.current.has(exoId)) return true;
+      const passage = passagesFiges?.[exoId];
+      if (passage) return passage.nb_repondues >= passage.nb_questions;
+      return !!historicalQuizProof && historicalQuizProof.totalQuizzes > 0
+        && !historicalQuizProof.remainingQuizzes.some(q => q.id === String(exoId))
+        && Array.isArray(moduleData.exercices) && showResultsFor.has(exoId);
+    };
     const renderProgressionSteps = (isMobileView = false) => (
       <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
         {pages.map((p, i) => {
@@ -9628,7 +9648,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       : isCompleted
                         ? "border-emerald-500 bg-emerald-500 text-white"
                         : unlocked
-                          ? "border-muted-foreground/30 bg-background hover:border-primary/50"
+                          ? "border-destructive bg-background text-destructive"
                           : "border-muted/50 bg-muted/30 cursor-not-allowed"
                   }`}
                 >
@@ -9656,11 +9676,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     : isCompleted
                       ? "text-emerald-600 font-medium"
                       : unlocked
-                        ? "text-muted-foreground hover:text-foreground"
+                        ? "text-destructive hover:text-destructive"
                         : "text-muted-foreground/40 cursor-not-allowed"
                 }`}
               >
-                <span className="line-clamp-2 flex-1">{label}</span>
+                <span className="flex-1">{label}{!isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
                 {(() => {
                   // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
                   const hLabel = hierarchicalLabelsByPage[i] || "";

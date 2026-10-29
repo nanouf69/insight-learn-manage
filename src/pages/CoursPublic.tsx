@@ -44,6 +44,7 @@ import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/component
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
+import { completionEvidenceAllowsDone } from "@/lib/moduleCompletionEvidence";
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
 import { activitesModuleEleve, libelleJeux, jeuxRestants, type EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -816,6 +817,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
   const [fetchNonce, setFetchNonce] = useState(0);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
+  const [selectedExerciseTarget, setSelectedExerciseTarget] = useState<string | null>(null);
   const [deepLinkChecked, setDeepLinkChecked] = useState(false);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
@@ -1889,11 +1891,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         {modalSignature}
         <ErrorBoundary>
           <StableModuleDetailView
+            key={`${apprenant?.id ?? "preview"}:${selectedModule.id}`}
             module={selectedModule}
+            initialExerciseId={selectedExerciseTarget}
             activitesEtat={completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
               ? activitesModuleEleve(selectedModule.id, modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises), moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)
               : null}
-            onBack={handleBackFromModule}
+            onBack={() => { setSelectedExerciseTarget(null); void handleBackFromModule(); }}
             studentOnly
             apprenantId={apprenant?.id || null}
             onModuleCompleted={handleModuleCompleted}
@@ -1995,7 +1999,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, {});
 
   // Completed counters use the validation evidence, not today's edited questions.
-  const moduleQuizStatsById = modules.reduce<Record<number, { completedQuizzes: number; totalQuizzes: number; completedLabels: string[]; remainingLabels: string[] }>>((acc, module) => {
+  const moduleQuizStatsById = modules.reduce<Record<number, { completedQuizzes: number; totalQuizzes: number; completedLabels: string[]; remainingLabels: string[]; remainingQuizzes?: Array<{ id: string; label: string; missingQuestionIds: string[] }> }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
     const allLabels = new Set<string>();
     const doneLabels = new Set<string>();
@@ -2068,6 +2072,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const display = getLearnerModuleDisplayState({
       loaded: completionsLoaded,
       serverCompleted: completedModuleIds.has(module.id),
+      obligationsComplete: rows.filter(r => r.status === "completed").every(completionEvidenceAllowsDone),
       quizStats: moduleQuizStatsById[module.id],
       examStats: examBlancStatsById[module.id],
       hasProgress: rows.some(hasModuleCompletionProgress),
@@ -2089,8 +2094,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const progressionDisponible = progressionModules?.etat === "ok" ? progressionModules : null;
   const completedCount = progressionDisponible?.termines;
   const remainingIds = new Set(progressionDisponible?.restants.map((m) => m.id) ?? []);
-  const remainingModules = progressionDisponible ? modules.filter((m) => remainingIds.has(m.id)) : [];
-  const doneModules = progressionDisponible ? modules.filter((m) => !remainingIds.has(m.id) && !exceptionModulesEleve(apprenant?.id)?.rubriquesHorsCompteur.includes(m.id)) : [];
+  const remainingModules = progressionDisponible ? modules.filter((m) => remainingIds.has(m.id) || (!idsModulesExiges.has(m.id) && !moduleProgressById[m.id]?.isDone)) : [];
+  const doneModules = progressionDisponible ? modules.filter((m) => moduleProgressById[m.id]?.isDone && !remainingIds.has(m.id) && !exceptionModulesEleve(apprenant?.id)?.rubriquesHorsCompteur.includes(m.id)) : [];
   // Jeux du registre par module : même source que le compteur (requis/dispensés/facultatifs), lecture seule.
   const activitesParModule: Record<number, EtatActivitesModuleEleve> = progressionModules
     ? Object.fromEntries(modules.map((m) => [m.id, activitesModuleEleve(m.id, modules, moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)]))
@@ -2453,8 +2458,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     return (
                     <Card
                       key={mod.id}
-                      className={`shadow-sm transition-all duration-300 overflow-hidden ${lastMod ? "border-2 border-red-500 ring-2 ring-red-200 dark:ring-red-900/40" : "border-0"} ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
-                      onClick={() => { if (!locked) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
+                      className={`shadow-sm transition-all duration-300 overflow-hidden border border-destructive ${lastMod ? "ring-2 ring-destructive/20" : ""} ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
+                      onClick={() => { if (!locked) { setSelectedExerciseTarget(null); trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
                         <div className="flex items-center gap-4 p-4">
@@ -2477,13 +2482,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                   ⏳ Validation en cours
                                 </Badge>
                               )}
-                              {jeuxRestants(activitesParModule[mod.id]) > 0 && (
+                              {!moduleProgressById[mod.id]?.enValidation && (
                                 <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0" data-testid={`badge-a-terminer-${mod.id}`}>
                                   À terminer
                                 </Badge>
                               )}
                             </h3>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-destructive">
                               {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
                                 examBlancStatsById[mod.id]
                                   ? (examBlancStatsById[mod.id].completed > 0
@@ -2498,6 +2503,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                     : mod.description
                               )}
                             </p>
+                            {!idsModulesExiges.has(mod.id) && <p className="text-xs text-muted-foreground">Consultation facultative — sans effet sur les jalons acquis</p>}
+                            {(moduleQuizStatsById[mod.id]?.remainingQuizzes?.length ?? 0) > 0 && (
+                              <details className="mt-2 text-xs text-destructive" onClick={event => event.stopPropagation()}>
+                                <summary className="cursor-pointer font-semibold">Quiz et questions à terminer</summary>
+                                <ul className="mt-1 space-y-1">
+                                  {moduleQuizStatsById[mod.id]?.remainingQuizzes?.map(q => (
+                                    <li key={q.id}>
+                                      <Button variant="link" className="h-auto whitespace-normal p-0 text-left text-destructive" disabled={locked}
+                                        onClick={() => { setSelectedExerciseTarget(q.id); trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
+                                        {q.label} — questions {q.missingQuestionIds.join(", ")}
+                                      </Button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
                             {!locked && activitesParModule[mod.id] && libelleJeux(activitesParModule[mod.id]) && (
                               <div className="mt-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs" data-testid={`jeux-statut-${mod.id}`}>
                                 <p className="font-semibold text-primary">🗺️ {libelleJeux(activitesParModule[mod.id])}</p>
@@ -2762,6 +2783,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     profile?.role,
     selectedFormation,
     selectedModule,
+    selectedExerciseTarget,
     sessionAccessWindow,
     showInactivityModal,
     showPresenceModal,
