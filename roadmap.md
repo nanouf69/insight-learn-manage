@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Onze questions validées — cohérence ciblée 29/10 17:58 UTC
+- [x] Audit avant écriture : sections600/601/602 non partagées avec TA28 ; affichage snapshots5/11 remplacé par contenu actuel via questionsSnapshotCorrigees ; futurs600–602 figés depuisJSON, pas canonique.
+- [x] RisqueQ104 prouvé :15 snapshots TAXI600,9 ancienne cléC/6 cléB ; copies non terminées600/601/602=10/8/4. STOP : aucune donnée pédagogique modifiée.
+- [x] Trois tests fictifs réellement exécutés PASS : reproduction du remplacement rétroactif, snapshot source inchangé ; compilation automatique OK18:01:19Z. Aucun test compte hébergé ni envoi.
+- [ ] Q104, typographie48, Q206 et libellé73 suspendus : protection affichage/barème des passages commencés et copies héritées non garantie ; accord distinct pour préparer futur-only requis. Q53 conserveC ; aucun ajout des exclusives59/112–114/198–199.
+- [ ] Compte technique/UI/publication suspendus : aucune correction livrée avant protection prouvée ; rapport docs/onze-questions-coherence-2026-10-29.md et test diagnostic fictif conservés.
+
 ## Sauvegarde Admin 57014 — Q2 « prise en charge » — 29/10 14:12 UTC
 - [x] Q2 identifiée : TAXI 11 / Bilan examen Réglementation locale (606) Q2, ligne officielle partagée TAXI 11/606 + TA 28/701 ; base déjà « 3,10€ » (module 14:11:32, liste officielle 14:11:41), journal humain 4 € → "? € → 3, € → 3,10€.
 - [x] Cause prouvée sur copie jetable : contrôle de liaison Bilans VTC↔TAXI (290 liens) ≈4 s sur ≈5 s par sauvegarde du module 11 ; limite serveur 8 s → 57014 sous charge.
