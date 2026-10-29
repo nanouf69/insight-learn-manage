@@ -3,6 +3,7 @@
 ## Mise en ligne effective
 - Publication en bloc explicitement autorisée et demandée à 19:25 UTC : version courante, incluant protection stricte des snapshots, Bilan exercices TAXI complet, quiz fériés, EDOF, calendrier devis et quiz externes déjà présents.
 - Avant : `/assets/index-CAJXubK1.js`. Après : `/assets/index-tGd3fqJR.js`, HTTP 200, SHA256 `cf64d6f70284d2a0db765f219866befef77a68da40ed972ed42fd18d7448a293`.
+- La substitution stricte depuis le snapshot a aussi été retrouvée dans le JavaScript réellement publié : `return nt?{...Sn,questions:nt.questions}:Sn`.
 - Navigateur public : `https://gestion.ftransport.fr/login`, écran Connexion visible, aucune erreur JavaScript. Capture conservée sous `/tmp/browser/publication-bilans/screenshots/public.png`.
 - Cela prouve la nouvelle version servie, pas chaque parcours authentifié, ni une actualisation forcée des onglets élèves déjà ouverts. Aucune réinitialisation ou interruption volontaire de session.
 - Aucun changement de code, banque, clé ou version d'examen blanc dans cette intervention ; la publication capture la version courante autorisée, elle n'est pas une nouvelle publication de contenu EB.
@@ -26,7 +27,7 @@ Les autres divergences, questions spécifiques, 42 Sécurité et 73 T3P restent 
 - PASS : 20 tests protection/projection avant publication (3 fichiers).
 - PASS : 27 tests sauvegarde/intention/lecture/reprise historiques ; FAIL : 1 ancien test de chaîne source attend une ancienne signature de callback (9 tests de ce fichier, 8 passent). Aucun correctif du code partagé effectué pour masquer cet échec.
 - PASS : 12 assertions PostgreSQL jetable du contrat futur national/local, conservation intégrale à la réouverture après changement canonique, ordre/champs/identités, refus banque vide, absence de bascule TA. Ce test n'est pas une preuve du circuit cinq matières.
-- Test diagnostic supplémentaire : véritable fonction d'hydratation évaluée sur données fictives pour établir le changement C→B sans snapshot et l'expansion Gestion 197→198. Résultats ajoutés après exécution.
+- PASS : 11 tests après publication (4 fichiers), dont 2 nouveaux diagnostics exécutant la véritable fonction d'hydratation sur copies fictives ; changement C→B sans snapshot et expansion Gestion 197→198 reproduits. Les deux tests ne valident pas ces mutations en production : ils prouvent pourquoi elles sont arrêtées.
 - NON PROUVÉ : parcours hébergé sous compte technique admin → sauvegarde → nouveau passage → soumission/recharge des cinq matières. Aucun compte réel utilisé, aucune écriture d'essai dans la base partagée.
 - Contrôle serveur : 216 snapshots lus (166 VTC, 50 TAXI). Aucune écriture dans ces tables ; changements dus à l'activité réelle des élèves ne seraient pas attribuables à cette intervention.
 - Sécurité avant publication : trois alertes critiques de lecture de paramètres signalées ; publication acceptée par l'outil. Aucune permission modifiée ni alerte masquée.

@@ -4,9 +4,10 @@
 - [x] Autorisation explicite de publier la version courante en bloc ; aucune nouvelle intervention sur les examens blancs.
 - [x] Contrôle sécurité effectué ; trois alertes critiques de lecture de paramètres signalées, aucun changement de permissions.
 - [x] 20 tests de protection des passages et projection exécutés ; publication demandée vers gestion.ftransport.fr.
-- [ ] Vérifier la version effectivement servie et consigner les preuves.
-- [ ] Prouver admin → sauvegarde → futur passage et reprise historique sur copies isolées, sans écrire dans les dossiers élèves.
-- [ ] Appliquer seulement les divergences avérées et sûres des modules 5/11 ; laisser tout risque non maîtrisé en attente.
+- [x] Version servie confirmée HTTP200 : index-tGd3fqJR.js, empreinte cf64d6f7… ; navigateur public Connexion, aucune erreur JavaScript ; expression snapshot stricte retrouvée dans le fichier publié.
+- [x] Contrôles isolés :20 tests avant publication,27/28 tests sauvegarde/reprise (1 ancien contrat de chaîne source FAIL),12 assertions PostgreSQL jetable et11 tests après publication PASS ; deux tests nouveaux prouvent le risque sans snapshot.
+- [ ] Circuit cinq matières complet sous compte technique hébergé NON PROUVÉ : suspendu avant écriture, copies héritées sans snapshot ni preuve de contenu initial toujours présentes.
+- [ ] Q104/Q48/Q206/Q73 suspendues : respectivement4/18/3/5 copies sans snapshot ; clés, texte ou liste pourraient changer. Q53 déjàC, aucun changement. Rapport docs/publication-coherence-bilans-2026-10-29-1924.md ; aucune donnée ni code applicatif modifié après publication.
 
 
 ## Onze questions validées — cohérence ciblée 29/10 17:58 UTC
