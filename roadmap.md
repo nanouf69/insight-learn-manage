@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## Bilans futurs isolés — 29/10 20:10 UTC
-- [ ] Diagnostiquer le circuit complet et la frontière serveur nouveaux/anciens sans modifier les banques existantes.
-- [ ] Préparer uniquement une version commune isolée et ses tests, suspendre les contenus ambigus.
-- [ ] Vérifier anciens avec/sans snapshot et nouveaux TAXI/VTC admin/élève avant activation ; publication interdite si non prouvé.
-- [ ] Rapporter les modifications, tests réellement exécutés et blocages ; aucun examen blanc ni donnée ancienne modifié.
+- [x] Circuit audité : retour perd le reçu, files anciennes sans identité de version, absence de preuve serveur ne signifie pas jamais commencé ; anciens circuits intacts.
+- [x] Candidate commune indépendante 114/200/211/97/194 et provenance préparées,44 SR suspendues ; aucun import écran ni écriture Cloud.
+- [x] 27 tests Vitest PASS + suite PostgreSQL jetable permissions/ouverture/correction/reprise PASS ; quatre empreintes Cloud strictement identiques avant/après.
+- [ ] Activation/publication BLOQUÉES : éligibilité réelle, transport/interface reçu-scopés et pont de validation non prouvés ; aucune bascule pendant anciennes files actives.
+- [x] Rapport docs/bilans-futurs-isoles-2026-10-29.md ; publication aucune, examens blancs et données anciennes inchangés.
 
 ## Publication en bloc et cohérence Bilan 5/11 — 29/10 19:24 UTC
 - [x] Autorisation explicite de publier la version courante en bloc ; aucune nouvelle intervention sur les examens blancs.
