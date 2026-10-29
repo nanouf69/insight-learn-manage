@@ -21,3 +21,4 @@
 - Module 7 additive communes panels are routed by the existing commune exercise IDs via module7ActivitiesDisplay, never by module ID alone; why: unrelated selected quizzes must not be obscured by a shared activities dashboard.
 - Supplementary Pratique VTC/TAXI reading is rendered separately from course pages and activity registries, with image-only media and no completion callbacks; why: reading must not change any learner milestone or expose the original PDF.
 - Learner frozen Bilan passages render strictly from their snapshot (text, choices, keys); never overlay current editor content; why: later corrections must not change a started or historical passage.
+- Future Bilan 5/11: only learner RPCs (route/open/questions/resume/save_draft/submit) and admin-checked RPCs are executable by authenticated; internal grant/trace/trigger functions and all bilan_future_* table writes are revoked from client roles; why: no account can grant itself or others the future circuit.
