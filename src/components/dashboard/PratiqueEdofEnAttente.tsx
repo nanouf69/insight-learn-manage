@@ -7,7 +7,8 @@ import { pratiqueEdofEnAttente, listePratiqueEdofVisible } from "@/lib/pratiqueE
 import { useEdofValides } from "@/components/examens/EdofValideBadge";
 import { Button } from "@/components/ui/button";
 import { estCandidatElearning } from "@/lib/examenElearningRelance";
-import { bilanSignaturesPresentiel } from "@/lib/suiviPratiqueEdof";
+import { chargerBilanSignaturesEdof, chargerClassificationSignatures } from "@/lib/signaturesManquantes";
+import { compteurSignaturesFiche } from "@/lib/suiviPratiqueEdof";
 import { SuiviElearningCell, SuiviPresentielCell } from "@/components/dashboard/SuiviPratiqueEdofCell";
 import { useAuth } from "@/contexts/AuthContext";
 import { safeGetItem, safeSetItem } from "@/lib/safeStorage";
@@ -51,14 +52,21 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
         fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,apprenant_id,date_choisie,type_formation,creneau").order("id").range(f,t)),
         fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
       ]);
-      return apprenants.flatMap(a => {
+      const lignes = apprenants.flatMap(a => {
         const dates = pratiqueEdofEnAttente(signatures.filter(s=>s.apprenant_id===a.id),inscriptions.filter(s=>s.apprenant_id===a.id),reservations.filter(s=>s.apprenant_id===a.id),configs,false,a.mode_financement);
         if (!dates.length) return [];
         const elearning = estCandidatElearning(a);
-        let presentiel: { attendues: number; manquantes: number } | null = null;
-        if (!elearning) { try { presentiel = bilanSignaturesPresentiel(signatures.filter(s=>s.apprenant_id===a.id),inscriptions.filter(s=>s.apprenant_id===a.id),reservations.filter(s=>s.apprenant_id===a.id),configs); } catch { presentiel = null; } }
-        return [{...a,dates,elearning,presentiel}];
+        return [{...a,dates,elearning,presentiel:null as { attendues: number; manquantes: number } | null}];
       });
+      // Présentiel : mêmes chargeurs que la fiche apprenant (récapitulatif + liste rouge).
+      return Promise.all(lignes.map(async (a) => {
+        if (a.elearning) return a;
+        try {
+          const formation = [a.type_apprenant, a.formation_choisie].filter(Boolean).join(" ");
+          const [bilan, classification] = await Promise.all([chargerBilanSignaturesEdof(a.id, formation), chargerClassificationSignatures(a.id)]);
+          return { ...a, presentiel: compteurSignaturesFiche(bilan, classification.attendus) };
+        } catch { return a; }
+      }));
     },
   });
   const rows = listePratiqueEdofVisible((query.data ?? []).filter(a => !edof.data?.has(a.id)), retires);

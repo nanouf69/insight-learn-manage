@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pourcentageModules, mailDerniereRelance, mailDerniereRelanceHtml, OBJET_DERNIERE_RELANCE, dateLimiteRelance, bilanSignaturesPresentiel, PARAGRAPHES_SANCTIONS_ROUGES, PARAGRAPHE_SANCTIONS_NORMAL, ROUGE_SANCTIONS } from "@/lib/suiviPratiqueEdof";
+import { pourcentageModules, mailDerniereRelance, mailDerniereRelanceHtml, OBJET_DERNIERE_RELANCE, dateLimiteRelance, bilanSignaturesPresentiel, PARAGRAPHES_SANCTIONS_ROUGES, PARAGRAPHE_SANCTIONS_NORMAL, ROUGE_SANCTIONS, compteurSignaturesFiche } from "@/lib/suiviPratiqueEdof";
 
 describe("suivi pratique EDOF", () => {
   it("8 modules terminés sur 10 = 80 %", () => expect(pourcentageModules(8, 10)).toBe(80));
@@ -46,5 +46,15 @@ describe("suivi pratique EDOF", () => {
     const r = bilanSignaturesPresentiel(sig, sessions, [], [], "2026-10-29");
     expect(r.attendues).toBe(4);
     expect(r.manquantes).toBe(3);
+  });
+});
+
+describe("compteur EDOF = fiche apprenant", () => {
+  it("TA 2/12 (présentiel 0/10, pratique 2/2) : 10 manquantes / 12 attendues", () => {
+    const attendus = [...Array(10)].map(() => ({ etat: "manquante" })).concat([{ etat: "absence_enregistree" }]);
+    expect(compteurSignaturesFiche({ objectifTotal: 12, total: 2 }, attendus)).toEqual({ attendues: 12, signees: 2, manquantes: 10 });
+  });
+  it("liste vide mais objectif non atteint : même écart que la fiche (« Il manque 20 »)", () => {
+    expect(compteurSignaturesFiche({ objectifTotal: 22, total: 2 }, []).manquantes).toBe(20);
   });
 });

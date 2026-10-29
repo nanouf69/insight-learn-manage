@@ -22,6 +22,18 @@ export function bilanSignaturesPresentiel(emargements: any[], sessionRows: any[]
   return { attendues, manquantes };
 }
 
+/**
+ * Compteur EDOF = MÊME source que la fiche apprenant : objectif « Total signatures X/Y »
+ * (calculerBilanSignaturesEdof) et liste rouge « Signatures manquantes (N) »
+ * (classifierSignatures, état « manquante »). Aucun calcul parallèle.
+ */
+export function compteurSignaturesFiche(bilan: { objectifTotal: number; total: number }, attendus: { etat?: string }[]) {
+  const liste = attendus.filter((m) => m.etat === "manquante").length;
+  // Même affichage que la fiche : liste rouge si elle existe, sinon « Il manque X pour atteindre l'objectif ».
+  const manquantes = liste > 0 ? liste : Math.max(0, bilan.objectifTotal - bilan.total);
+  return { attendues: bilan.objectifTotal, signees: bilan.total, manquantes };
+}
+
 /** Date limite = date d'envoi + 3 jours calendaires (Europe/Paris). */
 export function dateLimiteRelance(envoi: Date = new Date()): string {
   const jour = dateDuJourParis(envoi);
