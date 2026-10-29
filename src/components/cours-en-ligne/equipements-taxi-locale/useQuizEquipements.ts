@@ -7,7 +7,7 @@ import { EXERCICE_TYPE_JEU } from "@/lib/jeuxPedagogiques";
 import { ID_QUIZ_EQUIPEMENTS, VERSION_QUIZ_EQUIPEMENTS, QUESTIONS_EQUIPEMENTS, type QuestionEquipement, type ReponsesEquipements } from "./donnees";
 
 /** Définition d'une série complémentaire (identité immuable : ID + version). */
-export interface SerieEquipements { id: string; version: string; questions: QuestionEquipement[]; /** Série notée : 1 point par bonne réponse. */ notee?: boolean }
+export interface SerieEquipements { id: string; version: string; questions: QuestionEquipement[]; protectionRpc?: string; /** Série notée : 1 point par bonne réponse. */ notee?: boolean }
 /** Note brute (1 point par question exacte) calculée depuis les réponses. */
 export const noteSerie = (serie: SerieEquipements, v: ReponsesEquipements) => serie.questions.filter((q) => (v[q.id] ?? "") === String(q.correct)).length;
 export const SERIE_COMPLEMENT: SerieEquipements = { id: ID_QUIZ_EQUIPEMENTS, version: VERSION_QUIZ_EQUIPEMENTS, questions: QUESTIONS_EQUIPEMENTS };
@@ -29,7 +29,7 @@ export interface TransportEquipements {
 }
 const transportReel: TransportEquipements = {
   async lire(compte, serie = SERIE_COMPLEMENT) {
-    const protection = await freshSessionCall<{ data: unknown; error: unknown }>(() => (supabase as any).rpc("quiz_equipements_taxi_protection_prete"));
+    const protection = await freshSessionCall<{ data: unknown; error: unknown }>(() => (supabase as any).rpc(serie.protectionRpc ?? "quiz_equipements_taxi_protection_prete"));
     if (protection.error || protection.data !== true) throw new Error("Protection serveur non disponible.");
     const { data, error } = await freshSessionCall(() => supabase.from("reponses_apprenants").select("completed,reponses").eq("apprenant_id", compte).eq("exercice_id", serie.id).maybeSingle());
     if (error) throw error;

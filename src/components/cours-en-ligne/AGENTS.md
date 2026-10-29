@@ -1,5 +1,7 @@
 # Supports pédagogiques et protection T3P
 
+- Module 12 supplementary holidays quiz uses an independent versioned answer identity and guarded quiz transport, with no completion callback or milestone obligation; why: add calendar revision without altering existing case exercises or completed evidence.
+
 - Module 7 hydration owns source/server/tombstone display resolution; never run a second raw-server opening prune there, and commune navigation uses exercise IDs with additive and historical series distinguished; why: avoid response-order dependent missing questions without changing saved proofs.
 - Corrected media use new assets, matching PDF/PPTX, exact historical-path selection, originals retained; why: fix clipping without replacing custom uploads.
 - CourseFileViewer selects corrected versioned media through courseDisplaySupport, without changing module data or page identities; why: serve matching PDF/PPTX while preserving learner history and custom uploads.

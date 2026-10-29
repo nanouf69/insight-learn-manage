@@ -1513,6 +1513,13 @@
       "when": 1793263130181,
       "tag": "0215_attendance_early_window",
       "breakpoints": true
+    },
+    {
+      "idx": 216,
+      "version": "7",
+      "when": 1793266792533,
+      "tag": "0216_guard_cas_pratique_feries",
+      "breakpoints": true
     }
   ]
 }
