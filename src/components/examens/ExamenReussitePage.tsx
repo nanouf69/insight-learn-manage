@@ -1644,7 +1644,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       return rows.filter((a: any) => !estTypeFormationContinue(a.type_apprenant));
     },
   });
-  const tableApprenants = showAllExamDates ? apprenantsToutesDates : apprenants;
+  // Formations pratiques seules (PA) : retirées du tableau théorique uniquement ; le planning pratique les garde.
+  const tableApprenants = (showAllExamDates ? apprenantsToutesDates : apprenants)
+    ?.filter((a: any) => !['pa-vtc', 'pa-taxi'].includes((a.type_apprenant || '').toLowerCase()));
 
   // Statut de suivi provenant des sessions (source unique : session_apprenants)
   const apprenantIdsExamen = (tableApprenants || []).map((a: any) => a.id);
