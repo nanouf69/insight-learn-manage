@@ -1,0 +1,274 @@
+[
+  {
+    "documentNumber": 1,
+    "question_id": "1e49c049-f734-4a21-880c-26c7490808be",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 89,
+    "position": 70,
+    "enonce": "Les tarifs des taxis sont-ils réglementés par les autorités locales ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Oui, les tarifs sont fixés par les Préfets",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Non, les conducteurs peuvent fixer leurs propres tarifs",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Oui, mais uniquement pour les taxis de luxe",
+        "correct": false
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 3,
+    "question_id": "9becec9c-159e-486b-8f91-3c725f6e457a",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 90,
+    "position": 71,
+    "enonce": "Pour pouvoir s'inscrire sur une liste d'attente dans le cadre d'une délivrance d'ADS, il ne faut pas :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Être titulaire d'une carte professionnelle en cours de validité, délivrée dans le département concerné",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Être titulaire d'une autorisation de stationnement",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Être inscrit sur une autre liste d'attente",
+        "correct": true
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 5,
+    "question_id": "f28610b7-d25e-49c3-ad8f-3e252ea03e0d",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 91,
+    "position": 72,
+    "enonce": "Quelle(s) formation(s) un conducteur taxi doit-il suivre lorsqu'il change de département d'exercice ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Il n'y a pas de formation à suivre",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Une formation continue obligatoire",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Une formation obligatoire de 14 h pour la province",
+        "correct": true
+      },
+      {
+        "lettre": "D",
+        "texte": "Une formation obligatoire de 35 h pour Paris",
+        "correct": true
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 7,
+    "question_id": "f737eed0-f8da-4825-8361-13b0f6ba7358",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 92,
+    "position": 73,
+    "enonce": "Le véhicule taxi doit être équipé d'une imprimante :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Reliée au taximètre",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Reliée à l'horodateur",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Reliée au dispositif lumineux extérieur",
+        "correct": false
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 10,
+    "question_id": "fb685316-6e8e-4c50-a664-f42398dc677e",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 93,
+    "position": 74,
+    "enonce": "En cas de décès du titulaire d'une autorisation de stationnement délivrée avant le 1/10/2014, les ayants droit peuvent présenter un successeur à titre onéreux :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Non",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Oui, dans un délai maximum de 6 mois suivant le décès",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Oui, dans un délai maximum d'un an suivant le décès",
+        "correct": true
+      },
+      {
+        "lettre": "D",
+        "texte": "Oui, sans condition de délai",
+        "correct": false
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 11,
+    "question_id": "19203158-1a93-4c24-bf22-db1794559f59",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 94,
+    "position": 75,
+    "enonce": "Une ADS délivrée à titre gratuit avant l'entrée en vigueur de la loi du 1er octobre 2014 est cessible sous réserve de respecter un délai d'exploitation effective et continue de :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "5 ans si c'est une ADS qui n'a jamais été cédée antérieurement",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "15 ans si c'est une ADS qui n'a jamais été cédée antérieurement",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "15 ans si c'est une ADS qui a déjà été cédée antérieurement",
+        "correct": false
+      },
+      {
+        "lettre": "D",
+        "texte": "5 ans si c'est une ADS qui a déjà été cédée antérieurement",
+        "correct": true
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 13,
+    "question_id": "c624ef13-c70a-40f1-a60c-0fa7f733f04c",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 95,
+    "position": 76,
+    "enonce": "Auprès de quelle autorité compétente faut-il déclarer la détention d'un taxi relais ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Le préfet de département ou le préfet de police de Paris dans sa zone de compétence",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "La DREETS",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "La chambre des métiers et de l'artisanat",
+        "correct": false
+      },
+      {
+        "lettre": "D",
+        "texte": "La CPAM du département d'exercice",
+        "correct": false
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 14,
+    "question_id": "16a3feae-f35d-40e9-912f-300165d08b0a",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 96,
+    "position": 77,
+    "enonce": "Lorsque le conducteur taxi est en service :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Il peut éclairer le dispositif lumineux en vert s'il n'est pas occupé ou retenu",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Il doit éclairer le dispositif lumineux en vert s'il n'est pas occupé ou retenu",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Il a interdiction d'éclairer le dispositif lumineux en vert s'il n'est pas occupé ou retenu",
+        "correct": false
+      }
+    ],
+    "active": true,
+    "source": "module"
+  },
+  {
+    "documentNumber": 16,
+    "question_id": "08b6fad0-c6e6-4b85-be4e-acb1f3a45da0",
+    "quiz_id": "bilan-examen-taxi",
+    "section_id": 605,
+    "legacy_question_id": 97,
+    "position": 78,
+    "enonce": "Une ADS délivrée à titre onéreux le 1er janvier 2014 est :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Incessible",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Cessible sous condition de durée d'exploitation",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Renouvelable",
+        "correct": false
+      }
+    ],
+    "active": true,
+    "source": "module"
+  }
+]
