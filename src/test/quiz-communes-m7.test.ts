@@ -2,8 +2,26 @@ import { describe, it, expect } from "vitest";
 import { QUESTIONS_METROPOLE, QUESTIONS_ZUPC, COMMUNES_METROPOLE, COMMUNES_ZUPC } from "@/components/cours-en-ligne/equipements-taxi-locale/donneesCommunes";
 import { activitesDuModule, activitesRequisesModule, activiteHorsVolume } from "@/lib/jeuxPedagogiques";
 import { module7CommunePanel } from "@/lib/module7ActivitiesDisplay";
+import { activitesModuleEleve, statutActiviteEleve, jeuxRestants } from "@/lib/activitesModuleEleve";
 
 describe("quiz communes module 7", () => {
+  it("les quiz non réalisés restent signalés même facultatifs, sans rouvrir les jalons", () => {
+    const e = activitesModuleEleve(7, [{ id: 7 }], [{ module_id: 7, status: "completed", completed_at: "2026-10-26T09:00:00Z" }], new Set());
+    expect(e.etat).toBe("ok");
+    if (e.etat !== "ok") throw new Error("Activités absentes");
+    expect(e.facultatives).toHaveLength(2);
+    for (const a of e.facultatives) {
+      expect(statutActiviteEleve(e, a.id)).toMatchObject({ termine: false, facultatif: true, nonRealise: true });
+    }
+    expect(jeuxRestants(e)).toBe(0);
+    const id = e.facultatives[0].id;
+    const soumis = activitesModuleEleve(7, [{ id: 7 }], [{ module_id: 7, status: "completed", completed_at: "2026-10-26T09:00:00Z" }], new Set([id]));
+    expect(statutActiviteEleve(soumis, id)).toMatchObject({ termine: true, nonRealise: false });
+  });
+  it("lecture impossible ou activité absente ne signifie pas non réalisé", () => {
+    expect(statutActiviteEleve(null, "quiz").nonRealise).toBe(false);
+    expect(statutActiviteEleve({ etat: "indisponible", requises: [] }, "quiz").connu).toBe(false);
+  });
   it("seules les étapes communes affichent leur propre panneau, jamais Musées/Consulats/Hôpitaux/jeux", () => {
     expect(module7CommunePanel(7, 7020)).toBe(7020);
     expect(module7CommunePanel(7, 7021)).toBe(7021);

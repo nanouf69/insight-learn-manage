@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ecouterDemandeJeu } from "@/lib/demandeJeuRegistre";
 import { useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
+import { statutActiviteEleve } from "@/lib/activitesModuleEleve";
 import { FERIES_2026, IDS_TAXI, QUESTIONS_TARIFS, SCENARIOS_RTST, SOURCE_RHONE, attenteEuros, saisieComplete } from "./donnees";
 import { useActiviteTaxi, type TransportTaxi } from "./useActiviteTaxi";
 
@@ -113,13 +114,11 @@ export default function ExercicesTaxi2026({compteId,transport}:{compteId?:string
     <p className="text-sm">{etat?.etat==="indisponible"?"Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant.":toutFacultatif?"Votre module est déjà validé : ces exercices sont facultatifs, sans effet sur votre progression.":ok?nbRequis===3?"Faites ces 3 exercices pour terminer le module. Ils sont validés une fois confirmés par le serveur.":`${nbRequis} exercice${nbRequis>1?"s sont requis":" est requis"} pour terminer le module (marqués « À faire » ou « Terminé »). Les autres sont facultatifs.`:"Chargement du statut…"}</p>
     <div className="grid gap-3 md:grid-cols-3">{IDS_TAXI.map((id,i)=>{
       const Icon=icons[i];
-      const termine=!!ok&&[...ok.requises,...ok.facultatives].some(a=>a.id===id&&a.termine);
-      const facultatif=!!ok&&ok.facultatives.some(a=>a.id===id);
-      const statut=!ok?"Statut à vérifier":termine?"Terminé":facultatif?"Facultatif":"À faire";
+      const { termine, nonRealise, libelle: statut }=statutActiviteEleve(etat,id);
       return <button type="button" key={id} onClick={()=>setOuvert(id)} data-testid={`taxi-2026-carte-${id}`} aria-label={`${TITRES_TAXI[i]} — ${statut}`}
-        className={`flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-left min-h-40 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${termine?"border-primary":facultatif||!ok?"border-border":"border-destructive/60"}`}>
+        className={`flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-left min-h-40 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${termine?"border-primary":nonRealise?"border-destructive":"border-border"}`}>
         <span className="flex items-start justify-between gap-2"><Icon className="h-8 w-8 shrink-0 text-primary" aria-hidden/>
-          <Badge variant={termine?"default":facultatif||!ok?"outline":"destructive"}>{termine?<CheckCircle2 className="h-3 w-3 mr-1" aria-hidden/>:null}{statut}</Badge></span>
+          <Badge variant={termine?"default":nonRealise?"destructive":"outline"}>{termine?<CheckCircle2 className="h-3 w-3 mr-1" aria-hidden/>:null}{statut}</Badge></span>
         <span className="block font-bold text-base break-words">{TITRES_TAXI[i]}</span>
         <span className="block text-sm text-muted-foreground">{indications[i]}</span>
         <span className="mt-auto inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">{termine?"Revoir":"Commencer / reprendre"}</span>

@@ -14,6 +14,18 @@ export type EtatActivitesModuleEleve =
   | { etat: "indisponible"; requises: Omit<ActiviteEleve, "termine">[] }
   | { etat: "ok"; requises: ActiviteEleve[]; facultatives: ActiviteEleve[]; restantes: ActiviteEleve[] };
 
+/** Display-only: a waiver never proves that the activity was performed. */
+export function statutActiviteEleve(etat: EtatActivitesModuleEleve | null | undefined, id: string) {
+  const activite = etat?.etat === "ok"
+    ? [...etat.requises, ...etat.facultatives].find((a) => a.id === id)
+    : undefined;
+  const connu = !!activite;
+  const termine = activite?.termine === true;
+  const facultatif = etat?.etat === "ok" && etat.facultatives.some((a) => a.id === id);
+  return { connu, termine, facultatif, nonRealise: connu && !termine,
+    libelle: !connu ? "Statut à vérifier" : termine ? "Terminé" : facultatif ? "Non réalisé — facultatif" : "À faire" };
+}
+
 export function activitesModuleEleve(
   moduleId: number,
   parcours: readonly { id: number }[],

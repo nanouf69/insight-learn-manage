@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Quiz non réalisés en rouge — 29/10
+- [ ] Distinguer réalisation réelle et quiz facultatif, signaler en rouge les cartes et listes repliées sans toucher aux acquis.
+- [ ] Vérifier les tests fictifs et l’affichage des communes ; aucune publication globale.
+
 ## Pratique signée à valider EDOF — 29/10
 - [x] Badge E = dernière validation EDOF ; liste de pratiques réellement signées, excluant E, absents/masqués/attente/théorie ; aucune écriture de dossier ou preuve.
 - [x] 8 tests PASS et tableau de bord Admin connecté : 38 personnes avec dates, capture vérifiée, compilation OK ; rafraîchissement du badge après sauvegarde CRM corrigé. Non publié.
