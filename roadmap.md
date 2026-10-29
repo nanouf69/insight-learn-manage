@@ -1,5 +1,15 @@
 # Feuille de route
 
+## Publication en bloc et cohérence Bilan 5/11 — 29/10 19:24 UTC
+- [x] Autorisation explicite de publier la version courante en bloc ; aucune nouvelle intervention sur les examens blancs.
+- [x] Contrôle sécurité effectué ; trois alertes critiques de lecture de paramètres signalées, aucun changement de permissions.
+- [x] 20 tests de protection des passages et projection exécutés ; publication demandée vers gestion.ftransport.fr.
+- [x] Version servie confirmée HTTP200 : index-tGd3fqJR.js, empreinte cf64d6f7… ; navigateur public Connexion, aucune erreur JavaScript ; expression snapshot stricte retrouvée dans le fichier publié.
+- [x] Contrôles isolés :20 tests avant publication,27/28 tests sauvegarde/reprise (1 ancien contrat de chaîne source FAIL),12 assertions PostgreSQL jetable et11 tests après publication PASS ; deux tests nouveaux prouvent le risque sans snapshot.
+- [ ] Circuit cinq matières complet sous compte technique hébergé NON PROUVÉ : suspendu avant écriture, copies héritées sans snapshot ni preuve de contenu initial toujours présentes.
+- [ ] Q104/Q48/Q206/Q73 suspendues : respectivement4/18/3/5 copies sans snapshot ; clés, texte ou liste pourraient changer. Q53 déjàC, aucun changement. Rapport docs/publication-coherence-bilans-2026-10-29-1924.md ; aucune donnée ni code applicatif modifié après publication.
+
+
 ## Onze questions validées — cohérence ciblée 29/10 17:58 UTC
 - [x] Audit avant écriture : sections600/601/602 non partagées avec TA28 ; affichage snapshots5/11 remplacé par contenu actuel via questionsSnapshotCorrigees ; futurs600–602 figés depuisJSON, pas canonique.
 - [x] RisqueQ104 prouvé :15 snapshots TAXI600,9 ancienne cléC/6 cléB ; copies non terminées600/601/602=10/8/4. STOP : aucune donnée pédagogique modifiée.
