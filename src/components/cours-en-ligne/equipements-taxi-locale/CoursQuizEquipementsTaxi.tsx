@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ecouterDemandeJeu } from "@/lib/demandeJeuRegistre";
 import { useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
+import { statutActiviteEleve } from "@/lib/activitesModuleEleve";
 import { COURS_EQUIPEMENTS } from "./donnees";
 import { ID_QUIZ_SANCTIONS, VERSION_QUIZ_SANCTIONS, QUESTIONS_SANCTIONS } from "./donneesSanctions";
 import { useQuizEquipements, noteSerie, SERIE_COMPLEMENT, serieComplete, type SerieEquipements, type TransportEquipements } from "./useQuizEquipements";
@@ -67,16 +68,15 @@ export function SectionSerie({ compteId, transport, serie, titre, intro, inline 
   useEffect(() => ecouterDemandeJeu((id) => { if (id === ID_QUIZ_EQUIPEMENTS) setOuvert(true); }), []);
   const ok = etat?.etat === "ok" ? etat : null;
   const requis = !!ok?.requises.some((a) => a.id === ID_QUIZ_EQUIPEMENTS);
-  const termine = !!ok && [...ok.requises, ...ok.facultatives].some((a) => a.id === ID_QUIZ_EQUIPEMENTS && a.termine);
-  const statut = !ok ? "Statut à vérifier" : termine ? "Terminé" : requis ? "À faire" : "Facultatif";
+  const { termine, nonRealise, libelle: statut } = statutActiviteEleve(etat, ID_QUIZ_EQUIPEMENTS);
   const nb = serie.questions.length;
-  return <section className="space-y-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 sm:p-5" data-testid={`equipements-taxi-section-${serie.id}`} aria-labelledby={`titre-${serie.id}`}>
+  return <section className={`space-y-4 rounded-xl border-2 p-4 sm:p-5 ${nonRealise ? "border-destructive bg-destructive/5" : "border-primary/40 bg-primary/5"}`} data-testid={`equipements-taxi-section-${serie.id}`} aria-labelledby={`titre-${serie.id}`}>
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <h3 id={`titre-${serie.id}`} className="text-xl font-bold">{titre}</h3>
-      <Badge variant={termine ? "default" : requis ? "destructive" : "outline"} data-testid="equipements-taxi-statut">{statut}</Badge>
+      <Badge variant={termine ? "default" : nonRealise ? "destructive" : "outline"} data-testid="equipements-taxi-statut">{statut}</Badge>
     </div>
     <p className="text-sm">{etat?.etat === "indisponible" ? "Statut momentanément indisponible. Rien n'est perdu : réessayez dans un instant."
-      : ok && !requis ? `Votre module est déjà validé : ces ${nb} questions sont accessibles en révision, sans effet sur votre progression.`
+      : ok && !requis ? `Ces ${nb} questions restent facultatives, sans effet sur vos jalons déjà acquis.`
       : ok ? `${nb} ${intro}`
       : "Chargement du statut…"}</p>
     {inline ? <div className="rounded-lg border bg-background p-4" data-testid="equipements-taxi-inline"><QuizEquipements key={compteId ?? "apercu"} compteId={compteId} transport={transport} serie={serie} /></div> : <>

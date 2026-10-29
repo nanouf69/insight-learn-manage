@@ -21,14 +21,14 @@ export function ActivitesModuleBandeau({ onOuvrir }: { onOuvrir: (activiteId: st
   }
   const reste = e.restantes.length > 0;
   const ligne = (a: { id: string; titre: string; termine: boolean }, facultatif: boolean) => (
-    <li key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2">
+    <li key={a.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 ${!a.termine ? "border-destructive text-destructive" : ""}`}>
       <span className="flex items-center gap-2 font-medium min-w-0">
         {a.termine ? <CheckCircle2 className="w-4 h-4 shrink-0 text-primary" /> : <CircleDashed className="w-4 h-4 shrink-0 text-destructive" />}
         <span className="break-words">{a.titre}</span>
       </span>
       <span className="flex items-center gap-2 shrink-0">
-        <Badge variant={a.termine ? "default" : facultatif ? "outline" : "destructive"}>
-          {a.termine ? "Terminé (confirmé)" : facultatif ? "Facultatif" : "À faire"}
+        <Badge variant={a.termine ? "default" : "destructive"}>
+          {a.termine ? "Terminé (confirmé)" : facultatif ? "Non réalisé — facultatif" : "À faire"}
         </Badge>
         <Button type="button" size="sm" variant={a.termine || facultatif ? "outline" : "default"} onClick={() => onOuvrir(a.id)}>
           {a.termine ? "Rejouer" : "Jouer"}
