@@ -110,7 +110,20 @@ export const normalizeModuleIdForDashboard = (moduleId: number) => DASHBOARD_PAR
 
 
 /** Same assigned module list as the learner dashboard; no progress or hours inferred. */
-export function modulesAttribuesDashboard(formation: FormationId, autorises?: number[] | null) {
+export function modulesAttribuesDashboard(formation: FormationId, autorises?: number[] | null, apprenantId?: string | null) {
+  const base = modulesAttribuesDashboardBase(formation, autorises);
+  // Pilote Bilan examen TAXI futur : compte de test VTC unique, module 11 explicitement attribué.
+  if (apprenantId && PILOTE_BILAN_TAXI_11.has(apprenantId) && (autorises ?? []).includes(11) && !base.some(m => m.id === 11)) {
+    const m11 = MODULES_DATA.find(m => m.id === 11);
+    if (m11) return [...base, m11];
+  }
+  return base;
+}
+
+/** Comptes de test autorisés à voir le module 11 hors parcours TAXI (pilote, aucun élève réel). */
+export const PILOTE_BILAN_TAXI_11 = new Set(["deb92ae7-09aa-4861-abfd-405e9d340d65"]);
+
+function modulesAttribuesDashboardBase(formation: FormationId, autorises?: number[] | null) {
   const normalize = (ids: number[]) => [...new Set(ids.map(normalizeModuleIdForDashboard))].filter(id => MANAGED_MODULE_IDS.has(id));
   const assigned = normalize(expandModulesAutorises(autorises) ?? autorises ?? []);
   const defaults = normalize(FORMATION_DEFAULT_MODULES[formation] ?? []);

@@ -1886,7 +1886,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             module={selectedModule}
             initialExerciseId={selectedExerciseTarget}
             activitesEtat={completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
-              ? activitesModuleEleve(selectedModule.id, modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises), moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)
+              ? activitesModuleEleve(selectedModule.id, modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises, apprenant?.id), moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)
               : null}
             onBack={() => { setSelectedExerciseTarget(null); void handleBackFromModule(); }}
             studentOnly
@@ -1942,7 +1942,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Dashboard
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
-  const filteredSourceModules = modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises);
+  const filteredSourceModules = modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises, apprenant?.id);
 
   const modules = filteredSourceModules.map((module) => ({
     ...module,
