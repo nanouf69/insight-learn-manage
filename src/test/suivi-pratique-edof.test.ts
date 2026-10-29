@@ -24,9 +24,10 @@ describe("suivi pratique EDOF", () => {
   });
   it("HTML : seuls les 3 passages de sanctions sont en rouge, le reste ne l'est pas", () => {
     const html = mailDerniereRelanceHtml("Ali", "Ben", 80, "dimanche 1 novembre 2026");
+    const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     expect(html.match(new RegExp(`color:${ROUGE_SANCTIONS}`, "g"))).toHaveLength(3);
-    for (const p of PARAGRAPHES_SANCTIONS_ROUGES) expect(html).toContain(`<p style="color:${ROUGE_SANCTIONS};font-weight:600">${p}</p>`);
-    expect(html).toContain(`<p>${PARAGRAPHE_SANCTIONS_NORMAL}</p>`);
+    for (const p of PARAGRAPHES_SANCTIONS_ROUGES) expect(html).toContain(`<p style="color:${ROUGE_SANCTIONS};font-weight:600">${esc(p)}</p>`);
+    expect(html).toContain(`<p>${esc(PARAGRAPHE_SANCTIONS_NORMAL)}</p>`);
     expect(html).toContain("<p>Bonjour Ali BEN,</p>");
     expect(html).toContain("dimanche 1 novembre 2026");
   });
