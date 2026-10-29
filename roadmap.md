@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Intégrité montants Cas pratique — 29/10 10:19 UTC
+- [x] Module12/exercice306/question4/A identifié ; JSON/canonique 8€ déjà enregistré, journal humain €/_€/8€ ; 31 848 choix JSON et 2 261 questions canoniques actifs inspectés, zéro € seul actuel. Rapport docs/integrite-montants-2026-10-29.md.
+- [x] Révision locale pour accusés JSON/canoniques, € seul gardé localement, minuteur annulé à Enregistrer ; 79 tests distincts PASS, navigateur composants réels isolés/sauvegarde lente/clic/reload et coche module13 préservée, build OK ; aucun écrasement Cloud ni renotation.
+- [ ] Compte technique hébergé, notation monétaire ouverte, historique complet et temps réel réel NON PROUVÉS ; publication ciblée non disponible sans embarquer travaux inachevés.
+
 ## Contrôle connaissances questions retirées — 29/10 10:04
 - [x] Lecture : retraits Admin 199/201/204/207, tombstone antérieur69 ; 221 questions actuelles, IDs226/227 de la capture conservés. Cause navigateur Ahlem NON PROUVÉE.
 - [x] Préparé module13 seul : membership/tombstones avant canonique, aucun fallback de liste ni prune concurrent, compteur écran courant, relecture événement/reconnexion sans polling ; aucun contenu Cloud modifié.

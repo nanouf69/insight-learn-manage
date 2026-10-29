@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Editor save acknowledgements apply only to their local edit revision; unfinished currency-only choices remain local and explicit saves cancel pending draft timers; why: older asynchronous replies must never publish a missing amount or erase a newer input.
 - Activity display separates confirmed performance from required/optional status via statutActiviteEleve; why: waived or collapsed quizzes must remain visibly unperformed without changing milestone requirements.
 - Dashboard pending EDOF practice uses the shared signature classifier and latest EDOF badge query, display-only; why: signed practical dates disappear on confirmed E marking without deleting proofs or counting theory.
 - Attendance windows are server-owned; consumers use `emargementFenetres` for due slots, actual hours and next-opening delay; why: theory, practice and manual signatures must share exactly the same authorization.
