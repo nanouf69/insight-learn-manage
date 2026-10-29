@@ -2064,6 +2064,7 @@ const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2
 const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuizCommunes"));
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
+import QuizExterneBilan from "./QuizExterneBilan";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -9850,6 +9851,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </div>
 
           {Number(module.id) === 12 && <Suspense fallback={<p role="status">Chargement du quiz des jours fériés…</p>}><QuizJoursFeries key={apprenantId ?? "apercu"} compteId={apprenantId ?? null} /></Suspense>}
+          <QuizExterneBilan moduleId={Number(module.id)} />
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
           {![6, 7, 64].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
