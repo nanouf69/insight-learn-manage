@@ -1,6 +1,6 @@
 import { calculerSignaturesManquantes, planningCreneaux, dateDuJourParis } from "@/lib/signaturesManquantes";
 
-export const OBJET_DERNIERE_RELANCE = "DERNIER AVERTISSEMENT – Formation à terminer sous 3 jours";
+export const OBJET_DERNIERE_RELANCE = "URGENT – DERNIER AVERTISSEMENT – Formation à terminer sous 3 jours";
 
 /** % de modules ENTIÈREMENT terminés (jamais d'heures ni de sous-étapes) ; null si total nul. */
 export function pourcentageModules(termines: number, total: number): number | null {

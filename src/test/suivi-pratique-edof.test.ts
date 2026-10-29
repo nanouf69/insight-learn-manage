@@ -4,7 +4,7 @@ import { pourcentageModules, mailDerniereRelance, mailDerniereRelanceHtml, OBJET
 describe("suivi pratique EDOF", () => {
   it("8 modules terminés sur 10 = 80 %", () => expect(pourcentageModules(8, 10)).toBe(80));
   it("aucun module attribué = pas de pourcentage", () => expect(pourcentageModules(0, 0)).toBeNull());
-  it("objet exact de la dernière relance", () => expect(mailDerniereRelance("Ali", "Ben", 80, "x").subject).toBe("DERNIER AVERTISSEMENT – Formation à terminer sous 3 jours"));
+  it("objet exact de la dernière relance", () => expect(mailDerniereRelance("Ali", "Ben", 80, "x").subject).toBe("URGENT – DERNIER AVERTISSEMENT – Formation à terminer sous 3 jours"));
   it("mail personnalisé avec nom, progression et date limite", () => {
     const m = mailDerniereRelance("Ali", "Ben", 80, "lundi 2 novembre 2026");
     expect(m.body).toContain("Bonjour Ali BEN,");
