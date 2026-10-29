@@ -1,6 +1,6 @@
 import { EdofValideBadge } from "./EdofValideBadge";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
-import { candidatsAPayer } from "@/lib/candidatsAPayer";
+import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
@@ -2782,9 +2782,28 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   (a: any) => a.type_apprenant,
                 );
                 return (
-                  <span className="ml-3 font-semibold text-destructive">
-                    — À payer : {r.nombre} candidat(s) — {r.montant.toLocaleString("fr-FR")} €
-                  </span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="ml-3 font-semibold text-destructive underline underline-offset-2 hover:opacity-80">
+                        — À payer : {r.nombre} candidat(s) — {r.montant.toLocaleString("fr-FR")} € ▾
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-96 max-h-96 overflow-auto p-3" align="start">
+                      <p className="font-semibold mb-2">Candidats à payer ({r.nombre})</p>
+                      {r.liste.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">Aucun candidat.</p>
+                      ) : (
+                        <ul className="space-y-1 text-sm">
+                          {r.liste.map((a: any) => (
+                            <li key={a.id} className="flex justify-between gap-2 border-b border-border pb-1">
+                              <span className="font-medium">{(a.nom || '').toUpperCase()} {a.prenom}</span>
+                              <span className="text-muted-foreground">{a.type_apprenant} — {tarifExamen(a.type_apprenant)} €</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                 );
               })()}
             </div>

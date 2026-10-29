@@ -10,5 +10,5 @@ export function candidatsAPayer<T>(liste: T[], statut: (a: T) => string | null |
     const st = statut(a);
     return st !== "paye" && st !== "inscription_validee";
   });
-  return { nombre: aPayer.length, montant: aPayer.reduce((s, a) => s + tarifExamen(type(a)), 0) };
+  return { nombre: aPayer.length, montant: aPayer.reduce((s, a) => s + tarifExamen(type(a)), 0), liste: aPayer };
 }
