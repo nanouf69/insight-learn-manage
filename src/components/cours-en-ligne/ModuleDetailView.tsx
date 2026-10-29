@@ -5772,9 +5772,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, editorStateHydrated]);
 
-  const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}) => {
+  const performDbSave = async (dataToSave: ModuleEditorSavePayload, options: { retryStaleOnce?: boolean } = {}): Promise<boolean> => {
     const savedLocalRevision = dataToSave.local_revision ?? adminLocalRevisionRef.current;
     isSavingToDbRef.current = true;
+    let succesAAfficher = false;
     try {
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
@@ -6019,14 +6020,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             moduleNom: module.nom,
             summary,
           });
-          // Toast admin : confirmer visuellement l'enregistrement des modifs/suppressions de questions
-          if (/question|exercice/i.test(summary)) {
-            const now = Date.now();
-            if (now - (lastChangeToastAtRef.current ?? 0) > 1500) {
-              lastChangeToastAtRef.current = now;
-              toast.success("✅ Changement enregistré");
-            }
-          }
+          // Toast admin affiché après la confirmation de la liste officielle (plus bas).
+          if (/question|exercice/i.test(summary)) succesAAfficher = true;
         }
       } catch (e) {
         console.error("[ModuleNotif] diff/publish error:", e);
@@ -6198,6 +6193,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      // Succès affiché seulement maintenant : module ET liste officielle des
+      // questions confirmés par relecture serveur.
+      if (succesAAfficher) {
+        const now = Date.now();
+        if (now - (lastChangeToastAtRef.current ?? 0) > 1500) {
+          lastChangeToastAtRef.current = now;
+          toast.success("✅ Changement enregistré");
+        }
+      }
+      return true;
+
       // Aucun miroir VTC↔TAXI automatique ici : chaque écriture implicite sur un
       // autre module crée un updated_at concurrent et peut réintroduire d'anciens
       // snapshots. Les modules FC continuent seulement de lire leur parent.
@@ -6244,6 +6250,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     } finally {
       isSavingToDbRef.current = false;
     }
+    return false;
   };
 
   const enqueueDbSave = (payload: ModuleEditorSavePayload) => {
@@ -6257,12 +6264,30 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const nextPayload = latestQueuedDbSaveRef.current;
           if (!nextPayload) return;
           latestQueuedDbSaveRef.current = null;
-          await performDbSave(nextPayload, { retryStaleOnce: true });
+          const saved = await performDbSave(nextPayload, { retryStaleOnce: true });
+          // Échec : la modification reste à l'écran, signalée comme NON
+          // enregistrée, sans aucune répétition automatique.
+          if (saved) {
+            if (failedDbSaveRef.current === nextPayload || (failedDbSaveRef.current?.local_revision ?? -1) <= (nextPayload.local_revision ?? -1)) {
+              failedDbSaveRef.current = null;
+              setEchecSauvegarde(null);
+            }
+          } else {
+            failedDbSaveRef.current = nextPayload;
+            setEchecSauvegarde({ at: new Date().toISOString() });
+          }
           pendingDbSaveDataRef.current = latestQueuedDbSaveRef.current;
         }
       });
 
     return dbSaveQueueRef.current;
+  };
+
+  const reessayerSauvegarde = () => {
+    const failed = failedDbSaveRef.current;
+    if (!failed) return;
+    lastSavedPayloadSignatureRef.current = null;
+    void enqueueDbSave(failed);
   };
 
   useEffect(() => {
