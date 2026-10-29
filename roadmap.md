@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Onze questions validées — cohérence ciblée 29/10 17:58 UTC
+- [ ] Auditer les lectures admin/futurs/historiques des sections600/601/602 et5/11/TA avant écriture ; risque rétroactif = STOP.
+- [ ] Corriger uniquement Q104, typographie48, Q206 et libellé73 si protections prouvées ; Q53 garde C sans explication inventée ; aucune fusion des questions exclusives.
+- [ ] Tests isolés et compte technique, intégrité avant/après ; publier seulement les correctifs sûrs, sans autres travaux.
+
 ## Sauvegarde Admin 57014 — Q2 « prise en charge » — 29/10 14:12 UTC
 - [x] Q2 identifiée : TAXI 11 / Bilan examen Réglementation locale (606) Q2, ligne officielle partagée TAXI 11/606 + TA 28/701 ; base déjà « 3,10€ » (module 14:11:32, liste officielle 14:11:41), journal humain 4 € → "? € → 3, € → 3,10€.
 - [x] Cause prouvée sur copie jetable : contrôle de liaison Bilans VTC↔TAXI (290 liens) ≈4 s sur ≈5 s par sauvegarde du module 11 ; limite serveur 8 s → 57014 sous charge.
