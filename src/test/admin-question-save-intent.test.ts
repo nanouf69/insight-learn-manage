@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent } from '@/lib/adminQuestionSaveIntent';
+import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from '@/lib/adminQuestionSaveIntent';
 
 const question = (id: number) => ({ id, enonce: `Question ${id}`, explication: 'Explication conservée', choix: [{ lettre: 'D', texte: '1,30 €', correct: false }], image: 'image-originale' });
 const server = () => ({ id: 10, exercices: [{ id: 70, questions: Array.from({ length: 64 }, (_, i) => question(i + 1)) }, { id: 71, questions: Array.from({ length: 35 }, (_, i) => question(i + 1)) }, { id: 74, questions: Array.from({ length: 27 }, (_, i) => question(i + 1)) }] });
@@ -7,6 +7,18 @@ const none = new Set<string>();
 const keys = (data: ReturnType<typeof server>) => data.exercices.flatMap(e => e.questions.map(q => `${e.id}:${q.id}`));
 
 describe('Admin : lot complet + intentions par identifiant, jamais par omission', () => {
+  it('Q68 A seule ne devient pas une commande A+D lors d’une modification voisine ou d’une ouverture', () => {
+    const q68 = { id: 68, enonce: 'Registre ADS', choix: [{ lettre: 'A', correct: true }, { lettre: 'D', correct: true }] };
+    const srv = { exercices: [{ id: 605, questions: [{ id: 67, enonce: 'Ancien', choix: [] }, q68] }] };
+    const local = { exercices: [{ id: 605, questions: [{ id: 67, enonce: 'Édité', choix: [] }, { ...q68, question_id: 'canonique', choix: [{ correct: true, lettre: 'A' }, { correct: false, lettre: 'D' }] }] }] };
+    const edited = explicitQuestionEditIds(605, [67]);
+    const result = applyQuestionSaveIntent(local, srv, edited, none, none);
+    expect(result.exercices[0].questions[1]).toEqual(q68);
+    expect(isCanonicalQuestionSaveIntent(605, 68, edited, none)).toBe(false);
+    expect(isCanonicalQuestionSaveIntent(605, 67, edited, none)).toBe(true);
+    expect(explicitQuestionEditIds(605, [])).toEqual(new Set());
+    expect(isCanonicalQuestionSaveIntent(605, 68, explicitQuestionEditIds(605, [68]), none)).toBe(true);
+  });
   it('reproduit exactement les sept retraits historiques 73:6, 74:14/15/16/18/19, 76:28 sans les rejouer', () => {
     const original = { exercices: [{ id: 73, questions: [question(6), question(7)] }, { id: 74, questions: [14,15,16,18,19,21].map(question) }, { id: 76, questions: [question(28), question(29)] }] };
     const tombstones: Record<number, number[]> = { 73: [6], 74: [14,15,16,18,19,20,24], 76: [28] };

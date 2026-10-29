@@ -1,4 +1,8 @@
 /** Rendered/canonical question arrays are projections, never deletion commands. */
+export function explicitQuestionEditIds(exerciseId: number, questionIds: readonly number[]): Set<string> {
+  return new Set(questionIds.filter(Number.isSafeInteger).map(id => `${exerciseId}-${id}`));
+}
+
 export function applyQuestionSaveIntent<T extends { exercices?: any[] }>(
   data: T,
   server: { exercices?: any[] } | null,
