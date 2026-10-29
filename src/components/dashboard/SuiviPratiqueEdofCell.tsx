@@ -31,6 +31,7 @@ export function SuiviElearningCell({ apprenant }: { apprenant: Apprenant }) {
   const [sending, setSending] = useState(false);
   const [jourPreparation, setJourPreparation] = useState("");
   const [mail, setMail] = useState({ subject: "", body: "" });
+  const [corpsModele, setCorpsModele] = useState("");
   const dernier = useQuery({
     queryKey: ["derniere-relance-envoyee", apprenant.id],
     queryFn: async () => {
@@ -48,9 +49,15 @@ export function SuiviElearningCell({ apprenant }: { apprenant: Apprenant }) {
   const ouvrir = () => {
     if (!relancePossible || pct === null) return;
     setJourPreparation(dateDuJourParis());
-    setMail(mailDerniereRelance(apprenant.prenom, apprenant.nom, pct, dateLimiteRelance()));
+    const modele = mailDerniereRelance(apprenant.prenom, apprenant.nom, pct, dateLimiteRelance());
+    setCorpsModele(modele.body);
+    setMail(modele);
     setOpen(true);
   };
+  /** HTML réellement envoyé : modèle intact = version avec sanctions en rouge ; texte modifié = équivalent texte brut sans couleur. */
+  const htmlEnvoi = () => (mail.body === corpsModele && pct !== null
+    ? mailDerniereRelanceHtml(apprenant.prenom, apprenant.nom, pct, dateLimiteRelance())
+    : texteMailVersHtml(mail.body));
   const envoyer = async () => {
     if (sending || !relancePossible || !mail.subject.trim() || !mail.body.trim()) return;
     if (dateDuJourParis() !== jourPreparation) { toast.error("La date limite a changé : rouvrez l'aperçu avant d'envoyer."); return; }
