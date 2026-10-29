@@ -51,7 +51,7 @@ describe('Isolated future Bilan preparation, never legacy mutations', () => {
     expect(key(1, 198)).toEqual(['B']); expect(key(1, 199)).toEqual(['B']);
   });
   it('suspends ambiguous road questions, never chooses a conflicting key', () => {
-    for (const id of [79, 80, 92, 177, 212, 213]) {
+    for (const id of [63, 80, 92, 177, 212, 213]) {
       expect(bank()[2].questions.some(q => q.id === id)).toBe(false);
       expect(bank()[2].suspended.some(q => q.questionId === id)).toBe(true);
     }
