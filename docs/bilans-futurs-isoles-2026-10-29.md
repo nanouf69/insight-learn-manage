@@ -57,3 +57,8 @@ Références : [R413-4](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT
 4. Le prototype sépare stockage/réponses et exige une éligibilité explicite, mais cette autorisation, l'interface dédiée, le transport des brouillons versionnés, les identités permanentes et le pont de validation n'ont PAS été intégrés au circuit réel. Ne pas inventer de validation et ne pas changer les règles de complétion hors périmètre.
 
 **Arrêt de l'activation conformément à la consigne utilisateur.** La préparation sûre est conservée ; aucun ancien texte, choix, correction, nombre de questions, note, statut ou snapshot n'a changé. Une version nouvelle réellement utilisable exige de terminer et vérifier le circuit reçu → réponses isolées → correction serveur → relecture → validation, sans réutiliser les anciennes files.
+## Suite 29/10 20:45 UTC — transport reçu/version
+- Prototype serveur : `bilan_future_drafts` (append-only), `bilan_future_save_draft(reçu, version, question, révision, réponse, jeton)` et `bilan_future_resume(reçu)`. Refus : autre compte, version différente du reçu, révision périmée (ancien onglet), question hors banque, écriture directe, brouillon après soumission. Réessai identique idempotent.
+- Client `src/lib/bilanFutureTransport.ts` : file locale à clé `bilan-future:v1:compte:reçu:version`, refus des clés `module_X_exo_Y`, retrait seulement après accusé serveur, refus définitifs non rejoués.
+- Tests : PostgreSQL jetable PASS (9 blocs), Vitest 22/22 PASS.
+- Toujours NON appliqué en Cloud, non branché à l'écran, non publié : éligibilité réelle, écran élève dédié, pont vers validation module/jalons et test compte technique hébergé restent à faire.

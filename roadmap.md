@@ -5,6 +5,7 @@
 - [x] Candidate commune indépendante 114/200/211/97/194 et provenance préparées,44 SR suspendues ; aucun import écran ni écriture Cloud.
 - [x] 27 tests Vitest PASS + suite PostgreSQL jetable permissions/ouverture/correction/reprise PASS ; quatre empreintes Cloud strictement identiques avant/après.
 - [ ] Activation/publication BLOQUÉES : éligibilité réelle, transport/interface reçu-scopés et pont de validation non prouvés ; aucune bascule pendant anciennes files actives.
+- [x] Transport brouillons reçu+version (serveur prototype + client) testé ; reste : migration Cloud, écran, pont validation, compte technique.
 - [x] Rapport docs/bilans-futurs-isoles-2026-10-29.md ; publication aucune, examens blancs et données anciennes inchangés.
 
 ## Publication en bloc et cohérence Bilan 5/11 — 29/10 19:24 UTC
