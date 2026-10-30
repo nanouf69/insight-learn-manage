@@ -232,12 +232,16 @@ describe("PDF : polyfill posé aussi dans le worker pour les navigateurs anciens
     writeFileSync(dep, "const r = Promise.withResolvers(); r.resolve(1); globalThis.__vu = typeof Promise.withResolvers + ':' + (await r.promise);\n");
     let code = "";
     sourceWorkerCompatible(pathToFileURL(dep).href, false, "file:///", (c) => { code = c; return "blob:"; });
+    // Préchargement : capacité native retirée AVANT tout module (comme Chrome 110).
+    const sansNatif = join(dir, "sans-natif.mjs");
+    writeFileSync(sansNatif, "delete Promise.withResolvers;\n");
+    const node = (f: string) => execFileSync(process.execPath, ["--import", pathToFileURL(sansNatif).href, f], { stdio: "pipe" }).toString().trim();
     const wrapper = join(dir, "wrapper.mjs");
-    writeFileSync(wrapper, "delete Promise.withResolvers;\n" + code + "console.log(globalThis.__vu);\n");
-    expect(execFileSync(process.execPath, [wrapper]).toString().trim()).toBe("function:1");
+    writeFileSync(wrapper, code + "console.log(globalThis.__vu);\n");
+    expect(node(wrapper)).toBe("function:1");
     // Contre-preuve : l'ancien import statique plante (dépendance évaluée avant le polyfill).
     const statique = join(dir, "statique.mjs");
-    writeFileSync(statique, "delete Promise.withResolvers;\n" + code.split("\n")[0] + "\nimport " + JSON.stringify(pathToFileURL(dep).href) + ";\n");
-    expect(() => execFileSync(process.execPath, [statique], { stdio: "pipe" })).toThrow();
+    writeFileSync(statique, code.split("\n")[0] + "\nimport " + JSON.stringify(pathToFileURL(dep).href) + ";\n");
+    expect(() => node(statique)).toThrow(/withResolvers is not a function/);
   });
 });
