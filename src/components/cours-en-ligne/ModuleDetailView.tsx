@@ -9627,7 +9627,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               questionsSafe.forEach((q: any) => {
                                 const key = `${exo.id}-${q.id}`;
                                 if (selectedAnswers[key] !== undefined) snapshot[key] = selectedAnswers[key];
-                                if (isAnswerCorrect(selectedAnswers[key], q)) {
+                                if (justePourRefaire(key, q)) {
                                   snapCorrect++;
                                 } else {
                                   wrongKeys.push(key);
