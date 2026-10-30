@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Visibilité prolongation d’accès — 30/10 11:15
+- [x] Onglet existant renommé « Ajouter un mois d’accès », raccourci près de Réinscription ouvrant l’onglet et le faisant défiler ; aucune prolongation automatique.
+- [ ] Vérification aperçu de l’ouverture et proposition réelle en lecture seule ; aucune publication.
+
 ## Choix dates Examen et Réussite — 30/10
 - [x] Masquer dates passées dans les deux sélecteurs théorie, proposer prochaine session selon jour Paris ; garder catalogue et dossiers historiques inchangés.
 - [x] 13 tests ciblés PASS ; aperçu administrateur : sept dates futures, choix janvier confirmé ; build OK, aucune publication.
