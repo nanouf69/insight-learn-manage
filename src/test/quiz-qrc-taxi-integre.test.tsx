@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createHash } from "crypto";
 import { readFileSync } from "fs";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { quizItems } from "@/data/quiz-qrc-taxi/quizData";
 import { METROPOLE_LYON, ZUPC_LYON, distracteurs } from "@/lib/quizQrcTaxi/communesLyon";
 import { corrigerCommunes, corrigerCases, corrigerQrc } from "@/lib/quizQrcTaxi/correction";
 import { QUIZ_COMMUNES_METROPOLE, QUIZ_COMMUNES_ZUPC } from "@/components/cours-en-ligne/exercices/communes-metropole-zupc-quiz-data";
 
+import { requirements } from '@/lib/quizQrcTaxi/manifest';
+const persisted = vi.hoisted(() => ({answers: {} as Record<string, unknown>, quiz: 'specialites'}));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: {getSession: async()=>({data:{session:{user:{id:'eleve-fictif-1'}}}})}, rpc: async(name:string,args:Record<string,unknown>)=>{
+ if(name==='qrc_practice_open') persisted.quiz=String(args.p_quiz);
+ if(name==='qrc_practice_save') persisted.answers[String(args.p_key)]=args.p_answer;
+ return {data:{id:'fixture',owner:'eleve-fictif-1',quiz:persisted.quiz,version:'taxi-optional-durable-v1',revision:0,manifest:requirements(persisted.quiz as 'complet'|'specialites'),answers:{...persisted.answers},answer_meta:{},submitted_at:null,saved_at:null,submit_operation:null}};
+}}}));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "eleve-fictif-1" } }) }));
 import QuizQrcTaxiIntegre, { QUIZ_QRC_TAXI, cleStockage } from "@/components/cours-en-ligne/QuizQrcTaxiIntegre";
 
@@ -95,43 +102,35 @@ describe("correction QRC (règles du site d'origine, sans IA)", () => {
 });
 
 describe("parcours écran apprenant", () => {
-  beforeEach(() => localStorage.clear());
-  it("QCM + QRC sauvegardés localement pour ce compte et repris au rechargement", () => {
-    const q = QUIZ_QRC_TAXI.specialites.items[0];
-    const { unmount } = render(<QuizQrcTaxiIntegre quiz="specialites" />);
-    fireEvent.click(screen.getByText(new RegExp(q.mcqOptions[0].slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))));
-    fireEvent.click(screen.getByText("Passer à la QRC"));
-    fireEvent.change(screen.getByPlaceholderText("Tapez votre réponse ici..."), { target: { value: "ma réponse" } });
-    unmount();
-    const saved = JSON.parse(localStorage.getItem(cleStockage("eleve-fictif-1", "specialites"))!);
-    expect(saved.reponses[q.id]).toEqual({ qcm: q.mcqOptions[0], qrc: "ma réponse" });
-    render(<QuizQrcTaxiIntegre quiz="specialites" />);
-    expect((screen.getByPlaceholderText("Tapez votre réponse ici...") as HTMLTextAreaElement).value).toBe("ma réponse");
+  beforeEach(() => {localStorage.clear(); persisted.answers={};});
+  it("QCM + QRC sauvegardés au serveur et repris après rechargement", async () => {
+    const {unmount}=render(<QuizQrcTaxiIntegre quiz="specialites" />);
+    await screen.findByText(/^A\./);
+    fireEvent.click(screen.getByText(/^A\./)); fireEvent.click(screen.getByText('Passer à la QRC'));
+    fireEvent.change(screen.getByPlaceholderText('Tapez votre réponse ici...'),{target:{value:'ma réponse'}});
+    await waitFor(()=>expect(persisted.answers['qrc:21']).toBe('ma réponse'));
+    unmount(); render(<QuizQrcTaxiIntegre quiz="specialites" />);
+    await screen.findByText(/^A\./); fireEvent.click(screen.getByText('Passer à la QRC'));
+    expect((screen.getByPlaceholderText('Tapez votre réponse ici...') as HTMLTextAreaElement).value).toBe('ma réponse');
   });
-  it("après les questions : exercices ZUPC puis Métropole avec bilan des oubliées", () => {
-    localStorage.setItem(cleStockage("eleve-fictif-1", "specialites"), JSON.stringify({ index: 20 }));
-    render(<QuizQrcTaxiIntegre quiz="specialites" />);
-    expect(screen.getByTestId("zone-zupc")).toBeTruthy();
-    expect(screen.getByTestId("zone-metropole")).toBeTruthy();
-    const zupc = screen.getByTestId("zone-zupc");
-    fireEvent.change(zupc.querySelector("textarea")!, { target: { value: "Bron, Givors" } });
-    fireEvent.click(screen.getAllByText("Corriger ma liste")[0]);
-    expect(screen.getByText("1/23 communes trouvées · Aéroport : oublié")).toBeTruthy();
-    expect(screen.getByText(/Réponses erronées/)).toBeTruthy();
-    expect(screen.getAllByText("Correction des 20 questions")).toHaveLength(1);
+  it("exercices incomplets ne donnent ni correction ni soumission", async () => {
+    render(<QuizQrcTaxiIntegre quiz="specialites" />); await screen.findByText('Exercices et soumission');
+    fireEvent.click(screen.getByText('Exercices et soumission'));
+    expect(screen.getByTestId('zone-zupc')).toBeTruthy();expect(screen.getByTestId('zone-metropole')).toBeTruthy();
+    expect((screen.getByText('Soumettre le quiz') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText('Correction des 20 questions')).toBeNull();
   });
-  it("complet : première question sans QRC, comme le site d'origine ; Métropole seule", () => {
-    render(<QuizQrcTaxiIntegre quiz="complet" />);
-    fireEvent.click(screen.getByText(/^A\./));
-    expect(screen.getByText("Question suivante")).toBeTruthy();
-    expect(QUIZ_QRC_TAXI.complet.zones).toEqual(["metropole"]);
+  it("complet conserve première question sans QRC",async()=>{
+    render(<QuizQrcTaxiIntegre quiz="complet" />);await screen.findByText(/^A\./);
+    fireEvent.click(screen.getByText(/^A\./));expect(screen.getByText('Question suivante')).toBeTruthy();
+    expect(QUIZ_QRC_TAXI.complet.zones).toEqual(['metropole']);
   });
 });
 
 import { QCM_LOCAUX_BILAN_TA } from "@/data/bilan-ta/qcmLocauxBilanTa";
 import { qcmLocalJuste } from "@/components/cours-en-ligne/QuizQrcTaxiIntegre";
 describe("QCM locaux du Bilan examen TA ajoutés au quiz spécialités", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {localStorage.clear(); persisted.answers={};});
   it("40 QCM ajoutés, les 20 QRC conservées, complet inchangé", () => {
     expect(QUIZ_QRC_TAXI.specialites.qcmLocaux).toHaveLength(40);
     expect(QUIZ_QRC_TAXI.specialites.items).toHaveLength(20);
@@ -144,15 +143,12 @@ describe("QCM locaux du Bilan examen TA ajoutés au quiz spécialités", () => {
     expect(qcmLocalJuste(q, ["C", "D"])).toBe(true);
     expect(qcmLocalJuste(q, ["C"])).toBe(false);
   });
-  it("écran : cocher, corriger, résultat affiché et sauvegardé", () => {
-    localStorage.setItem(cleStockage("eleve-fictif-1", "specialites"), JSON.stringify({ index: 20 }));
-    render(<QuizQrcTaxiIntegre quiz="specialites" />);
-    const sec = screen.getByTestId("qcm-locaux-ta");
-    fireEvent.click(sec.querySelectorAll('button[role="checkbox"]')[0]); // Q1 A = juste
-    fireEvent.click(screen.getByText("Corriger les QCM locaux"));
-    expect(screen.getByText("1/40 justes")).toBeTruthy();
-    const saved = JSON.parse(localStorage.getItem(cleStockage("eleve-fictif-1", "specialites"))!);
-    expect(saved.locaux[1]).toEqual(["A"]);
+  it("écran : choix local sauvegardé, pas de correction avant soumission",async()=>{
+    render(<QuizQrcTaxiIntegre quiz="specialites" />);await screen.findByText('Exercices et soumission');
+    fireEvent.click(screen.getByText('Exercices et soumission'));
+    const sec=screen.getByTestId('qcm-locaux-ta');const choice=sec.querySelector('button[role="checkbox"]');if(!choice)throw Error('choice');
+    fireEvent.click(choice);await waitFor(()=>expect(persisted.answers['local:1']).toEqual(['A']));
+    expect(screen.queryByText('1/40 justes')).toBeNull();
   });
 });
 

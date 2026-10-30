@@ -1597,6 +1597,13 @@
       "when": 1793356054486,
       "tag": "0227_crm_reinscription_reactivation",
       "breakpoints": true
+    },
+    {
+      "idx": 228,
+      "version": "7",
+      "when": 1793357710056,
+      "tag": "0228_qrc_practice_durable",
+      "breakpoints": true
     }
   ]
 }
