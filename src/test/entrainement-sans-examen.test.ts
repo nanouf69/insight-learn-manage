@@ -10,3 +10,8 @@ describe("entraînement sans examen", () => {
     expect(anomaliesEntrainementExamen(r, apps, [{ apprenant_id: "a", date_examen: "2026-11-03" }]).map(a => a.id)).toEqual(["c"]);
   });
 });
+describe("date d'examen non lisible", () => {
+  it("un texte libre ne vaut pas inscription à l'examen", () => {
+    expect(anomaliesEntrainementExamen([{ apprenant_id: "m", date_choisie: "2026-10-17" }], [{ id: "m", prenom: "c", nom: "M", date_examen_pratique: "Du 2 au 13 novembre 2026" }], []).map(a => a.id)).toEqual(["m"]);
+  });
+});

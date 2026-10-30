@@ -4,7 +4,9 @@ import { anomaliesEntrainementExamen, type ReservationLite } from "@/lib/entrain
 
 /** Affichage seul : élèves inscrits à un entraînement pratique sans examen pratique au planning CRM (ou examen avant l'entraînement). */
 export function EntrainementSansExamenAlerte({ reservations, debut, fin }: { reservations: ReservationLite[] | undefined; debut: string; fin: string }) {
-  const visibles = (reservations ?? []).filter((r) => r.date_choisie && r.date_choisie >= debut && r.date_choisie <= fin);
+  // Entraînements récents (60 j) et à venir, quelle que soit la période affichée.
+  const depuis = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+  const visibles = (reservations ?? []).filter((r) => r.date_choisie && r.date_choisie >= depuis && !!debut && !!fin);
   const ids = [...new Set(visibles.map((r) => r.apprenant_id))];
   const { data } = useQuery({
     queryKey: ["entrainement-sans-examen", ids.sort().join(",")],
