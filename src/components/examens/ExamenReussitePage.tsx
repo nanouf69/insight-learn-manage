@@ -4965,6 +4965,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 )}
               </div>
 
+              <EntrainementSansExamenAlerte reservations={reservationsPratique as any} debut={planningStartDate} fin={planningEndDate} />
               {weeks.map((week, wi) => (
                 <div key={wi}>
                   <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Semaine {wi + 1}</h4>
