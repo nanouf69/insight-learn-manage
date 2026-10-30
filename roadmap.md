@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Sauvegarde durable des deux quiz QRC TAXI — 30/10 10:40 UTC
+- [ ] Audit et règles : toutes les réponses requises, validation serveur seule, quiz facultatifs hors progression ; anciens brouillons conservés.
+- [ ] Tentatives privées, réponses historisées, commandes idempotentes/versionnées, soumission atomique ; sauvegarde multi-appareils avec conflits visibles.
+- [ ] Interface sauvegarde/horodatage, réponses manquantes avec liens, reprise/offline sans fausse confirmation, résultat seulement après reçu serveur.
+- [ ] Correction QRC uniquement après soumission ; appels payants bloqués tant que budget euros non vérifiable, sauvegarde indépendante.
+- [ ] Tests isolés et parcours technique, journal précis, aucune publication et aucun examen officiel touché.
+
 ## Plafonds QRC IA et application — 30/10 10:35 UTC
 - [x] Lecture seule : coûts enregistrés, plan Pro actif, recharges automatiques et recherche de limites bloquantes natives.
 - [x] Chemin des quiz terminés confirmé dans la source : correction depuis réponse sauvegardée, sans reset ; accès actif et même navigateur nécessaires. Parcours hébergé ancien élève NON PROUVÉ, aucun retraitement automatique.
