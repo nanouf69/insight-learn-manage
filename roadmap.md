@@ -5,7 +5,7 @@
 - [x] Feedback intégré complet/spécialités : alertes Q5/Q6 et précision CPAM Q13, énoncés/références/barème/stockage inchangés.
 - [ ] Remplacement Q5/Q6 et quatrième équipement universel BLOQUÉ : arbitrage juridique nécessaire ; formulations exactes non validées.
 - [ ] Contrôle13 BLOQUÉ : protection des références des copies en cours non prouvée ; aucune écriture Cloud.
-- [ ] Tests ciblés et comparaison des sources à exécuter ; parcours compte élève hébergé non exécuté.
+- [x] 30 tests ciblés/non-régression PASS ; trois sources pédagogiques strictement identiques aux copies avant audit ; contrôle automatique build OK10:05:33Z. Parcours compte élève hébergé NON PROUVÉ.
 
 ## Corrections réglementaires QRC TAXI — 30/10 09:47 UTC
 - [x] Localisation texte : intégré25/26/33, fiches TAXI/TA, H44/46/60, Cloud13/13100/212/213/220 ; sources officielles, loi juin2026 article28 relue et arrêté Rhône septembre2026 intégral.
