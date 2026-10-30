@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Corrections réglementaires QRC TAXI — 30/10 09:47 UTC
+- [ ] Audit lecture seule des trois textes dans toutes les sources, dont Contrôle de connaissances ; sources officielles et nuances.
+- [ ] Corrigés/feedback uniquement pour les points prouvés et autorisés ; divergences suspendues à validation, énoncés et historiques inchangés.
+- [ ] Tests isolés ciblés/non-régression et journal précis ; aucune publication.
+
 ## Bilans futurs isolés — 29/10 20:10 UTC
 - [x] Circuit audité : retour perd le reçu, files anciennes sans identité de version, absence de preuve serveur ne signifie pas jamais commencé ; anciens circuits intacts.
 - [x] Candidate commune indépendante 114/200/211/97/194 et provenance préparées,44 SR suspendues ; aucun import écran ni écriture Cloud.
