@@ -2794,6 +2794,28 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </Popover>
                 );
               })()}
+              {(() => {
+                const sansValidation = (tableApprenants as any[]).filter((a: any) => {
+                  const s = String(statutsSession?.[a.id]?.statut ?? a.statut_suivi ?? "").toLowerCase();
+                  return !s.includes("inscription valid");
+                });
+                if (sansValidation.length === 0) return null;
+                return (
+                  <div className="mt-3">
+                    <p className="font-semibold text-destructive mb-1">
+                      Sans « Inscription validée » ({sansValidation.length}) :
+                    </p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {sansValidation.map((a: any) => (
+                        <span key={a.id} className="flex items-center gap-1">
+                          <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
+                          <span className="text-xs">({statutsSession?.[a.id]?.statut ?? a.statut_suivi ?? "aucun statut"})</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </CardContent>
