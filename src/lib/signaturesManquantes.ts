@@ -301,7 +301,7 @@ export function calculerBilanSignaturesEdof(
     }
   }
   horsPlanning.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
-  const classification = classifierSignatures(emargements, sessionRows, reservations, dateDuJourParis(), configs, blocs);
+  const classification = classifierSignatures(emargements, sessionRows, reservations, dateDuJourParis(), configs, reel?.incomplet ? undefined : blocs);
   const verifierKeys = new Set(classification.aVerifier.map(e => `${e.date}|${e.creneau}`));
   const horsRetenu = horsPlanning.filter(e => !verifierKeys.has(`${e.date}|${e.creneau}`));
   let objectifTheorie = 0, objectifPratique = 0;
