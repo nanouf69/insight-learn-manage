@@ -38,7 +38,7 @@ export function estErreurLectureTransitoire(err: ErreurLecture | null | undefine
 /** Code court et sûr pour la télémétrie (aucune donnée élève). */
 export function codeErreurSur(err: ErreurLecture | null | undefined): string {
   if (!err) return "inconnu";
-  const brut = String(err.code ?? (err.status ? `http${err.status}` : "") ?? "");
+  const brut = String(err.code ?? (err.status ? `http${err.status}` : ""));
   const propre = brut.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
   return propre || "reseau";
 }
