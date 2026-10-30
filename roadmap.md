@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Synchronisation Riyad LABIOD — 30/10 15:41 UTC
+- [ ] Audit lecture seule des sept modules, obligations historiques et preuves serveur ; comparer élève/CRM/EDOF/jalons et dossiers divergents.
+- [ ] Corriger uniquement la projection et l’actualisation cohérentes, sans modifier les preuves ni les contenus.
+- [ ] Tests ciblés et contrôles d’écran ; diagnostic détaillé, publication suspendue tant que les contrôles globaux restent incomplets.
+
 ## Mail signatures manquantes — 30/10 15:39 UTC
 - [x] Bouton Relance signatures ajouté au suivi présentiel, réutilise aperçu/relecture/confirmation CRM ; aucun envoi de test.
 - [x] Compte admin : ouverture tableau de bord → relance FIACRE → aperçu mail vérifiée ; 31 tests PASS. Aucun mail envoyé, aucune publication.
