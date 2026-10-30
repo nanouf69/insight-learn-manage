@@ -1,3 +1,4 @@
+import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { supabase } from '@/integrations/supabase/client';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from '@/lib/pratiqueSlots';
@@ -139,7 +140,7 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
 // VTC journée et soir : 20 théorie + 2 pratique = 22 ;
 // TAXI : 30 + 2 = 32. Signature comptée une seule fois par date + créneau.
 
-interface JourPlanning { creneaux: Set<string>; pratique: boolean }
+export interface JourPlanning { creneaux: Set<string>; pratique: boolean }
 
 /**
  * Créneaux réellement prévus par date, à partir des inscriptions retenues
@@ -244,6 +245,7 @@ export interface BilanSignaturesEdof {
   objectifPratique: number;
   objectifTotal: number;
   complet: boolean;
+  planningIncomplet: boolean;
 }
 
 export function calculerBilanSignaturesEdof(
@@ -252,10 +254,18 @@ export function calculerBilanSignaturesEdof(
   reservations: any[],
   formation: string,
   configs: any[] = [],
+  blocs?: any[],
 ): BilanSignaturesEdof {
   const filiere = filiereSignatures(formation);
   sessionRows = marquerFiliereRows(sessionRows, filiere);
-  const { parDate, soir } = planningCreneaux(sessionRows, reservations, configs);
+  const legacy = planningCreneaux(sessionRows, reservations, configs);
+  const reel = blocs ? planningSignaturesReel(sessionRows, reservations, blocs, configs, filiere) : null;
+  const parDate = reel ? new Map<string, JourPlanning>() : legacy.parDate;
+  if (reel) for (const [key, pratique] of reel.creneaux) {
+    const date = key.slice(0,10), c = key.slice(11), jour = parDate.get(date) ?? { creneaux: new Set<string>(), pratique: false };
+    jour.creneaux.add(c); jour.pratique ||= pratique; parDate.set(date, jour);
+  }
+  const soir = [...parDate.values()].some(j => j.creneaux.has('soir_1') || j.creneaux.has('soir_2'));
   const vus = new Set<string>();
   let theorie = 0;
   let pratique = 0;
@@ -283,32 +293,34 @@ export function calculerBilanSignaturesEdof(
   const classification = classifierSignatures(emargements, sessionRows, reservations, dateDuJourParis(), configs);
   const verifierKeys = new Set(classification.aVerifier.map(e => `${e.date}|${e.creneau}`));
   const horsRetenu = horsPlanning.filter(e => !verifierKeys.has(`${e.date}|${e.creneau}`));
-  // TA actuel : 10 signatures de théorie (première semaine, lun–ven) + 2 de pratique = 12.
-  // Ancien parcours TA : objectif total 12 ou 14 saisi explicitement par un admin sur l'inscription
-  // théorique retenue (jamais déduit des signatures). Sinon règle actuelle 10 + 2.
-  const historiqueTA = filiere === 'TA'
-    ? (sessionRows ?? []).filter(r => r?.liste_attente !== true && !inscriptionExclue(r) && /theorique/i.test(r?.sessions?.type_session ?? ''))
-        .map(r => Number(r?.objectif_signatures_ta_historique)).find(n => n === 12 || n === 14)
-    : undefined;
-  const objectifTheorie = filiere === 'TAXI' ? 30 : filiere === 'TA' ? (historiqueTA ? historiqueTA - 2 : 10) : 20;
-  const objectifPratique = 2;
+  let objectifTheorie = 0, objectifPratique = 0;
+  for (const jour of parDate.values()) {
+    if (jour.pratique) objectifPratique += jour.creneaux.size;
+    else objectifTheorie += jour.creneaux.size;
+  }
+  const planningIncomplet = reel?.incomplet ?? false;
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning: horsRetenu, aVerifier: classification.aVerifier,
     objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
-    complet: theorie === objectifTheorie && pratique === objectifPratique,
+    planningIncomplet,
+    complet: !planningIncomplet && objectifTheorie + objectifPratique > 0 && theorie === objectifTheorie && pratique === objectifPratique,
     excedent: theorie > objectifTheorie || pratique > objectifPratique,
   };
 }
 
 export async function chargerBilanSignaturesEdof(apprenantId: string, formation: string): Promise<BilanSignaturesEdof> {
   if (!apprenantId) throw new Error('Apprenant requis');
-  const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
+  const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
+    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    supabase.from('apprenants').select('type_apprenant,creneau_horaire').eq('id',apprenantId).single(),
   ]);
-  return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation, configs);
+  if (apprenant.error) throw apprenant.error;
+  const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
+  return calculerBilanSignaturesEdof(emargRes, sessionsRes.map(r => ({...r, elearning_apprenant: elearning})), reservationsRes, formation, configs, blocs);
 }
 
 // ── Classification attendu / valide / hors session ──
