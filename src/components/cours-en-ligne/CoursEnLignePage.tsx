@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
 import ModuleContentSearch from "./ModuleContentSearch";
+import { setSearchFocus } from "./module-content-search";
 import BilanFinFormationFCVtc from "./BilanFinFormationFCVtc";
 import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
@@ -85,7 +86,7 @@ const CoursEnLignePage = () => {
   }
 
   if (editingModule) {
-    return <ModuleDetailView module={editingModule} onBack={() => setEditingModule(null)} />;
+    return <ModuleDetailView module={editingModule} onBack={() => { setSearchFocus(null); setEditingModule(null); }} />;
   }
 // ---------- Apprenant Search + Preview subcomponent ----------
 interface SearchedApprenant {
