@@ -4,7 +4,6 @@ import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
 import { idsActivites } from "@/lib/jeuxPedagogiques";
 import { avecEtatServeur, chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
-import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
 import { modulesAttribuesDashboard, modulesExigesDashboard, resolveFormationId } from "@/lib/parcoursModulesDashboard";
 import type { GelFinAcces } from "@/lib/releveJalonsGel";
