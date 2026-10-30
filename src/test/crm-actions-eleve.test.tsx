@@ -38,4 +38,19 @@ describe('Commandes individuelles sans mutation des preuves', () => {
     mocks.rpc.mockResolvedValue({data:null,error:new Error('Lecture impossible')});wrap(<ReactiverPlateformeTab apprenantId="a"/>);
     await screen.findByText('Lecture impossible');expect(screen.queryByRole('button',{name:'Réactiver pour un mois'})).toBeNull();
   });
+  it('panne réseau conserve l’identité et les dates de la même confirmation', async()=>{
+    const p={debut:'2026-10-30',fin:'2026-11-30',fin_precedente:'2026-10-01'};
+    let attempts=0;
+    mocks.rpc.mockImplementation(async(name,args)=>{
+      if(name==='crm_preparer_reactivation')return {data:p,error:null};
+      attempts++;if(attempts===1)return {data:null,error:new Error('Réseau indisponible')};
+      mocks.rows=[{id:'r',operation_id:args.p_operation,...p,created_at:'2026-10-30T10:00:00Z'}];return {data:mocks.rows[0],error:null};
+    });
+    wrap(<ReactiverPlateformeTab apprenantId="a"/>);fireEvent.click(await screen.findByRole('button',{name:'Réactiver pour un mois'}));
+    fireEvent.click(screen.getByRole('button',{name:'Confirmer la réactivation'}));
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer la réactivation'})).not.toBeDisabled());
+    fireEvent.click(screen.getByRole('button',{name:'Confirmer la réactivation'}));
+    await waitFor(()=>expect(mocks.rpc.mock.calls.filter(c=>c[0]==='crm_reactiver_un_mois')).toHaveLength(2));
+    const calls=mocks.rpc.mock.calls.filter(c=>c[0]==='crm_reactiver_un_mois');expect(calls[0][1]).toEqual(calls[1][1]);
+  });
 });
