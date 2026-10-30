@@ -1,4 +1,5 @@
 import { EdofValideBadge } from "./EdofValideBadge";
+import { EntrainementSansExamenAlerte } from "./EntrainementSansExamenAlerte";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
