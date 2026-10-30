@@ -15,10 +15,7 @@
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - EB subject grouping (selectLatestAttemptRows) uses the recorded tentative number, never a time window; older tentatives only fill missing subjects; why: one attempt can span several days.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
-- Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
-- Practical training days = ceil(candidates/3); why: max_per_day was wrong.
-- Practical booking offers every admin-typed VTC/TAXI day incl. weekends; why: exact planning.
-- Practical notes: admin append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: keep history, reject stale writes.
+- Practical: training days = ceil(candidates/3); booking offers every admin-typed VTC/TAXI day incl. weekends; notes = admin append-only revisions, server guard, escaped HTML shared by CMA/learner emails. Planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
 - Exam selectors share sessions/handler; all-dates paginates separately; planning names use CRM callback; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Labels: permanent IDs + dated baselines; why: no drift.
@@ -35,8 +32,7 @@
 - Shared theory attendance: sessionHeures by learner track; why: no cross-track totals.
 - CRM theory denominators group overlapping shared-track sessions by training period and deduplicate session IDs; separate periods still add up, and signed evidence is unchanged; why: cross-enrollment must not double the same training obligation.
 - Read local AGENTS before edits; why: scoped rules apply.
-- E-learning warning and CRM batch reads share elearningHoursEvidence and seuilElearning; why: advisory filtering must match proven hours without changing validation or rates.
-- E-learning first/last activity dates use recorded pedagogical events in elearningHoursEvidence, not connection boundaries; why: a login alone must never invent activity dates, and hours arithmetic remains unchanged.
+- E-learning warning/CRM reads share elearningHoursEvidence and seuilElearning; first/last activity dates use recorded pedagogical events, never logins; why: match proven hours without changing validation, rates or arithmetic.
 - Quotes/training contracts: see `src/lib/contratFormation/AGENTS.md`.
 - QRC retry history supersedes old traces only with matching final server proof; why: reservations never prove completion.
 - TAXI 2026: isolated versioned drafts, owned queue/readback, staged server guard; why: additive proofs only. See courses AGENTS.
@@ -60,3 +56,4 @@
 - Future Bilan examen 5/11 runs only through `bilan_future_*` (route RPC decides before the legacy screen renders; eligibility only for accounts with no legacy trace; completion via submission trigger); why: new passages never touch legacy copies.
 - Live content refresh (module JSON, canonical bank) goes through `createLiveRefresher` (`src/lib/moduleLiveRefresh.ts`): light version probe on ticks/focus, full reread only on change or every 2 min, single-flight, jittered Realtime, bounded backoff on read errors; quiz confirmation rereads use `relireAvecReprisesBornees` (transient errors only, content mismatch never retried); why: full 0.5 MB rereads every 5 s were 36.7 % of DB time and saturated the pool (PGRST003/57014).
 - Optional TAXI practice uses owner-only qrc_practice RPCs, append-only answers, frozen obligations, CAS and atomic submission; AI requires matching submission and blocks paid calls until budget verified, unknowns never replay. See course/lib AGENTS; why: no lost drafts, false completion or official grade changes.
+- TAXI/TA form defaults mirror FORMATION_MODULES (test modeles-taxi-ta-fin-formation); why: no missing modules.
