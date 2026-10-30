@@ -1,0 +1,38 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { anomaliesEntrainementExamen, type ReservationLite } from "@/lib/entrainementSansExamen";
+
+/** Affichage seul : élèves inscrits à un entraînement pratique sans examen pratique au planning CRM (ou examen avant l'entraînement). */
+export function EntrainementSansExamenAlerte({ reservations, debut, fin }: { reservations: ReservationLite[] | undefined; debut: string; fin: string }) {
+  const visibles = (reservations ?? []).filter((r) => r.date_choisie && r.date_choisie >= debut && r.date_choisie <= fin);
+  const ids = [...new Set(visibles.map((r) => r.apprenant_id))];
+  const { data } = useQuery({
+    queryKey: ["entrainement-sans-examen", ids.sort().join(",")],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const [apps, cma] = await Promise.all([
+        supabase.from("apprenants").select("id, prenom, nom, date_examen_pratique").in("id", ids),
+        supabase.from("cma_planning_lignes").select("apprenant_id, date_examen").in("apprenant_id", ids),
+      ]);
+      if (apps.error) throw apps.error;
+      if (cma.error) throw cma.error;
+      return anomaliesEntrainementExamen(visibles, apps.data ?? [], cma.data ?? []);
+    },
+  });
+  if (!data?.length) return null;
+  return (
+    <div className="rounded-md border border-destructive bg-destructive/5 p-3 mb-3">
+      <p className="text-sm font-bold text-destructive mb-1">
+        Inscrits à l'entraînement pratique sans examen pratique au planning ({data.length})
+      </p>
+      <ul className="text-sm text-destructive font-semibold space-y-0.5">
+        {data.map((a) => (
+          <li key={a.id}>
+            {a.prenom} {a.nom.toUpperCase()} — entraînement le {a.dateEntrainement.split("-").reverse().join("/")}
+            {a.dateExamen ? ` · examen le ${a.dateExamen.split("-").reverse().join("/")} (avant l'entraînement)` : " · aucun examen pratique"}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
