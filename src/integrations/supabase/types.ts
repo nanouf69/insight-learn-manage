@@ -7028,6 +7028,87 @@ export type Database = {
           },
         ]
       }
+      qrc_taxi_ia_gate: {
+        Row: {
+          http_status: number | null
+          id: boolean
+          message: string | null
+          paused: boolean
+          updated_at: string
+        }
+        Insert: {
+          http_status?: number | null
+          id?: boolean
+          message?: string | null
+          paused?: boolean
+          updated_at?: string
+        }
+        Update: {
+          http_status?: number | null
+          id?: boolean
+          message?: string | null
+          paused?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      qrc_taxi_ia_receipts: {
+        Row: {
+          answer_hash: string
+          attempt: number
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          http_status: number | null
+          id: string
+          identity_hash: string
+          question_id: number
+          quiz: string
+          result: Json | null
+          retry_at: string | null
+          run_id: string | null
+          status: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          answer_hash: string
+          attempt?: number
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          http_status?: number | null
+          id?: string
+          identity_hash: string
+          question_id: number
+          quiz: string
+          result?: Json | null
+          retry_at?: string | null
+          run_id?: string | null
+          status?: string
+          user_id: string
+          version: string
+        }
+        Update: {
+          answer_hash?: string
+          attempt?: number
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          http_status?: number | null
+          id?: string
+          identity_hash?: string
+          question_id?: number
+          quiz?: string
+          result?: Json | null
+          retry_at?: string | null
+          run_id?: string | null
+          status?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       qrc_verification_demandes: {
         Row: {
           apprenant_id: string
@@ -9601,6 +9682,18 @@ export type Database = {
           passages: number
           qrc_repondues: number
         }[]
+      }
+      qrc_taxi_ia_claim: {
+        Args: {
+          p_answer_hash: string
+          p_identity: string
+          p_question: number
+          p_quiz: string
+          p_retry?: boolean
+          p_user: string
+          p_version: string
+        }
+        Returns: Json
       }
       quiz_cas_pratique_feries_protection_prete: {
         Args: never
