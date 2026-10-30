@@ -3546,7 +3546,7 @@ function ExerciceCard({
   }, [moduleId, item.id]);
 
   return (
-    <Card ref={cardRef} className={`border-2 border-slate-300 transition-all hover:shadow-md ${searchHighlight && (searchHighlight.questionId == null || !safeQuestions.some((q) => Number(q.id) === searchHighlight.questionId)) ? "ring-4 ring-primary bg-primary/10" : ""}`}>
+    <Card ref={cardRef} className="border-2 border-slate-300 transition-all hover:shadow-md">
       <CardContent className="p-4 space-y-3">
         <div>
           {editingMeta ? (
@@ -3576,7 +3576,11 @@ function ExerciceCard({
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between">
+              {/* Recherche : cible exercice (sans question précise) = on encadre
+                  uniquement le titre, jamais toute la carte. Cible question =
+                  seule la question visée reste encadrée (plus bas). */}
+              <div className={`flex items-center justify-between rounded-lg ${searchHighlight && searchHighlight.questionId == null ? "ring-4 ring-primary bg-primary/10" : ""}`}>
+
                 <h4 className="font-bold text-base flex items-center gap-2">
                   {partNumber && (
                     <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-sm font-bold align-middle" title="Numéro du quiz côté élève">Quiz élève {partNumber}</span>
