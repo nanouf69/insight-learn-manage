@@ -832,8 +832,19 @@ export default function AdminCorrectionQrcV2Reel() {
                   : "date inconnue"}{" "}
                 · tentative {tentativeSel.attempt_id.slice(0, 8)}
               </span>
+              {(() => {
+                const mat = (tentativeSel.snapshot.matieres ?? []).find((m) => m.subject_id === questionSel?.matiere);
+                return (
+                  <span className="ml-auto text-right text-sm font-semibold text-primary" data-testid="entete-eb-matiere">
+                    📅 Examen blanc du {tentativeSel.started_at
+                      ? new Date(tentativeSel.started_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })
+                      : "date inconnue"}
+                    {" · "}📘 Matière : {mat ? `${mat.lettre} — ${mat.titre}` : (questionSel?.matiere ?? "inconnue")}
+                  </span>
+                );
+              })()}
               <span
-                className={`ml-auto rounded px-2 py-0.5 text-xs font-medium ${
+                className={`rounded px-2 py-0.5 text-xs font-medium ${
                   qrcSel.etat === "corrigee" && origineSel === "ia"
                     ? "bg-ia/15 text-ia"
                     : qrcSel.etat === "corrigee"
