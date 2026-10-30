@@ -1632,6 +1632,13 @@
       "when": 1793376519177,
       "tag": "0232_validation_module_preuve_soumise",
       "breakpoints": true
+    },
+    {
+      "idx": 233,
+      "version": "7",
+      "when": 1793377308760,
+      "tag": "0233_etat_completion_sans_ajouts_posterieurs",
+      "breakpoints": true
     }
   ]
 }
