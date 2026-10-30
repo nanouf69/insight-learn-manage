@@ -5,15 +5,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { quizItems, QuizItem } from "@/data/quiz-qrc-taxi/quizData";
 import { ElementReference, METROPOLE_LYON, ZUPC_LYON, distracteurs } from "@/lib/quizQrcTaxi/communesLyon";
+import { QCM_LOCAUX_BILAN_TA, QcmBilanTa } from "@/data/bilan-ta/qcmLocauxBilanTa";
 import { corrigerCases, corrigerCommunes, corrigerQrc } from "@/lib/quizQrcTaxi/correction";
 
 /** Entraînement facultatif : aucune écriture serveur, aucun jalon, aucune progression. Sauvegarde locale par compte. */
 export type QuizQrcTaxiId = "complet" | "specialites";
 type Zone = "metropole" | "zupc";
 
-export const QUIZ_QRC_TAXI: Record<QuizQrcTaxiId, { titre: string; items: QuizItem[]; zones: Zone[]; qrcDesLaPremiere: boolean }> = {
-  complet: { titre: "QRC TAXI complet", items: quizItems, zones: ["metropole"], qrcDesLaPremiere: false },
-  specialites: { titre: "QRC TAXI spécialités", items: quizItems.filter((q) => q.category === "national"), zones: ["zupc", "metropole"], qrcDesLaPremiere: true },
+export const QUIZ_QRC_TAXI: Record<QuizQrcTaxiId, { titre: string; items: QuizItem[]; zones: Zone[]; qrcDesLaPremiere: boolean; qcmLocaux: QcmBilanTa[] }> = {
+  complet: { titre: "QRC TAXI complet", items: quizItems, zones: ["metropole"], qrcDesLaPremiere: false, qcmLocaux: [] },
+  specialites: { titre: "QRC TAXI spécialités", items: quizItems.filter((q) => q.category === "national"), zones: ["zupc", "metropole"], qrcDesLaPremiere: true, qcmLocaux: QCM_LOCAUX_BILAN_TA },
 };
 
 const ZONES: Record<Zone, { titre: string; ref: ElementReference[]; consigne: string }> = {
@@ -22,7 +23,7 @@ const ZONES: Record<Zone, { titre: string; ref: ElementReference[]; consigne: st
 };
 
 interface Reponse { qcm: string; qrc: string }
-interface Etat { index: number; phase: "qcm" | "qrc"; reponses: Record<number, Reponse>; cases: Record<string, string[]>; saisies: Record<string, string>; casesCorrigees: Record<string, boolean>; saisiesCorrigees: Record<string, boolean>; termine: boolean }
+interface Etat { index: number; phase: "qcm" | "qrc"; reponses: Record<number, Reponse>; cases: Record<string, string[]>; saisies: Record<string, string>; casesCorrigees: Record<string, boolean>; saisiesCorrigees: Record<string, boolean>; locaux?: Record<number, string[]>; locauxCorriges?: boolean; termine: boolean }
 const VIDE: Etat = { index: 0, phase: "qcm", reponses: {}, cases: {}, saisies: {}, casesCorrigees: {}, saisiesCorrigees: {}, termine: false };
 
 export const cleStockage = (userId: string, quiz: QuizQrcTaxiId) => `quiz-qrc-taxi:v1:${userId}:${quiz}`;
@@ -31,6 +32,47 @@ function Liste({ titre, noms, ton }: { titre: string; noms: string[]; ton: "ok" 
   if (!noms.length) return null;
   const cls = ton === "ok" ? "text-primary" : ton === "ko" ? "text-destructive" : "text-muted-foreground";
   return <div className="mt-2"><p className={`font-semibold ${cls}`}>{titre} ({noms.length})</p><p className="text-sm">{noms.join(" · ")}</p></div>;
+}
+
+export const qcmLocalJuste = (q: QcmBilanTa, coches: string[]) => {
+  const att = q.choix.filter((c) => c.correct).map((c) => c.lettre).sort().join();
+  return att === [...coches].sort().join();
+};
+
+function SectionQcmLocaux({ questions, etat, maj }: { questions: QcmBilanTa[]; etat: Etat; maj: (f: (e: Etat) => Etat) => void }) {
+  const locaux = etat.locaux ?? {};
+  const corrige = !!etat.locauxCorriges;
+  const justes = questions.filter((q) => qcmLocalJuste(q, locaux[q.id] ?? [])).length;
+  return (
+    <div className="rounded-lg border p-4 space-y-4" data-testid="qcm-locaux-ta">
+      <p className="font-semibold text-lg">QCM Réglementation locale — repris du Bilan examen TA ({questions.length} questions)</p>
+      <p className="text-sm text-muted-foreground">Questions à choix : cochez la ou les bonnes réponses.</p>
+      {questions.map((q, i) => {
+        const coches = locaux[q.id] ?? [];
+        const ok = qcmLocalJuste(q, coches);
+        return (
+          <div key={q.id} className="border-t pt-3">
+            <p className="font-medium">{i + 1}. {q.enonce}</p>
+            <div className="flex flex-col gap-2 mt-2">
+              {q.choix.map((c) => (
+                <label key={c.lettre} className="flex items-center gap-2">
+                  <Checkbox checked={coches.includes(c.lettre)} disabled={corrige}
+                    onCheckedChange={(v) => maj((e) => ({ ...e, locaux: { ...(e.locaux ?? {}), [q.id]: v ? [...coches, c.lettre] : coches.filter((l) => l !== c.lettre) } }))} />
+                  <span>{c.lettre}. {c.texte}</span>
+                </label>
+              ))}
+            </div>
+            {corrige && <p className={ok ? "text-primary" : "text-destructive"}>
+              {ok ? "Juste" : `Faux — attendu : ${q.choix.filter((c) => c.correct).map((c) => `${c.lettre}. ${c.texte}`).join(" + ")}`}</p>}
+          </div>
+        );
+      })}
+      {!corrige
+        ? <Button className="w-full" onClick={() => maj((e) => ({ ...e, locauxCorriges: true }))}>Corriger les QCM locaux</Button>
+        : <><p className="font-semibold">{justes}/{questions.length} justes</p>
+            <Button variant="outline" className="w-full" onClick={() => maj((e) => ({ ...e, locaux: {}, locauxCorriges: false }))}>Refaire les QCM locaux</Button></>}
+    </div>
+  );
 }
 
 function ExerciceZone({ zone, etat, maj }: { zone: Zone; etat: Etat; maj: (f: (e: Etat) => Etat) => void }) {
@@ -133,6 +175,7 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
       )}
 
       {!enQuestions && (<>
+        {def.qcmLocaux.length > 0 && <SectionQcmLocaux questions={def.qcmLocaux} etat={etat} maj={maj} />}
         {def.zones.map((z) => <ExerciceZone key={z} zone={z} etat={etat} maj={maj} />)}
         <div className="rounded-lg border p-4 space-y-3">
           <p className="font-semibold text-lg">Correction des {n} questions</p>
