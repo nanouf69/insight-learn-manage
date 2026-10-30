@@ -7,7 +7,7 @@ import { resolveFormationId, modulesExigesDashboard, normalizeModuleIdForDashboa
 import { computeServerCompletedModuleIds, type CompletionLite } from '@/lib/moduleUnlockLogic';
 import { ACTIVITES_CODE } from '@/lib/jeuxPedagogiques';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
-import { withSubmittedModuleProof } from '@/lib/moduleCompletionEvidence';
+import { avecEtatServeur, chargerEtatCompletionServeur } from '@/lib/etatCompletionServeur';
 
 export const CANDIDAT_MODULES_KEY = 'candidat-modules-confirmes';
 
@@ -19,17 +19,16 @@ export async function chargerCandidatModules(apprenantId: string) {
   if (!apprenant) throw new Error('Parcours indisponible');
   const formation = resolveFormationId(apprenant.type_apprenant, apprenant.formation_choisie, apprenant.modules_autorises);
   if (!formation) throw new Error('Parcours non déterminé');
-  const [recordedCompletions, activites, submittedProofs] = await Promise.all([
+  const [recordedCompletions, activites, etatsServeur] = await Promise.all([
     fetchAllRows<CompletionLite>((from, to) => supabase.from('apprenant_module_completion')
       .select('module_id, status, completed_at, details').eq('apprenant_id', apprenantId).order('module_id').range(from, to)),
     fetchAllRows<{ exercice_id: string; completed: boolean | null }>((from, to) => supabase.from('reponses_apprenants')
       .select('exercice_id, completed').eq('apprenant_id', apprenantId)
       .in('exercice_id', ACTIVITES_CODE.map(a => a.id)).order('exercice_id').range(from, to)),
-    fetchAllRows<any>((from, to) => supabase.from('reponses_apprenants')
-      .select('exercice_id,status,submitted_at,reponses').eq('apprenant_id', apprenantId)
-      .eq('status', 'submitted').like('exercice_id', 'module_%').order('exercice_id').range(from, to)),
+    // Verdict serveur unique (preuves soumises comprises) : même source que l'élève et les jalons.
+    chargerEtatCompletionServeur(apprenantId),
   ]);
-  const completions = recordedCompletions.map(row => withSubmittedModuleProof(row, submittedProofs));
+  const completions = recordedCompletions.map(row => avecEtatServeur(row, etatsServeur));
   const done = computeServerCompletedModuleIds(completions, DASHBOARD_PARENT_TO_CHILDREN, normalizeModuleIdForDashboard);
   return progressionModulesEleve(modulesExigesDashboard(formation, apprenant.modules_autorises, completions, (apprenant as any).date_fin_cours_en_ligne), id => done.has(id),
     new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId, completions);
@@ -45,12 +44,16 @@ export function useCandidatModules(apprenantId?: string) {
     const channel = supabase.channel(`candidat-modules-${userId}-${apprenantId}-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'apprenant_module_completion', filter: `apprenant_id=eq.${apprenantId}` }, invalidate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reponses_apprenants', filter: `apprenant_id=eq.${apprenantId}` }, invalidate)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'apprenants', filter: `id=eq.${apprenantId}` }, invalidate).subscribe();
-    return () => { void supabase.removeChannel(channel); };
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'apprenants', filter: `id=eq.${apprenantId}` }, invalidate)
+      // (Re)connexion Realtime : des événements ont pu être manqués pendant la coupure → relecture.
+      .subscribe((status) => { if (status === 'SUBSCRIBED') invalidate(); });
+    const onOnline = () => invalidate();
+    window.addEventListener('online', onOnline);
+    return () => { window.removeEventListener('online', onOnline); void supabase.removeChannel(channel); };
   }, [userId, apprenantId, qc]);
   const query = useQuery({
     queryKey: [CANDIDAT_MODULES_KEY, userId, apprenantId], enabled: !!userId && !!apprenantId,
-    staleTime: 0, gcTime: 0, refetchOnWindowFocus: true,
+    staleTime: 0, gcTime: 0, refetchOnWindowFocus: true, refetchOnReconnect: true,
     queryFn: () => {
       if (!apprenantId || !userId) throw new Error('Compte absent');
       return chargerCandidatModules(apprenantId);

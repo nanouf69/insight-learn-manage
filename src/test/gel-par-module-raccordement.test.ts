@@ -6,7 +6,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: str
   q.single = async () => fake.rows[table];
   q.range = async (f: number, t: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(f, t + 1) });
   return q;
-} } }));
+}, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null } } }));
 import { chargerCandidatModules } from "@/hooks/useCandidatModules";
 import { completionAvecActivites, ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { recalculerPratiqueSeule } from "@/lib/releveCalculServeur";

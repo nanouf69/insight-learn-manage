@@ -27,6 +27,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIX_AVANT = ROOT / 'src/test/fixtures/module_completion_schema_avant_0197.sql'
+MIGRATION_0230 = ROOT / 'drizzle/migrations/0230_completion_source_serveur.sql'
 TABLE = 'apprenant_module_completion'
 RPCS = ['save_module_completion', 'save_module_pages_progress', 'autovalidate_module_if_complete']
 
@@ -106,10 +107,11 @@ CREATE TABLE public.apprenant_connexions(apprenant_id uuid, user_id uuid, starte
 CREATE TABLE public.comptes_test_techniques(apprenant_id uuid);
 CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
 CREATE TABLE public.module_regles_validation(module_id int, protection_serveur boolean, contient_questions boolean);
-CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, reponses jsonb);
+CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, reponses jsonb, status text, submitted_at timestamptz);
 CREATE TABLE public.quiz_valide_reecritures_refusees(table_cible text, apprenant_id uuid, cle text, champs text[], auteur uuid);
 CREATE TABLE public.donnees_eleves_suppressions(table_nom text, apprenant_id uuid, ligne jsonb, auteur_uid uuid, auteur_role text, compte_test boolean, motif text);
 CREATE FUNCTION public.examens_blancs_preuve_soumission(uuid, int) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
+GRANT SELECT ON public.reponses_apprenants, public.module_regles_validation TO authenticated, service_role;
 '''
 # Fonctions lues par les politiques/déclencheurs, copiées telles quelles du catalogue réel.
 DEPS = ['has_role', 'is_current_user_apprenant', 'est_compte_test', 'est_proprietaire_apprenant']
@@ -138,6 +140,12 @@ def build(db, schema_sql, migration=None):
     deja = sql(f"SELECT NOT attnotnull FROM pg_attribute WHERE attrelid='public.{TABLE}'::regclass AND attname='completed_at'", db) == 't'
     if migration and not deja: sql(migration, db)
     print(f'[{db}] 0197', 'déjà présente dans le schéma réel' if deja else ('appliquée' if migration else 'non appliquée'))
+    # 0230 (source serveur, validation exhaustive) : appliquée si absente du catalogue capturé.
+    if migration and sql("SELECT count(*) FROM pg_proc WHERE proname='etat_completion_modules'", db) == '0':
+        sql(MIGRATION_0230.read_text(), db); print(f'[{db}] 0230 appliquée')
+    # Candidat non déployé (revue avant migration) : MODULE_COMPLETION_CANDIDATE=/chemin.sql
+    if migration and os.environ.get('MODULE_COMPLETION_CANDIDATE'):
+        sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db); print(f'[{db}] candidat appliqué')
     sql(f"""INSERT INTO apprenants VALUES ('{A}','{U}'),('{A2}','{U2}'),('{ISMAIL}','{UI}');
       INSERT INTO user_roles VALUES ('{ADMIN}','admin');
       INSERT INTO apprenant_connexions VALUES ('{A}','{U}',now(),now(),now(),NULL),('{A2}','{U2}',now(),now(),now(),NULL);
@@ -227,6 +235,59 @@ class Apres0197(unittest.TestCase):
         self.assertEqual(sql(smc(U, 2, False, 3)), 'completed|100|2026-09-17 08:00:00+00')
         self.assertEqual(sql(smc(U, 2, True, 100)), 'completed|100|2026-09-17 08:00:00+00')
 
+    # ---- 0230 : validation exhaustive, progression asynchrone, source serveur unique
+    def _d(self, answers, qrc=()):
+        items = []
+        for q, rep in answers.items():
+            rc = '[]' if q in qrc else '"A"'
+            items.append('{"exerciceId":1,"questionId":%d,"reponseCorrecte":%s,"reponseEleve":%s}' % (q, rc, rep))
+        return "'[" + ",".join(items) + "]'::jsonb"
+
+    def test_11_premiere_validation_refusee_si_qcm_vide(self):
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"B\"}}')")
+        e = err(smc(U, 2, True, 100, self._d({1: '"B"', 2: 'null', 3: '""'})))
+        self.assertIn('2 question(s) QCM sans réponse', e or '')
+        self.assertEqual(row(2), '')
+
+    def test_12_qrc_vide_et_reponse_deja_enregistree_acceptees(self):
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"B\",\"1-2\":[\"C\"]}}','submitted',now())")
+        res = sql(smc(U, 2, True, 100, self._d({1: '"B"', 2: 'null', 3: 'null'}, qrc=(3,))))
+        self.assertTrue(res.startswith('completed|100|'))
+
+    def test_16_brouillon_ou_soumission_partielle_ne_prouve_pas(self):
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"B\",\"1-2\":[\"C\"]}}','in_progress',NULL)")
+        self.assertIn('1 question(s) QCM sans réponse', err(smc(U, 2, True, 100, self._d({1: '"B"', 2: 'null'}))) or '')
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-2\":[\"C\"]}}','submitted',now())")
+        self.assertIn('2 question(s) QCM sans réponse', err(smc(U, 2, True, 100, self._d({1: 'null', 2: 'null'}))) or '')
+        self.assertEqual(row(2), '')
+
+    def test_13_modules_facultatifs_et_deja_termines_inchanges(self):
+        sql("INSERT INTO module_regles_validation VALUES (3, false, true)")
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_3_exo_1','{{\"1-1\":\"B\"}}')")
+        self.assertTrue(sql(smc(U, 3, True, 100, self._d({1: '"B"', 2: 'null'}))).startswith('completed|100|'))
+        sql(f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at,details) VALUES ('{A}',4,'completed',100,'2026-09-17T08:00:00Z','[]')")
+        self.assertEqual(sql(smc(U, 4, True, 100, self._d({1: 'null'}))), 'completed|100|2026-09-17 08:00:00+00')
+        sql("DELETE FROM module_regles_validation")
+
+    def test_14_sauvegarde_asynchrone_tardive_ne_vide_pas_une_reponse(self):
+        sql(smc(U, 2, False, 60, self._d({1: '"B"', 2: '"C"'})))
+        sql(smc(U, 2, False, 30, self._d({1: 'null', 2: '"D"'})))  # ancien envoi arrivé après
+        got = sql(f"SELECT string_agg(d->>'questionId'||'='||coalesce(d->>'reponseEleve','∅'), ',' ORDER BY (d->>'questionId')::int) FROM {TABLE}, jsonb_array_elements(details) d WHERE apprenant_id='{A}' AND module_id=2")
+        self.assertEqual(got, '1=B,2=D')
+        self.assertEqual(row(2), 'in_progress|60|NULL')
+
+    def test_15_etat_serveur_meme_verdict_pour_eleve_admin_refus_autre_compte(self):
+        sql(f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at,details) VALUES ('{A}',2,'completed',100,now(),{self._d({1: '"B"', 2: 'null'})}),('{A}',5,'completed',100,now(),{self._d({1: '"B"'})})")
+        q = f"SELECT string_agg(module_id||':'||coalesce(preuve_complete::text,'∅')||':'||status_effectif||':'||round(progress_effectif), ',' ORDER BY module_id) FROM public.etat_completion_modules('{A}')"
+        self.assertEqual(sql(learner(U, q)), '2:false:in_progress:50,5:true:completed:100')
+        self.assertEqual(sql(learner(ADMIN, q)), '2:false:in_progress:50,5:true:completed:100')
+        self.assertIn(sql(learner(U2, q)) or '', ('',))  # RLS : aucun module d'un autre élève
+        # Soumission serveur entière : preuve sans modifier la copie
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"B\",\"1-2\":\"A\"}}','submitted',now())")
+        self.assertTrue(sql(learner(U, q)).startswith('2:true:completed:100'))
+        self.assertEqual(sql(f"SELECT details->1->>'reponseEleve' IS NULL FROM {TABLE} WHERE apprenant_id='{A}' AND module_id=2"), 't')
+        self.assertIn('permission denied', err(f"SET ROLE anon; SELECT * FROM public.etat_completion_modules('{A}')") or '')
+
 def main():
     if '--capture' in sys.argv:
         print(capture_live()); return
@@ -234,6 +295,11 @@ def main():
     have_live = bool(os.environ.get('PGHOST'))
     DEPS_SQL = {fn: (live(f"select pg_get_functiondef(oid) from pg_proc where proname='{fn}' and pronamespace='public'::regnamespace") + ';') if have_live
                 else (ROOT / f'src/test/fixtures/fn_{fn}.sql').read_text() for fn in DEPS}
+    # Après déploiement de 0230, les RPC capturées appellent ces aides : on les recopie d'abord.
+    if have_live:
+        for fn in ['reponse_enregistree', 'fusion_details_progression']:
+            d = live(f"select pg_get_functiondef(oid) from pg_proc where proname='{fn}' and pronamespace='public'::regnamespace")
+            if d: DEPS.append(fn); DEPS_SQL[fn] = d + ';'
     mig = os.environ.get('MIGRATION_0197') or (sorted(glob.glob(str(ROOT / 'drizzle/migrations/0197_*.sql'))) or [None])[0]
     if not mig: raise SystemExit('SQL 0197 introuvable')
     migration = pathlib.Path(mig).read_text()
