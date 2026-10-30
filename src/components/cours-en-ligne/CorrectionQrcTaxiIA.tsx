@@ -42,7 +42,7 @@ export function CorrectionQrcTaxiIA({ quiz, questionId, answer, onNext, onLock, 
       {receipt.status === "review" ? "À arbitrer — sans note définitive" : `Correction IA : ${receipt.result.score}/1`} — {receipt.result.explanation}
     </p> : receipt && <p className="text-muted-foreground">{receipt.error || (receipt.status === "missing" ? "Aucune correction enregistrée ; votre réponse est conservée." : "Correction non reçue ; aucune note attribuée.")}</p>}
     {!busy && !finished && <Button className="w-full" disabled={!user?.id || !answer.trim() || answer.length > 4000} onClick={() => run(unread ? "read" : receipt?.status === "error" ? "read" : "correct")}>
-      {unread || receipt?.status === "error" ? "Vérifier la correction" : "Valider ma réponse"}
+      {unread || receipt?.status === "error" ? "Vérifier la correction" : attemptId ? "Demander la correction IA" : "Valider ma réponse"}
     </Button>}
     {!busy && retryAllowed && <Button variant="outline" className="w-full" onClick={() => { if (receipt?.retryAt && Date.now() >= Date.parse(receipt.retryAt)) run("retry"); else setReceipt(r => r ? { ...r, error: "Veuillez patienter avant la nouvelle tentative autorisée." } : r); }}>Réessayer la correction</Button>}
     {!busy && onNext && receipt && <Button variant="outline" className="w-full" onClick={onNext}>{finished ? "Question suivante" : "Continuer sans note"}</Button>}
