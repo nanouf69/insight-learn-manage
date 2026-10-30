@@ -1,9 +1,11 @@
 # Feuille de route
 
 ## Choix réinscription et réactivation plateforme — 30/10 10:20 UTC
-- [ ] Diagnostic lecture seule de la fiche CRM et des protections existantes.
-- [ ] Présenter le périmètre : choix administratif historisé + onglet de réactivation d’un mois, sans modifier les copies ni publier.
-- [ ] Mise en œuvre après accord du plan ; contrôles isolés et journal daté, aucune modification de dossier réel pour tester.
+- [x] Diagnostic lecture seule : badge non éditable ; accès lié aux dates initiales, circuit IA avec garde propre ; règle d’historique séparé retenue.
+- [x] Plan approuvé : choix Oui/Non par examen et nouvel onglet, périodes supplémentaires append-only, originaux conservés.
+- [x] Commandes admin idempotentes/RLS + historique (0227), relecture, concurrence refusée ; écran et garde IA reconnaissent l’extension sans changer dates ou jalons. Fonction qrc-taxi-ia ciblée déployée, aucun appel IA.
+- [x] 27 tests frontend +8 SQL isolés PASS ; fiche Naim lue, deux confirmations/readback navigateur simulés PASS ; build OK. Empreintes dossiers/documents identiques, tables nouvelles vides.
+- [ ] Parcours hébergé complet après véritable écriture NON PROUVÉ : aucun dossier réel utilisé pour tester et aucun compte fictif réactivé sur Cloud. Frontend NON PUBLIÉ, attend accord ; journal docs/crm-reinscription-reactivation-2026-10-30.md.
 
 ## IA immédiate des quiz QRC TAXI — 30/10 10:07 UTC
 - [x] Audit lecture seule : corriger-qrc existant non adapté (références client, pas d’auth/idempotence) ; circuit officiel en file exclu.
