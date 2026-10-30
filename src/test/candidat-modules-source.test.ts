@@ -60,3 +60,22 @@ describe('Candidats : même parcours et preuves que l’élève, lecture simulé
     await expect(chargerCandidatModules('fictif')).rejects.toThrow('Refus simulé');
   });
 });
+describe('Verdict serveur unique etat_completion_modules (lecture simulée)', () => {
+  it('Riyad : module 2 « completed » sans preuve serveur => reste à terminer, statut stocké intact', async () => {
+    fake.rows.apprenants = { data: { type_apprenant: 'vtc-e', modules_autorises: [2, 5], formation_choisie: null } };
+    const stocke = [{ module_id: 2, status: 'completed', completed_at: '2026-10-20T08:00:00Z' }, { module_id: 5, status: 'completed', completed_at: '2026-10-21T08:00:00Z' }];
+    fake.rows.apprenant_module_completion = { data: stocke };
+    fake.rows['rpc:etat_completion_modules'] = { data: [
+      { module_id: 2, status: 'completed', preuve_complete: false, progress_effectif: 86.8 },
+      { module_id: 5, status: 'completed', preuve_complete: true, progress_effectif: 100 },
+    ], error: null };
+    const r = await chargerCandidatModules('fictif-riyad');
+    expect(r).toMatchObject({ total: 2, termines: 1 });
+    expect(r.restants.map((m: any) => m.id)).toEqual([2]);
+    expect(stocke[0].status).toBe('completed');
+  });
+  it('erreur de lecture du verdict serveur => erreur remontée, jamais un faux 100 %', async () => {
+    fake.rows['rpc:etat_completion_modules'] = { data: null, error: { message: 'timeout' } };
+    await expect(chargerCandidatModules('fictif-erreur')).rejects.toBeTruthy();
+  });
+});
