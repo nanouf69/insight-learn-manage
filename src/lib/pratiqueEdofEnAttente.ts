@@ -1,6 +1,6 @@
 import { classifierSignatures } from "@/lib/signaturesManquantes";
 
-/** Display-only: no personal financing, a real practical signature and no latest EDOF validation. */
+/** Display-only: all financing types (personal included since 30/10), a real practical signature and no latest EDOF validation. */
 export function pratiqueEdofEnAttente(signatures: any[], inscriptions: any[], reservations: any[], configs: any[], valideEdof: boolean, modeFinancement?: string | null): string[] {
   void modeFinancement;
   if (valideEdof) return [];
