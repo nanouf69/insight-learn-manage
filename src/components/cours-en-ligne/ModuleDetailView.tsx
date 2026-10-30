@@ -8118,7 +8118,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         if (!ok) {
           completionPersistedRef.current = false;
           if (wasLastCompletionRefusedIncomplete()) {
-            toast.error("Module non terminé : aucune réponse n'est encore enregistrée. Vos réponses sont conservées, reprenez les questions du module.");
+            toast.error(lastCompletionRefusalText(), { duration: 12000 });
           } else if (await isLearnerSessionExpired(null)) {
             toast.error(SESSION_EXPIREE_MESSAGE, { duration: 15000 });
           } else {

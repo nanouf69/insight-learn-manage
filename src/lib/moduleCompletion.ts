@@ -42,8 +42,17 @@ const RETRY_BASE_DELAY = 800;
 
 /** Vrai si la dernière demande « Terminé » a été refusée par le serveur (module incomplet). */
 let lastCompletionRefusedIncomplete = false;
+let lastCompletionRefusalMessage = "";
 export function wasLastCompletionRefusedIncomplete(): boolean {
   return lastCompletionRefusedIncomplete;
+}
+
+/** Message élève du dernier refus serveur P0501 (nombre de QCM sans réponse si connu). */
+export function lastCompletionRefusalText(): string {
+  const n = /(\d+) question\(s\) QCM/.exec(lastCompletionRefusalMessage)?.[1];
+  return n
+    ? `Module non terminé : ${n} question${Number(n) > 1 ? "s" : ""} QCM sans réponse enregistrée. Vos réponses sont conservées, complétez les quiz du module puis validez à nouveau.`
+    : "Module non terminé : aucune réponse n'est encore enregistrée. Vos réponses sont conservées, reprenez les questions du module.";
 }
 
 /** True when the DB row means "module validated" (terminal state). */
@@ -87,6 +96,7 @@ export async function saveModuleCompletion(
   };
 
   lastCompletionRefusedIncomplete = false;
+  lastCompletionRefusalMessage = "";
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const { error } = await (supabase as any).rpc("save_module_completion", payload);
@@ -94,6 +104,7 @@ export async function saveModuleCompletion(
       // Refus définitif du serveur : module incomplet. Pas de nouvel essai, rien n'est effacé.
       if ((error as any)?.code === "P0501" || /MODULE_INCOMPLET/.test((error as any)?.message ?? "")) {
         lastCompletionRefusedIncomplete = true;
+        lastCompletionRefusalMessage = String((error as any)?.message ?? "");
         return false;
       }
       console.error(
