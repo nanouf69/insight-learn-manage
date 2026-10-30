@@ -1,5 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
-import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
+import { chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
 import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
@@ -32,12 +31,7 @@ export function calculerRatioSignatures(emargements: any[], inscriptions: any[],
 
 /** Admin read-only, account-scoped, paginated. No generated-sheet count is used as denominator. */
 export async function chargerRatioSignatures(apprenantId: string, filiere: string): Promise<RatioSignatures> {
-  const [emargements, sessions, reservations, blocs, configs] = await Promise.all([
-    fetchAllRows<any>((f,t) => supabase.from('emargements_fc').select('id,date_emargement,demi_journee,signature_data_url,absent,masque').eq('apprenant_id',apprenantId).order('id').range(f,t)),
-    fetchAllRows<any>((f,t) => supabase.from('session_apprenants').select('id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(type_session,statut,date_debut,date_fin,heure_debut,heure_fin)').eq('apprenant_id',apprenantId).order('id').range(f,t)),
-    fetchAllRows<any>((f,t) => supabase.from('reservations_pratique').select('id,date_choisie,creneau').eq('apprenant_id',apprenantId).order('id').range(f,t)),
-    fetchAllRows<any>((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
-    fetchAllRows<any>((f,t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
-  ]);
-  return calculerRatioSignatures(emargements, sessions, reservations, blocs, configs, filiere);
+  const b = await chargerBilanSignaturesEdof(apprenantId, filiere);
+  const raison = b.planningIncomplet ? 'Planning incomplet : créneaux attendus non déterminés' : !b.objectifTotal ? 'Aucun créneau attendu défini pour cette session' : null;
+  return { signees: b.total, attendues: b.objectifTotal, taux: raison ? null : b.total / b.objectifTotal * 100, raison };
 }
