@@ -1201,7 +1201,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const requestId = ++completionsRequestRef.current;
     let cancelled = false;
     const fetchCompletions = async () => {
-      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }, submittedProofs] = await Promise.all([
+      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }, etatsServeur] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
         // never yields an empty progression (which re-locked validated modules).
         fetchModuleCompletions(apprenant.id),
@@ -1248,7 +1248,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         }, delay);
         return;
       }
-      if (completionsResult.ok && !cancelled && requestId === completionsRequestRef.current) {
+      if (completionsResult.ok && etatsServeur && !cancelled && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows.map(row => avecEtatServeur(row, etatsServeur));
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
 
@@ -1567,7 +1567,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
       const requestId = ++completionsRequestRef.current;
-      const [completionsResult, { data: examData }, submittedProofs] = await Promise.all([
+      const [completionsResult, { data: examData }, etatsServeur] = await Promise.all([
         fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
@@ -1577,7 +1577,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         // Verdict serveur unique ; erreur de lecture = progression non affichée (jamais un faux terminé).
         chargerEtatCompletionServeur(apprenant.id).catch((e) => { console.error("[CoursPublic] état serveur indisponible", e); return null as Map<number, EtatCompletionServeur> | null; }),
       ]);
-      if (completionsResult.ok && requestId === completionsRequestRef.current) {
+      if (completionsResult.ok && etatsServeur && requestId === completionsRequestRef.current) {
         const completionRows = completionsResult.rows.map(row => avecEtatServeur(row, etatsServeur));
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
