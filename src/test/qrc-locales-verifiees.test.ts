@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { QCM_LOCAUX_BILAN_TA } from '@/data/bilan-ta/qcmLocauxBilanTa';
-import { reponsesLocalesAcceptees } from '@/lib/quizQrcTaxi/correctionsLocalesVerifiees';
+import { reponsesLocalesAcceptees, feedbackLocalVerifie } from '@/lib/quizQrcTaxi/correctionsLocalesVerifiees';
 
 describe('Corrections facultatives documentées Q29/Q35', () => {
   it('Q35 accepte D et refuse les seuils trois, quatre et cinq places', () => {
@@ -15,6 +15,7 @@ describe('Corrections facultatives documentées Q29/Q35', () => {
     const q = QCM_LOCAUX_BILAN_TA.find(q => q.id === 29);
     if (!q) throw new Error('Q29 absente');
     expect(reponsesLocalesAcceptees(q)).toEqual(['A']);
+    expect(feedbackLocalVerifie(q)).toBeNull(); // Q29 inchangée : l'utilisateur la modifiera lui-même
   });
   it('toutes les autres clés sont exactement celles de la copie TA', () => {
     for (const q of QCM_LOCAUX_BILAN_TA.filter(q => q.id !== 35)) {
