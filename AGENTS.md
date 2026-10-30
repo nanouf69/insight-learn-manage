@@ -21,7 +21,7 @@
 - Labels: permanent IDs + dated baselines; why: no drift.
 - Course-specific rules (supports, T3P, module 7 communes, extra readings, books, question CSS, Part 1 enrichment): see `src/components/cours-en-ligne/AGENTS.md`.
 - Student counters/CRM jalons share progressionModulesEleve, account proofs and Lyon waivers; attendance uses milestone ID; why: no divergence or leakage.
-- Signatures PDF/Contrôle ZIP share readonly planning loader; retain IDs/versions, unknown hours, abort read errors; EDOF targets shared, PDF counts images not timestamps; why: no fabricated proof or mutations.
+- Signature counters share planningSignaturesReel (enrolled agenda + actual practice), unknown planning blocks completion; PDF/ZIP preserve IDs/versions and abort read errors; why: no fictitious practice quota or altered historical proof.
 - Accès élève créés/envoyés par trigger serveur si aucun compte; why: toujours un accès.
 - Quiz validé : `trg_00_garde_*` gardent réponses/note/statut (refus dans `quiz_valide_reecritures_refusees`, Admin/service/nouvelle tentative passent) ; EB legacy : clôture vide refusée P0530 (code client `cloture_vide` ; sans réponse locale renseignée, l'écran affiche « temps écoulé sans réponse », jamais un blocage permanent) ; why: anti-réécriture sans enfermer l'élève.
 - Échecs validation : RPC `signaler_echec_validation_quiz`, 3/15 min = 1 alerte/h ; why: marche sans session.

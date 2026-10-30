@@ -1,3 +1,4 @@
+import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { supabase } from '@/integrations/supabase/client';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from '@/lib/pratiqueSlots';
@@ -67,6 +68,7 @@ export function calculerSignaturesManquantes(
   reservations: any[],
   dateReference: string = dateDuJourParis(),
   configs: any[] = [],
+  blocs?: any[],
 ): SignatureManquante[] {
   const signes = new Set<string>();
   const absents = new Set<string>();
@@ -82,7 +84,7 @@ export function calculerSignaturesManquantes(
   }
 
   const attendus = new Map<string, { creneau: string; source: string }>();
-  const { parDate } = planningCreneaux(sessionRows, reservations, configs);
+  const { parDate } = planningCreneaux(sessionRows, reservations, configs, blocs);
   for (const [date, jour] of parDate) {
     for (const creneau of jour.creneaux) attendus.set(`${date}|${creneau}`, { creneau, source: jour.pratique ? `Pratique ${String(reservations.find(r => normDate(r.date_choisie) === date)?.type_formation ?? '').toUpperCase()} — inscription / réservation` : 'Théorie — inscription de session' });
   }
@@ -99,17 +101,13 @@ export function calculerSignaturesManquantes(
 }
 
 /** Filière de l'apprenant (TA / TAXI / VTC) d'après son type ; erreur de lecture = erreur, jamais une valeur par défaut. */
-export function filiereSignatures(formation: string | null | undefined): 'VTC' | 'TAXI' | 'TA' {
+export function filiereSignatures(formation: string | null | undefined): 'VTC' | 'TAXI' | 'TA' | 'VA' {
   const f = String(formation ?? '').toLowerCase();
+  if (/(^|[^a-z])va([^a-z]|$)|passerelle-vtc/.test(f)) return 'VA';
   return /(^|[^a-z])ta([^a-z]|$)|taxi-pour-vtc|passerelle-taxi/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
 }
 export function marquerFiliereRows(rows: any[], filiere: string): any[] {
   return (rows ?? []).map(r => ({ ...r, filiere_apprenant: filiere }));
-}
-async function marquerFiliere(apprenantId: string, rows: any[]): Promise<any[]> {
-  const { data, error } = await supabase.from('apprenants').select('type_apprenant, formation_choisie').eq('id', apprenantId).maybeSingle();
-  if (error) throw error;
-  return marquerFiliereRows(rows, filiereSignatures(data?.type_apprenant || data?.formation_choisie));
 }
 
 async function paginer(build: (from: number, to: number) => any): Promise<any[]> {
@@ -126,20 +124,25 @@ async function paginer(build: (from: number, to: number) => any): Promise<any[]>
 
 export async function chargerSignaturesManquantes(apprenantId: string): Promise<SignatureManquante[]> {
   if (!apprenantId) throw new Error('Apprenant requis');
-  const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
+  const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
+    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    supabase.from('apprenants').select('type_apprenant,formation_choisie,creneau_horaire').eq('id',apprenantId).single(),
   ]);
-  return calculerSignaturesManquantes(emargRes, await marquerFiliere(apprenantId, sessionsRes), reservationsRes, dateDuJourParis(), configs);
+  if (apprenant.error) throw apprenant.error;
+  const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
+  const rows = marquerFiliereRows(sessionsRes, filiereSignatures(apprenant.data.type_apprenant || apprenant.data.formation_choisie)).map(r => ({...r, elearning_apprenant: elearning}));
+  return calculerSignaturesManquantes(emargRes, rows, reservationsRes, dateDuJourParis(), configs, blocs);
 }
 
 // ── Objectif EDOF : nombre de signatures attendues selon la formation ──
 // VTC journée et soir : 20 théorie + 2 pratique = 22 ;
 // TAXI : 30 + 2 = 32. Signature comptée une seule fois par date + créneau.
 
-interface JourPlanning { creneaux: Set<string>; pratique: boolean }
+export interface JourPlanning { creneaux: Set<string>; pratique: boolean }
 
 /**
  * Créneaux réellement prévus par date, à partir des inscriptions retenues
@@ -148,8 +151,17 @@ interface JourPlanning { creneaux: Set<string>; pratique: boolean }
  * sa paire date + créneau est prévue ici. Une réservation ne contourne jamais
  * une inscription pratique exclue du périmètre.
  */
-export function planningCreneaux(sessionRows: any[], reservations: any[], configs: any[] = []): { parDate: Map<string, JourPlanning>; soir: boolean } {
+export function planningCreneaux(sessionRows: any[], reservations: any[], configs: any[] = [], blocs?: any[]): { parDate: Map<string, JourPlanning>; soir: boolean } {
   const parDate = new Map<string, JourPlanning>();
+  if (blocs) {
+    const plan = planningSignaturesReel(sessionRows, reservations, blocs, configs, sessionRows.find(r => r.filiere_apprenant)?.filiere_apprenant ?? 'VTC');
+    if (plan.incomplet) throw new Error('Planning incomplet : signatures attendues non déterminées');
+    for (const [key, pratique] of plan.creneaux) {
+      const date = key.slice(0,10), creneau = key.slice(11), jour = parDate.get(date) ?? { creneaux: new Set<string>(), pratique: false };
+      jour.creneaux.add(creneau); jour.pratique ||= pratique; parDate.set(date, jour);
+    }
+    return { parDate, soir: [...parDate.values()].some(j => j.creneaux.has('soir_1') || j.creneaux.has('soir_2')) };
+  }
   let soir = false;
   const add = (date: string, creneaux: string[], pratique: boolean) => {
     const cur = parDate.get(date);
@@ -231,7 +243,7 @@ export function datesDuPlanning(sessionRows: any[], reservations: any[], configs
   return { datesTheorie, datesPratique, soir };
 }
 export interface BilanSignaturesEdof {
-  filiere: 'VTC' | 'TAXI' | 'TA';
+  filiere: 'VTC' | 'TAXI' | 'TA' | 'VA';
   excedent: boolean;
   soir: boolean;
   theorie: number;
@@ -244,6 +256,7 @@ export interface BilanSignaturesEdof {
   objectifPratique: number;
   objectifTotal: number;
   complet: boolean;
+  planningIncomplet: boolean;
 }
 
 export function calculerBilanSignaturesEdof(
@@ -252,10 +265,18 @@ export function calculerBilanSignaturesEdof(
   reservations: any[],
   formation: string,
   configs: any[] = [],
+  blocs?: any[],
 ): BilanSignaturesEdof {
   const filiere = filiereSignatures(formation);
   sessionRows = marquerFiliereRows(sessionRows, filiere);
-  const { parDate, soir } = planningCreneaux(sessionRows, reservations, configs);
+  const legacy = planningCreneaux(sessionRows, reservations, configs);
+  const reel = blocs ? planningSignaturesReel(sessionRows, reservations, blocs, configs, filiere) : null;
+  const parDate = reel ? new Map<string, JourPlanning>() : legacy.parDate;
+  if (reel) for (const [key, pratique] of reel.creneaux) {
+    const date = key.slice(0,10), c = key.slice(11), jour = parDate.get(date) ?? { creneaux: new Set<string>(), pratique: false };
+    jour.creneaux.add(c); jour.pratique ||= pratique; parDate.set(date, jour);
+  }
+  const soir = [...parDate.values()].some(j => j.creneaux.has('soir_1') || j.creneaux.has('soir_2'));
   const vus = new Set<string>();
   let theorie = 0;
   let pratique = 0;
@@ -280,35 +301,37 @@ export function calculerBilanSignaturesEdof(
     }
   }
   horsPlanning.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
-  const classification = classifierSignatures(emargements, sessionRows, reservations, dateDuJourParis(), configs);
+  const classification = classifierSignatures(emargements, sessionRows, reservations, dateDuJourParis(), configs, reel?.incomplet ? undefined : blocs);
   const verifierKeys = new Set(classification.aVerifier.map(e => `${e.date}|${e.creneau}`));
   const horsRetenu = horsPlanning.filter(e => !verifierKeys.has(`${e.date}|${e.creneau}`));
-  // TA actuel : 10 signatures de théorie (première semaine, lun–ven) + 2 de pratique = 12.
-  // Ancien parcours TA : objectif total 12 ou 14 saisi explicitement par un admin sur l'inscription
-  // théorique retenue (jamais déduit des signatures). Sinon règle actuelle 10 + 2.
-  const historiqueTA = filiere === 'TA'
-    ? (sessionRows ?? []).filter(r => r?.liste_attente !== true && !inscriptionExclue(r) && /theorique/i.test(r?.sessions?.type_session ?? ''))
-        .map(r => Number(r?.objectif_signatures_ta_historique)).find(n => n === 12 || n === 14)
-    : undefined;
-  const objectifTheorie = filiere === 'TAXI' ? 30 : filiere === 'TA' ? (historiqueTA ? historiqueTA - 2 : 10) : 20;
-  const objectifPratique = 2;
+  let objectifTheorie = 0, objectifPratique = 0;
+  for (const jour of parDate.values()) {
+    if (jour.pratique) objectifPratique += jour.creneaux.size;
+    else objectifTheorie += jour.creneaux.size;
+  }
+  const planningIncomplet = reel?.incomplet ?? false;
   return {
     filiere, soir, theorie, pratique, total: theorie + pratique, horsPlanning: horsRetenu, aVerifier: classification.aVerifier,
     objectifTheorie, objectifPratique, objectifTotal: objectifTheorie + objectifPratique,
-    complet: theorie === objectifTheorie && pratique === objectifPratique,
+    planningIncomplet,
+    complet: !planningIncomplet && objectifTheorie + objectifPratique > 0 && theorie === objectifTheorie && pratique === objectifPratique,
     excedent: theorie > objectifTheorie || pratique > objectifPratique,
   };
 }
 
 export async function chargerBilanSignaturesEdof(apprenantId: string, formation: string): Promise<BilanSignaturesEdof> {
   if (!apprenantId) throw new Error('Apprenant requis');
-  const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
+  const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
+    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    supabase.from('apprenants').select('type_apprenant,creneau_horaire').eq('id',apprenantId).single(),
   ]);
-  return calculerBilanSignaturesEdof(emargRes, sessionsRes, reservationsRes, formation, configs);
+  if (apprenant.error) throw apprenant.error;
+  const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
+  return calculerBilanSignaturesEdof(emargRes, sessionsRes.map(r => ({...r, elearning_apprenant: elearning})), reservationsRes, formation, configs, blocs);
 }
 
 // ── Classification attendu / valide / hors session ──
@@ -350,9 +373,10 @@ export function classifierSignatures(
   reservations: any[],
   dateReference: string = dateDuJourParis(),
   configs: any[] = [],
+  blocs?: any[],
 ): ClassificationSignatures {
-  const attendus = calculerSignaturesManquantes(emargements, sessionRows, reservations, dateReference, configs);
-  const { parDate } = planningCreneaux(sessionRows, reservations, configs);
+  const attendus = calculerSignaturesManquantes(emargements, sessionRows, reservations, dateReference, configs, blocs);
+  const { parDate } = planningCreneaux(sessionRows, reservations, configs, blocs);
 
   const anomalies: AnomalieSignature[] = [];
   const aVerifier: SignatureClassee[] = [];
@@ -366,7 +390,7 @@ export function classifierSignatures(
     if (e.masque !== true && e.absent !== true && e.signed_at && !estSignee(e)) {
       anomalies.push({ date: normDate(e.date_emargement), creneau: DEMI_LABELS[e.demi_journee] ?? e.demi_journee, detail: 'Date enregistrée sans image de signature : preuve à vérifier, non comptée. Une date de création automatique ne prouve pas une signature.' });
     }
-    if (e.masque === true && estSignee(e) && normDate(e.signed_at) !== normDate(e.date_emargement)) {
+    if (e.masque === true && aPreuveSignatureEmargement({ ...e, masque: false }) && normDate(e.signed_at) !== normDate(e.date_emargement)) {
       anomalies.push({ date: normDate(e.date_emargement), creneau: DEMI_LABELS[e.demi_journee] ?? e.demi_journee, detail: `Historique masqué : signature effectuée le ${normDate(e.signed_at)} sur cette feuille ; rattachement à examiner, aucune présence réattribuée.` });
     }
   }
@@ -430,13 +454,18 @@ export function classifierSignatures(
 
 export async function chargerClassificationSignatures(apprenantId: string): Promise<ClassificationSignatures> {
   if (!apprenantId) throw new Error('Apprenant requis');
-  const [emargRes, sessionsRes, reservationsRes, configs] = await Promise.all([
+  const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
+    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    supabase.from('apprenants').select('type_apprenant,formation_choisie,creneau_horaire').eq('id',apprenantId).single(),
   ]);
-  return classifierSignatures(emargRes, await marquerFiliere(apprenantId, sessionsRes), reservationsRes, dateDuJourParis(), configs);
+  if (apprenant.error) throw apprenant.error;
+  const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
+  const rows = marquerFiliereRows(sessionsRes, filiereSignatures(apprenant.data.type_apprenant || apprenant.data.formation_choisie)).map(r => ({...r, elearning_apprenant: elearning}));
+  return classifierSignatures(emargRes, rows, reservationsRes, dateDuJourParis(), configs, blocs);
 }
 
 /** Live-only display filter. Never used to rewrite evidence or calculate frozen history. */

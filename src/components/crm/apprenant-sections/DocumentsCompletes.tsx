@@ -841,8 +841,8 @@ export function DocumentsCompletes({ apprenant }: Props) {
           </div>
           <SignaturesRassembleesExport
             apprenant={apprenant}
-            totalAttendu={/e-?learning/i.test(formationEdof) ? null : (bilanEdof?.objectifTotal ?? null)}
-            totalIndisponible={bilanEdofErreur}
+            totalAttendu={bilanEdof?.planningIncomplet ? null : (bilanEdof?.objectifTotal ?? null)}
+            totalIndisponible={bilanEdofErreur || bilanEdof?.planningIncomplet === true}
           />
         </CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
@@ -853,10 +853,11 @@ export function DocumentsCompletes({ apprenant }: Props) {
           ) : (
             <div className="text-sm space-y-1">
               <p className="text-foreground">
-                <strong>Total signatures : {bilanEdof.total} / {bilanEdof.objectifTotal}</strong>
+                <strong>Signatures attendues : {bilanEdof.planningIncomplet ? "à vérifier" : bilanEdof.objectifTotal} — Signatures recueillies : {bilanEdof.total} / {bilanEdof.planningIncomplet ? "—" : bilanEdof.objectifTotal}</strong>
                 {" "}— présentiel {bilanEdof.theorie}/{bilanEdof.objectifTheorie}, pratique {bilanEdof.pratique}/{bilanEdof.objectifPratique}
                 {" "}({bilanEdof.filiere}{bilanEdof.filiere === "VTC" ? (bilanEdof.soir ? " cours du soir" : " journée") : ""})
               </p>
+              {bilanEdof.planningIncomplet && <p role="alert" className="text-sm text-destructive">Planning incomplet : total non confirmé, aucune validation déduite.</p>}
               {bilanEdof.excedent && (
                 <p role="alert" className="text-base font-bold text-destructive">
                   Problème : plus de signatures que prévu ({bilanEdof.total} pour {bilanEdof.objectifTotal} attendues) — à vérifier.

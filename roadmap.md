@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Signatures réelles — 30/10 15:27 UTC
+- [x] Audit Ilyes : TA dix créneaux/10 images, aucune pratique réservée/inscrite ; +2 forfait client.22 feuilles futures sans image conservées ; origine exacte du lot12/10 NON PROUVÉE.
+- [x] Lecture nominative457 dossiers,3041 feuilles :79 plannings incomplets,45 dossiers hors planning,34 horodatages sans image,0 doublon ; rapport docs/audit-emargements-2026-10-30.md et CSV Files. Empreinte avant/après identique.
+- [x] Compteurs partagés selon planning réel, résumé en haut des fiches, taux/Documents/EDOF harmonisés ; aucune écritureCloud ni preuve/calendrier modifié.
+- [x] 191 tests/18 fichiers PASS ; aperçu buildOK ; compte admin réel ficheIlyes/Formulaires10/10 et mobile lisible. Aucun mail/SMS/IA/attestation/publication.
+- [ ] Publication BLOQUÉE : confirmer horaire27/10 après-midi (agenda13–15=29h contre30h affichées), plannings incomplets et concordance serveur/attestations. Tests SQL et parcours de tous les comptes NON PROUVÉS ; audit détaillé des attestations existantes non terminé (preuves complémentaires requises).
+
 ## Livres reçus — 30/10 15:06 UTC
 - [x] TAXI113 / VTC87 / TA53 / VA27 pages ; deux fichiers TA byte-identiques ; seuls modules70–73 concernés.
 - [x] Visionneuse masquée à l'impression ; PDF original élève toujours refusé côté serveur, aucune modification de questions/données.

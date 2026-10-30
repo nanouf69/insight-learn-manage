@@ -44,6 +44,6 @@ describe('TA ancien parcours : objectif historique explicite', () => {
     expect(b.objectifTotal).toBe(12); expect(b.theorie).toBe(10);
   });
   it('valeur hors 12/14 ignorée', () => {
-    expect(calculerBilanSignaturesEdof([], [theorie({ objectif_signatures_ta_historique: 16 })], [], 'ta').objectifTotal).toBe(12);
+    expect(calculerBilanSignaturesEdof([], [theorie({ objectif_signatures_ta_historique: 16 })], [], 'ta').objectifTotal).toBe(10);
   });
 });
