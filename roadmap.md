@@ -2,7 +2,7 @@
 
 ## Visibilité prolongation d’accès — 30/10 11:15
 - [x] Onglet existant renommé « Ajouter un mois d’accès », raccourci près de Réinscription ouvrant l’onglet et le faisant défiler ; aucune prolongation automatique.
-- [ ] Vérification aperçu de l’ouverture et proposition réelle en lecture seule ; aucune publication.
+- [x] Aperçu administrateur : raccourci ouvre onglet actif, proposition serveur et action de confirmation visibles, aucune réactivation exécutée ; 4 tests PASS, build OK. Aucune publication.
 
 ## Choix dates Examen et Réussite — 30/10
 - [x] Masquer dates passées dans les deux sélecteurs théorie, proposer prochaine session selon jour Paris ; garder catalogue et dossiers historiques inchangés.
