@@ -122,12 +122,14 @@ export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
           outcome = "error";
         }
         lastOutcome = outcome;
+        // Même en erreur : la relecture de sécurité (lourde) n'est pas retentée
+        // avant l'intervalle suivant ; les tics suivants restent des sondes.
+        lastFullAt = now();
         if (outcome === "error") {
           markFailure();
           trailing = false; // pas de rafale après une erreur : l'attente bornée s'applique
         } else {
           markSuccess();
-          lastFullAt = now();
         }
       } while (trailing && !disposed);
       return lastOutcome;

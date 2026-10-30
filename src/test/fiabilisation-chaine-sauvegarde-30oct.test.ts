@@ -83,7 +83,8 @@ describe("Rafraîchissement live : sonde légère au lieu de relire 0,5 Mo toute
   it("PGRST003 / 57014 : attente exponentielle bornée avec gigue, jamais de rafale", async () => {
     const h = horloge();
     const probe = vi.fn(async () => null as string | null); // lecture en erreur
-    const r = createLiveRefresher({ probe, fetchFull: async () => true, isHidden: () => false, now: h.now, random: () => 0.5, backoffBaseMs: 5_000, backoffMaxMs: 60_000 });
+    const fetchFull = vi.fn(async () => false); // base saturée : relecture complète en erreur aussi
+    const r = createLiveRefresher({ probe, fetchFull, isHidden: () => false, now: h.now, random: () => 0.5, backoffBaseMs: 5_000, backoffMaxMs: 60_000 });
     expect(await r.poll()).toBe("probe-error");
     h.avancer(4_000);
     expect(await r.poll()).toBe("backoff");
@@ -94,7 +95,9 @@ describe("Rafraîchissement live : sonde légère au lieu de relire 0,5 Mo toute
     for (let i = 0; i < 10; i += 1) { h.avancer(61_000); await r.poll(); }
     h.avancer(59_000);
     expect(await r.poll()).toBe("backoff"); // plafond 60 s ±20 %
-    expect(probe.mock.calls.length).toBe(13);
+    // ~11 min de saturation : au plus une lecture par minute, relectures lourdes rares.
+    expect(probe.mock.calls.length + fetchFull.mock.calls.length).toBeLessThanOrEqual(13);
+    expect(fetchFull.mock.calls.length).toBeLessThanOrEqual(6);
   });
 
   it("relecture complète en erreur : jeton non retenu, nouvel essai après l'attente", async () => {
