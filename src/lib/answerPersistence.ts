@@ -881,6 +881,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     return "retry";
   } finally {
     if (abandon) clearTimeout(abandon);
+    if (envoiEnCoursId === item.id) envoiEnCoursId = null;
   }
 }
 
