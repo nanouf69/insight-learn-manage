@@ -13,7 +13,6 @@ import { ecouterContenuModifie } from "@/lib/contenuModifie";
 import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { GEL_QUERY_KEY, chargerEtatGel, mentionGel } from "@/lib/releveJalonsGel";
-import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { modeFormationAffichage } from "@/lib/modeFormationAffichage";
 
 export const JALONS_VOLUMES_KEY = "jalons-volumes";
@@ -81,9 +80,8 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY] });
       })
       // Réalisations confirmées par le serveur pour CET élève (jeux/activités, modules) : relecture ciblée immédiate.
-      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, (p: any) => {
-        const ex = String((p.new as any)?.exercice_id ?? (p.old as any)?.exercice_id ?? "");
-        if (ACTIVITES_CODE.some((a) => a.id === ex)) void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY, apprenantId] });
+      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, () => {
+        void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY, apprenantId] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "apprenant_module_completion", filter: `apprenant_id=eq.${apprenantId}` }, () => {
         void queryClient.invalidateQueries({ queryKey: [JALONS_VOLUMES_KEY, apprenantId] });
@@ -156,7 +154,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
         </table>
         <p className="mt-2 text-xs text-muted-foreground">{EXPLICATION_JALONS} Durée couverte = durée CPF × progression / 100 (arrondie à la minute pour l’affichage). Le total couvert est arrondi après addition. Le taux global n’est pas la somme des progressions ; le plafond interne existant reste inchangé. Examens blancs : {calcul.filiere === "vtc" || calcul.filiere === "taxi" ? "23h00" : "5h00"} ; présentiel : 6h00.</p>
         <p className="mt-2 text-xs font-medium">Heures réellement enregistrées (distinctes du prévisionnel) : en ligne {heures.enLigne == null ? "lecture non disponible" : formatDureeJalon(heures.enLigne)} · présence (signée ou validée par l’administration) {formatDureeJalon(heures.pratique)} · total {heures.total == null ? "lecture non disponible" : formatDureeJalon(heures.total)}. Aucune répartition d’heures réelles par module n’est déduite des connexions.</p>
-        <p className="mt-1 text-xs text-muted-foreground">Questions recomptées sur le contenu actuel ; pages issues de l'audit (non recomptées automatiquement). Un module déjà « Terminé » reste à 100 % même si des questions ont été ajoutées depuis.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Questions recomptées sur le contenu actuel ; pages issues de l'audit. Les obligations historiques et leurs soumissions serveur déterminent l'achèvement ; les ajouts ultérieurs ne rouvrent pas un module légitimement terminé. Les relevés figés restent inchangés.</p>
         {calcul.limites.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{calcul.limites.map((t) => <li key={t}>{t}</li>)}</ul>}
         </div>
       )}

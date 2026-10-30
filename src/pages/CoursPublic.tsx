@@ -1305,6 +1305,31 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, []);
   useEffect(() => { completionsLoadedRef.current = completionsLoaded; }, [completionsLoaded]);
 
+  // Same server evidence as CRM/EDOF; coalesce bursts, never mutate learner proofs.
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        setCompletionsError(false);
+        setCompletionsReloadToken(t => t + 1);
+      }, 250);
+    };
+    const channel = supabase.channel(`learner-module-proof-${apprenant.id}-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "apprenant_module_completion", filter: `apprenant_id=eq.${apprenant.id}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants", filter: `apprenant_id=eq.${apprenant.id}` }, refresh)
+      .subscribe();
+    window.addEventListener("focus", refresh);
+    window.addEventListener("online", refresh);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+      void supabase.removeChannel(channel);
+    };
+  }, [apprenant?.id, user?.id]);
+
   // Vérifier si une signature d'émargement est requise pour le créneau en cours
   // - Formation continue : matin / aprem (selon l'heure)
   // - Présentiel : matin / aprem / soir (selon l'agenda du jour)
