@@ -17,6 +17,7 @@ import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
 import { streamText } from "npm:ai";
 import { classerEchecIa, planSuite, prochaineActionIa, TIMEOUT_IA_MS, type ActionQrc } from "../_shared/qrcIaSuite.ts";
 import { z } from "npm:zod@3";
+import { creditsMax, creditsReels, debutMoisSuivant, SORTIE_MAX_JETONS, type PRIX_CREDITS } from "../_shared/qrcIaBudget.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
   CONSIGNE_IA, MARQUEUR_IA, MODELE_IA_QRC, admissibilite, cleIdempotence, estApprenantElearning, estElearning, estPauseGlobale,
@@ -322,6 +323,8 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       clearTimeout(minuteur);
       const upstream = (e as { statusCode?: number }).statusCode;
       const echec = classerEchecIa({ providerFinished, timeoutLocal, statusCode: providerFinished ? undefined : upstream });
+      // Budget : refus HTTP du fournisseur = non facturé ; issue inconnue = réservation conservée.
+      if (!providerFinished) await reglerBudget(upstream ? 0 : null, !!upstream);
       const message = `${echec.code} : ${String((e as { message?: string }).message ?? "Service IA indisponible")}`.slice(0, 600);
       await finishError(echec.status, message, echec.statut);
       if (estPauseGlobale(echec.status)) {
