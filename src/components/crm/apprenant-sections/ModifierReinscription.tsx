@@ -13,6 +13,7 @@ export function ModifierReinscription({ apprenantId, examen }: { apprenantId: st
   const [choix, setChoix] = useState<'oui' | 'non' | null>(null);
   const [saving, setSaving] = useState(false);
   const operation = useRef<string | null>(null);
+  const submitted = useRef<{ choix: 'oui' | 'non'; precedent?: string } | null>(null);
   const busy = useRef(false);
   const client = useQueryClient();
   const query = useQuery({ queryKey: ['choix-reinscription-admin', apprenantId, examen], queryFn: () => lireChoixAdmin(apprenantId, examen) });
@@ -21,18 +22,19 @@ export function ModifierReinscription({ apprenantId, examen }: { apprenantId: st
     if (busy.current || !choix || !examen || query.isError || query.isLoading) return;
     busy.current = true; setSaving(true);
     operation.current ??= crypto.randomUUID();
+    submitted.current ??= { choix, precedent: latest?.id };
     try {
-      const { data, error } = await supabase.rpc('crm_enregistrer_reinscription', { p_operation: operation.current, p_apprenant: apprenantId, p_examen: examen, p_choix: choix, p_precedent: latest?.id });
-      if (error) throw error;
+      const { data, error } = await supabase.rpc('crm_enregistrer_reinscription', { p_operation: operation.current, p_apprenant: apprenantId, p_examen: examen, p_choix: submitted.current.choix, p_precedent: submitted.current.precedent });
+      if (error) { if (error.code === '40001') { operation.current = null;submitted.current = null;await query.refetch(); } throw error; }
       const rows = await lireChoixAdmin(apprenantId, examen);
       if (!data || !rows.some(r => r.operation_id === operation.current && r.choix === choix)) throw new Error('Enregistrement non confirmé : réessayez sans changer le choix');
       await Promise.all([client.invalidateQueries({ queryKey: ['choix-reinscription-admin', apprenantId] }), client.invalidateQueries({ queryKey: ['reinscription-examen-declaree', apprenantId] })]);
-      toast.success('Choix de réinscription enregistré');setOpen(false);operation.current = null;
+      toast.success('Choix de réinscription enregistré');setOpen(false);operation.current = null;submitted.current = null;
     } catch (e) { toast.error((e as Error).message || 'Enregistrement impossible'); }
     finally { busy.current = false;setSaving(false); }
   };
   return <>
-    <Button variant="outline" size="sm" onClick={() => { setOpen(true);setChoix(latest?.choix === 'oui' ? 'oui' : latest?.choix === 'non' ? 'non' : null); }}>
+    <Button variant="outline" size="sm" onClick={() => { setOpen(true);setChoix(submitted.current?.choix ?? (latest?.choix === 'oui' ? 'oui' : latest?.choix === 'non' ? 'non' : null)); }}>
       <Pencil className="h-3 w-3 mr-1" />Réinscription examen : {latest ? `${latest.choix === 'oui' ? 'Oui' : 'Non'} (administration)` : 'Modifier'}
     </Button>
     <Dialog open={open} onOpenChange={v => { if (!saving) setOpen(v); }}><DialogContent><DialogHeader><DialogTitle>Réinscription à l’examen</DialogTitle></DialogHeader>
