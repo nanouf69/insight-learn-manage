@@ -24,6 +24,8 @@ if (typeof promiseAvecResolvers.withResolvers === "undefined") {
  * « Promise.withResolvers is not a function » (journaux jusqu'au 29/10).
  * Pour ces navigateurs seulement, on démarre un petit worker module qui pose
  * le polyfill PUIS importe le vrai worker (même fichier, même origine).
+ * Import DYNAMIQUE obligatoire : un `import` statique serait évalué avant le
+ * corps du module, donc avant le polyfill.
  */
 export function sourceWorkerCompatible(
   urlWorker: string,
@@ -36,7 +38,7 @@ export function sourceWorkerCompatible(
     const absolu = new URL(urlWorker, baseHref).href;
     const code =
       "if(typeof Promise.withResolvers!=='function'){Promise.withResolvers=function(){var a,b;var p=new Promise(function(r,j){a=r;b=j});return{promise:p,resolve:a,reject:b}}}\n" +
-      `import ${JSON.stringify(absolu)};\n`;
+      `await import(${JSON.stringify(absolu)});\n`;
     return creerUrlBlob(code) ?? urlWorker;
   } catch {
     return urlWorker;
