@@ -842,3 +842,8 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 
 ## Verrou attestations formation continue — 27/10 17:34 UTC
 - [x] Aucune génération/téléchargement/envoi d'attestation FC (VTC, TAXI si même processus) sans les 4 signatures serveur (matin+après-midi × 2 jours) ; vérification serveur, refus par défaut, message des créneaux manquants ; tests 0–4 signatures, envois auto/manuels, accès directs ; aucun mail réel.
+
+## 30/10 — Riyad LABIOD jalons 100 % → 95,5 %
+- [ ] Diagnostic lecture seule des 4,5 points perdus (quiz ajoutés après validation ?)
+- [ ] Correctif : exigences figées à l'attribution/validation, nouveaux quiz non rétroactifs ; tests ; publication conditionnelle
+## 30/10 — Liste Pratique signée EDOF : élèves en financement personnel (N. BONNARDON) — attente décision
