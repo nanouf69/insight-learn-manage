@@ -41,8 +41,10 @@ export interface ModuleSearchResult {
 
 // Cible d'ouverture depuis la recherche (mémoire d'interface uniquement)
 let searchFocus: { moduleId: number; exerciceId: number; questionId?: number } | null = null;
-export const setSearchFocus = (f: typeof searchFocus) => { searchFocus = f; };
+let activeSearchFocus: typeof searchFocus = null;
+export const setSearchFocus = (f: typeof searchFocus) => { searchFocus = f; activeSearchFocus = f; };
 export const peekSearchFocus = () => searchFocus;
+export const getActiveSearchFocus = () => activeSearchFocus;
 export const consumeSearchFocus = () => { searchFocus = null; };
 
 const asModule = (id: number, nom: string, cours: any[], exercices: any[]): SearchableModule => ({

@@ -17,7 +17,7 @@ import { courseDisplaySupport } from "@/lib/courseDisplaySupport";
 import { projeterSupportTaxi } from "@/lib/taxiReglementationSupports";
 import { nationalePartie1CourseReview } from "@/lib/nationalePartie1CourseReview";
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
-import { peekSearchFocus, consumeSearchFocus } from "./module-content-search";
+import { peekSearchFocus, consumeSearchFocus, getActiveSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
@@ -3510,14 +3510,14 @@ function ExerciceCard({
   // Ouverture ciblée depuis la recherche « Gestion des modules » (affichage seul)
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const f = peekSearchFocus();
+    const f = peekSearchFocus() ?? getActiveSearchFocus();
     if (!f || f.moduleId !== moduleId || f.exerciceId !== Number(item.id)) return;
     setExpanded(true);
     setSearchHighlight({ questionId: f.questionId });
     let tries = 0;
     const iv = setInterval(() => {
       tries += 1;
-      if (peekSearchFocus() !== f) return clearInterval(iv);
+      if (getActiveSearchFocus() !== f) return clearInterval(iv);
       const el = (f.questionId != null ? document.getElementById(`question-anchor-${item.id}-${f.questionId}`) : null) || (tries >= 80 ? cardRef.current : null);
       if (!el && tries < 80) return;
       clearInterval(iv);
