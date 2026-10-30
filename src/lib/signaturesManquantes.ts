@@ -101,8 +101,9 @@ export function calculerSignaturesManquantes(
 }
 
 /** Filière de l'apprenant (TA / TAXI / VTC) d'après son type ; erreur de lecture = erreur, jamais une valeur par défaut. */
-export function filiereSignatures(formation: string | null | undefined): 'VTC' | 'TAXI' | 'TA' {
+export function filiereSignatures(formation: string | null | undefined): 'VTC' | 'TAXI' | 'TA' | 'VA' {
   const f = String(formation ?? '').toLowerCase();
+  if (/(^|[^a-z])va([^a-z]|$)|passerelle-vtc/.test(f)) return 'VA';
   return /(^|[^a-z])ta([^a-z]|$)|taxi-pour-vtc|passerelle-taxi/.test(f) ? 'TA' : /taxi/.test(f) && !/vtc/.test(f) ? 'TAXI' : 'VTC';
 }
 export function marquerFiliereRows(rows: any[], filiere: string): any[] {
@@ -154,6 +155,7 @@ export function planningCreneaux(sessionRows: any[], reservations: any[], config
   const parDate = new Map<string, JourPlanning>();
   if (blocs) {
     const plan = planningSignaturesReel(sessionRows, reservations, blocs, configs, sessionRows.find(r => r.filiere_apprenant)?.filiere_apprenant ?? 'VTC');
+    if (plan.incomplet) throw new Error('Planning incomplet : signatures attendues non déterminées');
     for (const [key, pratique] of plan.creneaux) {
       const date = key.slice(0,10), creneau = key.slice(11), jour = parDate.get(date) ?? { creneaux: new Set<string>(), pratique: false };
       jour.creneaux.add(creneau); jour.pratique ||= pratique; parDate.set(date, jour);
@@ -241,7 +243,7 @@ export function datesDuPlanning(sessionRows: any[], reservations: any[], configs
   return { datesTheorie, datesPratique, soir };
 }
 export interface BilanSignaturesEdof {
-  filiere: 'VTC' | 'TAXI' | 'TA';
+  filiere: 'VTC' | 'TAXI' | 'TA' | 'VA';
   excedent: boolean;
   soir: boolean;
   theorie: number;

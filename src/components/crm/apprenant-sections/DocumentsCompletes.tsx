@@ -842,7 +842,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
           <SignaturesRassembleesExport
             apprenant={apprenant}
             totalAttendu={/e-?learning/i.test(formationEdof) ? null : (bilanEdof?.objectifTotal ?? null)}
-            totalIndisponible={bilanEdofErreur}
+            totalIndisponible={bilanEdofErreur || bilanEdof?.planningIncomplet === true}
           />
         </CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
