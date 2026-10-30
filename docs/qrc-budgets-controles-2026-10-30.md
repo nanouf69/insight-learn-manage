@@ -38,6 +38,7 @@ Payloads expurgés : les corps complets ne sont pas disponibles dans cette consu
 ## Contrôles de compte réellement consultés
 
 - Abonnement : **Pro actif** depuis le12 mars2026. Montant, palier, périodicité, TVA et factures non fournis par cet outil.
+- Vérification complémentaire demandée (« regarde toi ») : solde workspace consulté, période de consommation7octobre–7novembre2026 ;1751,77 crédits restants, grant billing4000 crédits, rollover4000 crédits et top-up597,72 crédits. Ce relevé confirme des allocations de crédits, **pas leur prix payé**. Les outils de facturation accessibles ne lisent ni les factures ni les paiements TTC ; aucun montant euro fiable n’a pu être établi, même après cette vérification. Ne pas redemander les mêmes montants à l’utilisateur.
 - Recharge automatique : **activée**, seuil25 crédits, recharge50 crédits, maximum mensuel100 crédits ; consommation de recharge automatique actuelle0 crédit, période1octobre–1novembre UTC. Ces100 crédits ne sont pas100€ et ce réglage ne plafonne ni l’abonnement ni la totalité des achats/dépenses. Aucun réglage modifié.
 - Recherche d’un plafond natif mensuel **bloquant IA pour le projet** : aucun plafond correspondant trouvé, aucune mise à jour faite.
 - Recherche d’un plafond natif mensuel **bloquant général workspace** : aucun plafond correspondant trouvé, aucune mise à jour faite.
