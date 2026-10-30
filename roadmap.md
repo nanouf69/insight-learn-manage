@@ -1,5 +1,11 @@
 # Feuille de route
 
+## IA immédiate des quiz QRC TAXI — 30/10 10:07 UTC
+- [x] Audit lecture seule : corriger-qrc existant non adapté (références client, pas d’auth/idempotence) ; circuit officiel en file exclu.
+- [ ] Accord sur limite dédiée requis : Cloud ne fournit pas de limite standard ; proposer 60 nouvelles corrections/heure et 200/jour/compte, une active par compte, reçus distincts sans réponses brutes.
+- [ ] Après accord : endpoint sécurisé immédiat indépendant, références serveur versionnées, reçus idempotents, flux de résultat et conservation des réponses locales ; aucun effet sur notes officielles.
+- [ ] Tests fictifs paraphrases/réseau/double clic/reprise/isolation + vérification IA réelle et parcours technique PC/mobile ; aucune publication.
+
 ## Arbitrage QRC TAXI — 30/10 10:03 UTC
 - [x] Demande : réponses seules, points contradictoires suspendus, copies intactes, aucune publication.
 - [x] Feedback intégré complet/spécialités : alertes Q5/Q6 et précision CPAM Q13, énoncés/références/barème/stockage inchangés.
