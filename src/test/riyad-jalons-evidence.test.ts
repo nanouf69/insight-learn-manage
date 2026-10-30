@@ -41,7 +41,7 @@ describe("Riyad: sept modules attribués, sans faux 100%", () => {
   it("le calcul figé garde sa méthode ; le calcul live rejette les vides après les dispenses d’activités", () => {
     const row = {...make(8,1,10,9),completed_at:"2026-10-01T10:00:00Z"};
     const input = {key:"vtc-e",filiere:"vtc" as const,parcours:[26,8],parcoursInitial:[26,8],modulesAttribues:[26,8],
-      editorRows:[],examens:[],initialDe:()=>({cours:[],exercices:[]}),pratiqueDetails:[],emargements:[],
+      editorRows:[],examens:Array.from({length:6},(_,i)=>({type:"VTC",numero:i+1,matieres:[{questions:[{id:1,enonce:"Fictif",choix:[]}]}]})),initialDe:()=>({cours:[],exercices:[]}),pratiqueDetails:[],emargements:[],
       completions:[row],heuresValidees:[],jeuxTermines:[],dateActivites:"2026-10-30T15:41:00Z"};
     const before = JSON.stringify(input);
     const old = assemblerCalculJalons(input);
