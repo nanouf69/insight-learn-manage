@@ -3579,7 +3579,7 @@ function ExerciceCard({
               {/* Recherche : cible exercice (sans question précise) = on encadre
                   uniquement le titre, jamais toute la carte. Cible question =
                   seule la question visée reste encadrée (plus bas). */}
-              <div className={`flex items-center justify-between rounded-lg ${searchHighlight?.questionId == null ? "ring-4 ring-primary bg-primary/10" : ""}`}>
+              <div className={`flex items-center justify-between rounded-lg ${searchHighlight && searchHighlight.questionId == null ? "ring-4 ring-primary bg-primary/10" : ""}`}>
 
                 <h4 className="font-bold text-base flex items-center gap-2">
                   {partNumber && (
