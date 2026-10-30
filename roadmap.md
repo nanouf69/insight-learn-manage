@@ -2,7 +2,7 @@
 
 ## Choix dates Examen et Réussite — 30/10
 - [x] Masquer dates passées dans les deux sélecteurs théorie, proposer prochaine session selon jour Paris ; garder catalogue et dossiers historiques inchangés.
-- [ ] Vérifier tests ciblés et liste dans l’aperçu ; aucune publication.
+- [x] 13 tests ciblés PASS ; aperçu administrateur : sept dates futures, choix janvier confirmé ; build OK, aucune publication.
 
 ## Sauvegarde durable des deux quiz QRC TAXI — 30/10 10:40 UTC
 - [x] Audit : local seulement/finalisation sans preuve ;78/84 champs requis, ancienne copie conservée/import brouillon explicite, facultatifs hors progression.
