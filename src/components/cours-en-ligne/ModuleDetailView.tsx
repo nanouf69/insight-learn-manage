@@ -9814,6 +9814,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const unlocked = isPageUnlocked(i);
           const isCurrent = i === currentPage;
           const isQuizPageTmp = p?.type === "exercice-single" && p.exercice?.questions?.length > 0;
+          const estEtapeFacultative = p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES;
           // Un quiz n'est jamais « fait » avant la relecture des validations serveur.
           const isCompleted = completedPages.has(i) && (!isQuizPageTmp || quizValideServeur(p.exercice.id));
           const isQuizPage = p?.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
@@ -9867,12 +9868,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     ? "font-bold text-primary"
                     : isCompleted
                       ? "text-emerald-600 font-medium"
-                      : unlocked
+                      : estEtapeFacultative
+                        ? "text-foreground hover:text-primary"
+                        : unlocked
                         ? "text-destructive hover:text-destructive"
                         : "text-muted-foreground/40 cursor-not-allowed"
                 }`}
               >
-                <span className="flex-1">{label}{!isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
+                <span className="flex-1">{label}{estEtapeFacultative
+                  ? <span className="block text-xs text-muted-foreground">Facultatif — non compté</span>
+                  : !isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
                 {(() => {
                   // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
                   const hLabel = hierarchicalLabelsByPage[i] || "";
