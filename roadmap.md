@@ -1,11 +1,12 @@
 # Feuille de route
 
 ## Sauvegarde durable des deux quiz QRC TAXI — 30/10 10:40 UTC
-- [ ] Audit et règles : toutes les réponses requises, validation serveur seule, quiz facultatifs hors progression ; anciens brouillons conservés.
-- [ ] Tentatives privées, réponses historisées, commandes idempotentes/versionnées, soumission atomique ; sauvegarde multi-appareils avec conflits visibles.
-- [ ] Interface sauvegarde/horodatage, réponses manquantes avec liens, reprise/offline sans fausse confirmation, résultat seulement après reçu serveur.
-- [ ] Correction QRC uniquement après soumission ; appels payants bloqués tant que budget euros non vérifiable, sauvegarde indépendante.
-- [ ] Tests isolés et parcours technique, journal précis, aucune publication et aucun examen officiel touché.
+- [x] Audit : local seulement/finalisation sans preuve ;78/84 champs requis, ancienne copie conservée/import brouillon explicite, facultatifs hors progression.
+- [x] 0228 appliquée et vérifiée : propriétaire/RLS, réponses append-only, CAS, idempotence et soumission atomique ; aucun pont vers notes/modules.
+- [x] Interface sauvegarde/horodatage/manquants, reprise2appareils et offline→online sous compte technique vérifié ; deux passages complets/relecture dont clic Soumettre spécialités. Sources intactes.
+- [x] IA nouvelle soumission correspondante requise ; appels payants facultatifs bloqués402 tant que budget€ non vérifiable, refus réel testé sans fournisseur. Fonction ciblée déployée, aucune publication frontend.
+- [x] 40 tests Vitest+8 groupes SQL jetable PASS, build OK ; docs/qrc-durable-2026-10-30.md. Compteur réponses officielles+1 concurrent non attribué, pas de fausse empreinte inchangée.
+- [ ] Navigation complète portail depuis étapes8/3 NON PROUVÉE : compte technique formationVTC. Tests appareil physique, conflitUI deux versions et coupure soumission réelle non effectués ; interface NON PUBLIÉE en attente accord.
 
 ## Plafonds QRC IA et application — 30/10 10:35 UTC
 - [x] Lecture seule : coûts enregistrés, plan Pro actif, recharges automatiques et recherche de limites bloquantes natives.
