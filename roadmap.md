@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Choix réinscription et réactivation plateforme — 30/10 10:20 UTC
+- [ ] Diagnostic lecture seule de la fiche CRM et des protections existantes.
+- [ ] Présenter le périmètre : choix administratif historisé + onglet de réactivation d’un mois, sans modifier les copies ni publier.
+- [ ] Mise en œuvre après accord du plan ; contrôles isolés et journal daté, aucune modification de dossier réel pour tester.
+
 ## IA immédiate des quiz QRC TAXI — 30/10 10:07 UTC
 - [x] Audit lecture seule : corriger-qrc existant non adapté (références client, pas d’auth/idempotence) ; circuit officiel en file exclu.
 - [x] Accord plan : limites dédiées 60/heure +200/jour/compte glissantes, une active/compte ; migration0226 appliquée, reçus privés sans réponses brutes.
