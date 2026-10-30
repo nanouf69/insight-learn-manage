@@ -24,7 +24,7 @@ function CarteIntegree({ id }: { id: QuizQrcTaxiId }) {
   const exos = def.zones.map((z) => (z === "zupc" ? "ZUPC" : "Métropole de Lyon")).join(" + ");
   return (
     <div className="mb-4 rounded-lg border bg-card p-4 flex flex-col gap-2">
-      <p className="font-semibold text-foreground">{def.titre} ({def.items.length} questions + {exos})</p>
+      <p className="font-semibold text-foreground">{def.titre} ({def.items.length} QRC{def.qcmLocaux.length ? ` + ${def.qcmLocaux.length} QCM locaux du Bilan TA` : ""} + {exos})</p>
       <p className="text-sm text-muted-foreground">Entraînement complémentaire, facultatif, non comptabilisé dans la progression.</p>
       <Button className="w-full" variant={ouvert ? "outline" : "default"} onClick={() => setOuvert((o) => !o)}>
         {ouvert ? "Fermer le quiz" : "Ouvrir le quiz"}

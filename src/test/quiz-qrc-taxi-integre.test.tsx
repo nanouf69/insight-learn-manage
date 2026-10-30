@@ -127,3 +127,31 @@ describe("parcours écran apprenant", () => {
     expect(QUIZ_QRC_TAXI.complet.zones).toEqual(["metropole"]);
   });
 });
+
+import { QCM_LOCAUX_BILAN_TA } from "@/data/bilan-ta/qcmLocauxBilanTa";
+import { qcmLocalJuste } from "@/components/cours-en-ligne/QuizQrcTaxiIntegre";
+describe("QCM locaux du Bilan examen TA ajoutés au quiz spécialités", () => {
+  beforeEach(() => localStorage.clear());
+  it("40 QCM ajoutés, les 20 QRC conservées, complet inchangé", () => {
+    expect(QUIZ_QRC_TAXI.specialites.qcmLocaux).toHaveLength(40);
+    expect(QUIZ_QRC_TAXI.specialites.items).toHaveLength(20);
+    expect(QUIZ_QRC_TAXI.complet.qcmLocaux).toHaveLength(0);
+    expect(new Set(QCM_LOCAUX_BILAN_TA.map((q) => q.id)).size).toBe(40);
+    expect(QCM_LOCAUX_BILAN_TA.every((q) => q.choix.some((c) => c.correct))).toBe(true);
+  });
+  it("réponse multiple exigée en entier (tarif D = C + D)", () => {
+    const q = QCM_LOCAUX_BILAN_TA.find((x) => x.id === 13)!;
+    expect(qcmLocalJuste(q, ["C", "D"])).toBe(true);
+    expect(qcmLocalJuste(q, ["C"])).toBe(false);
+  });
+  it("écran : cocher, corriger, résultat affiché et sauvegardé", () => {
+    localStorage.setItem(cleStockage("eleve-fictif-1", "specialites"), JSON.stringify({ index: 20 }));
+    render(<QuizQrcTaxiIntegre quiz="specialites" />);
+    const sec = screen.getByTestId("qcm-locaux-ta");
+    fireEvent.click(sec.querySelectorAll('button[role="checkbox"]')[0]); // Q1 A = juste
+    fireEvent.click(screen.getByText("Corriger les QCM locaux"));
+    expect(screen.getByText("1/40 justes")).toBeTruthy();
+    const saved = JSON.parse(localStorage.getItem(cleStockage("eleve-fictif-1", "specialites"))!);
+    expect(saved.locaux[1]).toEqual(["A"]);
+  });
+});
