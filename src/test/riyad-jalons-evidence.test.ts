@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { liveCompletionEvidence, withSubmittedModuleProof } from "@/lib/moduleCompletionEvidence";
 import { calculerJalonsPonderes } from "@/lib/jalonsPonderes";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
+import { assemblerCalculJalons } from "@/lib/jalonsCalculCore";
+import { ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 
 const make = (id: number, ex: number, n: number, done: number) => ({
   module_id: id, status: "completed", completed_at: "2026-10-15T11:51:06Z", progress: 100,
@@ -35,5 +37,19 @@ describe("Riyad: sept modules attribués, sans faux 100%", () => {
     expect(liveCompletionEvidence(make(35,1,10,0)).status).toBe("completed");
     const unknown = {module_id:2,status:"completed",progress:100};
     expect(liveCompletionEvidence(unknown)).toBe(unknown);
+  });
+  it("le calcul figé garde sa méthode ; le calcul live rejette les vides après les dispenses d’activités", () => {
+    const row = {...make(8,1,10,9),completed_at:"2026-10-01T10:00:00Z"};
+    const input = {key:"vtc-e",filiere:"vtc" as const,parcours:[26,8],parcoursInitial:[26,8],modulesAttribues:[26,8],
+      editorRows:[],examens:[],initialDe:()=>({cours:[],exercices:[]}),pratiqueDetails:[],emargements:[],
+      completions:[row],heuresValidees:[],jeuxTermines:[],dateActivites:"2026-10-30T15:41:00Z"};
+    const before = JSON.stringify(input);
+    const old = assemblerCalculJalons(input);
+    const live = assemblerCalculJalons({...input,preuvesHistoriquesLive:true});
+    expect(old.resultat.lignes.find(l=>l.moduleId===8)?.valide).toBe(true);
+    expect(live.resultat.lignes.find(l=>l.moduleId===8)?.valide).toBe(false);
+    expect(live.activites.find(a=>a.moduleId===8)?.requises).toEqual([]);
+    expect(live.activites.find(a=>a.moduleId===8)?.ajouteesApresValidation).toEqual(ACTIVITES_CODE.filter(a=>a.moduleId===8).map(a=>a.id));
+    expect(JSON.stringify(input)).toBe(before);
   });
 });

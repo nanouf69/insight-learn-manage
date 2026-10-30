@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const fake = vi.hoisted(() => ({ rows: {} as Record<string, any> }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: string) => {
-  const q: any = {}; for (const m of ["select", "eq", "order", "in"]) q[m] = () => q;
+  const q: any = {}; for (const m of ["select", "eq", "order", "in", "like"]) q[m] = () => q;
   q.single = async () => fake.rows[table];
   q.range = async (f: number, t: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(f, t + 1) });
   return q;
