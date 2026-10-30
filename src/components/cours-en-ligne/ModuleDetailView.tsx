@@ -4863,7 +4863,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       fetchFull: async () => {
         erreurCanonique = false;
         await loadCanonicalQuestions();
-        return !erreurCanonique;
+        if (erreurCanonique) return false;
+        return relectureEnAttente ? "pending" : true;
       },
     });
     void refresher.fullNow();
