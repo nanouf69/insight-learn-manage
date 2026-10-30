@@ -13,7 +13,7 @@ describe("Riyad: sept modules attribués, sans faux 100%", () => {
     const rows = [make(26,1,10,10), make(2,7,66,55), make(3,400,26,26), make(4,100,206,118), make(35,1,0,0), make(5,500,1002,1002), make(8,1,99,99)];
     const before = JSON.stringify(rows);
     const effective = rows.map(liveCompletionEvidence);
-    expect(progressionModulesEleve(rows.map(r => ({id:r.module_id,nom:String(r.module_id)})), () => true, new Set(), "2026-10-15", "fictif", rows)).toMatchObject({total:7,termines:5});
+    expect(progressionModulesEleve(rows.map(r => ({id:r.module_id,nom:String(r.module_id)})), () => true, new Set(["jeu_lyon_arrondissements_quartiers", "jeu_lyon_lieux"]), "2026-10-15", "fictif", rows)).toMatchObject({total:7,termines:5});
     const r = calculerJalonsPonderes("vtc",rows.map(r=>r.module_id),effective,{[-1]:10,2:20,3:10,4:20,35:10,5:10,8:20});
     expect(r.taux).toBeLessThan(100);
     expect(r.lignes.filter(l=>!l.valide).map(l=>l.moduleId)).toEqual([2,4]);
