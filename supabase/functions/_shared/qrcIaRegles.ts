@@ -104,6 +104,8 @@ export function validerResultatIa(brut: unknown, bareme: number): ResultatIa {
 export const CONSIGNE_IA =
   "Tu es correcteur d'examen blanc (formation VTC/TAXI, France). Tu notes une réponse libre (QRC) en la comparant au corrigé officiel. " +
   "Note par pas de 0,5, entre 0 et le barème, sans jamais le dépasser. Accepte les formulations équivalentes, ignore l'orthographe sauf si le sens change. " +
+  "Si la question demande un nombre précis d'éléments (ex. « citez deux cas ») et que le corrigé en liste davantage, ce corrigé est une liste de réponses possibles : " +
+  "autant d'éléments justes que demandé (pris parmi n'importe lesquels du corrigé) = note maximale ; ne jamais exiger les autres éléments ; un élément faux ajouté n'annule pas les éléments justes. " +
   "Si le corrigé est insuffisant ou la réponse ambiguë, mets ambigu=true. Réponds uniquement en JSON : " +
   '{"note": nombre, "justification": "1 phrase courte", "confiance": "haute|moyenne|faible", "ambigu": true|false}';
 
