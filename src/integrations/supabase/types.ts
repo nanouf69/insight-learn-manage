@@ -7107,6 +7107,89 @@ export type Database = {
           },
         ]
       }
+      qrc_practice_answer_events: {
+        Row: {
+          answer: Json
+          attempt_id: string
+          id: string
+          operation_id: string
+          question_key: string
+          revision: number
+          saved_at: string
+        }
+        Insert: {
+          answer: Json
+          attempt_id: string
+          id?: string
+          operation_id: string
+          question_key: string
+          revision: number
+          saved_at?: string
+        }
+        Update: {
+          answer?: Json
+          attempt_id?: string
+          id?: string
+          operation_id?: string
+          question_key?: string
+          revision?: number
+          saved_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qrc_practice_answer_events_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "qrc_practice_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qrc_practice_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          manifest: Json
+          opening_operation: string
+          owner_id: string
+          quiz: string
+          revision: number
+          saved_at: string | null
+          submit_operation: string | null
+          submitted_answers: Json | null
+          submitted_at: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manifest?: Json
+          opening_operation: string
+          owner_id: string
+          quiz: string
+          revision?: number
+          saved_at?: string | null
+          submit_operation?: string | null
+          submitted_answers?: Json | null
+          submitted_at?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manifest?: Json
+          opening_operation?: string
+          owner_id?: string
+          quiz?: string
+          revision?: number
+          saved_at?: string | null
+          submit_operation?: string | null
+          submitted_answers?: Json | null
+          submitted_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       qrc_taxi_ia_gate: {
         Row: {
           http_status: number | null
@@ -9816,6 +9899,32 @@ export type Database = {
           qrc_repondues: number
         }[]
       }
+      qrc_practice_access: { Args: { p_quiz: string }; Returns: boolean }
+      qrc_practice_answer_valid: {
+        Args: { p_answer: Json; p_complete?: boolean; p_rule: Json }
+        Returns: boolean
+      }
+      qrc_practice_manifest: { Args: { p_quiz: string }; Returns: Json }
+      qrc_practice_open: {
+        Args: { p_new?: boolean; p_operation: string; p_quiz: string }
+        Returns: Json
+      }
+      qrc_practice_read: { Args: { p_attempt: string }; Returns: Json }
+      qrc_practice_save: {
+        Args: {
+          p_answer: Json
+          p_attempt: string
+          p_expected: number
+          p_key: string
+          p_operation: string
+        }
+        Returns: Json
+      }
+      qrc_practice_submit: {
+        Args: { p_attempt: string; p_expected: number; p_operation: string }
+        Returns: Json
+      }
+      qrc_practice_zone_options: { Args: { p_zone: string }; Returns: Json }
       qrc_taxi_ia_claim: {
         Args: {
           p_answer_hash: string
