@@ -3,7 +3,7 @@ import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
 import { idsActivites } from "@/lib/jeuxPedagogiques";
-import { withSubmittedModuleProof } from "@/lib/moduleCompletionEvidence";
+import { avecEtatServeur, chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
 import { modulesAttribuesDashboard, modulesExigesDashboard, resolveFormationId } from "@/lib/parcoursModulesDashboard";
@@ -76,7 +76,7 @@ export async function chargerCalculJalons(params: {
   const key = formationJalonsElearning(params.typeApprenant, params.formationChoisie);
   if (!key) throw new Error("Formation e-learning non concernée");
   const { filiere, parcoursInitial, parcours, ids } = modulesDuCalcul(key);
-  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult, jeuxResult, affectation, submittedProofs] = await Promise.all([
+  const [{ data: editorRows, error: editorError }, examensModule, moduleDetail, pratiqueDetails, emargementsResult, completionsResult, heuresValideesResult, jeuxResult, affectation, etatsServeur] = await Promise.all([
     supabase.from("module_editor_state").select("module_id, module_data, deleted_exercices, deleted_cours").in("module_id", ids),
     import("@/components/cours-en-ligne/useLiveExamens"),
     import("@/components/cours-en-ligne/ModuleDetailView"),
@@ -89,9 +89,8 @@ export async function chargerCalculJalons(params: {
     // Jeux du module 8 : seule une ligne serveur completed = true compte (jamais le score local).
     supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", idsActivites(parcoursInitial).length ? idsActivites(parcoursInitial) : ["__aucune__"]),
     supabase.from("apprenants").select("modules_autorises, type_apprenant, formation_choisie, date_fin_cours_en_ligne").eq("id", params.apprenantId).single(),
-    fetchAllRows<any>((from, to) => supabase.from("reponses_apprenants")
-      .select("exercice_id,status,submitted_at,reponses").eq("apprenant_id", params.apprenantId)
-      .eq("status", "submitted").like("exercice_id", "module_%").order("exercice_id").range(from, to)),
+    // Verdict serveur unique : mêmes preuves que le compteur élève/CRM/EDOF.
+    chargerEtatCompletionServeur(params.apprenantId),
   ]);
   if (affectation.error) throw affectation.error;
   const formation = resolveFormationId(affectation.data.type_apprenant, affectation.data.formation_choisie, affectation.data.modules_autorises);
@@ -105,7 +104,7 @@ export async function chargerCalculJalons(params: {
   // Parcours réel attribué (même règle que l'écran élève, parents/enfants normalisés).
   const modulesAttribues = modulesExigesDashboard(formation, affectation.data.modules_autorises, (completionsResult.data as JalonCompletion[]) ?? [], (affectation.data as any).date_fin_cours_en_ligne).map((m) => m.id);
   const parcoursRetenu = parcoursAvecExemptionFormalites(params.apprenantId, parcours, modulesAttribues);
-  const completionsAvecPreuves = ((completionsResult.data as JalonCompletion[]) ?? []).map(row => withSubmittedModuleProof(row, submittedProofs));
+  const completionsAvecPreuves = ((completionsResult.data as JalonCompletion[]) ?? []).map(row => avecEtatServeur(row, etatsServeur));
   return assemblerCalculJalons({
     key, filiere, parcours: parcoursRetenu, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
     initialDe: (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),
