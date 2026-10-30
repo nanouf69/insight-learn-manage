@@ -67,7 +67,7 @@ export default function LivreFormationViewer({ formation }: { formation: Formati
 
   const img = urls[page]?.url;
   return (
-    <div className="flex flex-col gap-3 select-none" onContextMenu={(e) => e.preventDefault()}>
+    <div className="flex flex-col gap-3 select-none print:hidden" onContextMenu={(e) => e.preventDefault()}>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)} aria-label="Page précédente"><ChevronLeft /></Button>
         <span className="text-sm tabular-nums">Page {page} / {total}</span>
