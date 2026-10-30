@@ -21,14 +21,11 @@
  *    l'affichage précédent est conservé par l'appelant.
  */
 
-/** Résultat d'une relecture complète : jeton lu, `undefined` = rien relu (sans erreur), `null` = erreur. */
-export type FullFetchResult = string | null | undefined;
-
 export interface LiveRefresherOptions {
   /** Lecture légère : renvoie le jeton de version courant, ou `null` en cas d'erreur. */
   probe: () => Promise<string | null>;
-  /** Relecture complète (applique le contenu) ; renvoie le jeton lu, `undefined` ou `null` (erreur). */
-  fetchFull: () => Promise<FullFetchResult>;
+  /** Relecture complète (applique le contenu) ; `false` = erreur de lecture. */
+  fetchFull: () => Promise<boolean>;
   isHidden?: () => boolean;
   now?: () => number;
   random?: () => number;
@@ -79,7 +76,7 @@ export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
 
   let token: string | null = null;
   let lastFullAt = now();
-  let inFlight: Promise<void> | null = null;
+  let inFlight: Promise<boolean> | null = null;
   let trailing = false;
   let probing = false;
   let failures = 0;
@@ -100,7 +97,8 @@ export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
     backoffUntil = 0;
   };
 
-  const runFull = (): Promise<void> => {
+  let lastFullOk = true;
+  const runFull = (): Promise<boolean> => {
     if (inFlight) {
       trailing = true;
       return inFlight;
@@ -108,23 +106,24 @@ export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
     inFlight = (async () => {
       do {
         trailing = false;
-        if (disposed) return;
+        if (disposed) return lastFullOk;
         fullFetches += 1;
-        let result: FullFetchResult = null;
+        let ok = false;
         try {
-          result = await o.fetchFull();
+          ok = (await o.fetchFull()) !== false;
         } catch {
-          result = null;
+          ok = false;
         }
-        if (result === null) {
+        lastFullOk = ok;
+        if (!ok) {
           markFailure();
           trailing = false; // pas de rafale après une erreur : l'attente bornée s'applique
         } else {
           markSuccess();
           lastFullAt = now();
-          if (typeof result === "string") token = result;
         }
       } while (trailing && !disposed);
+      return lastFullOk;
     })().finally(() => {
       inFlight = null;
     });
@@ -158,7 +157,9 @@ export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
       }
       markSuccess();
       if (token !== null && current === token) return "unchanged";
-      await runFull();
+      // Le jeton n'est retenu qu'après une relecture complète réussie : une
+      // erreur fait relire au tic suivant (après l'attente bornée).
+      if (await runFull()) token = current;
       return "full-changed";
     },
     trigger() {
@@ -172,15 +173,12 @@ export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
         void runFull();
       }, delay);
     },
-    fullNow() {
-      if (disposed) return Promise.resolve();
-      return runFull();
+    async fullNow() {
+      if (disposed) return;
+      await runFull();
     },
     noteToken(t) {
-      if (typeof t === "string" && t) {
-        token = t;
-        lastFullAt = now();
-      }
+      if (typeof t === "string" && t) token = t;
     },
     dispose() {
       disposed = true;
