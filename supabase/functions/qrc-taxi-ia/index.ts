@@ -7,7 +7,7 @@ import questions from "./questions.json" with { type: "json" };
 import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayResponseHeaders } from "./run-id.ts";
 import { VERSION, INSTRUCTIONS, validateGrade, disputedQuestion } from "./core.ts";
 
-const Input = z.object({ quiz: z.enum(["complet", "specialites"]), version: z.literal(VERSION), questionId: z.number().int(), answer: z.string().trim().min(1).max(4000), mode: z.enum(["correct", "read", "retry"]) }).strict();
+const Input = z.object({ quiz: z.enum(["complet", "specialites"]), version: z.literal(VERSION), questionId: z.number().int(), answer: z.string().trim().min(1).max(4000), mode: z.enum(["correct", "read", "retry"]), attemptId: z.string().uuid().optional() }).strict();
 const Grade = z.object({ score: z.number().nullable(), verdict: z.enum(["correct", "partial", "incorrect", "review"]), explanation: z.string() }).strict();
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 const hash = async (s: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))).map(v => v.toString(16).padStart(2, "0")).join("");
@@ -52,6 +52,14 @@ Deno.serve(async req => {
       if (error) return json({ error: "Lecture de correction indisponible." }, 503);
       return data ? sendReceipt(data) : json({ identity, status: "missing" });
     }
+    // All new corrections require a complete immutable optional submission, never a browser flag.
+    if (!input.attemptId) return json({ error: 'Soumettez le quiz complet avant de demander une correction.', blocked: true }, 409);
+    const { data: submitted, error: submissionError } = await db.from('qrc_practice_attempts').select('owner_id,quiz,submitted_at,submitted_answers').eq('id', input.attemptId).eq('owner_id', userId).maybeSingle();
+    if (submissionError) return json({ error: 'Vérification de soumission indisponible.' }, 503);
+    if (!submitted?.submitted_at || submitted.quiz !== input.quiz || submitted.submitted_answers?.[`qrc:${input.questionId}`]?.trim() !== input.answer) return json({ error: 'Réponse sans soumission correspondante ; aucune correction lancée.', blocked: true }, 409);
+    // Fail closed until a verifiable EUR/credit bound and atomic global budget are available.
+    // This affects only optional practice, never official QRC queues or answer saving.
+    if (!disputedQuestion(question.id)) return json({ error: 'Correction IA en pause : plafond global de 20 € par mois non encore vérifiable. Votre quiz est sauvegardé et soumis ; aucune note attribuée.', blocked: true }, 402);
     const { data: claim, error: claimError } = await db.rpc("qrc_taxi_ia_claim", { p_user: userId, p_identity: identity, p_quiz: input.quiz, p_version: VERSION, p_question: question.id, p_answer_hash: answerHash, p_retry: input.mode === "retry" });
     if (claimError || !claim) return json({ error: "Réservation de correction indisponible." }, 503);
     if (claim.blocked) return json({ error: claim.message, blocked: true }, claim.status);

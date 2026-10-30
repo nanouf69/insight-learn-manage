@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { correctionStorageKey, PracticeReceipt, requestPracticeCorrection } from "@/lib/quizQrcTaxi/aiCorrection";
 
-export function CorrectionQrcTaxiIA({ quiz, questionId, answer, onNext, onLock }: { quiz: "complet" | "specialites"; questionId: number; answer: string; onNext?: () => void; onLock?: (locked: boolean) => void }) {
+export function CorrectionQrcTaxiIA({ quiz, questionId, answer, onNext, onLock, attemptId }: { quiz: "complet" | "specialites"; questionId: number; answer: string; onNext?: () => void; onLock?: (locked: boolean) => void; attemptId?: string }) {
   const { user } = useAuth();
   const [receipt, setReceipt] = useState<PracticeReceipt>();
   const [busy, setBusy] = useState(false);
@@ -28,7 +28,7 @@ export function CorrectionQrcTaxiIA({ quiz, questionId, answer, onNext, onLock }
     const initialScope = scope;
     if (mode !== "read") save({ status: "active" });
     try {
-      const result = await requestPracticeCorrection(user.id, quiz, questionId, answer, mode);
+      const result = await requestPracticeCorrection(user.id, quiz, questionId, answer, mode, attemptId);
       if (currentScope.current === initialScope) save(result);
     } catch {
       if (currentScope.current === initialScope) save({ status: "unknown", error: "Résultat non reçu. Vérifiez la correction enregistrée ; votre réponse est conservée." });

@@ -9,6 +9,7 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
   const [busy, setBusy] = useState(false);
   const [conflicts, setConflicts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const submitFlight = useRef(false);
   const ref = useRef<{ journal: LocalJournal; attempt?: PracticeAttempt; flight: boolean; scope: string }>({ journal: { opening: '', pending: [] }, flight: false, scope: '' });
   const scope = `${account}:${quiz}`;
   const publish = () => { setAttempt(ref.current.attempt); setPending([...ref.current.journal.pending]); };
@@ -61,11 +62,11 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope]);
   useEffect(() => {
-    if (!pending.length || conflicts.length) return;
+    if (!pending.length || conflicts.length || error) return;
     const timer = setTimeout(() => { void synchronize(); }, 550);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pending, conflicts]);
+  }, [pending, conflicts, error]);
   useEffect(() => {
     const resume = async () => {
       if (ref.current.flight || !account || ref.current.scope !== scope) return;
@@ -86,6 +87,7 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
     const queued = ref.current.journal.pending.filter(p => p.key === key).at(-1);
     const entry = { key, answer, base: queued?.answer ?? a.answers[key], operation: crypto.randomUUID() };
     ref.current.journal.pending.push(entry);
+    setError('');
     try { persist(); } catch { publish(); setError('Sauvegarde locale indisponible. Gardez cette page ouverte.'); }
   };
   const resolve = (key: string, useLocal: boolean) => {
@@ -102,10 +104,11 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
     } catch { setError('Impossible de conserver les deux versions ; aucune version écartée.'); }
   };
   const submit = async () => {
-    if (!account || ref.current.flight || conflicts.length) return;
+    if (!account || ref.current.flight || conflicts.length || submitFlight.current) return;
+    submitFlight.current = true;
     await synchronize();
     const a = ref.current.attempt;
-    if (!a || ref.current.journal.pending.length || missingAnswers(a.manifest, a.answers).length) return;
+    if (!a || ref.current.journal.pending.length || missingAnswers(a.manifest, a.answers).length) { submitFlight.current = false; return; }
     ref.current.flight = true; setBusy(true); setError('');
     try {
       const command = ref.current.journal.submit ?? { operation: crypto.randomUUID(), revision: a.revision };
@@ -131,7 +134,7 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
       if (ref.current.scope !== scope) return;
       ref.current.journal = { opening: operation, attempt: result.id, pending: [] }; accept(result); persist();
     } catch (e) { setError(e instanceof Error ? e.message : 'Nouvelle tentative indisponible.'); }
-    finally { if (ref.current.scope === scope) { ref.current.flight = false; setBusy(false); } }
+    finally { submitFlight.current = false; if (ref.current.scope === scope) { ref.current.flight = false; setBusy(false); } }
   };
   const answers = { ...attempt?.answers };
   for (const entry of pending) answers[entry.key] = entry.answer;

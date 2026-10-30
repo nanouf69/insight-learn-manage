@@ -19,15 +19,15 @@ export function validPracticeReceipt(v: unknown, identity: string): v is Practic
 }
 
 const flights = new Map<string, Promise<PracticeReceipt>>();
-export function requestPracticeCorrection(account: string, quiz: "complet" | "specialites", questionId: number, answer: string, mode: "correct" | "read" | "retry" = "correct"): Promise<PracticeReceipt> {
-  const key = JSON.stringify([account, quiz, questionId, answer.trim(), mode]);
+export function requestPracticeCorrection(account: string, quiz: "complet" | "specialites", questionId: number, answer: string, mode: "correct" | "read" | "retry" = "correct", attemptId?: string): Promise<PracticeReceipt> {
+  const key = JSON.stringify([account, quiz, questionId, answer.trim(), mode, attemptId]);
   const active = flights.get(key);
   if (active) return active;
   const promise = (async (): Promise<PracticeReceipt> => {
     const identity = await practiceIdentity(account, quiz, questionId, answer);
     const { data, error } = await supabase.auth.getSession();
     if (error || data.session?.user.id !== account) throw new Error("Reconnectez-vous avec le même compte ; votre réponse est conservée.");
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/qrc-taxi-ia`, { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ quiz, version: QRC_AI_VERSION, questionId, answer: answer.trim(), mode }) });
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/qrc-taxi-ia`, { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ quiz, version: QRC_AI_VERSION, questionId, answer: answer.trim(), mode, ...(attemptId ? { attemptId } : {}) }) });
     let last: PracticeReceipt | undefined;
     if (response.headers.get("Content-Type")?.includes("application/x-ndjson")) {
       const reader = response.body?.getReader();
