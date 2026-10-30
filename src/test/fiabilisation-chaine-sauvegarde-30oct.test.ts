@@ -208,8 +208,8 @@ describe("PDF : polyfill posé aussi dans le worker pour les navigateurs anciens
     let code = "";
     const src = sourceWorkerCompatible("/assets/w.mjs", false, "https://gestion.ftransport.fr/cours", (c) => { code = c; return "blob:https://gestion.ftransport.fr/1"; });
     expect(src).toBe("blob:https://gestion.ftransport.fr/1");
-    expect(code.indexOf("Promise.withResolvers=")).toBeLessThan(code.indexOf("import "));
-    expect(code).toContain('import "https://gestion.ftransport.fr/assets/w.mjs"');
+    expect(code).toContain('await import("https://gestion.ftransport.fr/assets/w.mjs")');
+    expect(code).not.toMatch(/^import /m);
   });
   it("le polyfill du worker fonctionne réellement sans withResolvers natif", () => {
     let code = "";
@@ -220,5 +220,24 @@ describe("PDF : polyfill posé aussi dans le worker pour les navigateurs anciens
     const { promise, resolve } = P.withResolvers();
     resolve(7);
     return expect(promise).resolves.toBe(7);
+  });
+
+  it("exécution réelle (module ESM, withResolvers absent) : la dépendance voit le polyfill avant usage", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { pathToFileURL } = await import("node:url");
+    const { execFileSync } = await import("node:child_process");
+    const dir = mkdtempSync(join((await import("node:os")).tmpdir(), "pdfw-"));
+    const dep = join(dir, "dep.mjs");
+    writeFileSync(dep, "const r = Promise.withResolvers(); r.resolve(1); globalThis.__vu = typeof Promise.withResolvers + ':' + (await r.promise);\n");
+    let code = "";
+    sourceWorkerCompatible(pathToFileURL(dep).href, false, "file:///", (c) => { code = c; return "blob:"; });
+    const wrapper = join(dir, "wrapper.mjs");
+    writeFileSync(wrapper, "delete Promise.withResolvers;\n" + code + "console.log(globalThis.__vu);\n");
+    expect(execFileSync(process.execPath, [wrapper]).toString().trim()).toBe("function:1");
+    // Contre-preuve : l'ancien import statique plante (dépendance évaluée avant le polyfill).
+    const statique = join(dir, "statique.mjs");
+    writeFileSync(statique, "delete Promise.withResolvers;\n" + code.split("\n")[0] + "\nimport " + JSON.stringify(pathToFileURL(dep).href) + ";\n");
+    expect(() => execFileSync(process.execPath, [statique], { stdio: "pipe" })).toThrow();
   });
 });
