@@ -14,7 +14,7 @@ export function requirements(quiz: PracticeQuiz): Requirement[] {
   const def = QUIZ_DEFINITIONS[quiz];
   return [
     ...def.items.flatMap((q, i): Requirement[] => [
-      { key: `mcq:${q.id}`, label: `Question ${i + 1} — QCM`, kind: 'choice', options: q.mcqOptions },
+      { key: `mcq:${q.id}`, label: `Question ${i + 1} — QCM`, kind: 'choice', options: q.mcqOptions.map((_, n) => String.fromCharCode(65 + n)) },
       ...((def.qrcDesLaPremiere || i > 0) && q.qrcQuestion.trim() ? [{ key: `qrc:${q.id}`, label: `Question ${i + 1} — QRC`, kind: 'text' as const }] : []),
     ]),
     ...def.qcmLocaux.map(q => ({ key: `local:${q.id}`, label: `QCM local ${q.id}`, kind: 'choices' as const, options: q.choix.map(c => c.lettre) })),
@@ -54,7 +54,10 @@ export function legacyAnswers(raw: unknown, rules: Requirement[]): { answers: Re
       for (const [key, answer] of candidates) {
         if (typeof key !== 'string' || answer === undefined || answer === '' || Array.isArray(answer) && !answer.length) continue;
         const rule = rules.find(r => r.key === key);
-        if (rule && validAnswer(rule, answer, false)) answers[key] = answer;
+        const item = key.startsWith('mcq:') ? quizItems.find(q => String(q.id) === id) : undefined;
+        const index = item && typeof answer === 'string' ? item.mcqOptions.indexOf(answer) : -1;
+        const imported = index >= 0 ? String.fromCharCode(65 + index) : answer;
+        if (rule && validAnswer(rule, imported, false)) answers[key] = imported;
         else rejected.push(String(key));
       }
     }
