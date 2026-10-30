@@ -514,7 +514,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     // Formation pratique seule : uniquement le module PRATIQUE de la filière.
     if (value === "pratique-taxi" || value === "pratique-vtc") {
       setHasTouchedModules(true);
-      setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
+      setModulesAutorises([...(DEFAULT_MODULES_BY_TYPE[value] ?? (value === "pratique-taxi" ? [6] : [8]))]);
     }
     
     if (value === "vtc" || value === "vtc-exam") {
