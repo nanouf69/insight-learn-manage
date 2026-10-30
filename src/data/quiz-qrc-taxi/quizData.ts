@@ -1,0 +1,622 @@
+export interface QuizItem {
+  id: number;
+  category: string;
+  // QCM part
+  mcqQuestion: string;
+  mcqOptions: string[];
+  mcqCorrectAnswer: string;
+  // QRC part (free-text)
+  qrcQuestion: string;
+  qrcCorrectAnswer: string | string[];
+  qrcMultipleAnswers?: boolean;
+}
+
+export const categories = [
+  { id: "t3p", name: "T3P - Réglementation", icon: "📋" },
+  { id: "gestion", name: "Gestion", icon: "💼" },
+  { id: "national", name: "Réglementation nationale", icon: "🚖" },
+];
+
+export const quizItems: QuizItem[] = [
+  // T3P - Réglementation (hors Développement commercial / VTC)
+  {
+    id: 1,
+    category: "t3p",
+    mcqQuestion:
+      "Que devez-vous présenter aux agents susceptibles d'effectuer des contrôles pour justifier d'une réservation préalable ?",
+    mcqOptions: [
+      "Un document écrit sur support papier ou électronique",
+      "Uniquement une carte professionnelle",
+      "Un SMS de confirmation",
+      "Un reçu de paiement",
+    ],
+    mcqCorrectAnswer: "Un document écrit sur support papier ou électronique",
+    qrcQuestion: "Qu'est-ce que l'honorabilité dans votre profession ?",
+    qrcCorrectAnswer: "Avoir le casier judiciaire B2 vierge",
+  },
+  {
+    id: 2,
+    category: "t3p",
+    mcqQuestion:
+      "Quelles sont les sanctions possibles qui peuvent être décidées par les commissions disciplinaires locales ?",
+    mcqOptions: [
+      "Un avertissement, un retrait temporaire ou définitif de la carte professionnelle",
+      "Une amende uniquement",
+      "Une peine de prison",
+      "Un simple rappel à l'ordre",
+    ],
+    mcqCorrectAnswer:
+      "Un avertissement, un retrait temporaire ou définitif de la carte professionnelle",
+    qrcQuestion: "Citez trois des conditions d'accès et/ou d'exercice aux professions de conducteurs de T3P",
+    qrcCorrectAnswer: [
+      "Carte professionnelle en cours de validité",
+      "Aptitude médicale",
+      "Honorabilité",
+      "Casier judiciaire B2 vierge",
+      "Permis de conduire hors période probatoire",
+      "Caractéristiques du véhicule",
+      "Réussite à l'examen",
+    ],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 3,
+    category: "t3p",
+    mcqQuestion:
+      "Quel est le poids maximal autorisé en charge (PTAC) d'un véhicule affecté au T3P et pour combien de places maximum ?",
+    mcqOptions: [
+      "3,5 tonnes et 9 places conducteur compris",
+      "2,5 tonnes et 7 places",
+      "4 tonnes et 12 places",
+      "5 tonnes et 15 places",
+    ],
+    mcqCorrectAnswer: "3,5 tonnes et 9 places conducteur compris",
+    qrcQuestion:
+      "Je me fais contrôler sur la route : quels documents communs aux professions de T3P dois-je présenter aux forces de l'ordre ?",
+    qrcCorrectAnswer: [
+      "Permis de conduire",
+      "Carte professionnelle",
+      "Certificat médical",
+      "Contrôle technique",
+      "Assurance du véhicule",
+      "Responsabilité civile professionnelle",
+      "Carte grise",
+    ],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 4,
+    category: "t3p",
+    mcqQuestion: "Qu'est-ce que la formation TPMR ?",
+    mcqOptions: [
+      "Transport de personnes à mobilité réduite",
+      "Transport public motorisé routier",
+      "Tarification pour mobilité réduite",
+      "Transport par moyens rapides",
+    ],
+    mcqCorrectAnswer: "Transport de personnes à mobilité réduite",
+    qrcQuestion: "Quelles sont les deux assurances obligatoires qu'un conducteur de T3P doit souscrire ?",
+    qrcCorrectAnswer: ["Assurance du véhicule", "Responsabilité civile professionnelle"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 5,
+    category: "t3p",
+    mcqQuestion:
+      "Quel est le terme utilisé quand un conducteur de T3P prend en charge un client sur la voie publique sans réservation au préalable ?",
+    mcqOptions: ["La maraude", "Le racolage", "L'interception", "Le stationnement"],
+    mcqCorrectAnswer: "La maraude",
+    qrcQuestion: "Développez le sigle 'T3P'",
+    qrcCorrectAnswer: "Transport public particulier de personnes",
+  },
+  {
+    id: 6,
+    category: "t3p",
+    mcqQuestion: "Comment s'appelle le document qui lie une entreprise et un expert-comptable ?",
+    mcqOptions: [
+      "Une lettre de mission",
+      "Un contrat de prestation",
+      "Une convention d'expertise",
+      "Un mandat comptable",
+    ],
+    mcqCorrectAnswer: "Une lettre de mission",
+    qrcQuestion: "Le renouvellement de la carte professionnelle intervient quand 2 attestations sont produites, lesquelles ?",
+    qrcCorrectAnswer: ["Visite médicale", "Formation continue"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 10,
+    category: "t3p",
+    mcqQuestion: "Que signifie RCS ?",
+    mcqOptions: [
+      "Registre du commerce et des sociétés",
+      "Régime des cotisations sociales",
+      "Réglementation des comptes sociaux",
+      "Rapport comptable standardisé",
+    ],
+    mcqCorrectAnswer: "Registre du commerce et des sociétés",
+    qrcQuestion:
+      "Une centrale de réservation doit justifier de l'existence d'un contrat d'assurance couvrant quel type de responsabilité ?",
+    qrcCorrectAnswer: "Responsabilité civile professionnelle",
+  },
+
+  // Gestion
+  {
+    id: 11,
+    category: "gestion",
+    mcqQuestion: "Lorsqu'un véhicule est amorti, reste-t-il toujours à l'actif du bilan ?",
+    mcqOptions: [
+      "Oui, toute immobilisation reste à l'actif même une fois le bien totalement amorti",
+      "Non, il est retiré du bilan",
+      "Oui, mais seulement pour 5 ans supplémentaires",
+      "Non, il passe au passif",
+    ],
+    mcqCorrectAnswer: "Oui, toute immobilisation reste à l'actif même une fois le bien totalement amorti",
+    qrcQuestion: "Citez deux régimes de base de la protection sociale en France",
+    qrcCorrectAnswer: ["Régime général", "Régime agricole"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 12,
+    category: "gestion",
+    mcqQuestion: "Qu'est-ce que le seuil de rentabilité ?",
+    mcqOptions: [
+      "Le niveau du chiffre d'affaires pour lequel l'entreprise ne réalise ni pertes ni bénéfices",
+      "Le montant minimum de capital requis",
+      "Le taux de marge minimal",
+      "Le nombre de clients nécessaires",
+    ],
+    mcqCorrectAnswer: "Le niveau du chiffre d'affaires pour lequel l'entreprise ne réalise ni pertes ni bénéfices",
+    qrcQuestion: "Qu'est-ce que le seuil de rentabilité ?",
+    qrcCorrectAnswer: "Le niveau du chiffre d'affaires pour lequel l'entreprise ne réalise ni pertes ni bénéfices",
+  },
+  {
+    id: 13,
+    category: "gestion",
+    mcqQuestion: "Quel est le rôle d'un centre de formalités des entreprises (CFE) ?",
+    mcqOptions: [
+      "Accomplir les formalités de création, modification ou cessation d'entreprise",
+      "Gérer les impôts des entreprises",
+      "Octroyer des prêts aux entrepreneurs",
+      "Former les nouveaux entrepreneurs",
+    ],
+    mcqCorrectAnswer: "Accomplir les formalités de création, modification ou cessation d'entreprise",
+    qrcQuestion: "Citez deux rôles d'un centre de formalités des entreprises (CFE)",
+    qrcCorrectAnswer: [
+      "Accomplir les formalités de création d'entreprise",
+      "Effectuer des formalités de modification ou de cessation",
+      "Carte grise",
+    ],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 14,
+    category: "gestion",
+    mcqQuestion: "Citez une forme juridique d'entreprise",
+    mcqOptions: [
+      "Entreprise individuelle",
+      "Club d'entreprises",
+      "Consortium informel",
+      "Groupe de travail",
+    ],
+    mcqCorrectAnswer: "Entreprise individuelle",
+    qrcQuestion: "Citez 3 formes juridiques d'entreprise",
+    qrcCorrectAnswer: ["Entreprise individuelle", "Société à responsabilité limitée", "Société par actions simplifiée", "SARL", "SAS", "SASU", "EURL"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 15,
+    category: "gestion",
+    mcqQuestion: "Qu'est-ce qu'une personne morale ?",
+    mcqOptions: [
+      "Un groupement de personnes physiques ou morales qui souhaitent accomplir quelque chose en commun",
+      "Un individu avec des qualités éthiques",
+      "Un représentant légal",
+      "Un employé modèle",
+    ],
+    mcqCorrectAnswer: "Un groupement de personnes physiques ou morales qui souhaitent accomplir quelque chose en commun",
+    qrcQuestion: "Qu'est-ce qu'une personne morale ?",
+    qrcCorrectAnswer: "Un groupement de personnes physiques ou morales qui souhaitent accomplir quelque chose en commun",
+  },
+  {
+    id: 16,
+    category: "gestion",
+    mcqQuestion: "Citez un type d'immobilisation",
+    mcqOptions: [
+      "Immobilisations corporelles",
+      "Immobilisations temporaires",
+      "Immobilisations virtuelles",
+      "Immobilisations personnelles",
+    ],
+    mcqCorrectAnswer: "Immobilisations corporelles",
+    qrcQuestion: "Citez 2 types d'immobilisations",
+    qrcCorrectAnswer: ["Immobilisations corporelles", "Immobilisations incorporelles", "Immobilisations financières"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 17,
+    category: "gestion",
+    mcqQuestion: "Qu'est-ce que le point mort ?",
+    mcqOptions: [
+      "Le moment où l'entreprise commence à réaliser des bénéfices",
+      "La fin d'une activité commerciale",
+      "Un arrêt temporaire de production",
+      "Une panne de véhicule",
+    ],
+    mcqCorrectAnswer: "Le moment où l'entreprise commence à réaliser des bénéfices",
+    qrcQuestion: "",
+    qrcCorrectAnswer: "",
+  },
+  {
+    id: 18,
+    category: "gestion",
+    mcqQuestion: "Donnez la définition de la solvabilité",
+    mcqOptions: [
+      "La capacité de pouvoir payer ses dettes",
+      "La capacité d'emprunter de l'argent",
+      "Le montant des économies",
+      "Le niveau de revenus",
+    ],
+    mcqCorrectAnswer: "La capacité de pouvoir payer ses dettes",
+    qrcQuestion: "Donnez la définition de la solvabilité d'une personne",
+    qrcCorrectAnswer: "La capacité de pouvoir payer ses dettes",
+  },
+  {
+    id: 19,
+    category: "gestion",
+    mcqQuestion: "Quelle est la différence entre une charge fixe et une charge variable ?",
+    mcqOptions: [
+      "Les charges variables varient selon l'activité, les charges fixes restent constantes",
+      "Les charges fixes sont plus élevées",
+      "Les charges variables sont facultatives",
+      "Il n'y a pas de différence",
+    ],
+    mcqCorrectAnswer: "Les charges variables varient selon l'activité, les charges fixes restent constantes",
+    qrcQuestion: "Quelle est la différence entre une charge fixe et une charge variable ?",
+    qrcCorrectAnswer: "Les charges variables varient selon l'activité de l'entreprise contrairement aux charges fixes qui ne fluctuent pas",
+  },
+  {
+    id: 20,
+    category: "gestion",
+    mcqQuestion: "Expliquez la différence entre SIREN et SIRET",
+    mcqOptions: [
+      "SIREN identifie l'entreprise (9 chiffres), SIRET identifie l'établissement (14 chiffres)",
+      "SIREN est pour les grandes entreprises, SIRET pour les petites",
+      "SIREN est national, SIRET est régional",
+      "Il n'y a pas de différence",
+    ],
+    mcqCorrectAnswer: "SIREN identifie l'entreprise (9 chiffres), SIRET identifie l'établissement (14 chiffres)",
+    qrcQuestion: "Expliquez la différence entre les numéros SIREN et SIRET",
+    qrcCorrectAnswer: "Le SIREN identifie l'entreprise (9 chiffres), le SIRET identifie l'établissement (14 chiffres: SIREN + NIC)",
+  },
+
+  // Réglementation nationale (Taxi)
+  {
+    id: 21,
+    category: "national",
+    mcqQuestion: "Quelles autorités administratives peuvent délivrer une ADS ?",
+    mcqOptions: [
+      "Le maire ou le préfet de police (selon la zone)",
+      "Uniquement le ministère des Transports",
+      "Uniquement la préfecture de région",
+      "Uniquement la chambre de commerce",
+    ],
+    mcqCorrectAnswer: "Le maire ou le préfet de police (selon la zone)",
+    qrcQuestion: "Quelles sont les différentes autorités administratives compétentes pour délivrer une ADS ?",
+    qrcCorrectAnswer: ["Le maire", "Le préfet de police"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 22,
+    category: "national",
+    mcqQuestion:
+      "Lorsqu'un titulaire ne peut exploiter lui-même son ADS, quelles sont les 2 possibilités pour que l'entreprise reste active ?",
+    mcqOptions: [
+      "Louer le taxi à un conducteur et/ou employer un salarié",
+      "Vendre l'ADS immédiatement",
+      "Geler l'activité sans formalité",
+      "Faire uniquement du transport scolaire",
+    ],
+    mcqCorrectAnswer: "Louer le taxi à un conducteur et/ou employer un salarié",
+    qrcQuestion:
+      "Lorsqu'un titulaire ne peut exploiter lui-même son autorisation de stationnement, quelles sont les deux possibilités qui s'offrent à lui pour que son entreprise reste active ?",
+    qrcCorrectAnswer: ["La location du véhicule taxi", "L'emploi d'un salarié", "Location", "Salarié"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 23,
+    category: "national",
+    mcqQuestion:
+      "Je veux passer mon véhicule professionnel en véhicule personnel pour la journée : que dois-je faire ?",
+    mcqOptions: [
+      "Bâcher le lumineux, éteindre le taximètre et retirer la carte professionnelle",
+      "Laisser le lumineux allumé et retirer la plaque",
+      "Retirer uniquement l'imprimante",
+      "Aucune action n'est nécessaire",
+    ],
+    mcqCorrectAnswer: "Bâcher le lumineux, éteindre le taximètre et retirer la carte professionnelle",
+    qrcQuestion: "Je veux passer mon véhicule professionnel en véhicule personnel pour la journée que dois-je faire ?",
+    qrcCorrectAnswer: ["Bâcher le lumineux", "Éteindre le taximètre", "Retirer la carte professionnelle"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 24,
+    category: "national",
+    mcqQuestion: "Que signifie le sigle TICPE ?",
+    mcqOptions: [
+      "Taxe intérieure de consommation sur les produits énergétiques",
+      "Taxe intercommunale sur la circulation des passagers",
+      "Tarif intérieur de course pour les professionnels d'exploitation",
+      "Titre d'immatriculation du conducteur professionnel",
+    ],
+    mcqCorrectAnswer: "Taxe intérieure de consommation sur les produits énergétiques",
+    qrcQuestion: "Développez le sigle TICPE.",
+    qrcCorrectAnswer: "Taxe intérieure sur la consommation des produits énergétique",
+  },
+  {
+    id: 25,
+    category: "national",
+    mcqQuestion:
+      "Quelle sanction est encourue pour exercer comme conducteur de taxi sans carte professionnelle valide ?",
+    mcqOptions: ["1 500€ d'amende", "150€ d'amende", "Aucune", "Prison ferme"],
+    mcqCorrectAnswer: "1 500€ d'amende",
+    qrcQuestion:
+      "Quelle est la sanction encourue pour exercice de l'activité de conducteur de taxi sans être titulaire de la carte professionnelle en cours de validité ?",
+    qrcCorrectAnswer: "1500€ d'amende",
+  },
+  {
+    id: 26,
+    category: "national",
+    mcqQuestion: "Quelles sont les conditions de stationnement des taxis en attente de la clientèle ?",
+    mcqOptions: [
+      "Dans la zone de prise en charge et en station aménagée (sauf réservé/retour), lumineux non bâché",
+      "N'importe où sur la voie publique, lumineux bâché",
+      "Uniquement sur autoroute, lumineux allumé",
+      "Uniquement devant une gare, lumineux bâché",
+    ],
+    mcqCorrectAnswer:
+      "Dans la zone de prise en charge et en station aménagée (sauf réservé/retour), lumineux non bâché",
+    qrcQuestion: "Quelles sont les conditions de stationnement des taxis en attente de la clientèle ?",
+    qrcCorrectAnswer:
+      "Le conducteur ne peut stationner en attente de la clientèle que dans sa zone de prise en charge et seulement dans des stations aménagées, sauf s'il est réservé ou retenu hors de sa zone. Le lumineux ne doit pas être recouvert.",
+  },
+  {
+    id: 27,
+    category: "national",
+    mcqQuestion: "Quelle proposition correspond à la définition d'un TAXI ?",
+    mcqOptions: [
+      "Véhicule (8 places max en plus du conducteur) avec équipements spéciaux + TPE, titulaire d'une ADS, en attente sur la voie publique",
+      "Véhicule collectif avec horaires fixes",
+      "Véhicule de livraison",
+      "Véhicule personnel",
+    ],
+    mcqCorrectAnswer:
+      "Véhicule (8 places max en plus du conducteur) avec équipements spéciaux + TPE, titulaire d'une ADS, en attente sur la voie publique",
+    qrcQuestion: "Définir le TAXI",
+    qrcCorrectAnswer:
+      "Véhicule automobile (outre le siège du conducteur, 8 places max) muni d'équipements spéciaux et d'un terminal de paiement électronique, dont l'exploitant est titulaire d'une ADS et stationne sur la voie publique en attente de la clientèle pour effectuer le transport à la demande et à titre onéreux.",
+  },
+  {
+    id: 28,
+    category: "national",
+    mcqQuestion: "Pour le TAP (transport assis professionnalisé), à qui s'adresser ?",
+    mcqOptions: ["CPAM", "Préfecture", "INPI", "DREAL"],
+    mcqCorrectAnswer: "CPAM",
+    qrcQuestion: "A qui s’adresser pour le TAP : transport assis professionnalisé ?",
+    qrcCorrectAnswer: ["CPAM", "Caisse primaire d’assurance maladie"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 29,
+    category: "national",
+    mcqQuestion: "Qu'est-ce que le taxi de remplacement ?",
+    mcqOptions: [
+      "Un véhicule temporaire en cas d'immobilisation/vol, reprenant les équipements et l'ADS du taxi remplacé",
+      "Un taxi électrique obligatoire",
+      "Un second taxi pour les heures de pointe",
+      "Un taxi sans équipements",
+    ],
+    mcqCorrectAnswer:
+      "Un véhicule temporaire en cas d'immobilisation/vol, reprenant les équipements et l'ADS du taxi remplacé",
+    qrcQuestion: "Qu’est-ce que le taxi de remplacement ?",
+    qrcCorrectAnswer:
+      "En cas d'immobilisation mécanique ou de vol du véhicule/équipements, le taxi peut être remplacé temporairement par un véhicule disposant des équipements. L'ADS et la plaque restent ceux du taxi remplacé.",
+  },
+  {
+    id: 30,
+    category: "national",
+    mcqQuestion:
+      "Quelle convention doit appliquer un taxi qui effectue un transport médical pour une assurance CPAM ?",
+    mcqOptions: [
+      "La convention de la CPAM du département du taxi",
+      "La convention de la CPAM du patient",
+      "Aucune convention",
+      "Une convention nationale unique",
+    ],
+    mcqCorrectAnswer: "La convention de la CPAM du département du taxi",
+    qrcQuestion:
+      "Quelle convention doit appliquer un taxi qui effectue un transport médical pour une assurance de CPAM.",
+    qrcCorrectAnswer: "Il doit appliquer la convention de la CPAM de son département",
+  },
+  {
+    id: 31,
+    category: "national",
+    mcqQuestion: "Citez 3 éléments du montant affichés sur les compteurs euro kilométrique.",
+    mcqOptions: [
+      "Prise en charge, tarif horokilométrique, marche lente/attente",
+      "TVA, bonus écologique, malus",
+      "Assurance, entretien, carburant",
+      "Nombre de passagers, météo, bagages",
+    ],
+    mcqCorrectAnswer: "Prise en charge, tarif horokilométrique, marche lente/attente",
+    qrcQuestion: "Citez 3 éléments du montant affichés sur les compteurs euro kilométrique",
+    qrcCorrectAnswer: ["Prise en charge", "Tarif horokilométrique", "Tarif de marche lente", "Tarif d’attente"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 32,
+    category: "national",
+    mcqQuestion: "Quels trajets ouvrent droit au remboursement d'une fraction de la TICPE ?",
+    mcqOptions: [
+      "Exercice de la profession + aller-retour quotidien domicile-travail",
+      "Uniquement les trajets privés",
+      "Uniquement les trajets de nuit",
+      "Uniquement les trajets à l'étranger",
+    ],
+    mcqCorrectAnswer: "Exercice de la profession + aller-retour quotidien domicile-travail",
+    qrcQuestion: "Citez les 2 types de trajet ouvrant droit au remboursement d'une fraction de la TICPE.",
+    qrcCorrectAnswer: ["Exercice de la profession", "Aller-retour quotidien domicile lieu de travail"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 33,
+    category: "national",
+    mcqQuestion:
+      "Quel équipement fait partie des équipements obligatoires (hors taximètre, lumineux, plaques scellées, imprimante) ?",
+    mcqOptions: [
+      "Terminal de paiement électronique",
+      "Éthylotest personnel",
+      "Gyrophare",
+      "Tachygraphe",
+    ],
+    mcqCorrectAnswer: "Terminal de paiement électronique",
+    qrcQuestion:
+      "Citez 4 équipements obligatoires hors ceux cités ci-après : taximètre, lumineux, plaques scellées, imprimante :",
+    qrcCorrectAnswer: [
+      "Terminal de paiement électronique",
+      "Carnet de métrologie",
+      "Les tarifs",
+      "La trousse à pharmacie",
+      "Un facturier",
+      "Horodateur (uniquement sur Paris)",
+    ],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 34,
+    category: "national",
+    mcqQuestion:
+      "Un taxi effectue un transport médical pour un assuré d'une CPAM différente : quelle convention appliquer ?",
+    mcqOptions: [
+      "La convention qu'il a signée avec la CPAM de son département",
+      "La convention de la CPAM de l'assuré",
+      "Aucune convention",
+      "Une convention au choix",
+    ],
+    mcqCorrectAnswer: "La convention qu'il a signée avec la CPAM de son département",
+    qrcQuestion:
+      "Quelle convention doit appliquer le TAXI qui effectue un transport médical pour un assuré d’une CPAM différente avec laquelle il a signé ?",
+    qrcCorrectAnswer:
+      "Le taxi doit appliquer la convention qu’il a signé avec la CPAM de son département quel que soit la caisse de l’assuré.",
+  },
+  {
+    id: 35,
+    category: "national",
+    mcqQuestion:
+      "Quel est le document où sont consignées les opérations sur l'installation des équipements spéciaux des taxis ?",
+    mcqOptions: ["Carnet métrologique", "Carnet de santé", "Bon de transport", "Registre des VTC"],
+    mcqCorrectAnswer: "Carnet métrologique",
+    qrcQuestion:
+      "Comment appelle-t-on le document sur lequel sont consignées les opérations effectuées sur l'installation des équipements spéciaux des taxis ?",
+    qrcCorrectAnswer: "Le carnet métrologique",
+  },
+  {
+    id: 36,
+    category: "national",
+    mcqQuestion: "Quelles sont les 2 fonctionnalités du compteur horokilométrique ?",
+    mcqOptions: [
+      "Fonction horaire + fonction kilométrique",
+      "Fonction radio + fonction GPS",
+      "Fonction carte + fonction SMS",
+      "Fonction climatisation + fonction chauffage",
+    ],
+    mcqCorrectAnswer: "Fonction horaire + fonction kilométrique",
+    qrcQuestion: "Citez 2 fonctionnalités du compteur horokilométrique",
+    qrcCorrectAnswer: ["Fonction horaire", "Fonction kilométrique"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 37,
+    category: "national",
+    mcqQuestion:
+      "Lors du transfert d'une ADS, quel délai a le nouveau titulaire pour déclarer la transaction aux impôts ?",
+    mcqOptions: ["1 mois", "1 semaine", "3 mois", "6 mois"],
+    mcqCorrectAnswer: "1 mois",
+    qrcQuestion:
+      "Lors du transfert des ADS, quel délai a le nouveau titulaire pour déclarer la transaction à la recette des impôts compétente, à partir de la date de conclusion ?",
+    qrcCorrectAnswer: "1 mois",
+  },
+  {
+    id: 38,
+    category: "national",
+    mcqQuestion: "Qui établit la prescription médicale ?",
+    mcqOptions: ["Le médecin", "La CPAM", "Le taxi", "Le patient"],
+    mcqCorrectAnswer: "Le médecin",
+    qrcQuestion: "Qui établit la prescription médicale ?",
+    qrcCorrectAnswer: "Le médecin qui a délivré le bon de transport",
+  },
+  {
+    id: 39,
+    category: "t3p",
+    mcqQuestion: "Qu'est-ce qu'un service de transport régulier ?",
+    mcqOptions: [
+      "Un transport collectif défini par un itinéraire, des points d'arrêt, une fréquence, un tarif et un horaire",
+      "Un transport à la demande sans horaire",
+      "Un transport de marchandises régulier",
+      "Un transport privé réservé à une entreprise",
+    ],
+    mcqCorrectAnswer:
+      "Un transport collectif défini par un itinéraire, des points d'arrêt, une fréquence, un tarif et un horaire",
+    qrcQuestion: "Qu'est-ce qu'un service de transport régulier ?",
+    qrcCorrectAnswer: ["Itinéraire", "Point d'arrêt", "Fréquence", "Tarif", "Horaire"],
+    qrcMultipleAnswers: true,
+  },
+  {
+    id: 40,
+    category: "gestion",
+    mcqQuestion:
+      "Un véhicule de 24 000 € HT mis en service le 1er mars 2023, amorti linéairement sur 5 ans : quelle est la valeur comptable nette au 31 décembre 2026 ?",
+    mcqOptions: ["5 600 €", "4 800 €", "18 400 €", "6 000 €"],
+    mcqCorrectAnswer: "5 600 €",
+    qrcQuestion:
+      "Véhicule de 24 000 € HT mis en service le 1er mars 2023, amortissement linéaire sur 5 ans, clôture au 31 décembre : quelle est la valeur comptable nette au 31 décembre 2026 ? Détaillez vos calculs.",
+    qrcCorrectAnswer:
+      "24 000 / 5 = 4 800 € par an ; 1ère année = 4 800 x 10/12 = 4 000 € ; 2e, 3e et 4e années = 4 800 € chacune ; total amortissement = 18 400 € ; valeur comptable nette = 24 000 - 18 400 = 5 600 €",
+  },
+  {
+    id: 41,
+    category: "national",
+    mcqQuestion: "Quelle est l'autorité compétente qui fixe le taux d'augmentation annuel des tarifs ?",
+    mcqOptions: ["Le ministre de l'économie", "Le maire", "Le préfet", "La CPAM"],
+    mcqCorrectAnswer: "Le ministre de l'économie",
+    qrcQuestion: "Quelle est l'autorité compétente qui fixe le taux d'augmentation annuel des tarifs ?",
+    qrcCorrectAnswer: "Le ministre de l'économie",
+  },
+  {
+    id: 42,
+    category: "national",
+    mcqQuestion:
+      "Dans quel cas peut-on céder à titre onéreux une ADS avant le temps minimal d'exploitation exigé ?",
+    mcqOptions: [
+      "En cas de liquidation judiciaire",
+      "En cas de déménagement",
+      "En cas de changement de véhicule",
+      "En cas de congés prolongés",
+    ],
+    mcqCorrectAnswer: "En cas de liquidation judiciaire",
+    qrcQuestion:
+      "Citez deux cas dans lesquels on peut céder à titre onéreux une autorisation de stationnement avant le temps minimal d'exploitation exigé.",
+    qrcCorrectAnswer: [
+      "Liquidation judiciaire",
+      "Fusion ou scission avec une entreprise analogue",
+      "Décès du titulaire",
+      "Inaptitude physique entraînant le retrait définitif du permis de conduire",
+    ],
+    qrcMultipleAnswers: true,
+  },
+];
+
+// Fonction pour obtenir tous les items (déjà dédupliqués dans cette version)
+export function getDedupedQuizItems(): QuizItem[] {
+  return quizItems;
+}
