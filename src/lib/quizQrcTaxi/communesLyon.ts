@@ -17,7 +17,7 @@ export const METROPOLE_LYON: ElementReference[] = [
   "Charbonnières-les-Bains", "Charly", "Chassieu", "Collonges-au-Mont-d'Or", "Corbas",
   "Couzon-au-Mont-d'Or", "Craponne", "Curis-au-Mont-d'Or", "Dardilly", "Décines-Charpieu",
   "Écully", "Feyzin", "Fleurieu-sur-Saône", "Fontaines-Saint-Martin", "Fontaines-sur-Saône",
-  "Francheville", "Genay", "Givors", "Grigny", "Irigny", "Jonage", "La Mulatière",
+  "Francheville", "Genay", "Givors", "Grigny-sur-Rhône", "Irigny", "Jonage", "La Mulatière",
   "La Tour-de-Salvagny", "Limonest", "Lissieu", "Lyon", "Marcy-l'Étoile", "Meyzieu", "Mions",
   "Montanay", "Neuville-sur-Saône", "Oullins-Pierre-Bénite", "Poleymieux-au-Mont-d'Or",
   "Quincieux", "Rillieux-la-Pape", "Rochetaillée-sur-Saône", "Saint-Cyr-au-Mont-d'Or",
@@ -44,7 +44,7 @@ export const ALIAS_COMMUNS: Record<string, string[]> = {
   "Décines-Charpieu": ["Décines", "Charpieu"],
   "Caluire-et-Cuire": ["Caluire"],
   "Tassin-la-Demi-Lune": ["Tassin"],
-  "Grigny": ["Grigny-sur-Rhône"],
+  "Grigny-sur-Rhône": ["Grigny"],
 };
 
 /** Communes voisines hors zone servant de distracteurs et de garde contre les faux positifs. */
