@@ -71,7 +71,7 @@ describe('Verdict serveur unique etat_completion_modules (lecture simulée)', ()
     ], error: null };
     const r = await chargerCandidatModules('fictif-riyad');
     expect(r).toMatchObject({ total: 2, termines: 1 });
-    expect(r.restants.map((m: any) => m.id)).toEqual([2]);
+    expect((r as any).restants.map((m: any) => m.id)).toEqual([2]);
     expect(stocke[0].status).toBe('completed');
   });
   it('erreur de lecture du verdict serveur => erreur remontée, jamais un faux 100 %', async () => {
