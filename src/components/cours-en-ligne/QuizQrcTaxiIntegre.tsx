@@ -1,33 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/contexts/AuthContext";
-import { quizItems, QuizItem } from "@/data/quiz-qrc-taxi/quizData";
-import { ElementReference, METROPOLE_LYON, ZUPC_LYON, distracteurs } from "@/lib/quizQrcTaxi/communesLyon";
-import { QCM_LOCAUX_BILAN_TA, QcmBilanTa } from "@/data/bilan-ta/qcmLocauxBilanTa";
-import { corrigerCases, corrigerCommunes } from "@/lib/quizQrcTaxi/correction";
-import { CorrectionQrcTaxiIA } from "./CorrectionQrcTaxiIA";
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/AuthContext';
+import { QuizItem } from '@/data/quiz-qrc-taxi/quizData';
+import { QcmBilanTa } from '@/data/bilan-ta/qcmLocauxBilanTa';
+import { METROPOLE_LYON, ZUPC_LYON, distracteurs } from '@/lib/quizQrcTaxi/communesLyon';
+import { corrigerCases, corrigerCommunes } from '@/lib/quizQrcTaxi/correction';
+import { AnswerValue, PracticeQuiz, QUIZ_DEFINITIONS, legacyAnswers, missingAnswers, requirements, validAnswer } from '@/lib/quizQrcTaxi/manifest';
+import { useDurablePractice } from '@/lib/quizQrcTaxi/useDurablePractice';
+import { CorrectionQrcTaxiIA } from './CorrectionQrcTaxiIA';
 
-/** Entraînement facultatif : aucune écriture serveur, aucun jalon, aucune progression. Sauvegarde locale par compte. */
-export type QuizQrcTaxiId = "complet" | "specialites";
-type Zone = "metropole" | "zupc";
-
-export const QUIZ_QRC_TAXI: Record<QuizQrcTaxiId, { titre: string; items: QuizItem[]; zones: Zone[]; qrcDesLaPremiere: boolean; qcmLocaux: QcmBilanTa[] }> = {
-  complet: { titre: "QRC TAXI complet", items: quizItems, zones: ["metropole"], qrcDesLaPremiere: false, qcmLocaux: [] },
-  specialites: { titre: "QRC TAXI spécialités", items: quizItems.filter((q) => q.category === "national"), zones: ["zupc", "metropole"], qrcDesLaPremiere: true, qcmLocaux: QCM_LOCAUX_BILAN_TA },
-};
-
-const ZONES: Record<Zone, { titre: string; ref: ElementReference[]; consigne: string }> = {
-  metropole: { titre: "Communes de la Métropole de Lyon", ref: METROPOLE_LYON, consigne: "58 communes" },
-  zupc: { titre: "ZUPC de Lyon", ref: ZUPC_LYON, consigne: "23 communes + l'Aéroport de Lyon-Saint-Exupéry (à citer, ce n'est pas une commune)" },
-};
-
-interface Reponse { qcm: string; qrc: string }
-interface Etat { index: number; phase: "qcm" | "qrc"; reponses: Record<number, Reponse>; cases: Record<string, string[]>; saisies: Record<string, string>; casesCorrigees: Record<string, boolean>; saisiesCorrigees: Record<string, boolean>; locaux?: Record<number, string[]>; locauxCorriges?: boolean; termine: boolean }
-const VIDE: Etat = { index: 0, phase: "qcm", reponses: {}, cases: {}, saisies: {}, casesCorrigees: {}, saisiesCorrigees: {}, termine: false };
-
-export const cleStockage = (userId: string, quiz: QuizQrcTaxiId) => `quiz-qrc-taxi:v1:${userId}:${quiz}`;
+export type QuizQrcTaxiId = PracticeQuiz;
+export const QUIZ_QRC_TAXI = QUIZ_DEFINITIONS;
+export const cleStockage = (account: string, quiz: PracticeQuiz) => `quiz-qrc-taxi:v1:${account}:${quiz}`;
+export const qcmLocalJuste = (q: QcmBilanTa, choices: string[]) => q.choix.filter(c => c.correct).map(c => c.lettre).sort().join() === [...choices].sort().join();
 
 /** Feedback only: original references and local answers remain untouched pending arbitration. */
 export function alerteReglementaireQrc(q: QuizItem): string | null {
@@ -43,181 +30,100 @@ export function alerteReglementaireQrc(q: QuizItem): string | null {
   return null;
 }
 
-function Liste({ titre, noms, ton }: { titre: string; noms: string[]; ton: "ok" | "ko" | "neutre" }) {
-  if (!noms.length) return null;
-  const cls = ton === "ok" ? "text-primary" : ton === "ko" ? "text-destructive" : "text-muted-foreground";
-  return <div className="mt-2"><p className={`font-semibold ${cls}`}>{titre} ({noms.length})</p><p className="text-sm">{noms.join(" · ")}</p></div>;
-}
 
-export const qcmLocalJuste = (q: QcmBilanTa, coches: string[]) => {
-  const att = q.choix.filter((c) => c.correct).map((c) => c.lettre).sort().join();
-  return att === [...coches].sort().join();
-};
+const arrayAnswer = (value: AnswerValue | undefined): string[] => Array.isArray(value) ? value : [];
+const textAnswer = (value: AnswerValue | undefined): string => typeof value === 'string' ? value : '';
+const dateText = (date: string) => new Date(date).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
 
-function SectionQcmLocaux({ questions, etat, maj }: { questions: QcmBilanTa[]; etat: Etat; maj: (f: (e: Etat) => Etat) => void }) {
-  const locaux = etat.locaux ?? {};
-  const corrige = !!etat.locauxCorriges;
-  const justes = questions.filter((q) => qcmLocalJuste(q, locaux[q.id] ?? [])).length;
-  return (
-    <div className="rounded-lg border p-4 space-y-4" data-testid="qcm-locaux-ta">
-      <p className="font-semibold text-lg">QCM Réglementation locale — repris du Bilan examen TA ({questions.length} questions)</p>
-      <p className="text-sm text-muted-foreground">Questions à choix : cochez la ou les bonnes réponses.</p>
-      {questions.map((q, i) => {
-        const coches = locaux[q.id] ?? [];
-        const ok = qcmLocalJuste(q, coches);
-        return (
-          <div key={q.id} className="border-t pt-3">
-            <p className="font-medium">{i + 1}. {q.enonce}</p>
-            <div className="flex flex-col gap-2 mt-2">
-              {q.choix.map((c) => (
-                <label key={c.lettre} className="flex items-center gap-2">
-                  <Checkbox checked={coches.includes(c.lettre)} disabled={corrige}
-                    onCheckedChange={(v) => maj((e) => ({ ...e, locaux: { ...(e.locaux ?? {}), [q.id]: v ? [...coches, c.lettre] : coches.filter((l) => l !== c.lettre) } }))} />
-                  <span>{c.lettre}. {c.texte}</span>
-                </label>
-              ))}
-            </div>
-            {corrige && <p className={ok ? "text-primary" : "text-destructive"}>
-              {ok ? "Juste" : `Faux — attendu : ${q.choix.filter((c) => c.correct).map((c) => `${c.lettre}. ${c.texte}`).join(" + ")}`}</p>}
-          </div>
-        );
-      })}
-      {!corrige
-        ? <Button className="w-full" onClick={() => maj((e) => ({ ...e, locauxCorriges: true }))}>Corriger les QCM locaux</Button>
-        : <><p className="font-semibold">{justes}/{questions.length} justes</p>
-            <Button variant="outline" className="w-full" onClick={() => maj((e) => ({ ...e, locaux: {}, locauxCorriges: false }))}>Refaire les QCM locaux</Button></>}
-    </div>
-  );
-}
-
-function ExerciceZone({ zone, etat, maj }: { zone: Zone; etat: Etat; maj: (f: (e: Etat) => Etat) => void }) {
-  const z = ZONES[zone];
-  const options = useMemo(() => [...z.ref.map((e) => e.nom), ...distracteurs(zone)].sort((a, b) => a.localeCompare(b, "fr")), [zone, z.ref]);
-  const cochees = etat.cases[zone] ?? [];
-  const bilanCases = corrigerCases(cochees, z.ref);
-  const bilanSaisie = corrigerCommunes(etat.saisies[zone] ?? "", z.ref);
-  return (
-    <div className="rounded-lg border p-4 space-y-4" data-testid={`zone-${zone}`}>
-      <p className="font-semibold text-lg">{z.titre} — {z.consigne}</p>
-      <div>
-        <p className="font-medium mb-2">a) Cochez les éléments de la liste</p>
-        <div className="flex flex-col gap-2">
-          {options.map((nom) => (
-            <label key={nom} className="flex items-center gap-2">
-              <Checkbox checked={cochees.includes(nom)} disabled={etat.casesCorrigees[zone]}
-                onCheckedChange={(v) => maj((e) => ({ ...e, cases: { ...e.cases, [zone]: v ? [...cochees, nom] : cochees.filter((n) => n !== nom) } }))} />
-              <span>{nom}</span>
-            </label>
-          ))}
-        </div>
-        {!etat.casesCorrigees[zone]
-          ? <Button className="w-full mt-3" onClick={() => maj((e) => ({ ...e, casesCorrigees: { ...e.casesCorrigees, [zone]: true } }))}>Corriger les cases</Button>
-          : <div className="mt-3"><p className="font-semibold">{bilanCases.justes.length}/{z.ref.length} justes</p>
-              <Liste titre="Oubliées" noms={bilanCases.oubliees} ton="ko" />
-              <Liste titre="Cochées à tort" noms={bilanCases.erronees} ton="ko" /></div>}
-      </div>
-      <div>
-        <p className="font-medium mb-2">b) Écrivez librement toute la liste (une par ligne ou séparées par des virgules)</p>
-        <Textarea value={etat.saisies[zone] ?? ""} disabled={etat.saisiesCorrigees[zone]} className="min-h-[140px]"
-          onChange={(ev) => maj((e) => ({ ...e, saisies: { ...e.saisies, [zone]: ev.target.value } }))} />
-        {!etat.saisiesCorrigees[zone]
-          ? <Button className="w-full mt-3" onClick={() => maj((e) => ({ ...e, saisiesCorrigees: { ...e.saisiesCorrigees, [zone]: true } }))}>Corriger ma liste</Button>
-          : <div className="mt-3">
-              <p className="font-semibold">{bilanSaisie.communesTrouvees}/{bilanSaisie.totalCommunes} communes trouvées
-                {zone === "zupc" && ` · Aéroport : ${bilanSaisie.trouvees.includes(ZUPC_LYON[0].nom) ? "cité" : "oublié"}`}</p>
-              <Liste titre="Oubliées" noms={bilanSaisie.oubliees} ton="ko" />
-              <Liste titre="Réponses erronées (hors zone ou inconnues)" noms={bilanSaisie.erronees} ton="ko" />
-              <Liste titre="Citées en double" noms={bilanSaisie.doublons} ton="neutre" />
-              <Liste titre="Acceptées malgré l'orthographe" noms={bilanSaisie.orthographe.map((o) => `${o.saisie} → ${o.officiel}`)} ton="neutre" />
-            </div>}
-        {(etat.casesCorrigees[zone] || etat.saisiesCorrigees[zone]) &&
-          <Button variant="outline" className="w-full mt-2" onClick={() => maj((e) => ({ ...e, cases: { ...e.cases, [zone]: [] }, saisies: { ...e.saisies, [zone]: "" }, casesCorrigees: { ...e.casesCorrigees, [zone]: false }, saisiesCorrigees: { ...e.saisiesCorrigees, [zone]: false } }))}>Refaire cet exercice</Button>}
-      </div>
-    </div>
-  );
-}
-
-export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
-  const def = QUIZ_QRC_TAXI[quiz];
+export function QuizQrcTaxiIntegre({ quiz }: { quiz: PracticeQuiz }) {
   const { user } = useAuth();
-  const cle = user?.id ? cleStockage(user.id, quiz) : null;
-  const [etat, setEtat] = useState<Etat>(VIDE);
-  const [charge, setCharge] = useState(false);
-  const [correctionBusy, setCorrectionBusy] = useState(false);
-
+  const state = useDurablePractice(user?.id, quiz);
+  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState<'qcm' | 'qrc'>('qcm');
+  const [legacy, setLegacy] = useState<{ answers: Record<string, AnswerValue>; rejected: string[] }>();
+  const def = QUIZ_QRC_TAXI[quiz];
+  const rules = state.attempt?.manifest ?? requirements(quiz);
+  const missing = missingAnswers(rules, state.answers);
+  const submitted = !!state.attempt?.submitted_at;
+  const frozen = submitted || state.busy && !state.pending.length;
+  const item = def.items[index];
   useEffect(() => {
-    setCharge(false);
-    let e = VIDE;
-    if (cle) { try { const s = localStorage.getItem(cle); if (s) e = { ...VIDE, ...JSON.parse(s) }; } catch { /* stockage indisponible */ } }
-    setEtat(e); setCharge(true);
-  }, [cle]);
-  useEffect(() => { if (cle && charge) { try { localStorage.setItem(cle, JSON.stringify(etat)); } catch { /* ignore */ } } }, [cle, charge, etat]);
+    setIndex(0); setPhase('qcm'); setLegacy(undefined);
+    if (!user?.id) return;
+    try { const raw = localStorage.getItem(cleStockage(user.id, quiz)); if (raw) setLegacy(legacyAnswers(JSON.parse(raw), requirements(quiz))); }
+    catch { setLegacy({ answers: {}, rejected: ['Ancienne sauvegarde illisible, conservée sur cet appareil'] }); }
+  }, [user?.id, quiz]);
+  const stamp = (key: string) => {
+    const meta = state.attempt?.answer_meta?.[key];
+    return <p className="text-sm text-muted-foreground">{state.pending.some(p => p.key === key) ? 'Saisie conservée sur cet appareil — sauvegarde serveur en attente' : meta?.saved_at ? `Sauvegardée le ${dateText(meta.saved_at)}` : 'Pas encore sauvegardée'}</p>;
+  };
+  const go = (key: string) => {
+    const [kind, id] = key.split(':');
+    if (kind === 'mcq' || kind === 'qrc') { setIndex(def.items.findIndex(q => String(q.id) === id)); setPhase(kind === 'qrc' ? 'qrc' : 'qcm'); }
+    else setIndex(def.items.length);
+    setTimeout(() => document.getElementById(`practice-${quiz}-${key}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 30);
+  };
+  const importLegacy = () => {
+    if (!legacy || !state.attempt) return;
+    for (const [key, answer] of Object.entries(legacy.answers)) {
+      if (state.answers[key] === undefined) state.edit(key, answer);
+    }
+    setLegacy(undefined);
+  };
+  if (state.loading) return <p role="status">Lecture de votre sauvegarde…</p>;
+  if (!state.attempt) return <div className="space-y-3"><p role="alert">{state.error || 'Sauvegarde indisponible.'}</p><Button onClick={() => void state.synchronize()}>Réessayer la lecture</Button></div>;
 
-  const maj = (f: (e: Etat) => Etat) => setEtat(f);
-  const n = def.items.length;
-  const enQuestions = etat.index < n && !etat.termine;
-  const item = def.items[etat.index];
-  const avecQrc = (i: number) => (def.qrcDesLaPremiere || i >= 1) && !!def.items[i]?.qrcQuestion?.trim();
-  const rep = item ? etat.reponses[item.id] ?? { qcm: "", qrc: "" } : { qcm: "", qrc: "" };
-  const setRep = (r: Partial<Reponse>) => maj((e) => ({ ...e, reponses: { ...e.reponses, [item.id]: { ...rep, ...r } } }));
-  const suivant = () => maj((e) => ({ ...e, index: e.index + 1, phase: "qcm" }));
-
-  if (!charge) return <p className="text-sm text-muted-foreground">Chargement…</p>;
-
-  return (
-    <div className="space-y-4" data-testid={`quiz-qrc-taxi-${quiz}`}>
-      {enQuestions && item && (
-        <div className="rounded-lg border p-4 space-y-4">
-          <p className="text-sm text-muted-foreground">Question {etat.index + 1} / {n} · {etat.phase === "qcm" ? "QCM" : "QRC"}</p>
-          {alerteReglementaireQrc(item) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(item)}</p>}
-          {etat.phase === "qcm" ? (<>
-            <p className="text-xl font-semibold">{item.mcqQuestion}</p>
-            <div className="flex flex-col gap-2">
-              {item.mcqOptions.map((o, i) => (
-                <Button key={o} variant={rep.qcm === o ? "default" : "outline"} className="w-full justify-start whitespace-normal h-auto py-3 text-left" onClick={() => setRep({ qcm: o })}>
-                  {String.fromCharCode(65 + i)}. {o}
-                </Button>
-              ))}
-            </div>
-            <Button className="w-full" disabled={!rep.qcm} onClick={() => avecQrc(etat.index) ? maj((e) => ({ ...e, phase: "qrc" })) : suivant()}>
-              {avecQrc(etat.index) ? "Passer à la QRC" : "Question suivante"}
-            </Button>
-          </>) : (<>
-            <p className="text-xl font-semibold">{item.qrcQuestion}</p>
-            <Textarea value={rep.qrc} disabled={correctionBusy} maxLength={4000} onChange={(ev) => setRep({ qrc: ev.target.value })} className="min-h-[120px]" placeholder="Tapez votre réponse ici..." />
-            {item.qrcMultipleAnswers && <p className="text-sm text-muted-foreground">Cette question attend plusieurs éléments de réponse</p>}
-            <CorrectionQrcTaxiIA quiz={quiz} questionId={item.id} answer={rep.qrc} onNext={suivant} onLock={setCorrectionBusy} />
-          </>)}
-        </div>
-      )}
-
-      {!enQuestions && (<>
-        {def.qcmLocaux.length > 0 && <SectionQcmLocaux questions={def.qcmLocaux} etat={etat} maj={maj} />}
-        {def.zones.map((z) => <ExerciceZone key={z} zone={z} etat={etat} maj={maj} />)}
-        <div className="rounded-lg border p-4 space-y-3">
-          <p className="font-semibold text-lg">Correction des {n} questions</p>
-          {def.items.map((q, i) => {
-            const r = etat.reponses[q.id] ?? { qcm: "", qrc: "" };
-            const qcmOk = r.qcm === q.mcqCorrectAnswer;
-            const hasQrc = avecQrc(i);
-            return (
-              <div key={q.id} className="border-t pt-3">
-                <p className="font-medium">{i + 1}. {q.mcqQuestion}</p>
-                {alerteReglementaireQrc(q) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(q)}</p>}
-                <p className={qcmOk ? "text-primary" : "text-destructive"}>QCM : {qcmOk ? "juste" : `faux — attendu : ${q.mcqCorrectAnswer}`}</p>
-                {hasQrc && <>
-                  <p className="font-medium mt-1">{q.qrcQuestion}</p>
-                  <p className="text-sm">Votre réponse : {r.qrc || "—"}</p>
-                  <CorrectionQrcTaxiIA quiz={quiz} questionId={q.id} answer={r.qrc} />
-                </>}
-              </div>
-            );
-          })}
-        </div>
-        <Button variant="outline" className="w-full" onClick={() => setEtat(VIDE)}>Recommencer le quiz</Button>
-      </>)}
+  return <div className="space-y-4" data-testid={`quiz-qrc-taxi-${quiz}`}>
+    <div className="border-b pb-3 space-y-2">
+      <p className="font-semibold">{submitted ? `Quiz soumis le ${dateText(state.attempt.submitted_at ?? '')}` : `${rules.length - missing.length}/${rules.length} réponses renseignées — non soumis`}</p>
+      <p role="status" className="text-sm text-muted-foreground">{state.busy ? 'Envoi en cours…' : state.pending.length ? `${state.pending.length} sauvegarde(s) en attente` : state.attempt.saved_at ? `Sauvegarde serveur : ${dateText(state.attempt.saved_at)}` : 'Brouillon ouvert'}</p>
+      {state.error && <p role="alert" className="text-destructive">{state.error}</p>}
+      {!!state.error && !state.conflicts.length && <Button variant="outline" disabled={state.busy} onClick={() => void state.synchronize()}>Réessayer la sauvegarde</Button>}
+      {state.conflicts.map(key => <div key={key} className="space-y-2"><p>{rules.find(r => r.key === key)?.label} — deux versions conservées</p><p className="break-words">Autre appareil : {textAnswer(state.attempt?.answers[key]) || arrayAnswer(state.attempt?.answers[key]).join(', ')}</p><Button variant="outline" onClick={() => state.resolve(key, true)}>Enregistrer ma version</Button><Button variant="outline" onClick={() => state.resolve(key, false)}>Garder la version serveur</Button></div>)}
+      {legacy && !submitted && (Object.keys(legacy.answers).length > 0 || legacy.rejected.length > 0) && <div className="space-y-2"><p>Anciennes réponses conservées sur cet appareil : {Object.keys(legacy.answers).length}.</p>{legacy.rejected.length > 0 && <p className="text-destructive">À vérifier : {legacy.rejected.join(', ')}</p>}<Button variant="outline" onClick={importLegacy}>Reprendre les anciennes réponses manquantes</Button></div>}
+      {!submitted && <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { setIndex(0); setPhase('qcm'); }}>Questions</Button><Button variant="outline" onClick={() => setIndex(def.items.length)}>Exercices et soumission</Button></div>}
     </div>
-  );
-}
 
+    {!submitted && item && index < def.items.length && <div className="border p-4 rounded-lg space-y-4">
+      <p className="text-sm text-muted-foreground">Question {index + 1} / {def.items.length} · {phase === 'qcm' ? 'QCM' : 'QRC'}</p>
+      {alerteReglementaireQrc(item) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(item)}</p>}
+      {phase === 'qcm' ? <div id={`practice-${quiz}-mcq:${item.id}`} className="space-y-3">
+        <p className="text-xl font-semibold">{item.mcqQuestion}</p>
+        {item.mcqOptions.map((option, n) => { const letter = String.fromCharCode(65 + n); return <Button key={letter} disabled={frozen} variant={state.answers[`mcq:${item.id}`] === letter ? 'default' : 'outline'} className="w-full h-auto py-3 justify-start whitespace-normal text-left" onClick={() => state.edit(`mcq:${item.id}`, letter)}>{letter}. {option}</Button>; })}
+        {stamp(`mcq:${item.id}`)}
+        <Button className="w-full" disabled={!state.answers[`mcq:${item.id}`]} onClick={() => rules.some(r => r.key === `qrc:${item.id}`) ? setPhase('qrc') : setIndex(index + 1)}>{rules.some(r => r.key === `qrc:${item.id}`) ? 'Passer à la QRC' : 'Question suivante'}</Button>
+      </div> : <div id={`practice-${quiz}-qrc:${item.id}`} className="space-y-3">
+        <p className="text-xl font-semibold">{item.qrcQuestion}</p>
+        <Textarea disabled={frozen} maxLength={4000} className="min-h-[120px]" placeholder="Tapez votre réponse ici..." value={textAnswer(state.answers[`qrc:${item.id}`])} onChange={e => state.edit(`qrc:${item.id}`, e.target.value)} />
+        {item.qrcMultipleAnswers && <p className="text-sm text-muted-foreground">Cette question attend plusieurs éléments de réponse</p>}
+        {stamp(`qrc:${item.id}`)}
+        <Button className="w-full" disabled={!textAnswer(state.answers[`qrc:${item.id}`]).trim()} onClick={() => { setIndex(index + 1); setPhase('qcm'); }}>Question suivante</Button>
+      </div>}
+      <Button variant="outline" disabled={index === 0 && phase === 'qcm'} onClick={() => { if (phase === 'qrc') setPhase('qcm'); else { setIndex(Math.max(0, index - 1)); setPhase('qcm'); } }}>Précédente</Button>
+    </div>}
+
+    {(submitted || index >= def.items.length) && <>
+      {def.qcmLocaux.length > 0 && <section data-testid="qcm-locaux-ta" className="space-y-4"><p className="font-semibold text-lg">QCM Réglementation locale — repris du Bilan examen TA ({def.qcmLocaux.length} questions)</p><p className="text-sm text-muted-foreground">Questions à choix : cochez la ou les bonnes réponses.</p>{def.qcmLocaux.map(q => {
+        const choices = arrayAnswer(state.answers[`local:${q.id}`]);
+        return <div id={`practice-${quiz}-local:${q.id}`} key={q.id} className="border-t pt-3 space-y-2"><p className="font-medium">{q.id}. {q.enonce}</p>{q.choix.map(c => <label key={c.lettre} className="flex items-center gap-2"><Checkbox disabled={submitted || frozen} checked={choices.includes(c.lettre)} onCheckedChange={v => state.edit(`local:${q.id}`, v ? [...choices, c.lettre] : choices.filter(l => l !== c.lettre))} /><span>{c.lettre}. {c.texte}</span></label>)}{stamp(`local:${q.id}`)}{submitted && <p className={qcmLocalJuste(q, choices) ? 'text-primary' : 'text-destructive'}>{qcmLocalJuste(q, choices) ? 'Juste' : `Faux — attendu : ${q.choix.filter(c => c.correct).map(c => `${c.lettre}. ${c.texte}`).join(' + ')}`}</p>}</div>;
+      })}</section>}
+      {def.zones.map(zone => {
+        const ref = zone === 'metropole' ? METROPOLE_LYON : ZUPC_LYON;
+        const chosen = arrayAnswer(state.answers[`cases:${zone}`]); const text = textAnswer(state.answers[`list:${zone}`]);
+        const cases = corrigerCases(chosen, ref), list = corrigerCommunes(text, ref);
+        return <section key={zone} data-testid={`zone-${zone}`} className="border-t pt-4 space-y-3">
+          <p className="font-semibold text-lg">{zone === 'metropole' ? 'Communes de la Métropole de Lyon — 58 communes' : "ZUPC de Lyon — 23 communes + l'Aéroport de Lyon-Saint-Exupéry (à citer, ce n'est pas une commune)"}</p>
+          <div id={`practice-${quiz}-cases:${zone}`} className="space-y-2"><p className="font-medium">a) Cochez les éléments de la liste</p>{[...ref.map(e => e.nom), ...distracteurs(zone)].sort((a, b) => a.localeCompare(b, 'fr')).map(name => <label className="flex items-center gap-2" key={name}><Checkbox checked={chosen.includes(name)} disabled={submitted || frozen} onCheckedChange={v => state.edit(`cases:${zone}`, v ? [...chosen, name] : chosen.filter(n => n !== name))} /><span>{name}</span></label>)}{stamp(`cases:${zone}`)}</div>
+          <div id={`practice-${quiz}-list:${zone}`} className="space-y-2"><p className="font-medium">b) Écrivez librement toute la liste (une par ligne ou séparées par des virgules)</p><Textarea className="min-h-[140px]" maxLength={8000} value={text} disabled={submitted || frozen} onChange={e => state.edit(`list:${zone}`, e.target.value)} />{stamp(`list:${zone}`)}</div>
+          {submitted && <div className="space-y-2"><p>{cases.justes.length}/{ref.length} cases justes</p><p>{list.communesTrouvees}/{list.totalCommunes} communes trouvées{zone === 'zupc' && ` · Aéroport : ${list.trouvees.includes(ZUPC_LYON[0].nom) ? 'cité' : 'oublié'}`}</p><p className="text-destructive">Oubliées : {list.oubliees.join(' · ') || '—'}</p><p className="text-destructive">Réponses erronées : {list.erronees.join(' · ') || '—'}</p><p className="text-muted-foreground">Acceptées malgré l'orthographe : {list.orthographe.map(o => `${o.saisie} → ${o.officiel}`).join(' · ') || '—'}</p></div>}
+        </section>;
+      })}
+      {!submitted && <section className="border-t pt-4 space-y-3">
+        {missing.length > 0 && <><p className="font-semibold">Réponses manquantes ({missing.length})</p><div className="flex flex-col items-start gap-1">{missing.map(r => <Button variant="link" key={r.key} className="h-auto whitespace-normal text-left" onClick={() => go(r.key)}>{r.label}</Button>)}</div></>}
+        <Button className="w-full" disabled={state.busy || !!state.pending.length || !!missing.length || !!state.conflicts.length} onClick={() => void state.submit()}>{state.busy ? 'Envoi en cours…' : 'Soumettre le quiz'}</Button>
+      </section>}
+      {submitted && <section className="border-t pt-4 space-y-3"><p className="font-semibold text-lg">Correction des {def.items.length} questions</p>{def.items.map((q, i) => <div className="border-t pt-3 space-y-2" key={q.id}><p className="font-medium">{i + 1}. {q.mcqQuestion}</p>{alerteReglementaireQrc(q) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(q)}</p>}<p>QCM : {q.mcqOptions[Number(textAnswer(state.answers[`mcq:${q.id}`]).charCodeAt(0)) - 65] === q.mcqCorrectAnswer ? 'juste' : `faux — attendu : ${q.mcqCorrectAnswer}`}</p>{rules.some(r => r.key === `qrc:${q.id}`) && <><p>{q.qrcQuestion}</p><p className="break-words">Votre réponse : {textAnswer(state.answers[`qrc:${q.id}`])}</p><CorrectionQrcTaxiIA quiz={quiz} questionId={q.id} answer={textAnswer(state.answers[`qrc:${q.id}`])} attemptId={state.attempt?.id} /></>}</div>)}<Button variant="outline" className="w-full" disabled={state.busy} onClick={() => void state.fresh()}>Nouvelle tentative — conserver celle-ci</Button></section>}
+    </>}
+  </div>;
+}
 export default QuizQrcTaxiIntegre;
