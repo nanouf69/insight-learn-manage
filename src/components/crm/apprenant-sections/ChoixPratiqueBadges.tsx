@@ -3,11 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { etatChoixPratique, LIBELLE_CHOIX_COURT, type DocChoixRow, type RevisionRow } from "@/lib/choixPratiqueEtat";
+import { ModifierReinscription } from './ModifierReinscription';
+import { dateExamenIso } from '@/lib/crmActionsEleve';
 
 const oui = (v: string | null | undefined) => (v === "oui" ? "Oui" : v === "non" ? "Non" : "—");
 
 /** Badges CRM : choix pratique signé + réinscription examen, avec historique complet (lecture seule). */
-export function ChoixPratiqueBadges({ apprenantId }: { apprenantId: string }) {
+export function ChoixPratiqueBadges({ apprenantId, dateExamen }: { apprenantId: string; dateExamen?: string | null }) {
+  const examen = dateExamenIso(dateExamen);
   const { data, isError, isLoading } = useQuery({
     queryKey: ["choix-pratique-crm", apprenantId],
     queryFn: async () => {
@@ -31,19 +34,19 @@ export function ChoixPratiqueBadges({ apprenantId }: { apprenantId: string }) {
     return (
       <>
         <Badge variant="outline" className="border-amber-500 text-amber-700">Choix pratique : pas répondu</Badge>
-        <Badge variant="outline" className="border-amber-500 text-amber-700">Réinscription examen : pas répondu</Badge>
+        <ModifierReinscription key={`${apprenantId}:${examen}`} apprenantId={apprenantId} examen={examen} />
       </>
     );
   }
   return (
-    <Popover>
+    <><ModifierReinscription key={`${apprenantId}:${examen}`} apprenantId={apprenantId} examen={examen} /><Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="flex flex-wrap gap-2">
+        <Button variant="ghost" size="sm" className="flex flex-wrap gap-2 h-auto">
           <Badge variant={e.choix === "renonce" ? "destructive" : "default"}>Choix pratique : {LIBELLE_CHOIX_COURT[e.choix ?? ""] ?? "—"}{e.revisions.length ? " (modifié)" : ""}</Badge>
           <Badge variant={e.reinscription === "oui" ? "default" : e.reinscription === "non" ? "destructive" : "outline"}>
             Réinscription examen : {e.demandeReinscription ? oui(e.reinscription) : "non demandée"}
           </Badge>
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 text-sm space-y-2">
         <p className="font-semibold">Historique des choix signés</p>
@@ -53,6 +56,6 @@ export function ChoixPratiqueBadges({ apprenantId }: { apprenantId: string }) {
         ))}
         <p className="text-xs text-muted-foreground">{e.modificationOuverte ? "L'élève peut encore modifier son choix (4 jours après la 1re signature)." : "Délai de modification terminé."}</p>
       </PopoverContent>
-    </Popover>
+    </Popover></>
   );
 }

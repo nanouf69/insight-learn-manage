@@ -68,6 +68,8 @@ import { ApprenantChatWidget } from "@/components/chat/ApprenantChatWidget";
 import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { isPresentielType, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
 import { calculerAccesCours } from "@/lib/accesCoursFenetre";
+import { lireExtensionAcces } from '@/lib/crmActionsEleve';
+import { useQuery } from '@tanstack/react-query';
 import { getExpectedPratiqueEmargements } from "@/lib/pratiqueEmargements";
 import { maintenantParis } from "@/lib/heureParis";
 import { lireFenetresEmargement, fenetresDues, delaiProchaineFenetre, horaireFenetre } from '@/lib/emargementFenetres';
@@ -815,6 +817,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [completionsReloadToken, setCompletionsReloadToken] = useState(0);
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
+  const extensionAcces = useQuery({
+    queryKey: ['extension-acces', apprenant?.id, user?.id],
+    enabled: !embedded && !!apprenant?.id && !!user?.id,
+    retry: false,
+    queryFn: () => { if (!apprenant?.id) throw new Error('Dossier indisponible'); return lireExtensionAcces(apprenant.id); },
+  });
   const seuilProgressionMemory = useRef<{ owner: string; total: number; termines: number } | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
   const [fetchNonce, setFetchNonce] = useState(0);
@@ -1731,11 +1739,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       fenetreSession: sessionAccessWindow,
       maintenant: now,
     });
-    const isAccessAllowed = acces.autorise;
+    const isAccessAllowed = acces.autorise || extensionAcces.data?.autorise === true;
     const debutEffectif = acces.debut;
     const fin = acces.fin;
 
     if (!isAccessAllowed) {
+      if (extensionAcces.isLoading || extensionAcces.isError) return <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background text-foreground"><p>{extensionAcces.isError ? 'Vérification de votre accès impossible.' : 'Vérification de votre accès…'}</p>{extensionAcces.isError && <Button variant="outline" onClick={() => extensionAcces.refetch()}>Réessayer</Button>}</div>;
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="text-center max-w-md">

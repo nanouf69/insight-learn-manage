@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle, Clock3, CircleHelp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { etatChoixPratique, type DocChoixRow, type RevisionRow } from "@/lib/choixPratiqueEtat";
+import { dateExamenIso, lireChoixAdmin } from '@/lib/crmActionsEleve';
 
 export function statutReinscription(doc: DocChoixRow | null, revisions: RevisionRow[]) {
   const etat = etatChoixPratique(doc, revisions);
@@ -15,7 +16,9 @@ export function statutReinscription(doc: DocChoixRow | null, revisions: Revision
 export function ReinscriptionExamenBadge({ apprenantId, dateExamen, documentId }: {
   apprenantId: string; dateExamen?: string | null; documentId?: string;
 }) {
-  const cle = dateExamen ? `examen_theorique:${String(dateExamen).slice(0, 10)}` : null;
+  const examen = dateExamenIso(dateExamen);
+  const cle = examen ? `examen_theorique:${examen}` : null;
+  const admin = useQuery({ queryKey: ['choix-reinscription-admin', apprenantId, examen], queryFn: () => lireChoixAdmin(apprenantId, examen) });
   const { data, isLoading, isError } = useQuery({
     queryKey: ["reinscription-examen-declaree", apprenantId, cle, documentId],
     queryFn: async () => {
@@ -36,8 +39,10 @@ export function ReinscriptionExamenBadge({ apprenantId, dateExamen, documentId }
       return { doc, revisions: (revisions ?? []) as RevisionRow[] };
     },
   });
-  if (isLoading) return <Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" />Réinscription : chargement</Badge>;
-  if (isError) return <Badge variant="outline"><CircleHelp className="mr-1 h-3 w-3" />Réinscription : indisponible</Badge>;
+  if (isLoading || admin.isLoading) return <Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" />Réinscription : chargement</Badge>;
+  if (isError || admin.isError) return <Badge variant="outline"><CircleHelp className="mr-1 h-3 w-3" />Réinscription : indisponible</Badge>;
+  const override = admin.data?.[0];
+  if (override) return <Badge variant={override.choix === 'oui' ? 'default' : 'destructive'} title="Choix enregistré par l’administration ; ne confirme pas une inscription officielle.">Réinscription : {override.choix === 'oui' ? 'Oui' : 'Non'} (administration)</Badge>;
   const statut = statutReinscription(data?.doc ?? null, data?.revisions ?? []);
   const Icon = statut === "oui" ? CheckCircle2 : statut === "non" ? XCircle : statut === "attente" ? Clock3 : CircleHelp;
   const libelle = statut === "oui" ? "Oui (déclaré)" : statut === "non" ? "Non (déclaré)" : statut === "attente" ? "En attente" : "Non renseigné";
