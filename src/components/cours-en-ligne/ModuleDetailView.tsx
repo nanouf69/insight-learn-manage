@@ -2070,7 +2070,7 @@ const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2
 const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuizCommunes"));
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
-import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres } from "./QuizExterneBilan";
+import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -7003,6 +7003,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
     const pages: PageType[] = (() => {
+      // Étape facultative « Quiz complémentaires » (Bilans 11/28), toujours en dernier : sans questions,
+      // hors compteur de quiz et hors pourcentage d'avancement.
+      const etape = etapeQuizComplementaires(Number(moduleData.id));
+      const base = pagesDeBase();
+      return etape
+        ? [...base, { type: "exercice-single" as const, exercice: { id: ID_ETAPE_QUIZ_COMPLEMENTAIRES, titre: etape.titre, actif: true, questions: [] } as unknown as ExerciceItem }]
+        : base;
+    })();
+    function pagesDeBase(): PageType[] {
       if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
         return orderedCoursePages(activeCours, activeExercices);
       }
@@ -7011,7 +7020,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
         ...activeExercices.map(e => ({ type: "exercice-single" as const, exercice: e })),
       ];
-    })();
+    }
 
 
 
@@ -7026,6 +7035,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         pages.forEach((page, index) => {
           if (page?.type === "exercice-single") {
             quizIndex++;
+            if (Number(page.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES) { labels[index] = `${quizIndex}. ${page.exercice.titre}`; return; }
             const cleanTitle = page.exercice.titre.replace(/^📝\s*|^📘\s*|^📗\s*|^📙\s*|^📕\s*|^📓\s*/, "");
             labels[index] = `${quizIndex}. 📝 Quiz — ${cleanTitle}`;
           }
@@ -7120,7 +7130,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     useEffect(() => {
       if (exoCourantId != null) ouvrirMatiereBilanRef.current(exoCourantId);
     }, [exoCourantId]);
-    const progressPercent = pourcentagePagesActuelles(completedPages, totalPages);
+    // L'étape facultative « Quiz complémentaires » (toujours la dernière) n'entre pas dans l'avancement.
+    const totalPagesProgression = pages.filter(p => !(p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES)).length;
+    const progressPercent = pourcentagePagesActuelles(completedPages, totalPagesProgression);
 
     // --- Restore learner UI state (page + results) to prevent unwanted reset ---
     useEffect(() => {
@@ -8026,7 +8038,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       // Persistance serveur immédiate : la progression étape par étape ne doit
       // jamais dépendre du sessionStorage (perdue à la reconnexion / autre appareil).
       if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
-        const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
+        const progress = Math.min(100, Math.round((snapshot.filter(i => i < totalPagesProgression).length / totalPagesProgression) * 100));
         (async () => {
           const status = await queueModulePagesStatus(apprenantId, module.id, pagesForStorage(snapshot), progress);
           // « pending » (envoi en cours / relance automatique) est normal : aucun message d'échec.
@@ -9802,6 +9814,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const unlocked = isPageUnlocked(i);
           const isCurrent = i === currentPage;
           const isQuizPageTmp = p?.type === "exercice-single" && p.exercice?.questions?.length > 0;
+          const estEtapeFacultative = p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES;
           // Un quiz n'est jamais « fait » avant la relecture des validations serveur.
           const isCompleted = completedPages.has(i) && (!isQuizPageTmp || quizValideServeur(p.exercice.id));
           const isQuizPage = p?.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
@@ -9855,12 +9868,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     ? "font-bold text-primary"
                     : isCompleted
                       ? "text-emerald-600 font-medium"
-                      : unlocked
+                      : estEtapeFacultative
+                        ? "text-foreground hover:text-primary"
+                        : unlocked
                         ? "text-destructive hover:text-destructive"
                         : "text-muted-foreground/40 cursor-not-allowed"
                 }`}
               >
-                <span className="flex-1">{label}{!isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
+                <span className="flex-1">{label}{estEtapeFacultative
+                  ? <span className="block text-xs text-muted-foreground">Facultatif — non compté</span>
+                  : !isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
                 {(() => {
                   // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
                   const hLabel = hierarchicalLabelsByPage[i] || "";
@@ -10105,7 +10122,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                 Quiz historique — {currentPageData.exercice.questions?.length ?? 0} questions
               </h3>
             )}
-            {renderSingleExercicePage(currentPageData.exercice)}
+            {Number(currentPageData.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES
+              ? <section aria-label={currentPageData.exercice.titre}><QuizExterneBilan moduleId={Number(module.id)} /></section>
+              : renderSingleExercicePage(currentPageData.exercice)}
           </>}
         </div>
 
@@ -10194,11 +10213,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
           )}
         </div>
-        {quizIntegresBilan(Number(module.id)).length > 0 && (
-          <section aria-label="Quiz d'entraînement QRC TAXI" className="border-t pt-6">
-            <QuizExterneBilan moduleId={Number(module.id)} />
-          </section>
-        )}
         </div>
       </div>
       {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
