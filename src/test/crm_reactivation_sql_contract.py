@@ -34,7 +34,7 @@ class Contract(unittest.TestCase):
  def extend(s,op=O,p=None,check=True):
   p=p or s.proposal();return s.sql(f"SET test.uid='{U}';SELECT row_to_json(r) FROM crm_reactiver_un_mois('{op}','{A}','{p['fin_precedente']}','{p['fin']}')r",check)
  def test_choice_yes_no_history_and_dates(s):
-  first=json.loads(s.choice().stdout.splitlines()[-1]);s.choice(op=A,prev="'%s'"%first['id'],choice='non');s.assertEqual(s.sql('SELECT string_agg(choix,',' ORDER BY created_at) FROM crm_reinscription_choix').stdout.strip(),'oui,non');s.assertNotEqual(s.choice(exam='2026-12-17',check=False).returncode,0)
+  first=json.loads(s.choice().stdout.splitlines()[-1]);s.choice(op=A,prev="'%s'"%first['id'],choice='non');s.assertEqual(s.sql("SELECT string_agg(choix,',' ORDER BY created_at) FROM crm_reinscription_choix").stdout.strip(),'oui,non');s.assertNotEqual(s.choice(exam='2026-12-17',check=False).returncode,0)
  def test_idempotence_and_conflict(s):
   s.assertEqual(s.choice().stdout,s.choice().stdout);s.assertNotEqual(s.choice(op=A,check=False).returncode,0)
  def test_non_admin_refused(s):
@@ -49,5 +49,5 @@ class Contract(unittest.TestCase):
  def test_owner_extension_read_and_isolation(s):
   s.extend();r=s.sql(f"SET test.uid='{A}';SELECT crm_lire_extension_acces('{A}')");s.assertTrue(json.loads(r.stdout.splitlines()[-1])['autorise']);s.assertNotEqual(s.sql(f"SET test.uid='{O}';SELECT crm_lire_extension_acces('{A}')",False).returncode,0)
  def test_immutable_and_browser_insert_forbidden(s):
-  s.choice();s.extend();s.assertNotEqual(s.sql('UPDATE crm_reinscription_choix SET choix='non'',False).returncode,0);s.assertNotEqual(s.sql('DELETE FROM crm_acces_extensions',False).returncode,0);s.assertNotEqual(s.sql(f"SET ROLE authenticated;INSERT INTO crm_acces_extensions(operation_id,apprenant_id,auteur,debut,fin) VALUES('{A}','{A}','{U}',current_date,current_date)",False).returncode,0)
+  s.choice();s.extend();s.assertNotEqual(s.sql("UPDATE crm_reinscription_choix SET choix='non'",False).returncode,0);s.assertNotEqual(s.sql('DELETE FROM crm_acces_extensions',False).returncode,0);s.assertNotEqual(s.sql(f"SET ROLE authenticated;INSERT INTO crm_acces_extensions(operation_id,apprenant_id,auteur,debut,fin) VALUES('{A}','{A}','{U}',current_date,current_date)",False).returncode,0)
 if __name__=='__main__':unittest.main(verbosity=2)
