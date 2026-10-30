@@ -8793,6 +8793,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
     const renderSingleExercicePage = (exo: ExerciceItem) => {
       const etatSnap = etatSnapshotsRef.current;
+      // « Refaire les fausses » : une QRC jugée entièrement juste par l'IA n'est pas fausse.
+      const justePourRefaire = (key: string, q: any): boolean => {
+        if (isAnswerCorrect(selectedAnswers[key], q)) return true;
+        const r = qrcResults[key];
+        return estQuestionQrc(q) && typeof r === "object" && r !== null && r.estCorrect === true;
+      };
       if (etatSnap.statut === "pret" && etatSnap.rouges?.includes(Number(exo.id))) {
         return (
           <div className="m-6 p-6 rounded-lg border bg-muted/40 text-center space-y-2">
