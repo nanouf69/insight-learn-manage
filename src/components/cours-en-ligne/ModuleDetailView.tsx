@@ -7003,8 +7003,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
     const pages: PageType[] = (() => {
-      // Étape facultative « Quiz complémentaires » (Bilans 11/28) : sans questions comptées,
-      // donc hors compteur de quiz ; marquée faite à l'affichage pour ne pas bloquer 100 %.
+      // Étape facultative « Quiz complémentaires » (Bilans 11/28), toujours en dernier : sans questions,
+      // hors compteur de quiz et hors pourcentage d'avancement.
       const etape = etapeQuizComplementaires(Number(moduleData.id));
       const base = pagesDeBase();
       return etape
@@ -7130,7 +7130,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     useEffect(() => {
       if (exoCourantId != null) ouvrirMatiereBilanRef.current(exoCourantId);
     }, [exoCourantId]);
-    const progressPercent = pourcentagePagesActuelles(completedPages, totalPages);
+    // L'étape facultative « Quiz complémentaires » (toujours la dernière) n'entre pas dans l'avancement.
+    const totalPagesProgression = pages.filter(p => !(p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES)).length;
+    const progressPercent = pourcentagePagesActuelles(completedPages, totalPagesProgression);
 
     // --- Restore learner UI state (page + results) to prevent unwanted reset ---
     useEffect(() => {
@@ -8036,7 +8038,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       // Persistance serveur immédiate : la progression étape par étape ne doit
       // jamais dépendre du sessionStorage (perdue à la reconnexion / autre appareil).
       if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
-        const progress = Math.min(100, Math.round((snapshot.length / totalPages) * 100));
+        const progress = Math.min(100, Math.round((snapshot.filter(i => i < totalPagesProgression).length / totalPagesProgression) * 100));
         (async () => {
           const status = await queueModulePagesStatus(apprenantId, module.id, pagesForStorage(snapshot), progress);
           // « pending » (envoi en cours / relance automatique) est normal : aucun message d'échec.
@@ -8148,8 +8150,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           }
         }
         // exercice-single pages: don't auto-complete, user must validate
-        // (sauf l'étape facultative « Quiz complémentaires », jamais notée)
-        if (p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES) markPageCompleted(i);
 
       });
     }, [pages.length]);
