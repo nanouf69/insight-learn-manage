@@ -625,7 +625,7 @@ const PARTIE_5: ExerciceItem = {
       id: 57,
       enonce: "Un client a oublié un objet dans le véhicule taxi après une dépose sur Givors. Où le déposer ?",
       choix: [
-        { lettre: "A", texte: "Aux services des objets trouvés de la mairie de dépose ou auprès de l'autorité de délivrance de l'ADS dans un délai maximum de 24 heures", correct: true },
+        { lettre: "A", texte: "Aux services des objets trouvés de la mairie de dépose ou auprès de l'autorité de délivrance de l'ADS dans un délai maximum de 72 heures", correct: true },
         { lettre: "B", texte: "Dans un délai maximum de 48 heures" },
         { lettre: "C", texte: "Dans un délai maximum de 72 heures" },
       ],
