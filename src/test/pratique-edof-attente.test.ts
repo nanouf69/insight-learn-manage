@@ -15,7 +15,8 @@ describe("Pratique signée à valider EDOF",()=>{
     expect(listePratiqueEdofVisible(rows,[]).map(a=>a.id)).toEqual(["a","b"]);
     expect(JSON.stringify(rows)).toBe(before);
   });
-  it.each(["personnel", " Personnel ", "PERSONNEL"])("le financement personnel signé sans badge E est exclu (%s)", mode => expect(pratiqueEdofEnAttente([sig],[inscription],[],[],false,mode)).toEqual([]));
+  it.each(["personnel", " Personnel ", "PERSONNEL"])("le financement personnel signé sans badge E est affiché (%s)", mode => expect(pratiqueEdofEnAttente([sig],[inscription],[],[],false,mode)).not.toEqual([]));
+  it("le financement personnel validé EDOF disparaît", () => expect(pratiqueEdofEnAttente([sig],[inscription],[],[],true,"personnel")).toEqual([]));
   it("le financement CPF signé reste en attente sans badge E",()=>expect(pratiqueEdofEnAttente([sig],[inscription],[],[],false,"cpf")).toEqual([date]));
   it("une signature pratique réelle apparaît",()=>expect(pratiqueEdofEnAttente([sig],[inscription],[],[],false)).toEqual([date]));
   it("le badge E retire uniquement de la liste",()=>expect(pratiqueEdofEnAttente([sig],[inscription],[],[],true)).toEqual([]));
