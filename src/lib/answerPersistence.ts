@@ -132,6 +132,11 @@ type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number
 const listeners = new Set<Listener>();
 let state: AnswerSaveState = "idle";
 let processing = false;
+/** Opération en cours d'envoi normal (jamais doublée par un envoi de fermeture). */
+let envoiEnCoursId: string | null = null;
+const BEACON_FENETRE_MS = 10_000;
+const beaconsEnvoyes = new Map<string, number>();
+const beaconCle = (item: QueueItem) => `${item.id}|${String(item.payload.updated_at ?? "")}`;
 let authToken: string | null = null;
 let authUserId: string | null = null;
 let rejectedAuthToken: string | null = null;
@@ -787,6 +792,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   const delaiEnvoi = delaiEnvoiPour(item.attempts ?? 0);
   dernierEnvoiDelaiDepasse = false;
   const abandon = controller ? setTimeout(() => controller.abort(), delaiEnvoi) : undefined;
+  envoiEnCoursId = item.id;
   try {
     console.info('[answerPersistence] envoi', { operation: item.id, tentative: item.attempts + 1 });
     const res = await fetch(url, {
@@ -828,7 +834,16 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
       return "retry";
     }
     const text = await res.text();
-    console.error("[answerPersistence] Échec sauvegarde", { operation: item.id, status: res.status });
+    // Corrélation sûre (code SQL/PostgREST + identifiant de requête Edge, jamais
+    // de réponse ni de jeton) : un refus 400 doit pouvoir être expliqué après coup.
+    let codeServeur: string | undefined;
+    let requeteServeur: string | undefined;
+    try {
+      const corps = JSON.parse(text) as { code?: unknown; request_id?: unknown };
+      if (typeof corps?.code === "string") codeServeur = corps.code.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 24) || undefined;
+      if (typeof corps?.request_id === "string") requeteServeur = corps.request_id.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 64) || undefined;
+    } catch { /* corps non JSON : statut seul */ }
+    console.error("[answerPersistence] Échec sauvegarde", { operation: item.id, status: res.status, code: codeServeur, request_id: requeteServeur });
     // Expiration : une seule demande de renouvellement, puis renvoi espacé
     // par le worker existant. Une réponse n'est jamais un refus définitif ici.
     if (res.status === 401 || /pgrst303|jwt\s*expired/i.test(text)) {
@@ -1021,7 +1036,16 @@ export function flushAnswerSavesOnUnload(): void {
   if (!canSynchronizeAnswers()) return;
   // Uniquement les sauvegardes du compte connecté : celles d'un autre compte
   // seraient refusées (403) et restent en attente de leur propriétaire.
-  const queue = readQueue().filter(isSendableInCurrentContext);
+  // pagehide + beforeunload + visibilitychange se déclenchent ensemble : une
+  // même version n'est envoyée qu'une fois par fenêtre de 10 s, et jamais en
+  // doublon d'un envoi normal déjà parti (réduit la charge serveur).
+  const maintenant = Date.now();
+  for (const [cle, at] of beaconsEnvoyes) if (maintenant - at > BEACON_FENETRE_MS) beaconsEnvoyes.delete(cle);
+  const queue = readQueue().filter((item) => {
+    if (!isSendableInCurrentContext(item)) return false;
+    if (item.id === envoiEnCoursId) return false;
+    return !beaconsEnvoyes.has(beaconCle(item));
+  });
   if (queue.length === 0 || !authToken) return;
   const url = endpoint();
   const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -1031,8 +1055,8 @@ export function flushAnswerSavesOnUnload(): void {
       const beaconUrl = `${url}?apikey=${encodeURIComponent(apikey)}${
         authToken ? `&access_token=${encodeURIComponent(authToken)}` : ""
       }`;
-      const blob = new Blob([JSON.stringify(item.payload)], { type: "application/json" });
-      navigator.sendBeacon?.(beaconUrl, blob);
+      const blob = new Blob([JSON.stringify({ ...item.payload, operation_id: item.id })], { type: "application/json" });
+      if (navigator.sendBeacon?.(beaconUrl, blob)) beaconsEnvoyes.set(beaconCle(item), maintenant);
     } catch {
       /* la file reste intacte : renvoi au prochain chargement */
     }
