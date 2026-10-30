@@ -3380,6 +3380,7 @@ function ExerciceCard({
   partNumber?: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [searchHighlight, setSearchHighlight] = useState<{ questionId?: number } | null>(null);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
   // Tant qu'une question est ouverte en édition, la relecture automatique
@@ -3512,6 +3513,7 @@ function ExerciceCard({
     const f = peekSearchFocus();
     if (!f || f.moduleId !== moduleId || f.exerciceId !== Number(item.id)) return;
     setExpanded(true);
+    setSearchHighlight({ questionId: f.questionId });
     let tries = 0;
     const iv = setInterval(() => {
       tries += 1;
@@ -3522,15 +3524,14 @@ function ExerciceCard({
       if (!el) return;
       consumeSearchFocus();
       // La liste peut encore se re-dessiner : on retrouve la question par son identifiant
-      // à chaque instant pendant 3 s pour la garder cadrée et surlignée.
+      // à chaque instant pendant 3 s pour la garder cadrée. L'encadrement
+      // reste porté par React jusqu'à la fermeture du module, sans minuterie.
       const anchorId = f.questionId != null ? `question-anchor-${item.id}-${f.questionId}` : null;
-      const HL = ["ring-4", "ring-primary", "rounded-lg", "bg-primary/10"];
       const start = Date.now();
       let last: HTMLElement | null = null;
       const tick = () => {
         const cur = (anchorId ? document.getElementById(anchorId) : null) || cardRef.current;
         if (cur && cur !== last) {
-          cur.classList.add(...HL);
           cur.scrollIntoView({ behavior: "auto", block: "center" });
           last = cur;
         } else if (cur) {
@@ -3538,7 +3539,6 @@ function ExerciceCard({
           if (r.bottom < 0 || r.top > window.innerHeight) cur.scrollIntoView({ behavior: "auto", block: "center" });
         }
         if (Date.now() - start < 3000) setTimeout(tick, 150);
-        else if (last) last.classList.remove("ring-4", "ring-primary", "bg-primary/10");
       };
       tick();
     }, 250);
@@ -3546,7 +3546,7 @@ function ExerciceCard({
   }, [moduleId, item.id]);
 
   return (
-    <Card ref={cardRef} className="border-2 border-slate-300 transition-all hover:shadow-md">
+    <Card ref={cardRef} className={`border-2 border-slate-300 transition-all hover:shadow-md ${searchHighlight && searchHighlight.questionId == null ? "ring-4 ring-primary bg-primary/10" : ""}`}>
       <CardContent className="p-4 space-y-3">
         <div>
           {editingMeta ? (
@@ -3647,7 +3647,7 @@ function ExerciceCard({
         {expanded && hasQuestions && (
           <div className="space-y-2 pt-2 border-t">
             {safeQuestions.map((q, qi) => (
-              <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`}>
+              <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`} className={searchHighlight?.questionId === Number(q.id) ? "ring-4 ring-primary rounded-lg bg-primary/10" : undefined}>
 
                 {editingQId === q.id ? (
                   <QuestionEditor
@@ -3763,7 +3763,7 @@ function ExerciceCard({
             {hasQuestions ? (
               <div className="space-y-3">
                 {safeQuestions.map((q, qi) => (
-                  <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`}>
+                  <div key={`${q.id}-${qi}`} id={`question-anchor-${item.id}-${q.id}`} className={searchHighlight?.questionId === Number(q.id) ? "ring-4 ring-primary rounded-lg bg-primary/10" : undefined}>
 
                     {editingQId === q.id ? (
                       <QuestionEditor
