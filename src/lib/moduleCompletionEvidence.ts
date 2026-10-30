@@ -8,7 +8,8 @@ export function hasRecordedAnswer(value: unknown): boolean {
 
 /**
  * Miroir de `module_regles_validation` (contient_questions = true, protection_serveur = false) :
- * questions facultatives pour valider. La source d'autorité reste la table serveur.
+ * questions facultatives pour VALIDER (save_module_completion), mais « Réalisés » exige toujours
+ * les obligations prouvées (règle 29/10). La source d'autorité reste la table serveur.
  */
 export const MODULES_QUESTIONS_FACULTATIVES: ReadonlySet<number> = new Set([3, 31, 60, 62, 63, 64, 90]);
 const MODULES_EXAMENS_BLANCS: ReadonlySet<number> = new Set([35, 36, 37, 38]);
@@ -77,7 +78,6 @@ export function completionEvidenceAllowsDone(row: CompletionEvidenceRow): boolea
   if (row.preuve_serveur !== undefined) return row.preuve_serveur !== false;
   // Exam modules have a separate same-attempt engine, not ordinary quiz details.
   if (MODULES_EXAMENS_BLANCS.has(Number(row.module_id))) return true;
-  if (MODULES_QUESTIONS_FACULTATIVES.has(Number(row.module_id))) return true;
   return historicalQuestionsComplete(row) !== false;
 }
 
