@@ -26,7 +26,7 @@ async function command(account: string, quiz: PracticeQuiz, name: string, args: 
   const before = await supabase.auth.getSession();
   if (before.error || before.data.session?.user.id !== account) throw new Error('Reconnectez-vous avec le même compte.');
   // Narrow dynamic RPC boundary: schema is regenerated when migration is applied.
-  const rpc = supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
+  const rpc = supabase.rpc.bind(supabase) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
   const { data, error } = await rpc(name, args);
   if (error) throw Object.assign(new Error(error.message), { code: error.code });
   const after = await supabase.auth.getSession();
