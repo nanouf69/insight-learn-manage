@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Synchronisation Riyad LABIOD — 30/10 15:41 UTC
-- [ ] Audit lecture seule des sept modules, obligations historiques et preuves serveur ; comparer élève/CRM/EDOF/jalons et dossiers divergents.
-- [ ] Corriger uniquement la projection et l’actualisation cohérentes, sans modifier les preuves ni les contenus.
-- [ ] Tests ciblés et contrôles d’écran ; diagnostic détaillé, publication suspendue tant que les contrôles globaux restent incomplets.
+- [x] Lecture réelle sept modules : 5/7 cohérent avec la projection ; module2 exercices7/72 incomplets, module4 première copie118/206, révision206 non soumise. Jalons100 ignorait les détails ; aucun gel. Rapport docs/riyad-synchronisation-jalons-2026-10-30.md.
+- [x] Jalons live : mêmes détails/soumissions et garde historique après dispenses, 95,5% vérifié ; élève événements réponses/complétions + focus/online. Aucune écriture Cloud ni contenu/proof modifié.
+- [x] 123 tests PASS/11 fichiers ; fiche réelle + Vue apprenant5/7, restants2/4, reload stable, buildOK. Audit global426 lignes/204 dossiers après preuves soumises ; aucun retraitement.
+- [ ] Achèvement réel7/7 et exhaustivité historique BLOQUÉS : versions initiales2/4 non récupérées, révisionT3P non soumise,12 clésmodule2 sans preuve. Test autonomie/multiappareils après soumission réelle NON PROUVÉ ; aucun test sur compte réel. Publication suspendue : test annexe couleur FAIL et autres contrôles globaux inachevés.
 
 ## Mail signatures manquantes — 30/10 15:39 UTC
 - [x] Bouton Relance signatures ajouté au suivi présentiel, réutilise aperçu/relecture/confirmation CRM ; aucun envoi de test.
