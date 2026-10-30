@@ -1,4 +1,5 @@
 import { ChoixPratiqueBadges } from "@/components/crm/apprenant-sections/ChoixPratiqueBadges";
+import { SignaturesPlanningResume } from "./apprenant-sections/SignaturesPlanningResume";
 import { ReactiverPlateformeTab } from "./apprenant-sections/ReactiverPlateformeTab";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -539,6 +540,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <SignaturesPlanningResume apprenant={apprenant} />
       {/* Header */}
       <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>

@@ -61,6 +61,8 @@ export function EdofStatutInfos({ apprenant, onOuvrirOnglet }: { apprenant: any;
               <p className="text-sm text-destructive">Possibilité de valider sur EDOF : indisponible (erreur de lecture).</p>
             ) : !bilan.data ? (
               <p className="text-sm text-muted-foreground">Calcul des signatures…</p>
+            ) : bilan.data.planningIncomplet ? (
+              <p className="text-sm text-destructive">Planning incomplet : signatures attendues à vérifier, validation non confirmée.</p>
             ) : bilan.data.complet && !bilan.data.excedent ? (
               <p className="text-base font-bold text-destructive">Possibilité de valider sur EDOF ({bilan.data.total} / {bilan.data.objectifTotal} signatures)</p>
             ) : (
