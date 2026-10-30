@@ -143,6 +143,9 @@ def build(db, schema_sql, migration=None):
     # 0230 (source serveur, validation exhaustive) : appliquée si absente du catalogue capturé.
     if migration and sql("SELECT count(*) FROM pg_proc WHERE proname='etat_completion_modules'", db) == '0':
         sql(MIGRATION_0230.read_text(), db); print(f'[{db}] 0230 appliquée')
+    # Candidat non déployé (revue avant migration) : MODULE_COMPLETION_CANDIDATE=/chemin.sql
+    if migration and os.environ.get('MODULE_COMPLETION_CANDIDATE'):
+        sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db); print(f'[{db}] candidat appliqué')
     sql(f"""INSERT INTO apprenants VALUES ('{A}','{U}'),('{A2}','{U2}'),('{ISMAIL}','{UI}');
       INSERT INTO user_roles VALUES ('{ADMIN}','admin');
       INSERT INTO apprenant_connexions VALUES ('{A}','{U}',now(),now(),now(),NULL),('{A2}','{U2}',now(),now(),now(),NULL);
@@ -247,9 +250,16 @@ class Apres0197(unittest.TestCase):
         self.assertEqual(row(2), '')
 
     def test_12_qrc_vide_et_reponse_deja_enregistree_acceptees(self):
-        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-2\":[\"C\"]}}')")
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"B\",\"1-2\":[\"C\"]}}','submitted',now())")
         res = sql(smc(U, 2, True, 100, self._d({1: '"B"', 2: 'null', 3: 'null'}, qrc=(3,))))
         self.assertTrue(res.startswith('completed|100|'))
+
+    def test_16_brouillon_ou_soumission_partielle_ne_prouve_pas(self):
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"B\",\"1-2\":[\"C\"]}}','in_progress',NULL)")
+        self.assertIn('1 question(s) QCM sans réponse', err(smc(U, 2, True, 100, self._d({1: '"B"', 2: 'null'}))) or '')
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-2\":[\"C\"]}}','submitted',now())")
+        self.assertIn('2 question(s) QCM sans réponse', err(smc(U, 2, True, 100, self._d({1: 'null', 2: 'null'}))) or '')
+        self.assertEqual(row(2), '')
 
     def test_13_modules_facultatifs_et_deja_termines_inchanges(self):
         sql("INSERT INTO module_regles_validation VALUES (3, false, true)")
