@@ -45,10 +45,10 @@ Blocage : conserver l'énoncé mais valider un feedback indiquant que la quatri�
 ## Protection des passages et vérifications
 - Lecture module13 : 11 copies principales (6 non terminées) et 1 révision non terminée de 13100. Aucune mention snapshot dans reponses/reponses_meta pour ces douze copies ; absence de mention ne garantit pas absence de snapshot ailleurs.
 - Changer le JSON module13 peut modifier la référence de correction de copies commencées sans protection prouvée. Toute application y reste bloquée, même après validation réglementaire, tant que le périmètre futur-only n'est pas garanti. Aucune copie reconstruite.
-- Empreinte initiale lecture seule des 73 lignes `reponses_apprenants` module13 : `8e578fc37099dfcfbd1afc3ef5334970` ; relecture consignée à la finalisation. Des écritures normales élèves peuvent faire évoluer cette empreinte ; aucun appel d'écriture effectué par cet audit.
+- Empreinte avant/après identique des 73 lignes `reponses_apprenants` module13 : `8e578fc37099dfcfbd1afc3ef5334970` ; aucun appel d'écriture effectué par cet audit.
 - PASS : 27 tests réellement exécutés, `quiz-qrc-taxi-integre.test.tsx` (22) + `controle-connaissances-display.test.ts` (5), données fictives.
 - NON PROUVÉ : correction souple des nouvelles formulations, puisqu'aucun nouveau corrigé n'est appliqué ; parcours élève connecté, nouvelle persistance/correction Cloud, qualification judiciaire de chaque carte expirée. Aucune assertion ne prétend ces points validés.
-- Sources pédagogiques copiées sous /tmp avant audit, comparaison finale requise. Aucun changement applicatif : aucun nouvel effet sur notes, progression ou comptes.
+- Comparaison finale réellement exécutée : quizData, fiches QRC et source H strictement identiques octet par octet aux copies avant audit. Dernier contrôle automatique disponible : build OK 09:48:08Z. Aucun changement applicatif : aucun nouvel effet sur notes, progression ou comptes.
 
 ## Validation demandée
 Autoriser des feedbacks nuancés, et non les trois propositions comme vérités absolues : Q5 tient compte de la réforme juin2026 et distingue les situations ; Q6 disponibilité et territoire séparés ; Q13 quatrième élément conditionnel, sans pénaliser l'absence d'une obligation universelle inexistante. Le contrôle13 reste à préparer séparément pour les futurs passages seulement.
