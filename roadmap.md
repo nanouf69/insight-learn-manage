@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Corrections réglementaires QRC TAXI — 30/10 09:47 UTC
-- [ ] Audit lecture seule des trois textes dans toutes les sources, dont Contrôle de connaissances ; sources officielles et nuances.
-- [ ] Corrigés/feedback uniquement pour les points prouvés et autorisés ; divergences suspendues à validation, énoncés et historiques inchangés.
-- [ ] Tests isolés ciblés/non-régression et journal précis ; aucune publication.
+- [x] Localisation texte : intégré25/26/33, fiches TAXI/TA, H44/46/60, Cloud13/13100/212/213/220 ; sources officielles, loi juin2026 article28 relue et arrêté Rhône septembre2026 intégral.
+- [ ] Corrections SUSPENDUES à validation : Q5 nouveau délit sans carte3ans/45000€, récidive3000€ non prouvée ; Q6 couleur=disponibilité, gaine universelle non prouvée ; Q13 trousse conventionnelle, quatrième universel non établi. Aucun contenu pédagogique modifié.
+- [ ] Contrôle13 futur-only BLOQUÉ : 6 copies principales +1révision non terminées, protection de leurs références initiales non prouvée ; aucun JSON Cloud changé.
+- [x] 27 tests existants isolés PASS ; rapport docs/qrc-taxi-corrections-audit-2026-10-30.md. Aucune publication/IA/envoi ; correction des nouvelles formulations et parcours élève NON PROUVÉS faute d'application autorisée.
 
 ## Bilans futurs isolés — 29/10 20:10 UTC
 - [x] Circuit audité : retour perd le reçu, files anciennes sans identité de version, absence de preuve serveur ne signifie pas jamais commencé ; anciens circuits intacts.
