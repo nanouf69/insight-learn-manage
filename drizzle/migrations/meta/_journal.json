@@ -1604,6 +1604,13 @@
       "when": 1793357710056,
       "tag": "0228_qrc_practice_durable",
       "breakpoints": true
+    },
+    {
+      "idx": 229,
+      "version": "7",
+      "when": 1793367052708,
+      "tag": "0229_controle_qrc_ia_budget",
+      "breakpoints": true
     }
   ]
 }

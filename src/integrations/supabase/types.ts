@@ -2841,6 +2841,134 @@ export type Database = {
           },
         ]
       }
+      controle_qrc_copies: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          empreinte: string
+          exercice_id: string
+          id: string
+          note_points: number | null
+          note_total: number | null
+          qcm_bons: number
+          qcm_total: number
+          qrc_total: number
+          source_reponse_id: string | null
+          statut: string
+          termine_at: string | null
+          user_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          empreinte: string
+          exercice_id: string
+          id?: string
+          note_points?: number | null
+          note_total?: number | null
+          qcm_bons?: number
+          qcm_total?: number
+          qrc_total?: number
+          source_reponse_id?: string | null
+          statut?: string
+          termine_at?: string | null
+          user_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          empreinte?: string
+          exercice_id?: string
+          id?: string
+          note_points?: number | null
+          note_total?: number | null
+          qcm_bons?: number
+          qcm_total?: number
+          qrc_total?: number
+          source_reponse_id?: string | null
+          statut?: string
+          termine_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      controle_qrc_items: {
+        Row: {
+          commentaire: string | null
+          copie_id: string
+          corrige: string
+          enonce: string
+          essais: number
+          est_correct: boolean | null
+          http_status: number | null
+          id: string
+          lease_until: string | null
+          maj_at: string
+          motif: string | null
+          mots_cles: Json
+          next_at: string
+          note_ia: number | null
+          points: number | null
+          question_id: string
+          reponse: string
+          run_id: string | null
+          statut: string
+          token: string | null
+        }
+        Insert: {
+          commentaire?: string | null
+          copie_id: string
+          corrige: string
+          enonce: string
+          essais?: number
+          est_correct?: boolean | null
+          http_status?: number | null
+          id?: string
+          lease_until?: string | null
+          maj_at?: string
+          motif?: string | null
+          mots_cles?: Json
+          next_at?: string
+          note_ia?: number | null
+          points?: number | null
+          question_id: string
+          reponse: string
+          run_id?: string | null
+          statut?: string
+          token?: string | null
+        }
+        Update: {
+          commentaire?: string | null
+          copie_id?: string
+          corrige?: string
+          enonce?: string
+          essais?: number
+          est_correct?: boolean | null
+          http_status?: number | null
+          id?: string
+          lease_until?: string | null
+          maj_at?: string
+          motif?: string | null
+          mots_cles?: Json
+          next_at?: string
+          note_ia?: number | null
+          points?: number | null
+          question_id?: string
+          reponse?: string
+          run_id?: string | null
+          statut?: string
+          token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controle_qrc_items_copie_id_fkey"
+            columns: ["copie_id"]
+            isOneToOne: false
+            referencedRelation: "controle_qrc_copies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       core_bridge_comptes_test: {
         Row: {
           apprenant_id: string
@@ -6699,6 +6827,66 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_ia_budget_config: {
+        Row: {
+          eur_par_credit: number
+          id: boolean
+          plafond_eur: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          eur_par_credit?: number
+          id?: boolean
+          plafond_eur?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          eur_par_credit?: number
+          id?: boolean
+          plafond_eur?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      qrc_ia_budget_reservations: {
+        Row: {
+          created_at: string
+          id: string
+          mois: string
+          reel_eur: number | null
+          ref: string
+          regle_at: string | null
+          reserve_eur: number
+          source: string
+          statut: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mois: string
+          reel_eur?: number | null
+          ref: string
+          regle_at?: string | null
+          reserve_eur: number
+          source: string
+          statut?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mois?: string
+          reel_eur?: number | null
+          ref?: string
+          regle_at?: string | null
+          reserve_eur?: number
+          source?: string
+          statut?: string
+        }
+        Relationships: []
+      }
       qrc_ia_config: {
         Row: {
           actif: boolean
@@ -9071,6 +9259,9 @@ export type Database = {
         }[]
       }
       confirmer_changement_mdp_effectue: { Args: never; Returns: boolean }
+      controle_qrc_armer: { Args: never; Returns: number }
+      controle_qrc_cloturer: { Args: { p_copie: string }; Returns: undefined }
+      controle_qrc_dispatch: { Args: never; Returns: number }
       core_admin_reset_exam: {
         Args: {
           p_admin_email?: string
@@ -9794,6 +9985,16 @@ export type Database = {
           trace_statut: string
         }[]
       }
+      qrc_ia_budget_engage: { Args: { p_mois: string }; Returns: number }
+      qrc_ia_budget_etat: { Args: never; Returns: Json }
+      qrc_ia_budget_regler: {
+        Args: { p_annuler?: boolean; p_credits_reels: number; p_id: string }
+        Returns: undefined
+      }
+      qrc_ia_budget_reserver: {
+        Args: { p_credits_max: number; p_ref: string; p_source: string }
+        Returns: string
+      }
       qrc_ia_compter_copies_en_attente: { Args: never; Returns: Json }
       qrc_ia_copie_rattrapable: {
         Args: { p_result_id: string }
@@ -9818,6 +10019,7 @@ export type Database = {
         Args: { p_attempt: string; p_origine?: string }
         Returns: string
       }
+      qrc_ia_mois_paris: { Args: { p?: string }; Returns: string }
       qrc_ia_publier_auto: {
         Args: {
           p_attempt: string

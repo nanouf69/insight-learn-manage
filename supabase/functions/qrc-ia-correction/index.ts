@@ -17,6 +17,7 @@ import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
 import { streamText } from "npm:ai";
 import { classerEchecIa, planSuite, prochaineActionIa, TIMEOUT_IA_MS, type ActionQrc } from "../_shared/qrcIaSuite.ts";
 import { z } from "npm:zod@3";
+import { creditsMax, creditsReels, debutMoisSuivant, SORTIE_MAX_JETONS, type PRIX_CREDITS } from "../_shared/qrcIaBudget.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
   CONSIGNE_IA, MARQUEUR_IA, MODELE_IA_QRC, admissibilite, cleIdempotence, estApprenantElearning, estElearning, estPauseGlobale,
@@ -231,13 +232,19 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     // 5. Un seul appel payant par invocation.
     const c = candidats.get(plan.id)!;
     if (!key) { await finirSuite("a_verifier", "Service IA non configuré", 60000, "cle_absente"); return json({ ok: false, message: "Service IA non configuré" }, 401); }
+    // Plafond mensuel commun (20 €) : réservation sur borne haute AVANT tout appel payant.
+    const promptIa = messageUtilisateur(c.q, c.bareme, c.inst.reponse);
+    const { data: resaBudget, error: budgetError } = await service.rpc("qrc_ia_budget_reserver", { p_source: "examen_blanc", p_ref: c.inst.qrc_instance_id, p_credits_max: creditsMax(MODELE_IA_QRC as keyof typeof PRIX_CREDITS, CONSIGNE_IA.length + promptIa.length) });
+    if (budgetError) throw budgetError;
+    if (!resaBudget) { await finirSuite("attente", "Plafond mensuel IA atteint : reprise au mois suivant, aucune note attribuée", debutMoisSuivant().getTime() - Date.now(), "budget_mensuel"); return json({ ok: true, statut: "budget_mensuel_atteint" }); }
+    const reglerBudget = async (credits: number | null, annuler = false) => { const { error } = await service.rpc("qrc_ia_budget_regler", { p_id: resaBudget, p_credits_reels: credits, p_annuler: annuler }); if (error) console.error("[qrc-ia-correction] budget", error.message); };
     const { data: claim, error: claimError } = automatique
       ? await service.rpc("qrc_ia_reserver_auto", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme } })
       : exceptionnelle
         ? await service.rpc("qrc_ia_reserver_reprise_exceptionnelle", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme } })
         : await service.rpc("qrc_ia_reserver_reprise", { p_qrc: c.inst.qrc_instance_id, p_base: { ...c.base, bareme: c.bareme }, p_interruption_confirmee: interruption_confirmee === true });
-    if (claimError) throw claimError;
-    if (!claim) { await finirSuite("a_verifier", "Réservation non acquise ; aucune relance payante", 60000, "reservation_non_acquise"); return json({ ok: true, statut: "reprise_non_acquise" }); }
+    if (claimError) { await reglerBudget(0, true); throw claimError; }
+    if (!claim) { await reglerBudget(0, true); await finirSuite("a_verifier", "Réservation non acquise ; aucune relance payante", 60000, "reservation_non_acquise"); return json({ ok: true, statut: "reprise_non_acquise" }); }
     const lease = typeof claim === "string" ? claim : String((claim as { id: string }).id);
     const initial = typeof claim !== "string" && (claim as { type: string }).type === "initial";
     let retryAfterMs = 120000;
@@ -276,11 +283,12 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       } });
       // Flux fournisseur, aucun retry SDK, délai maximal : un abandon local
       // n'écrit aucune note ; une issue inconnue reste en revue.
-      const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: messageUtilisateur(c.q, c.bareme, c.inst.reponse), maxRetries: 0, abortSignal: delai.signal, onChunk: ({ chunk }) => { if (chunk.type === "text-delta" || chunk.type === "reasoning-delta") marquerPremierJeton(trace); }, onError: ({ error }) => { streamError = error; } });
+      const result = streamText({ model: gateway(MODELE_IA_QRC), system: CONSIGNE_IA, prompt: promptIa, maxOutputTokens: SORTIE_MAX_JETONS, maxRetries: 0, abortSignal: delai.signal, onChunk: ({ chunk }) => { if (chunk.type === "text-delta" || chunk.type === "reasoning-delta") marquerPremierJeton(trace); }, onError: ({ error }) => { streamError = error; } });
       const text = await result.text;
       if (streamError) throw streamError;
       if (timeoutLocal) throw new Error("Délai IA dépassé");
       providerFinished = true;
+      await reglerBudget(creditsReels(MODELE_IA_QRC as keyof typeof PRIX_CREDITS, await result.usage));
       trace.fin_at = new Date().toISOString();
       trace.fin_raison = String(await result.finishReason);
       await ecrireTrace();
@@ -315,6 +323,8 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       clearTimeout(minuteur);
       const upstream = (e as { statusCode?: number }).statusCode;
       const echec = classerEchecIa({ providerFinished, timeoutLocal, statusCode: providerFinished ? undefined : upstream });
+      // Budget : refus HTTP du fournisseur = non facturé ; issue inconnue = réservation conservée.
+      if (!providerFinished) await reglerBudget(upstream ? 0 : null, !!upstream);
       const message = `${echec.code} : ${String((e as { message?: string }).message ?? "Service IA indisponible")}`.slice(0, 600);
       await finishError(echec.status, message, echec.statut);
       if (estPauseGlobale(echec.status)) {
