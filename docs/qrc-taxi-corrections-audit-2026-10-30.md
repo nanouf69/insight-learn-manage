@@ -52,3 +52,10 @@ Blocage : conserver l'énoncé mais valider un feedback indiquant que la quatri�
 
 ## Validation demandée
 Autoriser des feedbacks nuancés, et non les trois propositions comme vérités absolues : Q5 tient compte de la réforme juin2026 et distingue les situations ; Q6 disponibilité et territoire séparés ; Q13 quatrième élément conditionnel, sans pénaliser l'absence d'une obligation universelle inexistante. Le contrôle13 reste à préparer séparément pour les futurs passages seulement.
+
+## Suite — demande du 30/10 à 10:03 UTC
+Les formulations exactes sont demandées, mais l'instruction maintient explicitement l'arbitrage avant application des contradictions. Application limitée aux feedbacks des deux entraînements intégrés : alerte Q5 (réforme, récidive non prouvée, carte inexistante), alerte Q6 (disponibilité/ADS, limites de réservation, gaine non prouvée), précision Q13 (TPE, carnet, affichage et trousse conditionnelle CPAM ; pas de quatrième obligation universelle établie). Ces notes sont visibles pendant la question et à la correction, y compris pour le QCM associé afin de ne pas laisser sa clé historique sembler validée juridiquement.
+
+Aucune référence historique ni règle de score modifiée : réponses exactes demandées non substituées, énoncés inchangés, conservation des réponses locales et absence de recalcul serveur. Le Contrôle de connaissances, les fiches de cours, H et les examens restent inchangés : protection des copies en cours non prouvée. Aucune écriture Cloud ni publication. Ce suivi ne remplace ni n'efface l'audit préalable ci-dessus.
+
+Vérifications réellement exécutées : 30/30 tests PASS (3 périmètre/immutabilité du feedback +22 entraînement/persistance existants +5 affichage Contrôle). Comparaison octet par octet PASS pour quizData, fiches QRC et source H avec leurs copies avant audit. Contrôle automatique build OK10:05:33Z. Parcours connecté compte élève et protection complète des références du Contrôle13 NON PROUVÉS ; aucun test sur vrai élève.

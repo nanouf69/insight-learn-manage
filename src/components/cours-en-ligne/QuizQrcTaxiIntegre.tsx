@@ -28,6 +28,20 @@ const VIDE: Etat = { index: 0, phase: "qcm", reponses: {}, cases: {}, saisies: {
 
 export const cleStockage = (userId: string, quiz: QuizQrcTaxiId) => `quiz-qrc-taxi:v1:${userId}:${quiz}`;
 
+/** Feedback only: original references and local answers remain untouched pending arbitration. */
+export function alerteReglementaireQrc(q: QuizItem): string | null {
+  if (q.qrcQuestion === "Quelle est la sanction encourue pour exercice de l'activité de conducteur de taxi sans être titulaire de la carte professionnelle en cours de validité ?") {
+    return "Corrigé en attente d’arbitrage : la loi du 25 juin 2026 prévoit aussi un délit de transport sans la carte professionnelle correspondante (3 ans et 45 000 €). L’articulation avec la contravention pour carte non valide doit être distinguée ; les 3 000 € en récidive ne sont pas établis pour ce cas. Une carte jamais délivrée ne peut pas être retirée. La référence historique ci-dessous n’est pas un corrigé juridiquement validé.";
+  }
+  if (q.qrcQuestion === "Quelles sont les conditions de stationnement des taxis en attente de la clientèle ?") {
+    return "Corrigé en attente d’arbitrage : vert signifie libre, rouge occupé, et non simplement dans ou hors du ressort de l’ADS. Hors ressort, la réservation préalable ne donne pas un droit illimité d’attente dans toute station. La règle universelle sur la gaine opaque n’est pas établie par les textes vérifiés. La référence historique ci-dessous n’est pas un corrigé juridiquement validé.";
+  }
+  if (q.qrcQuestion === "Citez 4 équipements obligatoires hors ceux cités ci-après : taximètre, lumineux, plaques scellées, imprimante :") {
+    return "Précision vérifiée : terminal de paiement électronique (TPE), carnet de métrologie et affichette des tarifs. La trousse de secours est obligatoire si le taxi est conventionné CPAM ; cette convention ne l’impose pas à tous les taxis. L’énoncé demandant quatre équipements universellement obligatoires reste à arbitrer. Le facturier et l’horodateur de la référence historique ne sont pas établis comme obligations universelles. Le barème historique est conservé, sans recalcul des réponses enregistrées.";
+  }
+  return null;
+}
+
 function Liste({ titre, noms, ton }: { titre: string; noms: string[]; ton: "ok" | "ko" | "neutre" }) {
   if (!noms.length) return null;
   const cls = ton === "ok" ? "text-primary" : ton === "ko" ? "text-destructive" : "text-muted-foreground";
@@ -153,6 +167,7 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
       {enQuestions && item && (
         <div className="rounded-lg border p-4 space-y-4">
           <p className="text-sm text-muted-foreground">Question {etat.index + 1} / {n} · {etat.phase === "qcm" ? "QCM" : "QRC"}</p>
+          {alerteReglementaireQrc(item) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(item)}</p>}
           {etat.phase === "qcm" ? (<>
             <p className="text-xl font-semibold">{item.mcqQuestion}</p>
             <div className="flex flex-col gap-2">
@@ -186,6 +201,7 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
             return (
               <div key={q.id} className="border-t pt-3">
                 <p className="font-medium">{i + 1}. {q.mcqQuestion}</p>
+                {alerteReglementaireQrc(q) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(q)}</p>}
                 <p className={qcmOk ? "text-primary" : "text-destructive"}>QCM : {qcmOk ? "juste" : `faux — attendu : ${q.mcqCorrectAnswer}`}</p>
                 {c && <>
                   <p className="font-medium mt-1">{q.qrcQuestion}</p>
