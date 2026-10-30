@@ -307,6 +307,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("infos");
+  const accessTabRef = useRef<HTMLDivElement>(null);
+  const openAccessTab = () => {
+    setActiveTab("reactivation-plateforme");
+    requestAnimationFrame(() => accessTabRef.current?.scrollIntoView({ block: "start" }));
+  };
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showSoftDeleteDialog, setShowSoftDeleteDialog] = useState(false);
@@ -584,6 +589,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 );
               })}
               <ChoixPratiqueBadges apprenantId={apprenant.id} dateExamen={apprenant.date_examen_theorique} />
+              <Button variant="outline" size="sm" onClick={openAccessTab}>
+                <Calendar className="h-4 w-4 mr-2 shrink-0" />Ajouter un mois d’accès
+              </Button>
             </div>
           </div>
         </div>
@@ -1206,13 +1214,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         </Dialog>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs ref={accessTabRef} value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {/* Onglets en haut */}
         <TabsList className="flex flex-wrap w-full gap-0 bg-transparent border-b border-border rounded-none p-0 h-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary">
           <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
           <TabsTrigger value="signatures-manquantes" className="text-sm font-semibold text-destructive">✉ Signatures manquantes</TabsTrigger>
           <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
-          <TabsTrigger value="reactivation-plateforme" className="text-sm">Réactiver la plateforme</TabsTrigger>
+          <TabsTrigger value="reactivation-plateforme" className="text-sm">Ajouter un mois d’accès</TabsTrigger>
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
           <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
