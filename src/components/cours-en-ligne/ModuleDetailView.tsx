@@ -4788,6 +4788,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const quizIds = canonicalQuizIdsForNationalDisplay(Number(module.id), configuredQuizIds);
     let cancelled = false;
     let relectureEnAttente = false;
+    let erreurCanonique = false;
 
     const loadCanonicalQuestions = async (dejaRenouvele = false): Promise<void> => {
       if (questionsEnEditionOuvertes > 0) {
@@ -4820,6 +4821,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           return; // plus de session : l'élève se reconnecte, aucune boucle
         }
         console.error("[CanonicalQuiz] Lecture impossible", err);
+        erreurCanonique = true;
         return;
       }
       const sourceRows = (data ?? []) as unknown as CanonicalQuestionRow[];
@@ -4843,46 +4845,67 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       setLastSyncAt(new Date());
     };
 
-    void loadCanonicalQuestions();
+    // Une seule relecture à la fois, fusion des demandes, attente bornée après
+    // erreur ; tic et retour sur la page = sonde légère (identité/ordre/date)
+    // puis relecture complète seulement si la banque a changé. Mesure 30/10 :
+    // la relecture complète toutes les 15 s = 12,6 % du temps de la base.
+    const refresher = createLiveRefresher({
+      probe: async () => {
+        const { data, error } = await supabase
+          .from("quiz_questions")
+          .select("question_id,section_id,position,active,updated_at")
+          .in("quiz_id", quizIds)
+          .order("section_id")
+          .order("position");
+        if (error) return null;
+        return questionBankToken((data ?? []) as Array<{ question_id: string; updated_at: string }>);
+      },
+      fetchFull: async () => {
+        erreurCanonique = false;
+        await loadCanonicalQuestions();
+        return !erreurCanonique;
+      },
+    });
+    void refresher.fullNow();
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase
       .channel(`canonical-module-${module.id}-${canonicalRefreshKey}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions" }, (payload) => {
         const row = (payload.new ?? payload.old) as { quiz_id?: string } | null;
-        if (!row?.quiz_id || quizIds.includes(row.quiz_id)) void loadCanonicalQuestions();
+        if (!row?.quiz_id || quizIds.includes(row.quiz_id)) refresher.trigger();
       })
       .subscribe((status) => {
         // Un canal temps réel coupé ne doit jamais figer le contenu affiché :
         // on relit la base à la reconnexion.
         if (status === "SUBSCRIBED") {
-          void loadCanonicalQuestions();
+          void refresher.fullNow();
           return;
         }
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           if (reconnectTimer) clearTimeout(reconnectTimer);
           reconnectTimer = setTimeout(() => {
-            if (!cancelled) void loadCanonicalQuestions();
+            if (!cancelled) void refresher.poll({ ignoreHidden: true });
           }, 3000);
         }
       });
-    const onFocus = () => void loadCanonicalQuestions();
+    const onFocus = () => void refresher.poll({ ignoreHidden: true });
     const onVisibilityChange = () => {
-      if (!document.hidden) void loadCanonicalQuestions();
+      if (!document.hidden) void refresher.poll({ ignoreHidden: true });
     };
-    // Filet de sécurité : les questions canoniques (bilans/quiz) étaient
-    // rafraîchies uniquement par le temps réel ou le focus. Un événement
-    // manqué laissait l'ancienne version affichée plusieurs minutes.
+    // Filet de sécurité si un événement temps réel est manqué : sonde légère
+    // toutes les 15 s (onglet visible), relecture complète au plus tard 2 min.
     const pollInterval = Number(module.id) === 13 ? null : window.setInterval(() => {
-      if (!document.hidden) void loadCanonicalQuestions();
+      void refresher.poll();
     }, 15_000);
     const onEditionFermee = () => {
-      if (relectureEnAttente) void loadCanonicalQuestions();
+      if (relectureEnAttente) void refresher.fullNow();
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener(EVENEMENT_EDITION_QUESTION_FERMEE, onEditionFermee);
     return () => {
       cancelled = true;
+      refresher.dispose();
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (pollInterval) window.clearInterval(pollInterval);
       window.removeEventListener("focus", onFocus);
