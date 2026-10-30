@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Optional TAXI quiz drafts use account/quiz/attempt-scoped pending journals, serialized per-answer RPCs and same-account readback; conflicts preserve both versions, submitted answers use server proof only; why: device races and offline retries cannot falsely validate or erase drafts.
 - Editor save acknowledgements apply only to their local edit revision; unfinished currency-only choices remain local and explicit saves cancel pending draft timers; why: older asynchronous replies must never publish a missing amount or erase a newer input.
 - Activity display separates confirmed performance from required/optional status via statutActiviteEleve; why: waived or collapsed quizzes must remain visibly unperformed without changing milestone requirements.
 - Dashboard pending EDOF practice uses the shared signature classifier and latest EDOF badge query, display-only; why: signed practical dates disappear on confirmed E marking without deleting proofs or counting theory.

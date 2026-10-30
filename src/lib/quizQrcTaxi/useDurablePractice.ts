@@ -123,7 +123,7 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
     } catch (e) {
       if ((e as { code?: string }).code === '40001') { ref.current.journal.submit = undefined; persist(); }
       setError(e instanceof Error ? e.message : 'Envoi non confirmé ; réessayez avec la même identité.');
-    } finally { if (ref.current.scope === scope) { ref.current.flight = false; setBusy(false); } }
+    } finally { submitFlight.current = false; if (ref.current.scope === scope) { ref.current.flight = false; setBusy(false); } }
   };
   const fresh = async () => {
     if (!account || ref.current.flight || !ref.current.attempt?.submitted_at || pending.length) return;
@@ -134,7 +134,7 @@ export function useDurablePractice(account: string | undefined, quiz: PracticeQu
       if (ref.current.scope !== scope) return;
       ref.current.journal = { opening: operation, attempt: result.id, pending: [] }; accept(result); persist();
     } catch (e) { setError(e instanceof Error ? e.message : 'Nouvelle tentative indisponible.'); }
-    finally { submitFlight.current = false; if (ref.current.scope === scope) { ref.current.flight = false; setBusy(false); } }
+    finally { if (ref.current.scope === scope) { ref.current.flight = false; setBusy(false); } }
   };
   const answers = { ...attempt?.answers };
   for (const entry of pending) answers[entry.key] = entry.answer;
