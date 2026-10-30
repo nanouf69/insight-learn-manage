@@ -26,13 +26,11 @@ describe('Compte de signatures sous le bouton PDF', () => {
     expect(formaterCompteSignaturesPdf(24, null, true)).toEqual({ texte: '24 signatures signées — total attendu indisponible', ton: 'neutre' });
   });
 
-  it('le total attendu vient du bilan EDOF et est passé aux deux exports', () => {
-    const fiche = readFileSync('src/components/crm/apprenant-sections/DocumentsCompletes.tsx', 'utf8');
-    expect(fiche).toContain('totalAttendu={/e-?learning/i.test(formationEdof) ? null : (bilanEdof?.objectifTotal ?? null)}');
-    expect(fiche).toContain('totalIndisponible={bilanEdofErreur}');
-    const export_ = readFileSync('src/components/crm/apprenant-sections/SignaturesRassembleesExport.tsx', 'utf8');
-    expect(export_).toContain('data-testid="signatures-pdf-compte"');
-    expect(export_.match(/totalAttendu=\{totalAttendu\}/g)).toHaveLength(2);
+  it('un planning inconnu ne fournit pas un objectif imprimé ni une validation', () => {
+    const bilan = calculerBilanSignaturesEdof([], [], [{date_choisie:'2026-10-31'}], 'TA', [], []);
+    expect(bilan.planningIncomplet).toBe(true);
+    expect(bilan.complet).toBe(false);
+    expect(formaterCompteSignaturesPdf(10, bilan.planningIncomplet ? null : bilan.objectifTotal, bilan.planningIncomplet)).toEqual({texte:'10 signatures signées — total attendu indisponible',ton:'neutre'});
   });
 
   it('20 signatures et 2 dates automatiques sans image : bilan et PDF comptent 20 sur 22', () => {
