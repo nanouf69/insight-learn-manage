@@ -17,7 +17,7 @@ SHA256 : `edd5d03cc182b23218607317b25f23e895d8573b69ffbc3bbd3f3668a40c705e`.
 
 **Distinction :** le contrôle avant éloignement et le signalement immédiat sont explicites sur la page officielle ; ils ne figurent pas dans la phrase de l’article6. « Avant descente » n’est PAS la citation officielle. Aucun texte lu n’établit qu’un dépôt au lieu de prise en charge remplace la procédure après départ.
 
-Arrêté préfectoral du **21/09/2026**, article9, PDF autonome **pages3–4** (recueil pages16–17) :
+Arrêté préfectoral du **21/09/2026**, article9, PDF autonome **pages2–3** (recueil pages16–17) :
 > Après chaque course et avant que les clients ne se soient éloignés du véhicule, le conducteur de taxi s’assure qu’ils n’ont laissé aucun objet à l’intérieur du véhicule.
 > Les objets oubliés dans le véhicule par le client après son départ sont déposés le plus rapidement possible, sans excéder72 heures, au service des objets trouvés de la mairie de dépose ou auprès de l’autorité de délivrance de l’autorisation de stationnement.
 
