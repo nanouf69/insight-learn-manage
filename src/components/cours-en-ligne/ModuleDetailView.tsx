@@ -2055,6 +2055,7 @@ import { pourcentagePagesActuelles } from "@/lib/pagesProgressionActuelle";
 import { ActivitesModuleContext, ActivitesModuleBandeau, libelleFinQuiz, useActivitesModule } from "@/components/cours-en-ligne/ActivitesModuleStatut";
 import type { EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import { demanderJeu } from "@/lib/demandeJeuRegistre";
+import { MODULE_CONTROLE_SERVEUR, soumettreCopieControle, lireCopieControle, resultatDepuisServeur } from "@/lib/controleQrcServeur";
 import { estQuestionQrc, qrcACorriger, etatCorrectionQrc, pointsAvecQrc, reponseQrc, resultatIaValide, echecRetentable, cleCacheQrc } from "@/lib/qrcCorrectionFinale";
 
 /** Lance une action une seule fois à l'affichage (correction finale des QRC). */
@@ -6848,6 +6849,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string; indisponible?: boolean } | { indisponible: true; estCorrect?: undefined; pointsObtenus?: undefined; explication?: undefined } | "loading">>({});
     const qrcCorrectionsEnCoursRef = useRef<Set<string>>(new Set());
+    // Module 13 : identifiant du dernier envoi validé + suivi de la correction serveur.
+    const dernierEnvoiValideRef = useRef<Map<number, string>>(new Map());
+    const suiviControleRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+    useEffect(() => () => { suiviControleRef.current.forEach((t) => clearTimeout(t)); }, []);
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
@@ -8841,8 +8846,37 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           qrcCorrectionsEnCoursRef.current.delete(key);
         }
       };
+      // Module 13 : correction serveur durable (copie figée, file, plafond mensuel).
+      const lancerCorrectionServeurControle = async (exoId: number, keys: string[]) => {
+        if (suiviControleRef.current.has(exoId)) return;
+        setQrcResults(prev => { const n = { ...prev }; keys.forEach(k => { n[k] = "loading"; }); return n; });
+        const exerciceServeur = dernierEnvoiValideRef.current.get(exoId) ?? exerciceIdPourSauvegarde(exoId);
+        const copieId = await soumettreCopieControle(exerciceServeur);
+        if (!copieId) {
+          setQrcResults(prev => { const n = { ...prev }; keys.forEach(k => { n[k] = { indisponible: true }; }); return n; });
+          return;
+        }
+        let tours = 0;
+        const lire = async () => {
+          tours++;
+          const copie = await lireCopieControle(copieId);
+          if (copie) {
+            setQrcResults(prev => {
+              const n = { ...prev };
+              copie.items.forEach(it => { n[`${exoId}-${it.question_id}`] = resultatDepuisServeur(it) as any; });
+              return n;
+            });
+          }
+          const fini = copie && copie.statut !== "en_cours";
+          // Lecture toutes les 5 s pendant 15 min au plus ; la correction continue côté serveur.
+          if (!fini && tours < 180) suiviControleRef.current.set(exoId, setTimeout(lire, 5000));
+          else suiviControleRef.current.delete(exoId);
+        };
+        suiviControleRef.current.set(exoId, setTimeout(lire, 0));
+      };
       const corrigerToutesQrc = (exoId: number, questions: any[]) => {
         const keys = qrcACorriger(exoId, questions, qrcAnswers, selectedAnswers, qrcResults);
+        if (module.id === MODULE_CONTROLE_SERVEUR) { if (keys.length) void lancerCorrectionServeurControle(exoId, keys); return; }
         for (const k of keys) {
           const q = questions.find((qq: any) => `${exoId}-${qq.id}` === k);
           if (q) void handleQrcCorrection(exoId, q, k);
@@ -9372,6 +9406,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               if (!submitted) { echec("validation_serveur"); return false; }
                               submittedExoIdsRef.current.add(exo.id);
                             }
+                            dernierEnvoiValideRef.current.set(exo.id, exerciceId);
                             return true;
                           };
                           let timer: ReturnType<typeof setTimeout> | undefined;
@@ -9443,16 +9478,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             </div>
                           ) : (
                             <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center">
+                              {module.id === MODULE_CONTROLE_SERVEUR ? (<>
+                                <p className="font-semibold">Correction à vérifier</p>
+                                <p className="text-sm text-muted-foreground">Vos réponses sont conservées. Une ou plusieurs réponses rédigées seront vérifiées par un formateur : aucune note n'est attribuée en attendant.</p>
+                              </>) : (<>
                               <p className="font-semibold">Correction momentanément indisponible</p>
                               <p className="text-sm text-muted-foreground">Vos réponses sont conservées. Aucune note n'est attribuée tant que la correction n'a pas abouti.</p>
-                              <Button variant="outline" onClick={() => {
+                              </>)}
+                              {module.id !== MODULE_CONTROLE_SERVEUR && <Button variant="outline" onClick={() => {
                                 const ko = questionsCompteesExo.filter((q: any) => {
                                   const r = qrcResults[`${exo.id}-${q.id}`];
                                   return r && r !== "loading" && r.indisponible;
                                 });
                                 setQrcResults(prev => { const next = { ...prev }; ko.forEach((q: any) => delete next[`${exo.id}-${q.id}`]); return next; });
                                 ko.forEach((q: any) => void handleQrcCorrection(exo.id, q, `${exo.id}-${q.id}`));
-                              }}>🔄 Relancer la correction</Button>
+                              }}>🔄 Relancer la correction</Button>}
                             </div>
                           )}
                         </div>
