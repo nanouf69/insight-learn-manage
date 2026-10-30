@@ -155,3 +155,20 @@ describe("QCM locaux du Bilan examen TA ajoutés au quiz spécialités", () => {
     expect(saved.locaux[1]).toEqual(["A"]);
   });
 });
+
+import { quizIntegresBilan, exerciceRemplaceParQuizIntegres } from "@/components/cours-en-ligne/QuizExterneBilan";
+import { BILAN_EXAMEN_TAXI } from "@/components/cours-en-ligne/bilan-examen-taxi-data";
+describe("placement des quiz intégrés", () => {
+  it("TAXI 11 et TA 28 affichent les deux quiz ; VTC 5 garde son lien", () => {
+    expect(quizIntegresBilan(11)).toEqual(["complet", "specialites"]);
+    expect(quizIntegresBilan(28)).toEqual(["complet", "specialites"]);
+    expect(quizIntegresBilan(5)).toEqual([]);
+  });
+  it("seule l'entrée H (607) du module 11 est remplacée, ses questions restent dans les données", () => {
+    const visibles = BILAN_EXAMEN_TAXI.filter((e) => !exerciceRemplaceParQuizIntegres(11, e.id)).map((e) => e.id);
+    expect(visibles).toEqual([600, 601, 602, 603, 604, 605, 606]);
+    expect(BILAN_EXAMEN_TAXI.find((e) => e.id === 607)!.questions.length).toBeGreaterThan(0);
+    expect(exerciceRemplaceParQuizIntegres(28, 607)).toBe(false);
+    expect(exerciceRemplaceParQuizIntegres(5, 507)).toBe(false);
+  });
+});
