@@ -23,7 +23,7 @@ export function requestPracticeCorrection(account: string, quiz: "complet" | "sp
   const key = JSON.stringify([account, quiz, questionId, answer.trim(), mode]);
   const active = flights.get(key);
   if (active) return active;
-  const promise = (async () => {
+  const promise = (async (): Promise<PracticeReceipt> => {
     const identity = await practiceIdentity(account, quiz, questionId, answer);
     const { data, error } = await supabase.auth.getSession();
     if (error || data.session?.user.id !== account) throw new Error("Reconnectez-vous avec le même compte ; votre réponse est conservée.");
