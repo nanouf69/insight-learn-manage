@@ -111,6 +111,7 @@ CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, rep
 CREATE TABLE public.quiz_valide_reecritures_refusees(table_cible text, apprenant_id uuid, cle text, champs text[], auteur uuid);
 CREATE TABLE public.donnees_eleves_suppressions(table_nom text, apprenant_id uuid, ligne jsonb, auteur_uid uuid, auteur_role text, compte_test boolean, motif text);
 CREATE FUNCTION public.examens_blancs_preuve_soumission(uuid, int) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
+GRANT SELECT ON public.reponses_apprenants, public.module_regles_validation TO authenticated, service_role;
 '''
 # Fonctions lues par les politiques/déclencheurs, copiées telles quelles du catalogue réel.
 DEPS = ['has_role', 'is_current_user_apprenant', 'est_compte_test', 'est_proprietaire_apprenant']
