@@ -1,5 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,7 +68,7 @@ Deno.serve(async (req) => {
           from: "FTRANSPORT <contact@ftransport.fr>",
           to: [r.to],
           subject,
-          html: buildHtml(r),
+          html: appliquerSignatureEmail(buildHtml(r)),
         }),
       });
       const data = await res.json();
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
         await supabase.from("emails").insert({
           type: "sent",
           subject,
-          body_html: buildHtml(r),
+          body_html: appliquerSignatureEmail(buildHtml(r)),
           sender_email: "contact@ftransport.fr",
           recipients: [r.to],
           sent_at: new Date().toISOString(),
