@@ -4,6 +4,7 @@ import { construireVolumes } from "@/lib/jalonsVolumes";
 import { activitesDuModule, activiteHorsVolume, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import type { ModuleContentLite } from "@/lib/volumeModules";
+import { liveCompletionEvidence } from "@/lib/moduleCompletionEvidence";
 import {
   calculerJalonsPonderes,
   calculerPoids,
@@ -19,7 +20,7 @@ export const METHODE_CALCUL_JALONS = "jalons-calcul v3 — 13/10/2026";
 /** Formalités de fin de formation : exigées seulement si attribuées (même liste que l'espace élève). */
 export const FORMALITES_IDS = new Set([50, 51, 52, 53, 83, 84]);
 
-export interface CompletionCalc extends CompletionLite { completed_at?: string | null }
+export interface CompletionCalc extends CompletionLite { completed_at?: string | null; details?: unknown }
 
 /**
  * Calcul PUR des jalons (aucune lecture de base) : même code pour le calcul
@@ -38,6 +39,8 @@ export function assemblerCalculJalons(i: {
   activitesDispensees?: readonly string[];
   /** Modules réellement attribués (règle écran élève). Absent = parcours par défaut (calculs figés inchangés). */
   modulesAttribues?: readonly number[] | null;
+  /** Explicit live-only evidence guard; absent keeps the frozen/server method unchanged. */
+  preuvesHistoriquesLive?: boolean;
 }) {
   const attribues = i.modulesAttribues?.length ? new Set(i.modulesAttribues) : null;
   const ponderesFiliere = new Set(GRILLE_DUREES[i.filiere].map(([id]) => id));
@@ -72,11 +75,12 @@ export function assemblerCalculJalons(i: {
       if (!acts.length) continue;
       const r = completionAvecActivites((row ?? { module_id: v.moduleId }) as any, { ...v }, acts, termines);
       volumes.volumes[Number(cle)] = { ...v, jeux: acts.reduce((s2, x) => s2 + x.unites, 0) };
-      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), { ...r.completion, completed_at: (row as any)?.completed_at ?? null }];
+      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), { ...r.completion, completed_at: row?.completed_at ?? null, details: row?.details }];
       activites.push({ ...r.etat, methode: METHODE_ACTIVITES });
     }
   }
-  const completions = [...completionsBase, completionPratique(pratiqueMinutes)];
+  const completionsEffectives = i.preuvesHistoriquesLive ? completionsBase.map(liveCompletionEvidence) : completionsBase;
+  const completions = [...completionsEffectives, completionPratique(pratiqueMinutes)];
   const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes, attribues);
   const poids = calculerPoids(i.filiere, volumes.volumes, attribues);
   const resultat = calculerJalonsPonderes(i.filiere, i.parcours, completions, poids);

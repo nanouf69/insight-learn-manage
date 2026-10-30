@@ -54,3 +54,12 @@ export function completionEvidenceAllowsDone(row: CompletionEvidenceRow): boolea
   if ([35, 36, 37, 38].includes(Number(row.module_id))) return true;
   return historicalQuestionsComplete(row) !== false;
 }
+
+/** Live display only. The persisted status/date and frozen calculations stay untouched. */
+export function liveCompletionEvidence<T extends CompletionEvidenceRow & { progress?: number | null }>(row: T): T {
+  if (completionEvidenceAllowsDone(row) || !Array.isArray(row.details)) return row;
+  const questions = row.details.filter(d => d?.exerciceId != null && d?.questionId != null);
+  const answered = questions.filter(d => hasRecordedAnswer(d.reponseEleve)).length;
+  const evidenceProgress = questions.length ? answered / questions.length * 100 : 0;
+  return { ...row, status: "in_progress", progress: Math.min(99.9, Number(row.progress ?? 100), evidenceProgress) };
+}
