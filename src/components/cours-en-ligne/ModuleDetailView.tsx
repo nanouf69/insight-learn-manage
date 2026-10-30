@@ -3546,7 +3546,7 @@ function ExerciceCard({
   }, [moduleId, item.id]);
 
   return (
-    <Card ref={cardRef} className={`border-2 border-slate-300 transition-all hover:shadow-md ${searchHighlight && searchHighlight.questionId == null ? "ring-4 ring-primary bg-primary/10" : ""}`}>
+    <Card ref={cardRef} className={`border-2 border-slate-300 transition-all hover:shadow-md ${searchHighlight && (searchHighlight.questionId == null || !safeQuestions.some((q) => Number(q.id) === searchHighlight.questionId)) ? "ring-4 ring-primary bg-primary/10" : ""}`}>
       <CardContent className="p-4 space-y-3">
         <div>
           {editingMeta ? (
