@@ -9672,6 +9672,20 @@ export type Database = {
         Args: { _apprenant_id: string }
         Returns: boolean
       }
+      etat_completion_modules: {
+        Args: { _apprenant_id: string }
+        Returns: {
+          completed_at: string
+          module_id: number
+          preuve_complete: boolean
+          progress: number
+          progress_effectif: number
+          questions_prouvees: number
+          questions_requises: number
+          status: string
+          status_effectif: string
+        }[]
+      }
       exam_editor_required_schema_version: { Args: never; Returns: string }
       exam_id_for_module: { Args: { _module_id: number }; Returns: string }
       exam_matiere_signature: { Args: { _matiere: Json }; Returns: string }
@@ -9718,6 +9732,10 @@ export type Database = {
         }
       }
       fin_acces_elearning: { Args: { _id: string }; Returns: string }
+      fusion_details_progression: {
+        Args: { _ancien: Json; _nouveau: Json }
+        Returns: Json
+      }
       geler_releves_fin_acces: { Args: never; Returns: number }
       generer_emargements_planning_pratique: {
         Args: { p_apprenant_id?: string }
@@ -10159,6 +10177,7 @@ export type Database = {
       releve_demander_resolution: { Args: never; Returns: undefined }
       releve_figer_contenu: { Args: never; Returns: Json }
       releve_sources_apprenant: { Args: { _id: string }; Returns: Json }
+      reponse_enregistree: { Args: { v: Json }; Returns: boolean }
       reset_quiz_attempt: {
         Args: { _apprenant_id: string; _exercice_id: string }
         Returns: {
