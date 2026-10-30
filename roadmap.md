@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Arbitrage QRC TAXI — 30/10 10:03 UTC
+- [x] Demande : réponses seules, points contradictoires suspendus, copies intactes, aucune publication.
+- [x] Feedback intégré complet/spécialités : alertes Q5/Q6 et précision CPAM Q13, énoncés/références/barème/stockage inchangés.
+- [ ] Remplacement Q5/Q6 et quatrième équipement universel BLOQUÉ : arbitrage juridique nécessaire ; formulations exactes non validées.
+- [ ] Contrôle13 BLOQUÉ : protection des références des copies en cours non prouvée ; aucune écriture Cloud.
+- [ ] Tests ciblés et comparaison des sources à exécuter ; parcours compte élève hébergé non exécuté.
+
 ## Corrections réglementaires QRC TAXI — 30/10 09:47 UTC
 - [x] Localisation texte : intégré25/26/33, fiches TAXI/TA, H44/46/60, Cloud13/13100/212/213/220 ; sources officielles, loi juin2026 article28 relue et arrêté Rhône septembre2026 intégral.
 - [ ] Corrections SUSPENDUES à validation : Q5 nouveau délit sans carte3ans/45000€, récidive3000€ non prouvée ; Q6 couleur=disponibilité, gaine universelle non prouvée ; Q13 trousse conventionnelle, quatrième universel non établi. Aucun contenu pédagogique modifié.
