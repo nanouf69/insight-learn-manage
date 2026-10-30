@@ -164,6 +164,10 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
               // les nouveaux résultats → on vérifie AUSSI chaque QRC de la définition
               // d'examen contre les corrections validées manuellement.
                const enAttenteCorrection = isExamAttemptPublicationPending(exam.matieres, examenDef);
+               // Examen incomplet : toutes les matières de l'examen n'ont pas été passées.
+               const matsDef = Array.isArray(examenDef?.matieres) ? examenDef.matieres : [];
+               const examIncomplet = matsDef.length > 0 && !matsDef.every((md: any) => exam.matieres.some((m: any) => m.matiere_id === md.id || m.matiere_nom === md.nom));
+               const sansNoteFinale = enAttenteCorrection || examIncomplet;
                // LECTURE SEULE : signale un passage réalisé sur une version
                // antérieure de l'examen. Aucune note n'est recalculée ni corrigée.
                const versionAnterieure = exam.matieres.some((m: any) => {
@@ -198,7 +202,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-sm">{exam.titre}</h4>
-                      {enAttenteCorrection ? (
+                      {examIncomplet ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Examen incomplet — notes par matière uniquement
+                        </Badge>
+                      ) : enAttenteCorrection ? (
                         <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
                           ⏳ En attente de correction
                         </Badge>
@@ -221,8 +229,8 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                         </Badge>
                       )}
                     </div>
-                    {enAttenteCorrection ? (
-                      <span className="text-sm font-semibold text-amber-600">Note en attente</span>
+                    {sansNoteFinale ? (
+                      <span className="text-sm font-semibold text-amber-600">{examIncomplet ? "Pas de note finale" : "Note finale en attente"}</span>
                     ) : (
                       <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
                         {moyenne.toFixed(1)}/20
@@ -268,7 +276,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                       return (
                         <div key={i} className="flex justify-between text-xs border rounded px-2 py-1">
                           <span className="truncate pr-1">{(m.matiere_nom || m.matiere_id || "?").split(" - ")[0]}</span>
-                           {enAttenteCorrection ? (
+                           {isExamAttemptPublicationPending([m], examenDef) ? (
                             <span className="font-semibold shrink-0 text-amber-600">⏳</span>
                           ) : (
                             <span className={`font-bold shrink-0 ${note >= 10 ? "text-green-600" : "text-red-500"}`}>
@@ -282,7 +290,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   </div>
 
                   {/* Bilan auto */}
-                   {bilan && !enAttenteCorrection && (
+                   {bilan && !sansNoteFinale && (
                     <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-2">
                       <div className="flex items-center gap-2 mb-2">
                         <Bot className="w-4 h-4 text-primary" />
