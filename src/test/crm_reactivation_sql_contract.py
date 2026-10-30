@@ -19,7 +19,7 @@ class Contract(unittest.TestCase):
   c.sql(Path('docs/crm-reinscription-reactivation.sql').read_text())
  @classmethod
  def tearDownClass(c):
-  if not hasattr(c,'d'):return
+  if not hasattr(c,'d') or not os.path.exists(c.d):return
   subprocess.run(AS+['pg_ctl','-D',c.d+'/db','-m','immediate','stop'],env=c.env,capture_output=True);shutil.rmtree(c.d)
  @classmethod
  def sql(c,q,check=True):
