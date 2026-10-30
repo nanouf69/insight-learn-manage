@@ -26,9 +26,12 @@ describe("Quiz de module — résultat seulement après confirmation serveur", (
   });
 
   it("chaque échec garde les réponses, propose « Réessayer la validation » et journalise l'étape", () => {
-    ["envoi", "relecture", "validation_serveur", "exception"].forEach((e) =>
+    ["envoi", "validation_serveur", "exception"].forEach((e) =>
       expect(src).toContain(`echec("${e}")`),
     );
+    // Relecture : erreur passagère (code sûr) distinguée d'une vraie différence.
+    expect(src).toContain("echec(`relecture_erreur_${codeErreurSur(confirmedError)}`)");
+    expect(src).toContain('"relecture_difference"');
     expect(src).toContain("Réessayer la validation");
     expect(src).toContain("Enregistrement en cours…");
   });
