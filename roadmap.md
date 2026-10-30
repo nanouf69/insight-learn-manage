@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Signatures réelles — 30/10 15:27 UTC
+- [ ] Audit lecture seule Ilyes Dakhlaoui : planning, preuves, origine du +2 pratique.
+- [ ] Audit nominatif tous parcours, doublons/feuilles sans image/dates hors planning ; empreintes avant/après.
+- [ ] Compteurs partagés selon séances réellement prévues et résumé en haut des fiches ; aucune modification de preuve/calendrier.
+- [ ] Tests absence de pratique fictive, vraie pratique, erreurs de lecture, attestations et ouverture −30 min ; vérification écran ; pas de publication sans validation.
+
 ## Livres reçus — 30/10 15:06 UTC
 - [x] TAXI113 / VTC87 / TA53 / VA27 pages ; deux fichiers TA byte-identiques ; seuls modules70–73 concernés.
 - [x] Visionneuse masquée à l'impression ; PDF original élève toujours refusé côté serveur, aucune modification de questions/données.
