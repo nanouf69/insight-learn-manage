@@ -15,10 +15,7 @@
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - EB subject grouping (selectLatestAttemptRows) uses the recorded tentative number, never a time window; older tentatives only fill missing subjects; why: one attempt can span several days.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
-- Practical planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
-- Practical training days = ceil(candidates/3); why: max_per_day was wrong.
-- Practical booking offers every admin-typed VTC/TAXI day incl. weekends; why: exact planning.
-- Practical notes: admin append-only revisions by learner/session/period, server revision guard, escaped HTML shared by CMA/learner emails; why: keep history, reject stale writes.
+- Practical: training days = ceil(candidates/3); booking offers every admin-typed VTC/TAXI day incl. weekends; notes = admin append-only revisions, server guard, escaped HTML shared by CMA/learner emails. Planning: exact exam session/period key, save only after load; locked dates never empty/reversed; why: preserve recorded dates.
 - Exam selectors share sessions/handler; all-dates paginates separately; planning names use CRM callback; why: no cross-session writes.
 - Accreditation: shared company letters keep IDs/originals; exports are new agrements/exports/ files via signed https; why: preserve history/all formats, avoid blocked blobs.
 - Labels: permanent IDs + dated baselines; why: no drift.
