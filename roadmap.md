@@ -844,6 +844,6 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Aucune génération/téléchargement/envoi d'attestation FC (VTC, TAXI si même processus) sans les 4 signatures serveur (matin+après-midi × 2 jours) ; vérification serveur, refus par défaut, message des créneaux manquants ; tests 0–4 signatures, envois auto/manuels, accès directs ; aucun mail réel.
 
 ## 30/10 — Riyad LABIOD jalons 100 % → 95,5 %
-- [ ] Diagnostic lecture seule des 4,5 points perdus (quiz ajoutés après validation ?)
-- [ ] Correctif : exigences figées à l'attribution/validation, nouveaux quiz non rétroactifs ; tests ; publication conditionnelle
+- [x] Diagnostic : 99 questions ajoutées le 29/09 après validation (M2 : 11, M4 : 88) + 1 supprimée
+- [x] Correctif serveur 0233 appliqué (Riyad 7/7 prouvés) ; test SQL dédié et publication restent à faire — [ ] Correctif : exigences figées à l'attribution/validation, nouveaux quiz non rétroactifs ; tests ; publication conditionnelle
 ## 30/10 — Liste Pratique signée EDOF : élèves en financement personnel (N. BONNARDON) — attente décision
