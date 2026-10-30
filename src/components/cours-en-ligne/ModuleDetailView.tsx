@@ -3576,7 +3576,11 @@ function ExerciceCard({
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between">
+              {/* Recherche : cible exercice (sans question précise) = on encadre
+                  uniquement le titre, jamais toute la carte. Cible question =
+                  seule la question visée reste encadrée (plus bas). */}
+              <div className={`flex items-center justify-between rounded-lg ${searchHighlight?.questionId == null ? "ring-4 ring-primary bg-primary/10" : ""}`}>
+
                 <h4 className="font-bold text-base flex items-center gap-2">
                   {partNumber && (
                     <span className="inline-flex items-center justify-center min-w-6 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-sm font-bold align-middle" title="Numéro du quiz côté élève">Quiz élève {partNumber}</span>
