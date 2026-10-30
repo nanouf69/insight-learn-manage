@@ -24,10 +24,10 @@ import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPast
 // Mapping type d'apprenant → modules par défaut
 export const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation VTC — présentiel inclut module 83 (feuilles d'émargement VTC)
-  "vtc":               [1, 2, 3, 4, 35, 5, 8, 83],
-  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 83],
+  "vtc":               [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
+  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
   // Formation VTC E-learning — Intro e-learning (pas d'émargement)
-  "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
+  "vtc-e":             [26, 2, 3, 4, 35, 5, 60, 70, 8, 50],
   // Formation TAXI — présentiel inclut module 84 (feuilles d'émargement TAXI)
   "taxi":              [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12, 84, 61, 71, 51],
   "taxi-e-presentiel": [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12, 84, 61, 71, 51],
@@ -39,9 +39,9 @@ export const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation TA E-learning (pas d'émargement)
   "ta-e":              [32, 40, 7, 64, 3, 27, 13, 28, 37, 6, 12, 62, 72, 52],
   // Formation VA — passerelle VTC inclut module 83
-  "va":                [34, 41, 3, 29, 30, 38, 8, 83],
-  "va-e-presentiel":   [34, 41, 3, 29, 30, 38, 8, 83],
-  "va-e":              [34, 41, 3, 29, 30, 38, 8],
+  "va":                [34, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
+  "va-e-presentiel":   [34, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
+  "va-e":              [34, 41, 3, 29, 30, 38, 63, 73, 8, 53],
   // Formation Continue VTC — inclut aussi le Bilan Examen VTC pour tous les nouveaux accès
   "continue-vtc":      [81, 5, 87, 83, 85, 88],
 };

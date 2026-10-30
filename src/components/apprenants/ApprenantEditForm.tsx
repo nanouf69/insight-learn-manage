@@ -89,10 +89,10 @@ function VirementsMatchBlock({
 // Mapping type d'apprenant → modules par défaut
 export const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation VTC — présentiel inclut module 83 (feuilles d'émargement VTC)
-  "vtc":               [1, 2, 3, 4, 35, 5, 8, 83],
-  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 83],
+  "vtc":               [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
+  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50],
   // Formation VTC E-learning — Intro e-learning (pas d'émargement)
-  "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
+  "vtc-e":             [26, 2, 3, 4, 35, 5, 60, 70, 8, 50],
   // Formation TAXI — présentiel inclut module 84 (feuilles d'émargement TAXI)
   "taxi":              [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12, 84, 61, 71, 51],
   "taxi-e-presentiel": [1, 10, 7, 64, 3, 9, 13, 11, 36, 6, 12, 84, 61, 71, 51],
@@ -104,10 +104,10 @@ export const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation TA E-learning (pas d'émargement)
   "ta-e":              [32, 40, 7, 64, 3, 27, 13, 28, 37, 6, 12, 62, 72, 52],
   // Formation VA présentiel — passerelle VTC inclut module 83
-  "va":                [33, 41, 3, 29, 30, 38, 8, 83],
-  "va-e-presentiel":   [33, 41, 3, 29, 30, 38, 8, 83],
+  "va":                [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
+  "va-e-presentiel":   [33, 41, 3, 29, 30, 38, 63, 73, 8, 83, 53],
   // Formation VA E-learning (pas d'émargement)
-  "va-e":              [34, 41, 3, 29, 30, 38, 8],
+  "va-e":              [34, 41, 3, 29, 30, 38, 63, 73, 8, 53],
 };
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64, 83, 84]);
