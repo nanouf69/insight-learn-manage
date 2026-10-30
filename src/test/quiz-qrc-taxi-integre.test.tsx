@@ -161,7 +161,7 @@ import { BILAN_EXAMEN_TAXI } from "@/components/cours-en-ligne/bilan-examen-taxi
 describe("placement des quiz intégrés", () => {
   it("TAXI 11 et TA 28 affichent les deux quiz ; VTC 5 garde son lien", () => {
     expect(quizIntegresBilan(11)).toEqual(["complet", "specialites"]);
-    expect(quizIntegresBilan(28)).toEqual(["complet", "specialites"]);
+    expect(quizIntegresBilan(28)).toEqual(["specialites"]);
     expect(quizIntegresBilan(5)).toEqual([]);
   });
   it("seule l'entrée H (607) du module 11 est remplacée, ses questions restent dans les données", () => {

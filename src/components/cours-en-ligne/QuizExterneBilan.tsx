@@ -9,7 +9,13 @@ const QUIZ_PAR_MODULE: Record<number, { titre: string; url: string }> = {
 };
 
 /** Module 11 (Bilan examen TAXI) : deux quiz intégrés, facultatifs, hors progression. */
-const QUIZ_INTEGRES_PAR_MODULE: Record<number, QuizQrcTaxiId[]> = { 11: ["complet", "specialites"], 28: ["complet", "specialites"] };
+const QUIZ_INTEGRES_PAR_MODULE: Record<number, QuizQrcTaxiId[]> = { 11: ["complet", "specialites"], 28: ["specialites"] };
+/** Étape de navigation facultative portant les cartes (identifiant hors plage des exercices). */
+export const ID_ETAPE_QUIZ_COMPLEMENTAIRES = 990001;
+const TITRE_ETAPE: Record<number, string> = { 11: "Quiz complémentaires", 28: "QRC TAXI spécialités" };
+export function etapeQuizComplementaires(moduleId: number) {
+  return TITRE_ETAPE[moduleId] ? { titre: TITRE_ETAPE[moduleId] } : null;
+}
 /** Entrées remplacées à l'écran par les quiz intégrés (données conservées dans le code). */
 const EXERCICES_REMPLACES: Record<number, number[]> = { 11: [607] };
 export function exerciceRemplaceParQuizIntegres(moduleId: number, exerciceId: number) {

@@ -2070,7 +2070,7 @@ const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2
 const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuizCommunes"));
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
-import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres } from "./QuizExterneBilan";
+import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -7003,6 +7003,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
     const pages: PageType[] = (() => {
+      // Étape facultative « Quiz complémentaires » (Bilans 11/28) : sans questions comptées,
+      // donc hors compteur de quiz ; marquée faite à l'affichage pour ne pas bloquer 100 %.
+      const etape = etapeQuizComplementaires(Number(moduleData.id));
+      const base = pagesDeBase();
+      return etape
+        ? [...base, { type: "exercice-single" as const, exercice: { id: ID_ETAPE_QUIZ_COMPLEMENTAIRES, titre: etape.titre, actif: true, questions: [] } as unknown as ExerciceItem }]
+        : base;
+    })();
+    function pagesDeBase(): PageType[] {
       if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
         return orderedCoursePages(activeCours, activeExercices);
       }
@@ -7011,7 +7020,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
         ...activeExercices.map(e => ({ type: "exercice-single" as const, exercice: e })),
       ];
-    })();
+    }
 
 
 
@@ -7026,6 +7035,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         pages.forEach((page, index) => {
           if (page?.type === "exercice-single") {
             quizIndex++;
+            if (Number(page.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES) { labels[index] = `${quizIndex}. ${page.exercice.titre}`; return; }
             const cleanTitle = page.exercice.titre.replace(/^📝\s*|^📘\s*|^📗\s*|^📙\s*|^📕\s*|^📓\s*/, "");
             labels[index] = `${quizIndex}. 📝 Quiz — ${cleanTitle}`;
           }
@@ -8138,6 +8148,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           }
         }
         // exercice-single pages: don't auto-complete, user must validate
+        // (sauf l'étape facultative « Quiz complémentaires », jamais notée)
+        if (p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES) markPageCompleted(i);
 
       });
     }, [pages.length]);
@@ -10105,7 +10117,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                 Quiz historique — {currentPageData.exercice.questions?.length ?? 0} questions
               </h3>
             )}
-            {renderSingleExercicePage(currentPageData.exercice)}
+            {Number(currentPageData.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES
+              ? <section aria-label={currentPageData.exercice.titre}><QuizExterneBilan moduleId={Number(module.id)} /></section>
+              : renderSingleExercicePage(currentPageData.exercice)}
           </>}
         </div>
 
@@ -10194,11 +10208,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
           )}
         </div>
-        {quizIntegresBilan(Number(module.id)).length > 0 && (
-          <section aria-label="Quiz d'entraînement QRC TAXI" className="border-t pt-6">
-            <QuizExterneBilan moduleId={Number(module.id)} />
-          </section>
-        )}
         </div>
       </div>
       {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
