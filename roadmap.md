@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Contrôle de connaissances absent — 30/10 12:01 UTC
+- [x] Lecture seule session TAXI/TA du 26/10 au 16/11 : module13 absent des listes explicites de Mohktar BEN ALI, Ilyes Dakhlaoui, CIHAN RAYMAN et Harutyun Pndukyan ; ce dernier a une date d’accès expirée. MASSINISSA HADDOU a une liste NULL, distincte d’une exclusion explicite.
+- [ ] Rétablissement ciblé soumis à accord : ajouter uniquement module13 aux trois dossiers à dates actives, sans modifier les autres modules, dates, réponses, notes ou preuves ; examiner séparément le dossier à accès expiré et le parcours par défaut NULL.
+
 ## Objets oubliés TAXI — 30/10 11:31
 - [x] Page officielle et scan2024 article6/p5 lus ; vérifier avant éloignement, pas avant descente. Texte2026 article9 fraîchement relu, destinataire divergent.
 - [x] Inventaire code + JSON/banques Cloud ; feedbacks locaux20/29 précisés, secours Contrôle57 délai24→72 seulement. Q35, banques et sauvegarde/IA conservés.
