@@ -15,6 +15,7 @@ interface BrandedEmailParams {
 const FROM_ADDRESS = "FTRANSPORT <contact@ftransport.fr>";
 
 import { estEmailValide } from "./email-valide.ts";
+import { appliquerSignatureEmail } from "./signatureEmail.ts";
 export { estEmailValide };
 
 /**
@@ -92,8 +93,10 @@ export async function sendBrandedEmail({
     }
   }
 
+  // Signature commune FTRANSPORT apposée en fin de chaque e-mail sortant.
+  const htmlSigne = appliquerSignatureEmail(html);
   const htmlWithPixel = trackingEnabled
-    ? `${html}<img src="${supabaseUrl}/functions/v1/email-track-open?id=${trackingId}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0" />`
+    ? `${htmlSigne}<img src="${supabaseUrl}/functions/v1/email-track-open?id=${trackingId}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0" />`
     : html;
 
   const response = await fetch("https://api.resend.com/emails", {
