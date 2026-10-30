@@ -3,12 +3,12 @@
 <!-- LOVABLE:END -->
 
 
-- save_module_completion refuses completion without proven answers for modules with questions (P0501); why: browser never decides alone.
+- save_module_completion refuses a first validation while any QCM in the sent details lacks an answer (not covered by a full submitted exercise proof), P0501; optional-rule modules and EB 35–38 exempt; late progress saves never blank a stored answer; why: browser never decides alone.
 - Module completion: completed_at NULL = not validated, set only at real server validation (CHECK completed ⇒ date); changes to its RPCs/schema must pass `python3 src/test/module_completion_sql_contract.py` (disposable Postgres built from the live catalog); why: mocked/regex tests missed the 0193 NOT NULL 23502 regression.
 - Règles de fin des modules définis dans le code : table `module_regles_validation` (protection_serveur) lue par save_module_completion ; why: le serveur doit connaître les modules à questions absents de module_editor_state.
 - Technical test accounts use `comptes_test_techniques` and restrictive `est_compte_test()` policies; why: central exclusion without name guessing; each test account sees only itself.
 - Bilans: `trg_bilan_aa_controle_ids` rejects non-int32 exercise IDs (P0510); why: keep old IDs compatible.
-- Live learner/CRM/EDOF counts and weighted jalons use moduleCompletionEvidence with submitted server proofs; apply the live projection after activity cutoffs, never to frozen calculations; why: blank historical obligations cannot yield 100%, later additions cannot reopen legitimate achievements, and stored proofs/dates remain intact.
+- Live learner/CRM/EDOF counts and weighted jalons take the proof verdict from RPC `etat_completion_modules` (src/lib/etatCompletionServeur.ts, read error = error, never done) projected by moduleCompletionEvidence; apply the live projection after activity cutoffs, never to frozen calculations; why: blank historical obligations cannot yield 100%, later additions cannot reopen legitimate achievements, and stored proofs/dates remain intact.
 - `trg_garde_correction_admin_quiz` refuses (42501) learner writes to admin/manual-corrected quiz scores; why: pending device notes never overwrite admin corrections.
 - Quiz OK requires send, readback and submitQuizAttempt; validated quiz revisions use module_X_revision_exo_Y; why: no unproven validation or overwritten proof.
 - Exam source = noteExamenAffichee + passagesV2NonFiables: same-attempt identity, matching answers/content else legacy; snapshots compared by relative order and explicit correct choices; why: no borrowed or truncated score.
