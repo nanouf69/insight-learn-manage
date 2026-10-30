@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Corrigés spécialités Q29/Q35 — 30/10 11:17
+- [ ] Identifier les énoncés exacts et vérifier livre/supports avec page ; ne pas confondre numéros affichés et identifiants.
+- [ ] Corriger seulement réponses acceptées/feedback prouvés, tests ciblés ; copies, notes, sauvegarde/IA et autres questions intactes, aucune publication.
+
 ## Visibilité prolongation d’accès — 30/10 11:15
 - [x] Onglet existant renommé « Ajouter un mois d’accès », raccourci près de Réinscription ouvrant l’onglet et le faisant défiler ; aucune prolongation automatique.
 - [x] Aperçu administrateur : raccourci ouvre onglet actif, proposition serveur et action de confirmation visibles, aucune réactivation exécutée ; 4 tests PASS, build OK. Aucune publication.
