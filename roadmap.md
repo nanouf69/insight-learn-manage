@@ -2,9 +2,10 @@
 
 ## IA immédiate des quiz QRC TAXI — 30/10 10:07 UTC
 - [x] Audit lecture seule : corriger-qrc existant non adapté (références client, pas d’auth/idempotence) ; circuit officiel en file exclu.
-- [ ] Accord sur limite dédiée requis : Cloud ne fournit pas de limite standard ; proposer 60 nouvelles corrections/heure et 200/jour/compte, une active par compte, reçus distincts sans réponses brutes.
-- [ ] Après accord : endpoint sécurisé immédiat indépendant, références serveur versionnées, reçus idempotents, flux de résultat et conservation des réponses locales ; aucun effet sur notes officielles.
-- [ ] Tests fictifs paraphrases/réseau/double clic/reprise/isolation + vérification IA réelle et parcours technique PC/mobile ; aucune publication.
+- [x] Accord plan : limites dédiées 60/heure +200/jour/compte glissantes, une active/compte ; migration0226 appliquée, reçus privés sans réponses brutes.
+- [x] Endpoint immédiat authentifié actif : références serveur exactes, claim atomique, reprises transitoires bornées, résultats inconnus jamais rejoués, pause persistante402/403 ; Q5/Q6/Q13 à arbitrer sans note. Interface préparée, aucune publication.
+- [x] 39 tests Vitest PASS +8 contrôles PostgreSQL jetable PASS ; IA réelle deux paraphrases1/1 et réponse incorrecte0, journal Gateway3 succès ; même réponse relue sans nouvel appel. Composants réels sous session technique PC/mobile PASS, sans débordement/erreur console.
+- [ ] Navigation complète étapes8TAXI/3TA sous compte technique NON PROUVÉE : compte technique disponible affiche le parcoursVTC et garde multi-session ; aucune attribution/formation/session modifiée pour forcer le test. Emplacement et isolation couverts par tests existants. Rapport docs/qrc-taxi-ia-immediate-2026-10-30.md.
 
 ## Arbitrage QRC TAXI — 30/10 10:03 UTC
 - [x] Demande : réponses seules, points contradictoires suspendus, copies intactes, aucune publication.
