@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Objets oubliés TAXI — 30/10 11:31
-- [ ] Vérifier page Métropole et arrêté du 27/11/2024 ; comparer portée territoriale et texte préfectoral2026.
-- [ ] Inventorier tous corrigés concernés, séparer sources actives et snapshots ; harmoniser seulement ce qui est vérifié et protégé.
-- [ ] Tests ciblés et inventaire avant/après ; aucune publication, aucun changement des copies/notes.
+- [x] Page officielle et scan2024 article6/p5 lus ; vérifier avant éloignement, pas avant descente. Texte2026 article9 fraîchement relu, destinataire divergent.
+- [x] Inventaire code + JSON/banques Cloud ; feedbacks locaux20/29 précisés, secours Contrôle57 délai24→72 seulement. Q35, banques et sauvegarde/IA conservés.
+- [x] 53tests PASS, lecture copie technique soumise PC/mobile vérifiée, empreintes Cloud identiques ; rapport docs/objets-oublies-taxi-2026-10-30.md, aucune publication/écritureCloud.
+- [ ] Harmonisation complète BLOQUÉE : articulation Métropole/Rhône pour ADS hors Métropole à arbitrer ; copies héritées ouvertes sans protection des références prouvée. Exhaustivité des supports binaires NON PROUVÉE.
 
 ## Corrigés spécialités Q29/Q35 — 30/10 11:17
 - [x] QCM locaux29/35 identifiés ; supports Locale1 pages8–9, livre PDF33 et arrêté2026 art9/10 PDF17 lus.
