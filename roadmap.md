@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Mail signatures manquantes — 30/10 15:39 UTC
-- [ ] Bouton de relance dans le suivi présentiel du tableau de bord ; réutiliser aperçu/relecture/confirmation existants, aucun envoi de test.
-- [ ] Vérifier ouverture et tests ; aucune publication.
+- [x] Bouton Relance signatures ajouté au suivi présentiel, réutilise aperçu/relecture/confirmation CRM ; aucun envoi de test.
+- [x] Compte admin : ouverture tableau de bord → relance FIACRE → aperçu mail vérifiée ; 31 tests PASS. Aucun mail envoyé, aucune publication.
 
 ## Signatures réelles — 30/10 15:27 UTC
 - [x] Audit Ilyes : TA dix créneaux/10 images, aucune pratique réservée/inscrite ; +2 forfait client.22 feuilles futures sans image conservées ; origine exacte du lot12/10 NON PROUVÉE.
