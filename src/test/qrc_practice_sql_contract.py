@@ -5,7 +5,9 @@ ROOT=Path(__file__).resolve().parents[2]
 TEMP=tempfile.mkdtemp(prefix='qrc-practice-sql-',dir='/tmp');os.chown(TEMP,1000,1000)
 USER=['setpriv','--reuid=1000','--regid=1000','--clear-groups'];PORT='55473';started=False
 def sql(q):
- return subprocess.check_output(['psql','-X','-q','-h',TEMP,'-p',PORT,'-U','lovable','-d','postgres','-At','-v','ON_ERROR_STOP=1','-c',q],text=True,stderr=subprocess.STDOUT).strip()
+ result=subprocess.run(['psql','-X','-q','-h',TEMP,'-p',PORT,'-U','lovable','-d','postgres','-At','-v','ON_ERROR_STOP=1'],input=q,text=True,capture_output=True)
+ if result.returncode:raise subprocess.CalledProcessError(result.returncode,'isolated SQL',output=result.stderr)
+ return result.stdout.strip()
 A='00000000-0000-0000-0000-000000000901';B='00000000-0000-0000-0000-000000000902'
 def call(q,user=A):return json.loads(sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{user}'; SELECT {q};"))
 def uid(n):return '00000000-0000-0000-0001-'+str(n).zfill(12)
