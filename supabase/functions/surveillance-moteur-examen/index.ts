@@ -19,6 +19,8 @@
  *   DELAI_48H_SUR_TENTATIVE_OUVERTE
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -247,7 +249,7 @@ async function alerter(anomalies: Anomalie[], correlationId: string): Promise<st
           from: "FTRANSPORT Supervision <contact@ftransport.fr>",
           to: [ALERT_EMAIL],
           subject: `[FTRANSPORT MOTEUR EXAMEN] ${anomalies.length} anomalie(s) détectée(s)`,
-          html: `<p>Détection automatique — aucune donnée n'a été modifiée.</p>${corps}<p>Correlation ID : ${correlationId}</p>`,
+          html: appliquerSignatureEmail(`<p>Détection automatique — aucune donnée n'a été modifiée.</p>${corps}<p>Correlation ID : ${correlationId}</p>`),
         }),
         signal: AbortSignal.timeout(10000),
       });

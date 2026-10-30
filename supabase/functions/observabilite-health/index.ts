@@ -13,6 +13,8 @@
  * MONITORING_TRIGGER_TOKEN.
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -209,7 +211,7 @@ async function envoyerAlerte(
           from: "FTRANSPORT Supervision <contact@ftransport.fr>",
           to: [ALERT_EMAIL],
           subject: titre,
-          html: corps,
+          html: appliquerSignatureEmail(corps),
         }),
         signal: timeout(10000),
       });

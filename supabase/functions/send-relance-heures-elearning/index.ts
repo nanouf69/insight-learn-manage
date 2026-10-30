@@ -1,5 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,7 +67,7 @@ Deno.serve(async (req) => {
 
   for (const r of RECIPIENTS) {
     const subject = `⚠️ ${r.prenom}, finalisez vos heures de formation avant votre examen pratique ${r.formation} du ${r.dateExamen}`;
-    const html = buildHtml(r);
+    const html = appliquerSignatureEmail(buildHtml(r));
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",

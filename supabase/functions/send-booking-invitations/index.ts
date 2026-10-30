@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -165,7 +167,7 @@ serve(async (req) => {
 
     for (const t of recipientsToSend) {
       const link = `${baseUrl.replace(/\/+$/, "")}/booking?id=${t.id}`;
-      const html = buildHtml(link, t.prenom, t.nom);
+      const html = appliquerSignatureEmail(buildHtml(link, t.prenom, t.nom));
       const subject = testMode
         ? "[TEST] Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai"
         : "Votre examen du 26 mai — réservez votre créneau de questions lundi 25 mai";

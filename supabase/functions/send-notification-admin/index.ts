@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -509,7 +511,7 @@ serve(async (req) => {
     }
     const docLabel = formatDocumentLabel(payload.type_document);
     const subject = `[FTRANSPORT] ${docLabel} – ${payload.prenom || ""} ${(payload.nom || "").toUpperCase()}`;
-    const html = buildEmailHtml(payload);
+    const html = appliquerSignatureEmail(buildEmailHtml(payload));
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",

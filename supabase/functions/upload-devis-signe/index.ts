@@ -1,5 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { apposerSignatureTampon } from "../_shared/tamponFtransport.ts";
+import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -241,7 +243,7 @@ Deno.serve(async (req) => {
             from: "FTRANSPORT <noreply@ftransport.fr>",
             to: "contact@ftransport.fr",
             subject: `📝 Devis signé reçu — ${clientLabel}`,
-            html: `<p>Bonjour,</p><p><strong>${clientLabel}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`,
+            html: appliquerSignatureEmail(`<p>Bonjour,</p><p><strong>${clientLabel}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`),
           }),
         });
       }
