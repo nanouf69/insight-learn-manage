@@ -1,4 +1,5 @@
 import { ChoixPratiqueBadges } from "@/components/crm/apprenant-sections/ChoixPratiqueBadges";
+import { ReactiverPlateformeTab } from "./apprenant-sections/ReactiverPlateformeTab";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { EdofFinFormationTab } from "@/components/crm/apprenant-sections/EdofFinFormationTab";
@@ -582,7 +583,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                   </Badge>
                 );
               })}
-              <ChoixPratiqueBadges apprenantId={apprenant.id} />
+              <ChoixPratiqueBadges apprenantId={apprenant.id} dateExamen={apprenant.date_examen_theorique} />
             </div>
           </div>
         </div>
@@ -1211,6 +1212,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
           <TabsTrigger value="signatures-manquantes" className="text-sm font-semibold text-destructive">✉ Signatures manquantes</TabsTrigger>
           <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
+          <TabsTrigger value="reactivation-plateforme" className="text-sm">Réactiver la plateforme</TabsTrigger>
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
           <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
@@ -1241,6 +1243,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
         {/* Contenu principal des onglets */}
         <div className="space-y-4">
+          {activeTab === "reactivation-plateforme" && <ReactiverPlateformeTab key={apprenantId} apprenantId={apprenantId} />}
           {activeTab === "infos" && (
             <div className="space-y-6">
               <EdofStatutInfos apprenant={apprenant} onOuvrirOnglet={() => setActiveTab("edof-fin")} />

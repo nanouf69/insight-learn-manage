@@ -30,10 +30,16 @@ Deno.serve(async req => {
     const { data: role, error: roleError } = await db.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
     if (roleError) return json({ error: "Vérification de l’accès indisponible." }, 503);
     if (!role) {
-      const { data: learners, error } = await db.from("apprenants").select("modules_autorises,date_debut_cours_en_ligne,date_fin_cours_en_ligne").eq("auth_user_id", userId).is("deleted_at", null).is("compte_cours_archive_at", null);
+      const { data: learners, error } = await db.from("apprenants").select("id,modules_autorises,date_debut_cours_en_ligne,date_fin_cours_en_ligne").eq("auth_user_id", userId).is("deleted_at", null).is("compte_cours_archive_at", null);
       if (error) return json({ error: "Vérification de l’accès indisponible." }, 503);
       const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-      const allowed = learners?.some(l => (l.modules_autorises?.includes(11) || (input.quiz === "specialites" && l.modules_autorises?.includes(28))) && l.date_debut_cours_en_ligne && l.date_fin_cours_en_ligne && l.date_debut_cours_en_ligne <= today && l.date_fin_cours_en_ligne >= today);
+      let allowed = learners?.some(l => (l.modules_autorises?.includes(11) || (input.quiz === "specialites" && l.modules_autorises?.includes(28))) && l.date_debut_cours_en_ligne && l.date_fin_cours_en_ligne && l.date_debut_cours_en_ligne <= today && l.date_fin_cours_en_ligne >= today);
+      if (!allowed) for (const learner of learners ?? []) {
+        if (!learner.modules_autorises?.includes(11) && !(input.quiz === 'specialites' && learner.modules_autorises?.includes(28))) continue;
+        const extension = await client.rpc('crm_lire_extension_acces', { p_apprenant: learner.id });
+        if (extension.error) return json({ error: 'Vérification de l’accès indisponible.' }, 503);
+        if (extension.data?.autorise === true) { allowed = true; break; }
+      }
       if (!allowed) return json({ error: "Cet entraînement n’est pas accessible à ce compte." }, 403);
     }
     const question = questions.find(q => q.id === input.questionId && (input.quiz === "complet" || q.category === "national"));

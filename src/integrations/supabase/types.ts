@@ -3084,6 +3084,85 @@ export type Database = {
           },
         ]
       }
+      crm_acces_extensions: {
+        Row: {
+          apprenant_id: string
+          auteur: string
+          created_at: string
+          debut: string
+          fin: string
+          fin_precedente: string | null
+          id: string
+          operation_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          auteur: string
+          created_at?: string
+          debut: string
+          fin: string
+          fin_precedente?: string | null
+          id?: string
+          operation_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          auteur?: string
+          created_at?: string
+          debut?: string
+          fin?: string
+          fin_precedente?: string | null
+          id?: string
+          operation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_acces_extensions_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_reinscription_choix: {
+        Row: {
+          apprenant_id: string
+          auteur: string
+          choix: string
+          created_at: string
+          date_examen: string
+          id: string
+          operation_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          auteur: string
+          choix: string
+          created_at?: string
+          date_examen: string
+          id?: string
+          operation_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          auteur?: string
+          choix?: string
+          created_at?: string
+          date_examen?: string
+          id?: string
+          operation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_reinscription_choix_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandes_inscription_urgentes: {
         Row: {
           apprenant_id: string
@@ -9181,6 +9260,60 @@ export type Database = {
         }
       }
       core_sujet_publie: { Args: { p_exam_id: string }; Returns: boolean }
+      crm_date_examen_iso: { Args: { p_text: string }; Returns: string }
+      crm_enregistrer_reinscription: {
+        Args: {
+          p_apprenant: string
+          p_choix: string
+          p_examen: string
+          p_operation: string
+          p_precedent?: string
+        }
+        Returns: {
+          apprenant_id: string
+          auteur: string
+          choix: string
+          created_at: string
+          date_examen: string
+          id: string
+          operation_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_reinscription_choix"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_lire_extension_acces: { Args: { p_apprenant: string }; Returns: Json }
+      crm_preparer_reactivation: {
+        Args: { p_apprenant: string }
+        Returns: Json
+      }
+      crm_reactiver_un_mois: {
+        Args: {
+          p_apprenant: string
+          p_fin_confirmee: string
+          p_fin_precedente: string
+          p_operation: string
+        }
+        Returns: {
+          apprenant_id: string
+          auteur: string
+          created_at: string
+          debut: string
+          fin: string
+          fin_precedente: string | null
+          id: string
+          operation_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_acces_extensions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       decaler_examen_theorique: {
         Args: {

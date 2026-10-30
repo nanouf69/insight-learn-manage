@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { lireExtensionAcces } from '@/lib/crmActionsEleve';
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -21,6 +23,7 @@ interface Props {
  * pédagogique n'est modifié ici. Le statut est calculé à partir des données existantes.
  */
 export function CompteStatutBadge({ apprenant }: Props) {
+  const extension = useQuery({ queryKey: ['extension-acces', apprenant?.id], enabled: !!apprenant?.id, queryFn: () => lireExtensionAcces(apprenant.id), retry: false });
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [lastConnexion, setLastConnexion] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,9 +101,9 @@ export function CompteStatutBadge({ apprenant }: Props) {
       className: "bg-orange-100 text-orange-800 border-orange-200",
       icon: <AlertTriangle className="w-3 h-3" />,
     };
-  } else if (dateFin && dateFin < today) {
+  } else if (dateFin && dateFin < today && !extension.data?.autorise) {
     statut = {
-      label: "Accès e-learning expiré",
+      label: extension.isError ? 'Accès : lecture impossible' : extension.isLoading ? 'Vérification de l’accès…' : "Accès e-learning expiré",
       className: "bg-orange-100 text-orange-800 border-orange-200",
       icon: <Clock className="w-3 h-3" />,
     };
