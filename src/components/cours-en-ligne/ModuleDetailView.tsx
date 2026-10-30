@@ -53,6 +53,8 @@ import {
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
 import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
+import { createLiveRefresher, moduleVersionToken, questionBankToken, type LiveRefresher } from "@/lib/moduleLiveRefresh";
+import { relireAvecReprisesBornees } from "@/lib/relectureBornee";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 
 import { ColoredTextField } from "./ColoredTextField";
@@ -4390,7 +4392,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
   const [lastDbUpdatedAt, setLastDbUpdatedAt] = useState<string | null>(null);
   const [isManualSyncing, setIsManualSyncing] = useState(false);
-  const refetchModuleFromDbRef = useRef<(() => Promise<void>) | null>(null);
+  const refetchModuleFromDbRef = useRef<(() => Promise<unknown>) | null>(null);
+  const moduleRefresherRef = useRef<LiveRefresher | null>(null);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
@@ -5278,7 +5281,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     if (!studentOnly) return; // Only students need realtime updates
 
     // Refetch from DB instead of trusting the payload (which can be truncated for large JSONB)
-    const refetchModuleFromDb = async () => {
+    let erreurRelectureModule = false;
+    const refetchModuleFromDbInner = async () => {
       try {
         const fetchStartedAt = Date.now();
         const parentModuleId = FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)];
@@ -5395,10 +5399,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           }
         }
       } catch (err) {
+        erreurRelectureModule = true;
         console.error("[Realtime] Error refetching module data:", err);
       }
     };
+    // `false` = lecture en erreur (pool saturé, délai SQL…) : l'affichage
+    // précédent est conservé et le rafraîchisseur attend avant de relire.
+    const refetchModuleFromDb = async (): Promise<boolean> => {
+      erreurRelectureModule = false;
+      await refetchModuleFromDbInner();
+      return !erreurRelectureModule;
+    };
     refetchModuleFromDbRef.current = refetchModuleFromDb;
+
+    // Sonde légère (identifiant + date) : la relecture complète du module
+    // (0,5 Mo de JSON) n'a lieu que si une version a changé. Mesure 30/10 :
+    // la relecture complète toutes les 5 s = 36,7 % du temps de la base.
+    const probeModuleVersion = async (): Promise<string | null> => {
+      const parentId = FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)];
+      const ids = [Number(module.id)];
+      if (parentId) ids.push(parentId);
+      if (shouldSyncVtcBilanFromCours(module.id)) ids.push(BILAN_VTC_SOURCE_MODULE_ID);
+      const { data, error } = await supabase
+        .from("module_editor_state")
+        .select("module_id, updated_at")
+        .in("module_id", ids);
+      if (error) return null;
+      return moduleVersionToken((data ?? []) as Array<{ module_id: number; updated_at: string }>);
+    };
+    const refresher = createLiveRefresher({ probe: probeModuleVersion, fetchFull: refetchModuleFromDb });
+    moduleRefresherRef.current = refresher;
 
     const handleRealtimeChange = async (payload: any) => {
       const newData = payload.new as any;
@@ -5409,8 +5439,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           eventModule === FC_BILAN_PARENT_BY_MODULE_ID[Number(module.id)] ||
           (shouldSyncVtcBilanFromCours(module.id) && eventModule === BILAN_VTC_SOURCE_MODULE_ID)
         ) {
-        // Direct module match — refetch full data from DB (payload may be truncated)
-        await refetchModuleFromDb();
+        // Direct module match — refetch full data from DB (payload may be truncated).
+        // Décalage aléatoire borné + fusion : tous les élèves ne relisent pas
+        // le même module dans la même seconde après une sauvegarde Admin.
+        refresher.trigger();
       } else {
         // Another module was updated — check for shared questions (cross-module propagation)
         const crossOverrides = await loadCrossModuleOverridesFromDb();
@@ -5514,7 +5546,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           maintenanceHideTimerRef.current = null;
         }
         setMaintenanceActive(false);
-        void refetchModuleFromDb();
+        refresher.trigger();
       })
       .on('broadcast', { event: 'maintenance-start' }, () => {
         console.log(`[Realtime/Broadcast] maintenance-start received for module ${module.id}`);
@@ -5529,33 +5561,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       .subscribe((status) => {
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
         setRealtimeStatus(status);
-        if (Number(module.id) === 13 && status === "SUBSCRIBED") void refetchModuleFromDb();
+        if (Number(module.id) === 13 && status === "SUBSCRIBED") void refresher.fullNow();
         // Auto-reconnect on failure so students never miss admin corrections
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           setTimeout(() => setRealtimeReconnectKey((k) => k + 1), 3000);
         }
       });
 
-    // Polling fallback — plus rapide côté apprenant pour garantir que
-    // toute modification admin (suppression d'image, édition de réponse…)
-    // soit visible en moins de 5 s même si Realtime rate un événement.
+    // Filet de sécurité si Realtime rate un événement : sonde légère toutes
+    // les 5 s (onglet visible uniquement) ; relecture complète seulement si la
+    // version a changé, et au plus tard toutes les 2 min. Chaque relecture
+    // complète réussie réapplique aussi les modifications formateur.
     const pollIntervalMs = studentOnly ? 5_000 : 15_000;
     const pollTimer = Number(module.id) === 13 ? null : setInterval(() => {
-      void refetchModuleFromDb();
-      // Filet de sécurité identique pour les modifications formateur/fournisseur
-      // (quiz_questions_overrides) : on redemande l'application des overrides.
-      setTrainerOverridesReapplyKey((k) => k + 1);
+      void refresher.poll();
     }, pollIntervalMs);
 
-    // Refetch immédiat quand l'onglet reprend le focus (l'apprenant revient sur la page)
+    // Retour sur la page : sonde immédiate (fusionnée avec focus/visibilité).
     const handleFocusRefresh = () => {
-      void refetchModuleFromDb();
-      setTrainerOverridesReapplyKey((k) => k + 1);
+      void refresher.poll({ ignoreHidden: true });
     };
     window.addEventListener('focus', handleFocusRefresh);
     if (Number(module.id) === 13) window.addEventListener('online', handleFocusRefresh);
 
     return () => {
+      refresher.dispose();
+      if (moduleRefresherRef.current === refresher) moduleRefresherRef.current = null;
       if (pollTimer) clearInterval(pollTimer);
       window.removeEventListener('focus', handleFocusRefresh);
       window.removeEventListener('online', handleFocusRefresh);
@@ -5575,6 +5606,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
     const handleVisibilityChange = async () => {
       if (document.hidden) return;
+      // Même circuit que le focus : sonde légère fusionnée, relecture complète
+      // seulement si la version a changé (évite deux relectures de 0,5 Mo).
+      if (moduleRefresherRef.current) {
+        void moduleRefresherRef.current.poll({ ignoreHidden: true });
+        return;
+      }
       // Only re-check if at least 10s have passed since last check
       if (Number(module.id) !== 13 && Date.now() - lastCheckedAt < 10_000) return;
       lastCheckedAt = Date.now();
