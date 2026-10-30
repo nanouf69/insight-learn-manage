@@ -2070,7 +2070,7 @@ const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2
 const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuizCommunes"));
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
-import QuizExterneBilan from "./QuizExterneBilan";
+import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres } from "./QuizExterneBilan";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -6856,7 +6856,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
     const HIDDEN_CHECKLIST_TYPES = ["analyse-besoin", "projet-professionnel", "competences", "cgv", "cgv-reglement"];
     const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
-    const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
+    // Module 11 : l'entrée « H - Exercice complémentaire » (607, définie dans le code, jamais répondue)
+    // est remplacée à l'écran par les quiz intégrés en bas du module ; ses questions restent dans le code.
+    const activeExercices = moduleData.exercices.filter(e => e.actif && !exerciceRemplaceParQuizIntegres(Number(moduleData.id), Number(e.id))) as ExerciceItem[];
     // Toujours la liste d'exercices la plus récente (évite un calcul de révision
     // fait sur une liste pas encore chargée après rechargement).
     const activeExercicesRef = useRef<ExerciceItem[]>(activeExercices);
@@ -9947,7 +9949,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           </div>
 
           {Number(module.id) === 12 && <Suspense fallback={<p role="status">Chargement du quiz des jours fériés…</p>}><QuizJoursFeries key={apprenantId ?? "apercu"} compteId={apprenantId ?? null} /></Suspense>}
-          <QuizExterneBilan moduleId={Number(module.id)} />
+          {!quizIntegresBilan(Number(module.id)).length && <QuizExterneBilan moduleId={Number(module.id)} />}
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
           {![6, 7, 64].includes(Number(module.id)) && <ActivitesModuleBandeau onOuvrir={demanderJeu} />}
@@ -10192,6 +10194,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
           )}
         </div>
+        {quizIntegresBilan(Number(module.id)).length > 0 && (
+          <section aria-label="Quiz d'entraînement QRC TAXI" className="border-t pt-6">
+            <QuizExterneBilan moduleId={Number(module.id)} />
+          </section>
+        )}
         </div>
       </div>
       {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
