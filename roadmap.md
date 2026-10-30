@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Plafonds QRC IA et application — 30/10 10:35 UTC
+- [x] Lecture seule : coûts enregistrés, plan Pro actif, recharges automatiques et recherche de limites bloquantes natives.
+- [ ] Vérifier accès aux corrections depuis les quiz déjà terminés sans remise à zéro ; ne pas retraiter automatiquement les anciens quiz.
+- [ ] Mise en place plafond global QRC20 €/mois civil Europe/Paris avec réservation atomique et alertes50/80/100 : BLOQUÉE par conversion crédits/euros et financement client non disponibles, à établir avant poursuite IA.
+- [ ] Plafond total300 €/mois : BLOQUÉ par factures abonnement/recharges/hébergement et dépenses externes non disponibles, aucun contrôle global en euros prouvé.
+- [ ] Rapport coûts/contrôles/preuves, aucune publication ni test IA payant pendant l’établissement du budget.
+
 ## Choix réinscription et réactivation plateforme — 30/10 10:20 UTC
 - [x] Diagnostic lecture seule : badge non éditable ; accès lié aux dates initiales, circuit IA avec garde propre ; règle d’historique séparé retenue.
 - [x] Plan approuvé : choix Oui/Non par examen et nouvel onglet, périodes supplémentaires append-only, originaux conservés.
