@@ -8850,7 +8850,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       const lancerCorrectionServeurControle = async (exoId: number, keys: string[]) => {
         if (suiviControleRef.current.has(exoId)) return;
         setQrcResults(prev => { const n = { ...prev }; keys.forEach(k => { n[k] = "loading"; }); return n; });
-        const exerciceServeur = dernierEnvoiValideRef.current.get(exoId) ?? exerciceIdPourSauvegarde(exoId);
+        const exerciceServeur = dernierEnvoiValideRef.current.get(exoId) ?? (revisionActiveRef.current.has(exoId) ? buildRevisionExerciceId(module.id, exoId) : buildExerciceId(module.id, exoId));
         const copieId = await soumettreCopieControle(exerciceServeur);
         if (!copieId) {
           setQrcResults(prev => { const n = { ...prev }; keys.forEach(k => { n[k] = { indisponible: true }; }); return n; });
