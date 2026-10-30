@@ -3,7 +3,8 @@
 ## Livres reçus — 30/10 15:06 UTC
 - [x] TAXI113 / VTC87 / TA53 / VA27 pages ; deux fichiers TA byte-identiques ; seuls modules70–73 concernés.
 - [x] Visionneuse masquée à l'impression ; PDF original élève toujours refusé côté serveur, aucune modification de questions/données.
-- [ ] Préparer les nouvelles versions privées, vérifier les pages et préserver les versions actuelles.
+- [ ] Préparer les nouvelles versions privées : TAXI113/TA53/VA27 images temporaires ; VTC incomplet (conversion trop lente/ensemble alternatif incomplet). Aucun téléversement ni pointeur changé ; anciens livres conservés.
+- [x] Visionneuse actuelle testée isolément avec session admin : navigation TA et média print blanc ; buildOK. Nouvelles versions et parcours élève NON PROUVÉS.
 - [ ] Activer seulement après validation globale ; aucune publication dans ce lot.
 
 ## Contrôle de connaissances absent — 30/10 12:01 UTC
