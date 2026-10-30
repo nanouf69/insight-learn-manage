@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Objets oubliés TAXI — 30/10 11:31
+- [ ] Vérifier page Métropole et arrêté du 27/11/2024 ; comparer portée territoriale et texte préfectoral2026.
+- [ ] Inventorier tous corrigés concernés, séparer sources actives et snapshots ; harmoniser seulement ce qui est vérifié et protégé.
+- [ ] Tests ciblés et inventaire avant/après ; aucune publication, aucun changement des copies/notes.
+
 ## Corrigés spécialités Q29/Q35 — 30/10 11:17
 - [x] QCM locaux29/35 identifiés ; supports Locale1 pages8–9, livre PDF33 et arrêté2026 art9/10 PDF17 lus.
 - [x] Q35D accepté (≥6, tiers arrière, disque/lumineux/2h), feedbackQ29 explicite sans exclusion catégorique ; banques intactes,35 tests PASS, aucune écriture serveur/publication. Rapport docs/qrc-specialites-q29-q35-2026-10-30.md.
