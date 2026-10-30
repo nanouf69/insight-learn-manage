@@ -1625,6 +1625,13 @@
       "when": 1793376434316,
       "tag": "0231_etat_completion_realises_obligations",
       "breakpoints": true
+    },
+    {
+      "idx": 232,
+      "version": "7",
+      "when": 1793376519177,
+      "tag": "0232_validation_module_preuve_soumise",
+      "breakpoints": true
     }
   ]
 }
