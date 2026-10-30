@@ -56,7 +56,7 @@ BEGIN
  END IF;
  IF jsonb_typeof(p_answer)<>'string' THEN RETURN false; END IF;
  v:=p_answer#>>'{}';
- IF length(v)>CASE WHEN kind='text' THEN 4000 ELSE 8000 END THEN RETURN false; END IF;
+ IF length(v)>(CASE WHEN kind='text' THEN 4000 ELSE 8000 END) THEN RETURN false; END IF;
  IF NOT p_complete THEN RETURN true; END IF;
  IF v !~ '[^[:space:]]' THEN RETURN false; END IF;
  IF kind='list' THEN
