@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Choix dates Examen et Réussite — 30/10
+- [x] Masquer dates passées dans les deux sélecteurs théorie, proposer prochaine session selon jour Paris ; garder catalogue et dossiers historiques inchangés.
+- [ ] Vérifier tests ciblés et liste dans l’aperçu ; aucune publication.
+
 ## Sauvegarde durable des deux quiz QRC TAXI — 30/10 10:40 UTC
 - [x] Audit : local seulement/finalisation sans preuve ;78/84 champs requis, ancienne copie conservée/import brouillon explicite, facultatifs hors progression.
 - [x] 0228 appliquée et vérifiée : propriétaire/RLS, réponses append-only, CAS, idempotence et soumission atomique ; aucun pont vers notes/modules.

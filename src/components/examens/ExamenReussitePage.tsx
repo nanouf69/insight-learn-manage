@@ -5,6 +5,7 @@ import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscripti
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
+import { datesExamenChoisissables } from '@/lib/examDatesChoix';
 import { limiteCourte } from '@/lib/examDateLimiteAffichage';
 import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -556,23 +557,9 @@ function InlineStatutSuivi({
 
 
 
-// Trouve la date d'examen la plus récente passée (ou la première à venir)
+// Propose seulement une session non passée ; aucun dossier n'est modifié.
 function getDefaultExamDate(): string {
-  const MONTH_MAP: Record<string, number> = {
-    janvier: 0, février: 1, fevrier: 1, mars: 2, avril: 3,
-    mai: 4, juin: 5, juillet: 6, août: 7, septembre: 8,
-    octobre: 9, novembre: 10, décembre: 11, decembre: 11,
-  };
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  let lastPast = ALL_DATES_EXAMEN_REUSSITE[0].date;
-  for (const d of ALL_DATES_EXAMEN_REUSSITE) {
-    const m = d.date.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
-    if (!m) continue;
-    const dt = new Date(Number(m[3]), MONTH_MAP[m[2].toLowerCase()] ?? 0, Number(m[1]));
-    if (dt <= today) lastPast = d.date;
-  }
-  return lastPast;
+  return datesExamenChoisissables()[0]?.date ?? '';
 }
 
 function getDefaultPratiqueDate(): string {
@@ -1545,6 +1532,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     { date: "26 mai 2026", lieu: "Villeurbanne (passé)", pratiqueIndex: 0 },
   ];
   const datesExamenTheorique = [...HISTORICAL_DATES_THEORIQUE, ...ALL_DATES_EXAMEN_REUSSITE];
+  const datesChoisissables = datesExamenChoisissables();
   const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT;
 
   const handleExamDateChange = (date: string) => {
@@ -2277,7 +2265,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <SelectValue placeholder="Date d'examen" />
             </SelectTrigger>
             <SelectContent>
-              {datesExamenTheorique.map(e => (
+              {datesChoisissables.map(e => (
                 <SelectItem key={e.date} value={e.date}>
                   {e.date} — {e.lieu}
                   {limiteCourte(e.date) && <span className="text-destructive font-semibold"> — {limiteCourte(e.date)}</span>}
@@ -2453,7 +2441,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               </SelectTrigger>
               <SelectContent className="z-[9999]">
                 <SelectItem value="all">Toutes les dates</SelectItem>
-                {datesExamenTheorique.map(e => (
+                {datesChoisissables.map(e => (
                   <SelectItem key={e.date} value={e.date}>{e.date}</SelectItem>
                 ))}
               </SelectContent>
