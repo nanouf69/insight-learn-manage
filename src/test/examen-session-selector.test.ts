@@ -11,7 +11,7 @@ describe('Sélection des sessions d’examen', () => {
     expect(page).toContain("value={showAllExamDates ? 'all' : selectedExamDate}");
     expect(page).toContain("if (date === 'all') setShowAllExamDates(true)");
     expect(page).toContain('else handleExamDateChange(date)');
-    expect(page.match(/\{datesExamenTheorique\.map\(e => \(/g)).toHaveLength(2);
+    expect(page.match(/\{datesChoisissables\.map\(e => \(/g)).toHaveLength(2);
     expect(page).toContain('aria-label="Session d’examen"');
   });
 
