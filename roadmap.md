@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Corrigés spécialités Q29/Q35 — 30/10 11:17
+- [x] QCM locaux29/35 identifiés ; supports Locale1 pages8–9, livre PDF33 et arrêté2026 art9/10 PDF17 lus.
+- [x] Q35D accepté (≥6, tiers arrière, disque/lumineux/2h), feedbackQ29 explicite sans exclusion catégorique ; banques intactes,35 tests PASS, aucune écriture serveur/publication. Rapport docs/qrc-specialites-q29-q35-2026-10-30.md.
+- [ ] Nouvelles clésQ29 BLOQUÉES : lieu de dépose du client absent de l’énoncé, texte dit mairie de dépose non prise en charge ; arbitrage utilisateur nécessaire.
+
 ## Visibilité prolongation d’accès — 30/10 11:15
 - [x] Onglet existant renommé « Ajouter un mois d’accès », raccourci près de Réinscription ouvrant l’onglet et le faisant défiler ; aucune prolongation automatique.
 - [x] Aperçu administrateur : raccourci ouvre onglet actif, proposition serveur et action de confirmation visibles, aucune réactivation exécutée ; 4 tests PASS, build OK. Aucune publication.

@@ -10,11 +10,12 @@ import { corrigerCases, corrigerCommunes } from '@/lib/quizQrcTaxi/correction';
 import { AnswerValue, PracticeQuiz, QUIZ_DEFINITIONS, legacyAnswers, missingAnswers, requirements, validAnswer } from '@/lib/quizQrcTaxi/manifest';
 import { useDurablePractice } from '@/lib/quizQrcTaxi/useDurablePractice';
 import { CorrectionQrcTaxiIA } from './CorrectionQrcTaxiIA';
+import { reponsesLocalesAcceptees, feedbackLocalVerifie } from '@/lib/quizQrcTaxi/correctionsLocalesVerifiees';
 
 export type QuizQrcTaxiId = PracticeQuiz;
 export const QUIZ_QRC_TAXI = QUIZ_DEFINITIONS;
 export const cleStockage = (account: string, quiz: PracticeQuiz) => `quiz-qrc-taxi:v1:${account}:${quiz}`;
-export const qcmLocalJuste = (q: QcmBilanTa, choices: string[]) => q.choix.filter(c => c.correct).map(c => c.lettre).sort().join() === [...choices].sort().join();
+export const qcmLocalJuste = (q: QcmBilanTa, choices: string[]) => reponsesLocalesAcceptees(q).sort().join() === [...choices].sort().join();
 
 /** Feedback only: original references and local answers remain untouched pending arbitration. */
 export function alerteReglementaireQrc(q: QuizItem): string | null {
@@ -105,7 +106,7 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: PracticeQuiz }) {
     {(submitted || index >= def.items.length) && <>
       {def.qcmLocaux.length > 0 && <section data-testid="qcm-locaux-ta" className="space-y-4"><p className="font-semibold text-lg">QCM Réglementation locale — repris du Bilan examen TA ({def.qcmLocaux.length} questions)</p><p className="text-sm text-muted-foreground">Questions à choix : cochez la ou les bonnes réponses.</p>{def.qcmLocaux.map(q => {
         const choices = arrayAnswer(state.answers[`local:${q.id}`]);
-        return <div id={`practice-${quiz}-local:${q.id}`} key={q.id} className="border-t pt-3 space-y-2"><p className="font-medium">{q.id}. {q.enonce}</p>{q.choix.map(c => <label key={c.lettre} className="flex items-center gap-2"><Checkbox disabled={submitted || frozen} checked={choices.includes(c.lettre)} onCheckedChange={v => state.edit(`local:${q.id}`, v ? [...choices, c.lettre] : choices.filter(l => l !== c.lettre))} /><span>{c.lettre}. {c.texte}</span></label>)}{stamp(`local:${q.id}`)}{submitted && <p className={qcmLocalJuste(q, choices) ? 'text-primary' : 'text-destructive'}>{qcmLocalJuste(q, choices) ? 'Juste' : `Faux — attendu : ${q.choix.filter(c => c.correct).map(c => `${c.lettre}. ${c.texte}`).join(' + ')}`}</p>}</div>;
+        return <div id={`practice-${quiz}-local:${q.id}`} key={q.id} className="border-t pt-3 space-y-2"><p className="font-medium">{q.id}. {q.enonce}</p>{q.choix.map(c => <label key={c.lettre} className="flex items-center gap-2"><Checkbox disabled={submitted || frozen} checked={choices.includes(c.lettre)} onCheckedChange={v => state.edit(`local:${q.id}`, v ? [...choices, c.lettre] : choices.filter(l => l !== c.lettre))} /><span>{c.lettre}. {c.texte}</span></label>)}{stamp(`local:${q.id}`)}{submitted && <><p className={qcmLocalJuste(q, choices) ? 'text-primary' : 'text-destructive'}>{q.id === 29 && feedbackLocalVerifie(q) ? 'Corrigé historique : A — autres possibilités à arbitrer selon le lieu de dépose du client.' : qcmLocalJuste(q, choices) ? 'Juste' : `Faux — attendu : ${q.choix.filter(c => reponsesLocalesAcceptees(q).includes(c.lettre)).map(c => `${c.lettre}. ${c.texte}`).join(' + ')}`}</p>{feedbackLocalVerifie(q) && <p role="note" className="text-sm text-muted-foreground">{feedbackLocalVerifie(q)}</p>}</>}</div>;
       })}</section>}
       {def.zones.map(zone => {
         const ref = zone === 'metropole' ? METROPOLE_LYON : ZUPC_LYON;
