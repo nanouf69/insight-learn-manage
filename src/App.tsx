@@ -28,6 +28,7 @@ import ReservationCarteVtc from "./pages/ReservationCarteVtc";
 import Booking from "./pages/Booking";
 import ChallengePublic from "./pages/ChallengePublic";
 import ChallengeLive from "./pages/ChallengeLive";
+import AdminControleQrc from "./pages/AdminControleQrc";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionElearningPage from "./pages/SessionElearningPage";
 import DiagnosticExamensBlancs from "./pages/DiagnosticExamensBlancs";
@@ -214,6 +215,11 @@ function App() {
                 <Route path="/admin/correction-qrc-v2-maquette" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminCorrectionQrcV2 /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/controle-qrc" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminControleQrc /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/publication-v2" element={
