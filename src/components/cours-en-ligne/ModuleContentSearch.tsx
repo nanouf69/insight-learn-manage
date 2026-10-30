@@ -5,7 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, X, BookOpen, ClipboardList, MessageSquareText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { searchModuleContent, setSearchFocus, type ModuleSearchResult } from "./module-content-search";
+import { searchModuleContent, setSearchFocus, SEARCHABLE_MODULES, type ModuleSearchResult } from "./module-content-search";
+import {
+  exercicesAffichesPourRecherche,
+  SEARCH_CANONICAL_QUIZ_IDS,
+  type SearchCanonicalBinding,
+  type SearchCanonicalRow,
+} from "./module-search-display";
 
 const KIND_LABEL: Record<ModuleSearchResult["kind"], string> = {
   cours: "Cours",
@@ -44,6 +50,38 @@ export default function ModuleContentSearch({ onOpenModule }: Props) {
       (data || []).forEach((row: any) => {
         if (row?.module_data && typeof row.module_data === "object") map[Number(row.module_id)] = row.module_data;
       });
+      // Questions réellement affichées par les modules (banque + sélection) :
+      // une question masquée de l'affichage ne doit pas être proposée.
+      try {
+        const quizIds = [...new Set(Object.values(SEARCH_CANONICAL_QUIZ_IDS).flat())];
+        const rows: SearchCanonicalRow[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data: page, error } = await supabase
+            .from("quiz_questions")
+            .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,explication,active")
+            .in("quiz_id", quizIds)
+            .order("question_id")
+            .range(from, from + 999);
+          if (error) throw error;
+          rows.push(...((page ?? []) as unknown as SearchCanonicalRow[]));
+          if (!page || page.length < 1000) break;
+        }
+        const { data: bindings, error: bErr } = await supabase
+          .from("quiz_question_bindings")
+          .select("module_id,quiz_id,exercise_id,section_id")
+          .in("module_id", Object.keys(SEARCH_CANONICAL_QUIZ_IDS).map(Number));
+        if (bErr) throw bErr;
+        if (cancelled) return;
+        for (const mod of SEARCHABLE_MODULES) {
+          if (!SEARCH_CANONICAL_QUIZ_IDS[mod.id]) continue;
+          const base = map[mod.id] && Array.isArray(map[mod.id].exercices) ? map[mod.id].exercices : mod.exercices;
+          const exercices = exercicesAffichesPourRecherche(mod.id, base, rows, (bindings ?? []) as SearchCanonicalBinding[]);
+          map[mod.id] = { ...(map[mod.id] ?? { cours: mod.cours }), exercices };
+        }
+      } catch (e) {
+        console.warn("[Recherche modules] Banque de questions indisponible, recherche sur le contenu enregistré", e);
+      }
+      if (cancelled) return;
       setOverrides(map);
       setLoadingOverrides(false);
     })();

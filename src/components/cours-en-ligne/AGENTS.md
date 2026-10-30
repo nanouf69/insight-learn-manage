@@ -1,5 +1,5 @@
 # Supports pédagogiques et protection T3P
-- Search-result outlines use React display state backed by an active in-memory target retained after scroll consumption and cleared on module exit, with bounded scrolling and no timed outline removal; why: remounts, rerenders and editing must not erase the user's search location.
+- Search-result outlines use React display state backed by an active in-memory target retained after scroll consumption and cleared on module exit, with bounded scrolling and no timed outline removal; search results for canonical-bank modules come from the displayed projection (module-search-display), and a target absent from the display outlines its exercise card; why: remounts, rerenders, editing or hidden questions must not erase the user's search location.
 - Module 13 current display respects saved question membership and explicit tombstones before canonical hydration, with event/focus/reconnect reads and no opening prune or polling; historical passages and answer state remain separate. Why: prevent deleted questions returning without changing other content or proofs.
 
 - Module 12 supplementary holidays quiz uses an independent versioned answer identity and guarded quiz transport, with no completion callback or milestone obligation; why: add calendar revision without altering existing case exercises or completed evidence.
