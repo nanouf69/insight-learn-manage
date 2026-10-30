@@ -14,7 +14,7 @@ describe("preuves de correction facultative", () => {
   it("référence serveur exacte, mêmes 39 questions et corrigés", () => { expect(serverQuestions).toEqual(quizItems); });
   it("l'identité isole compte, quiz, question et réponse", async () => {
     const base = await practiceIdentity("a", "complet", 2, "réponse");
-    for (const args of [["b", "complet", 2, "réponse"], ["a", "specialites", 2, "réponse"], ["a", "complet", 3, "réponse"], ["a", "complet", 2, "autre"]] as const) expect(await practiceIdentity(...args)).not.toBe(base);
+    for (const [account, quiz, question, answer] of [["b", "complet", 2, "réponse"], ["a", "specialites", 2, "réponse"], ["a", "complet", 3, "réponse"], ["a", "complet", 2, "autre"]] as const) expect(await practiceIdentity(account, quiz, question, answer)).not.toBe(base);
   });
   it("erreur et arbitrage n'inventent pas de zéro", () => {
     expect(validateGrade({ score: null, verdict: "review", explanation: "À arbitrer" }).score).toBeNull();
