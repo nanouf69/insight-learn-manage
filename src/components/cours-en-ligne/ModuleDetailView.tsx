@@ -9655,7 +9655,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                                 let count = 0;
                                 questionsSafe.forEach((q: any) => {
                                   const key = `${exo.id}-${q.id}`;
-                                  if (!isAnswerCorrect(selectedAnswers[key], q)) count++;
+                                  if (!justePourRefaire(key, q)) count++;
                                 });
                                 return count;
                               })()})
