@@ -91,7 +91,7 @@ export function PratiqueEdofEnAttente({ onNavigateToApprenant }: { onNavigateToA
         {rows.map(a=><div key={a.id} className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.5fr)_2.5rem]">
         <Button variant="link" className="h-auto whitespace-normal p-0 text-left" onClick={()=>onNavigateToApprenant(a.id)}>{[a.prenom,a.nom].filter(Boolean).join(" ")}</Button>
         <span className="col-start-1 row-start-2 text-sm text-muted-foreground sm:col-start-2 sm:row-start-1 sm:text-right">{[...a.dates].sort().reverse().map((d:string)=>new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Europe/Paris"})).join(" · ")}</span>
-        <div className="col-start-1 row-start-3 text-sm sm:col-start-3 sm:row-start-1 sm:text-right">{a.elearning ? <SuiviElearningCell apprenant={a} /> : <SuiviPresentielCell bilan={a.presentiel} />}</div>
+        <div className="col-start-1 row-start-3 text-sm sm:col-start-3 sm:row-start-1 sm:text-right">{a.elearning ? <SuiviElearningCell apprenant={a} /> : <SuiviPresentielCell bilan={a.presentiel} apprenant={a} />}</div>
         <Button variant="ghost" size="icon" className="col-start-2 row-start-1 text-destructive sm:col-start-4" disabled={!user} title="Retirer de cette liste uniquement" aria-label={`Retirer ${[a.prenom,a.nom].filter(Boolean).join(" ")} de la liste`} onClick={() => setARetirer({ id: a.id, nom: [a.prenom,a.nom].filter(Boolean).join(" ") })}><X className="h-4 w-4" /></Button>
       </div>)}</div>}
     <AlertDialog open={aRetirer !== null} onOpenChange={open => { if (!open) setARetirer(null); }}>

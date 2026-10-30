@@ -13,15 +13,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { texteMailVersHtml } from "@/lib/examenElearningRelance";
 import { dateDuJourParis } from "@/lib/signaturesManquantes";
 import { OBJET_DERNIERE_RELANCE, dateLimiteRelance, formatPourcentage, mailDerniereRelance, mailDerniereRelanceHtml, pourcentageModules } from "@/lib/suiviPratiqueEdof";
+import { SignaturesManquantesTab } from "@/components/crm/apprenant-sections/SignaturesManquantesTab";
 
 type Apprenant = { id: string; prenom?: string | null; nom?: string | null; email?: string | null };
 
-export function SuiviPresentielCell({ bilan }: { bilan: { attendues: number; manquantes: number } | null }) {
+export function SuiviPresentielCell({ bilan, apprenant }: { bilan: { attendues: number; manquantes: number } | null; apprenant: Apprenant }) {
+  const [open, setOpen] = useState(false);
   if (!bilan) return <span className="text-muted-foreground">Signatures indisponibles</span>;
   if (bilan.attendues === 0) return <span className="text-muted-foreground">Aucune séance attribuée</span>;
-  return <span className={bilan.manquantes > 0 ? "font-medium text-destructive" : "text-muted-foreground"}>
+  return <div className="flex flex-wrap items-center gap-2 sm:justify-end"><span className={bilan.manquantes > 0 ? "font-medium text-destructive" : "text-muted-foreground"}>
     {bilan.manquantes} signature{bilan.manquantes > 1 ? "s" : ""} manquante{bilan.manquantes > 1 ? "s" : ""} / {bilan.attendues} attendue{bilan.attendues > 1 ? "s" : ""}
-  </span>;
+  </span>
+    {bilan.manquantes > 0 && <Button variant="outline" size="sm" className="h-7" onClick={() => setOpen(true)} title="Préparer le mail des signatures manquantes"><Mail className="mr-1 h-3.5 w-3.5" />Relance signatures</Button>}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Relance signatures — {[apprenant.prenom, apprenant.nom].filter(Boolean).join(' ')}</DialogTitle><DialogDescription>Vérification des séances prévues avant aperçu et confirmation d’envoi.</DialogDescription></DialogHeader>
+        {open && <SignaturesManquantesTab apprenant={apprenant} />}
+      </DialogContent>
+    </Dialog>
+  </div>;
 }
 
 export function SuiviElearningCell({ apprenant }: { apprenant: Apprenant }) {
