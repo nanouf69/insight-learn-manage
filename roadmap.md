@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Livres reçus — 30/10 15:06 UTC
+- [x] TAXI113 / VTC87 / TA53 / VA27 pages ; deux fichiers TA byte-identiques ; seuls modules70–73 concernés.
+- [x] Visionneuse masquée à l'impression ; PDF original élève toujours refusé côté serveur, aucune modification de questions/données.
+- [ ] Préparer les nouvelles versions privées : TAXI113/TA53/VA27 images temporaires ; VTC incomplet (conversion trop lente/ensemble alternatif incomplet). Aucun téléversement ni pointeur changé ; anciens livres conservés.
+- [x] Visionneuse actuelle testée isolément avec session admin : navigation TA et média print blanc ; buildOK. Nouvelles versions et parcours élève NON PROUVÉS.
+- [ ] Activer seulement après validation globale ; aucune publication dans ce lot.
+
 ## Contrôle de connaissances absent — 30/10 12:01 UTC
 - [x] Lecture seule session TAXI/TA du 26/10 au 16/11 : module13 absent des listes explicites de Mohktar BEN ALI, Ilyes Dakhlaoui, CIHAN RAYMAN et Harutyun Pndukyan ; ce dernier a une date d’accès expirée. MASSINISSA HADDOU a une liste NULL, distincte d’une exclusion explicite.
 - [x] Cause confirmée : listes par défaut TA/TA e-présentiel des formulaires création et modification omettent13, contrairement au catalogue commun ; les listes TAXI le contiennent. ListeNULL bénéficie du parcours par défaut côté élève (pas une absence confirmée).
