@@ -3,7 +3,9 @@
 ## Contrôle de connaissances absent — 30/10 12:01 UTC
 - [x] Lecture seule session TAXI/TA du 26/10 au 16/11 : module13 absent des listes explicites de Mohktar BEN ALI, Ilyes Dakhlaoui, CIHAN RAYMAN et Harutyun Pndukyan ; ce dernier a une date d’accès expirée. MASSINISSA HADDOU a une liste NULL, distincte d’une exclusion explicite.
 - [x] Cause confirmée : listes par défaut TA/TA e-présentiel des formulaires création et modification omettent13, contrairement au catalogue commun ; les listes TAXI le contiennent. ListeNULL bénéficie du parcours par défaut côté élève (pas une absence confirmée).
-- [ ] Rétablissement ciblé soumis à accord : ajouter uniquement module13 aux trois dossiers à dates actives, sans modifier les autres modules, dates, réponses, notes ou preuves ; examiner séparément le dossier à accès expiré et le parcours par défaut NULL.
+- [x] Accord « Oui, les trois élèves » : module13 ajouté seul aux trois listes actives sous verrou/comparaison exacte, trois événements audit ; formulaires création/modification TA et TA e-présentiel corrigés. Harutyun et listeNULL inchangés.
+- [x] 55 tests PASS ; empreintes des trois dossiers hors modules, réponses, validations et216 snapshots strictement identiques avant/après. Fiche Mohktar relue dans CRM : contrôle coché, aucune sauvegarde UI ni soumission. Build OK ; ajouts d’accès effectifs Cloud, formulaires non publiés.
+- [ ] Ouverture autonome du contrôle depuis un compte élève NON PROUVÉE (consultation CRM seule, aucun compte réel connecté pour test) ; formulaires corrigés attendent publication autorisée.
 
 ## Objets oubliés TAXI — 30/10 11:31
 - [x] Page officielle et scan2024 article6/p5 lus ; vérifier avant éloignement, pas avant descente. Texte2026 article9 fraîchement relu, destinataire divergent.
