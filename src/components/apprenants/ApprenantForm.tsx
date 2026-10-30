@@ -211,7 +211,7 @@ export function ApprenantForm() {
     }
     // Formation pratique seule : uniquement le module PRATIQUE de la filière.
     if (value === "pratique-taxi" || value === "pratique-vtc") {
-      setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
+      setModulesAutorises([...(DEFAULT_MODULES_BY_TYPE[value] ?? (value === "pratique-taxi" ? [6] : [8]))]);
     }
 
     // Pour les RP, forcer le mode de financement à "personnel"
