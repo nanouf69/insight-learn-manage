@@ -1,5 +1,8 @@
 # Shared Edge code
 
+- Signature e-mail commune : `signatureEmail.ts` (`appliquerSignatureEmail`) doit être appliquée dans chaque transport d'envoi (`send-branded-email.ts` et tout envoi Resend direct) AVANT le pixel de suivi ; elle remplace une signature « Cordialement + FTRANSPORT » déjà en fin de corps au lieu de doubler ; jamais de signature sur les e-mails d'authentification (pipeline distinct) ; why: chaque mail sortant se termine par la signature bleue cursive FTRANSPORT Services Pro sans doublon.
+
+
 - QRC AI: tasks are queued server-side (trigger at passage end + bounded 10-min reconciliation since auto cutoff, e-learning only); the learner-tab call only enqueues; the queue runs one streamed item per invocation in background with a 140 s per-call budget (below the 150 s Edge request limit) and a per-call trace (stages, gateway status vs local abort code, run id, no content), append-only retry receipts, per-QRC dead letter that never blocks other QRC; only finished 429/5xx retry (max 2); local deadline or other unknown outcome goes to review, never replayed (local abort does not prove provider cancellation); qrc_ia_bilan_statuts trusts SQL only via auth.uid() IS NULL + session_user, never definer current_user; why: no tab dependency, no hung queue, no double billing or overwritten corrections.
 
 - Registration upload validates authenticated owner/admin or scoped onboarding HMAC, immutable UUID/content hash and explicit acknowledgement; why: retries never duplicate or replace prior versions.
