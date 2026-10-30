@@ -54,7 +54,7 @@ import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
 import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
 import { createLiveRefresher, moduleVersionToken, questionBankToken, type LiveRefresher } from "@/lib/moduleLiveRefresh";
-import { relireAvecReprisesBornees } from "@/lib/relectureBornee";
+import { codeErreurSur, relireAvecReprisesBornees } from "@/lib/relectureBornee";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 
 import { ColoredTextField } from "./ColoredTextField";
@@ -9320,17 +9320,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               }
                             }
                             etapeEnCours = "relecture";
-                            const { data: confirmedRow, error: confirmedError } = await supabase
-                              .from("reponses_apprenants" as any)
-                              .select("reponses")
-                              .eq("apprenant_id", apprenantId)
-                              .eq("exercice_id", exerciceId)
-                              .maybeSingle();
+                            // Le serveur a déjà accusé réception : une erreur PASSAGÈRE de
+                            // relecture (pool saturé, délai SQL, réseau) est relue au plus
+                            // 3 fois au lieu d'annoncer un échec. Une différence de contenu
+                            // reste un échec explicite (jamais réessayée, jamais masquée).
+                            const exerciceRelu = exerciceId;
+                            const { data: confirmedRow, error: confirmedError } = await relireAvecReprisesBornees(
+                              () => supabase
+                                .from("reponses_apprenants" as any)
+                                .select("reponses")
+                                .eq("apprenant_id", apprenantId)
+                                .eq("exercice_id", exerciceRelu)
+                                .maybeSingle(),
+                              { renouvelerSession: () => assurerSessionFraiche(3600) },
+                            );
+                            if (termine) return false;
+                            if (confirmedError) { echec(`relecture_erreur_${codeErreurSur(confirmedError)}`); return false; }
                             const stored = ((confirmedRow as any)?.reponses ?? {}) as Record<string, any>;
                             const aComparer = enRevision
                               ? Object.fromEntries(Object.keys(exoAnswers).map((k) => [k, stored[k]]))
                               : stored;
-                            if (confirmedError || !answersAreEqual(aComparer, exoAnswers)) { echec("relecture"); return false; }
+                            if (!answersAreEqual(aComparer, exoAnswers)) { echec(confirmedRow ? "relecture_difference" : "relecture_ligne_absente"); return false; }
                             etapeEnCours = "validation_serveur";
                             if (!enRevision) {
                               const submitted = await submitQuizAttempt({

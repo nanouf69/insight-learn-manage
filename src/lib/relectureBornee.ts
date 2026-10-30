@@ -59,7 +59,9 @@ export async function relireAvecReprisesBornees<T>(
   const random = opts.random ?? Math.random;
   let sessionRenouvelee = false;
   let dernier: { data: T | null; error: ErreurLecture | null } = { data: null, error: null };
+  let faits = 0;
   for (let essai = 1; essai <= essaisMax; essai += 1) {
+    faits = essai;
     try {
       const r = await lire();
       dernier = { data: r.data ?? null, error: r.error ?? null };
@@ -77,5 +79,5 @@ export async function relireAvecReprisesBornees<T>(
     const base = delais[Math.min(essai - 1, delais.length - 1)] ?? 1000;
     await attendre(Math.round(base * (0.75 + random() * 0.5)));
   }
-  return { ...dernier, essais: essaisMax };
+  return { ...dernier, essais: faits };
 }
