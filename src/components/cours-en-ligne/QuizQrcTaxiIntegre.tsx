@@ -6,7 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { quizItems, QuizItem } from "@/data/quiz-qrc-taxi/quizData";
 import { ElementReference, METROPOLE_LYON, ZUPC_LYON, distracteurs } from "@/lib/quizQrcTaxi/communesLyon";
 import { QCM_LOCAUX_BILAN_TA, QcmBilanTa } from "@/data/bilan-ta/qcmLocauxBilanTa";
-import { corrigerCases, corrigerCommunes, corrigerQrc } from "@/lib/quizQrcTaxi/correction";
+import { corrigerCases, corrigerCommunes } from "@/lib/quizQrcTaxi/correction";
+import { CorrectionQrcTaxiIA } from "./CorrectionQrcTaxiIA";
 
 /** Entraînement facultatif : aucune écriture serveur, aucun jalon, aucune progression. Sauvegarde locale par compte. */
 export type QuizQrcTaxiId = "complet" | "specialites";
@@ -142,6 +143,7 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
   const cle = user?.id ? cleStockage(user.id, quiz) : null;
   const [etat, setEtat] = useState<Etat>(VIDE);
   const [charge, setCharge] = useState(false);
+  const [correctionBusy, setCorrectionBusy] = useState(false);
 
   useEffect(() => {
     setCharge(false);
@@ -182,9 +184,9 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
             </Button>
           </>) : (<>
             <p className="text-xl font-semibold">{item.qrcQuestion}</p>
-            <Textarea value={rep.qrc} onChange={(ev) => setRep({ qrc: ev.target.value })} className="min-h-[120px]" placeholder="Tapez votre réponse ici..." />
+            <Textarea value={rep.qrc} disabled={correctionBusy} maxLength={4000} onChange={(ev) => setRep({ qrc: ev.target.value })} className="min-h-[120px]" placeholder="Tapez votre réponse ici..." />
             {item.qrcMultipleAnswers && <p className="text-sm text-muted-foreground">Cette question attend plusieurs éléments de réponse</p>}
-            <Button className="w-full" onClick={suivant}>Valider ma réponse</Button>
+            <CorrectionQrcTaxiIA quiz={quiz} questionId={item.id} answer={rep.qrc} onNext={suivant} onLock={setCorrectionBusy} />
           </>)}
         </div>
       )}
@@ -197,16 +199,16 @@ export function QuizQrcTaxiIntegre({ quiz }: { quiz: QuizQrcTaxiId }) {
           {def.items.map((q, i) => {
             const r = etat.reponses[q.id] ?? { qcm: "", qrc: "" };
             const qcmOk = r.qcm === q.mcqCorrectAnswer;
-            const c = avecQrc(i) ? corrigerQrc(r.qrc, q.qrcCorrectAnswer) : null;
+            const hasQrc = avecQrc(i);
             return (
               <div key={q.id} className="border-t pt-3">
                 <p className="font-medium">{i + 1}. {q.mcqQuestion}</p>
                 {alerteReglementaireQrc(q) && <p role="note" className="text-sm text-destructive">{alerteReglementaireQrc(q)}</p>}
                 <p className={qcmOk ? "text-primary" : "text-destructive"}>QCM : {qcmOk ? "juste" : `faux — attendu : ${q.mcqCorrectAnswer}`}</p>
-                {c && <>
+                {hasQrc && <>
                   <p className="font-medium mt-1">{q.qrcQuestion}</p>
                   <p className="text-sm">Votre réponse : {r.qrc || "—"}</p>
-                  <p className={c.isCorrect ? "text-primary" : "text-destructive"}>QRC ({c.score} pt) : {c.feedback}</p>
+                  <CorrectionQrcTaxiIA quiz={quiz} questionId={q.id} answer={r.qrc} />
                 </>}
               </div>
             );

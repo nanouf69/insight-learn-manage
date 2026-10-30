@@ -1583,6 +1583,13 @@
       "when": 1793315710987,
       "tag": "0225_bilan_future_revoke_internal",
       "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1793355008128,
+      "tag": "0226_qrc_taxi_optional_ai_receipts",
+      "breakpoints": true
     }
   ]
 }
