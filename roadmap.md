@@ -2,9 +2,9 @@
 
 ## Incident iPhone — compte TEST isolé — 31/10
 - [ ] Compte hébergé : bloqué tant que tous les envois automatiques et statistiques ne sont pas exclus ; aucun compte réel utilisé.
-- [ ] Reproduire avec profil TEST local sous WebKit ; vérifier diaporama, scroll, retour et brouillons sans appel Cloud.
-- [ ] Corriger les rafales de vérification de connexion ; tests de non-régression et rapport précis.
-- [ ] Tests auth hébergés/PWA réelle et validation globale : non prouvés ; aucune publication.
+- [x] Profil TEST local WebKit iPhone13 : largeur canvas372→372, scroll delta0, retour=1 vérification ; QCM/QRC conservés après reload/arrière/avant (transport simulé). Page temporaire retirée, contexte détruit, aucun appel Cloud.
+- [x] Hook connexion : lectures différées hors callback auth, événements regroupés, même identité vérifiée, contrôle révocation60s conservé ; 31 tests ciblés PASS. Rapport docs/incident-iphone-test-isole-2026-10-31.md.
+- [ ] Tests auth hébergés/PWA réelle : bloqués par isolation incomplète ; deux erreurs worker WebKit local conservées au rapport. Global3218 PASS/16 FAIL/13 skipped,10 erreurs ; aucune publication.
 
 ## Synchronisation Riyad LABIOD — 30/10 15:41 UTC
 - [x] Lecture réelle sept modules : 5/7 cohérent avec la projection ; module2 exercices7/72 incomplets, module4 première copie118/206, révision206 non soumise. Jalons100 ignorait les détails ; aucun gel. Rapport docs/riyad-synchronisation-jalons-2026-10-30.md.
