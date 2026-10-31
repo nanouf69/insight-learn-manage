@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Supports pratiques complets — 31/10 13:17 UTC
+- [ ] Retrouver et vérifier les sources exactes TAXI/VTC annoncées de 20 pages et 76 questions-réponses ; distinguer les supports de 19 pages déjà référencés.
+- [ ] Intégration intégrale séparée en consultation authentifiée uniquement, sans impact sur les acquis ; bloquée tant que les sources exactes ne sont pas vérifiées.
+- [ ] Tester les deux parcours et la stabilité mobile/tablette ; aucune publication sans confirmation.
+
 ## Extension tablettes et autres modules — 31/10 10:44 UTC
 - [x] Audit transversal et correctifs SlideViewer, images cours/questions, carousel et scroll révision ; aucune donnée pédagogique modifiée.
 - [x]10 écrans pratiques locaux sur iPad/Android ;2 scénarios lecteurs portrait/paysage/hauteur/clavier, cadres images stables ; rapport docs/incident-tablettes-transversal-2026-10-31.md.
