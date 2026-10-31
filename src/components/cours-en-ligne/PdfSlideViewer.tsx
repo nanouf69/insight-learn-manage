@@ -111,15 +111,25 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     ? url
     : `${window.location.origin}${url.startsWith("/") ? url : `/${url}`}`;
 
-  // Recalculate width/height on resize / fullscreen changes
+  // Recalculate width/height on resize / fullscreen changes.
+  // Hors plein écran, la zone a une hauteur « auto » qui dépend de la slide :
+  // la mesurer faisait grandir la slide de quelques pixels à chaque passage
+  // (boucle visible sur téléphone : images qui bougent, page qui saute).
+  // On prend donc une hauteur fixe tirée de l'écran, et on ignore les
+  // micro-variations (barre d'adresse iOS/Android qui apparaît/disparaît).
+  const isExpandedRef = useRef(false);
+  isExpandedRef.current = isExpanded;
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
-      setContainerWidth(Math.max(320, containerRef.current.clientWidth - 16));
+      const w = Math.max(320, containerRef.current.clientWidth - 16);
+      setContainerWidth((prev) => (Math.abs(prev - w) < 4 ? prev : w));
     }
-    if (scrollAreaRef.current) {
-      const h = scrollAreaRef.current.clientHeight;
-      if (h > 0) setViewportHeight(h);
-    }
+    const h = hauteurDisponibleViewer({
+      expanded: isExpandedRef.current,
+      zoneMesuree: scrollAreaRef.current?.clientHeight ?? 0,
+      hauteurEcran: typeof window !== "undefined" ? window.innerHeight : 0,
+    });
+    if (h > 0) setViewportHeight((prev) => (Math.abs(prev - h) < 48 ? prev : h));
   }, []);
 
   useEffect(() => {
