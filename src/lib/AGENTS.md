@@ -8,3 +8,4 @@
 - Upload client shares documentUploadRules and stable operation IDs across retries; why: limits and acknowledgements must match the server.
 - Trailing-dot correction opens a new tab manually without transferring auth/storage; why: separate browser origins must retain their own queues.
 - Autosave pending drafts have a separate account/dossier-scoped journal from confirmed caches; why: an older in-flight acknowledgement cannot erase newer local edits.
+- moduleAccessDerogation intersects admin-written access grants with the learner's assigned modules and separates never-submitted exam subjects from finished copies; why: access must not create completion, replay submitted work, or transfer permissions between accounts.
