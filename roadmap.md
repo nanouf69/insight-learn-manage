@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Supports pratiques complets — 31/10 13:17 UTC
+- [x] Audit : deux PDF originaux retrouvés dans la copie des pièces jointes, 19 pages / couverture 72 questions, trois parties présentes ; sources 20/76 non trouvées. Rapport docs/supports-pratiques-complets-audit-2026-10-31.md.
+- [ ] Intégration intégrale séparée en consultation authentifiée uniquement, sans impact sur les acquis ; bloquée tant que les sources exactes ne sont pas vérifiées.
+- [x] 6 tests existants PASS : séparation TAXI/VTC et aucune obligation ajoutée ; aucun code ni donnée Cloud changé.
+- [ ] Parcours authentifiés et stabilité mobile/tablette : non prouvés ; images publiées HTTP403 depuis sandbox et contrôle bundle expiré. Aucune publication sans confirmation.
+
 ## Extension tablettes et autres modules — 31/10 10:44 UTC
 - [x] Audit transversal et correctifs SlideViewer, images cours/questions, carousel et scroll révision ; aucune donnée pédagogique modifiée.
 - [x]10 écrans pratiques locaux sur iPad/Android ;2 scénarios lecteurs portrait/paysage/hauteur/clavier, cadres images stables ; rapport docs/incident-tablettes-transversal-2026-10-31.md.
