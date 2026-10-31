@@ -877,3 +877,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Diagnostic : 99 questions ajoutées le 29/09 après validation (M2 : 11, M4 : 88) + 1 supprimée
 - [x] Correctif serveur 0233 appliqué (Riyad 7/7 prouvés) ; test SQL dédié et publication restent à faire — [ ] Correctif : exigences figées à l'attribution/validation, nouveaux quiz non rétroactifs ; tests ; publication conditionnelle
 ## 30/10 — Liste Pratique signée EDOF : élèves en financement personnel (N. BONNARDON) — attente décision
+
+- [ ] Kevin FERNANDES (VTC) : audit EB1/EB2 F(V)/G(V), intro e-learning, bilan final ; corriger seulement avec preuves
