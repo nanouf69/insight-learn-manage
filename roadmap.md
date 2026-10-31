@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## Extension tablettes et autres modules — 31/10 10:44 UTC
-- [ ] Auditer lecteurs/layout/auth communs et corriger uniquement défauts reproductibles, sans données pédagogiques.
-- [ ] Tester vrais lecteurs et écrans sur iPad/Android portrait/paysage, gestes, chargement et reprise ; consigner limites.
-- [ ] Confirmer suite globale/build et sécurité ; publication seulement avec contrôles satisfaisants.
+- [x] Audit transversal et correctifs SlideViewer, images cours/questions, carousel et scroll révision ; aucune donnée pédagogique modifiée.
+- [x]10 écrans pratiques locaux sur iPad/Android ;2 scénarios lecteurs portrait/paysage/hauteur/clavier, cadres images stables ; rapport docs/incident-tablettes-transversal-2026-10-31.md.
+- [x] Suite3249 PASS/13 ignorés/zéro erreur, buildOK ;4 alertes de configuration triées en lecture seule, non supprimées.
+- [ ] Publication et production : bloquées par couverture autonome hébergée complète non garantie, automatismes du compte TEST non isolés et lecteurs externes non prouvés.
 
 ## Lever les blocages de publication iPhone — 31/10 10:19 UTC
 - [x] Auditer les16 échecs et10 erreurs : mocks/attentes corrigés ; timeout WelcomeBanner annulé au démontage. 3247 PASS /13 ignorés, zéro erreur non gérée le31/10 10:43.
