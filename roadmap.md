@@ -878,4 +878,6 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Correctif serveur 0233 appliqué (Riyad 7/7 prouvés) ; test SQL dédié et publication restent à faire — [ ] Correctif : exigences figées à l'attribution/validation, nouveaux quiz non rétroactifs ; tests ; publication conditionnelle
 ## 30/10 — Liste Pratique signée EDOF : élèves en financement personnel (N. BONNARDON) — attente décision
 
-- [ ] Kevin FERNANDES (31/10 accord explicite) : droits individuels sur tous les modules attribués sans validation fictive ; G(V) EB2 et bilan accessibles ; reconnaître introduction et corrections prouvées, tests lecture seule et rapport avant/après, aucun déploiement.
+- [x] Kevin FERNANDES (31/10) : introduction restaurée depuis journal 15/09 (A), date/score 9/10 conservés ; 5/7 modules prouvés. Sept droits individuels enregistrés, accès G(V) seule et bilan testés en aperçu admin réel ; 56 tests PASS, build OK, résultats/snapshots/signatures identiques. Rapport docs/kevin-fernandes-reparation-2026-10-31.md.
+- [ ] Kevin EB1 : copies historiques T3/T4 divergent du moteur et sans preuve de remise de même tentative ; correction historique exacte requise, aucune note empruntée ni attente supprimée fictivement. EB2 déjà 14/14 QRC corrigées, aucune relance.
+- [ ] Kevin publication des accès : interface prête mais non publiée, confirmation explicite nécessaire ; connexion autonome/soumission G(V) non testées.
