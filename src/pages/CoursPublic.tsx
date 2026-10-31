@@ -1597,6 +1597,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }, [apprenant?.id]);
 
+  const handleRetourModuleRef = useRef(handleBackFromModule);
+  handleRetourModuleRef.current = handleBackFromModule;
+  const handleRetourModule = useCallback(() => { setSelectedExerciseTarget(null); void handleRetourModuleRef.current(); }, []);
+
   const handleLogout = useCallback(async () => {
     // Tablette partagée : les réponses encore en attente doivent partir AVANT
     // la déconnexion, tant que la session de cet apprenant est valide.
@@ -1920,7 +1924,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             activitesEtat={completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
               ? activitesModuleEleve(selectedModule.id, modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises, apprenant?.id), moduleCompletionsForNotes, activitesEleve.termines, apprenant?.id)
               : null}
-            onBack={() => { setSelectedExerciseTarget(null); void handleBackFromModule(); }}
+            onBack={handleRetourModule}
             studentOnly
             apercuAdmin={!!(embedded && apprenantOverride)}
             apprenantId={apprenant?.id || null}

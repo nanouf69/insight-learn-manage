@@ -6765,8 +6765,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   // arrive après ce rendu et laissait donc systématiquement l'apprenant sur la
   // version précédente des questions jusqu'à une seconde mise à jour.
   moduleDataRef.current = moduleData;
+  // Rappels du parent lus via une ref : la page élève recrée certaines fonctions
+  // (ex. « Retour ») à chaque rendu. Les mettre dans les dépendances recréait le
+  // composant élève → démontage/remontage 3-4 fois par seconde en production
+  // (page et images qui montent/descendent sans cesse à l'entrée d'un module).
+  const rappelsEleveRef = useRef({ onBack, onTrackCours, onLearnerActivity, onModuleCompleted });
+  rappelsEleveRef.current = { onBack, onTrackCours, onLearnerActivity, onModuleCompleted };
 
   const LearnerPreview = useMemo(() => {
+    const onBack = () => rappelsEleveRef.current.onBack();
+    const onTrackCours = (moduleId: number, coursTitle: string) => rappelsEleveRef.current.onTrackCours?.(moduleId, coursTitle);
+    const onLearnerActivity = () => rappelsEleveRef.current.onLearnerActivity?.();
+    const onModuleCompleted = (moduleId: number) => rappelsEleveRef.current.onModuleCompleted?.(moduleId);
     const LearnerPreviewComponent = ({ secureMode = true }: { secureMode?: boolean }) => {
     const moduleData = (() => {
       const base = moduleDataRef.current;
@@ -10300,7 +10310,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // (polling ~5s, Realtime, réconciliation Bilans), ce qui décochait les
     // réponses de l'apprenant et provoquait un scroll vers le haut.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
+  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, slidesByKey, studentOnly]);
 
   if (studentOnly) {
     return (
