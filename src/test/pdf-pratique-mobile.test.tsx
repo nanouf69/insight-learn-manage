@@ -6,7 +6,7 @@ vi.mock('@/lib/pdfWorker', () => ({ ensurePdfWorker() {} }));
 vi.mock('react-pdf', () => ({
   Document: ({ children, onLoadSuccess }: any) => {
     load.callback = onLoadSuccess;
-    React.useEffect(() => { onLoadSuccess({ numPages: 3, getPage: async () => ({ getViewport: () => ({ width: 960, height: 540 }) }) }); }, []);
+    React.useEffect(() => { const timer = setTimeout(() => onLoadSuccess({ numPages: 3, getPage: async () => ({ getViewport: () => ({ width: 960, height: 540 }) }) }), 0); return () => clearTimeout(timer); }, []);
     return <div>{children}</div>;
   },
   Page: ({ pageNumber, width }: any) => <div data-testid="slide" data-page={pageNumber} data-width={width} />,
