@@ -2221,7 +2221,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
 
   return (
-    <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
+    <div className={`${embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}${bandeauSignature ? " pb-28" : ""}`}>
        {bandeauSignature}
        {modalSignature}
        {/* Top navbar */}
