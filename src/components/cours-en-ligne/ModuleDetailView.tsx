@@ -326,7 +326,7 @@ function CourseImageLightbox({ src, alt, className }: { src: string; alt: string
     return <div className={className ?? "h-48 rounded border bg-muted animate-pulse"} />;
   }
 
-  return <ImageLightbox src={displayUrl} alt={alt} className={className} />;
+  return <ImageLightbox src={displayUrl} alt={alt} className={className} reserveFrame />;
 }
 
 const LIVRE_SCHEME = /^livre-formation:(vtc|taxi|ta|va)$/;

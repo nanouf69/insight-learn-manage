@@ -19,6 +19,11 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
   const lastPageFired = useRef(false);
 
   const total = images.length;
+  const sourceIdentity = JSON.stringify(images);
+  useEffect(() => {
+    setPage(0); setZoom(1); setPan({ x: 0, y: 0 });
+    setDragging(false); lastPageFired.current = false;
+  }, [sourceIdentity]);
 
   // Preload next image
   useEffect(() => {
@@ -79,6 +84,7 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]')) return;
     if (e.key === "ArrowLeft") prev();
     if (e.key === "ArrowRight") next();
   };
@@ -108,13 +114,13 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
     >
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 bg-muted/50 border-b flex-wrap">
-        <Button variant="ghost" size="sm" onClick={prev} disabled={page <= 0}>
+        <Button aria-label="Image précédente" variant="ghost" size="sm" onClick={prev} disabled={page <= 0}>
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <span className="text-xs font-medium text-muted-foreground min-w-[4rem] text-center">
           {page + 1} / {total}
         </span>
-        <Button variant="ghost" size="sm" onClick={next} disabled={page >= total - 1}>
+        <Button aria-label="Image suivante" variant="ghost" size="sm" onClick={next} disabled={page >= total - 1}>
           <ChevronRight className="w-4 h-4" />
         </Button>
         <div className="w-px h-5 bg-border mx-1" />
