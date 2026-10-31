@@ -4,7 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import ModuleDetailView from '@/components/cours-en-ligne/ModuleDetailView';
 import { useConnexionEleveConfirmee } from '@/hooks/useConnexionEleveConfirmee';
+import { installAnswerPersistence, setAnswerSaveAuthToken, setAnswerSaveOwnership } from '@/lib/answerPersistence';
 import '@/index.css';
+setAnswerSaveOwnership({apprenantId:'local-test-learner'});
+setAnswerSaveAuthToken('local-test-token','local-test-owner');
+installAnswerPersistence();
 function Harness() {
   const params = new URLSearchParams(location.search);
   const type = params.get('track') ?? 'vtc';
