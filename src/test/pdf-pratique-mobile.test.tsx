@@ -20,7 +20,9 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe.each(['TAXI module6', 'TA module6', 'VTC module8', 'VA module8', 'CAS module12'])('%s shared mobile PDF', track => {
   it('vertical/diagonal/pinch gestures never turn pages; explicit navigation does', async () => {
     render(<PdfSlideViewer url="/test.pdf" nom={track} />);
-    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Page suivante' })[0]).not.toBeDisabled());
+    // Attendre le chargement réel du document (numPages=3) : cliquer avant
+    // chargerait une page bornée à 1 et rendrait le test dépendant du timing.
+    await waitFor(() => expect(screen.getAllByText('1 / 3').length).toBeGreaterThan(0));
     const slide = screen.getByTestId('slide');
     fireEvent.touchStart(slide, { changedTouches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(slide, { changedTouches: [{ clientX: 90, clientY: 600 }] });
