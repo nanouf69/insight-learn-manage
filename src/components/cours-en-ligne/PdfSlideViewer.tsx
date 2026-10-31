@@ -36,6 +36,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 1024px), (pointer: coarse)").matches);
   const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
   const [lastModified, setLastModified] = useState<string | null>(null);
+  const sourceRef = useRef(url);
+  sourceRef.current = url;
+  useEffect(() => {
+    setPage(1); setNumPages(0); setZoom(1); setLoadError(false);
+    setPageAspectRatio(16 / 9); setRenderMode('react-pdf');
+  }, [url]);
 
   // Récupère la date de dernière modification du fichier PDF (header HTTP)
   useEffect(() => {
@@ -77,7 +83,8 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     }
 
     const target = containerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${clampedPage}"]`);
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const area = scrollAreaRef.current;
+    if (target && area) area.scrollTo({ top: area.scrollTop + target.getBoundingClientRect().top - area.getBoundingClientRect().top, behavior: 'smooth' });
 
     if (clampedPage === numPages && onLastPageReached) {
       onLastPageReached();
@@ -209,6 +216,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
       getViewport: (params: { scale: number }) => { width: number; height: number };
     }>;
   }) => {
+    const loadedSource = sourceRef.current;
     setNumPages(pdf.numPages);
     setPage((current) => Math.max(1, Math.min(current, pdf.numPages)));
     setLoadError(false);
@@ -217,6 +225,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
     try {
       const firstPage = await pdf.getPage(1);
+      if (sourceRef.current !== loadedSource) return;
       const viewport = firstPage.getViewport({ scale: 1 });
       if (viewport.width > 0 && viewport.height > 0) {
         setPageAspectRatio(viewport.width / viewport.height);
@@ -317,8 +326,9 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") prev();
-    if (e.key === "ArrowRight") next();
+    if ((e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]')) return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
+    if (e.key === "ArrowRight") { e.preventDefault(); next(); }
     if (e.key === "Escape" && isPseudoFullscreen) setIsPseudoFullscreen(false);
     if (e.key === "Escape" && isNativeFullscreen) document.exitFullscreen();
   };
@@ -508,7 +518,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           </div>
         ) : (
           <Document
-            key={retryCount}
+            key={`${url}-${retryCount}`}
             file={url}
             onLoadSuccess={(pdf) => {
               if (loadingTimerRef.current) {

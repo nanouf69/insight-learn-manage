@@ -4874,6 +4874,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     });
     void refresher.fullNow();
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let channelDisposed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
       .channel(`canonical-module-${module.id}-${canonicalRefreshKey}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions" }, (payload) => {
@@ -4881,6 +4883,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         if (!row?.quiz_id || quizIds.includes(row.quiz_id)) refresher.trigger();
       })
       .subscribe((status) => {
+        if (channelDisposed) return;
         // Un canal temps réel coupé ne doit jamais figer le contenu affiché :
         // on relit la base à la reconnexion.
         if (status === "SUBSCRIBED") {
@@ -5593,7 +5596,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         if (Number(module.id) === 13 && status === "SUBSCRIBED") void refresher.fullNow();
         // Auto-reconnect on failure so students never miss admin corrections
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          setTimeout(() => setRealtimeReconnectKey((k) => k + 1), 3000);
+          if (reconnectTimer === undefined) reconnectTimer = setTimeout(() => {
+            reconnectTimer = undefined;
+            if (!channelDisposed) setRealtimeReconnectKey((k) => k + 1);
+          }, 3000);
         }
       });
 
@@ -5614,6 +5620,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     if (Number(module.id) === 13) window.addEventListener('online', handleFocusRefresh);
 
     return () => {
+      channelDisposed = true;
+      if (reconnectTimer !== undefined) clearTimeout(reconnectTimer);
       refresher.dispose();
       if (moduleRefresherRef.current === refresher) moduleRefresherRef.current = null;
       if (pollTimer) clearInterval(pollTimer);
