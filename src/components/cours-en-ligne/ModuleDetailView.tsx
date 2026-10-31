@@ -10310,7 +10310,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // (polling ~5s, Realtime, réconciliation Bilans), ce qui décochait les
     // réponses de l'apprenant et provoquait un scroll vers le haut.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, onBack, onLearnerActivity, onModuleCompleted, onTrackCours, slidesByKey, studentOnly]);
+  }, [apprenantId, apprenantInfo, apprenantType, hideFormulaires, isPresentiel, module.id, slidesByKey, studentOnly]);
 
   if (studentOnly) {
     return (
