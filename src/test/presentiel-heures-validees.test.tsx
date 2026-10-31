@@ -32,7 +32,7 @@ vi.mock("@/components/cours-en-ligne/modules-config", () => ({ FORMATION_MODULES
 import { useApprenantTauxRealisation } from "../hooks/useApprenantTauxRealisation";
 
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>
 );
 
 describe("Heures de présence validées manuellement", () => {
