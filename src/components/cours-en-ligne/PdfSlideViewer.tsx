@@ -29,12 +29,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const nativeScrollRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
   const [viewportHeight, setViewportHeight] = useState(0);
 
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 1024px), (pointer: coarse)").matches);
   const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
   const [lastModified, setLastModified] = useState<string | null>(null);
 
@@ -211,7 +210,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     }>;
   }) => {
     setNumPages(pdf.numPages);
-    setPage(1);
+    setPage((current) => Math.max(1, Math.min(current, pdf.numPages)));
     setLoadError(false);
     setRenderMode("react-pdf");
     updateWidth();
@@ -324,23 +323,6 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     if (e.key === "Escape" && isNativeFullscreen) document.exitFullscreen();
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStartXRef.current = e.changedTouches[0]?.clientX ?? null;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    const startX = touchStartXRef.current;
-    const endX = e.changedTouches[0]?.clientX;
-    touchStartXRef.current = null;
-    if (startX == null || endX == null) return;
-
-    const deltaX = endX - startX;
-    if (Math.abs(deltaX) < 48) return;
-
-    if (deltaX > 0) prev();
-    if (deltaX < 0) next();
-  };
-
   // Detect portrait mobile for CSS rotation fallback
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
   useEffect(() => {
@@ -374,7 +356,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const heightConstrainedWidth = availableHeight > 0 ? availableHeight * pageAspectRatio : Infinity;
   const fitPageWidth = Math.max(
     280,
-    Math.min(containerWidth, heightConstrainedWidth) * zoom
+    (isMobile && !isExpanded ? containerWidth : Math.min(containerWidth, heightConstrainedWidth)) * zoom
   );
 
 
@@ -430,13 +412,13 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         <div className="w-px h-5 bg-border mx-1" />
         {renderMode === "react-pdf" && (
           <>
-            <Button variant="ghost" size="sm" onClick={prev} disabled={page <= 1}>
+            <Button aria-label="Page précédente" variant="ghost" size="sm" onClick={prev} disabled={page <= 1}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-xs font-medium text-muted-foreground min-w-[4rem] text-center">
               {page} / {numPages || "…"}
             </span>
-            <Button variant="ghost" size="sm" onClick={next} disabled={page >= numPages && numPages > 0}>
+            <Button aria-label="Page suivante" variant="ghost" size="sm" onClick={next} disabled={page >= numPages && numPages > 0}>
               <ChevronRight className="w-4 h-4" />
             </Button>
             <div className="w-px h-5 bg-border mx-1" />
@@ -477,14 +459,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         ref={scrollAreaRef}
         className={`flex overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
-          maxHeight: isExpanded ? "none" : "80vh",
+          maxHeight: isExpanded || isMobile ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
           touchAction: renderMode === "react-pdf" ? "pan-x pan-y pinch-zoom" : "auto",
           WebkitOverflowScrolling: "touch",
           overscrollBehavior: "contain",
         }}
-        onTouchStart={renderMode === "react-pdf" ? handleTouchStart : undefined}
-        onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
         onScroll={(e) => handleViewerScroll(e.currentTarget)}
       >
         {renderMode === "native" || loadError ? (
@@ -545,7 +525,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
               setLoadError(true);
               setRenderMode("native");
             }}
-            loading={<div className="flex items-center justify-center p-12 text-muted-foreground">Chargement du PDF…</div>}
+            loading={<div className="flex items-center justify-center text-muted-foreground" style={{ width: isMobile ? fitPageWidth : containerWidth, minHeight: Math.max(220, (isMobile ? fitPageWidth : containerWidth) / pageAspectRatio) + 32 }}>Chargement du PDF…</div>}
             error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
           >
             <div className="flex flex-col items-center gap-4 py-4" style={{ width: isMobile ? fitPageWidth : Math.max(280, containerWidth * zoom), flexShrink: 0 }}>
@@ -645,7 +625,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
       {/* Bottom nav for mobile — with zoom controls */}
       {renderMode === "react-pdf" && (
         <div className="flex items-center justify-between gap-2 p-2 border-t bg-muted/50 sm:hidden">
-          <Button variant="outline" size="icon" className="h-10 w-10" onClick={prev} disabled={page <= 1}>
+          <Button aria-label="Page précédente" variant="outline" size="icon" className="h-10 w-10" onClick={prev} disabled={page <= 1}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-1">
@@ -658,7 +638,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             </Button>
           </div>
           <span className="text-xs text-muted-foreground">{page}/{numPages || "…"}</span>
-          <Button variant="outline" size="icon" className="h-10 w-10" onClick={next} disabled={page >= numPages && numPages > 0}>
+          <Button aria-label="Page suivante" variant="outline" size="icon" className="h-10 w-10" onClick={next} disabled={page >= numPages && numPages > 0}>
             <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
