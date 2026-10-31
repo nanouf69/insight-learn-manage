@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## Incident généralisé pratiques iPhone — 31/10 10:01 UTC
-- [ ] Cartographier lecteurs et supports TAXI/VTC/TA/VA, causes partagées de taille/navigation/auth.
-- [ ] Corriger les défauts prouvés dans les lecteurs partagés sans changement pédagogique.
-- [ ] Tests multi-parcours WebKit/Chromium locaux, avant/après et non-régression ; comptes hébergés bloqués par isolation des envois non garantie.
-- [ ] Rapport et contrôle publication : pas de déploiement tant que contrôle global non concluant.
+- [x] Cartographie code + lecture Cloud6/8/12 : TAXI/TA partagent6/12, VTC/VA8 ; PDF, PPT sans PDF, images et supports Lyon distingués.
+- [x] Correctifs partagés PDF (largeur mobile, navigation explicite, source/page, scroll local), cadres images, timeout auth non assimilé à logout, cleanup reconnect.
+- [x] 43 tests ciblés PASS ;10 simulations WebKit/Chromium PASS avec médias/auth fictifs. Rapport docs/incident-pratiques-mobile-2026-10-31.md.
+- [ ] Tests hébergés et supports réels complets : bloqués par isolation compte test non garantie ; Office/PWA réelle non prouvés.
+- [ ] Publication : bloquée par16 FAIL globaux/10 erreurs (3230 PASS), aucun déploiement.
 
 ## Incident iPhone — compte TEST isolé — 31/10
 - [ ] Compte hébergé : bloqué tant que tous les envois automatiques et statistiques ne sont pas exclus ; aucun compte réel utilisé.
