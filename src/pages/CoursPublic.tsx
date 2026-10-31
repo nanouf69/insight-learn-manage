@@ -79,6 +79,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { applyPratiqueUnlockElearning, computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
+import { appliquerDerogationsModules, lireDerogationsModules } from '@/lib/moduleAccessDerogation';
 import {
   fetchModuleCompletions,
   isCompletionDone,
@@ -817,6 +818,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [completionsReloadToken, setCompletionsReloadToken] = useState(0);
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
+  const derogationsModules = useQuery({
+    queryKey: ['module-access-derogations', apprenant?.id, user?.id],
+    enabled: !!apprenant?.id && !!user?.id,
+    retry: 2,
+    queryFn: () => {
+      if (!apprenant?.id) throw new Error('Dossier indisponible');
+      return lireDerogationsModules(apprenant.id);
+    },
+  });
   const extensionAcces = useQuery({
     queryKey: ['extension-acces', apprenant?.id, user?.id],
     enabled: !embedded && !!apprenant?.id && !!user?.id,
@@ -2164,6 +2174,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     alwaysUnlockedIds: ALWAYS_UNLOCKED_IDS,
   });
   const { effectivelyCompletedIds, unlockedModuleIds } = unlockState;
+  appliquerDerogationsModules(unlockState, modules, derogationsModules.data ?? []);
 
   // Règle générale e-learning (accord du responsable, 13/10/2026) : le module
   // Pratique est débloqué pour tous les apprenants e-learning, sans modifier
@@ -2221,7 +2232,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
-  const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
+  const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId)
+    && !derogationsModules.data?.includes(modId);
 
 
   return (

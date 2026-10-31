@@ -72,6 +72,7 @@ import { freshSessionRead } from '@/lib/sessionRpc';
 import { rememberRetakeReturn, readRetakeReturn, retakeReturnKey } from '@/lib/subjectRetakeNavigation';
 import { SubjectCopyHistory } from './SubjectCopyHistory';
 import { RefaireMatiereButton } from './RefaireMatiereButton';
+import { lireDerogationsModules, matieresRestantesAvecDerogation } from '@/lib/moduleAccessDerogation';
 
 /**
  * Retrouve la version ORIGINALE (source statique, jamais éditée) d'une matière
@@ -673,7 +674,34 @@ export default function ExamensBlancsPage({
     // Cette photo reste attachée à la tentative jusqu'à sa fin.
     const snapshotExamen = buildAttemptSnapshot(examenBase);
     attemptFingerprintRef.current = buildExamFingerprint(examenBase);
-    const latestExamen = applyMatiereFilter(snapshotExamen, matiereFilterRef.current)!;
+    // Individual owner permission: open only subjects never submitted, including
+    // mixed historical attempt numbers. Never move/rewrite a finished subject.
+    if (!forceRetake && apprenantId && !isAdmin && matiereIds === null) {
+      try {
+        const permissions = await lireDerogationsModules(apprenantId);
+        const { data: parcours, error: parcoursError } = await supabase.from('examens_blancs_parcours')
+          .select('module_id').eq('exam_id', examenBase.id);
+        if (parcoursError) throw parcoursError;
+        const moduleId = parcours?.find(p => permissions.includes(p.module_id))?.module_id;
+        if (moduleId != null && permissions.includes(moduleId)) {
+          const { data, error } = await supabase.from('apprenant_quiz_results')
+            .select('id,matiere_id,matiere_nom,tentative,completed_at,details')
+            .eq('apprenant_id', apprenantId).eq('quiz_id', examenBase.id).eq('quiz_type', 'examen_blanc');
+          if (error) throw error;
+          const rows = selectLatestAttemptRows(excludeResultPlaceholders(data ?? []));
+          const submittedIds = snapshotExamen.matieres.filter(m => rows.some(r =>
+            shareLookupKey(buildMatiereLookupKeys(m.id, m.nom), buildMatiereLookupKeys(r.matiere_id, r.matiere_nom))
+          )).map(m => m.id);
+          const remaining = matieresRestantesAvecDerogation(snapshotExamen.matieres, submittedIds, permissions, moduleId);
+          if (remaining) setMatiereFilter(remaining);
+        }
+      } catch {
+        toast.error('Impossible de vérifier les accès individuels. Aucune tentative démarrée.');
+        return;
+      }
+    }
+    const latestExamen = applyMatiereFilter(snapshotExamen, matiereFilterRef.current);
+    if (!latestExamen) return;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
     let nextTentative = 1;
