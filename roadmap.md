@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Incident généralisé pratiques iPhone — 31/10 10:01 UTC
+- [ ] Cartographier lecteurs et supports TAXI/VTC/TA/VA, causes partagées de taille/navigation/auth.
+- [ ] Corriger les défauts prouvés dans les lecteurs partagés sans changement pédagogique.
+- [ ] Tests multi-parcours WebKit/Chromium locaux, avant/après et non-régression ; comptes hébergés bloqués par isolation des envois non garantie.
+- [ ] Rapport et contrôle publication : pas de déploiement tant que contrôle global non concluant.
+
 ## Incident iPhone — compte TEST isolé — 31/10
 - [ ] Compte hébergé : bloqué tant que tous les envois automatiques et statistiques ne sont pas exclus ; aucun compte réel utilisé.
 - [x] Profil TEST local WebKit iPhone13 : largeur canvas372→372, scroll delta0, retour=1 vérification ; QCM/QRC conservés après reload/arrière/avant (transport simulé). Page temporaire retirée, contexte détruit, aucun appel Cloud.
