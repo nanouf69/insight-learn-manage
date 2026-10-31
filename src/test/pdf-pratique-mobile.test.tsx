@@ -32,7 +32,7 @@ describe.each(['TAXI module6', 'TA module6', 'VTC module8', 'VA module8', 'CAS m
   });
   it('same-source reload preserves page, changed source resets it', async () => {
     const r = render(<PdfSlideViewer url="/test.pdf" nom={track} />);
-    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Page suivante' })[0]).not.toBeDisabled());
+    await waitFor(() => expect(screen.getAllByText('1 / 3').length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByRole('button', { name: 'Page suivante' })[0]);
     await act(async () => { load.callback?.({ numPages: 3, getPage: async () => ({ getViewport: () => ({ width: 960, height: 540 }) }) }); });
     await waitFor(() => expect(screen.getByTestId('slide').dataset.page).toBe('2'));
