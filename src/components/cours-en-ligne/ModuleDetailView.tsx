@@ -279,36 +279,43 @@ function extractCourseStorageObject(input: string): { bucket: string; path: stri
   return null;
 }
 
+function courseStorageObjectOf(fileUrl: string) {
+  return extractCourseStorageObject(fileUrl) ?? extractCourseStorageObject(resolveAppFileUrl(fileUrl));
+}
+
 async function toDisplayableCourseUrl(fileUrl: string): Promise<string> {
   const resolvedUrl = resolveAppFileUrl(fileUrl);
-  try {
-    const storageObject = extractCourseStorageObject(fileUrl) ?? extractCourseStorageObject(resolvedUrl);
-    if (!storageObject) return resolvedUrl;
-
+  const storageObject = courseStorageObjectOf(fileUrl);
+  if (!storageObject) return resolvedUrl;
+  const signed = await signCourseObject(storageObject.bucket, storageObject.path, async () => {
     const { data, error } = await supabase.storage
       .from(storageObject.bucket)
       .createSignedUrl(storageObject.path, 60 * 60);
+    return error || !data?.signedUrl ? null : normalizeSignedStorageUrl(data.signedUrl);
+  });
+  return signed ?? resolvedUrl;
+}
 
-    if (error || !data?.signedUrl) return resolvedUrl;
-    return normalizeSignedStorageUrl(data.signedUrl);
-  } catch {
-    return resolvedUrl;
-  }
+/** Private storage media: never expose the unsigned (400) URL first, then swap it —
+ * that swap reloaded PDFs/images and made them jump on phones/tablets. */
+function initialDisplayableCourseUrl(fileUrl?: string): string | null {
+  if (!fileUrl) return null;
+  const obj = courseStorageObjectOf(fileUrl);
+  if (!obj) return resolveAppFileUrl(fileUrl);
+  return getCachedSignedUrl(obj.bucket, obj.path);
 }
 
 function useDisplayableCourseUrl(fileUrl?: string) {
-  const [displayUrl, setDisplayUrl] = useState<string | null>(fileUrl ? resolveAppFileUrl(fileUrl) : null);
+  const [displayUrl, setDisplayUrl] = useState<string | null>(() => initialDisplayableCourseUrl(fileUrl));
 
   useEffect(() => {
     let cancelled = false;
-    if (!fileUrl) {
-      setDisplayUrl(null);
-      return;
-    }
-
-    setDisplayUrl(resolveAppFileUrl(fileUrl));
+    const initial = initialDisplayableCourseUrl(fileUrl);
+    setDisplayUrl((prev) => (prev === initial ? prev : initial));
+    if (!fileUrl || (initial && !courseStorageObjectOf(fileUrl)) ) return;
+    if (initial) return;
     toDisplayableCourseUrl(fileUrl).then((url) => {
-      if (!cancelled) setDisplayUrl(url);
+      if (!cancelled) setDisplayUrl((prev) => (prev === url ? prev : url));
     });
 
     return () => {
