@@ -5866,6 +5866,38 @@ export type Database = {
         }
         Relationships: []
       }
+      module_acces_derogations: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          id: string
+          module_id: number
+          motif: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          id?: string
+          module_id: number
+          motif: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          id?: string
+          module_id?: number
+          motif?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_acces_derogations_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_admin_audit_log: {
         Row: {
           action: string
