@@ -26,7 +26,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   },
   removeChannel: vi.fn(() => Promise.resolve("ok")),
 }}));
-vi.mock("@/lib/pratiqueSlots", () => ({ fetchPratiqueSlotDetails: async () => [] }));
+vi.mock("@/lib/pratiqueSlots", async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/pratiqueSlots')>(), fetchPratiqueSlotDetails: async () => [] }));
 vi.mock("@/components/cours-en-ligne/modules-config", () => ({ FORMATION_MODULES: { "vtc-e": { modules: [] } } }));
 
 import { useApprenantTauxRealisation } from "../hooks/useApprenantTauxRealisation";
