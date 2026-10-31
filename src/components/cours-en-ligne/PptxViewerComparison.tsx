@@ -112,8 +112,9 @@ export default function PptxViewerComparison({
     }
   }, [googleViewerUrl]);
 
+  // Width-based on phones/tablets: vh follows Safari's toolbar and resized the viewer while scrolling.
   const viewerHeightClass = isCompactViewport
-    ? "h-[72vh] min-h-[360px] max-h-[84vh]"
+    ? "aspect-[3/4] sm:aspect-[4/3]"
     : "h-[68vh] min-h-[560px] max-h-[680px]";
 
   return (
