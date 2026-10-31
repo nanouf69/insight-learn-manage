@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {} }));
-import { appliquerDerogationsModules } from '@/lib/moduleAccessDerogation';
+import { appliquerDerogationsModules, matieresRestantesAvecDerogation } from '@/lib/moduleAccessDerogation';
 import { computeUnlockState, isModuleLocked } from '@/lib/moduleUnlockLogic';
 
 const assigned = [26, 2, 3, 4, 35, 5, 8].map(id => ({ id }));
@@ -28,5 +28,14 @@ describe('Kevin : accès individuel sans réalisation fictive', () => {
     expect(state.unlockedModuleIds.has(5)).toBe(true);
     expect(state.unlockedModuleIds.has(6)).toBe(false);
     expect(state.unlockedModuleIds.has(11)).toBe(false);
+  });
+  it('EB2 : ouvre G(V) non effectué sans rejouer les six matières soumises ni inventer son résultat', () => {
+    const subjects = ['t3p', 'gestion', 'securite', 'francais', 'anglais', 'reglementation_vtc', 'reglementation_vtc2'];
+    expect(matieresRestantesAvecDerogation(subjects.map(id => ({ id })), subjects.slice(0, 6), [35], 35))
+      .toEqual(['reglementation_vtc2']);
+    expect(matieresRestantesAvecDerogation(subjects.map(id => ({ id })), subjects.slice(0, 6), [], 35))
+      .toBeNull();
+    expect(matieresRestantesAvecDerogation(subjects.map(id => ({ id })), subjects, [35], 35))
+      .toBeNull();
   });
 });

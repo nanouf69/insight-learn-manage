@@ -19,3 +19,18 @@ export function appliquerDerogationsModules(
     if (granted.has(module.id)) state.unlockedModuleIds.add(module.id);
   }
 }
+
+/** An individually unlocked exam may open its genuinely unsubmitted subjects.
+ * Submitted subjects keep their original attempt identities and are never replayed.
+ */
+export function matieresRestantesAvecDerogation(
+  matieres: readonly { id: string }[],
+  submittedSubjectIds: readonly string[],
+  permissions: readonly number[],
+  examModuleId: number,
+): string[] | null {
+  if (!permissions.includes(examModuleId) || submittedSubjectIds.length === 0) return null;
+  const submitted = new Set(submittedSubjectIds);
+  const remaining = matieres.filter(m => !submitted.has(m.id)).map(m => m.id);
+  return remaining.length ? remaining : null;
+}
