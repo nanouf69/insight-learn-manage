@@ -16,6 +16,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     const builder: Record<string, unknown> = {};
     for (const method of ["eq", "filter", "range", "select", "order", "in", "gte", "lte", "is", "limit"]) builder[method] = () => builder;
     builder.maybeSingle = () => builder;
+    builder.single = () => builder;
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: data(), error: null }).then(resolve);
     return builder;
   },
