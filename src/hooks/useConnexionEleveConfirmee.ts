@@ -36,6 +36,7 @@ export function useConnexionEleveConfirmee(opts: {
       try {
         // Le client peut rester bloqué pendant un renouvellement raté : délai max.
         const res = await avecDelai(supabase.auth.getSession(), 6000, null);
+        if (!res) return true; // Unknown transport/SDK lock, not proof of logout.
         const s = res?.data?.session;
         if (!s?.access_token || s.user?.id !== userId || (s.expires_at && s.expires_at * 1000 <= Date.now())) return false;
         // Vérification auprès du serveur : une session révoquée/expirée côté
