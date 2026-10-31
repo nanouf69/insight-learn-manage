@@ -88,17 +88,19 @@ export function ExamQuestionImage({
     };
   }, [resolvedUrl]);
 
-  if (!resolvedUrl || hasError) {
-    return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
+  if (!resolvedUrl) return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
+  if (hasError) {
+    return <div className="w-full aspect-[4/3] overflow-hidden"><p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p></div>;
   }
 
   if (!displayUrl) {
-    return <div className={className ?? "mt-2 h-40 w-full max-w-xs rounded-lg border bg-muted animate-pulse"} />;
+    return <div className="w-full aspect-[4/3] overflow-hidden"><div className={className ?? "mt-2 h-40 w-full max-w-xs rounded-lg border bg-muted animate-pulse"} /></div>;
   }
 
   const src = addCacheBuster(displayUrl, cacheToken);
   return (
     <ImageLightbox
+      reserveFrame
       src={src}
       alt={alt}
       loading="eager"

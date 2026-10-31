@@ -1,0 +1,20 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import ImageCarouselViewer from '@/components/cours-en-ligne/ImageCarouselViewer';
+afterEach(cleanup);
+it('retains page for identical sources and resets navigation for a new source', () => {
+  const done=vi.fn();
+  const ui=render(<ImageCarouselViewer images={['/a.png','/b.png']} nom="TEST" onLastPageReached={done} />);
+  fireEvent.click(screen.getByRole('button',{name:'Image suivante'}));
+  expect(screen.getByAltText('TEST — Slide 2')).toHaveAttribute('src','/b.png');
+  expect(done).toHaveBeenCalledTimes(1);
+  ui.rerender(<ImageCarouselViewer images={['/a.png','/b.png']} nom="TEST" onLastPageReached={done} />);
+  expect(screen.getByAltText('TEST — Slide 2')).toBeInTheDocument();
+  ui.rerender(<ImageCarouselViewer images={['/c.png','/d.png']} nom="TEST" onLastPageReached={done} />);
+  expect(screen.getByAltText('TEST — Slide 1')).toHaveAttribute('src','/c.png');
+  fireEvent.touchStart(screen.getByAltText('TEST — Slide 1'),{touches:[{clientX:90,clientY:40}]});
+  fireEvent.touchEnd(screen.getByAltText('TEST — Slide 1'),{changedTouches:[{clientX:20,clientY:400}]});
+  expect(screen.getByAltText('TEST — Slide 1')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Image suivante'}));
+  expect(done).toHaveBeenCalledTimes(2);
+});

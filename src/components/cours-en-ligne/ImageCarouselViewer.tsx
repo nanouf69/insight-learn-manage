@@ -19,6 +19,11 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
   const lastPageFired = useRef(false);
 
   const total = images.length;
+  const sourceIdentity = JSON.stringify(images);
+  useEffect(() => {
+    setPage(0); setZoom(1); setPan({ x: 0, y: 0 });
+    setDragging(false); lastPageFired.current = false;
+  }, [sourceIdentity]);
 
   // Preload next image
   useEffect(() => {
@@ -79,6 +84,7 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]')) return;
     if (e.key === "ArrowLeft") prev();
     if (e.key === "ArrowRight") next();
   };
@@ -108,13 +114,13 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
     >
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 bg-muted/50 border-b flex-wrap">
-        <Button variant="ghost" size="sm" onClick={prev} disabled={page <= 0}>
+        <Button aria-label="Image précédente" variant="ghost" size="sm" onClick={prev} disabled={page <= 0}>
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <span className="text-xs font-medium text-muted-foreground min-w-[4rem] text-center">
           {page + 1} / {total}
         </span>
-        <Button variant="ghost" size="sm" onClick={next} disabled={page >= total - 1}>
+        <Button aria-label="Image suivante" variant="ghost" size="sm" onClick={next} disabled={page >= total - 1}>
           <ChevronRight className="w-4 h-4" />
         </Button>
         <div className="w-px h-5 bg-border mx-1" />
@@ -135,11 +141,25 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
       {/* Image viewer */}
       <div
         className="flex justify-center items-center overflow-hidden relative"
-        style={{ aspectRatio: "4 / 3", minHeight: 220, maxHeight: 720, cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default" }}
+        style={{ aspectRatio: "4 / 3", minHeight: 220, maxHeight: 720, touchAction: zoom > 1 ? "none" : "pan-x pan-y pinch-zoom", cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default" }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onPointerDown={(e) => {
+          if (e.pointerType !== 'touch' || zoom <= 1) return;
+          setDragging(true); lastPos.current = { x: e.clientX, y: e.clientY };
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (e.pointerType !== 'touch' || !dragging || zoom <= 1) return;
+          const dx=e.clientX-lastPos.current.x, dy=e.clientY-lastPos.current.y;
+          lastPos.current={x:e.clientX,y:e.clientY};
+          setPan(p=>({x:p.x+dx,y:p.y+dy}));
+        }}
+        onPointerUp={handleMouseUp}
+        onPointerCancel={handleMouseUp}
+        onLostPointerCapture={handleMouseUp}
       >
         <img
           src={images[page]}
