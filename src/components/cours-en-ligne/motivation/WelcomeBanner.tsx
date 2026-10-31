@@ -12,7 +12,10 @@ interface WelcomeBannerProps {
 
 export function WelcomeBanner({ prenom, formationLabel, xp, xpToday, streak, progression }: WelcomeBannerProps) {
   const [visible, setVisible] = useState(false);
-  useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), 80);
+    return () => clearTimeout(timer);
+  }, []);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
