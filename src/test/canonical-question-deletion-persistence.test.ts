@@ -35,7 +35,7 @@ describe("persistance des suppressions dans la source canonique", () => {
     );
 
     expect(moduleView).toContain(
-      "onUpdateQuestions={(id, questions, deletedQuestionId) =>\n                  updateExerciceQuestions(id, questions, deletedQuestionId)",
+      "onUpdateQuestions={(id, questions, deletedQuestionId, editedQuestionIds) =>\n                  updateExerciceQuestions(id, questions, deletedQuestionId, editedQuestionIds)",
     );
   });
 

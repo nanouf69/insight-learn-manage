@@ -19,7 +19,18 @@ describe("All configured formations — approved admin-label-only change", () =>
   }
   for (const [file, hash] of Object.entries(baseline.sourceHashes)) {
     it(`${file}: all pedagogical content, quiz IDs and active flags unchanged`, () => {
-      expect(createHash("sha256").update(readFileSync(file)).digest("hex")).toBe(hash);
+      const raw = readFileSync(file, 'utf8');
+      if (file === 'src/components/cours-en-ligne/exercices/connaissances-ville-quiz-data.ts') {
+        // The documented 28/10 restoration added museum22–41, no old rows changed.
+        // Pin the restored source AND compare all historical bytes to 07/10.
+        expect(createHash('sha256').update(raw).digest('hex')).toBe('9081920cb448eba5240d528e24ece7c25aa3e36c64308dcc984999c881dc2493');
+        const from = raw.indexOf('    {\n      id: 22, enonce: "Quel musée');
+        const to = raw.indexOf('\n  ],\n};', from);
+        expect(from).toBeGreaterThan(0); expect(to).toBeGreaterThan(from);
+        const historical = (raw.slice(0, from) + raw.slice(to + 1))
+          .replace('sousTitre: "41 questions sur les musées de Lyon"', 'sousTitre: "21 questions sur les musées de Lyon"');
+        expect(createHash('sha256').update(historical).digest('hex')).toBe(hash);
+      } else expect(createHash('sha256').update(raw).digest('hex')).toBe(hash);
     });
   }
   for (const module of [VTC_COURS_DATA, TAXI_COURS_DATA, TA_COURS_DATA, VA_COURS_DATA]) {

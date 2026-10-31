@@ -20,7 +20,7 @@ describe("Formation e-learning terminée = heures + modules", () => {
   it("bouton Terminé : aucune fausse réussite côté élève sans identité", () => {
     const src = readFileSync("src/components/cours-en-ligne/ModuleDetailView.tsx", "utf8");
     const i = src.indexOf("const persistModuleCompletion = async");
-    const block = src.slice(i, i + 800);
+    const block = src.slice(i, src.indexOf('try {', i));
     expect(block).toMatch(/if \(!apprenantId\) \{[\s\S]*if \(studentOnly\) \{[\s\S]*return false;/);
   });
 });

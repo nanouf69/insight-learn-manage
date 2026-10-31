@@ -1,10 +1,16 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import { dureeDevisElearning, formationDevisAvecDuree, dureeDevisEnregistre, parcoursDevisElearning } from '@/lib/devisDureesElearning';
 import { buildCanonicalDevisPDF } from '@/lib/pdf/devis-canonical';
+// Vite's browser ?inline becomes a path in the Node test environment.
+// Embed the real project image, keeping the actual PDF generator and stamp.
+vi.mock('@/assets/tampon-ftransport.png?inline', async () => {
+  const { readFileSync } = await import('node:fs');
+  return { default: `data:image/png;base64,${readFileSync('src/assets/tampon-ftransport.png').toString('base64')}` };
+});
 
 describe('Durées affichées des nouveaux devis e-learning', () => {
   it.each([

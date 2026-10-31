@@ -8,6 +8,6 @@ describe("candidats à payer", () => {
   it("TA 168", () => expect(tarifExamen("TA")).toBe(168));
   it("payé et inscription validée exclus", () => {
     const l = [{ s: "paye", t: "vtc" }, { s: "inscription_validee", t: "taxi" }, { s: null, t: "vtc" }, { s: "document_complet", t: "ta" }];
-    expect(candidatsAPayer(l, (a) => a.s, (a) => a.t)).toEqual({ nombre: 2, montant: 409 });
+    expect(candidatsAPayer(l, (a) => a.s, (a) => a.t)).toEqual({ nombre: 2, montant: 409, liste: [l[2], l[3]] });
   });
 });

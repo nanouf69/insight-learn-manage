@@ -19,7 +19,7 @@ vi.mock("@/integrations/supabase/client", () => {
   return {
     supabase: {
       auth: {
-        getSession: async () => ({ data: { session: { access_token: "fictif" } } }),
+        getSession: async () => ({ data: { session: { access_token: 'fictif', refresh_token: 'fictif', user: { id: 'fictif' }, expires_at: Date.now() / 1000 + 3600 } } }),
         getUser: async () => ({ data: { user: { id: "fictif" } } }),
       },
       from: () => query,
@@ -31,6 +31,7 @@ import { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEdito
 
 describe("Examens blancs : relecture unique après renouvellement du jeton", () => {
   it("n'émet pas « Aucune version active » si la relecture trouve des lignes", async () => {
+    appels = 0;
     const err: any = await loadSavedExamens().then(() => null).catch((e) => e);
     expect(appels).toBeGreaterThanOrEqual(2);
     expect(String(err?.message ?? "")).not.toContain("Aucune version active");

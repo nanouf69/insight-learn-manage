@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Lever les blocages de publication iPhone — 31/10 10:19 UTC
+- [ ] Auditer séparément les16 échecs et10 erreurs non gérées ; corriger uniquement défauts prouvés ou simulations obsolètes, sans changer règles/contenus.
+- [ ] Vérifier écran pratique complet avec transport local isolé et conserver les limites des comptes hébergés.
+- [ ] Relancer tests pertinents/globaux et consulter sécurité ; publier seulement si contrôles satisfaisants et vérifier résultat.
+
 ## Incident généralisé pratiques iPhone — 31/10 10:01 UTC
 - [x] Cartographie code + lecture Cloud6/8/12 : TAXI/TA partagent6/12, VTC/VA8 ; PDF, PPT sans PDF, images et supports Lyon distingués.
 - [x] Correctifs partagés PDF (largeur mobile, navigation explicite, source/page, scroll local), cadres images, timeout auth non assimilé à logout, cleanup reconnect.
