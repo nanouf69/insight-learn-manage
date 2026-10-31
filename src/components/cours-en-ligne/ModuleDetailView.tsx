@@ -5545,6 +5545,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       });
     };
 
+    let channelDisposed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
       .channel(`module-editor-live-${module.id}`)
       .on(
@@ -5588,12 +5590,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         }, 10_000);
       })
       .subscribe((status) => {
+        if (channelDisposed) return;
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
         setRealtimeStatus(status);
         if (Number(module.id) === 13 && status === "SUBSCRIBED") void refresher.fullNow();
         // Auto-reconnect on failure so students never miss admin corrections
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          setTimeout(() => setRealtimeReconnectKey((k) => k + 1), 3000);
+          if (reconnectTimer === undefined) reconnectTimer = setTimeout(() => {
+            reconnectTimer = undefined;
+            if (!channelDisposed) setRealtimeReconnectKey((k) => k + 1);
+          }, 3000);
         }
       });
 
@@ -5614,6 +5620,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     if (Number(module.id) === 13) window.addEventListener('online', handleFocusRefresh);
 
     return () => {
+      channelDisposed = true;
+      if (reconnectTimer !== undefined) clearTimeout(reconnectTimer);
       refresher.dispose();
       if (moduleRefresherRef.current === refresher) moduleRefresherRef.current = null;
       if (pollTimer) clearInterval(pollTimer);

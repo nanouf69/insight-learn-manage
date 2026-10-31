@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, FileText, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supportPratiqueTaxiLyon } from "@/lib/pratiqueTaxiLyonSupport";
+import StableReadingImage from './StableReadingImage';
 
 /** Supplementary reading only: no completion callback or persisted activity. */
 export default function PratiqueTaxiLyonSupport({ moduleId }: { moduleId: number }) {
@@ -31,10 +32,7 @@ export default function PratiqueTaxiLyonSupport({ moduleId }: { moduleId: number
           {erreur ? (
             <div className="text-center space-y-2 p-6"><p role="alert">Cette page n’a pas pu être chargée.</p><Button variant="outline" onClick={() => { setErreur(false); setRetry(retry + 1); }}>Réessayer</Button></div>
           ) : (
-            <div className="max-h-[75vh] overflow-auto border rounded bg-muted touch-pan-x touch-pan-y">
-              <img key={`${page}-${retry}`} src={support.pages[page]} alt={`${support.titre} — Page ${page + 1}`} draggable={false} onError={() => setErreur(true)}
-                className={`block mx-auto max-w-none ${zoom === 1 ? "w-full" : zoom === 1.5 ? "w-[150%]" : zoom === 2 ? "w-[200%]" : zoom === 2.5 ? "w-[250%]" : "w-[300%]"}`} />
-            </div>
+            <StableReadingImage key={`${page}-${retry}`} src={support.pages[page]} alt={`${support.titre} — Page ${page + 1}`} zoom={zoom} onError={() => setErreur(true)} />
           )}
         </div>
       )}

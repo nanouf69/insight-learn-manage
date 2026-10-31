@@ -17,6 +17,17 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 describe('Connexion élève au retour iPhone', () => {
+  it('does not turn two session-read timeouts into a logout', async () => {
+    auth.getSession.mockImplementation(() => new Promise(() => {}));
+    const { result } = renderHook(() => useConnexionEleveConfirmee(opts));
+    await tick(20000); expect(result.current).toBe('ok');
+    expect(auth.getUser).not.toHaveBeenCalled();
+  });
+  it('still refuses a definitely missing local session', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null } });
+    const { result } = renderHook(() => useConnexionEleveConfirmee(opts));
+    await tick(3000); expect(result.current).toBe('absente');
+  });
   it('coalesces initial/auth/resume events into one server verification', async () => {
     renderHook(() => useConnexionEleveConfirmee(opts));
     act(() => { auth.listener?.(); auth.listener?.(); document.dispatchEvent(new Event('visibilitychange')); window.dispatchEvent(new Event('pageshow')); });

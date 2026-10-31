@@ -135,7 +135,7 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
       {/* Image viewer */}
       <div
         className="flex justify-center items-center overflow-hidden relative"
-        style={{ height: "68vh", minHeight: 400, maxHeight: 720, cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default" }}
+        style={{ aspectRatio: "4 / 3", minHeight: 220, maxHeight: 720, cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default" }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
