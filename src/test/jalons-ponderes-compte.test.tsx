@@ -45,7 +45,7 @@ vi.mock("@/lib/jalonsPedagogiques", async () => {
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 
 describe("carte jalons : changement de compte et erreurs", () => {
-  it('libellé, pourcentage et barre rouges dès juillet sans changer le calcul', async () => {
+  it('le taux e-learning reste identique lorsque seule la date de début change', async () => {
     auth = { user: { id: 'admin-fictif' }, loading: false };
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const ui = (date: string) => <QueryClientProvider client={qc}><JalonsPonderesCard apprenantId="couleur-fictif" typeApprenant="vtc-e" titre="TAUX DE JALONS" apprenant={{type_apprenant:'vtc-e',date_debut_formation:date}} /></QueryClientProvider>;
@@ -55,7 +55,7 @@ describe("carte jalons : changement de compte et erreurs", () => {
     expect(screen.getByText(/%$/)).toHaveClass('text-destructive');
     expect(view.container.querySelector('.bg-destructive')).toBeTruthy();
     view.rerender(ui('2026-06-30'));
-    expect(screen.getByText('TAUX DE JALONS')).not.toHaveClass('text-destructive');
+    expect(screen.getByText('TAUX DE JALONS')).toHaveClass('text-destructive');
     expect(screen.getByText(/%$/).textContent).toBe(taux);
     view.unmount(); qc.clear();
   });

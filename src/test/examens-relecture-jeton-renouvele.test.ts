@@ -19,6 +19,7 @@ vi.mock("@/integrations/supabase/client", () => {
   return {
     supabase: {
       auth: {
+        getSession: async () => ({ data: { session: { access_token: 'fictif', refresh_token: 'fictif', user: { id: 'fictif' }, expires_at: Date.now() / 1000 + 3600 } } }),
         getUser: async () => ({ data: { user: { id: "fictif" } } }),
       },
       from: () => query,
