@@ -20,7 +20,8 @@ describe('Planning pratique — accès CRM', () => {
   });
   it('both VTC and TAXI use the existing admin callback', () => {
     const source = readFileSync('src/components/examens/ExamenReussitePage.tsx', 'utf8');
-    expect(source.match(/<PratiqueApprenantLink apprenant=\{a\} onOuvrir=\{onNavigateToApprenant\}/g)).toHaveLength(2);
+    // Both theoretical result tables and both practical track tables use it.
+    expect(source.match(/<PratiqueApprenantLink apprenant=\{a\} onOuvrir=\{onNavigateToApprenant\}/g)).toHaveLength(4);
     expect(readFileSync('src/pages/Index.tsx', 'utf8')).toContain('onNavigateToApprenant={handleNavigateToApprenant}');
   });
 });

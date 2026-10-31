@@ -28,7 +28,7 @@ describe('Sélection des sessions d’examen', () => {
     expect(page).toContain(".not('date_examen_theorique', 'is', null)");
     expect(page).toContain(".neq('date_examen_theorique', '')");
     expect(page).toContain('.range(from, from + pageSize - 1)');
-    expect(page).toContain('const tableApprenants = showAllExamDates ? apprenantsToutesDates : apprenants');
+    expect(page).toContain('const tableApprenants = (showAllExamDates ? apprenantsToutesDates : apprenants)');
     expect(page).toContain('const filtered = tableApprenants?.filter');
     expect(page).toContain('{!showAllExamDates && <span data-testid="date-limite-inscription-crm"');
   });

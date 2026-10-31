@@ -57,7 +57,8 @@ describe("Identité d'expéditeur FTRANSPORT", () => {
     });
 
     it("mot de passe temporaire : uniquement celui qui vient d'être généré et appliqué au compte", () => {
-      expect(source).toMatch(/crypto\.getRandomValues/);
+      expect(shared).toMatch(/crypto\.getRandomValues/);
+      expect(source).toContain('generateEasyPassphrase(MOTS_PHRASE_DE_PASSE)');
       expect(source).toMatch(/updateUserById\(\s*apprenant\.auth_user_id,\s*\{ password: generated \}/);
       expect(source).toContain("tempPassword = generated;");
       expect(blocTemp).toContain("${tempPassword}");
