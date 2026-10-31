@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -17,26 +17,32 @@ export function useConnexionEleveConfirmee(opts: {
 }): "ok" | "verification" | "absente" {
   const { embedded, userId, authLoading } = opts;
   const [etat, setEtat] = useState<"ok" | "verification" | "absente">("ok");
-  const enCours = useRef(false);
 
   useEffect(() => {
     if (embedded) { setEtat("ok"); return; }
     let annule = false;
+    let enCours = false;
     let timer: number | undefined;
+    let scheduled: number | undefined;
 
-    const avecDelai = <T,>(p: Promise<T>, ms: number, repli: T) =>
-      Promise.race([p, new Promise<T>((r) => window.setTimeout(() => r(repli), ms))]);
+    const avecDelai = async <T,>(p: Promise<T>, ms: number, repli: T) => {
+      let timeout: number | undefined;
+      try {
+        return await Promise.race([p, new Promise<T>((r) => { timeout = window.setTimeout(() => r(repli), ms); })]);
+      } finally { if (timeout !== undefined) window.clearTimeout(timeout); }
+    };
 
     const sessionValide = async () => {
       try {
         // Le client peut rester bloqué pendant un renouvellement raté : délai max.
         const res = await avecDelai(supabase.auth.getSession(), 6000, null);
         const s = res?.data?.session;
-        if (!s?.access_token || (s.expires_at && s.expires_at * 1000 <= Date.now())) return false;
+        if (!s?.access_token || s.user?.id !== userId || (s.expires_at && s.expires_at * 1000 <= Date.now())) return false;
         // Vérification auprès du serveur : une session révoquée/expirée côté
         // serveur paraît valide localement. Coupure réseau = on ne conclut pas.
         const u = await avecDelai(supabase.auth.getUser(), 6000, null);
-        if (!u || !u.error) return true;
+        if (!u) return true; // délai réseau : ne pas démonter la saisie
+        if (!u.error) return u.data.user?.id === userId;
         const st = (u.error as { status?: number }).status;
         return !(st === 401 || st === 403);
       } catch {
@@ -45,8 +51,8 @@ export function useConnexionEleveConfirmee(opts: {
     };
 
     const verifier = async () => {
-      if (enCours.current || annule) return;
-      enCours.current = true;
+      if (enCours || annule) return;
+      enCours = true;
       try {
         const v1 = await sessionValide();
         if (v1) { if (!annule) setEtat("ok"); return; }
@@ -56,21 +62,32 @@ export function useConnexionEleveConfirmee(opts: {
         const ok = await sessionValide();
         if (!annule) setEtat(ok ? "ok" : "absente");
       } finally {
-        enCours.current = false;
+        enCours = false;
       }
     };
 
-    if (!authLoading) void verifier();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { void verifier(); });
-    const onVis = () => { if (document.visibilityState === "visible") void verifier(); };
+    // Safari emits several resume/auth events together. Defer auth calls outside
+    // the SDK callback (its session lock is still held), and coalesce the burst.
+    const programmer = () => {
+      if (annule || authLoading || enCours || scheduled !== undefined) return;
+      scheduled = window.setTimeout(() => { scheduled = undefined; void verifier(); }, 150);
+    };
+    if (!authLoading) programmer();
+    const { data: sub } = supabase.auth.onAuthStateChange(programmer);
+    const onVis = () => { if (document.visibilityState === "visible") programmer(); };
     document.addEventListener("visibilitychange", onVis);
-    const interval = window.setInterval(() => { void verifier(); }, 60000);
+    window.addEventListener("pageshow", onVis);
+    window.addEventListener("online", onVis);
+    const interval = window.setInterval(programmer, 60000);
 
     return () => {
       annule = true;
       if (timer) window.clearTimeout(timer);
+      if (scheduled !== undefined) window.clearTimeout(scheduled);
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pageshow", onVis);
+      window.removeEventListener("online", onVis);
       sub.subscription.unsubscribe();
     };
   }, [embedded, userId, authLoading]);

@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Incident iPhone — compte TEST isolé — 31/10
+- [ ] Compte hébergé : bloqué tant que tous les envois automatiques et statistiques ne sont pas exclus ; aucun compte réel utilisé.
+- [ ] Reproduire avec profil TEST local sous WebKit ; vérifier diaporama, scroll, retour et brouillons sans appel Cloud.
+- [ ] Corriger les rafales de vérification de connexion ; tests de non-régression et rapport précis.
+- [ ] Tests auth hébergés/PWA réelle et validation globale : non prouvés ; aucune publication.
+
 ## Synchronisation Riyad LABIOD — 30/10 15:41 UTC
 - [x] Lecture réelle sept modules : 5/7 cohérent avec la projection ; module2 exercices7/72 incomplets, module4 première copie118/206, révision206 non soumise. Jalons100 ignorait les détails ; aucun gel. Rapport docs/riyad-synchronisation-jalons-2026-10-30.md.
 - [x] Jalons live : mêmes détails/soumissions et garde historique après dispenses, 95,5% vérifié ; élève événements réponses/complétions + focus/online. Aucune écriture Cloud ni contenu/proof modifié.
