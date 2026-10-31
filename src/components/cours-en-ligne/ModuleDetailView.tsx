@@ -4874,8 +4874,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     });
     void refresher.fullNow();
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let channelDisposed = false;
-    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
       .channel(`canonical-module-${module.id}-${canonicalRefreshKey}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions" }, (payload) => {
@@ -4883,7 +4881,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         if (!row?.quiz_id || quizIds.includes(row.quiz_id)) refresher.trigger();
       })
       .subscribe((status) => {
-        if (channelDisposed) return;
         // Un canal temps réel coupé ne doit jamais figer le contenu affiché :
         // on relit la base à la reconnexion.
         if (status === "SUBSCRIBED") {
@@ -5548,6 +5545,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       });
     };
 
+    let channelDisposed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
       .channel(`module-editor-live-${module.id}`)
       .on(
@@ -5591,6 +5590,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         }, 10_000);
       })
       .subscribe((status) => {
+        if (channelDisposed) return;
         console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
         setRealtimeStatus(status);
         if (Number(module.id) === 13 && status === "SUBSCRIBED") void refresher.fullNow();
