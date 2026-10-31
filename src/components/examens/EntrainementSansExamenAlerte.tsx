@@ -3,12 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { anomaliesEntrainementExamen, type ReservationLite } from "@/lib/entrainementSansExamen";
 
 /** Affichage seul : élèves inscrits à un entraînement pratique sans examen pratique au planning CRM (ou examen avant l'entraînement). */
-export function EntrainementSansExamenAlerte({ reservations, debut, fin }: { reservations: ReservationLite[] | undefined; debut: string; fin: string }) {
+export function EntrainementSansExamenAlerte({ reservations, debut = "planning", fin = "planning" }: { reservations?: ReservationLite[]; debut?: string; fin?: string }) {
   // Entraînements récents (60 j) et à venir, quelle que soit la période affichée.
   const depuis = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
-  const visibles = (reservations ?? []).filter((r) => r.date_choisie && r.date_choisie >= depuis && !!debut && !!fin);
+  const { data: reservationsPlanning, isError: erreurReservations } = useQuery({
+    queryKey: ['entrainement-reservations-alerte', depuis],
+    enabled: reservations === undefined,
+    queryFn: async () => {
+      const rows: ReservationLite[] = [];
+      for (let offset = 0; ; offset += 500) {
+        const result = await supabase.from('reservations_pratique')
+          .select('apprenant_id,date_choisie').gte('date_choisie', depuis)
+          .order('id').range(offset, offset + 499);
+        if (result.error) throw result.error;
+        rows.push(...(result.data ?? []));
+        if ((result.data?.length ?? 0) < 500) return rows;
+      }
+    },
+  });
+  const visibles = (reservations ?? reservationsPlanning ?? []).filter((r) => r.date_choisie && r.date_choisie >= depuis && !!debut && !!fin);
   const ids = [...new Set(visibles.map((r) => r.apprenant_id))];
-  const { data } = useQuery({
+  const { data, isError: erreurExamen } = useQuery({
     queryKey: ["entrainement-sans-examen", ids.sort().join(",")],
     enabled: ids.length > 0,
     queryFn: async () => {
@@ -21,6 +36,7 @@ export function EntrainementSansExamenAlerte({ reservations, debut, fin }: { res
       return anomaliesEntrainementExamen(visibles, apps.data ?? [], cma.data ?? []);
     },
   });
+  if (erreurReservations || erreurExamen) return <p role="alert" className="text-destructive font-semibold">Impossible de vérifier les inscrits à l’entraînement sans examen pratique.</p>;
   if (!data?.length) return null;
   return (
     <div className="rounded-md border border-destructive bg-destructive/5 p-3 mb-3">
