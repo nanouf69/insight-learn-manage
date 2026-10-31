@@ -9,11 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { installDomPatch } from "@/lib/domPatch";
 import { installModulePagesPersistence } from "@/lib/modulePagesPersistence";
 import { installChunkVersionGuard } from "@/lib/chunkVersionGuard";
+import { installDeployedVersionWatch } from "@/lib/deployedVersionWatch";
 import { CanonicalOriginNotice } from "@/components/CanonicalOriginNotice";
 
 installErrorMonitoring();
 // Ancien onglet après mise en ligne : notification + rechargement manuel sûr.
 installChunkVersionGuard();
+// Onglet resté ouvert après une mise en ligne : même notification, élèves compris.
+installDeployedVersionWatch();
 
 // Persistance fiable des réponses apprenants (file durable + renvoi automatique).
 installAnswerPersistence();
