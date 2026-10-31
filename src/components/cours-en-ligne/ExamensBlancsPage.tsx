@@ -679,7 +679,10 @@ export default function ExamensBlancsPage({
     if (!forceRetake && apprenantId && !isAdmin && matiereIds === null) {
       try {
         const permissions = await lireDerogationsModules(apprenantId);
-        const moduleId = getModuleIdForExamId(examenBase.id);
+        const { data: parcours, error: parcoursError } = await supabase.from('examens_blancs_parcours')
+          .select('module_id').eq('exam_id', examenBase.id);
+        if (parcoursError) throw parcoursError;
+        const moduleId = parcours?.find(p => permissions.includes(p.module_id))?.module_id;
         if (moduleId != null && permissions.includes(moduleId)) {
           const { data, error } = await supabase.from('apprenant_quiz_results')
             .select('id,matiere_id,matiere_nom,tentative,completed_at,details')
