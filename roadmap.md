@@ -1,7 +1,12 @@
 # Feuille de route
 
+## Extension tablettes et autres modules — 31/10 10:44 UTC
+- [ ] Auditer lecteurs/layout/auth communs et corriger uniquement défauts reproductibles, sans données pédagogiques.
+- [ ] Tester vrais lecteurs et écrans sur iPad/Android portrait/paysage, gestes, chargement et reprise ; consigner limites.
+- [ ] Confirmer suite globale/build et sécurité ; publication seulement avec contrôles satisfaisants.
+
 ## Lever les blocages de publication iPhone — 31/10 10:19 UTC
-- [ ] Auditer séparément les16 échecs et10 erreurs non gérées ; corriger uniquement défauts prouvés ou simulations obsolètes, sans changer règles/contenus.
+- [x] Auditer les16 échecs et10 erreurs : mocks/attentes corrigés ; timeout WelcomeBanner annulé au démontage. 3247 PASS /13 ignorés, zéro erreur non gérée le31/10 10:43.
 - [ ] Vérifier écran pratique complet avec transport local isolé et conserver les limites des comptes hébergés.
 - [ ] Relancer tests pertinents/globaux et consulter sécurité ; publier seulement si contrôles satisfaisants et vérifier résultat.
 
