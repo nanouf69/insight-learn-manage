@@ -1909,7 +1909,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
     // Module 87 (Bilan fin de formation FC VTC) est désormais rendu comme un module quiz standard via StableModuleDetailView ci-dessous.
     return (
-      <div className="min-h-screen bg-background">
+      <div className={`min-h-screen bg-background${bandeauSignature ? " pb-28" : ""}`}>
         {bandeauSignature}
         {modalSignature}
         <ErrorBoundary>
