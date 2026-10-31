@@ -39,7 +39,7 @@ describe("Heures de présence validées manuellement", () => {
   it("s'ajoutent aux heures signées sans les remplacer", async () => {
     state.heuresValidees = [{ heures: 6 }, { heures: 3.5 }];
     const { result } = renderHook(() => useApprenantTauxRealisation("app-1"), { wrapper });
-    await waitFor(() => expect(result.current.data).toBeTruthy());
+    await waitFor(() => { if (result.current.error) throw result.current.error; expect(result.current.data).toBeTruthy(); });
     expect(result.current.data?.heuresPresentielValidees).toBe(9.5);
     // Aucune signature : les heures validées comptent seules dans le présentiel
     expect(result.current.data?.donePresentiel).toBe(9.5);
@@ -49,7 +49,7 @@ describe("Heures de présence validées manuellement", () => {
   it("sans validation manuelle, le présentiel reste à zéro", async () => {
     state.heuresValidees = [];
     const { result } = renderHook(() => useApprenantTauxRealisation("app-2"), { wrapper });
-    await waitFor(() => expect(result.current.data).toBeTruthy());
+    await waitFor(() => { if (result.current.error) throw result.current.error; expect(result.current.data).toBeTruthy(); });
     expect(result.current.data?.heuresPresentielValidees).toBe(0);
     expect(result.current.data?.donePresentiel).toBe(0);
   });
