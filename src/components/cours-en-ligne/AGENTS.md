@@ -1,5 +1,6 @@
 # Supports pédagogiques et protection T3P
 - Shared mobile PDF uses width-based sizing outside fullscreen, explicit navigation only, same-source page retention and source reset; supplementary images reserve a fixed frame; why: Safari chrome, panning and delayed media must not move learner content.
+- Course and exam question images reserve the same width-based frame during loading, display and failure; carousel resets use source identity rather than array reference. Why: delayed media and refetch must not shift tablet reading or carry a page across different documents.
 - Search-result outlines use React display state backed by an active in-memory target retained after scroll consumption and cleared on module exit, with bounded scrolling and no timed outline removal; search results for canonical-bank modules come from the displayed projection (module-search-display), and a target absent from the display outlines its exercise card; why: remounts, rerenders, editing or hidden questions must not erase the user's search location.
 - Module 13 current display respects saved question membership and explicit tombstones before canonical hydration, with event/focus/reconnect reads and no opening prune or polling; historical passages and answer state remain separate. Why: prevent deleted questions returning without changing other content or proofs.
 

@@ -88,7 +88,8 @@ export function ExamQuestionImage({
     };
   }, [resolvedUrl]);
 
-  if (!resolvedUrl || hasError) {
+  if (!resolvedUrl) return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
+  if (hasError) {
     return <div className="w-full aspect-[4/3] overflow-hidden"><p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p></div>;
   }
 
