@@ -1527,10 +1527,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }, [selectedModule?.id]);
 
-  const handleRetourModuleRef = useRef(handleBackFromModule);
-  handleRetourModuleRef.current = handleBackFromModule;
-  const handleRetourModule = useCallback(() => { setSelectedExerciseTarget(null); void handleRetourModuleRef.current(); }, []);
-
   const handleTrackCours = useCallback((moduleId: number, coursTitle: string) => {
     trackModuleActivity(moduleId, coursTitle, "open_cours");
   }, [trackModuleActivity]);
@@ -1600,6 +1596,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       }
     }
   }, [apprenant?.id]);
+
+  const handleRetourModuleRef = useRef(handleBackFromModule);
+  handleRetourModuleRef.current = handleBackFromModule;
+  const handleRetourModule = useCallback(() => { setSelectedExerciseTarget(null); void handleRetourModuleRef.current(); }, []);
 
   const handleLogout = useCallback(async () => {
     // Tablette partagée : les réponses encore en attente doivent partir AVANT
