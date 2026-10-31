@@ -13,6 +13,7 @@ import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 import { syncPratiqueSessionsFromPlanning, checkPratiqueSessionsCoherence, type PratiqueCoherenceReport } from "@/lib/syncPratiqueSessions";
 import { resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from "@/lib/pratiqueSlots";
 import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
+import { EntrainementSansExamenAlerte } from "@/components/examens/EntrainementSansExamenAlerte";
 
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -559,6 +560,8 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
 
         </div>
       </div>
+
+      <EntrainementSansExamenAlerte />
 
       {!checkingCoherence && coherence && coherence.total > 0 && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 space-y-3">
