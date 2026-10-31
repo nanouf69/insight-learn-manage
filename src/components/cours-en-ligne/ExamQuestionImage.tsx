@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { resolveExamQuestionImageUrl, addCacheBuster } from "./examens-blancs-utils";
 import { ImageLightbox } from "./ImageLightbox";
 import { supabase } from "@/integrations/supabase/client";
+import { getCachedSignedUrl, signCourseObject } from "@/lib/signedCourseUrlCache";
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
 const STORAGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/storage/v1` : "";
@@ -43,17 +44,17 @@ function extractStorageObject(input: string): { bucket: string; path: string } |
  * like `cours-fichiers` returns 400), extract bucket + path and return a signed URL.
  * Otherwise returns the input url unchanged.
  */
+const PAGE_CACHE_TOKEN = Date.now();
+
 async function toDisplayableUrl(url: string): Promise<string> {
-  try {
-    const object = extractStorageObject(url);
-    if (!object) return url;
-    const { bucket, path } = object;
+  const object = extractStorageObject(url);
+  if (!object) return url;
+  const { bucket, path } = object;
+  const signed = await signCourseObject(bucket, path, async () => {
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
-    if (error || !data?.signedUrl) return url;
-    return normalizeSignedUrl(data.signedUrl);
-  } catch {
-    return url;
-  }
+    return error || !data?.signedUrl ? null : normalizeSignedUrl(data.signedUrl);
+  });
+  return signed ?? url;
 }
 
 export function ExamQuestionImage({
@@ -68,20 +69,22 @@ export function ExamQuestionImage({
   fallbackClassName?: string;
 }) {
   const resolvedUrl = resolveExamQuestionImageUrl(image);
-  const [displayUrl, setDisplayUrl] = useState<string | null>(null);
-  const [cacheToken, setCacheToken] = useState<number>(() => Date.now());
+  const cachedFor = (u: string | null) => {
+    if (!u) return null;
+    const o = extractStorageObject(u);
+    return o ? getCachedSignedUrl(o.bucket, o.path) : null;
+  };
+  const [displayUrl, setDisplayUrl] = useState<string | null>(() => cachedFor(resolvedUrl));
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setHasError(false);
-    setDisplayUrl(null);
-    if (!resolvedUrl) {
-      return;
-    }
-    setCacheToken(Date.now());
+    const cached = cachedFor(resolvedUrl);
+    setDisplayUrl((prev) => (prev === cached ? prev : cached));
+    if (!resolvedUrl || cached) return;
     toDisplayableUrl(resolvedUrl).then((u) => {
-      if (!cancelled) setDisplayUrl(u);
+      if (!cancelled) setDisplayUrl((prev) => (prev === u ? prev : u));
     });
     return () => {
       cancelled = true;
@@ -97,7 +100,8 @@ export function ExamQuestionImage({
     return <div className="w-full aspect-[4/3] overflow-hidden"><div className={className ?? "mt-2 h-40 w-full max-w-xs rounded-lg border bg-muted animate-pulse"} /></div>;
   }
 
-  const src = addCacheBuster(displayUrl, cacheToken);
+  // Signed URLs are already unique; a per-mount cache-buster forced a reload (visible jump) on every rerender/remount.
+  const src = extractStorageObject(resolvedUrl) ? displayUrl : addCacheBuster(displayUrl, PAGE_CACHE_TOKEN);
   return (
     <ImageLightbox
       reserveFrame

@@ -330,7 +330,7 @@ function CourseImageLightbox({ src, alt, className }: { src: string; alt: string
   const displayUrl = useDisplayableCourseUrl(src);
 
   if (!displayUrl) {
-    return <div className={className ?? "h-48 rounded border bg-muted animate-pulse"} />;
+    return <div className="w-full aspect-[4/3] rounded border bg-muted" aria-busy="true" />;
   }
 
   return <ImageLightbox src={displayUrl} alt={alt} className={className} reserveFrame />;
@@ -374,7 +374,8 @@ function CourseFileViewerInner({
     return <div className="h-20 rounded-lg border bg-muted animate-pulse" />;
   }
 
-  const externalViewerUrl = resolveAppFileUrl(support.url, { forExternalViewer: true });
+  // Private storage: Google/Office can only fetch the signed URL (the raw URL returns 400 → "No preview").
+  const externalViewerUrl = courseStorageObjectOf(support.url) ? displayUrl : resolveAppFileUrl(support.url, { forExternalViewer: true });
   const googleViewerUrl = shouldShowViewers
     ? `https://docs.google.com/viewer?url=${encodeURIComponent(externalViewerUrl)}&embedded=true`
     : null;
@@ -2079,6 +2080,7 @@ const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuiz
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
 import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
+import { getCachedSignedUrl, signCourseObject } from "@/lib/signedCourseUrlCache";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
