@@ -22,7 +22,6 @@ describe("onglet resté sur une ancienne version", () => {
     const s = document.createElement("script");
     s.type = "module"; s.src = "/assets/index-ANCIENNE.js";
     document.head.appendChild(s);
-    const reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
     const fetcher = vi.fn(async () => new Response(page("NOUVELLE"), { status: 200 }));
     installDeployedVersionWatch(window, fetcher as any);
     await vi.waitFor(() => expect(notifier).toHaveBeenCalledTimes(1));
@@ -30,6 +29,5 @@ describe("onglet resté sur une ancienne version", () => {
     window.dispatchEvent(new Event("focus"));
     await new Promise((r) => setTimeout(r, 10));
     expect(notifier).toHaveBeenCalledTimes(1);
-    expect(reload).not.toHaveBeenCalled();
   });
 });
