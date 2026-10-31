@@ -1,3 +1,4 @@
+import { hauteurDisponibleViewer } from "./pdfViewerHauteur";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Document, Page } from "react-pdf";
