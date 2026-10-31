@@ -1831,14 +1831,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Rappel non bloquant affiché dans l'espace élève (bandeau + bouton Signer).
   const signatureEnAttente = needsEmargement && emargementFCStatus !== "checking" && emargementFCStatus !== "erreur";
   const bandeauSignature = signatureEnAttente ? (
-    <div data-testid="bandeau-signature-en-attente" className="bg-amber-100 border-b border-amber-300 text-amber-900">
+    <div data-testid="bandeau-signature-en-attente" className="fixed inset-x-0 bottom-0 z-40 bg-amber-100 border-t border-amber-300 text-amber-900 pb-[env(safe-area-inset-bottom)] shadow-lg">
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
         <span>📝 <strong>Signature en attente</strong> — merci de signer votre feuille d'émargement (obligatoire pour votre dossier de formation).{emargementEnRetard > 0 ? ` ${emargementEnRetard} créneau${emargementEnRetard > 1 ? "x" : ""} passé${emargementEnRetard > 1 ? "s" : ""} non signé${emargementEnRetard > 1 ? "s" : ""} : la date du cours est conservée et l'heure réelle de signature est enregistrée.` : ""}</span>
         <Button size="sm" disabled={!identityConfirmed || alreadyConnected || showPresenceModal || showInactivityModal || isInExam} onClick={() => setShowSignatureModal(true)}>Signer</Button>
       </div>
     </div>
   ) : emargementFCStatus === "erreur" && (isFC || isPres || emargementPratiquePending) ? (
-    <div data-testid="bandeau-signature-erreur" className="bg-amber-100 border-b border-amber-300 text-amber-900">
+    <div data-testid="bandeau-signature-erreur" className="fixed inset-x-0 bottom-0 z-40 bg-amber-100 border-t border-amber-300 text-amber-900 pb-[env(safe-area-inset-bottom)] shadow-lg">
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
         <span>⚠️ Impossible de vérifier vos feuilles d'émargement pour le moment (connexion ou serveur indisponible).</span>
         <Button size="sm" variant="outline" onClick={() => setEmargementRefreshTick((t) => t + 1)}>Réessayer</Button>
