@@ -146,6 +146,20 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onPointerDown={(e) => {
+          if (e.pointerType !== 'touch' || zoom <= 1) return;
+          setDragging(true); lastPos.current = { x: e.clientX, y: e.clientY };
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (e.pointerType !== 'touch' || !dragging || zoom <= 1) return;
+          const dx=e.clientX-lastPos.current.x, dy=e.clientY-lastPos.current.y;
+          lastPos.current={x:e.clientX,y:e.clientY};
+          setPan(p=>({x:p.x+dx,y:p.y+dy}));
+        }}
+        onPointerUp={handleMouseUp}
+        onPointerCancel={handleMouseUp}
+        onLostPointerCapture={handleMouseUp}
       >
         <img
           src={images[page]}

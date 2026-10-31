@@ -519,21 +519,7 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   const prev = () => setIdx(i => Math.max(0, i - 1));
   const next = () => setIdx(i => Math.min(total - 1, i + 1));
 
-  // Swipe support for mobile
-  const touchStartRef = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartRef.current = e.changedTouches[0]?.clientX ?? null;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const startX = touchStartRef.current;
-    const endX = e.changedTouches[0]?.clientX;
-    touchStartRef.current = null;
-    if (startX == null || endX == null) return;
-    const delta = endX - startX;
-    if (Math.abs(delta) < 50) return;
-    if (delta > 0) prev();
-    else next();
-  };
+  // Reading gestures belong to the browser; only explicit controls navigate.
 
   const handleSlideChange = (updatedSlide: Slide) => {
     const newSlides = [...slides];
@@ -574,12 +560,13 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]')) return;
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [total]);
 
   return (
     <div
@@ -625,10 +612,8 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
         style={
           isFullscreen
             ? { flex: 1 }
-            : { aspectRatio: "16 / 9", maxHeight: "min(70vh, 620px)" }
+            : { aspectRatio: "16 / 9", maxHeight: "620px" }
         }
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
         <div
           className="absolute"
