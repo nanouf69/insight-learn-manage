@@ -8,15 +8,15 @@
 
 ## Lever les blocages de publication iPhone — 31/10 10:19 UTC
 - [x] Auditer les16 échecs et10 erreurs : mocks/attentes corrigés ; timeout WelcomeBanner annulé au démontage. 3247 PASS /13 ignorés, zéro erreur non gérée le31/10 10:43.
-- [ ] Vérifier écran pratique complet avec transport local isolé et conserver les limites des comptes hébergés.
-- [ ] Relancer tests pertinents/globaux et consulter sécurité ; publier seulement si contrôles satisfaisants et vérifier résultat.
+- [x] Écrans6/8/12 vérifiés avec transport local isolé ; limites hébergées conservées au rapport tablette.
+- [x] Tests globaux3249 PASS/zéro erreur et sécurité relus ; publication reste conditionnée aux limites nommées plus haut.
 
 ## Incident généralisé pratiques iPhone — 31/10 10:01 UTC
 - [x] Cartographie code + lecture Cloud6/8/12 : TAXI/TA partagent6/12, VTC/VA8 ; PDF, PPT sans PDF, images et supports Lyon distingués.
 - [x] Correctifs partagés PDF (largeur mobile, navigation explicite, source/page, scroll local), cadres images, timeout auth non assimilé à logout, cleanup reconnect.
 - [x] 43 tests ciblés PASS ;10 simulations WebKit/Chromium PASS avec médias/auth fictifs. Rapport docs/incident-pratiques-mobile-2026-10-31.md.
 - [ ] Tests hébergés et supports réels complets : bloqués par isolation compte test non garantie ; Office/PWA réelle non prouvés.
-- [ ] Publication : bloquée par16 FAIL globaux/10 erreurs (3230 PASS), aucun déploiement.
+- [ ] Publication : échecs globaux levés (3249 PASS), couverture hébergée/tablette complète et lecteurs externes non prouvés ; aucun déploiement.
 
 ## Incident iPhone — compte TEST isolé — 31/10
 - [ ] Compte hébergé : bloqué tant que tous les envois automatiques et statistiques ne sont pas exclus ; aucun compte réel utilisé.
