@@ -878,4 +878,4 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Correctif serveur 0233 appliqué (Riyad 7/7 prouvés) ; test SQL dédié et publication restent à faire — [ ] Correctif : exigences figées à l'attribution/validation, nouveaux quiz non rétroactifs ; tests ; publication conditionnelle
 ## 30/10 — Liste Pratique signée EDOF : élèves en financement personnel (N. BONNARDON) — attente décision
 
-- [ ] Kevin FERNANDES (VTC) : audit EB1/EB2 F(V)/G(V), intro e-learning, bilan final ; corriger seulement avec preuves
+- [ ] Kevin FERNANDES (31/10 accord explicite) : droits individuels sur tous les modules attribués sans validation fictive ; G(V) EB2 et bilan accessibles ; reconnaître introduction et corrections prouvées, tests lecture seule et rapport avant/après, aucun déploiement.
