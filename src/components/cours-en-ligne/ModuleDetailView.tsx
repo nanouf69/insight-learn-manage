@@ -6907,19 +6907,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         return;
       }
 
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      // A target removed by navigation is not a request to reset the page.
     }, []);
 
+    const revisionFrameRef = useRef<number | null>(null);
+    useEffect(() => () => {
+      if (revisionFrameRef.current !== null) window.cancelAnimationFrame(revisionFrameRef.current);
+    }, []);
     const scheduleScrollToRevisionStart = useCallback((exoId: number) => {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
 
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => scrollToRevisionStart(exoId));
+      if (revisionFrameRef.current !== null) window.cancelAnimationFrame(revisionFrameRef.current);
+      revisionFrameRef.current = window.requestAnimationFrame(() => {
+        revisionFrameRef.current = window.requestAnimationFrame(() => {
+          revisionFrameRef.current = null;
+          scrollToRevisionStart(exoId);
+        });
       });
-      window.setTimeout(() => scrollToRevisionStart(exoId), 180);
-      window.setTimeout(() => scrollToRevisionStart(exoId), 420);
     }, [scrollToRevisionStart]);
 
     const startWrongQuestionRevision = (pending: {
