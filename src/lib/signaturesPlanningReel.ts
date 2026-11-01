@@ -1,8 +1,9 @@
 import { daySlotsDepuisConfigs, normalizePratiqueCreneau, normalizePratiqueType, parseClockMinutes, resolvePratiqueSlotParts } from '@/lib/pratiqueSlots';
+import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 
 const dateISO = (v: unknown) => String(v ?? '').slice(0, 10);
 const dateValide = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
-const retenue = (r: any) => r?.sessions && r.liste_attente !== true && r.emargements_exclus !== true && !/annul/i.test(r.sessions.statut ?? '');
+const retenue = (r: any) => r?.sessions && r.liste_attente !== true && r.emargements_exclus !== true && !/annul|abandon|exclu|attente/i.test(`${r.sessions.statut ?? ''} ${r.statut_suivi ?? ''}`);
 
 export function slotsSignatures(start: unknown, end: unknown): string[] {
   const a = parseClockMinutes(String(start ?? '')), b = parseClockMinutes(String(end ?? ''));
@@ -40,42 +41,9 @@ export function planningSignaturesReel(inscriptions: any[], reservations: any[],
       continue;
     }
     if (!/theorique/i.test(s.type_session ?? '') || row.elearning_apprenant === true) continue;
-    const debut = [dateISO(s.date_debut), dateISO(row.date_debut)].filter(Boolean).sort().at(-1) ?? '';
-    let fin = [dateISO(s.date_fin || s.date_debut), dateISO(row.date_fin_personnalisee || row.date_fin)].filter(Boolean).sort()[0] ?? '';
-    if (!dateValide(debut) || !dateValide(fin) || fin < debut) { incomplet = true; continue; }
-    if (filiere.toUpperCase() === 'TA' && !dateValide(dateISO(row.date_fin_personnalisee))) {
-      const d = new Date(`${debut}T00:00:00Z`); let jours = 0;
-      for (let i = 0; i < 400 && d.toISOString().slice(0, 10) <= fin; i++, d.setUTCDate(d.getUTCDate() + 1)) {
-        if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6 && ++jours === 5) { fin = d.toISOString().slice(0, 10); break; }
-      }
-    }
-    const hd = parseClockMinutes(row.heure_debut_personnalisee ?? s.heure_debut);
-    const hf = parseClockMinutes(row.heure_fin_personnalisee ?? s.heure_fin);
-    let trouves = 0;
-    for (const b of blocs) {
-      const publics = Array.isArray(b.publics_cibles) ? b.publics_cibles : [];
-      if (!(publics.length ? publics.some((p: string) => p.toUpperCase() === filiere.toUpperCase()) : new RegExp(`\\b${filiere}\\b`, 'i').test(b.formation ?? ''))) continue;
-      const d = new Date(`${dateISO(b.semaine_debut)}T00:00:00Z`);
-      d.setUTCDate(d.getUTCDate() + Number(b.jour));
-      if (!Number.isFinite(d.getTime()) || d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
-      const date = d.toISOString().slice(0, 10);
-      if (date < debut || date > fin) continue;
-      const a = parseClockMinutes(b.heure_debut), z = parseClockMinutes(b.heure_fin);
-      if (a == null || z == null) { incomplet = true; continue; }
-      const start = Math.max(a, hd ?? a), end = Math.min(z, hf ?? z);
-      if (end <= start) continue;
-      const clock = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
-      ajouter(date, slotsSignatures(clock(start), clock(end)), false); trouves++;
-    }
-    // Only explicitly assigned hours are a fallback schedule, never a 9–16 default.
-    if (!trouves) {
-      const keys = slotsSignatures(row.heure_debut_personnalisee ?? s.heure_debut, row.heure_fin_personnalisee ?? s.heure_fin);
-      if (!keys.length) { incomplet = true; continue; }
-      const d = new Date(`${debut}T00:00:00Z`);
-      for (let i = 0; i < 400 && d.toISOString().slice(0, 10) <= fin; i++, d.setUTCDate(d.getUTCDate() + 1)) {
-        if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) ajouter(d.toISOString().slice(0, 10), keys, false);
-      }
-    }
+    const slots = creneauxSessionInscrite(row, filiere);
+    if (!slots.length) incomplet = true;
+    for (const slot of slots) ajouter(slot.date, [slot.creneau], false);
   }
   for (const r of reservations) {
     const date = dateISO(r.date_choisie);
