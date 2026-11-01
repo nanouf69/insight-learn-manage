@@ -9688,6 +9688,16 @@ export type Database = {
           serveur_le: string
         }[]
       }
+      emargement_theorie_inscrite: {
+        Args: { p_apprenant_id: string; p_session_id?: string }
+        Returns: {
+          creneau: string
+          date_cours: string
+          debut: string
+          fin: string
+          pratique: boolean
+        }[]
+      }
       enforce_apprenant_session_limits: {
         Args: never
         Returns: {

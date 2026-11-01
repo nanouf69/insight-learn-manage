@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Émargements des inscriptions session — priorité 02/11/2026
+- [ ] Remplacer dépendance agenda par inscriptions/dates effectives et exceptions explicites pour théorie ; deux créneaux/jour ouvré, TA première semaine, pratique séparée, exclusions et régularisation historiques conservées.
+- [ ] Tester PostgreSQL isolé avant migration active autorisée ; conserver ouverture −30 min, propriété et compatibilité site publié.
+- [ ] Harmoniser vue élève/CRM/compteurs/préparation future idempotente ; aucun signé/présent fictif, aucun compte ni message.
+- [ ] Audit nominatif 40 personnes lundi, croisements dédupliqués, feuilles requises/proposées/existantes, volumes réels sans forfait pratique.
+- [ ] Empreintes historiques avant/après, tests frontières/jours/TA/doublons/exclusions/isolation/sans compte ; rapport SQL appliqué ou non et limites. Aucun site publié.
+
 ## Fiabilité globale après audit — 01/11/2026
 - [ ] Priorité supplémentaire 00:37 : nouveau corrigé administrateur immédiatement autoritaire pour corrections/nouvelles tentatives ; caches/invalidation, A→B, éditions rapides, multichoix et 8 € sur deux sessions/appareils ; copies et notes figées inchangées, divergences explicites.
 - [ ] P1 : protéger brouillons/soumissions contre concurrence, accusés trompeurs et réécritures ; tests fictifs uniquement.

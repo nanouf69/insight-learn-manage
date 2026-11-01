@@ -152,8 +152,9 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             // Construire la liste des jours d'émargement à partir de l'agenda réel
             // (détection auto journée/soir + horaires réels)
             const agendaDays = await buildSessionAgendaDays({
-              dateDebut: apprenant.date_debut_formation || session.date_debut,
-              dateFin: apprenant.date_fin_formation || session.date_fin,
+              dateDebut: session.date_debut,
+              dateFin: session.date_fin,
+              inscription: sa,
               title: session.nom,
               type_session: session.type_session,
               typeApprenant: apprenant.type_apprenant,

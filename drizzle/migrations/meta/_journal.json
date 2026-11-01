@@ -1646,6 +1646,13 @@
       "when": 1793465885890,
       "tag": "0234_individual_module_access_derogations",
       "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1793543298874,
+      "tag": "0235_attendance_enrollment_rights",
+      "breakpoints": true
     }
   ]
 }

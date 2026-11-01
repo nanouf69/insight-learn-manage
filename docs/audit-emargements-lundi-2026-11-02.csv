@@ -1,0 +1,41 @@
+apprenant_id,nom,prenom,parcours,compte,droits_lundi,theorie_sessions_ciblees,feuilles_avant,feuilles_apres,pratique_inscrite_ou_reservee,anomalie
+4d676c71-f298-44c4-b504-ad2f64334114,ABDELHAK,MOHAMMED,vtc,oui,"soir_1,soir_2",20,2,2,,
+18d7f8fb-613d-439b-a793-c56c56817818,ADYAHYA,Kamal,vtc,non,"matin,apres_midi",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+14f7a8be-587b-4277-bf1e-60062509ea29,AIT BALLAGH,SAMI,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+f582fc9d-3003-4d8d-a619-d6373e70684c,Alpha,Barry,vtc,oui,"matin,apres_midi",20,0,2,,
+5bed600d-6dcb-4538-bb26-62e104b6f0ab,Bekkis,Abdessamad,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+0cd26bec-c660-4c5c-beb8-99baa46326ff,BEN ALI,Mohktar,ta,oui,,10,0,0,,TA première semaine finie
+bba53239-a98d-4de6-b64c-d4e8aee74b7f,BENAKKI,Ayoub,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+7b8498de-0102-47c2-a90d-d22344c5af1f,BENCHAKR,ANISS,vtc,non,"matin,apres_midi",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+b9058e7e-a81e-4741-adba-6da88238cc84,BENKHELIL,HASSEN,taxi,oui,"matin,apres_midi",32,2,2,,
+63940579-542d-48f7-ab1e-fd0ee8101a6b,BENNANI,Meriem,vtc,non,"matin,apres_midi",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+e117ed6e-db12-4de2-b9e0-5858e41a8c50,Berhane Gebremedhin,Samson,vtc,oui,"soir_1,soir_2",20,2,2,,
+a12b358b-d833-4022-a956-5e3d7d0d5200,CABRAL DE SOUSA FURTADO,José,vtc,oui,"soir_1,soir_2",20,2,2,,
+b1f8a760-ac2d-4f12-abd8-60651e1b9974,CHALA,Rachida,ta,oui,,10,0,0,,TA première semaine finie
+2be4ac7b-32a6-4a0f-9a12-267381c6779b,CHEMOUN,Mourad,taxi,oui,"matin,apres_midi",32,0,2,,
+f0d7655a-6da6-4286-88fb-16d53f277dde,Dakhlaoui,Ilyes,ta,oui,,10,2,2,,"TA : première semaine finie, feuilles lundi existantes conservées hors droit"
+8441a1b2-f20f-496e-b2c9-b2a914d9c8e3,DAKHLI,Zine,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+a0df3f1e-d538-4955-9529-d950b5816634,DIABY,Mohamed,vtc,oui,"matin,apres_midi",20,2,2,,
+317750c9-5976-4fde-ad37-0de4a57d2ccb,DIALLO,Kama,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+1a143496-f384-4143-acb9-9f81d4f1e942,DIANE,Mohamed,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+ac865e87-2a5c-4209-9486-215a1f3627df,HABLANIS,Anis,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+c41a5034-8fa2-4fe5-a5d0-ad3f590d7fbe,HADDOU,MASSINISSA,taxi,oui,"matin,apres_midi",32,0,2,,
+9734d067-a16f-4c57-82c1-c57a0ce097cf,Haddouche,Djamel,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+b78b5391-9f8f-4f11-9add-2e86078363e1,HADJ ALI,Arezki,vtc,non,"matin,apres_midi",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+26b14f51-4a57-44a3-93d9-bd9f5d462f91,HAMDI,Mohamed,taxi,oui,"matin,apres_midi",32,0,2,,
+86eebfff-3714-4acb-bb9f-e808f516fbbe,HASNAT,MEHDI,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+c097d086-8a76-4ec2-8bfe-75c7ae112d11,KOUGBE TE BIBANGA,Vianney,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+e048502c-eeaa-48e3-aeb9-2b9dce4cf2f2,MAHROUG,Mohamed Amin,vtc,oui,"soir_1,soir_2",20,2,2,,
+10c15d2c-221f-428d-8076-fe9b1f43f7ab,MALKI,Ahmed,vtc,non,"matin,apres_midi",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+7dac2ec5-46f4-46f9-9573-2bf245041601,MEMDOUH,Ilies,taxi,oui,"matin,apres_midi",32,0,2,,
+c3b3b7c0-0a45-4ba0-81c6-2d05e051711b,Mfouemo,Rodrigue Rodrigue Etienne,vtc,oui,"soir_1,soir_2",20,2,2,,
+4354a667-522a-4461-9ecc-1100a06ebf22,MLIKI,Mohamed,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+b233f0db-9e28-47c4-8721-80d591b2287c,NAZARYAN,KAREN,vtc,oui,"soir_1,soir_2",20,2,2,,
+0002ed1d-66ff-4167-8af5-6799ee63095a,Pndukyan,Harutyun,ta,oui,,10,2,2,2026-06-15,"TA : première semaine finie, feuilles lundi existantes conservées hors droit"
+a3348359-20ed-4cef-beb8-e02b0e6367e2,RAYMAN,CIHAN,ta,oui,,10,2,2,,"TA : première semaine finie, feuilles lundi existantes conservées hors droit"
+22dd8bcf-1b79-4968-b408-2deea64524b9,SAIDI,Aymen,vtc,non,"soir_1,soir_2",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+144ca7f4-6623-4063-861b-e139a4a0108b,SARKISIAN,Pogos,taxi,oui,"matin,apres_midi",32,0,2,,
+e912ca30-7d7f-4fa9-87ba-e4755fcad023,SELMI,KAIS,vtc,non,"matin,apres_midi",20,0,0,,Compte absent : droit planifié mais aucune feuille liée à un compte créée
+bcb6b59b-098f-449e-aa4c-23940c528c16,SENE,Mamadou,vtc,oui,"matin,apres_midi",20,2,2,,
+d04a9639-a7a6-47b0-a1c4-6d7871521f79,SMAIL,Sifeddine,vtc,oui,,0,0,0,,Théorie e-learning exclue
+ab67643c-475e-4c54-a2ea-ad31b2d5f924,SOUICI,Ahlem,ta,oui,,10,0,0,,TA première semaine finie
