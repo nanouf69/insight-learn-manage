@@ -3,6 +3,7 @@ import os, subprocess, tempfile, shutil, unittest, json
 from pathlib import Path
 AS = ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
 A='11111111-1111-1111-1111-111111111111'; U='22222222-2222-2222-2222-222222222222'; S='33333333-3333-3333-3333-333333333333'
+OTHER='55555555-5555-5555-5555-555555555555'
 TABLES=['apprenants','sessions','session_apprenants','agenda_blocs','reservations_pratique','planning_pratique_config','emargement_regularisations','emargements_fc','emargement_dossiers_lies']
 def live(q): return subprocess.check_output(['psql','-X','-At','-v','ON_ERROR_STOP=1','-c',q],text=True).strip()
 class Contrat(unittest.TestCase):
