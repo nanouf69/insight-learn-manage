@@ -1653,6 +1653,13 @@
       "when": 1793543298874,
       "tag": "0235_attendance_enrollment_rights",
       "breakpoints": true
+    },
+    {
+      "idx": 236,
+      "version": "7",
+      "when": 1793549694297,
+      "tag": "0236_vtc_november_enrollment_attendance",
+      "breakpoints": true
     }
   ]
 }
