@@ -1,5 +1,13 @@
 # Feuille de route
 
+## Fiabilité globale après audit — 01/11/2026
+- [ ] P1 : protéger brouillons/soumissions contre concurrence, accusés trompeurs et réécritures ; tests fictifs uniquement.
+- [ ] P2 : preuve EB par toutes les matières effectivement requises et remises ; compatibilité historique sans modification des acquis.
+- [ ] P3 : diagnostic QRC en attente et copies vides ; aucune relance IA payante automatique ni renotation.
+- [ ] P4 : recontrôler les divergences de comptes, 353 déficits et 74 feuilles passées sans image ; signaler les preuves insuffisantes, aucune réparation automatique.
+- [ ] Tests ciblés, intégration PostgreSQL jetable, non-régression globale et simulations mobiles/tablettes ; rapport avant/après.
+- [ ] Déploiement : interdit avant contrôles terminés et nouvelle confirmation explicite du propriétaire.
+
 ## Supports pratiques complets — 31/10 13:17 UTC
 - [x] Audit : deux PDF originaux retrouvés dans la copie des pièces jointes, 19 pages / couverture 72 questions, trois parties présentes ; sources 20/76 non trouvées. Rapport docs/supports-pratiques-complets-audit-2026-10-31.md.
 - [ ] Intégration intégrale séparée en consultation authentifiée uniquement, sans impact sur les acquis ; bloquée tant que les sources exactes ne sont pas vérifiées.
