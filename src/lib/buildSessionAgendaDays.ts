@@ -1,5 +1,6 @@
 import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 import { isPratiqueType } from '@/lib/sessionTypes';
+import { parseClockMinutes } from '@/lib/pratiqueSlots';
 import type { AgendaDaySlot } from '@/components/sessions/EmargementIndividuelGenerator';
 
 export interface SessionAgendaContext {
@@ -17,8 +18,16 @@ export async function buildSessionAgendaDays(ctx: SessionAgendaContext): Promise
   const row = ctx.inscription ?? { sessions: { date_debut: ctx.dateDebut, date_fin: ctx.dateFin, nom: ctx.title, type_session: ctx.type_session } };
   const type = String(ctx.typeApprenant ?? '').toLowerCase();
   if (isPratiqueType(ctx.type_session)) {
-    // This helper has no real booking/config evidence: do not invent practical sheets.
-    throw new Error('Les horaires pratiques inscrits doivent être vérifiés avant de générer la feuille.');
+    const s = row.sessions;
+    if (row.liste_attente || row.emargements_exclus || /annul|abandon/i.test(s?.statut ?? '')) return [];
+    const hd = parseClockMinutes(row.heure_debut_personnalisee || s?.heure_debut);
+    const hf = parseClockMinutes(row.heure_fin_personnalisee || s?.heure_fin);
+    if (!s?.date_debut || hd == null || hf == null || hf <= hd) throw new Error('Les horaires pratiques inscrits doivent être vérifiés avant de générer la feuille.');
+    const clock = (n: number) => `${String(Math.floor(n / 60)).padStart(2,'0')}:${String(n % 60).padStart(2,'0')}`;
+    const day: AgendaDaySlot = {date:new Date(`${s.date_debut}T00:00:00`)};
+    if(hd < 720) {day.matinDebut=clock(hd);day.matinFin=clock(Math.min(hf,720));}
+    if(hf > 780 && hd < 1020) {day.apremDebut=clock(Math.max(hd,780));day.apremFin=clock(hf);}
+    return [day];
   }
   const filiere = type.split('-')[0].toUpperCase();
   const slots = creneauxSessionInscrite({ ...row, type_apprenant: type, elearning_apprenant: /^(vtc|taxi|ta|va)-e$/.test(type) }, filiere);
