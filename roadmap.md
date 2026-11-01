@@ -1,6 +1,7 @@
 # Feuille de route
 
 ## Fiabilité globale après audit — 01/11/2026
+- [ ] Priorité supplémentaire 00:37 : nouveau corrigé administrateur immédiatement autoritaire pour corrections/nouvelles tentatives ; caches/invalidation, A→B, éditions rapides, multichoix et 8 € sur deux sessions/appareils ; copies et notes figées inchangées, divergences explicites.
 - [ ] P1 : protéger brouillons/soumissions contre concurrence, accusés trompeurs et réécritures ; tests fictifs uniquement.
 - [ ] P2 : preuve EB par toutes les matières effectivement requises et remises ; compatibilité historique sans modification des acquis.
 - [ ] P3 : diagnostic QRC en attente et copies vides ; aucune relance IA payante automatique ni renotation.
