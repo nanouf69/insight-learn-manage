@@ -23,6 +23,7 @@ class Contrat(unittest.TestCase):
   cls.sql('ALTER TABLE emargements_fc ADD UNIQUE(apprenant_id,date_emargement,demi_journee);')
   cls.sql(Path('drizzle/migrations/0215_attendance_early_window.sql').read_text())
   cls.sql(Path(os.environ.get('ATTENDANCE_MIGRATION','drizzle/migrations/0235_attendance_enrollment_rights.sql')).read_text())
+  if os.environ.get('ATTENDANCE_OVERLAY'): cls.sql(Path(os.environ['ATTENDANCE_OVERLAY']).read_text())
  @classmethod
  def tearDownClass(cls):
   subprocess.run(AS+['pg_ctl','-D',cls.dir+'/db','-m','immediate','stop'],capture_output=True,env=cls.env); shutil.rmtree(cls.dir,True)
@@ -94,6 +95,20 @@ class Contrat(unittest.TestCase):
  def test_custom_dates_respected(self):
   self.sql("truncate agenda_blocs; update session_apprenants set date_debut='2026-10-28',date_fin_personnalisee='2026-10-29'")
   self.assertEqual(len(self.slots()),4); self.assertTrue(all(s.startswith(('2026-10-28','2026-10-29')) for s in self.slots()))
+ def test_28_vtc_november_enrollment_twenty_weekday_slots(self):
+  target='91f00853-2ac2-4da6-996b-4832fc132b6b'
+  self.sql(f"truncate agenda_blocs; update apprenants set type_apprenant='vtc',creneau_horaire='en-ligne'; update sessions set id='{target}',date_debut='2026-11-02',date_fin='2026-11-13',heure_debut=null,heure_fin=null; update session_apprenants set session_id='{target}'")
+  slots=self.slots();self.assertEqual(len(slots),20)
+  dates={s.split('|')[0] for s in slots}
+  self.assertEqual(dates,{'2026-11-02','2026-11-03','2026-11-04','2026-11-05','2026-11-06','2026-11-09','2026-11-10','2026-11-11','2026-11-12','2026-11-13'})
+  self.sql("update apprenants set type_apprenant='ta-e'");self.assertEqual(self.slots(),[])
+ def test_fc_exception_afternoon_17_unchanged(self):
+  self.sql("update apprenants set type_apprenant='continue-vtc'; update sessions set nom='Formation continue VTC',heure_fin='17:00'; truncate agenda_blocs")
+  self.assertIn('2026-10-26|apres_midi|13:00:00|17:00:00|false',self.slots())
+ def test_requested_four_opening_boundaries(self):
+  for start,before,opening in [('09:00','07:29','07:30'),('13:00','11:29','11:30'),('17:00','15:29','15:30'),('18:30','16:59','17:00')]:
+   for instant,wanted in [(before,'f'),(opening,'t')]:
+    self.assertEqual(self.sql(f"select emargement_fenetre_ouverte('2026-11-02','{start}','2026-11-02T{instant}:00Z')").stdout.strip(),wanted)
  def test_historical_proof_cannot_clear_reassign_or_redate(self):
   self.test_recorded_signature_unchanged_and_real_timestamp()
   before=self.sql('select md5(string_agg(to_jsonb(e)::text,\'\')) from emargements_fc e').stdout
