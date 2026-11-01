@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Autorisation ciblée 28 VTC novembre — 01/11 16:11 UTC
+- [ ] Audit actuel des 28 IDs, comptes/email/lien unique, accès novembre, fenêtres et feuilles ; seules deux sessions VTC ciblées.
+- [ ] Créer les18 comptes manquants par flux existant seulement si aucun envoi ni réinitialisation ni écriture pédagogique ; préparer remise des accès sans envoi.
+- [ ] Préparer20 feuilles vides par élève selon inscriptions effectives ; jours02–06/09–13 incluant11/11, aucun weekend/pratique ; déduplication et conservation historique.
+- [ ] Tests isolés droits/horaires/RLS/identité et empreintes avant/après ; vérifier compatibilité publié, aucun site publié ni autre chantier repris.
+
 ## Émargements des inscriptions session — priorité 02/11/2026
 - [x] Migration0235 appliquée : théorie inscrite sans agenda, deux créneaux ouvrés, TA5 premiers jours, horaires personnalisés, pratique distincte, passé sur régularisation seulement.
 - [x] PostgreSQL isolé22/22 PASS avant et après fichier exact appliqué ; ouverture−30min et conservation des preuves.
