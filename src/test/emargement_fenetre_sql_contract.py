@@ -22,7 +22,7 @@ class Contrat(unittest.TestCase):
    cls.sql(catalog['functions'][f] if catalog else live(f"select pg_get_functiondef('public.{f}'::regproc)"))
   cls.sql('ALTER TABLE emargements_fc ADD UNIQUE(apprenant_id,date_emargement,demi_journee);')
   cls.sql(Path('drizzle/migrations/0215_attendance_early_window.sql').read_text())
-  if os.environ.get('ATTENDANCE_MIGRATION'): cls.sql(Path(os.environ['ATTENDANCE_MIGRATION']).read_text())
+  cls.sql(Path(os.environ.get('ATTENDANCE_MIGRATION','drizzle/migrations/0235_attendance_enrollment_rights.sql')).read_text())
  @classmethod
  def tearDownClass(cls):
   subprocess.run(AS+['pg_ctl','-D',cls.dir+'/db','-m','immediate','stop'],capture_output=True,env=cls.env); shutil.rmtree(cls.dir,True)

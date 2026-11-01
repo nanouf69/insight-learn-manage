@@ -1,11 +1,13 @@
 # Feuille de route
 
 ## Émargements des inscriptions session — priorité 02/11/2026
-- [ ] Remplacer dépendance agenda par inscriptions/dates effectives et exceptions explicites pour théorie ; deux créneaux/jour ouvré, TA première semaine, pratique séparée, exclusions et régularisation historiques conservées.
-- [ ] Tester PostgreSQL isolé avant migration active autorisée ; conserver ouverture −30 min, propriété et compatibilité site publié.
-- [ ] Harmoniser vue élève/CRM/compteurs/préparation future idempotente ; aucun signé/présent fictif, aucun compte ni message.
-- [ ] Audit nominatif 40 personnes lundi, croisements dédupliqués, feuilles requises/proposées/existantes, volumes réels sans forfait pratique.
-- [ ] Empreintes historiques avant/après, tests frontières/jours/TA/doublons/exclusions/isolation/sans compte ; rapport SQL appliqué ou non et limites. Aucun site publié.
+- [x] Migration0235 appliquée : théorie inscrite sans agenda, deux créneaux ouvrés, TA5 premiers jours, horaires personnalisés, pratique distincte, passé sur régularisation seulement.
+- [x] PostgreSQL isolé22/22 PASS avant et après fichier exact appliqué ; ouverture−30min et conservation des preuves.
+- [x] Compteurs/feuilles individuels locaux harmonisés ;12 feuilles lundi vides ajoutées, rejeu0, aucun compte ni message. Aucun site publié.
+- [x] Audit40 personnes/46 inscriptions :33 éligibles/66 créneaux lundi ;18 sans compte non créés,6TA semaine terminée,1e-learning exclu. Rapport docs/emargements-inscriptions-2026-11-01.md et CSV.
+- [x] Empreinte3041 feuilles identique avant/après ;155 tests signatures PASS. Limites : aucune signature réelle testée, collectifs et relance serveur non harmonisés, calendriers d'autres sessions hors correction lundi.
+- [ ] Accès autonome des18 inscrits sans compte : création/envoi interdits dans ce périmètre ; tests en compte réel non autorisés.
+- [ ] Mise en ligne des compteurs/PDF locaux : attend accord explicite, aucune publication.
 
 ## Fiabilité globale après audit — 01/11/2026
 - [ ] Priorité supplémentaire 00:37 : nouveau corrigé administrateur immédiatement autoritaire pour corrections/nouvelles tentatives ; caches/invalidation, A→B, éditions rapides, multichoix et 8 € sur deux sessions/appareils ; copies et notes figées inchangées, divergences explicites.
