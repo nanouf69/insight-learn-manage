@@ -3,7 +3,8 @@ import { parseClockMinutes } from '@/lib/pratiqueSlots';
 /** Enrollment theory schedule. Agenda and curriculum quotas never create rights. */
 export function creneauxSessionInscrite(row: any, filiere: string) {
   const s = row.sessions;
-  if (!s || row.liste_attente === true || row.emargements_exclus === true || row.elearning_apprenant === true
+  const vtcNovembre = filiere.toUpperCase() === 'VTC' && ['91f00853-2ac2-4da6-996b-4832fc132b6b','e8dee3f0-22bd-4187-ab61-41026b316e6c'].includes(row.session_id ?? s?.id);
+  if (!s || row.liste_attente === true || row.emargements_exclus === true || (row.elearning_apprenant === true && !vtcNovembre)
     || /annul|abandon|exclu|attente/i.test(`${s.statut ?? ''} ${row.statut_suivi ?? ''}`)
     || !/theorique/i.test(s.type_session ?? '')) return [];
   const iso = (v: unknown) => String(v ?? '').slice(0, 10);

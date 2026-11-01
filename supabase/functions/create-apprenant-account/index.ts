@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import { verifierPreparationSilencieuse, lierCompteConfirme } from './silentProvision.ts';
 import {
   generateSetPasswordLink,
   generateUnsharedPassword,
@@ -145,7 +146,7 @@ serve(async (req) => {
     console.log(`${LOG_PREFIX}[${requestId}] Step 6 - Check admin role (done)`);
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 7 - Parse request body (start)`);
-    let requestBody: { apprenant_id?: string; email?: string };
+    let requestBody: { apprenant_id?: string; email?: string; preparation_vtc_novembre?: boolean };
     try {
       requestBody = await req.json();
     } catch (parseErr) {
@@ -168,6 +169,12 @@ serve(async (req) => {
         error: "apprenant_id et email requis",
         requestId,
       });
+    }
+
+    const silent = requestBody.preparation_vtc_novembre === true;
+    if (silent) {
+      try { await verifierPreparationSilencieuse(supabaseAdmin, apprenant_id, email); }
+      catch (err) { return jsonResponse(403, {error: err instanceof Error ? err.message : 'Préparation refusée',requestId}); }
     }
 
     console.log(`${LOG_PREFIX}[${requestId}] Step 8 - Fetch apprenant (start)`);
@@ -379,6 +386,10 @@ serve(async (req) => {
 
 
     // Liaison simple : aucun nettoyage forcé, aucun détachement d'une autre fiche.
+    if (silent) {
+      await lierCompteConfirme(supabaseAdmin, apprenant_id, authUser.user.id);
+      return jsonResponse(200, {success:true,apprenant_id,accountLinked:true,emailSent:false,accessDeliveryPending:true,requestId});
+    }
     const { error: linkErr } = await supabaseAdmin
       .from("apprenants")
       .update({ auth_user_id: authUser.user.id })

@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Autorisation ciblée 28 VTC novembre — 01/11 16:11 UTC
+- [x] Audit28 IDs :10auth valides/liens uniques,18absents ;Bekkis janvier conservé, accès par inscription novembre testé isolément.
+- [ ] Création18 comptes : mode silencieux ajouté/testé et fonction seule déployée ;appel403, session propriétaire rôle user et non admin. Attend session admin reconnue ;aucun compte créé ni message.
+- [x] 38 feuilles ajoutées pour10comptes :20chacun/200total,0weekend/remplies, rejeu0 ;360 feuilles des18absents restent bloquées par absence de compte.
+- [x] Migration0236 ciblée VTC deux sessions appliquée ;25PostgreSQL+181Vitest PASS, anciennes3053feuilles empreinte identique. Autres règles inchangées ;pas de site publié.
+- [ ] Test connexion/signature élève et affichage publié :non prouvé sans session élève autorisée ;remise des18accès à préparer après création, envoi distinct non autorisé. Rapport docs/vtc-novembre-28-preparation-2026-11-01.md.
+
 ## Émargements des inscriptions session — priorité 02/11/2026
 - [x] Migration0235 appliquée : théorie inscrite sans agenda, deux créneaux ouvrés, TA5 premiers jours, horaires personnalisés, pratique distincte, passé sur régularisation seulement.
 - [x] PostgreSQL isolé22/22 PASS avant et après fichier exact appliqué ; ouverture−30min et conservation des preuves.

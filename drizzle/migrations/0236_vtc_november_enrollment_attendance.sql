@@ -1,0 +1,17 @@
+CREATE OR REPLACE FUNCTION public.emargement_theorie_inscrite(p_apprenant_id uuid,p_session_id uuid DEFAULT NULL)
+RETURNS TABLE(date_cours date,creneau text,debut time,fin time,pratique boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+WITH app AS (SELECT a.*,upper(split_part(coalesce(a.type_apprenant,''),'-',1)) filiere,NOT(coalesce(a.creneau_horaire,'') ~* 'en[- ]?ligne|e[- ]?learning|online|distanciel' OR coalesce(a.type_apprenant,'') ~* '^(vtc|taxi|ta|va)-e$') presentiel FROM apprenants a WHERE a.id=p_apprenant_id AND a.deleted_at IS NULL AND NOT coalesce(a.abandonnee,false) AND coalesce(a.statut,'') !~* 'annul|abandon|exclu|attente'), inscriptions AS (
+SELECT sa.*,s.type_session,s.nom,s.date_debut sd,s.date_fin sf,
+coalesce(nullif(sa.heure_debut_personnalisee,''),nullif(s.heure_debut,''),CASE WHEN s.nom ~* 'soir' OR array_to_string(s.creneaux,' ') ~* 'soir|17' THEN '17:00' ELSE '09:00' END)::time hd,
+coalesce(nullif(sa.heure_fin_personnalisee,''),nullif(s.heure_fin,''),CASE WHEN s.nom ~* 'soir' OR array_to_string(s.creneaux,' ') ~* 'soir|17' THEN '21:00' ELSE '16:00' END)::time hf,
+greatest(s.date_debut,coalesce(sa.date_debut,s.date_debut)) d,
+least(coalesce(s.date_fin,s.date_debut),coalesce(sa.date_fin_personnalisee,sa.date_fin,s.date_fin,s.date_debut)) f
+FROM session_apprenants sa JOIN sessions s ON s.id=sa.session_id WHERE sa.apprenant_id=p_apprenant_id AND (p_session_id IS NULL OR sa.session_id=p_session_id) AND NOT coalesce(sa.liste_attente,false) AND NOT coalesce(sa.emargements_exclus,false) AND coalesce(s.statut,'') !~* 'annul|abandon' AND coalesce(sa.statut_suivi,'') !~* 'annul|abandon|exclu|attente'
+),bornes AS (SELECT 'matin'::text c,'00:00'::time a,'12:00'::time z UNION ALL SELECT 'apres_midi','13:00'::time,'17:00'::time UNION ALL SELECT 'soir_1','17:00'::time,'18:30'::time UNION ALL SELECT 'soir_2','18:30'::time,'23:59:59'::time),theorie AS (
+SELECT g::date date_cours,k.c creneau,greatest(i.hd,k.a) debut,least(i.hf,k.z) fin,false pratique FROM inscriptions i CROSS JOIN app a CROSS JOIN LATERAL generate_series(i.d::timestamp,i.f::timestamp,interval '1 day') g CROSS JOIN LATERAL (
+SELECT 'matin'::text c,'09:00'::time a,'12:00'::time z WHERE i.hd<'17:00' UNION ALL SELECT 'apres_midi','13:00'::time,CASE WHEN (coalesce(a.type_apprenant,'')||' '||coalesce(a.formation_choisie,'')||' '||coalesce(i.nom,'')) ~* 'continue|\mfc\M|fco' THEN '17:00'::time ELSE '16:00'::time END WHERE i.hd<'17:00' UNION ALL SELECT 'soir_1','17:00'::time,'18:30'::time WHERE i.hd>='17:00' UNION ALL SELECT 'soir_2','18:30'::time,'21:00'::time WHERE i.hd>='17:00'
+) k WHERE i.type_session ~* 'theorique' AND (a.presentiel OR (lower(a.type_apprenant)='vtc' AND i.session_id IN ('91f00853-2ac2-4da6-996b-4832fc132b6b'::uuid,'e8dee3f0-22bd-4187-ab61-41026b316e6c'::uuid))) AND extract(isodow from g)<=5 AND (a.filiere<>'TA' OR i.date_fin_personnalisee IS NOT NULL OR (SELECT count(*) FROM generate_series(i.d::timestamp,g,interval '1 day') x WHERE extract(isodow from x)<=5)<=5)
+) SELECT date_cours,creneau,min(debut),max(fin),false FROM theorie WHERE fin>debut GROUP BY date_cours,creneau ORDER BY date_cours,min(debut) $$;
+REVOKE ALL ON FUNCTION public.emargement_theorie_inscrite(uuid,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.emargement_theorie_inscrite(uuid,uuid) TO service_role;
