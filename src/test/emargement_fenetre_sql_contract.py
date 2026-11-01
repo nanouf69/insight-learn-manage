@@ -12,12 +12,16 @@ class Contrat(unittest.TestCase):
   subprocess.run(AS+['initdb','-D',cls.dir+'/db','-U','postgres','-A','trust','--no-locale'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
   subprocess.run(AS+['pg_ctl','-D',cls.dir+'/db','-l',cls.dir+'/pg.log','-o',f'-k {cls.dir} -p 55479 -h ""','-w','start'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
   cls.sql("CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role; CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$select nullif(current_setting('test.uid',true),'')::uuid$$; CREATE FUNCTION has_role(u uuid,r text) RETURNS boolean LANGUAGE sql AS $$select false$$;")
+  # A catalog captured through the managed read tool avoids production psql access.
+  catalog=json.loads(Path(os.environ['ATTENDANCE_CATALOG']).read_text()) if os.environ.get('ATTENDANCE_CATALOG') else None
   for t in TABLES:
-   columns=live(f"select string_agg(quote_ident(attname)||' '||format_type(atttypid,atttypmod),',' order by attnum) from pg_attribute where attrelid='public.{t}'::regclass and attnum>0 and not attisdropped")
+   columns=catalog['tables'][t] if catalog else live(f"select string_agg(quote_ident(attname)||' '||format_type(atttypid,atttypmod),',' order by attnum) from pg_attribute where attrelid='public.{t}'::regclass and attnum>0 and not attisdropped")
    cls.sql(f'CREATE TABLE public.{t} ({columns});')
   for f in ['pratique_creneaux_planifies','est_dossier_lie_emargement']:
-   cls.sql(live(f"select pg_get_functiondef('public.{f}'::regproc)"))
-  cls.sql(Path(os.environ.get('ATTENDANCE_MIGRATION', 'drizzle/migrations/0215_attendance_early_window.sql')).read_text())
+   cls.sql(catalog['functions'][f] if catalog else live(f"select pg_get_functiondef('public.{f}'::regproc)"))
+  cls.sql('ALTER TABLE emargements_fc ADD UNIQUE(apprenant_id,date_emargement,demi_journee);')
+  cls.sql(Path('drizzle/migrations/0215_attendance_early_window.sql').read_text())
+  if os.environ.get('ATTENDANCE_MIGRATION'): cls.sql(Path(os.environ['ATTENDANCE_MIGRATION']).read_text())
  @classmethod
  def tearDownClass(cls):
   subprocess.run(AS+['pg_ctl','-D',cls.dir+'/db','-m','immediate','stop'],capture_output=True,env=cls.env); shutil.rmtree(cls.dir,True)
@@ -38,9 +42,10 @@ class Contrat(unittest.TestCase):
    self.assertEqual(self.sql(f"select emargement_fenetre_ouverte('{d}','09:00','{d}T{h}:00Z')").stdout.strip(),'t')
   self.assertEqual(self.sql("select emargement_fenetre_ouverte('2026-10-30','00:00','2026-10-29T22:30:00Z')").stdout.strip(),'t')
  def test_real_schedule_and_personalized_hours(self):
-  self.assertEqual(self.slots(),['2026-10-26|matin|09:00:00|12:00:00|false','2026-10-26|apres_midi|13:00:00|16:00:00|false'])
+  self.assertEqual(len(self.slots()),10)
+  self.assertEqual(self.slots()[:2],['2026-10-26|matin|09:00:00|12:00:00|false','2026-10-26|apres_midi|13:00:00|16:00:00|false'])
   self.sql("update session_apprenants set heure_debut_personnalisee='10:00',heure_fin_personnalisee='15:30'")
-  self.assertEqual(self.slots(),['2026-10-26|matin|10:00:00|12:00:00|false','2026-10-26|apres_midi|13:00:00|15:30:00|false'])
+  self.assertEqual(self.slots()[:2],['2026-10-26|matin|10:00:00|12:00:00|false','2026-10-26|apres_midi|13:00:00|15:30:00|false'])
  def test_waitlist_excluded_cancelled_nonregistered(self):
   for change in ["update session_apprenants set liste_attente=true","update session_apprenants set emargements_exclus=true","update sessions set statut='annulee'","truncate session_apprenants"]:
    self.setUp(); self.sql(change); self.assertEqual(self.slots(),[])
@@ -58,10 +63,45 @@ class Contrat(unittest.TestCase):
   self.sql(f"insert into emargements_fc(id,apprenant_id,user_id,date_emargement,demi_journee) values(gen_random_uuid(),'{A}','{U}','2099-01-01','matin')")
   r=self.sql("update emargements_fc set signature_data_url='data:image/png;base64,fictif'",check=False); self.assertNotEqual(r.returncode,0); self.assertIn('trente minutes',r.stderr)
  def test_recorded_signature_unchanged_and_real_timestamp(self):
-  self.sql(f"insert into emargements_fc(id,apprenant_id,user_id,date_emargement,demi_journee,signature_data_url,signed_at) values(gen_random_uuid(),'{A}','{U}','2026-10-26','matin','data:image/png;base64,fictif','2000-01-01')")
+  self.sql(f"insert into emargement_regularisations(id,apprenant_id,auth_user_id,expire_le,creneaux) values('44444444-4444-4444-4444-444444444444','{A}','{U}',now()+interval '1 day','[{{\"date\":\"2026-10-26\",\"creneau\":\"matin\"}}]');")
+  self.sql(f"insert into emargements_fc(id,apprenant_id,user_id,date_emargement,demi_journee,signature_data_url,signed_at,regularisation_id) values(gen_random_uuid(),'{A}','{U}','2026-10-26','matin','data:image/png;base64,fictif','2000-01-01','44444444-4444-4444-4444-444444444444')")
   self.assertEqual(self.sql("select signed_at>'2026-01-01'::timestamptz from emargements_fc").stdout.strip(),'t')
   old=self.sql('select signed_at from emargements_fc').stdout; self.sql("update emargements_fc set user_agent='metadata only'"); self.assertEqual(self.sql('select signed_at from emargements_fc').stdout,old)
  def test_read_rpc_other_account_refused(self):
   r=self.sql(f"set test.uid='99999999-9999-9999-9999-999999999999'; select * from emargement_fenetres_eleve('{A}')",check=False); self.assertNotEqual(r.returncode,0)
-  self.assertEqual(self.sql(f"set test.uid='{U}'; select count(*) from emargement_fenetres_eleve('{A}')").stdout.strip().splitlines()[-1],'2')
+  self.assertEqual(self.sql(f"set test.uid='{U}'; select count(*) from emargement_fenetres_eleve('{A}')").stdout.strip().splitlines()[-1],'10')
+ def test_no_agenda_still_ten_enrolled_slots(self):
+  self.sql('truncate agenda_blocs'); self.assertEqual(len(self.slots()),10)
+ def test_missing_session_hours_use_day_defaults(self):
+  self.sql('truncate agenda_blocs; update sessions set heure_debut=null,heure_fin=null')
+  self.assertEqual(len(self.slots()),10); self.assertIn('|apres_midi|13:00:00|16:00:00|false',self.slots()[1])
+ def test_evening_exactly_two_slots_per_day(self):
+  self.sql("truncate agenda_blocs; update sessions set heure_debut='17:00',heure_fin='21:00'")
+  self.assertEqual(len(self.slots()),10)
+  self.assertEqual(self.slots()[:2],['2026-10-26|soir_1|17:00:00|18:30:00|false','2026-10-26|soir_2|18:30:00|21:00:00|false'])
+ def test_ta_first_five_workdays_and_explicit_end(self):
+  self.sql("update apprenants set type_apprenant='ta'; update sessions set date_fin='2026-11-16'; truncate agenda_blocs")
+  self.assertEqual(len(self.slots()),10); self.assertFalse(any('2026-11-02' in s for s in self.slots()))
+  self.sql("update session_apprenants set date_fin_personnalisee='2026-11-02'")
+  self.assertEqual(len(self.slots()),12)
+ def test_weekend_and_cross_enrollment_deduplicated(self):
+  self.sql(f"truncate agenda_blocs; update sessions set date_fin='2026-11-01'; insert into session_apprenants(apprenant_id,session_id) values('{A}','{S}')")
+  self.assertEqual(len(self.slots()),10); self.assertFalse(any('2026-10-31' in s or '2026-11-01' in s for s in self.slots()))
+ def test_abandoned_or_cancelled_learner_refused(self):
+  for change in ["update apprenants set abandonnee=true","update apprenants set statut='inscription_annulee'","update session_apprenants set statut_suivi='exclu'"]:
+   self.setUp(); self.sql(change); self.assertEqual(self.slots(),[])
+ def test_custom_dates_respected(self):
+  self.sql("truncate agenda_blocs; update session_apprenants set date_debut='2026-10-28',date_fin_personnalisee='2026-10-29'")
+  self.assertEqual(len(self.slots()),4); self.assertTrue(all(s.startswith(('2026-10-28','2026-10-29')) for s in self.slots()))
+ def test_past_signature_without_regularization_refused(self):
+  r=self.sql(f"insert into emargements_fc(apprenant_id,user_id,date_emargement,demi_journee,signature_data_url) values('{A}','{U}','2026-10-26','matin','data:image/png;base64,fictif')",check=False)
+  self.assertNotEqual(r.returncode,0); self.assertIn('P0541' if 'P0541' in r.stderr else 'Signature refusée',r.stderr)
+ def test_future_blank_preparation_idempotent_no_account_required_for_slots(self):
+  self.sql("truncate agenda_blocs; update sessions set date_debut='2099-11-02',date_fin='2099-11-06'")
+  count=len(self.slots()); self.assertGreater(count,0)
+  self.assertEqual(int(self.sql(f"select generer_emargements_session('{S}')").stdout.strip()),count)
+  self.assertEqual(self.sql(f"select generer_emargements_session('{S}')").stdout.strip(),'0')
+  self.assertEqual(self.sql('select count(*) from emargements_fc where signature_data_url is not null or signed_at is not null or absent is true').stdout.strip(),'0')
+  self.sql('truncate emargements_fc; update apprenants set auth_user_id=null')
+  self.assertEqual(len(self.slots()),count); self.assertEqual(self.sql(f"select generer_emargements_session('{S}')").stdout.strip(),'0')
 if __name__=='__main__': unittest.main(verbosity=2)
