@@ -1,3 +1,4 @@
+import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { supabase } from '@/integrations/supabase/client';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
@@ -126,10 +127,10 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, statut_suivi, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
-    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    Promise.resolve([] as any[]),
     supabase.from('apprenants').select('type_apprenant,formation_choisie,creneau_horaire').eq('id',apprenantId).single(),
   ]);
   if (apprenant.error) throw apprenant.error;
@@ -204,24 +205,9 @@ export function planningCreneaux(sessionRows: any[], reservations: any[], config
       pratiqueRetenues.add(d);
       add(d, pratiqueKeys(d, s, row), true);
     } else if (type.includes('theorique')) {
-      const h = String(debutH ?? '').slice(0, 5);
-      if (h >= '17:00') soir = true;
-      // Mêmes bornes que les signatures manquantes : intersection inscription ∩ session.
-      const debutBrut = normDate(row.date_debut || s.date_debut);
-      let finBrute = normDate(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut);
-      // TA actuel : seule la première semaine (5 jours ouvrés) de théorie est attendue.
-      // Une date de fin personnalisée explicite (anciens parcours 12 ou 14) reste prioritaire.
-      if (row?.filiere_apprenant === 'TA' && !estDate(normDate(row.date_fin_personnalisee))) {
-        const premiers = joursOuvres(debutBrut, finBrute).slice(0, 5);
-        if (premiers.length) finBrute = premiers[premiers.length - 1];
-      }
-      const debutSession = normDate(s.date_debut);
-      const finSession = normDate(s.date_fin || s.date_debut);
-      const debut = estDate(debutSession) ? (debutBrut > debutSession ? debutBrut : debutSession) : debutBrut;
-      const fin = estDate(finSession) ? (finBrute < finSession ? finBrute : finSession) : finBrute;
-      if (!estDate(debut) || !estDate(fin) || fin < debut) continue;
-      const creneaux = creneauxAttendus(debutH, finH);
-      for (const d of joursOuvres(debut, fin)) add(d, creneaux, false);
+      if (row.elearning_apprenant === true) continue;
+      const slots = creneauxSessionInscrite(row, row.filiere_apprenant ?? 'VTC');
+      for (const slot of slots) { add(slot.date, [slot.creneau], false); if(slot.creneau.startsWith('soir')) soir=true; }
     }
   }
   for (const r of reservations ?? []) {
@@ -323,10 +309,10 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, statut_suivi, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
-    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    Promise.resolve([] as any[]),
     supabase.from('apprenants').select('type_apprenant,creneau_horaire').eq('id',apprenantId).single(),
   ]);
   if (apprenant.error) throw apprenant.error;
@@ -456,10 +442,10 @@ export async function chargerClassificationSignatures(apprenantId: string): Prom
   if (!apprenantId) throw new Error('Apprenant requis');
   const [emargRes, sessionsRes, reservationsRes, configs, blocs, apprenant] = await Promise.all([
     paginer((f, t) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).order('id').range(f, t)),
-    paginer((f, t) => supabase.from('session_apprenants').select('id, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
+    paginer((f, t) => supabase.from('session_apprenants').select('id, statut_suivi, liste_attente, emargements_exclus, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, objectif_signatures_ta_historique, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(f, t)),
     paginer((f, t) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('id').range(f,t)),
-    paginer((f,t) => supabase.from('agenda_blocs').select('id,semaine_debut,jour,heure_debut,heure_fin,formation,publics_cibles').order('id').range(f,t)),
+    Promise.resolve([] as any[]),
     supabase.from('apprenants').select('type_apprenant,formation_choisie,creneau_horaire').eq('id',apprenantId).single(),
   ]);
   if (apprenant.error) throw apprenant.error;
