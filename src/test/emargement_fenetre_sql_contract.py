@@ -93,6 +93,18 @@ class Contrat(unittest.TestCase):
  def test_custom_dates_respected(self):
   self.sql("truncate agenda_blocs; update session_apprenants set date_debut='2026-10-28',date_fin_personnalisee='2026-10-29'")
   self.assertEqual(len(self.slots()),4); self.assertTrue(all(s.startswith(('2026-10-28','2026-10-29')) for s in self.slots()))
+ def test_historical_proof_cannot_clear_reassign_or_redate(self):
+  self.test_recorded_signature_unchanged_and_real_timestamp()
+  before=self.sql('select md5(string_agg(to_jsonb(e)::text,\'\')) from emargements_fc e').stdout
+  for change in ["signature_data_url=null,absent=false", "signed_at='2000-01-01'", f"apprenant_id='{OTHER}'", f"user_id='{OTHER}'"]:
+   r=self.sql('update emargements_fc set '+change,check=False); self.assertNotEqual(r.returncode,0)
+  self.assertEqual(self.sql('select md5(string_agg(to_jsonb(e)::text,\'\')) from emargements_fc e').stdout,before)
+ def test_generation_scoped_to_requested_session(self):
+  self.sql(f"update sessions set date_debut='2099-11-02',date_fin='2099-11-06'; insert into sessions(id,date_debut,date_fin,type_session,heure_debut,heure_fin) values('{OTHER}','2099-11-09','2099-11-13','theorique','09:00','16:00'); insert into session_apprenants(apprenant_id,session_id) values('{A}','{OTHER}')")
+  self.sql(f"select generer_emargements_session('{S}')")
+  self.assertEqual(self.sql("select count(*) from emargements_fc where date_emargement>='2099-11-09'").stdout.strip(),'0')
+  self.sql("truncate emargements_fc; update sessions set statut='annulee'")
+  self.assertEqual(self.sql(f"select generer_emargements_session('{S}')").stdout.strip(),'0')
  def test_past_signature_without_regularization_refused(self):
   r=self.sql(f"insert into emargements_fc(apprenant_id,user_id,date_emargement,demi_journee,signature_data_url) values('{A}','{U}','2026-10-26','matin','data:image/png;base64,fictif')",check=False)
   self.assertNotEqual(r.returncode,0); self.assertIn('P0541' if 'P0541' in r.stderr else 'Signature refusée',r.stderr)

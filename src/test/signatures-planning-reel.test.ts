@@ -10,6 +10,20 @@ const blocs = [0,1,2,3,4].flatMap(jour => [
 ]);
 const signatures = [26,27,28,29,30].flatMap(d => ['matin','apres_midi'].map(demi_journee => ({ date_emargement: `2026-10-${d}`, demi_journee, signature_data_url: 'data:image/png;base64,YQ==', signed_at: '2026-10-30T14:24:00Z' })));
 describe('Attentes réelles : Ilyes TA et tous parcours, aucune écriture', () => {
+  it('agenda vide ou modifié : cinq jours inscrits donnent exactement dix créneaux', () => {
+    const row = { sessions: { type_session: 'theorique', date_debut: '2026-11-02', date_fin: '2026-11-06' } };
+    const empty = planningSignaturesReel([row], [], [], [], 'VTC');
+    const changed = planningSignaturesReel([row], [], [{semaine_debut:'2026-11-02',jour:0,heure_debut:'17:00',heure_fin:'21:00',publics_cibles:['VTC']}], [], 'VTC');
+    expect([...empty.creneaux.keys()]).toEqual([...changed.creneaux.keys()]);
+    expect(empty.creneaux.size).toBe(10);
+    expect(empty.incomplet).toBe(false);
+  });
+  it('soir croisé : deux signatures et jamais quatre, weekend exclu', () => {
+    const row = { sessions: { type_session: 'theorique', nom: 'VTC cours du soir', date_debut: '2026-11-02', date_fin: '2026-11-08' } };
+    const plan = planningSignaturesReel([row,row], [], [], [], 'VTC');
+    expect(plan.creneaux.size).toBe(10);
+    expect([...plan.creneaux.keys()].filter(k=>k.startsWith('2026-11-02'))).toEqual(['2026-11-02|soir_1','2026-11-02|soir_2']);
+  });
   it('Ilyes : exactement 10 attendues, 10 recueillies, pratique 0/0', () => {
     expect(calculerBilanSignaturesEdof(signatures, [inscription], [], 'ta', [], blocs)).toMatchObject({ objectifTheorie: 10, objectifPratique: 0, objectifTotal: 10, total: 10, complet: true });
     expect(calculerRatioSignatures(signatures, [inscription], [], blocs, [], 'TA')).toMatchObject({ attendues: 10, signees: 10, taux: 100 });
