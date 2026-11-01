@@ -2,10 +2,11 @@
 
 ## Autorisation ciblée 28 VTC novembre — 01/11 16:11 UTC
 - [x] Audit28 IDs :10auth valides/liens uniques,18absents ;Bekkis janvier conservé, accès par inscription novembre testé isolément.
-- [ ] Création18 comptes : mode silencieux ajouté/testé et fonction seule déployée ;appel403, session propriétaire rôle user et non admin. Attend session admin reconnue ;aucun compte créé ni message.
+- [ ] Création18 comptes : reprise01/11 16:50UTC,403 confirmé dans les logs pour89354720-37ec-4431-8f29-77108e0657e0 (naoufal.guenichi@gmail.com,user). CRM contact@ftransport.fr a le rôle serveur admin mais sa session n'est pas injectée ;mint nominatif refusé car approbation indisponible. Aucun contournement/création/envoi. Attend transmission autorisée de cette session par Lovable.
 - [x] 38 feuilles ajoutées pour10comptes :20chacun/200total,0weekend/remplies, rejeu0 ;360 feuilles des18absents restent bloquées par absence de compte.
 - [x] Migration0236 ciblée VTC deux sessions appliquée ;25PostgreSQL+181Vitest PASS, anciennes3053feuilles empreinte identique. Autres règles inchangées ;pas de site publié.
 - [ ] Test connexion/signature élève et affichage publié :non prouvé sans session élève autorisée ;remise des18accès à préparer après création, envoi distinct non autorisé. Rapport docs/vtc-novembre-28-preparation-2026-11-01.md.
+- [ ] Écart SMAIL : dossier en-ligne, inscription non exclue ;0236 lui donne néanmoins20créneaux théoriques et20feuilles vides existent. Ne pas forcer le mode ni demander de signature ;résoudre la contradiction avant de déclarer prêt.
 
 ## Émargements des inscriptions session — priorité 02/11/2026
 - [x] Migration0235 appliquée : théorie inscrite sans agenda, deux créneaux ouvrés, TA5 premiers jours, horaires personnalisés, pratique distincte, passé sur régularisation seulement.
