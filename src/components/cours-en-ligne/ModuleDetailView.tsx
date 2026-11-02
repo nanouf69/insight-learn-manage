@@ -7005,7 +7005,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       // la tentative validée reste intacte (« Refaire les fausses » toujours cliquable).
       if (submittedExoIdsRef.current.has(pending.exoId)) revisionActiveRef.current.add(pending.exoId);
       // Persist the wiped selections after state has settled.
-      autoSaveAnswers(clearedSelected, [pending.exoId]);
+      autoSaveAnswers(clearedSelected, [pending.exoId], selectedAnswers);
 
       toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire (réponses effacées)`);
       scheduleScrollToRevisionStart(pending.exoId);
@@ -7823,7 +7823,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // --- Auto-save partial answers to DB (debounced) ---
     const autoSaveAnswers = (
       answers: Record<string, string | string[]>,
-      forceExerciceIds: number[] = []
+      forceExerciceIds: number[] = [],
+      clearedFrom: Record<string, string | string[]> = {}
     ) => {
       if (!apprenantId) return;
 
@@ -7852,7 +7853,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           // rien. Pour « Recommencer tout » / « Refaire les fausses », chaque
           // réponse retirée localement est donc envoyée explicitement vide,
           // sinon l'ancienne réponse revient au rechargement ou sur un autre appareil.
-          const previousForBlank = lastPersistedAnswersRef.current;
+          const previousForBlank = { ...clearedFrom, ...lastPersistedAnswersRef.current };
           const forceSet = new Set(forceExerciceIds.filter((id) => Number.isFinite(id)));
           const blankFor = (v: unknown) => (Array.isArray(v) ? [] : "");
           Object.entries(previousForBlank).forEach(([key, prevVal]) => {
@@ -9675,7 +9676,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               // Quiz déjà validé : la nouvelle tentative part sur l'identifiant de révision,
                               // la tentative validée reste intacte.
                               if (submittedExoIdsRef.current.has(exo.id)) revisionActiveRef.current.add(exo.id);
-                              autoSaveAnswers(cleared, [exo.id]);
+                              autoSaveAnswers(cleared, [exo.id], selectedAnswers);
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
                               setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
