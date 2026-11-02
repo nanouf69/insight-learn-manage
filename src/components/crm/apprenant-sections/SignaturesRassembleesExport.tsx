@@ -6,6 +6,36 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { chargerSignaturesRassemblees, formaterCompteSignaturesPdf } from '@/lib/signaturesRassemblees';
 import { generateSignaturesRassembleesPdf } from '@/lib/pdf/signatures-rassemblees';
+import { chargerSignaturesManquantes } from '@/lib/signaturesManquantes';
+import { generateSignaturesManquantesPdf } from '@/lib/pdf/signatures-manquantes-pdf';
+
+function ExportManquantes({ apprenant }: { apprenant: any }) {
+  const [state, setState] = useState<'idle' | 'loading' | 'none' | 'error'>('idle');
+  const [pdf, setPdf] = useState<{ blob: Blob; fileName: string; count: number } | null>(null);
+  const prepare = async () => {
+    setState('loading');
+    try {
+      const rows = await chargerSignaturesManquantes(apprenant.id);
+      if (!rows.length) { setPdf(null); setState('none'); return; }
+      const r = generateSignaturesManquantesPdf(apprenant, rows);
+      setPdf({ blob: r.blob, fileName: r.fileName, count: rows.length }); setState('idle');
+    } catch { setPdf(null); setState('error'); }
+  };
+  const download = () => {
+    if (!pdf) return;
+    const url = URL.createObjectURL(pdf.blob);
+    const a = document.createElement('a'); a.href = url; a.download = pdf.fileName;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  };
+  return <div className="flex flex-col items-start gap-1">
+    <Button variant="outline" size="sm" disabled={state === 'loading'} onClick={() => pdf ? download() : void prepare()} className="gap-2 whitespace-normal h-auto min-h-9 text-left">
+      {state === 'loading' ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <FileDown className="h-4 w-4 shrink-0" />}
+      {state === 'loading' ? 'Préparation…' : pdf ? `Télécharger — Signatures manquantes à imprimer (${pdf.count})` : 'Signatures manquantes à imprimer (PDF)'}
+    </Button>
+    {state === 'none' && <p className="text-xs text-muted-foreground">Aucune signature manquante.</p>}
+    {state === 'error' && <p role="alert" className="text-xs text-destructive">Lecture impossible : aucun PDF produit.</p>}
+  </div>;
+}
 
 function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, totalIndisponible }: { apprenant: any; userId: string; seulementPlanning: boolean; totalAttendu: number | null; totalIndisponible: boolean }) {
   const libelle = seulementPlanning ? 'Signatures session + pratique (PDF)' : 'Toutes les signatures (PDF)';
@@ -59,5 +89,6 @@ export function SignaturesRassembleesExport({ apprenant, totalAttendu = null, to
   return <div className="flex flex-col items-start gap-2">
     <ExportPourCompte key={`${user.id}:${apprenant.id}:all`} userId={user.id} apprenant={apprenant} seulementPlanning={false} totalAttendu={totalAttendu} totalIndisponible={totalIndisponible} />
     <ExportPourCompte key={`${user.id}:${apprenant.id}:plan`} userId={user.id} apprenant={apprenant} seulementPlanning totalAttendu={totalAttendu} totalIndisponible={totalIndisponible} />
+    <ExportManquantes key={`${apprenant.id}:manquantes`} apprenant={apprenant} />
   </div>;
 }
