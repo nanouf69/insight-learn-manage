@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     const { data: dejaEnvoye } = await admin.from("crm_prolongation_emails").select("id").eq("extension_id", ext.id).eq("statut", "envoye").maybeSingle();
     if (dejaEnvoye) return json({ statut: "envoye", deja: true });
 
-    const { data: a, error: aErr } = await admin.from("apprenants").select("id, prenom, email").eq("id", ext.apprenant_id).single();
+    const { data: a, error: aErr } = await admin.from("apprenants").select("id, prenom, email, emails_bloques").eq("id", ext.apprenant_id).single();
     if (aErr) throw aErr;
     const to = String(a.email ?? "").trim();
 
@@ -55,8 +55,8 @@ Deno.serve(async (req) => {
 
     const mail = construireMailProlongation({ prenom: a.prenom, fin: ext.fin });
     try {
-      const res = await sendBrandedEmail({ to, subject: mail.subject, html: mail.html, replyTo: "contact@ftransport.fr" });
-      if (res === null) throw new Error("Envois d'e-mails bloqués pour cet apprenant");
+      if (a.emails_bloques === true) throw new Error("Envois d'e-mails bloqués pour cet apprenant");
+      await sendBrandedEmail({ to, subject: mail.subject, html: mail.html, replyTo: "contact@ftransport.fr" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       await finir({ statut: "echec", erreur: msg.slice(0, 500) });
