@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type React from "react";
 import { resolveExamQuestionImageUrl, addCacheBuster } from "./examens-blancs-utils";
 import { ImageLightbox } from "./ImageLightbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,16 @@ async function toDisplayableUrl(url: string): Promise<string> {
   return signed ?? url;
 }
 
+/** Loading reservation for question images = the caller's own height cap (max-h-*/h-*), else 10rem. */
+export function questionImageReserveHeight(className?: string): string {
+  const c = className ?? "";
+  const bracket = c.match(/(?:^|\s)max-h-\[([^\]\s]+)\]/);
+  if (bracket) return bracket[1].replace(/_/g, " ");
+  const scale = c.match(/(?:^|\s)max-h-(\d+(?:\.\d+)?)(?=\s|$)/) ?? c.match(/(?:^|\s)h-(\d+(?:\.\d+)?)(?=\s|$)/);
+  if (scale) return `${Number(scale[1]) * 0.25}rem`;
+  return "10rem";
+}
+
 export function ExamQuestionImage({
   image,
   alt,
@@ -95,7 +106,23 @@ export function ExamQuestionImage({
     };
   }, [resolvedUrl]);
 
+  // Callers without a dedicated frame get a frame that hugs the visible image (no blank under it).
+  const fitContent = frameClassName ? undefined : {
+    reserveHeight: questionImageReserveHeight(className),
+    fullWidth: /(?:^|\s)w-full(?=\s|$)/.test(className ?? ""),
+  };
+
   if (!resolvedUrl) return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
+  if (hasError && fitContent) {
+    return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
+  }
+  if (!displayUrl && fitContent) {
+    return (
+      <div className="question-image-frame" aria-busy="true" style={{ "--question-image-reserve": fitContent.reserveHeight } as React.CSSProperties}>
+        <div className="h-full w-full rounded-lg border bg-muted animate-pulse" />
+      </div>
+    );
+  }
   if (hasError) {
     return <div className={frameClassName ?? "w-full aspect-[4/3] overflow-hidden"}><p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p></div>;
   }
@@ -111,6 +138,7 @@ export function ExamQuestionImage({
       reserveFrame
       frameClassName={frameClassName}
       fitFrameToImage={fitFrameToImage}
+      fitContent={fitContent}
       src={src}
       alt={alt}
       loading="eager"
