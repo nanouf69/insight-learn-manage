@@ -7,6 +7,24 @@ const elearning = { type_apprenant: "vtc-e", date_debut_cours_en_ligne: "2026-11
 const pres = { type_apprenant: "vtc", date_debut_formation: "2026-11-02", date_fin_formation: "2026-11-27" };
 
 describe("accès aux cours selon les dates de la plateforme", () => {
+  it("prolongation Nesar : 31 octobre + deux semaines ouvre jusqu'au 14 novembre inclus, pas le 15", () => {
+    const ancienneFin = new Date("2026-10-31T12:00:00");
+    ancienneFin.setDate(ancienneFin.getDate() + 14);
+    expect([ancienneFin.getFullYear(), ancienneFin.getMonth() + 1, ancienneFin.getDate()]).toEqual([2026, 11, 14]);
+    const a = {
+      type_apprenant: "vtc",
+      date_debut_formation: "2026-09-14",
+      date_fin_formation: "2026-10-31",
+      date_debut_cours_en_ligne: "2026-09-14",
+      date_fin_cours_en_ligne: "2026-11-14",
+    };
+    const snapshot = { ...a };
+    const acces = (date: string) => calculerAccesCours({ apprenant: a, isFC: false, isPresentiel: true, maintenant: new Date(date) });
+    expect(acces("2026-11-02T09:00:00").autorise).toBe(true);
+    expect(acces("2026-11-14T23:59:59").autorise).toBe(true);
+    expect(acces("2026-11-15T00:00:00").autorise).toBe(false);
+    expect(a).toEqual(snapshot);
+  });
   it("e-learning : fermé avant le début, ouvert pendant, fermé après la fin", () => {
     expect(calculerAccesCours({ apprenant: elearning, isFC: false, isPresentiel: false, maintenant: at("2026-11-01") }).statut).toBe("avant");
     expect(calculerAccesCours({ apprenant: elearning, isFC: false, isPresentiel: false, maintenant: at("2026-11-02") }).autorise).toBe(true);
