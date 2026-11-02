@@ -3253,6 +3253,53 @@ export type Database = {
           },
         ]
       }
+      crm_prolongation_emails: {
+        Row: {
+          apprenant_id: string
+          auteur: string | null
+          created_at: string
+          destinataire: string | null
+          email_id: string | null
+          erreur: string | null
+          extension_id: string
+          id: string
+          statut: string
+          termine_at: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          auteur?: string | null
+          created_at?: string
+          destinataire?: string | null
+          email_id?: string | null
+          erreur?: string | null
+          extension_id: string
+          id?: string
+          statut?: string
+          termine_at?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          auteur?: string | null
+          created_at?: string
+          destinataire?: string | null
+          email_id?: string | null
+          erreur?: string | null
+          extension_id?: string
+          id?: string
+          statut?: string
+          termine_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_prolongation_emails_extension_id_fkey"
+            columns: ["extension_id"]
+            isOneToOne: false
+            referencedRelation: "crm_acces_extensions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_reinscription_choix: {
         Row: {
           apprenant_id: string
