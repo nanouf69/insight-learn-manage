@@ -2,7 +2,7 @@
 
 ## Réinitialisation mot de passe — 02/11 09:40 UTC
 - [x] Œil indépendant nouveau mot de passe/confirmation et refus français sur /reset-password, sans changer les comptes ni les contrôles serveur.
-- [ ] Vérifications isolées de la page et des erreurs, aucun mail réel.
+- [x] 14 tests isolés PASS : affichage/masquage indépendant, refus serveur sans déconnexion/succès, nouvel essai avec confirmation ; build OK. Aucun mail réel. Connexion/lien réel non consommé et parcours hébergé NON PROUVÉ. Journal docs/reinitialisation-mot-de-passe-2026-11-02.md.
 - [ ] Validité 3 h : réglage hébergé réservé au propriétaire, Plus → Users → Auth settings → Email → Email OTP expiration (seconds) = 10800 ; non modifié ni prouvé.
 - [ ] Publication interdite sans autorisation distincte ; corrections disponibles seulement dans l’aperçu.
 
