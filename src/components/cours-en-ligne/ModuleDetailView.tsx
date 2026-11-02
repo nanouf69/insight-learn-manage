@@ -7847,6 +7847,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               byExo.set(exoId, {});
             }
           });
+
+          // Le serveur FUSIONNE question par question : une clé absente n'efface
+          // rien. Pour « Recommencer tout » / « Refaire les fausses », chaque
+          // réponse retirée localement est donc envoyée explicitement vide,
+          // sinon l'ancienne réponse revient au rechargement ou sur un autre appareil.
+          const previousForBlank = lastPersistedAnswersRef.current;
+          const forceSet = new Set(forceExerciceIds.filter((id) => Number.isFinite(id)));
+          const blankFor = (v: unknown) => (Array.isArray(v) ? [] : "");
+          Object.entries(previousForBlank).forEach(([key, prevVal]) => {
+            const exoId = parseInt(key.split("-")[0], 10);
+            if (!forceSet.has(exoId) || key in answers) return;
+            const bucket = byExo.get(exoId) ?? {};
+            bucket[key] = blankFor(prevVal) as string | string[];
+            byExo.set(exoId, bucket);
+          });
           
           // Journal question par question : on n'envoie que ce qui a changé
           // depuis la dernière sauvegarde confirmée.
@@ -9646,12 +9661,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                                   [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
                                 }));
                               }
-                              setSelectedAnswers(prev => {
-                                const next = { ...prev };
-                                exoKeys.forEach(k => delete next[k]);
-                autoSaveAnswers(next, [exo.id]);
-                                return next;
+                              const exoKeySet = new Set(exoKeys);
+                              const cleared = { ...selectedAnswers };
+                              exoKeys.forEach(k => delete cleared[k]);
+                              const clearedQrc = Object.fromEntries(Object.entries(qrcAnswers).filter(([k]) => !exoKeySet.has(k))) as typeof qrcAnswers;
+                              const clearedQrcResults = Object.fromEntries(Object.entries(qrcResults).filter(([k]) => !exoKeySet.has(k))) as typeof qrcResults;
+                              flushSync(() => {
+                                setSelectedAnswers(cleared);
+                                setQrcAnswers(clearedQrc);
+                                setQrcResults(clearedQrcResults);
+                                setUnansweredKeys(new Set());
                               });
+                              // Quiz déjà validé : la nouvelle tentative part sur l'identifiant de révision,
+                              // la tentative validée reste intacte.
+                              if (submittedExoIdsRef.current.has(exo.id)) revisionActiveRef.current.add(exo.id);
+                              autoSaveAnswers(cleared, [exo.id]);
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
                               setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
