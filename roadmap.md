@@ -4,7 +4,8 @@
 - [x] Identités uniques vérifiées : RHAIMA ta-e actif 02/11–31/05 ; NESAR compte connecté ce matin mais cours expirés31/10, examen enregistré29/09 et aucune extension.
 - [x] Deux demandes récupération HTTP200 et hooks réussis : RHAIMA07:38:58 / NESAR07:39:48 UTC, emails enregistrés, aucun jeton exposé ; livraison boîte et clic NON PROUVÉS.
 - [x] Ancien lien expiré +429 confirmés ; page publiée refus expiré vérifiée,8 tests PASS, empreintes67réponses/31quiz/10complétions/22feuilles identiques. Aucun code/SQL actif/déploiement/publication ; rapport docs/incident-acces-rhaima-nesar-2026-11-02.md.
-- [ ] NESAR réouverture : attend confirmation de fin d'accès jusqu'au17/11 annoncé, absent des dates enregistrées ; ne pas confondre lien et accès cours.
+- [x] NESAR prolongation02/11 07:54:07UTC : seule date_fin_cours_en_ligne31/10→14/11 inclus (updated_at automatique) ;9 tests PASS, empreintes67réponses/31quiz/10complétions/22feuilles et autres dossiers identiques. Aucune migration/publication/envoi ; rapport docs/nesar-prolongation-2026-11-02.md.
+- [ ] NESAR ouverture autonome réelle : session nominative indisponible (approbation non disponible) ; bornes et données vérifiées, connexion/UI en compte élève NON PROUVÉES, aucun contournement ni consommation du lien.
 - [ ] RHAIMA direction mobilité : demandeVTC→TAXI mais dossierTA/passerelle-taxi-elearning ; attend confirmation, aucune conversion/modules modifiés.
 
 ## Autorisation ciblée 28 VTC novembre — 01/11 16:11 UTC
