@@ -113,7 +113,7 @@ export function ExamQuestionImage({
   };
 
   if (!resolvedUrl) return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
-  if (hasError && fitContent) {
+  if (hasError && (fitContent || fitFrameToImage)) {
     return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
   }
   if (!displayUrl && fitContent) {
