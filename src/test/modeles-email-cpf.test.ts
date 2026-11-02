@@ -26,6 +26,6 @@ describe('Modèles e-mail CPF', () => {
     expect(MODELES_EMAIL_CPF[0].getBody({ prenom: null })).toMatch(/^Bonjour,/);
   });
   it('libellés demandés', () => {
-    expect(MODELES_EMAIL_CPF.map(m => m.label)).toEqual(['🔗 CPF VTC — Journée','🔗 CPF VTC — Soirée','🔗 CPF VTC — E-learning','🔗 CPF TAXI — Présentiel','🔗 CPF TAXI — E-learning','🔗 CPF Passerelle TAXI → VTC','🔗 CPF Passerelle VTC → TAXI']);
+    expect(MODELES_EMAIL_CPF.map(m => m.label)).toEqual(['🔗 CPF VTC — Journée','🔗 CPF VTC — Soirée','🔗 CPF VTC — E-learning','🔗 CPF TAXI — Présentiel','🔗 CPF TAXI — E-learning','🔗 CPF Passerelle TAXI → VTC','🔗 CPF Passerelle VTC → TAXI — E-learning']);
   });
 });

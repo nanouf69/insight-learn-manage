@@ -38,5 +38,5 @@ export const MODELES_EMAIL_CPF: ModeleEmailCpf[] = [
   modele("cpf-taxi-presentiel", "🔗 CPF TAXI — Présentiel", "formation TAXI en présentiel", LIENS_CPF.taxiPresentiel),
   modele("cpf-taxi-elearning", "🔗 CPF TAXI — E-learning", "formation TAXI en e-learning", LIENS_CPF.taxiElearning),
   modele("cpf-passerelle-taxi-vtc", "🔗 CPF Passerelle TAXI → VTC", "passerelle chauffeur TAXI vers chauffeur VTC", LIENS_CPF.passerelleTaxiVersVtc),
-  modele("cpf-passerelle-vtc-taxi", "🔗 CPF Passerelle VTC → TAXI", "passerelle chauffeur VTC vers chauffeur TAXI", LIENS_CPF.passerelleVtcVersTaxi),
+  modele("cpf-passerelle-vtc-taxi", "🔗 CPF Passerelle VTC → TAXI — E-learning", "passerelle chauffeur VTC vers chauffeur TAXI en e-learning", LIENS_CPF.passerelleVtcVersTaxi),
 ];
