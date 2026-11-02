@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import { X } from "lucide-react";
 
 interface ImageLightboxProps {
@@ -10,10 +10,21 @@ interface ImageLightboxProps {
   onError?: () => void;
   reserveFrame?: boolean;
   frameClassName?: string;
+  /** Opt-in: once loaded, the frame takes the image's own ratio (height capped by CSS) so no blank remains under it. */
+  fitFrameToImage?: boolean;
 }
 
-export function ImageLightbox({ src, alt, className, loading, decoding, onError, reserveFrame = false, frameClassName }: ImageLightboxProps) {
+export function ImageLightbox({ src, alt, className, loading, decoding, onError, reserveFrame = false, frameClassName, fitFrameToImage = false }: ImageLightboxProps) {
   const [open, setOpen] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [fitted, setFitted] = useState<{ src: string; w: number; h: number } | null>(null);
+  const readNatural = useCallback((img: HTMLImageElement | null) => {
+    if (!fitFrameToImage || !img || !img.naturalWidth || !img.naturalHeight) return;
+    setFitted((prev) => (prev?.src === src && prev.w === img.naturalWidth && prev.h === img.naturalHeight ? prev : { src, w: img.naturalWidth, h: img.naturalHeight }));
+  }, [fitFrameToImage, src]);
+  // Already-decoded (cached) images may not emit a new load event.
+  useLayoutEffect(() => { if (imgRef.current?.complete) readNatural(imgRef.current); }, [readNatural]);
+  const ratio = fitFrameToImage && fitted?.src === src ? fitted : null;
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -28,8 +39,14 @@ export function ImageLightbox({ src, alt, className, loading, decoding, onError,
 
   return (
     <>
-      <div className={reserveFrame ? (frameClassName ?? "w-full aspect-[4/3] overflow-hidden") : "contents"}>
+      <div
+        className={reserveFrame ? (frameClassName ?? "w-full aspect-[4/3] overflow-hidden") : "contents"}
+        data-frame-fitted={ratio ? "" : undefined}
+        style={ratio ? { aspectRatio: `${ratio.w} / ${ratio.h}`, maxWidth: `calc(var(--road-safety-image-h) * ${ratio.w / ratio.h})` } : undefined}
+      >
       <img
+        ref={imgRef}
+        onLoad={(e) => readNatural(e.currentTarget)}
         src={src}
         alt={alt}
         className={`${className ?? ""} ${reserveFrame ? "w-full h-full object-contain" : ""} cursor-pointer hover:opacity-80 transition-opacity`}

@@ -105,6 +105,7 @@ import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
 import { ExamQuestionImage } from "./ExamQuestionImage";
+import { isRoadSafetyCourseExercise } from "./roadSafetyQuestionImage";
 import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
