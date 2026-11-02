@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Espaces image/question → réponses, tous écrans — 02/11 13:35 UTC
+- [x] Cause commune : cadre par défaut pleine largeur 4:3 d’ExamQuestionImage (exercices, examens blancs, résultats, bilans, éditeurs admin). Cadre ajusté à l’image visible ; Sécurité routière inchangée.
+- [x] 11 dispositions × 5 formats + sans image × 4 largeurs : blanc après image 1–41 px (avant jusqu’à 630 px), 0 rognage/débordement ; chargement lent = un seul ajustement, réouverture sans saut, erreur compacte. Tests image 116 PASS ; suite 3287 PASS, 1 échec préexistant émargements hors périmètre.
+- [ ] Session élève/admin réelle non testée ; publication après contrôles.
+
 ## Espacement images Sécurité routière — 02/11
 - [x] Cause : cadre pleine largeur 4:3 + image en taille automatique ; cadre borné optionnel pour seuls exercices Sécurité routière, image entière sans marge interne. Contenus et valeurs par défaut ailleurs inchangés.
 - [x] Écran réel isolé Q9 sur 1280/768/1024/390 : marge8px, zéro débordement/erreurJS ;105 images Partie1 chargées et contenues,117 tests PASS, aperçu buildOK. Journal docs/securite-routiere-espacement-2026-11-02.md ; aucun compte réel testé, Cloud ni publication.
