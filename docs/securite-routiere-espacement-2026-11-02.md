@@ -29,3 +29,11 @@ Captures tablette/mobile inspectées : panneau complet, texte et choix lisibles 
 La capture originale utilisateur n'était pas disponible comme fichier ; la cause est établie dans les styles et reproduite avec le vrai écran local, pas dans sa session tablette. Connexion élève hébergée, tablette physique et toutes les autres matières en navigation réelle NON PROUVÉES ; valeurs par défaut du composant partagé inchangées et ordre des formations testé. Aucun test sur un vrai apprenant.
 
 Aucune écriture Cloud, migration, question, réponse, image, note, logique de quiz, progression, jalon, signature ou droit modifié. Aucun envoi. Aucune publication : correction uniquement dans l'aperçu.
+## Reprise 02/11 11:35 UTC — l'espace restait en production
+**Cause du raté** : le commit 9cd4419a était bien publié (CSS `road-safety-question-image` présent sur gestion.ftransport.fr), mais le ciblage par modules (4/9/15/21/27/29/81) excluait le module 2 (VTC) et le module 10 (TAXI), qui contiennent les quiz 80/81/82 en base. Ces élèves gardaient le cadre 4:3 pleine largeur : mesuré 294 px de blanc sous Q9 (reproduit). De plus le cadre 4:3 laissait du blanc sous les panneaux larges.
+
+**Correctif** : ciblage par quiz 80/81/82 + titre « Sécurité Routière — Partie 1/2/3 » dans tout module (`roadSafetyQuestionImage.ts`) ; cadre de hauteur fixe pendant le chargement (240 px, 200 px mobile), puis cadre aux proportions réelles de l'image (`ImageLightbox` option `fitFrameToImage`). Bilans 102, examens 502/602 et autres matières inchangés.
+
+**Mesures (aperçu local, composants réels, CSS réelle)** : blanc entre bas des pixels visibles et « Plusieurs réponses possibles » = 9 px (8 px d'écart + 1 px de bordure) pour Q9 carrée, image très large 74 et image 75, sur 1280×1800, 768×1024, 1024×768, 390×844 ; aucun débordement horizontal ; témoin non ciblé = 294 px. Tests : 96 PASS.
+
+**Limites** : panneaux très larges (texte) petits sur mobile (agrandissement au toucher inchangé) ; images plus larges que hautes se réduisent une fois au chargement ; session élève réelle hébergée non testée.

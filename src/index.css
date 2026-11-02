@@ -287,7 +287,24 @@ div[data-learner-question][class*="border-destructive"] {
   div[data-learner-question] { padding: 32px; }
   .learner-question-title { font-size: 24px; }
 }
-/* Only course road-safety exercises: keep loading/display/error frames identical. */
+/* Only course road-safety quizzes 80/81/82: fixed square-ish reservation while loading,
+   then the frame takes the image's own ratio (inline style) so no blank remains under visible pixels. */
+.road-safety-question-image {
+  --road-safety-image-h: 200px;
+  display: block;
+  height: var(--road-safety-image-h);
+  width: min(calc(100% - 0.5rem), var(--road-safety-image-h));
+  max-width: calc(100% - 0.5rem);
+  overflow: hidden;
+  margin-left: 0.5rem;
+}
+.road-safety-question-image[data-frame-fitted] {
+  height: auto;
+  width: calc(100% - 0.5rem);
+}
+@media (min-width: 640px) {
+  .road-safety-question-image { --road-safety-image-h: 240px; }
+}
 [data-learner-question] .road-safety-question-image > img {
   display: block;
   width: 100%;
@@ -295,6 +312,7 @@ div[data-learner-question][class*="border-destructive"] {
   max-height: 100%;
   margin: 0;
   object-fit: contain;
+  object-position: left top;
 }
 @media (max-width: 479px) {
   div[data-learner-question] { padding: 16px; }

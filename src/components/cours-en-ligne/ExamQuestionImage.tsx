@@ -63,12 +63,14 @@ export function ExamQuestionImage({
   className,
   fallbackClassName,
   frameClassName,
+  fitFrameToImage = false,
 }: {
   image: unknown;
   alt: string;
   className?: string;
   fallbackClassName?: string;
   frameClassName?: string;
+  fitFrameToImage?: boolean;
 }) {
   const resolvedUrl = resolveExamQuestionImageUrl(image);
   const cachedFor = (u: string | null) => {
@@ -108,6 +110,7 @@ export function ExamQuestionImage({
     <ImageLightbox
       reserveFrame
       frameClassName={frameClassName}
+      fitFrameToImage={fitFrameToImage}
       src={src}
       alt={alt}
       loading="eager"
