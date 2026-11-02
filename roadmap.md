@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## Espacement images Sécurité routière — 02/11
-- [ ] Diagnostiquer et réduire uniquement le vide entre image/question et réponses, sans changer les contenus ni les autres matières.
-- [ ] Vérifier tablette/mobile/ordinateur et non-régression ; journaliser les fichiers exacts, aucune publication.
+- [x] Cause : cadre pleine largeur 4:3 + image en taille automatique ; cadre borné optionnel pour seuls exercices Sécurité routière, image entière sans marge interne. Contenus et valeurs par défaut ailleurs inchangés.
+- [x] Écran réel isolé Q9 sur 1280/768/1024/390 : marge8px, zéro débordement/erreurJS ;105 images Partie1 chargées et contenues,117 tests PASS, aperçu buildOK. Journal docs/securite-routiere-espacement-2026-11-02.md ; aucun compte réel testé, Cloud ni publication.
 
 ## Réinitialisation mot de passe — 02/11 09:40 UTC
 - [x] Œil indépendant nouveau mot de passe/confirmation et refus français sur /reset-password, sans changer les comptes ni les contrôles serveur.
