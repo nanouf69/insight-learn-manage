@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { storage: { from: () => ({ createSignedUrl: async () => ({ data: null, error: null }) }) } } }));
 
@@ -14,8 +14,9 @@ describe("question images: no blank under the visible image", () => {
     expect(questionImageReserveHeight("rounded")).toBe("10rem");
   });
 
-  it("default frame no longer uses the full-width 4:3 box and hugs the image once loaded", () => {
+  it("default frame no longer uses the full-width 4:3 box and hugs the image once loaded", async () => {
     const { container } = render(<ExamQuestionImage image="/qa/sign-a.png" alt="i" className="max-h-40 rounded border" />);
+    await waitFor(() => expect(container.querySelector(".question-image-frame img")).not.toBeNull());
     const frame = container.querySelector(".question-image-frame") as HTMLElement;
     expect(frame).not.toBeNull();
     expect(container.querySelector(".aspect-\\[4\\/3\\]")).toBeNull();
@@ -35,8 +36,9 @@ describe("question images: no blank under the visible image", () => {
     expect(container.querySelector(".question-image-frame")).toBeNull();
   });
 
-  it("a broken image shows only the short message, without a reserved blank box", () => {
+  it("a broken image shows only the short message, without a reserved blank box", async () => {
     const { container, getByText } = render(<ExamQuestionImage image="/qa/broken.png" alt="i" className="max-h-40" />);
+    await waitFor(() => expect(container.querySelector("img")).not.toBeNull());
     fireEvent.error(container.querySelector("img") as HTMLImageElement);
     expect(getByText("Image non disponible")).toBeTruthy();
     expect(container.querySelector(".question-image-frame")).toBeNull();
