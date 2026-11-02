@@ -57,4 +57,4 @@
 - Future Bilan examen 5/11 runs only through `bilan_future_*` (route RPC decides before the legacy screen renders; eligibility only for accounts with no legacy trace; completion via submission trigger); why: new passages never touch legacy copies.
 - Optional TAXI practice uses owner-only qrc_practice RPCs, append-only answers, frozen obligations, CAS and atomic submission; AI requires matching submission and blocks paid calls until budget verified, unknowns never replay. See course/lib AGENTS; why: no lost drafts, false completion or official grade changes.
 - TAXI/TA form defaults mirror FORMATION_MODULES (test modeles-taxi-ta-fin-formation); why: no missing modules.
-- CRM « Ajouter un mois d’accès »: the month is added only by crm_reactiver_un_mois; the « Prolongation » email is sent separately by send-prolongation-acces per extension_id (crm_prolongation_emails, one sent/in-progress per extension), never creating accounts or credentials; why: resending an email must never add another month.
+- CRM month extension: crm_reactiver_un_mois adds the month; send-prolongation-acces only emails per extension_id; why: resend never adds a month.
