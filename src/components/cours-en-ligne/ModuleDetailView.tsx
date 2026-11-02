@@ -3683,6 +3683,7 @@ function ExerciceCard({
                         alt={`Illustration Q${qi + 1}`}
                         className="w-20 h-20 object-contain rounded border shrink-0 bg-white"
                         fallbackClassName="hidden"
+                        {...(isRoadSafetyCourseExercise(item) ? { frameClassName: "shrink-0 w-20 h-20 overflow-hidden" } : {})}
                       />
                     )}
                     <div className="flex-1">
@@ -3807,8 +3808,11 @@ function ExerciceCard({
                             <ExamQuestionImage
                               image={q.image}
                               alt={`Illustration Q${qi + 1}`}
-                              className="max-h-48 object-contain rounded border mb-3 bg-white cursor-zoom-in"
+                              className={isRoadSafetyCourseExercise(item)
+                                ? "!w-auto !h-auto max-w-full max-h-48 object-contain rounded border mb-3 bg-white cursor-zoom-in"
+                                : "max-h-48 object-contain rounded border mb-3 bg-white cursor-zoom-in"}
                               fallbackClassName="mb-3 text-xs text-muted-foreground italic"
+                              {...(isRoadSafetyCourseExercise(item) ? { frameClassName: "block w-fit max-w-full" } : {})}
                             />
                           )}
                           <div className="flex flex-wrap gap-2">
