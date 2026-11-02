@@ -293,14 +293,14 @@ div[data-learner-question][class*="border-destructive"] {
   --road-safety-image-h: 200px;
   display: block;
   height: var(--road-safety-image-h);
-  width: min(100%, var(--road-safety-image-h));
-  max-width: 100%;
+  width: min(calc(100% - 0.5rem), var(--road-safety-image-h));
+  max-width: calc(100% - 0.5rem);
   overflow: hidden;
   margin-left: 0.5rem;
 }
 .road-safety-question-image[data-frame-fitted] {
   height: auto;
-  width: 100%;
+  width: calc(100% - 0.5rem);
 }
 @media (min-width: 640px) {
   .road-safety-question-image { --road-safety-image-h: 240px; }
