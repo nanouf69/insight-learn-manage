@@ -62,11 +62,13 @@ export function ExamQuestionImage({
   alt,
   className,
   fallbackClassName,
+  frameClassName,
 }: {
   image: unknown;
   alt: string;
   className?: string;
   fallbackClassName?: string;
+  frameClassName?: string;
 }) {
   const resolvedUrl = resolveExamQuestionImageUrl(image);
   const cachedFor = (u: string | null) => {
@@ -93,11 +95,11 @@ export function ExamQuestionImage({
 
   if (!resolvedUrl) return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
   if (hasError) {
-    return <div className="w-full aspect-[4/3] overflow-hidden"><p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p></div>;
+    return <div className={frameClassName ?? "w-full aspect-[4/3] overflow-hidden"}><p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p></div>;
   }
 
   if (!displayUrl) {
-    return <div className="w-full aspect-[4/3] overflow-hidden"><div className={className ?? "mt-2 h-40 w-full max-w-xs rounded-lg border bg-muted animate-pulse"} /></div>;
+    return <div className={frameClassName ?? "w-full aspect-[4/3] overflow-hidden"}><div className={className ?? "mt-2 h-40 w-full max-w-xs rounded-lg border bg-muted animate-pulse"} /></div>;
   }
 
   // Signed URLs are already unique; a per-mount cache-buster forced a reload (visible jump) on every rerender/remount.
@@ -105,6 +107,7 @@ export function ExamQuestionImage({
   return (
     <ImageLightbox
       reserveFrame
+      frameClassName={frameClassName}
       src={src}
       alt={alt}
       loading="eager"

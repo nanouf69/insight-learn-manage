@@ -9176,7 +9176,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       };
                       const sizeClass = sizeMap[q.imageSize ?? "sm"] ?? "max-h-40";
                       return (
-                        <ExamQuestionImage image={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic" />
+                        <ExamQuestionImage image={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic"
+                          frameClassName={[80, 81, 82].includes(Number(exo.id)) && [4, 9, 15, 21, 27, 29, 81].includes(Number(module.id)) ? "road-safety-question-image w-full max-w-sm aspect-[4/3] overflow-hidden" : undefined}
+                        />
                       );
                     })()}
                     {multi && (

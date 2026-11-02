@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Espacement images Sécurité routière — 02/11
+- [x] Cause : cadre pleine largeur 4:3 + image en taille automatique ; cadre borné optionnel pour seuls exercices Sécurité routière, image entière sans marge interne. Contenus et valeurs par défaut ailleurs inchangés.
+- [x] Écran réel isolé Q9 sur 1280/768/1024/390 : marge8px, zéro débordement/erreurJS ;105 images Partie1 chargées et contenues,117 tests PASS, aperçu buildOK. Journal docs/securite-routiere-espacement-2026-11-02.md ; aucun compte réel testé, Cloud ni publication.
+
 ## Réinitialisation mot de passe — 02/11 09:40 UTC
 - [x] Œil indépendant nouveau mot de passe/confirmation et refus français sur /reset-password, sans changer les comptes ni les contrôles serveur.
 - [x] 14 tests isolés PASS : affichage/masquage indépendant, refus serveur sans déconnexion/succès, nouvel essai avec confirmation ; build OK. Aucun mail réel. Connexion/lien réel non consommé et parcours hébergé NON PROUVÉ. Journal docs/reinitialisation-mot-de-passe-2026-11-02.md.

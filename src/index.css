@@ -287,6 +287,15 @@ div[data-learner-question][class*="border-destructive"] {
   div[data-learner-question] { padding: 32px; }
   .learner-question-title { font-size: 24px; }
 }
+/* Only course road-safety exercises: keep loading/display/error frames identical. */
+[data-learner-question] .road-safety-question-image > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  object-fit: contain;
+}
 @media (max-width: 479px) {
   div[data-learner-question] { padding: 16px; }
   [data-learner-question] button.w-full,

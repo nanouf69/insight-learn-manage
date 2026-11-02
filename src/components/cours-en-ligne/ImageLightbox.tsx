@@ -9,9 +9,10 @@ interface ImageLightboxProps {
   decoding?: "async" | "sync" | "auto";
   onError?: () => void;
   reserveFrame?: boolean;
+  frameClassName?: string;
 }
 
-export function ImageLightbox({ src, alt, className, loading, decoding, onError, reserveFrame = false }: ImageLightboxProps) {
+export function ImageLightbox({ src, alt, className, loading, decoding, onError, reserveFrame = false, frameClassName }: ImageLightboxProps) {
   const [open, setOpen] = useState(false);
 
   const close = useCallback(() => setOpen(false), []);
@@ -27,7 +28,7 @@ export function ImageLightbox({ src, alt, className, loading, decoding, onError,
 
   return (
     <>
-      <div className={reserveFrame ? "w-full aspect-[4/3] overflow-hidden" : "contents"}>
+      <div className={reserveFrame ? (frameClassName ?? "w-full aspect-[4/3] overflow-hidden") : "contents"}>
       <img
         src={src}
         alt={alt}
