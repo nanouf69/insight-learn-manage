@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Réinitialisation mot de passe — 02/11 09:40 UTC
+- [x] Œil indépendant nouveau mot de passe/confirmation et refus français sur /reset-password, sans changer les comptes ni les contrôles serveur.
+- [x] 14 tests isolés PASS : affichage/masquage indépendant, refus serveur sans déconnexion/succès, nouvel essai avec confirmation ; build OK. Aucun mail réel. Connexion/lien réel non consommé et parcours hébergé NON PROUVÉ. Journal docs/reinitialisation-mot-de-passe-2026-11-02.md.
+- [ ] Validité 3 h : réglage hébergé réservé au propriétaire, Plus → Users → Auth settings → Email → Email OTP expiration (seconds) = 10800 ; non modifié ni prouvé.
+- [ ] Publication interdite sans autorisation distincte ; corrections disponibles seulement dans l’aperçu.
+
 ## Incident accès RHAIMA / ABDULLBASET — 02/11 07:36 UTC
 - [x] Identités uniques vérifiées : RHAIMA ta-e actif 02/11–31/05 ; NESAR compte connecté ce matin mais cours expirés31/10, examen enregistré29/09 et aucune extension.
 - [x] Deux demandes récupération HTTP200 et hooks réussis : RHAIMA07:38:58 / NESAR07:39:48 UTC, emails enregistrés, aucun jeton exposé ; livraison boîte et clic NON PROUVÉS.
