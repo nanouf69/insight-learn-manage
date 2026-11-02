@@ -287,6 +287,30 @@ div[data-learner-question][class*="border-destructive"] {
   div[data-learner-question] { padding: 32px; }
   .learner-question-title { font-size: 24px; }
 }
+/* Question images (all screens without a dedicated frame): reserve the caller's height cap only while loading,
+   then the frame hugs the visible image so choices follow it with the normal margin. */
+.question-image-frame {
+  display: block;
+  flex-shrink: 0;
+  max-width: 100%;
+  width: min(100%, var(--question-image-reserve, 10rem));
+  height: var(--question-image-reserve, 10rem);
+  overflow: hidden;
+}
+.question-image-frame[data-loaded] {
+  width: fit-content;
+  height: auto;
+}
+.question-image-frame[data-loaded][data-full-width] {
+  width: 100%;
+}
+.question-image-frame[data-loaded][data-full-width] > img {
+  height: auto;
+}
+/* Learner exercise images carry ml-2: keep the whole image inside the frame (no 8px right-edge clip). */
+.question-image-frame > img.ml-2 {
+  max-width: calc(100% - 0.5rem);
+}
 /* Only course road-safety quizzes 80/81/82: fixed square-ish reservation while loading,
    then the frame takes the image's own ratio (inline style) so no blank remains under visible pixels. */
 .road-safety-question-image {

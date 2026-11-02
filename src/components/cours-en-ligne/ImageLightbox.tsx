@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import { X } from "lucide-react";
+import type React from "react";
 
 interface ImageLightboxProps {
   src: string;
@@ -12,9 +13,14 @@ interface ImageLightboxProps {
   frameClassName?: string;
   /** Opt-in: once loaded, the frame takes the image's own ratio (height capped by CSS) so no blank remains under it. */
   fitFrameToImage?: boolean;
+  /** Opt-in for question images: reserve `reserveHeight` only until the image is ready, then the frame hugs the visible image. */
+  fitContent?: { reserveHeight: string; fullWidth: boolean };
 }
 
-export function ImageLightbox({ src, alt, className, loading, decoding, onError, reserveFrame = false, frameClassName, fitFrameToImage = false }: ImageLightboxProps) {
+// Sources already displayed once in this page: a remount starts in its final size (no reserve, no jump).
+const READY_SOURCES = new Set<string>();
+
+export function ImageLightbox({ src, alt, className, loading, decoding, onError, reserveFrame = false, frameClassName, fitFrameToImage = false, fitContent }: ImageLightboxProps) {
   const [open, setOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [fitted, setFitted] = useState<{ src: string; w: number; h: number } | null>(null);
@@ -23,7 +29,16 @@ export function ImageLightbox({ src, alt, className, loading, decoding, onError,
     setFitted((prev) => (prev?.src === src && prev.w === img.naturalWidth && prev.h === img.naturalHeight ? prev : { src, w: img.naturalWidth, h: img.naturalHeight }));
   }, [fitFrameToImage, src]);
   // Already-decoded (cached) images may not emit a new load event.
-  useLayoutEffect(() => { if (imgRef.current?.complete) readNatural(imgRef.current); }, [readNatural]);
+  const [readySrc, setReadySrc] = useState<string | null>(() => (READY_SOURCES.has(src) ? src : null));
+  const markReady = useCallback((img: HTMLImageElement | null) => {
+    if (!fitContent || !img || !img.naturalWidth) return;
+    READY_SOURCES.add(src);
+    setReadySrc((prev) => (prev === src ? prev : src));
+  }, [fitContent, src]);
+  useLayoutEffect(() => {
+    if (imgRef.current?.complete) { readNatural(imgRef.current); markReady(imgRef.current); }
+  }, [readNatural, markReady]);
+  const contentReady = !!fitContent && (readySrc === src || READY_SOURCES.has(src));
   const ratio = fitFrameToImage && fitted?.src === src ? fitted : null;
 
   const close = useCallback(() => setOpen(false), []);
@@ -40,16 +55,20 @@ export function ImageLightbox({ src, alt, className, loading, decoding, onError,
   return (
     <>
       <div
-        className={reserveFrame ? (frameClassName ?? "w-full aspect-[4/3] overflow-hidden") : "contents"}
+        className={fitContent ? "question-image-frame" : reserveFrame ? (frameClassName ?? "w-full aspect-[4/3] overflow-hidden") : "contents"}
         data-frame-fitted={ratio ? "" : undefined}
-        style={ratio ? { aspectRatio: `${ratio.w} / ${ratio.h}`, maxWidth: `calc(var(--road-safety-image-h) * ${ratio.w / ratio.h})` } : undefined}
+        data-loaded={contentReady ? "" : undefined}
+        data-full-width={fitContent?.fullWidth ? "" : undefined}
+        style={fitContent
+          ? ({ "--question-image-reserve": fitContent.reserveHeight } as React.CSSProperties)
+          : ratio ? { aspectRatio: `${ratio.w} / ${ratio.h}`, maxWidth: `calc(var(--road-safety-image-h) * ${ratio.w / ratio.h})` } : undefined}
       >
       <img
         ref={imgRef}
-        onLoad={(e) => readNatural(e.currentTarget)}
+        onLoad={(e) => { readNatural(e.currentTarget); markReady(e.currentTarget); }}
         src={src}
         alt={alt}
-        className={`${className ?? ""} ${reserveFrame ? "w-full h-full object-contain" : ""} cursor-pointer hover:opacity-80 transition-opacity`}
+        className={`${className ?? ""} ${fitContent ? "max-w-full" : reserveFrame ? "w-full h-full object-contain" : ""} cursor-pointer hover:opacity-80 transition-opacity`}
         loading={loading}
         decoding={decoding}
         onError={onError}
