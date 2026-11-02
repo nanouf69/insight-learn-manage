@@ -2,7 +2,7 @@ import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { supabase } from '@/integrations/supabase/client';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
-import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from '@/lib/pratiqueSlots';
+import { daySlotsDepuisConfigs, parseClockMinutes, resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from '@/lib/pratiqueSlots';
 // complet = compte EXACT atteint (jamais « >= ») : la mention EDOF ne s'affiche qu'au nombre précis.
 
 // ================== Signatures d'émargement manquantes ==================
@@ -15,6 +15,8 @@ import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueCrene
 export interface SignatureManquante {
   date: string;
   creneau: string;
+  /** Horaires réels du créneau (issus des horaires de session ou du planning pratique), jamais inventés. */
+  horaires?: string;
   source: string;
   etat: 'manquante' | 'absence_enregistree';
 }
