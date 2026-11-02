@@ -60,7 +60,7 @@ export function generateSignaturesManquantesPdf(apprenant: { nom?: string; preno
     doc.text(l.creneau, xCreneau + 2, y + 7);
     doc.setFontSize(7);
     if (l.horaires) doc.text(l.horaires, xCreneau + 2, y + 14);
-    if (l.absence) doc.text('(absence enregistrée)', xCreneau + 2, y + l.horaires ? y + 20 : y + 14);
+    if (l.absence) doc.text('(absence enregistrée)', xCreneau + 2, l.horaires ? y + 20 : y + 14);
     doc.setFontSize(8);
     doc.text(FORMATEUR_EMARGEMENT, xFormateur + 2, y + 7);
     y += rowH;
