@@ -20,6 +20,7 @@ import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus, getActiveSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { flushSync } from "react-dom";
+import { reponsesVidesAEnvoyer } from "@/lib/reponsesEffacees";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7005,7 +7006,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       // la tentative validée reste intacte (« Refaire les fausses » toujours cliquable).
       if (submittedExoIdsRef.current.has(pending.exoId)) revisionActiveRef.current.add(pending.exoId);
       // Persist the wiped selections after state has settled.
-      autoSaveAnswers(clearedSelected, [pending.exoId]);
+      autoSaveAnswers(clearedSelected, [pending.exoId], selectedAnswers);
 
       toast.success(`🎯 Mode révision activé — ${pending.wrongKeys.length} question${pending.wrongKeys.length > 1 ? "s" : ""} à refaire (réponses effacées)`);
       scheduleScrollToRevisionStart(pending.exoId);
@@ -7823,7 +7824,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // --- Auto-save partial answers to DB (debounced) ---
     const autoSaveAnswers = (
       answers: Record<string, string | string[]>,
-      forceExerciceIds: number[] = []
+      forceExerciceIds: number[] = [],
+      clearedFrom: Record<string, string | string[]> = {}
     ) => {
       if (!apprenantId) return;
 
@@ -7846,6 +7848,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             if (Number.isFinite(exoId) && !byExo.has(exoId)) {
               byExo.set(exoId, {});
             }
+          });
+
+          // Le serveur FUSIONNE question par question : une clé absente n'efface
+          // rien. Pour « Recommencer tout » / « Refaire les fausses », chaque
+          // réponse retirée localement est donc envoyée explicitement vide,
+          // sinon l'ancienne réponse revient au rechargement ou sur un autre appareil.
+          const vides = reponsesVidesAEnvoyer({ ...clearedFrom, ...lastPersistedAnswersRef.current }, answers, forceExerciceIds);
+          Object.entries(vides).forEach(([exoId, blanks]) => {
+            const id = Number(exoId);
+            byExo.set(id, { ...(byExo.get(id) ?? {}), ...blanks });
           });
           
           // Journal question par question : on n'envoie que ce qui a changé
@@ -9646,12 +9658,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                                   [exo.id]: [...(prev[exo.id] ?? []), { at: Date.now(), total: questionsSafe.length, correct: snapCorrect, mode: "complet", answers: snapshot }],
                                 }));
                               }
-                              setSelectedAnswers(prev => {
-                                const next = { ...prev };
-                                exoKeys.forEach(k => delete next[k]);
-                autoSaveAnswers(next, [exo.id]);
-                                return next;
+                              const exoKeySet = new Set(exoKeys);
+                              const cleared = { ...selectedAnswers };
+                              exoKeys.forEach(k => delete cleared[k]);
+                              const clearedQrc = Object.fromEntries(Object.entries(qrcAnswers).filter(([k]) => !exoKeySet.has(k))) as typeof qrcAnswers;
+                              const clearedQrcResults = Object.fromEntries(Object.entries(qrcResults).filter(([k]) => !exoKeySet.has(k))) as typeof qrcResults;
+                              flushSync(() => {
+                                setSelectedAnswers(cleared);
+                                setQrcAnswers(clearedQrc);
+                                setQrcResults(clearedQrcResults);
+                                setUnansweredKeys(new Set());
                               });
+                              // Quiz déjà validé : la nouvelle tentative part sur l'identifiant de révision,
+                              // la tentative validée reste intacte.
+                              if (submittedExoIdsRef.current.has(exo.id)) revisionActiveRef.current.add(exo.id);
+                              autoSaveAnswers(cleared, [exo.id], selectedAnswers);
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
                               setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
