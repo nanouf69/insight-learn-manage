@@ -22,26 +22,7 @@ export interface ModeleEmailCpf {
 
 const corps = (formation: string, lien: string) => (a: { prenom?: string | null }) => {
   const prenom = (a?.prenom ?? "").trim();
-  return `Bonjour${prenom ? ` ${prenom}` : ""},
-
-Voici le lien pour vous inscrire à la ${formation} de FTRANSPORT avec votre CPF.
-
-Comment faire :
-1. Cliquez sur le lien ci-dessous.
-2. Connectez-vous à Mon Compte Formation (moncompteformation.gouv.fr) avec vos identifiants.
-3. Vérifiez la formation et la session, puis validez votre demande d'inscription.
-
-👉 Lien CPF de la formation : ${lien}
-
-Le financement dépend de vos droits CPF disponibles et de la validation de votre dossier sur Mon Compte Formation ; il n'est pas automatique.
-
-Pour toute question, contactez-nous :
-📞 Tél : 04 28 29 60 91
-📧 Email : contact@ftransport.fr
-
-Cordialement,
-L'équipe Ftransport
-86 Route de Genas, 69003 Lyon`;
+  return `Bonjour${prenom ? ` ${prenom}` : ""},<br><br>Voici le lien pour vous inscrire à la ${formation} de FTRANSPORT avec votre CPF.<br><br><strong>Comment faire :</strong><br>1️⃣ Cliquez sur le lien ci-dessous.<br>2️⃣ Connectez-vous à Mon Compte Formation (moncompteformation.gouv.fr) avec vos identifiants.<br>3️⃣ Vérifiez la formation et la session, puis validez votre demande d'inscription.<br><br>👉 <a href="${lien}" target="_blank" style="font-size: 16px; font-weight: bold;">LIEN CPF DE LA FORMATION</a><br>${lien}<br><br>Le financement dépend de vos droits CPF disponibles et de la validation de votre dossier sur Mon Compte Formation ; il n'est pas automatique.<br><br>Pour toute question, contactez-nous :<br>📞 Tél : 04 28 29 60 91<br>📧 Email : contact@ftransport.fr<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
 };
 
 const modele = (id: string, label: string, formation: string, lien: string): ModeleEmailCpf => ({
