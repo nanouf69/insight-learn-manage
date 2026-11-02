@@ -5,12 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Loader2, CheckCircle } from "lucide-react";
+import { KeyRound, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { passwordResetErrorFrench } from "@/lib/passwordResetError";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [resetError, setResetError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
@@ -53,12 +57,13 @@ export default function ResetPassword() {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    setResetError("");
     if (password.length < 6) {
-      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
+      setResetError("Ce mot de passe est trop court : il doit contenir au moins 6 caractères.");
       return;
     }
     if (password !== confirmPassword) {
-      toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
+      setResetError("Les mots de passe ne correspondent pas.");
       return;
     }
     setLoading(true);
@@ -69,8 +74,8 @@ export default function ResetPassword() {
       toast({ title: "✅ Mot de passe modifié", description: "Vous pouvez maintenant vous connecter" });
       // Sign out so user logs in fresh
       await supabase.auth.signOut({ scope: "local" });
-    } catch (error: any) {
-      toast({ title: "Erreur", description: error.message || "Impossible de modifier le mot de passe", variant: "destructive" });
+    } catch (error: unknown) {
+      setResetError(passwordResetErrorFrench(error));
     } finally {
       setLoading(false);
     }
@@ -142,12 +147,23 @@ export default function ResetPassword() {
           <form onSubmit={handleReset} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new-pw">Nouveau mot de passe</Label>
-              <Input id="new-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Min. 6 caractères" />
+              <div className="relative">
+                <Input id="new-pw" type={showPassword ? "text" : "password"} className="pr-12" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Min. 6 caractères" aria-invalid={!!resetError} aria-describedby={resetError ? "reset-error" : undefined} />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" aria-label={showPassword ? "Masquer le nouveau mot de passe" : "Afficher le nouveau mot de passe"} title={showPassword ? "Masquer le nouveau mot de passe" : "Afficher le nouveau mot de passe"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-pw">Confirmer le mot de passe</Label>
-              <Input id="confirm-pw" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              <div className="relative">
+                <Input id="confirm-pw" type={showConfirmation ? "text" : "password"} className="pr-12" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" aria-label={showConfirmation ? "Masquer la confirmation du mot de passe" : "Afficher la confirmation du mot de passe"} title={showConfirmation ? "Masquer la confirmation du mot de passe" : "Afficher la confirmation du mot de passe"} aria-pressed={showConfirmation} onClick={() => setShowConfirmation(!showConfirmation)}>
+                  {showConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
+            {resetError && <p id="reset-error" role="alert" className="text-sm text-destructive">{resetError}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
               Enregistrer
