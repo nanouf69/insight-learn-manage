@@ -1,9 +1,11 @@
 # Feuille de route
 
 ## Incident accès RHAIMA / ABDULLBASET — 02/11 07:36 UTC
-- [ ] Vérifier identités, inscriptions, fenêtres d'accès et récupération en lecture seule.
-- [ ] Envoyer un lien sécurisé à chaque adresse enregistrée si éligible ; confirmer envoi réel ou blocage.
-- [ ] Corriger seulement les bugs prouvés nécessaires, préserver acquis/signatures, rapporter limites et déploiement.
+- [x] Identités uniques vérifiées : RHAIMA ta-e actif 02/11–31/05 ; NESAR compte connecté ce matin mais cours expirés31/10, examen enregistré29/09 et aucune extension.
+- [x] Deux demandes récupération HTTP200 et hooks réussis : RHAIMA07:38:58 / NESAR07:39:48 UTC, emails enregistrés, aucun jeton exposé ; livraison boîte et clic NON PROUVÉS.
+- [x] Ancien lien expiré +429 confirmés ; page publiée refus expiré vérifiée,8 tests PASS, empreintes67réponses/31quiz/10complétions/22feuilles identiques. Aucun code/SQL actif/déploiement/publication ; rapport docs/incident-acces-rhaima-nesar-2026-11-02.md.
+- [ ] NESAR réouverture : attend confirmation de fin d'accès jusqu'au17/11 annoncé, absent des dates enregistrées ; ne pas confondre lien et accès cours.
+- [ ] RHAIMA direction mobilité : demandeVTC→TAXI mais dossierTA/passerelle-taxi-elearning ; attend confirmation, aucune conversion/modules modifiés.
 
 ## Autorisation ciblée 28 VTC novembre — 01/11 16:11 UTC
 - [x] Audit28 IDs :10auth valides/liens uniques,18absents ;Bekkis janvier conservé, accès par inscription novembre testé isolément.
