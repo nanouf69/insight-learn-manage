@@ -1,5 +1,9 @@
 # Feuille de route
 
+## Espacement images Sécurité routière — 02/11
+- [ ] Diagnostiquer et réduire uniquement le vide entre image/question et réponses, sans changer les contenus ni les autres matières.
+- [ ] Vérifier tablette/mobile/ordinateur et non-régression ; journaliser les fichiers exacts, aucune publication.
+
 ## Réinitialisation mot de passe — 02/11 09:40 UTC
 - [x] Œil indépendant nouveau mot de passe/confirmation et refus français sur /reset-password, sans changer les comptes ni les contrôles serveur.
 - [x] 14 tests isolés PASS : affichage/masquage indépendant, refus serveur sans déconnexion/succès, nouvel essai avec confirmation ; build OK. Aucun mail réel. Connexion/lien réel non consommé et parcours hébergé NON PROUVÉ. Journal docs/reinitialisation-mot-de-passe-2026-11-02.md.
