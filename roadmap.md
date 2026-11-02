@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Incident accès RHAIMA / ABDULLBASET — 02/11 07:36 UTC
+- [ ] Vérifier identités, inscriptions, fenêtres d'accès et récupération en lecture seule.
+- [ ] Envoyer un lien sécurisé à chaque adresse enregistrée si éligible ; confirmer envoi réel ou blocage.
+- [ ] Corriger seulement les bugs prouvés nécessaires, préserver acquis/signatures, rapporter limites et déploiement.
+
 ## Autorisation ciblée 28 VTC novembre — 01/11 16:11 UTC
 - [x] Audit28 IDs :10auth valides/liens uniques,18absents ;Bekkis janvier conservé, accès par inscription novembre testé isolément.
 - [ ] Création18 comptes : reprise01/11 16:50UTC,403 confirmé dans les logs pour89354720-37ec-4431-8f29-77108e0657e0 (naoufal.guenichi@gmail.com,user). CRM contact@ftransport.fr a le rôle serveur admin mais sa session n'est pas injectée ;mint nominatif refusé car approbation indisponible. Aucun contournement/création/envoi. Attend transmission autorisée de cette session par Lovable.
