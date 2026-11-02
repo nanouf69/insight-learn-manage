@@ -1660,6 +1660,13 @@
       "when": 1793549694297,
       "tag": "0236_vtc_november_enrollment_attendance",
       "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1793647976635,
+      "tag": "0237_crm_prolongation_emails",
+      "breakpoints": true
     }
   ]
 }

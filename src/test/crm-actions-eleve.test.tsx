@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ModifierReinscription } from '@/components/crm/apprenant-sections/ModifierReinscription';
 import { ReactiverPlateformeTab } from '@/components/crm/apprenant-sections/ReactiverPlateformeTab';
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), rows: [] as any[], choix: [] as any[] }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc, from: () => {
+const mocks = vi.hoisted(() => ({ invoke: vi.fn(async () => ({ data: { statut: 'envoye' }, error: null })), rpc: vi.fn(), rows: [] as any[], choix: [] as any[] }));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { functions: { invoke: mocks.invoke }, rpc: mocks.rpc, from: () => {
   const chain: any = { select: () => chain, eq: () => chain, order: () => chain, single: async () => ({ data: mocks.rows[0], error: null }), then: (resolve: any) => Promise.resolve({data: mocks.rows,error:null}).then(resolve) };return chain;
 } } }));
 vi.mock('@/lib/crmActionsEleve', () => ({ lireChoixAdmin: async () => mocks.choix }));
