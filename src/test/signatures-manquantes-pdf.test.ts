@@ -20,10 +20,10 @@ describe('PDF signatures manquantes : horaires + formateur', () => {
       row('2026-09-10', 'Matin'), // horaires indisponibles : rien d'inventé
     ]);
     expect(lignes.map(l => `${l.date}|${l.creneau}|${l.horaires ?? ''}|${l.absence}`)).toEqual([
-      'lundi 07/09/2026|Matin|9h-12h|false',
-      'mardi 08/09/2026|Après-midi|13h-16h|false',
-      'mercredi 09/09/2026|Matin|9h-12h|true',
-      'jeudi 10/09/2026|Matin||false',
+      'Lundi 07/09/2026|Matin|9h-12h|false',
+      'Mardi 08/09/2026|Après-midi|13h-16h|false',
+      'Mercredi 09/09/2026|Matin|9h-12h|true',
+      'Jeudi 10/09/2026|Matin||false',
     ]);
   });
 
