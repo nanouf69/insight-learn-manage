@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { MODELES_EMAIL_CPF } from "@/lib/modelesEmailCpf";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -340,8 +341,9 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   // Merge hardcoded + DB templates
   const allTemplates = [
     ...EMAIL_TEMPLATES,
+    ...MODELES_EMAIL_CPF,
     ...dbTemplates
-      .filter(t => !EMAIL_TEMPLATES.some(et => et.id === t.id))
+      .filter(t => !EMAIL_TEMPLATES.some(et => et.id === t.id) && !MODELES_EMAIL_CPF.some(et => et.id === t.id))
       .map(t => ({
         id: t.id,
         label: `${t.icon} ${t.label}`,
