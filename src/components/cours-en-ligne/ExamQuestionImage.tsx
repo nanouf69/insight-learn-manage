@@ -58,7 +58,7 @@ async function toDisplayableUrl(url: string): Promise<string> {
   return signed ?? url;
 }
 
-/** Loading reservation for question images = the caller's own height cap (max-h-*/h-*), else 10rem. */
+/** Loading reservation for question images = the caller's own height cap (max-h or h class), else 10rem. */
 export function questionImageReserveHeight(className?: string): string {
   const c = className ?? "";
   const bracket = c.match(/(?:^|\s)max-h-\[([^\]\s]+)\]/);
