@@ -20,6 +20,7 @@ import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { peekSearchFocus, consumeSearchFocus, getActiveSearchFocus } from "./module-content-search";
 import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { flushSync } from "react-dom";
+import { reponsesVidesAEnvoyer } from "@/lib/reponsesEffacees";
 import { Button } from "@/components/ui/button";
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7853,15 +7854,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           // rien. Pour « Recommencer tout » / « Refaire les fausses », chaque
           // réponse retirée localement est donc envoyée explicitement vide,
           // sinon l'ancienne réponse revient au rechargement ou sur un autre appareil.
-          const previousForBlank = { ...clearedFrom, ...lastPersistedAnswersRef.current };
-          const forceSet = new Set(forceExerciceIds.filter((id) => Number.isFinite(id)));
-          const blankFor = (v: unknown) => (Array.isArray(v) ? [] : "");
-          Object.entries(previousForBlank).forEach(([key, prevVal]) => {
-            const exoId = parseInt(key.split("-")[0], 10);
-            if (!forceSet.has(exoId) || key in answers) return;
-            const bucket = byExo.get(exoId) ?? {};
-            bucket[key] = blankFor(prevVal) as string | string[];
-            byExo.set(exoId, bucket);
+          const vides = reponsesVidesAEnvoyer({ ...clearedFrom, ...lastPersistedAnswersRef.current }, answers, forceExerciceIds);
+          Object.entries(vides).forEach(([exoId, blanks]) => {
+            const id = Number(exoId);
+            byExo.set(id, { ...(byExo.get(id) ?? {}), ...blanks });
           });
           
           // Journal question par question : on n'envoie que ce qui a changé
