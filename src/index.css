@@ -307,6 +307,10 @@ div[data-learner-question][class*="border-destructive"] {
 .question-image-frame[data-loaded][data-full-width] > img {
   height: auto;
 }
+/* Learner exercise images carry ml-2: keep the whole image inside the frame (no 8px right-edge clip). */
+.question-image-frame > img.ml-2 {
+  max-width: calc(100% - 0.5rem);
+}
 /* Only course road-safety quizzes 80/81/82: fixed square-ish reservation while loading,
    then the frame takes the image's own ratio (inline style) so no blank remains under visible pixels. */
 .road-safety-question-image {
