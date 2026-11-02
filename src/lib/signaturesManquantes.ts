@@ -64,6 +64,68 @@ function joursOuvres(debut: string, fin: string): string[] {
   return out;
 }
 
+// ── Horaires lisibles par créneau (affichage PDF, jamais une heure inventée) ──
+const hfmt = (mn: number) => `${Math.floor(mn / 60)}h${mn % 60 ? String(mn % 60).padStart(2, '0') : ''}`;
+const horairesDeRange = (debut: number | string | null | undefined, fin: number | string | null | undefined): string | undefined => {
+  const a = typeof debut === 'number' ? debut : parseClockMinutes(debut);
+  const z = typeof fin === 'number' ? fin : parseClockMinutes(fin);
+  return a != null && z != null && z > a ? `${hfmt(a)}-${hfmt(z)}` : undefined;
+};
+
+/** Horaires réels par clé date|créneau, déduits des mêmes sources que les créneaux attendus (sessions, planning pratique, réservations). */
+function horairesAttendus(sessionRows: any[], reservations: any[], configs: any[] = []): Map<string, string> {
+  const out = new Map<string, string>();
+  const set = (date: string, creneau: string, h?: string) => {
+    if (estDate(date) && h && !out.has(`${date}|${creneau}`)) out.set(`${date}|${creneau}`, h);
+  };
+  const datesPratique = [
+    ...(reservations ?? []).map(r => normDate(r?.date_choisie)),
+    ...(sessionRows ?? []).filter(r => /pratique/i.test(r?.sessions?.type_session ?? '')).map(r => normDate(r.sessions.date_debut)),
+  ];
+  const daySlots = daySlotsDepuisConfigs(datesPratique, configs);
+  const partsHoraires = (date: string, slot: any, typeFormation: any, reservationCreneau: any) => {
+    for (const p of resolvePratiqueSlotParts(slot, normalizePratiqueType(typeFormation), normalizePratiqueCreneau(reservationCreneau)).filter(p => p.minutes > 0)) {
+      set(date, p.creneau, horairesDeRange(p.startMinute, p.endMinute));
+    }
+  };
+  const pratiqueCouvertes = new Set(
+    (sessionRows ?? []).filter(r => /pratique/i.test(r?.sessions?.type_session ?? '') && estDate(normDate(r.sessions.date_debut))).map(r => normDate(r.sessions.date_debut)),
+  );
+  for (const row of sessionRows ?? []) {
+    const s = row?.sessions;
+    if (!s) continue;
+    const type = String(s.type_session ?? '').toLowerCase();
+    const d = normDate(s.date_debut);
+    if (type.includes('pratique') && estDate(d)) {
+      const rs = (reservations ?? []).filter(r => normDate(r?.date_choisie) === d);
+      const slot = daySlots.get(d);
+      if (daySlots.has(d) || rs.length) {
+        const selections = rs.length ? rs : [{ creneau: 'journee', type_formation: s.type_session }];
+        for (const r of selections) partsHoraires(d, slot, r.type_formation, r.creneau);
+      } else {
+        // Aucun planning pratique du jour : horaires de la session pratique elle-même.
+        const hd = parseClockMinutes(row.heure_debut_personnalisee || s.heure_debut);
+        const hf = parseClockMinutes(row.heure_fin_personnalisee || s.heure_fin);
+        if (hd != null && hf != null && hf > hd) {
+          if (hf <= 720) set(d, 'matin', horairesDeRange(hd, hf));
+          else if (hd >= 780) set(d, 'apres_midi', horairesDeRange(hd, hf));
+          else { set(d, 'matin', horairesDeRange(hd, 720)); set(d, 'apres_midi', horairesDeRange(780, hf)); }
+        }
+      }
+    } else if (type.includes('theorique')) {
+      for (const slot of creneauxSessionInscrite(row, row.filiere_apprenant ?? 'VTC')) {
+        set(slot.date, slot.creneau, horairesDeRange(slot.debut, slot.fin));
+      }
+    }
+  }
+  for (const r of reservations ?? []) {
+    const d = normDate(r?.date_choisie);
+    if (!estDate(d) || pratiqueCouvertes.has(d)) continue; // session pratique du jour déjà retenue
+    partsHoraires(d, daySlots.get(d), r?.type_formation, r?.creneau);
+  }
+  return out;
+}
+
 /** Fonction pure : attendus (sessions + réservations) vs signatures réelles ; les dates futures ne sont jamais « manquantes ». */
 export function calculerSignaturesManquantes(
   emargements: any[],
@@ -92,12 +154,13 @@ export function calculerSignaturesManquantes(
     for (const creneau of jour.creneaux) attendus.set(`${date}|${creneau}`, { creneau, source: jour.pratique ? `Pratique ${String(reservations.find(r => normDate(r.date_choisie) === date)?.type_formation ?? '').toUpperCase()} — inscription / réservation` : 'Théorie — inscription de session' });
   }
 
+  const horaires = horairesAttendus(sessionRows, reservations, configs);
   const manquantes: SignatureManquante[] = [];
   for (const [key, { creneau, source }] of attendus) {
     const date = key.slice(0, 10);
     if (date > dateReference) continue; // créneau à venir : rien à reprocher
     if (signes.has(key)) continue;
-    manquantes.push({ date, creneau: DEMI_LABELS[creneau] ?? creneau, source, etat: absents.has(key) ? 'absence_enregistree' : 'manquante' });
+    manquantes.push({ date, creneau: DEMI_LABELS[creneau] ?? creneau, horaires: horaires.get(key), source, etat: absents.has(key) ? 'absence_enregistree' : 'manquante' });
   }
   manquantes.sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
   return manquantes;
