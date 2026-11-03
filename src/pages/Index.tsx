@@ -37,6 +37,7 @@ import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGl
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { IncidentsExamensPanel } from "@/components/dashboard/IncidentsExamensPanel";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
+import { PaiementsFcRevue } from "@/components/dashboard/PaiementsFcRevue";
 import { PersonalFinancingTransfersTable } from "@/components/dashboard/PersonalFinancingTransfersTable";
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
@@ -415,6 +416,7 @@ const Index = () => {
 
             {/* Small Transfers */}
             <SmallTransfersTable />
+            <PaiementsFcRevue />
 
             {/* Personal financing transfers (other formations) */}
             <PersonalFinancingTransfersTable />
