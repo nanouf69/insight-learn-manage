@@ -4997,6 +4997,122 @@ export type Database = {
         }
         Relationships: []
       }
+      fc_acces_config: {
+        Row: {
+          actif: boolean
+          actif_depuis: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          actif_depuis?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          actif_depuis?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fc_acces_envois: {
+        Row: {
+          apprenant_id: string
+          compte: string | null
+          created_at: string
+          declencheur: string
+          erreur: string | null
+          id: string
+          paiement_id: string
+          statut: string
+          termine_at: string | null
+        }
+        Insert: {
+          apprenant_id: string
+          compte?: string | null
+          created_at?: string
+          declencheur?: string
+          erreur?: string | null
+          id?: string
+          paiement_id: string
+          statut?: string
+          termine_at?: string | null
+        }
+        Update: {
+          apprenant_id?: string
+          compte?: string | null
+          created_at?: string
+          declencheur?: string
+          erreur?: string | null
+          id?: string
+          paiement_id?: string
+          statut?: string
+          termine_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fc_acces_envois_paiement_id_fkey"
+            columns: ["paiement_id"]
+            isOneToOne: false
+            referencedRelation: "fc_paiements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fc_paiements: {
+        Row: {
+          apprenant_id: string | null
+          associe_par: string | null
+          candidats: string[]
+          created_at: string
+          date_operation: string
+          empreinte: string
+          historique: boolean
+          id: string
+          libelle: string
+          montant: number
+          motif: string | null
+          statut: string
+          transaction_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id?: string | null
+          associe_par?: string | null
+          candidats?: string[]
+          created_at?: string
+          date_operation: string
+          empreinte: string
+          historique?: boolean
+          id?: string
+          libelle: string
+          montant: number
+          motif?: string | null
+          statut?: string
+          transaction_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string | null
+          associe_par?: string | null
+          candidats?: string[]
+          created_at?: string
+          date_operation?: string
+          empreinte?: string
+          historique?: boolean
+          id?: string
+          libelle?: string
+          montant?: number
+          motif?: string | null
+          statut?: string
+          transaction_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       financeurs_fc: {
         Row: {
           adresse: string | null
