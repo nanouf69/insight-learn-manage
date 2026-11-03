@@ -492,3 +492,25 @@ export function isResultPlaceholder(row: any): boolean {
 export function excludeResultPlaceholders<T>(rows: T[] | null | undefined): T[] {
   return ((rows as any[]) || []).filter((r) => !isResultPlaceholder(r)) as T[];
 }
+
+/**
+ * Ancien registre QRC (qrc_instances) consulté matière par matière, et
+ * UNIQUEMENT pour les matières sans passage dans le nouveau système.
+ * Une matière ayant un passage __core est jugée sur son état serveur seul.
+ * null = ancien registre non branché pour cet examen.
+ */
+export function legacyEnginePendingForRows(
+  rows: any[] | null | undefined,
+  isMatierePending: (matiereId: string) => boolean | null,
+): boolean | null {
+  const list = (rows || []).filter((row) => row && !row?.nonPassee && !row?.__core);
+  let any: boolean | null = null;
+  for (const row of list) {
+    const id = String(row?.matiereId ?? row?.matiere_id ?? "");
+    if (!id) continue;
+    const p = isMatierePending(id);
+    if (p === true) return true;
+    if (p === false) any = false;
+  }
+  return any;
+}

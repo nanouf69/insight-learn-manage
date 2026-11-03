@@ -21,7 +21,7 @@ import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
-import { isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { isExamAttemptPublicationPending, legacyEnginePendingForRows, isMatiereQrcPendingForAttempt, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { toast } from "sonner";
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
 import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDelay";
@@ -599,7 +599,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                        // Passage entièrement présent dans le nouveau système → son état
                        // serveur est la seule source (ancien moteur ignoré).
                        const allCore = scores.length > 0 && scores.every((s: any) => !!s?.__core);
-                       const enginePending = allCore ? null : qrcEngine.isExamPending(examen.id);
+                       const enginePending = allCore ? null : legacyEnginePendingForRows(scores, (mid) => qrcEngine.isMatierePending(examen.id, mid));
                        const publicationPending = enginePending === true
                          || isExamAttemptPublicationPending(scores, examen);
                        if (publicationPending) {
