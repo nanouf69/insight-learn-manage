@@ -1,36 +1,50 @@
-# Fiabiliser les enregistrements et validations après l’audit global
+# Habib BEN MOHAMED — examen blanc VTC n°2 bloqué « En attente de correction des QRC »
 
-Autorisation de préparer les correctifs reçue. Aucune publication ; confirmation distincte avant tout déploiement en production.
+## Diagnostic (lecture seule, rien n'a été modifié)
 
-## 1. Sauvegardes et soumissions
-- Corriger les défauts reproduits de concurrence et de confirmation : une réponse récente ne doit pas être remplacée par un ancien brouillon ; une sauvegarde locale ou une requête acceptée ne vaut pas preuve de soumission.
-- Conserver les saisies en cas d’erreur, vérifier le même compte et la même copie avant confirmation, rendre les échecs explicites et les reprises idempotentes.
-- Vérifier les transactions existantes avant d’ajouter une protection ; éviter toute seconde voie de validation contournant un refus serveur.
+Toutes les QRC de cet examen sont corrigées dans le nouveau système. Le blocage vient d'un ancien registre de QRC, qui n'a jamais été mis à jour.
 
-## 2. Examens blancs
-- Remplacer le critère insuffisant « une matière V2 terminée ou un nombre de notes » par une preuve de remise des matières réellement requises, par identité de copie.
-- Un import historique isolé ne valide jamais un examen. Les anciennes copies authentiquement soumises restent utilisables sans exiger une conversion V2.
-- Ne pas rouvrir ni réécrire les validations, réponses, notes ou tentatives historiques. Les cas sans preuve suffisante restent à vérifier ; accès et reprise ne doivent pas être confondus avec achèvement.
+Preuves (élève 4f289012…, EB2) :
 
-## 3. QRC et anomalies historiques
-- Distinguer correction réellement manquante, ancienne trace déjà supersédée, copie vide et conflit d’identité.
-- Ne déclencher aucune IA payante, correction fictive ou relance massive.
-- Recontrôler en lecture seule les quatre dossiers à compte divergent, les 353 modules à preuve incomplète et les 74 feuilles passées sans image ; produire les cas nécessitant une vérification humaine, sans rattachement ni signature automatique.
+| Matière | Nouveau système (copie / note / QRC) | Ancien registre QRC |
+|---|---|---|
+| A T3P | 7c3271ee : 18 définitif, 5/5 corrigées | 5 « en attente » |
+| B Gestion | f2f0e2f2 : 20 définitif, 2/2 corrigées | 2 « en attente » |
+| C Sécurité routière | aucune copie (QCM seulement), ancienne note 19 | aucune |
+| D Français | 213e195c : 17,5 définitif, 3/3 corrigées | 3 « en attente » |
+| E Anglais | aucune copie (QCM seulement), ancienne note 19 | aucune |
+| F(V) | 28724266 : 18,5 définitif, 4/4 corrigées | 4 « en attente » |
+| G(V) | 2be74bfa : 20 définitif, 2/2 corrigées | 2 « en attente » |
 
-## Priorité ajoutée : corrigés administrateur immédiatement pris en compte
-- Après une sauvegarde confirmée, la nouvelle bonne réponse devient la référence pour l’affichage, les nouvelles corrections et les nouvelles tentatives. Aucun ancien cache, état local ou réponse enregistrée ne doit remplacer silencieusement ce corrigé.
-- Vérifier la version serveur, les accusés de sauvegarde, l’invalidation des caches sur les deux écrans et les références utilisées par la correction automatique et IA ; aucune IA payante lancée pour les essais.
-- Conserver les notes et copies figées ainsi que les examens en cours sur leur version attribuée ; afficher explicitement toute divergence avec la version courante, sans renotation rétroactive ni publication automatique d’un examen.
-- Tests isolés concrets : A→B, sauvegarde puis rechargement sur deux sessions/appareils, changements rapides A→B→C, bonnes réponses multiples et montant 8 € ; VTC/TAXI/TA/VA. Aucun corrigé de production modifié pour tester.
+Les 7 notes affichées correspondent exactement à ces copies : 5 notes du nouveau système, plus C et E de l'ancien.
 
-## Vérifications et livraison
-- Reproductions avant/après sur données fictives : deux écritures concurrentes, réponse lente, double soumission, coupure/reprise, changement de compte, refus serveur, copie vide et import isolé.
-- Tests des parcours VTC/TAXI/TA/VA, historiques et en cours ; simulations téléphone/tablette, puis suite globale et contrôles de compilation disponibles.
-- Rapport : fichiers changés, résultats réellement exécutés, limites et anomalies non résolues. Aucune certification globale si un contrôle essentiel manque.
+Ce que fait l'écran :
+- C et E n'existent que dans l'ancien système, donc l'examen n'est pas entièrement dans le nouveau.
+- Dans ce cas, l'écran demande à l'ancien registre s'il reste des QRC en attente **pour tout l'examen**. Il trouve les 16 anciennes lignes de A, B, D, F, G, des doublons déjà corrigés dans le nouveau système, et il bloque la note.
+- Cela contredit la règle déjà en place : une matière qui a une copie dans le nouveau système est jugée seulement sur cette copie.
 
-## Détails techniques et fichiers concernés
-- Sauvegardes : `src/hooks/useAutoSaveReponses.ts`, `src/lib/answerPersistence.ts`, `src/lib/quizAttempts.ts` et, si le défaut est reproduit, `src/hooks/useAutoSave.tsx` et leurs contrôles serveur.
-- Examens : fonction serveur `examens_blancs_preuve_soumission`, ses appelants et la projection commune de complétion ; modification minimale, test sur PostgreSQL jetable avec le contrat `src/test/module_completion_sql_contract.py` si ses RPC sont touchées.
-- Corrigés : chaîne d’édition/sauvegarde/relecture de `ModuleDetailView.tsx`, résolution des questions canoniques, `moduleLiveRefresh.ts`, chargement des nouvelles tentatives et références IA ; conserver les snapshots attribués. Le chemin exact sera limité aux défauts reproduits.
-- Tests : fichiers ciblés sous `src/test`, scénarios mobiles temporaires sous `/tmp/browser` ; décisions dans `AGENTS.md`, avancement dans `roadmap.md`, rapport sous `docs`.
-- Toute protection serveur préparée sera testée hors production avant application ; la base Cloud est partagée avec le site publié. Pas de changement actif de règle serveur avant confirmation du déploiement.
+Ce n'est pas un cas isolé : 16 élèves ont des anciennes lignes « en attente » sur un examen qui a aussi des copies dans le nouveau système (220 lignes). Je n'ai pas vérifié lesquels sont réellement bloqués à l'écran.
+
+## Correction minimale proposée (affichage seulement, aucune donnée touchée)
+
+On interroge l'ancien registre **matière par matière**, et seulement pour les matières qui n'ont pas de copie dans le nouveau système. On ne lui demande plus d'avis global sur l'examen.
+- Les matières du nouveau système restent jugées sur leur état serveur, comme aujourd'hui.
+- Une QRC réellement en attente, dans l'un ou l'autre système, bloque toujours la note.
+- Aucune ligne ancienne n'est modifiée, fusionnée ni supprimée. Aucune note ni réponse ne change.
+
+Écrans concernés : la carte de l'examen dans la liste des examens blancs, et la page des résultats (côté élève).
+
+## Tests prévus avant publication
+
+1. Cas Habib reproduit avec des données fictives : 5 matières corrigées dans le nouveau système, ancien registre « en attente » sur ces matières, C/E anciens sans QRC → note finale affichée.
+2. Une QRC réellement en attente dans le nouveau système → toujours bloqué.
+3. Une matière seulement dans l'ancien système, avec une QRC ancienne en attente → toujours bloqué.
+4. Examen entièrement dans le nouveau système → comportement inchangé.
+5. Tests existants des aides de calcul des examens et des corrections → toujours OK.
+6. Vérification en lecture seule de l'écran d'Habib dans l'aperçu, puis publication seulement avec votre accord.
+
+## Détails techniques
+
+- Fichiers : `src/components/cours-en-ligne/ExamenBlancsListe.tsx` (lignes ~600-604) et `ExamenBlancsResultats.tsx` (ligne ~123). Remplacer `qrcEngine.isExamPending(examId)` par `scores.some(s => !s.__core && qrcEngine.isMatierePending(examId, s.matiere_id) === true)`.
+- `useQrcEnginePending.isMatierePending` existe déjà ; `isExamAttemptPublicationPending` n'est pas modifiée.
+- Nouveau test : `src/test/eb-pending-mixte-core-ancien.test.ts`.
