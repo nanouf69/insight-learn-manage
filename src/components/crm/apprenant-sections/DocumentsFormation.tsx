@@ -550,7 +550,9 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       id: 'fin-formation',
       title: "Attestation de fin de formation",
       description: "Délivrée à la fin du parcours de formation",
-      status: (apprenant.date_fin_formation || apprenant.date_examen_pratique) ? 'disponible' : 'en_attente',
+      // Le PDF lit les sessions inscrites / dates e-learning enregistrées : il
+      // reste disponible dès qu'une de ces sources existe (aucune date inventée).
+      status: (apprenant.date_fin_formation || apprenant.date_examen_pratique || apprenant.date_fin_cours_en_ligne || sortedSessions.length > 0) ? 'disponible' : 'en_attente',
       type: 'fin-formation' as const,
       icon: FileText,
     },
