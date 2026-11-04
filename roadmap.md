@@ -1,8 +1,8 @@
 # Feuille de route
 
-## Activation initiale seule — 04/11 08:23 UTC
+## Activation initiale seule — durée 24 h acceptée 04/11 10:09 UTC
 - [x] Examiner émission actuelle et limites fournisseur : activation utilise recovery, expiration commune limitée à 24 h.
-- [ ] Activation 48 h + renvoi sûr : bloqués par limite fournisseur et absence de distinction prouvée initial/activé ; aucun réglage global ou contournement de jeton.
+- [ ] Activation 24 h + renvoi sûr : vérifier réglage effectif et distinction native initial/activé ; aucun changement global de récupération ni contournement de jeton.
 - [ ] Tests lien valide/expiré/renvoi/activé : non exécutés, aucun vrai email ni modification de compte, aucune publication.
 
 ## Sauvegardes ciblées — autorisation 04/11
