@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { freshSessionRead } from "@/lib/sessionRpc";
 import type { CompletionEvidenceRow } from "@/lib/moduleCompletionEvidence";
 
 /** Ligne de `etat_completion_modules` : verdict serveur unique (même RLS que la lecture des modules). */
@@ -15,7 +16,9 @@ export interface EtatCompletionServeur {
 
 /** Lecture seule. Une erreur est remontée : jamais de repli silencieux vers un faux « terminé ». */
 export async function chargerEtatCompletionServeur(apprenantId: string): Promise<Map<number, EtatCompletionServeur>> {
-  const { data, error } = await (supabase as any).rpc("etat_completion_modules", { _apprenant_id: apprenantId });
+  const { data, error } = await freshSessionRead<{ data: EtatCompletionServeur[] | null; error: unknown }>(
+    () => (supabase as any).rpc("etat_completion_modules", { _apprenant_id: apprenantId }),
+  );
   if (error) throw error;
   return new Map(((data ?? []) as EtatCompletionServeur[]).map(r => [Number(r.module_id), r]));
 }
