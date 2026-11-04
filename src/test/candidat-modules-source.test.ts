@@ -4,6 +4,7 @@ import { ACTIVITES_CODE } from '@/lib/jeuxPedagogiques';
 import { chargerCandidatModules } from '@/hooks/useCandidatModules';
 
 const fake = vi.hoisted(() => ({ rows: {} as Record<string, any>, calls: [] as string[] }));
+vi.mock('@/lib/sessionExpiree', () => ({ assurerSessionFraiche: async () => 'test-token', SESSION_EXPIREE_MESSAGE: 'Session expirée' }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => {
   fake.calls.push(table);
   const q: any = {};
@@ -11,7 +12,7 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: str
   q.single = async () => fake.rows[table];
   q.range = async (from: number, to: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(from, to + 1) });
   return q;
-}, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null } } }));
+}, auth: { getSession: async () => ({ data: { session: { user: { id: 'compte-test' } } } }) }, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null } } }));
 
 beforeEach(() => {
   fake.calls = [];
