@@ -67,6 +67,7 @@ import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
 import LivreFormationViewer, { type FormationLivre } from "./LivreFormationViewer";
 import PratiqueVtcLyonSupport from "./PratiqueVtcLyonSupport";
 import PratiqueTaxiLyonSupport from "./PratiqueTaxiLyonSupport";
+import PratiqueQuestionsSupport from "./PratiqueQuestionsSupport";
 import { NATIONALE_PARTIE1_IMAGES, NATIONALE_PARTIE2_IMAGES } from "./slides/nationale-slide-images";
 
 /** Cours dont les diapositives sont rendues à l'identique du PowerPoint (images) */
@@ -8484,6 +8485,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
       return (
         <div className="space-y-4">
+        <PratiqueQuestionsSupport key={`questions-pratique-${module.id}-${cours.id}-${apprenantId ?? 'apercu'}`} moduleId={Number(module.id)} coursId={Number(cours.id)} />
         <Card key={cours.id} className="overflow-hidden">
           {cours.image && (
             <div className="w-full h-48 sm:h-64 overflow-hidden">
