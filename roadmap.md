@@ -1,6 +1,7 @@
 # Feuille de route
 
 ## Supports pratiques reçus — 04/11 14:52 UTC
+- [x] Accord TA → support TAXI / VA → support VTC : partage déjà assuré par les modules pratiques communs 6/8 ; tests des six modalités ajoutés, sans changement des affectations ni des jalons.
 - [x] Deux sources exactes vérifiées : 20 pages / 76 questions-réponses chacune ; accord d’ajout dans Déroulement, consultation seule, sans publication.
 - [x] 40 pages rendues dans le stockage privé existant ; originaux non exposés, affichage dans cours id 2 des modules 6/8 sans remplacer les anciens supports.
 - [x] 20 tests ciblés PASS ; lecteur isolé authentifié avec pages réelles TAXI/VTC, PC/mobile sans débordement, impression masquée ; build OK. Aucun changement de données pédagogiques ou publication.
