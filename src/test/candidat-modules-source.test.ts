@@ -5,6 +5,8 @@ import { chargerCandidatModules } from '@/hooks/useCandidatModules';
 
 const fake = vi.hoisted(() => ({ rows: {} as Record<string, any>, calls: [] as string[] }));
 vi.mock('@/lib/sessionExpiree', () => ({ assurerSessionFraiche: async () => 'test-token', SESSION_EXPIREE_MESSAGE: 'Session expirée' }));
+// This suite isolates progression arithmetic; real recovery is exercised by sauvegardes-04nov.
+vi.mock('@/lib/sessionRpc', () => ({ freshSessionRead: async (call: () => PromiseLike<unknown>) => call() }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => {
   fake.calls.push(table);
   const q: any = {};
