@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Délai 57014 éditeur de questions — incident 04/11 15h18
+- [x] 0239 jamais appliqué (constat live) ; trace 14:18:32 UTC identifiée ; aucune perte (clic suivant enregistré).
+- [x] Copie isolée identique au live ; équivalence 16/16 PASS dont cas réel exo 82 ; mesure par contrôle : gain 0239 ≈ 25–30 %.
+- [x] Cause dominante : base saturée en pointe (enregistrement 0,45 s isolé → 2,2 s moyen / 7,1 s max en ligne).
+- [ ] Appliquer 0239 + réduire la charge (sondes, lectures de progression) ou agrandir l'instance : attend accord.
+- [ ] Test de persistance après rechargement : après mise en place, avec accord.
+
 ## Activation initiale seule — durée 24 h acceptée 04/11 10:09 UTC
 - [x] Examiner émission actuelle et limites fournisseur : activation utilise recovery, expiration commune limitée à 24 h.
 - [x] Accord 24 h enregistré ; lecture officielle tentée (`lovable auth settings show` : service distinct indisponible), configuration OTP réelle NON VÉRIFIÉE ; rapport docs/activation-initiale-24h-2026-11-04.md.
