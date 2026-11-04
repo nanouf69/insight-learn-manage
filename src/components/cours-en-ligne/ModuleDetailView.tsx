@@ -54,7 +54,7 @@ import {
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
 import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
-import { createLiveRefresher, moduleVersionToken, questionBankToken, type LiveRefresher } from "@/lib/moduleLiveRefresh";
+import { createLiveRefresher, moduleVersionToken, questionBankToken, SONDE_VERSION_ADMIN_MS, SONDE_VERSION_ELEVE_MS, type LiveRefresher } from "@/lib/moduleLiveRefresh";
 import { codeErreurSur, relireAvecReprisesBornees } from "@/lib/relectureBornee";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 
