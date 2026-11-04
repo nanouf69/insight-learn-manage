@@ -44,7 +44,7 @@ Correctifs client dans l’aperçu seulement. **Aucune publication, migration, f
 ## Conservation et risques non résolus
 - Belarbi : 128 lignes réponses ; avant/après **9dc4138b5b6404397093ab5ed8f6efc3**. Sanctions toujours non terminé, score NULL, 20 champs présents. Aucun changement forcé de completed.
 - Snapshots Bilan : 222 lignes ; avant/après **ed71c9c6b643b1f7f6c6803e365a0b35**.
-- Module editor : 62 lignes ; comparer avec le même tri numérique module_id (un tri texte produit une autre empreinte sans changement de données).
+- Module editor : 62 lignes ; empreinte initiale annoncée **fdb53d690bb7a6a68e6024095e12921c** ; contrôle final avec tri numérique module_id **a118232f0d51a79f41c2a7e5e8974df4**, tri texte **bffee19222d5f8e09505a0cc5dded116**. La méthode exacte initiale n’a pas pu être retrouvée : identité avant/après des questions **NON PROUVÉE**, aucune conclusion de perte ou de changement. Zéro écriture Cloud effectuée par ce chantier ; une activité extérieure concurrente n’est pas exclue.
 - Aucune fusion de brouillons nested `valeurs` : local/pending/serveur restent des versions différentes ; une saisie plus ancienne peut masquer une plus récente. Ne pas faire de fusion automatique non autorisée.
 - Course save → final avec base_seq périmé reproduit : serveur refuse la fin lorsque le brouillon conservé est incomplet ; données conservées. Aucun rebasing automatique implémenté (risque de supplanter une révision concurrente).
 - Les deux opérations sanctions rejetées restent conservées. Nouvelle soumission compatible possible après mise en ligne ; pas de réécriture automatique des anciennes opérations.
