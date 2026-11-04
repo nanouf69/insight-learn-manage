@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Supports pratiques reçus — 04/11 14:52 UTC
+- [x] Deux sources exactes vérifiées : 20 pages / 76 questions-réponses chacune ; accord d’ajout dans Déroulement, consultation seule, sans publication.
+- [ ] Préparer originaux privés et pages rendues ; affichage séparé des obligations, sans remplacer les anciens supports.
+- [ ] Tests ciblés et lecture PC/mobile ; aucun changement de données pédagogiques ou publication.
+
 ## Délai 57014 éditeur de questions — incident 04/11 15h18
 - [x] 0239 jamais appliqué (constat live) ; trace 14:18:32 UTC identifiée ; aucune perte (clic suivant enregistré).
 - [x] Copie isolée identique au live ; équivalence 16/16 PASS dont cas réel exo 82 ; mesure par contrôle : gain 0239 ≈ 25–30 %.
