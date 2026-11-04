@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Sauvegardes ciblées — autorisation 04/11
+- [ ] Reproduire le refus sanctions module 64 sur PostgreSQL jetable, corriger le score transmis sans changer le contrat serveur ni les copies.
+- [ ] Sécuriser la lecture etat_completion_modules après expiration de session, sans élargir les droits.
+- [ ] Auditer les files signalées en lecture seule, conserver les refus et tester concurrence/reprise/propriété.
+- [ ] Rapport causes, tests exécutés, empreintes et limites ; aucune publication ni écriture fictive Cloud.
+
 ## Espaces image/question → réponses, tous écrans — 02/11 13:35 UTC
 - [x] Cause commune : cadre par défaut pleine largeur 4:3 d’ExamQuestionImage (exercices, examens blancs, résultats, bilans, éditeurs admin). Cadre ajusté à l’image visible ; Sécurité routière inchangée.
 - [x] 11 dispositions × 5 formats + sans image × 4 largeurs : blanc après image 1–41 px (avant jusqu’à 630 px), 0 rognage/débordement ; chargement lent = un seul ajustement, réouverture sans saut, erreur compacte. Tests image 116 PASS ; suite 3287 PASS, 1 échec préexistant émargements hors périmètre.
