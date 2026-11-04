@@ -2,7 +2,7 @@
 Setup (read-only on live): pg_dump -s -n public + data of tables <60 MB into a local initdb; save old definition to /tmp/pgt2/old.sql.
 Usage: python3 src/test/propagation_partagee_equivalence.py /tmp/pgt2/new.sql  -- never point it at the live database."""
 import subprocess,re,hashlib,time,sys
-env=dict(PGHOST='/tmp/pgt',PGPORT='5499',PGUSER='postgres',PGDATABASE='postgres',PATH='/bin:/usr/bin:'+__import__('os').environ['PATH'])
+env=dict(PGHOST='/tmp/pgt',PGPORT='5499',PGUSER='postgres',PGDATABASE=__import__('os').environ.get('PGT_DB','t'),PATH='/bin:/usr/bin:'+__import__('os').environ['PATH'])
 def q(sql):
     r=subprocess.run(['psql','-X','-At','-q'],input=sql,capture_output=True,text=True,env=env); return r.stdout,r.stderr
 TS=re.compile(r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}(:\d{2})?)?')
@@ -19,6 +19,10 @@ cases={
  'm2 inchangé':(2,"d"),
  'm10 supprime 1 question exo0':(10,"jsonb_set(d,'{exercices,0,questions}',(d#>'{exercices,0,questions}')-0)"),
  'm2 choix exo0 q0':(2,"jsonb_set(d,'{exercices,0,questions,0,choix}','[{\"lettre\":\"A\",\"texte\":\"FICTIF\",\"correct\":true}]')"),
+ 'm2 cas réel 15h18 exo82 q18 enonce':(2,"jsonb_set(d,'{exercices,7,questions,17,enonce}',to_jsonb((d#>>'{exercices,7,questions,17,enonce}')||' FICTIF'))"),
+ 'm10 cas réel exo82 q18 enonce':(10,"jsonb_set(d,'{exercices,7,questions,17,enonce}',to_jsonb((d#>>'{exercices,7,questions,17,enonce}')||' FICTIF'))"),
+ 'm15 cas réel exo82 q18 enonce':(15,"jsonb_set(d,'{exercices,2,questions,17,enonce}',to_jsonb((d#>>'{exercices,2,questions,17,enonce}')||' FICTIF'))"),
+ 'm2 exo82 q18 bonne réponse':(2,"jsonb_set(d,'{exercices,7,questions,17,choix}',(select jsonb_agg(c||jsonb_build_object('correct',not coalesce((c->>'correct')::boolean,false))) from jsonb_array_elements(d#>'{exercices,7,questions,17,choix}') c))"),
  'm13 enonce':(13,"jsonb_set(d,'{exercices,0,questions,0,enonce}',to_jsonb((d#>>'{exercices,0,questions,0,enonce}')||' FICTIF'))"),
 }
 def run(fn,name):
