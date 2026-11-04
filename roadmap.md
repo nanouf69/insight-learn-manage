@@ -1,5 +1,10 @@
 # Feuille de route
 
+## Activation initiale seule — 04/11 08:23 UTC
+- [x] Examiner émission actuelle et limites fournisseur : activation utilise recovery, expiration commune limitée à 24 h.
+- [ ] Activation 48 h + renvoi sûr : bloqués par limite fournisseur et absence de distinction prouvée initial/activé ; aucun réglage global ou contournement de jeton.
+- [ ] Tests lien valide/expiré/renvoi/activé : non exécutés, aucun vrai email ni modification de compte, aucune publication.
+
 ## Sauvegardes ciblées — autorisation 04/11
 - [x] Reproduction SQL jetable score numérique 23514 / NULL accepté ; transport corrigé, aucun changement SQL actif.
 - [x] Lecture etat_completion_modules via freshSessionRead ; HTTP anonyme 401/42501 et auth 200 vérifiés ; aucun GRANT.
