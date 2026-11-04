@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## Sauvegardes ciblées — autorisation 04/11
-- [ ] Reproduire le refus sanctions module 64 sur PostgreSQL jetable, corriger le score transmis sans changer le contrat serveur ni les copies.
-- [ ] Sécuriser la lecture etat_completion_modules après expiration de session, sans élargir les droits.
-- [ ] Auditer les files signalées en lecture seule, conserver les refus et tester concurrence/reprise/propriété.
-- [ ] Rapport causes, tests exécutés, empreintes et limites ; aucune publication ni écriture fictive Cloud.
+- [x] Reproduction SQL jetable score numérique 23514 / NULL accepté ; transport corrigé, aucun changement SQL actif.
+- [x] Lecture etat_completion_modules via freshSessionRead ; HTTP anonyme 401/42501 et auth 200 vérifiés ; aucun GRANT.
+- [x] Files auditées, aucune récupération locale prétendue ; 90 tests client et 7 SQL isolés PASS.
+- [x] Rapport docs/sauvegardes-ciblees-2026-11-04.md ; aucune publication ni écriture fictive Cloud.
+- [ ] Publication et vérification sur appareils élèves : attend accord distinct ; payloads historiques exacts et vidage des files locales non disponibles.
 
 ## Espaces image/question → réponses, tous écrans — 02/11 13:35 UTC
 - [x] Cause commune : cadre par défaut pleine largeur 4:3 d’ExamQuestionImage (exercices, examens blancs, résultats, bilans, éditeurs admin). Cadre ajusté à l’image visible ; Sécurité routière inchangée.
