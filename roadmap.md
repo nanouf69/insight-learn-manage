@@ -2,7 +2,8 @@
 
 ## Activation initiale seule — durée 24 h acceptée 04/11 10:09 UTC
 - [x] Examiner émission actuelle et limites fournisseur : activation utilise recovery, expiration commune limitée à 24 h.
-- [ ] Activation 24 h + renvoi sûr : vérifier réglage effectif et distinction native initial/activé ; aucun changement global de récupération ni contournement de jeton.
+- [x] Accord 24 h enregistré ; lecture officielle tentée (`lovable auth settings show` : service distinct indisponible), configuration OTP réelle NON VÉRIFIÉE ; rapport docs/activation-initiale-24h-2026-11-04.md.
+- [ ] Activation 24 h + renvoi sûr : bloqués par durée native commune à récupération 3 h et absence de preuve initial/activé ; lecture de valeur par propriétaire et capacité de durée séparée nécessaires, aucun changement global ni contournement.
 - [ ] Tests lien valide/expiré/renvoi/activé : non exécutés, aucun vrai email ni modification de compte, aucune publication.
 
 ## Sauvegardes ciblées — autorisation 04/11
