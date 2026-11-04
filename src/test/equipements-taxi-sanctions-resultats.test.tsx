@@ -150,7 +150,7 @@ describe("Note sur 20 — série sanctions uniquement", () => {
     ["mixte 12/20", (v) => Q.slice(0, 8).forEach((q) => { v[q.id] = String((q.correct + 1) % 3); }), 12],
   ];
   for (const [nom, alterer, attendu] of cas) {
-    it(`${nom} : note affichée et score % envoyé une seule fois`, async () => {
+    it(`${nom} : bilan dérivé affiché, score SQL null envoyé une seule fois`, async () => {
       const { t, scores } = avecScore();
       render(<QuizEquipements compteId={`fictif-${nom}`} transport={t} serie={SERIE_SANCTIONS} />);
       await screen.findByText("Suivi chargé");
@@ -158,7 +158,7 @@ describe("Note sur 20 — série sanctions uniquement", () => {
       const fin = screen.getByRole("button", { name: /Terminer le quiz/ });
       fireEvent.click(fin); fireEvent.click(fin);
       expect((await screen.findByTestId("equipements-note")).textContent).toBe(`Note : ${attendu} / ${Q.length}`);
-      expect(scores).toEqual([Math.round((attendu / Q.length) * 100)]);
+      expect(scores).toEqual([null]);
     });
   }
   it("déjà soumis sans score (ancien envoi) : note dérivée affichée, aucun envoi", async () => {

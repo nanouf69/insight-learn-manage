@@ -47,6 +47,7 @@ export function useQuizEquipements(compte: string | null | undefined, transport:
   const [confirme, setConfirme] = useState(false);
   const [charge, setCharge] = useState(false);
   const [busy, setBusy] = useState(false);
+  const enregistrementEnCours = useRef(false);
   const generation = useRef(0);
   const revision = useRef("");
   const valeursRef = useRef<ReponsesEquipements>({});
@@ -90,23 +91,26 @@ export function useQuizEquipements(compte: string | null | undefined, transport:
   };
 
   const enregistrer = async (termine = false) => {
-    if (!compte || !charge || busy || confirme || isLearnerPreviewReadOnly()) return;
+    if (!compte || !charge || enregistrementEnCours.current || busy || confirme || isLearnerPreviewReadOnly()) return;
     if (termine && !serieComplete(serie, valeursRef.current)) { setStatut("Répondez à toutes les questions avant de terminer."); return; }
     const g = generation.current;
     const draft = { valeurs: { ...valeursRef.current }, revision: revision.current || crypto.randomUUID() }; revision.current = draft.revision;
     try { window.localStorage.setItem(cleBrouillonEquipements(compte, serie), JSON.stringify(draft)); } catch { setStatut("Stockage appareil indisponible."); return; }
+    enregistrementEnCours.current = true;
     setBusy(true); setStatut("Enregistrement en cours…");
     try {
-      // Série notée : même échelle que les autres quiz (score en %), écrit dans le même envoi que la fin.
-      const score = termine && serie.notee ? Math.round((noteSerie(serie, draft.valeurs) / serie.questions.length) * 100) : null;
-      const ok = await transport.envoyer(compte, draft, termine, serie, score);
+      // Ces activités ont un contrat SQL non noté : le bilan est dérivé pour
+      // l'affichage seulement, jamais enregistré comme une note officielle.
+      await transport.envoyer(compte, draft, termine, serie, null);
       const row = await transport.lire(compte, serie);
       if (g !== generation.current) return;
-      if (!ok || !accuseEquipementsCorrespond(row, draft, termine, serie.version)) throw new Error("Accusé non prouvé");
+      // Un ancien refus en file ou un accusé réseau perdu n'annule pas une
+      // preuve SQL identique. Sans cette relecture stricte : jamais confirmé.
+      if (!accuseEquipementsCorrespond(row, draft, termine, serie.version)) throw new Error("Accusé non prouvé");
       if (termine) { setConfirme(true); window.dispatchEvent(new Event("activite-registre-confirmee")); }
       setStatut(termine ? "Quiz terminé — confirmé par le serveur" : "Réponses enregistrées — confirmées par le serveur");
     } catch { if (g === generation.current) setStatut("Enregistrement non confirmé — réponses conservées sur cet appareil."); }
-    finally { if (g === generation.current) setBusy(false); }
+    finally { enregistrementEnCours.current = false; if (g === generation.current) setBusy(false); }
   };
   return { valeurs, modifier, statut, confirme, charge, busy, enregistrer, relire };
 }

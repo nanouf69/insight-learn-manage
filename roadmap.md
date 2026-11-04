@@ -1,5 +1,12 @@
 # Feuille de route
 
+## Sauvegardes ciblées — autorisation 04/11
+- [x] Reproduction SQL jetable score numérique 23514 / NULL accepté ; transport corrigé, aucun changement SQL actif.
+- [x] Lecture etat_completion_modules via freshSessionRead ; HTTP anonyme 401/42501 et auth 200 vérifiés ; aucun GRANT.
+- [x] Files auditées, aucune récupération locale prétendue ; 90 tests client et 7 SQL isolés PASS.
+- [x] Rapport docs/sauvegardes-ciblees-2026-11-04.md ; aucune publication ni écriture fictive Cloud.
+- [ ] Publication et vérification sur appareils élèves : attend accord distinct ; payloads historiques exacts et vidage des files locales non disponibles.
+
 ## Espaces image/question → réponses, tous écrans — 02/11 13:35 UTC
 - [x] Cause commune : cadre par défaut pleine largeur 4:3 d’ExamQuestionImage (exercices, examens blancs, résultats, bilans, éditeurs admin). Cadre ajusté à l’image visible ; Sécurité routière inchangée.
 - [x] 11 dispositions × 5 formats + sans image × 4 largeurs : blanc après image 1–41 px (avant jusqu’à 630 px), 0 rognage/débordement ; chargement lent = un seul ajustement, réouverture sans saut, erreur compacte. Tests image 116 PASS ; suite 3287 PASS, 1 échec préexistant émargements hors périmètre.
