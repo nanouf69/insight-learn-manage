@@ -69,6 +69,14 @@ export interface LiveRefresher {
 
 type FullOutcome = "ok" | "error" | "pending";
 
+/**
+ * Intervalles de la sonde de secours (onglet visible). Realtime/broadcast
+ * restent la voie principale ; 04/11 : la sonde élève à 5 s représentait
+ * 62 900 appels en 18 h et ralentissait les enregistrements Admin (57014).
+ */
+export const SONDE_VERSION_ELEVE_MS = 30_000;
+export const SONDE_VERSION_ADMIN_MS = 15_000;
+
 export function createLiveRefresher(o: LiveRefresherOptions): LiveRefresher {
   const now = o.now ?? (() => Date.now());
   const random = o.random ?? Math.random;

@@ -29,3 +29,8 @@ La cause directe reste la propagation, mais le dépassement vient surtout de la 
 
 ### Empreintes live de référence (14:3x UTC, édition admin en cours)
 module_editor_state 62 `bbf7f716…` ; quiz_questions 2 317 `7842c53a…` ; exam_attempts_v2 2 231 `f3fc9451…` ; bilan_passages_figes 17 `461e966a…` ; canonical_questions 0.
+
+### Mise en place 04/11 (accord utilisateur)
+- Migration 0239 appliquée ; fonction live vérifiée (`v_changed_keys` présent, md5 `fc61945c…`, déclencheur actif, SECURITY DEFINER conservé). Empreinte module_editor_state `bbf7f716…` identique avant/après.
+- Sonde de secours élève 5 s → 30 s (`SONDE_VERSION_ELEVE_MS`), admin 15 s inchangé ; test `sonde-version-module.test.ts` + 19 tests du rafraîchisseur PASS. Aperçu seulement, non publié.
+- Persistance après rechargement : NON PROUVÉE (aucun enregistrement Admin depuis 14:21 UTC).

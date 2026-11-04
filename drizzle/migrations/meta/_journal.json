@@ -1674,6 +1674,13 @@
       "when": 1793733332930,
       "tag": "0238_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 239,
+      "version": "7",
+      "when": 1793802743741,
+      "tag": "0239_propagation_partagee_ciblee",
+      "breakpoints": true
     }
   ]
 }
