@@ -1,5 +1,11 @@
 # Feuille de route
 
+## Supports pratiques reçus — 04/11 14:52 UTC
+- [x] Deux sources exactes vérifiées : 20 pages / 76 questions-réponses chacune ; accord d’ajout dans Déroulement, consultation seule, sans publication.
+- [x] 40 pages rendues dans le stockage privé existant ; originaux non exposés, affichage dans cours id 2 des modules 6/8 sans remplacer les anciens supports.
+- [x] 20 tests ciblés PASS ; lecteur isolé authentifié avec pages réelles TAXI/VTC, PC/mobile sans débordement, impression masquée ; build OK. Aucun changement de données pédagogiques ou publication.
+- [ ] Parcours complet dans le module d’un élève : non prouvé (Baptiste dispose du module 12, pas 6) ; aucun compte élève utilisé ni accès modifié.
+
 ## Délai 57014 éditeur de questions — incident 04/11 15h18
 - [x] 0239 jamais appliqué (constat live) ; trace 14:18:32 UTC identifiée ; aucune perte (clic suivant enregistré).
 - [x] Copie isolée identique au live ; équivalence 16/16 PASS dont cas réel exo 82 ; mesure par contrôle : gain 0239 ≈ 25–30 %.
