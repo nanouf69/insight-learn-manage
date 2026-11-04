@@ -5618,11 +5618,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         }
       });
 
-    // Filet de sécurité si Realtime rate un événement : sonde légère toutes
-    // les 5 s (onglet visible uniquement) ; relecture complète seulement si la
-    // version a changé, et au plus tard toutes les 2 min. Chaque relecture
-    // complète réussie réapplique aussi les modifications formateur.
-    const pollIntervalMs = studentOnly ? 5_000 : 15_000;
+    // Filet de sécurité si Realtime rate un événement : sonde légère (onglet
+    // visible uniquement) ; relecture complète seulement si la version a
+    // changé, et au plus tard toutes les 2 min. Chaque relecture complète
+    // réussie réapplique aussi les modifications formateur. Les mises à jour
+    // arrivent d'abord par Realtime/broadcast ; mesure 04/11 : la sonde à 5 s
+    // = 62 900 appels/18 h, 2e consommateur de la base (délais 57014).
+    const pollIntervalMs = studentOnly ? SONDE_VERSION_ELEVE_MS : SONDE_VERSION_ADMIN_MS;
     const pollTimer = Number(module.id) === 13 ? null : setInterval(() => {
       void refresher.poll();
     }, pollIntervalMs);
