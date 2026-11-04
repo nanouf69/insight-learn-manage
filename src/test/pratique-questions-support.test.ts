@@ -1,8 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import { pratiqueQuestionsSupport } from '@/lib/pratiqueQuestionsSupport';
 import { activitesDuModule } from '@/lib/jeuxPedagogiques';
+import { FORMATION_MODULES } from '@/components/cours-en-ligne/modules-config';
 
 describe('Questions pratiques : pièces de consultation séparées', () => {
+  it.each(['ta', 'ta-e', 'ta-e-presentiel'])('%s reçoit le même support que TAXI', parcours => {
+    const pratique = FORMATION_MODULES[parcours]?.modules.find(m => m.id === 6);
+    expect(pratique?.id).toBe(6);
+    const support = pratiqueQuestionsSupport(pratique?.id ?? -1, 2);
+    expect(support?.formation).toBe('taxi');
+    expect(support?.pages).toEqual(pratiqueQuestionsSupport(6, 2)?.pages);
+    expect(support?.consultationSeule).toBe(true);
+  });
+  it.each(['va', 'va-e', 'va-e-presentiel'])('%s reçoit le même support que VTC', parcours => {
+    const pratique = FORMATION_MODULES[parcours]?.modules.find(m => m.id === 8);
+    expect(pratique?.id).toBe(8);
+    const support = pratiqueQuestionsSupport(pratique?.id ?? -1, 2);
+    expect(support?.formation).toBe('vtc');
+    expect(support?.pages).toEqual(pratiqueQuestionsSupport(8, 2)?.pages);
+    expect(support?.consultationSeule).toBe(true);
+  });
   it('TAXI : uniquement module 6, cours Déroulement id 2, 20 pages distinctes', () => {
     const s = pratiqueQuestionsSupport(6, 2);
     expect(s?.formation).toBe('taxi');
