@@ -15,7 +15,7 @@ const norm = (t: string) => {
 // Sources examens blancs : sujet français EB2 (q8) et EB3 (q9)
 const SOURCES: Record<number, [number, number]> = { 5: [1, 8], 85: [2, 9] };
 
-describe("Bilan Français — correction préparée (non appliquée)", () => {
+describe("Bilan Français — correction appliquée le 05/11", () => {
   for (const [avantF, apresF] of cas) {
     const avant = load(avantF);
     const apres = load(apresF);

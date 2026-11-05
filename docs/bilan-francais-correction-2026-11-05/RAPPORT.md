@@ -20,3 +20,10 @@ Les Bilans n'ont ni champ ni affichage de texte support (élève, admin, nouveau
 - `apres_prepare_*.json` : version préparée, 95/97 strictement identiques.
 - Test : `src/test/bilan-francais-correction-preparee.test.ts` — 6/6 PASS.
 - Rendu élève/admin : NON PROUVÉ (rien appliqué).
+
+## Application — 05/11/2026 11:13 UTC (accord explicite)
+- Avant : base live = sauvegarde, 97/97 questions identiques (empreintes par question) dans 5/503 et 11/603.
+- Écriture : 2 lignes `module_editor_state` (modules 5 et 11), seuls les éléments Q5 et Q85 remplacés, garde par empreinte du contenu.
+- Après : 97/97 = version préparée ; diff vs sauvegarde = Q5, Q85 uniquement ; reste des modules 5/11 et tous les autres modules : empreintes inchangées.
+- Non touchés : QRC Q8/9/10/87/89, Q88, 25 sans source, Q86, textes supports, notes, réponses, progressions, EB, version figée a2d4892a.
+- Publication du site non nécessaire (contenu lu depuis la base) ; non publié.
