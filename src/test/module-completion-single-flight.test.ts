@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 const rpc = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (...a: unknown[]) => rpc(...a) } }));
-vi.mock("@/lib/learnerWriteGuard", () => ({ blockLearnerWrite: () => false }), );
+vi.mock("@/lib/learnerPreviewGuard", () => ({ blockLearnerWrite: () => false }), );
 import { saveModuleCompletion, delaiNouvelEssai } from "@/lib/moduleCompletion";
 
 describe("Enregistrement de module : single-flight et gigue", () => {
