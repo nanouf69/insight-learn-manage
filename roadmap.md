@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 05/11 20:18 — Sessions explicites du premier passage
+- [ ] Ajouter sessions retenues nom/dates/modalité, filtres JOURNÉE/SOIRÉE, taux et n/N par catégorie et session ; aucune écriture Cloud.
+- [ ] Tests dates inclusives, périodes distinctes, déduplication et catégorie sans session ; vérification administrateur avec lectures réelles, sans publication.
+
 ## 05/11 — Erreur au premier passage dans la liste admin
 - [x] Lecture seule sessions actives JOUR/SOIR, inscriptions effectives, premières réponses journalisées + tentative 1 remise + preuve figée compatible ; jamais corrigé actuel ni note agrégée.
 - [x] Affichage liste admin normale/plein écran, taux partiel et limites, partage par quiz_question_bindings, déduplication ; 28 tests PASS, compte admin réel Q1 marketing 0/2 avec 26 exclus non prouvés ; aucune écriture base/publication.
