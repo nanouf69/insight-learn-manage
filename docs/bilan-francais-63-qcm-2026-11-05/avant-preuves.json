@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-11-05T19:47:29Z",
+  "original_french_version": "a2d4892a-d60e-4e54-864b-45b0130e7f63",
+  "fingerprint": "3f12115d70f91bd8185660904c6f7fb0",
+  "question_count": 97,
+  "receipts": {
+    "count": 8,
+    "fingerprint": "c8e2b7ed967da229f7913f7db18ce3cc"
+  },
+  "drafts": {
+    "count": 1377,
+    "fingerprint": "51590d2333bd97ec2f938b6e660399d0"
+  },
+  "submissions": {
+    "count": 4,
+    "fingerprint": "932f7421214a076017918822ab1edb94"
+  },
+  "eligibility": {
+    "count": 45,
+    "fingerprint": "9e081857ee1636d5023c60cab9717cde"
+  }
+}
