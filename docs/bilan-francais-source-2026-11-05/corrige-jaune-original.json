@@ -1,0 +1,1462 @@
+[
+ {
+  "q": 1,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "Quel(s) est (sont) le(s) synonyme(s) de paradoxe ?",
+  "propositions": [
+   "Invraisemblance",
+   "Accord",
+   "Concordance de genre"
+  ],
+  "jaunes": [
+   "Invraisemblance"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 2,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "L'industrie automobile :",
+  "propositions": [
+   "Respecte la parité homme / femme",
+   "Compte peu de femmes dans ses effectifs",
+   "Est un secteur très masculin"
+  ],
+  "jaunes": [
+   "Compte peu de femmes dans ses effectifs",
+   "Est un secteur très masculin"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 3,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "Les auteures parlent d'un écart de 10 points entre les hommes et les femmes à l'examen du permis de conduire, cela signifie que",
+  "propositions": [
+   "Les femmes réussissent davantage à l'examen du permis de conduire",
+   "Les hommes réussissent plus souvent l'examen du permis de conduire que les femmes",
+   "Le permis de conduire des femmes à moins de points que celui des hommes"
+  ],
+  "jaunes": [
+   "Les hommes réussissent plus souvent l'examen du permis de conduire que les femmes"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 4,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "L'accidentalité est :",
+  "propositions": [
+   "Le taux d'accident rapporté à une population",
+   "Le nombre d'accident par an",
+   "La science qui étudie la nature des accidents"
+  ],
+  "jaunes": [
+   "Le taux d'accident rapporté à une population"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 5,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "« L'influence des stéréotypes masculins et féminins tout au long du parcours scolaire » a quelle(s) conséquence(s) selon les auteures ?",
+  "propositions": [
+   "Les filles ne s'orientent pas vers les filières techniques automobiles",
+   "L'industrie des automobiles ne veut pas recruter des femmes",
+   "Les métiers de l'automobile sont trop durs physiquement pour les filles"
+  ],
+  "jaunes": [
+   "Les filles ne s'orientent pas vers les filières techniques automobiles"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 6,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "Qu'est-ce qu'un stéréotype ?",
+  "propositions": [
+   "Un cliché",
+   "Une typologie",
+   "Un genre"
+  ],
+  "jaunes": [
+   "Un cliché"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 7,
+  "type": "QCM",
+  "texte": 1,
+  "enonce": "Trouvez le(s) synonyme(s) de précarité :",
+  "propositions": [
+   "Instabilité",
+   "Fragilité",
+   "Pauvreté"
+  ],
+  "jaunes": [
+   "Instabilité",
+   "Fragilité"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 8,
+  "type": "QRC",
+  "texte": 1,
+  "enonce": "Expliquez en quoi la précarité touche plus particulièrement les femmes et en quoi les difficultés de mobilité aggravent la situation. Illustrez vos explications d'exemples personnels.",
+  "propositions": [
+   "En quoi la précarité touche plus particulièrement les femmes :  Travail à temps partiel, famille mono parentale, salaire plus bas",
+   "Mobilité et précarité :  Manque d'indépendance, éloignement des lieux d'habitation par rapport au bassin d'emploi"
+  ],
+  "jaunes": [
+   "En quoi la précarité touche plus particulièrement les femmes :  Travail à temps partiel, famille mono parentale, salaire plus bas",
+   "Mobilité et précarité :  Manque d'indépendance, éloignement des lieux d'habitation par rapport au bassin d'emploi"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 9,
+  "type": "QRC",
+  "texte": 1,
+  "enonce": "Expliquez le paradoxe relevé par les auteures sans paraphraser le texte",
+  "propositions": [
+   "Bien que statistiquement les femmes ont moins d'accidents et sont plus prudentes, les clichés sont toujours là : les femmes sont peu habiles ou douées au volant voire dangereuses."
+  ],
+  "jaunes": [
+   "Bien que statistiquement les femmes ont moins d'accidents et sont plus prudentes, les clichés sont toujours là : les femmes sont peu habiles ou douées au volant voire dangereuses."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 10,
+  "type": "QRC",
+  "texte": 1,
+  "enonce": "En quoi le permis de conduire est-il indispensable à l'insertion sociale des personnes d'après vous ?",
+  "propositions": [
+   "Pour l'insertion sociale c'est la création ou l'entretien d'un réseau de d'amis, de famille.",
+   "Le permis de conduire permet d'accéder aux lieux de culture, administratifs pour réaliser ses démarches"
+  ],
+  "jaunes": [
+   "Pour l'insertion sociale c'est la création ou l'entretien d'un réseau de d'amis, de famille.",
+   "Le permis de conduire permet d'accéder aux lieux de culture, administratifs pour réaliser ses démarches"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 11,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "Que signifie « réviser leurs arbitrages » dans le contexte de l'article :",
+  "propositions": [
+   "Arbitrer leurs combats",
+   "Revoir leurs priorités et/ou leurs choix",
+   "Régler leurs litiges"
+  ],
+  "jaunes": [
+   "Revoir leurs priorités et/ou leurs choix"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 12,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "De combien devrait augmenter la demande de TER d'ici à 2030 :",
+  "propositions": [
+   "40%",
+   "4%",
+   "400%"
+  ],
+  "jaunes": [
+   "400%"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 13,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "Donnez des antonymes de \"prémices\"",
+  "propositions": [
+   "Origine",
+   "Aboutissement",
+   "À terme",
+   "Amorce"
+  ],
+  "jaunes": [
+   "Aboutissement",
+   "À terme"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 14,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "D'après le texte, sur la dernière décennie :",
+  "propositions": [
+   "La fréquentation des TER a augmenté",
+   "Il y a 60 % de TER en plus"
+  ],
+  "jaunes": [
+   "La fréquentation des TER a augmenté"
+  ],
+  "alerte": "NB_PROPOSITIONS 2≠3"
+ },
+ {
+  "q": 15,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "Les régions ont investi dans les TER",
+  "propositions": [
+   "Les régions ont investi dans les TER",
+   "Car les usagers ne possèdent pas de voiture",
+   "Car le marketing de la SNCF les attire",
+   "Pour éviter les contraintes de la voiture (coût, bouchons, ...)"
+  ],
+  "jaunes": [
+   "Pour éviter les contraintes de la voiture (coût, bouchons, ...)"
+  ],
+  "alerte": "NB_PROPOSITIONS 4≠3"
+ },
+ {
+  "q": 16,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "A quoi fait référence « la même période de 2007 » dans l'article :",
+  "propositions": [
+   "De Janvier à Juin 2007",
+   "De juillet à décembre 2007",
+   "De janvier à mars 2007"
+  ],
+  "jaunes": [
+   "De Janvier à Juin 2007"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 17,
+  "type": "QCM",
+  "texte": 2,
+  "enonce": "La \"sensibilité écologique\" évoquée dans l'article :",
+  "propositions": [
+   "Fait référence à la prise de conscience de l'impact qu'a l'utilisation de la voiture sur l'environnement",
+   "Encourage les personnes à faire des choix différents sur leurs moyens de transport lors de leurs déplacements",
+   "Fait référence aux difficultés d'utilisation des véhicules"
+  ],
+  "jaunes": [
+   "Fait référence à la prise de conscience de l'impact qu'a l'utilisation de la voiture sur l'environnement",
+   "Encourage les personnes à faire des choix différents sur leurs moyens de transport lors de leurs déplacements"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 18,
+  "type": "QRC",
+  "texte": 2,
+  "enonce": "D'après cet article, quel risque induit l'augmentation de l'utilisation des transports en commun et pour quelle raison ?",
+  "propositions": [
+   "Les  réseaux  risquent  d'être  saturés  faute  de  pouvoir  réaliser  les  investissements  nécessaires  à  l'amélioration  des  réseaux  pour  l'augmentation  du trafic."
+  ],
+  "jaunes": [
+   "Les  réseaux  risquent  d'être  saturés  faute  de  pouvoir  réaliser  les  investissements  nécessaires  à  l'amélioration  des  réseaux  pour  l'augmentation  du trafic."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 19,
+  "type": "QRC",
+  "texte": 2,
+  "enonce": "Pourquoi l'utilisation des transports en commun augmente-t-elle ?",
+  "propositions": [
+   "L'utilisation  des  transports  en  commun  augmente  pour  plusieurs  raisons  :  Amélioration de l'offre de service  Cout du carburant  Difficultés de stationnement  Bouchons  Radars  Prise de conscience des conséquences de la voiture sur l'écologie"
+  ],
+  "jaunes": [
+   "L'utilisation  des  transports  en  commun  augmente  pour  plusieurs  raisons  :  Amélioration de l'offre de service  Cout du carburant  Difficultés de stationnement  Bouchons  Radars  Prise de conscience des conséquences de la voiture sur l'écologie"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 20,
+  "type": "QRC",
+  "texte": 2,
+  "enonce": "Que signifie dans Le contexte de cet article « un découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres » ?",
+  "propositions": [
+   "Cela  signifie  que  même  si  la  majorité  des  français  possède une  voiture,  ce  n'est  pas  pour  autant  qu'ils  l'utilisent  comme  leur  moyen  de transport unique",
+   "Ils peuvent posséder une voiture, mais choisir aussi d'autres moyens de transport"
+  ],
+  "jaunes": [
+   "Cela  signifie  que  même  si  la  majorité  des  français  possède une  voiture,  ce  n'est  pas  pour  autant  qu'ils  l'utilisent  comme  leur  moyen  de transport unique",
+   "Ils peuvent posséder une voiture, mais choisir aussi d'autres moyens de transport"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 21,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "Donnez un synonyme de « venelle » :",
+  "propositions": [
+   "Petite veine",
+   "Courée",
+   "Ruelle"
+  ],
+  "jaunes": [
+   "Ruelle"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 22,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "La chaussée \"grignote le trottoir\" Qu'est-ce que cela signifie ?",
+  "propositions": [
+   "Les trottoirs sont de plus en plus étroits",
+   "Des pistes cyclables se situent sur les trottoirs",
+   "La route est de plus en plus large au détriment des trottoirs"
+  ],
+  "jaunes": [
+   "Les trottoirs sont de plus en plus étroits",
+   "La route est de plus en plus large au détriment des trottoirs"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 23,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "Selon vous, le texte est tire d'un :",
+  "propositions": [
+   "Essai",
+   "Roman",
+   "Article de presse"
+  ],
+  "jaunes": [
+   "Article de presse"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 24,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "Que veut dire « politique de l autruche » ?",
+  "propositions": [
+   "S'enfuir en courant",
+   "Ignorer la réalité",
+   "Pondre des projets de grande taille"
+  ],
+  "jaunes": [
+   "Ignorer la réalité"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 25,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "Que veut dire l’auteur par « taillées au gabarit » ?",
+  "propositions": [
+   "Être de taille pour",
+   "Mettre à dimension",
+   "Remettre à distance"
+  ],
+  "jaunes": [
+   "Être de taille pour"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 26,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "Que veut dire l expression « s attirer mes foudres » ?",
+  "propositions": [
+   "Défier quelqu'un",
+   "Se mettre en retrait",
+   "Mettre en colère"
+  ],
+  "jaunes": [
+   "Mettre en colère"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 27,
+  "type": "QCM",
+  "texte": 3,
+  "enonce": "Donnez un antonyme de « décongestionner »",
+  "propositions": [
+   "Cloisonner",
+   "Concentrer",
+   "Embouteiller"
+  ],
+  "jaunes": [
+   "Embouteiller"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 28,
+  "type": "QRC",
+  "texte": 3,
+  "enonce": "L'auteur évoque un « bourricot bardé de couffins ». Après avoir expliqué ces termes, indiquez l'idée portée par l'intégralité de la phrase.",
+  "propositions": [
+   "Il s'agit d'un âne sur lequel sont mis des paniers. La phrase veut dire que dans la médina de Fez il n'y a pas de voitures car les ruelles sont trop étroites, elles ont été taillées pour le passage d'animaux."
+  ],
+  "jaunes": [
+   "Il s'agit d'un âne sur lequel sont mis des paniers. La phrase veut dire que dans la médina de Fez il n'y a pas de voitures car les ruelles sont trop étroites, elles ont été taillées pour le passage d'animaux."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 29,
+  "type": "QRC",
+  "texte": 3,
+  "enonce": "Quelle est l'idée maîtresse du texte ?",
+  "propositions": [
+   "L'idée maîtresse du texte est que la circulation est de plus en plus dense et que les piétons n'ont même plus la place de flâner sur les trottoirs. Que cela devient insupportable et que les pouvoirs publics ne font rien."
+  ],
+  "jaunes": [
+   "L'idée maîtresse du texte est que la circulation est de plus en plus dense et que les piétons n'ont même plus la place de flâner sur les trottoirs. Que cela devient insupportable et que les pouvoirs publics ne font rien."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 30,
+  "type": "QRC",
+  "texte": 3,
+  "enonce": "Pourquoi en sommes-nous arrivés à cette situation (deux réponses attendues) ?",
+  "propositions": [
+   "D'une  part  parce  que  les  citadins  préfèrent  prendre  leur  voiture  plutôt  que  les  transports  en  commun  et  que  les  responsables  politiques  ne prennent pas les bonnes décisions en matière de réduction de la circulation."
+  ],
+  "jaunes": [
+   "D'une  part  parce  que  les  citadins  préfèrent  prendre  leur  voiture  plutôt  que  les  transports  en  commun  et  que  les  responsables  politiques  ne prennent pas les bonnes décisions en matière de réduction de la circulation."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 31,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Quelle est l'idée principale développe dans ce texte ?",
+  "propositions": [
+   "La différence entre les conducteurs masculins et féminins",
+   "Les risques d'agression auprès des femmes",
+   "La création de taxi pour les femmes et géré par des femmes"
+  ],
+  "jaunes": [
+   "La création de taxi pour les femmes et géré par des femmes"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 32,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Dans quel pays a été créée la première entreprise de transport reservee aux femmes ?",
+  "propositions": [
+   "États-Unis",
+   "Angleterre",
+   "Mexique"
+  ],
+  "jaunes": [
+   "Angleterre"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 33,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Pour Maria Lopez, les clientes de VTC ou Taxi prennent plus facilement des « Pink",
+  "propositions": [
+   "ladies cab» :",
+   "Parce que les véhicules sont roses",
+   "Pour des raisons de sécurité",
+   "Parce que la société est gérée par des femmes"
+  ],
+  "jaunes": [
+   "Pour des raisons de sécurité"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 34,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Que signifie l'expression : le concept « fera bientôt école » ?",
+  "propositions": [
+   "Créera des écoles pour chauffeurs",
+   "Incitera à créer des services similaires dans d'autres villes ou d'autres pays",
+   "Créera des concurrent"
+  ],
+  "jaunes": [
+   "Incitera à créer des services similaires dans d'autres villes ou d'autres pays"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 35,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Que signifie « le programme « Atenea » reste modeste » ?",
+  "propositions": [
+   "C'est un programme peu onéreux",
+   "C'est un programme peu répandu",
+   "C'est un programme honnête"
+  ],
+  "jaunes": [
+   "C'est un programme peu répandu"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 36,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Que veut dire « franc succès » ?",
+  "propositions": [
+   "Un succès français",
+   "Connaître la réussite",
+   "Avoir un succès honnête et loyal"
+  ],
+  "jaunes": [
+   "Connaître la réussite"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 37,
+  "type": "QCM",
+  "texte": 4,
+  "enonce": "Quel est le synonyme de « badauds » ?",
+  "propositions": [
+   "Des flâneurs",
+   "Des touristes",
+   "Des clients"
+  ],
+  "jaunes": [
+   "Des flâneurs"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 38,
+  "type": "QRC",
+  "texte": 4,
+  "enonce": "Comment sont équipés les véhicules décrits dans le texte, quelle est la contrepartie de ce service particulier ?",
+  "propositions": [
+   "Le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+   "La contrepartie se sont des tarifs 10 % supérieurs à ceux des taxis classiques."
+  ],
+  "jaunes": [
+   "Le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+   "La contrepartie se sont des tarifs 10 % supérieurs à ceux des taxis classiques."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 39,
+  "type": "QRC",
+  "texte": 4,
+  "enonce": "L'auteur évoque « le machisme ambiant » selon vous dans le contexte de l'article qu'a-t-il voulu dire ?",
+  "propositions": [
+   "Qu'il y a dans ce pays une dominance de l'homme sur la femme et que de ce fait elles sont vulnérables"
+  ],
+  "jaunes": [
+   "Qu'il y a dans ce pays une dominance de l'homme sur la femme et que de ce fait elles sont vulnérables"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 40,
+  "type": "QRC",
+  "texte": 4,
+  "enonce": "Citez les 2 points positifs de ce programme au Mexique :",
+  "propositions": [
+   "La sécurité des femmes",
+   "La création d'emplois pour les femmes"
+  ],
+  "jaunes": [
+   "La sécurité des femmes",
+   "La création d'emplois pour les femmes"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 41,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Donnez un synonyme d'indécent :",
+  "propositions": [
+   "Opportun",
+   "Choquant",
+   "Correct"
+  ],
+  "jaunes": [
+   "Choquant"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 42,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Qu'est-ce que la « société civile » ?",
+  "propositions": [
+   "C'est l'ensemble des acteurs sociaux/économiques (entreprises, ONG, associations...)",
+   "C'est l'ensemble des personnes non-militaire",
+   "C'est l'ensemble des actions gouvernementales"
+  ],
+  "jaunes": [
+   "C'est l'ensemble des acteurs sociaux/économiques (entreprises, ONG, associations...)"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 43,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Qu'entend-on par « pays tiers » dans l'article ?",
+  "propositions": [
+   "Le troisième pays de l'union européenne",
+   "Un pays non-membre de l'union européenne",
+   "Un autre pays que la France"
+  ],
+  "jaunes": [
+   "Un pays non-membre de l'union européenne"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 44,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Que signifie le sigle ONG ?",
+  "propositions": [
+   "Organisation non garantie",
+   "Organisation non gouvernementale",
+   "Optimisation non gouvernementale"
+  ],
+  "jaunes": [
+   "Organisation non gouvernementale"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 45,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Que signifie l'expression « rapports glaçant » dans l'article ?",
+  "propositions": [
+   "Des comptes rendus d'enquête excitants",
+   "Des secrets terrifiants",
+   "Des comptes rendus d'enquête terrifiants"
+  ],
+  "jaunes": [
+   "Des comptes rendus d'enquête terrifiants"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 46,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Qu'est-ce qu'un périple ?",
+  "propositions": [
+   "Un voyage comportant beaucoup d'étapes",
+   "Un évènement",
+   "Une figure de gymnastique"
+  ],
+  "jaunes": [
+   "Un voyage comportant beaucoup d'étapes"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 47,
+  "type": "QCM",
+  "texte": 5,
+  "enonce": "Donnez un antonyme de « vétuste » :",
+  "propositions": [
+   "Étroit",
+   "Neuf",
+   "Délabré"
+  ],
+  "jaunes": [
+   "Neuf"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 48,
+  "type": "QRC",
+  "texte": 5,
+  "enonce": "L'Union européenne a légiféré sur les conditions de transport, quelle est la portée géographique de cette législation ?",
+  "propositions": [
+   "La législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union"
+  ],
+  "jaunes": [
+   "La législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 49,
+  "type": "QRC",
+  "texte": 5,
+  "enonce": "Indiquez la nature et l'objectif de la campagne #stop The Trucks.",
+  "propositions": [
+   "La nature est une campagne de sensibilisation et qui a recueilli à travers l'Europe des millions de signature pour faire arrêter le transport des animaux dans de mauvaises conditions. L'objectif est de dénoncer le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées."
+  ],
+  "jaunes": [
+   "La nature est une campagne de sensibilisation et qui a recueilli à travers l'Europe des millions de signature pour faire arrêter le transport des animaux dans de mauvaises conditions. L'objectif est de dénoncer le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 50,
+  "type": "QRC",
+  "texte": 5,
+  "enonce": "Quels sont les différents modes de transport évoqués dans l'article ?",
+  "propositions": [
+   "Les camions",
+   "Les cargos"
+  ],
+  "jaunes": [
+   "Les camions",
+   "Les cargos"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 51,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Qu est-ce qu un black cab ?",
+  "propositions": [
+   "Taxi Londonien",
+   "La voiture la plus vendue à Londres",
+   "Voiture de location"
+  ],
+  "jaunes": [
+   "Taxi Londonien"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 52,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Un véhiculé hybride :",
+  "propositions": [
+   "Associe 2 énergies alternativement afin de rouler",
+   "Associe 2 énergies simultanément afin de rouler",
+   "Associe électricité et essence afin de rouler"
+  ],
+  "jaunes": [
+   "Associe 2 énergies simultanément afin de rouler"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 53,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Que veut dire l'auteur par : « une formule un peu vague... »",
+  "propositions": [
+   "L'équipement de base et les options ne sont pas définis",
+   "La personne interviewée ne répond pas précisément à la question",
+   "Les calculs mathématiques ne sont pas juste"
+  ],
+  "jaunes": [
+   "La personne interviewée ne répond pas précisément à la question"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 54,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Qu est-ce qu un prototype ?",
+  "propositions": [
+   "Dernier modèle d'une série",
+   "Modèle diffusé à grande échelle",
+   "Un modèle de tests/d'études d'un nouveau produit"
+  ],
+  "jaunes": [
+   "Un modèle de tests/d'études d'un nouveau produit"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 55,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Quel est le sujet de ce texte ?",
+  "propositions": [
+   "La marque de véhicule anglaise sera bientôt disponible en France",
+   "Les véhicules anglais avec conduite à droite circulant prochainement à Paris",
+   "Les conducteurs anglais viendront travailler avec leurs véhicules à Paris"
+  ],
+  "jaunes": [
+   "La marque de véhicule anglaise sera bientôt disponible en France"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 56,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Quand le black cab avec conduite a gauche arrivera-t-il sur le marche ?",
+  "propositions": [
+   "2013",
+   "Fin 2017",
+   "2018"
+  ],
+  "jaunes": [
+   "2018"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 57,
+  "type": "QCM",
+  "texte": 6,
+  "enonce": "Quand l'auteur parle d autonomie, il évoqué",
+  "propositions": [
+   "Un véhicule sans constructeur",
+   "Des conducteurs autonomes",
+   "La distance à parcourir avant la prochaine recharge"
+  ],
+  "jaunes": [
+   "La distance à parcourir avant la prochaine recharge"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 58,
+  "type": "QRC",
+  "texte": 6,
+  "enonce": "Que veut dire l'auteur par « à la différence avec ses aînés » ?",
+  "propositions": [
+   "Cela veut dire que ce nouveau modèle sera différent des modèles conçus auparavant."
+  ],
+  "jaunes": [
+   "Cela veut dire que ce nouveau modèle sera différent des modèles conçus auparavant."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 59,
+  "type": "QRC",
+  "texte": 6,
+  "enonce": "Quelle concession le constructeur fera-t-il pour les futurs véhicules parisiens ?",
+  "propositions": [
+   "La concession est que le véhicules pourra se décliner en une vingtaine de couleurs différentes contrairement aux blacks cab qui sont noirs uniquement."
+  ],
+  "jaunes": [
+   "La concession est que le véhicules pourra se décliner en une vingtaine de couleurs différentes contrairement aux blacks cab qui sont noirs uniquement."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 60,
+  "type": "QRC",
+  "texte": 6,
+  "enonce": "Qu'est ce qui permet à l'auteur d'affirmer qu'il s'agit d'un véhicule hybride ?",
+  "propositions": [
+   "C'est le fait que le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Ce n'est donc pas un véhicule exclusivement électrique.",
+   "TEXTE 7"
+  ],
+  "jaunes": [
+   "C'est le fait que le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Ce n'est donc pas un véhicule exclusivement électrique."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 61,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "Trouvez-les synonyme(s) d énigmatique :",
+  "propositions": [
+   "Mystérieux",
+   "Inexplicable",
+   "Évident"
+  ],
+  "jaunes": [
+   "Mystérieux",
+   "Inexplicable"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 62,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "C est « pour faire face aux problèmes lies a la circulation urbaine » signifie que :",
+  "propositions": [
+   "On va laisser le problème de côté",
+   "Prendre le problème à bras le corps",
+   "Attendre que les choses s'enveniment davantage"
+  ],
+  "jaunes": [
+   "Prendre le problème à bras le corps"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 63,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "La science-fiction est un genre littéraire qui :",
+  "propositions": [
+   "Invente des mondes",
+   "Est ancré dans la réalité",
+   "Se situe dans des espaces-temps futurs"
+  ],
+  "jaunes": [
+   "Invente des mondes",
+   "Se situe dans des espaces-temps futurs"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 64,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "La métropole brésilienne Sao Paulo :",
+  "propositions": [
+   "Va être la première à utiliser les deux engins futuristes",
+   "A établi un record il y a quelques années au niveau du trafic sur les routes autour de la ville Est un exemple sur lequel s'appuie le groupe Airbus",
+   "S'étend sur 344 kilomètres"
+  ],
+  "jaunes": [
+   "A établi un record il y a quelques années au niveau du trafic sur les routes autour de la ville Est un exemple sur lequel s'appuie le groupe Airbus"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 65,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "Donnez I antonyme du mot « excitant » :",
+  "propositions": [
+   "Alléchant",
+   "Attrayant",
+   "Anémiant"
+  ],
+  "jaunes": [
+   "Anémiant"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 66,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "Selon I auteur, pourquoi Airbus se lance dans ce projet ?",
+  "propositions": [
+   "Car le Brésil est prêt à investir 31 milliards de dollars pour ce projet",
+   "Pour pallier aux problèmes de circulation",
+   "Parce que le carnaval de Rio de Janeiro attire beaucoup de touristes"
+  ],
+  "jaunes": [
+   "Pour pallier aux problèmes de circulation"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 67,
+  "type": "QCM",
+  "texte": 7,
+  "enonce": "Que signifie la phrase « ce projet n est pas aussi délirant qu il en a l'air » dans le texte ?",
+  "propositions": [
+   "Ce projet n'est pas aussi marrant que ce que l'on pense",
+   "Ce projet n'est pas réaliste et ne relève que de la science-fiction",
+   "Ce projet est plus réaliste que ce que l'on pense"
+  ],
+  "jaunes": [
+   "Ce projet est plus réaliste que ce que l'on pense"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 68,
+  "type": "QRC",
+  "texte": 7,
+  "enonce": "En quoi, selon vous, voler au-dessus d'une ville serait plus excitant ?",
+  "propositions": [
+   "D'une part on éviterait les bouchons et d'autre part on contemplerai la ville par le dessus"
+  ],
+  "jaunes": [
+   "D'une part on éviterait les bouchons et d'autre part on contemplerai la ville par le dessus"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 69,
+  "type": "QRC",
+  "texte": 7,
+  "enonce": "Citez les noms des deux projets. Pour chacun d'eux, expliquez en quoi ils consistent :",
+  "propositions": [
+   "Vahana qui pourrait accueillir un passager ou servir pour le transport de marchandises.",
+   "CityAirbus une sorte de taxi volant qui pourrait accueillir de multiples passagers"
+  ],
+  "jaunes": [
+   "Vahana qui pourrait accueillir un passager ou servir pour le transport de marchandises.",
+   "CityAirbus une sorte de taxi volant qui pourrait accueillir de multiples passagers"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 70,
+  "type": "QRC",
+  "texte": 7,
+  "enonce": "Expliquez la phrase \"les voitures volantes ne feront plus partie de notre imaginaire collectif\"",
+  "propositions": [
+   "Cela veut dire que les voitures volantes seront réelles et feront partie de notre quotidien."
+  ],
+  "jaunes": [
+   "Cela veut dire que les voitures volantes seront réelles et feront partie de notre quotidien."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 71,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "Donnez, la ou les définition(s) du verbe condenser :",
+  "propositions": [
+   "Accentuer",
+   "Faire passer de l'état de vapeur à i 'état liquide ou solide",
+   "Réduire à l'essentiel",
+   "Faire passer de l'état de liquide à l’état de vapeur"
+  ],
+  "jaunes": [
+   "Réduire à l'essentiel"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 72,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "En I espace d un siècle, signifie :",
+  "propositions": [
+   "Sur une période de 100 ans",
+   "Sur une Période de 1000 ans",
+   "Sur une période de 10 ans"
+  ],
+  "jaunes": [
+   "Sur une période de 100 ans"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 73,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "Que signifie ingénierie ?",
+  "propositions": [
+   "Travail scientifique",
+   "Imagerie",
+   "Conception"
+  ],
+  "jaunes": [
+   "Travail scientifique"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 74,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "Donnez, le ou les antonyme(s) de nostalgique :",
+  "propositions": [
+   "Joyeux",
+   "Cœur léger",
+   "Mélancolique",
+   "Neurasthénique"
+  ],
+  "jaunes": [
+   "Joyeux",
+   "Cœur léger"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 75,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "Donnez, la ou les définition(s) de suranné :",
+  "propositions": [
+   "Qui est archaïque",
+   "Qui est désuet",
+   "Qui est futuriste"
+  ],
+  "jaunes": [
+   "Qui est archaïque",
+   "Qui est désuet"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 76,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "Quel est le temps utilise pour le verbe « composeraient » ?",
+  "propositions": [
+   "Imparfait",
+   "Passé simple",
+   "Futur",
+   "Conditionne"
+  ],
+  "jaunes": [
+   "Conditionne"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 77,
+  "type": "QCM",
+  "texte": 8,
+  "enonce": "Donnez, le ou les synonymes d anachronisme :",
+  "propositions": [
+   "Préhistorique",
+   "Symptôme chronique",
+   "Inexactitude",
+   "Contresens"
+  ],
+  "jaunes": [
+   "Inexactitude"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 78,
+  "type": "QRC",
+  "texte": 8,
+  "enonce": "« L'automobile a [...] transformé le paysage physique », donnez quatre exemples de transformation.",
+  "propositions": [
+   "Le trafic routier",
+   "Le carnage",
+   "La pollution",
+   "L'expansion urbaine"
+  ],
+  "jaunes": [
+   "Le trafic routier",
+   "Le carnage",
+   "La pollution",
+   "L'expansion urbaine"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 79,
+  "type": "QRC",
+  "texte": 8,
+  "enonce": "Le texte précise : \" l'autoroute était un chaos sanglant et magnifique Expliquez en quoi cette affirmation est antinomique ?",
+  "propositions": [
+   "Un chaos sanglant ne peut pas être magnifique, c'est le contraire"
+  ],
+  "jaunes": [
+   "Un chaos sanglant ne peut pas être magnifique, c'est le contraire"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 80,
+  "type": "QRC",
+  "texte": 8,
+  "enonce": "Selon vous, pourquoi l'auteur utilise-t-il des termes du registre de la sensualité, voire de la sexualité, pour qualifier la voiture ?",
+  "propositions": [
+   "Car pour l'auteur conduire procure du plaisir"
+  ],
+  "jaunes": [
+   "Car pour l'auteur conduire procure du plaisir"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 81,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "Donnez un synonyme du verbe « titiller » ?",
+  "propositions": [
+   "Tracasser",
+   "Interpeller",
+   "Taquiner"
+  ],
+  "jaunes": [
+   "Tracasser",
+   "Taquiner"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 82,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "Que signifie le verbe « eradiquer » ?",
+  "propositions": [
+   "Faire disparaitre",
+   "Maintenir",
+   "Conserver"
+  ],
+  "jaunes": [
+   "Faire disparaitre"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 83,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "Donnez le contraire de l'adjectif « autonome »",
+  "propositions": [
+   "Libre",
+   "Assistée",
+   "Indépendant"
+  ],
+  "jaunes": [
+   "Assistée"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 84,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "Dans le texte, quel est le sens du mot « bardés » ?",
+  "propositions": [
+   "Devenus menaçants",
+   "Couverts",
+   "Avec un prix réduit"
+  ],
+  "jaunes": [
+   "Couverts"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 85,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "Un comportement erratique, c'est :",
+  "propositions": [
+   "Un comportement instable",
+   "Un comportement sans cohérence",
+   "Un comportement dangereux"
+  ],
+  "jaunes": [
+   "Un comportement instable",
+   "Un comportement sans cohérence"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 86,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "La voiture autonome est un moyen de communication facile pour les constructeurs car :",
+  "propositions": [
+   "Le concept n'intéresse que les médias et pas le grand public",
+   "Les médias diffusent les démonstrations des voitures autonomes ce qui permet de faire de la publicité aux constructeurs",
+   "Elles sont équipées d'un système qui leur permet d'échanger des informations entre elles"
+  ],
+  "jaunes": [
+   "Les médias diffusent les démonstrations des voitures autonomes ce qui permet de faire de la publicité aux constructeurs"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 87,
+  "type": "QCM",
+  "texte": 9,
+  "enonce": "Elle sera forcément « mue par l'électricité » signifie :",
+  "propositions": [
+   "Elle se déplacera avec l'électricité comme source d'énergie",
+   "Elle se sera débarrassée de l'électricité pour se déplacer",
+   "Elle se sera débarrassée de l'électricité pour se déplacer"
+  ],
+  "jaunes": [
+   "Elle se déplacera avec l'électricité comme source d'énergie",
+   "Elle se sera débarrassée de l'électricité pour se déplacer"
+  ],
+  "alerte": "PROPOSITIONS_EN_DOUBLE"
+ },
+ {
+  "q": 88,
+  "type": "QRC",
+  "texte": 9,
+  "enonce": "Que veut dire « de spectaculaires démonstrations dont les médias sont friands » ?",
+  "propositions": [
+   "Les  médias  aiment le sensationnel. Ils  montrent toujours  plus  d'images  fortes, divulguent des  « informations-choc  » pour faire le buzz, souhaitent marquer les  esprits  voire même dépasser leurs  concurrents  dans  l'immédiateté de l'information. De nos  jours, les  spectateurs  sont aussi en attente de ces images relayées de manière instantanée, sans recul. Cela fait partie d'un voyeurisme ambiant."
+  ],
+  "jaunes": [
+   "Les  médias  aiment le sensationnel. Ils  montrent toujours  plus  d'images  fortes, divulguent des  « informations-choc  » pour faire le buzz, souhaitent marquer les  esprits  voire même dépasser leurs  concurrents  dans  l'immédiateté de l'information. De nos  jours, les  spectateurs  sont aussi en attente de ces images relayées de manière instantanée, sans recul. Cela fait partie d'un voyeurisme ambiant."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 89,
+  "type": "QRC",
+  "texte": 9,
+  "enonce": "Que veut dire l'auteur par la phrase « des piétons moins soucieux des règles » ?",
+  "propositions": [
+   "Certains piétons ne veulent pas respecter les règles du code de la route et font ce qu'ils veulent sur les chaussées au risque de mettre leur vie en danger"
+  ],
+  "jaunes": [
+   "Certains piétons ne veulent pas respecter les règles du code de la route et font ce qu'ils veulent sur les chaussées au risque de mettre leur vie en danger"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 90,
+  "type": "QRC",
+  "texte": 9,
+  "enonce": "D'après le texte et sans paraphraser, quelles sont les promesses de la voiture autonome ?",
+  "propositions": [
+   "Suppression de la mortalité routière, la mobilité personnelle sera accessible à tous, suppression des embouteillages et non polluante."
+  ],
+  "jaunes": [
+   "Suppression de la mortalité routière, la mobilité personnelle sera accessible à tous, suppression des embouteillages et non polluante."
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 91,
+  "type": "QCM",
+  "texte": 10,
+  "enonce": "Selon la newsletter « Oversharing »,quel est la durée de vie moyenne d'une trottinette en libre-service ?",
+  "propositions": [
+   "18 jours",
+   "26 jours",
+   "28 jours",
+   "31 jours"
+  ],
+  "jaunes": [
+   "28 jours"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 92,
+  "type": "QCM",
+  "texte": 10,
+  "enonce": "Selon un rapport de 2019 d'Arcadis, une trottinette électrique en libre service présente le même bilan carbone :",
+  "propositions": [
+   "qu'une voiture classique transportant trois passagers",
+   "qu'une voiture classique transportant cinq passagers",
+   "qu'un bus diesel",
+   "qu'un SUV"
+  ],
+  "jaunes": [
+   "qu'une voiture classique transportant trois passagers"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 93,
+  "type": "QCM",
+  "texte": 10,
+  "enonce": "Pourquoi les trottinettes électriques sont devenues un vrai dangers dans les centres-villes ?",
+  "propositions": [
+   "Les conducteurs ne respectent pas le code de la route",
+   "Elles sont difficilement recyclables",
+   "Elles ont une durée de vie très courte"
+  ],
+  "jaunes": [
+   "Les conducteurs ne respectent pas le code de la route"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 94,
+  "type": "QCM",
+  "texte": 10,
+  "enonce": "Dans le texte, avec une meilleure longévité, une trottinette peut émettre",
+  "propositions": [
+   "7 fois moins de grammes de CO2 au kilomètre qu'un bus diesel",
+   "7 fois moins de grammes de CO2 au kilomètre qu'une voiture",
+   "10 fois moins de grammes de CO2 au kilomètre qu'un taxi"
+  ],
+  "jaunes": [
+   "7 fois moins de grammes de CO2 au kilomètre qu'une voiture"
+  ],
+  "alerte": "NB_PROPOSITIONS 3≠4"
+ },
+ {
+  "q": 95,
+  "type": null,
+  "texte": null,
+  "enonce": "Quel(s) est/sont le(s) synonyme(s) d' \"optimiser\" ?",
+  "propositions": [
+   "Maximiser",
+   "Perfectionner",
+   "Rendre optimiste",
+   "Abimer"
+  ],
+  "jaunes": [
+   "Maximiser",
+   "Perfectionner"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 96,
+  "type": null,
+  "texte": null,
+  "enonce": "Dans le texte \"substantielles doit être compris comme :",
+  "propositions": [
+   "Appréciables",
+   "Peu importantes",
+   "Vaines",
+   "Probables"
+  ],
+  "jaunes": [
+   "Appréciables"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 97,
+  "type": null,
+  "texte": null,
+  "enonce": "Donnez le contraire (antonyme) de l'adverbe \"couramment\":",
+  "propositions": [
+   "Rarement",
+   "Habituellement",
+   "Principalement",
+   "Toujours"
+  ],
+  "jaunes": [
+   "Rarement"
+  ],
+  "alerte": ""
+ },
+ {
+  "q": 98,
+  "type": null,
+  "texte": null,
+  "enonce": "Pourquoi l'éco conduite est une attitude qu'il faut adopter ?",
+  "propositions": [
+   "Parce qu'elle permet de préserver l'environnement",
+   "Parce qu'elle offre des possibilités de se déplacer rapidement"
+  ],
+  "jaunes": [
+   "Parce qu'elle permet de préserver l'environnement"
+  ],
+  "alerte": ""
+ }
+]
