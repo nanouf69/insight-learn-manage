@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 05/11 — Erreur au premier passage dans la liste admin
+- [x] Lecture seule sessions actives JOUR/SOIR, inscriptions effectives, premières réponses journalisées + tentative 1 remise + preuve figée compatible ; jamais corrigé actuel ni note agrégée.
+- [x] Affichage liste admin normale/plein écran, taux partiel et limites, partage par quiz_question_bindings, déduplication ; 28 tests PASS, compte admin réel Q1 marketing 0/2 avec 26 exclus non prouvés ; aucune écriture base/publication.
+- [ ] Contrôle mobile complet NON PROUVÉ : navigation latérale existante masque la liste au petit format ; pas de modification hors périmètre. Anciennes données sans preuve conservées et exclues, taux exhaustif non prouvé.
+
 ## 05/11 19:45 UTC — Bilan Français : 63 QCM, neuf textes
 - [x] Sources jaunes, 7 QCM par texte, Q14/Q15/Q87 ; 63 QCM, aucune QRC ni Q80 ajoutée, Q33 fragment d'énoncé remis dans l'énoncé selon DOCX.
 - [x] Migration additive 0241 appliquée, version indépendante ca3fc116-a0b7-4c07-a2e6-996226b2151d insérée ; neuf supports, ancienne banque/reçus/soumissions/éligibilité et 1377 brouillons antérieurs identiques. Zéro activation, zéro nouveau reçu sur cette version.
