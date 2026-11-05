@@ -36,3 +36,14 @@ describe("virements formation continue", () => {
     expect(peutEnvoyerAuto({ statut: "a_revoir", historique: false }, true, false)).toBe(false);
   });
 });
+
+import { estDossierFc, estSessionFc } from "../../supabase/functions/_shared/fcPaiementsRegles";
+describe("périmètre FC 05/11", () => {
+  it("PA TAXI inscrit à une session de formation continue = FC", () => {
+    expect(estSessionFc("Formation Continue TAXI - 19 et 20 novembre 2026")).toBe(true);
+    expect(estDossierFc("PA TAXI", true)).toBe(true);
+  });
+  it("PA VTC non inscrit à une session FC = hors périmètre", () => expect(estDossierFc("PA VTC", false)).toBe(false));
+  it("session examen ≠ FC", () => expect(estSessionFc("Session examen — 27 janvier 2026")).toBe(false));
+  it("continue-vtc reste FC", () => expect(estDossierFc("continue-vtc", false)).toBe(true));
+});
