@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 05/11 15:07 — Source Word unique du Bilan Français reçue
+- [x] Fichier réellement ouvert : XML et 21 pages extraits ; 10 textes, 98 questions (67 QCM explicites, 27 QRC, 4 complémentaires sans type explicite), aucune bonne réponse QCM marquée.
+- [x] Q40/Q87/Q91/Q95–98 signalées par la source elle-même ; aucune correction pédagogique, écriture base ou publication à cette étape.
+- [ ] Intégration ciblée 5/503 et 11/603 : corrigé QCM validé manquant et ambiguïtés de source à arbitrer ; préserver anciennes identités et snapshots, puis tests élève/admin avant publication.
+
 ## 05/11 — Convocations FC après paiement confirmé (préparation uniquement)
 - [x] Rapprochements et modèle officiel lus ; neuf inscriptions auditées, montants dossier/session divergents et deux mails historiques à revoir, aucun seuil contractuel inventé.
 - [x] Chaîne convocations distincte préparée : preuves admin, SQL non appliqué, fonction non déployée, unicité/session, journal, reprise bornée et quarantaine ; ancien bloc bancaire dangereux retiré de l'aperçu uniquement.
