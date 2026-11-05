@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 05/11 20:33 — Activation/publication Bilan Français
+- [x] Cinq échecs investigués : quatre simulations sans auth, un attendu ancien agenda incompatible avec inscriptions ; pas une régression Français démontrée. 36 tests Français + 3 contrats SQL Français + 14 isolation PASS. Candidate/ancienne banque/routage live relus.
+- [ ] Activation/publication BLOQUÉES : session nominative autorisée sans dossier élève (count=0), parcours réel ouverture/reprise/remise non vérifié ; aperçu global avec cinq tests généraux non remis à niveau et permissions connues non arbitrées. Pointeur vide, zéro reçu candidat ; aucun élève, donnée ou droit modifié. Détails dans ETAT.md.
+
 ## 05/11 20:22 — Publication premier passage
 - [x] Filtre individuel par ID de session terminé, remise à zéro JOURNÉE/SOIRÉE et lectures admin réelles vérifiées PC/mobile, 20 tests calcul PASS ; aucune écriture pédagogique.
 - [x] Suite globale exécutée : 3413 PASS, 5 FAIL préexistants (4 mock auth gel-par-module-raccordement, 1 règle agenda suivi-formation-indicateurs), 13 skipped ; aperçu build OK.
