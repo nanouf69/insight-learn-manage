@@ -1,0 +1,2162 @@
+[
+  {
+    "id": 1,
+    "sourceNumber": 1,
+    "type": "QCM",
+    "enonce": "Quel(s) est (sont) le(s) synonyme(s) de paradoxe ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Invraisemblance",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Accord",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Concordance de genre",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "sourceNumber": 2,
+    "type": "QCM",
+    "enonce": "L'industrie automobile :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Respecte la parité homme / femme",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Compte peu de femmes dans ses effectifs",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Est un secteur très masculin",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "sourceNumber": 3,
+    "type": "QCM",
+    "enonce": "Les auteures parlent d'un écart de 10 points entre les hommes et les femmes à l'examen du permis de conduire, cela signifie que",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Les femmes réussissent davantage à l'examen du permis de conduire",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Les hommes réussissent plus souvent l'examen du permis de conduire que les femmes",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Le permis de conduire des femmes à moins de points que celui des hommes",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "sourceNumber": 4,
+    "type": "QCM",
+    "enonce": "L'accidentalité est :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Le taux d'accident rapporté à une population",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Le nombre d'accident par an",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "La science qui étudie la nature des accidents",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "sourceNumber": 5,
+    "type": "QCM",
+    "enonce": "« L'influence des stéréotypes masculins et féminins tout au long du parcours scolaire » a quelle(s) conséquence(s) selon les auteures ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Les filles ne s'orientent pas vers les filières techniques automobiles",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "L'industrie des automobiles ne veut pas recruter des femmes",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Les métiers de l'automobile sont trop durs physiquement pour les filles",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "sourceNumber": 6,
+    "type": "QCM",
+    "enonce": "Qu'est-ce qu'un stéréotype ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Un cliché",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Une typologie",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Un genre",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "sourceNumber": 7,
+    "type": "QCM",
+    "enonce": "Trouvez le(s) synonyme(s) de précarité :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Instabilité",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Fragilité",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Pauvreté",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 1,
+      "paragraphes": [
+        "Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure... Comment expliquer ce paradoxe ?",
+        "Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, intégration professionnelle et insertion sociale des personnes.",
+        "En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une variété des métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?",
+        "Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?",
+        "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) - 20 septembre 2016"
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "sourceNumber": 11,
+    "type": "QCM",
+    "enonce": "Que signifie « réviser leurs arbitrages » dans le contexte de l'article :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Arbitrer leurs combats",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Revoir leurs priorités et/ou leurs choix",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Régler leurs litiges",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "sourceNumber": 12,
+    "type": "QCM",
+    "enonce": "De combien devrait augmenter la demande de TER d'ici à 2030 :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "40%",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "4%",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "400%",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "sourceNumber": 13,
+    "type": "QCM",
+    "enonce": "Donnez des antonymes de \"prémices\"",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Origine",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Aboutissement",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "À terme",
+        "correct": true
+      },
+      {
+        "lettre": "D",
+        "texte": "Amorce",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "sourceNumber": 14,
+    "type": "QCM",
+    "enonce": "D'après le texte, sur la dernière décennie :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "La fréquentation des TER a augmenté",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Il y a 60 % de TER en plus",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Les régions ont investi dans les TER",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 15,
+    "sourceNumber": 15,
+    "type": "QCM",
+    "enonce": "Les régions ont investi dans les TER",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Car les usagers ne possèdent pas de voiture",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Car le marketing de la SNCF les attire",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Pour éviter les contraintes de la voiture (coût, bouchons, ...)",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 16,
+    "sourceNumber": 16,
+    "type": "QCM",
+    "enonce": "A quoi fait référence « la même période de 2007 » dans l'article :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "De Janvier à Juin 2007",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "De juillet à décembre 2007",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "De janvier à mars 2007",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 17,
+    "sourceNumber": 17,
+    "type": "QCM",
+    "enonce": "La \"sensibilité écologique\" évoquée dans l'article :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Fait référence à la prise de conscience de l'impact qu'a l'utilisation de la voiture sur l'environnement",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Encourage les personnes à faire des choix différents sur leurs moyens de transport lors de leurs déplacements",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Fait référence aux difficultés d'utilisation des véhicules",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 2,
+      "paragraphes": [
+        "Le succès des transports en commun s'amplifie. Portés par les changements de comportement des Français face à la crise énergétique et la mise",
+        "en service de nouveaux services dans de nombreuses villes, les transports collectifs connaissent une hausse significative de leur fréquentation. (...)",
+        "Cette tendance positive se retrouve dans la plupart des secteurs. Au premier semestre, les trains express régionaux (TER) affichent ainsi une croissance de 6,3% par rapport à la même période de 2007. (--)",
+        "Deux facteurs se conjuguent, selon les observateurs. D'abord, la conséquence des investissements publics réalisés depuis dix ans qui se sont",
+        "traduits par une amélioration de l'offre de services. Spectaculaire, la croissance des TER ne fait ainsi que prolonger l'évolution enregistrée sur la dernière décennie : depuis 1998, la fréquentation des TER a augmenté de 60 %, grâce, notamment, à l'effort financier des régions auxquelles l'État a délégué cette compétence en 2002. (...)",
+        "Mais les transports en commun bénéficient aussi directement des évolutions de comportement des Français. Les difficultés croissantes d'utilisation",
+        "des véhicules (coût des carburants, stationnement, bouchons, multiplication des radars, etc.), doublées d'une sensibilité écologique plus marquée,",
+        "semblent inciter les automobilistes à réviser leurs arbitrages. Selon les études marketing de la SNCF, un tiers de ses clients actuels utilisaient auparavant leur voiture pour leurs déplacements. (...)",
+        "L'entreprise publique prévoit ainsi que \"les grandes évolutions socio-économiques\" devraient déboucher sur une multiplication par quatre de la",
+        "demande de TER d'ici à 2030. Avec le risque que cet accroissement de la demande se traduise par une congestion des réseaux, faute de pouvoir réaliser les investissements nécessaires. (...)",
+        "De manière plus fine, les études du Certu insistent sur l'évolution du rapport des Français à leurs véhicules. \"On assiste aux prémices d'un",
+        "découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres\", explique M.",
+        "Guidez. Avec des Français qui n'hésitent plus à laisser leur véhicule dans leur garage : la SNCF relève que 56 % des usagers de TER disposent d'une voiture, mais choisissent de prendre le train."
+      ]
+    }
+  },
+  {
+    "id": 21,
+    "sourceNumber": 21,
+    "type": "QCM",
+    "enonce": "Donnez un synonyme de « venelle » :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Petite veine",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Courée",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Ruelle",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 22,
+    "sourceNumber": 22,
+    "type": "QCM",
+    "enonce": "La chaussée \"grignote le trottoir\" Qu'est-ce que cela signifie ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Les trottoirs sont de plus en plus étroits",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Des pistes cyclables se situent sur les trottoirs",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "La route est de plus en plus large au détriment des trottoirs",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 23,
+    "sourceNumber": 23,
+    "type": "QCM",
+    "enonce": "Selon vous, le texte est tire d'un :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Essai",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Roman",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Article de presse",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 24,
+    "sourceNumber": 24,
+    "type": "QCM",
+    "enonce": "Que veut dire « politique de l autruche » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "S'enfuir en courant",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Ignorer la réalité",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Pondre des projets de grande taille",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 25,
+    "sourceNumber": 25,
+    "type": "QCM",
+    "enonce": "Que veut dire l’auteur par « taillées au gabarit » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Être de taille pour",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Mettre à dimension",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Remettre à distance",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 26,
+    "sourceNumber": 26,
+    "type": "QCM",
+    "enonce": "Que veut dire l expression « s attirer mes foudres » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Défier quelqu'un",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Se mettre en retrait",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Mettre en colère",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 27,
+    "sourceNumber": 27,
+    "type": "QCM",
+    "enonce": "Donnez un antonyme de « décongestionner »",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Cloisonner",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Concentrer",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Embouteiller",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 3,
+      "paragraphes": [
+        "Les rues aux piétons...",
+        "La vie est devenue un véritable enfer; la situation se dégrade chaque jour davantage. La chaussée grignote le trottoir ; l'automobiliste roule à l* allure",
+        "du promeneur. Le cœur des grandes agglomérations étouffe dans le chaos d'une circulation lente et pourtant dangereuse qui rend impossible",
+        "toute initiative de flâner dans les rues.",
+        "La voiture ne vole-t-elle pas à l'homme un univers à sa dimension: la rue ? Les mystérieuses venelles de la médina à Fez, taillées au gabarit du bourricot bardé de couffins, résistent sans effort à la marée automobile. Mais Norwich, Cologne, Rotterdam, Copenhague et bien d'autres cités, submergées par ces flots, livrent depuis plusieurs années, un combat difficile et courageux pour réapprendre au promeneur les chemins de la ville.",
+        "Beaucoup trop habitués au confort trompeur de la voiture privée, les citadins refusent d'utiliser les transports publics pour se rendre au centre de la ville. Ils préfèrent s'exposer inutilement au tracas de la circulation urbaine plutôt que de contribuer activement à décongestionner le centre urbain pour en faire un lieu de rencontre où l'on peut flâner sans s'exposer aux dangers d'n trafic chaotique",
+        "Les responsables se dérobent-ils à leurs obligations ou le problème a-t-il pris des dimensions qui rendent toute intervention impossible ? Dans la crainte de s'attirer les foudres des commerçants et de leur clientèle motorisée, et faute d'imaginer un plan de circulation susceptible de satisfaire à",
+        "la fois automobilistes et piétons, les responsables pratiquèrent longtemps la politique de l'autruche.",
+        "Source : Le Monde, Dossiers et documents, « vivre dans la ville » 1973"
+      ]
+    }
+  },
+  {
+    "id": 31,
+    "sourceNumber": 31,
+    "type": "QCM",
+    "enonce": "Quelle est l'idée principale développe dans ce texte ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "La différence entre les conducteurs masculins et féminins",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Les risques d'agression auprès des femmes",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "La création de taxi pour les femmes et géré par des femmes",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 32,
+    "sourceNumber": 32,
+    "type": "QCM",
+    "enonce": "Dans quel pays a été créée la première entreprise de transport reservee aux femmes ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "États-Unis",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Angleterre",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Mexique",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 33,
+    "sourceNumber": 33,
+    "type": "QCM",
+    "enonce": "Pour Maria Lopez, les clientes de VTC ou Taxi prennent plus facilement des « Pink ladies cab» :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Parce que les véhicules sont roses",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Pour des raisons de sécurité",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Parce que la société est gérée par des femmes",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 34,
+    "sourceNumber": 34,
+    "type": "QCM",
+    "enonce": "Que signifie l'expression : le concept « fera bientôt école » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Créera des écoles pour chauffeurs",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Incitera à créer des services similaires dans d'autres villes ou d'autres pays",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Créera des concurrent",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 35,
+    "sourceNumber": 35,
+    "type": "QCM",
+    "enonce": "Que signifie « le programme « Atenea » reste modeste » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "C'est un programme peu onéreux",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "C'est un programme peu répandu",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "C'est un programme honnête",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 36,
+    "sourceNumber": 36,
+    "type": "QCM",
+    "enonce": "Que veut dire « franc succès » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Un succès français",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Connaître la réussite",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Avoir un succès honnête et loyal",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 37,
+    "sourceNumber": 37,
+    "type": "QCM",
+    "enonce": "Quel est le synonyme de « badauds » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Des flâneurs",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Des touristes",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Des clients",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 4,
+      "paragraphes": [
+        "Maria Lopez ne passe pas inaperçue au volant de son taxi rose bonbon. Sur la place principale",
+        "de la ville coloniale de Puebla, a 120 km de Mexico, les badauds s'approchent, \"c'est réservé aux dames\", lâche la jeune femme brune qui conduit l'un des 35 Pink Taxis destinés aux femmes et gérés par des femmes.",
+        "Inspiré des Pink Ladies Cabs de Londres, le concept, lancé le 6 octobre, fera bientôt école dans d'autres villes mexicaines. L'initiative a la cote auprès des femmes, victimes du machisme ambiant. \"L'objectif c'est la sécurité\", commente Maria, dont le taxi est équipé d'un GPS et d'un bouton d'alerte sous le volant, connectés aux services de police. Joignable 24hl24h par téléphone ou par internet, son véhicule est aussi doté d'un terminal de carte bancale pour limiter les risques de vol avec agression.",
+        "Avec 40 courses par heure, deux fois plus le week-end, les 35 Pink Taxis semblent faire leurs preuves, malgré des tarifs 10 % supérieurs à ceux des taxis classiques. \"Cette politique de prévention rencontre un franc succès\", se félicite Valentin Meneses, secrétaire chargé des transports, qui prévoit de doubler le nombre de taxis roses à Puebla, avant de les lancer dans trois autres villes de l'Etat.",
+        "La mairie de Mexico devrait lui emboîter le pas :\"Nous étudions un service similaire pour 2010\", annonce Ariadna Montiel, directrice du réseau de transport de la capitale. A L'institut des femmes de Mexico (Immujeres), la directrice Martha Lucia Micher explique que \"ces initiatives répondent à un vrai besoin, dans une société où les hommes pensent que le corps des femmes leur appartient\".",
+        "Avec ses 4 millions de passagères annuelles, le programme \"Atenea\" reste nordeste. \"L'idée n'est peut-être pas révolutionnaire, mais elle crée des emplois pour les femmes », conclut Maria. Un argument de poids dans un pays qui compte 900 000 chômeurs supplémentaires cette année.",
+        "Le Monde 24.11.2009"
+      ]
+    }
+  },
+  {
+    "id": 41,
+    "sourceNumber": 41,
+    "type": "QCM",
+    "enonce": "Donnez un synonyme d'indécent :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Opportun",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Choquant",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Correct",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 42,
+    "sourceNumber": 42,
+    "type": "QCM",
+    "enonce": "Qu'est-ce que la « société civile » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "C'est l'ensemble des acteurs sociaux/économiques (entreprises, ONG, associations...)",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "C'est l'ensemble des personnes non-militaire",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "C'est l'ensemble des actions gouvernementales",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 43,
+    "sourceNumber": 43,
+    "type": "QCM",
+    "enonce": "Qu'entend-on par « pays tiers » dans l'article ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Le troisième pays de l'union européenne",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Un pays non-membre de l'union européenne",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Un autre pays que la France",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 44,
+    "sourceNumber": 44,
+    "type": "QCM",
+    "enonce": "Que signifie le sigle ONG ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Organisation non garantie",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Organisation non gouvernementale",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Optimisation non gouvernementale",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 45,
+    "sourceNumber": 45,
+    "type": "QCM",
+    "enonce": "Que signifie l'expression « rapports glaçant » dans l'article ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Des comptes rendus d'enquête excitants",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Des secrets terrifiants",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Des comptes rendus d'enquête terrifiants",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 46,
+    "sourceNumber": 46,
+    "type": "QCM",
+    "enonce": "Qu'est-ce qu'un périple ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Un voyage comportant beaucoup d'étapes",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Un évènement",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Une figure de gymnastique",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 47,
+    "sourceNumber": 47,
+    "type": "QCM",
+    "enonce": "Donnez un antonyme de « vétuste » :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Étroit",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Neuf",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Délabré",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 5,
+      "paragraphes": [
+        "L'indécent transport des animaux vivants",
+        "Plusieurs millions d'animaux subissent en Europe d'effroyables conditions clé transport et l'abattage en violation flagrante de la législation. Différents reportages et vidéos réalisés par des associations et ONG illustrent les effroyables conditions de transport des animaux au sein de l'Union européenne souvent à destination de pays tiers. Des rapports glaçants le confirment : Ils font état d'animaux abandonnés pendant plusieurs jours, sans soins, sans espace, sans eau, ni nourriture. Ils sont entassés dans des camions en plein soleil, bloqués aux frontières ou en mer dans des cargos vétustes et inadaptés, avant de poursuivre un périple parfois de plusieurs milliers de kilomètres. À cela s'ajoutent fréquemment pour les exportations hors de l'Union Européenne, d'insupportables conditions d'abattage à l'arrivée, en l'absence d'un cadre juridique de protection des animaux, Les sociétés civiles française et européenne se sont mobilisées via la campagne #stop The Trucks (Arrêtons les camions) qui a recueilli à travers l'Europe plus d'un million de signatures. Elle dénonce le fait que les normes européennes encadrant les conditions de transport sont très fréquemment ignorées et violées. La Cour de justice de l'Union européenne a pourtant rappelé que la législation européenne s'applique durant l'ensemble du transport, jusqu'au point d'arrivée, y compris donc au-delà des frontières de l'Union. L'an dernier, plusieurs ONG ont démontré que 70 % des camions inspectés à la frontière bulgare ne respectaient pas la législation européenne, et pour les camions transportant des animaux français, ce chiffre monte À 89 %, Cet été, une enquête sur le transport maritime des animaux a également démontré que les cargos utilisés n'auraient jamais dû être agréés par les autorités françaises et européennes.",
+        "Extrait article Site internet La Croix.com 13/09/2017"
+      ]
+    }
+  },
+  {
+    "id": 51,
+    "sourceNumber": 51,
+    "type": "QCM",
+    "enonce": "Qu est-ce qu un black cab ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Taxi Londonien",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "La voiture la plus vendue à Londres",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Voiture de location",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 52,
+    "sourceNumber": 52,
+    "type": "QCM",
+    "enonce": "Un véhiculé hybride :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Associe 2 énergies alternativement afin de rouler",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Associe 2 énergies simultanément afin de rouler",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Associe électricité et essence afin de rouler",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 53,
+    "sourceNumber": 53,
+    "type": "QCM",
+    "enonce": "Que veut dire l'auteur par : « une formule un peu vague... »",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "L'équipement de base et les options ne sont pas définis",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "La personne interviewée ne répond pas précisément à la question",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Les calculs mathématiques ne sont pas juste",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 54,
+    "sourceNumber": 54,
+    "type": "QCM",
+    "enonce": "Qu est-ce qu un prototype ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Dernier modèle d'une série",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Modèle diffusé à grande échelle",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Un modèle de tests/d'études d'un nouveau produit",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 55,
+    "sourceNumber": 55,
+    "type": "QCM",
+    "enonce": "Quel est le sujet de ce texte ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "La marque de véhicule anglaise sera bientôt disponible en France",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Les véhicules anglais avec conduite à droite circulant prochainement à Paris",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Les conducteurs anglais viendront travailler avec leurs véhicules à Paris",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 56,
+    "sourceNumber": 56,
+    "type": "QCM",
+    "enonce": "Quand le black cab avec conduite a gauche arrivera-t-il sur le marche ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "2013",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Fin 2017",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "2018",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 57,
+    "sourceNumber": 57,
+    "type": "QCM",
+    "enonce": "Quand l'auteur parle d autonomie, il évoqué",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Un véhicule sans constructeur",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Des conducteurs autonomes",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "La distance à parcourir avant la prochaine recharge",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 6,
+      "paragraphes": [
+        "Les black cabs, les fameux taxis londoniens, rouleront-ils un jour à Paris ? Peut-être si t'on en croit leur constructeur racheté en 2013 par le chinois Geely. Ce dernier prépare un prototype de véhicule hybride électrique qui vient d'être présenté à quelques sociétés de taxis parisiens et de VTC.",
+        "Depuis 70 ans. Les black cabs font partie du paysage londonien au même titre que les bus rouges à double étage. LTC (London Taxi Company), le constructeur de ces voitures au look typiquement anglais, qui a été racheté en 2013 par Geely, septième constructeur automobile chinois, a présenté à Paris le prototype d'une version hybride électrique qui devrait arriver sur le marché européen en 2018. S'il conserve les codes caractéristiques du black cab, notamment la forme générale, la conception de ce véhicule n'a plus grand chose à voir avec ses aînés. Il est animé par un moteur électrique et des batteries « disposant d'une excellente autonomie permettant aux taxis de fonctionner en mode zéro émission durant leur journée de travail», explique ses concepteurs. Une formule un peu vague qui ne permet pas de connaître exactement l'autonomie du véhicule. Quoi qu'il en soit, le véhicule sera également équipé d'un générateur à essence (pour recharger la batterie si aucune borne de recharge n'est disponible à proximité). Il s'agit donc plutôt d'un véhicule hybride, A la différence de ses aînés, ce nouveau véhicule aura une structure allégée grâce à l'utilisation d'aluminium et de matériaux composites. Il pourra transporter 6 passagers et accueillir des fauteuils roulant grâce à une palette rétractable manuellement.",
+        "Comme ses aînés, il offre un confortable rayon de braquage de 7,6 mètres. Une première vision avec conduite à droite sera disponible fin 2017 pour le marché anglais, Quelques mois plus tard une version conduite à gauche sera disponible pour la « douzaine de mégacities de plus de 1 million d'habitants que nous avons identifiées et que nous souhaitons avoir pour clients », a précisé Peter JOHANSEN. Reste maintenant à convaincre les sociétés de taxis et de VTC parisiens d'adopter pour leur flotte un véhicule au look unique. Seule concession du constructeur à ses traditions, le cab parisien pourra se décliner en une vingtaine de couleurs différentes.",
+        "Robert VIENNEY"
+      ]
+    }
+  },
+  {
+    "id": 61,
+    "sourceNumber": 61,
+    "type": "QCM",
+    "enonce": "Trouvez-les synonyme(s) d énigmatique :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Mystérieux",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Inexplicable",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Évident",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 62,
+    "sourceNumber": 62,
+    "type": "QCM",
+    "enonce": "C est « pour faire face aux problèmes lies a la circulation urbaine » signifie que :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "On va laisser le problème de côté",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Prendre le problème à bras le corps",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Attendre que les choses s'enveniment davantage",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 63,
+    "sourceNumber": 63,
+    "type": "QCM",
+    "enonce": "La science-fiction est un genre littéraire qui :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Invente des mondes",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Est ancré dans la réalité",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Se situe dans des espaces-temps futurs",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 64,
+    "sourceNumber": 64,
+    "type": "QCM",
+    "enonce": "La métropole brésilienne Sao Paulo :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Va être la première à utiliser les deux engins futuristes",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "A établi un record il y a quelques années au niveau du trafic sur les routes autour de la ville Est un exemple sur lequel s'appuie le groupe Airbus",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "S'étend sur 344 kilomètres",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 65,
+    "sourceNumber": 65,
+    "type": "QCM",
+    "enonce": "Donnez I antonyme du mot « excitant » :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Alléchant",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Attrayant",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Anémiant",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 66,
+    "sourceNumber": 66,
+    "type": "QCM",
+    "enonce": "Selon I auteur, pourquoi Airbus se lance dans ce projet ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Car le Brésil est prêt à investir 31 milliards de dollars pour ce projet",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Pour pallier aux problèmes de circulation",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Parce que le carnaval de Rio de Janeiro attire beaucoup de touristes",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 67,
+    "sourceNumber": 67,
+    "type": "QCM",
+    "enonce": "Que signifie la phrase « ce projet n est pas aussi délirant qu il en a l'air » dans le texte ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Ce projet n'est pas aussi marrant que ce que l'on pense",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Ce projet n'est pas réaliste et ne relève que de la science-fiction",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Ce projet est plus réaliste que ce que l'on pense",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 7,
+      "paragraphes": [
+        "Pourquoi vous conduirez bientôt une voiture volante",
+        "Les voitures volantes, ces objets de science-fiction, ne feront bientôt plus seulement partie de notre imaginaire collectif. Plusieurs entreprises ont annoncé se lancer dans la conception de ces engins futuristes, dont la très sérieuse compagnie d'aéronautique Airbus. La célèbre voiture volante de Marty Mc Fly de Retour vers le futur pourrait bientôt remplacer les vieux taxis de la capitale. Ce projet qu'on croirait sorti d'un film de science-fiction fait partie d'annonces très sérieuses réalisées par le groupe d'aéronautique Airbus dans son magazine interne Forum, en août 2016. Deux engins, aux noms énigmatiques de Vahana et CityAirbus, pourraient arriver plus vite que prévu sur le marché. Si Airbus se lance dans ce business un peu particulier, c'est pour faire face aux problèmes liés à la circulation urbaine, qui se révèlent de plus en plus nombreux. Le groupe s'appuie sur l'exemple de la métropole brésilienne Sao Paulo « qui a établi un nouveau record en 2014 ». Le trafic sur les routes autour de la ville s'étendait sur 344 kilomètres pendant les heures de pointe. Ce type de blocage couterait 31 milliards de dollars à l'économie brésilienne. Un taxi volant : Une filiale du constructeur aéronautique spécialisée dans l'innovation, A3, planche sur un « véhicule volant autonome », nommé Vahana, qui pourrait accueillir un passager ou servir pour le transport de marchandises. Les premiers essais de vol sont prévus pour la fin de l'année 2017. Et ce projet n'est pas aussi délirant qu'il en a l'air. Rodin Lyasoff, son responsable, précise ainsi que « la plupart des technologies nécessaires, comme les batteries, les moteurs et l'avionique sont là ». Le seul problème qu'il resta a surmonter est l'implantation d'un système de détection et d'évitement des obstacles, qui commence tout juste à être installé sur les voitures. Le petit véhicule pourrait être commandé à partir d'une application. Un deuxième projet qui porte le nom temporaire de CityAirbus, est développé par la filiale Airbus Hélicopters depuis deux ans. Il ressemblerait à une sorte de taxi volant qui pourrait accueillir de multiples passagers, contrairement au Vahana. L'idée est pour l'instant secret-défense, mais Marius Bebesel, le responsable du programme recherche et innovation de la filiale, a dévoilé le scenario d'utilisation du taxi volant : Les clients se serviront d'une application type Uber pour réserver leur place dans un CityAirbus, se déplaceront vers l'héliport le plus proche et s'envoleront vers leur destination. Le trajet ne couterait pas plus cher qu'un voyage en taxi, grâce au principe de l'économie de partage. « Un trajet en taxi dans une nouvelle ville est une belle expérience, mais voler au-dessus de cette ville serait beaucoup plus excitant », imagine Marius Bebesel"
+      ]
+    }
+  },
+  {
+    "id": 71,
+    "sourceNumber": 71,
+    "type": "QCM",
+    "enonce": "Donnez, la ou les définition(s) du verbe condenser :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Accentuer",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Faire passer de l'état de vapeur à i 'état liquide ou solide",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Réduire à l'essentiel",
+        "correct": true
+      },
+      {
+        "lettre": "D",
+        "texte": "Faire passer de l'état de liquide à l’état de vapeur",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 72,
+    "sourceNumber": 72,
+    "type": "QCM",
+    "enonce": "En I espace d un siècle, signifie :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Sur une période de 100 ans",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Sur une Période de 1000 ans",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Sur une période de 10 ans",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 73,
+    "sourceNumber": 73,
+    "type": "QCM",
+    "enonce": "Que signifie ingénierie ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Travail scientifique",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Imagerie",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Conception",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 74,
+    "sourceNumber": 74,
+    "type": "QCM",
+    "enonce": "Donnez, le ou les antonyme(s) de nostalgique :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Joyeux",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Cœur léger",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Mélancolique",
+        "correct": false
+      },
+      {
+        "lettre": "D",
+        "texte": "Neurasthénique",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 75,
+    "sourceNumber": 75,
+    "type": "QCM",
+    "enonce": "Donnez, la ou les définition(s) de suranné :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Qui est archaïque",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Qui est désuet",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Qui est futuriste",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 76,
+    "sourceNumber": 76,
+    "type": "QCM",
+    "enonce": "Quel est le temps utilise pour le verbe « composeraient » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Imparfait",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Passé simple",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Futur",
+        "correct": false
+      },
+      {
+        "lettre": "D",
+        "texte": "Conditionne",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 77,
+    "sourceNumber": 77,
+    "type": "QCM",
+    "enonce": "Donnez, le ou les synonymes d anachronisme :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Préhistorique",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Symptôme chronique",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Inexactitude",
+        "correct": true
+      },
+      {
+        "lettre": "D",
+        "texte": "Contresens",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 8,
+      "paragraphes": [
+        "Comment la voiture autonome va tuer le mythe américain",
+        "'Si on me demandait de condenser l'intégralité de ce siècle en une seule image mentale, je choisirais une scène familière de la vie de tous les jours : un homme au volant de sa voiture, qui roule sur une autoroute bétonnée vers une destination inconnue, écrivait le romancier J.G. Ballard en1971. Presque tous les aspects de la vie moderne sont représentés : notre penchant pour la vitesse, le spectaculaire, !'agressivité, les mondes de la publicité et des biens de consommation, de l'ingénierie et de la production de masse, et l'expérience partagée d'un déplacement collectif au sein d'un paysage à la signalisation complexe ». En d'autres termes : la vie est une autoroute. Et aux yeux de Ballard, I autoroute était un chaos sanglant et magnifique. L'automobile a colonisé notre paysage mental. En l'espace d'un siècle, a écrit Ballard, cette « technologie perverse » qu'est l'automobile a colonisé notre paysage mental et transformé le paysage physique. Mais il avait aussi pressenti que ses effets secondaires toxiques",
+        "- le trafic routier, le carnage, la pollution, l'expansion urbaine - ne tarderaient pas à provoquer sa disparition. Vers te milieu du XXle siècle. Les conducteurs humains seraient remplacés par un « système de contrôle électronique » et conduire deviendrait illégal. Les machines sensuelles seraient stérilisées, castrées, dépouillées de leur pédale de frein, leur accélérateur, leur volant. La conduite et dans le même temps la culture automobile telle que nous la connaissons deviendraient des choses du passé. Hormis dans quelques \"parcs automobiles\" réservés aux nostalgiques, prendre le volant deviendrait un anachronisme. Certains détails dans les prédictions de Ballard ont aujourd'hui un charme suranné. Il pensait par exemple que le volant serait remplacé par un cadran rotatif et un carnet d'adresses et que les utilisateurs \"composeraient leur destination. Le véhicule serait contrôlé via des ondes radio émises par des bandes métalliques sur la route.",
+        "Source: http://www.courrierinternational.com"
+      ]
+    }
+  },
+  {
+    "id": 80,
+    "sourceNumber": 81,
+    "type": "QCM",
+    "enonce": "Donnez un synonyme du verbe « titiller » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Tracasser",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Interpeller",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Taquiner",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  },
+  {
+    "id": 81,
+    "sourceNumber": 82,
+    "type": "QCM",
+    "enonce": "Que signifie le verbe « eradiquer » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Faire disparaitre",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Maintenir",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Conserver",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  },
+  {
+    "id": 82,
+    "sourceNumber": 83,
+    "type": "QCM",
+    "enonce": "Donnez le contraire de l'adjectif « autonome »",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Libre",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Assistée",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Indépendant",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  },
+  {
+    "id": 83,
+    "sourceNumber": 84,
+    "type": "QCM",
+    "enonce": "Dans le texte, quel est le sens du mot « bardés » ?",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Devenus menaçants",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Couverts",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Avec un prix réduit",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  },
+  {
+    "id": 84,
+    "sourceNumber": 85,
+    "type": "QCM",
+    "enonce": "Un comportement erratique, c'est :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Un comportement instable",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Un comportement sans cohérence",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Un comportement dangereux",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  },
+  {
+    "id": 85,
+    "sourceNumber": 86,
+    "type": "QCM",
+    "enonce": "La voiture autonome est un moyen de communication facile pour les constructeurs car :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Le concept n'intéresse que les médias et pas le grand public",
+        "correct": false
+      },
+      {
+        "lettre": "B",
+        "texte": "Les médias diffusent les démonstrations des voitures autonomes ce qui permet de faire de la publicité aux constructeurs",
+        "correct": true
+      },
+      {
+        "lettre": "C",
+        "texte": "Elles sont équipées d'un système qui leur permet d'échanger des informations entre elles",
+        "correct": false
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  },
+  {
+    "id": 86,
+    "sourceNumber": 87,
+    "type": "QCM",
+    "enonce": "Elle sera forcément « mue par l'électricité » signifie :",
+    "choix": [
+      {
+        "lettre": "A",
+        "texte": "Elle se déplacera avec l'électricité comme source d'énergie",
+        "correct": true
+      },
+      {
+        "lettre": "B",
+        "texte": "Elle se sera débarrassée de l'électricité pour se déplacer",
+        "correct": false
+      },
+      {
+        "lettre": "C",
+        "texte": "Pour se mouvoir elle utilisera l'électricité",
+        "correct": true
+      }
+    ],
+    "support": {
+      "numero": 9,
+      "paragraphes": [
+        "Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant..",
+        "La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moven de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.",
+        "La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.",
+        "Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchant sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5).",
+        "Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton.",
+        "La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre."
+      ]
+    }
+  }
+]

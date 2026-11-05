@@ -1688,6 +1688,13 @@
       "when": 1793864572777,
       "tag": "0240_fusion_details_progression_rapide",
       "breakpoints": true
+    },
+    {
+      "idx": 241,
+      "version": "7",
+      "when": 1793908260822,
+      "tag": "0241_bilan_francais_supports_release_additif",
+      "breakpoints": true
     }
   ]
 }

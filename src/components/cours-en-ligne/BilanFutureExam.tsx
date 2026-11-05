@@ -13,7 +13,7 @@ import type { FutureReceipt } from "@/lib/bilanFutureVersion";
 
 export const FUTURE_SUBJECT_NAMES = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
 
-type Q = { id: number; enonce: string; image?: string; imageSize?: string; choix: { lettre: string; texte: string }[] };
+type Q = { id: number; enonce: string; image?: string; imageSize?: string; support?: { numero: number; paragraphes: string[] }; choix: { lettre: string; texte: string }[] };
 type Passage = { receipt: FutureReceipt; questions: Q[]; answers: Record<string, string[]>; revisions: Record<string, number>; submitted: { correct_count: number; question_count: number } | null };
 
 const rpc = (name: string, args: Record<string, unknown>) => (supabase as any).rpc(name, args);
@@ -124,7 +124,14 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
           </div>
         )}
         {passage?.questions.map((q, i) => (
-          <div key={q.id} className="rounded-xl border bg-card p-5 space-y-3" data-question-id={q.id}>
+          <section key={q.id} className="space-y-3" data-question-id={q.id}>
+            {q.support && (i === 0 || passage.questions[i - 1]?.support?.numero !== q.support.numero) && (
+              <div className="border-y py-6 space-y-4" data-support-number={q.support.numero}>
+                <h3 className="text-xl font-bold">Texte {q.support.numero}</h3>
+                {q.support.paragraphes.map((p, n) => <p key={n} className="whitespace-pre-wrap leading-relaxed">{p}</p>)}
+              </div>
+            )}
+          <div className="rounded-lg border bg-card p-5 space-y-3">
             <p className="text-xl font-semibold">Q{i + 1}. {q.enonce}</p>
             {q.image && <ExamQuestionImage image={q.image} alt={`Illustration question ${i + 1}`} className="max-h-72 w-auto rounded" />}
             <div className="space-y-2">
@@ -137,6 +144,7 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
               ))}
             </div>
           </div>
+          </section>
         ))}
         {passage && !passage.submitted && (
           <div className="flex items-center gap-4">
@@ -154,12 +162,12 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
       {FUTURE_SUBJECT_NAMES.map((nom, k) => {
         const s = statuts[base + k];
         return (
-          <button key={k} onClick={() => void ouvrir(base + k)} className="w-full text-left rounded-xl border bg-card p-4 hover:bg-accent">
+          <Button key={k} variant="outline" onClick={() => void ouvrir(base + k)} className="w-full h-auto justify-start text-left rounded-lg p-4 whitespace-normal">
             <span className="text-lg font-semibold">{nom}</span>
             <span className="ml-3 text-sm text-muted-foreground">
               {s && s !== "erreur" ? (s.submitted ? `Remise — ${s.score}` : "En cours") : "À commencer"}
             </span>
-          </button>
+          </Button>
         );
       })}
     </div>

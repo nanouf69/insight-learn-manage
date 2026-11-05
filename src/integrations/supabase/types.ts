@@ -1526,6 +1526,29 @@ export type Database = {
           },
         ]
       }
+      bilan_future_french_releases: {
+        Row: {
+          activated_at: string
+          version_id: string
+        }
+        Insert: {
+          activated_at?: string
+          version_id: string
+        }
+        Update: {
+          activated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_french_releases_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: true
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bilan_future_opening: {
         Row: {
           changed_at: string
