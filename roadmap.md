@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 05/11 21:46 — Premier passage dans l’éditeur des examens blancs
+- [ ] Audit lecture seule des identités, premières réponses et corrigés figés ; données insuffisantes explicitement exclues.
+- [ ] Ajouter uniquement l’affichage admin VTC/TAXI avec sessions actives, JOURNÉE/SOIRÉE et choix par ID ; réutiliser les contrôles existants.
+- [ ] Tests ciblés/non-régression et affichage PC/mobile ; aucune écriture Cloud ni publication.
+
 ## 05/11 20:33 — Activation/publication Bilan Français
 - [x] Cinq échecs investigués : quatre simulations sans auth, un attendu ancien agenda incompatible avec inscriptions ; pas une régression Français démontrée. 36 tests Français + 3 contrats SQL Français + 14 isolation PASS. Candidate/ancienne banque/routage live relus.
 - [ ] Activation/publication BLOQUÉES : session nominative autorisée sans dossier élève (count=0), parcours réel ouverture/reprise/remise non vérifié ; aperçu global avec cinq tests généraux non remis à niveau et permissions connues non arbitrées. Pointeur vide, zéro reçu candidat ; aucun élève, donnée ou droit modifié. Détails dans ETAT.md.
