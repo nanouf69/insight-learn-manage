@@ -5,7 +5,8 @@ export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_
 export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number; revision_nouvelle: number; auteur: string | null; created_at: string };
 export type ExamStatsResult = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string; details: { snapshot?: { questions?: FrozenQuestion[] }; reponses?: Record<string, unknown> } | null };
 export type ExamStatsRetake = { apprenant_id: string; exam_id: string; matiere_id: string; attempt_id: string | null; exercice_id: string; created_at: string };
-export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[] };
+export type ExamStatsState = {attempt_id:string;apprenant_id:string;question_id:string;valeur:unknown};
+export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[] };
 const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) ? [...v].sort() : null;
 const hasAnswer = (v: unknown) => typeof v === 'string' ? !!v.trim() : Array.isArray(v) && v.length > 0;
 const same = (a: unknown, b: unknown) => values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));
@@ -33,7 +34,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         if (!frozen?.length) continue;
         const events=evidence.events.filter(e=>e.apprenant_id===learner && e.attempt_id===a.attempt_id && e.question_id===qid && hasAnswer(e.valeur_nouvelle)).sort((x,y)=>x.created_at.localeCompare(y.created_at) || x.event_id-y.event_id);
         const first=events[0];
-        if (!first) continue;
+        if (!first) {if(evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===qid && hasAnswer(s.valeur)))uncertain=true;continue;}
         const retake=evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id);
         const proven=!retake && frozen.length===1 && first.auteur===learner && first.revision_precedente===0 && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
         observations.push({at:first.created_at,correct:proven?grade(q,frozen[0],first.valeur_nouvelle):null,answer:first.valeur_nouvelle});
@@ -53,6 +54,11 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
           const proven=!retake && row.status==='submitted' && !!row.submitted_at && first.created_at<=row.submitted_at && Number.isFinite(Date.parse(first.created_at)) && same(first.valeur,answer) && history.filter(e=>e.created_at===first.created_at).every(e=>same(e.valeur,answer)) && frozen?.length===1;
           observations.push({at:first.created_at,correct:proven?grade(q,frozen?.[0],first.valeur):null,answer:first.valeur});
         }
+        // An imported/result-only copy proves a prior answer exists, not its first choice.
+        const resultOnly=evidence.results.some(r=>r.apprenant_id===learner && r.quiz_id===exam && r.matiere_id===subject && hasAnswer(r.details?.reponses?.[String(q.id)]) && !rows.some(row=>hasAnswer(row.reponses?.[String(q.id)])));
+        if(resultOnly)uncertain=true;
+        const imported=evidence.attempts.some(a=>a.apprenant_id===learner && a.exam_id===exam && !a.is_test && a.snapshot.source_historique && a.snapshot.questions?.some(f=>f.matiere===subject && String(f.id)===String(q.id)) && evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===String(q.id) && hasAnswer(s.valeur)) && !rows.some(row=>hasAnswer(row.reponses?.[String(q.id)])));
+        if(imported)uncertain=true;
       }
       observations.sort((a,b)=>a.at.localeCompare(b.at));
       const first=observations[0];
