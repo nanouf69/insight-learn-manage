@@ -1,3 +1,4 @@
+// @vitest-environment node
 import {describe,it,expect,vi} from 'vitest';
 import {simulerConvocationFc,rendreConvocationFc,type VirementFcConvocation} from '../../supabase/functions/_shared/fcConvocationsRegles';
 import {transporterConvocationFc} from '../../supabase/functions/_shared/fcConvocationsEnvoi';
@@ -45,7 +46,7 @@ describe('FC convocations : règles prouvées',()=>{
 describe('FC transport : simulations, aucun accès réseau réel',()=>{
   const p={to:a.email,subject:'FC',html:'Bonjour',envoiId:'one',apiKey:'fake-only'};
   it('200 avec ID est prouvé ; idempotency key stable',async()=>{
-    const fetcher=vi.fn(async()=>new Response(JSON.stringify({id:'accepted'}),{status:200}));
+    const fetcher=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>new Response(JSON.stringify({id:'accepted'}),{status:200}));
     expect(await transporterConvocationFc(p,fetcher)).toMatchObject({statut:'envoye',providerId:'accepted'});
     expect(fetcher).toHaveBeenCalledTimes(1);expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({'Idempotency-Key':'fc-convocation/one'});
   });

@@ -41,7 +41,9 @@ export function simulerConvocationFc(p: {
     if (p.preuves.some(x => x.transaction_id === t.id && x.inscription_id !== i.id)) return result('a_revoir', 'Paiement associé à plusieurs inscriptions');
     if (t.montant <= 0 || /rembours|refund|reversal/i.test(t.libelle)) return result('exclu', 'Remboursement : aucun envoi');
     // Bank dates have no reliable time: exclude the entire activation day, not only earlier imports.
-    if (t.date_operation <= p.depuis.slice(0,10)) continue;
+    const activationJour = new Date(p.depuis).toLocaleDateString('en-CA',{timeZone:'Europe/Paris'});
+    if (t.date_operation <= activationJour || (t.created_at && t.created_at < p.depuis)) continue;
+    if (!Number.isFinite(cents(t.montant))) return result('a_revoir','Montant bancaire invalide');
     if (!['justifie','rapproche'].includes(t.statut) || t.categorie !== 'recette_formation') return result('a_revoir', 'Paiement bancaire non confirmé comme recette formation');
     const key = cleVirementFc(t);
     if (!key) return result('a_revoir', 'Référence bancaire stable manquante');
