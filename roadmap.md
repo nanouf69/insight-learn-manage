@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 05/11 19:45 UTC — Bilan Français : 63 QCM, neuf textes
+- [ ] Vérifier sources jaunes, 7 QCM par texte et corrections Q14/Q15/Q87 ; aucune QRC ni Q80 ajoutée.
+- [ ] Préparer version indépendante et neuf supports, sauvegarde avant/après et routage nouveaux passages uniquement ; anciens reçus et preuves intacts.
+- [ ] Tests SQL isolés, corrections multichoix, lecture supports et reprise PC/mobile ; ne publier qu'après vérifications satisfaisantes.
+
 ## 05/11 15:07 — Source Word unique du Bilan Français reçue
 - [x] Fichier réellement ouvert : XML et 21 pages extraits ; 10 textes, 98 questions (67 QCM explicites, 27 QRC, 4 complémentaires sans type explicite), aucune bonne réponse QCM marquée.
 - [x] Q40/Q87/Q91/Q95–98 signalées par la source elle-même ; aucune correction pédagogique, écriture base ou publication à cette étape.
