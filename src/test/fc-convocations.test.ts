@@ -9,15 +9,15 @@ const tx=(montant=200,id='t',reference='bank-id'):VirementFcConvocation=>({id,ba
 const preuve=(id='t')=>({transaction_id:id,inscription_id:'i',confirme_par:'admin',piece_reference:'justificatif-unique'});
 const base=()=>({session:s,inscription:i,stagiaire:a,virements:[tx()],preuves:[preuve()],exigible:{inscription_id:'i',montant:200,reference_contrat:'contrat-signe',confirme_par:'admin'},depuis:'2026-11-05T10:00:00Z',aujourdHui:'2026-11-05'});
 describe('FC convocations : règles prouvées',()=>{
-  it.each([50,150])('%i € sous exigible 200 € ne déclenche pas',m=>expect(simulerConvocationFc({...base(),virements:[tx(m)]}).statut).toBe('exclu'));
+  it.each([50,150,200])('%i € confirmés suffisent (seuil 50 €)',m=>expect(simulerConvocationFc({...base(),virements:[tx(m)]}).statut).toBe('eligible'));
+  it('49,99 € ne déclenche pas',()=>expect(simulerConvocationFc({...base(),virements:[tx(49.99)]}).statut).toBe('exclu'));
   it.each([200,300,500])('%i € atteint le contrat 200 €',m=>expect(simulerConvocationFc({...base(),virements:[tx(m)]}).statut).toBe('eligible'));
-  it('50 € uniquement si le contrat prouve 50 € exigibles',()=>expect(simulerConvocationFc({...base(),virements:[tx(50)],exigible:{...base().exigible,montant:50}}).statut).toBe('eligible'));
-  it('contrat inconnu refuse même 200 €',()=>expect(simulerConvocationFc({...base(),exigible:undefined}).statut).toBe('a_revoir'));
+  it('solde complet non exigé : 50 € sans contrat suffit',()=>expect(simulerConvocationFc({...base(),virements:[tx(50)],exigible:undefined}).statut).toBe('eligible'));
   it('nom seul/homonyme sans association explicite refuse',()=>expect(simulerConvocationFc({...base(),preuves:[]}).statut).toBe('a_revoir'));
   it('CMA catégorisé examen jamais admissible',()=>expect(simulerConvocationFc({...base(),virements:[{...tx(),categorie:'frais_examen_cma'}]}).statut).toBe('a_revoir'));
   it('même virement importé trois fois ne fait que 50 €',()=>{
     const r=simulerConvocationFc({...base(),virements:[tx(50,'t'),tx(50,'u'),tx(50,'v')],preuves:[preuve('t'),preuve('u'),preuve('v')]});
-    expect(r.totalCentimes).toBe(5000);expect(r.statut).toBe('exclu');
+    expect(r.totalCentimes).toBe(5000);expect(r.statut).toBe('eligible');
   });
   it('50 + 150 de deux références distinctes = 200',()=>expect(simulerConvocationFc({...base(),virements:[tx(50),tx(150,'u','distinct')],preuves:[preuve(),preuve('u')]})).toMatchObject({statut:'eligible',totalCentimes:20000}));
   it('référence manquante ou contradictoire refuse',()=>{
@@ -28,8 +28,9 @@ describe('FC convocations : règles prouvées',()=>{
     expect(simulerConvocationFc({...base(),preuves:[preuve(),{...preuve(),inscription_id:'other'}]}).statut).toBe('a_revoir');
     expect(simulerConvocationFc({...base(),virements:[tx(),tx(200,'u')],preuves:[preuve(),{...preuve('u'),inscription_id:'other'}]}).statut).toBe('a_revoir');
   });
-  it('ancien paiement et jour activation exclus même réimportés',()=>{
-    for(const date_operation of ['2026-10-28','2026-11-05']) expect(simulerConvocationFc({...base(),virements:[{...tx(),date_operation}]}).statut).toBe('exclu');
+  it('paiement antérieur compte pour une session future, jamais pour une session passée',()=>{
+    for(const date_operation of ['2026-10-28','2026-11-05']) expect(simulerConvocationFc({...base(),virements:[{...tx(),date_operation}]}).statut).toBe('eligible');
+    expect(simulerConvocationFc({...base(),aujourdHui:'2099-01-01'}).statut).toBe('exclu');
   });
   it('remboursement bloque même avec versement complet',()=>expect(simulerConvocationFc({...base(),virements:[tx(),tx(-50,'u','refund')],preuves:[preuve(),preuve('u')]}).statut).toBe('exclu'));
   it('doublon convocation bloque',()=>expect(simulerConvocationFc({...base(),dejaEnvoyee:true}).statut).toBe('exclu'));

@@ -7,6 +7,7 @@ export type PreuveRapprochementFc = { transaction_id: string; inscription_id: st
 export type ExigibleFc = { inscription_id: string; montant: number; reference_contrat: string; confirme_par: string };
 export type SimulationFc = { statut: 'eligible' | 'a_revoir' | 'exclu'; motif: string; totalCentimes: number; exigibleCentimes: number | null; cle: string };
 const cents = (n: number) => Number.isFinite(Number(n)) ? Math.round(Number(n) * 100) : NaN;
+export const SEUIL_CONVOCATION_FC_CENTIMES = 5000;
 const norm = (s: string) => s.trim().toLowerCase();
 export function cleVirementFc(t: VirementFcConvocation): string | null {
   return t.banque.trim() && t.reference?.trim() ? `${norm(t.banque)}:${norm(t.reference)}` : null;
@@ -40,9 +41,7 @@ export function simulerConvocationFc(p: {
   for (const t of txs) {
     if (p.preuves.some(x => x.transaction_id === t.id && x.inscription_id !== i.id)) return result('a_revoir', 'Paiement associé à plusieurs inscriptions');
     if (t.montant <= 0 || /rembours|refund|reversal/i.test(t.libelle)) return result('exclu', 'Remboursement : aucun envoi');
-    // Bank dates have no reliable time: exclude the entire activation day, not only earlier imports.
-    const activationJour = new Date(p.depuis).toLocaleDateString('en-CA',{timeZone:'Europe/Paris'});
-    if (t.date_operation <= activationJour || (t.created_at && t.created_at < p.depuis)) continue;
+    // Règle 05/11 : tout paiement confirmé compte pour une session FUTURE, même reçu avant l'activation.
     if (!Number.isFinite(cents(t.montant))) return result('a_revoir','Montant bancaire invalide');
     if (!['justifie','rapproche'].includes(t.statut) || t.categorie !== 'recette_formation') return result('a_revoir', 'Paiement bancaire non confirmé comme recette formation');
     const key = cleVirementFc(t);
@@ -52,10 +51,9 @@ export function simulerConvocationFc(p: {
     if (twins.some(x => p.preuves.some(z => z.transaction_id === x.id && z.inscription_id !== i.id))) return result('a_revoir', 'Même virement affecté à une autre session');
     if (!vus.has(key)) { totalCentimes += cents(t.montant); vus.add(key); }
   }
-  if (!totalCentimes) return result('exclu', 'Paiements historiques : aucun envoi rétroactif');
-  if (!p.exigible || p.exigible.inscription_id !== i.id || !p.exigible.confirme_par || !p.exigible.reference_contrat.trim() || exigibleCentimes === null || !Number.isFinite(exigibleCentimes) || exigibleCentimes <= 0 || !i.montant_total || exigibleCentimes > cents(i.montant_total)) return result('a_revoir', 'Montant exigible à justifier par le contrat ; aucun seuil inventé');
-  if (totalCentimes < exigibleCentimes) return result('exclu', 'Acompte inférieur au montant contractuellement exigible');
-  return result('eligible', 'Paiement confirmé, session identifiée et montant exigible atteint');
+  // Règle métier 05/11 : au moins 50 € confirmés (acompte ou totalité) suffisent ; solde complet non requis.
+  if (totalCentimes < SEUIL_CONVOCATION_FC_CENTIMES) return result('exclu', 'Paiement confirmé inférieur à 50 €');
+  return result('eligible', 'Paiement confirmé ≥ 50 € et session identifiée');
 }
 
 export type ModeleFc = { subject_template: string; body_template: string };
