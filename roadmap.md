@@ -3,7 +3,7 @@
 ## 05/11 22:18 — Indicateur admin TA uniquement
 - [x] Six examens passerelle VTC→TAXI identifiés : eb1-ta…eb6-ta, modules virtuels 90012/90018–90022 ; audit legacy/V2, empreintes avant lecture seule.
 - [x] Ajout du branchement visuel et lecture des seules identités TA ; composants/filtres/calculs de preuve réutilisés, aucune écriture Cloud ou comportement élève changé.
-- [ ] Tests ciblés/non-régression, affichage admin authentifié PC/mobile et comparaison empreintes après.
+- [x] 57 tests ciblés + 123 critiques PASS ; global 3450 PASS/5 FAIL préexistants/13 ignorés. Six TA vérifiés admin réel, PC/mobile, filtres et limites affichés ; empreintes modules/tentatives/résultats/versions identiques. Rapport docs/erreur-premier-passage-ta-2026-11-05.md.
 - [ ] Publication attend une autorisation distincte ; aucune publication dans ce périmètre.
 
 ## 05/11 21:46 — Premier passage dans l’éditeur des examens blancs
