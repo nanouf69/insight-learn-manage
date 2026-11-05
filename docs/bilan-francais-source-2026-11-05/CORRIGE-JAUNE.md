@@ -13,3 +13,8 @@ Lecture directe des surlignages jaunes du Word original (pas du Word recomposé)
 - **Q94** : conforme (ligne vide en trop dans le Word recomposé seulement).
 
 Détail question par question : `corrige-jaune-original.json`.
+
+## Décisions du responsable — 05/11/2026 19:01 UTC
+- Q15 : bonnes réponses validées = A ET C. Énoncé elliptique conservé mot pour mot jusqu'à clarification éventuelle. Statut : prêt pour préparation.
+- Q87 : réponses annoncées = A ET C. ANOMALIE : B et C ont le même libellé (« Elle se sera débarrassée de l'électricité pour se déplacer ») et C contredit A. Aucun choix réécrit. Statut : BLOQUÉ en attente de validation du libellé exact de C.
+- Base de données : aucune écriture. Publication : aucune.
