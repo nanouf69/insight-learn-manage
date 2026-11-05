@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichText } from "@/lib/richText";
 import { ColoredTextField } from "./ColoredTextField";
+import { FirstPassageProvider, QuestionFirstPassageRate } from "./QuestionFirstPassageRate";
 
 // Virtual module_id range for examens blancs: 90000+
 // Stable mapping from exam ID → module_id (survives reordering / additions)
@@ -973,6 +974,8 @@ function MatiereEditor({
   const questionsSafe = (matiere.questions ?? []).filter(
     (q): q is Question => q != null && q?.type != null,
   );
+  const statsQuestions = useMemo(() => (matiere.questions ?? []).filter((q): q is Question => q != null && q.type != null).map(q => ({id:q.id,enonce:q.enonce,type:q.type,choix:q.choix ?? []})), [matiere.questions]);
+  const statsEnabled = /^EB[1-6](?:-TAXI)?$/.test(examId);
 
   const updateQuestion = (updated: Question, closeEditor: boolean) => {
     const updatedAt = new Date().toISOString();
@@ -1216,6 +1219,7 @@ function MatiereEditor({
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
+          <FirstPassageProvider moduleId={getModuleIdForExamId(examId)} exerciseId={0} questions={statsQuestions} enabled={statsEnabled} examId={statsEnabled ? examId : undefined} subjectId={matiere.id}>
           {(matiere.texteSupport || isFrancais) && (
             <div className="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
               <div className="flex items-start justify-between gap-2 mb-2">
@@ -1273,6 +1277,7 @@ function MatiereEditor({
           )}
           {questionsSafe.map((q, qIndex) => (
             <div key={q.id}>
+              {statsEnabled && <QuestionFirstPassageRate questionId={q.id} />}
               {editingQId === q.id ? (
                 <QuestionEditor
                   question={q}
@@ -1387,6 +1392,7 @@ function MatiereEditor({
               Ajouter une QRC
             </Button>
           </div>
+          </FirstPassageProvider>
         </div>
       )}
     </div>

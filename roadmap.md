@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 05/11 21:46 — Premier passage dans l’éditeur des examens blancs
+- [x] Audit lecture seule des identités, premières réponses et corrigés figés ; données insuffisantes explicitement exclues, copies historiques jamais promues en premier choix.
+- [x] Affichage admin seul VTC/TAXI n°1–6, sessions actives, JOURNÉE/SOIRÉE et choix par ID ; composants existants réutilisés, aucun calcul exercice changé.
+- [x] 42 tests ciblés + 123 critiques PASS ; suite générale 3435 PASS/5 FAIL préexistants/13 ignorés. Admin réel VTC/TAXI, PC/mobile et filtres vérifiés ; preuves insuffisantes affichées, zéro taux fictif. Empreintes contenu/versions identiques. Rapport docs/erreur-premier-passage-examens-blancs-2026-11-05.md.
+- [ ] Publication interdite sans nouvelle autorisation explicite ; taux exhaustif ancien non prouvé faute de premières réponses/corrigés figés complets. Aucun changement de droits, de données pédagogiques ou de routage.
+
 ## 05/11 20:33 — Activation/publication Bilan Français
 - [x] Cinq échecs investigués : quatre simulations sans auth, un attendu ancien agenda incompatible avec inscriptions ; pas une régression Français démontrée. 36 tests Français + 3 contrats SQL Français + 14 isolation PASS. Candidate/ancienne banque/routage live relus.
 - [ ] Activation/publication BLOQUÉES : session nominative autorisée sans dossier élève (count=0), parcours réel ouverture/reprise/remise non vérifié ; aperçu global avec cinq tests généraux non remis à niveau et permissions connues non arbitrées. Pointeur vide, zéro reçu candidat ; aucun élève, donnée ou droit modifié. Détails dans ETAT.md.
