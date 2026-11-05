@@ -1,5 +1,12 @@
 import { activeLearners, activeSessions, sessionMode, type QuestionRate, type QuestionStatsTarget, type SessionStats, type InscriptionStats, type SessionMode, type SessionFirstPassage, type AttemptStats, type FirstAnswerEvent } from './premierPassageStats';
 
+/** Admin statistics only: TA reads its own exam, never changes the VTC/TAXI scope. */
+export function firstPassageExamIds(examId: string): string[] {
+  if (/^eb[1-6]-ta$/.test(examId)) return [examId];
+  const match = examId.match(/^EB([1-6])(?:-TAXI)?$/);
+  return match ? [`EB${match[1]}`, `EB${match[1]}-TAXI`] : [];
+}
+
 type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; choix?: QuestionStatsTarget['choix'] | null };
 export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_id: string; started_at: string; is_test: boolean; snapshot: { matiere?: string; questions?: FrozenQuestion[]; source_historique?: unknown } };
 export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number; revision_nouvelle: number; auteur: string | null; created_at: string };

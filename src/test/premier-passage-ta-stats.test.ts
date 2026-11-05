@@ -1,0 +1,23 @@
+import { describe, it, expect } from 'vitest';
+import { firstPassageExamIds, computeExamSessionFirstPassage, type ExamStatsEvidence } from '../lib/premierPassageExamStats';
+import { selectFirstPassageView } from '../lib/premierPassageStats';
+
+const subject = 'reglementation_taxi';
+const q = { id: 1, enonce: 'Question TA', type: 'QCM', choix: [{ lettre: 'A', texte: 'a', correct: true }, { lettre: 'B', texte: 'b' }] };
+function evidence(): ExamStatsEvidence {
+  return { attempts: [{ attempt_id: 'ta', apprenant_id: 'a', exam_id: 'eb1-ta', started_at: '2026-11-05T09:00:00Z', is_test: false, snapshot: { questions: [{ ...q, id: `${subject}:1`, matiere: subject }] } }], events: [{ event_id: 1, attempt_id: 'ta', apprenant_id: 'a', question_id: `${subject}:1`, valeur_nouvelle: ['B'], valeur_precedente: null, revision_precedente: 0, revision_nouvelle: 1, auteur: 'a', created_at: '2026-11-05T09:01:00Z' }], states: [], legacy: [], journal: [], results: [], retakes: [] };
+}
+const sessions = [{ id: 'j', nom: 'TAXI/TA journée', date_debut: '2026-11-02', date_fin: '2026-11-05' }, { id: 's', nom: 'TA soirée', date_debut: '2026-11-05', date_fin: '2026-11-13', heure_debut: '17:00' }, { id: 'old', date_debut: '2026-10-01', date_fin: '2026-11-04' }, { id: 'future', date_debut: '2026-11-06', date_fin: '2026-11-13' }];
+const enrollments = [{ apprenant_id: 'a', session_id: 'j' }, { apprenant_id: 'a', session_id: 's' }, { apprenant_id: 'a', session_id: 's' }];
+const calc = (e: ExamStatsEvidence) => computeExamSessionFirstPassage([q], firstPassageExamIds('eb1-ta'), subject, sessions, enrollments, '2026-11-05', new Set(), e);
+
+describe('TA — ajout admin isolé', () => {
+  it.each([1, 2, 3, 4, 5, 6])('TA n°%s conserve son identité exacte sans TAXI/VTC', n => expect(firstPassageExamIds(`eb${n}-ta`)).toEqual([`eb${n}-ta`]));
+  it('les périmètres VTC/TAXI existants ne changent pas', () => { for (let n = 1; n <= 6; n++) { expect(firstPassageExamIds(`EB${n}`)).toEqual([`EB${n}`, `EB${n}-TAXI`]); expect(firstPassageExamIds(`EB${n}-TAXI`)).toEqual([`EB${n}`, `EB${n}-TAXI`]); } });
+  it.each(['bilan-ta', 'eb1-va', 'eb7-ta'])('exclut %s', id => expect(firstPassageExamIds(id)).toEqual([]));
+  it('sessions actuelles seules, catégories et sélection par ID, élève dédupliqué', () => { const r = calc(evidence()); expect(r.sessions.map(s => s.id)).toEqual(['j', 's']); expect(r.rates['1']).toMatchObject({ incorrect: 1, total: 1 }); expect(r.modeRates.jour['1'].total).toBe(1); expect(r.modeRates.soir['1'].total).toBe(1); expect(selectFirstPassageView(r, 'soir', 's').rates['1'].incorrect).toBe(1); expect(selectFirstPassageView(r, 'jour', 's').sessions).toEqual([]); });
+  it('reprise et autre examen ne changent pas le premier choix', () => { const e = evidence(); e.events.push({ ...e.events[0], event_id: 2, revision_precedente: 1, revision_nouvelle: 2, valeur_nouvelle: ['A'], created_at: '2026-11-05T10:00:00Z' }); e.attempts.push({ ...e.attempts[0], attempt_id: 'taxi', exam_id: 'EB1-TAXI' }); e.events.push({ ...e.events[0], event_id: 3, attempt_id: 'taxi', valeur_nouvelle: ['A'] }); expect(calc(e).rates['1']).toMatchObject({ incorrect: 1, total: 1 }); });
+  it('état sans événement initial reste insuffisant', () => { const e = evidence(); e.events = []; e.states = [{ attempt_id: 'ta', apprenant_id: 'a', question_id: `${subject}:1`, valeur: ['A'] }]; expect(calc(e).rates['1']).toMatchObject({ total: 0, unknown: 1 }); });
+  it('legacy TA exige remise, journal et corrigé figé', () => { const e = evidence(); e.attempts = []; e.events = []; e.legacy = [{ apprenant_id: 'a', exercice_id: `eb1-ta__${subject}`, tentative: 1, status: 'submitted', submitted_at: '2026-11-05T10:00:00Z', reponses: { '1': ['B'] } }]; e.journal = [{ apprenant_id: 'a', exercice_id: `eb1-ta__${subject}`, question_id: '1', tentative: 1, valeur: ['B'], created_at: '2026-11-05T09:01:00Z' }]; e.results = [{ id: 'r', apprenant_id: 'a', quiz_id: 'eb1-ta', matiere_id: subject, tentative: 1, completed_at: '2026-11-05T10:00:00Z', details: { snapshot: { questions: [q] }, reponses: { '1': ['B'] } } }]; expect(calc(e).rates['1']).toMatchObject({ incorrect: 1, total: 1 }); e.journal = []; expect(calc(e).rates['1']).toMatchObject({ total: 0, unknown: 1 }); });
+  it('aucune mutation des questions, copies, preuves ou inscriptions', () => { const e = evidence(); const before = JSON.stringify({ e, q, sessions, enrollments }); calc(e); expect(JSON.stringify({ e, q, sessions, enrollments })).toBe(before); });
+});
