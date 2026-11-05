@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 05/11 20:33 — Activation/publication Bilan Français
-- [ ] Distinguer les cinq échecs généraux, relancer les contrats 63 QCM/neuf supports et protection historiques, lire le routage actif.
-- [ ] Vérifier parcours élève si session autorisée disponible ; activer candidate et publier seulement sans incertitude critique, sinon documenter blocage.
+- [x] Cinq échecs investigués : quatre simulations sans auth, un attendu ancien agenda incompatible avec inscriptions ; pas une régression Français démontrée. 36 tests Français + 3 contrats SQL Français + 14 isolation PASS. Candidate/ancienne banque/routage live relus.
+- [ ] Activation/publication BLOQUÉES : session nominative autorisée sans dossier élève (count=0), parcours réel ouverture/reprise/remise non vérifié ; aperçu global avec cinq tests généraux non remis à niveau et permissions connues non arbitrées. Pointeur vide, zéro reçu candidat ; aucun élève, donnée ou droit modifié. Détails dans ETAT.md.
 
 ## 05/11 20:22 — Publication premier passage
 - [x] Filtre individuel par ID de session terminé, remise à zéro JOURNÉE/SOIRÉE et lectures admin réelles vérifiées PC/mobile, 20 tests calcul PASS ; aucune écriture pédagogique.
