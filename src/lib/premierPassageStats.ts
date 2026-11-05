@@ -9,17 +9,19 @@ export type QuestionRate = { incorrect: number; total: number; unknown: number; 
 const answered = (value: unknown): boolean => Array.isArray(value) ? value.length > 0 && value.every(v => typeof v === 'string' && v.trim().length > 0) : typeof value === 'string' && value.trim().length > 0;
 const letters = (value: unknown): string[] => (Array.isArray(value) ? value : typeof value === 'string' ? [value] : []).filter((v): v is string => typeof v === 'string').sort();
 const equal = (a: unknown,b: unknown) => JSON.stringify(letters(a)) === JSON.stringify(letters(b));
+export type SessionMode = 'jour' | 'soir';
+export const sessionMode = (s: SessionStats): SessionMode => /soir/i.test((s.creneaux ?? []).join(' ')) || Number((s.heure_debut ?? '').split(':')[0]) >= 17 || /soir/i.test(s.nom ?? '') ? 'soir' : 'jour';
+export const activeSessions = (sessions: SessionStats[], today: string) => sessions.filter(s => Boolean(s.date_debut && s.date_fin) && s.date_debut <= today && today <= s.date_fin && !/annul|termin/i.test(s.statut ?? ''));
 export function activeLearners(sessions: SessionStats[], enrollments: InscriptionStats[], today: string, excluded: Set<string> = new Set()) {
   const result = new Map<string,Set<'jour'|'soir'>>();
+  const retained = new Map(activeSessions(sessions, today).map(s => [s.id, s]));
   for (const e of enrollments) {
-    const s = sessions.find(s => s.id === e.session_id);
-    if (!s || e.liste_attente || excluded.has(e.apprenant_id) || /annul|termin/i.test(s.statut ?? '') || s.date_debut > today || s.date_fin < today) continue;
+    const s = retained.get(e.session_id);
+    if (!s || e.liste_attente || excluded.has(e.apprenant_id)) continue;
     const start = e.date_debut ?? s.date_debut;
     const end = e.date_fin_personnalisee ?? e.date_fin ?? s.date_fin;
     if(start > today || end < today) continue;
-    const labels=(s.creneaux ?? []).join(' ');
-    const soir = /soir/i.test(labels) || Number((s.heure_debut ?? '').split(':')[0]) >= 17 || /soir/i.test(s.nom ?? '');
-    const group=result.get(e.apprenant_id) ?? new Set<'jour'|'soir'>();group.add(soir ? 'soir' : 'jour');result.set(e.apprenant_id,group);
+    const group=result.get(e.apprenant_id) ?? new Set<'jour'|'soir'>();group.add(sessionMode(s));result.set(e.apprenant_id,group);
   }
   return result;
 }
@@ -61,8 +63,21 @@ export function computeFirstPassage(targets: QuestionStatsTarget[], sources: Sou
       if(first.correct===null || uncertain || ties.some(o=>o.correct!==first.correct || !equal(o.value,first.value))){rate.unknown++;continue;}
       rate.total++;if(!first.correct)rate.incorrect++;
       if(modes.size>1)rate.mixte++;
-      else {const group=modes.has('soir')?rate.soir:rate.jour;group.total++;if(!first.correct)group.incorrect++;}
+      for (const mode of modes) {const group=rate[mode];group.total++;if(!first.correct)group.incorrect++;}
     }
     return [String(q.id),rate];
   }));
 }
+/** All views reuse the same read-only evidence; session IDs keep different periods separate. */
+export function computeSessionFirstPassage(targets: QuestionStatsTarget[], sources: SourceStats[], sessions: SessionStats[], enrollments: InscriptionStats[], today: string, excluded: Set<string>, attempts: AttemptStats[], completions: CompletionStats[], events: FirstAnswerEvent[]) {
+  const retained = activeSessions(sessions, today);
+  const population = activeLearners(retained, enrollments, today, excluded);
+  const compute = (learners: Map<string, Set<SessionMode>>) => computeFirstPassage(targets, sources, learners, attempts, completions, events);
+  const modeRates = Object.fromEntries((['jour','soir'] as const).map(mode => [mode, compute(new Map([...population].filter(([, modes]) => modes.has(mode))))])) as Record<SessionMode, Record<string, QuestionRate>>;
+  return {
+    today, rates: compute(population), modeRates,
+    sessions: retained.map(s => ({...s, mode: sessionMode(s), eligible: activeLearners([s], enrollments, today, excluded).size})),
+    sessionRates: Object.fromEntries(retained.map(s => [s.id, compute(activeLearners([s], enrollments, today, excluded))])),
+  };
+}
+export type SessionFirstPassage = ReturnType<typeof computeSessionFirstPassage>;
