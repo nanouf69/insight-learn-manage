@@ -6,7 +6,13 @@
   Base isolée au repos : 152–215 ms pour un seul appel (module 2, 875 questions) ; ×5 à ×350 sous la charge mesurée hier en production.
 - Correctif ACTIF (migration 0240) : passage linéaire via table de correspondance. Équivalence : 980/980 cas réels identiques (875 non triviaux, doublons, clés nulles, tableaux vides). Temps : 28–44 ms au lieu de 152–215 ms ; lot de 980 cas : 8,5 s au lieu de 83 s.
 - Droits identiques (ACL relue), pas de SECURITY DEFINER, signature inchangée.
-- Test contractuel `module_completion_sql_contract.py` : 16/17 ; test_16 échoue À L'IDENTIQUE avec l'ancienne fonction (contre-épreuve) → écart préexistant, non causé par 0240, non corrigé.
+- Test contractuel `module_completion_sql_contract.py` : 17/17 après correction du banc de test (voir triage test_16).
+
+### Triage test_16 (05/11 07:51)
+- Assertion : `assertIn('1 question(s) QCM sans réponse', err(smc(U, 2, True, 100, {1:"B", 2:null})))` après une ligne `in_progress` contenant `1-2`. Attendu : refus P0501 « 1 question(s) QCM sans réponse ». Observé : `''` (validation acceptée).
+- Cause prouvée : le banc rejouait 0230 (absence de `etat_completion_modules` dans le catalogue capturé), qui redéfinit `save_module_completion` dans sa version d'AVANT 0232 (brouillon accepté comme preuve). La prod exécute 0232 : md5 du corps live `be933393…` = corps de 0232, qui exige `status='submitted'`.
+- Qualification : banc de test obsolète, pas un défaut de validation en production. Échec identique avant/après 0240 (contre-épreuve).
+- Correction : le banc rejoue 0232 après 0230. Assertion de test_16 inchangée (propriété non affaiblie). Résultat : 17/17 OK.
 - Client (aperçu, non publié) : single-flight des envois identiques + gigue 0,5×–1,5× des nouveaux essais (`src/lib/moduleCompletion.ts`, test `module-completion-single-flight.test.ts`).
 - Non mesurable : `pg_stat_statements` par requête de production inaccessible au rôle de lecture ce jour ; gain réel en ligne à constater sur les prochains jours.
 
@@ -16,7 +22,7 @@
 - Discrimination : réseau (Failed to fetch 18:12), délai serveur (15 s, concomitant aux 57014), aucun refus SQL ni auth dans leurs traces. Comportement de la file conforme (conservation + nouvel essai). Aucun changement de code de la file ; la charge réduite (P1) est le levier.
 
 ## P3 — 42501 etat_completion_modules
-- 22:14:17 sans utilisateur (appel anonyme) depuis CoursPublic. Code actuel : `chargerEtatCompletionServeur` passe par `freshSessionRead` (utilisé par CoursPublic ×2, useCandidatModules, jalonsPedagogiques). Version en ligne à 22:14 : non prouvée. Aucun droit élargi.
+- 22:14:17 depuis CoursPublic, trace sans user_id ni e-mail. La trace ne contient pas le rôle JWT : l'appel anonyme est une HYPOTHÈSE (session absente, expirée ou non encore restaurée côté client), non prouvée. Code actuel : `chargerEtatCompletionServeur` passe par `freshSessionRead` (utilisé par CoursPublic ×2, useCandidatModules, jalonsPedagogiques). Version en ligne à 22:14 : non prouvée. Aucun droit élargi.
 
 ## P4 — voir roadmap (preventDefault vite:preloadError).
 

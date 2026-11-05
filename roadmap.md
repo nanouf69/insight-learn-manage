@@ -967,4 +967,4 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] P3 42501 progression : correctif freshSessionRead du 04/11 présent dans le code, publication non vérifiée.
 - [ ] P5 Belarbi m64 : correctif du 04/11 présent dans l'aperçu, non publié, aucune preuve élève.
 - [x] QRC 22 = exclusion volontaire reglementation_taxi2 (correction formateur).
-- [ ] test_16 du contrat SQL échoue avant/après 0240 : écart préexistant à analyser.
+- [x] test_16 : banc obsolète (0230 rejouée sans 0232) ; banc corrigé, assertion inchangée, 17/17 OK.

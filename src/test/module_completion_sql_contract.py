@@ -28,6 +28,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIX_AVANT = ROOT / 'src/test/fixtures/module_completion_schema_avant_0197.sql'
 MIGRATION_0230 = ROOT / 'drizzle/migrations/0230_completion_source_serveur.sql'
+MIGRATION_0232 = ROOT / 'drizzle/migrations/0232_validation_module_preuve_soumise.sql'
 TABLE = 'apprenant_module_completion'
 RPCS = ['save_module_completion', 'save_module_pages_progress', 'autovalidate_module_if_complete']
 
@@ -143,6 +144,9 @@ def build(db, schema_sql, migration=None):
     # 0230 (source serveur, validation exhaustive) : appliquée si absente du catalogue capturé.
     if migration and sql("SELECT count(*) FROM pg_proc WHERE proname='etat_completion_modules'", db) == '0':
         sql(MIGRATION_0230.read_text(), db); print(f'[{db}] 0230 appliquée')
+        # 0230 redéfinit save_module_completion : rejouer ensuite 0232 (version déployée, md5 identique
+        # au catalogue le 05/11), sinon la base jetable testerait une règle plus ancienne que la prod.
+        sql(MIGRATION_0232.read_text(), db); print(f'[{db}] 0232 appliquée')
     # Candidat non déployé (revue avant migration) : MODULE_COMPLETION_CANDIDATE=/chemin.sql
     if migration and os.environ.get('MODULE_COMPLETION_CANDIDATE'):
         sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db); print(f'[{db}] candidat appliqué')
