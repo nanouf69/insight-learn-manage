@@ -3,7 +3,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
 import { generateSetPasswordLink, generateUnsharedPassword, setPasswordBlock, redactForHistory } from "../_shared/credential-secrets.ts";
 import { trouverCompteParEmail, deciderReutilisation } from "../_shared/compte-existant.ts";
-import { classer, regrouperDoublons, peutEnvoyerAuto, MONTANT_MIN_FC, type DossierFc, type TxLite } from "../_shared/fcPaiementsRegles.ts";
+import { classer, regrouperDoublons, peutEnvoyerAuto, MONTANT_MIN_FC, estSessionFc, estDossierFc, type DossierFc, type TxLite } from "../_shared/fcPaiementsRegles.ts";
 
 // Actions admin : classer | associer | ignorer | envoyer.
 // L'envoi (manuel ou auto) est refusé tant que fc_acces_config.actif = false.
@@ -99,9 +99,19 @@ Deno.serve(async (req) => {
       }
     };
 
+    const idsInscritsSessionFc = async () => {
+      const sess = await paginer<{ id: string; nom: string | null }>((f, t) => admin.from("sessions").select("id, nom").ilike("nom", "%formation%continue%").range(f, t));
+      const ids = sess.filter((x) => estSessionFc(x.nom)).map((x) => x.id);
+      if (!ids.length) return new Set<string>();
+      const lignes = await paginer<{ apprenant_id: string }>((f, t) => admin.from("session_apprenants").select("apprenant_id").in("session_id", ids).range(f, t));
+      return new Set(lignes.map((l) => l.apprenant_id));
+    };
+
     if (action === "classer") {
       const txs = await paginer<TxLite>((f, t) => admin.from("transactions_bancaires").select("id, date_operation, montant, libelle, reference").or(`montant.gte.${MONTANT_MIN_FC},montant.lt.0`).order("date_operation").range(f, t));
-      const dossiers = await paginer<DossierFc & { compte_cours_archive_at?: string | null }>((f, t) => admin.from("apprenants").select("id, nom, prenom, email, type_apprenant, compte_cours_archive_at").ilike("type_apprenant", "continue%").range(f, t));
+      const inscritsFc = await idsInscritsSessionFc();
+      const tous = await paginer<DossierFc & { compte_cours_archive_at?: string | null }>((f, t) => admin.from("apprenants").select("id, nom, prenom, email, type_apprenant, compte_cours_archive_at").range(f, t));
+      const dossiers = tous.filter((d) => estDossierFc(d.type_apprenant, inscritsFc.has(d.id)));
       const fc = dossiers.map((d) => ({ ...d, archive: !!d.compte_cours_archive_at }));
       const depuis = cfg.actif_depuis ? new Date(cfg.actif_depuis).toISOString().slice(0, 10) : null;
       let nouveaux = 0, envoyes = 0;
@@ -136,7 +146,7 @@ Deno.serve(async (req) => {
       const aid = typeof body?.apprenant_id === "string" && UUID.test(body.apprenant_id) ? body.apprenant_id : null;
       if (!aid) return json({ error: "Stagiaire inconnu" }, 400);
       const { data: a } = await admin.from("apprenants").select("id, type_apprenant").eq("id", aid).maybeSingle();
-      if (!a || !(a.type_apprenant ?? "").toLowerCase().startsWith("continue")) return json({ error: "Ce dossier n'est pas une formation continue" }, 400);
+      if (!a || !estDossierFc(a.type_apprenant, (await idsInscritsSessionFc()).has(aid))) return json({ error: "Ce dossier n'est pas une formation continue" }, 400);
       const { error } = await admin.from("fc_paiements").update({ apprenant_id: aid, statut: "rapproche", associe_par: uid, motif: "Associé manuellement par un admin", updated_at: new Date().toISOString() }).eq("id", pid).in("statut", ["a_revoir", "rapproche"]);
       if (error) throw error;
       return json({ ok: true });

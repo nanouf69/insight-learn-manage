@@ -75,3 +75,12 @@ export function classer(tx: TxLite, dossiers: DossierFc[]): Decision {
 export function peutEnvoyerAuto(p: { statut: string; historique: boolean }, actif: boolean, dejaServi: boolean): boolean {
   return actif && !p.historique && p.statut === "rapproche" && !dejaServi;
 }
+
+/**
+ * Périmètre FC (05/11) : dossier « continue-* » OU inscrit à une session dont le nom contient
+ * « formation continue ». Les inscriptions du portail sont typées « PA TAXI / PA VTC » et étaient exclues.
+ */
+export const estSessionFc = (nom: string | null | undefined) => /formation\s+continue/i.test(nom ?? "");
+export function estDossierFc(typeApprenant: string | null | undefined, inscritSessionFc: boolean): boolean {
+  return (typeApprenant ?? "").toLowerCase().startsWith("continue") || inscritSessionFc;
+}
