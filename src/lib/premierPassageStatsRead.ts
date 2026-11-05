@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { freshSessionRead } from './sessionRpc';
-import { activeLearners, computeFirstPassage, type QuestionStatsTarget, type SourceStats, type AttemptStats, type CompletionStats, type InscriptionStats, type SessionStats, type FirstAnswerEvent } from './premierPassageStats';
+import { activeLearners, activeSessions, computeSessionFirstPassage, type QuestionStatsTarget, type SourceStats, type AttemptStats, type CompletionStats, type InscriptionStats, type SessionStats, type FirstAnswerEvent } from './premierPassageStats';
 
 async function pages<T>(query: (start:number,end:number)=>PromiseLike<{data:unknown;error:unknown}>) {
   const rows:T[]=[];
@@ -19,11 +19,12 @@ export async function readFirstPassage(module:number,exercise:number,questions:Q
   const role=await freshSessionRead(()=>supabase.rpc('has_role',{_user_id:user,_role:'admin'}));
   if(role.error || role.data!==true)throw new Error('Accès administrateur requis');
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const sessions=await pages<SessionStats>((a,b)=>supabase.from('sessions').select('id,nom,date_debut,date_fin,statut,heure_debut,creneaux').lte('date_debut',today).gte('date_fin',today).order('id').range(a,b));
-  if(!sessions.length)return computeFirstPassage(questions,[],new Map(),[],[]);
+  const sessions=activeSessions(await pages<SessionStats>((a,b)=>supabase.from('sessions').select('id,nom,date_debut,date_fin,statut,heure_debut,creneaux').lte('date_debut',today).gte('date_fin',today).order('id').range(a,b)),today);
+  if(!sessions.length)return computeSessionFirstPassage(questions,[],[],[],today,new Set(),[],[],[]);
   const enrollments=await pages<InscriptionStats>((a,b)=>supabase.from('session_apprenants').select('apprenant_id,session_id,date_debut,date_fin,date_fin_personnalisee,liste_attente').in('session_id',sessions.map(s=>s.id)).order('id').range(a,b));
   const tests=await pages<{apprenant_id:string}>((a,b)=>supabase.from('comptes_test_techniques').select('apprenant_id').order('apprenant_id').range(a,b));
-  const learners=activeLearners(sessions,enrollments,today,new Set(tests.map(t=>t.apprenant_id)));
+  const excluded=new Set(tests.map(t=>t.apprenant_id));
+  const learners=activeLearners(sessions,enrollments,today,excluded);
   const sources:SourceStats[]=[{module,exercise}];
   const binding=await freshSessionRead(()=>supabase.from('quiz_question_bindings').select('quiz_id,section_id').eq('module_id',module).eq('exercise_id',exercise));
   if(binding.error)throw binding.error;
@@ -33,7 +34,7 @@ export async function readFirstPassage(module:number,exercise:number,questions:Q
     const siblings=await pages<{module_id:number;exercise_id:number}>((a,b)=>supabase.from('quiz_question_bindings').select('module_id,exercise_id').eq('quiz_id',identity.quiz_id).eq('section_id',identity.section_id).order('id').range(a,b));
     for(const s of siblings)if(!sources.some(x=>x.module===s.module_id && x.exercise===s.exercise_id))sources.push({module:s.module_id,exercise:s.exercise_id});
   }
-  if(!learners.size)return computeFirstPassage(questions,sources,learners,[],[]);
+  if(!learners.size)return computeSessionFirstPassage(questions,sources,sessions,enrollments,today,excluded,[],[],[]);
   const attempts:AttemptStats[]=[],completions:CompletionStats[]=[],events:FirstAnswerEvent[]=[];
   // Bounded batches, SELECT only, one read per opened exercise, never per question.
   const ids=[...learners.keys()];
@@ -47,5 +48,5 @@ export async function readFirstPassage(module:number,exercise:number,questions:Q
   }
   const {data:finalSession}=await supabase.auth.getSession();
   if(finalSession.session?.user.id!==user)throw new Error('Le compte connecté a changé');
-  return computeFirstPassage(questions,sources,learners,attempts,completions,events);
+  return computeSessionFirstPassage(questions,sources,sessions,enrollments,today,excluded,attempts,completions,events);
 }
