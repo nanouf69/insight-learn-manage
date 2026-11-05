@@ -32,7 +32,7 @@ export function regrouperDoublons(txs: TxLite[]): Map<string, TxLite[]> {
 const RE_FC = /\b(formation continue|form continue|continue (taxi|vtc)|fc (taxi|vtc)|(taxi|vtc) fc|recyclage)\b/;
 export const mentionneFc = (libelle: string | null) => RE_FC.test(normaliser(libelle));
 
-export const estDossierFc = (d: DossierFc) => (d.type_apprenant ?? "").toLowerCase().startsWith("continue") && !d.archive;
+export const estDossierFc = (d: DossierFc & { inscrit_session_fc?: boolean }) => ((d.type_apprenant ?? "").toLowerCase().startsWith("continue") || d.inscrit_session_fc === true) && !d.archive;
 
 const mots = (s: string) => normaliser(s).split(" ").filter((w) => w.length >= 2);
 
@@ -75,3 +75,9 @@ export function classer(tx: TxLite, dossiers: DossierFc[]): Decision {
 export function peutEnvoyerAuto(p: { statut: string; historique: boolean }, actif: boolean, dejaServi: boolean): boolean {
   return actif && !p.historique && p.statut === "rapproche" && !dejaServi;
 }
+
+/**
+ * Périmètre FC (05/11) : dossier « continue-* » OU inscrit à une session dont le nom contient
+ * « formation continue ». Les inscriptions du portail sont typées « PA TAXI / PA VTC » et étaient exclues.
+ */
+export const estSessionFc = (nom: string | null | undefined) => /formation\s+continue/i.test(nom ?? "");

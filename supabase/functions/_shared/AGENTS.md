@@ -11,4 +11,4 @@
 
 - QRC AI budget: every paid QRC call (EB `qrc-ia-correction`, module 13 `controle-qrc-ia`) reserves an upper-bound cost via `qrc_ia_budget_reserver` before calling (output capped by SORTIE_MAX_JETONS) and settles with measured usage; unknown outcome keeps the reservation; module 13 QRC are corrected only server-side from frozen copies (`controle_qrc_copies/items`, immutable once corrected, queue armed on enqueue and unscheduled when drained); why: the monthly euro cap is enforced on the server, never trusted to the browser.
 
-- FC payment access: `fcPaiementsRegles.ts` + Edge `fc-paiements`; send only on unique full-name FC match, never historique, one envoi per learner (unique index), refused while `fc_acces_config.actif` is false; why: never send access to the wrong person or twice.
+- FC payment access: `fcPaiementsRegles.ts` + Edge `fc-paiements`; FC scope = type continue-* OR enrolled in a session named « formation continue » (portal dossiers are PA TAXI/VTC); send only on unique full-name match, never historique, one envoi per learner (unique index), refused while `fc_acces_config.actif` is false; why: never send access to the wrong person or twice.
