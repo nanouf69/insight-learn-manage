@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 05/11 — Erreur au premier passage dans la liste admin
+- [ ] Ajouter lecture seule sessions actives JOUR/SOIR, rattachements et premières réponses prouvées, sans utiliser les notes agrégées.
+- [ ] Afficher taux/dénominateur et limites par question, dédupliquer et contrôler identités partagées ; tests fictifs et aperçu, sans publication automatique.
+
 ## 05/11 19:45 UTC — Bilan Français : 63 QCM, neuf textes
 - [x] Sources jaunes, 7 QCM par texte, Q14/Q15/Q87 ; 63 QCM, aucune QRC ni Q80 ajoutée, Q33 fragment d'énoncé remis dans l'énoncé selon DOCX.
 - [x] Migration additive 0241 appliquée, version indépendante ca3fc116-a0b7-4c07-a2e6-996226b2151d insérée ; neuf supports, ancienne banque/reçus/soumissions/éligibilité et 1377 brouillons antérieurs identiques. Zéro activation, zéro nouveau reçu sur cette version.
