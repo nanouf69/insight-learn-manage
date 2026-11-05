@@ -1,8 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { freshSessionRead } from './sessionRpc';
-import { getExamIdentity } from '@/components/cours-en-ligne/examens-blancs-sync-scope';
 import { activeLearners, activeSessions, type SessionStats, type InscriptionStats, type QuestionStatsTarget, type AttemptStats, type FirstAnswerEvent } from './premierPassageStats';
-import { computeExamSessionFirstPassage, type ExamStatsAttempt, type ExamStatsEvent, type ExamStatsResult, type ExamStatsRetake, type ExamStatsEvidence, type ExamStatsState } from './premierPassageExamStats';
+import { firstPassageExamIds, computeExamSessionFirstPassage, type ExamStatsAttempt, type ExamStatsEvent, type ExamStatsResult, type ExamStatsRetake, type ExamStatsEvidence, type ExamStatsState } from './premierPassageExamStats';
 
 async function pages<T>(query:(a:number,b:number)=>PromiseLike<{data:unknown;error:unknown}>):Promise<T[]> {
   const rows:T[]=[];
@@ -14,10 +13,8 @@ export async function readExamFirstPassage(examId:string,subject:string,question
   if(!user)throw new Error('Session administrateur requise');
   const role=await freshSessionRead(()=>supabase.rpc('has_role',{_user_id:user,_role:'admin'}));
   if(role.error || role.data!==true)throw new Error('Accès administrateur requis');
-  const identity=getExamIdentity(examId);
-  if(!identity.numero || identity.numero>6 || !['VTC','TAXI'].includes(identity.filiere))throw new Error('Examen hors périmètre');
-  // Shared subjects use identical subject IDs in VTC/TAXI of the SAME number.
-  const examIds=[`EB${identity.numero}`,`EB${identity.numero}-TAXI`];
+  const examIds=firstPassageExamIds(examId);
+  if(!examIds.length)throw new Error('Examen hors périmètre');
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const sessions=activeSessions(await pages<SessionStats>((a,b)=>supabase.from('sessions').select('id,nom,date_debut,date_fin,statut,heure_debut,creneaux').lte('date_debut',today).gte('date_fin',today).order('id').range(a,b)),today);
   const evidence:ExamStatsEvidence={attempts:[],events:[],states:[],legacy:[],journal:[],results:[],retakes:[]};

@@ -975,7 +975,7 @@ function MatiereEditor({
     (q): q is Question => q != null && q?.type != null,
   );
   const statsQuestions = useMemo(() => (matiere.questions ?? []).filter((q): q is Question => q != null && q.type != null).map(q => ({id:q.id,enonce:q.enonce,type:q.type,choix:q.choix ?? []})), [matiere.questions]);
-  const statsEnabled = /^EB[1-6](?:-TAXI)?$/.test(examId);
+  const statsEnabled = /^EB[1-6](?:-TAXI)?$/.test(examId) || /^eb[1-6]-ta$/.test(examId);
 
   const updateQuestion = (updated: Question, closeEditor: boolean) => {
     const updatedAt = new Date().toISOString();
