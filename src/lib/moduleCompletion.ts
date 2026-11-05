@@ -68,7 +68,25 @@ export function isCompletionDone(row: ModuleCompletionRow | null | undefined): b
  * Persist module progression on the server. Retries automatically on failure.
  * Resolves to true ONLY when the server confirmed the write.
  */
-export async function saveModuleCompletion(
+const enregistrementsEnCours = new Map<string, Promise<boolean>>();
+
+/** Délai de nouvel essai avec gigue (0,5×–1,5×) : évite les rafales synchronisées après un délai serveur. */
+export function delaiNouvelEssai(attempt: number, alea: number = Math.random()): number {
+  return Math.round(RETRY_BASE_DELAY * attempt * (0.5 + alea));
+}
+
+export function saveModuleCompletion(params: SaveModuleCompletionParams): Promise<boolean> {
+  // Single-flight : un envoi strictement identique déjà en cours est partagé, jamais doublé.
+  const cle = JSON.stringify([params.apprenantId, params.moduleId, !!params.completed, params.progress ?? null,
+    params.scoreObtenu ?? null, params.scoreMax ?? null, params.details ?? null, params.retries ?? 4]);
+  const enCours = enregistrementsEnCours.get(cle);
+  if (enCours) return enCours;
+  const p = saveModuleCompletionUnique(params).finally(() => enregistrementsEnCours.delete(cle));
+  enregistrementsEnCours.set(cle, p);
+  return p;
+}
+
+async function saveModuleCompletionUnique(
   params: SaveModuleCompletionParams,
 ): Promise<boolean> {
   const {
@@ -118,7 +136,7 @@ export async function saveModuleCompletion(
       );
     }
     if (attempt < retries) {
-      await new Promise((r) => setTimeout(r, RETRY_BASE_DELAY * attempt));
+      await new Promise((r) => setTimeout(r, delaiNouvelEssai(attempt)));
     }
   }
   return false;

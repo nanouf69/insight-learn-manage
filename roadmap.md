@@ -962,8 +962,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 
 ## Incidents bilan 05/11 — autorisation « Corrige »
 - [x] P4 plantage lazy (Emmanuel 04/11 23:31) : cause prouvée dans le code — `preventDefault` sur `vite:preloadError` faisait résoudre l'import à `undefined` → `_result.default`. Corrigé (aperçu), test PASS, non publié.
-- [ ] P1 délais 57014 module_completion modules 2/4/10 : non traité ce tour.
-- [ ] P2 files Ahmed Malki / Mohamed Mliki : non audité ce tour.
+- [x] P1 : fusion quadratique prouvée ; 0240 actif (980/980 identiques, 6× plus rapide) ; single-flight + gigue en aperçu. Gain en ligne à constater.
+- [x] P2 audité : Malki 7 reprises prouvées ; Mliki 1 élément non confirmé (pas de preuve appareil).
 - [ ] P3 42501 progression : correctif freshSessionRead du 04/11 présent dans le code, publication non vérifiée.
 - [ ] P5 Belarbi m64 : correctif du 04/11 présent dans l'aperçu, non publié, aucune preuve élève.
-- [ ] QRC 22 en attente : diagnostic non fait ce tour.
+- [x] QRC 22 = exclusion volontaire reglementation_taxi2 (correction formateur).
+- [ ] test_16 du contrat SQL échoue avant/après 0240 : écart préexistant à analyser.
