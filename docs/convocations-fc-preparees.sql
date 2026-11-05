@@ -193,3 +193,36 @@ END $$;
 REVOKE ALL ON FUNCTION public.fc_convocation_finir(uuid,uuid,text,text,text,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.fc_convocation_finir(uuid,uuid,text,text,text,jsonb) TO service_role;
 -- No cron created here. Scheduling + activation require separate approval.
+
+-- Explicit admin confirmation only. Immutable records never replace another association.
+CREATE FUNCTION public.fc_convocation_confirmer(p_transaction uuid,p_inscription uuid,p_piece text,p_exigible numeric,p_contrat text) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE i record; t record; s record; ex record; r record;
+BEGIN
+  IF NOT coalesce(public.has_role(auth.uid(),'admin'),false) THEN RAISE EXCEPTION 'Admin requis' USING ERRCODE='42501'; END IF;
+  IF nullif(btrim(p_piece),'') IS NULL OR nullif(btrim(p_contrat),'') IS NULL OR p_exigible IS NULL OR p_exigible<=0 THEN RAISE EXCEPTION 'Preuves obligatoires'; END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('fc-proof:'||p_transaction,0));
+  SELECT * INTO t FROM transactions_bancaires WHERE id=p_transaction;
+  SELECT * INTO i FROM session_apprenants WHERE id=p_inscription;
+  SELECT * INTO s FROM sessions WHERE id=i.session_id;
+  IF t.id IS NULL OR i.id IS NULL OR t.montant<=0 OR t.libelle ~* 'rembours|refund|reversal'
+    OR t.statut IS NULL OR t.statut NOT IN('justifie','rapproche') OR t.categorie IS DISTINCT FROM 'recette_formation'
+    OR nullif(btrim(t.reference),'') IS NULL OR nullif(btrim(t.banque),'') IS NULL
+    OR s.nom IS NULL OR s.nom !~* 'formation\s+continue.*(taxi|vtc)' OR i.liste_attente
+    OR i.montant_total IS NULL OR p_exigible>i.montant_total THEN RAISE EXCEPTION 'Paiement, session ou contrat non recevable'; END IF;
+  -- Canonical bank identity must not already belong to another learner/session.
+  PERFORM pg_advisory_xact_lock(hashtextextended('fc-bank:'||lower(btrim(t.banque))||':'||lower(btrim(t.reference)),0));
+  IF EXISTS(SELECT 1 FROM transactions_bancaires d JOIN fc_convocation_rapprochements dr ON dr.transaction_id=d.id
+    WHERE lower(btrim(d.banque))=lower(btrim(t.banque)) AND lower(btrim(d.reference))=lower(btrim(t.reference)) AND dr.inscription_id<>i.id) THEN
+    RAISE EXCEPTION 'Virement déjà affecté à une autre inscription';
+  END IF;
+  SELECT * INTO ex FROM fc_convocation_exigibles WHERE inscription_id=i.id;
+  IF ex.inscription_id IS NOT NULL AND (ex.montant<>p_exigible OR ex.reference_contrat<>p_contrat) THEN RAISE EXCEPTION 'Contrat existant conservé, conflit à vérifier'; END IF;
+  SELECT * INTO r FROM fc_convocation_rapprochements WHERE transaction_id=t.id;
+  IF r.transaction_id IS NOT NULL AND (r.inscription_id<>i.id OR r.piece_reference<>p_piece) THEN RAISE EXCEPTION 'Association existante conservée'; END IF;
+  INSERT INTO fc_convocation_exigibles(inscription_id,montant,reference_contrat,confirme_par) VALUES(i.id,p_exigible,p_contrat,auth.uid()) ON CONFLICT DO NOTHING;
+  INSERT INTO fc_convocation_rapprochements(transaction_id,inscription_id,confirme_par,piece_reference) VALUES(t.id,i.id,auth.uid(),p_piece) ON CONFLICT DO NOTHING;
+  RETURN true;
+END $$;
+REVOKE ALL ON FUNCTION public.fc_convocation_confirmer(uuid,uuid,text,numeric,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.fc_convocation_confirmer(uuid,uuid,text,numeric,text) TO authenticated;

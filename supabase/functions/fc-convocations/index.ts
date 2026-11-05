@@ -13,16 +13,27 @@ Deno.serve(async req=>{
   const admin=createClient(url,key);
   const scheduler=Deno.env.get('FC_CONVOCATIONS_CRON_SECRET');
   const cron=!!scheduler && req.headers.get('x-fc-cron-secret')===scheduler;
+  let caller:ReturnType<typeof createClient>|null=null;
   if(!cron){
     const auth=req.headers.get('Authorization'); if(!auth) return json({error:'Non autorisé'},401);
-    const caller=createClient(url,anon,{global:{headers:{Authorization:auth}}});
+    caller=createClient(url,anon,{global:{headers:{Authorization:auth}}});
     const {data,error}=await caller.auth.getClaims(auth.replace(/^Bearer /,''));
     const uid=data?.claims?.sub; if(error||!uid) return json({error:'Non autorisé'},401);
     const role=await admin.rpc('has_role',{_user_id:uid,_role:'admin'});
     if(role.error||role.data!==true) return json({error:'Réservé aux administrateurs'},403);
   }
-  const body=z.object({action:z.literal('traiter')}).strict().safeParse(await req.json().catch(()=>null));
+  const body=z.discriminatedUnion('action',[
+    z.object({action:z.literal('traiter')}).strict(),
+    z.object({action:z.literal('confirmer'),transaction_id:z.string().uuid(),inscription_id:z.string().uuid(),piece_reference:z.string().trim().min(1).max(500),montant_exigible:z.number().positive().max(100000),reference_contrat:z.string().trim().min(1).max(500)}).strict()
+  ]).safeParse(await req.json().catch(()=>null));
   if(!body.success) return json({error:'Action invalide'},400);
+  if(body.data.action==='confirmer'){
+    if(!caller||cron) return json({error:'Confirmation administrateur requise'},403);
+    const b=body.data;
+    const r=await caller.rpc('fc_convocation_confirmer',{p_transaction:b.transaction_id,p_inscription:b.inscription_id,p_piece:b.piece_reference,p_exigible:b.montant_exigible,p_contrat:b.reference_contrat});
+    if(r.error||r.data!==true) return json({error:'Confirmation refusée : preuves existantes conservées'},409);
+    return json({ok:true,statut:'confirme',envoyes:0});
+  }
   const apiKey=Deno.env.get('RESEND_API_KEY'); if(!apiKey) return json({error:'Envoi non configuré'},503);
   try {
     const cfg=await admin.from('fc_convocation_config').select('actif').eq('id',true).single();
@@ -35,6 +46,12 @@ Deno.serve(async req=>{
     catch {
       const fin=await admin.rpc('fc_convocation_finir',{p_envoi:p.envoi_id,p_claim:p.claim_id,p_statut:'a_revoir',p_erreur:'Modèle officiel ou session à vérifier'});
       if(fin.error||fin.data!==true) throw new Error('Journal non confirmé');
+      return json({ok:false,statut:'a_revoir',envoyes:0});
+    }
+    const fresh=await admin.rpc('fc_convocation_controle',{p_inscription:p.inscription.id});
+    if(fresh.error||fresh.data?.eligible!==true||JSON.stringify(fresh.data?.stagiaire)!==JSON.stringify(p.stagiaire)||JSON.stringify(fresh.data?.session)!==JSON.stringify(p.session)||JSON.stringify(fresh.data?.inscription)!==JSON.stringify(p.inscription)){
+      const blocked=await admin.rpc('fc_convocation_finir',{p_envoi:p.envoi_id,p_claim:p.claim_id,p_statut:'a_revoir',p_erreur:'Éligibilité ou destinataire modifié depuis la réservation'});
+      if(blocked.error||blocked.data!==true) return json({error:'Journal non confirmé'},503);
       return json({ok:false,statut:'a_revoir',envoyes:0});
     }
     const r=await transporterConvocationFc({to:p.stagiaire.email,...message,envoiId:p.envoi_id,apiKey});
