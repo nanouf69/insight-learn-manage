@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 05/11 20:22 — Publication premier passage
+- [ ] Terminer le filtre individuel par session, vérifier données réelles et tests.
+- [ ] Contrôler sécurité et non-régression globale avant publication ; si blocage, ne pas publier et le nommer.
+
 ## 05/11 20:18 — Sessions explicites du premier passage
 - [x] Sessions retenues nom/dates/modalité, filtres JOURNÉE/SOIRÉE, taux et n/N par catégorie et session ; aucune écriture Cloud.
 - [x] 33 tests PASS : dates inclusives, périodes distinctes, déduplication et catégorie sans session ; compte admin réel PC/mobile + actualisation vérifiés. Q1 : journée 0/2, soirée aucune réponse prouvée (18 exclus), global 0/2 ; non publié. Rapport docs/erreur-premier-passage-sessions-2026-11-05.md.
