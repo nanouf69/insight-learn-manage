@@ -1681,6 +1681,13 @@
       "when": 1793802743741,
       "tag": "0239_propagation_partagee_ciblee",
       "breakpoints": true
+    },
+    {
+      "idx": 240,
+      "version": "7",
+      "when": 1793864572777,
+      "tag": "0240_fusion_details_progression_rapide",
+      "breakpoints": true
     }
   ]
 }
