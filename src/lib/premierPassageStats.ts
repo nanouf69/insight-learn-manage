@@ -51,7 +51,7 @@ export function computeFirstPassage(targets: QuestionStatsTarget[], sources: Sou
           const retaken=rows.some(r=>(r.tentative ?? 0)>1 && r.submitted_at && proofs.some(c=>c.completed_at && r.submitted_at && r.submitted_at<=c.completed_at));
           const results=keys.map(d=>equal(answer,d.reponseCorrecte));
           const correct=firstAnswerProven && !retaken && results.length>0 && results.every(r=>r===results[0]) ? results[0] : null;
-          observations.push({at:row.submitted_at,correct,value:answer});
+          observations.push({at:firstEvent?.created_at ?? row.submitted_at,correct,value:answer});
         }
       }
       observations.sort((a,b)=>a.at.localeCompare(b.at));
