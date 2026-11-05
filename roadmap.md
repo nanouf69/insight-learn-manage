@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 05/11 — Convocations FC après paiement confirmé (préparation uniquement)
+- [ ] Lire les rapprochements, contrats, modèles officiels et dossiers VTC 17–18/11 / TAXI 19–20/11.
+- [ ] Préparer une chaîne distincte des accès : association explicite paiement/stagiaire/session, montant exigible prouvé, journal et idempotence ; aucun déploiement ni envoi.
+- [ ] Tester sur données fictives la simulation, les exclusions, concurrence et reprise ; rapport et blocages d'activation.
+
 ## Supports pratiques reçus — 04/11 14:52 UTC
 - [x] Accord TA → support TAXI / VA → support VTC : partage déjà assuré par les modules pratiques communs 6/8 ; tests des six modalités ajoutés, sans changement des affectations ni des jalons.
 - [x] Deux sources exactes vérifiées : 20 pages / 76 questions-réponses chacune ; accord d’ajout dans Déroulement, consultation seule, sans publication.
