@@ -1,0 +1,2423 @@
+[
+ {
+  "id": 1,
+  "uid": "e984361a-a4c8-423f-a396-9e02d031d6df",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Invraisemblance",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Accord",
+    "lettre": "B"
+   },
+   {
+    "texte": "Concordance de genre",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Quel(s) est (sont) le(s) synonyme(s) de paradoxe ?",
+  "_editedAt": "2026-07-29T08:27:15.924Z",
+  "manually_edited": true
+ },
+ {
+  "id": 2,
+  "uid": "34a95f22-7f6a-4027-b775-cf5b3ae44481",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Respecte la parité homme / femme",
+    "lettre": "A",
+    "correct": false
+   },
+   {
+    "texte": "Compte peu de femmes dans ses effectifs",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Est un secteur très masculin",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "L'industrie automobile :",
+  "_editedAt": "2026-07-29T08:30:18.507Z",
+  "manually_edited": true
+ },
+ {
+  "id": 3,
+  "uid": "f4945848-658d-4392-a179-b96399bb4cc8",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les femmes réussissent davantage à l'examen du permis de conduire",
+    "lettre": "A",
+    "correct": false
+   },
+   {
+    "texte": "Les hommes réussissent plus souvent l'examen du permis de conduire que les femmes",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Le permis de conduire des femmes à moins de points que celui des hommes",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Les auteures parlent d'un écart de 10 points entre les hommes et les femmes à l'examen du permis de conduire, cela signifie que",
+  "_editedAt": "2026-07-29T08:33:25.124Z",
+  "manually_edited": true
+ },
+ {
+  "id": 4,
+  "uid": "7ea2ffbd-73fc-45d0-95c3-802e34a00b9a",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Le taux d'accident rapporté à une population",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Le nombre d'accident par an",
+    "lettre": "B"
+   },
+   {
+    "texte": "La science qui étudie la nature des accidents",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "L'accidentalité est :",
+  "_editedAt": "2026-07-29T08:39:09.587Z",
+  "manually_edited": true
+ },
+ {
+  "id": 5,
+  "uid": "b6c8935f-05bf-447a-bf01-779c79d2fac2",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les filles ne s'orientent pas vers les filières techniques",
+    "lettre": "A"
+   },
+   {
+    "texte": "automobiles",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "L'industrie des automobiles ne veut pas recruter des femmes",
+    "lettre": "C"
+   },
+   {
+    "texte": "Les métiers de l'automobile sont trop durs physiquement pour les",
+    "lettre": "D"
+   },
+   {
+    "texte": "filles",
+    "lettre": "E"
+   }
+  ],
+  "enonce": "« L'influence des stéréotypes masculins et féminins tout au long du parcours scolaire » a quelle(s) conséquence(s) selon les auteures ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 6,
+  "uid": "6d0631ae-e7c1-4976-83d8-aa78f93fd230",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Un cliché",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Une typologie",
+    "lettre": "B"
+   },
+   {
+    "texte": "Un genre",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Qu'est-ce qu'un stéréotype ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 7,
+  "uid": "8391ead2-cc9d-4e94-9cd3-7b58e41ec857",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Instabilité",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Fragilité",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Pauvreté",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Trouvez le(s) synonyme(s) de précarité :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 8,
+  "uid": "dc84e013-587a-4a32-a9e1-0b6179d538ff",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "En quoi la précarité touche plus particulièrement les femmes :",
+    "lettre": "A"
+   },
+   {
+    "texte": "Travail à temps partiel, famille mono parentale, salaire plus",
+    "lettre": "B"
+   },
+   {
+    "texte": "bas",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Mobilité et précarité : Manque d'indépendance, éloignement des lieux",
+    "lettre": "D"
+   },
+   {
+    "texte": "d'habitation par rapport au bassin d'emploi",
+    "lettre": "E",
+    "correct": true
+   }
+  ],
+  "enonce": "Expliquez en quoi la précarité touche plus particulièrement les femmes et en quoi les difficultés de mobilité aggravent la situation. Illustrez vos explications d'exemples personnels.",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 9,
+  "uid": "e5a7bd74-fcb0-4343-bda0-d17c7bdabc47",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Bien que statistiquement les femmes ont moins d'accidents et sont",
+    "lettre": "A"
+   },
+   {
+    "texte": "plus prudentes, les clichés sont toujours là : les femmes sont peu",
+    "lettre": "B"
+   },
+   {
+    "texte": "habiles ou douées au volant voire dangereuses.",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Expliquez le paradoxe relevé par les auteures sans paraphraser le texte",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 10,
+  "uid": "b97a774a-7892-4c21-8718-9eb6c64ca56b",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Pour l'insertion sociale c'est la création ou l'entretien d'un",
+    "lettre": "A"
+   },
+   {
+    "texte": "réseau de d'amis, de famille.",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Le permis de conduire permet d'accéder aux lieux de culture,",
+    "lettre": "C"
+   },
+   {
+    "texte": "administratifs pour réaliser ses démarches",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "En quoi le permis de conduire est-il indispensable à l'insertion sociale des personnes d'après vous ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 11,
+  "uid": "fcac49dc-6c25-4276-8dd8-1279ab666854",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Arbitrer leurs combats",
+    "lettre": "A"
+   },
+   {
+    "texte": "Revoir leurs priorités et/ou leurs choix",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Régler leurs litiges",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que signifie « réviser leurs arbitrages » dans le contexte de l'article :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 12,
+  "uid": "4e908c08-a0f1-4968-9307-82bd1fd8bd9c",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "40%",
+    "lettre": "A"
+   },
+   {
+    "texte": "4%",
+    "lettre": "B"
+   },
+   {
+    "texte": "400%",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "De combien devrait augmenter la demande de TER d'ici à 2030 :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 13,
+  "uid": "056a337b-8877-4b30-82c5-825db152d437",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Origine",
+    "lettre": "A"
+   },
+   {
+    "texte": "Aboutissement",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "À terme",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Amorce",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Donnez des antonymes de \"prémices\"",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 14,
+  "uid": "bc9ab18e-b375-44a0-8954-feb0b5080852",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La fréquentation des TER a augmenté",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Il y a 60 % de TER en plus",
+    "lettre": "B"
+   },
+   {
+    "texte": "Les régions ont investi dans les TER",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "D'après le texte, sur la dernière décennie :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 15,
+  "uid": "65dbfd88-49fb-499e-b5ca-ad6808126e16",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Car les usagers ne possèdent pas de voiture",
+    "lettre": "A"
+   },
+   {
+    "texte": "Car le marketing de la SNCF les attire",
+    "lettre": "B"
+   },
+   {
+    "texte": "Pour éviter les contraintes de la voiture (coût, bouchons,",
+    "lettre": "C"
+   },
+   {
+    "texte": "...)",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Les régions ont investi dans les TER",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 16,
+  "uid": "cebd806a-c7fa-48af-b47c-dbb4747a8837",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "De Janvier à Juin 2007",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "De juillet à décembre 2007",
+    "lettre": "B"
+   },
+   {
+    "texte": "De janvier à mars 2007",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "A quoi fait référence « la même période de 2007 » dans l'article :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 17,
+  "uid": "dc81dc4a-5fff-4c4f-ac37-3239046601b7",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Fait référence à la prise de conscience de l'impact qu'a",
+    "lettre": "A"
+   },
+   {
+    "texte": "l'utilisation de la voiture sur l'environnement",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Encourage les personnes à faire des choix différents sur leurs moyens",
+    "lettre": "C"
+   },
+   {
+    "texte": "de transport lors de leurs déplacements",
+    "lettre": "D",
+    "correct": true
+   },
+   {
+    "texte": "Fait référence aux difficultés d'utilisation des véhicules",
+    "lettre": "E"
+   }
+  ],
+  "enonce": "La \"sensibilité écologique\" évoquée dans l'article :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 18,
+  "uid": "dbcb4512-528d-4361-9839-006fc9f6a6fa",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les réseaux risquent d'être saturés faute de pouvoir réaliser les",
+    "lettre": "A"
+   },
+   {
+    "texte": "investissements nécessaires à l'amélioration des réseaux pour",
+    "lettre": "B"
+   },
+   {
+    "texte": "l'augmentation du trafic.",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "D'après cet article, quel risque induit l'augmentation de l'utilisation des transports en commun et pour quelle raison ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 19,
+  "uid": "cec7a36c-a45b-414e-b057-5408f7e12c67",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "L'utilisation des transports en commun augmente pour plusieurs",
+    "lettre": "A"
+   },
+   {
+    "texte": "raisons : Amélioration de l'offre de service Cout du carburant",
+    "lettre": "B"
+   },
+   {
+    "texte": "Difficultés de stationnement Bouchons Radars Prise de conscience des",
+    "lettre": "C"
+   },
+   {
+    "texte": "conséquences de la voiture sur l'écologie",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Pourquoi l'utilisation des transports en commun augmente-t-elle ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 20,
+  "uid": "bb354ba8-f8f2-462f-bea3-4f7c02bb7e36",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Cela signifie que même si la majorité des français possède une",
+    "lettre": "A"
+   },
+   {
+    "texte": "voiture, ce n'est pas pour autant qu'ils l'utilisent comme leur",
+    "lettre": "B"
+   },
+   {
+    "texte": "moyen de transport unique",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Ils peuvent posséder une voiture, mais choisir aussi d'autres moyens",
+    "lettre": "D"
+   },
+   {
+    "texte": "de transport",
+    "lettre": "E",
+    "correct": true
+   }
+  ],
+  "enonce": "Que signifie dans Le contexte de cet article « un découplage entre la possession et l'usage de la voiture, celle-ci devenant progressivement un mode de transport comme les autres » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 21,
+  "uid": "b4f321ef-3def-46f2-b11f-72c4c1df54d7",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Petite veine",
+    "lettre": "A"
+   },
+   {
+    "texte": "Courée",
+    "lettre": "B"
+   },
+   {
+    "texte": "Ruelle",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Donnez un synonyme de « venelle » :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 22,
+  "uid": "0e568dec-507f-4f07-b5f5-189fc5cc9856",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les trottoirs sont de plus en plus étroits",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Des pistes cyclables se situent sur les trottoirs",
+    "lettre": "B"
+   },
+   {
+    "texte": "La route est de plus en plus large au détriment des trottoirs",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "La chaussée \"grignote le trottoir\" Qu'est-ce que cela signifie ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 23,
+  "uid": "bec24da6-ea35-4f4c-9f6b-61f3e78cfbb5",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Essai",
+    "lettre": "A"
+   },
+   {
+    "texte": "Roman",
+    "lettre": "B"
+   },
+   {
+    "texte": "Article de presse",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Selon vous, le texte est tire d'un :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 24,
+  "uid": "a42619c3-5a38-46ff-b3ae-68da2b6cf6a1",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "S'enfuir en courant",
+    "lettre": "A"
+   },
+   {
+    "texte": "Ignorer la réalité",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Pondre des projets de grande taille",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que veut dire « politique de l autruche » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 25,
+  "uid": "d4131b88-40c6-49ee-b7e1-3d48a1e6ac02",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Être de taille pour",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Mettre à dimension",
+    "lettre": "B"
+   },
+   {
+    "texte": "Remettre à distance",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que veut dire l'auteur par « taillées au gabarit » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 26,
+  "uid": "5ce509ff-efa7-4657-8489-985b5bf24cff",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Défier quelqu'un",
+    "lettre": "A"
+   },
+   {
+    "texte": "Se mettre en retrait",
+    "lettre": "B"
+   },
+   {
+    "texte": "Mettre en colère",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Que veut dire l expression « s attirer mes foudres » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 27,
+  "uid": "4043ce2d-c0e3-4388-83c5-7343c167088d",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Cloisonner",
+    "lettre": "A"
+   },
+   {
+    "texte": "Concentrer",
+    "lettre": "B"
+   },
+   {
+    "texte": "Embouteiller",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Donnez un antonyme de « décongestionner »",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 28,
+  "uid": "351e8586-f906-4579-875c-53165073876d",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Il s'agit d'un âne sur lequel sont mis des paniers. La phrase veut",
+    "lettre": "A"
+   },
+   {
+    "texte": "dire que dans la médina de Fez il n'y a pas de voitures car les",
+    "lettre": "B"
+   },
+   {
+    "texte": "ruelles sont trop étroites, elles ont été taillées pour le passage",
+    "lettre": "C"
+   },
+   {
+    "texte": "d'animaux.",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "L'auteur évoque un « bourricot bardé de couffins ». Après avoir expliqué ces termes, indiquez l'idée portée par l'intégralité de la phrase.",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 29,
+  "uid": "f502a382-ffe5-4a5d-ab89-e27a2137f74a",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "L'idée maîtresse du texte est que la circulation est de plus en plus",
+    "lettre": "A"
+   },
+   {
+    "texte": "dense et que les piétons n'ont même plus la place de flâner sur les",
+    "lettre": "B"
+   },
+   {
+    "texte": "trottoirs. Que cela devient insupportable et que les pouvoirs publics",
+    "lettre": "C"
+   },
+   {
+    "texte": "ne font rien.",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Quelle est l'idée maîtresse du texte ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 30,
+  "uid": "8cd0a9b5-3393-4dff-bc97-f95820b3417e",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "D'une part parce que les citadins préfèrent prendre leur voiture",
+    "lettre": "A"
+   },
+   {
+    "texte": "plutôt que les transports en commun et que les responsables politiques",
+    "lettre": "B"
+   },
+   {
+    "texte": "ne prennent pas les bonnes décisions en matière de réduction de la",
+    "lettre": "C"
+   },
+   {
+    "texte": "circulation.",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Pourquoi en sommes-nous arrivés à cette situation (deux réponses attendues) ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 31,
+  "uid": "85e34b13-713f-4d58-8050-869723ababa1",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La différence entre les conducteurs masculins et féminins",
+    "lettre": "A"
+   },
+   {
+    "texte": "Les risques d'agression auprès des femmes",
+    "lettre": "B"
+   },
+   {
+    "texte": "La création de taxi pour les femmes et géré par des femmes",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Quelle est l'idée principale développe dans ce texte ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 32,
+  "uid": "601f7774-c509-483f-b05c-a6e619ff983b",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "États-Unis",
+    "lettre": "A"
+   },
+   {
+    "texte": "Angleterre",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Mexique",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Dans quel pays a été créée la première entreprise de transport reservee aux femmes ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 33,
+  "uid": "fc8b8b80-887a-45bc-b37c-931337fcb1dc",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "ladies cab» :",
+    "lettre": "A"
+   },
+   {
+    "texte": "Parce que les véhicules sont roses",
+    "lettre": "B"
+   },
+   {
+    "texte": "Pour des raisons de sécurité",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Parce que la société est gérée par des femmes",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Pour Maria Lopez, les clientes de VTC ou Taxi prennent plus facilement des « Pink",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 34,
+  "uid": "e71ba68d-a6ae-47ea-9722-417b5beede3d",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Créera des écoles pour chauffeurs",
+    "lettre": "A"
+   },
+   {
+    "texte": "Incitera à créer des services similaires dans d'autres villes ou",
+    "lettre": "B"
+   },
+   {
+    "texte": "d'autres pays",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Créera des concurrent",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Que signifie l'expression : le concept « fera bientôt école » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 35,
+  "uid": "393e8c2c-06b2-4bf6-a1fd-fa194c7deb3d",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "C'est un programme peu onéreux",
+    "lettre": "A"
+   },
+   {
+    "texte": "C'est un programme peu répandu",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "C'est un programme honnête",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que signifie « le programme « Atenea » reste modeste » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 36,
+  "uid": "48d3623f-1fed-460a-abbb-a43ab79fb4d6",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Un succès français",
+    "lettre": "A"
+   },
+   {
+    "texte": "Connaître la réussite",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Avoir un succès honnête et loyal",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que veut dire « franc succès » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 37,
+  "uid": "42cc387c-2321-4967-847a-9ddd80de16dd",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Des flâneurs",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Des touristes",
+    "lettre": "B"
+   },
+   {
+    "texte": "Des clients",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Quel est le synonyme de « badauds » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 38,
+  "uid": "121eb8c2-8cdd-47ca-b823-381c53f9b803",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Le taxi est équipé d'un GPS et d'un bouton d'alerte sous le",
+    "lettre": "A"
+   },
+   {
+    "texte": "volant, connectés aux services de police. Joignable 24hl24h par",
+    "lettre": "B"
+   },
+   {
+    "texte": "téléphone ou par internet, son véhicule est aussi doté d'un terminal",
+    "lettre": "C"
+   },
+   {
+    "texte": "de carte bancale pour limiter les risques de vol avec",
+    "lettre": "D"
+   },
+   {
+    "texte": "agression.",
+    "lettre": "E",
+    "correct": true
+   },
+   {
+    "texte": "La contrepartie se sont des tarifs 10 % supérieurs à ceux des taxis",
+    "lettre": "F"
+   },
+   {
+    "texte": "classiques.",
+    "lettre": "G",
+    "correct": true
+   }
+  ],
+  "enonce": "Comment sont équipés les véhicules décrits dans le texte, quelle est la contrepartie de ce service particulier ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 39,
+  "uid": "a67308e0-3548-498a-ae73-faa615c21f63",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Qu'il y a dans ce pays une dominance de l'homme sur la femme et que",
+    "lettre": "A"
+   },
+   {
+    "texte": "de ce fait elles sont vulnérables",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "L'auteur évoque « le machisme ambiant » selon vous dans le contexte de l'article qu'a-t-il voulu dire ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 40,
+  "uid": "225e8111-5c9f-40fc-af00-3034b8a3663e",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La sécurité des femmes",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "La création d'emplois pour les femmes",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "Citez les 2 points positifs de ce programme au Mexique :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 41,
+  "uid": "e5a1993e-d91b-490c-8f5c-b3adc366ec10",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Opportun",
+    "lettre": "A"
+   },
+   {
+    "texte": "Choquant",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Correct",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Donnez un synonyme d'indécent :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 42,
+  "uid": "bd13ffb9-36f8-4f8f-9a1f-12a78e82b71a",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "C'est l'ensemble des acteurs sociaux/économiques (entreprises, ONG,",
+    "lettre": "A"
+   },
+   {
+    "texte": "associations...)",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "C'est l'ensemble des personnes non-militaire",
+    "lettre": "C"
+   },
+   {
+    "texte": "C'est l'ensemble des actions gouvernementales",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Qu'est-ce que la « société civile » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 43,
+  "uid": "c7ae9992-2b6a-4bd9-8441-8dcc03aaca00",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Le troisième pays de l'union européenne",
+    "lettre": "A"
+   },
+   {
+    "texte": "Un pays non-membre de l'union européenne",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Un autre pays que la France",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Qu'entend-on par « pays tiers » dans l'article ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 44,
+  "uid": "298ee3b6-c67f-4365-9db6-2e0bd2a9ea8a",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Organisation non garantie",
+    "lettre": "A"
+   },
+   {
+    "texte": "Organisation non gouvernementale",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Optimisation non gouvernementale",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que signifie le sigle ONG ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 45,
+  "uid": "bb05caa4-8072-4bd9-ac3c-34b3917cf841",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Des comptes rendus d'enquête excitants",
+    "lettre": "A"
+   },
+   {
+    "texte": "Des secrets terrifiants",
+    "lettre": "B"
+   },
+   {
+    "texte": "Des comptes rendus d'enquête terrifiants",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Que signifie l'expression « rapports glaçant » dans l'article ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 46,
+  "uid": "0892a88b-f3f3-4ce1-88be-64b5a5de4495",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Un voyage comportant beaucoup d'étapes",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Un évènement",
+    "lettre": "B"
+   },
+   {
+    "texte": "Une figure de gymnastique",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Qu'est-ce qu'un périple ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 47,
+  "uid": "c30621b7-d6f5-4340-9706-1d409a8ba3f8",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Étroit",
+    "lettre": "A"
+   },
+   {
+    "texte": "Neuf",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Délabré",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Donnez un antonyme de « vétuste » :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 48,
+  "uid": "61c9d335-725a-46cc-93a3-822578cf5141",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La législation européenne s'applique durant l'ensemble du",
+    "lettre": "A"
+   },
+   {
+    "texte": "transport, jusqu'au point d'arrivée, y compris donc au-delà des",
+    "lettre": "B"
+   },
+   {
+    "texte": "frontières de l'Union",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "L'Union européenne a légiféré sur les conditions de transport, quelle est la portée géographique de cette législation ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 49,
+  "uid": "760fdbc8-f370-4711-877a-b103546e016b",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La nature est une campagne de sensibilisation et qui a recueilli à",
+    "lettre": "A"
+   },
+   {
+    "texte": "travers l'Europe des millions de signature pour faire arrêter le",
+    "lettre": "B"
+   },
+   {
+    "texte": "transport des animaux dans de mauvaises conditions. L'objectif est de",
+    "lettre": "C"
+   },
+   {
+    "texte": "dénoncer le fait que les normes européennes encadrant les conditions",
+    "lettre": "D"
+   },
+   {
+    "texte": "de transport sont très fréquemment ignorées et violées.",
+    "lettre": "E",
+    "correct": true
+   }
+  ],
+  "enonce": "Indiquez la nature et l'objectif de la campagne #stop The Trucks.",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 50,
+  "uid": "76c9e158-fa2f-4353-8639-7c3fbd903bf3",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les camions",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Les cargos",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "Quels sont les différents modes de transport évoqués dans l'article ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 51,
+  "uid": "b276a659-4e1f-4714-ae48-8392be010fe2",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Taxi Londonien",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "La voiture la plus vendue à Londres",
+    "lettre": "B"
+   },
+   {
+    "texte": "Voiture de location",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Qu est-ce qu un black cab ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 52,
+  "uid": "50b2d633-7a59-460f-83da-0ccd96afef06",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Associe 2 énergies alternativement afin de rouler",
+    "lettre": "A"
+   },
+   {
+    "texte": "Associe 2 énergies simultanément afin de rouler",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Associe électricité et essence afin de rouler",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Un véhiculé hybride :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 53,
+  "uid": "1b956582-6bce-4544-864b-5553cb07045f",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "L'équipement de base et les options ne sont pas définis",
+    "lettre": "A"
+   },
+   {
+    "texte": "La personne interviewée ne répond pas précisément à la",
+    "lettre": "B"
+   },
+   {
+    "texte": "question",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Les calculs mathématiques ne sont pas juste",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Que veut dire l'auteur par : « une formule un peu vague... »",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 54,
+  "uid": "30f3d1b6-ddf4-429a-90dd-2f897f0961c3",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Dernier modèle d'une série",
+    "lettre": "A"
+   },
+   {
+    "texte": "Modèle diffusé à grande échelle",
+    "lettre": "B"
+   },
+   {
+    "texte": "Un modèle de tests/d'études d'un nouveau produit",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Qu est-ce qu un prototype ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 55,
+  "uid": "eb0f38ff-907e-4b00-aabb-776ba0dbf196",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La marque de véhicule anglaise sera bientôt disponible en",
+    "lettre": "A"
+   },
+   {
+    "texte": "France",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Les véhicules anglais avec conduite à droite circulant prochainement à",
+    "lettre": "C"
+   },
+   {
+    "texte": "Paris",
+    "lettre": "D"
+   },
+   {
+    "texte": "Les conducteurs anglais viendront travailler avec leurs véhicules à",
+    "lettre": "E"
+   },
+   {
+    "texte": "Paris",
+    "lettre": "F"
+   }
+  ],
+  "enonce": "Quel est le sujet de ce texte ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 56,
+  "uid": "a980ce28-332e-41f4-a4c6-4502a2fb7591",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "2013",
+    "lettre": "A"
+   },
+   {
+    "texte": "Fin 2017",
+    "lettre": "B"
+   },
+   {
+    "texte": "2018",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Quand le black cab avec conduite a gauche arrivera-t-il sur le marche ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 57,
+  "uid": "01faa284-997a-4375-8f1a-7043179fe1e1",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Un véhicule sans constructeur",
+    "lettre": "A"
+   },
+   {
+    "texte": "Des conducteurs autonomes",
+    "lettre": "B"
+   },
+   {
+    "texte": "La distance à parcourir avant la prochaine recharge",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Quand l'auteur parle d autonomie, il évoqué",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 58,
+  "uid": "8e2c46a4-ebbf-44ad-bcf2-c9952ef09c5c",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Cela veut dire que ce nouveau modèle sera différent des modèles",
+    "lettre": "A"
+   },
+   {
+    "texte": "conçus auparavant.",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "Que veut dire l'auteur par « à la différence avec ses aînés » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 59,
+  "uid": "22281e94-82c9-4546-a721-3b0cc9e4fdd4",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "La concession est que le véhicules pourra se décliner en une",
+    "lettre": "A"
+   },
+   {
+    "texte": "vingtaine de couleurs différentes contrairement aux blacks cab qui",
+    "lettre": "B"
+   },
+   {
+    "texte": "sont noirs uniquement.",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Quelle concession le constructeur fera-t-il pour les futurs véhicules parisiens ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 60,
+  "uid": "5cfcdcb8-d14d-40ef-840f-f7bc612f96be",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "C'est le fait que le véhicule sera également équipé d'un générateur",
+    "lettre": "A"
+   },
+   {
+    "texte": "à essence (pour recharger la batterie si aucune borne de recharge",
+    "lettre": "B"
+   },
+   {
+    "texte": "n'est disponible à proximité). Ce n'est donc pas un véhicule",
+    "lettre": "C"
+   },
+   {
+    "texte": "exclusivement électrique.",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Qu'est ce qui permet à l'auteur d'affirmer qu'il s'agit d'un véhicule hybride ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 61,
+  "uid": "d81a7f99-eb5f-40c3-8626-f7633e7e24b7",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Mystérieux",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Inexplicable",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Évident",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Trouvez-les synonyme(s) d énigmatique :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 62,
+  "uid": "c31ab101-0b41-4560-8c2f-af92f40d0376",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "On va laisser le problème de côté",
+    "lettre": "A"
+   },
+   {
+    "texte": "Prendre le problème à bras le corps",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Attendre que les choses s'enveniment davantage",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "C est « pour faire face aux problèmes lies a la circulation urbaine » signifie que :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 63,
+  "uid": "c88a335e-c83a-42ea-bb4b-d214ad229854",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Invente des mondes",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Est ancré dans la réalité",
+    "lettre": "B"
+   },
+   {
+    "texte": "Se situe dans des espaces-temps futurs",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "La science-fiction est un genre littéraire qui :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 64,
+  "uid": "7dd6ef1c-93fa-406b-ac4b-ed4d7cf63bb5",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Va être la première à utiliser les deux engins futuristes",
+    "lettre": "A"
+   },
+   {
+    "texte": "A établi un record il y a quelques années au niveau du trafic sur les",
+    "lettre": "B"
+   },
+   {
+    "texte": "routes autour de la ville Est un exemple sur lequel s'appuie le",
+    "lettre": "C"
+   },
+   {
+    "texte": "groupe Airbus",
+    "lettre": "D",
+    "correct": true
+   },
+   {
+    "texte": "S'étend sur 344 kilomètres",
+    "lettre": "E"
+   }
+  ],
+  "enonce": "La métropole brésilienne Sao Paulo :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 65,
+  "uid": "332c1b8f-ff8e-453b-80fc-67644b07abc0",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Alléchant",
+    "lettre": "A"
+   },
+   {
+    "texte": "Attrayant",
+    "lettre": "B"
+   },
+   {
+    "texte": "Anémiant",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Donnez I antonyme du mot « excitant » :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 66,
+  "uid": "1fcb0b33-6ef6-465f-83a7-4d51e403b67a",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Car le Brésil est prêt à investir 31 milliards de dollars pour ce",
+    "lettre": "A"
+   },
+   {
+    "texte": "projet",
+    "lettre": "B"
+   },
+   {
+    "texte": "Pour pallier aux problèmes de circulation",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Parce que le carnaval de Rio de Janeiro attire beaucoup de touristes",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Selon I auteur, pourquoi Airbus se lance dans ce projet ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 67,
+  "uid": "0b5a2f33-9455-461e-8654-973f414309e5",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Ce projet n'est pas aussi marrant que ce que l'on pense",
+    "lettre": "A"
+   },
+   {
+    "texte": "Ce projet n'est pas réaliste et ne relève que de la science-fiction",
+    "lettre": "B"
+   },
+   {
+    "texte": "Ce projet est plus réaliste que ce que l'on pense",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Que signifie la phrase « ce projet n est pas aussi délirant qu il en a l'air » dans le texte ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 68,
+  "uid": "1f3e70c2-7f81-4540-af72-09c99de72b56",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "D'une part on éviterait les bouchons et d'autre part on",
+    "lettre": "A"
+   },
+   {
+    "texte": "contemplerai la ville par le dessus",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "En quoi, selon vous, voler au-dessus d'une ville serait plus excitant ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 69,
+  "uid": "d1c1639c-52ad-48a0-82c9-a3af9449076f",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Vahana qui pourrait accueillir un passager ou servir pour le",
+    "lettre": "A"
+   },
+   {
+    "texte": "transport de marchandises.",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "CityAirbus une sorte de taxi volant qui pourrait accueillir de",
+    "lettre": "C"
+   },
+   {
+    "texte": "multiples passagers",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Citez les noms des deux projets. Pour chacun d'eux, expliquez en quoi ils consistent :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 70,
+  "uid": "555771c8-333b-4694-afe9-2aa95bf0b53a",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Cela veut dire que les voitures volantes seront réelles et feront",
+    "lettre": "A"
+   },
+   {
+    "texte": "partie de notre quotidien.",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "Expliquez la phrase \"les voitures volantes ne feront plus partie de notre imaginaire collectif\"",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 71,
+  "uid": "f430b451-724e-4a3f-8ec8-d57d77866100",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Accentuer",
+    "lettre": "A"
+   },
+   {
+    "texte": "Faire passer de l'état de vapeur à i 'état liquide ou solide",
+    "lettre": "B"
+   },
+   {
+    "texte": "Réduire à l'essentiel",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Faire passer de l'état de liquide à l'état de vapeur",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Donnez, la ou les définition(s) du verbe condenser :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 72,
+  "uid": "13ddfe3b-1583-43ec-bf7b-173150652a94",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Sur une période de 100 ans",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Sur une Période de 1000 ans",
+    "lettre": "B"
+   },
+   {
+    "texte": "Sur une période de 10 ans",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "En I espace d un siècle, signifie :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 73,
+  "uid": "64b0d397-cc48-4104-953c-238bce1839a5",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Travail scientifique",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Imagerie",
+    "lettre": "B"
+   },
+   {
+    "texte": "Conception",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que signifie ingénierie ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 74,
+  "uid": "5da71e7a-39f9-4b8e-90ed-26dd7c0ba30f",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Joyeux",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Cœur léger",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Mélancolique",
+    "lettre": "C"
+   },
+   {
+    "texte": "Neurasthénique",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Donnez, le ou les antonyme(s) de nostalgique :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 75,
+  "uid": "b62b7b29-cf1b-4360-9070-3f74a6c34e06",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Qui est archaïque",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Qui est désuet",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Qui est futuriste",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Donnez, la ou les définition(s) de suranné :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 76,
+  "uid": "78c3eee3-85f1-4bf0-953e-963e61fa7bfb",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Imparfait",
+    "lettre": "A"
+   },
+   {
+    "texte": "Passé simple",
+    "lettre": "B"
+   },
+   {
+    "texte": "Futur",
+    "lettre": "C"
+   },
+   {
+    "texte": "Conditionne",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "Quel est le temps utilise pour le verbe « composeraient » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 77,
+  "uid": "624e91e6-7d72-4d6e-9a33-4b8c0c9b7c5d",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Préhistorique",
+    "lettre": "A"
+   },
+   {
+    "texte": "Symptôme chronique",
+    "lettre": "B"
+   },
+   {
+    "texte": "Inexactitude",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Contresens",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Donnez, le ou les synonymes d anachronisme :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 78,
+  "uid": "777b712b-88c2-4216-b2f3-eef6c119e2da",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Le trafic routier",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Le carnage",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "La pollution",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "L'expansion urbaine",
+    "lettre": "D",
+    "correct": true
+   }
+  ],
+  "enonce": "« L'automobile a [...] transformé le paysage physique », donnez quatre exemples de transformation.",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 79,
+  "uid": "d08b9bf7-2c27-4210-bb39-3dd49bce70e8",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Un chaos sanglant ne peut pas être magnifique, c'est le",
+    "lettre": "A"
+   },
+   {
+    "texte": "contraire",
+    "lettre": "B",
+    "correct": true
+   }
+  ],
+  "enonce": "Le texte précise : \" l'autoroute était un chaos sanglant et magnifique Expliquez en quoi cette affirmation est antinomique ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 80,
+  "uid": "f98156af-9a26-49f9-8120-9c5d2ca77ce8",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Tracasser",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Interpeller",
+    "lettre": "B"
+   },
+   {
+    "texte": "Taquiner",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Donnez un synonyme du verbe « titiller » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 81,
+  "uid": "9a94f625-f1b7-45da-9ab3-ccef75b69ff5",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Faire disparaitre",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Maintenir",
+    "lettre": "B"
+   },
+   {
+    "texte": "Conserver",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Que signifie le verbe « eradiquer » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 82,
+  "uid": "f7c5dd35-3174-457b-bc67-8f69e17a85b1",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Libre",
+    "lettre": "A"
+   },
+   {
+    "texte": "Assistée",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Indépendant",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Donnez le contraire de l'adjectif « autonome »",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 83,
+  "uid": "aa112397-bd50-4d2e-9b7a-43734f487f11",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Devenus menaçants",
+    "lettre": "A"
+   },
+   {
+    "texte": "Couverts",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Avec un prix réduit",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Dans le texte, quel est le sens du mot « bardés » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 84,
+  "uid": "4bcc1ba1-bb1e-4c5e-a0ed-d41fd013c3fc",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Un comportement instable",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Un comportement sans cohérence",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Un comportement dangereux",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Un comportement erratique, c'est :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 85,
+  "uid": "e261e0e2-d452-40c8-9cb5-3bc167593856",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Le concept n'intéresse que les médias et pas le grand public",
+    "lettre": "A"
+   },
+   {
+    "texte": "Les médias diffusent les démonstrations des voitures autonomes ce qui",
+    "lettre": "B"
+   },
+   {
+    "texte": "permet de faire de la publicité aux constructeurs",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "Elles sont équipées d'un système qui leur permet d'échanger des",
+    "lettre": "D"
+   },
+   {
+    "texte": "informations entre elles",
+    "lettre": "E"
+   }
+  ],
+  "enonce": "La voiture autonome est un moyen de communication facile pour les constructeurs car :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 86,
+  "uid": "ea2e70ef-e9ad-4c7f-be12-7a8bb0b65096",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Elle se déplacera avec l'électricité comme source d'énergie",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Elle se sera débarrassée de l'électricité pour se déplacer",
+    "lettre": "B"
+   },
+   {
+    "texte": "Elle se sera débarrassée de l'électricité pour se déplacer",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Elle sera forcément « mue par l'électricité » signifie :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 87,
+  "uid": "f58f5a72-4eb7-4d1f-8f52-a989f36d4f05",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les médias aiment le sensationnel. Ils montrent toujours plus",
+    "lettre": "A"
+   },
+   {
+    "texte": "d'images fortes, divulguent des « informations-choc » pour faire le",
+    "lettre": "B"
+   },
+   {
+    "texte": "buzz, souhaitent marquer les esprits voire même dépasser leurs",
+    "lettre": "C"
+   },
+   {
+    "texte": "concurrents dans l'immédiateté de l'information. De nos jours, les",
+    "lettre": "D"
+   },
+   {
+    "texte": "spectateurs sont aussi en attente de ces images relayées de manière",
+    "lettre": "E"
+   },
+   {
+    "texte": "instantanée, sans recul. Cela fait partie d'un voyeurisme",
+    "lettre": "F"
+   },
+   {
+    "texte": "ambiant.",
+    "lettre": "G",
+    "correct": true
+   }
+  ],
+  "enonce": "Que veut dire « de spectaculaires démonstrations dont les médias sont friands » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 88,
+  "uid": "b1cf299b-72b9-4b58-81c5-dd8d53cd8f79",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Certains piétons ne veulent pas respecter les règles du code de la",
+    "lettre": "A"
+   },
+   {
+    "texte": "route et font ce qu'ils veulent sur les chaussées au risque de mettre",
+    "lettre": "B"
+   },
+   {
+    "texte": "leur vie en danger",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "Que veut dire l'auteur par la phrase « des piétons moins soucieux des règles » ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 89,
+  "uid": "ffe9d0b6-a18c-4831-b7fd-1cbbfcd52381",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Suppression de la mortalité routière, la mobilité personnelle sera",
+    "lettre": "A"
+   },
+   {
+    "texte": "accessible à tous, suppression des embouteillages et non",
+    "lettre": "B"
+   },
+   {
+    "texte": "polluante.",
+    "lettre": "C",
+    "correct": true
+   }
+  ],
+  "enonce": "D'après le texte et sans paraphraser, quelles sont les promesses de la voiture autonome ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 90,
+  "uid": "75bf20b3-ca56-4e93-9c44-5de99384db45",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "18 jours",
+    "lettre": "A"
+   },
+   {
+    "texte": "26 jours",
+    "lettre": "B"
+   },
+   {
+    "texte": "28 jours",
+    "lettre": "C",
+    "correct": true
+   },
+   {
+    "texte": "31 jours",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Selon la newsletter « Oversharing »,quel est la durée de vie moyenne d'une trottinette en libre-service ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 91,
+  "uid": "de196429-1744-41b4-9e1b-882dc3eb34f0",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "qu'une voiture classique transportant trois passagers",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "qu'une voiture classique transportant cinq passagers",
+    "lettre": "B"
+   },
+   {
+    "texte": "qu'un bus diesel",
+    "lettre": "C"
+   },
+   {
+    "texte": "qu'un SUV",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Selon un rapport de 2019 d'Arcadis, une trottinette électrique en libre service présente le même bilan carbone :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 92,
+  "uid": "46953dfb-6b3d-4734-8c52-f495f384ae25",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Les conducteurs ne respectent pas le code de la route",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Elles sont difficilement recyclables",
+    "lettre": "B"
+   },
+   {
+    "texte": "Elles ont une durée de vie très courte",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Pourquoi les trottinettes électriques sont devenues un vrai dangers dans les centres-villes ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 93,
+  "uid": "884d9ca9-2769-431e-9c19-f1b629b463f0",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "7 fois moins de grammes de CO2 au kilomètre qu'un bus diesel",
+    "lettre": "A"
+   },
+   {
+    "texte": "7 fois moins de grammes de CO2 au kilomètre qu'une voiture",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "10 fois moins de grammes de CO2 au kilomètre qu'un taxi",
+    "lettre": "C"
+   }
+  ],
+  "enonce": "Dans le texte, avec une meilleure longévité, une trottinette peut émettre",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 94,
+  "uid": "af7ee309-a034-40ce-92e9-62bebb5de39e",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Maximiser",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Perfectionner",
+    "lettre": "B",
+    "correct": true
+   },
+   {
+    "texte": "Rendre optimiste",
+    "lettre": "C"
+   },
+   {
+    "texte": "Abimer",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Quel(s) est/sont le(s) synonyme(s) d' \"optimiser\" ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 95,
+  "uid": "0344e363-8fe6-4511-a839-6ef82afe8696",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Appréciables",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Peu importantes",
+    "lettre": "B"
+   },
+   {
+    "texte": "Vaines",
+    "lettre": "C"
+   },
+   {
+    "texte": "Probables",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Dans le texte \"substantielles doit être compris comme :",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 96,
+  "uid": "6743cdd2-779a-44fa-b014-633b13980826",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Rarement",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Habituellement",
+    "lettre": "B"
+   },
+   {
+    "texte": "Principalement",
+    "lettre": "C"
+   },
+   {
+    "texte": "Toujours",
+    "lettre": "D"
+   }
+  ],
+  "enonce": "Donnez le contraire (antonyme) de l'adverbe \"couramment\":",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ },
+ {
+  "id": 97,
+  "uid": "d1e06cda-1dff-4a6d-b0e9-e31fefb47f27",
+  "type": "QCM",
+  "choix": [
+   {
+    "texte": "Parce qu'elle permet de préserver l'environnement",
+    "lettre": "A",
+    "correct": true
+   },
+   {
+    "texte": "Parce qu'elle offre des possibilités de se déplacer rapidement",
+    "lettre": "B"
+   }
+  ],
+  "enonce": "Pourquoi l'éco conduite est une attitude qu'il faut adopter ?",
+  "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+  "manually_edited": true
+ }
+]
