@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { CalendarClock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -43,13 +42,6 @@ export function RappelAuditQualiopi() {
   const fermer = () => { fenetreFermee = true; setOuvert(false); };
   return (
     <>
-      <div role="alert" className="mx-3 sm:mx-6 mt-3 rounded-lg border-2 border-destructive bg-destructive/10 px-4 py-3 flex items-center gap-3">
-        <CalendarClock className="w-8 h-8 shrink-0 text-destructive" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-lg sm:text-2xl font-extrabold text-destructive leading-tight">AUDIT QUALIOPI — 10 NOVEMBRE 2026</p>
-          <p className="text-sm sm:text-base font-semibold text-foreground">Pensez à préparer votre audit Qualiopi · {libelleCompteRebours(jours)}</p>
-        </div>
-      </div>
       <Dialog open={ouvert} onOpenChange={(o) => { if (!o) fermer(); }}>
         <DialogContent className="border-2 border-destructive">
           <DialogHeader>
