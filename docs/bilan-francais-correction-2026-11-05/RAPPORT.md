@@ -27,3 +27,11 @@ Les Bilans n'ont ni champ ni affichage de texte support (élève, admin, nouveau
 - Après : 97/97 = version préparée ; diff vs sauvegarde = Q5, Q85 uniquement ; reste des modules 5/11 et tous les autres modules : empreintes inchangées.
 - Non touchés : QRC Q8/9/10/87/89, Q88, 25 sans source, Q86, textes supports, notes, réponses, progressions, EB, version figée a2d4892a.
 - Publication du site non nécessaire (contenu lu depuis la base) ; non publié.
+
+## Préparation Q14 / Q15 / Q87 — 05/11/2026 19:05 UTC (non appliquée)
+- Numérotation : la Q87 du Word = question n°86 dans les Bilans (97 questions en base, 98 dans le Word).
+- Q14 : déjà A + C correctes en base, rien à changer.
+- Q15 : C et D fragmentées réunies en « Pour éviter les contraintes de la voiture (coût, bouchons, ...) » ; A et C correctes ; énoncé inchangé.
+- Q87 (n°86) : C remplacée par « Pour se mouvoir elle utilisera l'électricité » ; A et C correctes ; B inchangée.
+- Fichiers : prepare_q15_q86_module5_ex503.json, prepare_q15_q86_module11_ex603.json ; 95/97 identiques, id/uid conservés.
+- Base : aucune écriture. Publication : aucune.
