@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 05/11 — Convocations FC après paiement confirmé (préparation uniquement)
+- [x] Rapprochements et modèle officiel lus ; neuf inscriptions auditées, montants dossier/session divergents et deux mails historiques à revoir, aucun seuil contractuel inventé.
+- [x] Chaîne convocations distincte préparée : preuves admin, SQL non appliqué, fonction non déployée, unicité/session, journal, reprise bornée et quarantaine ; ancien bloc bancaire dangereux retiré de l'aperçu uniquement.
+- [x] 61 Vitest + 14 SQL jetable PASS ; simulation fictive PC/mobile sans écriture ; empreintes live financières et inscriptions identiques ; rapport docs/convocations-fc-2026-11-05.md.
+- [ ] Activation : bloque sur nouvelles autorisations de déploiement/publication/envoi, preuves de rapprochement/contrat et secret de planification ; revue/formulaire CRM et parcours authentifié réel restent à vérifier avant activation.
+
 ## Supports pratiques reçus — 04/11 14:52 UTC
 - [x] Accord TA → support TAXI / VA → support VTC : partage déjà assuré par les modules pratiques communs 6/8 ; tests des six modalités ajoutés, sans changement des affectations ni des jalons.
 - [x] Deux sources exactes vérifiées : 20 pages / 76 questions-réponses chacune ; accord d’ajout dans Déroulement, consultation seule, sans publication.
