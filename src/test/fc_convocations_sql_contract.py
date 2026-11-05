@@ -101,4 +101,14 @@ class Contract(unittest.TestCase):
   self.evidence();self.claim()
   after=self.sql("SELECT md5(string_agg(x,'|' ORDER BY x)) FROM (SELECT to_jsonb(t)::text x FROM transactions_bancaires t UNION ALL SELECT to_jsonb(t)::text FROM apprenants t UNION ALL SELECT to_jsonb(t)::text FROM session_apprenants t UNION ALL SELECT to_jsonb(t)::text FROM sessions t) q")
   self.assertEqual(before,after)
+ def test_admin_confirmation_idempotent_and_owner_guarded(self):
+  q=f"SELECT fc_convocation_confirmer('{T}','{I}','proof',50,'contract')"
+  with self.assertRaisesRegex(RuntimeError,'Admin requis'):self.sql(q)
+  prefix="SET test.uid='ffffffff-0000-0000-0000-000000000001'; "
+  self.assertEqual(self.sql(prefix+q),'t');self.assertEqual(self.sql(prefix+q),'t')
+  self.assertEqual(self.sql('SELECT count(*) FROM fc_convocation_rapprochements'),'1')
+  with self.assertRaisesRegex(RuntimeError,'Contrat existant conservé'):self.sql(prefix+q.replace("50,'contract'","150,'contract'"))
+ def test_email_block_after_queue_is_rechecked(self):
+  self.activate();self.evidence();self.sql('UPDATE apprenants SET emails_bloques=true')
+  self.assertIsNone(self.claim());self.assertEqual(self.sql('SELECT statut FROM fc_convocation_envois'),'a_revoir')
 if __name__=='__main__':unittest.main(verbosity=2)
