@@ -1,5 +1,7 @@
 import { describe,it,expect } from 'vitest';
-import { activeLearners,computeFirstPassage,type AttemptStats,type CompletionStats } from '../lib/premierPassageStats';
+import { activeLearners,computeFirstPassage as computeRaw,type AttemptStats,type CompletionStats } from '../lib/premierPassageStats';
+const eventFor=(a:AttemptStats)=>({apprenant_id:a.apprenant_id,exercice_id:a.exercice_id,question_id:Object.keys(a.reponses ?? {})[0] ?? '1',tentative:a.tentative ?? 0,valeur:Object.values(a.reponses ?? {})[0],created_at:'2026-11-04T09:00:00Z'});
+const computeFirstPassage=(...args:Parameters<typeof computeRaw>)=>computeRaw(args[0],args[1],args[2],args[3],args[4],args[5] ?? args[3].map(eventFor));
 const sessions=[{id:'j',date_debut:'2026-11-02',date_fin:'2026-11-13',heure_debut:'09:00'},{id:'s',date_debut:'2026-11-02',date_fin:'2026-11-13',heure_debut:'17:00'}];
 const questions=[{id:1,enonce:'Marketing',choix:[{lettre:'A',texte:'a',correct:true},{lettre:'C',texte:'c',correct:true}]}];
 const attempt=(learner:string,answer:string[],tentative=1):AttemptStats=>({apprenant_id:learner,exercice_id:'module_4_exo_7',tentative,status:'submitted',submitted_at:'2026-11-04T10:00:00Z',reponses:{'7-1':answer}});
@@ -7,6 +9,8 @@ const proof=(learner:string,answer:string[]):CompletionStats=>({apprenant_id:lea
 const population=()=>activeLearners(sessions,[{apprenant_id:'a',session_id:'j'},{apprenant_id:'b',session_id:'s'}],'2026-11-05');
 const compute=(attempts:AttemptStats[],proofs:CompletionStats[])=>computeFirstPassage(questions,[{module:4,exercise:7}],population(),attempts,proofs)['1'];
 describe('Erreur premier passage — lecture seule',()=>{
+ it('réponse finale seule ne prouve pas le premier choix',()=>{expect(computeRaw(questions,[{module:4,exercise:7}],population(),[attempt('a',['A'])],[proof('a',['A'])])['1']).toMatchObject({total:0,unknown:1});});
+ it('premier choix modifié avant remise exclu sans corrigé de ce premier choix',()=>{const row=attempt('a',['A','C']);expect(computeRaw(questions,[{module:4,exercise:7}],population(),[row],[proof('a',['A','C'])],[{...eventFor(row),valeur:['A']}])['1']).toMatchObject({total:0,unknown:1});});
  it('global JOUR et SOIR : 1 erreur / 2 réponses = 50 %',()=>{const r=compute([attempt('a',['A']),attempt('b',['C','A'])],[proof('a',['A']),proof('b',['A','C'])]);expect(r).toMatchObject({incorrect:1,total:2,unknown:0,jour:{incorrect:1,total:1},soir:{incorrect:0,total:1}});});
  it('sessions futures/terminées et inscription hors dates exclues',()=>{const s=[...sessions,{id:'future',date_debut:'2026-12-01',date_fin:'2026-12-15'},{id:'past',date_debut:'2026-10-01',date_fin:'2026-10-15'}];expect(activeLearners(s,[{apprenant_id:'f',session_id:'future'},{apprenant_id:'p',session_id:'past'},{apprenant_id:'a',session_id:'j',date_fin_personnalisee:'2026-11-04'}],'2026-11-05').size).toBe(0);});
  it('déduplique plusieurs inscriptions sans perdre soirée',()=>{const l=activeLearners(sessions,[{apprenant_id:'a',session_id:'j'},{apprenant_id:'a',session_id:'s'},{apprenant_id:'a',session_id:'j'}],'2026-11-05');const r=computeFirstPassage(questions,[{module:4,exercise:7}],l,[attempt('a',['A']),attempt('a',['A'])],[proof('a',['A'])])['1'];expect(r.total).toBe(1);expect(r.mixte).toBe(1);});

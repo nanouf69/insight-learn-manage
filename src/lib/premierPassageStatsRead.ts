@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { freshSessionRead } from './sessionRpc';
-import { activeLearners, computeFirstPassage, type QuestionStatsTarget, type SourceStats, type AttemptStats, type CompletionStats, type InscriptionStats, type SessionStats } from './premierPassageStats';
+import { activeLearners, computeFirstPassage, type QuestionStatsTarget, type SourceStats, type AttemptStats, type CompletionStats, type InscriptionStats, type SessionStats, type FirstAnswerEvent } from './premierPassageStats';
 
 async function pages<T>(query: (start:number,end:number)=>PromiseLike<{data:unknown;error:unknown}>) {
   const rows:T[]=[];
@@ -34,7 +34,7 @@ export async function readFirstPassage(module:number,exercise:number,questions:Q
     for(const s of siblings)if(!sources.some(x=>x.module===s.module_id && x.exercise===s.exercise_id))sources.push({module:s.module_id,exercise:s.exercise_id});
   }
   if(!learners.size)return computeFirstPassage(questions,sources,learners,[],[]);
-  const attempts:AttemptStats[]=[],completions:CompletionStats[]=[];
+  const attempts:AttemptStats[]=[],completions:CompletionStats[]=[],events:FirstAnswerEvent[]=[];
   // Bounded batches, SELECT only, one read per opened exercise, never per question.
   const ids=[...learners.keys()];
   for(let offset=0;offset<ids.length;offset+=75){
@@ -43,8 +43,9 @@ export async function readFirstPassage(module:number,exercise:number,questions:Q
       attempts.push(...await pages<AttemptStats>((a,b)=>supabase.from(table).select('apprenant_id,exercice_id,tentative,status,submitted_at,reponses').in('apprenant_id',batch).in('exercice_id',exerciseIds).order('id').range(a,b)));
     }
     completions.push(...await pages<CompletionStats>((a,b)=>supabase.from('apprenant_module_completion').select('apprenant_id,module_id,status,completed_at,details').in('apprenant_id',batch).in('module_id',[...new Set(sources.map(s=>s.module))]).order('id').range(a,b)));
+    events.push(...await pages<FirstAnswerEvent>((a,b)=>supabase.from('reponses_apprenants_journal').select('apprenant_id,exercice_id,question_id,tentative,valeur,created_at').in('apprenant_id',batch).in('exercice_id',exerciseIds).eq('tentative',1).order('created_at').order('id').range(a,b)));
   }
   const {data:finalSession}=await supabase.auth.getSession();
   if(finalSession.session?.user.id!==user)throw new Error('Le compte connecté a changé');
-  return computeFirstPassage(questions,sources,learners,attempts,completions);
+  return computeFirstPassage(questions,sources,learners,attempts,completions,events);
 }
