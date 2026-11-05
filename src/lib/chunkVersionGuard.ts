@@ -56,7 +56,10 @@ export function notifierChunkObsolete(): void {
 export function installChunkVersionGuard(win: Window = window): void {
   // Vite émet cet événement quand un import dynamique échoue (chunk 404).
   win.addEventListener('vite:preloadError', (event) => {
-    event.preventDefault(); // empêche le rejet non géré
+    // NE PAS appeler preventDefault() : Vite résoudrait alors l'import avec
+    // `undefined`, et React.lazy planterait sur `_result.default` (incident
+    // 04/11 23:31 UTC). L'erreur doit rester une vraie erreur de chargement.
+    void event;
     notifierChunkObsolete();
   });
   // Filet de sécurité pour les navigateurs/bundles sans événement dédié.
