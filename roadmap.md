@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 05/11 20:33 — Activation/publication Bilan Français
+- [ ] Distinguer les cinq échecs généraux, relancer les contrats 63 QCM/neuf supports et protection historiques, lire le routage actif.
+- [ ] Vérifier parcours élève si session autorisée disponible ; activer candidate et publier seulement sans incertitude critique, sinon documenter blocage.
+
 ## 05/11 20:22 — Publication premier passage
 - [x] Filtre individuel par ID de session terminé, remise à zéro JOURNÉE/SOIRÉE et lectures admin réelles vérifiées PC/mobile, 20 tests calcul PASS ; aucune écriture pédagogique.
 - [x] Suite globale exécutée : 3413 PASS, 5 FAIL préexistants (4 mock auth gel-par-module-raccordement, 1 règle agenda suivi-formation-indicateurs), 13 skipped ; aperçu build OK.
