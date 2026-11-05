@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 05/11 20:22 — Publication premier passage
+- [x] Filtre individuel par ID de session terminé, remise à zéro JOURNÉE/SOIRÉE et lectures admin réelles vérifiées PC/mobile, 20 tests calcul PASS ; aucune écriture pédagogique.
+- [x] Suite globale exécutée : 3413 PASS, 5 FAIL préexistants (4 mock auth gel-par-module-raccordement, 1 règle agenda suivi-formation-indicateurs), 13 skipped ; aperçu build OK.
+- [ ] Publication BLOQUÉE selon condition « conforme et sans risque » : cinq tests en échec et quatre alertes critiques de lecture de paramètres (bilan_future_opening, bilan_identite_flags, bilan_snapshot_flags, module_regles_validation) ; aucune correction de permissions hors périmètre et aucune demande de publication envoyée.
+
 ## 05/11 20:18 — Sessions explicites du premier passage
 - [x] Sessions retenues nom/dates/modalité, filtres JOURNÉE/SOIRÉE, taux et n/N par catégorie et session ; aucune écriture Cloud.
 - [x] 33 tests PASS : dates inclusives, périodes distinctes, déduplication et catégorie sans session ; compte admin réel PC/mobile + actualisation vérifiés. Q1 : journée 0/2, soirée aucune réponse prouvée (18 exclus), global 0/2 ; non publié. Rapport docs/erreur-premier-passage-sessions-2026-11-05.md.

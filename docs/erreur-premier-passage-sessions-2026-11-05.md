@@ -27,3 +27,10 @@ La lecture conserve les identifiants distincts, jamais regroupés par intitulé.
 
 ## État
 **NON PUBLIÉ.** Aucune migration, aucun déploiement, aucune écriture de question, réponse, note, progression, émargement ou session ; aucun email/SMS/IA. Les taux restent partiels lorsque le premier choix et le corrigé historique ne sont pas prouvables.
+
+## Demande de publication 20:22 UTC
+- Filtre individuel par session ajouté : choix par identifiant immutable, options limitées à la modalité active sélectionnée ; changement de modalité réinitialise le choix. Une session retirée/incompatible ne produit aucun taux global de remplacement.
+- 20 tests calcul/session PASS (dont nouveau filtre individuel) ; suite complète exécutée : **3413 PASS, 5 FAIL, 13 skipped**. Les cinq échecs préexistants sont quatre mocks auth incomplets dans gel-par-module-raccordement et un attendu agenda dans suivi-formation-indicateurs ; aucune modification de ces règles hors demande.
+- Navigateur admin réel : sélection TAXI/TA seule affiche aucune réponse et n’inclut plus les sessions VTC ; passage SOIRÉE réinitialise correctement la sélection ; actualisation global 0/2, 26 non prouvés inchangé. PC/mobile, aucune erreur JavaScript, build OK.
+- Scan sécurité exécuté : quatre alertes critiques actives sur lecture de tables de paramètres `bilan_future_opening`, `bilan_identite_flags`, `bilan_snapshot_flags`, `module_regles_validation`, six avertissements et deux informations. Ce scan signale des permissions larges, pas une preuve de fuite de réponses élèves ; aucune modification de droits ni suppression d’alerte.
+- **Publication non demandée** : l’autorisation est conditionnée aux tests conformes et à l’absence de risque, conditions non établies. Production connue : https://gestion.ftransport.fr ; aucune preuve de nouvelle publication et aucun nouvel indicateur prétendu présent en production. La publication capture tout l’aperçu, pas uniquement cette fonctionnalité.
