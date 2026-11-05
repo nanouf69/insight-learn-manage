@@ -111,8 +111,7 @@ Deno.serve(async (req) => {
       const txs = await paginer<TxLite>((f, t) => admin.from("transactions_bancaires").select("id, date_operation, montant, libelle, reference").or(`montant.gte.${MONTANT_MIN_FC},montant.lt.0`).order("date_operation").range(f, t));
       const inscritsFc = await idsInscritsSessionFc();
       const tous = await paginer<DossierFc & { compte_cours_archive_at?: string | null }>((f, t) => admin.from("apprenants").select("id, nom, prenom, email, type_apprenant, compte_cours_archive_at").range(f, t));
-      const dossiers = tous.filter((d) => estDossierFc(d.type_apprenant, inscritsFc.has(d.id)));
-      const fc = dossiers.map((d) => ({ ...d, archive: !!d.compte_cours_archive_at }));
+      const fc = tous.map((d) => ({ ...d, inscrit_session_fc: inscritsFc.has(d.id), archive: !!d.compte_cours_archive_at })).filter(estDossierFc);
       const depuis = cfg.actif_depuis ? new Date(cfg.actif_depuis).toISOString().slice(0, 10) : null;
       let nouveaux = 0, envoyes = 0;
       for (const [k, groupe] of regrouperDoublons(txs)) {
@@ -146,7 +145,7 @@ Deno.serve(async (req) => {
       const aid = typeof body?.apprenant_id === "string" && UUID.test(body.apprenant_id) ? body.apprenant_id : null;
       if (!aid) return json({ error: "Stagiaire inconnu" }, 400);
       const { data: a } = await admin.from("apprenants").select("id, type_apprenant").eq("id", aid).maybeSingle();
-      if (!a || !estDossierFc(a.type_apprenant, (await idsInscritsSessionFc()).has(aid))) return json({ error: "Ce dossier n'est pas une formation continue" }, 400);
+      if (!a || !estDossierFc({ ...(a as DossierFc), inscrit_session_fc: (await idsInscritsSessionFc()).has(aid) })) return json({ error: "Ce dossier n'est pas une formation continue" }, 400);
       const { error } = await admin.from("fc_paiements").update({ apprenant_id: aid, statut: "rapproche", associe_par: uid, motif: "Associé manuellement par un admin", updated_at: new Date().toISOString() }).eq("id", pid).in("statut", ["a_revoir", "rapproche"]);
       if (error) throw error;
       return json({ ok: true });
