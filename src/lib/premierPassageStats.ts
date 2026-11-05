@@ -81,3 +81,12 @@ export function computeSessionFirstPassage(targets: QuestionStatsTarget[], sourc
   };
 }
 export type SessionFirstPassage = ReturnType<typeof computeSessionFirstPassage>;
+export type FirstPassageFilter = 'global' | 'jour' | 'soir';
+export function selectFirstPassageView(data: SessionFirstPassage, filter: FirstPassageFilter, sessionId: string) {
+  const available = data.sessions.filter(s => filter === 'global' || s.mode === filter);
+  const selected = sessionId === 'all' ? undefined : available.find(s => s.id === sessionId);
+  return {
+    sessions: selected ? [selected] : sessionId === 'all' ? available : [],
+    rates: selected ? data.sessionRates[selected.id] : sessionId === 'all' ? filter === 'global' ? data.rates : data.modeRates[filter] : {},
+  };
+}
