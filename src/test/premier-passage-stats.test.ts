@@ -9,6 +9,7 @@ const proof=(learner:string,answer:string[]):CompletionStats=>({apprenant_id:lea
 const population=()=>activeLearners(sessions,[{apprenant_id:'a',session_id:'j'},{apprenant_id:'b',session_id:'s'}],'2026-11-05');
 const compute=(attempts:AttemptStats[],proofs:CompletionStats[])=>computeFirstPassage(questions,[{module:4,exercise:7}],population(),attempts,proofs)['1'];
 describe('Erreur premier passage — lecture seule',()=>{
+ it('QRC sans correction individuelle prouvée exclue',()=>{expect(computeFirstPassage([{...questions[0],type:'QRC'}],[{module:4,exercise:7}],population(),[attempt('a',['A'])],[proof('a',['A'])])['1']).toMatchObject({total:0,unknown:1});});
  it('réponse finale seule ne prouve pas le premier choix',()=>{expect(computeRaw(questions,[{module:4,exercise:7}],population(),[attempt('a',['A'])],[proof('a',['A'])])['1']).toMatchObject({total:0,unknown:1});});
  it('premier choix modifié avant remise exclu sans corrigé de ce premier choix',()=>{const row=attempt('a',['A','C']);expect(computeRaw(questions,[{module:4,exercise:7}],population(),[row],[proof('a',['A','C'])],[{...eventFor(row),valeur:['A']}])['1']).toMatchObject({total:0,unknown:1});});
  it('global JOUR et SOIR : 1 erreur / 2 réponses = 50 %',()=>{const r=compute([attempt('a',['A']),attempt('b',['C','A'])],[proof('a',['A']),proof('b',['A','C'])]);expect(r).toMatchObject({incorrect:1,total:2,unknown:0,jour:{incorrect:1,total:1},soir:{incorrect:0,total:1}});});

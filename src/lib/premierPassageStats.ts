@@ -37,6 +37,7 @@ export function computeFirstPassage(targets: QuestionStatsTarget[], sources: Sou
         for(const row of rows) {
           const answer=row.reponses?.[`${source.exercise}-${q.id}`] ?? row.reponses?.[String(q.id)];
           if(!answered(answer))continue;
+          if(String(q.type ?? '').toLowerCase()==='qrc' || q.choix.length===0){uncertain=true;continue;}
           if(row.tentative!==1){if(!rows.some(r=>r.tentative===1))uncertain=true;continue;}
           if(row.status!=='submitted' || !row.submitted_at){uncertain=true;continue;}
           const history=events.filter(e=>e.apprenant_id===learner && e.exercice_id===id && e.tentative===1 && (e.question_id===`${source.exercise}-${q.id}` || e.question_id===String(q.id)) && answered(e.valeur)).sort((a,b)=>a.created_at.localeCompare(b.created_at));
