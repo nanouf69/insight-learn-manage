@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 05/11 20:18 — Sessions explicites du premier passage
-- [ ] Ajouter sessions retenues nom/dates/modalité, filtres JOURNÉE/SOIRÉE, taux et n/N par catégorie et session ; aucune écriture Cloud.
-- [ ] Tests dates inclusives, périodes distinctes, déduplication et catégorie sans session ; vérification administrateur avec lectures réelles, sans publication.
+- [x] Sessions retenues nom/dates/modalité, filtres JOURNÉE/SOIRÉE, taux et n/N par catégorie et session ; aucune écriture Cloud.
+- [x] 33 tests PASS : dates inclusives, périodes distinctes, déduplication et catégorie sans session ; compte admin réel PC/mobile + actualisation vérifiés. Q1 : journée 0/2, soirée aucune réponse prouvée (18 exclus), global 0/2 ; non publié. Rapport docs/erreur-premier-passage-sessions-2026-11-05.md.
 
 ## 05/11 — Erreur au premier passage dans la liste admin
 - [x] Lecture seule sessions actives JOUR/SOIR, inscriptions effectives, premières réponses journalisées + tentative 1 remise + preuve figée compatible ; jamais corrigé actuel ni note agrégée.
