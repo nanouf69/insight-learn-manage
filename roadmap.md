@@ -959,3 +959,11 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Kevin FERNANDES (31/10) : introduction restaurée depuis journal 15/09 (A), date/score 9/10 conservés ; 5/7 modules prouvés. Sept droits individuels enregistrés, accès G(V) seule et bilan testés en aperçu admin réel ; 56 tests PASS, build OK, résultats/snapshots/signatures identiques. Rapport docs/kevin-fernandes-reparation-2026-10-31.md.
 - [ ] Kevin EB1 : copies historiques T3/T4 divergent du moteur et sans preuve de remise de même tentative ; correction historique exacte requise, aucune note empruntée ni attente supprimée fictivement. EB2 déjà 14/14 QRC corrigées, aucune relance.
 - [ ] Kevin publication des accès : interface prête mais non publiée, confirmation explicite nécessaire ; connexion autonome/soumission G(V) non testées.
+
+## Incidents bilan 05/11 — autorisation « Corrige »
+- [x] P4 plantage lazy (Emmanuel 04/11 23:31) : cause prouvée dans le code — `preventDefault` sur `vite:preloadError` faisait résoudre l'import à `undefined` → `_result.default`. Corrigé (aperçu), test PASS, non publié.
+- [ ] P1 délais 57014 module_completion modules 2/4/10 : non traité ce tour.
+- [ ] P2 files Ahmed Malki / Mohamed Mliki : non audité ce tour.
+- [ ] P3 42501 progression : correctif freshSessionRead du 04/11 présent dans le code, publication non vérifiée.
+- [ ] P5 Belarbi m64 : correctif du 04/11 présent dans l'aperçu, non publié, aucune preuve élève.
+- [ ] QRC 22 en attente : diagnostic non fait ce tour.
