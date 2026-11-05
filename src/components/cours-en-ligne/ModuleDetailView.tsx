@@ -1,4 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
+import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
 import { signalerContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
 import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
@@ -3559,6 +3560,7 @@ function ExerciceCard({
   }, [moduleId, item.id]);
 
   return (
+    <FirstPassageProvider moduleId={moduleId} exerciseId={item.id} questions={safeQuestions} enabled={expanded || fullscreenOpen}>
     <Card ref={cardRef} className="border-2 border-slate-300 transition-all hover:shadow-md">
       <CardContent className="p-4 space-y-3">
         <div>
@@ -3690,6 +3692,7 @@ function ExerciceCard({
                     )}
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground line-clamp-2"><RichText value={q.enonce} /></p>
+                      <QuestionFirstPassageRate questionId={q.id} />
                       {getOverrideWarning(q.id) && (
                         <div className="mt-2 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
                           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -3798,6 +3801,7 @@ function ExerciceCard({
                         <Badge className="text-base shrink-0 mt-0.5 px-3 py-1">Q{qi + 1}</Badge>
                         <div className="flex-1 min-w-0">
                           <p className="text-xl font-semibold mb-3 leading-snug"><RichText value={q.enonce} /></p>
+                          <QuestionFirstPassageRate questionId={q.id} />
                           {getOverrideWarning(q.id) && (
                             <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
                               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -3857,6 +3861,7 @@ function ExerciceCard({
         </DialogContent>
       </Dialog>
     </Card>
+    </FirstPassageProvider>
   );
 }
 
