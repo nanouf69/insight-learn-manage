@@ -417,6 +417,7 @@ const Index = () => {
             {/* Small Transfers */}
             <SmallTransfersTable />
             <PaiementsFcRevue />
+            <ConvocationsFcSimulation />
 
             {/* Personal financing transfers (other formations) */}
             <PersonalFinancingTransfersTable />
