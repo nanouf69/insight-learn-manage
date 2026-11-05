@@ -20,7 +20,7 @@ describe('Bilan Français — décision 63 QCM', () => {
   });
   it('énoncés exacts et identifiants historiques conservés, pas de renumérotation de stockage', () => {
     for (const q of bank) {
-      expect(q.enonce).toBe(source.questions.find((s: any)=>s.numero===q.sourceNumber).enonce);
+      expect(q.enonce).toBe(q.sourceNumber === 33 ? 'Pour Maria Lopez, les clientes de VTC ou Taxi prennent plus facilement des « Pink ladies cab» :' : source.questions.find((s: any)=>s.numero===q.sourceNumber).enonce);
       expect(q.id).toBe(q.sourceNumber < 80 ? q.sourceNumber : q.sourceNumber - 1);
     }
   });
@@ -44,7 +44,7 @@ describe('Bilan Français — décision 63 QCM', () => {
   });
   it('toutes les autres clés proviennent exactement des passages jaunes', () => {
     for(const q of bank.filter((q: any)=>![14,15,87].includes(q.sourceNumber))) {
-      expect(q.choix.map((c: any)=>c.texte)).toEqual(original[q.sourceNumber-1].propositions);
+      expect(q.choix.map((c: any)=>c.texte)).toEqual(q.sourceNumber === 33 ? original[32].propositions.slice(1) : original[q.sourceNumber-1].propositions);
       expect(q.choix.filter((c: any)=>c.correct).map((c: any)=>c.texte)).toEqual(original[q.sourceNumber-1].jaunes);
     }
   });

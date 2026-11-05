@@ -855,25 +855,20 @@
     "id": 33,
     "sourceNumber": 33,
     "type": "QCM",
-    "enonce": "Pour Maria Lopez, les clientes de VTC ou Taxi prennent plus facilement des « Pink",
+    "enonce": "Pour Maria Lopez, les clientes de VTC ou Taxi prennent plus facilement des « Pink ladies cab» :",
     "choix": [
       {
         "lettre": "A",
-        "texte": "ladies cab» :",
-        "correct": false
-      },
-      {
-        "lettre": "B",
         "texte": "Parce que les véhicules sont roses",
         "correct": false
       },
       {
-        "lettre": "C",
+        "lettre": "B",
         "texte": "Pour des raisons de sécurité",
         "correct": true
       },
       {
-        "lettre": "D",
+        "lettre": "C",
         "texte": "Parce que la société est gérée par des femmes",
         "correct": false
       }
