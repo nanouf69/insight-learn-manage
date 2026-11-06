@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 06/11 — Trois accords nominatifs et prévention des jalons prématurés
+- [ ] Audit lecture seule des UUID de Léa CATANIA, Lazer NIKA et MEHDI KEBBAB : statut EDOF, preuve externe disponible, projections et autres sources de progression.
+- [ ] Bloquer toute écriture de taux si la NON-validation EDOF externe n’est pas prouvée ; relevés gel-v2 et autres dossiers strictement inchangés.
+- [ ] Préparer le correctif prospectif serveur : preuves exhaustives, ajouts tardifs exclus, idempotence et gel versionné sans régression automatique.
+- [ ] Couvrir VTC/TAXI/TA/VA et les scénarios historiques par tests, exécuter le contrat SQL jetable et vérifier les changements embarqués avant tout déploiement.
+- [ ] Publication/déploiement uniquement après revue explicite ; consigner le verdict et les blocages.
+
 ## 06/11 — Tableau de bord : apprenants à 100 % depuis septembre
 - [x] Périmètre validé : 101 dossiers non supprimés créés depuis le 01/09/2026 ; critère « Modules (jalons) » = 100 % OU « TAUX TOTAL » ≥ 100 %, mêmes calculs que la fiche.
 - [x] Carte avec les deux taux, accès à la fiche, masquage individuel réversible sur ce navigateur, signalement des lectures impossibles et calcul différé à l’approche pour ne pas saturer le tableau de bord.
