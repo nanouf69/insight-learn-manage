@@ -41,6 +41,8 @@ export function assemblerCalculJalons(i: {
   modulesAttribues?: readonly number[] | null;
   /** Explicit live-only evidence guard; absent keeps the frozen/server method unchanged. */
   preuvesHistoriquesLive?: boolean;
+  /** Nouveau gel v3 seulement : une preuve indéterminée rend le calcul indisponible, jamais 100 %. */
+  preuvesFigeesStrictes?: boolean;
 }) {
   const attribues = i.modulesAttribues?.length ? new Set(i.modulesAttribues) : null;
   const ponderesFiliere = new Set(GRILLE_DUREES[i.filiere].map(([id]) => id));
@@ -62,7 +64,9 @@ export function assemblerCalculJalons(i: {
   const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + r.heures, 0) * 60);
   const theorieMinutes = Math.round(theorieHours * 60);
   const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
-  let completionsBase = i.completions ?? [];
+  // Appliquer la preuve avant les activités : aucune recomposition ne peut restaurer
+  // un ancien « completed » déjà contredit par le verdict serveur.
+  let completionsBase = i.preuvesHistoriquesLive ? (i.completions ?? []).map(liveCompletionEvidence) : (i.completions ?? []);
   let activites: Array<EtatActivites & { methode: string }> = [];
   if (i.jeuxTermines) {
     const termines = new Set(i.jeuxTermines);
@@ -75,8 +79,23 @@ export function assemblerCalculJalons(i: {
       if (!acts.length) continue;
       const r = completionAvecActivites((row ?? { module_id: v.moduleId }) as any, { ...v }, acts, termines);
       volumes.volumes[Number(cle)] = { ...v, jeux: acts.reduce((s2, x) => s2 + x.unites, 0) };
-      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), { ...r.completion, completed_at: row?.completed_at ?? null, details: row?.details }];
+      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), {
+        ...r.completion,
+        completed_at: row?.completed_at ?? null,
+        details: row?.details,
+        preuve_serveur: (row as any)?.preuve_serveur,
+        progress_preuve: (row as any)?.progress_preuve,
+      } as CompletionCalc];
       activites.push({ ...r.etat, methode: METHODE_ACTIVITES });
+    }
+  }
+  if (i.preuvesFigeesStrictes) {
+    for (const row of completionsBase as any[]) {
+      if (row?.status !== "completed" || row?.preuve_serveur !== null) continue;
+      const volume = Object.values(volumes.volumes).find((v) => Number(v.moduleId) === Number(row.module_id));
+      if ((volume?.questions ?? 0) > 0) {
+        throw new Error(`Preuves indéterminées au gel pour le module ${row.module_id} : relevé indisponible, jamais 100 %`);
+      }
     }
   }
   const completionsEffectives = i.preuvesHistoriquesLive ? completionsBase.map(liveCompletionEvidence) : completionsBase;

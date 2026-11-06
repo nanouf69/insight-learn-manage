@@ -103,22 +103,25 @@ CREATE TABLE net.appels(url text, body jsonb);
 CREATE FUNCTION net.http_post(url text, headers jsonb, body jsonb) RETURNS bigint LANGUAGE sql AS $$ INSERT INTO net.appels VALUES (url, body) RETURNING 1::bigint $$;
 CREATE TYPE public.app_role AS ENUM ('admin','moderator','user');
 CREATE TABLE public.user_roles(user_id uuid, role app_role);
-CREATE TABLE public.apprenants(id uuid PRIMARY KEY, auth_user_id uuid);
+CREATE TABLE public.apprenants(id uuid PRIMARY KEY, auth_user_id uuid, type_apprenant text, formation_choisie text);
 CREATE TABLE public.apprenant_connexions(apprenant_id uuid, user_id uuid, started_at timestamptz, last_seen_at timestamptz, last_action_at timestamptz, ended_at timestamptz);
 CREATE TABLE public.comptes_test_techniques(apprenant_id uuid);
 CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
+CREATE TABLE public.module_admin_audit_log(module_id int, exercice_id text, question_id text, field text, created_at timestamptz);
 CREATE TABLE public.module_regles_validation(module_id int, protection_serveur boolean, contient_questions boolean);
 CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, reponses jsonb, status text, submitted_at timestamptz);
 CREATE TABLE public.quiz_valide_reecritures_refusees(table_cible text, apprenant_id uuid, cle text, champs text[], auteur uuid);
 CREATE TABLE public.donnees_eleves_suppressions(table_nom text, apprenant_id uuid, ligne jsonb, auteur_uid uuid, auteur_role text, compte_test boolean, motif text);
 CREATE FUNCTION public.examens_blancs_preuve_soumission(uuid, int) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
-GRANT SELECT ON public.reponses_apprenants, public.module_regles_validation TO authenticated, service_role;
+GRANT SELECT ON public.reponses_apprenants, public.module_regles_validation, public.module_admin_audit_log TO authenticated, service_role;
 '''
 # Fonctions lues par les politiques/déclencheurs, copiées telles quelles du catalogue réel.
 DEPS = ['has_role', 'is_current_user_apprenant', 'est_compte_test', 'est_proprietaire_apprenant']
 
 A = 'aaaaaaaa-0000-4000-8000-00000000000a'; U = 'bbbbbbbb-0000-4000-8000-00000000000b'
 A2 = 'aaaaaaaa-0000-4000-8000-00000000002a'; U2 = 'bbbbbbbb-0000-4000-8000-00000000002b'
+A3 = 'aaaaaaaa-0000-4000-8000-00000000003a'; U3 = 'bbbbbbbb-0000-4000-8000-00000000003b'
+A4 = 'aaaaaaaa-0000-4000-8000-00000000004a'; U4 = 'bbbbbbbb-0000-4000-8000-00000000004b'
 ADMIN = 'cccccccc-0000-4000-8000-00000000000c'
 ISMAIL = 'c0844007-b999-4385-9665-918e5077c3b5'; UI = 'bbbbbbbb-0000-4000-8000-0000000000ff'
 
@@ -127,6 +130,9 @@ def learner(uid, q):
 
 def smc(uid, mod, completed, progress=0, details='NULL'):
     return learner(uid, f"SELECT status||'|'||progress||'|'||coalesce(completed_at::text,'NULL') FROM public.save_module_completion('{A}', {mod}, {str(completed).lower()}, {progress}, NULL, NULL, {details});")
+
+def smc_for(aid, uid, mod, completed, progress=0, details='NULL'):
+    return learner(uid, f"SELECT status||'|'||progress||'|'||coalesce(completed_at::text,'NULL') FROM public.save_module_completion('{aid}', {mod}, {str(completed).lower()}, {progress}, NULL, NULL, {details});")
 
 def row(mod, aid=A):
     return sql(f"SELECT status||'|'||progress||'|'||coalesce(completed_at::text,'NULL') FROM {TABLE} WHERE apprenant_id='{aid}' AND module_id={mod}")
@@ -149,8 +155,16 @@ def build(db, schema_sql, migration=None):
         sql(MIGRATION_0232.read_text(), db); print(f'[{db}] 0232 appliquée')
     # Candidat non déployé (revue avant migration) : MODULE_COMPLETION_CANDIDATE=/chemin.sql
     if migration and os.environ.get('MODULE_COMPLETION_CANDIDATE'):
-        sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db); print(f'[{db}] candidat appliqué')
-    sql(f"""INSERT INTO apprenants VALUES ('{A}','{U}'),('{A2}','{U2}'),('{ISMAIL}','{UI}');
+        try:
+            sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db)
+        except subprocess.CalledProcessError as e:
+            # Ne pas noyer la cause SQL sous la commande complète (plusieurs dizaines de Ko).
+            print('ÉCHEC CANDIDAT — fin de la sortie PostgreSQL :\n' + e.output[-6000:])
+            raise
+        print(f'[{db}] candidat appliqué')
+    sql(f"""INSERT INTO apprenants(id,auth_user_id,type_apprenant,formation_choisie) VALUES
+      ('{A}','{U}','vtc-e','vtc-elearning'),('{A2}','{U2}','taxi-e','taxi-elearning'),
+      ('{A3}','{U3}','ta-e','ta-elearning'),('{A4}','{U4}','va-e','va-elearning'),('{ISMAIL}','{UI}',NULL,NULL);
       INSERT INTO user_roles VALUES ('{ADMIN}','admin');
       INSERT INTO apprenant_connexions VALUES ('{A}','{U}',now(),now(),now(),NULL),('{A2}','{U2}',now(),now(),now(),NULL);
       INSERT INTO module_editor_state VALUES (2, '{{"exercices":[{{"questions":[{{"id":1}}]}}]}}');""", db)
@@ -174,7 +188,10 @@ class Avant0197(unittest.TestCase):
 class Apres0197(unittest.TestCase):
     """Contrat après correction : schéma réel actuel + SQL 0197, base jetable 't'."""
     def setUp(self):
-        sql(f"SET app.suppression_eleve_autorisee='on'; ALTER TABLE {TABLE} DISABLE TRIGGER USER; DELETE FROM {TABLE}; ALTER TABLE {TABLE} ENABLE TRIGGER USER; DELETE FROM reponses_apprenants; DELETE FROM net.appels;")
+        sql(f"SET app.suppression_eleve_autorisee='on'; ALTER TABLE {TABLE} DISABLE TRIGGER USER; DELETE FROM {TABLE}; ALTER TABLE {TABLE} ENABLE TRIGGER USER; DELETE FROM reponses_apprenants; DELETE FROM net.appels; DELETE FROM module_admin_audit_log;")
+        if os.environ.get('MODULE_COMPLETION_CANDIDATE'):
+            sql("ALTER TABLE module_completion_validations DISABLE TRIGGER USER; DELETE FROM module_completion_validations; ALTER TABLE module_completion_validations ENABLE TRIGGER USER;")
+        sql("DELETE FROM module_regles_validation; DELETE FROM module_editor_state; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"questions\":[{\"id\":1}]}]}');")
 
     def test_01_nouvelle_progression_sans_fausse_date(self):
         self.assertEqual(sql(smc(U, 2, False, 40)), 'in_progress|40|NULL')
@@ -232,7 +249,8 @@ class Apres0197(unittest.TestCase):
         sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1\":\"B\"}}')")
         self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 1)"), 't')
         self.assertTrue(row(2).startswith('completed|100|'))
-        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 2)"), 'f')
+        # Le total transmis par le navigateur n'est plus une autorité ; le rejeu est idempotent.
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 2)"), 't' if os.environ.get('MODULE_COMPLETION_CANDIDATE') else 'f')
 
     def test_10_date_terminee_historique_intacte(self):
         sql(f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at) VALUES ('{A}',2,'completed',100,'2026-09-17T08:00:00Z')")
@@ -291,6 +309,99 @@ class Apres0197(unittest.TestCase):
         self.assertTrue(sql(learner(U, q)).startswith('2:true:completed:100'))
         self.assertEqual(sql(f"SELECT details->1->>'reponseEleve' IS NULL FROM {TABLE} WHERE apprenant_id='{A}' AND module_id=2"), 't')
         self.assertIn('permission denied', err(f"SET ROLE anon; SELECT * FROM public.etat_completion_modules('{A}')") or '')
+
+    # ---- Candidat 06/11 : canon serveur, snapshot et scénarios VTC/TAXI/TA/VA.
+    def _canon_deux_exercices(self, module=2):
+        sql(f"DELETE FROM module_editor_state WHERE module_id={module}; INSERT INTO module_editor_state VALUES ({module}, '{{\"exercices\":[{{\"id\":1,\"questions\":[{{\"id\":1,\"choix\":[{{\"lettre\":\"A\",\"correct\":true}}]}}]}},{{\"id\":2,\"questions\":[{{\"id\":2,\"choix\":[{{\"lettre\":\"A\",\"correct\":true}}]}}]}}]}}');")
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_17_exercice_entier_omis_refuse_puis_snapshot_idempotent_immuable(self):
+        self._canon_deux_exercices()
+        un = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"Z\"}]'::jsonb"
+        self.assertIn('1 question(s) QCM', err(smc(U, 2, True, 100, un)) or '')
+        self.assertEqual(row(2), '')
+        deux = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"Z\"},{\"exerciceId\":2,\"questionId\":2,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"Y\"}]'::jsonb"
+        # Réalisation complète acceptée même si toutes les réponses sont fausses : aucun seuil de score.
+        premier = sql(smc(U, 2, True, 100, deux))
+        self.assertTrue(premier.startswith('completed|100|'))
+        self.assertEqual(sql(f"SELECT questions_requises||'|'||questions_prouvees||'|'||preuve_complete||'|'||jsonb_array_length(perimetre) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '2|2|true|2')
+        self.assertEqual(sql(smc(U, 2, True, 100, "'[]'::jsonb")), premier)
+        self.assertEqual(sql(f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
+        self.assertIn('PREUVE_VALIDATION_IMMUTABLE', err(f"UPDATE module_completion_validations SET perimetre='[]' WHERE apprenant_id='{A}' AND module_id=2") or '')
+        self.assertIn('PREUVE_VALIDATION_IMMUTABLE', err(f"DELETE FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2") or '')
+        self.assertEqual(sql(learner(U2, f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}'")), '0')
+        self.assertEqual(sql(learner(ADMIN, f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}'")), '1')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_18_le_client_ne_transforme_pas_un_qcm_canonique_en_qrc(self):
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\",\"correct\":true}]}]}]}');")
+        faux_qrc = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":[],\"reponseEleve\":\"A\"}]'::jsonb"
+        # Le canon impose une question requise même si le navigateur la déclare QRC.
+        self.assertEqual(sql(f"SELECT questions_requises||'|'||questions_manquantes FROM public.module_completion_analyse_preuves('{A}',2,{faux_qrc})"), '1|0')
+        sans_reponse = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":[],\"reponseEleve\":null}]'::jsonb"
+        self.assertIn('MODULE_INCOMPLET', err(smc(U, 2, True, 100, sans_reponse)) or '')
+        self.assertEqual(row(2), '')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_19_autovalidation_total_navigateur_trop_faible_ne_suffit_pas(self):
+        self._canon_deux_exercices()
+        un = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        sql(smc(U, 2, False, 50, un))
+        got = sql(f"SET ROLE service_role; SELECT answered||'|'||total||'|'||validated FROM public.autovalidate_module_if_complete('{A}',2,1)")
+        self.assertEqual(got, '1|2|false')
+        self.assertTrue(row(2).startswith('in_progress|50|'))
+        deux = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"},{\"exerciceId\":2,\"questionId\":2,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"B\"}]'::jsonb"
+        sql(smc(U, 2, False, 100, deux))
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}',2,1)"), 't')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_20_ajout_apres_premiere_soumission_acquis_non_requis(self):
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]}]}]}');")
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"A\"}}','submitted','2026-01-02T10:00:00Z')")
+        sql("UPDATE module_editor_state SET module_data='{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]},{\"id\":2,\"choix\":[{\"lettre\":\"A\"}]}]}]}' WHERE module_id=2;")
+        sql("INSERT INTO module_admin_audit_log VALUES (2,'1','2','question_added','2026-01-03T10:00:00Z')")
+        details = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        self.assertTrue(sql(smc(U, 2, True, 100, details)).startswith('completed|100|'))
+        self.assertEqual(sql(f"SELECT questions_requises FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_21_matrice_vtc_taxi_ta_va_exercice_omis_puis_complet(self):
+        self._canon_deux_exercices()
+        un = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        deux = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"},{\"exerciceId\":2,\"questionId\":2,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"B\"}]'::jsonb"
+        for aid, uid, filiere in [(A,U,'vtc'),(A2,U2,'taxi'),(A3,U3,'ta'),(A4,U4,'va')]:
+            with self.subTest(filiere=filiere):
+                self.assertIn('MODULE_INCOMPLET', err(smc_for(aid, uid, 2, True, 100, un)) or '')
+                self.assertEqual(row(2, aid), '')
+                self.assertTrue(sql(smc_for(aid, uid, 2, True, 100, deux)).startswith('completed|100|'))
+                self.assertEqual(sql(f"SELECT questions_requises||'|'||questions_prouvees FROM module_completion_validations WHERE apprenant_id='{aid}' AND module_id=2"), '2|2')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_22_deux_validations_concurrentes_une_seule_date_et_preuve(self):
+        from concurrent.futures import ThreadPoolExecutor
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]}]}]}');")
+        details = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            resultats = list(pool.map(lambda _: sql(smc(U, 2, True, 100, details)), range(2)))
+        self.assertEqual(resultats[0], resultats[1])
+        self.assertEqual(sql(f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_23_snapshot_nouveau_ne_rouvre_pas_avec_ajout_ulterieur(self):
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]}]}]}');")
+        details = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        sql(smc(U, 2, True, 100, details))
+        sql("UPDATE module_editor_state SET module_data='{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]},{\"id\":2,\"choix\":[{\"lettre\":\"A\"}]}]}]}' WHERE module_id=2;")
+        got = sql(learner(U, f"SELECT questions_requises||'|'||questions_prouvees||'|'||preuve_complete||'|'||status_effectif FROM public.etat_completion_modules('{A}') WHERE module_id=2"))
+        self.assertEqual(got, '1|1|true|completed')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_24_details_nuls_et_seul_premier_exercice_soumis_ne_contournent_pas(self):
+        self._canon_deux_exercices()
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"A\"}}','submitted',now())")
+        self.assertIn('1 question(s) QCM', err(smc(U, 2, True, 100, 'NULL')) or '')
+        self.assertEqual(row(2), '')
+
 
 def main():
     if '--capture' in sys.argv:

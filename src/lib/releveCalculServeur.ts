@@ -16,6 +16,24 @@ import { ACTIVITES_CODE, METHODE_ACTIVITES } from "@/lib/jeuxPedagogiques";
 export { METHODE_CALCUL_JALONS };
 /** Méthode enregistrée avec chaque NOUVEAU calcul figé (les calculs déjà figés gardent la leur). */
 export const METHODE_GEL = `${METHODE_CALCUL_JALONS} + ${METHODE_ACTIVITES}`;
+export const METHODE_GEL_PREUVES = `${METHODE_GEL} + module-completion-preuves-v1 (gel-v3)`;
+
+/** Nouveau gel v3 : uniquement les verdicts serveur archivés, jamais une lecture en direct. */
+export function completionsPreuvesFigees(sources: any): any[] {
+  if (!Array.isArray(sources?.preuves_completion)) throw new Error("Source preuves_completion non archivée");
+  if (!Array.isArray(sources?.modules_attribues)) throw new Error("Source modules_attribues non archivée");
+  if (!Array.isArray(sources?.completions)) throw new Error("Source completions non archivée");
+  const etats = new Map(sources.preuves_completion.map((e: any) => [Number(e.module_id), e]));
+  return sources.completions.map((row: any) => {
+    const etat: any = etats.get(Number(row.module_id));
+    if (!etat) throw new Error(`Verdict serveur non archivé pour le module ${row.module_id}`);
+    return {
+      ...row,
+      preuve_serveur: typeof etat.preuve_complete === "boolean" ? etat.preuve_complete : null,
+      progress_preuve: etat.progress_effectif == null ? null : Number(etat.progress_effectif),
+    };
+  });
+}
 
 /**
  * Activités du registre terminées d'après les SEULES réponses archivées au gel
@@ -52,12 +70,17 @@ export async function calculerGelInitial(gel: any, apprenant: { type_apprenant?:
   const jeuxTermines = activitesTermineesDepuisGel(s);
   // Date de référence = instant du gel : une activité ajoutée après n'entre jamais dans ce relevé.
   const dateActivites = typeof s.gele_le === "string" ? new Date(s.gele_le).toISOString() : new Date().toISOString();
+  const preuvesV3 = gel.methode_version === "gel-v3";
+  const completions = preuvesV3 ? completionsPreuvesFigees(s) : s.completions;
   const calcul = assemblerCalculJalons({
     key, filiere, parcours, parcoursInitial, gelId: gel.id,
     editorRows: lignesFigees(gel, contenus, ids), examens: examens as any,
     initialDe: (id) => getInitialModuleContentForVolume(id, apprenant.type_apprenant),
-    pratiqueDetails: pratiqueSlotDetailsDepuisGel(s), emargements: s.emargements, completions: s.completions, heuresValidees: s.heures_validees,
+    pratiqueDetails: pratiqueSlotDetailsDepuisGel(s), emargements: s.emargements, completions, heuresValidees: s.heures_validees,
     jeuxTermines: jeuxTermines ?? undefined, dateActivites,
+    preuvesHistoriquesLive: preuvesV3 || undefined,
+    preuvesFigeesStrictes: preuvesV3 || undefined,
+    modulesAttribues: preuvesV3 ? s.modules_attribues : undefined,
   });
   // Registre figé avec le calcul (version, unités, dates) : relecture identique même si le code change.
   const registre = ACTIVITES_CODE.filter((a) => a.ajouteeLe <= dateActivites && (!a.retireeLe || a.retireeLe > dateActivites)).map((a) => ({ ...a }));

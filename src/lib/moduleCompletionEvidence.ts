@@ -84,8 +84,10 @@ export function completionEvidenceAllowsDone(row: CompletionEvidenceRow): boolea
 /** Live display only. The persisted status/date and frozen calculations stay untouched. */
 export function liveCompletionEvidence<T extends CompletionEvidenceRow & { progress?: number | null }>(row: T): T {
   if (completionEvidenceAllowsDone(row)) return row;
-  if (row.preuve_serveur === false && row.progress_preuve != null) {
-    return { ...row, status: "in_progress", progress: Number(row.progress_preuve) };
+  if (row.preuve_serveur === false) {
+    // Un faux serveur ne peut jamais retomber sur un statut « completed » faute de details.
+    const progress = row.progress_preuve == null ? 0 : Number(row.progress_preuve);
+    return { ...row, status: "in_progress", progress: Math.max(0, Math.min(99.9, progress)) };
   }
   if (!Array.isArray(row.details)) return row;
   const questions = row.details.filter(questionObligatoire);
