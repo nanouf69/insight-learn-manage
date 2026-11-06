@@ -22,6 +22,7 @@ class GelV3SqlContract(unittest.TestCase):
   c.DEPS_SQL = {fn: (ROOT / f"src/test/fixtures/fn_{fn}.sql").read_text() for fn in c.DEPS}
   subprocess.run(c.AS_USER + ["initdb","-D",c.DATA,"-A","trust","--no-locale","-U","lovable"],check=True,stdout=subprocess.DEVNULL)
   subprocess.run(c.AS_USER + ["pg_ctl","-D",c.DATA,"-l",c.TEMP+"/pg.log","-o",f"-k {c.TEMP} -p {c.PORT} -h ''","-w","start"],check=True,stdout=subprocess.DEVNULL)
+  c.sql("CREATE DATABASE t", "postgres")
   c.sql(c.STUBS)
   for fn in c.DEPS: c.sql(c.DEPS_SQL[fn])
   c.sql(c.capture_live()); c.sql(EXTRA); c.sql(c.MIGRATION_0230.read_text()); c.sql(CORE); c.sql(GEL)
