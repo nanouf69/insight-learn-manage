@@ -15,10 +15,10 @@ const questions = [
 const order = revisionQuestionOrder(questions);
 
 describe("révision des questions fausses — identité et reprise", () => {
-  it("distingue le même numéro de question dans deux matières et pour EB1–EB6 VTC/TAXI", () => {
+  it("distingue le même numéro de question dans deux matières et pour EB1–EB6 VTC/TAXI/TA", () => {
     expect(order).toEqual(["t3p:1", "gestion:1", "securite:2"]);
     expect(revisionQuestionKey(questions[0])).not.toBe(revisionQuestionKey(questions[1]));
-    for (const exam of ["EB1", "EB2", "EB3", "EB4", "EB5", "EB6", "EB1-TAXI", "EB2-TAXI", "EB3-TAXI", "EB4-TAXI", "EB5-TAXI", "EB6-TAXI"]) {
+    for (const exam of ["EB1", "EB2", "EB3", "EB4", "EB5", "EB6", "EB1-TAXI", "EB2-TAXI", "EB3-TAXI", "EB4-TAXI", "EB5-TAXI", "EB6-TAXI", "eb1-ta", "eb2-ta", "eb3-ta", "eb4-ta", "eb5-ta", "eb6-ta"]) {
       expect(creerRevisionProgressState({ examenId: exam, answers: {}, currentIndex: 0, correctedCount: 0, correctedQuestions: [], showCorrection: false, questionOrder: order }).examenId).toBe(exam);
     }
   });
