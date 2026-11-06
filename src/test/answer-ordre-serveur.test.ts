@@ -100,7 +100,9 @@ describe("Ordre des écritures décidé par le serveur", () => {
       reponses: { revisionState: { currentIndex: 0, answers: { "t3p:1": ["A"] } } },
     }));
     await new Promise((r) => setTimeout(r, 20));
-    expect(fetch).toHaveBeenCalledTimes(1);
+    // Le nouvel essai de clôture peut repartir une fois, mais sans preuve de
+    // recomposition le serveur le refuse à nouveau : il reste bloqué.
+    expect(fetch).toHaveBeenCalledTimes(2);
     const apresCloture = JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]");
     expect(apresCloture.find((q: any) => q.payload.completed)?.blocked).toBe(true);
     expect(await flushAnswerSavesAndWait(APPRENANT, "revision_fausses_EB1", 50)).toBe(false);
@@ -173,7 +175,7 @@ describe("Ordre des écritures décidé par le serveur", () => {
       reponses: { revisionState: local }, score: 1,
       events: [{ question_id: "gestion:1", valeur: "réponse QRC fictive" }],
     }));
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 2000));
 
     const bodies = sentBodies(fetchMock);
     expect(bodies).toHaveLength(2);
