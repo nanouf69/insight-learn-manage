@@ -96,6 +96,7 @@ export function assemblerCalculJalons(i: {
       }
     }
   }
+  if (i.preuvesFigeesStrictes) console.log("DEBUG_CORE_PREUVES", completionsBase);
   const completionsEffectives = i.preuvesHistoriquesLive ? completionsBase.map(liveCompletionEvidence) : completionsBase;
   const completions = [...completionsEffectives, completionPratique(pratiqueMinutes)];
   const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes, attribues);
