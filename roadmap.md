@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 06/11 — URGENT production : terminer « Refaire uniquement les questions fausses »
-- [ ] Diagnostiquer en lecture seule l’appel de fin, les erreurs serveur/réseau, l’identité de révision, RLS/idempotence/concurrence et l’écart aperçu/publication pour tous les EB VTC/TAXI/TA et QCM/QRC.
-- [ ] Préserver toutes les réponses/notes/progressions ; préparer si nécessaire un correctif minimal testé sur comptes fictifs, avec terminer/recharger/reprendre après déconnexion et aucun faux succès.
-- [ ] Fournir cause exacte, contournement sûr sans effacement/réinitialisation, preuves de tests et statut de publication ; aucune écriture réelle ni publication sans accord de périmètre.
+- [x] Cause exacte : course d’enregistrement pendant un envoi lent ; `revisionState` entier reste à une ancienne base, le serveur ignore l’enveloppe mais avance score/write_seq, puis la clôture est bloquée avant appel. Six révisions récentes preuves (1 réponse serveur malgré 30–480 événements) ; pas un refus RLS/réseau, production contient déjà les protections antérieures.
+- [x] Correctif aperçu `answerPersistence.ts` + retour conditionnel `stored_reponses` dans `upsert-reponse-apprenant` : chaînage des bases confirmées, nouvelle opération seulement pour extension stricte sans conflit serveur/file, sinon blocage conservé. Aucune écriture réelle.
+- [x] 29 tests PASS, dont parcours fictif QCM+QRC avec rechargement, retour, déconnexion/reconnexion et double clic ; EB1–EB6 VTC/TAXI/TA couverts, aucun succès sans confirmation. Build OK ; serveur simulé, pas de test réel publié.
+- [ ] Déploiement de la fonction et publication frontend : en attente de revue des autres changements d’aperçu et d’autorisation explicite de périmètre. Élève bloqué : ne rien effacer/recommencer, conserver tablette et file locale ; aucune clôture manuelle sûre avant correctif.
 
 ## 06/11 — Menu Correction QRC V2 : rouge uniquement en cours
 - [x] Limiter la couleur rouge aux sessions CRM réellement en cours à la date locale ; passées et futures en noir, lignes spéciales neutres.
