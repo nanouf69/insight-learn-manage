@@ -1585,6 +1585,10 @@ function RevisionFausses({
         </div>
       </div>
       <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
+      <AnswerSaveIndicator />
+      <p className="text-xs text-muted-foreground">
+        Les réponses déjà confirmées sont récupérables sur un autre appareil. Hors connexion, elles restent sur cet appareil jusqu’à leur confirmation serveur.
+      </p>
 
       <Card className="border-4 border-destructive bg-destructive/5">
         <CardContent className="pt-5 pb-5 space-y-4">
@@ -1626,9 +1630,9 @@ function RevisionFausses({
                           const prev = safeArray<string>(rep);
                           const correctCount = q.choix!.filter(ch => ch.correct).length;
                           if (correctCount <= 1) {
-                            updateReponse(q.id, [c.lettre]);
+                            updateReponse(currentKey, [c.lettre]);
                           } else {
-                            updateReponse(q.id, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
+                            updateReponse(currentKey, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
                           }
                         }}
                       >
@@ -1657,7 +1661,7 @@ function RevisionFausses({
             <div className="space-y-2">
               <Textarea
                 value={(rep as string) || ""}
-                onChange={e => updateReponse(q.id, e.target.value)}
+                onChange={e => updateReponse(currentKey, e.target.value)}
                 placeholder="Saisissez votre réponse..."
                 disabled={showCorrection}
                 rows={3}
@@ -1684,6 +1688,7 @@ function RevisionFausses({
           ) : (
             <Button
               onClick={goNext}
+              disabled={finEnCours}
               className="w-full gap-2"
               style={{ backgroundColor: '#F4A227' }}
             >
