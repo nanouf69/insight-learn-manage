@@ -125,6 +125,8 @@ interface QueueItem {
    * apprenant successif (ils restent en file pour leur propriétaire).
    */
   refused_user_ids?: string[];
+  /** Numéro confirmé par l'envoi en cours, utilisé pour chaîner les réponses composées pendant cet envoi. */
+  confirmed_write_seq?: number;
 }
 
 type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number) => void;
@@ -829,6 +831,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, "refused", message);
           return "blocked";
         }
+        item.confirmed_write_seq = Number(confirmation.write_seq ?? 0);
         console.info('[answerPersistence] accusé serveur', { operation: item.id, tentative: item.attempts + 1, writeSeq: Number(confirmation.write_seq ?? 0) });
         rememberWriteSeq(
           item.payload.apprenant_id,
@@ -936,6 +939,23 @@ async function processQueue(): Promise<void> {
       tried += 1;
       queue = readQueue();
       if (result === "ok") {
+        // Une réponse composée pendant l'envoi précédent est nécessairement plus
+        // récente sur CET appareil. Elle doit partir depuis le numéro qui vient
+        // d'être confirmé, même si son compactage lui avait conservé la base 0.
+        // Les éléments bloqués et ceux d'un autre compte ne sont jamais rebasés.
+        const confirmedSeq = item.confirmed_write_seq ?? 0;
+        if (confirmedSeq > 0) {
+          queue = queue.map((q) =>
+            q.id !== item.id &&
+            !q.blocked &&
+            isOwnedByCurrentUser(q) &&
+            q.payload.apprenant_id === item.payload.apprenant_id &&
+            q.payload.exercice_id === item.payload.exercice_id &&
+            (q.payload.base_seq ?? 0) < confirmedSeq
+              ? { ...q, payload: { ...q.payload, base_seq: confirmedSeq } }
+              : q
+          );
+        }
         // Retirer l'élément traité (identifié par son id).
         queue = queue.filter((q) => q.id !== item.id);
         writeQueue(queue);
