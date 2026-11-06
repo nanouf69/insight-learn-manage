@@ -57,6 +57,15 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         const qid=`${subject}:${q.id}`;
         const frozen=a.snapshot.questions?.filter(f=>f.matiere===subject && String(f.id)===qid);
         if (!frozen?.length) continue;
+        if(q.type==='QRC') {
+          const copies=evidence.qrc?.filter(c=>c.apprenant_id===learner && c.attempt_id===a.attempt_id && c.question_id===qid)??[];
+          const copy=copies[0];
+          if(!copy || !hasAnswer(copy.reponse))continue;
+          if(copies.length!==1 || evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id)) {uncertain=true;continue;}
+          const correct=gradeQrc(q,frozen.length===1?frozen[0]:undefined,copy,evidence.qrcIa??[]);
+          observations.push({at:a.started_at,correct,answer:copy.reponse});
+          continue;
+        }
         const events=evidence.events.filter(e=>e.apprenant_id===learner && e.attempt_id===a.attempt_id && e.question_id===qid && hasAnswer(e.valeur_nouvelle)).sort((x,y)=>x.created_at.localeCompare(y.created_at) || x.event_id-y.event_id);
         const first=events[0];
         if (!first) {if(evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===qid && hasAnswer(s.valeur)))uncertain=true;continue;}
