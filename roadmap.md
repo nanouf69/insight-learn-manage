@@ -7,7 +7,7 @@
 - [x] Corrigé actif de Corrections pris comme référence : Q2 B, Q4 A, Q9 A+B, Q13 B ; il est identique à l’ancienne fiche sur 20/20 QCM et donne Sécurité 11/20, global 9,9/20, non admis. Aucune donnée modifiée.
 - [ ] Régularisation éventuelle du seul résultat natif Sécurité 9 → 11 : tableau avant/après établi, écriture bloquée sans autorisation spécifique ; ne pas publier un remplacement par 9,6.
 - [x] Point T3P identifié : QRC Q2 honorabilité, réponse « Casier judiciaire B2 », note manuelle actuelle 0/2 ; le QCM casier Q15 est déjà 1/1. Avec Q2 = 1/2 : T3P 16,5, global 10,1 et ADMIS (Sécurité 11). Aucune écriture automatique.
-- [ ] Autorisation spécifique requise pour les deux régularisations natives combinées : T3P Q2 0 → 1 et Sécurité 9 → 11 ; impact final 9,6 natif → 10,1, NON ADMIS → ADMIS.
+- [ ] Appliquer le corrigé actif aux notes matière et au score final : T3P Q2 0 → 1 et Sécurité 9 → 11 ; résultat attendu T3P 16,5, global 10,1, ADMIS, avec traçabilité et relecture serveur.
 
 ## 06/11 — Taux d’échec au premier passage non affiché en rouge
 - [x] Diagnostic : taux placés sous chaque question, pas dans les lignes de sessions. Deux causes : preuves natives rejetées (`revision_precedente` NULL et auteur `auth_user_id`), puis texte toujours gris. QRC sans preuve de correction et notes en attente non comptées comme échecs.
