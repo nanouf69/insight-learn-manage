@@ -175,6 +175,8 @@ describe("Ordre des écritures décidé par le serveur", () => {
       reponses: { revisionState: local }, score: 1,
       events: [{ question_id: "gestion:1", valeur: "réponse QRC fictive" }],
     }));
+    await new Promise((r) => setTimeout(r, 50));
+    console.log("DEBUG_REBASE_QUEUE", JSON.stringify(JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]").map((q: any) => ({ id: q.id, blocked: q.blocked, attempts: q.attempts, retry_after: q.retry_after, base_seq: q.payload.base_seq }))));
     await new Promise((r) => setTimeout(r, 2000));
 
     const bodies = sentBodies(fetchMock);
