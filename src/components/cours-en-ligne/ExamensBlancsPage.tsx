@@ -1112,13 +1112,9 @@ export default function ExamensBlancsPage({
         normalizedScoreMax = canonicalScore.scoreMax;
       }
       if (safeScoreObtenu <= 0 && isCorruptedZeroRow(row)) {
-        const recovered = recoverCorruptedScoreRow(row, liveExamens);
-        if (recovered && recovered.score_obtenu > 0) {
-          safeScoreObtenu = recovered.score_obtenu;
-          normalizedScoreMax = recovered.score_max;
-          console.warn(`[handleViewResults][AutoHeal] ${row.quiz_id}/${row.matiere_id}: 0 -> ${recovered.score_obtenu}/${recovered.score_max}`);
-          // Diagnostic d'affichage uniquement : aucune note n'est réécrite.
-        }
+        // Un zéro historique reste visible tel quel : aucune note n'est devinée
+        // depuis le contenu courant. Le cas reste destiné à une revue manuelle.
+        console.warn(`[handleViewResults][RevueManuelle] ${row.quiz_id}/${row.matiere_id}: score nul conservé`);
       }
 
       return {
