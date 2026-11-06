@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 06/11 — Passage automatique à la copie suivante après notation QRC
-- [ ] Après la note choisie, attendre la persistance serveur puis une relecture confirmant cette QRC avant toute navigation.
-- [ ] Passer à la même question du candidat suivant dans la liste courante ; rester sur place en cas d'erreur et signaler la dernière copie.
-- [ ] Conserver les flèches manuelles ; tests ciblés, aucune autre donnée ou écran modifié, aucune publication globale sans contrôle.
+- [x] Après la note choisie, attente de la persistance serveur puis relecture confirmant l'état corrigé et la note exacte avant toute navigation.
+- [x] Passage à la même question du candidat suivant dans la liste courante ; copie conservée avec erreur en cas d'échec/relecture non conforme et message explicite sur la dernière copie.
+- [x] Flèches manuelles et commentaire non enregistré protégés ; 89 tests QRC PASS, quatre scénarios d'écran fictifs et flèches sur admin réel vérifiés sans cliquer de note réelle. Build OK, aucune donnée modifiée, aucune publication.
 
 ## 06/11 — Navigation entre copies dans Correction QRC V2
 - [x] Ajouté uniquement « ← Retour » / « Suivant → » sous le barème, dans l'ordre des copies déjà filtrées, en conservant matière/question si possible.
