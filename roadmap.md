@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — EB1 affiché échoué 9,9 après corrections QRC
+- [ ] Identifier la tentative par les sept matières sans présumer l’identité ; contrôler QRC manuelles, notes matière serveur et ancienne fiche en lecture seule.
+- [ ] Recalculer le global avec les coefficients figés et le verdict ; distinguer note juste, ancienne fiche, cache et correctifs seulement en aperçu.
+- [ ] Fournir le tableau avant/après prouvé ; aucune écriture sans autorisation spécifique et aucune publication sans revue globale.
+
 ## 06/11 — Taux d’échec au premier passage non affiché en rouge
 - [x] Diagnostic : taux placés sous chaque question, pas dans les lignes de sessions. Deux causes : preuves natives rejetées (`revision_precedente` NULL et auteur `auth_user_id`), puis texte toujours gris. QRC sans preuve de correction et notes en attente non comptées comme échecs.
 - [x] Données réelles relues : trois sessions actives, 12/16/18 éligibles ; onglets Global/JOURNÉE/SOIRÉE conformes. EB1 Gestion Q3 : 60 % (3/5) TAXI/TA, 29 % (4/14) VTC/TAXI journée, 100 % (1/1) soir ; avant = données insuffisantes grises.
