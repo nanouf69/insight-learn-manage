@@ -9,11 +9,12 @@ export function firstPassageExamIds(examId: string): string[] {
 
 type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; choix?: QuestionStatsTarget['choix'] | null };
 export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_id: string; started_at: string; is_test: boolean; snapshot: { matiere?: string; questions?: FrozenQuestion[]; source_historique?: unknown } };
-export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number; revision_nouvelle: number; auteur: string | null; created_at: string };
+export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number | null; revision_nouvelle: number; auteur: string | null; created_at: string };
 export type ExamStatsResult = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string; details: { snapshot?: { questions?: FrozenQuestion[] }; reponses?: Record<string, unknown> } | null };
 export type ExamStatsRetake = { apprenant_id: string; exam_id: string; matiere_id: string; attempt_id: string | null; exercice_id: string; created_at: string };
 export type ExamStatsState = {attempt_id:string;apprenant_id:string;question_id:string;valeur:unknown};
-export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[] };
+export type ExamStatsAccount = {id:string;auth_user_id:string|null};
+export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[] };
 const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) ? [...v].sort() : null;
 const hasAnswer = (v: unknown) => typeof v === 'string' ? !!v.trim() : Array.isArray(v) && v.length > 0;
 const same = (a: unknown, b: unknown) => values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));

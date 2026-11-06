@@ -17,7 +17,7 @@ export async function readExamFirstPassage(examId:string,subject:string,question
   if(!examIds.length)throw new Error('Examen hors périmètre');
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const sessions=activeSessions(await pages<SessionStats>((a,b)=>supabase.from('sessions').select('id,nom,date_debut,date_fin,statut,heure_debut,creneaux').lte('date_debut',today).gte('date_fin',today).order('id').range(a,b)),today);
-  const evidence:ExamStatsEvidence={attempts:[],events:[],states:[],legacy:[],journal:[],results:[],retakes:[]};
+  const evidence:ExamStatsEvidence={attempts:[],events:[],states:[],legacy:[],journal:[],results:[],retakes:[],accounts:[]};
   if(!sessions.length)return computeExamSessionFirstPassage(questions,examIds,subject,[],[],today,new Set(),evidence);
   const [enrollments,tests]=await Promise.all([
     pages<InscriptionStats>((a,b)=>supabase.from('session_apprenants').select('apprenant_id,session_id,date_debut,date_fin,date_fin_personnalisee,liste_attente').in('session_id',sessions.map(s=>s.id)).order('id').range(a,b)),

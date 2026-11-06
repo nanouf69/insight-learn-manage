@@ -41,5 +41,5 @@ export function QuestionFirstPassageRate({questionId}:{questionId:number}) {
   const r=view?.rates[String(questionId)];
   if(!r)return <p className="text-xs text-muted-foreground">Premier passage non prouvé</p>;
   const court=(r:QuestionRate)=>exam && r.total===0 && r.unknown>0 ? 'données insuffisantes' : r.total ? `${Math.round(r.incorrect/r.total*100)} % (${r.incorrect}/${r.total})` : 'aucune réponse';
-  return <div className="my-1 space-y-0.5 text-xs text-muted-foreground">{sessions.map(s=>{const rate=data?.sessionRates[s.id]?.[String(questionId)];return <p key={s.id} className="break-words">{nomCourt(s)} : {rate ? court(rate) : 'non prouvé'}{rate?.unknown ? ` · ${rate.unknown} non prouvé(s)` : ''}</p>;})}</div>;
+  return <div className="my-1 space-y-0.5 text-xs text-muted-foreground">{sessions.map(s=>{const rate=data?.sessionRates[s.id]?.[String(questionId)];const echec=!!rate && rate.total>0 && rate.incorrect>0;return <p key={s.id} className={`break-words ${echec ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>{nomCourt(s)} : {rate ? court(rate) : 'non prouvé'}{rate?.unknown ? ` · ${rate.unknown} non prouvé(s)` : ''}</p>;})}</div>;
 }
