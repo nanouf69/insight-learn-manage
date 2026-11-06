@@ -117,30 +117,57 @@ export async function publierVersionExamen(examen: ExamenBlanc, moduleId: number
 }
 
 /** Le pont est-il actif pour cet apprenant ? (décision serveur, jamais locale) */
-export async function pontActifPour(apprenantId: string): Promise<boolean> {
+async function statutPontPour(apprenantId: string): Promise<"actif" | "inactif" | "erreur"> {
   const { data, error } = await supabase.rpc("core_bridge_actif_pour", { p_apprenant_id: apprenantId });
-  if (error) return false;
-  return data === true;
+  if (error) return "erreur";
+  return data === true ? "actif" : "inactif";
+}
+
+export async function pontActifPour(apprenantId: string): Promise<boolean> {
+  return (await statutPontPour(apprenantId)) === "actif";
 }
 
 /** Le sujet est-il publié dans le noyau (version active non retirée) ? */
-export async function sujetPublieDansNoyau(examenId: string): Promise<boolean> {
+async function statutSujetPublie(examenId: string): Promise<"publie" | "absent" | "erreur"> {
   // Fonction serveur : les élèves n'ont plus accès direct aux versions d'examen.
   const { data, error } = await supabase.rpc("core_sujet_publie" as never, { p_exam_id: examenId } as never);
-  if (error) return false;
-  return data === true;
+  if (error) return "erreur";
+  return data === true ? "publie" : "absent";
+}
+
+export async function sujetPublieDansNoyau(examenId: string): Promise<boolean> {
+  return (await statutSujetPublie(examenId)) === "publie";
 }
 
 /** Une tentative V2 existe-t-elle déjà pour ce passage ? (reprise, jamais changement de moteur) */
-export async function tentativeV2Existante(apprenantId: string, examenId: string): Promise<boolean> {
+export async function tentativeV2Existante(apprenantId: string, examenId: string): Promise<boolean | null> {
   const { data, error } = await supabase
     .from("exam_attempts_v2")
     .select("attempt_id")
     .eq("apprenant_id", apprenantId)
     .eq("exam_id", examenId)
     .limit(1);
-  if (error) return false;
+  if (error) return null;
   return (data ?? []).length > 0;
+}
+
+/** Reprise exacte : elle ne dépend ni du pont actuel ni d'une version toujours publiée. */
+async function tentativeV2OuvertePourMatiere(
+  apprenantId: string,
+  examenId: string,
+  matiereId: string,
+): Promise<{ attemptId: string | null; erreur: boolean }> {
+  const { data, error } = await supabase
+    .from("exam_attempts_v2")
+    .select("attempt_id, snapshot")
+    .eq("apprenant_id", apprenantId)
+    .eq("exam_id", examenId)
+    .eq("etat", "en_cours")
+    .order("started_at", { ascending: false });
+  if (error) return { attemptId: null, erreur: true };
+  const matches = (data ?? []).filter((row) => String((row as { snapshot?: { matiere?: unknown } }).snapshot?.matiere ?? "") === matiereId);
+  if (matches.length > 1) return { attemptId: null, erreur: true };
+  return { attemptId: matches.length === 1 ? String((matches[0] as { attempt_id: string }).attempt_id) : null, erreur: false };
 }
 
 export type DecisionRoutage =
@@ -163,10 +190,21 @@ export async function routerPassage(params: {
   tentative: number;
   passageDejaEngage: boolean;
 }): Promise<DecisionRoutage> {
-  if (!(await pontActifPour(params.apprenantId))) return { moteur: "ancien", motif: "pont_inactif" };
-  if (!(await sujetPublieDansNoyau(params.examenId))) return { moteur: "ancien", motif: "sujet_non_publie" };
+  const ouverte = await tentativeV2OuvertePourMatiere(params.apprenantId, params.examenId, params.matiereId);
+  if (ouverte.erreur) {
+    return { moteur: "bloque", message: "La reprise de votre copie figée ne peut pas être vérifiée. Aucun sujet courant n'a été substitué à votre tentative ; réessayez dans quelques instants." };
+  }
+  if (ouverte.attemptId) return { moteur: "v2", attemptId: ouverte.attemptId };
+
+  const pont = await statutPontPour(params.apprenantId);
+  if (pont === "erreur") return { moteur: "bloque", message: "Le circuit de votre examen ne peut pas être vérifié. Aucune nouvelle tentative n'a été ouverte." };
+  if (pont === "inactif") return { moteur: "ancien", motif: "pont_inactif" };
+  const sujet = await statutSujetPublie(params.examenId);
+  if (sujet === "erreur") return { moteur: "bloque", message: "La version officielle de l'examen est momentanément illisible. Aucune nouvelle tentative n'a été ouverte." };
+  if (sujet === "absent") return { moteur: "ancien", motif: "sujet_non_publie" };
 
   const reprise = await tentativeV2Existante(params.apprenantId, params.examenId);
+  if (reprise === null) return { moteur: "bloque", message: "L'historique de vos tentatives est illisible. Aucun changement de circuit n'a été effectué." };
   if (!reprise && params.passageDejaEngage) return { moteur: "ancien", motif: "passage_deja_engage" };
 
   const attemptId = await demarrerTentative(params);

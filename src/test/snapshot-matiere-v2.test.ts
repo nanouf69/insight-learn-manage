@@ -23,7 +23,7 @@ describe("projection exclusive du snapshot V2", () => {
   });
 
   it("signale une reprise historique incomplète au lieu de deviner", () => {
-    const incomplete = snapshot();
+    const incomplete = snapshot() as any;
     incomplete.questions[0].points = undefined;
     const result = projeterMatiereDepuisSnapshot(incomplete, "gestion");
     expect(result).toMatchObject({ ok: false });
