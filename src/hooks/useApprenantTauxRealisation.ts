@@ -185,6 +185,5 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
     queryFn: async () => chargerApprenantTauxRealisation(apprenantId!, apprenantProp)
-    },
   });
 }
