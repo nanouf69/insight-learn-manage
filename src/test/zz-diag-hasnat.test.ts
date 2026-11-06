@@ -25,7 +25,7 @@ describe("diag", () => { it("hasnat", async () => {
     const d = row.details;
     const r = attacherSourceUnique({ ...row, quiz_type: "examen_blanc" }, st, new Set());
     console.log("DIAG", row.matiere_id, "core?", !!core, core && { pending: core.pending, note: core.note20, qrc: core.qrcTotal },
-      core && verifierPassageV2(core, d?.reponses), core && verifierContenuPassage(core, d), core && contenuFicheTronqueCompatible(core, d),
+      core && verifierPassageV2(core, d?.reponses), core && verifierContenuPassage(core, d), core && contenuFicheTronqueCompatible(core, d), core && verifierContenuPassage(core, d, { enonceLibre: true }),
       JSON.stringify(noteExamenAffichee(r)), "lignePlate:", !!coreFiablePourLigne(st, { ...row, ...d, quizId: row.quiz_id, matiereId: row.matiere_id, completedAt: row.completed_at, resultId: row.id }));
   }
 }); });
