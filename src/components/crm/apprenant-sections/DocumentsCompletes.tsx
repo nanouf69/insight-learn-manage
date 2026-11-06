@@ -844,6 +844,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
             apprenant={apprenant}
             totalAttendu={bilanEdof?.planningIncomplet ? null : (bilanEdof?.objectifTotal ?? null)}
             totalIndisponible={bilanEdofErreur || bilanEdof?.planningIncomplet === true}
+            onOuvrirRelanceSignatures={onOuvrirRelanceSignatures}
           />
         </CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
