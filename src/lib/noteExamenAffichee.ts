@@ -46,7 +46,11 @@ export function attacherSourceUnique<T extends Record<string, any>>(
   const reponsesFiables = !nonFiables.has(core.attemptId) && verifierPassageV2(core, original?.reponses ?? row?.reponses) === "fiable";
   // Matière à QRC, passage natif définitif, mêmes réponses : une ancienne fiche tronquée
   // (sans corrigé) ne peut pas porter la correction QRC ; le passage moteur fait foi.
-  const ficheTronqueQrc = reponsesFiables && core.qrcTotal > 0 && !core.pending && contenuFicheTronqueCompatible(core, original);
+  const qrcDefinitif = reponsesFiables && core.qrcTotal > 0 && !core.pending;
+  // Ancienne fiche qui ne porte pas la correction QRC : passage moteur définitif fait foi si
+  // la fiche est tronquée OU si seul un énoncé a été retouché (choix, bonnes réponses,
+  // réponses attendues et réponses élève identiques). Cas HASNAT 06/11, Gestion Q15.
+  const ficheTronqueQrc = qrcDefinitif && (contenuFicheTronqueCompatible(core, original) || verifierContenuPassage(core, original, { enonceLibre: true }));
   if (!reponsesFiables || (!ficheTronqueQrc && !verifierContenuPassage(core, original))) {
     if (core.pending) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE, __noteRecalculee: true };
     return { ...row, __core: null, __noteRecalculee: true };
