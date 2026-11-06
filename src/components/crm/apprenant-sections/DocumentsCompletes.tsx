@@ -170,7 +170,7 @@ function getLabel(key: string): string {
 
 const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'apprenant_prenom']);
 
-export function DocumentsCompletes({ apprenant }: Props) {
+export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
