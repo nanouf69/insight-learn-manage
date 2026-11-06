@@ -16,6 +16,24 @@ import { ACTIVITES_CODE, METHODE_ACTIVITES } from "@/lib/jeuxPedagogiques";
 export { METHODE_CALCUL_JALONS };
 /** Méthode enregistrée avec chaque NOUVEAU calcul figé (les calculs déjà figés gardent la leur). */
 export const METHODE_GEL = `${METHODE_CALCUL_JALONS} + ${METHODE_ACTIVITES}`;
+export const METHODE_GEL_PREUVES = `${METHODE_GEL} + module-completion-preuves-v1 (gel-v3)`;
+
+/** Nouveau gel v3 : uniquement les verdicts serveur archivés, jamais une lecture en direct. */
+export function completionsPreuvesFigees(sources: any): any[] {
+  if (!Array.isArray(sources?.preuves_completion)) throw new Error("Source preuves_completion non archivée");
+  if (!Array.isArray(sources?.modules_attribues)) throw new Error("Source modules_attribues non archivée");
+  if (!Array.isArray(sources?.completions)) throw new Error("Source completions non archivée");
+  const etats = new Map(sources.preuves_completion.map((e: any) => [Number(e.module_id), e]));
+  return sources.completions.map((row: any) => {
+    const etat: any = etats.get(Number(row.module_id));
+    if (!etat) throw new Error(`Verdict serveur non archivé pour le module ${row.module_id}`);
+    return {
+      ...row,
+      preuve_serveur: typeof etat.preuve_complete === "boolean" ? etat.preuve_complete : null,
+      progress_preuve: etat.progress_effectif == null ? null : Number(etat.progress_effectif),
+    };
+  });
+}
 
 /**
  * Activités du registre terminées d'après les SEULES réponses archivées au gel

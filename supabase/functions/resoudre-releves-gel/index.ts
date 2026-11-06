@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
         (globalThis as any).document = { createElement: el, createElementNS: el, head: el(), body: el(), documentElement: el(), addEventListener() {}, querySelector: () => null };
       }
     }
-    const { calculerGelInitial, recalculerPratiqueSeule, METHODE_CALCUL_JALONS, METHODE_GEL } = await import("./calcul.bundle.js");
+    const { calculerGelInitial, recalculerPratiqueSeule, METHODE_CALCUL_JALONS, METHODE_GEL, METHODE_GEL_PREUVES } = await import("./calcul.bundle.js");
     const { data: gels, error } = await sb.from("releve_jalons_fin_acces")
       .select("id, apprenant_id, version, remplace_id").order("version", { ascending: true }).limit(500);
     if (error) throw error;

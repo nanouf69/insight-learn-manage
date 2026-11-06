@@ -41,6 +41,8 @@ export function assemblerCalculJalons(i: {
   modulesAttribues?: readonly number[] | null;
   /** Explicit live-only evidence guard; absent keeps the frozen/server method unchanged. */
   preuvesHistoriquesLive?: boolean;
+  /** Nouveau gel v3 seulement : une preuve indéterminée rend le calcul indisponible, jamais 100 %. */
+  preuvesFigeesStrictes?: boolean;
 }) {
   const attribues = i.modulesAttribues?.length ? new Set(i.modulesAttribues) : null;
   const ponderesFiliere = new Set(GRILLE_DUREES[i.filiere].map(([id]) => id));
