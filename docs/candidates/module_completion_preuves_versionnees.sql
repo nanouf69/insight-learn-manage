@@ -408,7 +408,7 @@ BEGIN
       INSERT INTO public.alertes_systeme (type, titre, message, details)
       VALUES ('gel_releve_echec', 'Gel du relevé non réalisé', 'Le gel automatique du relevé a échoué ; nouvel essai à la prochaine exécution horaire.', 'apprenant ' || a.id::text || ' : ' || SQLSTATE);
     END;
-  END LOOP
+  END LOOP;
   RETURN _n;
 END $function$;
 REVOKE ALL ON FUNCTION public.geler_releves_fin_acces() FROM PUBLIC, anon, authenticated;
