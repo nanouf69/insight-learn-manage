@@ -406,7 +406,7 @@ function PassageMatiere({
           return;
         }
         const projection = projeterMatiereDepuisSnapshot(nouvelle.snapshot, matiere.id);
-        if (!projection.ok) {
+        if (projection.ok === false) {
           setBlocageV2("Cette copie figée est incomplète et nécessite une revue manuelle. Vos réponses sont conservées ; aucune question n'a été devinée depuis la version actuelle.");
           void captureError({
             message: "[NoyauV2] reprise bloquée — snapshot historique insuffisant",

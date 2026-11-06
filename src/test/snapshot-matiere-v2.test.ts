@@ -27,7 +27,7 @@ describe("projection exclusive du snapshot V2", () => {
     incomplete.questions[0].points = undefined;
     const result = projeterMatiereDepuisSnapshot(incomplete, "gestion");
     expect(result).toMatchObject({ ok: false });
-    if (!result.ok) expect(result.raisons.join(" ")).toContain("barème absent");
+    if (result.ok === false) expect(result.raisons.join(" ")).toContain("barème absent");
   });
 
   it("refuse une clé QCM absente et les identifiants dupliqués", () => {
@@ -36,7 +36,7 @@ describe("projection exclusive du snapshot V2", () => {
     invalid.questions[1].id = "gestion:1";
     const result = projeterMatiereDepuisSnapshot(invalid, "gestion");
     expect(result.ok).toBe(false);
-    if (!result.ok) {
+    if (result.ok === false) {
       expect(result.raisons.join(" ")).toContain("bonne réponse absente");
       expect(result.raisons.join(" ")).toContain("identifiant dupliqué");
     }
