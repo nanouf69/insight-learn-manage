@@ -6,7 +6,10 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: str
   q.single = async () => fake.rows[table];
   q.range = async (f: number, t: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(f, t + 1) });
   return q;
-}, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null } } }));
+}, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null },
+  // Lecture serveur sous session vérifiée (freshSessionRead) : session admin fictive stable.
+  auth: { getSession: async () => ({ data: { session: { user: { id: "admin-fictif" }, expires_at: Math.floor(Date.now() / 1000) + 3600 } }, error: null }),
+    refreshSession: async () => ({ data: { session: { user: { id: "admin-fictif" }, expires_at: Math.floor(Date.now() / 1000) + 3600 } }, error: null }) } } }));
 import { chargerCandidatModules } from "@/hooks/useCandidatModules";
 import { completionAvecActivites, ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { recalculerPratiqueSeule } from "@/lib/releveCalculServeur";
