@@ -64,9 +64,10 @@ export function assemblerCalculJalons(i: {
   const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + r.heures, 0) * 60);
   const theorieMinutes = Math.round(theorieHours * 60);
   const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
-  // Appliquer la preuve avant les activités : aucune recomposition ne peut restaurer
-  // un ancien « completed » déjà contredit par le verdict serveur.
-  let completionsBase = i.preuvesHistoriquesLive ? (i.completions ?? []).map(liveCompletionEvidence) : (i.completions ?? []);
+  // Le gel par module (activités ajoutées après la validation = acquises) lit la date de
+  // validation ENREGISTRÉE ; la preuve serveur est appliquée ensuite sur la ligne recomposée
+  // (details + preuve_serveur conservés), donc aucun ancien « completed » contredit n'est restauré.
+  let completionsBase = i.completions ?? [];
   let activites: Array<EtatActivites & { methode: string }> = [];
   if (i.jeuxTermines) {
     const termines = new Set(i.jeuxTermines);
