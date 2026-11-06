@@ -3,7 +3,7 @@
 ## 06/11 — Revoir les notes de tous les élèves des sessions actives
 - [x] Trois sessions actives, 40 élèves uniques après déduplication ; audit lecture seule des derniers passages avec corrigé actif et QRC validées.
 - [x] 42 écarts de matière chez 22 élèves : 33 définitifs et 9 provisoires, tous à la hausse ; moyennes recalculées, aucun changement de verdict parmi les examens complets définitifs.
-- [ ] Décision requise : appliquer les 42, seulement les 33 définitives, ou ne rien modifier ; réponses, copies, snapshots et journaux conservés.
+- [x] Validation « Appliquer les 42 » exécutée : 42/42 notes conformes à la relecture, 33 définitives et 9 provisoires préservées, 42 audits avant/après, zéro ancienne valeur restante ; réponses, copies et snapshots inchangés.
 
 ## 06/11 — EB1 affiché échoué 9,9 après corrections QRC
 - [x] Identifier la tentative par les sept matières sans présumer l’identité ; contrôler QRC manuelles, notes matière serveur et ancienne fiche en lecture seule.
