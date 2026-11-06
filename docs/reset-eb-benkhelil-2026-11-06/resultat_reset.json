@@ -1,0 +1,49 @@
+[
+ {
+  "reset_id": "0cf57d6b-418e-47a0-a06b-37b1fd88989a",
+  "operation_id": "32a8e682-6fd0-455a-b3f8-142407003d5a",
+  "apprenant_id": "b9058e7e-a81e-4741-adba-6da88238cc84",
+  "exam_id": "EB1-TAXI",
+  "cutoff_at": "2026-11-06T09:17:05.371549+00:00",
+  "archived_attempt_ids": [
+   "5870238b-277c-4672-8380-9bb7cd9fee08",
+   "cf6df86d-2570-4722-b43c-fa1288bc1063",
+   "dd2929c6-96ff-454f-aac4-4ffb8fef28b7"
+  ],
+  "archived_core_result_ids": [
+   "3d667b5d-9615-4905-bda3-c21aba18dd53",
+   "1082c962-bd5e-4f0c-b899-0cba0d0946c1"
+  ],
+  "archived_legacy_result_ids": [
+   "b9b70d0a-3186-479c-81ee-e05ece0e072a",
+   "3a2448bd-a3b9-479b-b49f-5aa99792fd24"
+  ],
+  "motif": "Demande responsable 06/11/2026 : examens blancs ne fonctionnent pas",
+  "created_by": "d9d42e89-e386-4b22-af96-ec866fee98db",
+  "created_email": "contact@ftransport.fr",
+  "created_at": "2026-11-06T09:17:05.371549+00:00"
+ },
+ {
+  "reset_id": "32f563bb-0693-4da5-a8e0-1eed0e7ddbb9",
+  "operation_id": "e4a73e97-a8f3-465d-835b-8672daf4f611",
+  "apprenant_id": "b9058e7e-a81e-4741-adba-6da88238cc84",
+  "exam_id": "EB2-TAXI",
+  "cutoff_at": "2026-11-06T09:17:05.606478+00:00",
+  "archived_attempt_ids": [
+   "e2cb40cc-5898-419a-9ec3-12dad9b84b28",
+   "170f327c-5537-4bfa-ab74-48f31f1970e6"
+  ],
+  "archived_core_result_ids": [
+   "e05bf947-dfe0-4dee-b57a-8ad71e0811af",
+   "0305378f-7ee8-444e-96c2-332aff617355"
+  ],
+  "archived_legacy_result_ids": [
+   "d84b579e-a7ed-4917-8f4c-130da9971d32",
+   "31b70525-c029-4479-a63b-b7c1aa3cc654"
+  ],
+  "motif": "Demande responsable 06/11/2026 : examens blancs ne fonctionnent pas",
+  "created_by": "d9d42e89-e386-4b22-af96-ec866fee98db",
+  "created_email": "contact@ftransport.fr",
+  "created_at": "2026-11-06T09:17:05.606478+00:00"
+ }
+]
