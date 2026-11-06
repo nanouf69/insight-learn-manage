@@ -80,6 +80,7 @@ import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/a
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { applyPratiqueUnlockElearning, computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import { appliquerDerogationsModules, lireDerogationsModules } from '@/lib/moduleAccessDerogation';
+import { modeExamenBlancStrict } from '@/lib/confirmationPresentielEB';
 import {
   fetchModuleCompletions,
   isCompletionDone,
@@ -1821,6 +1822,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     !!apprenant?.id &&
     !isFC &&
     isPresentielType(apprenant?.type_apprenant, apprenant?.formation_choisie, apprenant?.creneau_horaire);
+
+  // Écran d'identité avant un NOUVEL examen blanc : présentiel certain uniquement (ambigu ou e-learning = rien).
+  const confirmationPresentielEB =
+    !embedded && !!user && !!apprenant?.id && !isFC && modeExamenBlancStrict(apprenant) === "presentiel"
+      ? { nom: apprenant?.nom ?? null, prenom: apprenant?.prenom ?? null }
+      : null;
 
   // Dernier jour de FC : on n'autorise PAS le bypass "skipped" — toutes les
   // signatures doivent être régularisées avant d'accéder aux cours.
