@@ -363,6 +363,8 @@ const Index = () => {
               />
             </div>
 
+            <ApprenantsTauxComplets onNavigateToApprenant={handleNavigateToApprenant} />
+
             {/* Incidents techniques des examens blancs (diagnostic, lecture seule) */}
             <IncidentsExamensPanel onNavigateToApprenant={handleNavigateToApprenant} />
 
@@ -383,7 +385,6 @@ const Index = () => {
             {/* Apprenants actuellement en formation — journée / soirée */}
             <SuiviFormationEnCours onNavigateToApprenant={handleNavigateToApprenant} />
             <PratiqueEdofEnAttente onNavigateToApprenant={handleNavigateToApprenant} />
-            <ApprenantsTauxComplets onNavigateToApprenant={handleNavigateToApprenant} />
 
             {/* Tâches à faire */}
             <DashboardTasks />
