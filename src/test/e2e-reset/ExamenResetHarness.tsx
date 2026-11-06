@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PassageMatiere } from "@/components/cours-en-ligne/ExamenBlancsPassage";
+import { setAnswerSaveOwnership } from "@/lib/answerPersistence";
+
+setAnswerSaveOwnership({ apprenantId: "apprenant-fictif", previewReadOnly: false });
 
 const matiere: any = {
   id: "t3p",
