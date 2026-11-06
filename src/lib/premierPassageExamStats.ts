@@ -31,6 +31,21 @@ function grade(q: QuestionStatsTarget, frozen: FrozenQuestion | undefined, answe
   return same(answer, keys);
 }
 
+/** Une QRC est évaluée sur sa copie soumise, jamais sur la première lettre tapée.
+ * Humain prioritaire ; IA seulement avec sa preuve appliquée au même barème et à la même note. */
+function gradeQrc(q:QuestionStatsTarget,frozen:FrozenQuestion|undefined,qrc:ExamStatsQrc|undefined,corrections:ExamStatsQrcIa[]):boolean|null {
+  if(q.type!=='QRC' || frozen?.type!=='QRC' || frozen.enonce!==q.enonce || !qrc || qrc.etat!=='corrigee' || qrc.note==null)return null;
+  const max=Number(frozen.points);const note=Number(qrc.note);
+  if(!Number.isFinite(max) || max<=0 || !Number.isFinite(note) || note<0 || note>max)return null;
+  const email=(qrc.corrige_email??'').trim().toLowerCase();
+  if(!email || email.startsWith('auto:') || email.startsWith('correction historique importée'))return null;
+  if(email.startsWith('ia:')) {
+    const applied=corrections.some(c=>c.qrc_instance_id===qrc.qrc_instance_id && c.statut==='appliquee' && Number(c.bareme)===max && Number(c.note)===note);
+    if(!applied)return null;
+  }
+  return note===max;
+}
+
 export function computeExamFirstPassage(questions: QuestionStatsTarget[], examIds: string[], subject: string, population: Map<string,Set<SessionMode>>, evidence: ExamStatsEvidence): Record<string,QuestionRate> {
   return Object.fromEntries(questions.map(q=> {
     const rate=blankRate();
