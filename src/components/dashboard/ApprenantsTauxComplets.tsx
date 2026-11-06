@@ -119,7 +119,7 @@ export function ApprenantsTauxComplets({ onNavigateToApprenant }: { onNavigateTo
                 </div>
                 <Button variant="ghost" size="icon" className="shrink-0 text-destructive" disabled={!user} title="Retirer de cette liste uniquement" aria-label={`Retirer ${[row.prenom, row.nom].filter(Boolean).join(" ")} de la liste des taux complets`} onClick={() => setARetirer(row)}><X className="h-4 w-4" /></Button>
               </div>)}
-            </div>}
+            </div> : null}
         </>}
     </CardContent>
     <AlertDialog open={aRetirer !== null} onOpenChange={(open) => { if (!open) setARetirer(null); }}>
