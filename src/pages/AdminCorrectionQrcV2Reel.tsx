@@ -4,6 +4,7 @@
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
+import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { nombrePassagesCroises } from "@/features/correction-qrc-v2/rattachementCrm";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -736,9 +737,9 @@ export default function AdminCorrectionQrcV2Reel() {
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {matieres.map((m) => {
-          const tentatives = (session?.tentatives ?? []).filter((t) =>
+          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) =>
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
-          );
+          ));
           // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
           // rencontrées dans les snapshots, sans jamais en inventer ni en fusionner d'un autre EB.
           const questions: typeof tentatives[number]["snapshot"]["questions"] = [];
