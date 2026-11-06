@@ -19,7 +19,7 @@ export type ExamStatsQrcIa = { qrc_instance_id:string; statut:string; note:numbe
 export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[]; qrc?:ExamStatsQrc[]; qrcIa?:ExamStatsQrcIa[] };
 const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) ? [...v].sort() : null;
 const hasAnswer = (v: unknown) => typeof v === 'string' ? !!v.trim() : Array.isArray(v) && v.length > 0;
-const same = (a: unknown, b: unknown) => values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));
+const same = (a: unknown, b: unknown) => typeof a==='string' || typeof b==='string' ? a===b : values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));
 const blankRate = (): QuestionRate => ({incorrect:0,total:0,unknown:0,jour:{incorrect:0,total:0},soir:{incorrect:0,total:0},mixte:0});
 /** Matching text/choices only validates a stable exam+subject+ID identity; never joins by text. */
 function grade(q: QuestionStatsTarget, frozen: FrozenQuestion | undefined, answer: unknown): boolean | null {
