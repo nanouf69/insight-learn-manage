@@ -39,8 +39,9 @@ export async function readExamFirstPassage(examId:string,subject:string,question
       questions.some(q=>q.type==='QRC') ? pages<ExamStatsQrc>((a,b)=>supabase.from('qrc_instances_v2').select('qrc_instance_id,attempt_id,apprenant_id,question_id,reponse,etat,note,corrige_email').in('apprenant_id',batch).in('question_id',questions.filter(q=>q.type==='QRC').map(q=>`${subject}:${q.id}`)).order('qrc_instance_id').range(a,b)) : Promise.resolve([]),
     ]);
     evidence.attempts.push(...attempts);evidence.events.push(...events);evidence.states?.push(...states);evidence.legacy.push(...legacy,...archived);evidence.journal.push(...journal);evidence.results.push(...results);evidence.retakes.push(...retakes);evidence.accounts.push(...accounts);evidence.qrc?.push(...qrc);
-    if(qrc.length){
-      const ia=await pages<ExamStatsQrcIa>((a,b)=>supabase.from('qrc_ia_corrections').select('qrc_instance_id,statut,note,bareme').in('qrc_instance_id',qrc.map(c=>c.qrc_instance_id)).order('qrc_instance_id').order('created_at').range(a,b));
+    const iaIds=qrc.filter(c=>(c.corrige_email??'').toLowerCase().startsWith('ia:')).map(c=>c.qrc_instance_id);
+    for(let i=0;i<iaIds.length;i+=100){
+      const ia=await pages<ExamStatsQrcIa>((a,b)=>supabase.from('qrc_ia_corrections').select('qrc_instance_id,statut,note,bareme').in('qrc_instance_id',iaIds.slice(i,i+100)).order('qrc_instance_id').order('created_at').range(a,b));
       evidence.qrcIa?.push(...ia);
     }
   }
