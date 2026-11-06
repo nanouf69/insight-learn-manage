@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-/** Déclaration de l'élève uniquement : aucune écriture serveur, pas une preuve d'autorisation du formateur. */
+/** Déclarations de l'élève uniquement : aucune écriture serveur, pas une approbation technique admin. */
 export default function ConfirmationPresentielEB({ open, nom, prenom, examLibelle, onConfirm, onCancel }: {
   open: boolean;
   nom?: string | null;
@@ -13,34 +13,41 @@ export default function ConfirmationPresentielEB({ open, nom, prenom, examLibell
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const [coche, setCoche] = useState(false);
-  useEffect(() => { if (open) setCoche(false); }, [open]);
+  const [compte, setCompte] = useState(false);
+  const [formateur, setFormateur] = useState(false);
+  useEffect(() => { if (open) { setCompte(false); setFormateur(false); } }, [open]);
   const identite = [prenom, nom ? String(nom).toUpperCase() : null].filter(Boolean).join(" ") || "Nom non disponible";
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="confirmation-presentiel-eb">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-5 w-5 shrink-0" /> Attention — Examen blanc en présentiel
+            <AlertTriangle className="h-5 w-5 shrink-0" /> Examen blanc en présentiel
           </DialogTitle>
-          {examLibelle ? <DialogDescription>{examLibelle}</DialogDescription> : null}
+          <DialogDescription>{examLibelle || "Confirmation avant de commencer"}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-sm text-foreground">
-          <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
-            <p className="text-xs text-muted-foreground">Compte connecté</p>
-            <p className="text-xl font-bold" data-testid="identite-compte">{identite}</p>
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 font-semibold text-destructive">
+            Ne commencez pas l'examen blanc avant la confirmation du formateur.
+          </p>
+          <div className="space-y-2 rounded-lg border-2 border-primary bg-primary/5 p-4">
+            <p className="text-base font-semibold" data-testid="question-compte">Êtes-vous bien {identite} ?</p>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={compte} onCheckedChange={(v) => setCompte(v === true)} className="mt-0.5" aria-label="Oui, je confirme que c'est bien mon compte." />
+              <span>Oui, je confirme que c'est bien mon compte.</span>
+            </label>
           </div>
-          <p>Vérifiez que vous êtes bien connecté à votre compte personnel.</p>
-          <p className="font-semibold">Ne commencez pas l'examen blanc avant d'avoir reçu la confirmation de votre formateur.</p>
-          <p>Toute utilisation du mauvais compte peut entraîner des erreurs d'enregistrement, de synchronisation et de résultats.</p>
-          <label className="flex items-start gap-3 rounded-md border p-3 cursor-pointer">
-            <Checkbox checked={coche} onCheckedChange={(v) => setCoche(v === true)} className="mt-0.5" aria-label="Confirmation identité et autorisation" />
-            <span>Je confirme que le nom et le prénom affichés sont bien les miens et que mon formateur m'a autorisé à commencer cet examen.</span>
-          </label>
+          <div className="space-y-2 rounded-lg border p-4">
+            <p className="text-base font-semibold">Avez-vous reçu l'autorisation de votre formateur pour commencer cet examen blanc ?</p>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={formateur} onCheckedChange={(v) => setFormateur(v === true)} className="mt-0.5" aria-label="Oui, mon formateur m'a autorisé à commencer." />
+              <span>Oui, mon formateur m'a autorisé à commencer.</span>
+            </label>
+          </div>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-row">
           <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">Annuler</Button>
-          <Button disabled={!coche} onClick={onConfirm} className="w-full sm:w-auto">Commencer l'examen blanc</Button>
+          <Button disabled={!(compte && formateur)} onClick={onConfirm} className="w-full sm:w-auto">Commencer l'examen blanc</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

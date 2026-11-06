@@ -38,15 +38,24 @@ describe("quand l'écran est exigé", () => {
 });
 
 describe("écran de confirmation", () => {
-  it("affiche l'identité, case non cochée, bouton désactivé puis actif", () => {
+  it("question d'identité, deux cases décochées, bouton actif seulement avec les deux", () => {
     const onConfirm = vi.fn();
     render(<ConfirmationPresentielEB open nom="Mfouemo" prenom="Rodrigue" onConfirm={onConfirm} onCancel={() => {}} />);
-    expect(screen.getByTestId("identite-compte").textContent).toBe("Rodrigue MFOUEMO");
+    expect(screen.getByTestId("question-compte").textContent).toBe("Êtes-vous bien Rodrigue MFOUEMO ?");
     const bouton = screen.getByRole("button", { name: "Commencer l'examen blanc" });
+    const compte = screen.getByRole("checkbox", { name: "Oui, je confirme que c'est bien mon compte." });
+    const formateur = screen.getByRole("checkbox", { name: "Oui, mon formateur m'a autorisé à commencer." });
+    expect(compte).not.toBeChecked();
+    expect(formateur).not.toBeChecked();
+    expect(bouton).toBeDisabled();
+    fireEvent.click(compte);
     expect(bouton).toBeDisabled();
     fireEvent.click(bouton);
     expect(onConfirm).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(compte);
+    fireEvent.click(formateur);
+    expect(bouton).toBeDisabled();
+    fireEvent.click(compte);
     expect(bouton).not.toBeDisabled();
     fireEvent.click(bouton);
     expect(onConfirm).toHaveBeenCalledTimes(1);
