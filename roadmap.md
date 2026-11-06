@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — Revoir les notes de tous les élèves des sessions actives
+- [ ] Identifier les sessions actives et leurs élèves, puis auditer en lecture seule les EB avec le corrigé actif et les QRC validées.
+- [ ] Recalculer matières, score global pondéré et admission ; produire les avant/après uniquement pour les écarts prouvés.
+- [ ] Aucune régularisation groupée sans validation explicite après tableau ; conserver réponses, copies, snapshots et journaux.
+
 ## 06/11 — EB1 affiché échoué 9,9 après corrections QRC
 - [x] Identifier la tentative par les sept matières sans présumer l’identité ; contrôler QRC manuelles, notes matière serveur et ancienne fiche en lecture seule.
 - [x] Recalculer le global avec les coefficients figés et le verdict ; distinguer note juste, ancienne fiche, cache et correctifs seulement en aperçu.
