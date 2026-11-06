@@ -43,6 +43,7 @@ import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, ty
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
+import { correctionOfficielleQrc } from "@/lib/correctionOfficielleQrc";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -901,7 +902,12 @@ function EcranResultats({
                     } else if (q?.type === "QRC") {
                       const corrIA = cacheMatiere[q.id] ?? cacheMatiere[String(q.id)];
                       const fallback = evaluateQrcDeterministic(q, rep, pts);
-                      if (corrIA === "loading") {
+                      const officielle = correctionOfficielleQrc(r.__core, r.matiereId ?? matiere?.id, q.id, pts);
+                      if (officielle) {
+                        pointsObtenus = officielle.pointsObtenus;
+                        isCorrect = officielle.estCorrect;
+                        correctionDetail = officielle.explication;
+                      } else if (corrIA === "loading") {
                         isLoadingIA = true;
                        } else if (corrIA && corrIA !== "error") {
                          pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
@@ -1149,7 +1155,10 @@ function EcranResultats({
                if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
             } else if (q?.type === "QRC") {
               const corrIA = correctionsIA[mi]?.[q.id] ?? correctionsIA[mi]?.[String(q.id)];
-              if (corrIA && corrIA !== "loading" && corrIA !== "error") {
+              const officielle = correctionOfficielleQrc((r as any).__core, r.matiereId ?? matiere.id, q.id, getPointsParQuestion(matiere.id, "QRC", matiere));
+              if (officielle) {
+                if (!officielle.estCorrect) nbFaussesTop++;
+              } else if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
                 const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC", matiere));
