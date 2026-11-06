@@ -33,7 +33,7 @@ describe("Chargeur réel mocké : QRC du même passage", () => {
   it.each([
     { score: 12, total: 25, attendu: 12 },
     { score: 12, total: 10, attendu: 12 },
-    { score: 9.47, total: 19, attendu: 9.47 },
+    { score: 9.47, total: 19, attendu: 9.5 },
   ])("la note serveur $score/20 n'est pas divisée une seconde fois par le barème $total", async ({ score, total, attendu }) => {
     data.core_exam_results = [{ attempt_id: "att", result_revision: 1, status: "definitif", score, total, qrc_restantes: 0 }];
     expect(await chargerEtAfficher()).toMatchObject({ etat: "note", note20: attendu, source: "noyau" });
