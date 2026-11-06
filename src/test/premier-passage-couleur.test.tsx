@@ -37,11 +37,18 @@ describe('Couleur du taux d’échec au premier passage', () => {
     expect(line).not.toHaveClass('text-destructive');
   });
 
-  it('QRC ou preuve insuffisante ne devient ni 0 % ni un échec rouge', async () => {
+  it('QRC ou preuve insuffisante ne devient ni 0 % ni un échec rouge et n’affiche aucun non prouvé', async () => {
     mockedRead.mockResolvedValue(data(rate(0, 0, 2)));
     renderRate();
     const line = await screen.findByText(/données insuffisantes/);
-    expect(line).toHaveTextContent('2 non prouvé(s)');
+    expect(line).not.toHaveTextContent('non prouvé');
     expect(line).not.toHaveClass('text-destructive');
+  });
+
+  it('un pourcentage calculé reste affiché sans suffixe non prouvé', async () => {
+    mockedRead.mockResolvedValue(data(rate(1, 2, 14)));
+    renderRate();
+    const line = await screen.findByText(/50 % \(1\/2\)/);
+    expect(line).not.toHaveTextContent('non prouvé');
   });
 });
