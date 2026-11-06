@@ -915,7 +915,16 @@ export default function AdminCorrectionQrcV2Reel() {
         {qrcSel && questionSel && tentativeSel && (
           <>
             <div className="flex flex-wrap items-baseline gap-x-2 border-b pb-2">
-              <span className="font-semibold">{tentativeSel.candidat}</span>
+              <a
+                href={`/?section=crm&apprenant=${encodeURIComponent(String(qrcSel.apprenant_id))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+                title="Ouvrir la fiche CRM de l'élève (nouvel onglet)"
+                data-testid="lien-fiche-crm"
+              >
+                {tentativeSel.candidat} ↗
+              </a>
               <span className="text-xs text-muted-foreground">
                 {ebChoisi?.exam_id} ·{" "}
                 {tentativeSel.started_at
