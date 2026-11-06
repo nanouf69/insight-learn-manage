@@ -15,7 +15,7 @@ describe('EB premier passage — preuves et conservation',()=>{
  it('examen 2 jamais agrégé avec examen 1',()=>{const e=evidence();e.attempts[0].exam_id='EB2';expect(calc(e).total).toBe(0);});
  it('même ID numérique d’autre matière non agrégé',()=>{const e=evidence();e.events[0].question_id='francais:1';expect(calc(e).total).toBe(0);});
  it('choix modifiés depuis le snapshot : inconnus',()=>{const e=evidence();const fq=e.attempts[0].snapshot.questions?.[0];if(fq)fq.choix=[{lettre:'A',texte:'autre',correct:true}];expect(calc(e)).toMatchObject({total:0,unknown:1});});
- it('QRC jamais notée via comparaison de texte ou IA',()=>{expect(calc(evidence(),{...q,type:'QRC'})).toMatchObject({total:0,unknown:1});});
+ it('QRC sans copie soumise ne compte ni réponse ni échec',()=>{expect(calc(evidence(),{...q,type:'QRC'})).toMatchObject({total:0,unknown:0});});
  it('import historique ne fabrique pas un événement initial',()=>{const e=evidence();e.attempts[0].snapshot.source_historique={result_id:'old'};expect(calc(e).total).toBe(0);});
  it('compte test non inclus',()=>{const e=evidence();e.attempts[0].is_test=true;expect(calc(e).total).toBe(0);});
  it('absence de réponse n’est pas une erreur',()=>{const e=evidence();e.events=[];expect(calc(e)).toMatchObject({total:0,incorrect:0});});
@@ -30,4 +30,16 @@ describe('EB premier passage — preuves et conservation',()=>{
  it('format serveur réel : révision initiale NULL et auteur auth_user_id donnent 1/1',()=>{expect(calc(evidence())).toMatchObject({incorrect:1,total:1,unknown:0});});
  it('sans lien auth_user_id prouvé, la réponse reste insuffisante',()=>{const e=evidence();e.accounts=[];expect(calc(e)).toMatchObject({total:0,unknown:1});});
  it('calcul ne modifie aucune preuve ou question',()=>{const e=evidence();const before=JSON.stringify({e,q});calc(e);expect(JSON.stringify({e,q})).toBe(before);});
+ describe('QRC sur la copie soumise et sa correction validée',()=>{
+  const qrcQuestion={id:1,enonce:'Documents ?',type:'QRC',choix:[]};
+  const qrcEvidence=(note:number|null=1,email:string|null='formateur@ftransport.fr')=>{const e=evidence();e.attempts[0].snapshot.questions=[{id:'gestion:1',matiere:'gestion',type:'QRC',enonce:'Documents ?',points:2}];e.events=[{...e.events[0],valeur_nouvelle:'P'}];e.qrc=[{qrc_instance_id:'qrc-1',attempt_id:'native',apprenant_id:'a',question_id:'gestion:1',reponse:'Permis et carte professionnelle',etat:note==null?'en_attente':'corrigee',note,corrige_email:email}];return e;};
+  it('note humaine 1/2 = échec de la copie soumise, pas de la première lettre tapée',()=>{expect(calc(qrcEvidence(1),qrcQuestion)).toMatchObject({incorrect:1,total:1,unknown:0});});
+  it('note humaine 2/2 = réussite',()=>{expect(calc(qrcEvidence(2),qrcQuestion)).toMatchObject({incorrect:0,total:1,unknown:0});});
+  it('QRC en attente reste hors dénominateur et explicitement non prouvée',()=>{expect(calc(qrcEvidence(null,null),qrcQuestion)).toMatchObject({incorrect:0,total:0,unknown:1});});
+  it('IA appliquée au même barème acceptée',()=>{const e=qrcEvidence(1,'ia:modele');e.qrcIa=[{qrc_instance_id:'qrc-1',statut:'appliquee',note:1,bareme:2}];expect(calc(e,qrcQuestion)).toMatchObject({incorrect:1,total:1});});
+  it('IA sans preuve appliquée ne fabrique pas un échec',()=>{expect(calc(qrcEvidence(1,'ia:modele'),qrcQuestion)).toMatchObject({total:0,unknown:1});});
+  it('correction humaine prioritaire même sans reçu IA',()=>{expect(calc(qrcEvidence(2,'formateur@ftransport.fr'),qrcQuestion)).toMatchObject({incorrect:0,total:1});});
+  it('reprise exclue du premier passage',()=>{const e=qrcEvidence(1);e.retakes=[{apprenant_id:'a',exam_id:'EB1',matiere_id:'gestion',attempt_id:'native',exercice_id:'EB1__gestion__t2',created_at:'2026-11-04T09:00:00Z'}];expect(calc(e,qrcQuestion)).toMatchObject({total:0,unknown:1});});
+  it('note hors barème figé refusée',()=>{expect(calc(qrcEvidence(3),qrcQuestion)).toMatchObject({total:0,unknown:1});});
+ });
 });

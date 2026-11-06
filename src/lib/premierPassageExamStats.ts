@@ -7,17 +7,19 @@ export function firstPassageExamIds(examId: string): string[] {
   return match ? [`EB${match[1]}`, `EB${match[1]}-TAXI`] : [];
 }
 
-type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; choix?: QuestionStatsTarget['choix'] | null };
+type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; points?: number | string; choix?: QuestionStatsTarget['choix'] | null };
 export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_id: string; started_at: string; is_test: boolean; snapshot: { matiere?: string; questions?: FrozenQuestion[]; source_historique?: unknown } };
 export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number | null; revision_nouvelle: number; auteur: string | null; created_at: string };
 export type ExamStatsResult = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string; details: { snapshot?: { questions?: FrozenQuestion[] }; reponses?: Record<string, unknown> } | null };
 export type ExamStatsRetake = { apprenant_id: string; exam_id: string; matiere_id: string; attempt_id: string | null; exercice_id: string; created_at: string };
 export type ExamStatsState = {attempt_id:string;apprenant_id:string;question_id:string;valeur:unknown};
 export type ExamStatsAccount = {id:string;auth_user_id:string|null};
-export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[] };
+export type ExamStatsQrc = { qrc_instance_id:string; attempt_id:string; apprenant_id:string; question_id:string; reponse:unknown; etat:string; note:number|string|null; corrige_email:string|null };
+export type ExamStatsQrcIa = { qrc_instance_id:string; statut:string; note:number|string|null; bareme:number|string|null };
+export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[]; qrc?:ExamStatsQrc[]; qrcIa?:ExamStatsQrcIa[] };
 const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) ? [...v].sort() : null;
 const hasAnswer = (v: unknown) => typeof v === 'string' ? !!v.trim() : Array.isArray(v) && v.length > 0;
-const same = (a: unknown, b: unknown) => values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));
+const same = (a: unknown, b: unknown) => typeof a==='string' || typeof b==='string' ? a===b : values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));
 const blankRate = (): QuestionRate => ({incorrect:0,total:0,unknown:0,jour:{incorrect:0,total:0},soir:{incorrect:0,total:0},mixte:0});
 /** Matching text/choices only validates a stable exam+subject+ID identity; never joins by text. */
 function grade(q: QuestionStatsTarget, frozen: FrozenQuestion | undefined, answer: unknown): boolean | null {
@@ -27,6 +29,21 @@ function grade(q: QuestionStatsTarget, frozen: FrozenQuestion | undefined, answe
   const keys = choices.filter(c=>c.correct === true).map(c=>c.lettre);
   if (!keys.length || new Set(choices.map(c=>c.lettre)).size !== choices.length || values(answer)?.some(v=>!choices.some(c=>c.lettre===v))) return null;
   return same(answer, keys);
+}
+
+/** Une QRC est évaluée sur sa copie soumise, jamais sur la première lettre tapée.
+ * Humain prioritaire ; IA seulement avec sa preuve appliquée au même barème et à la même note. */
+function gradeQrc(q:QuestionStatsTarget,frozen:FrozenQuestion|undefined,qrc:ExamStatsQrc|undefined,corrections:ExamStatsQrcIa[]):boolean|null {
+  if(q.type!=='QRC' || frozen?.type!=='QRC' || frozen.enonce!==q.enonce || !qrc || qrc.etat!=='corrigee' || qrc.note==null)return null;
+  const max=Number(frozen.points);const note=Number(qrc.note);
+  if(!Number.isFinite(max) || max<=0 || !Number.isFinite(note) || note<0 || note>max)return null;
+  const email=(qrc.corrige_email??'').trim().toLowerCase();
+  if(!email || email.startsWith('auto:') || email.startsWith('correction historique importée'))return null;
+  if(email.startsWith('ia:')) {
+    const applied=corrections.some(c=>c.qrc_instance_id===qrc.qrc_instance_id && c.statut==='appliquee' && Number(c.bareme)===max && Number(c.note)===note);
+    if(!applied)return null;
+  }
+  return note===max;
 }
 
 export function computeExamFirstPassage(questions: QuestionStatsTarget[], examIds: string[], subject: string, population: Map<string,Set<SessionMode>>, evidence: ExamStatsEvidence): Record<string,QuestionRate> {
@@ -40,6 +57,15 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         const qid=`${subject}:${q.id}`;
         const frozen=a.snapshot.questions?.filter(f=>f.matiere===subject && String(f.id)===qid);
         if (!frozen?.length) continue;
+        if(q.type==='QRC') {
+          const copies=evidence.qrc?.filter(c=>c.apprenant_id===learner && c.attempt_id===a.attempt_id && c.question_id===qid)??[];
+          const copy=copies[0];
+          if(!copy || !hasAnswer(copy.reponse))continue;
+          if(copies.length!==1 || evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id)) {uncertain=true;continue;}
+          const correct=gradeQrc(q,frozen.length===1?frozen[0]:undefined,copy,evidence.qrcIa??[]);
+          observations.push({at:a.started_at,correct,answer:copy.reponse});
+          continue;
+        }
         const events=evidence.events.filter(e=>e.apprenant_id===learner && e.attempt_id===a.attempt_id && e.question_id===qid && hasAnswer(e.valeur_nouvelle)).sort((x,y)=>x.created_at.localeCompare(y.created_at) || x.event_id-y.event_id);
         const first=events[0];
         if (!first) {if(evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===qid && hasAnswer(s.valeur)))uncertain=true;continue;}
