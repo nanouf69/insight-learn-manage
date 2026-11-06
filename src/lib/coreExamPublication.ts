@@ -109,7 +109,9 @@ export async function fetchCoreMatiereStatesBulk(
           const r = latestResult.get(a.attempt_id);
           const score = r?.score != null ? Number(r.score) : NaN;
           const total = r?.total != null ? Number(r.total) : NaN;
-          const note20 = Number.isFinite(score) && Number.isFinite(total) && total > 0 ? (score / total) * 20 : null;
+          // core_exam_results.score est déjà la note sur 20 calculée par core_note_attempt.
+          // total est le barème brut du snapshot : ne jamais normaliser une seconde fois.
+          const note20 = Number.isFinite(score) && Number.isFinite(total) && total > 0 ? score : null;
           const qrcRestantes = Math.max(q.pending, r ? Number(r.qrc_restantes) || 0 : 0);
           const pending = !r || r.status !== "definitif" || qrcRestantes > 0 || note20 == null;
           const key = String(a.apprenant_id);
