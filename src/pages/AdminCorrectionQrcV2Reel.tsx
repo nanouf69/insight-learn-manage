@@ -930,7 +930,7 @@ export default function AdminCorrectionQrcV2Reel() {
                     📅 Examen blanc du {tentativeSel.started_at
                       ? new Date(tentativeSel.started_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })
                       : "date inconnue"}
-                    {" · "}📘 Matière : {mat ? `${mat.lettre} — ${mat.titre}` : (questionSel?.matiere ?? "inconnue")}
+                    {" · "}📘 Matière : {mat ? [mat.lettre, mat.titre].filter((v) => v != null && String(v).trim() !== "").join(" — ") || (questionSel?.matiere ?? "inconnue") : (questionSel?.matiere ?? "inconnue")}
                   </span>
                 );
               })()}
