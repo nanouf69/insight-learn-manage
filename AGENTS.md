@@ -13,6 +13,7 @@
 - `trg_garde_correction_admin_quiz` refuses (42501) learner writes to admin/manual-corrected quiz scores; why: pending device notes never overwrite admin corrections.
 - Quiz OK requires send, readback and submitQuizAttempt; validated quiz revisions use module_X_revision_exo_Y; why: no unproven validation or overwritten proof.
 - Exam source = noteExamenAffichee + passagesV2NonFiables: same-attempt identity, matching answers/content else legacy; snapshots compared by relative order and explicit correct choices; why: no borrowed or truncated score.
+- `core_exam_results.score` is already /20; never divide by `total` again; why: preserve official QRC notes globally.
 - Modules Examens blancs 35–38 : déclencheur serveur `trg_zz_examens_blancs_6_sur_6` (écrit seulement « completed », jamais bloquant) ; why: validation 6/6 automatique côté serveur.
 - EB subject grouping (selectLatestAttemptRows) uses the recorded tentative number, never a time window; older tentatives only fill missing subjects; why: one attempt can span several days.
 - Émargements : une feuille erronée est masquée (emargements_fc.masque = true), jamais supprimée ; toutes les lectures filtrent masque = false ; why: aucune donnée élève ne disparaît.
