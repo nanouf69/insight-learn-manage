@@ -4,6 +4,7 @@
 - [x] Les 30 passages sont visibles dans chacune des deux sessions couvrantes avec les mêmes identifiants, une seule fois par session et la mention « Inscription croisée » ; EB1-TAXI a quitté le conflit, les vrais conflits restent.
 - [x] Avertissement contre l’addition des totaux, EB1 VTC distinct, filtres/navigation inchangés ; 62 QRC visibles et empreinte des passages identique avant/après, aucune écriture.
 - [x] 28 tests ciblés PASS ; série QRC 182 PASS + 1 échec ancien connu de reprise après clôture hors périmètre ; build OK ; écran réel et captures vérifiés sans erreur JS.
+- [ ] Vérification impérative complémentaire : ouvrir réellement EB1 VTC et EB1-TAXI dans la même session, comparer candidats/réponses/corrections et confirmer zéro copie manquante.
 - [ ] Publication interdite sans autorisation distincte ; aucune publication effectuée.
 
 ## 06/11 — Passage automatique à la copie suivante après notation QRC
