@@ -29,6 +29,7 @@ import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
 interface Props {
   apprenant: any;
+  onOuvrirRelanceSignatures?: () => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
