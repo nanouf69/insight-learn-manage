@@ -149,7 +149,13 @@ def build(db, schema_sql, migration=None):
         sql(MIGRATION_0232.read_text(), db); print(f'[{db}] 0232 appliquée')
     # Candidat non déployé (revue avant migration) : MODULE_COMPLETION_CANDIDATE=/chemin.sql
     if migration and os.environ.get('MODULE_COMPLETION_CANDIDATE'):
-        sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db); print(f'[{db}] candidat appliqué')
+        try:
+            sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db)
+        except subprocess.CalledProcessError as e:
+            # Ne pas noyer la cause SQL sous la commande complète (plusieurs dizaines de Ko).
+            print('ÉCHEC CANDIDAT — fin de la sortie PostgreSQL :\n' + e.output[-6000:])
+            raise
+        print(f'[{db}] candidat appliqué')
     sql(f"""INSERT INTO apprenants VALUES ('{A}','{U}'),('{A2}','{U2}'),('{ISMAIL}','{UI}');
       INSERT INTO user_roles VALUES ('{ADMIN}','admin');
       INSERT INTO apprenant_connexions VALUES ('{A}','{U}',now(),now(),now(),NULL),('{A2}','{U2}',now(),now(),now(),NULL);
