@@ -1218,10 +1218,7 @@ function MatiereEditor({
       {/* Ajout de question toujours accessible */}
       <div className="mx-4 mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted-foreground">Ajouter une question :</span>
-        <Button size="sm" variant="outline" className="gap-1" onClick={() => { setExpanded(true); addQuestion("QCM"); }}>
-          <Plus className="w-3 h-3" />
-          Ajouter un QCM
-        </Button>
+        <AjouterQcmMenu matiereNom={matiere.nom} onNouveau={() => { setExpanded(true); addQuestion("QCM"); }} onImporter={importQcm} />
         <Button size="sm" variant="outline" className="gap-1" onClick={() => { setExpanded(true); addQuestion("QRC"); }}>
           <Plus className="w-3 h-3" />
           Ajouter une QRC
