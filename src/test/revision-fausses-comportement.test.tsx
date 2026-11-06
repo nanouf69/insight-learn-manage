@@ -101,6 +101,8 @@ describe("Révision questions fausses — comportement", () => {
     fireEvent.click(valider); fireEvent.click(valider);
     expect(dernierPayload().reponses.revisionState.correctedCount).toBe(1);
     expect(dernierPayload().reponses.revisionState.correctedQuestions).toEqual(["t3p:1"]);
+    expect(screen.getByText("Question T3P")).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 450));
     fireEvent.click(screen.getByRole("button", { name: /Question suivante/ }));
     await screen.findByText("Question Gestion");
     fireEvent.change(screen.getByPlaceholderText("Saisissez votre réponse..."), { target: { value: "ma QRC" } });

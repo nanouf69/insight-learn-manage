@@ -1277,6 +1277,7 @@ function RevisionFausses({
   const [loaded, setLoaded] = useState(false);
   const [finEnCours, setFinEnCours] = useState(false);
   const finEnCoursRef = useRef(false);
+  const derniereValidationRef = useRef(0);
   const revisionRowsRef = useRef<RevisionRowLike[]>([]);
   const correctedQuestionsRef = useRef<string[]>([]);
 
@@ -1432,6 +1433,7 @@ function RevisionFausses({
   const checkAnswer = () => {
     // Double clic / double tap : une question n'est comptée et validée qu'une fois.
     if (correctedQuestionsRef.current.includes(currentKey)) return;
+    derniereValidationRef.current = Date.now();
     let isCorrect = false;
     if (q?.type === "QCM" && q.choix) {
        const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
@@ -1455,6 +1457,8 @@ function RevisionFausses({
 
   const goNext = async () => {
     if (finEnCoursRef.current) return;
+    // Le second geste d'un double tap ne doit pas valider PUIS avancer.
+    if (Date.now() - derniereValidationRef.current < 400) return;
     setShowCorrection(false);
     if (currentIndex < wrongQuestions.length - 1) {
       const newIdx = currentIndex + 1;
