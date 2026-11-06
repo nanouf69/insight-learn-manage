@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 06/11 — Règle stricte QCM corrigé admin / QRC correction validée
+- [x] Sources tracées : QCM serveur depuis snapshot publié, QRC humaines prioritaires et IA seulement après publication prouvée ; 0 IA sans preuve, 0 IA après humain, 0 QRC manquante, 0 définitif avec QRC restantes. Humain partiel = points conservés + provisoire.
+- [x] VTC soir EB1 : 8 passages natifs, 7 comparables sans variation, Gestion non comparable ; T3P 10 QRC en attente sur 2 passages, Gestion 2, Sécurité 0. Le 7 de la capture n’apparaît pas dans les résultats natifs actuels ; aucune note touchée.
+- [x] Calcul à blanc : 59 écarts définitifs chez 30 élèves toutes tentatives, 52 sur dernières tentatives, tous à la hausse ; 24 examens complets chez 13 élèves, zéro verdict changé. 32 zéros automatiques réponse vide (31 réels + 1 fictif) : points inchangés mais statut strict = attente ; un examen simulé deviendrait en attente.
+- [x] Rapport `audit-notation-qcm-qrc-2026-11-06.xlsx` : correctif minimal proposé pour publication QCM, régularisations traçables, replis QRC non validés/déterministes et attente V2 ; tests définis mais non exécutés. Aucune écriture réelle, aucun code modifié, aucune publication.
+
 ## 06/11 — Source de vérité du corrigé admin et divergences
 - [x] Corrigé admin réel = `module_editor_state` ; Q2 B et Q3 B+C conformes à la capture. Nouvelles tentatives figées depuis la version publiée `exam_content_versions`, source distincte : Q2 publié B+C, Q3 publié B+C.
 - [x] Comparaisons strictes EB1–EB6 VTC/TAXI/TA : 17 lignes natives globales (9 questions distinctes, 273 occurrences), dont 16 lignes admin ≠ publié (8 questions distinctes) ; 9 lignes dans les sessions actives. 100 lignes d’anciennes fiches globales sur ID+énoncé identiques, options à confirmer ; zéro dans les sessions actives.
