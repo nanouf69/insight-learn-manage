@@ -45,3 +45,20 @@ export function copieVoisine(
   }
   return null;
 }
+
+export type DecisionApresCorrection =
+  | { statut: "non_confirmee" }
+  | { statut: "confirmee"; suivante: QrcReelle | null };
+
+/** La navigation automatique n'est calculée qu'avec la QRC relue après l'écriture. */
+export function decisionApresCorrection(
+  sessionRelue: Pick<SessionReelle, "tentatives" | "qrc"> | null,
+  qrcInstanceId: string,
+  noteChoisie: number,
+): DecisionApresCorrection {
+  const correction = sessionRelue?.qrc.find((q) => q.qrc_instance_id === qrcInstanceId);
+  if (!sessionRelue || !correction || correction.etat !== "corrigee" || correction.note !== noteChoisie) {
+    return { statut: "non_confirmee" };
+  }
+  return { statut: "confirmee", suivante: copieVoisine(sessionRelue, qrcInstanceId, 1) };
+}

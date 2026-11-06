@@ -3,7 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
-import { copieVoisine, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
+import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -106,6 +106,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [commentaire, setCommentaire] = useState("");
   const [etatEnvoi, setEtatEnvoi] = useState<"vide" | "encours" | "ok" | "echec">("vide");
   const [erreur, setErreur] = useState<string | null>(null);
+  const [messageNavigation, setMessageNavigation] = useState<string | null>(null);
   // Révision d'une correction déjà validée : action volontaire, jamais un écrasement silencieux.
   const [modeRevision, setModeRevision] = useState(false);
   // Jeton d'intention : identique pour un double-clic (une seule écriture),
@@ -227,14 +228,21 @@ export default function AdminCorrectionQrcV2Reel() {
         : ebChoisi?.legacyResultIds)
     : undefined;
 
-  const recharger = useCallback(async () => {
-    if (!attemptsAffiches) { setSession(null); return; }
+  const recharger = useCallback(async (): Promise<SessionReelle | null> => {
+    if (!attemptsAffiches) { setSession(null); return null; }
     // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
-    if (attemptsAffiches.length === 0) { setSession({ tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle); return; }
+    if (attemptsAffiches.length === 0) {
+      const vide = { tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle;
+      setSession(vide);
+      return vide;
+    }
     try {
-      setSession(await chargerSessionTest(mode, attemptsAffiches));
+      const relue = await chargerSessionTest(mode, attemptsAffiches);
+      setSession(relue);
+      return relue;
     } catch (e) {
       setErreur((e as Error).message);
+      return null;
     }
   }, [mode, attemptsAffiches]);
 
@@ -376,7 +384,7 @@ export default function AdminCorrectionQrcV2Reel() {
     void lireHistoriqueQrc(selection).then((h) => { if (vivant) setHistorique(h); }).catch(() => undefined);
     return () => { vivant = false; };
   }, [selection, session]);
-  useEffect(() => { setModeRevision(false); }, [selection]);
+  useEffect(() => { setModeRevision(false); setMessageNavigation(null); }, [selection]);
 
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
@@ -410,6 +418,7 @@ export default function AdminCorrectionQrcV2Reel() {
     setNote(n);
     setEtatEnvoi("encours");
     setErreur(null);
+    setMessageNavigation(null);
     try {
       if (revision) {
         await reviserQrc({
@@ -431,12 +440,28 @@ export default function AdminCorrectionQrcV2Reel() {
           email: emailAdmin,
         });
       }
-      setEtatEnvoi("ok");
+
+      // Aucune navigation sur la seule promesse d'écriture : la QRC relue doit
+      // porter exactement la note choisie et l'état corrigé.
+      const sessionRelue = await recharger();
+      const decision = decisionApresCorrection(sessionRelue, qrcSel.qrc_instance_id, n);
+      if (decision.statut === "non_confirmee") {
+        setEtatEnvoi("echec");
+        setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
+        return;
+      }
+
       setNote(null);
       setCommentaire("");
       setModeRevision(false);
       setJeton(Math.random().toString(36).slice(2, 10));
-      await recharger();
+      if (decision.suivante) {
+        setEtatEnvoi("vide");
+        setSelection(decision.suivante.qrc_instance_id);
+      } else {
+        setEtatEnvoi("ok");
+        setMessageNavigation("Correction enregistrée — dernière copie de la liste.");
+      }
     } catch (e) {
       setEtatEnvoi("echec");
       setErreur((e as Error).message);
@@ -1046,6 +1071,17 @@ export default function AdminCorrectionQrcV2Reel() {
                   {etatEnvoi === "echec" && <span className="text-destructive">🔴 CORRECTION NON ENREGISTRÉE</span>}
                 </div>
               </div>
+            )}
+
+            {messageNavigation && (
+              <p role="status" className="rounded border border-success/40 bg-success/10 p-2 text-sm font-semibold text-success" data-testid="fin-liste-copies">
+                {messageNavigation}
+              </p>
+            )}
+            {etatEnvoi === "echec" && erreur && (
+              <p role="alert" className="rounded border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive" data-testid="erreur-correction-copie">
+                {erreur}
+              </p>
             )}
 
             <div className="space-y-1 border-t pt-2 text-[11px] text-muted-foreground">
