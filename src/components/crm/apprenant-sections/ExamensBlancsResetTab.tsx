@@ -37,6 +37,8 @@ import {
 } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
+import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/examResetAdmin";
+import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
 const STATIC_EXAMENS_BLANCS = [
@@ -121,11 +123,19 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
       if (error) throw error;
 
+      const { data: resetRows, error: resetError } = await supabase
+        .from("core_exam_resets")
+        .select("exam_id, cutoff_at, archived_legacy_result_ids")
+        .eq("apprenant_id", apprenant.id);
+      if (resetError) throw resetError;
+      const archivedLegacyIds = idsResultatsLegacyArchives(resetRows);
+      const resetCutoffs = latestExamResetCutoffs(resetRows);
+
       // Group rows by quiz_id, then dedupe per matière via selectLatestAttemptRows
       // (same logic as ExamenBlancsListe.tsx côté élève) so admin & student agree.
       const rowsByQuiz = new Map<string, any[]>();
       for (const row of (data || [])) {
-        if (!row?.quiz_id) continue;
+        if (!row?.quiz_id || archivedLegacyIds.has(String(row.id))) continue;
         if (!rowsByQuiz.has(row.quiz_id)) rowsByQuiz.set(row.quiz_id, []);
         rowsByQuiz.get(row.quiz_id)!.push(row);
       }
@@ -190,6 +200,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
         for (const row of inProgressData) {
           const parts = (row.exercice_id ?? "").split("_");
           const examPart = parts[0] ?? ""; // e.g. "EB6"
+          if (!isAfterExamReset(row.updated_at, resetCutoffs[examPart])) continue;
           const existing = inProgressByExam.get(examPart);
           const date = row.updated_at ?? "";
           if (existing) {
