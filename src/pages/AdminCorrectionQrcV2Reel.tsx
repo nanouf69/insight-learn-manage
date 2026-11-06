@@ -3,7 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
-import { copieVoisine, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
+import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -106,6 +106,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [commentaire, setCommentaire] = useState("");
   const [etatEnvoi, setEtatEnvoi] = useState<"vide" | "encours" | "ok" | "echec">("vide");
   const [erreur, setErreur] = useState<string | null>(null);
+  const [messageNavigation, setMessageNavigation] = useState<string | null>(null);
   // Révision d'une correction déjà validée : action volontaire, jamais un écrasement silencieux.
   const [modeRevision, setModeRevision] = useState(false);
   // Jeton d'intention : identique pour un double-clic (une seule écriture),
@@ -227,14 +228,21 @@ export default function AdminCorrectionQrcV2Reel() {
         : ebChoisi?.legacyResultIds)
     : undefined;
 
-  const recharger = useCallback(async () => {
-    if (!attemptsAffiches) { setSession(null); return; }
+  const recharger = useCallback(async (): Promise<SessionReelle | null> => {
+    if (!attemptsAffiches) { setSession(null); return null; }
     // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
-    if (attemptsAffiches.length === 0) { setSession({ tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle); return; }
+    if (attemptsAffiches.length === 0) {
+      const vide = { tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle;
+      setSession(vide);
+      return vide;
+    }
     try {
-      setSession(await chargerSessionTest(mode, attemptsAffiches));
+      const relue = await chargerSessionTest(mode, attemptsAffiches);
+      setSession(relue);
+      return relue;
     } catch (e) {
       setErreur((e as Error).message);
+      return null;
     }
   }, [mode, attemptsAffiches]);
 
@@ -376,7 +384,7 @@ export default function AdminCorrectionQrcV2Reel() {
     void lireHistoriqueQrc(selection).then((h) => { if (vivant) setHistorique(h); }).catch(() => undefined);
     return () => { vivant = false; };
   }, [selection, session]);
-  useEffect(() => { setModeRevision(false); }, [selection]);
+  useEffect(() => { setModeRevision(false); setMessageNavigation(null); }, [selection]);
 
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;

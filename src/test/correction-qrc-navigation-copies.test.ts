@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { copieVoisine } from "@/features/correction-qrc-v2/navigationCopies";
+import { copieVoisine, decisionApresCorrection } from "@/features/correction-qrc-v2/navigationCopies";
 import type { QrcReelle, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
 
 const tentative = (id: string, questions: Array<{ id: string; matiere?: string }>): TentativeReelle => ({
