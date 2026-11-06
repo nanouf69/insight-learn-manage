@@ -10,6 +10,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: str
   // Lecture serveur sous session vérifiée (freshSessionRead) : session admin fictive stable.
   auth: { getSession: async () => ({ data: { session: { user: { id: "admin-fictif" }, expires_at: Math.floor(Date.now() / 1000) + 3600 } }, error: null }),
     refreshSession: async () => ({ data: { session: { user: { id: "admin-fictif" }, expires_at: Math.floor(Date.now() / 1000) + 3600 } }, error: null }) } } }));
+vi.mock("@/lib/sessionExpiree", () => ({ assurerSessionFraiche: async () => "test-token", SESSION_EXPIREE_MESSAGE: "Session expirée" }));
 import { chargerCandidatModules } from "@/hooks/useCandidatModules";
 import { completionAvecActivites, ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { recalculerPratiqueSeule } from "@/lib/releveCalculServeur";
