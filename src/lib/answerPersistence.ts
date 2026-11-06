@@ -127,6 +127,8 @@ interface QueueItem {
   refused_user_ids?: string[];
   /** Numéro confirmé par l'envoi en cours, utilisé pour chaîner les réponses composées pendant cet envoi. */
   confirmed_write_seq?: number;
+  /** Nouvel identifiant d'opération après une recomposition sans conflit. */
+  rebase_operation_id?: string;
 }
 
 type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number) => void;
@@ -535,6 +537,43 @@ export function answersAreEqual(left: unknown, right: unknown): boolean {
   return JSON.stringify(sortValue(left ?? {})) === JSON.stringify(sortValue(right ?? {}));
 }
 
+const estObjet = (value: unknown): value is Record<string, any> =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * Une recomposition n'est autorisée que si la version candidate contient
+ * EXACTEMENT toutes les réponses de la version antérieure. Elle peut ajouter
+ * des réponses et avancer la progression, mais ne change jamais une réponse,
+ * l'ordre des questions ou une validation déjà enregistrée.
+ */
+function revisionStateContientSansConflit(candidate: unknown, previous: unknown): boolean {
+  if (!estObjet(candidate) || !estObjet(previous)) return false;
+  if (previous.examenId && candidate.examenId !== previous.examenId) return false;
+  const previousOrder = Array.isArray(previous.questionOrder) ? previous.questionOrder : [];
+  const candidateOrder = Array.isArray(candidate.questionOrder) ? candidate.questionOrder : [];
+  if (previousOrder.length > 0 && JSON.stringify(previousOrder) !== JSON.stringify(candidateOrder)) return false;
+  const previousAnswers = estObjet(previous.answers) ? previous.answers : {};
+  const candidateAnswers = estObjet(candidate.answers) ? candidate.answers : {};
+  for (const [key, value] of Object.entries(previousAnswers)) {
+    if (!Object.prototype.hasOwnProperty.call(candidateAnswers, key) || !answersAreEqual(candidateAnswers[key], value)) return false;
+  }
+  const previousCorrected = Array.isArray(previous.correctedQuestions) ? previous.correctedQuestions.map(String) : [];
+  const candidateCorrected = new Set(Array.isArray(candidate.correctedQuestions) ? candidate.correctedQuestions.map(String) : []);
+  if (previousCorrected.some((key) => !candidateCorrected.has(key))) return false;
+  const previousCount = Number.isFinite(previous.correctedCount) ? Number(previous.correctedCount) : 0;
+  const candidateCount = Number.isFinite(candidate.correctedCount) ? Number(candidate.correctedCount) : 0;
+  return candidateCount >= previousCount;
+}
+
+function reponsesContiennentSansConflit(candidate: unknown, previous: unknown, onlyKeys?: string[]): boolean {
+  if (!estObjet(candidate) || !estObjet(previous)) return false;
+  const keys = onlyKeys ?? Object.keys(previous);
+  return keys.every((key) => {
+    if (key === "revisionState") return revisionStateContientSansConflit(candidate[key], previous[key]);
+    return Object.prototype.hasOwnProperty.call(candidate, key) && answersAreEqual(candidate[key], previous[key]);
+  });
+}
+
 /**
  * Vide la file du compte connecté avant une déconnexion (tablette partagée :
  * l'apprenant suivant ne pourra pas envoyer ces réponses, elles doivent partir
@@ -616,7 +655,7 @@ const buildHeaders = (): Record<string, string> | null => {
   return headers;
 };
 
-type SendResult = "ok" | "retry" | "blocked" | "paused";
+type SendResult = "ok" | "retry" | "rebase" | "blocked" | "paused";
 let retrySuccessCount = 0;
 /** Nombre (anonyme) de réponses confirmées après au moins un réessai, depuis le chargement. */
 export const getRetrySuccessCount = () => retrySuccessCount;

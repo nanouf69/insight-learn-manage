@@ -163,6 +163,9 @@ Deno.serve(async (req) => {
       write_seq: confirmation.stored_write_seq ?? 0,
       frozen: confirmation.frozen === true,
       skipped_questions: confirmation.skipped_questions ?? [],
+      // Nécessaire uniquement pour prouver côté client qu'une recomposition
+      // conserve déjà toutes les réponses serveur. Aucun conflit n'est résolu ici.
+      stored_reponses: (confirmation.skipped_questions ?? []).length > 0 ? confirmation.stored_reponses ?? null : null,
       accepted_event_ids: confirmation.accepted_event_ids ?? [],
       auto_validation: autoValidation,
     }), {
