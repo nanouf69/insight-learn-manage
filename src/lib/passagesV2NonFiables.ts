@@ -59,7 +59,12 @@ export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown
   return "fiable";
 }
 
-export function verifierContenuPassage(core: CoreMatiereState, details: any): boolean {
+/**
+ * opts.enonceLibre : l'énoncé peut différer (retouche de libellé après le passage), TOUT
+ * le reste reste strict (identités, ordre, types, images, choix lettre/texte/bonne réponse,
+ * réponse attendue QRC). La note ne dépend que de ces éléments : aucune note empruntée.
+ */
+export function verifierContenuPassage(core: CoreMatiereState, details: any, opts?: { enonceLibre?: boolean }): boolean {
   const legacy = details?.snapshot?.questions ?? details?.questions;
   const moteur = core.resultId ? core.historicalDetails?.snapshot?.questions ?? core.historicalDetails?.questions : core.questions;
   if (!Array.isArray(legacy) || !legacy.length || !Array.isArray(moteur) || !moteur.length) return false;
@@ -82,7 +87,8 @@ export function verifierContenuPassage(core: CoreMatiereState, details: any): bo
   };
   const same = (a: any, b: any) => {
     const type = text(a.type).toUpperCase();
-    if (type !== text(b.type).toUpperCase() || !text(a.enonce) || text(a.enonce) !== text(b.enonce)
+    if (type !== text(b.type).toUpperCase() || !text(a.enonce) || !text(b.enonce)
+      || (!opts?.enonceLibre && text(a.enonce) !== text(b.enonce))
       || text(a.image) !== text(b.image)) return false;
     if (type === "QCM") return sameChoices(a, b);
     if (type === "QRC") return text(a.reponseQRC) === text(b.reponseQRC);
