@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 06/11 — Design admin des QCM/QRC et taux premier essai
+- [ ] Capturer un QCM réel avant/après ; cartes compactes, choix structurés, bonnes réponses sobres, taux intégrés par session, ordinateur/tablette.
+- [ ] UI/CSS seulement : aucun contenu, corrigé, calcul, filtre ou donnée modifié ; tests ciblés, build et non-publication.
+
 ## 06/11 — URGENT production : terminer « Refaire uniquement les questions fausses »
 - [x] Cause exacte : course d’enregistrement pendant un envoi lent ; `revisionState` entier reste à une ancienne base, le serveur ignore l’enveloppe mais avance score/write_seq, puis la clôture est bloquée avant appel. Six révisions récentes preuves (1 réponse serveur malgré 30–480 événements) ; pas un refus RLS/réseau, production contient déjà les protections antérieures.
 - [x] Correctif aperçu `answerPersistence.ts` + retour conditionnel `stored_reponses` dans `upsert-reponse-apprenant` : chaînage des bases confirmées, nouvelle opération seulement pour extension stricte sans conflit serveur/file, sinon blocage conservé. Aucune écriture réelle.
