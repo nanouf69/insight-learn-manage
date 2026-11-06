@@ -77,7 +77,13 @@ export function assemblerCalculJalons(i: {
       if (!acts.length) continue;
       const r = completionAvecActivites((row ?? { module_id: v.moduleId }) as any, { ...v }, acts, termines);
       volumes.volumes[Number(cle)] = { ...v, jeux: acts.reduce((s2, x) => s2 + x.unites, 0) };
-      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), { ...r.completion, completed_at: row?.completed_at ?? null, details: row?.details }];
+      completionsBase = [...completionsBase.filter((c) => Number(c.module_id) !== v.moduleId), {
+        ...r.completion,
+        completed_at: row?.completed_at ?? null,
+        details: row?.details,
+        preuve_serveur: (row as any)?.preuve_serveur,
+        progress_preuve: (row as any)?.progress_preuve,
+      }];
       activites.push({ ...r.etat, methode: METHODE_ACTIVITES });
     }
   }
