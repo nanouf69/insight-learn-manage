@@ -2,8 +2,8 @@
 
 ## 06/11 — Tableau de bord : apprenants à 100 % depuis septembre
 - [x] Périmètre validé : 101 dossiers non supprimés créés depuis le 01/09/2026 ; critère « Modules (jalons) » = 100 % OU « TAUX TOTAL » ≥ 100 %, mêmes calculs que la fiche.
-- [ ] Ajouter une carte avec les deux taux, accès à la fiche, masquage individuel réversible sur ce navigateur et signalement des lectures impossibles.
-- [ ] Tests du critère OU et du masquage, vérification des calculs inchangés, contrôle réel du tableau de bord, sans modifier les dossiers ni publier.
+- [x] Carte avec les deux taux, accès à la fiche, masquage individuel réversible sur ce navigateur, signalement des lectures impossibles et calcul différé à l’approche pour ne pas saturer le tableau de bord.
+- [x] 34 tests PASS, TypeScript/build OK ; contrôle réel : 10 apprenants affichés, 1 lecture indisponible signalée, retrait 10→9 persistant après rechargement, réaffichage 9→10, concordance fiche 100 % jalons / 0 % total ; aucune modification de dossier ni publication.
 
 ## 06/11 — Supports T3P/Gestion, lot 1/3 (VTC 2 + TAXI 10)
 - [x] Lecture seule : cinq cours ciblés par module ; VTC 2 sans PDF, TAXI 10 avec paires et forme-finder à préserver ; 5 PPTX et 5 PDF valides.
