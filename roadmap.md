@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 06/11 — Bouton « À envoyer par mail »
+- [ ] Ouvrir directement l’aperçu de relance depuis Formulaires, ramener la zone à l’écran et conserver la vérification explicite avant tout envoi.
+- [ ] Tester l’ouverture, l’absence de signatures et l’absence d’envoi automatique ; vérifier le clic réel dans l’aperçu, sans publication.
+
 ## 06/11 — Design admin des QCM/QRC et taux premier essai
 - [x] QCM réel Gestion Q3 capturé avant/après ; en-tête compact, choix A/B/C/D sur deux colonnes, bonne réponse sobre, QRC harmonisées, taux intégrés par session à droite sur ordinateur et sous la question sur tablette.
 - [x] UI/CSS seulement : contenus, corrigés, calculs, filtres et données inchangés ; 56 tests PASS, TypeScript/build PASS, PC/tablette sans débordement, filtres Global/JOURNÉE/SOIRÉE et n/N vérifiés, non publié.

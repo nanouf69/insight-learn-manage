@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Send, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';

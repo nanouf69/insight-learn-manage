@@ -308,6 +308,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("infos");
+  const [demandeApercuRelance, setDemandeApercuRelance] = useState(0);
   const accessTabRef = useRef<HTMLDivElement>(null);
   const openAccessTab = () => {
     setActiveTab("reactivation-plateforme");
