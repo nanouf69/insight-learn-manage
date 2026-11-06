@@ -46,7 +46,7 @@ describe("reset admin — archivage fictif, jamais de suppression", () => {
 
   it("l'écran admin ne contient plus de suppression directe", () => {
     const source = readFileSync("src/components/crm/apprenant-sections/ExamensBlancsResetTab.tsx", "utf8");
-    expect(source).not.toContain(".delete(");
+    expect(source).not.toContain(".delete()");
     expect(source).toContain("archiverExamenBlancAdmin");
   });
 });

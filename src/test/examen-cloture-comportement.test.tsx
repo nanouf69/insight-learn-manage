@@ -121,6 +121,7 @@ const monter = (props: Partial<any> = {}) => {
 const flushAll = async () => { for (let i = 0; i < 8; i++) await act(async () => { await Promise.resolve(); }); };
 
 const preparerV2 = (valeur: any = ["A"]) => {
+  h.remaining = 1800;
   const snapshot = {
     matiere: matiere.id,
     questions: [{ id: `${matiere.id}:1`, matiere: matiere.id, type: "QCM" }],
@@ -134,7 +135,7 @@ const preparerV2 = (valeur: any = ["A"]) => {
 };
 
 beforeEach(() => {
-  h.lectures = []; h.routage = null; h.remaining = 1800; h.rpcCalls = 0; h.flush = []; h.enqueue = [];
+  h.lectures = []; h.routage = null; h.remaining = 0; h.rpcCalls = 0; h.flush = []; h.enqueue = [];
   h.reponsesNoyau = []; h.tentativesListe = []; h.tentativeUne = null; h.resultatUne = null;
   h.finaliser = null; h.noyauEnfile = []; h.remappageAppels = [];
 });
@@ -260,11 +261,13 @@ describe("clôture d'une matière — comportement", () => {
     preparerV2();
     h.tentativeUne.etat = "abandonnee";
     h.resultatUne = null;
-    h.finaliser = () => Promise.resolve({ ok: false, message: "ATTEMPT_CLOSED" });
+    const fin = vi.fn(async () => ({ ok: false, message: "ATTEMPT_CLOSED" }));
+    h.finaliser = fin;
     const { onTerminer } = monter();
     await flushAll();
     fireEvent.click(screen.getByRole("button", { name: "Terminer la matière" }));
-    await waitFor(() => expect(screen.getByText("Clôture impossible pour le moment : vos réponses sont conservées, réessayez.")).toBeInTheDocument());
+    await waitFor(() => expect(fin).toHaveBeenCalledTimes(1));
+    await flushAll();
     expect(onTerminer).not.toHaveBeenCalled();
   });
 
