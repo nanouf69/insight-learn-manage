@@ -103,7 +103,7 @@ CREATE TABLE net.appels(url text, body jsonb);
 CREATE FUNCTION net.http_post(url text, headers jsonb, body jsonb) RETURNS bigint LANGUAGE sql AS $$ INSERT INTO net.appels VALUES (url, body) RETURNING 1::bigint $$;
 CREATE TYPE public.app_role AS ENUM ('admin','moderator','user');
 CREATE TABLE public.user_roles(user_id uuid, role app_role);
-CREATE TABLE public.apprenants(id uuid PRIMARY KEY, auth_user_id uuid);
+CREATE TABLE public.apprenants(id uuid PRIMARY KEY, auth_user_id uuid, type_apprenant text, formation_choisie text);
 CREATE TABLE public.apprenant_connexions(apprenant_id uuid, user_id uuid, started_at timestamptz, last_seen_at timestamptz, last_action_at timestamptz, ended_at timestamptz);
 CREATE TABLE public.comptes_test_techniques(apprenant_id uuid);
 CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
@@ -120,6 +120,8 @@ DEPS = ['has_role', 'is_current_user_apprenant', 'est_compte_test', 'est_proprie
 
 A = 'aaaaaaaa-0000-4000-8000-00000000000a'; U = 'bbbbbbbb-0000-4000-8000-00000000000b'
 A2 = 'aaaaaaaa-0000-4000-8000-00000000002a'; U2 = 'bbbbbbbb-0000-4000-8000-00000000002b'
+A3 = 'aaaaaaaa-0000-4000-8000-00000000003a'; U3 = 'bbbbbbbb-0000-4000-8000-00000000003b'
+A4 = 'aaaaaaaa-0000-4000-8000-00000000004a'; U4 = 'bbbbbbbb-0000-4000-8000-00000000004b'
 ADMIN = 'cccccccc-0000-4000-8000-00000000000c'
 ISMAIL = 'c0844007-b999-4385-9665-918e5077c3b5'; UI = 'bbbbbbbb-0000-4000-8000-0000000000ff'
 
@@ -128,6 +130,9 @@ def learner(uid, q):
 
 def smc(uid, mod, completed, progress=0, details='NULL'):
     return learner(uid, f"SELECT status||'|'||progress||'|'||coalesce(completed_at::text,'NULL') FROM public.save_module_completion('{A}', {mod}, {str(completed).lower()}, {progress}, NULL, NULL, {details});")
+
+def smc_for(aid, uid, mod, completed, progress=0, details='NULL'):
+    return learner(uid, f"SELECT status||'|'||progress||'|'||coalesce(completed_at::text,'NULL') FROM public.save_module_completion('{aid}', {mod}, {str(completed).lower()}, {progress}, NULL, NULL, {details});")
 
 def row(mod, aid=A):
     return sql(f"SELECT status||'|'||progress||'|'||coalesce(completed_at::text,'NULL') FROM {TABLE} WHERE apprenant_id='{aid}' AND module_id={mod}")
@@ -157,7 +162,9 @@ def build(db, schema_sql, migration=None):
             print('ÉCHEC CANDIDAT — fin de la sortie PostgreSQL :\n' + e.output[-6000:])
             raise
         print(f'[{db}] candidat appliqué')
-    sql(f"""INSERT INTO apprenants VALUES ('{A}','{U}'),('{A2}','{U2}'),('{ISMAIL}','{UI}');
+    sql(f"""INSERT INTO apprenants(id,auth_user_id,type_apprenant,formation_choisie) VALUES
+      ('{A}','{U}','vtc-e','vtc-elearning'),('{A2}','{U2}','taxi-e','taxi-elearning'),
+      ('{A3}','{U3}','ta-e','ta-elearning'),('{A4}','{U4}','va-e','va-elearning'),('{ISMAIL}','{UI}',NULL,NULL);
       INSERT INTO user_roles VALUES ('{ADMIN}','admin');
       INSERT INTO apprenant_connexions VALUES ('{A}','{U}',now(),now(),now(),NULL),('{A2}','{U2}',now(),now(),now(),NULL);
       INSERT INTO module_editor_state VALUES (2, '{{"exercices":[{{"questions":[{{"id":1}}]}}]}}');""", db)
@@ -184,6 +191,7 @@ class Apres0197(unittest.TestCase):
         sql(f"SET app.suppression_eleve_autorisee='on'; ALTER TABLE {TABLE} DISABLE TRIGGER USER; DELETE FROM {TABLE}; ALTER TABLE {TABLE} ENABLE TRIGGER USER; DELETE FROM reponses_apprenants; DELETE FROM net.appels; DELETE FROM module_admin_audit_log;")
         if os.environ.get('MODULE_COMPLETION_CANDIDATE'):
             sql("ALTER TABLE module_completion_validations DISABLE TRIGGER USER; DELETE FROM module_completion_validations; ALTER TABLE module_completion_validations ENABLE TRIGGER USER;")
+        sql("DELETE FROM module_regles_validation; DELETE FROM module_editor_state; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"questions\":[{\"id\":1}]}]}');")
 
     def test_01_nouvelle_progression_sans_fausse_date(self):
         self.assertEqual(sql(smc(U, 2, False, 40)), 'in_progress|40|NULL')
