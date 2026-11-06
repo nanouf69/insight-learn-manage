@@ -2,6 +2,7 @@
 // Aucune donnée historique n'est complétée ni recalculée : ce qui manque est signalé.
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
+import { groupeEnCours, prefixeEb } from "@/features/correction-qrc-v2/marquageEbEnCours";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -548,13 +549,14 @@ export default function AdminCorrectionQrcV2Reel() {
             </select>
             <select
               data-testid="choix-eb"
-              className="rounded border bg-background px-2 py-1 text-sm"
+              className={`rounded border bg-background px-2 py-1 text-sm ${groupeEnCours(groupeChoisi, jourActuel) ? "text-red-600 font-semibold" : ""}`}
+              title={groupeEnCours(groupeChoisi, jourActuel) ? "Passages d'apprenants de la session CRM en cours sélectionnée" : undefined}
               value={ebChoisi?.cle ?? ""}
               onChange={(e) => setEbCle(e.target.value)}
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
-                <option key={e.cle} value={e.cle}>
-                  {e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                <option key={e.cle} value={e.cle} className={groupeEnCours(groupeChoisi, jourActuel) ? "text-red-600 font-semibold" : undefined}>
+                  {prefixeEb(groupeChoisi, jourActuel)}{e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
                 </option>
