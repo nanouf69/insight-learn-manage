@@ -16,24 +16,46 @@ const deferred = <T,>(): Deferred<T> => {
 const h = vi.hoisted(() => ({
   lectures: [] as Array<() => Promise<any>>,
   routage: null as null | (() => Promise<any>),
-  remaining: 0,
+  remaining: 1800,
   rpcCalls: 0,
   flush: [] as Array<() => Promise<boolean>>,
   enqueue: [] as any[],
+  reponsesNoyau: [] as any[],
+  tentativesListe: [] as any[],
+  tentativeUne: null as any,
+  resultatUne: null as any,
+  finaliser: null as null | (() => Promise<any>),
+  noyauEnfile: [] as any[],
+  remappageAppels: [] as any[],
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const chain = (table: string) => {
     const b: any = {
-      select: () => b, eq: () => b, in: () => b, order: () => b, limit: () => b,
+      selection: "",
+      select: (colonnes: string) => { b.selection = colonnes; return b; },
+      eq: () => b, in: () => b, order: () => b, limit: () => b,
       maybeSingle: () => {
         if (table === "reponses_apprenants") {
           const next = h.lectures.shift();
           return next ? next() : Promise.resolve({ data: null, error: null });
         }
+        if (table === "exam_attempts_v2") {
+          return Promise.resolve({ data: h.tentativeUne, error: null });
+        }
+        if (table === "core_exam_results") {
+          return Promise.resolve({ data: h.resultatUne, error: null });
+        }
         return Promise.resolve({ data: null, error: null });
       },
-      then: (ok: any, ko: any) => Promise.resolve({ data: [], error: null }).then(ok, ko),
+      then: (ok: any, ko: any) => {
+        const data = table === "answer_state"
+          ? h.reponsesNoyau
+          : table === "exam_attempts_v2"
+            ? h.tentativesListe
+            : [];
+        return Promise.resolve({ data, error: null }).then(ok, ko);
+      },
     };
     return b;
   };
@@ -48,13 +70,16 @@ vi.mock("@/integrations/supabase/client", () => {
 
 vi.mock("@/features/noyau-passage/pontV2", () => ({
   routerPassage: () => (h.routage ? h.routage() : Promise.resolve({ moteur: "legacy" })),
-  enfilerReponseNoyau: vi.fn(),
+  enfilerReponseNoyau: (params: any) => { h.noyauEnfile.push(params); },
   viderFileNoyau: vi.fn(async () => ({ restantes: 0 })),
-  finaliserMatiere: vi.fn(async () => ({ ok: true })),
+  finaliserMatiere: () => h.finaliser ? h.finaliser() : Promise.resolve({ ok: true }),
   reponsesNoyauEnAttente: () => 0,
   reponsesNoyauEcartees: () => 0,
   questionsNoyauEcartees: () => new Set(),
-  remapperFileApresReouverture: () => ({ ok: true, correspondance: 0 }),
+  remapperFileApresReouverture: (params: any) => {
+    h.remappageAppels.push(params);
+    return { ok: true, correspondance: params.questionIdsSnapshot.length };
+  },
   archiverMarqueursObsoletes: vi.fn(),
   recommencerMatiereNoyau: vi.fn(),
 }));
@@ -96,7 +121,9 @@ const monter = (props: Partial<any> = {}) => {
 const flushAll = async () => { for (let i = 0; i < 8; i++) await act(async () => { await Promise.resolve(); }); };
 
 beforeEach(() => {
-  h.lectures = []; h.routage = null; h.remaining = 0; h.rpcCalls = 0; h.flush = []; h.enqueue = [];
+  h.lectures = []; h.routage = null; h.remaining = 1800; h.rpcCalls = 0; h.flush = []; h.enqueue = [];
+  h.reponsesNoyau = []; h.tentativesListe = []; h.tentativeUne = null; h.resultatUne = null;
+  h.finaliser = null; h.noyauEnfile = []; h.remappageAppels = [];
 });
 
 describe("clôture d'une matière — comportement", () => {
