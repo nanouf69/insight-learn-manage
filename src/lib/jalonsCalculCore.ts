@@ -44,6 +44,7 @@ export function assemblerCalculJalons(i: {
   /** Nouveau gel v3 seulement : une preuve indéterminée rend le calcul indisponible, jamais 100 %. */
   preuvesFigeesStrictes?: boolean;
 }) {
+  if (i.preuvesFigeesStrictes) console.log("DEBUG_CORE_INPUT", i.preuvesHistoriquesLive, i.completions);
   const attribues = i.modulesAttribues?.length ? new Set(i.modulesAttribues) : null;
   const ponderesFiliere = new Set(GRILLE_DUREES[i.filiere].map(([id]) => id));
   // Même liste de modules que l'espace élève : retire les modules PONDÉRÉS et les formalités
