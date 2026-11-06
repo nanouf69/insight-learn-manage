@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PassageMatiere } from "@/components/cours-en-ligne/ExamenBlancsPassage";
-import { setAnswerSaveOwnership } from "@/lib/answerPersistence";
+import { setAnswerSaveOwnership, setAnswerSaveAuthToken } from "@/lib/answerPersistence";
 
 setAnswerSaveOwnership({ apprenantId: "apprenant-fictif", previewReadOnly: false });
+setAnswerSaveAuthToken("e30.eyJzdWIiOiJ1dGlsaXNhdGV1ci1maWN0aWYifQ.fictif", "utilisateur-fictif");
 
 const matiere: any = {
   id: "t3p",
