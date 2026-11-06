@@ -10,7 +10,8 @@ export type DecisionRattachementCrm =
 
 /**
  * Rattachement d'affichage uniquement. L'inscription croisée autorisée est volontairement
- * limitée à EB1-TAXI, à un apprenant TAXI et à exactement deux sessions réellement couvrantes.
+ * s'applique à tout examen blanc dès que exactement deux sessions couvrent le jour du passage ;
+ * trois sessions ou plus restent un conflit explicite.
  */
 export function deciderRattachementCrm(params: {
   jour: string;
@@ -22,9 +23,9 @@ export function deciderRattachementCrm(params: {
   const uniques = Array.from(new Map(couvrantes.map((lien) => [lien.session.id, lien])).values());
 
   if (uniques.length === 1) return { type: "unique", sessions: uniques };
-  const estEb1Taxi = params.examId.trim().toLowerCase() === "eb1-taxi";
-  const estTaxi = params.typeApprenant.trim().toLowerCase() === "taxi";
-  if (estEb1Taxi && estTaxi && uniques.length === 2) return { type: "croisee", sessions: uniques };
+  // Générique (tous EB, toutes filières) : l'examen reste séparé par son exam_id ;
+  // seul l'affichage dans les deux sessions réellement inscrites est ajouté.
+  if (uniques.length === 2) return { type: "croisee", sessions: uniques };
   return uniques.length === 0 ? { type: "indetermine", sessions: [] } : { type: "conflit", sessions: [] };
 }
 
