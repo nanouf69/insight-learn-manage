@@ -106,6 +106,36 @@ describe("Ordre des écritures décidé par le serveur", () => {
     expect(await flushAnswerSavesAndWait(APPRENANT, "revision_fausses_EB1", 50)).toBe(false);
   });
 
+  it("une réponse composée pendant un envoi lent repart avec le numéro confirmé précédent", async () => {
+    let confirmerPremierEnvoi: (() => void) | undefined;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        confirmerPremierEnvoi = () => resolve({
+          ok: true,
+          json: async () => ({ success: true, confirmed: true, write_seq: 1 }),
+          text: async () => "",
+        });
+      }))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, confirmed: true, write_seq: 2 }),
+        text: async () => "",
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    enqueueAnswerSave(basePayload());
+    await new Promise((r) => setTimeout(r, 0));
+    enqueueAnswerSave(basePayload({ reponses: { "1": ["B"] } }));
+    await new Promise((r) => setTimeout(r, 0));
+    confirmerPremierEnvoi?.();
+    await new Promise((r) => setTimeout(r, 30));
+
+    const bodies = sentBodies(fetchMock);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0].base_seq).toBe(0);
+    expect(bodies[1].base_seq).toBe(1);
+  });
+
   it("compactage hors connexion : conserve le numéro d'écriture le plus ancien", async () => {
     // Aucun envoi possible (réseau en échec) : les éléments restent en file.
     vi.stubGlobal(
