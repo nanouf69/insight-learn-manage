@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MODULE_NAME_BY_ID } from "@/components/cours-en-ligne/modules-config";
 import { LABEL_PRESENTIEL } from "@/lib/jalonsPonderes";
 import { chargerCalculJalons, estJalonPratique, formationJalonsElearning } from "@/lib/jalonsPedagogiques";
-import { EXPLICATION_JALONS, formatDureeJalon, heuresEnregistreesJalons, tableauAffichageJalons } from "@/lib/affichageJalons";
+import { EXPLICATION_JALONS, formatDureeJalon, heuresEnregistreesJalons, jalonsRestants, libelleActivitesModule, tableauAffichageJalons } from "@/lib/affichageJalons";
 import { chargerPreuvesJalons } from "@/lib/preuvesJalons";
 import { Button } from "@/components/ui/button";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
@@ -119,9 +119,10 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       {((calcul as any).pagesNonRecomptees?.length ?? 0) > 0 && (
         <div className="mt-1 text-xs font-medium text-destructive">Taux provisoire : pages non recomptées pour le(s) module(s) {(calcul as any).pagesNonRecomptees.join(", ")} (supports modifiés depuis l’audit).</div>
       )}
-      {((calcul as any).activites ?? []).map((j: any) => (
+      {r.taux < 100 && (() => { const reste = jalonsRestants(r.lignes, (id) => estJalonPratique(id) ? LABEL_PRESENTIEL : `${id} · ${MODULE_NAME_BY_ID[id] ?? ""}`); return reste.length ? <div className="mt-1 text-xs font-medium text-destructive">Reste à faire pour 100 % : {reste.join(" ; ")}.</div> : null; })()}
+      {((calcul as any).activites ?? []).filter((j: any) => libelleActivitesModule(j.termines, j.requises)).map((j: any) => (
         <div key={j.moduleId} className="mt-1 text-xs text-muted-foreground">
-          Module {j.moduleId} — activités du module : {j.termines.length}/{j.requises.length} terminée(s), confirmées par le serveur.
+          Module {j.moduleId} — activités du module : {libelleActivitesModule(j.termines, j.requises)}, confirmées par le serveur.
           {j.versionAnterieureValidee ? " Version antérieure du module validée (statut conservé) ; nouvelles activités à faire, donc moins de 100 % dans le calcul courant." : ""}
         </div>
       ))}
