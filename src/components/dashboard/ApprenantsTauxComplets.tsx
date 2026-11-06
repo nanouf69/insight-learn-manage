@@ -106,11 +106,11 @@ export function ApprenantsTauxComplets({ onNavigateToApprenant }: { onNavigateTo
     <CardContent className="space-y-3">
       {erreurRetrait && <p role="alert" className="text-sm text-destructive">Retrait non enregistré. La personne reste dans la liste.</p>}
       {query.isError ? <p role="alert" className="text-sm text-destructive">Lecture impossible. Aucune liste à 100 % n’est affirmée.</p>
-        : query.isPending ? <p role="status" className="text-sm text-muted-foreground">Analyse des dossiers depuis septembre…</p>
         : <>
+          {query.isFetching && <p role="status" className="text-sm text-muted-foreground">Analyse des dossiers depuis septembre… Les apprenants à 100 % s’affichent dès leur vérification.</p>}
           {erreurs > 0 && <p role="alert" className="text-sm text-destructive">{erreurs} dossier(s) ont un taux indisponible et ne sont pas classés à 100 % sans preuve.</p>}
-          {!lignes.length ? <p className="text-sm text-muted-foreground">{toutesLignes.some((row) => row.complet) ? "Tous les apprenants à 100 % sont masqués. Utilisez « Réafficher » pour les retrouver." : "Aucun apprenant à 100 % dans ce périmètre."}</p>
-            : <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+          {!lignes.length && !query.isFetching ? <p className="text-sm text-muted-foreground">{toutesLignes.some((row) => row.complet) ? "Tous les apprenants à 100 % sont masqués. Utilisez « Réafficher » pour les retrouver." : "Aucun apprenant à 100 % dans ce périmètre."}</p>
+            : lignes.length > 0 ? <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
               {lignes.map((row) => <div key={row.id} className="flex items-center gap-2 rounded-lg border bg-card p-3">
                 <Button variant="link" className="h-auto min-w-0 flex-1 justify-start whitespace-normal p-0 text-left font-medium" onClick={() => onNavigateToApprenant(row.id)}>{[row.prenom, row.nom].filter(Boolean).join(" ")}</Button>
                 <div className="flex shrink-0 flex-wrap justify-end gap-1">
