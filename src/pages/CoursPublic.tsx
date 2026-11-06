@@ -1914,6 +1914,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               userId={effectiveUserId || null}
               apprenantType={examenBlancType}
               isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+              confirmationPresentiel={confirmationPresentielEB}
               onExamStateChange={handleExamStateChange}
               onLearnerActivity={handleLearnerQuizActivity}
             />
@@ -2307,6 +2308,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               userId={effectiveUserId || null}
               apprenantType={apprenant?.type_apprenant || null}
               isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+              confirmationPresentiel={confirmationPresentielEB}
               onExamStateChange={handleExamStateChange}
               onLearnerActivity={handleLearnerQuizActivity}
             />

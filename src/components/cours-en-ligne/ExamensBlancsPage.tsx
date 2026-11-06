@@ -820,7 +820,7 @@ export default function ExamensBlancsPage({
       });
 
       if (confirmationPresentielRequise({
-        mode: confirmationPresentiel ? "presentiel" : "inconnu",
+        mode: confirmationPresentiel && !latestExamen.id.startsWith("bilan-") ? "presentiel" : "inconnu",
         passageMode: passage.mode,
         isAdmin,
         dejaConfirme,
