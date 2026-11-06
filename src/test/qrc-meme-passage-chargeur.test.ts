@@ -38,6 +38,11 @@ describe("Chargeur réel mocké : QRC du même passage", () => {
     data.core_exam_results = [{ attempt_id: "att", result_revision: 1, status: "definitif", score, total, qrc_restantes: 0 }];
     expect(await chargerEtAfficher()).toMatchObject({ etat: "note", note20: attendu, source: "noyau" });
   });
+  it("conserve 9,47 dans la source serveur avant l'arrondi d'affichage à 9,5", async () => {
+    data.core_exam_results = [{ attempt_id: "att", result_revision: 1, status: "definitif", score: 9.47, total: 19, qrc_restantes: 0 }];
+    const states = await fetchCoreMatiereStates("a");
+    expect(states?.[0]?.note20).toBe(9.47);
+  });
   it("une réponse tronquée garde l'attente historique", async () => {
     data.answer_state = [{ attempt_id: "att", question_id: "t3p:1", valeur: "r" }];
     expect(await chargerEtAfficher()).toMatchObject({ etat: "en_attente", source: "ancien" });
