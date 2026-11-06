@@ -47,13 +47,18 @@ describe("Correction QRC V2 — inscriptions croisées EB1-TAXI", () => {
     expect(decision.sessions[0]?.session.id).toBe(sessionId);
   });
 
-  it("conserve EB1 VTC distinct et un vrai chevauchement VTC en conflit", () => {
-    const decision = deciderRattachementCrm({ jour: "2026-11-06", examId: "EB1", typeApprenant: "vtc", liens: [TAXI_TA, VTC_TAXI] });
-    expect(decision.type).toBe("conflit");
+  const TOUS = ["EB1", "EB2", "EB3", "EB4", "EB5", "EB6",
+    "EB1-TAXI", "EB2-TAXI", "EB3-TAXI", "EB4-TAXI", "EB5-TAXI", "EB6-TAXI",
+    "eb1-ta", "eb2-ta", "eb3-ta", "eb4-ta", "eb5-ta", "eb6-ta", "eb3", "eb3-taxi"];
+  it.each(TOUS)("%s : visible dans les deux sessions couvrantes (jamais masqué en conflit)", (examId) => {
+    for (const type of ["taxi", "vtc", "ta"]) {
+      const d = deciderRattachementCrm({ jour: "2026-11-06", examId, typeApprenant: type, liens: [TAXI_TA, VTC_TAXI] });
+      expect(d.type).toBe("croisee");
+      expect(d.sessions).toHaveLength(2);
+    }
   });
 
-  it("n'étend la règle ni à un autre examen TAXI ni à trois sessions", () => {
-    expect(deciderRattachementCrm({ jour: "2026-11-06", examId: "EB2-TAXI", typeApprenant: "taxi", liens: [TAXI_TA, VTC_TAXI] }).type).toBe("conflit");
+  it("garde le conflit explicite à trois sessions", () => {
     const troisieme = { ...TAXI_TA, session: { ...TAXI_TA.session, id: "00000000-0000-0000-0000-000000000003", nom: "Troisième" } };
     expect(deciderRattachementCrm({ jour: "2026-11-06", examId: "EB1-TAXI", typeApprenant: "taxi", liens: [TAXI_TA, VTC_TAXI, troisieme] }).type).toBe("conflit");
   });
