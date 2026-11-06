@@ -51,7 +51,8 @@ export function exercicesAffichesPourRecherche(
   let selected: SearchCanonicalRow[];
   try {
     selected = selectBilanNationalDisplayRows(moduleId, moduleRows);
-  } catch {
+  } catch (error) {
+    if (options.strict) throw error;
     return exercices; // source incohérente : on garde la recherche actuelle
   }
   const bySection = new Map<number, SearchCanonicalRow[]>();

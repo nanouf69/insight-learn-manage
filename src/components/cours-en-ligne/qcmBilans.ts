@@ -91,7 +91,7 @@ export async function chargerQcmBilans(source: SourceBilanQcm): Promise<QcmBilan
   for (const module of modules) {
     const saved = savedByModule.get(module.id);
     const base = Array.isArray(saved?.exercices) ? saved.exercices : module.exercices;
-    const exercices = exercicesAffichesPourRecherche(module.id, base, canonical.rows, canonical.bindings);
+    const exercices = exercicesAffichesPourRecherche(module.id, base, canonical.rows, canonical.bindings, { strict: true });
     for (const exercice of exercices) {
       const questions = Array.isArray(exercice?.questions) ? exercice.questions : [];
       questions.forEach((question: any, index: number) => {
