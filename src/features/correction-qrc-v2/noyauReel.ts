@@ -1,6 +1,7 @@
 // Accès au VRAI noyau sécurisé en base (aucun serveur simulé).
 // Toutes les écritures passent par des fonctions serveur idempotentes.
 import { supabase } from "@/integrations/supabase/client";
+import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 
 export type QuestionSnapshot = {
   id: string;
@@ -94,6 +95,8 @@ export type SessionListee = {
   dates: DatePassage[];
   /** Apprenant de chaque passage (recherche de candidat, affichage seul). */
   apprenantParAttempt?: Record<string, string>;
+  /** Autres sessions affichant le même passage EB1-TAXI, sans nouvelle copie ni écriture. */
+  inscriptionCroiseeParAttempt?: Record<string, string[]>;
 };
 
 export type ResultatReel = {
@@ -244,6 +247,9 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   const { data: apprenants } = apprenantIds.length
     ? await supabase.from("apprenants").select("id, type_apprenant").in("id", apprenantIds)
     : { data: [] as { id: string; type_apprenant: string | null }[] };
+  const typesApprenant = new Map(
+    (apprenants ?? []).map((a) => [a.id, (a.type_apprenant ?? "").trim().toLowerCase()]),
+  );
   const estElearning = new Map(
     (apprenants ?? []).map((a) => [a.id, /-e$/.test((a.type_apprenant ?? "").trim().toLowerCase())]),
   );
@@ -279,6 +285,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     cle: string,
     base: Omit<GroupeSessionCrm, "cle" | "examens" | "nbCandidats">,
     a: any,
+    autresSessionsCroisees?: string[],
   ) => {
     const d = new Date(a.started_at as string);
     const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(d);
@@ -311,6 +318,9 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     }
     eb.attemptIds.push(a.attempt_id as string);
     (eb.apprenantParAttempt ??= {})[a.attempt_id as string] = a.apprenant_id as string;
+    if (autresSessionsCroisees?.length) {
+      (eb.inscriptionCroiseeParAttempt ??= {})[a.attempt_id as string] = autresSessionsCroisees;
+    }
     if (ancien && a.id) eb.legacyResultIds?.push(a.id as string);
     let dt = eb.dates.find((x) => x.jour === jour);
     if (!dt) {
@@ -342,19 +352,28 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
       }, a);
       continue;
     }
-    const couvrantes = (liensDe.get(a.apprenant_id) ?? []).filter((l) => jour >= l.debut && jour <= l.fin);
-    const uniques = Array.from(new Map(couvrantes.map((l) => [l.session.id, l])).values());
-    if (uniques.length === 1) {
-      const s = uniques[0].session;
-      ajouter(`crm:${s.id}`, {
-        type: "crm",
-        libelle: s.nom ?? "Session sans nom",
-        periode: `${jourFr(s.date_debut)} → ${jourFr(s.date_fin)}`,
-        debut: (s.date_debut as string) ?? null,
-        fin: (s.date_fin as string) ?? null,
-        tri: s.date_debut as string,
-      }, a);
-    } else if (uniques.length === 0) {
+    const decision = deciderRattachementCrm({
+      jour,
+      examId: a.exam_id as string,
+      typeApprenant: typesApprenant.get(a.apprenant_id) ?? "",
+      liens: liensDe.get(a.apprenant_id) ?? [],
+    });
+    if (decision.type === "unique" || decision.type === "croisee") {
+      for (const lien of decision.sessions) {
+        const s = lien.session;
+        const autresSessions = decision.type === "croisee"
+          ? decision.sessions.filter((autre) => autre.session.id !== s.id).map((autre) => autre.session.nom ?? "Session sans nom")
+          : undefined;
+        ajouter(`crm:${s.id}`, {
+          type: "crm",
+          libelle: s.nom ?? "Session sans nom",
+          periode: `${jourFr(s.date_debut)} → ${jourFr(s.date_fin)}`,
+          debut: (s.date_debut as string) ?? null,
+          fin: (s.date_fin as string) ?? null,
+          tri: s.date_debut as string,
+        }, a, autresSessions);
+      }
+    } else if (decision.type === "indetermine") {
       ajouter("indetermine", {
         type: "indetermine",
         libelle: "⚠️ Session CRM non déterminée",
