@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — URGENT production : terminer « Refaire uniquement les questions fausses »
+- [ ] Diagnostiquer en lecture seule l’appel de fin, les erreurs serveur/réseau, l’identité de révision, RLS/idempotence/concurrence et l’écart aperçu/publication pour tous les EB VTC/TAXI/TA et QCM/QRC.
+- [ ] Préserver toutes les réponses/notes/progressions ; préparer si nécessaire un correctif minimal testé sur comptes fictifs, avec terminer/recharger/reprendre après déconnexion et aucun faux succès.
+- [ ] Fournir cause exacte, contournement sûr sans effacement/réinitialisation, preuves de tests et statut de publication ; aucune écriture réelle ni publication sans accord de périmètre.
+
 ## 06/11 — Menu Correction QRC V2 : rouge uniquement en cours
 - [x] Limiter la couleur rouge aux sessions CRM réellement en cours à la date locale ; passées et futures en noir, lignes spéciales neutres.
 - [x] Conserver libellés, dates, ordre, sélection, filtres et données ; menu ouvert vérifié (3 en cours rouges, 12 autres noires, 2 spéciales noires), 9 tests de dates PASS, sans publication.
