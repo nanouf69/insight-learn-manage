@@ -41,31 +41,9 @@ const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) 
  * Calcule les taux de realisation (e-learning / presentiel / total)
  * avec EXACTEMENT la meme logique que le releve de connexions PDF.
  */
-export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?: any) {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    if (!apprenantId) return;
-    // Each effect owns its channel: admin + learner preview and StrictMode
-    // can mount concurrently while a previous removal is still asynchronous.
-    const channel = supabase.channel(`taux-presence-${apprenantId}-${crypto.randomUUID()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "session_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations_pratique", filter: `apprenant_id=eq.${apprenantId}` }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_blocs" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "planning_pratique_config" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [apprenantId, queryClient]);
-  return useQuery<TauxRealisation | null>({
-    queryKey: ["apprenant-taux-realisation", apprenantId, apprenantProp?.type_apprenant ?? null, apprenantProp?.formation_choisie ?? null, apprenantProp?.heures_elearning ?? null, apprenantProp?.heures_presentiel ?? null, apprenantProp?.heures_totales ?? null],
-    enabled: !!apprenantId,
-    // La fiche Admin doit refléter l'état réel courant, pas un cache de 5 minutes
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: "always",
-    queryFn: async () => {
+
+/** Chargeur partage avec la fiche : les regles de calcul restent dans ce module. */
+export async function chargerApprenantTauxRealisation(apprenantId: string, apprenantProp?: any): Promise<TauxRealisation | null> {
       if (!apprenantId) return null;
 
       // Toujours relire les heures contractuelles en base : le prop peut ne pas
@@ -180,6 +158,32 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
         premiereActiviteAt,
         derniereActiviteAt,
       };
-    },
+}
+
+export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?: any) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!apprenantId) return;
+    // Each effect owns its channel: admin + learner preview and StrictMode
+    // can mount concurrently while a previous removal is still asynchronous.
+    const channel = supabase.channel(`taux-presence-${apprenantId}-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_apprenants", filter: `apprenant_id=eq.${apprenantId}` }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations_pratique", filter: `apprenant_id=eq.${apprenantId}` }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_blocs" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "planning_pratique_config" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [apprenantId, queryClient]);
+  return useQuery<TauxRealisation | null>({
+    queryKey: ["apprenant-taux-realisation", apprenantId, apprenantProp?.type_apprenant ?? null, apprenantProp?.formation_choisie ?? null, apprenantProp?.heures_elearning ?? null, apprenantProp?.heures_presentiel ?? null, apprenantProp?.heures_totales ?? null],
+    enabled: !!apprenantId,
+    // La fiche Admin doit refléter l'état réel courant, pas un cache de 5 minutes
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    queryFn: async () => chargerApprenantTauxRealisation(apprenantId!, apprenantProp)
   });
 }

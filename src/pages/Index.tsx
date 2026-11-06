@@ -43,6 +43,7 @@ import { PersonalFinancingTransfersTable } from "@/components/dashboard/Personal
 import { ApprenantQuestionsPanel } from "@/components/dashboard/ApprenantQuestionsPanel";
 import { EmargementsManquants } from "@/components/dashboard/EmargementsManquants";
 import { PratiqueEdofEnAttente } from "@/components/dashboard/PratiqueEdofEnAttente";
+import { ApprenantsTauxComplets } from "@/components/dashboard/ApprenantsTauxComplets";
 import { ElearningSansPratique } from "@/components/dashboard/ElearningSansPratique";
 import { EmargementsFinFormation } from "@/components/dashboard/EmargementsFinFormation";
 import { CodesAccesEnvoyes } from "@/components/dashboard/CodesAccesEnvoyes";
@@ -382,6 +383,7 @@ const Index = () => {
             {/* Apprenants actuellement en formation — journée / soirée */}
             <SuiviFormationEnCours onNavigateToApprenant={handleNavigateToApprenant} />
             <PratiqueEdofEnAttente onNavigateToApprenant={handleNavigateToApprenant} />
+            <ApprenantsTauxComplets onNavigateToApprenant={handleNavigateToApprenant} />
 
             {/* Tâches à faire */}
             <DashboardTasks />

@@ -53,6 +53,17 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   return res;
 }
 
+/** Chargeur partage avec la fiche apprenant ; aucune regle de calcul n'est dupliquee. */
+export async function chargerTauxPresenceHeures(apprenantId: string, filiere?: string | null) {
+  const [em, ins, reservations, configs] = await Promise.all([
+    fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
+    fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,session_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(id,type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
+    fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
+    fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
+  ]);
+  return calculerTauxPresenceHeures(em, ins, filiere, reservations, configs);
+}
+
 export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true, filiere?: string | null) {
   const [data, setData] = useState<ReturnType<typeof calculerTauxPresenceHeures> | null>(null);
   const [erreur, setErreur] = useState(false);
@@ -63,13 +74,8 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     let annule = false;
     (async () => {
       try {
-        const [em, ins, reservations, configs] = await Promise.all([
-          fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
-          fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,session_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(id,type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
-          fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
-          fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
-        ]);
-        if (!annule) setData(calculerTauxPresenceHeures(em, ins, filiere, reservations, configs));
+        const resultat = await chargerTauxPresenceHeures(apprenantId, filiere);
+        if (!annule) setData(resultat);
       } catch {
         if (!annule) setErreur(true);
       }
