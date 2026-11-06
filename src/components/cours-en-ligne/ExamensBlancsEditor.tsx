@@ -1531,6 +1531,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
           }
         } catch (error) {
           console.error("[ExamensEditor] Save error:", error);
+          if (persistedUpdatedAtByModule[row.module_id]) {
+            toast.error("Le contenu est enregistré dans l'éditeur, mais sa nouvelle version V2 n'a pas pu être confirmée. Ne faites pas commencer une nouvelle tentative avant vérification.", { duration: 15000 });
+            return false;
+          }
           if (isStaleModuleEditorStateError(error)) {
             toast.error(
               "Une version plus récente de cet examen existe en base. Rechargez la page avant de ré-enregistrer.",

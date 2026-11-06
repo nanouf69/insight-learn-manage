@@ -1035,18 +1035,14 @@ export default function ExamensBlancsPage({
     })();
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
-    // Rebuild from stored responses if quiz_results is empty or only zero-score rows
-    if (rows.length === 0 || hasOnlyZeroScores) {
-      const rebuiltResults = await rebuildResultsFromSavedResponses();
-      if (!rebuiltResults) { toast.error("Aucun résultat exploitable trouvé."); return; }
-      toast.success(`${rebuiltResults.length} résultat(s) recalculé(s) depuis vos réponses.`);
-      setExamenChoisi(examReference);
-      setTousResultats(rebuiltResults);
-      setIsViewingSavedResults(true);
-      setPhase("resultats");
-      // BUG #2 FIX: purge any stale exam sessionStorage immediately on entering results phase
-      try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+    // Aucune reconstruction depuis les seules réponses et le sujet courant :
+    // sans résultat/snapshot fiable, la copie est orientée vers une revue manuelle.
+    if (rows.length === 0) {
+      toast.error("Aucun résultat figé exploitable. Les réponses restent conservées et cette copie nécessite une revue manuelle.");
       return;
+    }
+    if (hasOnlyZeroScores) {
+      console.warn("[handleViewResults][RevueManuelle] scores nuls conservés sans recalcul courant");
     }
 
     const rowsWithLookup = rows.map((row: any) => ({
