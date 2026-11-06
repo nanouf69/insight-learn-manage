@@ -20,7 +20,9 @@ export function joursAvantAuditQualiopi(now: Date): number | null {
 export const libelleCompteRebours = (n: number) => (n === 0 ? "Aujourd'hui" : n === 1 ? "Dans 1 jour" : `Dans ${n} jours`);
 
 // Une fois par ouverture de l'application (rechargement = nouvelle ouverture), pas à chaque navigation.
-let fenetreFermee = false;
+const CLE_MASQUE = "rappel-audit-qualiopi-masque-definitif";
+const masqueDefinitif = () => { try { return window.localStorage.getItem(CLE_MASQUE) === "1"; } catch { return false; } };
+let fenetreFermee = typeof window !== "undefined" && masqueDefinitif();
 
 export function RappelAuditQualiopi() {
   const [jours, setJours] = useState(() => joursAvantAuditQualiopi(new Date()));
@@ -51,8 +53,11 @@ export function RappelAuditQualiopi() {
             </DialogDescription>
           </DialogHeader>
           <p className="text-3xl font-black text-center text-destructive">{libelleCompteRebours(jours)}</p>
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
             <Button size="lg" variant="destructive" className="w-full" onClick={fermer}>Fermer</Button>
+            <Button size="lg" variant="outline" className="w-full" onClick={() => { try { window.localStorage.setItem(CLE_MASQUE, "1"); } catch { /* ignore */ } fermer(); }}>
+              Ne plus jamais afficher
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
