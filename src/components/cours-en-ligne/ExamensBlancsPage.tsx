@@ -1052,7 +1052,7 @@ export default function ExamensBlancsPage({
 
     const calculerMaxPoints = (matiere: Matiere): number => {
       const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-      return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+      return questionsSafe.reduce((acc, q) => acc + (q.points ?? getPointsParQuestion(matiere.id, q?.type || "QCM", matiere)), 0);
     };
 
     // POINT 6 — version FIGÉE utilisée pour l'affichage des tentatives déjà passées.
@@ -1168,7 +1168,7 @@ export default function ExamensBlancsPage({
     questionsSafe.forEach(q => {
       if (!q || !q?.type) return;
       const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
-      const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
+      const pts = q.points ?? getPointsParQuestion(matiere.id, q?.type, matiere);
       if (q?.type === "QCM" && q.choix) {
         const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
         const donnees = safeArray<string>(rep).sort();
@@ -1197,7 +1197,7 @@ export default function ExamensBlancsPage({
       if (!q) return null;
       const rep = resultat.reponses?.[q.id] ?? resultat.reponses?.[String(q.id)];
       if (q?.type === "QRC") {
-        const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
+        const pts = q.points ?? getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
         frozenCorrections[q.id] = evaluateQrcDeterministic(q, rep, pts);
       }
       return {
@@ -1256,7 +1256,7 @@ export default function ExamensBlancsPage({
           : undefined,
         reponseQRC: q.reponseQRC,
         reponses_possibles: q.reponses_possibles,
-        points: getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
+        points: q.points ?? getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
         // Image telle qu'elle était présentée à l'apprenant (relecture fidèle).
         image: q.image ?? null,
         imageSize: q.imageSize ?? q.image_size ?? null,
