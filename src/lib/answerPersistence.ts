@@ -1001,7 +1001,8 @@ async function processQueue(): Promise<void> {
             isOwnedByCurrentUser(q) &&
             q.payload.apprenant_id === item.payload.apprenant_id &&
             q.payload.exercice_id === item.payload.exercice_id &&
-            (q.payload.base_seq ?? 0) < confirmedSeq
+            (q.payload.base_seq ?? 0) < confirmedSeq &&
+            (item.payload.exercice_type !== "revision_fausses" || reponsesContiennentSansConflit(q.payload.reponses, item.payload.reponses))
               ? { ...q, payload: { ...q.payload, base_seq: confirmedSeq } }
               : q
           );

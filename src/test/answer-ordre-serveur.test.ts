@@ -138,6 +138,43 @@ describe("Ordre des écritures décidé par le serveur", () => {
     expect(bodies[1].base_seq).toBe(1);
   });
 
+  it("ne rebase pas une révision d'un autre onglet qui ne contient pas la réponse précédente", async () => {
+    let confirmerPremierEnvoi: (() => void) | undefined;
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        confirmerPremierEnvoi = () => resolve({
+          ok: true,
+          json: async () => ({ success: true, confirmed: true, write_seq: 1, skipped_questions: [] }),
+          text: async () => "",
+        });
+      }))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, confirmed: true, write_seq: 1, skipped_questions: ["revisionState"] }),
+        text: async () => "",
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    const etat = (answers: Record<string, unknown>) => ({
+      version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
+      correctedQuestions: [], showCorrection: false, questionOrder: ["t3p:1"], answers,
+    });
+    enqueueAnswerSave(basePayload({
+      exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
+      reponses: { revisionState: etat({ "t3p:1": ["A"] }) },
+    }));
+    await new Promise((r) => setTimeout(r, 0));
+    enqueueAnswerSave(basePayload({
+      exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
+      reponses: { revisionState: etat({}) },
+    }));
+    await new Promise((r) => setTimeout(r, 0));
+    confirmerPremierEnvoi?.();
+    await new Promise((r) => setTimeout(r, 30));
+    const bodies = sentBodies(fetchMock);
+    expect(bodies[1].base_seq).toBe(0);
+    expect(bodies[1].reponses.revisionState.answers).toEqual({});
+  });
+
   it("reprend une clôture déjà bloquée seulement par ajouts sans conflit, avec une nouvelle opération", async () => {
     const serveur = {
       version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
