@@ -33,6 +33,8 @@ import { toast } from "sonner";
 import { RichText } from "@/lib/richText";
 import { ColoredTextField } from "./ColoredTextField";
 import { FirstPassageProvider, QuestionFirstPassageRate } from "./QuestionFirstPassageRate";
+import { AjouterQcmMenu } from "./AjouterQcmMenu";
+import { copierQcmPourImport } from "./qcmBilans";
 
 // Virtual module_id range for examens blancs: 90000+
 // Stable mapping from exam ID → module_id (survives reordering / additions)
