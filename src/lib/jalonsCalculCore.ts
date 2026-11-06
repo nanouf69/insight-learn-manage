@@ -85,7 +85,7 @@ export function assemblerCalculJalons(i: {
         details: row?.details,
         preuve_serveur: (row as any)?.preuve_serveur,
         progress_preuve: (row as any)?.progress_preuve,
-      }];
+      } as CompletionCalc];
       activites.push({ ...r.etat, methode: METHODE_ACTIVITES });
     }
   }
