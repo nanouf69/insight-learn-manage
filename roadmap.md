@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 06/11 — Répercussion des corrections QRC sur matières, score global et admission
+- [ ] Audit exhaustif en lecture seule EB VTC/TAXI/TA : corrections validées, snapshots/barèmes, tentatives exclues, notes officielles et coefficients ; aucun recalcul persisté.
+- [ ] Calcul à blanc par question/matière/tentative avec cas BENNANI, MALKI et SELMI ; distinguer écarts d’affichage et notes serveur réellement erronées, impacts score final/admission.
+- [ ] Préparer seulement le correctif minimal démontré de la chaîne de calcul et ses tests, sans modifier les corrections manuelles, copies, réponses ou examens en cours.
+- [ ] Si nécessaire, préparer une régularisation traçable, transactionnelle, idempotente et réversible, avec inventaire avant/après et provenance ; aucune écriture de notes réelles sans validation détaillée distincte.
+- [ ] Publication interdite sans contrôle des autres changements de l’aperçu et autorisation distincte.
+
 ## 06/11 — Reprise durable « Refaire uniquement les questions fausses » EB VTC/TAXI
 - [x] Audit du composant partagé EB1–EB6 VTC/TAXI : position forcée à zéro, validation non restaurée, clés de questions communes aux matières et sauvegarde directe sans file durable.
 - [x] File serveur durable QCM/QRC, ordre/contexte/position/correction restaurés, clé matière+question, indication honnête ; double geste, requêtes tardives, conflits et clôture après reset bloqués sans écrasement.
