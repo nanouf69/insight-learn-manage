@@ -545,7 +545,7 @@ export default function AdminCorrectionQrcV2Reel() {
               onChange={(e) => setGroupeCle(e.target.value)}
             >
               {groupes.map((g) => (
-                <option key={g.cle} value={g.cle} className={estEnCours(g) ? "text-red-600 font-semibold" : undefined}>
+                <option key={g.cle} value={g.cle} className={estEnCours(g) ? "text-red-600 font-semibold" : "text-foreground font-normal"}>
                   {libelleGroupe(g)}
                 </option>
               ))}
