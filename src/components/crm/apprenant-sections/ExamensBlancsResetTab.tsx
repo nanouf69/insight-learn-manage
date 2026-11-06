@@ -270,113 +270,28 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       if (!user) { toast.error("Session expirée"); return; }
 
       if (matiere) {
-        // Reset single matière — quiz_results + reponses
-        const exerciceId = `${matiere.quiz_id}_${matiere.matiere_id}`;
-
-        const { error } = await supabase
-          .from("apprenant_quiz_results")
-          .delete()
-          .eq("apprenant_id", apprenant.id)
-          .eq("quiz_type", "examen_blanc")
-          .eq("quiz_id", matiere.quiz_id)
-          .eq("matiere_id", matiere.matiere_id);
-        if (error) throw error;
-
-        // Also delete matching reponses_apprenants
-        await supabase
-          .from("reponses_apprenants")
-          .delete()
-          .eq("apprenant_id", apprenant.id)
-          .eq("exercice_id", exerciceId);
-
-        await supabase.from("audit_logs").insert({
-          action: "reset_examen_blanc_matiere",
-          admin_user_id: user.id,
-          admin_email: user.email ?? null,
-          apprenant_id: apprenant.id,
-          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
-          details: {
-            examen_label: group.examenLabel,
-            matiere_id: matiere.matiere_id,
-            matiere_nom: matiere.matiere_nom,
-            quiz_id: matiere.quiz_id,
-            exercice_id: exerciceId,
-          },
-        });
-
-        toast.success(`${matiere.matiere_nom} réinitialisée (${group.examenLabel})`);
-      } else {
-        // Reset full exam — quiz_results + ALL reponses (completed + in-progress)
-        const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
-
-        for (const qid of quizIds) {
-          const { error } = await supabase
-            .from("apprenant_quiz_results")
-            .delete()
-            .eq("apprenant_id", apprenant.id)
-            .eq("quiz_type", "examen_blanc")
-            .eq("quiz_id", qid);
-          if (error) throw error;
-        }
-
-        // Delete all reponses for each matière of this exam (from results)
-        const exerciceIds = group.results.map((r) => `${r.quiz_id}_${r.matiere_id}`);
-        // Also include in-progress exercice IDs not covered by results
-        const allExerciceIds = [...new Set([
-          ...exerciceIds,
-          ...(group.inProgressExerciceIds || []),
-        ])];
-
-        for (const eid of allExerciceIds) {
-          await supabase
-            .from("reponses_apprenants")
-            .delete()
-            .eq("apprenant_id", apprenant.id)
-            .eq("exercice_id", eid);
-        }
-
-        // Safety net: also delete any remaining reponses matching EB{num}_%
-        // This catches orphaned rows not tracked in results or inProgressExerciceIds
-        const ebPrefix = quizIds[0] || `EB${group.examenNum}`;
-        const { data: orphans } = await supabase
-          .from("reponses_apprenants")
-          .select("exercice_id")
-          .eq("apprenant_id", apprenant.id)
-          .like("exercice_id", `${ebPrefix}_%`);
-        if (orphans && orphans.length > 0) {
-          for (const orphan of orphans) {
-            await supabase
-              .from("reponses_apprenants")
-              .delete()
-              .eq("apprenant_id", apprenant.id)
-              .eq("exercice_id", orphan.exercice_id);
-          }
-        }
-
-        await supabase.from("audit_logs").insert({
-          action: "reset_examen_blanc",
-          admin_user_id: user.id,
-          admin_email: user.email ?? null,
-          apprenant_id: apprenant.id,
-          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
-          details: {
-            examen_label: group.examenLabel,
-            examen_num: group.examenNum,
-            type: group.type,
-            quiz_ids: quizIds,
-            exercice_ids: allExerciceIds,
-            matieres_supprimees: group.results.length,
-            in_progress_cleaned: group.inProgressOnly ?? false,
-          },
-        });
-
-        toast.success(`${group.examenLabel} réinitialisé pour ${apprenant.prenom} ${apprenant.nom}`);
+        // Aucun circuit serveur d'archivage administratif par matière n'existe
+        // encore. On conserve donc tout plutôt que de supprimer une copie.
+        toast.info("Le reset destructif par matière est désactivé. Utilisez le repassage sécurisé depuis l’espace élève : les anciennes réponses et notes sont conservées.");
+        return;
       }
 
+      const quizIds = [...new Set([
+        ...group.results.map((r) => r.quiz_id),
+        group.quizId,
+      ].filter(Boolean))];
+      await archiverExamenBlancAdmin({
+        apprenantId: apprenant.id,
+        examIds: quizIds,
+        motif: `Remise à zéro admin ${group.examenLabel} pour ${apprenant.prenom} ${apprenant.nom}`,
+        adminEmail: user.email,
+      });
+
+      toast.success(`${group.examenLabel} archivé pour ${apprenant.prenom} ${apprenant.nom} : les anciennes copies et notes sont conservées.`);
       queryClient.invalidateQueries({ queryKey: ["examen-blanc-results-admin", apprenant.id] });
     } catch (err: any) {
-      console.error("Erreur reset examen blanc:", err);
-      toast.error(err?.message || "Erreur lors de la réinitialisation");
+      console.error("Erreur archivage examen blanc:", err);
+      toast.error(err?.message || "Erreur lors de la remise à zéro");
     } finally {
       setResetting(false);
       setConfirmTarget(null);
