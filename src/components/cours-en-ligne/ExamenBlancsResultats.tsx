@@ -1,6 +1,18 @@
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getPendingAnswers, mergeSavedAndPendingAnswers } from "@/lib/answerPersistence";
+import {
+  enqueueAnswerSave,
+  flushAnswerSavesAndWait,
+  flushAnswerSavesOnUnload,
+  mergeSavedAndPendingAnswers,
+} from "@/lib/answerPersistence";
+import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
+import {
+  creerRevisionProgressState,
+  restaurerRevisionProgressState,
+  revisionQuestionKey,
+  revisionQuestionOrder,
+} from "@/lib/revisionFaussesProgression";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +39,7 @@ import {
 } from "./examens-blancs-utils";
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
-import { choisirTentativeRevision, revisionBaseId } from "@/lib/revisionFaussesTentative";
+import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
@@ -1263,13 +1275,13 @@ function RevisionFausses({
   const [showCorrection, setShowCorrection] = useState(false);
   const [correctedCount, setCorrectedCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Refs pour flush "keepalive" en cas de déconnexion / fermeture d'onglet
-  const latestPayloadRef = useRef<any>(null);
-  const pendingSaveRef = useRef(false);
-  const accessTokenRef = useRef<string | null>(null);
+  const [finEnCours, setFinEnCours] = useState(false);
+  const finEnCoursRef = useRef(false);
+  const revisionRowsRef = useRef<RevisionRowLike[]>([]);
+  const correctedQuestionsRef = useRef<string[]>([]);
 
   const baseExerciceId = revisionBaseId(examenId);
+  const questionOrder = useMemo(() => revisionQuestionOrder(wrongQuestions), [wrongQuestions]);
   // Identifiant de la tentative en cours : jamais celui d'une révision déjà terminée.
   const [exerciceId, setExerciceId] = useState<string>(baseExerciceId);
   // Tant que la tentative n'est pas identifiée (ou après la fin), aucune écriture.
@@ -1277,12 +1289,13 @@ function RevisionFausses({
   const termineeRef = useRef(false);
 
 
-  // ---- Load saved progress on mount ----
+  // ---- Charge le brouillon serveur puis les valeurs locales encore non confirmées. ----
   useEffect(() => {
     if (!apprenantId || !userId || !examenId || wrongQuestions.length === 0) {
       setLoaded(true);
       return;
     }
+    let annule = false;
     (async () => {
       try {
         const { data: tentatives, error: errTentatives } = await supabase
@@ -1292,14 +1305,16 @@ function RevisionFausses({
           .eq("exercice_type", "revision_fausses")
           .like("exercice_id", `${baseExerciceId}%`);
         if (errTentatives) {
-          // Lecture impossible : on n'écrit rien plutôt que réécrire une révision terminée.
           console.error("Erreur chargement révision (tentatives):", errTentatives.message);
           return;
         }
-        const idTentative = choisirTentativeRevision(baseExerciceId, (tentatives as any[]) || []);
+        const rows = (tentatives as RevisionRowLike[]) || [];
+        revisionRowsRef.current = rows;
+        const idTentative = choisirTentativeRevision(baseExerciceId, rows);
+        if (annule) return;
         setExerciceId(idTentative);
         tentativePreteRef.current = true;
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("reponses_apprenants")
           .select("reponses, score")
           .eq("apprenant_id", apprenantId)
@@ -1309,36 +1324,29 @@ function RevisionFausses({
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-
-
+        if (error) {
+          console.error("Erreur chargement révision:", error.message);
+          return;
+        }
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
-        // Règle générale : les réponses locales encore en attente d'envoi
-        // restent affichées après F5 / reconnexion, et une valeur vide
-        // n'écrase jamais une réponse réellement saisie.
-        const pending = getPendingAnswers(apprenantId, idTentative) as any;
-        const mergedAnswers = mergeSavedAndPendingAnswers(
-          (saved.answers && typeof saved.answers === "object" ? saved.answers : {}) as any,
-          apprenantId,
-          idTentative,
-        );
-        const pendingAnswers = pending?.answers && typeof pending.answers === "object" ? pending.answers : {};
-        const finalAnswers = { ...mergedAnswers, ...pendingAnswers };
-        if (Object.keys(finalAnswers).length > 0) setReponses(finalAnswers as any);
-        if (typeof saved.correctedCount === "number") {
-          setCorrectedCount(saved.correctedCount);
+        const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);
+        const restored = restaurerRevisionProgressState(merged, examenId, questionOrder);
+        if (annule) return;
+        setReponses(restored.answers as Reponses);
+        setCorrectedCount(restored.correctedCount);
+        correctedQuestionsRef.current = restored.correctedQuestions;
+        setCurrentIndex(restored.currentIndex);
+        setShowCorrection(restored.showCorrection);
+        if (restored.contexteChange) {
+          toast.info("La liste des questions a changé. Vos réponses identifiables sont conservées ; la première question non validée est affichée.");
         }
-        if (data?.reponses) {
-          // Toujours repartir de la 1ère question lors d'un "Refaire les fausses"
-          setCurrentIndex(0);
-          setShowCorrection(false);
-        }
-
       } catch (err) {
         console.error("Erreur chargement révision:", err);
       } finally {
-        setLoaded(true);
+        if (!annule) setLoaded(true);
       }
     })();
+    return () => { annule = true; };
   }, [apprenantId, userId, examenId, baseExerciceId, wrongQuestions.length]);
 
   // ---- Persist progress (debounced) ----
