@@ -418,6 +418,7 @@ export default function AdminCorrectionQrcV2Reel() {
     setNote(n);
     setEtatEnvoi("encours");
     setErreur(null);
+    setMessageNavigation(null);
     try {
       if (revision) {
         await reviserQrc({
@@ -439,12 +440,28 @@ export default function AdminCorrectionQrcV2Reel() {
           email: emailAdmin,
         });
       }
-      setEtatEnvoi("ok");
+
+      // Aucune navigation sur la seule promesse d'écriture : la QRC relue doit
+      // porter exactement la note choisie et l'état corrigé.
+      const sessionRelue = await recharger();
+      const decision = decisionApresCorrection(sessionRelue, qrcSel.qrc_instance_id, n);
+      if (decision.statut === "non_confirmee") {
+        setEtatEnvoi("echec");
+        setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
+        return;
+      }
+
       setNote(null);
       setCommentaire("");
       setModeRevision(false);
       setJeton(Math.random().toString(36).slice(2, 10));
-      await recharger();
+      if (decision.suivante) {
+        setEtatEnvoi("vide");
+        setSelection(decision.suivante.qrc_instance_id);
+      } else {
+        setEtatEnvoi("ok");
+        setMessageNavigation("Correction enregistrée — dernière copie de la liste.");
+      }
     } catch (e) {
       setEtatEnvoi("echec");
       setErreur((e as Error).message);
@@ -1054,6 +1071,17 @@ export default function AdminCorrectionQrcV2Reel() {
                   {etatEnvoi === "echec" && <span className="text-destructive">🔴 CORRECTION NON ENREGISTRÉE</span>}
                 </div>
               </div>
+            )}
+
+            {messageNavigation && (
+              <p role="status" className="rounded border border-success/40 bg-success/10 p-2 text-sm font-semibold text-success" data-testid="fin-liste-copies">
+                {messageNavigation}
+              </p>
+            )}
+            {etatEnvoi === "echec" && erreur && (
+              <p role="alert" className="rounded border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive" data-testid="erreur-correction-copie">
+                {erreur}
+              </p>
             )}
 
             <div className="space-y-1 border-t pt-2 text-[11px] text-muted-foreground">

@@ -79,3 +79,35 @@ describe("Correction QRC — navigation entre copies affichées", () => {
     expect(copieVoisine(null, "a1-q1", 1)).toBeNull();
   });
 });
+
+describe("Correction QRC — navigation automatique après relecture", () => {
+  const relueAvecNote = (qrcInstanceId: string, note: number | null) => ({
+    ...session,
+    qrc: session.qrc.map((q) => q.qrc_instance_id === qrcInstanceId
+      ? { ...q, etat: "corrigee" as const, note }
+      : q),
+  });
+
+  it("ne navigue pas tant que la QRC relue reste en attente", () => {
+    expect(decisionApresCorrection(session, "a1-q1", 1.5)).toEqual({ statut: "non_confirmee" });
+  });
+
+  it("ne navigue pas si la note relue diffère de la note choisie", () => {
+    expect(decisionApresCorrection(relueAvecNote("a1-q1", 1), "a1-q1", 1.5)).toEqual({ statut: "non_confirmee" });
+  });
+
+  it("ne navigue pas si la QRC est absente de la relecture", () => {
+    expect(decisionApresCorrection(session, "absente", 1.5)).toEqual({ statut: "non_confirmee" });
+    expect(decisionApresCorrection(null, "a1-q1", 1.5)).toEqual({ statut: "non_confirmee" });
+  });
+
+  it("confirme puis cible la même question du candidat suivant", () => {
+    const decision = decisionApresCorrection(relueAvecNote("a1-q1", 1.5), "a1-q1", 1.5);
+    expect(decision).toMatchObject({ statut: "confirmee", suivante: { qrc_instance_id: "a2-q1" } });
+  });
+
+  it("confirme la dernière copie sans cible suivante", () => {
+    const decision = decisionApresCorrection(relueAvecNote("a3-q1", 2), "a3-q1", 2);
+    expect(decision).toEqual({ statut: "confirmee", suivante: null });
+  });
+});
