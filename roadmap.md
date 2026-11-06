@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — Tableau de bord : apprenants à 100 % depuis septembre
+- [x] Périmètre validé : 101 dossiers non supprimés créés depuis le 01/09/2026 ; critère « Modules (jalons) » = 100 % OU « TAUX TOTAL » ≥ 100 %, mêmes calculs que la fiche.
+- [ ] Ajouter une carte avec les deux taux, accès à la fiche, masquage individuel réversible sur ce navigateur et signalement des lectures impossibles.
+- [ ] Tests du critère OU et du masquage, vérification des calculs inchangés, contrôle réel du tableau de bord, sans modifier les dossiers ni publier.
+
 ## 06/11 — Supports T3P/Gestion, lot 1/3 (VTC 2 + TAXI 10)
 - [x] Lecture seule : cinq cours ciblés par module ; VTC 2 sans PDF, TAXI 10 avec paires et forme-finder à préserver ; 5 PPTX et 5 PDF valides.
 - [x] Dix nouveaux médias avec `?v=20261106` ; 15 liens remplacés et cinq PDF ajoutés au VTC, sans autre modification.
