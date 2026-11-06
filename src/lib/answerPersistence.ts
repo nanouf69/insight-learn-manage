@@ -861,9 +861,20 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
       if (confirmation?.success === true && confirmation?.confirmed === true) {
         const skipped = Array.isArray(confirmation.skipped_questions) ? confirmation.skipped_questions : [];
         if (skipped.length > 0) {
-          // Le serveur a déjà une version plus récente. Ne jamais retirer la
-          // version locale ni avancer base_seq : sinon une clôture suivante
-          // pourrait réécrire la valeur ignorée avec le nouveau numéro.
+          // Réparation uniquement si la version locale est une extension stricte
+          // de celle du serveur : toutes les réponses serveur sont déjà présentes,
+          // identiques, dans le même examen et le même ordre. Sinon, conflit conservé.
+          const confirmedSeq = Number(confirmation.write_seq ?? 0);
+          if (
+            confirmedSeq > 0 &&
+            reponsesContiennentSansConflit(item.payload.reponses, confirmation.stored_reponses, skipped)
+          ) {
+            item.payload = { ...item.payload, base_seq: confirmedSeq };
+            item.rebase_operation_id = `${item.id}__rebase_${confirmedSeq}_${item.attempts + 1}`;
+            return "rebase";
+          }
+          // Le serveur a déjà une version plus récente et différente. Ne jamais
+          // retirer la version locale ni avancer base_seq : aucun écrasement.
           const message = "Une version plus récente existe sur le serveur. Vos réponses locales sont conservées sur cet appareil ; rechargez avant de continuer pour éviter tout écrasement.";
           notifyAnswerSaveRejected(item.payload.exercice_id, "refused", message);
           item.rejection = { exerciceId: item.payload.exercice_id, reason: "refused", message, at: new Date().toISOString() };
@@ -1001,21 +1012,36 @@ async function processQueue(): Promise<void> {
       } else {
         const idx = queue.findIndex((q) => q.id === item.id);
         if (idx >= 0) {
-          const refused = new Set(queue[idx].refused_user_ids ?? []);
-          if (result === "blocked" && authUserId) refused.add(authUserId);
-          const failed: QueueItem = {
-            ...queue[idx],
-            attempts: (queue[idx].attempts ?? 0) + 1,
-            blocked: result === "blocked" ? true : queue[idx].blocked,
-            rejection: result === "blocked" ? item.rejection : queue[idx].rejection,
-            retry_after: result === "retry" ? Date.now() + computeRetryDelay((queue[idx].attempts ?? 0) + 1) : queue[idx].retry_after,
-            refused_user_ids: refused.size > 0 ? [...refused] : undefined,
-          };
-          queue.splice(idx, 1);
-          queue.push(failed);
+          if (result === "rebase" && item.rebase_operation_id) {
+            // Nouvelle opération : la charge utile est identique, seule sa base
+            // serveur prouvée change. Les événements gardent leurs identifiants.
+            const rebased: QueueItem = {
+              ...queue[idx],
+              id: item.rebase_operation_id,
+              payload: item.payload,
+              attempts: (queue[idx].attempts ?? 0) + 1,
+              blocked: false,
+              rejection: undefined,
+              retry_after: Date.now() + computeRetryDelay((queue[idx].attempts ?? 0) + 1),
+            };
+            queue.splice(idx, 1, rebased);
+          } else {
+            const refused = new Set(queue[idx].refused_user_ids ?? []);
+            if (result === "blocked" && authUserId) refused.add(authUserId);
+            const failed: QueueItem = {
+              ...queue[idx],
+              attempts: (queue[idx].attempts ?? 0) + 1,
+              blocked: result === "blocked" ? true : queue[idx].blocked,
+              rejection: result === "blocked" ? item.rejection : queue[idx].rejection,
+              retry_after: result === "retry" ? Date.now() + computeRetryDelay((queue[idx].attempts ?? 0) + 1) : queue[idx].retry_after,
+              refused_user_ids: refused.size > 0 ? [...refused] : undefined,
+            };
+            queue.splice(idx, 1);
+            queue.push(failed);
+          }
           writeQueue(queue);
         }
-        if (result === "retry") hadFailure = true;
+        if (result === "retry" || result === "rebase") hadFailure = true;
         // Serveur lent : ne pas enchaîner d'autres envois de 15 s chacun dans ce tour
         // (la file grossissait 8 → 13) ; tout reste en file pour le prochain essai.
         if (result === "retry" && dernierEnvoiDelaiDepasse) break;
@@ -1081,7 +1107,29 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     attempts: 0,
     owner_user_id: authUserId,
   };
-  const queue = readQueue();
+  let queue = readQueue();
+  // Un nouvel essai de clôture peut remplacer les anciennes versions locales,
+  // y compris bloquées, seulement si son état final contient chacune de leurs
+  // réponses sans contradiction. Sinon elles restent et la clôture est refusée.
+  if (payload.completed && payload.exercice_type === "revision_fausses") {
+    const precedents = queue.filter((q) =>
+      q.payload.exercice_id === payload.exercice_id &&
+      q.payload.apprenant_id === payload.apprenant_id &&
+      isOwnedByCurrentUser(q)
+    );
+    if (precedents.length > 0 && precedents.every((q) => reponsesContiennentSansConflit(payload.reponses, q.payload.reponses))) {
+      item.payload.events = [
+        ...precedents.flatMap((q) => q.payload.events ?? []),
+        ...(item.payload.events ?? []),
+      ];
+      const remplaces = new Set(precedents.filter((q) => q.id !== envoiEnCoursId).map((q) => q.id));
+      queue = queue.filter((q) => !remplaces.has(q.id));
+      const conflitRestant = queue.some((q) =>
+        q.blocked && q.payload.apprenant_id === payload.apprenant_id && q.payload.exercice_id === payload.exercice_id
+      );
+      if (!conflitRestant) definitiveRejections.delete(rejectionKey(payload.user_id ?? authUserId, payload.apprenant_id, payload.exercice_id));
+    }
+  }
   // Compactage : une sauvegarde non envoyée du même exercice non terminée est
   // remplacée par la plus récente (la dernière réponse fait foi), mais les
   // événements question par question sont conservés et fusionnés.
