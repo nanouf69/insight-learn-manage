@@ -35,12 +35,12 @@ import {
   isStoredExamSessionAfterReset,
   type SavedExamAnswerRow,
 } from "./examens-blancs-utils";
-import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
+import { isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { resultatsDuPassage } from "@/lib/examClotureGarde";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
-import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
+import { computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import {
   buildFinalizationKey,
@@ -936,79 +936,6 @@ export default function ExamensBlancsPage({
     const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
-    const rebuildResultsFromSavedResponses = async (): Promise<ResultatMatiere[] | null> => {
-      if (!apprenantId || !userId) return null;
-
-      const { data: savedResponses } = await supabase
-        .from("reponses_apprenants" as any)
-        .select("exercice_id, reponses, score, completed")
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_type", "examen_blanc")
-        .like("exercice_id", `${examReference.id}_%`);
-
-      const responseRows = (savedResponses as any[]) || [];
-      const completedResponses = responseRows.filter((r: any) => r?.completed === true);
-      const candidateResponses = completedResponses.length > 0
-        ? completedResponses
-        : responseRows.filter((r: any) => r?.reponses && Object.keys(r.reponses || {}).length > 0);
-
-      if (candidateResponses.length === 0) return null;
-
-      const rebuiltResults: ResultatMatiere[] = [];
-      for (const matiere of examReference.matieres) {
-        if (!matiere) continue;
-        const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
-        const resp = candidateResponses.find((r: any) => {
-          const exerciceId = safeStr(r?.exercice_id);
-          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, examReference.id);
-          if (!matiereKey) return false;
-          const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
-          return shareLookupKey(responseKeys, expectedKeys);
-        });
-
-        const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-        const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
-
-        // Placeholder for non-attempted matières so ALL 7 matières always display.
-        if (!resp) {
-          rebuiltResults.push({
-            matiereId: matiere.id,
-            nomMatiere: matiere.nom,
-            noteObtenue: 0,
-            maxPoints,
-            noteSur: matiere.noteSur || 20,
-            noteEliminatoire: matiere.noteEliminatoire || 0,
-            coefficient: matiere.coefficient || 1,
-            admis: false,
-            reponses: {},
-            nonPassee: true,
-          } as ResultatMatiere);
-          continue;
-        }
-
-        const reponses = resp.reponses || {};
-        const score = computeMatiereScore(matiere, reponses, 0, maxPoints, null, findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom));
-        const safeNote = score?.scoreObtenu ?? 0;
-        const safeMaxPoints = score?.scoreMax ?? maxPoints;
-        const noteSur20 = score?.noteSur20 ?? normalizeNoteSur20(safeNote, safeMaxPoints);
-        const admis = score?.admis ?? computeAdmisForMatiere(safeNote, safeMaxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
-
-        rebuiltResults.push({
-          matiereId: matiere.id,
-          nomMatiere: matiere.nom,
-          noteObtenue: safeNote,
-          maxPoints: safeMaxPoints,
-          noteSur: matiere.noteSur || 20,
-          noteEliminatoire: matiere.noteEliminatoire || 0,
-          coefficient: matiere.coefficient || 1,
-          admis,
-          reponses,
-        });
-      }
-
-      return rebuiltResults.length > 0 ? rebuiltResults : null;
-    };
-
     const { data } = await supabase
       .from("apprenant_quiz_results" as any)
       .select("*")
@@ -1035,18 +962,14 @@ export default function ExamensBlancsPage({
     })();
     const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
 
-    // Rebuild from stored responses if quiz_results is empty or only zero-score rows
-    if (rows.length === 0 || hasOnlyZeroScores) {
-      const rebuiltResults = await rebuildResultsFromSavedResponses();
-      if (!rebuiltResults) { toast.error("Aucun résultat exploitable trouvé."); return; }
-      toast.success(`${rebuiltResults.length} résultat(s) recalculé(s) depuis vos réponses.`);
-      setExamenChoisi(examReference);
-      setTousResultats(rebuiltResults);
-      setIsViewingSavedResults(true);
-      setPhase("resultats");
-      // BUG #2 FIX: purge any stale exam sessionStorage immediately on entering results phase
-      try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+    // Aucune reconstruction depuis les seules réponses et le sujet courant :
+    // sans résultat/snapshot fiable, la copie est orientée vers une revue manuelle.
+    if (rows.length === 0) {
+      toast.error("Aucun résultat figé exploitable. Les réponses restent conservées et cette copie nécessite une revue manuelle.");
       return;
+    }
+    if (hasOnlyZeroScores) {
+      console.warn("[handleViewResults][RevueManuelle] scores nuls conservés sans recalcul courant");
     }
 
     const rowsWithLookup = rows.map((row: any) => ({
@@ -1056,7 +979,7 @@ export default function ExamensBlancsPage({
 
     const calculerMaxPoints = (matiere: Matiere): number => {
       const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-      return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+      return questionsSafe.reduce((acc, q) => acc + (q.points ?? getPointsParQuestion(matiere.id, q?.type || "QCM", matiere)), 0);
     };
 
     // POINT 6 — version FIGÉE utilisée pour l'affichage des tentatives déjà passées.
@@ -1104,6 +1027,7 @@ export default function ExamensBlancsPage({
           score_obtenu: row.score_obtenu,
           score_max: safeScoreMax,
           note_sur_20: row.note_sur_20,
+          reussi: row.reussi,
         },
         findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom),
       );
@@ -1112,13 +1036,9 @@ export default function ExamensBlancsPage({
         normalizedScoreMax = canonicalScore.scoreMax;
       }
       if (safeScoreObtenu <= 0 && isCorruptedZeroRow(row)) {
-        const recovered = recoverCorruptedScoreRow(row, liveExamens);
-        if (recovered && recovered.score_obtenu > 0) {
-          safeScoreObtenu = recovered.score_obtenu;
-          normalizedScoreMax = recovered.score_max;
-          console.warn(`[handleViewResults][AutoHeal] ${row.quiz_id}/${row.matiere_id}: 0 -> ${recovered.score_obtenu}/${recovered.score_max}`);
-          // Diagnostic d'affichage uniquement : aucune note n'est réécrite.
-        }
+        // Un zéro historique reste visible tel quel : aucune note n'est devinée
+        // depuis le contenu courant. Le cas reste destiné à une revue manuelle.
+        console.warn(`[handleViewResults][RevueManuelle] ${row.quiz_id}/${row.matiere_id}: score nul conservé`);
       }
 
       return {
@@ -1175,7 +1095,7 @@ export default function ExamensBlancsPage({
     questionsSafe.forEach(q => {
       if (!q || !q?.type) return;
       const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
-      const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
+      const pts = q.points ?? getPointsParQuestion(matiere.id, q?.type, matiere);
       if (q?.type === "QCM" && q.choix) {
         const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
         const donnees = safeArray<string>(rep).sort();
@@ -1204,7 +1124,7 @@ export default function ExamensBlancsPage({
       if (!q) return null;
       const rep = resultat.reponses?.[q.id] ?? resultat.reponses?.[String(q.id)];
       if (q?.type === "QRC") {
-        const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
+        const pts = q.points ?? getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
         frozenCorrections[q.id] = evaluateQrcDeterministic(q, rep, pts);
       }
       return {
@@ -1263,7 +1183,7 @@ export default function ExamensBlancsPage({
           : undefined,
         reponseQRC: q.reponseQRC,
         reponses_possibles: q.reponses_possibles,
-        points: getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
+        points: q.points ?? getPointsParQuestion(matiere.id, q?.type || "QCM", matiere),
         // Image telle qu'elle était présentée à l'apprenant (relecture fidèle).
         image: q.image ?? null,
         imageSize: q.imageSize ?? q.image_size ?? null,

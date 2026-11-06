@@ -1125,3 +1125,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] P5 Belarbi m64 : correctif du 04/11 présent dans l'aperçu, non publié, aucune preuve élève.
 - [x] QRC 22 = exclusion volontaire reglementation_taxi2 (correction formateur).
 - [x] test_16 : banc obsolète (0230 rejouée sans 0232) ; banc corrigé, assertion inchangée, 17/17 OK.
+
+## 06/11 20:18 UTC — Protection des snapshots après édition des examens blancs
+- [ ] Audit lecture seule V2/legacy, écritures admin, snapshots, réponses/QRC, notes et vues.
+- [ ] Protéger en aperçu toute modification/ajout/suppression/réorganisation/clé/barème/corrigé pour les futures tentatives seules.
+- [ ] Signaler sans reconstruction les historiques dont le snapshot est insuffisant.
+- [ ] Tests fictifs de régression et contrôle de non-modification des données réelles ; aucune publication globale.

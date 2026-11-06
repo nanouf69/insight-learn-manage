@@ -393,16 +393,18 @@ export function controlerVersionPubliee(examen: ExamenBlanc, version: VersionPub
   const publie = (version.content ?? {}) as Partial<ContenuVersion>;
   const qp = Array.isArray(publie.questions) ? publie.questions : [];
   const ecarts: string[] = [];
-  if (qp.length !== attendu.questions.length) {
-    ecarts.push(`nombre de questions : ${qp.length} publiées vs ${attendu.questions.length} actives`);
+  const canonique = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonique);
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, item]) => [key, canonique(item)]));
+    }
+    return value;
+  };
+  if (JSON.stringify(canonique(attendu)) !== JSON.stringify(canonique(publie))) {
+    ecarts.push("contenu complet différent après relecture (identité, ordre, textes, choix, clés, corrigés ou barèmes)");
   }
-  attendu.questions.forEach((q, i) => {
-    const p = qp[i];
-    if (!p) return;
-    if (p.id !== q.id) ecarts.push(`question ${i + 1} : identifiant différent`);
-    else if (normaliser(p.enonce) !== normaliser(q.enonce)) ecarts.push(`question ${i + 1} : énoncé différent`);
-    else if (Number(p.points ?? 0) !== Number(q.points ?? 0)) ecarts.push(`question ${i + 1} : barème différent`);
-  });
   return { conforme: ecarts.length === 0, nbQuestions: qp.length, ecarts };
 }
 

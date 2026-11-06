@@ -68,8 +68,8 @@ describe("Anciennes tentatives sans snapshot : note figée", () => {
           noteEliminatoire: 0,
           noteSur: 20,
           questions: [
-            { id: 1, type: "QCM", enonce: "Q1", choix: [{ lettre: "A", texte: "a", correct: true }, { lettre: "B", texte: "b" }], ordre: 0 },
-            { id: 2, type: "QCM", enonce: "Q2", choix: [{ lettre: "A", texte: "a", correct: true }, { lettre: "B", texte: "b" }], ordre: 1 },
+            { id: 1, type: "QCM", enonce: "Q1", choix: [{ lettre: "A", texte: "a", correct: true }, { lettre: "B", texte: "b" }], points: 10, ordre: 0 },
+            { id: 2, type: "QCM", enonce: "Q2", choix: [{ lettre: "A", texte: "a", correct: true }, { lettre: "B", texte: "b" }], points: 10, ordre: 1 },
           ],
         },
         reponses: { 1: ["A"], 2: ["A"] },

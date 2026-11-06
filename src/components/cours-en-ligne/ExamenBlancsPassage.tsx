@@ -49,6 +49,7 @@ import {
   archiverMarqueursObsoletes,
   recommencerMatiereNoyau,
 } from "@/features/noyau-passage/pontV2";
+import { projeterMatiereDepuisSnapshot } from "@/features/noyau-passage/snapshotMatiere";
 import { captureError } from "@/lib/monitoring/errorLogger";
 import { deciderCloture, compterReponsesSaisies, finalisationBloqueeParRefus } from "@/lib/examClotureGarde";
 import { getAnswerSaveRejectionFor } from "@/lib/answerPersistence";
@@ -59,7 +60,7 @@ import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 
 // ===== PASSAGE D'UNE MATIÈRE =====
 function PassageMatiere({
-  matiere,
+  matiere: matiereCourante,
   numero,
   total,
   onTerminer,
@@ -91,6 +92,10 @@ function PassageMatiere({
   onSubjectRetake?: (receipt: SubjectRetakeReceipt) => void;
 }) {
 
+  // V2 : la matière affichée devient la copie figée du serveur dès sa lecture.
+  // Legacy : la source existante est conservée (voir les limites historiques documentées).
+  const [matiereV2, setMatiereV2] = useState<Matiere | null>(null);
+  const matiere = matiereV2 ?? matiereCourante;
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
@@ -298,7 +303,7 @@ function PassageMatiere({
     }
   };
 
-  const actualiserConfirmationsNoyau = async (attemptId: string) => {
+  const actualiserConfirmationsNoyau = async (attemptId: string, questionsReference: Question[] = matiere.questions) => {
     const { data, error } = await supabase
       .from("answer_state")
       .select("question_id, valeur")
@@ -312,7 +317,7 @@ function PassageMatiere({
     // RÈGLE 1 — le serveur possède les DERNIÈRES valeurs de toute la matière.
     // La seule présence d'un identifiant ne suffit plus : une modification
     // encore locale doit être renvoyée avant toute clôture.
-    const questionsMatiere = (matiere.questions ?? []).map((q: any) => String(q?.id ?? "")).filter(Boolean);
+    const questionsMatiere = (questionsReference ?? []).map((q: any) => String(q?.id ?? "")).filter(Boolean);
     const complet = questionsMatiere.length > 0 && questionsMatiere.every((id) => {
       const stableId = `${matiere.id}:${id}`;
       const cle = valeursServeur.has(stableId) ? stableId : valeursServeur.has(id) ? id : null;
@@ -381,45 +386,48 @@ function PassageMatiere({
         // Le chrono suit la tentative V2 réellement ouverte. Une réouverture
         // administrative obtient donc une nouvelle fenêtre ; F5/reconnexion sur
         // la même tentative conserve exactement la même fenêtre serveur.
-        const { data: tentativesV2 } = await supabase
+        const { data: tentativesV2, error: erreurTentativesV2 } = await supabase
           .from("exam_attempts_v2")
           .select("attempt_id, started_at, snapshot, etat")
           .eq("apprenant_id", apprenantId)
           .eq("exam_id", examenId)
           .order("started_at", { ascending: true });
+        if (erreurTentativesV2) {
+          setBlocageV2("Votre copie figée est momentanément illisible. Aucun contenu courant n'a été substitué à votre tentative.");
+          return;
+        }
         const matiereTentatives = ((tentativesV2 as { attempt_id?: string; etat?: string; snapshot?: { matiere?: string; questions?: { id?: string }[] } }[] | null) ?? [])
           .filter((row) => Boolean(row.attempt_id) && String(row.snapshot?.matiere ?? "") === String(matiere.id));
         const indexTentative = matiereTentatives.findIndex((row) => row.attempt_id === decision.attemptId);
         setTentativeChrono(subjectRetake?.tentative ?? (indexTentative >= 0 ? indexTentative + 1 : Math.max(1, Number(tentative) || 1)));
-        setBlocageV2(null);
         const nouvelle = matiereTentatives.find((row) => row.attempt_id === decision.attemptId);
-        const idsSnapshot = (nouvelle?.snapshot?.questions ?? [])
-          .filter((q) => typeof q?.id === "string")
-          .map((q) => String(q.id));
-        const idsAffiches = questionsSafe.map((q) => `${matiere.id}:${q.id}`);
-        const sujetExact =
-          idsSnapshot.length === idsAffiches.length &&
-          new Set(idsSnapshot).size === idsSnapshot.length &&
-          idsAffiches.every((id) => idsSnapshot.includes(id));
-        if (!sujetExact) {
-          setBlocageV2("Le sujet affiché ne correspond pas exactement à l'instantané serveur. Vos réponses restent conservées et aucun transfert n'a été effectué.");
+        if (!nouvelle) {
+          setBlocageV2("La tentative exacte est introuvable. Aucune autre copie et aucun sujet courant n'ont été utilisés.");
+          return;
+        }
+        const projection = projeterMatiereDepuisSnapshot(nouvelle.snapshot, matiere.id);
+        if (projection.ok === false) {
+          setBlocageV2("Cette copie figée est incomplète et nécessite une revue manuelle. Vos réponses sont conservées ; aucune question n'a été devinée depuis la version actuelle.");
           void captureError({
-            message: "[NoyauV2] synchronisation bloquée — sujet affiché différent du snapshot",
+            message: "[NoyauV2] reprise bloquée — snapshot historique insuffisant",
             source: "passage-examen-blanc",
-            fingerprint: `exam-snapshot-display-mismatch:${apprenantId}:${examenId}:${matiere.id}`,
+            fingerprint: `exam-snapshot-review:${apprenantId}:${examenId}:${matiere.id}`,
             context: {
               apprenantId,
               examenId,
               matiere: matiere.id,
               attemptId: decision.attemptId,
-              code: "SNAPSHOT_AFFICHAGE_NON_CONFORME",
-              questionsAffichees: idsAffiches.length,
-              questionsSnapshot: idsSnapshot.length,
+              code: "SNAPSHOT_HISTORIQUE_A_REVOIR",
+              raisons: projection.raisons,
               heure: new Date().toISOString(),
             },
           });
           return;
         }
+        setMatiereV2(projection.matiere);
+        setQuestionsSafe(projection.matiere.questions);
+        setBlocageV2(null);
+        const idsSnapshot = projection.matiere.questions.map((q) => `${matiere.id}:${q.id}`);
         const ancienneIds = matiereTentatives
           .filter((row) => row.etat !== "en_cours" && row.attempt_id !== decision.attemptId)
           .map((row) => String(row.attempt_id));
@@ -462,7 +470,7 @@ function PassageMatiere({
         rattraperReponsesNoyau(decision.attemptId);
         // Résolu seulement APRÈS restauration des réponses et identité chrono fixée.
         marquerResolu();
-        void viderFileNoyau(decision.attemptId).then(() => actualiserConfirmationsNoyau(decision.attemptId));
+        void viderFileNoyau(decision.attemptId).then(() => actualiserConfirmationsNoyau(decision.attemptId, projection.matiere.questions));
         return;
       }
       if (decision.moteur !== "bloque") marquerResolu();
@@ -1380,7 +1388,7 @@ function PassageMatiere({
               </div>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(matiere.id, question?.type || "QCM", matiere)} pt{getPointsParQuestion(matiere.id, question?.type || "QCM", matiere) > 1 ? "s" : ""}
+              {(question?.points ?? getPointsParQuestion(matiere.id, question?.type || "QCM", matiere))} pt{(question?.points ?? getPointsParQuestion(matiere.id, question?.type || "QCM", matiere)) > 1 ? "s" : ""}
             </Badge>
           </div>
 

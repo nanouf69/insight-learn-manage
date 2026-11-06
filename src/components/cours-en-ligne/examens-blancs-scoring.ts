@@ -65,6 +65,9 @@ export interface MatiereSnapshot {
     choix?: Array<{ lettre: string; texte?: string; correct?: boolean }>;
     reponseQRC?: string;
     reponses_possibles?: string[];
+    requiresCalcul?: boolean;
+    image?: string | null;
+    imageSize?: unknown;
     points?: number;
     ordre?: number;
   }>;
@@ -80,6 +83,22 @@ export function hasMatiereSnapshot(details: any): boolean {
       Array.isArray(s.questions) &&
       s.questions.length > 0,
   );
+}
+
+/** Une copie incomplète reste consultable avec sa note enregistrée, mais n'est jamais recalculée. */
+export function matiereSnapshotFiable(details: any): boolean {
+  if (!hasMatiereSnapshot(details)) return false;
+  const s = details.snapshot as MatiereSnapshot;
+  if (!Number.isFinite(Number(s.noteSur)) || Number(s.noteSur) <= 0) return false;
+  if (!Number.isFinite(Number(s.coefficient)) || Number(s.coefficient) <= 0) return false;
+  if (!Number.isFinite(Number(s.noteEliminatoire))) return false;
+  return (s.questions ?? []).every((q) => {
+    if (q == null || q.id == null || !String(q.enonce ?? "").trim()) return false;
+    if (!Number.isFinite(Number(q.points)) || Number(q.points) <= 0) return false;
+    if (q.type === "QRC") return true;
+    return q.type === "QCM" && Array.isArray(q.choix) && q.choix.length > 0
+      && q.choix.some((c) => c?.correct === true);
+  });
 }
 
 /**
@@ -101,6 +120,10 @@ export function buildMatiereFromSnapshot(
       choix: Array.isArray(q.choix) ? (q.choix as any) : undefined,
       reponseQRC: q.reponseQRC,
       reponses_possibles: q.reponses_possibles,
+      requiresCalcul: q.requiresCalcul,
+      image: q.image ?? undefined,
+      points: q.points,
+      ordre: q.ordre ?? idx,
       _ordre: q.ordre ?? idx,
     })) as unknown as Question[];
 
@@ -126,6 +149,10 @@ export function resolveMatiereForScoring(
   current: Matiere,
   details?: any,
 ): Matiere {
+  if (hasMatiereSnapshot(details) && !matiereSnapshotFiable(details)) {
+    // Ne jamais présenter les questions courantes comme la copie historique.
+    return { ...current, questions: [] };
+  }
   return buildMatiereFromSnapshot(details, current) ?? current;
 }
 
@@ -144,7 +171,7 @@ export function computeMatiereScoreFromReponses(
   if (questionsSafe.length === 0) return null;
 
   const scoreMax = questionsSafe.reduce(
-    (acc, q) => acc + getPointsParQuestion(matiere.id, q.type, matiere),
+    (acc, q) => acc + (q.points ?? getPointsParQuestion(matiere.id, q.type, matiere)),
     0,
   );
 
@@ -170,7 +197,7 @@ export function computeMatiereScoreFromReponses(
 
   const scoreObtenu = questionsSafe.reduce((total, q) => {
     const rep = reponses[q.id] ?? reponses[String(q.id)];
-    const pts = getPointsParQuestion(matiere.id, q.type, matiere);
+    const pts = q.points ?? getPointsParQuestion(matiere.id, q.type, matiere);
     if (q.type === "QCM") {
       const correctes = safeArray<string>(getCorrectQcmChoices(q)).sort();
       const donnees = safeArray<string>(normalizeSelectedChoices(rep)).sort();
@@ -294,33 +321,36 @@ export function computeMatiereScore(
  */
 export function computeMatiereScoreForAttempt(
   matiereCourante: Matiere,
-  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown; __core?: unknown } | null | undefined,
+  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown; reussi?: boolean; __core?: unknown } | null | undefined,
   staticFallbackMatiere?: Matiere | null,
 ): MatiereScore | null {
   if (!row) return null;
   // Passage du nouveau système publié : note serveur définitive, jamais recalculée.
   const core = coreStateScore((row as any).__core);
   if (core) {
+    const noteEliminatoire = (row as any).__core?.noteEliminatoire;
     return {
       ...core,
-      admis: computeAdmisForMatiere(core.noteSur20, 20, matiereCourante.noteEliminatoire, matiereCourante.noteSur || 20, false),
+      admis: typeof noteEliminatoire === "number"
+        ? computeAdmisForMatiere(core.noteSur20, 20, noteEliminatoire, (row as any).__core?.noteSur || 20, false)
+        : Boolean((row as any).reussi),
       passee: true,
     };
   }
   const details = (row as any).details;
 
-  if (hasMatiereSnapshot(details)) {
+  if (hasMatiereSnapshot(details) && matiereSnapshotFiable(details)) {
     return computeMatiereScore(
       resolveMatiereForScoring(matiereCourante, details),
       details?.reponses || null,
       (row as any).score_obtenu,
       (row as any).score_max,
       details?.correctionsIA || null,
-      staticFallbackMatiere ?? null,
+      null,
     );
   }
 
-  // Aucune snapshot → note figée telle qu'enregistrée.
+  // Snapshot absent ou insuffisant → note enregistrée, jamais de reconstruction courante.
   const storedObtenu = toFiniteNumber((row as any).score_obtenu, NaN);
   const storedMax = toFiniteNumber((row as any).score_max, NaN);
   const storedNote20 = toFiniteNumber((row as any).note_sur_20, NaN);
@@ -358,9 +388,12 @@ export function computeResultatMatiereScore(
   if (!resultat) return null;
   const core = coreStateScore((resultat as any).__core);
   if (core) {
+    const noteEliminatoire = (resultat as any).__core?.noteEliminatoire;
     return {
       ...core,
-      admis: computeAdmisForMatiere(core.noteSur20, 20, matiere.noteEliminatoire, matiere.noteSur || 20, false),
+      admis: typeof noteEliminatoire === "number"
+        ? computeAdmisForMatiere(core.noteSur20, 20, noteEliminatoire, (resultat as any).__core?.noteSur || 20, false)
+        : Boolean((resultat as any).admis),
       passee: true,
     };
   }
