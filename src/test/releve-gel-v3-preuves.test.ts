@@ -60,12 +60,12 @@ function sources(moduleId: number, preuve: boolean | null, progression = 50) {
   };
 }
 
-function gel(moduleId: number, preuve: boolean | null, methodeVersion = "gel-v3") {
+function gel(moduleId: number, preuve: boolean | null, methodeVersion = "gel-v3", progression = 50) {
   return {
     id: `gel-fictif-${moduleId}`,
     methode_version: methodeVersion,
     contenu: {},
-    sources: sources(moduleId, preuve),
+    sources: sources(moduleId, preuve, progression),
   };
 }
 
@@ -84,7 +84,7 @@ describe("gel-v3 — preuves serveur figées", () => {
   });
 
   it.each(cas)("%s : preuve incomplète = progression archivée, jamais 100 %%", async (type, moduleId) => {
-    const calcul = await calculerGelInitial(gel(moduleId, false, 50), { type_apprenant: type }, new Map());
+    const calcul = await calculerGelInitial(gel(moduleId, false, "gel-v3", 50), { type_apprenant: type }, new Map());
     const ligne = calcul.resultat.lignes.find((l) => l.moduleId === moduleId);
     expect(ligne?.progression).toBe(50);
     expect(calcul.completions.find((c: any) => c.module_id === moduleId)).toMatchObject({ status: "in_progress", progress: 50 });

@@ -72,7 +72,6 @@ export async function calculerGelInitial(gel: any, apprenant: { type_apprenant?:
   const dateActivites = typeof s.gele_le === "string" ? new Date(s.gele_le).toISOString() : new Date().toISOString();
   const preuvesV3 = gel.methode_version === "gel-v3";
   const completions = preuvesV3 ? completionsPreuvesFigees(s) : s.completions;
-  if (preuvesV3) console.log("DEBUG_GEL_INPUT", completions);
   const calcul = assemblerCalculJalons({
     key, filiere, parcours, parcoursInitial, gelId: gel.id,
     editorRows: lignesFigees(gel, contenus, ids), examens: examens as any,
