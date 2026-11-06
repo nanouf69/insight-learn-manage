@@ -1,11 +1,12 @@
 # Feuille de route
 
 ## 06/11 — Trois accords nominatifs et prévention des jalons prématurés
-- [ ] Audit lecture seule des UUID de Léa CATANIA, Lazer NIKA et MEHDI KEBBAB : statut EDOF, preuve externe disponible, projections et autres sources de progression.
-- [ ] Bloquer toute écriture de taux si la NON-validation EDOF externe n’est pas prouvée ; relevés gel-v2 et autres dossiers strictement inchangés.
-- [ ] Préparer le correctif prospectif serveur : preuves exhaustives, ajouts tardifs exclus, idempotence et gel versionné sans régression automatique.
-- [ ] Couvrir VTC/TAXI/TA/VA et les scénarios historiques par tests, exécuter le contrat SQL jetable et vérifier les changements embarqués avant tout déploiement.
-- [ ] Publication/déploiement uniquement après revue explicite ; consigner le verdict et les blocages.
+- [x] Audit lecture seule des trois UUID : aucune ligne EDOF et aucun connecteur/preuve externe de NON-validation ; CATANIA, NIKA et KEBBAB restent donc PROTÉGÉS. Projections confirmées comme indicatives, jamais écrites.
+- [x] Aucun taux, relevé gel-v2, réponse, note, signature ou autre dossier modifié ; aucune exécution de `geler_releves_fin_acces()`.
+- [x] Candidats prospectifs hors historique des migrations : périmètre serveur exhaustif, ajouts tardifs exclus, preuve append-only/idempotente ; gel-v3 distinct utilisant verdicts et attribution archivés, ancien gel-v2 inchangé.
+- [x] 81 tests Vitest ciblés PASS (VTC/TAXI/TA/VA, preuve fausse/indéterminée, activités, ancien gel), TypeScript/build OK ; bundle candidat synchronisé, sans déploiement.
+- [ ] Contrat SQL du gel-v3 NON PROUVÉ : harnais auxiliaire incomplet retiré, ne pas le compter comme réussi ; le contrat SQL de validation reste à confirmer dans la commande finale.
+- [ ] Écriture des trois taux BLOQUÉE par l’absence de preuve externe fiable de NON-validation EDOF ; publication/déploiement BLOQUÉS en attente de revue globale de l’aperçu et du contrat SQL du gel.
 
 ## 06/11 — Tableau de bord : apprenants à 100 % depuis septembre
 - [x] Périmètre validé : 101 dossiers non supprimés créés depuis le 01/09/2026 ; critère « Modules (jalons) » = 100 % OU « TAUX TOTAL » ≥ 100 %, mêmes calculs que la fiche.
