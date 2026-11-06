@@ -30,6 +30,14 @@ async function chargerEtAfficher() {
 }
 describe("Chargeur réel mocké : QRC du même passage", () => {
   it("lit le passage, ses réponses et sa QRC corrigée", async () => expect(await chargerEtAfficher()).toMatchObject({ etat: "note", note20: 14.5, source: "noyau" }));
+  it.each([
+    { score: 12, total: 25, attendu: 12 },
+    { score: 12, total: 10, attendu: 12 },
+    { score: 9.47, total: 19, attendu: 9.47 },
+  ])("la note serveur $score/20 n'est pas divisée une seconde fois par le barème $total", async ({ score, total, attendu }) => {
+    data.core_exam_results = [{ attempt_id: "att", result_revision: 1, status: "definitif", score, total, qrc_restantes: 0 }];
+    expect(await chargerEtAfficher()).toMatchObject({ etat: "note", note20: attendu, source: "noyau" });
+  });
   it("une réponse tronquée garde l'attente historique", async () => {
     data.answer_state = [{ attempt_id: "att", question_id: "t3p:1", valeur: "r" }];
     expect(await chargerEtAfficher()).toMatchObject({ etat: "en_attente", source: "ancien" });
