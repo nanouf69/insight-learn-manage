@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { deciderRattachementCrm, nombrePassagesCroises, type LienSessionCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 
 const TAXI_TA: LienSessionCrm = {
-  session: { id: "82b3a426-39d1-44f9-bfaa-d750c4575e8d", nom: "Session TAXI et TA - Du 26 octobre au 16 novembre 2026" },
+  session: { id: "82b3a426-39d1-44f9-bfaa-d750c4575e8d", nom: "Session TAXI et TA - Du 26 octobre au 16 novembre 2026", date_debut: "2026-10-26", date_fin: "2026-11-16" },
   debut: "2026-10-26",
   fin: "2026-11-16",
 };
 const VTC_TAXI: LienSessionCrm = {
-  session: { id: "91f00853-2ac2-4da6-996b-4832fc132b6b", nom: "Session VTC et TAXI - Du 2 au 13 novembre 2026" },
+  session: { id: "91f00853-2ac2-4da6-996b-4832fc132b6b", nom: "Session VTC et TAXI - Du 2 au 13 novembre 2026", date_debut: "2026-11-02", date_fin: "2026-11-13" },
   debut: "2026-11-02",
   fin: "2026-11-13",
 };
@@ -54,7 +54,7 @@ describe("Correction QRC V2 — inscriptions croisées EB1-TAXI", () => {
 
   it("n'étend la règle ni à un autre examen TAXI ni à trois sessions", () => {
     expect(deciderRattachementCrm({ jour: "2026-11-06", examId: "EB2-TAXI", typeApprenant: "taxi", liens: [TAXI_TA, VTC_TAXI] }).type).toBe("conflit");
-    const troisieme = { ...TAXI_TA, session: { id: "00000000-0000-0000-0000-000000000003", nom: "Troisième" } };
+    const troisieme = { ...TAXI_TA, session: { ...TAXI_TA.session, id: "00000000-0000-0000-0000-000000000003", nom: "Troisième" } };
     expect(deciderRattachementCrm({ jour: "2026-11-06", examId: "EB1-TAXI", typeApprenant: "taxi", liens: [TAXI_TA, VTC_TAXI, troisieme] }).type).toBe("conflit");
   });
 

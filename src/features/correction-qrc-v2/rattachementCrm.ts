@@ -1,5 +1,5 @@
 export type LienSessionCrm = {
-  session: { id: string; nom?: string | null };
+  session: { id: string; nom?: string | null; date_debut: string; date_fin: string };
   debut: string;
   fin: string;
 };

@@ -5,6 +5,7 @@
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
+import { nombrePassagesCroises } from "@/features/correction-qrc-v2/rattachementCrm";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -223,6 +224,7 @@ export default function AdminCorrectionQrcV2Reel() {
     : (attemptsBase ?? []).join(",");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null]);
+  const nbPassagesCroises = nombrePassagesCroises(attemptsAffiches ?? [], ebChoisi?.inscriptionCroiseeParAttempt);
   const legacyResultIds = ancienCircuit
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
@@ -560,6 +562,9 @@ export default function AdminCorrectionQrcV2Reel() {
                   {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
+                  {Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length > 0
+                    ? ` · Inscription croisée : ${Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length}`
+                    : ""}
                 </option>
               ))}
             </select>
@@ -667,6 +672,11 @@ export default function AdminCorrectionQrcV2Reel() {
             {qrcSel && (
               <span className="block font-medium text-foreground" data-testid="compteur-candidat">
                 Candidat sélectionné : {corrigeesCandidat}/{totalCandidat} QRC corrigées — {totalCandidat - corrigeesCandidat} restantes
+              </span>
+            )}
+            {nbPassagesCroises > 0 && (
+              <span className="block font-medium text-warning" data-testid="compteur-inscriptions-croisees">
+                Inscription croisée : {nbPassagesCroises} passage(s) aussi visibles dans l’autre session — ne pas additionner les totaux des deux sessions.
               </span>
             )}
           </p>}
@@ -777,7 +787,17 @@ export default function AdminCorrectionQrcV2Reel() {
                   <tbody>
                     {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
-                        <td className="sticky left-0 z-[1] bg-background px-1 py-0.5 font-medium truncate" title={t.candidat}>{t.candidat}</td>
+                        <td
+                          className="sticky left-0 z-[1] bg-background px-1 py-0.5 font-medium"
+                          title={`${t.candidat}${ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? ` — Inscription croisée, également visible dans ${ebChoisi.inscriptionCroiseeParAttempt[t.attempt_id].join(" et ")}` : ""}`}
+                        >
+                          <span className="block truncate">{t.candidat}</span>
+                          {ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? (
+                            <span className="block text-[10px] font-semibold text-warning" data-testid={`inscription-croisee-${t.attempt_id}`}>
+                              Inscription croisée
+                            </span>
+                          ) : null}
+                        </td>
                         <td
                           className="px-1 py-0.5 whitespace-nowrap text-muted-foreground truncate"
                           title={`${t.started_at ? new Date(t.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "date inconnue"} · tentative ${t.attempt_id.slice(0, 8)}`}
