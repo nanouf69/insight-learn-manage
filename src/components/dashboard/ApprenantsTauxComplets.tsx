@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, RefreshCw, RotateCcw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const DEPUIS_SEPTEMBRE = "2026-09-01";
-const CONCURRENCE = 4;
+const CONCURRENCE = 2;
 
 function lireRetires(key: string): string[] {
   try {
@@ -39,6 +39,8 @@ const formatTaux = (value: number | null) => value === null
 
 export function ApprenantsTauxComplets({ onNavigateToApprenant }: { onNavigateToApprenant: (id: string) => void }) {
   const { user } = useAuth();
+  const carteRef = useRef<HTMLDivElement>(null);
+  const [proche, setProche] = useState(false);
   const storageKey = `dashboard-taux-complets-retires:${user?.id ?? "sans-compte"}`;
   const [retraits, setRetraits] = useState<{ key: string; ids: string[] }>(() => ({ key: storageKey, ids: lireRetires(storageKey) }));
   const [aRetirer, setARetirer] = useState<ApprenantTauxComplet | null>(null);
@@ -59,8 +61,24 @@ export function ApprenantsTauxComplets({ onNavigateToApprenant }: { onNavigateTo
     if (ok) setRetraits({ key: storageKey, ids });
   };
 
+  useEffect(() => {
+    if (proche || !carteRef.current) return;
+    if (!("IntersectionObserver" in window)) { setProche(true); return; }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setProche(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "400px" });
+    observer.observe(carteRef.current);
+    return () => observer.disconnect();
+  }, [proche]);
+
   const query = useQuery({
     queryKey: ["apprenants-taux-complets", DEPUIS_SEPTEMBRE],
+    enabled: proche && !!user,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -80,7 +98,7 @@ export function ApprenantsTauxComplets({ onNavigateToApprenant }: { onNavigateTo
     .sort((a, b) => `${a.nom ?? ""} ${a.prenom ?? ""}`.localeCompare(`${b.nom ?? ""} ${b.prenom ?? ""}`, "fr"));
   const erreurs = toutesLignes.filter((row) => row.erreur).length;
 
-  return <Card>
+  return <Card ref={carteRef}>
     <CardHeader className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2 text-base"><CheckCircle2 className="h-5 w-5 text-success" />Formations à 100 %{!query.isPending && !query.isError && ` (${lignes.length})`}</CardTitle>
