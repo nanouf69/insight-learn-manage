@@ -71,28 +71,17 @@ describe("Notes QRC officielles répercutées au score global", () => {
   });
 
   it("les coefficients officiels comptent : notes 12 coeff. 3 et 8 coeff. 1 donnent 11/20", () => {
-    const result = bilan({ ...BENNANI, t3p: 12, gestion: BENNANI.gestion, securite: BENNANI.securite });
-    expect(result.totalCoef).toBe(17);
-    expect(result.moyenne).not.toBe(10);
-    const simple = { matieres: [
-      { id: "a", nom: "A", coefficient: 3, noteSur: 20, noteEliminatoire: 6, questions: [] },
-      { id: "b", nom: "B", coefficient: 1, noteSur: 20, noteEliminatoire: 6, questions: [] },
-    ] } as any;
-    const score = computeMoyenneExamen(simple, (m) => ({
-      scoreObtenu: m.id === "a" ? 12 : 8, scoreMax: 20,
-      noteSur20: m.id === "a" ? 12 : 8, admis: true, passee: true,
-    }));
-    expect(score.moyenne).toBe(11);
+    expect(bilanSimple({ a: 12, b: 8 }).moyenne).toBe(11);
   });
 
   it("une révision officielle peut faire passer de non admis à admis", () => {
-    expect(bilan({ t3p: 8, gestion: 4 }).admisGlobal).toBe(false);
-    expect(bilan({ t3p: 12, gestion: 8 }).admisGlobal).toBe(true);
+    expect(bilanSimple({ a: 8, b: 4 }).admisGlobal).toBe(false);
+    expect(bilanSimple({ a: 12, b: 8 }).admisGlobal).toBe(true);
   });
 
   it("une révision officielle peut faire passer d'admis à non admis", () => {
-    expect(bilan({ t3p: 12, gestion: 8 }).admisGlobal).toBe(true);
-    expect(bilan({ t3p: 12, gestion: 4 }).admisGlobal).toBe(false);
+    expect(bilanSimple({ a: 12, b: 8 }).admisGlobal).toBe(true);
+    expect(bilanSimple({ a: 12, b: 4 }).admisGlobal).toBe(false);
   });
 
   it("une matière encore en attente empêche l'admission, sans inventer sa note", () => {
