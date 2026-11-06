@@ -95,6 +95,14 @@ describe("Ordre des écritures décidé par le serveur", () => {
     expect(queue[0].payload.base_seq).toBe(0);
     expect(queue[0].payload.reponses.revisionState.answers["t3p:1"]).toEqual(["A"]);
     expect(queue[0].rejection.message).toContain("version plus récente");
+    enqueueAnswerSave(basePayload({
+      exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses", completed: true,
+      reponses: { revisionState: { currentIndex: 0, answers: { "t3p:1": ["A"] } } },
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const apresCloture = JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]");
+    expect(apresCloture.find((q: any) => q.payload.completed)?.blocked).toBe(true);
     expect(await flushAnswerSavesAndWait(APPRENANT, "revision_fausses_EB1", 50)).toBe(false);
   });
 

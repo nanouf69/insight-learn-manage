@@ -771,6 +771,19 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   // timer ou événement appelle le worker, Vue apprenant ne peut jamais émettre
   // la requête réseau.
   if (!isSendableInCurrentContext(item)) return "blocked";
+  if (item.payload.completed) {
+    const proprietaire = item.payload.user_id ?? authUserId;
+    const conflitMemorise = definitiveRejections.has(rejectionKey(proprietaire, item.payload.apprenant_id, item.payload.exercice_id));
+    const conflitEnFile = readQueue().some((other) =>
+      other.id !== item.id && other.blocked === true &&
+      other.payload.apprenant_id === item.payload.apprenant_id &&
+      other.payload.exercice_id === item.payload.exercice_id
+    );
+    // Une clôture ne doit jamais dépasser une réponse en conflit du même
+    // exercice : sinon le serveur figerait la version distante pendant que
+    // la version locale non synchronisée deviendrait irrécupérable en écriture.
+    if (conflitMemorise || conflitEnFile) return "blocked";
+  }
   const url = endpoint();
   // Reconnexion silencieuse : jeton renouvelé s'il expire bientôt.
   // Tablette partagée : pendant l'attente, un autre élève peut s'être
