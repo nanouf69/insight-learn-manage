@@ -69,6 +69,14 @@ class Contrat(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'23514.*incomplètes'): self.save(self.payload('final'),True,seq=0)
         self.assertEqual(before,self.sql('SELECT row_to_json(r)::text FROM reponses_apprenants r'))
         self.save(self.payload('final'),True,seq=1)
+    def test_stale_whole_state_never_overwrites_newer_server_version(self):
+        self.save(self.payload('device-a'))
+        self.save(self.payload('device-b'), seq=1)
+        before=self.sql("SELECT reponses->>'revision' FROM reponses_apprenants")
+        self.assertEqual(before,'device-b')
+        result=self.save(self.payload('late-a'),seq=1)
+        self.assertIn('t|2|f',result)
+        self.assertEqual(self.sql("SELECT reponses->>'revision' FROM reponses_apprenants"),'device-b')
     def test_other_account_rls_and_rpc_denied(self):
         self.save(self.payload())
         self.assertEqual(self.sql(f"SET ROLE authenticated; SET test.uid='{B}'; SELECT count(*) FROM reponses_apprenants"),'0')

@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 06/11 — Reprise durable « Refaire uniquement les questions fausses » EB VTC/TAXI
+- [x] Audit du composant partagé EB1–EB6 VTC/TAXI : position forcée à zéro, validation non restaurée, clés de questions communes aux matières et sauvegarde directe sans file durable.
+- [x] File serveur durable QCM/QRC, ordre/contexte/position/correction restaurés, clé matière+question, indication honnête ; double geste, requêtes tardives, conflits et clôture après reset bloqués sans écrasement.
+- [x] Recommencer conserve l’ancien brouillon dans une nouvelle tentative ; clôture après flush et relecture serveur, un seul résultat ; aucune suppression ni donnée réelle modifiée.
+- [x] 51 tests révision/files + 156 tests EB + 8 tests PostgreSQL jetables PASS ; deux scénarios Chromium fictifs ordinateur/tactile mobile PASS avec hors ligne, rechargements, reprise serveur sans file locale et un seul résultat ; TypeScript PASS.
+- [ ] Publication BLOQUÉE : revue des autres changements embarqués et autorisation distincte requises ; aucun parcours sur un élève réel effectué.
+
 ## 06/11 — Sécurisation durable des examens blancs après remise à zéro
 - [x] État initial sauvegardé sous `/tmp/eb-reset-securisation-etat-initial` ; référence : 169 Vitest PASS / 1 échec textuel obsolète, 19 tests SQL isolés PASS au contrôle précédent.
 - [x] Récupérer sans perte les files locales des tentatives `terminee` et `abandonnee`, uniquement vers le même examen/matière et des identifiants du snapshot ; tablette/rechargement et mauvais snapshot couverts par tests et Chromium fictif isolé.
