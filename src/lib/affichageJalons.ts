@@ -27,3 +27,14 @@ export function heuresEnregistreesJalons(calcul: Calcul, preuves?: PreuvesJalons
   const pratique = calcul.pratique.minutes; // Non plafonnée : présence signée + heures validées par l’admin, pas durée CPF.
   return { enLigne, pratique, total: enLigne == null ? null : enLigne + pratique };
 }
+/** Activités d'un module : seules les activités EXIGÉES sont comptées (jamais « 1/0 »). Aucune exigée = null (ligne masquée). */
+export function libelleActivitesModule(termines: readonly string[], requises: readonly string[]): string | null {
+  if (!requises.length) return null;
+  const faites = termines.filter((id) => requises.includes(id)).length;
+  return `${faites}/${requises.length} terminée(s)`;
+}
+
+/** Jalons pondérés restant à faire (libellés), pour expliquer un taux < 100 % sans le confondre avec les modules. */
+export function jalonsRestants(lignes: readonly { moduleId: number; valide: boolean; progression: number; obligatoireSansPoids?: boolean; minutesCpf: number }[], libelle: (id: number) => string): string[] {
+  return lignes.filter((l) => !l.valide && !l.obligatoireSansPoids && l.progression < 100).map((l) => `${libelle(l.moduleId)} (${formatDureeJalon(l.minutesCpf)}, ${Math.round(l.progression)} %)`);
+}
