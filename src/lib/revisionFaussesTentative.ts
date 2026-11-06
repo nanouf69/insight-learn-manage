@@ -32,3 +32,12 @@ export function choisirTentativeRevision(base: string, rows: RevisionRowLike[]):
   const max = Math.max(...mine.map((x) => x.n));
   return `${base}__r${max + 1}`;
 }
+
+/** Nouvelle tentative sans supprimer ni clôturer l'ancienne : la plus récente est reprise au retour. */
+export function nouvelleTentativeRevision(base: string, rows: RevisionRowLike[]): string {
+  const rounds = rows
+    .map((r) => roundOf(base, String(r.exercice_id)))
+    .filter((n): n is number => n != null);
+  const max = rounds.length > 0 ? Math.max(...rounds) : 0;
+  return `${base}__r${max + 1}`;
+}
