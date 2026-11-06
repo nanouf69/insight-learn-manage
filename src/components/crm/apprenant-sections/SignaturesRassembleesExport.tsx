@@ -8,6 +8,7 @@ import { chargerSignaturesRassemblees, formaterCompteSignaturesPdf } from '@/lib
 import { generateSignaturesRassembleesPdf } from '@/lib/pdf/signatures-rassemblees';
 import { chargerSignaturesManquantes } from '@/lib/signaturesManquantes';
 import { generateSignaturesManquantesPdf } from '@/lib/pdf/signatures-manquantes-pdf';
+import { EmargementPersonnaliseExport } from './EmargementPersonnaliseExport';
 
 function ExportManquantes({ apprenant }: { apprenant: any }) {
   const [state, setState] = useState<'idle' | 'loading' | 'none' | 'error'>('idle');
@@ -90,5 +91,6 @@ export function SignaturesRassembleesExport({ apprenant, totalAttendu = null, to
     <ExportPourCompte key={`${user.id}:${apprenant.id}:all`} userId={user.id} apprenant={apprenant} seulementPlanning={false} totalAttendu={totalAttendu} totalIndisponible={totalIndisponible} />
     <ExportPourCompte key={`${user.id}:${apprenant.id}:plan`} userId={user.id} apprenant={apprenant} seulementPlanning totalAttendu={totalAttendu} totalIndisponible={totalIndisponible} />
     <ExportManquantes key={`${apprenant.id}:manquantes`} apprenant={apprenant} />
+    <EmargementPersonnaliseExport key={`${apprenant.id}:perso`} apprenant={apprenant} />
   </div>;
 }
