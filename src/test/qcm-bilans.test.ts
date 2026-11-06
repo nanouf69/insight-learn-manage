@@ -19,8 +19,8 @@ const source: Question = {
 };
 
 describe("Reprendre un QCM d’un bilan", () => {
-  it("couvre les bilans exercices VTC/TAXI/TA/VA et les bilans examen VTC/TAXI/TA/VA", () => {
-    expect(MODULES_BILAN_QCM.exercices).toEqual([4, 9, 27, 29]);
+  it("couvre les bilans exercices, formation continue comprise, et les bilans examen VTC/TAXI/TA/VA", () => {
+    expect(MODULES_BILAN_QCM.exercices).toEqual([4, 9, 27, 29, 81, 82]);
     expect(MODULES_BILAN_QCM.examen).toEqual([5, 11, 28, 30]);
   });
 

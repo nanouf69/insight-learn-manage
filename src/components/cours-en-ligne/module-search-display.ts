@@ -14,6 +14,8 @@ export type SearchCanonicalRow = {
   enonce: string;
   choix: any[] | null;
   explication: string | null;
+  image?: string | null;
+  image_size?: string | null;
   active: boolean;
 };
 

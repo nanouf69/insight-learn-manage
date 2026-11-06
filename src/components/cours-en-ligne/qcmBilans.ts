@@ -11,7 +11,7 @@ import {
 export type SourceBilanQcm = "exercices" | "examen";
 
 export const MODULES_BILAN_QCM: Record<SourceBilanQcm, number[]> = {
-  exercices: [4, 9, 27, 29],
+  exercices: [4, 9, 27, 29, 81, 82],
   examen: [5, 11, 28, 30],
 };
 
