@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — Supports T3P/Gestion, lot 1/3 (VTC 2 + TAXI 10)
+- [x] Lecture seule : cinq cours ciblés par module ; VTC 2 sans PDF, TAXI 10 avec paires et forme-finder à préserver ; 5 PPTX et 5 PDF valides.
+- [x] Dix nouveaux médias avec `?v=20261106` ; 15 liens remplacés et cinq PDF ajoutés au VTC, sans autre modification.
+- [x] Relecture serveur : 20 liens exacts, dix URL HTTP 200, empreintes des autres cours/champs/exercices et forme-finder strictement identiques ; anciens fichiers conservés, aucune publication frontend.
+
 ## 06/11 — Bouton « À envoyer par mail »
 - [x] Ouvrir directement l’aperçu de relance depuis Formulaires, ramener la zone à l’écran et conserver la vérification explicite avant tout envoi.
 - [x] 10 tests PASS (aperçu, fermeture sans réouverture, zéro signature, adresse absente, règles de relance), TypeScript PASS ; clic réel à 1366×1125 avec retour visible et zéro appel d’envoi, sans publication.
