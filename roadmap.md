@@ -5,7 +5,7 @@
 - [x] Recalculer le global avec les coefficients figés et le verdict ; distinguer note juste, ancienne fiche, cache et correctifs seulement en aperçu.
 - [x] Fournir le tableau avant/après prouvé ; aucune écriture sans autorisation spécifique et aucune publication sans revue globale.
 - [x] Corrigé actif de Corrections pris comme référence : Q2 B, Q4 A, Q9 A+B, Q13 B ; il est identique à l’ancienne fiche sur 20/20 QCM et donne Sécurité 11/20, global 9,9/20, non admis. Aucune donnée modifiée.
-- [ ] Régularisation éventuelle du seul résultat natif Sécurité 9 → 11 : tableau avant/après établi, écriture bloquée sans autorisation spécifique ; ne pas publier un remplacement par 9,6.
+- [x] Résultat natif Sécurité régularisé 9 → 11 avec révision et journal ; le remplacement par 9,6 est écarté.
 - [x] Point T3P identifié : QRC Q2 honorabilité, réponse « Casier judiciaire B2 », note manuelle actuelle 0/2 ; le QCM casier Q15 est déjà 1/1. Avec Q2 = 1/2 : T3P 16,5, global 10,1 et ADMIS (Sécurité 11). Aucune écriture automatique.
 - [x] Régularisations appliquées avec journal avant/après : T3P Q2 0 → 1, T3P 16,5 et Sécurité 11 relues serveur ; global 10,1, ADMIS. Réponses, copies et snapshots inchangés.
 
