@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — Correction QRC V2 : inscriptions croisées EB1-TAXI
+- [ ] Afficher les 30 passages concernés dans chacune des deux sessions couvrantes, avec les mêmes identifiants et la mention « Inscription croisée » ; conserver les vrais conflits.
+- [ ] Empêcher les totaux trompeurs, garder EB1 VTC distinct d’EB1-TAXI et ne changer ni filtres ni navigation ni écriture.
+- [ ] Tests ciblés/non-régression, build et contrôle réel ; publication interdite sans autorisation distincte.
+
 ## 06/11 — Passage automatique à la copie suivante après notation QRC
 - [x] Après la note choisie, attente de la persistance serveur puis relecture confirmant l'état corrigé et la note exacte avant toute navigation.
 - [x] Passage à la même question du candidat suivant dans la liste courante ; copie conservée avec erreur en cas d'échec/relecture non conforme et message explicite sur la dernière copie.
