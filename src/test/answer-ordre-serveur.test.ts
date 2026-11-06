@@ -136,6 +136,81 @@ describe("Ordre des écritures décidé par le serveur", () => {
     expect(bodies[1].base_seq).toBe(1);
   });
 
+  it("reprend une clôture déjà bloquée seulement par ajouts sans conflit, avec une nouvelle opération", async () => {
+    const serveur = {
+      version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
+      correctedQuestions: [], showCorrection: false, questionOrder: ["t3p:1", "gestion:1"],
+      answers: { "t3p:1": ["A"] },
+    };
+    const local = {
+      ...serveur, currentIndex: 1, correctedCount: 1, correctedQuestions: ["gestion:1"], showCorrection: true,
+      answers: { "t3p:1": ["A"], "gestion:1": "réponse QRC fictive" },
+    };
+    localStorage.setItem("answer_save_queue_v1", JSON.stringify([{
+      id: "ancienne_sauvegarde_bloquee", queued_at: new Date().toISOString(), attempts: 1,
+      owner_user_id: "22222222-2222-2222-2222-222222222222", blocked: true,
+      rejection: { exerciceId: "revision_fausses_EB1", reason: "refused", at: new Date().toISOString() },
+      payload: basePayload({
+        exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
+        reponses: { revisionState: serveur }, score: 0, events: [{ question_id: "t3p:1", valeur: ["A"] }],
+      }),
+    }]));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"], stored_reponses: { revisionState: serveur } }),
+        text: async () => "",
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, confirmed: true, write_seq: 10, skipped_questions: [] }),
+        text: async () => "",
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    enqueueAnswerSave(basePayload({
+      exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses", completed: true,
+      reponses: { revisionState: local }, score: 1,
+      events: [{ question_id: "gestion:1", valeur: "réponse QRC fictive" }],
+    }));
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const bodies = sentBodies(fetchMock);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0].completed).toBe(true);
+    expect(bodies[1].base_seq).toBe(9);
+    expect(bodies[1].operation_id).not.toBe(bodies[0].operation_id);
+    expect(bodies[1].reponses.revisionState.answers["gestion:1"]).toBe("réponse QRC fictive");
+    expect(JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]")).toHaveLength(0);
+    await expect(flushAnswerSavesAndWait(APPRENANT, "revision_fausses_EB1", 50)).resolves.toBe(true);
+  });
+
+  it("refuse la recomposition si une réponse serveur diffère, et conserve la version locale", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"],
+        stored_reponses: { revisionState: {
+          version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
+          correctedQuestions: [], showCorrection: false, questionOrder: ["t3p:1"], answers: { "t3p:1": ["B"] },
+        } },
+      }),
+      text: async () => "",
+    }));
+    enqueueAnswerSave(basePayload({
+      exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
+      reponses: { revisionState: {
+        version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
+        correctedQuestions: [], showCorrection: false, questionOrder: ["t3p:1"], answers: { "t3p:1": ["A"] },
+      } },
+    }));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const queue = JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]");
+    expect(queue[0].blocked).toBe(true);
+    expect(queue[0].payload.reponses.revisionState.answers["t3p:1"]).toEqual(["A"]);
+  });
+
   it("compactage hors connexion : conserve le numéro d'écriture le plus ancien", async () => {
     // Aucun envoi possible (réseau en échec) : les éléments restent en file.
     vi.stubGlobal(
