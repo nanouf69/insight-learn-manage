@@ -42,9 +42,16 @@ export default function PratiqueQuestionsSupport({ moduleId, coursId }: { module
   if (!support) return null;
   const changerPage = (next: number) => { setPage(next); setZoom(1); setSrc(null); };
   return (
-    <section aria-label={support.titre} className="space-y-3 border-t pt-4 print:hidden">
-      <Button variant="outline" className="h-auto whitespace-normal gap-2 text-left" aria-expanded={ouvert} onClick={() => setOuvert(!ouvert)}>
-        <FileText className="h-4 w-4 shrink-0" />{support.titre}
+    <section aria-label={support.titre} className="space-y-3 rounded-xl border-2 border-primary bg-primary/5 p-4 shadow-md print:hidden">
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-3 w-3" aria-hidden="true">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-destructive" />
+        </span>
+        <p className="text-sm font-bold uppercase tracking-wide text-primary">À consulter avant l’examen pratique</p>
+      </div>
+      <Button size="lg" className="h-auto w-full whitespace-normal gap-3 py-4 text-left text-base font-bold" aria-expanded={ouvert} onClick={() => setOuvert(!ouvert)}>
+        <FileText className="h-6 w-6 shrink-0" />{support.titre} — {ouvert ? 'Fermer' : 'Ouvrir le document'}
       </Button>
       {ouvert && <div className="space-y-3 select-none" onContextMenu={e => e.preventDefault()}>
         <div className="flex flex-wrap justify-center items-center gap-2">
