@@ -1732,6 +1732,7 @@ export default function ExamensBlancsPage({
             </div>
           </CardContent>
         </Card>
+        {dialogPresentiel}
       </div>
     );
   }
