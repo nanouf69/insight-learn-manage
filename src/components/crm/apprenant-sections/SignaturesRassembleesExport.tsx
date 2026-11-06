@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileDown, Loader2 } from 'lucide-react';
+import { FileDown, Loader2, Mail } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -84,13 +84,21 @@ function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, 
   </div>;
 }
 
-export function SignaturesRassembleesExport({ apprenant, totalAttendu = null, totalIndisponible = false }: { apprenant: any; totalAttendu?: number | null; totalIndisponible?: boolean }) {
+export function SignaturesRassembleesExport({ apprenant, totalAttendu = null, totalIndisponible = false, onOuvrirRelanceSignatures }: { apprenant: any; totalAttendu?: number | null; totalIndisponible?: boolean; onOuvrirRelanceSignatures?: () => void }) {
   const { user, loading } = useAuth();
   if (loading || !user?.id || !apprenant?.id) return null;
   return <div className="flex flex-col items-start gap-2">
     <ExportPourCompte key={`${user.id}:${apprenant.id}:all`} userId={user.id} apprenant={apprenant} seulementPlanning={false} totalAttendu={totalAttendu} totalIndisponible={totalIndisponible} />
     <ExportPourCompte key={`${user.id}:${apprenant.id}:plan`} userId={user.id} apprenant={apprenant} seulementPlanning totalAttendu={totalAttendu} totalIndisponible={totalIndisponible} />
-    <ExportManquantes key={`${apprenant.id}:manquantes`} apprenant={apprenant} />
+    <div className="flex flex-wrap items-start gap-2">
+      <ExportManquantes key={`${apprenant.id}:manquantes`} apprenant={apprenant} />
+      {onOuvrirRelanceSignatures && (
+        <Button variant="outline" size="sm" onClick={onOuvrirRelanceSignatures} className="gap-2 whitespace-normal h-auto min-h-9 text-left">
+          <Mail className="h-4 w-4 shrink-0" />
+          À envoyer par mail
+        </Button>
+      )}
+    </div>
     <EmargementPersonnaliseExport key={`${apprenant.id}:perso`} apprenant={apprenant} />
   </div>;
 }

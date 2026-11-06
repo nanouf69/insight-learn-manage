@@ -29,6 +29,7 @@ import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
 interface Props {
   apprenant: any;
+  onOuvrirRelanceSignatures?: () => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -169,7 +170,7 @@ function getLabel(key: string): string {
 
 const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'apprenant_prenom']);
 
-export function DocumentsCompletes({ apprenant }: Props) {
+export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -843,6 +844,7 @@ export function DocumentsCompletes({ apprenant }: Props) {
             apprenant={apprenant}
             totalAttendu={bilanEdof?.planningIncomplet ? null : (bilanEdof?.objectifTotal ?? null)}
             totalIndisponible={bilanEdofErreur || bilanEdof?.planningIncomplet === true}
+            onOuvrirRelanceSignatures={onOuvrirRelanceSignatures}
           />
         </CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
