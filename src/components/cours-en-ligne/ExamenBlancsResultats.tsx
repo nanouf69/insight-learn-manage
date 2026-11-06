@@ -568,9 +568,9 @@ function EcranResultats({
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
     const out: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
-    examen.matieres.forEach((matiere, mi) => {
+    examenPourCalcul.matieres.forEach((matiere, mi) => {
       if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
-      const r = resultats[mi];
+      const r = resultats.find((item) => item.matiereId === matiere.id) ?? resultats[mi];
       if (!r) return;
       const qSafe = questionsRevisionDuPassage(matiere, r as any);
       const matiereDuPassage = { ...matiere, questions: qSafe };

@@ -287,13 +287,14 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     expect(src).toContain("sauvegardées sur le serveur");
   });
 
-  it("aucune réponse locale n'est renvoyée si le sujet affiché diffère du snapshot", () => {
+  it("la reprise affiche exclusivement le snapshot et signale toute copie insuffisante", () => {
     const src = read(PASSAGE);
-    const controle = src.indexOf("const sujetExact");
+    const controle = src.indexOf("projeterMatiereDepuisSnapshot");
     const rattrapage = src.indexOf("rattraperReponsesNoyau(decision.attemptId)");
     expect(controle).toBeGreaterThan(-1);
     expect(rattrapage).toBeGreaterThan(controle);
-    expect(src).toContain("SNAPSHOT_AFFICHAGE_NON_CONFORME");
+    expect(src).toContain("setQuestionsSafe(projection.matiere.questions)");
+    expect(src).toContain("SNAPSHOT_HISTORIQUE_A_REVOIR");
   });
 
   it("le remappage s'arrête si une seule question ne correspond pas au snapshot", () => {
