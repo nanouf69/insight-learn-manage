@@ -40,6 +40,9 @@ export interface Question {
   reponseQRC?: string;
   reponses_possibles?: string[];
   requiresCalcul?: boolean;
+  /** Présent uniquement dans une copie figée : ne jamais remplacer par le barème courant. */
+  points?: number;
+  ordre?: number;
 }
 
 /**
@@ -79,6 +82,8 @@ export interface Matiere {
    * la version de référence d'une matière partagée entre plusieurs examens.
    */
   _editedAt?: string;
+  /** Plus petit identifiant jamais réutilisable pour les prochaines questions de cette matière. */
+  prochainIdQuestion?: number;
 }
 
 

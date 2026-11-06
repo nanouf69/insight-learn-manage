@@ -37,7 +37,7 @@ export type ContenuVersion = {
   exam_libelle: string;
   filiere: string;
   exam_numero: string;
-  matieres: { subject_id: string; titre: string; ordre: number; duree: number; coefficient: number; note_sur: number }[];
+    matieres: { subject_id: string; titre: string; ordre: number; duree: number; coefficient: number; note_sur: number; note_eliminatoire: number; pts_qcm?: number; pts_qrc?: number; texte_support?: string; texte_source?: string }[];
   questions: {
     id: string;
     matiere: string;
@@ -46,6 +46,8 @@ export type ContenuVersion = {
     enonce: string;
     choix: Question["choix"] | null;
     reponseQRC: string | null;
+    reponses_possibles: string[] | null;
+    requiresCalcul: boolean | null;
     image: string | null;
     points: number;
   }[];
@@ -70,6 +72,11 @@ export function contenuVersionDepuisExamen(examen: ExamenBlanc): ContenuVersion 
       duree: m.duree ?? 0,
       coefficient: m.coefficient ?? 1,
       note_sur: m.noteSur ?? 0,
+      note_eliminatoire: m.noteEliminatoire ?? 0,
+      pts_qcm: m.ptsQCM,
+      pts_qrc: m.ptsQRC,
+      texte_support: m.texteSupport,
+      texte_source: m.texteSource,
     })),
     questions: matieres.flatMap((m) =>
       (m.questions ?? [])
@@ -82,6 +89,8 @@ export function contenuVersionDepuisExamen(examen: ExamenBlanc): ContenuVersion 
           enonce: q.enonce ?? "",
           choix: q.choix ?? null,
           reponseQRC: q.reponseQRC ?? null,
+          reponses_possibles: q.reponses_possibles ?? null,
+          requiresCalcul: q.requiresCalcul ?? null,
           image: q.image ?? null,
           points: getPointsParQuestion(m.id, q.type, m),
         })),
