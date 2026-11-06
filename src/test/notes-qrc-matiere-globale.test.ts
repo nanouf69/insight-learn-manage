@@ -33,6 +33,17 @@ function bilan(notes: Record<string, number>) {
   });
 }
 
+function bilanSimple(notes: Record<string, number>) {
+  const exam = { matieres: [
+    { id: "a", nom: "A", coefficient: 3, noteSur: 20, noteEliminatoire: 6, questions: [] },
+    { id: "b", nom: "B", coefficient: 1, noteSur: 20, noteEliminatoire: 6, questions: [] },
+  ] } as any;
+  return computeMoyenneExamen(exam, (m) => ({
+    scoreObtenu: notes[m.id], scoreMax: 20, noteSur20: notes[m.id],
+    admis: notes[m.id] >= 6, passee: true,
+  }));
+}
+
 const BENNANI = { t3p: 15.5, gestion: 11, securite: 9, francais: 10, anglais: 8, reglementation_vtc: 7, reglementation_vtc2: 6 };
 const MALKI = { t3p: 3.5, gestion: 11, securite: 8, francais: 13, anglais: 7, reglementation_vtc: 11, reglementation_vtc2: 11 };
 const SELMI = { t3p: 1.5, gestion: 5, securite: 6, francais: 11, anglais: 7, reglementation_vtc: 6.5, reglementation_vtc2: 7 };
