@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 06/11 — Reprise durable « Refaire uniquement les questions fausses » EB VTC/TAXI
+- [ ] Auditer EB1–EB6 VTC/TAXI : réponses QCM/QRC, position/ordre/contexte, confirmations serveur, reprise multi-appareil et secours local explicite.
+- [ ] Tester hors ligne, double clic, réponses en retard, conflits de versions et reset simultané sans modifier de données réelles.
+- [ ] Corriger minimalement les lacunes démontrées, avec tests comportementaux et scénario navigateur fictif isolé si possible.
+- [ ] Vérifier non-régression, compilation et sécurité ; publication bloquée sans revue des autres changements et autorisation distincte.
+
 ## 06/11 — Sécurisation durable des examens blancs après remise à zéro
 - [x] État initial sauvegardé sous `/tmp/eb-reset-securisation-etat-initial` ; référence : 169 Vitest PASS / 1 échec textuel obsolète, 19 tests SQL isolés PASS au contrôle précédent.
 - [x] Récupérer sans perte les files locales des tentatives `terminee` et `abandonnee`, uniquement vers le même examen/matière et des identifiants du snapshot ; tablette/rechargement et mauvais snapshot couverts par tests et Chromium fictif isolé.
