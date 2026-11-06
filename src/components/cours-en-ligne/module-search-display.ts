@@ -14,6 +14,8 @@ export type SearchCanonicalRow = {
   enonce: string;
   choix: any[] | null;
   explication: string | null;
+  image?: string | null;
+  image_size?: string | null;
   active: boolean;
 };
 
@@ -40,6 +42,7 @@ export function exercicesAffichesPourRecherche(
   exercices: any[],
   rows: SearchCanonicalRow[],
   bindings: SearchCanonicalBinding[],
+  options: { strict?: boolean } = {},
 ): any[] {
   const quizIds = SEARCH_CANONICAL_QUIZ_IDS[moduleId];
   const moduleBindings = bindings.filter((b) => Number(b.module_id) === moduleId);
@@ -48,7 +51,8 @@ export function exercicesAffichesPourRecherche(
   let selected: SearchCanonicalRow[];
   try {
     selected = selectBilanNationalDisplayRows(moduleId, moduleRows);
-  } catch {
+  } catch (error) {
+    if (options.strict) throw error;
     return exercices; // source incohérente : on garde la recherche actuelle
   }
   const bySection = new Map<number, SearchCanonicalRow[]>();
@@ -67,6 +71,8 @@ export function exercicesAffichesPourRecherche(
         id: Number(r.legacy_question_id),
         enonce: r.enonce,
         choix: Array.isArray(r.choix) ? r.choix : [],
+        ...(r.image ? { image: r.image } : {}),
+        ...(r.image_size ? { imageSize: r.image_size } : {}),
         ...(r.explication ? { explication: r.explication } : {}),
       })),
     };
