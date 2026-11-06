@@ -1,10 +1,10 @@
 # Feuille de route
 
 ## 06/11 — Taux d’échec au premier passage non affiché en rouge
-- [ ] Diagnostiquer en lecture seule l’écran admin : présence du taux, chargement, sessions actives, calcul premier essai, onglets et condition de couleur ; ne pas confondre échec à l’examen ou QRC en attente.
-- [ ] Comparer au moins un taux source attendu à l’affichage pour les sessions TAXI/TA et VTC/TAXI, JOURNÉE/SOIRÉE, avec QCM/QRC et preuves insuffisantes distingués.
-- [ ] Si bug démontré, préparer uniquement le correctif minimal calcul/affichage et les tests ; aucune donnée réelle modifiée.
-- [ ] Publication interdite sans revue des autres changements de l’aperçu et autorisation distincte.
+- [x] Diagnostic : taux placés sous chaque question, pas dans les lignes de sessions. Deux causes : preuves natives rejetées (`revision_precedente` NULL et auteur `auth_user_id`), puis texte toujours gris. QRC sans preuve de correction et notes en attente non comptées comme échecs.
+- [x] Données réelles relues : trois sessions actives, 12/16/18 éligibles ; onglets Global/JOURNÉE/SOIRÉE conformes. EB1 Gestion Q3 : 60 % (3/5) TAXI/TA, 29 % (4/14) VTC/TAXI journée, 100 % (1/1) soir ; avant = données insuffisantes grises.
+- [x] Correctifs minimaux dans `premierPassageExamStats(Read).ts` et `QuestionFirstPassageRate.tsx` ; rouge si erreur prouvée > 0, zéro/inconnu neutre. 62 tests PASS, TypeScript et build OK, écran réel et ligne rouge vérifiés, aucune donnée modifiée.
+- [ ] Publication BLOQUÉE : autres changements de l’aperçu non validés et autorisation distincte absente.
 
 ## 06/11 — Répercussion des corrections QRC sur matières, score global et admission
 - [x] Audit lecture seule des 18 EB : 2 278 tentatives éligibles, 5 160 QRC corrigées, 824 passages natifs sans écart ; tests/neutralisées exclus, aucun recalcul persisté.
