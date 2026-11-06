@@ -1,4 +1,5 @@
 # Persistence boundaries
+- EB first-passage QRC statistics use the submitted qrc_instances_v2 copy and frozen points, with human correction priority or an exactly matching applied AI receipt; full marks = success, pending/retakes stay unproven, never grade the first keystroke; why: typing events are not submitted answers and unvalidated corrections cannot invent failure rates.
 - Equipment custom quiz transport always sends a null SQL score and confirms only identical account-scoped version/revision/answers readback; why: these guarded activities are non-graded and old rejected operations must not cancel a proven submission.
 - Optional TAXI quiz drafts use account/quiz/attempt-scoped pending journals, serialized per-answer RPCs and same-account readback; conflicts preserve both versions, submitted answers use server proof only; why: device races and offline retries cannot falsely validate or erase drafts.
 - Editor save acknowledgements apply only to their local edit revision; unfinished currency-only choices remain local and explicit saves cancel pending draft timers; why: older asynchronous replies must never publish a missing amount or erase a newer input.
