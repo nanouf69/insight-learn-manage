@@ -36,6 +36,7 @@ import { copierQcmPourImport } from "./qcmBilans";
 import { AdminExamQuestionCard } from "./AdminExamQuestionCard";
 import { publierVersionExamen } from "@/features/noyau-passage/pontV2";
 import { controlerVersionPubliee, lireVersions, versionActive, type VersionPubliee } from "@/features/noyau-passage/publicationV2";
+import { prochainIdQuestionDisponible } from "./examQuestionIdentity";
 
 // Virtual module_id range for examens blancs: 90000+
 // Stable mapping from exam ID → module_id (survives reordering / additions)
@@ -1038,11 +1039,7 @@ function MatiereEditor({
   const appendQuestion = (base: Omit<Question, "id">) => {
     const editedAt = new Date().toISOString();
     // Compteur monotone persisté : supprimer le plus grand ID ne le rend plus réutilisable.
-    const newId = Math.max(
-      Number(matiere.prochainIdQuestion) || 1,
-      1,
-      ...questionsSafe.map((q) => (Number.isSafeInteger(q.id) && q.id > 0 ? q.id + 1 : 1)),
-    );
+    const newId = prochainIdQuestionDisponible({ ...matiere, questions: questionsSafe });
     // Même structure que les questions existantes + marqueurs d'édition Admin.
     const newQ = { ...base, id: newId, manually_edited: true, _editedAt: editedAt } as Question;
     const newQuestions = [...questionsSafe, newQ];
