@@ -1695,6 +1695,13 @@
       "when": 1793908260822,
       "tag": "0241_bilan_francais_supports_release_additif",
       "breakpoints": true
+    },
+    {
+      "idx": 242,
+      "version": "7",
+      "when": 1793965262246,
+      "tag": "0242_secure_exam_reset_retake_authorization",
+      "breakpoints": true
     }
   ]
 }

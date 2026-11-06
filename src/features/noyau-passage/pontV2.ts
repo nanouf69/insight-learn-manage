@@ -198,7 +198,7 @@ export async function demarrerTentative(params: {
   // ses réponses seraient refusées avec ATTEMPT_CLOSED. Une réouverture n'est
   // permise que si cette tentative figure explicitement au journal append-only
   // des neutralisations administratives.
-  const [{ data: etat }, { data: neutralisation }] = await Promise.all([
+  const [{ data: etat, error: erreurEtat }, { data: neutralisation, error: erreurNeutralisation }] = await Promise.all([
     supabase.from("exam_attempts_v2").select("etat").eq("attempt_id", attemptId).maybeSingle(),
     supabase
       .from("core_tentatives_neutralisees")
@@ -207,14 +207,32 @@ export async function demarrerTentative(params: {
       .maybeSingle(),
   ]);
   const etatRejoue = (etat as { etat?: string } | null)?.etat;
+  // État illisible = échec fermé : renvoyer l'ancien ID pourrait refaire
+  // échouer toutes les réponses avec ATTEMPT_CLOSED.
+  if (erreurEtat || erreurNeutralisation || !etatRejoue) {
+    console.warn("[PontV2] état de tentative illisible, ouverture interrompue:", {
+      attemptId,
+      etat: erreurEtat?.message,
+      neutralisation: erreurNeutralisation?.message,
+    });
+    return null;
+  }
+
+  const relireNouvelleOuverture = async (recree: unknown): Promise<string | null> => {
+    const nouvelId = (recree as { attempt_id?: string } | null)?.attempt_id ?? null;
+    if (!nouvelId || nouvelId === attemptId) return null;
+    const { data: etatNouveau, error: erreurEtatNouveau } = await supabase
+      .from("exam_attempts_v2")
+      .select("etat")
+      .eq("attempt_id", nouvelId)
+      .maybeSingle();
+    if (erreurEtatNouveau || (etatNouveau as { etat?: string } | null)?.etat !== "en_cours") return null;
+    return nouvelId;
+  };
+
   // Toute tentative fermée (terminee, abandonnee après remise à zéro…) non
   // neutralisée n'est jamais reprise : ses réponses seraient refusées.
-  if (etatRejoue && etatRejoue !== "en_cours" && (!neutralisation || etatRejoue !== "terminee")) {
-    // CAUSE COMMUNE Kevin/Thierno : le rejeu idempotent renvoie une tentative
-    // clôturée. On ne la réutilise JAMAIS (ses réponses seraient refusées avec
-    // ATTEMPT_CLOSED) et on ne bloque plus l'apprenant : on redemande au noyau
-    // une ouverture avec une nouvelle opération. Le serveur reste l'autorité
-    // (règle des 48 h, propriété, version publiée) : s'il refuse, on bloque.
+  if (etatRejoue !== "en_cours" && (!neutralisation || etatRejoue !== "terminee")) {
     console.warn("[PontV2] tentative clôturée rejouée, nouvelle ouverture demandée:", attemptId);
     const opFraiche = await operationId(`start-after-closed:${attemptId}:${Date.now()}`);
     const { data: recree, error: erreurRecree } = await demarrer(opFraiche);
@@ -222,24 +240,16 @@ export async function demarrerTentative(params: {
       console.warn("[PontV2] ouverture après tentative clôturée refusée:", erreurRecree.message);
       return null;
     }
-    const nouvelId = (recree as unknown as { attempt_id?: string } | null)?.attempt_id ?? null;
-    if (!nouvelId || nouvelId === attemptId) return null;
-    const { data: etatNouveau } = await supabase
-      .from("exam_attempts_v2")
-      .select("etat")
-      .eq("attempt_id", nouvelId)
-      .maybeSingle();
-    if ((etatNouveau as { etat?: string } | null)?.etat !== "en_cours") return null;
-    return nouvelId;
+    return relireNouvelleOuverture(recree);
   }
-  if ((etat as { etat?: string } | null)?.etat === "terminee" && neutralisation) {
+  if (etatRejoue === "terminee" && neutralisation) {
     const reopenOp = await operationId(`reopen:${attemptId}`);
     const { data: reopened, error: reopenError } = await demarrer(reopenOp);
     if (reopenError) {
       console.warn("[PontV2] réouverture administrative refusée:", reopenError.message);
       return null;
     }
-    return (reopened as unknown as { attempt_id?: string } | null)?.attempt_id ?? null;
+    return relireNouvelleOuverture(reopened);
   }
   return attemptId;
 }

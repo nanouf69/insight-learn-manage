@@ -4517,6 +4517,7 @@ export type Database = {
           granted_email: string | null
           id: string
           motif: string
+          reset_id: string | null
           result_ids: Json
           revoked_at: string | null
         }
@@ -4529,6 +4530,7 @@ export type Database = {
           granted_email?: string | null
           id?: string
           motif?: string
+          reset_id?: string | null
           result_ids?: Json
           revoked_at?: string | null
         }
@@ -4541,10 +4543,19 @@ export type Database = {
           granted_email?: string | null
           id?: string
           motif?: string
+          reset_id?: string | null
           result_ids?: Json
           revoked_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exam_retake_authorizations_reset_fk"
+            columns: ["reset_id"]
+            isOneToOne: false
+            referencedRelation: "core_exam_resets"
+            referencedColumns: ["reset_id"]
+          },
+        ]
       }
       exam_subject_retakes: {
         Row: {

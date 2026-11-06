@@ -20,6 +20,7 @@ import {
   getPendingAnswerSaves,
   setAnswerSaveAuthToken,
   setAnswerSaveOwnership,
+  answersAreEqual,
 } from "@/lib/answerPersistence";
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), "utf-8");
@@ -61,7 +62,7 @@ describe("Réponse enregistrée ≠ matière terminée", () => {
   it("1b — le noyau exige les identifiants exacts du snapshot côté serveur avant de clôturer (tolérant à la mise en page)", () => {
     const src = read(SRC).replace(/\s+/g, "");
     expect(src).toContain('supabase.from("exam_attempts_v2").select("snapshot")');
-    expect(src).toContain('supabase.from("answer_state").select("question_id")');
+    expect(src).toContain('supabase.from("answer_state").select("question_id,valeur")');
     expect(src).toContain("requis.every");
     expect(src).toContain("clotureForcee?idsSnapshot.filter");
     expect(src).toContain("!confirmation?.contenuConforme||!confirmation.toutesConfirmees");
@@ -87,14 +88,20 @@ describe("1a — clôture autorisée seulement si le serveur possède toutes les
     // La fonction extraite lit deux éléments de la portée englobante :
     // `clotureForcee` (clôture normale vs forcée) et `idsSaisis` (réponses
     // réellement saisies par l'élève). On les fournit comme paramètres.
-    return new Function(
-      "supabase", "attemptId", "matiere", "attendues", "clotureForcee", "idsSaisis",
+    const fabrique = new Function(
+      "supabase", "attemptId", "matiere", "attendues", "clotureForcee", "idsSaisis", "answersAreEqual", "latestReponsesRef",
       `${js}; return lireConfirmationNoyau;`,
     );
+    return (supabase: any, attemptId: string, matiere: any, attendues: number, clotureForcee: boolean, idsSaisis: Set<string>) =>
+      fabrique(
+        supabase, attemptId, matiere, attendues, clotureForcee, idsSaisis,
+        answersAreEqual,
+        { current: Object.fromEntries(Array.from({ length: attendues }, (_, i) => [`q${i + 1}`, "A"])) },
+      );
   };
   const serveur = (nbQuestions: number, nbReponses: number) => {
     const snapshot = { questions: Array.from({ length: nbQuestions }, (_, i) => ({ id: `q${i + 1}`, matiere: "t3p" })) };
-    const reponses = Array.from({ length: nbReponses }, (_, i) => ({ question_id: `q${i + 1}` }));
+    const reponses = Array.from({ length: nbReponses }, (_, i) => ({ question_id: `q${i + 1}`, valeur: "A" }));
     return {
       from: (table: string) => ({
         select: () => ({

@@ -16,24 +16,46 @@ const deferred = <T,>(): Deferred<T> => {
 const h = vi.hoisted(() => ({
   lectures: [] as Array<() => Promise<any>>,
   routage: null as null | (() => Promise<any>),
-  remaining: 0,
+  remaining: 1800,
   rpcCalls: 0,
   flush: [] as Array<() => Promise<boolean>>,
   enqueue: [] as any[],
+  reponsesNoyau: [] as any[],
+  tentativesListe: [] as any[],
+  tentativeUne: null as any,
+  resultatUne: null as any,
+  finaliser: null as null | (() => Promise<any>),
+  noyauEnfile: [] as any[],
+  remappageAppels: [] as any[],
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const chain = (table: string) => {
     const b: any = {
-      select: () => b, eq: () => b, in: () => b, order: () => b, limit: () => b,
+      selection: "",
+      select: (colonnes: string) => { b.selection = colonnes; return b; },
+      eq: () => b, in: () => b, order: () => b, limit: () => b,
       maybeSingle: () => {
         if (table === "reponses_apprenants") {
           const next = h.lectures.shift();
           return next ? next() : Promise.resolve({ data: null, error: null });
         }
+        if (table === "exam_attempts_v2") {
+          return Promise.resolve({ data: h.tentativeUne, error: null });
+        }
+        if (table === "core_exam_results") {
+          return Promise.resolve({ data: h.resultatUne, error: null });
+        }
         return Promise.resolve({ data: null, error: null });
       },
-      then: (ok: any, ko: any) => Promise.resolve({ data: [], error: null }).then(ok, ko),
+      then: (ok: any, ko: any) => {
+        const data = table === "answer_state"
+          ? h.reponsesNoyau
+          : table === "exam_attempts_v2"
+            ? h.tentativesListe
+            : [];
+        return Promise.resolve({ data, error: null }).then(ok, ko);
+      },
     };
     return b;
   };
@@ -48,13 +70,16 @@ vi.mock("@/integrations/supabase/client", () => {
 
 vi.mock("@/features/noyau-passage/pontV2", () => ({
   routerPassage: () => (h.routage ? h.routage() : Promise.resolve({ moteur: "legacy" })),
-  enfilerReponseNoyau: vi.fn(),
+  enfilerReponseNoyau: (params: any) => { h.noyauEnfile.push(params); },
   viderFileNoyau: vi.fn(async () => ({ restantes: 0 })),
-  finaliserMatiere: vi.fn(async () => ({ ok: true })),
+  finaliserMatiere: () => h.finaliser ? h.finaliser() : Promise.resolve({ ok: true }),
   reponsesNoyauEnAttente: () => 0,
   reponsesNoyauEcartees: () => 0,
   questionsNoyauEcartees: () => new Set(),
-  remapperFileApresReouverture: () => ({ ok: true, correspondance: 0 }),
+  remapperFileApresReouverture: (params: any) => {
+    h.remappageAppels.push(params);
+    return { ok: true, correspondance: params.questionIdsSnapshot.length };
+  },
   archiverMarqueursObsoletes: vi.fn(),
   recommencerMatiereNoyau: vi.fn(),
 }));
@@ -95,8 +120,24 @@ const monter = (props: Partial<any> = {}) => {
 };
 const flushAll = async () => { for (let i = 0; i < 8; i++) await act(async () => { await Promise.resolve(); }); };
 
+const preparerV2 = (valeur: any = ["A"]) => {
+  h.remaining = 1800;
+  const snapshot = {
+    matiere: matiere.id,
+    questions: [{ id: `${matiere.id}:1`, matiere: matiere.id, type: "QCM" }],
+  };
+  h.routage = () => Promise.resolve({ moteur: "v2", attemptId: "nouvelle" });
+  h.tentativesListe = [{ attempt_id: "nouvelle", etat: "en_cours", snapshot }];
+  h.tentativeUne = { etat: "terminee", snapshot };
+  h.reponsesNoyau = [{ question_id: `${matiere.id}:1`, valeur }];
+  h.lectures.push(ligne({ 1: valeur }));
+  return snapshot;
+};
+
 beforeEach(() => {
   h.lectures = []; h.routage = null; h.remaining = 0; h.rpcCalls = 0; h.flush = []; h.enqueue = [];
+  h.reponsesNoyau = []; h.tentativesListe = []; h.tentativeUne = null; h.resultatUne = null;
+  h.finaliser = null; h.noyauEnfile = []; h.remappageAppels = [];
 });
 
 describe("clôture d'une matière — comportement", () => {
@@ -188,5 +229,55 @@ describe("clôture d'une matière — comportement", () => {
     await flushAll();
     expect(onTerminer).toHaveBeenCalledTimes(1);
     expect(new Set(terminales().map((p) => p.exercice_id)).size).toBe(1);
+  });
+
+  it("reset : les réponses locales d'une tentative abandonnée sont proposées au remappage du même snapshot", async () => {
+    const snapshot = preparerV2();
+    h.tentativesListe.push({ attempt_id: "ancienne-abandonnee", etat: "abandonnee", snapshot });
+    monter();
+    await waitFor(() => expect(h.remappageAppels).toHaveLength(1));
+    expect(h.remappageAppels[0]).toMatchObject({
+      anciensAttemptIds: ["ancienne-abandonnee"],
+      nouvelAttemptId: "nouvelle",
+      matiereId: matiere.id,
+      questionIdsSnapshot: [`${matiere.id}:1`],
+    });
+  });
+
+  it("une ancienne valeur serveur ne suffit pas : la dernière valeur locale est renvoyée et la clôture reste bloquée", async () => {
+    preparerV2(["A"]); // serveur encore à A
+    h.lectures = [ligne({ 1: ["B"] })]; // tablette à B
+    const fin = vi.fn(async () => ({ ok: true }));
+    h.finaliser = fin;
+    const { onTerminer } = monter();
+    await flushAll();
+    fireEvent.click(screen.getByRole("button", { name: "Terminer la matière" }));
+    await waitFor(() => expect(h.noyauEnfile.some((r) => JSON.stringify(r.valeur) === JSON.stringify(["B"]))).toBe(true));
+    expect(fin).not.toHaveBeenCalled();
+    expect(onTerminer).not.toHaveBeenCalled();
+  });
+
+  it("ATTEMPT_CLOSED sur tentative abandonnée : jamais assimilé à une réussite", async () => {
+    preparerV2();
+    h.tentativeUne.etat = "abandonnee";
+    h.resultatUne = null;
+    const fin = vi.fn(async () => ({ ok: false, message: "ATTEMPT_CLOSED" }));
+    h.finaliser = fin;
+    const { onTerminer } = monter();
+    await flushAll();
+    fireEvent.click(screen.getByRole("button", { name: "Terminer la matière" }));
+    await waitFor(() => expect(fin).toHaveBeenCalledTimes(1));
+    await flushAll();
+    expect(onTerminer).not.toHaveBeenCalled();
+  });
+
+  it("ATTEMPT_CLOSED sur tentative terminée avec résultat : relecture puis succès idempotent", async () => {
+    preparerV2();
+    h.resultatUne = { result_id: "resultat-fictif" };
+    h.finaliser = () => Promise.resolve({ ok: false, message: "ATTEMPT_CLOSED" });
+    const { onTerminer } = monter();
+    await flushAll();
+    fireEvent.click(screen.getByRole("button", { name: "Terminer la matière" }));
+    await waitFor(() => expect(onTerminer).toHaveBeenCalledTimes(1));
   });
 });

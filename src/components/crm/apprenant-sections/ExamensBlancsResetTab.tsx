@@ -37,6 +37,8 @@ import {
 } from "@/components/cours-en-ligne/examens-blancs-utils";
 import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
+import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/examResetAdmin";
+import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
 const STATIC_EXAMENS_BLANCS = [
@@ -121,11 +123,19 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
       if (error) throw error;
 
+      const { data: resetRows, error: resetError } = await supabase
+        .from("core_exam_resets")
+        .select("exam_id, cutoff_at, archived_legacy_result_ids")
+        .eq("apprenant_id", apprenant.id);
+      if (resetError) throw resetError;
+      const archivedLegacyIds = idsResultatsLegacyArchives(resetRows);
+      const resetCutoffs = latestExamResetCutoffs(resetRows);
+
       // Group rows by quiz_id, then dedupe per matière via selectLatestAttemptRows
       // (same logic as ExamenBlancsListe.tsx côté élève) so admin & student agree.
       const rowsByQuiz = new Map<string, any[]>();
       for (const row of (data || [])) {
-        if (!row?.quiz_id) continue;
+        if (!row?.quiz_id || archivedLegacyIds.has(String(row.id))) continue;
         if (!rowsByQuiz.has(row.quiz_id)) rowsByQuiz.set(row.quiz_id, []);
         rowsByQuiz.get(row.quiz_id)!.push(row);
       }
@@ -190,6 +200,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
         for (const row of inProgressData) {
           const parts = (row.exercice_id ?? "").split("_");
           const examPart = parts[0] ?? ""; // e.g. "EB6"
+          if (!isAfterExamReset(row.updated_at, resetCutoffs[examPart])) continue;
           const existing = inProgressByExam.get(examPart);
           const date = row.updated_at ?? "";
           if (existing) {
@@ -259,113 +270,28 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       if (!user) { toast.error("Session expirée"); return; }
 
       if (matiere) {
-        // Reset single matière — quiz_results + reponses
-        const exerciceId = `${matiere.quiz_id}_${matiere.matiere_id}`;
-
-        const { error } = await supabase
-          .from("apprenant_quiz_results")
-          .delete()
-          .eq("apprenant_id", apprenant.id)
-          .eq("quiz_type", "examen_blanc")
-          .eq("quiz_id", matiere.quiz_id)
-          .eq("matiere_id", matiere.matiere_id);
-        if (error) throw error;
-
-        // Also delete matching reponses_apprenants
-        await supabase
-          .from("reponses_apprenants")
-          .delete()
-          .eq("apprenant_id", apprenant.id)
-          .eq("exercice_id", exerciceId);
-
-        await supabase.from("audit_logs").insert({
-          action: "reset_examen_blanc_matiere",
-          admin_user_id: user.id,
-          admin_email: user.email ?? null,
-          apprenant_id: apprenant.id,
-          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
-          details: {
-            examen_label: group.examenLabel,
-            matiere_id: matiere.matiere_id,
-            matiere_nom: matiere.matiere_nom,
-            quiz_id: matiere.quiz_id,
-            exercice_id: exerciceId,
-          },
-        });
-
-        toast.success(`${matiere.matiere_nom} réinitialisée (${group.examenLabel})`);
-      } else {
-        // Reset full exam — quiz_results + ALL reponses (completed + in-progress)
-        const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
-
-        for (const qid of quizIds) {
-          const { error } = await supabase
-            .from("apprenant_quiz_results")
-            .delete()
-            .eq("apprenant_id", apprenant.id)
-            .eq("quiz_type", "examen_blanc")
-            .eq("quiz_id", qid);
-          if (error) throw error;
-        }
-
-        // Delete all reponses for each matière of this exam (from results)
-        const exerciceIds = group.results.map((r) => `${r.quiz_id}_${r.matiere_id}`);
-        // Also include in-progress exercice IDs not covered by results
-        const allExerciceIds = [...new Set([
-          ...exerciceIds,
-          ...(group.inProgressExerciceIds || []),
-        ])];
-
-        for (const eid of allExerciceIds) {
-          await supabase
-            .from("reponses_apprenants")
-            .delete()
-            .eq("apprenant_id", apprenant.id)
-            .eq("exercice_id", eid);
-        }
-
-        // Safety net: also delete any remaining reponses matching EB{num}_%
-        // This catches orphaned rows not tracked in results or inProgressExerciceIds
-        const ebPrefix = quizIds[0] || `EB${group.examenNum}`;
-        const { data: orphans } = await supabase
-          .from("reponses_apprenants")
-          .select("exercice_id")
-          .eq("apprenant_id", apprenant.id)
-          .like("exercice_id", `${ebPrefix}_%`);
-        if (orphans && orphans.length > 0) {
-          for (const orphan of orphans) {
-            await supabase
-              .from("reponses_apprenants")
-              .delete()
-              .eq("apprenant_id", apprenant.id)
-              .eq("exercice_id", orphan.exercice_id);
-          }
-        }
-
-        await supabase.from("audit_logs").insert({
-          action: "reset_examen_blanc",
-          admin_user_id: user.id,
-          admin_email: user.email ?? null,
-          apprenant_id: apprenant.id,
-          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
-          details: {
-            examen_label: group.examenLabel,
-            examen_num: group.examenNum,
-            type: group.type,
-            quiz_ids: quizIds,
-            exercice_ids: allExerciceIds,
-            matieres_supprimees: group.results.length,
-            in_progress_cleaned: group.inProgressOnly ?? false,
-          },
-        });
-
-        toast.success(`${group.examenLabel} réinitialisé pour ${apprenant.prenom} ${apprenant.nom}`);
+        // Aucun circuit serveur d'archivage administratif par matière n'existe
+        // encore. On conserve donc tout plutôt que de supprimer une copie.
+        toast.info("Le reset destructif par matière est désactivé. Utilisez le repassage sécurisé depuis l’espace élève : les anciennes réponses et notes sont conservées.");
+        return;
       }
 
+      const quizIds = [...new Set([
+        ...group.results.map((r) => r.quiz_id),
+        group.quizId,
+      ].filter(Boolean))];
+      await archiverExamenBlancAdmin({
+        apprenantId: apprenant.id,
+        examIds: quizIds,
+        motif: `Remise à zéro admin ${group.examenLabel} pour ${apprenant.prenom} ${apprenant.nom}`,
+        adminEmail: user.email,
+      });
+
+      toast.success(`${group.examenLabel} archivé pour ${apprenant.prenom} ${apprenant.nom} : les anciennes copies et notes sont conservées.`);
       queryClient.invalidateQueries({ queryKey: ["examen-blanc-results-admin", apprenant.id] });
     } catch (err: any) {
-      console.error("Erreur reset examen blanc:", err);
-      toast.error(err?.message || "Erreur lors de la réinitialisation");
+      console.error("Erreur archivage examen blanc:", err);
+      toast.error(err?.message || "Erreur lors de la remise à zéro");
     } finally {
       setResetting(false);
       setConfirmTarget(null);
@@ -390,8 +316,8 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           Examens blancs — Remise à zéro
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Réinitialisez les résultats d'examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> par examen ou par matière.
-          L'action est tracée pour la conformité Qualiopi.
+          Archivez un examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> pour autoriser un nouveau passage.
+          Les copies, réponses et notes anciennes sont conservées ; l'action est tracée pour la conformité Qualiopi.
         </p>
       </CardHeader>
       <CardContent>
@@ -526,15 +452,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                               <span className="text-muted-foreground">{r.matiere_nom}</span>
                               <div className="flex items-center gap-3">
                                 <span className="font-mono text-xs">{note}/20</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                                  onClick={() => setConfirmTarget({ group, matiere: r })}
-                                >
-                                  <RotateCcw className="w-3 h-3 mr-1" />
-                                  Reset
-                                </Button>
+                                <span className="text-xs text-muted-foreground" title="Le reset destructif est désactivé ; le repassage sécurisé conserve l’ancienne copie.">
+                                  Repassage sécurisé élève
+                                </span>
                               </div>
                             </div>
                           );
@@ -572,14 +492,10 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
               Voulez-vous vraiment réinitialiser <strong>{confirmDescription}</strong> pour{" "}
               <strong>{apprenant.prenom} {apprenant.nom}</strong> ?
               <br /><br />
-              Cette action est <strong>irréversible</strong>.
-              {confirmTarget?.matiere
-                ? " Le résultat de cette matière sera supprimé et l'apprenant pourra la refaire."
-                : confirmTarget?.group.inProgressOnly
-                  ? " Les réponses en cours seront supprimées et l'apprenant pourra recommencer cet examen."
-                  : ` Les résultats des ${confirmTarget?.group.results.length} matière(s) seront supprimés et l'apprenant pourra refaire cet examen depuis zéro.`}
+              Les anciennes copies, réponses et notes seront <strong>archivées et conservées</strong>.
+              L'examen repartira sans l'ancienne progression, avec une nouvelle autorisation de passage.
               <br /><br />
-              <em className="text-xs">L'action sera enregistrée dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
+              <em className="text-xs">L'archivage sera enregistré dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

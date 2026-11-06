@@ -301,19 +301,23 @@ function PassageMatiere({
   const actualiserConfirmationsNoyau = async (attemptId: string) => {
     const { data, error } = await supabase
       .from("answer_state")
-      .select("question_id")
+      .select("question_id, valeur")
       .eq("attempt_id", attemptId);
     if (error || attemptV2Ref.current !== attemptId) return;
-    const confirmees = new Set(((data as { question_id?: string }[] | null) ?? []).map((r) => String(r.question_id ?? "")));
+    const lignes = (data as { question_id?: string; valeur?: unknown }[] | null) ?? [];
+    const confirmees = new Set(lignes.map((r) => String(r.question_id ?? "")));
+    const valeursServeur = new Map(lignes.map((r) => [String(r.question_id ?? ""), r.valeur]));
     setQuestionsConfirmees(confirmees);
 
-    // RÈGLE 1 — toutes les réponses de la matière sont confirmées côté serveur :
-    // on archive (sans rien supprimer) les marqueurs techniques devenus faux et
-    // on efface l'alerte rouge héritée d'une ancienne erreur.
+    // RÈGLE 1 — le serveur possède les DERNIÈRES valeurs de toute la matière.
+    // La seule présence d'un identifiant ne suffit plus : une modification
+    // encore locale doit être renvoyée avant toute clôture.
     const questionsMatiere = (matiere.questions ?? []).map((q: any) => String(q?.id ?? "")).filter(Boolean);
-    const complet =
-      questionsMatiere.length > 0 &&
-      questionsMatiere.every((id) => confirmees.has(`${matiere.id}:${id}`) || confirmees.has(id));
+    const complet = questionsMatiere.length > 0 && questionsMatiere.every((id) => {
+      const stableId = `${matiere.id}:${id}`;
+      const cle = valeursServeur.has(stableId) ? stableId : valeursServeur.has(id) ? id : null;
+      return cle !== null && answersAreEqual(valeursServeur.get(cle), latestReponsesRef.current?.[id]);
+    });
     serveurCompletRef.current = complet;
     setServeurComplet(complet);
     if (complet) {
@@ -417,7 +421,7 @@ function PassageMatiere({
           return;
         }
         const ancienneIds = matiereTentatives
-          .filter((row) => row.etat === "terminee" && row.attempt_id !== decision.attemptId)
+          .filter((row) => row.etat !== "en_cours" && row.attempt_id !== decision.attemptId)
           .map((row) => String(row.attempt_id));
         if (!subjectRetake && ancienneIds.length > 0) {
           // Toute tentative clôturée de la MÊME matière (neutralisée ou non)
@@ -430,7 +434,7 @@ function PassageMatiere({
             matiereId: matiere.id,
             questionIdsSnapshot: idsSnapshot,
           });
-          if (!remappage.ok && remappage.correspondance > 0) {
+          if (!remappage.ok && remappage.questionInvalide) {
             setBlocageV2(`Récupération arrêtée : la question ${remappage.questionInvalide ?? "inconnue"} ne correspond pas au sujet officiel.`);
             void captureError({
               message: "[NoyauV2] remappage local refusé — snapshot non conforme",
@@ -682,7 +686,7 @@ function PassageMatiere({
         supabase.from("exam_attempts_v2").select("snapshot").eq("attempt_id", attemptId).maybeSingle(),
         supabase
         .from("answer_state")
-        .select("question_id")
+        .select("question_id, valeur")
         .eq("attempt_id", attemptId),
       ]);
       if (tentativeError || reponsesError) return null;
@@ -693,13 +697,21 @@ function PassageMatiere({
             .map((q: any) => String(q?.id ?? ""))
             .filter(Boolean)
         : [];
-      const idsServeur = new Set(((reponsesServeur as any[]) ?? []).map((r) => String(r?.question_id ?? "")));
+      const lignesServeur = (reponsesServeur as { question_id?: string; valeur?: unknown }[] | null) ?? [];
+      const idsServeur = new Set(lignesServeur.map((r) => String(r?.question_id ?? "")));
+      const valeursServeur = new Map(lignesServeur.map((r) => [String(r?.question_id ?? ""), r?.valeur]));
+      const valeurLocale = (stableId: string) => {
+        const questionId = stableId.startsWith(`${matiere.id}:`) ? stableId.slice(matiere.id.length + 1) : stableId;
+        return (latestReponsesRef.current as Record<string, unknown> | undefined)?.[questionId];
+      };
       const requis = clotureForcee
         ? idsSnapshot.filter((id: string) => idsSaisis.has(id))
         : idsSnapshot;
       return {
         contenuConforme: idsSnapshot.length === attendues,
-        toutesConfirmees: idsSnapshot.length > 0 && requis.every((id: string) => idsServeur.has(id)),
+        toutesConfirmees: idsSnapshot.length > 0 && requis.every((id: string) =>
+          idsServeur.has(id) && answersAreEqual(valeursServeur.get(id), valeurLocale(id)),
+        ),
         idsServeur,
       };
     };
@@ -753,7 +765,19 @@ function PassageMatiere({
     }
     const qrc = questionsSafe.filter(q => q?.type === "QRC").map(q => q.id);
     const res = await finaliserMatiere({ attemptId, matiereId: matiere.id, questionsQRC: qrc });
-    if (!res.ok && !/ATTEMPT_CLOSED/.test(res.message ?? "")) {
+    if (!res.ok && /ATTEMPT_CLOSED/.test(res.message ?? "")) {
+      // Un double-clic sur une matière DÉJÀ TERMINÉE peut être confirmé par
+      // relecture. Une tentative abandonnée après reset n'est jamais une
+      // réussite et ne doit surtout pas faire avancer l'apprenant.
+      const [{ data: tentative, error: erreurTentative }, { data: resultat, error: erreurResultat }] = await Promise.all([
+        supabase.from("exam_attempts_v2").select("etat").eq("attempt_id", attemptId).maybeSingle(),
+        supabase.from("core_exam_results").select("result_id").eq("attempt_id", attemptId).maybeSingle(),
+      ]);
+      if (!erreurTentative && !erreurResultat && (tentative as any)?.etat === "terminee" && (resultat as any)?.result_id) {
+        return true;
+      }
+    }
+    if (!res.ok) {
       setSaveStatus("error");
       toast.error("Clôture impossible pour le moment : vos réponses sont conservées, réessayez.");
       return false;

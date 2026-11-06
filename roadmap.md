@@ -1,5 +1,14 @@
 # Feuille de route
 
+## 06/11 — Sécurisation durable des examens blancs après remise à zéro
+- [x] État initial sauvegardé sous `/tmp/eb-reset-securisation-etat-initial` ; référence : 169 Vitest PASS / 1 échec textuel obsolète, 19 tests SQL isolés PASS au contrôle précédent.
+- [x] Récupérer sans perte les files locales des tentatives `terminee` et `abandonnee`, uniquement vers le même examen/matière et des identifiants du snapshot ; tablette/rechargement et mauvais snapshot couverts par tests et Chromium fictif isolé.
+- [x] Migration additive 0242 : autorisation de reset V2 consommée au plus une fois sous verrou serveur ; double appareil, matières concurrentes, rejeu et rollback validés sur PostgreSQL jetable, aucune donnée réelle modifiée.
+- [x] Avant « Terminer la matière », dernières valeurs serveur vérifiées ; clôture abandonnée refusée et état illisible en échec fermé.
+- [x] Reset admin complet remplacé par l’archivage officiel ; reset par matière destructif désactivé tant qu’aucun circuit d’archivage dédié sûr n’existe.
+- [x] 156 Vitest + 10 contrats SQL jetables PASS ; test textuel obsolète corrigé ; scénario Chromium fictif hors ligne/reset/rechargement/nouvelle tentative/clôture PASS sans requête externe ; TypeScript PASS.
+- [ ] Publication BLOQUÉE : revue explicite de tous les autres changements de l’aperçu et autorisation distincte requises.
+
 ## 06/11 — Correction QRC V2 : inscriptions croisées EB1-TAXI
 - [x] Les 30 passages sont visibles dans chacune des deux sessions couvrantes avec les mêmes identifiants, une seule fois par session et la mention « Inscription croisée » ; EB1-TAXI a quitté le conflit, les vrais conflits restent.
 - [x] Avertissement contre l’addition des totaux, EB1 VTC distinct, filtres/navigation inchangés ; 62 QRC visibles et empreinte des passages identique avant/après, aucune écriture.
