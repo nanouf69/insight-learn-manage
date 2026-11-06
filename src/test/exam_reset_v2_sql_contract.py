@@ -69,7 +69,7 @@ class ExamResetV2Contract(unittest.TestCase):
     def reset(self, op="66666666-6666-6666-6666-666666666666"):
         self.sql(f"""INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat) VALUES('{OLD}','{APPRENANT}','EB1-FICTIF','{VERSION}','{{"matiere":"t3p"}}','old','en_cours');
         INSERT INTO apprenant_quiz_results(apprenant_id,quiz_id,quiz_type) VALUES('{APPRENANT}','EB1-FICTIF','examen_blanc');""")
-        return self.sql(f"SET test.uid='{ADMIN}'; SELECT reset_id FROM core_admin_reset_exam('{op}','{APPRENANT}','EB1-FICTIF','test fictif','admin@example.test')").stdout.strip()
+        return self.sql(f"SET test.uid='{ADMIN}'; SELECT reset_id FROM core_admin_reset_exam('{op}','{APPRENANT}','EB1-FICTIF','test fictif','admin@example.test')").stdout.strip().splitlines()[-1]
 
     def start(self, matiere="t3p", op="77777777-7777-7777-7777-777777777777", check=True):
         return self.sql(f"SET test.uid='{OWNER}'; SELECT attempt_id FROM core_start_attempt('{op}','{APPRENANT}','EB1-FICTIF','{matiere}')", check)
@@ -141,7 +141,7 @@ class ExamResetV2Contract(unittest.TestCase):
     def test_meme_operation_autre_matiere_refusee(self):
         self.reset()
         self.start()
-        refused = self.start("gestion")
+        refused = self.start("gestion", check=False)
         self.assertNotEqual(refused.returncode, 0)
         self.assertIn("OPERATION_CIBLE_DIFFERENTE", refused.stderr)
 
