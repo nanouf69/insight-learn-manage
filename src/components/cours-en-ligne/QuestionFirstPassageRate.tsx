@@ -8,6 +8,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { selectFirstPassageView, type FirstPassageFilter as Filter, type QuestionRate, type QuestionStatsTarget, type SessionFirstPassage } from '@/lib/premierPassageStats';
 type State = { data: SessionFirstPassage | null; loading:boolean; error:string|null };
 const Context=createContext<State & {filter: Filter; sessionId: string; exam: boolean}>({data:null,loading:true,error:null,filter:'global',sessionId:'all',exam:false});
+const MOIS=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+const nomCourt=(s:{nom?:string|null;date_fin:string;mode:string})=>`${(s.nom ?? 'Session').split(' - ')[0].replace(/^Session\s+/i,'').replace(/cours du soir/i,'').trim()} ${MOIS[Number(s.date_fin.slice(5,7))-1] ?? ''} ${s.mode==='jour'?'journée':'soir'}`.replace(/\s+/g,' ');
 const dateLabel = (value:string) => value.split('-').reverse().join('/');
 export function FirstPassageProvider({moduleId,exerciseId,questions,enabled,children,examId,subjectId}:{moduleId:number;exerciseId:number;questions:QuestionStatsTarget[];enabled:boolean;children:React.ReactNode;examId?:string;subjectId?:string}) {
   const [state,setState]=useState<State>({data:null,loading:true,error:null});const [reload,setReload]=useState(0);
@@ -39,5 +41,5 @@ export function QuestionFirstPassageRate({questionId}:{questionId:number}) {
   const r=view?.rates[String(questionId)];
   if(!r)return <p className="text-xs text-muted-foreground">Premier passage non prouvé</p>;
   const court=(r:QuestionRate)=>exam && r.total===0 && r.unknown>0 ? 'données insuffisantes' : r.total ? `${Math.round(r.incorrect/r.total*100)} % (${r.incorrect}/${r.total})` : 'aucune réponse';
-  return <div className="my-1 space-y-0.5 text-xs text-muted-foreground">{sessions.map(s=>{const rate=data?.sessionRates[s.id]?.[String(questionId)];return <p key={s.id} className="break-words">{s.nom ?? 'Session'} · {s.mode==='jour'?'Jour':'Soir'} : {rate ? court(rate) : 'non prouvé'}{rate?.unknown ? ` · ${rate.unknown} non prouvé(s)` : ''}</p>;})}</div>;
+  return <div className="my-1 space-y-0.5 text-xs text-muted-foreground">{sessions.map(s=>{const rate=data?.sessionRates[s.id]?.[String(questionId)];return <p key={s.id} className="break-words">{nomCourt(s)} : {rate ? court(rate) : 'non prouvé'}{rate?.unknown ? ` · ${rate.unknown} non prouvé(s)` : ''}</p>;})}</div>;
 }
