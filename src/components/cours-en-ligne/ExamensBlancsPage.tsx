@@ -1580,6 +1580,23 @@ export default function ExamensBlancsPage({
   };
 
   // ===== RENDER =====
+  const dialogPresentiel = confirmationPresentiel ? (
+    <ConfirmationPresentielEB
+      open={pendingPresentielStart !== null}
+      nom={confirmationPresentiel.nom}
+      prenom={confirmationPresentiel.prenom}
+      examLibelle={pendingPresentielStart?.examen?.titre ?? null}
+      onCancel={() => setPendingPresentielStart(null)}
+      onConfirm={() => {
+        const pending = pendingPresentielStart;
+        setPendingPresentielStart(null);
+        if (!pending) return;
+        presentielConfirmeRef.current = true;
+        void handleStart(pending.examen, pending.forceRetake, pending.matiereIds);
+      }}
+    />
+  ) : null;
+
   if (phase === "edition") {
     return <ExamensBlancsEditor onBack={() => setPhase("selection")} pausedExamIds={pausedExamIds} onPauseToggle={handlePauseToggle} />;
   }
@@ -1641,6 +1658,7 @@ export default function ExamensBlancsPage({
           pausedExamIds={pausedExamIds}
           onPauseToggle={handlePauseToggle}
         />
+        {dialogPresentiel}
       </>
     );
   }
@@ -1905,6 +1923,7 @@ export default function ExamensBlancsPage({
         {subjectRetake && <Button variant="outline" onClick={() => void returnFromSubjectRetake()}>Retour aux autres matières</Button>}
         {!examenChoisi.id.startsWith('bilan-') && userId && apprenantId && <SubjectCopyHistory owner={userId} account={apprenantId} exam={examenChoisi.id} />}
         <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} currentTentative={currentTentative} onSubjectRetake={activateSubjectRetake} />
+        {dialogPresentiel}
       </div>
     );
   }
