@@ -1,3 +1,4 @@
+import { ordonnerCandidatsParFin } from "./ordreCandidats";
 import type { QrcReelle, SessionReelle } from "./noyauReel";
 
 export type DirectionCopie = -1 | 1;
@@ -20,9 +21,10 @@ export function copieVoisine(
   if (!courante || !tentativeCourante || !questionCourante) return null;
 
   const matiere = questionCourante.matiere;
-  const tentatives = session.tentatives.filter((t) =>
+  // Même ordre que le tableau affiché (terminés par fin croissante, puis les autres).
+  const tentatives = ordonnerCandidatsParFin(session.tentatives.filter((t) =>
     (t.snapshot.matieres ?? []).some((m) => m.subject_id === matiere),
-  );
+  ));
   const index = tentatives.findIndex((t) => t.attempt_id === courante.attempt_id);
   if (index < 0) return null;
 

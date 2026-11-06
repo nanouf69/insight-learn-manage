@@ -33,6 +33,8 @@ export type TentativeReelle = {
   candidat: string;
   /** Date/heure réelle du passage (affichage uniquement). */
   started_at?: string | null;
+  /** Fin enregistrée par le serveur (exam_attempts_v2.finished_at) ; ordre d'affichage seulement. */
+  finished_at?: string | null;
 };
 
 export type QrcReelle = {
@@ -425,7 +427,7 @@ export async function chargerSessionTest(
     return out;
   };
 
-  const colonnes = "attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at";
+  const colonnes = "attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at, finished_at";
   let attempts: any[] = [];
   if (attemptIdsFiltre?.length) {
     attempts = await parLots(attemptIdsFiltre, async (lot) => {
