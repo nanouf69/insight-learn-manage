@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 06/11 — Source de vérité du corrigé admin et divergences
+- [ ] Vérifier en lecture seule le corrigé admin validé, sa concordance avec la capture et la source utilisée pour créer les snapshots.
+- [ ] Recenser les divergences réelles avec snapshots et anciennes fiches, sans extrapoler la capture aux autres questions.
+- [ ] Vérifier que les taux premier essai corrigent avec la référence applicable à chaque tentative.
+- [ ] Proposer la règle sûre futures tentatives / régularisations traçables ; aucune écriture ni publication.
+
 ## 06/11 — Revoir les notes de tous les élèves des sessions actives
 - [x] Trois sessions actives, 40 élèves uniques après déduplication ; audit lecture seule des derniers passages avec corrigé actif et QRC validées.
 - [x] 42 écarts de matière chez 22 élèves : 33 définitifs et 9 provisoires, tous à la hausse ; moyennes recalculées, aucun changement de verdict parmi les examens complets définitifs.
