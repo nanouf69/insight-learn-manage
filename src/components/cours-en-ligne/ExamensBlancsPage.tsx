@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from "./ExamensBlancsEditor";
+import ConfirmationPresentielEB from "./ConfirmationPresentielEB";
+import { confirmationPresentielRequise } from "@/lib/confirmationPresentielEB";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { answersAreEqual } from "@/lib/answerPersistence";
@@ -194,6 +196,8 @@ export default function ExamensBlancsPage({
   const currentTentativeRef = useRef<number>(1);
   const [resumeExerciceIds, setResumeExerciceIds] = useState<Record<string, string>>({});
   const [subjectRetake, setSubjectRetake] = useState<SubjectRetakeReceipt | null>(null);
+  const [pendingPresentielStart, setPendingPresentielStart] = useState<{ examen: ExamenBlanc; forceRetake: boolean; matiereIds?: string[] | null } | null>(null);
+  const presentielConfirmeRef = useRef(false);
   const subjectRetakeRestored = useRef<string | null>(null);
   const activateSubjectRetake = (receipt: SubjectRetakeReceipt) => {
     if (!apprenantId || !userId) return;
