@@ -421,7 +421,7 @@ function PassageMatiere({
           return;
         }
         const ancienneIds = matiereTentatives
-          .filter((row) => row.etat === "terminee" && row.attempt_id !== decision.attemptId)
+          .filter((row) => row.etat !== "en_cours" && row.attempt_id !== decision.attemptId)
           .map((row) => String(row.attempt_id));
         if (!subjectRetake && ancienneIds.length > 0) {
           // Toute tentative clôturée de la MÊME matière (neutralisée ou non)

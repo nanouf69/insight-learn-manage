@@ -275,7 +275,8 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
 
   it("une tentative clôturée non neutralisée n'est jamais rendue au navigateur comme tentative active", () => {
     const pont = read(PONT);
-    expect(pont).toContain('etat === "terminee" && !neutralisation');
+    expect(pont).toContain('etatRejoue !== "en_cours" && (!neutralisation || etatRejoue !== "terminee")');
+    expect(pont).toContain("if (erreurEtat || erreurNeutralisation || !etatRejoue)");
     expect(pont).toContain("return null");
   });
 
