@@ -310,6 +310,96 @@ class Apres0197(unittest.TestCase):
         self.assertEqual(sql(f"SELECT details->1->>'reponseEleve' IS NULL FROM {TABLE} WHERE apprenant_id='{A}' AND module_id=2"), 't')
         self.assertIn('permission denied', err(f"SET ROLE anon; SELECT * FROM public.etat_completion_modules('{A}')") or '')
 
+    # ---- Candidat 06/11 : canon serveur, snapshot et scénarios VTC/TAXI/TA/VA.
+    def _canon_deux_exercices(self, module=2):
+        sql(f"DELETE FROM module_editor_state WHERE module_id={module}; INSERT INTO module_editor_state VALUES ({module}, '{{\"exercices\":[{{\"id\":1,\"questions\":[{{\"id\":1,\"choix\":[{{\"lettre\":\"A\",\"correct\":true}}]}}]}},{{\"id\":2,\"questions\":[{{\"id\":2,\"choix\":[{{\"lettre\":\"A\",\"correct\":true}}]}}]}}]}}');")
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_17_exercice_entier_omis_refuse_puis_snapshot_idempotent_immuable(self):
+        self._canon_deux_exercices()
+        un = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"Z\"}]'::jsonb"
+        self.assertIn('1 question(s) QCM', err(smc(U, 2, True, 100, un)) or '')
+        self.assertEqual(row(2), '')
+        deux = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"Z\"},{\"exerciceId\":2,\"questionId\":2,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"Y\"}]'::jsonb"
+        # Réalisation complète acceptée même si toutes les réponses sont fausses : aucun seuil de score.
+        premier = sql(smc(U, 2, True, 100, deux))
+        self.assertTrue(premier.startswith('completed|100|'))
+        self.assertEqual(sql(f"SELECT questions_requises||'|'||questions_prouvees||'|'||preuve_complete||'|'||jsonb_array_length(perimetre) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '2|2|true|2')
+        self.assertEqual(sql(smc(U, 2, True, 100, '[]')), premier)
+        self.assertEqual(sql(f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
+        self.assertIn('P0502', err(f"UPDATE module_completion_validations SET perimetre='[]' WHERE apprenant_id='{A}' AND module_id=2") or '')
+        self.assertIn('P0502', err(f"DELETE FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2") or '')
+        self.assertEqual(sql(learner(U2, f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}'")), '0')
+        self.assertEqual(sql(learner(ADMIN, f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}'")), '1')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_18_le_client_ne_transforme_pas_un_qcm_canonique_en_qrc(self):
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\",\"correct\":true}]}]}]}');")
+        faux_qrc = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":[],\"reponseEleve\":\"A\"}]'::jsonb"
+        self.assertIn('1 question(s) QCM', err(smc(U, 2, True, 100, faux_qrc)) or '')
+        self.assertEqual(row(2), '')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_19_autovalidation_total_navigateur_trop_faible_ne_suffit_pas(self):
+        self._canon_deux_exercices()
+        un = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        sql(smc(U, 2, False, 50, un))
+        got = sql(f"SET ROLE service_role; SELECT answered||'|'||total||'|'||validated FROM public.autovalidate_module_if_complete('{A}',2,1)")
+        self.assertEqual(got, '1|2|false')
+        self.assertTrue(row(2).startswith('in_progress|50|'))
+        deux = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"},{\"exerciceId\":2,\"questionId\":2,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"B\"}]'::jsonb"
+        sql(smc(U, 2, False, 100, deux))
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}',2,1)"), 't')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_20_ajout_apres_premiere_soumission_acquis_non_requis(self):
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]}]}]}');")
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"A\"}}','submitted','2026-01-02T10:00:00Z')")
+        sql("UPDATE module_editor_state SET module_data='{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]},{\"id\":2,\"choix\":[{\"lettre\":\"A\"}]}]}]}' WHERE module_id=2;")
+        sql("INSERT INTO module_admin_audit_log VALUES (2,'1','2','question_added','2026-01-03T10:00:00Z')")
+        details = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        self.assertTrue(sql(smc(U, 2, True, 100, details)).startswith('completed|100|'))
+        self.assertEqual(sql(f"SELECT questions_requises FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_21_matrice_vtc_taxi_ta_va_exercice_omis_puis_complet(self):
+        self._canon_deux_exercices()
+        un = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        deux = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"},{\"exerciceId\":2,\"questionId\":2,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"B\"}]'::jsonb"
+        for aid, uid, filiere in [(A,U,'vtc'),(A2,U2,'taxi'),(A3,U3,'ta'),(A4,U4,'va')]:
+            with self.subTest(filiere=filiere):
+                self.assertIn('MODULE_INCOMPLET', err(smc_for(aid, uid, 2, True, 100, un)) or '')
+                self.assertEqual(row(2, aid), '')
+                self.assertTrue(sql(smc_for(aid, uid, 2, True, 100, deux)).startswith('completed|100|'))
+                self.assertEqual(sql(f"SELECT questions_requises||'|'||questions_prouvees FROM module_completion_validations WHERE apprenant_id='{aid}' AND module_id=2"), '2|2')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_22_deux_validations_concurrentes_une_seule_date_et_preuve(self):
+        from concurrent.futures import ThreadPoolExecutor
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]}]}]}');")
+        details = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            resultats = list(pool.map(lambda _: sql(smc(U, 2, True, 100, details)), range(2)))
+        self.assertEqual(resultats[0], resultats[1])
+        self.assertEqual(sql(f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_23_snapshot_nouveau_ne_rouvre_pas_avec_ajout_ulterieur(self):
+        sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]}]}]}');")
+        details = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":\"A\",\"reponseEleve\":\"A\"}]'::jsonb"
+        sql(smc(U, 2, True, 100, details))
+        sql("UPDATE module_editor_state SET module_data='{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\"}]},{\"id\":2,\"choix\":[{\"lettre\":\"A\"}]}]}]}' WHERE module_id=2;")
+        got = sql(learner(U, f"SELECT questions_requises||'|'||questions_prouvees||'|'||preuve_complete||'|'||status_effectif FROM public.etat_completion_modules('{A}') WHERE module_id=2"))
+        self.assertEqual(got, '1|1|true|completed')
+
+    @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
+    def test_24_details_nuls_et_seul_premier_exercice_soumis_ne_contournent_pas(self):
+        self._canon_deux_exercices()
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1-1\":\"A\"}}','submitted',now())")
+        self.assertIn('1 question(s) QCM', err(smc(U, 2, True, 100, 'NULL')) or '')
+        self.assertEqual(row(2), '')
+
+
 def main():
     if '--capture' in sys.argv:
         print(capture_live()); return
