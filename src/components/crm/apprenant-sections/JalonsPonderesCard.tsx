@@ -119,7 +119,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
       {((calcul as any).pagesNonRecomptees?.length ?? 0) > 0 && (
         <div className="mt-1 text-xs font-medium text-destructive">Taux provisoire : pages non recomptées pour le(s) module(s) {(calcul as any).pagesNonRecomptees.join(", ")} (supports modifiés depuis l’audit).</div>
       )}
-      {r.taux < 100 && (() => { const reste = jalonsRestants(r.lignes, (id) => estJalonPratique(id) ? LABEL_PRESENTIEL : `${id} · ${MODULE_NAME_BY_ID[id] ?? ""}`); return reste.length ? <div className="mt-1 text-xs font-medium text-destructive">Reste à faire pour 100 % : {reste.join(" ; ")}.</div> : null; })()}
+      {r.taux < 100 && (() => { const reste = jalonsRestants(tableau.lignes, (id) => estJalonPratique(id) ? LABEL_PRESENTIEL : `${id} · ${MODULE_NAME_BY_ID[id] ?? ""}`); return reste.length ? <div className="mt-1 text-xs font-medium text-destructive">Reste à faire pour 100 % : {reste.join(" ; ")}.</div> : null; })()}
       {((calcul as any).activites ?? []).filter((j: any) => libelleActivitesModule(j.termines, j.requises)).map((j: any) => (
         <div key={j.moduleId} className="mt-1 text-xs text-muted-foreground">
           Module {j.moduleId} — activités du module : {libelleActivitesModule(j.termines, j.requises)}, confirmées par le serveur.
