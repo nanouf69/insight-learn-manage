@@ -530,55 +530,28 @@ function EcranResultats({
     };
   });
 
-  // Auto-save recalculated scores to DB for ALL users (not just admin)
-  // so the list view averages stay in sync with the detail view
-  useEffect(() => {
-    if (!apprenantId || !examen || hasQrcPendingValidation) return;
-    // Consultation admin : aucun score n'est réécrit dans le dossier de l'élève.
-    if (blockLearnerWrite("apprenant_quiz_results(auto-save scores)")) return;
-    const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
-    resultatsAvecIA.forEach(async (r, mi) => {
-      if (r.nonPassee) return; // Skip placeholder rows (matière not attempted)
-      const matiere = examen.matieres[mi];
-      if (!matiere) return;
-      const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-      const scoreRecalcule = Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-      const noteSur20 = normalizeNoteSur20(scoreRecalcule, safeMax);
-      // Also save the correctionsIA in the details column for admin overrides
-      const cacheMatiere = correctionsIA[mi] || {};
-      const serializedCache: Record<string, CorrectionQRC> = {};
-      for (const [k, v] of Object.entries(cacheMatiere)) {
-        if (v && v !== "loading" && v !== "error") serializedCache[k] = v;
-      }
-      let updateQuery = supabase
-        .from("apprenant_quiz_results" as any)
-        .update({
-          score_obtenu: scoreRecalcule,
-          note_sur_20: noteSur20,
-          reussi: computeAdmisForMatiere(scoreRecalcule, safeMax, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
-          details: {
-            questions: (resultats[mi] as any)?.details?.questions || [],
-            reponses: r.reponses,
-            correctionsIA: Object.keys(serializedCache).length > 0 ? serializedCache : undefined,
-          },
-        } as any)
-        .eq("apprenant_id", apprenantId)
-        .eq("quiz_id", examen.id)
-        .eq("quiz_type", quizType)
-        .eq("matiere_id", matiere.id);
-      updateQuery = (r as any).resultId
-        ? updateQuery.eq("id", (r as any).resultId)
-        : updateQuery.eq("tentative", toFiniteNumber((r as any).tentative, currentTentative || 1));
-      await updateQuery;
-    });
-  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(","), hasQrcPendingValidation]);
+  // La consultation et le recalcul d'affichage ne réécrivent JAMAIS une note.
+  // Seules une soumission initiale ou une correction volontaire disposent d'un chemin d'écriture.
 
+  // Coefficients et règles de la version du passage quand le snapshot V2 les contient.
+  const examenPourCalcul = {
+    ...examen,
+    matieres: examen.matieres.map((m) => {
+      const core = resultatsAvecIA.find((r) => r.matiereId === m.id)?.__core;
+      return core ? {
+        ...m,
+        coefficient: core.coefficient ?? m.coefficient,
+        noteSur: core.noteSur ?? m.noteSur,
+        noteEliminatoire: core.noteEliminatoire ?? m.noteEliminatoire,
+      } : m;
+    }),
+  };
   // Moyenne globale calculée via le helper PARTAGÉ avec la vue liste et le bilan
   // texte → les 3 écrans affichent EXACTEMENT la même note.
-  const bilanExamen = computeMoyenneExamen(examen, (m) => {
+  const bilanExamen = computeMoyenneExamen(examenPourCalcul, (m) => {
     const r = resultatsAvecIA.find(rr => rr.matiereId === m.id);
     if (!r || r.nonPassee) return null;
-    const mi = examen.matieres.findIndex(mm => mm?.id === m.id);
+    const mi = examenPourCalcul.matieres.findIndex(mm => mm?.id === m.id);
     return computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
   });
   const noteGlobale = bilanExamen.moyenne;
@@ -609,7 +582,7 @@ function EcranResultats({
       });
     });
     return out;
-  }, [examen, resultats]);
+  }, [examenPourCalcul, resultats]);
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "resultats" | "revision")} className="space-y-6">
