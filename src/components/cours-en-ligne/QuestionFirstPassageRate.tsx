@@ -31,15 +31,26 @@ export function FirstPassageProvider({moduleId,exerciseId,questions,enabled,chil
     {state.error ? <p role="status" className="text-destructive">{state.error}</p> : state.loading ? <p>Lecture des sessions…</p> : retained.length===0 ? <p>Aucune session en cours</p> : <ul className="space-y-1">{retained.map(s=><li key={s.id} className="break-words"><strong>{s.mode==='jour'?'JOURNÉE':'SOIRÉE'}</strong> · {s.nom ?? 'Session sans intitulé'} · {dateLabel(s.date_debut)} – {dateLabel(s.date_fin)} · {s.eligible} élève(s) éligible(s)</li>)}</ul>}
   </section>}{children}</Context.Provider>;
 }
-export function QuestionFirstPassageRate({questionId}:{questionId:number}) {
+export function QuestionFirstPassageRate({questionId,presentation='inline'}:{questionId:number;presentation?:'inline'|'panel'}) {
   const {data,filter,sessionId,loading,error,exam}=useContext(Context);
-    if(loading)return <p className="text-xs text-muted-foreground">Erreur 1er passage : chargement…</p>;
-  if(error)return <p role="status" className="text-xs text-destructive">{error}</p>;
   const view=data ? selectFirstPassageView(data,filter,sessionId) : null;
   const sessions=view?.sessions ?? [];
-  if(!sessions.length)return <p className="text-xs text-muted-foreground">Aucune session en cours</p>;
   const r=view?.rates[String(questionId)];
-  if(!r)return <p className="text-xs text-muted-foreground">Aucune donnée de premier passage</p>;
   const court=(r:QuestionRate)=>exam && r.total===0 && r.unknown>0 ? 'données insuffisantes' : r.total ? `${Math.round(r.incorrect/r.total*100)} % (${r.incorrect}/${r.total})` : 'aucune réponse';
+
+  if(presentation==='panel') {
+    let content:React.ReactNode;
+    if(loading)content=<p className="text-xs text-muted-foreground">Chargement des taux…</p>;
+    else if(error)content=<p role="status" className="text-xs text-destructive">{error}</p>;
+    else if(!sessions.length)content=<p className="text-xs text-muted-foreground">Aucune session en cours</p>;
+    else if(!r)content=<p className="text-xs text-muted-foreground">Aucune donnée de premier passage</p>;
+    else content=<ul className="space-y-2">{sessions.map(s=>{const rate=data?.sessionRates[s.id]?.[String(questionId)];const echec=!!rate && rate.total>0 && rate.incorrect>0;return <li key={s.id} className="flex items-start justify-between gap-3 border-b border-border/50 pb-2 text-xs last:border-0 last:pb-0"><span className="min-w-0 leading-4 text-muted-foreground">{nomCourt(s)}</span><span className={`shrink-0 text-right leading-4 ${echec ? 'font-semibold text-destructive' : 'font-medium text-foreground'}`}>{rate ? court(rate) : 'aucune donnée'}</span></li>;})}</ul>;
+    return <section className="space-y-3" aria-label="Taux d’erreur au premier essai"><div><p className="text-xs font-semibold uppercase tracking-wide text-foreground">Erreur au 1er essai</p><p className="mt-0.5 text-[11px] text-muted-foreground">Premières réponses, par session</p></div>{content}</section>;
+  }
+
+  if(loading)return <p className="text-xs text-muted-foreground">Erreur 1er passage : chargement…</p>;
+  if(error)return <p role="status" className="text-xs text-destructive">{error}</p>;
+  if(!sessions.length)return <p className="text-xs text-muted-foreground">Aucune session en cours</p>;
+  if(!r)return <p className="text-xs text-muted-foreground">Aucune donnée de premier passage</p>;
   return <div className="my-1 space-y-0.5 text-xs text-muted-foreground">{sessions.map(s=>{const rate=data?.sessionRates[s.id]?.[String(questionId)];const echec=!!rate && rate.total>0 && rate.incorrect>0;return <p key={s.id} className={`break-words ${echec ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>{nomCourt(s)} : {rate ? court(rate) : 'aucune donnée'}</p>;})}</div>;
 }
