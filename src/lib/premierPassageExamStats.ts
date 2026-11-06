@@ -7,7 +7,7 @@ export function firstPassageExamIds(examId: string): string[] {
   return match ? [`EB${match[1]}`, `EB${match[1]}-TAXI`] : [];
 }
 
-type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; choix?: QuestionStatsTarget['choix'] | null };
+type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; points?: number | string; choix?: QuestionStatsTarget['choix'] | null };
 export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_id: string; started_at: string; is_test: boolean; snapshot: { matiere?: string; questions?: FrozenQuestion[]; source_historique?: unknown } };
 export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number | null; revision_nouvelle: number; auteur: string | null; created_at: string };
 export type ExamStatsResult = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string; details: { snapshot?: { questions?: FrozenQuestion[] }; reponses?: Record<string, unknown> } | null };
