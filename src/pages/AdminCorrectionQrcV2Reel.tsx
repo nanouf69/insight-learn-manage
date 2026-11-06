@@ -3,6 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
+import { copieVoisine, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -441,6 +442,48 @@ export default function AdminCorrectionQrcV2Reel() {
       setErreur((e as Error).message);
     }
   };
+
+  const copiePrecedente = copieVoisine(session, selection, -1);
+  const copieSuivante = copieVoisine(session, selection, 1);
+  const naviguerCopie = (direction: DirectionCopie) => {
+    if (etatEnvoi === "encours") return;
+    const cible = copieVoisine(session, selection, direction);
+    if (!cible) return;
+    if (commentaire.trim() && !window.confirm(
+      "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
+    )) return;
+    setSelection(cible.qrc_instance_id);
+    setNote(null);
+    setCommentaire("");
+    setEtatEnvoi("vide");
+    setErreur(null);
+  };
+  const navigationCopies = (
+    <div className="flex items-center gap-2 border-y py-2" data-testid="navigation-copies">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-7 px-2 text-xs"
+        data-testid="copie-precedente"
+        disabled={etatEnvoi === "encours" || !copiePrecedente}
+        onClick={() => naviguerCopie(-1)}
+      >
+        ← Retour
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-7 px-2 text-xs"
+        data-testid="copie-suivante"
+        disabled={etatEnvoi === "encours" || !copieSuivante}
+        onClick={() => naviguerCopie(1)}
+      >
+        Suivant →
+      </Button>
+    </div>
+  );
 
   const nbIndetermines = groupes.find((g) => g.type === "indetermine")?.nbCandidats ?? 0;
   const nbConflits = groupes.find((g) => g.type === "conflit")?.nbCandidats ?? 0;
@@ -916,6 +959,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   NOTE : {String(qrcSel.note).replace(".", ",")}
                   {baremeSel != null ? ` / ${baremeSel}` : " (barème historique absent)"}
                 </p>
+                {navigationCopies}
                 {!modeRevision ? (
                   <Button variant="outline" size="sm" data-testid="modifier-note" onClick={() => setModeRevision(true)}>
                     ✏️ Modifier la note
@@ -969,6 +1013,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Notation — barème : {baremeSel} points
                 </p>
+                {navigationCopies}
                 {videSel && (
                   <p className="text-xs text-muted-foreground" data-testid="copie-vide-en-attente">
                     Copie vide — aucune correction historique, aucune note automatique.
