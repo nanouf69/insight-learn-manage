@@ -7,8 +7,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { chargerSignaturesManquantes, chargerClassificationSignatures, dateDuJourParis, type SignatureManquante } from '@/lib/signaturesManquantes';
 import { creneauxRelancables, empreinteCreneauxRelance, preparerRelanceSignatures, resultatRelance, dateSignatureLisible } from '@/lib/relanceSignaturesManquantes';
 
-interface Props { apprenant: { id: string; prenom?: string | null; nom?: string | null; email?: string | null } }
-export function SignaturesManquantesTab({ apprenant }: Props) {
+interface Props {
+  apprenant: { id: string; prenom?: string | null; nom?: string | null; email?: string | null };
+  demandeOuverture?: number;
+}
+export function SignaturesManquantesTab({ apprenant, demandeOuverture = 0 }: Props) {
   const queryClient = useQueryClient();
   const [preview, setPreview] = useState<SignatureManquante[] | null>(null);
   const [confirmed, setConfirmed] = useState(false);
