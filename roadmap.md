@@ -4,7 +4,8 @@
 - [x] Identifier la tentative par les sept matières sans présumer l’identité ; contrôler QRC manuelles, notes matière serveur et ancienne fiche en lecture seule.
 - [x] Recalculer le global avec les coefficients figés et le verdict ; distinguer note juste, ancienne fiche, cache et correctifs seulement en aperçu.
 - [x] Fournir le tableau avant/après prouvé ; aucune écriture sans autorisation spécifique et aucune publication sans revue globale.
-- [ ] Prendre le corrigé QCM enregistré dans Corrections comme référence, comparer Q2/Q4/Q9/Q13 et produire le calcul avant/après ; aucune régularisation sans autorisation spécifique après tableau.
+- [x] Corrigé actif de Corrections pris comme référence : Q2 B, Q4 A, Q9 A+B, Q13 B ; il est identique à l’ancienne fiche sur 20/20 QCM et donne Sécurité 11/20, global 9,9/20, non admis. Aucune donnée modifiée.
+- [ ] Régularisation éventuelle du seul résultat natif Sécurité 9 → 11 : tableau avant/après établi, écriture bloquée sans autorisation spécifique ; ne pas publier un remplacement par 9,6.
 
 ## 06/11 — Taux d’échec au premier passage non affiché en rouge
 - [x] Diagnostic : taux placés sous chaque question, pas dans les lignes de sessions. Deux causes : preuves natives rejetées (`revision_precedente` NULL et auteur `auth_user_id`), puis texte toujours gris. QRC sans preuve de correction et notes en attente non comptées comme échecs.
