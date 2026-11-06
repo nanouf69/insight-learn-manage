@@ -64,7 +64,9 @@ export function assemblerCalculJalons(i: {
   const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + r.heures, 0) * 60);
   const theorieMinutes = Math.round(theorieHours * 60);
   const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
-  let completionsBase = i.completions ?? [];
+  // Appliquer la preuve avant les activités : aucune recomposition ne peut restaurer
+  // un ancien « completed » déjà contredit par le verdict serveur.
+  let completionsBase = i.preuvesHistoriquesLive ? (i.completions ?? []).map(liveCompletionEvidence) : (i.completions ?? []);
   let activites: Array<EtatActivites & { methode: string }> = [];
   if (i.jeuxTermines) {
     const termines = new Set(i.jeuxTermines);
