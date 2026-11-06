@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 06/11 — Navigation entre copies dans Correction QRC V2
+- [ ] Ajouter uniquement « ← Retour » / « Suivant → » sous le barème, dans l'ordre des copies déjà filtrées, en conservant matière/question si possible.
+- [ ] Désactiver les extrémités et l'enregistrement en cours ; confirmer avant d'abandonner un commentaire non enregistré.
+- [ ] Tests ciblés et vérification admin réelle ; aucune note, réponse, donnée élève ou publication sans accord.
+
 ## 05/11 22:18 — Indicateur admin TA uniquement
 - [x] Six examens passerelle VTC→TAXI identifiés : eb1-ta…eb6-ta, modules virtuels 90012/90018–90022 ; audit legacy/V2, empreintes avant lecture seule.
 - [x] Ajout du branchement visuel et lecture des seules identités TA ; composants/filtres/calculs de preuve réutilisés, aucune écriture Cloud ou comportement élève changé.
