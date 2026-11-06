@@ -60,7 +60,7 @@ export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown
 }
 
 /**
- * opts.enonceLibre : l'énoncé peut différer (retouche de libellé après le passage), TOUT
+ * opts.enonceLibre : l'énoncé d'un QCM peut différer (retouche de libellé après le passage), TOUT
  * le reste reste strict (identités, ordre, types, images, choix lettre/texte/bonne réponse,
  * réponse attendue QRC). La note ne dépend que de ces éléments : aucune note empruntée.
  */
@@ -88,7 +88,8 @@ export function verifierContenuPassage(core: CoreMatiereState, details: any, opt
   const same = (a: any, b: any) => {
     const type = text(a.type).toUpperCase();
     if (type !== text(b.type).toUpperCase() || !text(a.enonce) || !text(b.enonce)
-      || (!opts?.enonceLibre && text(a.enonce) !== text(b.enonce))
+      // Retouche de libellé tolérée seulement pour un QCM (choix + bonnes réponses identiques) ; QRC strict.
+      || ((!opts?.enonceLibre || type !== "QCM") && text(a.enonce) !== text(b.enonce))
       || text(a.image) !== text(b.image)) return false;
     if (type === "QCM") return sameChoices(a, b);
     if (type === "QRC") return text(a.reponseQRC) === text(b.reponseQRC);

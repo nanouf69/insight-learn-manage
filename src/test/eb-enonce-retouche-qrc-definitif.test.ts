@@ -37,6 +37,9 @@ describe("EB : énoncé retouché après le passage, QRC corrigées, note serveu
   it("réponse attendue QRC différente : ancien circuit conservé", () => {
     expect(attacherSourceUnique(row([{ ...fiche[0], reponseQRC: "Autre" }, fiche[1]]), [core()], new Set()).__core).toBeNull();
   });
+  it("énoncé QRC différent : ancien circuit conservé (identité de question)", () => {
+    expect(attacherSourceUnique(row([{ ...fiche[0], enonce: "Autre sujet" }, fiche[1]]), [core()], new Set()).__core).toBeNull();
+  });
   it("réponses élève différentes : ancien circuit conservé", () => {
     expect(attacherSourceUnique(row(fiche, { 1: "Cpam", 2: ["A"] }), [core()], new Set()).__core).toBeNull();
   });
