@@ -325,7 +325,7 @@ class Apres0197(unittest.TestCase):
         premier = sql(smc(U, 2, True, 100, deux))
         self.assertTrue(premier.startswith('completed|100|'))
         self.assertEqual(sql(f"SELECT questions_requises||'|'||questions_prouvees||'|'||preuve_complete||'|'||jsonb_array_length(perimetre) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '2|2|true|2')
-        self.assertEqual(sql(smc(U, 2, True, 100, '[]')), premier)
+        self.assertEqual(sql(smc(U, 2, True, 100, "'[]'::jsonb")), premier)
         self.assertEqual(sql(f"SELECT count(*) FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2"), '1')
         self.assertIn('P0502', err(f"UPDATE module_completion_validations SET perimetre='[]' WHERE apprenant_id='{A}' AND module_id=2") or '')
         self.assertIn('P0502', err(f"DELETE FROM module_completion_validations WHERE apprenant_id='{A}' AND module_id=2") or '')
@@ -336,7 +336,10 @@ class Apres0197(unittest.TestCase):
     def test_18_le_client_ne_transforme_pas_un_qcm_canonique_en_qrc(self):
         sql("DELETE FROM module_editor_state WHERE module_id=2; INSERT INTO module_editor_state VALUES (2, '{\"exercices\":[{\"id\":1,\"questions\":[{\"id\":1,\"choix\":[{\"lettre\":\"A\",\"correct\":true}]}]}]}');")
         faux_qrc = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":[],\"reponseEleve\":\"A\"}]'::jsonb"
-        self.assertIn('1 question(s) QCM', err(smc(U, 2, True, 100, faux_qrc)) or '')
+        # Le canon impose une question requise même si le navigateur la déclare QRC.
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT questions_requises||'|'||questions_manquantes FROM public.module_completion_analyse_preuves('{A}',2,{faux_qrc})"), '1|0')
+        sans_reponse = "'[{\"exerciceId\":1,\"questionId\":1,\"reponseCorrecte\":[],\"reponseEleve\":null}]'::jsonb"
+        self.assertIn('MODULE_INCOMPLET', err(smc(U, 2, True, 100, sans_reponse)) or '')
         self.assertEqual(row(2), '')
 
     @unittest.skipUnless(os.environ.get('MODULE_COMPLETION_CANDIDATE'), 'candidat non chargé')
