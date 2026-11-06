@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from "./ExamensBlancsEditor";
+import ConfirmationPresentielEB from "./ConfirmationPresentielEB";
+import { confirmationPresentielRequise } from "@/lib/confirmationPresentielEB";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { answersAreEqual } from "@/lib/answerPersistence";
@@ -119,7 +121,10 @@ export default function ExamensBlancsPage({
   isPresentiel,
   onExamStateChange,
   onLearnerActivity,
+  confirmationPresentiel,
 }: {
+  /** Fourni uniquement pour un élève présentiel certain : écran d'identité avant chaque NOUVEL examen blanc. */
+  confirmationPresentiel?: { nom?: string | null; prenom?: string | null } | null;
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
   apprenantId?: string | null;
@@ -191,6 +196,8 @@ export default function ExamensBlancsPage({
   const currentTentativeRef = useRef<number>(1);
   const [resumeExerciceIds, setResumeExerciceIds] = useState<Record<string, string>>({});
   const [subjectRetake, setSubjectRetake] = useState<SubjectRetakeReceipt | null>(null);
+  const [pendingPresentielStart, setPendingPresentielStart] = useState<{ examen: ExamenBlanc; forceRetake: boolean; matiereIds?: string[] | null } | null>(null);
+  const presentielConfirmeRef = useRef(false);
   const subjectRetakeRestored = useRef<string | null>(null);
   const activateSubjectRetake = (receipt: SubjectRetakeReceipt) => {
     if (!apprenantId || !userId) return;
@@ -627,6 +634,8 @@ export default function ExamensBlancsPage({
   }, [defaultBilanId]);
 
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    const dejaConfirme = presentielConfirmeRef.current;
+    presentielConfirmeRef.current = false;
     if (!forceRetake && userId && apprenantId) {
       const operation = sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId));
       if (operation) {
@@ -809,6 +818,17 @@ export default function ExamensBlancsPage({
         forceRetake,
         minimumTentative: cutoff ? historicalMaximumAttempt : 1,
       });
+
+      if (confirmationPresentielRequise({
+        mode: confirmationPresentiel && !latestExamen.id.startsWith("bilan-") ? "presentiel" : "inconnu",
+        passageMode: passage.mode,
+        isAdmin,
+        dejaConfirme,
+      })) {
+        // Aucune écriture : on attend la déclaration de l'élève, puis on relance le même démarrage.
+        setPendingPresentielStart({ examen, forceRetake, matiereIds });
+        return;
+      }
 
       const bestRowsByMatiere = new Map<string, SavedExamAnswerRow>();
       validMatieres.forEach((matiere) => {
@@ -1564,6 +1584,23 @@ export default function ExamensBlancsPage({
   };
 
   // ===== RENDER =====
+  const dialogPresentiel = confirmationPresentiel ? (
+    <ConfirmationPresentielEB
+      open={pendingPresentielStart !== null}
+      nom={confirmationPresentiel.nom}
+      prenom={confirmationPresentiel.prenom}
+      examLibelle={pendingPresentielStart?.examen?.titre ?? null}
+      onCancel={() => setPendingPresentielStart(null)}
+      onConfirm={() => {
+        const pending = pendingPresentielStart;
+        setPendingPresentielStart(null);
+        if (!pending) return;
+        presentielConfirmeRef.current = true;
+        void handleStart(pending.examen, pending.forceRetake, pending.matiereIds);
+      }}
+    />
+  ) : null;
+
   if (phase === "edition") {
     return <ExamensBlancsEditor onBack={() => setPhase("selection")} pausedExamIds={pausedExamIds} onPauseToggle={handlePauseToggle} />;
   }
@@ -1625,6 +1662,7 @@ export default function ExamensBlancsPage({
           pausedExamIds={pausedExamIds}
           onPauseToggle={handlePauseToggle}
         />
+        {dialogPresentiel}
       </>
     );
   }
@@ -1698,6 +1736,7 @@ export default function ExamensBlancsPage({
             </div>
           </CardContent>
         </Card>
+        {dialogPresentiel}
       </div>
     );
   }
@@ -1889,6 +1928,7 @@ export default function ExamensBlancsPage({
         {subjectRetake && <Button variant="outline" onClick={() => void returnFromSubjectRetake()}>Retour aux autres matières</Button>}
         {!examenChoisi.id.startsWith('bilan-') && userId && apprenantId && <SubjectCopyHistory owner={userId} account={apprenantId} exam={examenChoisi.id} />}
         <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} currentTentative={currentTentative} onSubjectRetake={activateSubjectRetake} />
+        {dialogPresentiel}
       </div>
     );
   }
