@@ -86,6 +86,7 @@ describe("gel-v3 — preuves serveur figées", () => {
   it.each(cas)("%s : preuve incomplète = progression archivée, jamais 100 %%", async (type, moduleId) => {
     const calcul = await calculerGelInitial(gel(moduleId, false, 50), { type_apprenant: type }, new Map());
     const ligne = calcul.resultat.lignes.find((l) => l.moduleId === moduleId);
+    console.log("DEBUG_GEL", type, calcul.completions.filter((c: any) => c.module_id === moduleId), calcul.resultat.lignes.filter((l) => l.moduleId === moduleId));
     expect(ligne?.progression).toBe(50);
     expect(calcul.completions.find((c: any) => c.module_id === moduleId)).toMatchObject({ status: "in_progress", progress: 50 });
     expect(calcul.modulesAttribues).toEqual([moduleId]);
