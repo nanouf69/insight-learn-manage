@@ -206,7 +206,10 @@ export async function demarrerTentative(params: {
       .eq("attempt_id", attemptId)
       .maybeSingle(),
   ]);
-  if ((etat as { etat?: string } | null)?.etat === "terminee" && !neutralisation) {
+  const etatRejoue = (etat as { etat?: string } | null)?.etat;
+  // Toute tentative fermée (terminee, abandonnee après remise à zéro…) non
+  // neutralisée n'est jamais reprise : ses réponses seraient refusées.
+  if (etatRejoue && etatRejoue !== "en_cours" && (!neutralisation || etatRejoue !== "terminee")) {
     // CAUSE COMMUNE Kevin/Thierno : le rejeu idempotent renvoie une tentative
     // clôturée. On ne la réutilise JAMAIS (ses réponses seraient refusées avec
     // ATTEMPT_CLOSED) et on ne bloque plus l'apprenant : on redemande au noyau
