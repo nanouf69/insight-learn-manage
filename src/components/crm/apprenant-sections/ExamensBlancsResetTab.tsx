@@ -316,8 +316,8 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           Examens blancs — Remise à zéro
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Réinitialisez les résultats d'examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> par examen ou par matière.
-          L'action est tracée pour la conformité Qualiopi.
+          Archivez un examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> pour autoriser un nouveau passage.
+          Les copies, réponses et notes anciennes sont conservées ; l'action est tracée pour la conformité Qualiopi.
         </p>
       </CardHeader>
       <CardContent>
@@ -452,15 +452,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                               <span className="text-muted-foreground">{r.matiere_nom}</span>
                               <div className="flex items-center gap-3">
                                 <span className="font-mono text-xs">{note}/20</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                                  onClick={() => setConfirmTarget({ group, matiere: r })}
-                                >
-                                  <RotateCcw className="w-3 h-3 mr-1" />
-                                  Reset
-                                </Button>
+                                <span className="text-xs text-muted-foreground" title="Le reset destructif est désactivé ; le repassage sécurisé conserve l’ancienne copie.">
+                                  Repassage sécurisé élève
+                                </span>
                               </div>
                             </div>
                           );
@@ -498,14 +492,10 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
               Voulez-vous vraiment réinitialiser <strong>{confirmDescription}</strong> pour{" "}
               <strong>{apprenant.prenom} {apprenant.nom}</strong> ?
               <br /><br />
-              Cette action est <strong>irréversible</strong>.
-              {confirmTarget?.matiere
-                ? " Le résultat de cette matière sera supprimé et l'apprenant pourra la refaire."
-                : confirmTarget?.group.inProgressOnly
-                  ? " Les réponses en cours seront supprimées et l'apprenant pourra recommencer cet examen."
-                  : ` Les résultats des ${confirmTarget?.group.results.length} matière(s) seront supprimés et l'apprenant pourra refaire cet examen depuis zéro.`}
+              Les anciennes copies, réponses et notes seront <strong>archivées et conservées</strong>.
+              L'examen repartira sans l'ancienne progression, avec une nouvelle autorisation de passage.
               <br /><br />
-              <em className="text-xs">L'action sera enregistrée dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
+              <em className="text-xs">L'archivage sera enregistré dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
