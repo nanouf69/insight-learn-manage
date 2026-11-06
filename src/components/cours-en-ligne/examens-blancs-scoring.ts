@@ -321,16 +321,19 @@ export function computeMatiereScore(
  */
 export function computeMatiereScoreForAttempt(
   matiereCourante: Matiere,
-  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown; __core?: unknown } | null | undefined,
+  row: { details?: any; score_obtenu?: unknown; score_max?: unknown; note_sur_20?: unknown; reussi?: boolean; __core?: unknown } | null | undefined,
   staticFallbackMatiere?: Matiere | null,
 ): MatiereScore | null {
   if (!row) return null;
   // Passage du nouveau système publié : note serveur définitive, jamais recalculée.
   const core = coreStateScore((row as any).__core);
   if (core) {
+    const noteEliminatoire = (row as any).__core?.noteEliminatoire;
     return {
       ...core,
-      admis: computeAdmisForMatiere(core.noteSur20, 20, matiereCourante.noteEliminatoire, matiereCourante.noteSur || 20, false),
+      admis: typeof noteEliminatoire === "number"
+        ? computeAdmisForMatiere(core.noteSur20, 20, noteEliminatoire, (row as any).__core?.noteSur || 20, false)
+        : Boolean((row as any).reussi),
       passee: true,
     };
   }
@@ -385,9 +388,12 @@ export function computeResultatMatiereScore(
   if (!resultat) return null;
   const core = coreStateScore((resultat as any).__core);
   if (core) {
+    const noteEliminatoire = (resultat as any).__core?.noteEliminatoire;
     return {
       ...core,
-      admis: computeAdmisForMatiere(core.noteSur20, 20, matiere.noteEliminatoire, matiere.noteSur || 20, false),
+      admis: typeof noteEliminatoire === "number"
+        ? computeAdmisForMatiere(core.noteSur20, 20, noteEliminatoire, (resultat as any).__core?.noteSur || 20, false)
+        : Boolean((resultat as any).admis),
       passee: true,
     };
   }

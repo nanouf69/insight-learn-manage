@@ -1100,6 +1100,7 @@ export default function ExamensBlancsPage({
           score_obtenu: row.score_obtenu,
           score_max: safeScoreMax,
           note_sur_20: row.note_sur_20,
+          reussi: row.reussi,
         },
         findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom),
       );

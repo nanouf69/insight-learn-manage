@@ -32,6 +32,11 @@ export interface CoreMatiereState {
   answers?: Record<string, unknown>;
   historicalDetails?: any;
   questions?: any[];
+  matiereNom?: string | null;
+  noteEliminatoire?: number | null;
+  noteSur?: number | null;
+  coefficient?: number | null;
+  duree?: number | null;
   candidateResultIds?: string[];
 }
 
@@ -116,6 +121,8 @@ export async function fetchCoreMatiereStatesBulk(
           const pending = !r || r.status !== "definitif" || qrcRestantes > 0 || note20 == null;
           const key = String(a.apprenant_id);
           const list = out.get(key) || [];
+          const meta = (Array.isArray(a.matieres) ? a.matieres : []).find((m: any) => String(m?.subject_id ?? "") === String(a.matiere)) ?? null;
+          const nombreOuNull = (value: unknown) => value == null || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
           list.push({
             attemptId: a.attempt_id,
             examId: String(a.exam_id),
@@ -132,6 +139,11 @@ export async function fetchCoreMatiereStatesBulk(
             tentative: a.tentative != null ? Number(a.tentative) : a.historique?.tentative ?? null,
             historicalDetails: a.historique?.details,
             questions: a.questions,
+            matiereNom: meta?.titre ?? null,
+            noteEliminatoire: nombreOuNull(meta?.note_eliminatoire),
+            noteSur: nombreOuNull(meta?.note_sur),
+            coefficient: nombreOuNull(meta?.coefficient),
+            duree: nombreOuNull(meta?.duree),
             candidateResultIds: legacyResults.filter((l) => String(l.apprenant_id) === key && l.quiz_id === a.exam_id && l.matiere_id === a.matiere && Math.abs(new Date(l.completed_at).getTime() - new Date(a.finished_at).getTime()) <= CORE_MATCH_WINDOW_MS && (a.tentative == null || l.tentative == null || Number(a.tentative) === Number(l.tentative))).map((l) => String(l.id)),
             qrcProofs: qrcs.filter((q) => q.attempt_id === a.attempt_id).map((q) => ({ questionId: String(q.question_id), reponse: q.reponse, etat: q.etat, note: q.note == null ? null : Number(q.note) })),
           });
