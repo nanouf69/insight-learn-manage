@@ -107,6 +107,7 @@ CREATE TABLE public.apprenants(id uuid PRIMARY KEY, auth_user_id uuid);
 CREATE TABLE public.apprenant_connexions(apprenant_id uuid, user_id uuid, started_at timestamptz, last_seen_at timestamptz, last_action_at timestamptz, ended_at timestamptz);
 CREATE TABLE public.comptes_test_techniques(apprenant_id uuid);
 CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
+CREATE TABLE public.module_admin_audit_log(module_id int, exercice_id text, question_id text, field text, created_at timestamptz);
 CREATE TABLE public.module_regles_validation(module_id int, protection_serveur boolean, contient_questions boolean);
 CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, reponses jsonb, status text, submitted_at timestamptz);
 CREATE TABLE public.quiz_valide_reecritures_refusees(table_cible text, apprenant_id uuid, cle text, champs text[], auteur uuid);
@@ -180,7 +181,9 @@ class Avant0197(unittest.TestCase):
 class Apres0197(unittest.TestCase):
     """Contrat après correction : schéma réel actuel + SQL 0197, base jetable 't'."""
     def setUp(self):
-        sql(f"SET app.suppression_eleve_autorisee='on'; ALTER TABLE {TABLE} DISABLE TRIGGER USER; DELETE FROM {TABLE}; ALTER TABLE {TABLE} ENABLE TRIGGER USER; DELETE FROM reponses_apprenants; DELETE FROM net.appels;")
+        sql(f"SET app.suppression_eleve_autorisee='on'; ALTER TABLE {TABLE} DISABLE TRIGGER USER; DELETE FROM {TABLE}; ALTER TABLE {TABLE} ENABLE TRIGGER USER; DELETE FROM reponses_apprenants; DELETE FROM net.appels; DELETE FROM module_admin_audit_log;")
+        if os.environ.get('MODULE_COMPLETION_CANDIDATE'):
+            sql("ALTER TABLE module_completion_validations DISABLE TRIGGER USER; DELETE FROM module_completion_validations; ALTER TABLE module_completion_validations ENABLE TRIGGER USER;")
 
     def test_01_nouvelle_progression_sans_fausse_date(self):
         self.assertEqual(sql(smc(U, 2, False, 40)), 'in_progress|40|NULL')
@@ -238,7 +241,8 @@ class Apres0197(unittest.TestCase):
         sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_2_exo_1','{{\"1\":\"B\"}}')")
         self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 1)"), 't')
         self.assertTrue(row(2).startswith('completed|100|'))
-        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 2)"), 'f')
+        # Le total transmis par le navigateur n'est plus une autorité ; le rejeu est idempotent.
+        self.assertEqual(sql(f"SET ROLE service_role; SELECT validated FROM public.autovalidate_module_if_complete('{A}', 2, 2)"), 't' if os.environ.get('MODULE_COMPLETION_CANDIDATE') else 'f')
 
     def test_10_date_terminee_historique_intacte(self):
         sql(f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at) VALUES ('{A}',2,'completed',100,'2026-09-17T08:00:00Z')")
