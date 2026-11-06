@@ -14,6 +14,9 @@ describe("recherche = questions affichées", () => {
       [{ module_id: 11, quiz_id: "bilan-examen-taxi", exercise_id: 606, section_id: 606 }]);
     expect(out[0].questions.map((q: any) => q.id)).toEqual([1]);
     expect(out[0].questions[0].enonce).toBe("affichée");
+    expect(out[0].questions[0].image).toBe("question.png");
+    expect(out[0].questions[0].imageSize).toBe("large");
+    expect(out[0].questions[0].explication).toBe("Explication");
     expect(out[1]).toBe(ex[1]);
   });
 
