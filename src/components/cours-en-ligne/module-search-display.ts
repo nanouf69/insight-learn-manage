@@ -71,6 +71,8 @@ export function exercicesAffichesPourRecherche(
         id: Number(r.legacy_question_id),
         enonce: r.enonce,
         choix: Array.isArray(r.choix) ? r.choix : [],
+        ...(r.image ? { image: r.image } : {}),
+        ...(r.image_size ? { imageSize: r.image_size } : {}),
         ...(r.explication ? { explication: r.explication } : {}),
       })),
     };
