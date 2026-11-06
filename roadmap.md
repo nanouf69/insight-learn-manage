@@ -1,10 +1,10 @@
 # Feuille de route
 
 ## 06/11 — Source de vérité du corrigé admin et divergences
-- [ ] Vérifier en lecture seule le corrigé admin validé, sa concordance avec la capture et la source utilisée pour créer les snapshots.
-- [ ] Recenser les divergences réelles avec snapshots et anciennes fiches, sans extrapoler la capture aux autres questions.
-- [ ] Vérifier que les taux premier essai corrigent avec la référence applicable à chaque tentative.
-- [ ] Proposer la règle sûre futures tentatives / régularisations traçables ; aucune écriture ni publication.
+- [x] Corrigé admin réel = `module_editor_state` ; Q2 B et Q3 B+C conformes à la capture. Nouvelles tentatives figées depuis la version publiée `exam_content_versions`, source distincte : Q2 publié B+C, Q3 publié B+C.
+- [x] Comparaisons strictes EB1–EB6 VTC/TAXI/TA : 17 lignes natives globales (9 questions distinctes, 273 occurrences), dont 16 lignes admin ≠ publié (8 questions distinctes) ; 9 lignes dans les sessions actives. 100 lignes d’anciennes fiches globales sur ID+énoncé identiques, options à confirmer ; zéro dans les sessions actives.
+- [x] Taux premier essai : correction du snapshot de la tentative avec identité énoncé/options ; aucun basculement rétroactif sur le corrigé courant. Les journaux groupés existants ne suffisent pas à rattacher chaque taux à une version de corrigé par question.
+- [x] Règle sûre et tableau complet dans `diagnostic-corrections-eb-2026-11-06.xlsx` : publication contrôlée pour le futur, révisions append-only et simulation validée pour l’historique, mêmes références note/taux après régularisation explicite. Aucune écriture de données, aucun code modifié et aucune publication.
 
 ## 06/11 — Revoir les notes de tous les élèves des sessions actives
 - [x] Trois sessions actives, 40 élèves uniques après déduplication ; audit lecture seule des derniers passages avec corrigé actif et QRC validées.
