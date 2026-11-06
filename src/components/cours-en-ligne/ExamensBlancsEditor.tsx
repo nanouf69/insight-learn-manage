@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
+  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, applyOfficialCoefficient, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere, moveQuestionToPosition, normalizeQcmChoiceLetters } from "./examens-blancs-utils";
@@ -21,7 +21,6 @@ import { getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 // Contrôle visuel des anomalies — LECTURE SEULE, aucune correction automatique.
 import { detectExamenAnomalies, getCorrectionsMatiere } from "./examens-blancs-anomalies";
 import { QuestionImageUpload } from "./QuestionImageUpload";
-import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
   applyFournisseurOverridesToExamens,
   FOURNISSEUR_QUIZ_TO_EXAM,
@@ -30,7 +29,6 @@ import { getMatiereSyncKey, getExamIdentity } from "./examens-blancs-sync-scope"
 import { diffMatiereForAudit, recordExamAuditEntries, type ExamAuditEntry } from "./examens-blancs-audit";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RichText } from "@/lib/richText";
 import { ColoredTextField } from "./ColoredTextField";
 import { FirstPassageProvider, QuestionFirstPassageRate } from "./QuestionFirstPassageRate";
 import { AjouterQcmMenu } from "./AjouterQcmMenu";
