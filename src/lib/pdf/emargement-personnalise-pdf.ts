@@ -59,7 +59,7 @@ export function generateEmargementPersoPdf(apprenant: { nom?: string; prenom?: s
       lab('APPRENANT', m + 4, y + 6); lab('FORMATION', m + 96, y + 6); lab('FORMATEUR', m + 4, y + 18); lab('PÉRIODE', m + 96, y + 18);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...bleu);
       doc.text(name, m + 4, y + 12); doc.text(o.formation, m + 96, y + 12); doc.text(o.formateur, m + 4, y + 24);
-      doc.setFontSize(10); doc.text(`${datePresenceAvecJour(dates[0])} → ${datePresenceAvecJour(dates[dates.length - 1])}`, m + 96, y + 24);
+      doc.setFontSize(10); doc.text(`${datePresenceAvecJour(dates[0])} au ${datePresenceAvecJour(dates[dates.length - 1])}`, m + 96, y + 24);
       y += 34;
       doc.setFillColor(...bleu); doc.roundedRect(m, y, w, 9, 2, 2, 'F');
       doc.setTextColor(255, 255, 255); doc.setFontSize(10);
