@@ -2,6 +2,7 @@
 // Aucune donnée historique n'est complétée ni recalculée : ce qui manque est signalé.
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
+import { groupeEnCours, prefixeEb } from "@/features/correction-qrc-v2/marquageEbEnCours";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
