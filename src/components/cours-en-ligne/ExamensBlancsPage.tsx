@@ -35,12 +35,12 @@ import {
   isStoredExamSessionAfterReset,
   type SavedExamAnswerRow,
 } from "./examens-blancs-utils";
-import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
+import { isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { resultatsDuPassage } from "@/lib/examClotureGarde";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
-import { computeMatiereScore, computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
+import { computeMatiereScoreForAttempt, resolveMatiereForScoring, MATIERE_SNAPSHOT_VERSION } from "./examens-blancs-scoring";
 import { excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import {
   buildFinalizationKey,
