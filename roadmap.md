@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 06/11 — Menu Correction QRC V2 : rouge uniquement en cours
-- [ ] Limiter la couleur rouge aux sessions CRM réellement en cours à la date locale ; passées et futures en noir, lignes spéciales neutres.
-- [ ] Conserver libellés, dates, ordre, sélection, filtres et données ; vérifier le menu ouvert et les tests passé/présent/futur dans l’aperçu, sans publication.
+- [x] Limiter la couleur rouge aux sessions CRM réellement en cours à la date locale ; passées et futures en noir, lignes spéciales neutres.
+- [x] Conserver libellés, dates, ordre, sélection, filtres et données ; menu ouvert vérifié (3 en cours rouges, 12 autres noires, 2 spéciales noires), 9 tests de dates PASS, sans publication.
 
 ## 06/11 — Règle stricte QCM corrigé admin / QRC correction validée
 - [x] Sources tracées : QCM serveur depuis snapshot publié, QRC humaines prioritaires et IA seulement après publication prouvée ; 0 IA sans preuve, 0 IA après humain, 0 QRC manquante, 0 définitif avec QRC restantes. Humain partiel = points conservés + provisoire.
