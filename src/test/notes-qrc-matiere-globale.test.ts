@@ -44,17 +44,17 @@ function bilanSimple(notes: Record<string, number>) {
   }));
 }
 
-const BENNANI = { t3p: 15.5, gestion: 11, securite: 9, francais: 10, anglais: 8, reglementation_vtc: 7, reglementation_vtc2: 6 };
+const BENNANI = { t3p: 16.5, gestion: 11, securite: 11, francais: 10, anglais: 8, reglementation_vtc: 7, reglementation_vtc2: 6 };
 const MALKI = { t3p: 3.5, gestion: 11, securite: 8, francais: 13, anglais: 7, reglementation_vtc: 11, reglementation_vtc2: 11 };
 const SELMI = { t3p: 1.5, gestion: 5, securite: 6, francais: 11, anglais: 7, reglementation_vtc: 6.5, reglementation_vtc2: 7 };
 
 describe("Notes QRC officielles répercutées au score global", () => {
-  it("BENNANI : 162,5 points pondérés / 17 = 9,6, non admise malgré aucune éliminatoire", () => {
+  it("BENNANI : 171,5 points pondérés / 17 = 10,1, admise sans éliminatoire après régularisations", () => {
     const result = bilan(BENNANI);
     expect(result.totalCoef).toBe(17);
-    expect(result.moyenne).toBe(9.6);
+    expect(result.moyenne).toBe(10.1);
     expect(result.eliminatoires).toEqual([]);
-    expect(result.admisGlobal).toBe(false);
+    expect(result.admisGlobal).toBe(true);
   });
 
   it("MALKI : moyenne 9,1 et T3P 3,5 éliminatoire, non admis", () => {
