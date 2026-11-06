@@ -1,10 +1,10 @@
 # Feuille de route
 
 ## 06/11 — Règle stricte QCM corrigé admin / QRC correction validée
-- [ ] Tracer en lecture seule les sources QCM, QRC humaine/IA, statuts provisoire/définitif, notes matière, moyenne, verdict et relevé.
-- [ ] Contrôler la session VTC soir EB1 (8 passages, T3P 0/5, Gestion 0/2, Sécurité 0/0) sans altérer le 7 définitif ni aucune autre note.
-- [ ] Recenser les écarts et calculer à blanc les impacts élève par élève, y compris IA non validée et correction humaine partielle.
-- [ ] Proposer correctif minimal et tests ; aucune écriture réelle, aucun code ni publication sans accord distinct.
+- [x] Sources tracées : QCM serveur depuis snapshot publié, QRC humaines prioritaires et IA seulement après publication prouvée ; 0 IA sans preuve, 0 IA après humain, 0 QRC manquante, 0 définitif avec QRC restantes. Humain partiel = points conservés + provisoire.
+- [x] VTC soir EB1 : 8 passages natifs, 7 comparables sans variation, Gestion non comparable ; T3P 10 QRC en attente sur 2 passages, Gestion 2, Sécurité 0. Le 7 de la capture n’apparaît pas dans les résultats natifs actuels ; aucune note touchée.
+- [x] Calcul à blanc : 59 écarts définitifs chez 30 élèves toutes tentatives, 52 sur dernières tentatives, tous à la hausse ; 24 examens complets chez 13 élèves, zéro verdict changé. 32 zéros automatiques réponse vide (31 réels + 1 fictif) : points inchangés mais statut strict = attente ; un examen simulé deviendrait en attente.
+- [x] Rapport `audit-notation-qcm-qrc-2026-11-06.xlsx` : correctif minimal proposé pour publication QCM, régularisations traçables, replis QRC non validés/déterministes et attente V2 ; tests définis mais non exécutés. Aucune écriture réelle, aucun code modifié, aucune publication.
 
 ## 06/11 — Source de vérité du corrigé admin et divergences
 - [x] Corrigé admin réel = `module_editor_state` ; Q2 B et Q3 B+C conformes à la capture. Nouvelles tentatives figées depuis la version publiée `exam_content_versions`, source distincte : Q2 publié B+C, Q3 publié B+C.
