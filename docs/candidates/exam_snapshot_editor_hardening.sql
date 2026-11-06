@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.core_snapshot_has_question(p_snapshot jsonb, p
 RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path TO 'public' AS $$
   SELECT EXISTS (
     SELECT 1 FROM jsonb_array_elements(COALESCE(p_snapshot->'questions','[]'::jsonb)) q
-    WHERE q.value->>'id' = p_question_id
+    WHERE q->>'id' = p_question_id
   );
 $$;
 
@@ -45,31 +45,31 @@ BEGIN
     RAISE EXCEPTION 'CONTENU_INVALIDE: matières et questions obligatoires' USING ERRCODE = 'P0482';
   END IF;
   FOR m IN SELECT value FROM jsonb_array_elements(p_content->'matieres') LOOP
-    IF nullif(btrim(m.value->>'subject_id'),'') IS NULL
-       OR (m.value->>'duree')::numeric < 0
-       OR coalesce((m.value->>'coefficient')::numeric,0) <= 0
-       OR coalesce((m.value->>'note_sur')::numeric,0) <= 0
-       OR (m.value->>'note_eliminatoire') IS NULL THEN
+    IF nullif(btrim(m->>'subject_id'),'') IS NULL
+       OR (m->>'duree')::numeric < 0
+       OR coalesce((m->>'coefficient')::numeric,0) <= 0
+       OR coalesce((m->>'note_sur')::numeric,0) <= 0
+       OR (m->>'note_eliminatoire') IS NULL THEN
       RAISE EXCEPTION 'CONTENU_INVALIDE: métadonnées/barème de matière incomplets' USING ERRCODE = 'P0482';
     END IF;
   END LOOP;
   FOR q IN SELECT value FROM jsonb_array_elements(p_content->'questions') LOOP
-    IF nullif(btrim(q.value->>'id'),'') IS NULL OR nullif(btrim(q.value->>'matiere'),'') IS NULL
-       OR q.value->>'type' NOT IN ('QCM','QRC')
-       OR nullif(btrim(q.value->>'enonce'),'') IS NULL
-       OR coalesce((q.value->>'points')::numeric,0) <= 0 THEN
-      RAISE EXCEPTION 'CONTENU_INVALIDE: question incomplète %', q.value->>'id' USING ERRCODE = 'P0482';
+    IF nullif(btrim(q->>'id'),'') IS NULL OR nullif(btrim(q->>'matiere'),'') IS NULL
+       OR q->>'type' NOT IN ('QCM','QRC')
+       OR nullif(btrim(q->>'enonce'),'') IS NULL
+       OR coalesce((q->>'points')::numeric,0) <= 0 THEN
+      RAISE EXCEPTION 'CONTENU_INVALIDE: question incomplète %', q->>'id' USING ERRCODE = 'P0482';
     END IF;
-    IF q.value->>'type' = 'QCM' AND (
-      jsonb_typeof(q.value->'choix') <> 'array' OR jsonb_array_length(q.value->'choix') = 0
-      OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements(q.value->'choix') c WHERE c.value->>'correct' = 'true')
+    IF q->>'type' = 'QCM' AND (
+      jsonb_typeof(q->'choix') <> 'array' OR jsonb_array_length(q->'choix') = 0
+      OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements(q->'choix') c WHERE c.value->>'correct' = 'true')
     ) THEN
-      RAISE EXCEPTION 'CONTENU_INVALIDE: clé QCM absente %', q.value->>'id' USING ERRCODE = 'P0482';
+      RAISE EXCEPTION 'CONTENU_INVALIDE: clé QCM absente %', q->>'id' USING ERRCODE = 'P0482';
     END IF;
-    IF q.value->>'type' = 'QRC' AND nullif(btrim(q.value->>'reponseQRC'),'') IS NULL THEN
-      RAISE EXCEPTION 'CONTENU_INVALIDE: corrigé QRC absent %', q.value->>'id' USING ERRCODE = 'P0482';
+    IF q->>'type' = 'QRC' AND nullif(btrim(q->>'reponseQRC'),'') IS NULL THEN
+      RAISE EXCEPTION 'CONTENU_INVALIDE: corrigé QRC absent %', q->>'id' USING ERRCODE = 'P0482';
     END IF;
-    ids := array_append(ids,q.value->>'id');
+    ids := array_append(ids,q->>'id');
   END LOOP;
   IF (SELECT count(DISTINCT id) FROM unnest(ids) id) <> array_length(ids,1) THEN
     RAISE EXCEPTION 'CONTENU_INVALIDE: identifiants de questions dupliqués' USING ERRCODE = 'P0482';
@@ -141,15 +141,15 @@ BEGIN
     RAISE EXCEPTION 'SNAPSHOT_A_REVOIR: questions absentes' USING ERRCODE = 'P0479';
   END IF;
   FOR q IN SELECT value FROM jsonb_array_elements(p_snapshot->'questions') LOOP
-    IF nullif(btrim(q.value->>'id'),'') IS NULL OR q.value->>'type' NOT IN ('QCM','QRC')
-       OR nullif(btrim(q.value->>'enonce'),'') IS NULL OR coalesce((q.value->>'points')::numeric,0)<=0 THEN
-      RAISE EXCEPTION 'SNAPSHOT_A_REVOIR: question/barème incomplet %',q.value->>'id' USING ERRCODE = 'P0479';
+    IF nullif(btrim(q->>'id'),'') IS NULL OR q->>'type' NOT IN ('QCM','QRC')
+       OR nullif(btrim(q->>'enonce'),'') IS NULL OR coalesce((q->>'points')::numeric,0)<=0 THEN
+      RAISE EXCEPTION 'SNAPSHOT_A_REVOIR: question/barème incomplet %',q->>'id' USING ERRCODE = 'P0479';
     END IF;
-    IF q.value->>'type'='QCM' AND (
-      jsonb_typeof(q.value->'choix')<>'array' OR jsonb_array_length(q.value->'choix')=0
-      OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(q.value->'choix') c WHERE c.value->>'correct'='true')
+    IF q->>'type'='QCM' AND (
+      jsonb_typeof(q->'choix')<>'array' OR jsonb_array_length(q->'choix')=0
+      OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(q->'choix') c WHERE c.value->>'correct'='true')
     ) THEN
-      RAISE EXCEPTION 'SNAPSHOT_A_REVOIR: clé QCM absente %',q.value->>'id' USING ERRCODE = 'P0479';
+      RAISE EXCEPTION 'SNAPSHOT_A_REVOIR: clé QCM absente %',q->>'id' USING ERRCODE = 'P0479';
     END IF;
   END LOOP;
 END;
@@ -173,8 +173,8 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS
 DECLARE expected text[]; actual text[];
 BEGIN
   IF NEW.etat='terminee' AND OLD.etat IS DISTINCT FROM 'terminee' THEN
-    SELECT array_agg(q.value->>'id') INTO expected
-      FROM jsonb_array_elements(COALESCE(NEW.snapshot->'questions','[]'::jsonb)) q WHERE q.value->>'type'='QRC';
+    SELECT array_agg(q->>'id') INTO expected
+      FROM jsonb_array_elements(COALESCE(NEW.snapshot->'questions','[]'::jsonb)) q WHERE q->>'type'='QRC';
     SELECT array_agg(i.question_id) INTO actual FROM public.qrc_instances_v2 i WHERE i.attempt_id=NEW.attempt_id;
     IF coalesce(array_length(expected,1),0)<>coalesce(array_length(actual,1),0)
        OR EXISTS(SELECT 1 FROM unnest(coalesce(expected,'{}'::text[])) e WHERE NOT e=ANY(coalesce(actual,'{}'::text[])))
