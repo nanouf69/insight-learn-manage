@@ -44,7 +44,9 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         const first=events[0];
         if (!first) {if(evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===qid && hasAnswer(s.valeur)))uncertain=true;continue;}
         const retake=evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id);
-        const proven=!retake && frozen.length===1 && first.auteur===learner && first.revision_precedente===0 && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
+        const authUserId=evidence.accounts.find(account=>account.id===learner)?.auth_user_id;
+        // Le trigger enregistre INSERT avec revision_precedente NULL et l'auteur avec auth.uid().
+        const proven=!retake && frozen.length===1 && !!authUserId && first.auteur===authUserId && first.revision_precedente==null && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
         observations.push({at:first.created_at,correct:proven?grade(q,frozen[0],first.valeur_nouvelle):null,answer:first.valeur_nouvelle});
       }
       for (const exam of examIds) {

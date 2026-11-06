@@ -26,7 +26,7 @@ export async function readExamFirstPassage(examId:string,subject:string,question
   const excluded=new Set(tests.map(t=>t.apprenant_id));const ids=[...activeLearners(sessions,enrollments,today,excluded).keys()];
   for(let offset=0;offset<ids.length;offset+=50){
     const batch=ids.slice(offset,offset+50);
-    const [attempts,events,states,legacy,archived,journal,results,retakes]=await Promise.all([
+    const [attempts,events,states,legacy,archived,journal,results,retakes,accounts]=await Promise.all([
       pages<ExamStatsAttempt>((a,b)=>supabase.from('exam_attempts_v2').select('attempt_id,apprenant_id,exam_id,started_at,is_test,snapshot').in('apprenant_id',batch).in('exam_id',examIds).order('attempt_id').range(a,b)),
       pages<ExamStatsEvent>((a,b)=>supabase.from('answer_events').select('event_id,attempt_id,apprenant_id,question_id,valeur_nouvelle,valeur_precedente,revision_precedente,revision_nouvelle,auteur,created_at').in('apprenant_id',batch).in('question_id',questions.map(q=>`${subject}:${q.id}`)).order('event_id').range(a,b)),
       pages<ExamStatsState>((a,b)=>supabase.from('answer_state').select('attempt_id,apprenant_id,question_id,valeur').in('apprenant_id',batch).in('question_id',questions.flatMap(q=>[`${subject}:${q.id}`,String(q.id)])).order('response_id').range(a,b)),
@@ -35,8 +35,9 @@ export async function readExamFirstPassage(examId:string,subject:string,question
       pages<FirstAnswerEvent>((a,b)=>supabase.from('reponses_apprenants_journal').select('apprenant_id,exercice_id,question_id,tentative,valeur,created_at').in('apprenant_id',batch).in('exercice_id',examIds.map(e=>`${e}__${subject}`)).order('created_at').order('id').range(a,b)),
       pages<ExamStatsResult>((a,b)=>supabase.from('apprenant_quiz_results').select('id,apprenant_id,quiz_id,matiere_id,tentative,completed_at,details').in('apprenant_id',batch).in('quiz_id',examIds).eq('matiere_id',subject).order('id').range(a,b)),
       pages<ExamStatsRetake>((a,b)=>supabase.from('exam_subject_retakes').select('apprenant_id,exam_id,matiere_id,attempt_id,exercice_id,created_at').in('apprenant_id',batch).in('exam_id',examIds).eq('matiere_id',subject).order('operation_id').range(a,b)),
+      pages<{id:string;auth_user_id:string|null}>((a,b)=>supabase.from('apprenants').select('id,auth_user_id').in('id',batch).order('id').range(a,b)),
     ]);
-    evidence.attempts.push(...attempts);evidence.events.push(...events);evidence.states?.push(...states);evidence.legacy.push(...legacy,...archived);evidence.journal.push(...journal);evidence.results.push(...results);evidence.retakes.push(...retakes);
+    evidence.attempts.push(...attempts);evidence.events.push(...events);evidence.states?.push(...states);evidence.legacy.push(...legacy,...archived);evidence.journal.push(...journal);evidence.results.push(...results);evidence.retakes.push(...retakes);evidence.accounts.push(...accounts);
   }
   const {data:finalSession}=await supabase.auth.getSession();if(finalSession.session?.user.id!==user)throw new Error('Le compte connecté a changé');
   return computeExamSessionFirstPassage(questions,examIds,subject,sessions,enrollments,today,excluded,evidence);
