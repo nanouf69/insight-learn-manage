@@ -51,6 +51,7 @@ import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { RefaireMatiereButton } from './RefaireMatiereButton';
 import { buildExamMatiereExerciceId } from '@/lib/quizAttempts';
 import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
+import { questionsRevisionDuPassage, reponseCorrecteDansRevision } from "@/lib/revisionQuestionsFigees";
 
 
 function EcranResultats({
@@ -598,32 +599,13 @@ function EcranResultats({
       if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
       const r = resultats[mi];
       if (!r) return;
-      const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
-      const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
+      const qSafe = questionsRevisionDuPassage(matiere, r as any);
+      const matiereDuPassage = { ...matiere, questions: qSafe };
       qSafe.forEach((q) => {
         const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
         if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) return;
-        let isCorrect = false;
-        if (q?.type === "QCM" && q.choix) {
-          const correctes = safeArray<string>(q.choix?.filter((c) => c.correct).map((c) => c.lettre)).sort();
-          const donnees = safeArray<string>(rep).sort();
-          isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-        } else if (q?.type === "QRC") {
-          const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
-          if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
-            isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
-          } else {
-            const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-            const motsCles = q.reponses_possibles || [];
-            let nbTrouvees = 0;
-            motsCles.forEach((mc) => {
-              const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-              if (repStr.includes(mcN)) nbTrouvees++;
-            });
-            isCorrect = nbTrouvees >= motsCles.length;
-          }
-        }
-        if (!isCorrect) out.push({ matiere, question: q, matiereNom: matiere.nom });
+        const isCorrect = reponseCorrecteDansRevision(q, rep, matiereDuPassage, r as any);
+        if (!isCorrect) out.push({ matiere: matiereDuPassage, question: q, matiereNom: matiere.nom });
       });
     });
     return out;
