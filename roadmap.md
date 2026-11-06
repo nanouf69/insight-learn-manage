@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 06/11 — Correction QRC V2 : inscriptions croisées EB1-TAXI
-- [ ] Afficher les 30 passages concernés dans chacune des deux sessions couvrantes, avec les mêmes identifiants et la mention « Inscription croisée » ; conserver les vrais conflits.
-- [ ] Empêcher les totaux trompeurs, garder EB1 VTC distinct d’EB1-TAXI et ne changer ni filtres ni navigation ni écriture.
-- [ ] Tests ciblés/non-régression, build et contrôle réel ; publication interdite sans autorisation distincte.
+- [x] Les 30 passages sont visibles dans chacune des deux sessions couvrantes avec les mêmes identifiants, une seule fois par session et la mention « Inscription croisée » ; EB1-TAXI a quitté le conflit, les vrais conflits restent.
+- [x] Avertissement contre l’addition des totaux, EB1 VTC distinct, filtres/navigation inchangés ; 62 QRC visibles et empreinte des passages identique avant/après, aucune écriture.
+- [x] 28 tests ciblés PASS ; série QRC 182 PASS + 1 échec ancien connu de reprise après clôture hors périmètre ; build OK ; écran réel et captures vérifiés sans erreur JS.
+- [ ] Publication interdite sans autorisation distincte ; aucune publication effectuée.
 
 ## 06/11 — Passage automatique à la copie suivante après notation QRC
 - [x] Après la note choisie, attente de la persistance serveur puis relecture confirmant l'état corrigé et la note exacte avant toute navigation.
