@@ -119,7 +119,10 @@ export default function ExamensBlancsPage({
   isPresentiel,
   onExamStateChange,
   onLearnerActivity,
+  confirmationPresentiel,
 }: {
+  /** Fourni uniquement pour un élève présentiel certain : écran d'identité avant chaque NOUVEL examen blanc. */
+  confirmationPresentiel?: { nom?: string | null; prenom?: string | null } | null;
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
   apprenantId?: string | null;
@@ -627,6 +630,8 @@ export default function ExamensBlancsPage({
   }, [defaultBilanId]);
 
   const handleStart = async (examen: ExamenBlanc, forceRetake = false, matiereIds?: string[] | null) => {
+    const dejaConfirme = presentielConfirmeRef.current;
+    presentielConfirmeRef.current = false;
     if (!forceRetake && userId && apprenantId) {
       const operation = sessionStorage.getItem(subjectRetakeStorageKey(userId, apprenantId));
       if (operation) {
@@ -809,6 +814,17 @@ export default function ExamensBlancsPage({
         forceRetake,
         minimumTentative: cutoff ? historicalMaximumAttempt : 1,
       });
+
+      if (confirmationPresentielRequise({
+        mode: confirmationPresentiel ? "presentiel" : "inconnu",
+        passageMode: passage.mode,
+        isAdmin,
+        dejaConfirme,
+      })) {
+        // Aucune écriture : on attend la déclaration de l'élève, puis on relance le même démarrage.
+        setPendingPresentielStart({ examen, forceRetake, matiereIds });
+        return;
+      }
 
       const bestRowsByMatiere = new Map<string, SavedExamAnswerRow>();
       validMatieres.forEach((matiere) => {
