@@ -34,6 +34,8 @@ import { FirstPassageProvider, QuestionFirstPassageRate } from "./QuestionFirstP
 import { AjouterQcmMenu } from "./AjouterQcmMenu";
 import { copierQcmPourImport } from "./qcmBilans";
 import { AdminExamQuestionCard } from "./AdminExamQuestionCard";
+import { publierVersionExamen } from "@/features/noyau-passage/pontV2";
+import { controlerVersionPubliee, lireVersions, versionActive, type VersionPubliee } from "@/features/noyau-passage/publicationV2";
 
 // Virtual module_id range for examens blancs: 90000+
 // Stable mapping from exam ID → module_id (survives reordering / additions)
@@ -1033,11 +1035,16 @@ function MatiereEditor({
     toast.success("Question supprimée avec succès");
   };
 
-  const appendQuestion = (base: Question) => {
+  const appendQuestion = (base: Omit<Question, "id">) => {
     const editedAt = new Date().toISOString();
-    // Même structure que les questions existantes + marqueurs d'édition Admin
-    // (utilisés par la règle « dernière modification réelle = version commune »).
-    const newQ = { ...base, manually_edited: true, _editedAt: editedAt } as Question;
+    // Compteur monotone persisté : supprimer le plus grand ID ne le rend plus réutilisable.
+    const newId = Math.max(
+      Number(matiere.prochainIdQuestion) || 1,
+      1,
+      ...questionsSafe.map((q) => (Number.isSafeInteger(q.id) && q.id > 0 ? q.id + 1 : 1)),
+    );
+    // Même structure que les questions existantes + marqueurs d'édition Admin.
+    const newQ = { ...base, id: newId, manually_edited: true, _editedAt: editedAt } as Question;
     const newQuestions = [...questionsSafe, newQ];
     const nouveauTotal = sumPoints(newQuestions);
     // Le total de la matière est recalculé immédiatement, sans toucher aux
@@ -1046,25 +1053,25 @@ function MatiereEditor({
     if (nouveauTotal > BAREME_CIBLE) {
       toast.warning(`Cet ajout porterait le barème à ${nouveauTotal}/${BAREME_CIBLE}`);
     }
-    onChange({ ...matiere, questions: newQuestions, noteSur: nouveauTotal });
+    onChange({ ...matiere, questions: newQuestions, noteSur: nouveauTotal, prochainIdQuestion: newId + 1 });
     setEditingQId(newQ.id);
   };
 
   const addQuestion = (type: "QCM" | "QRC") => {
-    const newId = Math.max(0, ...questionsSafe.map(q => q.id)) + 1;
-    const base: Question = type === "QCM"
-      ? { id: newId, type: "QCM", enonce: "Nouvelle question", choix: [
+    const base: Omit<Question, "id"> = type === "QCM"
+      ? { type: "QCM", enonce: "Nouvelle question", choix: [
           { lettre: "A", texte: "Choix A", correct: true },
           { lettre: "B", texte: "Choix B" },
         ]}
-      : { id: newId, type: "QRC", enonce: "Nouvelle question QRC", reponseQRC: "", reponses_possibles: [] };
+      : { type: "QRC", enonce: "Nouvelle question QRC", reponseQRC: "", reponses_possibles: [] };
     appendQuestion(base);
   };
 
   const importQcm = (source: Question) => {
-    const newId = Math.max(0, ...questionsSafe.map(q => q.id)) + 1;
     setExpanded(true);
-    appendQuestion(copierQcmPourImport(source, newId));
+    const copie = copierQcmPourImport(source, 0) as Question;
+    const { id: _idProvisoire, ...sansId } = copie;
+    appendQuestion(sansId);
   };
 
 
@@ -1509,6 +1516,19 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
             moduleData: row.module_data as Record<string, unknown>,
             expectedUpdatedAt: lastKnownServerUpdatedAtRef.current[row.module_id] ?? null,
           });
+
+          const examenPublie = synced.find((ex) => getModuleIdForExamId(ex.id) === row.module_id);
+          if (examenPublie && !examenPublie.id.startsWith("bilan-")) {
+            // Ne jamais activer V2 sur un examen encore legacy (notamment EB3).
+            const versions = await lireVersions([examenPublie.id]);
+            if (versionActive(versions, examenPublie.id)) {
+              const version = await publierVersionExamen(examenPublie, row.module_id) as unknown as VersionPubliee;
+              const controle = controlerVersionPubliee(examenPublie, version);
+              if (!controle.conforme) {
+                throw new Error(`Nouvelle version V2 non conforme après relecture : ${controle.ecarts.join(" ; ")}`);
+              }
+            }
+          }
         } catch (error) {
           console.error("[ExamensEditor] Save error:", error);
           if (isStaleModuleEditorStateError(error)) {
@@ -1552,7 +1572,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
       if (showSuccessToast) {
         setSaved(true);
-        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
+        toast.success("Examens sauvegardés : les modifications concernent uniquement les nouvelles tentatives. Les copies commencées restent figées.");
         setTimeout(() => setSaved(false), 2500);
       }
 
@@ -1699,39 +1719,6 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     setSaving(false);
   };
 
-  const handleReset = async () => {
-    const confirmed = window.confirm(
-      "⚠️ Réinitialiser tous les examens blancs ?\n\nCela supprimera toutes vos modifications sauvegardées en base et restaurera les questions d'origine.\n\nCette action est irréversible."
-    );
-    if (!confirmed) return;
-
-    try {
-      const moduleIds = tousLesExamens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
-      const { error } = await supabase
-        .from("module_editor_state")
-        .delete()
-        .in("module_id", moduleIds);
-
-      if (error) {
-        console.error("[ExamensEditor] Reset DB error:", error);
-        toast.error("Erreur lors de la réinitialisation en base");
-        return;
-      }
-
-      const resetExamens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
-      setExamens(resetExamens);
-      lastSavedFingerprintRef.current = JSON.stringify(resetExamens);
-      lastSavedModuleFingerprintsRef.current = resetExamens.reduce<Record<number, string>>((acc, ex, i) => {
-        acc[EXAMEN_BLANC_MODULE_BASE + i] = JSON.stringify(ex.matieres ?? []);
-        return acc;
-      }, {});
-      toast.success("Examens blancs réinitialisés aux valeurs d'origine");
-    } catch (err) {
-      console.error("[ExamensEditor] Reset failed:", err);
-      toast.error("Erreur lors de la réinitialisation");
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-auto">
       <div className="max-w-[1800px] mx-auto p-6 space-y-6">
@@ -1757,9 +1744,6 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
               Sauvegarde auto...
             </span>
           )}
-          <Button variant="outline" size="sm" onClick={handleReset}>
-            Réinitialiser
-          </Button>
           <Button size="sm" onClick={handleSaveAll} className="gap-2" disabled={saving}>
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1886,10 +1870,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                       {activeResponsesCount} réponse(s) élève(s) détectée(s) sur cet examen
                     </p>
                     <p className="text-xs text-destructive/80 mt-1">
-                      La suppression et le déplacement de questions sont bloqués pour éviter de corrompre les données des élèves.
-                      Vous pouvez toujours corriger le texte, les choix et la bonne réponse d'une question — c'est la bonne pratique
-                      quand une question contient une erreur. Sachez simplement que cette correction s'appliquera automatiquement
-                      dès le prochain affichage aux élèves qui ont déjà répondu, y compris rétroactivement sur leur note.
+                      Les copies V2 commencées conservent leur version figée. Toute modification enregistrée crée une nouvelle version
+                      réservée aux futures tentatives ; elle ne recalcule ni les réponses, ni les corrections, ni les notes existantes.
+                      Les anciennes copies legacy sans snapshot restent en revue manuelle et ne doivent jamais être reconstruites depuis ce contenu.
                     </p>
                   </div>
                 </div>
