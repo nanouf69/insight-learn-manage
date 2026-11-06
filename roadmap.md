@@ -1,5 +1,14 @@
 # Feuille de route
 
+## 06/11 — Sécurisation durable des examens blancs après remise à zéro
+- [x] État initial sauvegardé sous `/tmp/eb-reset-securisation-etat-initial` ; référence : 169 Vitest PASS / 1 échec textuel obsolète, 19 tests SQL isolés PASS au contrôle précédent.
+- [ ] Récupérer sans perte les files locales des tentatives `terminee` et `abandonnee`, uniquement vers le même examen/matière et des identifiants du snapshot ; couvrir tablette/rechargement et mauvais snapshot.
+- [ ] Consommer les autorisations de reset V2 au plus une fois côté serveur, avec verrou de concurrence et tests double appareil ; aucune donnée réelle modifiée.
+- [ ] Avant « Terminer la matière », vérifier les dernières valeurs serveur, refuser une clôture abandonnée et échouer fermé si l’état d’une tentative est illisible.
+- [ ] Remplacer le reset admin complet destructif par l’archivage officiel ; empêcher le reset par matière destructif tant qu’aucun circuit d’archivage dédié sûr n’existe.
+- [ ] Ajouter tests comportementaux, SQL jetable et scénario navigateur fictif isolé ; corriger le test textuel obsolète et vérifier EB1–EB6 TAXI/VTC, compilation et non-régression.
+- [ ] Aucune publication sans revue explicite de tous les autres changements de l’aperçu et autorisation distincte.
+
 ## 06/11 — Correction QRC V2 : inscriptions croisées EB1-TAXI
 - [x] Les 30 passages sont visibles dans chacune des deux sessions couvrantes avec les mêmes identifiants, une seule fois par session et la mention « Inscription croisée » ; EB1-TAXI a quitté le conflit, les vrais conflits restent.
 - [x] Avertissement contre l’addition des totaux, EB1 VTC distinct, filtres/navigation inchangés ; 62 QRC visibles et empreinte des passages identique avant/après, aucune écriture.
