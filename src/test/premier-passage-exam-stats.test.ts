@@ -15,7 +15,7 @@ describe('EB premier passage — preuves et conservation',()=>{
  it('examen 2 jamais agrégé avec examen 1',()=>{const e=evidence();e.attempts[0].exam_id='EB2';expect(calc(e).total).toBe(0);});
  it('même ID numérique d’autre matière non agrégé',()=>{const e=evidence();e.events[0].question_id='francais:1';expect(calc(e).total).toBe(0);});
  it('choix modifiés depuis le snapshot : inconnus',()=>{const e=evidence();const fq=e.attempts[0].snapshot.questions?.[0];if(fq)fq.choix=[{lettre:'A',texte:'autre',correct:true}];expect(calc(e)).toMatchObject({total:0,unknown:1});});
- it('QRC jamais notée via comparaison de texte ou IA',()=>{expect(calc(evidence(),{...q,type:'QRC'})).toMatchObject({total:0,unknown:1});});
+ it('QRC sans correction validée : données insuffisantes',()=>{expect(calc(evidence(),{...q,type:'QRC'})).toMatchObject({total:0,unknown:1});});
  it('import historique ne fabrique pas un événement initial',()=>{const e=evidence();e.attempts[0].snapshot.source_historique={result_id:'old'};expect(calc(e).total).toBe(0);});
  it('compte test non inclus',()=>{const e=evidence();e.attempts[0].is_test=true;expect(calc(e).total).toBe(0);});
  it('absence de réponse n’est pas une erreur',()=>{const e=evidence();e.events=[];expect(calc(e)).toMatchObject({total:0,incorrect:0});});

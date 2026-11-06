@@ -14,7 +14,9 @@ export type ExamStatsResult = { id: string; apprenant_id: string; quiz_id: strin
 export type ExamStatsRetake = { apprenant_id: string; exam_id: string; matiere_id: string; attempt_id: string | null; exercice_id: string; created_at: string };
 export type ExamStatsState = {attempt_id:string;apprenant_id:string;question_id:string;valeur:unknown};
 export type ExamStatsAccount = {id:string;auth_user_id:string|null};
-export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[] };
+export type ExamStatsQrc = { qrc_instance_id:string; attempt_id:string; apprenant_id:string; question_id:string; reponse:unknown; etat:string; note:number|string|null; corrige_email:string|null };
+export type ExamStatsQrcIa = { qrc_instance_id:string; statut:string; note:number|string|null; bareme:number|string|null };
+export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[]; qrc?:ExamStatsQrc[]; qrcIa?:ExamStatsQrcIa[] };
 const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) ? [...v].sort() : null;
 const hasAnswer = (v: unknown) => typeof v === 'string' ? !!v.trim() : Array.isArray(v) && v.length > 0;
 const same = (a: unknown, b: unknown) => values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));

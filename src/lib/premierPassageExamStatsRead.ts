@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { freshSessionRead } from './sessionRpc';
 import { activeLearners, activeSessions, type SessionStats, type InscriptionStats, type QuestionStatsTarget, type AttemptStats, type FirstAnswerEvent } from './premierPassageStats';
-import { firstPassageExamIds, computeExamSessionFirstPassage, type ExamStatsAttempt, type ExamStatsEvent, type ExamStatsResult, type ExamStatsRetake, type ExamStatsEvidence, type ExamStatsState } from './premierPassageExamStats';
+import { firstPassageExamIds, computeExamSessionFirstPassage, type ExamStatsAttempt, type ExamStatsEvent, type ExamStatsResult, type ExamStatsRetake, type ExamStatsEvidence, type ExamStatsState, type ExamStatsQrc, type ExamStatsQrcIa } from './premierPassageExamStats';
 
 async function pages<T>(query:(a:number,b:number)=>PromiseLike<{data:unknown;error:unknown}>):Promise<T[]> {
   const rows:T[]=[];
