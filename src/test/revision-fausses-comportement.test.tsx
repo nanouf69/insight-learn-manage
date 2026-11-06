@@ -140,6 +140,19 @@ describe("Révision questions fausses — comportement", () => {
     expect(screen.getByRole("button", { name: /Terminer la révision/ })).toBeEnabled();
   });
 
+  it("une relecture encore non terminée après un reset concurrent bloque le résultat", async () => {
+    vi.mocked(flushAnswerSavesAndWait).mockResolvedValue(true);
+    h.saved = { reponses: { revisionState: creerRevisionProgressState({
+      examenId: "EB2-TAXI", answers: {}, currentIndex: 1, correctedCount: 0,
+      correctedQuestions: order, showCorrection: true, questionOrder: order,
+    }) }, score: 0, completed: false };
+    const { onTerminer } = monter();
+    fireEvent.click(await screen.findByRole("button", { name: /Terminer la révision/ }));
+    await waitFor(() => expect(flushAnswerSavesAndWait).toHaveBeenCalled());
+    expect(h.inserts).toHaveLength(0);
+    expect(onTerminer).not.toHaveBeenCalled();
+  });
+
   it("Recommencer alloue une nouvelle tentative et ne supprime jamais le brouillon", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     monter();
