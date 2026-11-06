@@ -805,6 +805,17 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
       if (confirmation?.success === true && confirmation?.confirmed === true) {
+        const skipped = Array.isArray(confirmation.skipped_questions) ? confirmation.skipped_questions : [];
+        if (skipped.length > 0) {
+          // Le serveur a déjà une version plus récente. Ne jamais retirer la
+          // version locale ni avancer base_seq : sinon une clôture suivante
+          // pourrait réécrire la valeur ignorée avec le nouveau numéro.
+          const message = "Une version plus récente existe sur le serveur. Vos réponses locales sont conservées sur cet appareil ; rechargez avant de continuer pour éviter tout écrasement.";
+          notifyAnswerSaveRejected(item.payload.exercice_id, "refused", message);
+          item.rejection = { exerciceId: item.payload.exercice_id, reason: "refused", message, at: new Date().toISOString() };
+          recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, "refused", message);
+          return "blocked";
+        }
         console.info('[answerPersistence] accusé serveur', { operation: item.id, tentative: item.attempts + 1, writeSeq: Number(confirmation.write_seq ?? 0) });
         rememberWriteSeq(
           item.payload.apprenant_id,

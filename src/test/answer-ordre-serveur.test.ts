@@ -17,7 +17,7 @@ if (typeof globalThis.localStorage === "undefined") {
   };
 }
 
-import { enqueueAnswerSave, setAnswerSaveAuthToken, setAnswerSaveOwnership } from "@/lib/answerPersistence";
+import { enqueueAnswerSave, flushAnswerSavesAndWait, setAnswerSaveAuthToken, setAnswerSaveOwnership } from "@/lib/answerPersistence";
 
 const APPRENANT = "11111111-1111-1111-1111-111111111111";
 const EXO = "EB1__gestion__t1";
@@ -76,6 +76,26 @@ describe("Ordre des écritures décidé par le serveur", () => {
 
     const body = sentBodies(fetchMock)[0];
     expect(typeof body.base_seq).toBe("number");
+  });
+
+  it("une version ignorée par le serveur reste locale, bloque la clôture et n'avance pas base_seq", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"] }),
+      text: async () => "",
+    }));
+    enqueueAnswerSave(basePayload({
+      exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
+      reponses: { revisionState: { currentIndex: 0, answers: { "t3p:1": ["A"] } } },
+    }));
+    await new Promise((r) => setTimeout(r, 20));
+    const queue = JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]");
+    expect(queue).toHaveLength(1);
+    expect(queue[0].blocked).toBe(true);
+    expect(queue[0].payload.base_seq).toBe(0);
+    expect(queue[0].payload.reponses.revisionState.answers["t3p:1"]).toEqual(["A"]);
+    expect(queue[0].rejection.message).toContain("version plus récente");
+    expect(await flushAnswerSavesAndWait(APPRENANT, "revision_fausses_EB1", 50)).toBe(false);
   });
 
   it("compactage hors connexion : conserve le numéro d'écriture le plus ancien", async () => {
