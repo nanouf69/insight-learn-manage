@@ -48,7 +48,12 @@ export function verifierPassageV2(core: CoreMatiereState, reponsesLigne: unknown
   if (core.qrcTotal > 0 && (!core.qrcProofs || core.qrcProofs.length !== core.qrcTotal)) return "non_verifiable";
   for (const q of core.qrcProofs ?? []) {
     const id = q.questionId.startsWith(`${core.matiereId}:`) ? q.questionId.slice(core.matiereId.length + 1) : q.questionId;
-    if (!Object.prototype.hasOwnProperty.call(reponsesLigne, id)) return "non_verifiable";
+    // QRC laissée sans réponse : l'ancienne fiche n'enregistre pas la clé. Absente des
+    // deux côtés = même réponse (vide) ; une réponse serveur non vide reste non vérifiable.
+    if (!Object.prototype.hasOwnProperty.call(reponsesLigne, id)) {
+      if (normaliserValeurReponse(q.reponse) == null) continue;
+      return "non_verifiable";
+    }
     if (normaliserValeurReponse((reponsesLigne as Record<string, unknown>)[id]) !== normaliserValeurReponse(q.reponse)) return "non_fiable";
   }
   return "fiable";
