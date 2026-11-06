@@ -72,6 +72,9 @@ describe("Renvoi automatique — file durable", () => {
 
   it("en cas d'échec réseau répété, la réponse reste en file (jamais perdue)", async () => {
     mockFetch.mockRejectedValue(new Error("Failed to fetch"));
+    // Jitter neutre (×1) : 1er réessai à 2 s exactement, hors de la fenêtre de 1,5 s.
+    // Sans cela le jitter (0,7×) pouvait renvoyer à 1,4 s et rendre le test aléatoire.
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
     const { persistence, hook } = await setup();
     let flushed = true;
     await act(async () => {
@@ -82,6 +85,7 @@ describe("Renvoi automatique — file durable", () => {
     expect(mockFetch.mock.calls.length).toBe(1);
     expect(persistence.getPendingAnswers("apprenant-001", "exam-abc")).toEqual({ "1": ["A"] });
     expect(persistence.getPendingAnswerSavesFor("apprenant-001", "exam-abc")).toBe(1);
+    random.mockRestore();
   });
 
   it("réussit dès que le serveur revient, puis vide la file", async () => {

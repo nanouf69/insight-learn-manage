@@ -6,7 +6,13 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: str
   q.single = async () => fake.rows[table];
   q.range = async (f: number, t: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(f, t + 1) });
   return q;
-}, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null } } }));
+}, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null },
+  // Lecture serveur sous session vérifiée (freshSessionRead) : session admin fictive stable.
+  auth: { getSession: async () => ({ data: { session: { user: { id: "admin-fictif" }, expires_at: Math.floor(Date.now() / 1000) + 3600 } }, error: null }),
+    refreshSession: async () => ({ data: { session: { user: { id: "admin-fictif" }, expires_at: Math.floor(Date.now() / 1000) + 3600 } }, error: null }) } } }));
+vi.mock("@/lib/sessionExpiree", () => ({ assurerSessionFraiche: async () => "test-token", SESSION_EXPIREE_MESSAGE: "Session expirée" }));
+// Cette suite isole le raccordement compteur/jalons ; la reprise de session réelle est couverte par sauvegardes-04nov.
+vi.mock("@/lib/sessionRpc", () => ({ freshSessionRead: async (call: () => PromiseLike<unknown>) => call(), freshSessionCall: async (call: () => PromiseLike<unknown>) => call() }));
 import { chargerCandidatModules } from "@/hooks/useCandidatModules";
 import { completionAvecActivites, ACTIVITES_CODE } from "@/lib/jeuxPedagogiques";
 import { recalculerPratiqueSeule } from "@/lib/releveCalculServeur";

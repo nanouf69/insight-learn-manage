@@ -20,9 +20,10 @@ describe('Règles indicateurs juillet 2026, sans mutation', () => {
     expect(ratio([sig('matin'),sig('matin'),sig('apres_midi',{absent:true}),sig('apres_midi',{masque:true}),sig('soir_1'),sig('apres_midi',{signature_data_url:null,signature_formateur:'image'})])).toMatchObject({signees:1,attendues:2,taux:50});
   });
   it('soir attend deux signatures, pas une signature globale inventée', () => expect(ratio([sig('soir_1'),sig('soir')],[session({heure_debut:'17:00',heure_fin:'21:00'})])).toMatchObject({signees:1,attendues:2,taux:50}));
-  it('planning agenda effectif prime, sans ajout de samedi artificiel', () => {
+  // Règle 01/11 : les créneaux attendus viennent de l'inscription (jour ouvré = matin + après-midi), jamais de l'agenda.
+  it('agenda partiel ou doublé sans effet sur les attendus, sans ajout de samedi artificiel', () => {
     const bloc = {semaine_debut:'2026-07-06',jour:0,heure_debut:'09:00',heure_fin:'12:00',publics_cibles:['VTC']};
-    expect(ratio([sig('matin')],[session()],[],[bloc,bloc,{...bloc,publics_cibles:['TA']}])).toMatchObject({attendues:1,taux:100});
+    expect(ratio([sig('matin')],[session()],[],[bloc,bloc,{...bloc,publics_cibles:['TA']},{...bloc,jour:5}])).toMatchObject({signees:1,attendues:2,taux:50});
   });
   it('pratique du week-end, réservation et session sans doublon', () => {
     const rs=[{date_choisie:'2026-07-11',creneau:'journee'}];
