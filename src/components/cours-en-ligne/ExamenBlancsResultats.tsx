@@ -1349,86 +1349,43 @@ function RevisionFausses({
     return () => { annule = true; };
   }, [apprenantId, userId, examenId, baseExerciceId, wrongQuestions.length]);
 
-  // ---- Persist progress (debounced) ----
-  const correctedQuestionsRef = useRef<string[]>([]);
-
+  // ---- File durable : chaque saisie est localement récupérable, puis confirmée par le serveur. ----
   const persistProgress = useCallback((
     newReponses: Reponses,
     newIndex: number,
     newCorrectedCount: number,
     correctedQuestions: string[],
+    correctionVisible: boolean,
+    evenement?: { question_id: string; valeur: unknown },
+    completed = false,
   ) => {
-    if (!apprenantId || !userId) return;
-    // Tentative non identifiée ou déjà terminée : aucune réécriture « en cours ».
-    if (!tentativePreteRef.current || termineeRef.current) return;
+    if (!apprenantId || !userId || !examenId) return;
+    if (!tentativePreteRef.current || (termineeRef.current && !completed)) return;
     if (blockLearnerWrite("revision_progress(reponses_apprenants)")) return;
-    const payload = {
+    const revisionState = creerRevisionProgressState({
+      examenId,
+      answers: newReponses,
+      currentIndex: newIndex,
+      correctedCount: newCorrectedCount,
+      correctedQuestions,
+      showCorrection: correctionVisible,
+      questionOrder,
+    });
+    enqueueAnswerSave({
       apprenant_id: apprenantId,
       user_id: userId,
       exercice_id: exerciceId,
       exercice_type: "revision_fausses",
-      reponses: {
-        answers: newReponses,
-        currentIndex: newIndex,
-        correctedCount: newCorrectedCount,
-        correctedQuestions,
-      },
+      reponses: { revisionState },
       score: newCorrectedCount,
-      completed: false,
-    };
-    // Toujours mémoriser le dernier état — sert au flush en cas de déconnexion.
-    latestPayloadRef.current = payload;
-    pendingSaveRef.current = true;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from("reponses_apprenants")
-          .upsert(payload as any, { onConflict: "apprenant_id,exercice_id" });
-        if (error) console.error("Erreur sauvegarde révision progress:", error.message);
-        else pendingSaveRef.current = false;
-      } catch (err) {
-        console.error("Erreur sauvegarde révision progress:", err);
-      }
-    }, 800);
-  }, [apprenantId, userId, exerciceId]);
-
-  // Récupère l'access token pour le flush "keepalive" (fetch synchronisable sur pagehide).
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) accessTokenRef.current = data.session?.access_token || null;
+      completed,
+      events: evenement ? [{ ...evenement, tentative: 1 }] : [],
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      accessTokenRef.current = session?.access_token || null;
-    });
-    return () => { mounted = false; sub.subscription.unsubscribe(); };
-  }, []);
+  }, [apprenantId, userId, examenId, exerciceId, questionOrder]);
 
-  // Flush "keepalive" en cas de fermeture d'onglet / déconnexion / mise en veille.
+  // Dernier essai best-effort : seule une confirmation serveur retire la file locale.
   useEffect(() => {
-    const flush = () => {
-      if (!pendingSaveRef.current || !latestPayloadRef.current) return;
-      try {
-        const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-        const apikey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-          || import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
-        if (!baseUrl || !apikey) return;
-        const token = accessTokenRef.current || apikey;
-        fetch(`${baseUrl}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`, {
-          method: "POST",
-          keepalive: true,
-          headers: {
-            apikey,
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Prefer: "resolution=merge-duplicates,return=minimal",
-          },
-          body: JSON.stringify(latestPayloadRef.current),
-        }).catch(() => {});
-        pendingSaveRef.current = false;
-      } catch {}
-    };
+    const flush = () => flushAnswerSavesOnUnload();
     const onVis = () => { if (document.visibilityState === "hidden") flush(); };
     window.addEventListener("beforeunload", flush);
     window.addEventListener("pagehide", flush);
@@ -1437,7 +1394,6 @@ function RevisionFausses({
       window.removeEventListener("beforeunload", flush);
       window.removeEventListener("pagehide", flush);
       document.removeEventListener("visibilitychange", onVis);
-      // Dernier essai (best-effort) à la destruction du composant
       flush();
     };
   }, []);
@@ -1470,9 +1426,12 @@ function RevisionFausses({
   if (!current) return null;
   const { question: q, matiereNom, matiere: currentMatiere } = current;
   const qNumero = (currentMatiere?.questions || []).indexOf(q) + 1;
-  const rep = reponses[q.id];
+  const currentKey = revisionQuestionKey(current);
+  const rep = reponses[currentKey] ?? reponses[q.id];
 
   const checkAnswer = () => {
+    // Double clic / double tap : une question n'est comptée et validée qu'une fois.
+    if (correctedQuestionsRef.current.includes(currentKey)) return;
     let isCorrect = false;
     if (q?.type === "QCM" && q.choix) {
        const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
@@ -1490,8 +1449,8 @@ function RevisionFausses({
     setShowCorrection(true);
 
     // Track corrected questions
-    correctedQuestionsRef.current = [...new Set([...correctedQuestionsRef.current, String(q.id)])];
-    persistProgress(reponses, currentIndex, newCorrected, correctedQuestionsRef.current);
+    correctedQuestionsRef.current = [...new Set([...correctedQuestionsRef.current, currentKey])];
+    persistProgress(reponses, currentIndex, newCorrected, correctedQuestionsRef.current, true);
   };
 
   const goNext = async () => {
