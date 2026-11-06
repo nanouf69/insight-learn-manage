@@ -33,6 +33,28 @@ export function SignaturesManquantesTab({ apprenant, demandeOuverture = 0 }: Pro
   const missing = creneauxRelancables(rows, dateDuJourParis());
   const absent = rows.filter(row => row.etat === 'absence_enregistree');
   const mail = preview ? preparerRelanceSignatures(`${apprenant.prenom ?? ''} ${apprenant.nom ?? ''}`, preview) : null;
+  const derniereDemandeOuverture = useRef(0);
+
+  useEffect(() => {
+    if (!demandeOuverture || derniereDemandeOuverture.current === demandeOuverture || query.isPending) return;
+    derniereDemandeOuverture.current = demandeOuverture;
+    if (query.isError) {
+      setOutcome('Signatures indisponibles : aucun mail préparé.');
+      return;
+    }
+    const relancables = creneauxRelancables(query.data?.rows ?? [], dateDuJourParis());
+    if (!relancables.length) {
+      setOutcome('Aucune signature à relancer.');
+      return;
+    }
+    if (!apprenant.email) {
+      setOutcome('Adresse email manquante : ajoutez-la avant de préparer la relance.');
+      return;
+    }
+    setPreview(relancables);
+    setConfirmed(false);
+    setOutcome('');
+  }, [apprenant.email, demandeOuverture, query.data, query.isError, query.isPending]);
 
   const relecture = async () => {
     if (lock.current || !preview) return;
