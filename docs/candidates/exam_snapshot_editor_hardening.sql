@@ -33,6 +33,9 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+DROP TRIGGER IF EXISTS trg_exam_version_immutability ON public.exam_content_versions;
+CREATE TRIGGER trg_exam_version_immutability BEFORE UPDATE OR DELETE ON public.exam_content_versions
+FOR EACH ROW EXECUTE FUNCTION public.enforce_exam_version_immutability();
 
 CREATE OR REPLACE FUNCTION public.core_validate_exam_content(p_content jsonb)
 RETURNS void LANGUAGE plpgsql IMMUTABLE SET search_path TO 'public' AS $$

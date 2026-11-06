@@ -14,7 +14,7 @@ class ExamSnapshotEditorContract(unittest.TestCase):
         os.chown(cls.d, 1000, 1000)
         cls.addClassCleanup(cls.tearDownClass)
         cls.env = {k:v for k,v in os.environ.items() if not k.startswith("PG")}
-        subprocess.run(AS+["initdb","-D",cls.d+"/db","-U","postgres","-A","trust","--no-locale"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
+        subprocess.run(AS+["initdb","-D",cls.d+"/db","-U","postgres","-A","trust","--no-locale","--encoding=UTF8"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
         subprocess.run(AS+["pg_ctl","-D",cls.d+"/db","-l",cls.d+"/log","-o",f"-k {cls.d} -p {PORT} -h \"\"","-w","start"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=cls.env)
         cls.sql(f"""
         CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '{ADMIN}'::uuid $$;
