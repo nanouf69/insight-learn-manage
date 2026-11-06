@@ -42,6 +42,7 @@ export function exercicesAffichesPourRecherche(
   exercices: any[],
   rows: SearchCanonicalRow[],
   bindings: SearchCanonicalBinding[],
+  options: { strict?: boolean } = {},
 ): any[] {
   const quizIds = SEARCH_CANONICAL_QUIZ_IDS[moduleId];
   const moduleBindings = bindings.filter((b) => Number(b.module_id) === moduleId);

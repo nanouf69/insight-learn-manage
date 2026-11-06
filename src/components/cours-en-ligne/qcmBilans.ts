@@ -55,7 +55,7 @@ async function chargerQuestionsCanoniques(moduleIds: number[]) {
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
       .from("quiz_questions")
-      .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,explication,active")
+      .select("question_id,quiz_id,section_id,legacy_question_id,position,enonce,choix,image,image_size,explication,active")
       .in("quiz_id", quizIds)
       .order("question_id")
       .range(from, from + 999);
