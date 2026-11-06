@@ -1392,10 +1392,7 @@ function MatiereEditor({
           {/* Ajouter question */}
           <div className="flex items-center gap-2 pt-2 border-t">
             <span className="text-xs font-semibold text-muted-foreground">+ Ajouter une question :</span>
-            <Button size="sm" variant="outline" onClick={() => addQuestion("QCM")} className="gap-1">
-              <Plus className="w-3 h-3" />
-              Ajouter un QCM
-            </Button>
+            <AjouterQcmMenu matiereNom={matiere.nom} onNouveau={() => addQuestion("QCM")} onImporter={importQcm} />
             <Button size="sm" variant="outline" onClick={() => addQuestion("QRC")} className="gap-1">
               <Plus className="w-3 h-3" />
               Ajouter une QRC
