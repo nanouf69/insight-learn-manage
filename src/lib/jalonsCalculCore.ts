@@ -81,6 +81,15 @@ export function assemblerCalculJalons(i: {
       activites.push({ ...r.etat, methode: METHODE_ACTIVITES });
     }
   }
+  if (i.preuvesFigeesStrictes) {
+    for (const row of completionsBase as any[]) {
+      if (row?.status !== "completed" || row?.preuve_serveur !== null) continue;
+      const volume = Object.values(volumes.volumes).find((v) => Number(v.moduleId) === Number(row.module_id));
+      if ((volume?.questions ?? 0) > 0) {
+        throw new Error(`Preuves indéterminées au gel pour le module ${row.module_id} : relevé indisponible, jamais 100 %`);
+      }
+    }
+  }
   const completionsEffectives = i.preuvesHistoriquesLive ? completionsBase.map(liveCompletionEvidence) : completionsBase;
   const completions = [...completionsEffectives, completionPratique(pratiqueMinutes)];
   const durees = calculerDureesPrevisionnelles(i.filiere, volumes.volumes, attribues);

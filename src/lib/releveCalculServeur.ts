@@ -70,12 +70,17 @@ export async function calculerGelInitial(gel: any, apprenant: { type_apprenant?:
   const jeuxTermines = activitesTermineesDepuisGel(s);
   // Date de référence = instant du gel : une activité ajoutée après n'entre jamais dans ce relevé.
   const dateActivites = typeof s.gele_le === "string" ? new Date(s.gele_le).toISOString() : new Date().toISOString();
+  const preuvesV3 = gel.methode_version === "gel-v3";
+  const completions = preuvesV3 ? completionsPreuvesFigees(s) : s.completions;
   const calcul = assemblerCalculJalons({
     key, filiere, parcours, parcoursInitial, gelId: gel.id,
     editorRows: lignesFigees(gel, contenus, ids), examens: examens as any,
     initialDe: (id) => getInitialModuleContentForVolume(id, apprenant.type_apprenant),
-    pratiqueDetails: pratiqueSlotDetailsDepuisGel(s), emargements: s.emargements, completions: s.completions, heuresValidees: s.heures_validees,
+    pratiqueDetails: pratiqueSlotDetailsDepuisGel(s), emargements: s.emargements, completions, heuresValidees: s.heures_validees,
     jeuxTermines: jeuxTermines ?? undefined, dateActivites,
+    preuvesHistoriquesLive: preuvesV3 || undefined,
+    preuvesFigeesStrictes: preuvesV3 || undefined,
+    modulesAttribues: preuvesV3 ? s.modules_attribues : undefined,
   });
   // Registre figé avec le calcul (version, unités, dates) : relecture identique même si le code change.
   const registre = ACTIVITES_CODE.filter((a) => a.ajouteeLe <= dateActivites && (!a.retireeLe || a.retireeLe > dateActivites)).map((a) => ({ ...a }));
