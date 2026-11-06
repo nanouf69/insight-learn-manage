@@ -1454,120 +1454,115 @@ function RevisionFausses({
   };
 
   const goNext = async () => {
+    if (finEnCoursRef.current) return;
     setShowCorrection(false);
     if (currentIndex < wrongQuestions.length - 1) {
       const newIdx = currentIndex + 1;
       setCurrentIndex(newIdx);
-      persistProgress(reponses, newIdx, correctedCount, correctedQuestionsRef.current);
-    } else {
-      // Save final revision results to database
-      const finalCorrected = correctedCount;
-      let finEnregistree = false;
-      const ecritureBloquee = blockLearnerWrite("revision_fausses(fin)");
-      if (apprenantId && userId && examenId && !ecritureBloquee) {
-        // Plus aucune sauvegarde « en cours » différée ne doit partir après la fin :
-        // elle réécrirait une révision terminée (refus serveur).
-        if (saveTimeoutRef.current) { clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null; }
-        try {
-          // Mark the in-progress record as completed
-          const { error: finError } = await supabase
-            .from("reponses_apprenants")
-            .upsert({
-              apprenant_id: apprenantId,
-              user_id: userId,
-              exercice_id: exerciceId,
-              exercice_type: "revision_fausses",
-              reponses: {
-                answers: reponses,
-                currentIndex: wrongQuestions.length - 1,
-                correctedCount: finalCorrected,
-                correctedQuestions: correctedQuestionsRef.current,
-              },
-              score: finalCorrected,
-              completed: true,
-            } as any, { onConflict: "apprenant_id,exercice_id" });
-          if (finError) {
-            console.error("Erreur sauvegarde révision (fin):", finError.message);
-          } else {
-            finEnregistree = true;
-            termineeRef.current = true;
-            pendingSaveRef.current = false;
-            latestPayloadRef.current = null;
-          }
+      persistProgress(reponses, newIdx, correctedCount, correctedQuestionsRef.current, false);
+      return;
+    }
 
-          if (finEnregistree) {
-          const { error } = await supabase
-            .from("apprenant_quiz_results")
-            .insert({
-              apprenant_id: apprenantId,
-              user_id: userId,
-              quiz_type: "revision_fausses",
-              quiz_id: examenId,
-              quiz_titre: `Révision questions fausses — ${examenId}`,
-              score_obtenu: finalCorrected,
-              score_max: wrongQuestions.length,
-              note_sur_20: Math.round((finalCorrected / wrongQuestions.length) * 20 * 2) / 2,
-              reussi: finalCorrected === wrongQuestions.length,
-              details: {
-                reponses,
-                revision_exercice_id: exerciceId,
-                questions: wrongQuestions.map(wq => ({
-                  questionId: wq.question.id,
-                  matiereId: wq.matiere.id,
-                  matiereNom: wq.matiereNom,
-                  enonce: wq.question.enonce,
-                })),
-              } as any,
-            });
-          if (error) {
-            console.error("Erreur sauvegarde révision:", error.message, error.details);
-          } else {
-            console.log("Révision sauvegardée avec succès");
-          }
-          }
-        } catch (err) {
-          console.error("Erreur sauvegarde révision:", err);
-        }
+    const ecritureBloquee = blockLearnerWrite("revision_fausses(fin)");
+    if (ecritureBloquee) { onTerminer(); return; }
+    if (!apprenantId || !userId || !examenId) return;
+    finEnCoursRef.current = true;
+    setFinEnCours(true);
+    let finEnregistree = false;
+    try {
+      // La clôture passe par la même file ordonnée : aucune écriture directe
+      // ne peut dépasser une réponse encore en attente ou un autre appareil.
+      persistProgress(reponses, currentIndex, correctedCount, correctedQuestionsRef.current, true, undefined, true);
+      const confirmations = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+      if (!confirmations) throw new Error("Dernières réponses non confirmées");
+      const { data: relu, error: erreurRelecture } = await supabase
+        .from("reponses_apprenants")
+        .select("reponses, score, completed")
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_id", exerciceId)
+        .eq("exercice_type", "revision_fausses")
+        .maybeSingle();
+      if (erreurRelecture || relu?.completed !== true) {
+        throw new Error(erreurRelecture?.message || "Clôture non confirmée");
       }
-      if (ecritureBloquee) {
-        onTerminer();
-      } else if (finEnregistree) {
+      termineeRef.current = true;
+      const confirme = restaurerRevisionProgressState(relu.reponses, examenId, questionOrder);
+      const finalCorrected = Number.isFinite(relu.score) ? Number(relu.score) : confirme.correctedCount;
+      const { error } = await supabase
+        .from("apprenant_quiz_results")
+        .insert({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          quiz_type: "revision_fausses",
+          quiz_id: examenId,
+          quiz_titre: `Révision questions fausses — ${examenId}`,
+          score_obtenu: finalCorrected,
+          score_max: wrongQuestions.length,
+          note_sur_20: Math.round((finalCorrected / wrongQuestions.length) * 20 * 2) / 2,
+          reussi: finalCorrected === wrongQuestions.length,
+          details: {
+            reponses: confirme.answers,
+            revision_exercice_id: exerciceId,
+            questionOrder,
+            questions: wrongQuestions.map(wq => ({
+              questionKey: revisionQuestionKey(wq),
+              questionId: wq.question.id,
+              matiereId: wq.matiere.id,
+              matiereNom: wq.matiereNom,
+              enonce: wq.question.enonce,
+            })),
+          } as any,
+        });
+      if (error) {
+        console.error("Erreur sauvegarde révision:", error.message, error.details);
+      } else {
+        finEnregistree = true;
         toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
         onTerminer();
-      } else {
-        // Jamais « terminée » sans accusé serveur : l'élève reste sur la révision.
-        toast.error("Révision non enregistrée par le serveur. Vérifiez votre connexion puis réessayez.");
+      }
+    } catch (err) {
+      console.error("Erreur sauvegarde révision:", err);
+    } finally {
+      finEnCoursRef.current = false;
+      setFinEnCours(false);
+      if (!finEnregistree) {
+        setShowCorrection(true);
+        toast.error("Révision non enregistrée par le serveur. Vérifiez votre connexion puis réessayez ; vos réponses restent conservées.");
       }
     }
   };
 
-  const handleRecommencer = async () => {
-    if (!apprenantId || !userId) return;
-    if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Votre progression sur cette révision sera perdue.")) return;
-    // Delete saved progress
-    try {
-      await supabase
-        .from("reponses_apprenants")
-        .delete()
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_id", exerciceId)
-        .eq("exercice_type", "revision_fausses");
-    } catch (err) {
-      console.error("Erreur suppression progression:", err);
-    }
+  const handleRecommencer = () => {
+    if (!apprenantId || !userId || !examenId) return;
+    if (!window.confirm("Commencer une nouvelle révision ? Le brouillon actuel sera conservé.")) return;
+    const nouvelId = nouvelleTentativeRevision(baseExerciceId, revisionRowsRef.current);
+    revisionRowsRef.current = [...revisionRowsRef.current, { exercice_id: nouvelId, completed: false }];
+    setExerciceId(nouvelId);
     setReponses({});
     setCurrentIndex(0);
     setShowCorrection(false);
     setCorrectedCount(0);
     correctedQuestionsRef.current = [];
-    toast.info("Révision réinitialisée.");
+    tentativePreteRef.current = true;
+    termineeRef.current = false;
+    const vide = creerRevisionProgressState({
+      examenId, answers: {}, currentIndex: 0, correctedCount: 0,
+      correctedQuestions: [], showCorrection: false, questionOrder,
+    });
+    enqueueAnswerSave({
+      apprenant_id: apprenantId, user_id: userId, exercice_id: nouvelId,
+      exercice_type: "revision_fausses", reponses: { revisionState: vide },
+      score: 0, completed: false, events: [],
+    });
+    toast.info("Nouvelle révision commencée ; le brouillon précédent est conservé.");
   };
 
   // Update reponses with persistence
   const updateReponse = (questionId: number | string, value: any) => {
     const newReponses = { ...reponses, [questionId]: value };
     setReponses(newReponses);
-    persistProgress(newReponses, currentIndex, correctedCount, correctedQuestionsRef.current);
+    persistProgress(newReponses, currentIndex, correctedCount, correctedQuestionsRef.current, false,
+      { question_id: String(questionId), valeur: value });
   };
 
   return (
