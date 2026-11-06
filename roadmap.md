@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 06/11 — Règle stricte QCM corrigé admin / QRC correction validée
+- [ ] Tracer en lecture seule les sources QCM, QRC humaine/IA, statuts provisoire/définitif, notes matière, moyenne, verdict et relevé.
+- [ ] Contrôler la session VTC soir EB1 (8 passages, T3P 0/5, Gestion 0/2, Sécurité 0/0) sans altérer le 7 définitif ni aucune autre note.
+- [ ] Recenser les écarts et calculer à blanc les impacts élève par élève, y compris IA non validée et correction humaine partielle.
+- [ ] Proposer correctif minimal et tests ; aucune écriture réelle, aucun code ni publication sans accord distinct.
+
 ## 06/11 — Source de vérité du corrigé admin et divergences
 - [x] Corrigé admin réel = `module_editor_state` ; Q2 B et Q3 B+C conformes à la capture. Nouvelles tentatives figées depuis la version publiée `exam_content_versions`, source distincte : Q2 publié B+C, Q3 publié B+C.
 - [x] Comparaisons strictes EB1–EB6 VTC/TAXI/TA : 17 lignes natives globales (9 questions distinctes, 273 occurrences), dont 16 lignes admin ≠ publié (8 questions distinctes) ; 9 lignes dans les sessions actives. 100 lignes d’anciennes fiches globales sur ID+énoncé identiques, options à confirmer ; zéro dans les sessions actives.
