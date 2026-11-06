@@ -1,11 +1,11 @@
 # Feuille de route
 
 ## 06/11 — Répercussion des corrections QRC sur matières, score global et admission
-- [ ] Audit exhaustif en lecture seule EB VTC/TAXI/TA : corrections validées, snapshots/barèmes, tentatives exclues, notes officielles et coefficients ; aucun recalcul persisté.
-- [ ] Calcul à blanc par question/matière/tentative avec cas BENNANI, MALKI et SELMI ; distinguer écarts d’affichage et notes serveur réellement erronées, impacts score final/admission.
-- [ ] Préparer seulement le correctif minimal démontré de la chaîne de calcul et ses tests, sans modifier les corrections manuelles, copies, réponses ou examens en cours.
-- [ ] Si nécessaire, préparer une régularisation traçable, transactionnelle, idempotente et réversible, avec inventaire avant/après et provenance ; aucune écriture de notes réelles sans validation détaillée distincte.
-- [ ] Publication interdite sans contrôle des autres changements de l’aperçu et autorisation distincte.
+- [x] Audit lecture seule des 18 EB : 2 278 tentatives éligibles, 5 160 QRC corrigées, 824 passages natifs sans écart ; tests/neutralisées exclus, aucun recalcul persisté.
+- [x] Calcul à blanc : BENNANI 9,6, MALKI 9,1, SELMI 6,0, tous non admis ; zéro note native à régulariser. Onze écarts anciens importés isolés : dix arrondis, un arbitrage BAISSA ; un FERREIRA provisoire avec deux QRC en attente.
+- [x] Correctif minimal dans `coreExamPublication.ts` : la note serveur déjà sur 20 n’est plus divisée une seconde fois par le barème brut ; coefficients/admission et priorité au correcteur couverts. 406 tests PASS, TypeScript et build OK.
+- [x] Aucune migration créée : zéro ligne validée pour régularisation. Procédure transactionnelle/idempotente/réversible documentée dans `docs/audit-repercussion-notes-qrc-2026-11-06.md` si un futur cas est prouvé ; aucune écriture de données.
+- [ ] Publication BLOQUÉE : autres changements de l’aperçu non validés et autorisation distincte absente ; divergence QCM Sécurité des trois cas non arbitrée.
 
 ## 06/11 — Reprise durable « Refaire uniquement les questions fausses » EB VTC/TAXI
 - [x] Audit du composant partagé EB1–EB6 VTC/TAXI : position forcée à zéro, validation non restaurée, clés de questions communes aux matières et sauvegarde directe sans file durable.
