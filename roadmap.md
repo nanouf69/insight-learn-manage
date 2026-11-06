@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 06/11 — Taux d’échec au premier passage non affiché en rouge
+- [ ] Diagnostiquer en lecture seule l’écran admin : présence du taux, chargement, sessions actives, calcul premier essai, onglets et condition de couleur ; ne pas confondre échec à l’examen ou QRC en attente.
+- [ ] Comparer au moins un taux source attendu à l’affichage pour les sessions TAXI/TA et VTC/TAXI, JOURNÉE/SOIRÉE, avec QCM/QRC et preuves insuffisantes distingués.
+- [ ] Si bug démontré, préparer uniquement le correctif minimal calcul/affichage et les tests ; aucune donnée réelle modifiée.
+- [ ] Publication interdite sans revue des autres changements de l’aperçu et autorisation distincte.
+
 ## 06/11 — Répercussion des corrections QRC sur matières, score global et admission
 - [x] Audit lecture seule des 18 EB : 2 278 tentatives éligibles, 5 160 QRC corrigées, 824 passages natifs sans écart ; tests/neutralisées exclus, aucun recalcul persisté.
 - [x] Calcul à blanc : BENNANI 9,6, MALKI 9,1, SELMI 6,0, tous non admis ; zéro note native à régulariser. Onze écarts anciens importés isolés : dix arrondis, un arbitrage BAISSA ; un FERREIRA provisoire avec deux QRC en attente.
