@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { calculEmargementPerso, formatHeures, generateEmargementPersoPdf, type CreneauPerso } from '@/lib/pdf/emargement-personnalise-pdf';
+import { chargerElementAdmin } from '@/lib/documentAdminElements';
 import { FORMATEUR_EMARGEMENT } from '@/lib/pdf/signatures-manquantes-pdf';
 
 const JOURS = [{ v: 1, l: 'Lun' }, { v: 2, l: 'Mar' }, { v: 3, l: 'Mer' }, { v: 4, l: 'Jeu' }, { v: 5, l: 'Ven' }, { v: 6, l: 'Sam' }, { v: 0, l: 'Dim' }];
@@ -25,8 +26,15 @@ export function EmargementPersonnaliseExport({ apprenant }: { apprenant: any }) 
   catch (e: any) { erreur = e?.message === 'Aucune date' ? 'Aucune date dans la période choisie.' : 'Horaires invalides (la fin doit être après le début).'; }
   if (!erreur && (!opts.formateur || !opts.formation)) erreur = 'Indiquez le formateur et la formation.';
 
-  const download = () => {
-    const r = generateEmargementPersoPdf(apprenant, opts);
+  const [avecSignature, setAvecSignature] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [errSig, setErrSig] = useState<string | null>(null);
+  const download = async () => {
+    setBusy(true); setErrSig(null);
+    let sig: string | null = null;
+    if (avecSignature) { try { sig = await chargerElementAdmin('signature'); } catch { setBusy(false); setErrSig('Signature du formateur introuvable dans Documents : aucun PDF produit.'); return; } }
+    setBusy(false);
+    const r = generateEmargementPersoPdf(apprenant, opts, sig);
     const url = URL.createObjectURL(r.blob);
     const a = document.createElement('a'); a.href = url; a.download = r.fileName;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
@@ -53,9 +61,11 @@ export function EmargementPersonnaliseExport({ apprenant }: { apprenant: any }) 
       </div>)}
       <Button variant="ghost" size="sm" className="gap-1" onClick={() => setCreneaux(cs => [...cs, { debut: '17:00', fin: '21:00' }])}><Plus className="h-4 w-4" />Ajouter un créneau</Button>
     </div>
+    <label className="flex items-center gap-2 text-sm"><Checkbox checked={avecSignature} onCheckedChange={c => setAvecSignature(!!c)} />Mettre la signature du formateur</label>
+    {errSig && <p role="alert" className="text-xs text-destructive">{errSig}</p>}
     {erreur ? <p role="alert" className="text-xs text-destructive">{erreur}</p> : <p className="text-xs font-semibold">{resume}</p>}
     <div className="flex gap-2">
-      <Button size="sm" className="gap-2" disabled={!!erreur} onClick={download}><FileDown className="h-4 w-4" />Télécharger le PDF</Button>
+      <Button size="sm" className="gap-2" disabled={!!erreur || busy} onClick={() => void download()}><FileDown className="h-4 w-4" />Télécharger le PDF</Button>
       <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Fermer</Button>
     </div>
   </div>;
