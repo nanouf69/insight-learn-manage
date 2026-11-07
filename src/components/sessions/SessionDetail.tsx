@@ -501,6 +501,7 @@ function PaiementPopover({
   const [newMontant, setNewMontant] = useState<string>("");
   const [newMoyen, setNewMoyen] = useState<string>("virement");
   const [newDate, setNewDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedVirementId, setSelectedVirementId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 

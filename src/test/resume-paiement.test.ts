@@ -28,4 +28,10 @@ describe("virements reçus correspondants", () => {
     expect(resumePaiement(200, [{ montant: 50, date_paiement: "2026-09-22", transaction_bancaire_id: "tx-a" }], [{ ...v, id: "tx-a" }]).paye).toBe(50));
   it("deux vrais virements égaux avec deux identités : tous deux comptés", () =>
     expect(resumePaiement(200, [{ montant: 50, date_paiement: "2026-09-22", transaction_bancaire_id: "tx-a" }], [{ ...v, id: "tx-a" }, { ...v, id: "tx-b", date_operation: "2026-09-22" }]).paye).toBe(100));
+  it("multi-session : un virement lié à un autre dossier n'est pas recompté", () => {
+    const banque = [{ ...v, id: "tx-a" }, { ...v, id: "tx-b" }];
+    const liens = [{ apprenant_id: "autre-dossier", transaction_bancaire_id: "tx-a" }];
+    expect(exclureVirementsLiesAilleurs(banque, liens, "dossier-courant").map((x) => x.id)).toEqual(["tx-b"]);
+    expect(exclureVirementsLiesAilleurs(banque, liens, "autre-dossier")).toHaveLength(2);
+  });
 });
