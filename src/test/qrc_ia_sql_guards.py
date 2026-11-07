@@ -45,6 +45,25 @@ class Guards(unittest.TestCase):
         self.assertEqual(sql('SELECT count(*) FROM qrc_ia_reprises'), '2')
         self.assertEqual(sql('SELECT http_status FROM qrc_ia_corrections'), '503')
 
+    def test_exclusion_gt_reprise_append_only_et_publication_unique(self):
+        base = BASE.replace('"matiere":"test"','"matiere":"reglementation_taxi2"')
+        sql(f"INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,exam_id,matiere,reponse_hash,modele,bareme,statut,motif,termine_at) VALUES('test-key','{Q}','{A}','{P}','test:1','EB4','reglementation_taxi2','hash','original',2,'exclue','matiere_exclue_gt',now())")
+        self.assertIn('reprise', self.claim(base))
+        self.assertEqual(self.claim(base), '')
+        self.assertEqual(sql(f"SELECT statut||'|'||motif FROM qrc_ia_corrections WHERE qrc_instance_id='{Q}'"), 'exclue|matiere_exclue_gt')
+        sql(f"SELECT qrc_ia_suite_claim('{A}',NULL)")
+        preuve = sql(f"SELECT qrc_ia_publier_auto((SELECT id FROM qrc_ia_reprises),false,'{A}','{Q}','\"original\"','{A}',2,'AI result',NULL)")
+        self.assertIn('corrigee', preuve)
+        self.assertEqual(sql('SELECT count(*) FROM published'), '1')
+        self.assertEqual(sql(f"SELECT statut FROM qrc_ia_reprises WHERE qrc_instance_id='{Q}'"), 'appliquee')
+
+    def test_exclusion_non_gt_ou_reponse_changee_jamais_reprise(self):
+        sql(f"INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut,motif,termine_at) VALUES('test-key','{Q}','{A}','{P}','test:1','hash','exclue','reponse_vide',now())")
+        self.assertEqual(self.claim(), '')
+        sql("UPDATE qrc_ia_corrections SET motif='matiere_exclue_gt',matiere='reglementation_taxi2'")
+        with self.assertRaises(subprocess.CalledProcessError): self.claim(BASE.replace('"hash"','"changed"').replace('"matiere":"test"','"matiere":"reglementation_taxi2"'))
+        self.assertEqual(sql('SELECT count(*) FROM qrc_ia_reprises'), '0')
+
     def test_interrupted_active_work_not_replayed(self):
         self.claim()
         sql("UPDATE qrc_ia_corrections SET created_at=now()-interval '1 day'")
@@ -117,6 +136,7 @@ def main():
         sql(source[source.index('CREATE OR REPLACE FUNCTION public.qrc_ia_suite_claim'):source.index('CREATE OR REPLACE FUNCTION public.qrc_ia_dispatch_suites')])
         sql((ROOT/'drizzle/migrations/0185_qrc_ia_suite_lease_longue.sql').read_text())
         sql((ROOT/'drizzle/migrations/0186_qrc_ia_publication_auto_fenced.sql').read_text())
+        if os.environ.get('QRC_GT_SQL'): sql(pathlib.Path(os.environ['QRC_GT_SQL']).read_text())
         result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Guards))
         if not result.wasSuccessful(): raise SystemExit(1)
     finally:
