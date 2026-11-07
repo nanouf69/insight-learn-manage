@@ -47,6 +47,22 @@ try:
       completed_at timestamptz, score_obtenu int, score_max int, details jsonb, updated_at timestamptz, UNIQUE(apprenant_id,module_id));
     """)
     sql((ROOT / 'src/test/fixtures/bilan-future-isolated-prototype.sql').read_text())
+    if os.environ.get('RLS_CONFIG_CANDIDATE'):
+        sql("""
+        CREATE ROLE anon;
+        CREATE TABLE bilan_identite_flags(module_id int, actif boolean);
+        CREATE TABLE bilan_snapshot_flags(module_id int, actif boolean);
+        CREATE TABLE module_regles_validation(module_id int);
+        GRANT SELECT ON bilan_future_opening, bilan_identite_flags, bilan_snapshot_flags, module_regles_validation TO anon, authenticated;
+        ALTER TABLE bilan_identite_flags ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE bilan_snapshot_flags ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE module_regles_validation ENABLE ROW LEVEL SECURITY;
+        CREATE POLICY "Lecture flags identites" ON bilan_identite_flags FOR SELECT TO authenticated USING(true);
+        CREATE POLICY "Lecture flags snapshot bilan" ON bilan_snapshot_flags FOR SELECT TO authenticated USING(true);
+        CREATE POLICY "Lecture règles modules" ON module_regles_validation FOR SELECT TO authenticated USING(true);
+        """)
+        sql((ROOT / 'docs/sql-revue/2026-11-07-rls-configuration-admin.sql').read_text())
+        print('PASS: future Bilan suite runs with admin-only configuration reads')
     old = sql('SELECT jsonb_agg(to_jsonb(l) ORDER BY id) FROM legacy_copies l')
     a, b, c = ['00000000-0000-0000-0000-' + str(n).zfill(12) for n in (501, 502, 503)]
     prefix = lambda owner: f"SET test.uid='{owner}'; SET ROLE authenticated;"

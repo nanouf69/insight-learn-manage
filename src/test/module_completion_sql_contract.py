@@ -109,6 +109,10 @@ CREATE TABLE public.comptes_test_techniques(apprenant_id uuid);
 CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
 CREATE TABLE public.module_admin_audit_log(module_id int, exercice_id text, question_id text, field text, created_at timestamptz);
 CREATE TABLE public.module_regles_validation(module_id int, protection_serveur boolean, contient_questions boolean);
+-- Présentes uniquement pour rejouer le candidat RLS configuration avec ce contrat réel.
+CREATE TABLE public.bilan_future_opening(id int, open_to_new boolean);
+CREATE TABLE public.bilan_identite_flags(module_id int, actif boolean);
+CREATE TABLE public.bilan_snapshot_flags(module_id int, actif boolean);
 CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, reponses jsonb, status text, submitted_at timestamptz);
 CREATE TABLE public.quiz_valide_reecritures_refusees(table_cible text, apprenant_id uuid, cle text, champs text[], auteur uuid);
 CREATE TABLE public.donnees_eleves_suppressions(table_nom text, apprenant_id uuid, ligne jsonb, auteur_uid uuid, auteur_role text, compte_test boolean, motif text);
@@ -162,6 +166,9 @@ def build(db, schema_sql, migration=None):
             print('ÉCHEC CANDIDAT — fin de la sortie PostgreSQL :\n' + e.output[-6000:])
             raise
         print(f'[{db}] candidat appliqué')
+    if migration and os.environ.get('RLS_CONFIG_CANDIDATE'):
+        sql((ROOT / 'docs/sql-revue/2026-11-07-rls-configuration-admin.sql').read_text(), db)
+        print(f'[{db}] restrictions RLS configuration appliquées')
     sql(f"""INSERT INTO apprenants(id,auth_user_id,type_apprenant,formation_choisie) VALUES
       ('{A}','{U}','vtc-e','vtc-elearning'),('{A2}','{U2}','taxi-e','taxi-elearning'),
       ('{A3}','{U3}','ta-e','ta-elearning'),('{A4}','{U4}','va-e','va-elearning'),('{ISMAIL}','{UI}',NULL,NULL);
