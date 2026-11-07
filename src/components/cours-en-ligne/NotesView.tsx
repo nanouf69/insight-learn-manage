@@ -104,7 +104,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
       do {
         fetchStateRef.current.pending = false;
 
-        const [quizRes, moduleRes] = await Promise.all([
+        const [quizRes, moduleRes, resetsRes] = await Promise.all([
           supabase
             .from("apprenant_quiz_results")
             .select("*")
@@ -116,6 +116,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             .eq("apprenant_id", apprenantId)
             .eq("status", "completed")
             .order("completed_at", { ascending: true }),
+          supabase.from('core_exam_resets').select('archived_legacy_result_ids').eq('apprenant_id', apprenantId),
         ]);
 
         if (quizRes.error) {
@@ -126,8 +127,12 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
           const nonFiables = coreStates === null
             ? null
             : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
-          const rows = mergePassageSiblingRows(excludeResultPlaceholders(quizRes.data || [])) as any[];
-          setQuizResults(rows.map((r) => attacherSourceUnique(r, coreStates, nonFiables)) as any);
+          const archived = new Set((resetsRes.data ?? []).flatMap((r: any) => r.archived_legacy_result_ids ?? []).map(String));
+          const activeRows = excludeResultPlaceholders(quizRes.data || []).filter((r: any) => !archived.has(String(r.id)));
+          // EB rows carry immutable result IDs: never merge their identities before proof.
+          const rows = [...activeRows.filter((r: any) => /^examen_blanc/.test(r.quiz_type)),
+            ...mergePassageSiblingRows(activeRows.filter((r: any) => !/^examen_blanc/.test(r.quiz_type)))] as any[];
+          setQuizResults(rows.map((r) => attacherSourceUnique(r, resetsRes.error ? null : coreStates, nonFiables)) as any);
         }
 
         if (moduleRes.error) {
