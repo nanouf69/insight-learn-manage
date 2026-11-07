@@ -73,7 +73,8 @@ try:
                 assert 'permission denied' in e.output, e.output
             assert sql(f"SET ROLE authenticated; SET test.admin='0'; SELECT count(*) FROM {table}") == '0'
             assert sql(f"SET ROLE authenticated; SET test.admin='0'; SET test.uid='00000000-0000-0000-0000-000000000099'; SELECT count(*) FROM {table}") == '0'
-            assert sql(f"SET ROLE authenticated; SET test.admin='1'; SELECT count(*) FROM {table}") == expected
+            admin_count = sql(f"SET ROLE authenticated; SET test.admin='1'; SELECT count(*) FROM {table}")
+            assert admin_count == expected, (table, 'admin', admin_count, expected, sql("SET ROLE authenticated; SET test.admin='1'; SELECT current_setting('test.admin',true), public.has_role(null,'admin')"))
             assert sql(f"SET ROLE service_role; SELECT count(*) FROM {table}") == expected
         print('PASS: anonymous denied, learners/other account zero rows, admin and service read all four configuration tables')
     app = '00000000-0000-0000-0000-000000000001'
