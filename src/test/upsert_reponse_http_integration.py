@@ -117,7 +117,7 @@ GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, p
         fin_schema = time.time() + 45
         while True:
             try:
-                req_schema = Request(f"http://127.0.0.1:{cls.rest_port}/rest/v1/apprenants?select=id&limit=1", headers={"Authorization": f"Bearer {cls.service_jwt}", "apikey": cls.service_jwt})
+                req_schema = Request(f"http://127.0.0.1:{cls.rest_port}/apprenants?select=id&limit=1", headers={"Authorization": f"Bearer {cls.service_jwt}", "apikey": cls.service_jwt})
                 with urlopen(req_schema, timeout=2) as res_schema:
                     if res_schema.status == 200:
                         break
