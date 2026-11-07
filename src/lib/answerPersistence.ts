@@ -722,6 +722,17 @@ export function classifyAnswerSaveFailure(
     return { definitif: true, reason: "refused", code: "cloture_vide", message: MESSAGE_CLOTURE_VIDE_REFUSEE };
   }
 
+  // Caractère non transmissible (22P05). Le transport est désormais codé ; si le
+  // refus subsiste, renvoyer la même requête échouerait toujours : définitif,
+  // réponse conservée sur l'appareil, aucune boucle.
+  if (/\b22p05\b/.test(t) || t.includes("unsupported unicode escape")) {
+    return {
+      definitif: true,
+      reason: "refused",
+      message: "Un caractère de votre réponse n'a pas pu être transmis. Votre réponse est conservée sur cet appareil. Une alerte technique a été envoyée automatiquement.",
+    };
+  }
+
 
   // Règle des 48 h (trigger enforce_exam_retake_delay, SQLSTATE P0471).
   if (
