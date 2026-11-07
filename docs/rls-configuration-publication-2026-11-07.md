@@ -61,7 +61,7 @@ Les empreintes des six fonctions appelantes sont également inchangées.
 
 Scan frais à 14:17:02 UTC : **0 erreur, 6 avertissements, 2 informations**. Aucune alerte ignorée ni masquée. Les avertissements existants sur `audit_journal`, `exam_content_write_log`, `qrc_engine_flags`, `qrc_instances_v2` et deux règles de stockage restent hors de cette correction ciblée.
 
-Le lot global de 180 fichiers a été publié après revue des dépendances, suite complète et build. Les serveurs nécessaires sont présents : 0242, 0243, 0244, 0245, `upsert-reponse-apprenant` et l'export nocturne. Le candidat gel-v3 reste dormant ; aucune activation de `geler_releves_fin_acces()`.
+La publication du lot global de 180 fichiers a été demandée après revue des dépendances, suite complète et build. Les serveurs nécessaires sont présents : 0242, 0243, 0244, 0245, `upsert-reponse-apprenant` et l'export nocturne. Le candidat gel-v3 reste dormant ; aucune activation de `geler_releves_fin_acces()`.
 
 `preview_ui--publish` a répondu « Publishing is scheduled » pour https://gestion.ftransport.fr, commit `afda34b573528b93a9c136a26022ad12577545b8`. Le connecteur mentionnait encore l'ancienne alerte persistée `bilan_future_opening` ; ce n'était pas le résultat du scan frais et cela n'a pas bloqué la programmation.
 
