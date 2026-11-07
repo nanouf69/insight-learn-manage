@@ -12,7 +12,7 @@
 ALTER TABLE public.reponses_apprenants
   ADD COLUMN IF NOT EXISTS originaux_exacts jsonb NOT NULL DEFAULT '{}'::jsonb;
 COMMENT ON COLUMN public.reponses_apprenants.originaux_exacts IS
-  'Par question : {v:"nul-b64-v1", b64, projection}. Original exact (UTF-8 JSON base64) d''une valeur contenant U+0000 ; valide seulement si projection = reponses->question.';
+  'Par question : {v:"nul-b64-v1", b64, projection, seq}. Original exact (UTF-8 JSON base64) d''une valeur contenant U+0000 ; valide seulement si projection = reponses->question ET seq = reponses_meta->question->seq (tout autre écrivain invalide le marqueur).';
 ALTER TABLE public.reponses_apprenants_journal
   ADD COLUMN IF NOT EXISTS valeur_originale jsonb DEFAULT NULL;
 COMMENT ON COLUMN public.reponses_apprenants_journal.valeur_originale IS
@@ -73,7 +73,7 @@ BEGIN
           v_meta := jsonb_set(v_meta, ARRAY[v_key], jsonb_build_object('seq', v_next_seq, 'at', to_jsonb(now())), true);
           -- Le marqueur suit EXACTEMENT la valeur écrite : posé si fourni, retiré sinon.
           IF COALESCE(p_originaux, '{}'::jsonb) ? v_key THEN
-            v_orig := jsonb_set(v_orig, ARRAY[v_key], p_originaux->v_key, true);
+            v_orig := jsonb_set(v_orig, ARRAY[v_key], (p_originaux->v_key) || jsonb_build_object('seq', v_next_seq), true);
           ELSE
             v_orig := v_orig - v_key;
           END IF;
@@ -101,15 +101,19 @@ BEGIN
   ELSE
     v_merged := COALESCE(p_reponses, '{}'::jsonb);
     v_meta := '{}'::jsonb;
+    v_orig := '{}'::jsonb;
     FOR v_key IN SELECT key FROM jsonb_each(v_merged) LOOP
       v_meta := jsonb_set(v_meta, ARRAY[v_key], jsonb_build_object('seq', 1, 'at', to_jsonb(now())), true);
+      IF COALESCE(p_originaux, '{}'::jsonb) ? v_key THEN
+        v_orig := jsonb_set(v_orig, ARRAY[v_key], (p_originaux->v_key) || jsonb_build_object('seq', 1), true);
+      END IF;
     END LOOP;
     INSERT INTO public.reponses_apprenants (
       apprenant_id, user_id, exercice_id, exercice_type, reponses,
       reponses_meta, originaux_exacts, write_seq, completed, score, updated_at
     ) VALUES (
       p_apprenant_id, p_user_id, p_exercice_id, p_exercice_type,
-      v_merged, v_meta, COALESCE(p_originaux, '{}'::jsonb), 1, COALESCE(p_completed, false), p_score, now()
+      v_merged, v_meta, v_orig, 1, COALESCE(p_completed, false), p_score, now()
     )
     RETURNING * INTO v_current;
     v_tentative := COALESCE(v_current.tentative, 1);
