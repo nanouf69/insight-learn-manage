@@ -1191,9 +1191,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Relire corrections, revues, exclusions, notes définitives et affichage ; aucun mail/SMS, contenu, réponse ou historique modifié.
 
 ## 07/11 21:03 UTC — Corrections ciblées autorisées
-- [ ] Export 07/11 : timeout OFFSET à 928 000 confirmé ; réparation indépendante en cours, originaux/marqueurs préservés, aucune rotation. Manifeste `table_names` corrigé, restauration fictive jetable PASS ; résultat réel à relire.
+- [x] Export 07/11 : réexport indépendant terminé (1 777 363 lignes), originaux/marqueurs préservés, aucune rotation. Comptes concurrents divergents consignés dans `_incomplet.json`, jamais un snapshot cohérent ; restauration fictive jetable PASS, réelle non prouvée.
 - [x] Émargements : 216 `signed_at=created_at` automatiques (166 futurs, 50 passés), pas des preuves perdues ; 131 images/8 dossiers hors créneau actuel conservées, 40 tests PDF + 25 contrats SQL PASS, aucune signature modifiée.
 - [ ] CMA : quatre attentes confirmées, algorithme actuel déjà correct (10 tests). MESBAHI univoque mais RPC refusé sans session admin habilitée ; trois autres choix non automatiques. Aucun rattachement appliqué.
 - [x] Paiements : 0247 + identité stable appliqués, multi-session et virements égaux testés ; 18 paiements intacts, zéro backfill. Publication confirmée (`index-Dl3wEx4I.js`) sur les deux URL.
 - [x] Synchro : 0248 appliquée, réintroduction future bloquée ; Q40/Q41/Q49 et 210 contenus inchangés, empreintes modules identiques.
-- [ ] Tests : 3 695 globaux PASS, scan 0 critique/6 avertissements/2 infos ; rapport final, commit et preuves de bascule à terminer.
+- [x] Tests : 3 695 globaux PASS, scan 0 critique/6 avertissements/2 infos ; rapport final et bascule publique confirmée. Seul le rattachement CMA reste bloqué par la session admin habilitée.
