@@ -52,7 +52,7 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
           <div className="min-w-0">
             <h1 className="text-lg md:text-2xl font-bold text-foreground truncate">{title}</h1>
             {subtitle && (
-              <p className="hidden md:block text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+              <p className="hidden lg:block text-sm text-muted-foreground mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
@@ -62,7 +62,7 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
 
           <Button size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nouvel apprenant</span>
+            <span className="hidden lg:inline">Nouvel apprenant</span>
           </Button>
 
           <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
@@ -75,7 +75,7 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
               <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${initials}`} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
-            <div className="hidden sm:block">
+            <div className="hidden lg:block">
               <p className="text-sm font-medium">{displayName}</p>
               <p className="text-xs text-muted-foreground">Administrateur</p>
             </div>
