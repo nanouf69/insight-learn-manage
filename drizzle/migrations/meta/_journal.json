@@ -1723,6 +1723,13 @@
       "when": 1794061003809,
       "tag": "0245_restreindre_lecture_configuration_interne",
       "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1794063962613,
+      "tag": "0246_qrc_gt_question_par_question",
+      "breakpoints": true
     }
   ]
 }
