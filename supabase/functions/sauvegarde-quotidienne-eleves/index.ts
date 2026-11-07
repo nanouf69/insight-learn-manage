@@ -261,12 +261,9 @@ Deno.serve(async (req) => {
   if (etat.i < TABLES.length) {
     etat.maj = new Date().toISOString();
     await up(`${jour}/_etat.json`, etat);
+    // Un abandon (3 échecs) est consigné dans etat.erreurs ; la chaîne continue
+    // avec la table suivante au lieu d'attendre la reprise programmée.
     resultat = await exporterPaquet(sb, etat, TABLES.map(([n]) => n), jour, up);
-    if (resultat === "abandon") {
-      etat.maj = new Date().toISOString();
-      await up(`${jour}/_etat.json`, etat);
-      return json({ ok: false, saute: TABLES[etat.i - 1]?.[0] });
-    }
   }
 
   if (etat.i >= TABLES.length) {
