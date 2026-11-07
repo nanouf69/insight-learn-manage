@@ -106,10 +106,11 @@ describe("Correction IA — anonymat et source de vérité", () => {
     expect(m).toContain("Casier judiciaire vierge");
     expect(m).toContain("BARÈME : 2 points");
     expect(m).toContain("B2 vierge");
-    expect(fonction).not.toMatch(/select\("[^"]*(nom|prenom|email|telephone)/);
+    expect(m).not.toMatch(/FICTIF|FERREIRA|@ftransport/);
+    expect(fonction).toMatch(/messageUtilisateur\(c\.q, c\.bareme, c\.inst\.reponse\)/);
   });
   it("la question vient du snapshot de la tentative, jamais du contenu actuel", () => {
-    expect(fonction).toMatch(/att\.snapshot\?\.questions/);
+    expect(fonction).toMatch(/questionsDuSnapshot\(att\.snapshot\)/);
     expect(fonction).not.toMatch(/exam_content_versions|module_editor_state/);
   });
 });

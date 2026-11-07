@@ -37,7 +37,7 @@ export function estApprenantElearning(type?: string | null, modalite?: string | 
 /** Filet de sécurité complémentaire aux indicateurs techniques, jamais une formation. */
 export function estCompteTestApprenant(app?: { nom?: string | null; prenom?: string | null; email?: string | null } | null): boolean {
   const identite = `${app?.prenom ?? ""} ${app?.nom ?? ""} ${app?.email ?? ""}`.toLowerCase();
-  return /fictif|d[ée]mo|test[ _-]?technique|compte[ _-]?test|essai[ _-]?ia/.test(identite);
+  return /fictif|d[ée]mo|test[ ._-]?technique|compte[ _-]?test|essai[ _-]?ia/.test(identite);
 }
 
 export const texteReponse = (v: unknown): string =>
