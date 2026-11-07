@@ -155,7 +155,7 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
     if (technique || estCompteTestApprenant(app)) return json({ ok: true, statut: "compte_test_exclu" });
     const [{ data: neutralise, error: neutraliseError }, { data: resets, error: resetsError }] = await Promise.all([
       service.from("core_tentatives_neutralisees").select("attempt_id").eq("attempt_id", attempt_id).maybeSingle(),
-      service.from("core_exam_resets").select("reset_id").contains("archived_attempt_ids", [attempt_id]).limit(1),
+      service.from("core_exam_resets").select("reset_id").contains("archived_attempt_ids", JSON.stringify([attempt_id])).limit(1),
     ]);
     if (neutraliseError || resetsError) throw neutraliseError ?? resetsError;
     if (neutralise || resets?.length) return json({ ok: true, statut: "passage_archive_ou_neutralise" });
