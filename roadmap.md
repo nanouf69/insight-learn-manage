@@ -1191,9 +1191,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Relire corrections, revues, exclusions, notes définitives et affichage ; aucun mail/SMS, contenu, réponse ou historique modifié.
 
 ## 07/11 21:03 UTC — Corrections ciblées autorisées
-- [ ] Export 07/11 : identifier l'arrêt réel, contrôler charge/coût, réparer dans un répertoire indépendant sans toucher aux originaux ni provoquer de rotation ; vérifier manifeste et restauration jetable seulement.
-- [ ] Émargements : expliquer les 216 dates sans image par preuve/provenance ; contrôler les créneaux réels et dossiers liés, corriger seulement un défaut démontré, tester les PDF sans altérer les signatures.
-- [ ] CMA : vérifier rattachements/lignes existantes des quatre attentes, améliorer les noms composés sans fusion floue ; tester import/agenda/fiche et idempotence sur fixtures.
-- [ ] Paiements : vérifier Payé/Reste et la déduplication par identité de virement/liaison ; corriger le calcul seulement si fautif, sans écrire de donnée comptable.
-- [ ] Synchro : contrôler Q40/Q41/Q49 et comparer les 210 liens sécurité en lecture seule ; corriger le mécanisme uniquement sur reproduction, sans modifier les contenus.
-- [ ] Tests isolés, empreintes avant/après, déploiements strictement nécessaires et rapport des limites/coûts réels.
+- [ ] Export 07/11 : timeout OFFSET à 928 000 confirmé ; réparation indépendante en cours, originaux/marqueurs préservés, aucune rotation. Manifeste `table_names` corrigé, restauration fictive jetable PASS ; résultat réel à relire.
+- [x] Émargements : 216 `signed_at=created_at` automatiques (166 futurs, 50 passés), pas des preuves perdues ; 131 images/8 dossiers hors créneau actuel conservées, 40 tests PDF + 25 contrats SQL PASS, aucune signature modifiée.
+- [ ] CMA : quatre attentes confirmées, algorithme actuel déjà correct (10 tests). MESBAHI univoque mais RPC refusé sans session admin habilitée ; trois autres choix non automatiques. Aucun rattachement appliqué.
+- [x] Paiements : 0247 + identité stable appliqués, multi-session et virements égaux testés ; 18 paiements intacts, zéro backfill. Publication demandée, bascule à confirmer.
+- [x] Synchro : 0248 appliquée, réintroduction future bloquée ; Q40/Q41/Q49 et 210 contenus inchangés, empreintes modules identiques.
+- [ ] Tests : 3 695 globaux PASS, scan 0 critique/6 avertissements/2 infos ; rapport final, commit et preuves de bascule à terminer.
