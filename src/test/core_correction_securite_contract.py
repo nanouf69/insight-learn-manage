@@ -138,9 +138,11 @@ class Contrat(unittest.TestCase):
         # Chemin IA réel : qrc_ia_publier_* (SECURITY DEFINER, propriétaire postgres) imbriqué,
         # appelé par la fonction serveur avec la clé service (authenticator + SET ROLE service_role).
         pg.sql("CREATE FUNCTION public.qrc_ia_publier_fictif(p_op uuid, p_q uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN RETURN public.core_correct_qrc_publish(p_op, p_q, 2, 'ia', 'ia@fictif'); END $$; REVOKE ALL ON FUNCTION public.qrc_ia_publier_fictif(uuid,uuid) FROM PUBLIC; GRANT EXECUTE ON FUNCTION public.qrc_ia_publier_fictif(uuid,uuid) TO service_role;")
-        ok('service_role', service, f"SELECT public.qrc_ia_publier_fictif('{uuid.uuid4()}','{Q2}');")
+        q3 = str(uuid.uuid4())
+        c, o = pg.sql(f"BEGIN; INSERT INTO public.qrc_instances_v2 (qrc_instance_id, attempt_id, apprenant_id) VALUES ('{q3}','{ATT}','{APP}'); " + as_ctx('service_role', service, f"SELECT public.qrc_ia_publier_fictif('{uuid.uuid4()}','{q3}');") + " ROLLBACK;")
+        self.assertEqual(c, 0, o); self.assertIn('corrigee', o)
         # Même fonction imbriquée appelée par une tâche planifiée (session postgres) : refus par défaut.
-        c, o = pg.sql(f"BEGIN; SELECT public.qrc_ia_publier_fictif('{uuid.uuid4()}','{Q1}'); ROLLBACK;")
+        c, o = pg.sql(f"BEGIN; INSERT INTO public.qrc_instances_v2 (qrc_instance_id, attempt_id, apprenant_id) VALUES ('{q3}','{ATT}','{APP}'); SELECT public.qrc_ia_publier_fictif('{uuid.uuid4()}','{q3}'); ROLLBACK;")
         self.assertNotEqual(c, 0, o); self.assertIn('CORRECTION_NON_AUTORISEE', o)
         # Aucun rôle cron dédié n'est créé (aucune tâche réelle n'en dépend).
         self.assertEqual(pg.sql("SELECT count(*) FROM pg_roles WHERE rolname = 'ftransport_qrc_cron'")[1], '0')
