@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 07/11 — Mise en service progressive autorisée (depuis 280112574)
+- [ ] Vraie intégration handler Deno + PostgREST + PostgreSQL jetable : v2/v3, concurrence, rejeu après commit, gel, journal et faux ACK.
+- [ ] Empreintes avant/après et catalogue réel ; migration additive v3, déploiement de la fonction, durcissement de correction seulement si les contrôles passent.
+- [ ] Correctif d'export nocturne : déployer uniquement la reprise/les états honnêtes, sans export réel ni prétention de snapshot.
+- [ ] Publication frontend seulement si dépendances, revue globale, tests et sécurité le permettent ; alerte critique indépendante `bilan_future_opening` à ne pas contourner.
+
 ## 07/11 — Blocages restants (22P05, sécurité, sauvegarde cohérente)
 - [x] 22P05 : projection + original exact versionné (v3 additive), ACK par relecture exacte, refus définitif sans boucle si non activé, V2 écarté localement, message RAM honnête ; tests jetables + Vitest PASS.
 - [x] Sécurité : appelants réels vérifiés en SELECT, aucun cron dépendant, rôle cron retiré, garde-fou d'application, retour arrière testé.
