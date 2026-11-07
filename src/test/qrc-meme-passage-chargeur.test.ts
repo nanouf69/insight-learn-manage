@@ -45,7 +45,7 @@ describe("Chargeur réel mocké : QRC du même passage", () => {
   });
   it("une réponse tronquée garde l'attente historique", async () => {
     data.answer_state = [{ attempt_id: "att", question_id: "t3p:1", valeur: "r" }];
-    expect(await chargerEtAfficher()).toMatchObject({ etat: "en_attente", source: "ancien" });
+    expect(await chargerEtAfficher()).toMatchObject({ etat: "lecture_impossible", source: null });
   });
   it("échec de lecture des réponses : non vérifiable", async () => {
     fail = "answer_state";
