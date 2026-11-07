@@ -388,7 +388,12 @@ export function computeResultatMatiereScore(
   if (!resultat) return null;
   const core = coreStateScore((resultat as any).__core);
   if (core) {
-    const noteEliminatoire = (resultat as any).__core?.noteEliminatoire;
+    // Seuil éliminatoire : celui figé dans le passage, sinon celui de la matière
+    // (6/20, 4/20 en anglais) ; le champ « admis » enregistré n'est qu'un dernier repli.
+    const seuilFige = (resultat as any).__core?.noteEliminatoire;
+    const noteEliminatoire = typeof seuilFige === "number"
+      ? seuilFige
+      : (typeof (matiere as any)?.noteEliminatoire === "number" ? (matiere as any).noteEliminatoire : null);
     return {
       ...core,
       admis: typeof noteEliminatoire === "number"
