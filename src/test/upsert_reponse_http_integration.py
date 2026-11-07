@@ -114,6 +114,17 @@ GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, p
         cls.rest_log = open(cls.pg.dir + "/postgrest.log", "w")
         cls.rest = subprocess.Popen(["nix", "run", "nixpkgs#postgrest", "--"], env=env, stdout=cls.rest_log, stderr=subprocess.STDOUT)
         attendre_http(cls.rest_port)
+        fin_schema = time.time() + 45
+        while True:
+            try:
+                req_schema = Request(f"http://127.0.0.1:{cls.rest_port}/rest/v1/apprenants?select=id&limit=1", headers={"Authorization": f"Bearer {cls.service_jwt}", "apikey": cls.service_jwt})
+                with urlopen(req_schema, timeout=2) as res_schema:
+                    if res_schema.status == 200:
+                        break
+            except Exception:
+                if time.time() >= fin_schema:
+                    raise
+                time.sleep(0.2)
 
         integration = cls
 
