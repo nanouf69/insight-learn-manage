@@ -543,7 +543,7 @@ export function remapperFileApresReouverture(params: {
 /** Refus définitif du serveur : réessayer à l'infini n'y changera rien. */
 function refusDefinitif(message?: string): boolean {
   const m = String(message ?? "");
-  return /ATTEMPT_CLOSED|ATTEMPT_NOT_FOUND|QUESTION_NOT_IN_SNAPSHOT|NOT_OWNER|P0001|permission denied/i.test(m);
+  return /ATTEMPT_CLOSED|ATTEMPT_NOT_FOUND|QUESTION_NOT_IN_SNAPSHOT|NOT_OWNER|P0001|permission denied|NUL_NON_TRANSMISSIBLE_V2|22P05/i.test(m);
 }
 
 /** Réponses définitivement refusées et conservées pour la tentative donnée. */
