@@ -6,6 +6,7 @@ import { transformSync } from 'esbuild';
 import { expect, it, vi } from 'vitest';
 import { statutEchecPersistance, traceSauvegarde } from '../../supabase/functions/upsert-reponse-apprenant/diagnostic';
 import * as transportSansNul from '../../supabase/functions/upsert-reponse-apprenant/transportSansNul';
+import * as originauxExacts from '../../supabase/functions/upsert-reponse-apprenant/originauxExacts';
 
 async function invoke(code?: string, authenticated = true, encoding?: string) {
   let handler: ((req: Request) => Promise<Response>) | undefined;
@@ -15,10 +16,10 @@ async function invoke(code?: string, authenticated = true, encoding?: string) {
     .replace('import { createClient } from "npm:@supabase/supabase-js@2";', 'const createClient = globalThis.client;')
     .replace("import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';", 'const corsHeaders = {"Access-Control-Allow-Origin":"*"};')
     .replace("import { statutEchecPersistance, traceSauvegarde } from './diagnostic.ts';", 'const {statutEchecPersistance,traceSauvegarde} = globalThis.diagnostic;')
-    .replace("import { contientNul, encoderTransport, TRANSPORT_ENCODAGE } from './transportSansNul.ts';", 'const {contientNul,encoderTransport,TRANSPORT_ENCODAGE} = globalThis.transportSansNul;');
+    .replace("import { canonique, cleAvecNul, contientNul, lireOriginal, lireReponsesExactes, preparerLotSansNul } from './originauxExacts.ts';", 'const {canonique,cleAvecNul,contientNul,lireOriginal,lireReponsesExactes,preparerLotSansNul} = globalThis.originauxExacts;');
   runInNewContext(transformSync(source, { loader: 'ts', format: 'cjs' }).code, {
     Request, Response, URL, crypto: webcrypto, console,
-    diagnostic: { statutEchecPersistance, traceSauvegarde }, transportSansNul,
+    diagnostic: { statutEchecPersistance, traceSauvegarde }, transportSansNul, originauxExacts,
     client: () => ({ auth: { getUser: async () => ({ data: { user: authenticated ? { id: 'owner' } : null }, error: null }) }, from: () => chain, rpc }),
     Deno: { env: { get: () => 'fictitious' }, serve: (fn: typeof handler) => { handler = fn; } },
   });
