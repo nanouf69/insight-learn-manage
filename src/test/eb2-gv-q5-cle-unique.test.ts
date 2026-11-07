@@ -144,8 +144,12 @@ describe("EB2 G(V) Q5 — clé unique C", () => {
     const actuelle = gv("EB2");
     const snapQuestions = structuredClone(actuelle.questions) as any[];
     snapQuestions.find((q) => q.enonce === ENONCE).choix.find((c: any) => c.lettre === "B").correct = true;
+    // Snapshot complet tel qu'écrit à l'ouverture d'un passage (barème, seuil,
+    // coefficient et points figés) : seule forme recalculable (fail-closed).
+    for (const q of snapQuestions) q.points = q.points ?? (q.type === "QRC" ? 4 : 2);
     const details = {
-      snapshot: { version: 1, matiereId: actuelle.id, nom: actuelle.nom, ptsQCM: 2, ptsQRC: 4, noteSur: 20, questions: snapQuestions },
+      snapshot: { version: 1, matiereId: actuelle.id, nom: actuelle.nom, ptsQCM: 2, ptsQRC: 4, noteSur: 20,
+        coefficient: (actuelle as any).coefficient ?? 3, noteEliminatoire: (actuelle as any).noteEliminatoire ?? 6, questions: snapQuestions },
     };
     // Réponses identiques à celles du passage de SILLA Gils (21/09/2026).
     const reponses = { "1": "x", "2": "Rouge", "3": ["B"], "4": ["A"], "5": ["C"], "6": ["C"], "7": ["B"], "8": ["C"] };
@@ -160,5 +164,8 @@ describe("EB2 G(V) Q5 — clé unique C", () => {
     // La même copie sur la source corrigée (C seul) donnerait 15 : la correction ne s'applique qu'aux futurs passages.
     const scoreSource = computeMatiereScoreFromReponses(actuelle, reponses, corrections)!;
     expect(scoreSource.scoreObtenu).toBe(15);
+    // Snapshot incomplet (sans seuil/coefficient) : jamais recalculé avec les questions actuelles.
+    const incomplet = { snapshot: { ...details.snapshot, coefficient: undefined, noteEliminatoire: undefined } };
+    expect(computeMatiereScoreFromReponses(resolveMatiereForScoring(actuelle, incomplet), reponses, corrections)).toBeNull();
   });
 });
