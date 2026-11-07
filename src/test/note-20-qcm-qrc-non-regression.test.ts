@@ -27,12 +27,16 @@ function migrations(): { nom: string; sql: string }[] {
     .map((nom) => ({ nom, sql: readFileSync(path.join(DOSSIER_MIGRATIONS, nom), "utf8") }));
 }
 
-/** Dernière définition SQL d'une fonction (la migration la plus récente gagne). */
+/** Dernière définition SQL complète (jamais les GRANT qui mentionnent ensuite la fonction). */
 function derniereDefinition(nomFonction: string): string {
   let trouvee = "";
+  const motif = new RegExp(
+    `CREATE(?:\\s+OR\\s+REPLACE)?\\s+FUNCTION\\s+public\\.${nomFonction}\\s*\\([\\s\\S]*?\\$function\\$\\s*;`,
+    "i",
+  );
   for (const { sql } of migrations()) {
-    const i = sql.toLowerCase().lastIndexOf(`function public.${nomFonction}(`);
-    if (i >= 0) trouvee = sql.slice(i);
+    const correspondance = motif.exec(sql);
+    if (correspondance) trouvee = correspondance[0];
   }
   return trouvee;
 }
