@@ -1154,3 +1154,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Propagation exercice 62 : réintroduction reproduite, brouillon SQL testé (docs/sql-revue), non appliqué.
 - [ ] Q40/Q41 toujours présentes en TAXI 10/62 et Q49 en TAXI : décision admin requise, aucune modification faite.
 - [x] Contrat sécurité fonctions de correction : 6 profils testés ; correcteurs réels = 1 admin + service IA.
+
+## 07/11 11:09 — Finalisation ciblée a66eccf (sans activation)
+- [ ] Export : états honnêtes, concurrence et anciens curseurs, réparation indépendante.
+- [ ] 22P05 : bloquer le codec tant que stockage marqué et lecteurs complets ne sont pas disponibles ; contrats lossless isolés.
+- [ ] Sécurité : identité backend vérifiée, refus par défaut, matrice SQL isolée.
+- [ ] Rapport fichiers/tests/limites ; aucune publication, migration, donnée réelle ou appel payant.

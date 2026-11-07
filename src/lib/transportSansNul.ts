@@ -3,7 +3,7 @@
  *
  * PostgreSQL refuse U+0000 dans jsonb/text (SQLSTATE 22P05 « unsupported Unicode
  * escape sequence ») : une seule réponse contenant ce caractère invisible faisait
- * refuser définitivement TOUTE la sauvegarde de la matière (Ahmed MALKI, 05–06/11).
+ * refuser TOUT le lot en test isolé ; attribution au payload Ahmed NON PROUVÉE.
  *
  * Codage RÉVERSIBLE et sans perte, appliqué uniquement au transport/stockage :
  *   U+0000 → « ␀ » (U+2400) + U+034F (invisible)
@@ -64,4 +64,11 @@ export function encoderTransport<T>(value: T): T {
 /** Inverse exact de encoderTransport (restitue les U+0000 d'origine). */
 export function decoderTransport<T>(value: T): T {
   return transformer(value, decoderTexte) as T;
+}
+
+/** Contrat préparé uniquement : un lecteur ne décode JAMAIS une valeur non marquée. */
+export function decoderValeurMarquee<T>(value: T, version: unknown): T {
+  if (version == null) return value;
+  if (version !== TRANSPORT_ENCODAGE) throw new Error("ENCODAGE_VERSION_INCONNUE");
+  return decoderTransport(value);
 }
