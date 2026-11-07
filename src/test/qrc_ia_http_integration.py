@@ -161,7 +161,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
             if anciennes:
                 key, h = cle(APP, exam, attempt, str(i + 1), reponse)
                 self.pg.sql(f"INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,exam_id,matiere,reponse_hash,statut,motif,termine_at) VALUES('{key}','{qid}','{attempt}','{APP}','{i+1}','{exam}','reglementation_taxi2','{h}','exclue','matiere_exclue_gt',now());")
-        token = self.pg.sql(f"INSERT INTO qrc_ia_suites(attempt_id) VALUES('{attempt}') RETURNING token")
+        token = self.pg.sql(f"INSERT INTO qrc_ia_suites(attempt_id) VALUES('{attempt}') RETURNING token").splitlines()[0]
         return attempt, token, qrc_ids
 
     def appel(self, attempt, token):
