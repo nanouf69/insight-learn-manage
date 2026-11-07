@@ -27,7 +27,8 @@ BEGIN
     OR public.qrc_ia_identite_compte_test(ap.nom,ap.prenom,ap.email) THEN RETURN 'compte_test'; END IF;
  IF EXISTS(SELECT 1 FROM public.core_tentatives_neutralisees n WHERE n.attempt_id=p_attempt)
     OR EXISTS(SELECT 1 FROM public.core_exam_resets r WHERE r.archived_attempt_ids ? p_attempt::text) THEN RETURN 'passage_archive_ou_neutralise'; END IF;
- IF a.finished_at < greatest(c.actif_depuis,timestamptz '2026-10-20 09:53+00') THEN RETURN 'hors_periode'; END IF;
+ IF a.finished_at < greatest(c.actif_depuis,timestamptz '2026-10-20 09:53+00')
+    AND NOT EXISTS(SELECT 1 FROM public.qrc_ia_rattrapages_historiques h WHERE h.attempt_id=p_attempt) THEN RETURN 'hors_periode'; END IF;
  IF NOT EXISTS(
    SELECT 1 FROM public.qrc_instances_v2 q
    WHERE q.attempt_id=p_attempt AND q.etat='en_attente' AND q.reponse IS NOT NULL

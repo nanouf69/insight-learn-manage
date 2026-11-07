@@ -53,6 +53,12 @@ class File(unittest.TestCase):
         self.passage(8, finalise=False)
         self.assertEqual(self.suites(), '0')
 
+    def test_exception_historique_autorisee_preservee(self):
+        self.passage(24, fin="'2026-10-20 09:00+00'")
+        self.assertEqual(self.suites(), '0')
+        sql(f"INSERT INTO qrc_ia_rattrapages_historiques VALUES('{att(24)}')")
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(24)}','historique_autorise')"), 'en_file')
+
     def test_reconciliation_retrouve_une_tache_oubliee(self):
         sql("ALTER TABLE exam_attempts_v2 DISABLE TRIGGER trg_qrc_ia_enfiler_passage; ALTER TABLE qrc_instances_v2 DISABLE TRIGGER trg_qrc_ia_enfiler_qrc;")
         try: self.passage(9)
@@ -156,6 +162,7 @@ def main():
         CREATE TABLE comptes_test_techniques(apprenant_id uuid PRIMARY KEY);
         CREATE TABLE core_tentatives_neutralisees(attempt_id uuid PRIMARY KEY);
         CREATE TABLE core_exam_resets(reset_id uuid DEFAULT gen_random_uuid(), archived_attempt_ids jsonb);
+        CREATE TABLE qrc_ia_rattrapages_historiques(attempt_id uuid PRIMARY KEY);
         CREATE TABLE exam_attempts_v2(attempt_id uuid PRIMARY KEY, apprenant_id uuid, exam_id text DEFAULT 'EB5', etat text, finished_at timestamptz, is_test boolean DEFAULT false);
         CREATE TABLE qrc_instances_v2(qrc_instance_id uuid PRIMARY KEY, attempt_id uuid, apprenant_id uuid, question_id text, etat text, reponse jsonb);
         CREATE TABLE qrc_ia_corrections(id uuid DEFAULT gen_random_uuid(), cle_idempotence text UNIQUE, qrc_instance_id uuid, attempt_id uuid, apprenant_id uuid, question_id text, reponse_hash text, statut text, http_status int, motif text, matiere text, created_at timestamptz DEFAULT now(), termine_at timestamptz);
