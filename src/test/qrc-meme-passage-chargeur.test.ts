@@ -11,7 +11,7 @@ import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
 
-const questions = [{ id: "t3p:1", type: "QRC", enonce: "Q" }];
+const questions = [{ id: "t3p:1", type: "QRC", enonce: "Q", points: 1 }];
 const row = { id: "r", apprenant_id: "a", quiz_type: "examen_blanc", quiz_id: "EB5", matiere_id: "t3p", completed_at: "2026-09-27T13:28:28Z", score_obtenu: 4, score_max: 20, details: { qrc_pending_correction: true, reponses: { 1: "réponse" }, questions: [{ questionId: 1, type: "QRC", enonce: "Q" }] } };
 beforeEach(() => {
   fail = "";
@@ -45,7 +45,7 @@ describe("Chargeur réel mocké : QRC du même passage", () => {
   });
   it("une réponse tronquée garde l'attente historique", async () => {
     data.answer_state = [{ attempt_id: "att", question_id: "t3p:1", valeur: "r" }];
-    expect(await chargerEtAfficher()).toMatchObject({ etat: "en_attente", source: "ancien" });
+    expect(await chargerEtAfficher()).toMatchObject({ etat: "lecture_impossible", source: null });
   });
   it("échec de lecture des réponses : non vérifiable", async () => {
     fail = "answer_state";

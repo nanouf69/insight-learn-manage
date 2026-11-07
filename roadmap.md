@@ -1131,3 +1131,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Protéger en aperçu toute modification/ajout/suppression/réorganisation/clé/barème/corrigé pour les futures tentatives seules.
 - [ ] Signaler sans reconstruction les historiques dont le snapshot est insuffisant.
 - [ ] Tests fictifs de régression et contrôle de non-modification des données réelles ; aucune publication globale.
+
+## 07/11 — Notes EB1 VTC soir 2–13 novembre
+- [x] Audit des 18 comptes : 119 matières actives, 118 définitives, 59 faux pending/13 élèves, une vraie attente (4 QRC).
+- [x] Affichage V2 par preuve unique réponses/QRC ; archives exclues, aucun recalcul ni écriture.
+- [x] Régressions anonymisées et 18 vues CRM élève consultées avec écritures bloquées.
+- [ ] Mobile élève autonome non prouvé (contrôle effectué dans CRM uniquement) ; publication bloquée sans accord/sécurité globale.
