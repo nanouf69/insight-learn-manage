@@ -17,6 +17,7 @@
  *    un passage raccordé : il ne reçoit qu'une projection de lecture.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { contientNul } from "@/lib/originauxExacts";
 import type { ExamenBlanc, Matiere, Question } from "@/components/cours-en-ligne/examens-blancs-data";
 import { getPointsParQuestion } from "@/components/cours-en-ligne/examens-blancs-data";
 
@@ -319,7 +320,10 @@ export async function enregistrerReponse(params: {
       ? `answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`
       : `answer:${params.attemptId}:${qid}:r${rev}:${JSON.stringify(params.valeur ?? null)}`,
   );
-  // Aucun codec actif avant prise en charge durable du marqueur et de tous les lecteurs.
+  // U+0000 : le noyau V2 n'a pas de conservation exacte (answer_state jsonb). Refus local
+  // déterministe, sans appel réseau ni boucle ; la copie de référence passe par
+  // upsert-reponse-apprenant (original exact) et la file locale conserve la saisie.
+  if (contientNul(params.valeur)) return { ok: false, message: "NUL_NON_TRANSMISSIBLE_V2" };
   const valeurTransport = params.valeur ?? null;
   const sauvegarder = (operation: string, revision: number | null) => supabase.rpc("core_save_answer", {
     p_operation_id: operation,
