@@ -2,13 +2,21 @@
 // Un dossier par jour (AAAA-MM-JJ/table/part-N.json). Conservation 30 jours (seules les
 // anciennes COPIES de sauvegarde sont retirées, jamais une donnée élève).
 //
-// 07/10/2026 (B2) : l'ancienne version enchaînait ~370 appels d'affilée et s'arrêtait
-// chaque nuit après 6 tables sur 23. Désormais :
-//  - un appel = un paquet de 2 000 lignes (limite de calcul respectée), lecture triée par clé ;
-//  - l'avancement est enregistré dans « _etat.json » ; une chaîne s'arrête d'elle-même après
-//    40 paquets et une tâche de reprise (toutes les 2 minutes la nuit) repart du point exact ;
-//  - « _termine.json » (avec le nombre de lignes de chacune des 23 tables) n'est écrit
-//    qu'à la fin complète sans erreur, sinon « _incomplet.json » + alerte.
+// 07/10/2026 (B2) : un appel = un paquet, avancement dans « _etat.json », chaîne de 40 paquets
+// puis reprise par la tâche programmée.
+//
+// 07/11/2026 : la nuit du 07/11 s'est arrêtée sur « reponses_apprenants_journal » à la
+// position 928 000 (lecture par décalage OFFSET de plus en plus lente sur 1,7 M lignes),
+// la table a été abandonnée dès la PREMIÈRE erreur, puis « termine » a été posé malgré
+// l'erreur : les reprises répondaient « déjà terminé » sans rien réparer. Désormais :
+//  - lecture par clé (pk > dernier exporté) : coût constant, ni trou ni doublon ;
+//  - une erreur ne fait plus sauter la table : même position réessayée (attente croissante),
+//    abandon signalé seulement après 3 échecs au même endroit ;
+//  - preuve de couverture par table (comptage exact au début et à la fin) ;
+//  - « _termine.json » uniquement si toutes les tables sont prouvées complètes ;
+//  - une journée incomplète peut être RÉPARÉE sur demande explicite ({ jour, reparer: true }) :
+//    nouvel export complet des seules tables en erreur dans « _reparation-1/ », sans toucher
+//    aux fichiers déjà écrits ni à « _incomplet.json ». Jamais lancé automatiquement.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { EXPORT_TABLES, EXPORT_VERSION, exportManifest } from './manifest.ts';
@@ -19,7 +27,6 @@ const PAGE = 1000;
 const PART = 2000;
 // Tables aux lignes volumineuses (signatures, progression détaillée, snapshots) :
 // paquets plus petits pour rester sous la limite de calcul d'un appel.
-// 07/10/2026 soir : découpage plus fin des tables lourdes (lignes jusqu'à ~84 ko).
 const TAILLES: Record<string, [number, number]> = {
   apprenant_module_completion: [5, 20], emargements_fc: [10, 40], apprenant_documents_completes: [10, 50],
   bilan_passage_snapshots: [5, 20], apprenant_quiz_results: [100, 400], exam_attempts_v2: [50, 200],
@@ -29,10 +36,119 @@ const TAILLES: Record<string, [number, number]> = {
 const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
 const RETENTION_JOURS = 30;
+const MAX_ECHECS = 3;
+const REPARATION_DOSSIER = "_reparation-1";
 
-type Etat = { jour: string; i: number; from: number; comptes: Record<string, number>; erreurs: string[]; maj: string; termine?: boolean; pos?: string; essais?: number; version?: number; table_names?: string[] };
+type Preuve = { debut: number; fin?: number; mode: "cle" | "decalage"; dernier?: string | number | null };
+/** Avancement d'un export (journée principale ou réparation). Champs historiques conservés. */
+type Job = {
+  i: number; from: number; comptes: Record<string, number>; erreurs: string[];
+  pos?: string; essais?: number; table_names?: string[];
+  /** Lecture par clé : dernière clé exportée de la table en cours (null = début). Absent = ancien curseur par décalage. */
+  curseur?: string | number | null;
+  preuves?: Record<string, Preuve>;
+  derniere_erreur?: string;
+};
+type Etat = Job & {
+  jour: string; maj: string; termine?: boolean; version?: number;
+  reparation?: Job & { debut: string; termine?: boolean };
+};
 
 const json = (b: unknown) => new Response(JSON.stringify(b), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+const pkDe = (t: string) => TABLES.find(([n]) => n === t)?.[1] ?? "id";
+
+/** Avance d'UN paquet. Ne lève jamais pour une erreur de lecture : la position est conservée. */
+export async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: string, up: (p: string, c: unknown) => Promise<unknown>): Promise<"avance" | "echec" | "abandon"> {
+  const t = tables[job.i];
+  const pk = pkDe(t);
+  const [page, part] = TAILLES[t] ?? [PAGE, PART];
+  job.preuves ??= {};
+  const pos = `${job.i}:${job.from}`;
+  job.essais = job.pos === pos ? (job.essais ?? 0) + 1 : 1;
+  job.pos = pos;
+  if (job.essais > MAX_ECHECS) {
+    // Abandon explicite et signalé (jamais silencieux, jamais compté comme réussi).
+    job.erreurs.push(`${t}@${job.from}: ${MAX_ECHECS} échecs au même endroit${job.derniere_erreur ? ` (${job.derniere_erreur})` : ""}`);
+    job.i += 1; job.from = 0; job.essais = 0; job.curseur = undefined; job.derniere_erreur = undefined;
+    return "abandon";
+  }
+  // Ancien curseur par décalage (export commencé avant ce correctif) : il n'est jamais déplacé.
+  const decalage = job.from > 0 && job.curseur === undefined;
+  try {
+    if (!decalage && job.from === 0 && (job.curseur === undefined || job.curseur === null)) {
+      const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
+      if (error) throw error;
+      if (typeof count !== "number") throw new Error("comptage indisponible");
+      job.preuves[t] = { debut: count, mode: "cle" };
+      job.curseur = null;
+      job.comptes[t] = 0;
+    }
+    const buf: any[] = [];
+    let fini = false;
+    let curseur = job.curseur ?? null;
+    let f = job.from;
+    while (buf.length < part) {
+      let q = sb.from(t).select("*").order(pk, { ascending: true });
+      let res: any;
+      if (decalage) {
+        res = await q.range(f, f + page - 1);
+      } else {
+        if (curseur !== null) q = q.gt(pk, curseur);
+        res = await q.limit(page);
+      }
+      if (res.error) throw res.error;
+      const data = res.data ?? [];
+      if (!data.length) { fini = true; break; }
+      for (const row of data) {
+        const k = row?.[pk];
+        if (k === null || k === undefined) throw new Error(`clé ${pk} absente`);
+        if (!decalage && curseur !== null && !(cmpCle(k, curseur) > 0)) throw new Error("ordre des clés non croissant");
+        if (!decalage) curseur = k;
+      }
+      buf.push(...data); f += data.length;
+      if (data.length < page) { fini = true; break; }
+    }
+    if (buf.length) {
+      // Nom fixé par la position : un nouvel essai réécrit le même fichier (idempotent).
+      await up(`${prefixe}/${t}/part-${String(job.from).padStart(8, "0")}.json`, buf);
+    }
+    job.comptes[t] = (job.comptes[t] ?? 0) + buf.length;
+    if (!decalage) job.curseur = curseur;
+    if (fini) {
+      const preuve = job.preuves[t];
+      if (preuve && !decalage) {
+        const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
+        if (error) throw error;
+        if (typeof count !== "number") throw new Error("comptage final indisponible");
+        preuve.fin = count; preuve.dernier = curseur;
+        const n = job.comptes[t];
+        // Toute ligne présente au début est exportée (n ≥ début) ; rien d'inventé (n ≤ fin).
+        if (n < preuve.debut || n > count) job.erreurs.push(`${t}: couverture non prouvée (${n} exportées, ${preuve.debut} au début, ${count} à la fin)`);
+      } else if (decalage) {
+        job.preuves[t] = { debut: -1, mode: "decalage" };
+      }
+      job.i += 1; job.from = 0; job.curseur = undefined;
+    } else {
+      job.from += buf.length;
+    }
+    job.essais = 0; job.derniere_erreur = undefined;
+    return "avance";
+  } catch (e) {
+    const msg = String((e as any)?.code ? `${(e as any).code} ${(e as any).message ?? ""}` : (e as Error)?.message ?? JSON.stringify(e)).slice(0, 500);
+    console.error(`[sauvegarde] ${t}@${job.from}`, msg);
+    job.derniere_erreur = msg;
+    await sb.storage.from(BUCKET).upload(`${prefixe}/_erreurs/${t}-${job.from}.txt`, new Blob([msg]), { upsert: true }).catch(() => {});
+    // Position conservée : le prochain appel réessaie EXACTEMENT ce paquet.
+    return "echec";
+  }
+}
+
+function cmpCle(a: unknown, b: unknown): number {
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  if (/^\d+$/.test(String(a)) && /^\d+$/.test(String(b))) { const x = BigInt(String(a)), y = BigInt(String(b)); return x === y ? 0 : x > y ? 1 : -1; }
+  const x = String(a).toLowerCase(), y = String(b).toLowerCase();
+  return x === y ? 0 : x > y ? 1 : -1;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -46,6 +162,7 @@ Deno.serve(async (req) => {
   const saut: number = Number(body.saut ?? 0);
   const chaine = body.chaine === true;
   const reprise = body.reprise === true;
+  const reparer = body.reparer === true;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
   const up = async (path: string, content: unknown) => {
@@ -58,12 +175,73 @@ Deno.serve(async (req) => {
     if (!data) return null;
     try { return JSON.parse(await data.text()); } catch { return null; }
   };
+  const enchainer = (attenteMs = 0) => {
+    if (saut + 1 >= MAX_SAUTS) return false;
+    // @ts-ignore EdgeRuntime existe dans l'environnement des fonctions
+    EdgeRuntime.waitUntil(new Promise((r) => setTimeout(r, attenteMs)).then(() => fetch(`${url}/functions/v1/sauvegarde-quotidienne-eleves`, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key },
+      body: JSON.stringify({ jour, saut: saut + 1, chaine: true }),
+    })).catch((e) => console.error("[chaine]", e)));
+    return true;
+  };
 
   let etat = await lireEtat();
-  if (etat?.termine) return json({ ok: true, deja_termine: true, jour, version: etat.version ?? 1, tables: etat.table_names?.length ?? Object.keys(etat.comptes).length });
+
+  // Journée terminée : rien à refaire, sauf réparation EXPLICITE d'une journée incomplète.
+  if (etat?.termine) {
+    const incomplet = (etat.erreurs?.length ?? 0) > 0;
+    if (!incomplet) return json({ ok: true, deja_termine: true, jour, version: etat.version ?? 1, tables: etat.table_names?.length ?? Object.keys(etat.comptes).length });
+    if (etat.reparation?.termine) return json({ ok: (etat.reparation.erreurs ?? []).length === 0, deja_repare: true, jour, erreurs: etat.reparation.erreurs });
+    if (!etat.reparation) {
+      if (!reparer) return json({ ok: false, incomplet: true, jour, erreurs: etat.erreurs, action: "réparation sur demande explicite { jour, reparer: true }" });
+      const aRefaire = [...new Set(etat.erreurs.map((e) => e.split(/[@:]/)[0]).filter((n) => TABLES.some(([t]) => t === n)))];
+      etat.reparation = { debut: new Date().toISOString(), i: 0, from: 0, comptes: {}, erreurs: [], table_names: aRefaire, preuves: {} };
+      etat.maj = new Date(0).toISOString();
+      await up(`${jour}/_etat.json`, etat);
+    } else if (!chaine && Date.now() - new Date(etat.maj).getTime() < BAIL_MS) {
+      return json({ ok: true, chaine_active: true, reparation: true, i: etat.reparation.i, from: etat.reparation.from });
+    }
+    const r = etat.reparation!;
+    const tables = r.table_names ?? [];
+    let resultat: string = "avance";
+    if (r.i < tables.length) {
+      etat.maj = new Date().toISOString();
+      await up(`${jour}/_etat.json`, etat);
+      resultat = await exporterPaquet(sb, r, tables, `${jour}/${REPARATION_DOSSIER}`, up);
+    }
+    if (r.i >= tables.length) {
+      const manquantes = tables.filter((t) => !r.preuves?.[t] || r.preuves[t].mode !== "cle" || typeof r.preuves[t].fin !== "number");
+      const erreurs = [...r.erreurs, ...manquantes.map((t) => `${t}: preuve de couverture absente`)];
+      etat.maj = new Date().toISOString();
+      if (erreurs.length === 0) {
+        const comptes = { ...etat.comptes, ...r.comptes };
+        const manifeste = {
+          jour, fin: etat.maj, ...exportManifest(comptes, []),
+          repare: true, reparation_debut: r.debut, reparation_dossier: REPARATION_DOSSIER,
+          sources: Object.fromEntries(tables.map((t) => [t, `${REPARATION_DOSSIER}/${t}`])),
+          preuves: { ...(etat.preuves ?? {}), ...r.preuves }, erreurs_initiales: etat.erreurs,
+        };
+        if (manifeste.erreurs.length === 0) await up(`${jour}/_termine.json`, manifeste);
+        r.erreurs = manifeste.erreurs;
+      } else {
+        r.erreurs = erreurs;
+      }
+      r.termine = true;
+      await up(`${jour}/_etat.json`, etat);
+      return json({ ok: r.erreurs.length === 0, repare: r.erreurs.length === 0, jour, erreurs: r.erreurs });
+    }
+    etat.maj = new Date().toISOString();
+    await up(`${jour}/_etat.json`, etat);
+    if (!enchainer(resultat === "echec" ? 5_000 * (r.essais ?? 1) : 0)) {
+      etat.maj = new Date(Date.now() - BAIL_MS).toISOString();
+      await up(`${jour}/_etat.json`, etat);
+    }
+    return json({ ok: true, en_cours: true, reparation: true, i: r.i, from: r.from, saut });
+  }
+
   if (!etat) {
     if (reprise) return json({ ok: true, rien_a_reprendre: true, jour });
-    etat = { jour, i: 0, from: 0, comptes: {}, erreurs: [], maj: new Date(0).toISOString(), version: EXPORT_VERSION, table_names: TABLES.map(([name]) => name) };
+    etat = { jour, i: 0, from: 0, comptes: {}, erreurs: [], maj: new Date(0).toISOString(), version: EXPORT_VERSION, table_names: TABLES.map(([name]) => name), preuves: {} };
   } else if (!chaine && Date.now() - new Date(etat.maj).getTime() < BAIL_MS) {
     // Une chaîne est déjà active : ne jamais en lancer une deuxième en parallèle.
     return json({ ok: true, chaine_active: true, i: etat.i, from: etat.from });
@@ -72,52 +250,23 @@ Deno.serve(async (req) => {
   // An unfinished legacy export adopts appended tables without changing its cursor.
   etat.version = EXPORT_VERSION;
   etat.table_names = TABLES.map(([name]) => name);
+  let resultat: string = "avance";
   if (etat.i < TABLES.length) {
-    const [t, pk] = TABLES[etat.i];
-    const [page, part] = TAILLES[t] ?? [PAGE, PART];
-    // Un paquet qui fait tomber l'appel 3 fois est signalé puis la table suivante est traitée
-    // (jamais de blocage silencieux : la nuit se termine par « _incomplet.json » + alerte).
-    const pos = `${etat.i}:${etat.from}`;
-    etat.essais = etat.pos === pos ? (etat.essais ?? 0) + 1 : 1;
-    etat.pos = pos;
-    if (etat.essais > 3) {
-      etat.erreurs.push(`${t}@${etat.from}: paquet trop lourd (3 échecs)`);
-      etat.i += 1; etat.from = 0; etat.essais = 0;
-      etat.maj = new Date().toISOString();
-      await up(`${jour}/_etat.json`, etat);
-      return json({ ok: false, saute: t });
-    }
     etat.maj = new Date().toISOString();
     await up(`${jour}/_etat.json`, etat);
-    try {
-      const buf: unknown[] = [];
-      let f = etat.from, fini = false;
-      while (buf.length < part) {
-        const { data, error } = await sb.from(t).select("*").order(pk, { ascending: true }).range(f, f + page - 1);
-        if (error) throw error;
-        if (!data?.length) { fini = true; break; }
-        buf.push(...data); f += data.length;
-        if (data.length < page) { fini = true; break; }
-      }
-      if (buf.length) {
-        const { error } = await up(`${jour}/${t}/part-${String(etat.from).padStart(8, "0")}.json`, buf);
-        if (error) throw error;
-      }
-      etat.comptes[t] = (etat.comptes[t] ?? 0) + buf.length;
-      if (fini) { etat.i += 1; etat.from = 0; } else { etat.from += buf.length; }
-    } catch (e) {
-      const msg = String((e as Error)?.message ?? JSON.stringify(e));
-      console.error(`[sauvegarde] ${t}`, msg);
-      await sb.storage.from(BUCKET).upload(`${jour}/_erreurs/${t}-${etat.from}.txt`, new Blob([msg]), { upsert: true });
-      etat.erreurs.push(`${t}@${etat.from}: ${msg}`);
-      etat.i += 1; etat.from = 0;
+    resultat = await exporterPaquet(sb, etat, TABLES.map(([n]) => n), jour, up);
+    if (resultat === "abandon") {
+      etat.maj = new Date().toISOString();
+      await up(`${jour}/_etat.json`, etat);
+      return json({ ok: false, saute: TABLES[etat.i - 1]?.[0] });
     }
   }
 
   if (etat.i >= TABLES.length) {
     etat.maj = new Date().toISOString();
-    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs) };
+    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), preuves: etat.preuves ?? {} };
     await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_termine.json`, manifeste);
+    etat.erreurs = manifeste.erreurs;
     etat.termine = true;
     await up(`${jour}/_etat.json`, etat);
     await rotation(sb); // Scheduled retention unchanged; never invoked manually.
@@ -129,18 +278,12 @@ Deno.serve(async (req) => {
 
   etat.maj = new Date().toISOString();
   await up(`${jour}/_etat.json`, etat);
-  if (saut + 1 < MAX_SAUTS) {
-    // @ts-ignore EdgeRuntime existe dans l'environnement des fonctions
-    EdgeRuntime.waitUntil(fetch(`${url}/functions/v1/sauvegarde-quotidienne-eleves`, {
-      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key },
-      body: JSON.stringify({ jour, saut: saut + 1, chaine: true }),
-    }).catch((e) => console.error("[chaine]", e)));
-  } else {
+  if (!enchainer(resultat === "echec" ? 5_000 * (etat.essais ?? 1) : 0)) {
     // Chaîne volontairement arrêtée : la reprise suivante attendra la fin du délai BAIL_MS.
     etat.maj = new Date(Date.now() - BAIL_MS).toISOString();
     await up(`${jour}/_etat.json`, etat);
   }
-  return json({ ok: true, en_cours: true, i: etat.i, from: etat.from, saut });
+  return json({ ok: true, en_cours: true, i: etat.i, from: etat.from, saut, ...(resultat === "echec" ? { nouvel_essai: true } : {}) });
 });
 
 // Rotation : retirer uniquement les dossiers de SAUVEGARDE de plus de 30 jours.
@@ -150,7 +293,8 @@ async function rotation(sb: any) {
     const { data: dossiers } = await sb.storage.from(BUCKET).list("", { limit: 1000 });
     for (const d of dossiers ?? []) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d.name) || d.name >= limite) continue;
-      for (const t of [...TABLES.map(([n]) => n), "_erreurs", ""]) {
+      const noms = TABLES.map(([n]) => n);
+      for (const t of [...noms, "_erreurs", ...noms.map((n) => `${REPARATION_DOSSIER}/${n}`), `${REPARATION_DOSSIER}/_erreurs`, ""]) {
         const prefix = t ? `${d.name}/${t}` : d.name;
         const { data: files } = await sb.storage.from(BUCKET).list(prefix, { limit: 1000 });
         const paths = (files ?? []).filter((f: any) => f.id).map((f: any) => `${prefix}/${f.name}`);
