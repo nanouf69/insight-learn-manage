@@ -100,6 +100,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
   it('panne persistante : abandon après 3 échecs, _incomplet.json + alerte, jamais _termine.json', async () => {
     const h = harness({ rows: jeuFictif(3000), echec: ({ table, kind, gt }) => (table === JOURNAL && kind === 'read' && gt === uuid(2000) ? { code: '57014', message: 'timeout' } : null) });
     const fin = await h.run();
+    console.log('DBG', JSON.stringify(fin).slice(0,600), [...h.objects.keys()].filter(k=>!k.includes('part-')));
     expect(fin.ok).toBe(false);
     expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(false);
     const inc = h.objects.get(`${JOUR}/_incomplet.json`);
