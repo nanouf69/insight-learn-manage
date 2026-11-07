@@ -19,6 +19,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { ExamenBlanc, Matiere, Question } from "@/components/cours-en-ligne/examens-blancs-data";
 import { getPointsParQuestion } from "@/components/cours-en-ligne/examens-blancs-data";
+import { encoderTransport } from "@/lib/transportSansNul";
 
 /** Identifiant de question unique dans tout l'examen : matière + numéro. */
 export const idQuestionNoyau = (matiereId: string, questionId: number | string) =>
