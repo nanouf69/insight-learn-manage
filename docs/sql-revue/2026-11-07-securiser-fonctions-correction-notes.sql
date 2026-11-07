@@ -380,7 +380,10 @@ GRANT EXECUTE ON FUNCTION public.core_revise_qrc_publish(uuid, uuid, numeric, nu
 REVOKE ALL ON FUNCTION public.core_identite_api_verifiee() FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.core_contexte_correction_autorise() FROM authenticated, service_role;
 REVOKE ALL ON FUNCTION public.core_contexte_tentative_autorise(uuid) FROM authenticated, service_role;
--- Le cron de réconciliation doit appeler sa fonction de haut niveau documentée ;
--- aucun accès direct à la correction ni membership pour anon/authenticated/authenticator.
--- Activation BLOQUÉE : prouver les identités de connexion API/IA et provisionner
--- la connexion dédiée du scheduler avant toute application réelle.
+-- Aucun accès direct à la correction ni membership pour anon/authenticated/authenticator.
+-- Identités réelles vérifiées en SELECT le 07/11 : authenticator (LOGIN) porte les appels
+-- API ; service_role NOLOGIN (atteint seulement par SET ROLE depuis authenticator) ;
+-- appels réels = Correction QRC V2 admin (publish/revise), élève fin de passage
+-- (core_recalc_result), fonction IA via qrc_ia_publier_auto/reprise (service_role, imbriqué).
+-- Application : une transaction, hors correction en cours ; retour arrière =
+-- docs/sql-revue/2026-11-07-securiser-fonctions-RETOUR-ARRIERE.sql (définitions figées).
