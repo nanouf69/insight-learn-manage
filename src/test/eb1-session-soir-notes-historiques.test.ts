@@ -95,7 +95,7 @@ describe('EB1 soirée : verdict par matière = note affichée', () => {
       const n = noteExamenAffichee(a);
       if (n.etat !== 'note') { expect(verdictMatiereAffiche(a)).toBeNull(); continue; }
       const seuil = typeof a.__core?.noteEliminatoire === 'number' ? a.__core.noteEliminatoire
-        : (/anglais/i.test(String(row.matiere_nom ?? row.details?.snapshot?.nom ?? '')) ? 4 : 6);
+        : (/anglais/i.test(String((row as any).matiere_nom ?? (row as any).details?.snapshot?.nom ?? '')) ? 4 : 6);
       expect(verdictMatiereAffiche(a)).toBe(n.note20! >= seuil);
       verifies++;
     }
