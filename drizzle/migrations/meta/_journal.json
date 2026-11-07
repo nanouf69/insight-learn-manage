@@ -1702,6 +1702,20 @@
       "when": 1793965262246,
       "tag": "0242_secure_exam_reset_retake_authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "when": 1794059529016,
+      "tag": "0243_originaux_exacts_nul_v3",
+      "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "when": 1794059630723,
+      "tag": "0244_securiser_fonctions_correction_notes",
+      "breakpoints": true
     }
   ]
 }

@@ -1,10 +1,17 @@
 # Feuille de route
 
+## 07/11 — Mise en service progressive autorisée (depuis 280112574)
+- [x] Vraie intégration handler Deno + PostgREST + PostgreSQL jetable : v2/v3, concurrence, rejeu après commit, gel, journal et faux ACK — 1/1 PASS le 07/11.
+- [x] Empreintes avant/après identiques ; migration additive 0243, fonction réponses déployée, durcissement 0244 appliqué ; rejeu admin réel sans écriture PASS.
+- [x] Correctif d'export nocturne déployé seul, sans export réel ni prétention de snapshot ; restauration réelle toujours non prouvée.
+- [x] Suite globale 3 688 PASS / 0 échec ; build OK ; scan frais relu sans contournement.
+- [ ] Publication frontend NON APPELÉE : 4 erreurs RLS indépendantes (`bilan_future_opening`, `bilan_identite_flags`, `bilan_snapshot_flags`, `module_regles_validation`) ; patch isolé `answerPersistence` préparé, lot de 167 fichiers non publié.
+
 ## 07/11 — Blocages restants (22P05, sécurité, sauvegarde cohérente)
 - [x] 22P05 : projection + original exact versionné (v3 additive), ACK par relecture exacte, refus définitif sans boucle si non activé, V2 écarté localement, message RAM honnête ; tests jetables + Vitest PASS.
 - [x] Sécurité : appelants réels vérifiés en SELECT, aucun cron dépendant, rôle cron retiré, garde-fou d'application, retour arrière testé.
 - [x] Sauvegarde : script de restauration sur base jetable testé ; instantané cohérent = sauvegarde gérée/Export data uniquement.
-- [ ] Appliquer migration v3, déployer la fonction, appliquer le durcissement, publier : interdits pendant cette tâche (attente d'une exécution autorisée).
+- [x] Migration v3 0243, fonction réponses et durcissement 0244 appliqués le 07/11 avec tests et empreintes ; export corrigé déployé. Frontend non publié à cause de quatre alertes RLS critiques indépendantes.
 - [ ] Restauration d'un « Export data » réel sur base jetable : nécessite que le responsable lance l'export depuis l'interface.
 
 ## 06/11 — Trois accords nominatifs et prévention des jalons prématurés
