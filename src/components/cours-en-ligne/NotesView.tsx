@@ -5,10 +5,10 @@ import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, Gr
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
-import { isExamAttemptPublicationPending, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
-import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
+import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies, verdictMatiereAffiche } from "@/lib/noteExamenAffichee";
 
 interface QuizResult {
   id: string;
@@ -82,10 +82,18 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedDetail, setSelectedDetail] = useState<{ title: string; date: string; score: number; max: number; details: any[] } | null>(null);
-  const fetchStateRef = useRef({ inFlight: false, pending: false });
+  // Un état de chargement par élève : une réponse tardive de l'élève précédent
+  // ne peut jamais être affichée sur la fiche d'un autre élève.
+  const fetchStateRef = useRef<{ id: string; inFlight: boolean; pending: boolean }>({ id: apprenantId, inFlight: false, pending: false });
   useEffect(() => {
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
+  useEffect(() => {
+    // Changement d'élève : on vide immédiatement l'affichage précédent.
+    setQuizResults([]);
+    setLoading(true);
+    setSelectedDetail(null);
+  }, [apprenantId]);
 
   const fetchAll = useCallback(async () => {
     if (!apprenantId) {
@@ -93,16 +101,23 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
       return;
     }
 
-    if (fetchStateRef.current.inFlight) {
-      fetchStateRef.current.pending = true;
+    let state = fetchStateRef.current;
+    if (state.id !== apprenantId) {
+      state = { id: apprenantId, inFlight: false, pending: false };
+      fetchStateRef.current = state;
+    }
+    const isCurrent = () => fetchStateRef.current === state;
+
+    if (state.inFlight) {
+      state.pending = true;
       return;
     }
 
-    fetchStateRef.current.inFlight = true;
+    state.inFlight = true;
 
     try {
       do {
-        fetchStateRef.current.pending = false;
+        state.pending = false;
 
         const [quizRes, moduleRes, resetsRes] = await Promise.all([
           supabase
@@ -118,6 +133,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             .order("completed_at", { ascending: true }),
           supabase.from('core_exam_resets').select('archived_legacy_result_ids').eq('apprenant_id', apprenantId),
         ]);
+        if (!isCurrent()) return;
 
         if (quizRes.error) {
           console.error("NotesView: erreur chargement quiz", quizRes.error);
@@ -127,6 +143,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
           const nonFiables = coreStates === null
             ? null
             : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
+          if (!isCurrent()) return;
           const archived = new Set((resetsRes.data ?? []).flatMap((r: any) => r.archived_legacy_result_ids ?? []).map(String));
           const activeRows = excludeResultPlaceholders(quizRes.data || []).filter((r: any) => !archived.has(String(r.id)));
           // EB rows carry immutable result IDs: never merge their identities before proof.
@@ -142,10 +159,10 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         } else if (moduleCompletionsSeed.length === 0) {
           setModuleCompletions([]);
         }
-      } while (fetchStateRef.current.pending);
+      } while (state.pending && isCurrent());
     } finally {
-      fetchStateRef.current.inFlight = false;
-      setLoading(false);
+      state.inFlight = false;
+      if (isCurrent()) setLoading(false);
     }
   }, [apprenantId, moduleCompletionsSeed]);
 
@@ -196,18 +213,12 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     });
   };
 
-  const pendingResultIds = useMemo(() => {
-    const groups = new Map<string, QuizResult[]>();
-    quizResults.forEach((row) => {
-      const key = `${row.quiz_id}__${row.tentative ?? 1}`;
-      groups.set(key, [...(groups.get(key) || []), row]);
-    });
-    const ids = new Set<string>();
-    groups.forEach((rows) => {
-      if (isExamAttemptPublicationPending(rows)) rows.forEach((row) => ids.add(row.id));
-    });
-    return ids;
-  }, [quizResults]);
+  // Chaque matière d'examen blanc est jugée SEULE, sur l'état serveur de son
+  // propre passage (QRC V2 + note persistée) : une matière encore à corriger
+  // ne masque plus les notes définitives des autres matières du même examen.
+  // Une ligne sans état fiable (lecture impossible) reste non publiée.
+  const pendingResultIds = useMemo(() => idsResultatsNonPublies(quizResults), [quizResults]);
+  // Verrou commun conservé ligne par ligne : isExamAttemptPublicationPending([row]).
 
   const publishedQuizResults = useMemo(
     () => quizResults.filter((row) => !pendingResultIds.has(row.id)),
@@ -676,7 +687,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                             // Statut calculé avec la MÊME règle que le résultat
                             // définitif (barème + seuil éliminatoire), jamais le
                             // champ brut enregistré.
-                            const admis = computeReussiForResult(r as any) ?? false;
+                            const admis = verdictMatiereAffiche(r) ?? false;
                             return (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${admis ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                                 {admis ? "✅ Réussi" : "❌ Échoué"}
@@ -713,7 +724,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             .map(([quizId, results]) => {
               const failed = results.filter(r => {
                 // Tant qu'une QRC reste à corriger : aucun statut définitif.
-                const admis = computeReussiForResult(r as any);
+                const admis = verdictMatiereAffiche(r);
                 if (admis === null) return false;
                 const note = normalizeQuizNoteSur20(r);
                 return note != null && (!admis || note < 10);

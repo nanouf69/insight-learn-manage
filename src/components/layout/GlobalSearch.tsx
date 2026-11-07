@@ -186,7 +186,7 @@ export function GlobalSearch({ onSelectApprenant, onNavigate }: GlobalSearchProp
     <>
       <button
         onClick={() => setOpen(true)}
-        className="relative hidden md:flex items-center gap-2 w-64 px-3 py-2 bg-muted/50 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
+        className="relative hidden md:flex items-center gap-2 w-40 lg:w-64 shrink-0 px-3 py-2 bg-muted/50 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
       >
         <Search className="w-4 h-4" />
         <span>Rechercher...</span>

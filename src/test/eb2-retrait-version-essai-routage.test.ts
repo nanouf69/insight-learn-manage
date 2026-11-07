@@ -9,6 +9,8 @@ vi.mock("@/integrations/supabase/client", () => {
   chain.eq = () => chain;
   chain.is = () => chain;
   chain.limit = () => Promise.resolve({ data: etat.versionsActives, error: null });
+  // Recherche d'une tentative V2 déjà ouverte (reprise) : aucune pour ces élèves fictifs.
+  chain.order = () => Promise.resolve({ data: [], error: null });
   return {
     supabase: {
       from: () => chain,

@@ -53,3 +53,52 @@ describe('EB1 soirée : 18 comptes anonymisés, aucun recalcul', () => {
     }
   });
 });
+describe('EB1 soirée : écran Notes complet (plus de masquage inter-matières)', () => {
+  it('118 notes visibles, seule la matière à 4 QRC non corrigées reste en attente', async () => {
+    const { idsResultatsNonPublies } = await import('@/lib/noteExamenAffichee');
+    const ids = [...new Set(fixture.exam_attempts_v2.map(a => a.apprenant_id))];
+    const states = await fetchCoreMatiereStatesBulk(ids);
+    const archived = new Set(fixture.core_exam_resets.flatMap(r => r.archived_legacy_result_ids));
+    let visibles = 0; const attentes: any[] = []; let freresVisibles = 0;
+    for (const id of ids) {
+      const rows = fixture.apprenant_quiz_results.filter(r => r.apprenant_id === id && !archived.has(r.id))
+        .map(r => attacherSourceUnique(r, states?.get(id) ?? null, new Set()));
+      const pending = idsResultatsNonPublies(rows as any);
+      for (const r of rows) {
+        if (pending.has(String(r.id))) attentes.push(r);
+        else { visibles++; expect(noteExamenAffichee(r).etat).toBe('note'); }
+      }
+      if (pending.size) freresVisibles += rows.filter(r => !pending.has(String(r.id)) && rows.some(p => pending.has(String(p.id)) && p.quiz_id === r.quiz_id && (p.tentative ?? 1) === (r.tentative ?? 1))).length;
+    }
+    expect(visibles).toBe(118);
+    expect(attentes).toHaveLength(1);
+    expect(attentes[0].__core.qrcRestantes).toBe(4);
+    // Les autres matières du même examen/tentative (cas Kama) restent visibles.
+    expect(freresVisibles).toBeGreaterThanOrEqual(5);
+  });
+  it('ligne archivée/reset ou lecture impossible : jamais publiée', async () => {
+    const { idsResultatsNonPublies } = await import('@/lib/noteExamenAffichee');
+    const row = { ...fixture.apprenant_quiz_results[0] };
+    expect(idsResultatsNonPublies([attacherSourceUnique(row, null, new Set()) as any]).has(String(row.id))).toBe(true);
+  });
+});
+
+describe('EB1 soirée : verdict par matière = note affichée', () => {
+  it('chaque note V2 visible a un verdict cohérent avec son seuil (6/20, 4/20 anglais)', async () => {
+    const { verdictMatiereAffiche } = await import('@/lib/noteExamenAffichee');
+    const ids = [...new Set(fixture.exam_attempts_v2.map(a => a.apprenant_id))];
+    const states = await fetchCoreMatiereStatesBulk(ids);
+    const archived = new Set(fixture.core_exam_resets.flatMap(r => r.archived_legacy_result_ids));
+    let verifies = 0;
+    for (const row of fixture.apprenant_quiz_results.filter(r => !archived.has(r.id))) {
+      const a = attacherSourceUnique(row, states?.get(row.apprenant_id) ?? null, new Set());
+      const n = noteExamenAffichee(a);
+      if (n.etat !== 'note') { expect(verdictMatiereAffiche(a)).toBeNull(); continue; }
+      const seuil = typeof a.__core?.noteEliminatoire === 'number' ? a.__core.noteEliminatoire
+        : (/anglais/i.test(String((row as any).matiere_nom ?? (row as any).details?.snapshot?.nom ?? '')) ? 4 : 6);
+      expect(verdictMatiereAffiche(a)).toBe(n.note20! >= seuil);
+      verifies++;
+    }
+    expect(verifies).toBe(118);
+  });
+});

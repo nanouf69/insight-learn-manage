@@ -1137,3 +1137,11 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Affichage V2 par preuve unique réponses/QRC ; archives exclues, aucun recalcul ni écriture.
 - [x] Régressions anonymisées et 18 vues CRM élève consultées avec écritures bloquées.
 - [ ] Mobile élève autonome non prouvé (contrôle effectué dans CRM uniquement) ; publication bloquée sans accord/sécurité globale.
+
+## 07/11 — Levée des 5 points NO-GO (aperçu seul)
+- [x] Notes : masquage inter-matières supprimé, verdict aligné sur la note affichée, isolation changement d'élève.
+- [x] Tests globaux : 0 échec (3 658 réussis).
+- [x] En-tête admin mobile/tablette : plus de chevauchement.
+- [ ] Migration de sécurité des fonctions de correction : brouillon revu (docs/sql-revue), en attente d'accord distinct.
+- [ ] Parcours élève autonome iPhone Safari + rafraîchissement QRC en direct : NON PROUVÉS (pas d'identifiants élève).
+- [ ] Publication : lot global non découpable, en attente d'accord.

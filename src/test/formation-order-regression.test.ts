@@ -30,6 +30,17 @@ describe("All configured formations — approved admin-label-only change", () =>
         const historical = (raw.slice(0, from) + raw.slice(to + 1))
           .replace('sousTitre: "41 questions sur les musées de Lyon"', 'sousTitre: "21 questions sur les musées de Lyon"');
         expect(createHash('sha256').update(historical).digest('hex')).toBe(hash);
+      } else if (file === 'src/components/cours-en-ligne/examens-blancs-data.ts') {
+        // 06/11 : seuls trois champs OPTIONNELS de type (points/ordre figés d'une copie,
+        // prochainIdQuestion) ont été ajoutés ; aucune question, clé ou ID modifié.
+        expect(createHash('sha256').update(raw).digest('hex')).toBe('3e3f31539454d3b6b998d0f4022136952ecaee3840ef19faa60faf27bd7a0a17');
+        const typeOnly = [
+          '  /** Présent uniquement dans une copie figée : ne jamais remplacer par le barème courant. */\n  points?: number;\n  ordre?: number;\n',
+          '  /** Plus petit identifiant jamais réutilisable pour les prochaines questions de cette matière. */\n  prochainIdQuestion?: number;\n',
+        ];
+        let historical = raw;
+        for (const block of typeOnly) { expect(historical.includes(block)).toBe(true); historical = historical.replace(block, ''); }
+        expect(createHash('sha256').update(historical).digest('hex')).toBe(hash);
       } else expect(createHash('sha256').update(raw).digest('hex')).toBe(hash);
     });
   }
