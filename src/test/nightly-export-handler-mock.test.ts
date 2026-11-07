@@ -17,7 +17,10 @@ function harness(initial: Record<string, any>, failManifest = false) {
       list: async () => ({ data: [] }), remove: async () => { throw new Error('No deletion in synthetic run'); },
     }) },
     from: (table: string) => {
-      reads.push(table); const q: any = { select: () => q, order: (pk: string) => { events.push(`${table}:${pk}`); return q; }, range: async () => ({ data: [], error: null }), insert: async () => ({ error: null }) }; return q;
+      reads.push(table); let head = false;
+      const q: any = { select: (_c: string, o?: any) => { head = !!o?.head; return q; }, order: (pk: string) => { events.push(`${table}:${pk}`); return q; }, gt: () => q, range: async () => ({ data: [], error: null }), limit: async () => ({ data: [], error: null }), insert: async () => ({ error: null }),
+        then: (res: any, rej: any) => Promise.resolve(head ? { count: 0, error: null } : { error: null }).then(res, rej) };
+      return q;
     },
   };
   let handler: (req: Request) => Promise<Response> = async () => new Response('', { status: 500 });

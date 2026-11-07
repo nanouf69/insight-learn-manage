@@ -32,6 +32,30 @@ const QUEUE_KEY = "answer_save_queue_v1";
  */
 import { setLearnerPreviewReadOnly, isLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
+import { contientNul, encoderTransport, TRANSPORT_ENCODAGE } from "@/lib/transportSansNul";
+
+/**
+ * Corps réellement transmis : la file locale garde l'original, seul le transport
+ * est codé (U+0000 refusé par la base, 22P05). Réversible sans perte.
+ */
+export function corpsTransport(payload: AnswerSavePayload, operationId: string): string {
+  return JSON.stringify({ ...encoderTransport(payload), operation_id: operationId, transport_encodage: TRANSPORT_ENCODAGE });
+}
+
+/**
+ * Refus 22P05 historiques (avant le codage) : l'élément bloqué contenant un U+0000
+ * est réessayé UNE SEULE fois avec le nouveau transport, jamais en boucle.
+ */
+function deblocageUniqueTransportNul(items: QueueItem[]): { items: QueueItem[]; change: boolean } {
+  let change = false;
+  const out = items.map((item) => {
+    if (!item.blocked || item.transport_nul_reessai || item.rejection?.reason !== "refused" || !contientNul(item.payload)) return item;
+    change = true;
+    definitiveRejections.delete(rejectionKey(item.payload.user_id ?? item.owner_user_id ?? null, item.payload.apprenant_id, item.payload.exercice_id));
+    return { ...item, blocked: false, rejection: undefined, transport_nul_reessai: true, retry_after: undefined };
+  });
+  return { items: out, change };
+}
 
 const SEQ_KEY = "answer_write_seq_v1";
 
@@ -129,6 +153,8 @@ interface QueueItem {
   confirmed_write_seq?: number;
   /** Nouvel identifiant d'opération après une recomposition sans conflit. */
   rebase_operation_id?: string;
+  /** Déjà débloqué une fois pour le transport sans U+0000 (aucune boucle). */
+  transport_nul_reessai?: boolean;
 }
 
 type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number) => void;
@@ -696,6 +722,17 @@ export function classifyAnswerSaveFailure(
     return { definitif: true, reason: "refused", code: "cloture_vide", message: MESSAGE_CLOTURE_VIDE_REFUSEE };
   }
 
+  // Caractère non transmissible (22P05). Le transport est désormais codé ; si le
+  // refus subsiste, renvoyer la même requête échouerait toujours : définitif,
+  // réponse conservée sur l'appareil, aucune boucle.
+  if (/\b22p05\b/.test(t) || t.includes("unsupported unicode escape")) {
+    return {
+      definitif: true,
+      reason: "refused",
+      message: "Un caractère de votre réponse n'a pas pu être transmis. Votre réponse est conservée sur cet appareil. Une alerte technique a été envoyée automatiquement.",
+    };
+  }
+
 
   // Règle des 48 h (trigger enforce_exam_retake_delay, SQLSTATE P0471).
   if (
@@ -852,7 +889,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     const res = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify({ ...item.payload, operation_id: item.id }),
+      body: corpsTransport(item.payload, item.id),
       signal: controller?.signal,
     });
     if (authUserId !== compteAvant || item.payload.apprenant_id !== sessionApprenantId) return "paused";
@@ -867,7 +904,8 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           const confirmedSeq = Number(confirmation.write_seq ?? 0);
           if (
             confirmedSeq > 0 &&
-            reponsesContiennentSansConflit(item.payload.reponses, confirmation.stored_reponses, skipped)
+            // Comparaison dans la forme réellement stockée (transport codé).
+            reponsesContiennentSansConflit(encoderTransport(item.payload.reponses), confirmation.stored_reponses, skipped)
           ) {
             item.payload = { ...item.payload, base_seq: confirmedSeq };
             item.rebase_operation_id = `${item.id}__rebase_${confirmedSeq}_${item.attempts + 1}`;
@@ -973,6 +1011,8 @@ async function processQueue(): Promise<void> {
   processing = true;
   try {
     let queue = readQueue();
+    const deblocage = deblocageUniqueTransportNul(queue);
+    if (deblocage.change) { queue = deblocage.items; writeQueue(queue); }
     const sendable = (items: QueueItem[]) => items.filter(isSendableInCurrentContext);
     const itemsToTry = sendable(queue).length;
     let tried = 0;
@@ -1188,7 +1228,7 @@ export function flushAnswerSavesOnUnload(): void {
       const beaconUrl = `${url}?apikey=${encodeURIComponent(apikey)}${
         authToken ? `&access_token=${encodeURIComponent(authToken)}` : ""
       }`;
-      const blob = new Blob([JSON.stringify({ ...item.payload, operation_id: item.id })], { type: "application/json" });
+      const blob = new Blob([corpsTransport(item.payload, item.id)], { type: "application/json" });
       if (navigator.sendBeacon?.(beaconUrl, blob)) beaconsEnvoyes.set(beaconCle(item), maintenant);
     } catch {
       /* la file reste intacte : renvoi au prochain chargement */
