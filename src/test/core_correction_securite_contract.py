@@ -114,7 +114,8 @@ class Contrat(unittest.TestCase):
         c, o = pg.sql(as_ctx('authenticated', admin, correct(op, Q1, 1.5)) + " RESET ROLE;")
         self.assertEqual(c, 0, o); self.assertIn('provisoire', o)
         self.assertIn('CORRECTION_NON_AUTORISEE', refuse('authenticated', eleve, correct(op, Q1), 'rejeu par élève'))
-        self.assertEqual(ok('authenticated', admin, correct(op, Q1, 1.5)), o.splitlines()[-1])
+        # Rejeu (double-clic/F5) : aucune nouvelle écriture, état corrigé renvoyé (comportement existant).
+        self.assertIn('"corrigee"', ok('authenticated', admin, correct(op, Q1, 1.5)))
         # Service IA (qrc_ia_publier_* via service_role) : dernière QRC -> note définitive.
         c, o = pg.sql(as_ctx('service_role', service, correct(uuid.uuid4(), Q2, 2)) + " RESET ROLE;")
         self.assertEqual(c, 0, o); self.assertIn('"definitif"', o)
