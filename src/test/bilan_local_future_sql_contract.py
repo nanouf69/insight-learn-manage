@@ -124,6 +124,7 @@ try:
         """)
         sql((ROOT / 'drizzle/migrations/0089_bilan_identite_garde_v3.sql').read_text())
         sql('CREATE TRIGGER trg_test_identite BEFORE INSERT OR UPDATE OF module_data ON module_editor_state FOR EACH ROW EXECUTE FUNCTION bilan_identite_garde()')
+        sql('GRANT INSERT ON module_editor_state TO service_role')
         sql("""SET ROLE service_role; INSERT INTO module_editor_state VALUES(11,
           '{"exercices":[{"id":699,"titre":"TEST INTERNE","questions":[{"id":"99001","enonce":"Question fictive"}]}]}'::jsonb)""")
         saved = json.loads(sql("SELECT module_data::text FROM module_editor_state WHERE module_id=11 AND module_data->'exercices'->0->>'id'='699'"))
