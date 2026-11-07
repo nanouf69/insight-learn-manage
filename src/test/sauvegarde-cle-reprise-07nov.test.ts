@@ -145,7 +145,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     const rows = jeuFictif(2500);
     let ajout = false;
     const h = harness({ rows, echec: ({ table, gt }) => {
-      if (table === JOURNAL && gt === uuid(2000) && !ajout) { ajout = true; rows[JOURNAL].push({ id: uuid(9999), valeur: 'tardive' }, { id: uuid(1500).replace(/1500$/, '1500') + '', valeur: 'x' }); }
+      if (table === JOURNAL && gt === uuid(2000) && !ajout) { ajout = true; rows[JOURNAL].push({ id: uuid(9999), valeur: 'tardive' }, { id: `${uuid(1500)}0`, valeur: 'insérée sous le curseur' }); }
       return null;
     } });
     const fin = await h.run();
