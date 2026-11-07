@@ -10,7 +10,7 @@ function harness(initial: Record<string, any>, failManifest = false) {
     storage: { from: () => ({
       upload: async (path: string, blob: Blob) => {
         events.push(path);
-        if (failManifest && path.endsWith('_termine.json')) return { error: { message: 'synthetic failure' } };
+        if (failManifest && path.endsWith('_export_termine.json')) return { error: { message: 'synthetic failure' } };
         objects.set(path, JSON.parse(await blob.text())); return { error: null };
       },
       download: async (path: string) => ({ data: objects.has(path) ? new Blob([JSON.stringify(objects.get(path))]) : null }),
@@ -42,7 +42,7 @@ describe('Actual nightly export with mocked storage', () => {
     const h = harness({ i: 25, from: 0, comptes: counts(), erreurs: [], maj: '2000-01-01', jour: '2026-10-17' });
     const body = await (await h.call()).json(); expect(body.ok).toBe(true); expect(body.tables).toBe(26);
     expect(h.events).toContain('cma_planning_attente_rattachements:id');
-    expect(h.events.indexOf('2026-10-17/_termine.json')).toBeLessThan(h.events.lastIndexOf('2026-10-17/_etat.json'));
+    expect(h.events.indexOf('2026-10-17/_export_termine.json')).toBeLessThan(h.events.lastIndexOf('2026-10-17/_etat.json'));
   });
   it('failed final manifest never commits a completed checkpoint', async () => {
     const h = harness({ i: 26, from: 0, comptes: counts(), erreurs: [], maj: '2000-01-01', jour: '2026-10-17' }, true);
@@ -52,6 +52,6 @@ describe('Actual nightly export with mocked storage', () => {
   it('missing counts report incomplete instead of success', async () => {
     const h = harness({ i: 26, from: 0, comptes: {}, erreurs: [], maj: '2000-01-01', jour: '2026-10-17' });
     const body = await (await h.call()).json(); expect(body.ok).toBe(false); expect(body.erreurs).toHaveLength(26);
-    expect(h.objects.has('2026-10-17/_termine.json')).toBe(false);
+    expect(h.objects.has('2026-10-17/_export_termine.json')).toBe(false);
   });
 });
