@@ -84,7 +84,6 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     let pannes = 2;
     const h = harness({ rows, echec: ({ table, kind, gt }) => (table === JOURNAL && kind === 'read' && gt === uuid(2000) && pannes-- > 0 ? { code: '57014', message: 'canceling statement due to statement timeout' } : null) });
     const fin = await h.run();
-    if (!fin.ok) console.log(JSON.stringify(fin).slice(0, 800));
     expect(fin.ok).toBe(true);
     const ids = h.parts(`${JOUR}/${JOURNAL}/`).map((r: any) => r.id);
     expect(ids).toHaveLength(4500);
@@ -100,10 +99,9 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
   it('panne persistante : abandon après 3 échecs, _incomplet.json + alerte, jamais _termine.json', async () => {
     const h = harness({ rows: jeuFictif(3000), echec: ({ table, kind, gt }) => (table === JOURNAL && kind === 'read' && gt === uuid(2000) ? { code: '57014', message: 'timeout' } : null) });
     const fin = await h.run();
-    console.log('DBG', JSON.stringify(fin).slice(0,600), [...h.objects.keys()].filter(k=>!k.includes('part-')));
     expect(fin.ok).toBe(false);
     expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(false);
-    const inc = h.objects.get(`${JOUR}/_incomplet.json`); console.log('INC', typeof inc, JSON.stringify(inc).slice(0,300));
+    const inc = h.objects.get(`${JOUR}/_incomplet.json`);
     expect(inc.erreurs.join(' ')).toMatch(/reponses_apprenants_journal@2000: 3 échecs/);
     expect(h.alerts).toHaveLength(1);
   });
