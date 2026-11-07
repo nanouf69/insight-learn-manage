@@ -1182,3 +1182,10 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Scan frais : 0 erreur, 6 avertissements, 2 informations ; empreintes contenus/réponses/notes/tentatives/émargements identiques.
 - [x] Publication globale demandée sur commit `afda34b573528b93a9c136a26022ad12577545b8`.
 - [ ] Bascule frontend effective NON PROUVÉE : contrôle HTTP 200 mais ancienne version encore servie ; attente du déploiement programmé, sans nouvelle publication.
+
+## 07/11 14:48 UTC — G(T) e-learning : admissibilité par question et reprise contrôlée
+- [ ] Retirer l'exclusion matière globale ; snapshot seul, corrigé/barème suffisants, ambiguïté = revue, présentiel/tests exclus.
+- [ ] Tester le vrai handler et les RPC sur PostgreSQL jetable : snapshots `questions`/`matieres`, reprise idempotente, aucune double facturation ni réévaluation.
+- [ ] Appliquer uniquement la migration additive de reprise des exclusions `matiere_exclue_gt`, puis déployer `qrc-ia-correction`.
+- [ ] Reprendre les 24 QRC réelles ciblées : 22 admissibles, 2 calculs bagages incomplets en revue ; FICTIF et 6 déjà corrigées exclus ; plafond 20 € intact.
+- [ ] Relire corrections, revues, exclusions, notes définitives et affichage ; aucun mail/SMS, contenu, réponse ou historique modifié.
