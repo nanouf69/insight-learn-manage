@@ -58,7 +58,7 @@ const json = (b: unknown) => new Response(JSON.stringify(b), { headers: { ...cor
 const pkDe = (t: string) => TABLES.find(([n]) => n === t)?.[1] ?? "id";
 
 /** Avance d'UN paquet. Ne lève jamais pour une erreur de lecture : la position est conservée. */
-export async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: string, up: (p: string, c: unknown) => Promise<unknown>): Promise<"avance" | "echec" | "abandon"> {
+async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: string, up: (p: string, c: unknown) => Promise<unknown>): Promise<"avance" | "echec" | "abandon"> {
   const t = tables[job.i];
   const pk = pkDe(t);
   const [page, part] = TAILLES[t] ?? [PAGE, PART];
@@ -112,18 +112,25 @@ export async function exporterPaquet(sb: any, job: Job, tables: string[], prefix
       // Nom fixé par la position : un nouvel essai réécrit le même fichier (idempotent).
       await up(`${prefixe}/${t}/part-${String(job.from).padStart(8, "0")}.json`, buf);
     }
-    job.comptes[t] = (job.comptes[t] ?? 0) + buf.length;
+    const total = (job.comptes[t] ?? 0) + buf.length;
+    let finale: number | null = null;
+    if (fini && !decalage && job.preuves[t]) {
+      // Comptage final AVANT toute mise à jour de l'avancement : un échec ici
+      // laisse la position intacte et le paquet sera simplement réécrit.
+      const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
+      if (error) throw error;
+      if (typeof count !== "number") throw new Error("comptage final indisponible");
+      finale = count;
+    }
+    // Succès complet : l'avancement n'est modifié qu'ici.
+    job.comptes[t] = total;
     if (!decalage) job.curseur = curseur;
     if (fini) {
       const preuve = job.preuves[t];
-      if (preuve && !decalage) {
-        const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
-        if (error) throw error;
-        if (typeof count !== "number") throw new Error("comptage final indisponible");
-        preuve.fin = count; preuve.dernier = curseur;
-        const n = job.comptes[t];
+      if (preuve && finale !== null) {
+        preuve.fin = finale; preuve.dernier = curseur;
         // Toute ligne présente au début est exportée (n ≥ début) ; rien d'inventé (n ≤ fin).
-        if (n < preuve.debut || n > count) job.erreurs.push(`${t}: couverture non prouvée (${n} exportées, ${preuve.debut} au début, ${count} à la fin)`);
+        if (total < preuve.debut || total > finale) job.erreurs.push(`${t}: couverture non prouvée (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
       } else if (decalage) {
         job.preuves[t] = { debut: -1, mode: "decalage" };
       }
