@@ -82,3 +82,23 @@ describe('EB1 soirée : écran Notes complet (plus de masquage inter-matières)'
     expect(idsResultatsNonPublies([attacherSourceUnique(row, null, new Set()) as any]).has(String(row.id))).toBe(true);
   });
 });
+
+describe('EB1 soirée : verdict par matière = note affichée', () => {
+  it('chaque note V2 visible a un verdict cohérent avec son seuil (6/20, 4/20 anglais)', async () => {
+    const { verdictMatiereAffiche } = await import('@/lib/noteExamenAffichee');
+    const ids = [...new Set(fixture.exam_attempts_v2.map(a => a.apprenant_id))];
+    const states = await fetchCoreMatiereStatesBulk(ids);
+    const archived = new Set(fixture.core_exam_resets.flatMap(r => r.archived_legacy_result_ids));
+    let verifies = 0;
+    for (const row of fixture.apprenant_quiz_results.filter(r => !archived.has(r.id))) {
+      const a = attacherSourceUnique(row, states?.get(row.apprenant_id) ?? null, new Set());
+      const n = noteExamenAffichee(a);
+      if (n.etat !== 'note') { expect(verdictMatiereAffiche(a)).toBeNull(); continue; }
+      const seuil = typeof a.__core?.noteEliminatoire === 'number' ? a.__core.noteEliminatoire
+        : (/anglais/i.test(String(row.matiere_nom ?? row.details?.snapshot?.nom ?? '')) ? 4 : 6);
+      expect(verdictMatiereAffiche(a)).toBe(n.note20! >= seuil);
+      verifies++;
+    }
+    expect(verifies).toBe(118);
+  });
+});

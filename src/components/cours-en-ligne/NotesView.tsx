@@ -5,7 +5,7 @@ import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, Gr
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
-import { isExamAttemptPublicationPending, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
+import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies, verdictMatiereAffiche } from "@/lib/noteExamenAffichee";
