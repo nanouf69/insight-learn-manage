@@ -104,7 +104,7 @@ GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, p
         cls.service_jwt = jwt_service()
         env = os.environ.copy()
         env.update({
-            "PGRST_DB_URI": f"postgresql://postgres@127.0.0.1:{cls.pg.port}/postgres",
+            "PGRST_DB_URI": f"postgresql://postgres@127.0.0.1:{cls.pg.port}/postgres?sslmode=disable",
             "PGRST_DB_SCHEMAS": "public",
             "PGRST_DB_ANON_ROLE": "service_role",
             "PGRST_JWT_SECRET": JWT_SECRET,
