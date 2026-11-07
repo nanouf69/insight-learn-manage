@@ -319,11 +319,13 @@ export async function enregistrerReponse(params: {
       ? `answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`
       : `answer:${params.attemptId}:${qid}:r${rev}:${JSON.stringify(params.valeur ?? null)}`,
   );
+  // U+0000 refusé par la base (22P05) : transport codé réversible, sans perte.
+  const valeurTransport = encoderTransport(params.valeur ?? null);
   const sauvegarder = (operation: string, revision: number | null) => supabase.rpc("core_save_answer", {
     p_operation_id: operation,
     p_attempt_id: params.attemptId,
     p_question_id: qid,
-    p_valeur: (params.valeur ?? null) as unknown as never,
+    p_valeur: valeurTransport as unknown as never,
     p_expected_revision: revision,
     p_session_origine: "passage_apprenant",
   });
@@ -340,7 +342,7 @@ export async function enregistrerReponse(params: {
       .eq("question_id", qid)
       .maybeSingle();
     if (lectureError || !courant) return { ok: false, message: error.message };
-    if (JSON.stringify(courant.valeur) === JSON.stringify(params.valeur ?? null)) {
+    if (JSON.stringify(courant.valeur) === JSON.stringify(valeurTransport)) {
       return { ok: true, revision: courant.revision };
     }
     // Le serveur possède une autre réponse plus récente : aucun arbitrage
