@@ -56,11 +56,10 @@ function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any
   const js = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
   const chained: any[] = [];
   const EdgeRuntime = { waitUntil: (p: Promise<unknown>) => { chained.push(p); } };
-  const g: any = globalThis; const fetchAvant = g.fetch; g.fetch = async () => new Response('{}');
+  (globalThis as any).fetch = async () => new Response('{}');
   new Function('Deno', 'createClient', 'corsHeaders', 'EXPORT_TABLES', 'EXPORT_VERSION', 'exportManifest', 'EdgeRuntime', 'setTimeout', js)(
     { env: { get: () => 'synthetic' }, serve: (fn: typeof handler) => { handler = fn; } }, () => sb, {}, EXPORT_TABLES, EXPORT_VERSION, exportManifest, EdgeRuntime, (f: () => void) => f(),
   );
-  g.fetch = fetchAvant;
   const call = async (body: Record<string, unknown> = {}) => (await handler(new Request('https://synthetic.test', { method: 'POST', body: JSON.stringify({ jour: JOUR, chaine: true, saut: 0, ...body }) }))).json();
   /** Enchaîne les appels comme la chaîne + la reprise jusqu'à l'arrêt. */
   const run = async (body: Record<string, unknown> = {}, max = 5000) => {
@@ -85,6 +84,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     let pannes = 2;
     const h = harness({ rows, echec: ({ table, kind, gt }) => (table === JOURNAL && kind === 'read' && gt === uuid(2000) && pannes-- > 0 ? { code: '57014', message: 'canceling statement due to statement timeout' } : null) });
     const fin = await h.run();
+    if (!fin.ok) console.log(JSON.stringify(fin).slice(0, 800));
     expect(fin.ok).toBe(true);
     const ids = h.parts(`${JOUR}/${JOURNAL}/`).map((r: any) => r.id);
     expect(ids).toHaveLength(4500);
