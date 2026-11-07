@@ -6,8 +6,14 @@
 const eur = (n: number) =>
   `${(Math.round(n * 100) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
 
-export type PaiementLike = { montant?: number | string | null; date_paiement?: string | null };
+export type PaiementLike = {
+  montant?: number | string | null;
+  date_paiement?: string | null;
+  moyen_paiement?: string | null;
+  transaction_bancaire_id?: string | null;
+};
 export type VirementLike = { id?: string; montant?: number | string | null; date_operation?: string | null; libelle?: string | null };
+export type LienVirementLike = { apprenant_id?: string | null; transaction_bancaire_id?: string | null };
 
 const norm = (s: string) =>
   (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -31,15 +37,26 @@ export function virementsCorrespondants(txs: VirementLike[], nom?: string | null
   });
 }
 
+/** Un virement déjà lié à un autre dossier ne doit pas être compté une seconde fois dans une autre session. */
+export function exclureVirementsLiesAilleurs(virements: VirementLike[], liens: LienVirementLike[], apprenantId: string) {
+  const ailleurs = new Set((liens ?? [])
+    .filter((l) => l?.transaction_bancaire_id && l.apprenant_id && l.apprenant_id !== apprenantId)
+    .map((l) => String(l.transaction_bancaire_id)));
+  return (virements ?? []).filter((v) => !v?.id || !ailleurs.has(String(v.id)));
+}
+
 export function resumePaiement(totalDu: number, paiements: PaiementLike[], virements: VirementLike[] = []) {
   const du = Number(totalDu || 0);
   const liste = paiements ?? [];
   const payeEnregistre = liste.reduce((s, p) => s + Number(p?.montant || 0), 0);
-  // Anti double comptage : un virement déjà saisi comme paiement (même montant, même date) n'est pas recompté.
+  const idsLies = new Set(liste.map((p) => p?.transaction_bancaire_id).filter(Boolean).map(String));
   const utilises = new Set<number>();
   const virementsAjoutes = (virements ?? []).filter((v) => {
+    // Source de vérité : identifiant de transaction, indépendant de la date de saisie.
+    if (v?.id && idsLies.has(String(v.id))) return false;
+    // Repli limité aux anciennes saisies sans liaison, pour ne pas changer leur affichage historique.
     const idx = liste.findIndex(
-      (p, i) => !utilises.has(i) && Math.abs(Number(p?.montant || 0) - Number(v?.montant || 0)) < 0.01 &&
+      (p, i) => !utilises.has(i) && !p?.transaction_bancaire_id && Math.abs(Number(p?.montant || 0) - Number(v?.montant || 0)) < 0.01 &&
         (p?.date_paiement || "").slice(0, 10) === (v?.date_operation || "").slice(0, 10),
     );
     if (idx >= 0) { utilises.add(idx); return false; }

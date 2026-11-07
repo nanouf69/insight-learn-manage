@@ -1,4 +1,4 @@
-import { resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
+import { exclureVirementsLiesAilleurs, resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
@@ -501,6 +501,7 @@ function PaiementPopover({
   const [newMontant, setNewMontant] = useState<string>("");
   const [newMoyen, setNewMoyen] = useState<string>("virement");
   const [newDate, setNewDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedVirementId, setSelectedVirementId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -557,7 +558,18 @@ function PaiementPopover({
           const { data: ap } = await supabase.from("apprenants").select("created_at").eq("id", apprenantId).maybeSingle();
           const c = (ap as any)?.created_at ? new Date((ap as any).created_at) : null;
           const depuis = c ? new Date(c.getTime() - 60 * 86400000).toISOString().slice(0, 10) : null;
-          setVirementsRecus(virementsCorrespondants(data as any[], apprenantNom, apprenantPrenom, depuis));
+          const correspondants = virementsCorrespondants(data as any[], apprenantNom, apprenantPrenom, depuis);
+          const ids = correspondants.map((v) => v.id).filter(Boolean) as string[];
+          let liens: any[] = [];
+          if (ids.length) {
+            const { data: rows, error: liensError } = await supabase
+              .from("apprenant_paiements")
+              .select("apprenant_id,transaction_bancaire_id")
+              .in("transaction_bancaire_id", ids);
+            if (liensError) throw liensError;
+            liens = rows ?? [];
+          }
+          setVirementsRecus(exclureVirementsLiesAilleurs(correspondants, liens, apprenantId));
         }
       } catch (e) {
         console.error("[PaiementPopover] match err", e);
@@ -568,6 +580,7 @@ function PaiementPopover({
   }, [open, apprenantId, apprenantNom, apprenantPrenom]);
 
   const applyMatch = (tx: any) => {
+    setSelectedVirementId(tx.id || null);
     setNewMontant(String(Number(tx.montant) || 0));
     setNewMoyen("virement");
     setNewDate(tx.date_operation || new Date().toISOString().split("T")[0]);
@@ -581,16 +594,20 @@ function PaiementPopover({
     }
     setSaving(true);
     try {
+      const tx = matches.find((m) => m.id === selectedVirementId);
+      const liaisonCertaine = tx && newMoyen === "virement" && Math.abs(montant - Number(tx.montant || 0)) < 0.001 && newDate === tx.date_operation;
       const { error } = await supabase.from("apprenant_paiements").insert({
         apprenant_id: apprenantId,
         montant,
         moyen_paiement: newMoyen,
         date_paiement: newDate || null,
+        transaction_bancaire_id: liaisonCertaine ? tx.id : null,
       });
       if (error) throw error;
       setNewMontant("");
       setNewMoyen("virement");
       setNewDate(new Date().toISOString().split("T")[0]);
+      setSelectedVirementId(null);
       await loadPaiements();
       onChanged();
       toast({ title: "Paiement ajouté" });

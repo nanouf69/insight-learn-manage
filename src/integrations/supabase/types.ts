@@ -828,6 +828,7 @@ export type Database = {
           montant: number
           moyen_paiement: string | null
           notes: string | null
+          transaction_bancaire_id: string | null
         }
         Insert: {
           apprenant_id: string
@@ -838,6 +839,7 @@ export type Database = {
           montant?: number
           moyen_paiement?: string | null
           notes?: string | null
+          transaction_bancaire_id?: string | null
         }
         Update: {
           apprenant_id?: string
@@ -848,6 +850,7 @@ export type Database = {
           montant?: number
           moyen_paiement?: string | null
           notes?: string | null
+          transaction_bancaire_id?: string | null
         }
         Relationships: [
           {
@@ -855,6 +858,13 @@ export type Database = {
             columns: ["apprenant_id"]
             isOneToOne: false
             referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apprenant_paiements_transaction_bancaire_id_fkey"
+            columns: ["transaction_bancaire_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_bancaires"
             referencedColumns: ["id"]
           },
         ]

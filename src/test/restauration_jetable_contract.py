@@ -90,6 +90,12 @@ class Restauration(unittest.TestCase):
         rep = R.restaurer(export_fictif(None, a, r2), SCHEMA, self.pg.cible)
         self.assertEqual(rep['originaux_non_coherents'], 1)
 
+        # Manifeste sans tables : refus, jamais une réussite vide.
+        d = export_fictif(None, a, r)
+        man = json.loads((d / '_export_termine.json').read_text()); del man['table_names']
+        (d / '_export_termine.json').write_text(json.dumps(man))
+        self.assertFalse(R.restaurer(d, SCHEMA, self.pg.cible)['ok'])
+
         # Export non terminé : rien certifié.
         d = export_fictif(None, a, r); (d / '_export_termine.json').unlink()
         self.assertFalse(R.restaurer(d, SCHEMA, self.pg.cible)['ok'])

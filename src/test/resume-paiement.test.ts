@@ -7,7 +7,7 @@ describe("resumePaiement", () => {
   it("deux paiements", () => expect(resumePaiement(200, [{ montant: 50 }, { montant: "100" }]).reste).toBe(50));
   it("intégral", () => expect(resumePaiement(200, [{ montant: 150 }, { montant: 50 }]).libelle).toBe("✅ Payé intégralement : 200 € / 200 €"));
 });
-import { virementsCorrespondants } from "@/lib/resumePaiement";
+import { exclureVirementsLiesAilleurs, virementsCorrespondants } from "@/lib/resumePaiement";
 describe("virements reçus correspondants", () => {
   const v = { montant: 50, date_operation: "2026-09-20", libelle: "Laghouati Abdallah" };
   it("Laghouati : virement de 50 € compté", () =>
@@ -24,4 +24,14 @@ describe("virements reçus correspondants", () => {
     expect(virementsCorrespondants([{ montant: 200, libelle: "Virement de Meziane DJOUDI" }], "MEZIANE", "Meziane")).toHaveLength(0));
   it("virement trop ancien ignoré", () =>
     expect(virementsCorrespondants([v], "LAGHOUATI", "Abdallah", "2026-10-01")).toHaveLength(0));
+  it("même virement lié malgré une date de saisie différente : jamais compté deux fois", () =>
+    expect(resumePaiement(200, [{ montant: 50, date_paiement: "2026-09-22", transaction_bancaire_id: "tx-a" }], [{ ...v, id: "tx-a" }]).paye).toBe(50));
+  it("deux vrais virements égaux avec deux identités : tous deux comptés", () =>
+    expect(resumePaiement(200, [{ montant: 50, date_paiement: "2026-09-22", transaction_bancaire_id: "tx-a" }], [{ ...v, id: "tx-a" }, { ...v, id: "tx-b", date_operation: "2026-09-22" }]).paye).toBe(100));
+  it("multi-session : un virement lié à un autre dossier n'est pas recompté", () => {
+    const banque = [{ ...v, id: "tx-a" }, { ...v, id: "tx-b" }];
+    const liens = [{ apprenant_id: "autre-dossier", transaction_bancaire_id: "tx-a" }];
+    expect(exclureVirementsLiesAilleurs(banque, liens, "dossier-courant").map((x) => x.id)).toEqual(["tx-b"]);
+    expect(exclureVirementsLiesAilleurs(banque, liens, "autre-dossier")).toHaveLength(2);
+  });
 });

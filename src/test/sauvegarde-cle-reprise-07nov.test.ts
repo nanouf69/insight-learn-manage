@@ -137,6 +137,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     const termine = objects.get(`${JOUR}/_reparation-1/_export_termine.json`);
     expect(termine.provenance).toBe('reexport_independant_tables_selectionnees');
     expect(termine.sources[JOURNAL]).toBe(`_reparation-1/${JOURNAL}`);
+    expect(termine.table_names).toEqual([JOURNAL]);
     expect(termine.comptes[JOURNAL]).toBe(3000);
     expect(JSON.stringify(objects.get(`${JOUR}/_incomplet.json`))).toBe(incomplet);
     // Aucun fichier existant réécrit ou retiré (sauf l'état d'avancement).
