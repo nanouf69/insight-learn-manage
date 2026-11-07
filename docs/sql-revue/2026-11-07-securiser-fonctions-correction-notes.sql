@@ -1,5 +1,5 @@
 -- =====================================================================
--- REVUE UNIQUEMENT — NE PAS EXÉCUTER SANS VALIDATION DISTINCTE DU RESPONSABLE
+-- SCRIPT REVU — activation progressive autorisée par le responsable le 07/11/2026 à 13:45 UTC.
 -- Sécurisation des fonctions SECURITY DEFINER de correction / notation V2.
 -- Aucune donnée lue ou écrite : seules les définitions et droits EXECUTE changent.
 -- Corps métier strictement identiques aux définitions de production du 07/11/2026
@@ -18,6 +18,10 @@
 --     de la tentative (fin de passage, pontV2.ts).
 -- Refus par défaut : anon, authentifié non admin, JWT sans identité (sub nul).
 -- =====================================================================
+
+-- Transaction gérée par l'outil de migration ; ne jamais bloquer les corrections.
+SET LOCAL lock_timeout = '1500ms';
+SET LOCAL statement_timeout = '20s';
 
 -- Identité de connexion et rôle effectif, pas current_user (propriétaire du definer).
 -- Les claims ne sont fiables que sur une connexion API authenticator autorisée
