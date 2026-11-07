@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import fixture from './fixtures/eb1-session-soir-anonymisee.json';
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => {
   let ids: string[] = [];
-  const q: any = { select: () => q, eq: () => q, in: (_: string, values: string[]) => { ids = values; return q; }, range: async () => ({ data: ((fixture as any)[table] ?? []).filter((r: any) => !r.apprenant_id || ids.includes(r.apprenant_id)), error: null }) };
+  const q: any = { select: () => q, eq: () => q, in: (_: string, values: string[]) => { ids = values; return q; }, range: async (from: number, to: number) => ({ data: ((fixture as any)[table] ?? []).filter((r: any) => !r.apprenant_id || ids.includes(r.apprenant_id)).slice(from, to + 1), error: null }) };
   return q;
 } } }));
 import { fetchCoreMatiereStatesBulk } from '@/lib/coreExamPublication';
