@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
-  admissibilite, cleIdempotence, estElearning, estPauseGlobale, messageUtilisateur, validerResultatIa,
+  admissibilite, cleIdempotence, estCompteTestApprenant, estElearning, estPauseGlobale, messageUtilisateur, questionsDuSnapshot, validerResultatIa,
   MARQUEUR_IA, MODELE_IA_QRC,
 } from "../../supabase/functions/_shared/qrcIaRegles";
 import { celluleCompacte } from "@/features/correction-qrc-v2/celluleCompacte";
@@ -39,7 +39,16 @@ describe("Correction IA QRC e-learning — périmètre", () => {
 
 describe("Correction IA — règles d'exclusion déterministes", () => {
   it("cas admissible", () => expect(admissibilite(q(), "B2 vierge")).toEqual({ admissible: true, bareme: 2 }));
-  it("G(T) → aucun appel IA", () => expect(admissibilite(q({ matiere: "reglementation_taxi2" }), "x y z")).toMatchObject({ admissible: false, motif: "matiere_exclue_gt" }));
+  it("G(T) valide → admissible question par question, jamais d'exclusion globale", () => expect(admissibilite(q({ matiere: "reglementation_taxi2" }), "x y z")).toEqual({ admissible: true, bareme: 2 }));
+  it("G(T) avec corrigé de calcul incomplet → revue, aucune note arbitraire", () => {
+    const decision = admissibilite(q({
+      matiere: "reglementation_taxi2",
+      enonce: "Ces clients ont 15 bagages. Calculez le montant de la prise en charge.",
+      reponseQRC: "Prise en charge = 3 € + supplément passagers (4 × 4 € = 16 €) + supplément bagages.",
+      points: 4,
+    }), "J'additionne les suppléments");
+    expect(decision).toMatchObject({ admissible: false, statut: "a_verifier", motif: "corrige_incomplet_calcul" });
+  });
   it("réponse vide → aucun appel IA", () => {
     expect(admissibilite(q(), "   ")).toMatchObject({ admissible: false, motif: "reponse_vide" });
     expect(admissibilite(q(), null)).toMatchObject({ admissible: false, motif: "reponse_vide" });
@@ -64,10 +73,11 @@ describe("Correction IA — validation du résultat", () => {
     expect(validerResultatIa({ note: -0.5, justification: "x" }, 2)).toEqual({ valide: false, motif: "hors_bareme" });
     expect(validerResultatIa({ note: 1.25, justification: "x" }, 2)).toEqual({ valide: false, motif: "hors_bareme" });
   });
-  it("résultat invalide → refus (jamais de note inventée)", () => {
+  it("résultat invalide ou ambigu → refus (jamais de note inventée)", () => {
     expect(validerResultatIa("pas du json", 2)).toMatchObject({ valide: false });
     expect(validerResultatIa({ note: "beaucoup", justification: "x" }, 2)).toMatchObject({ valide: false });
     expect(validerResultatIa({ note: 1 }, 2)).toMatchObject({ valide: false });
+    expect(validerResultatIa({ note: 1, justification: "doute", ambigu: true }, 2)).toEqual({ valide: false, motif: "reponse_ou_corrige_ambigu" });
   });
   it("accepte un JSON entouré de texte", () => {
     expect(validerResultatIa('```json\n{"note": 1.5, "justification": "Bien"}\n```', 2)).toEqual({ valide: true, note: 1.5, justification: "Bien" });
@@ -75,16 +85,32 @@ describe("Correction IA — validation du résultat", () => {
 });
 
 describe("Correction IA — anonymat et source de vérité", () => {
+  it("snapshot historique : matière récupérée depuis matieres[].subject_id sans contenu actuel", () => {
+    const questions = questionsDuSnapshot({
+      matieres: [{ subject_id: "reglementation_taxi2", questions: [{ id: "1", type: "QRC", enonce: "Citez 4 musées de Lyon.", reponseQRC: "Beaux-Arts. Confluences. Imprimerie. Lugdunum.", points: 4 }] }],
+    });
+    expect(questions).toHaveLength(1);
+    expect(questions[0].matiere).toBe("reglementation_taxi2");
+    expect(admissibilite(questions[0], "Beaux-Arts, Confluences, Imprimerie, Lugdunum")).toEqual({ admissible: true, bareme: 4 });
+    expect(questionsDuSnapshot({ matieres: [{ subject_id: "reglementation_taxi2" }], questions: [{ ...q(), matiere: undefined }] })[0].matiere).toBe("reglementation_taxi2");
+  });
+  it("FICTIF/DÉMO/TEST TECHNIQUE sont refusés même sans flag technique", () => {
+    for (const app of [{ prenom: "ESSAI IA", nom: "FICTIF" }, { prenom: "Compte", nom: "Démo" }, { prenom: "TEST", nom: "TECHNIQUE" }, { email: "test.technique@example.invalid" }]) {
+      expect(estCompteTestApprenant(app)).toBe(true);
+    }
+    expect(estCompteTestApprenant({ prenom: "David", nom: "FERREIRA" })).toBe(false);
+  });
   it("l'IA ne reçoit que question + corrigé + barème + réponse", () => {
     const m = messageUtilisateur(q(), 2, "B2 vierge");
     expect(m).toContain("Qu'est-ce que l'honorabilité");
     expect(m).toContain("Casier judiciaire vierge");
     expect(m).toContain("BARÈME : 2 points");
     expect(m).toContain("B2 vierge");
-    expect(fonction).not.toMatch(/select\("[^"]*(nom|prenom|email|telephone)/);
+    expect(m).not.toMatch(/FICTIF|FERREIRA|@ftransport/);
+    expect(fonction).toMatch(/messageUtilisateur\(c\.q, c\.bareme, c\.inst\.reponse\)/);
   });
   it("la question vient du snapshot de la tentative, jamais du contenu actuel", () => {
-    expect(fonction).toMatch(/att\.snapshot\?\.questions/);
+    expect(fonction).toMatch(/questionsDuSnapshot\(att\.snapshot\)/);
     expect(fonction).not.toMatch(/exam_content_versions|module_editor_state/);
   });
 });

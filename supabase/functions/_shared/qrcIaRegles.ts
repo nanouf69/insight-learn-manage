@@ -11,8 +11,10 @@ export const LIBELLE_MODELE_IA_QRC = "Gemini 3.8 Flash";
 /** Marqueur d'origine écrit dans qrc_instances_v2.corrige_email. */
 export const MARQUEUR_IA = `ia:${MODELE_IA_QRC}`;
 
-/** Matières exclues : G(T) — Connaissance du territoire TAXI (corrigés insuffisants). */
-export const MATIERES_EXCLUES = new Set(["reglementation_taxi2"]);
+/**
+ * Aucune matière n'est exclue globalement : l'admissibilité est décidée pour
+ * chaque question figée, avec son propre énoncé, corrigé et barème.
+ */
 
 /** Même règle que isElearningType (src/lib/dossierFormation.ts). */
 export function estElearning(type?: string | null): boolean {
@@ -32,6 +34,12 @@ export function estApprenantElearning(type?: string | null, modalite?: string | 
   return estElearning(type);
 }
 
+/** Filet de sécurité complémentaire aux indicateurs techniques, jamais une formation. */
+export function estCompteTestApprenant(app?: { nom?: string | null; prenom?: string | null; email?: string | null } | null): boolean {
+  const identite = `${app?.prenom ?? ""} ${app?.nom ?? ""} ${app?.email ?? ""}`.toLowerCase();
+  return /fictif|d[ée]mo|test[ ._-]?technique|compte[ _-]?test|essai[ _-]?ia/.test(identite);
+}
+
 export const texteReponse = (v: unknown): string =>
   typeof v === "string" ? v : v == null ? "" : typeof v === "number" ? String(v) : JSON.stringify(v);
 
@@ -44,6 +52,38 @@ export type QuestionSnapshot = {
   matiere?: string | null;
   motsCles?: unknown;
 };
+
+type SnapshotExamen = { questions?: unknown; matiere?: unknown; matieres?: unknown };
+
+/**
+ * Lit uniquement le snapshot. Les passages historiques peuvent ranger leurs
+ * questions dans matieres[] et leur matière dans subject_id/matiereId.
+ */
+export function questionsDuSnapshot(snapshot: SnapshotExamen | null | undefined): QuestionSnapshot[] {
+  if (!snapshot || typeof snapshot !== "object") return [];
+  const matiereRacine = typeof snapshot.matiere === "string" ? snapshot.matiere : "";
+  const matieres = Array.isArray(snapshot.matieres) ? snapshot.matieres : [];
+  const matiereUnique = matieres.length === 1 && matieres[0] && typeof matieres[0] === "object"
+    ? ["matiere", "matiereId", "subject_id", "id"].map((k) => (matieres[0] as Record<string, unknown>)[k]).find((v) => typeof v === "string" && v.trim())
+    : "";
+  const sortie: QuestionSnapshot[] = [];
+  const ajouter = (valeur: unknown, matiere: unknown) => {
+    if (!Array.isArray(valeur)) return;
+    for (const brut of valeur) {
+      if (!brut || typeof brut !== "object" || Array.isArray(brut)) continue;
+      const q = brut as QuestionSnapshot;
+      sortie.push({ ...q, matiere: q.matiere ?? (typeof matiere === "string" ? matiere : "") });
+    }
+  };
+  ajouter(snapshot.questions, matiereRacine || matiereUnique);
+  for (const brut of matieres) {
+    if (!brut || typeof brut !== "object" || Array.isArray(brut)) continue;
+    const m = brut as Record<string, unknown>;
+    const matiere = ["matiere", "matiereId", "subject_id", "id"].map((k) => m[k]).find((v) => typeof v === "string" && v.trim());
+    ajouter(m.questions, matiere ?? matiereRacine);
+  }
+  return sortie;
+}
 
 export type Admissibilite =
   | { admissible: true; bareme: number }
@@ -60,13 +100,20 @@ export function admissibilite(q: QuestionSnapshot | null | undefined, reponse: u
   if ((q.type ?? "") !== "QRC") return { admissible: false, statut: "a_verifier", motif: "type_non_qrc" };
   const matiere = (q.matiere ?? "").trim().toLowerCase();
   if (!matiere) return { admissible: false, statut: "a_verifier", motif: "matiere_inconnue" };
-  if (MATIERES_EXCLUES.has(matiere)) return { admissible: false, statut: "exclue", motif: "matiere_exclue_gt" };
   const rep = texteReponse(reponse).trim();
   if (!rep) return { admissible: false, statut: "exclue", motif: "reponse_vide" };
   const enonce = (q.enonce ?? "").trim();
   const corrige = (q.reponseQRC ?? "").trim();
   if (enonce.length < 5) return { admissible: false, statut: "a_verifier", motif: "question_absente" };
-  if (corrige.length < 3) return { admissible: false, statut: "a_verifier", motif: "corrige_absent" };
+  if (corrige.length < 3 || corrige.endsWith("?") || corrige.toLocaleLowerCase("fr") === enonce.toLocaleLowerCase("fr")) {
+    return { admissible: false, statut: "a_verifier", motif: "corrige_absent" };
+  }
+  // Un calcul dont le dernier terme est seulement « + supplément bagages » ne
+  // contient pas la donnée nécessaire à une note complète : revue formateur.
+  const dernierTerme = corrige.split("+").pop() ?? "";
+  if (/\b(calculez|calculer|montant)\b/i.test(enonce) && corrige.includes("+") && !/\d/.test(dernierTerme)) {
+    return { admissible: false, statut: "a_verifier", motif: "corrige_incomplet_calcul" };
+  }
   const bareme = Number(q.points);
   if (q.points == null || q.points === "" || !Number.isFinite(bareme) || bareme <= 0 || bareme > 20 || (bareme * 2) % 1 !== 0) {
     return { admissible: false, statut: "a_verifier", motif: "bareme_absent" };
@@ -90,6 +137,7 @@ export function validerResultatIa(brut: unknown, bareme: number): ResultatIa {
     try { obj = JSON.parse(m[0]); } catch { return { valide: false, motif: "resultat_invalide" }; }
   }
   if (!obj || typeof obj !== "object") return { valide: false, motif: "resultat_invalide" };
+  if (obj.ambigu === true) return { valide: false, motif: "reponse_ou_corrige_ambigu" };
   const raw = obj.note;
   const note = typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() !== "" ? Number(raw.replace(",", ".")) : NaN;
   if (!Number.isFinite(note)) return { valide: false, motif: "resultat_invalide" };

@@ -3,6 +3,7 @@ import os, pathlib, subprocess, sys, tempfile, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MIGRATION = pathlib.Path(os.environ.get('QRC_FILE_SQL') or next(ROOT.glob('drizzle/migrations/*qrc_ia_file_serveur*.sql')))
+GT_SQL = os.environ.get('QRC_GT_SQL')
 TEMP = tempfile.mkdtemp(prefix='qrc-file-', dir='/tmp'); os.chown(TEMP, 1000, 1000)
 DATA = TEMP + '/data'; PORT = '55441'
 EL = '11111111-1111-4111-8111-000000000001'   # e-learning learner
@@ -52,6 +53,12 @@ class File(unittest.TestCase):
         self.passage(8, finalise=False)
         self.assertEqual(self.suites(), '0')
 
+    def test_exception_historique_autorisee_preservee(self):
+        self.passage(24, fin="'2026-10-20 09:00+00'")
+        self.assertEqual(self.suites(), '0')
+        sql(f"INSERT INTO qrc_ia_rattrapages_historiques VALUES('{att(24)}')")
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(24)}','historique_autorise')"), 'en_file')
+
     def test_reconciliation_retrouve_une_tache_oubliee(self):
         sql("ALTER TABLE exam_attempts_v2 DISABLE TRIGGER trg_qrc_ia_enfiler_passage; ALTER TABLE qrc_instances_v2 DISABLE TRIGGER trg_qrc_ia_enfiler_qrc;")
         try: self.passage(9)
@@ -73,6 +80,33 @@ class File(unittest.TestCase):
         self.passage(11)
         sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut) VALUES('k','{qrc(11)}','{att(11)}','{EL}','q:1','h','appliquee')")
         self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(11)}','x')"), 'rien_a_corriger')
+
+    def test_ancienne_exclusion_gt_seule_reouverte_sans_effacer_audit(self):
+        self.passage(20)
+        sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut,motif,matiere,termine_at) VALUES('gt','{qrc(20)}','{att(20)}','{EL}','q:1','h','exclue','matiere_exclue_gt','reglementation_taxi2',now())")
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(20)}','reprise_gt')"), 'reouverte')
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(20)}','reprise_gt')"), 'deja_en_file')
+        self.assertEqual(sql(f"SELECT statut||'|'||motif FROM qrc_ia_corrections WHERE qrc_instance_id='{qrc(20)}'"), 'exclue|matiere_exclue_gt')
+        sql(f"INSERT INTO qrc_ia_reprises(qrc_instance_id,numero,statut) VALUES('{qrc(20)}',1,'en_cours'); UPDATE qrc_ia_suites SET statut='terminee'")
+        self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(20)}')"), 'rien_a_corriger')
+
+    def test_autre_exclusion_et_compte_nom_test_jamais_reouverts(self):
+        self.passage(21)
+        sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut,motif,termine_at) VALUES('vide','{qrc(21)}','{att(21)}','{EL}','q:1','h','exclue','reponse_vide',now())")
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(21)}','x')"), 'rien_a_corriger')
+        self.passage(22)
+        sql(f"UPDATE apprenants SET nom='FICTIF',prenom='ESSAI IA' WHERE id='{EL}'")
+        self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(22)}')"), 'compte_test')
+        sql(f"UPDATE apprenants SET nom=NULL,prenom=NULL WHERE id='{EL}'")
+
+    def test_archive_neutralise_et_reset_refuses(self):
+        self.passage(23)
+        sql(f"UPDATE apprenants SET compte_cours_archive_at=now() WHERE id='{EL}'")
+        self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(23)}')"), 'compte_archive')
+        sql(f"UPDATE apprenants SET compte_cours_archive_at=NULL WHERE id='{EL}'; INSERT INTO core_tentatives_neutralisees(attempt_id) VALUES('{att(23)}')")
+        self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(23)}')"), 'passage_archive_ou_neutralise')
+        sql(f"DELETE FROM core_tentatives_neutralisees; INSERT INTO core_exam_resets(archived_attempt_ids) VALUES(jsonb_build_array('{att(23)}'))")
+        self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(23)}')"), 'passage_archive_ou_neutralise')
 
     def test_pause_globale_respectee(self):
         self.passage(12)
@@ -124,11 +158,14 @@ def main():
         CREATE SCHEMA extensions; CREATE SCHEMA net; CREATE TABLE public.net_calls(body jsonb);
         CREATE FUNCTION net.http_post(url text, headers jsonb, body jsonb) RETURNS bigint LANGUAGE sql AS $$INSERT INTO public.net_calls VALUES(body) RETURNING 1::bigint$$;
         CREATE TABLE qrc_ia_config(id boolean PRIMARY KEY, actif boolean, actif_depuis timestamptz, pause_depuis timestamptz); INSERT INTO qrc_ia_config VALUES(true,true,'2026-10-10 12:35+00',NULL);
-        CREATE TABLE apprenants(id uuid PRIMARY KEY, type_apprenant text, modalite_formation text);
+        CREATE TABLE apprenants(id uuid PRIMARY KEY, type_apprenant text, modalite_formation text, nom text, prenom text, email text, compte_cours_archive_at timestamptz);
         CREATE TABLE comptes_test_techniques(apprenant_id uuid PRIMARY KEY);
+        CREATE TABLE core_tentatives_neutralisees(attempt_id uuid PRIMARY KEY);
+        CREATE TABLE core_exam_resets(reset_id uuid DEFAULT gen_random_uuid(), archived_attempt_ids jsonb);
+        CREATE TABLE qrc_ia_rattrapages_historiques(attempt_id uuid PRIMARY KEY);
         CREATE TABLE exam_attempts_v2(attempt_id uuid PRIMARY KEY, apprenant_id uuid, exam_id text DEFAULT 'EB5', etat text, finished_at timestamptz, is_test boolean DEFAULT false);
         CREATE TABLE qrc_instances_v2(qrc_instance_id uuid PRIMARY KEY, attempt_id uuid, apprenant_id uuid, question_id text, etat text, reponse jsonb);
-        CREATE TABLE qrc_ia_corrections(id uuid DEFAULT gen_random_uuid(), cle_idempotence text UNIQUE, qrc_instance_id uuid, attempt_id uuid, apprenant_id uuid, question_id text, reponse_hash text, statut text, http_status int, motif text, created_at timestamptz DEFAULT now());
+        CREATE TABLE qrc_ia_corrections(id uuid DEFAULT gen_random_uuid(), cle_idempotence text UNIQUE, qrc_instance_id uuid, attempt_id uuid, apprenant_id uuid, question_id text, reponse_hash text, statut text, http_status int, motif text, matiere text, created_at timestamptz DEFAULT now(), termine_at timestamptz);
         CREATE TABLE qrc_ia_reprises(id uuid DEFAULT gen_random_uuid(), qrc_instance_id uuid, numero int, statut text, http_status int);
         CREATE TABLE alertes_systeme(type text, titre text, message text, details text, lu boolean);''')
         sql(f"INSERT INTO apprenants VALUES('{EL}','vtc-e',NULL),('{PR}','vtc',NULL),('{TS}','vtc-e',NULL),('{IS}','vtc-e',NULL); INSERT INTO comptes_test_techniques VALUES('{TS}');")
@@ -137,6 +174,7 @@ def main():
         sql(source[source.index('CREATE OR REPLACE FUNCTION public.qrc_ia_suite_wake'):source.index('CREATE OR REPLACE FUNCTION public.qrc_ia_suite_claim')])
         sql('ALTER TABLE public.qrc_ia_suites ADD COLUMN dispatches integer NOT NULL DEFAULT 0;')
         sql(MIGRATION.read_text())
+        if GT_SQL: sql(pathlib.Path(GT_SQL).read_text())
         result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(File))
         if not result.wasSuccessful(): raise SystemExit(1)
     finally:

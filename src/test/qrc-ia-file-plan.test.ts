@@ -2,11 +2,17 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { classerEchecIa, planSuite, TIMEOUT_IA_MS } from '../../supabase/functions/_shared/qrcIaSuite';
+import { classerEchecIa, planSuite, prochaineActionIa, TIMEOUT_IA_MS } from '../../supabase/functions/_shared/qrcIaSuite';
 
 const fonction = readFileSync(join(process.cwd(), 'supabase/functions/qrc-ia-correction/index.ts'), 'utf8');
 
 describe('Plan de suite par passage', () => {
+  it('seule une ancienne exclusion G(T) est reprenable, les autres exclusions restent en revue', () => {
+    const base = { http_status: null, termine_at: '2026-10-24T10:00:00Z', created_at: '2026-10-24T10:00:00Z' };
+    expect(prochaineActionIa({ ...base, statut: 'exclue', motif: 'matiere_exclue_gt' })).toEqual({ action: 'appel', delai: 0 });
+    expect(prochaineActionIa({ ...base, statut: 'exclue', motif: 'reponse_vide' }).action).toBe('revue');
+    expect(prochaineActionIa({ ...base, statut: 'a_verifier', motif: 'corrige_absent' }).action).toBe('revue');
+  });
   it('une QRC en revue ne bloque pas la suivante', () => {
     expect(planSuite([{ id: 'a', action: 'revue', delai: 0 }, { id: 'b', action: 'appel', delai: 0 }])).toEqual({ type: 'appel', id: 'b' });
   });

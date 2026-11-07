@@ -10315,6 +10315,10 @@ export type Database = {
         Args: { p_attempt: string; p_origine?: string }
         Returns: string
       }
+      qrc_ia_identite_compte_test: {
+        Args: { p_email: string; p_nom: string; p_prenom: string }
+        Returns: boolean
+      }
       qrc_ia_mois_paris: { Args: { p?: string }; Returns: string }
       qrc_ia_publier_auto: {
         Args: {

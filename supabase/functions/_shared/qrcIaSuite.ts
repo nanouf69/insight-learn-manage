@@ -2,10 +2,13 @@ export const MAX_ITEMS_SUITE = 24;
 import { BUDGET_APPEL_IA_MS } from "./qrcIaTrace.ts";
 /** Délai maximal d'un appel fournisseur (justifié dans qrcIaTrace.ts) ; au-delà, abandon local, rien n'est publié. */
 export const TIMEOUT_IA_MS = BUDGET_APPEL_IA_MS;
-export type TraceIa = { statut: string; http_status: number | null; termine_at: string | null; created_at: string; numero?: number };
+export type TraceIa = { statut: string; http_status: number | null; termine_at: string | null; created_at: string; numero?: number; motif?: string | null };
 /** Only completed upstream transient failures are retryable; unknown work is terminal for automation. */
 export function prochaineActionIa(trace: TraceIa | null, now = Date.now()): { action: 'appel' | 'attendre' | 'revue' | 'fin'; delai: number } {
   if (!trace) return { action: 'appel', delai: 0 };
+  // Seule l'ancienne exclusion globale G(T) devient reprenable. La ligne
+  // initiale reste immuable ; la réservation SQL crée une reprise append-only.
+  if (trace.statut === 'exclue' && trace.motif === 'matiere_exclue_gt' && trace.termine_at) return { action: 'appel', delai: 0 };
   if (trace.statut === 'appliquee' || trace.statut === 'ignoree') return { action: 'fin', delai: 0 };
   if (trace.statut === 'en_cours') return { action: 'revue', delai: 0 };
   if (trace.statut !== 'erreur' || !trace.termine_at || !(trace.http_status === 429 || (trace.http_status !== null && trace.http_status >= 500 && trace.http_status <= 599)) || (trace.numero ?? 0) >= 2) return { action: 'revue', delai: 0 };
