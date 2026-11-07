@@ -50,8 +50,7 @@ du scheduler. Les corps métier et notes ne sont pas modifiés par ces gardes.
 
 ## Tests exécutés
 
-- Vitest : 19/19 sauvegarde/transport, puis 33/33 régressions ; après ajout du refus
-  edge, 12/12 transport/edge (chevauchement : ne pas additionner comme scénarios uniques).
+- Dernier passage Vitest combiné : 53/53 PASS dans 7 fichiers ciblés ; suite globale non relancée (hors périmètre).
 - PostgreSQL jetable : contrat sécurité 1/1 PASS après correction d'une assertion
   de comptage des fonctions (8 définitions durcies, pas 9).
 - PostgreSQL jetable : contrat 22P05/stockage prototype marqué 1/1 PASS.
@@ -63,3 +62,13 @@ du scheduler. Les corps métier et notes ne sont pas modifiés par ces gardes.
 Préparé/testé seulement. Rien publié ni déployé. Incidents réels non déclarés corrigés.
 Activation : NO-GO (snapshot cohérent absent, codec complet non implémenté,
 identités/scheduler réels non vérifiés). Aucun chantier hors de ces trois réserves.
+## Fichiers modifiés depuis la référence
+
+- `supabase/functions/sauvegarde-quotidienne-eleves/{index.ts,AGENTS.md}`
+- `src/lib/{answerPersistence.ts,transportSansNul.ts,AGENTS.md}`
+- `src/features/noyau-passage/pontV2.ts`
+- `supabase/functions/upsert-reponse-apprenant/{index.ts,transportSansNul.ts}`
+- `docs/sql-revue/2026-11-07-securiser-fonctions-correction-notes.sql`
+- `docs/sql-revue/2026-11-07-transport-marque-non-actif.sql` (nouveau brouillon)
+- `src/test/{sauvegarde-cle-reprise-07nov.test.ts,nightly-export-handler-mock.test.ts,transport-nul-22p05.test.ts,answer-edge-handler-24oct.test.ts,core_correction_securite_contract.py,transport_nul_22p05_contract.py}`
+- `roadmap.md`, ce rapport.
