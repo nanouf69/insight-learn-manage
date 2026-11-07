@@ -1737,6 +1737,13 @@
       "when": 1794085768134,
       "tag": "0247_paiement_identite_virement",
       "breakpoints": true
+    },
+    {
+      "idx": 248,
+      "version": "7",
+      "when": 1794085792423,
+      "tag": "0248_propagation_sans_reintroduction",
+      "breakpoints": true
     }
   ]
 }
