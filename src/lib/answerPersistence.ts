@@ -32,29 +32,13 @@ const QUEUE_KEY = "answer_save_queue_v1";
  */
 import { setLearnerPreviewReadOnly, isLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
-import { contientNul, encoderTransport, TRANSPORT_ENCODAGE } from "@/lib/transportSansNul";
 
-/**
- * Corps réellement transmis : la file locale garde l'original, seul le transport
- * est codé (U+0000 refusé par la base, 22P05). Réversible sans perte.
+
+/** Codec désactivé : aucun stockage durablement marqué ni lecteur complet n'est activé.
+ * La file conserve la saisie exacte ; les refus définitifs ne sont pas débloqués.
  */
 export function corpsTransport(payload: AnswerSavePayload, operationId: string): string {
-  return JSON.stringify({ ...encoderTransport(payload), operation_id: operationId, transport_encodage: TRANSPORT_ENCODAGE });
-}
-
-/**
- * Refus 22P05 historiques (avant le codage) : l'élément bloqué contenant un U+0000
- * est réessayé UNE SEULE fois avec le nouveau transport, jamais en boucle.
- */
-function deblocageUniqueTransportNul(items: QueueItem[]): { items: QueueItem[]; change: boolean } {
-  let change = false;
-  const out = items.map((item) => {
-    if (!item.blocked || item.transport_nul_reessai || item.rejection?.reason !== "refused" || !contientNul(item.payload)) return item;
-    change = true;
-    definitiveRejections.delete(rejectionKey(item.payload.user_id ?? item.owner_user_id ?? null, item.payload.apprenant_id, item.payload.exercice_id));
-    return { ...item, blocked: false, rejection: undefined, transport_nul_reessai: true, retry_after: undefined };
-  });
-  return { items: out, change };
+  return JSON.stringify({ ...payload, operation_id: operationId });
 }
 
 const SEQ_KEY = "answer_write_seq_v1";
@@ -904,8 +888,8 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           const confirmedSeq = Number(confirmation.write_seq ?? 0);
           if (
             confirmedSeq > 0 &&
-            // Comparaison dans la forme réellement stockée (transport codé).
-            reponsesContiennentSansConflit(encoderTransport(item.payload.reponses), confirmation.stored_reponses, skipped)
+            // Comparaison exacte dans la forme non codée réellement transmise.
+            reponsesContiennentSansConflit(item.payload.reponses, confirmation.stored_reponses, skipped)
           ) {
             item.payload = { ...item.payload, base_seq: confirmedSeq };
             item.rebase_operation_id = `${item.id}__rebase_${confirmedSeq}_${item.attempts + 1}`;
@@ -1011,8 +995,6 @@ async function processQueue(): Promise<void> {
   processing = true;
   try {
     let queue = readQueue();
-    const deblocage = deblocageUniqueTransportNul(queue);
-    if (deblocage.change) { queue = deblocage.items; writeQueue(queue); }
     const sendable = (items: QueueItem[]) => items.filter(isSendableInCurrentContext);
     const itemsToTry = sendable(queue).length;
     let tried = 0;

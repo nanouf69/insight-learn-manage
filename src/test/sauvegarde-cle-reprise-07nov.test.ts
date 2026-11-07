@@ -28,7 +28,9 @@ function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any
     }) },
     from: (table: string) => {
       if (table === 'alertes_systeme') return { insert: (a: any) => { alerts.push(a); return Promise.resolve({ error: null }); } };
-      const pk = EXPORT_TABLES.find(([n]) => n === table)![1];
+      const entry = EXPORT_TABLES.find(([n]) => n === table);
+      if (!entry) throw new Error('table inconnue');
+      const pk = entry[1];
       const data = () => [...(rows[table] ?? [])].sort((a, b) => (String(a[pk]) < String(b[pk]) ? -1 : 1));
       const st: any = { gt: null as unknown, head: false };
       const q: any = {
@@ -79,19 +81,21 @@ function jeuFictif(nJournal: number) {
 }
 
 describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/11)', () => {
-  it('erreur de page temporaire (57014) : même paquet réessayé, ni trou ni doublon, _termine.json prouvé', async () => {
+  it('erreur de page temporaire (57014) : même paquet réessayé, ni trou ni doublon, parcours achevé sans preuve d’intégrité', async () => {
     const rows = jeuFictif(4500);
     let pannes = 2;
     const h = harness({ rows, echec: ({ table, kind, gt }) => (table === JOURNAL && kind === 'read' && gt === uuid(2000) && pannes-- > 0 ? { code: '57014', message: 'canceling statement due to statement timeout' } : null) });
     const fin = await h.run();
     expect(fin.ok).toBe(true);
+    expect(fin.integrite).toBe('non_verifiee');
+    expect(fin.restauration).toBe('non_prouvee');
     const ids = h.parts(`${JOUR}/${JOURNAL}/`).map((r: any) => r.id);
     expect(ids).toHaveLength(4500);
     expect(new Set(ids).size).toBe(4500);
     expect(ids).toEqual(rows[JOURNAL].map((r) => r.id));
-    expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(true);
+    expect(h.objects.has(`${JOUR}/_export_termine.json`)).toBe(true);
     expect(h.objects.has(`${JOUR}/_incomplet.json`)).toBe(false);
-    expect(h.objects.get(`${JOUR}/_termine.json`).preuves[JOURNAL]).toMatchObject({ debut: 4500, fin: 4500, mode: 'cle' });
+    expect(h.objects.get(`${JOUR}/_export_termine.json`).observations[JOURNAL]).toMatchObject({ debut: 4500, fin: 4500, mode: 'cle' });
     expect(h.objects.get(`${JOUR}/_erreurs/${JOURNAL}-2000.txt`)).toContain('57014');
     expect(h.deleted).toEqual([]);
   });
@@ -100,7 +104,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     const h = harness({ rows: jeuFictif(3000), echec: ({ table, kind, gt }) => (table === JOURNAL && kind === 'read' && gt === uuid(2000) ? { code: '57014', message: 'timeout' } : null) });
     const fin = await h.run();
     expect(fin.ok).toBe(false);
-    expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(false);
+    expect(h.objects.has(`${JOUR}/_export_termine.json`)).toBe(false);
     const inc = h.objects.get(`${JOUR}/_incomplet.json`);
     expect(inc.erreurs.join(' ')).toMatch(/reponses_apprenants_journal@2000: 3 échecs/);
     expect(h.alerts).toHaveLength(1);
@@ -126,11 +130,12 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     panne = false;
     const fin = await h1.run({ reparer: true });
     expect(fin.ok).toBe(true);
-    expect(fin.repare).toBe(true);
+    expect(fin.reexport_termine).toBe(true);
     const ids = h1.parts(`${JOUR}/_reparation-1/${JOURNAL}/`).map((r: any) => r.id);
     expect(ids).toEqual(rows[JOURNAL].map((r) => r.id));
-    const termine = objects.get(`${JOUR}/_termine.json`);
-    expect(termine.repare).toBe(true);
+    expect(objects.has(`${JOUR}/_export_termine.json`)).toBe(false);
+    const termine = objects.get(`${JOUR}/_reparation-1/_export_termine.json`);
+    expect(termine.provenance).toBe('reexport_independant_tables_selectionnees');
     expect(termine.sources[JOURNAL]).toBe(`_reparation-1/${JOURNAL}`);
     expect(termine.comptes[JOURNAL]).toBe(3000);
     expect(JSON.stringify(objects.get(`${JOUR}/_incomplet.json`))).toBe(incomplet);
@@ -151,7 +156,41 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     const ids = h.parts(`${JOUR}/${JOURNAL}/`).map((r: any) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (let i = 1; i <= 2500; i++) expect(ids).toContain(uuid(i));
+    expect(fin.ok).toBe(false);
+    expect(fin.integrite).toBe('non_verifiee');
+    expect(ids).not.toContain(`${uuid(1500)}0`);
+  });
+
+  it('mise à jour concomitante : comptes égaux mais versions mélangées, intégrité jamais certifiée', async () => {
+    const rows = jeuFictif(2500);
+    let mutation = false;
+    const h = harness({ rows, echec: ({ table, gt }) => {
+      if (table === JOURNAL && gt === uuid(2000) && !mutation) {
+        mutation = true;
+        rows[JOURNAL] = rows[JOURNAL].map((r) => ({ ...r, valeur: 'version2' }));
+      }
+      return null;
+    } });
+    const fin = await h.run();
     expect(fin.ok).toBe(true);
+    expect(fin.integrite).toBe('non_verifiee');
+    expect(fin.instantane_coherent).toBe(false);
+    const parts = h.parts(`${JOUR}/${JOURNAL}/`);
+    expect(parts[0].valeur).toBe('r0');
+    expect(parts[2499].valeur).toBe('version2');
+    expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(false);
+  });
+
+  it('ancien curseur OFFSET achevé : aucun nouveau succès historique certifié', async () => {
+    const rows = jeuFictif(2500);
+    const comptes = Object.fromEntries(EXPORT_TABLES.map(([t]) => [t, 0]));
+    comptes[JOURNAL] = 2000;
+    const index = EXPORT_TABLES.findIndex(([t]) => t === JOURNAL);
+    const h = harness({ rows, etat: { jour: JOUR, i: index, from: 2000, comptes, erreurs: [], maj: '2000-01-01' } });
+    const fin = await h.run();
+    expect(fin.integrite).toBe('non_verifiee');
+    expect(fin.ancien_curseur).toBe(true);
+    expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(false);
   });
 
   it('export déjà complet : aucune nouvelle lecture', async () => {

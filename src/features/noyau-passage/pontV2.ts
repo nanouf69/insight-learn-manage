@@ -19,7 +19,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { ExamenBlanc, Matiere, Question } from "@/components/cours-en-ligne/examens-blancs-data";
 import { getPointsParQuestion } from "@/components/cours-en-ligne/examens-blancs-data";
-import { encoderTransport } from "@/lib/transportSansNul";
 
 /** Identifiant de question unique dans tout l'examen : matière + numéro. */
 export const idQuestionNoyau = (matiereId: string, questionId: number | string) =>
@@ -320,8 +319,8 @@ export async function enregistrerReponse(params: {
       ? `answer:${params.attemptId}:${qid}:${JSON.stringify(params.valeur ?? null)}`
       : `answer:${params.attemptId}:${qid}:r${rev}:${JSON.stringify(params.valeur ?? null)}`,
   );
-  // U+0000 refusé par la base (22P05) : transport codé réversible, sans perte.
-  const valeurTransport = encoderTransport(params.valeur ?? null);
+  // Aucun codec actif avant prise en charge durable du marqueur et de tous les lecteurs.
+  const valeurTransport = params.valeur ?? null;
   const sauvegarder = (operation: string, revision: number | null) => supabase.rpc("core_save_answer", {
     p_operation_id: operation,
     p_attempt_id: params.attemptId,

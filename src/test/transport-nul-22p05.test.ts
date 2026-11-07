@@ -9,14 +9,14 @@ import { readFileSync } from "node:fs";
 if (typeof globalThis.localStorage === "undefined") {
   const store = new Map<string, string>();
   (globalThis as any).localStorage = {
-    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    getItem: (k: string) => (store.has(k) ? store.get(k) ?? null : null),
     setItem: (k: string, v: string) => void store.set(k, v),
     removeItem: (k: string) => void store.delete(k),
     clear: () => store.clear(),
   };
 }
 
-import { contientNul, decoderTransport, encoderTransport, TRANSPORT_ENCODAGE } from "@/lib/transportSansNul";
+import { contientNul, decoderTransport, decoderValeurMarquee, encoderTransport, TRANSPORT_ENCODAGE } from "@/lib/transportSansNul";
 import {
   classifyAnswerSaveFailure,
   enqueueAnswerSave,
@@ -50,6 +50,14 @@ describe("Codage de transport sans U+0000", () => {
     expect(encoderTransport(v)).toEqual(v);
   });
 
+  it("lecture UI/IA/historique/export préparée : décodage uniquement avec version explicite", () => {
+    const texte = "␀␀ et ␀\u034f";
+    expect(decoderValeurMarquee(texte, null)).toBe(texte);
+    expect(decoderValeurMarquee(texte, undefined)).toBe(texte);
+    expect(decoderValeurMarquee(encoderTransport(texte), TRANSPORT_ENCODAGE)).toBe(texte);
+    expect(() => decoderValeurMarquee(texte, "version-inconnue")).toThrow("ENCODAGE_VERSION_INCONNUE");
+  });
+
   it("copie serveur identique au module client", () => {
     expect(readFileSync("supabase/functions/upsert-reponse-apprenant/transportSansNul.ts", "utf8")).toBe(readFileSync("src/lib/transportSansNul.ts", "utf8"));
   });
@@ -70,66 +78,35 @@ describe("File de réponses : transport codé, original conservé", () => {
 
   const saisie = { "1": "abc", "2": "texte\u0000invisible" };
 
-  it("le corps envoyé ne contient aucun U+0000, porte le marqueur, et se décode à l'identique", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 3 }), text: async () => "" });
+  it("codec inactif : caractères littéraux et NUL transmis intacts sans marqueur ; pas de faux succès sur coupure", async () => {
+    const valeurs = { "1": "␀␀ et ␀\u034f", "2": saisie["2"] };
+    const fetchMock = vi.fn().mockRejectedValue(new Error("coupure réseau fictive"));
     vi.stubGlobal("fetch", fetchMock);
-    enqueueAnswerSave({ apprenant_id: APP, user_id: UID, exercice_id: "EB1__gestion__t2", exercice_type: "examen_blanc", reponses: saisie, events: [{ question_id: "2", valeur: saisie["2"] }] });
+    enqueueAnswerSave({ apprenant_id: APP, user_id: UID, exercice_id: "EB1__gestion__t2", exercice_type: "examen_blanc", reponses: valeurs });
     await flush();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const corps = fetchMock.mock.calls[0][1].body as string;
-    expect(corps.includes("\\u0000")).toBe(false);
-    const parsed = JSON.parse(corps);
-    expect(parsed.transport_encodage).toBe(TRANSPORT_ENCODAGE);
-    expect(decoderTransport(parsed.reponses)).toEqual(saisie);
-    expect(decoderTransport(parsed.events[0].valeur)).toBe(saisie["2"]);
-    expect(getPendingAnswerSaves()).toBe(0);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.transport_encodage).toBeUndefined();
+    expect(body.reponses).toEqual(valeurs);
+    expect(getPendingAnswers(APP, "EB1__gestion__t2")).toEqual(valeurs);
+    expect(getPendingAnswerSaves()).toBe(1);
   });
 
-  it("élément déjà bloqué par un ancien refus 22P05 : réessayé UNE fois avec le transport codé, original intact", async () => {
+  it("ancien refus définitif : aucun déblocage tant que le contrat complet n'est pas activé", async () => {
     const original = {
-      id: "EB1__gestion__t2__1794000168709__b67r7q",
-      payload: { apprenant_id: APP, user_id: UID, exercice_id: "EB1__gestion__t2", exercice_type: "examen_blanc", reponses: saisie, events: [{ question_id: "2", valeur: saisie["2"], event_id: "e1" }], base_seq: 2 },
+      id: "EB1__gestion__t2__op1",
+      payload: { apprenant_id: APP, user_id: UID, exercice_id: "EB1__gestion__t2", exercice_type: "examen_blanc", reponses: saisie, base_seq: 2 },
       queued_at: "2026-11-06T21:22:49.000Z", attempts: 55, owner_user_id: UID, blocked: true,
       rejection: { exerciceId: "EB1__gestion__t2", reason: "refused", at: "2026-11-06T21:22:49.000Z" },
     };
     localStorage.setItem("answer_save_queue_v1", JSON.stringify([original]));
-    // Pire cas : le serveur refuse encore (ex. ancienne version déployée).
-    const refus = { ok: false, status: 400, text: async () => JSON.stringify({ code: "22P05", error: "unsupported Unicode escape sequence" }) };
-    const fetchMock = vi.fn().mockResolvedValue(refus);
-    vi.stubGlobal("fetch", fetchMock);
-    // Une réponse d'un autre exercice déclenche le traitement de la file.
-    enqueueAnswerSave({ apprenant_id: APP, user_id: UID, exercice_id: "autre_exo", exercice_type: "quiz", reponses: { "1": "x" } });
-    await flush();
-    for (let i = 0; i < 20; i++) await flush(60_000);
-    const corpsGestion = fetchMock.mock.calls.map((c) => JSON.parse(c[1].body)).filter((b) => b.exercice_id === "EB1__gestion__t2");
-    // Exactement un renvoi codé, puis plus rien : aucune boucle.
-    expect(corpsGestion).toHaveLength(1);
-    expect(corpsGestion[0].transport_encodage).toBe(TRANSPORT_ENCODAGE);
-    expect(JSON.stringify(corpsGestion[0]).includes("\\u0000")).toBe(false);
-    // L'original reste en file, intact (U+0000 compris), bloqué et visible.
-    expect(getPendingAnswers(APP, "EB1__gestion__t2")).toEqual(saisie);
-    const file = JSON.parse(localStorage.getItem("answer_save_queue_v1")!);
-    const gestion = file.find((i: any) => i.payload.exercice_id === "EB1__gestion__t2");
-    expect(gestion.blocked).toBe(true);
-    expect(gestion.transport_nul_reessai).toBe(true);
-    expect(gestion.payload.events[0].valeur).toBe(saisie["2"]);
-    expect(getBlockedAnswerSaves()).toBeGreaterThanOrEqual(1);
-  });
-
-  it("élément bloqué 22P05 : le renvoi codé confirmé vide la file (preuve serveur seulement)", async () => {
-    const original = {
-      id: "EB1__t3p__op1",
-      payload: { apprenant_id: APP, user_id: UID, exercice_id: "EB1__t3p", exercice_type: "examen_blanc", reponses: saisie, base_seq: 26 },
-      queued_at: "2026-11-05T18:40:06.000Z", attempts: 1, owner_user_id: UID, blocked: true,
-      rejection: { exerciceId: "EB1__t3p", reason: "refused", at: "2026-11-05T18:40:06.000Z" },
-    };
-    localStorage.setItem("answer_save_queue_v1", JSON.stringify([original]));
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 27 }), text: async () => "" });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 400, text: async () => JSON.stringify({ code: "22P05" }) });
     vi.stubGlobal("fetch", fetchMock);
     enqueueAnswerSave({ apprenant_id: APP, user_id: UID, exercice_id: "autre_exo", exercice_type: "quiz", reponses: { "1": "x" } });
     await flush();
     await flush(60_000);
-    expect(getPendingAnswers(APP, "EB1__t3p")).toBeNull();
-    expect(getBlockedAnswerSaves()).toBe(0);
+    expect(fetchMock.mock.calls.map((c) => JSON.parse(c[1].body)).filter((b) => b.exercice_id === "EB1__gestion__t2")).toHaveLength(0);
+    expect(getPendingAnswers(APP, "EB1__gestion__t2")).toEqual(saisie);
+    expect(getBlockedAnswerSaves()).toBeGreaterThanOrEqual(1);
   });
 });

@@ -9,11 +9,11 @@
 // position 928 000 (lecture par décalage OFFSET de plus en plus lente sur 1,7 M lignes),
 // la table a été abandonnée dès la PREMIÈRE erreur, puis « termine » a été posé malgré
 // l'erreur : les reprises répondaient « déjà terminé » sans rien réparer. Désormais :
-//  - lecture par clé (pk > dernier exporté) : coût constant, ni trou ni doublon ;
+//  - lecture par clé : reprise bornée ; aucune garantie de snapshot sous concurrence ;
 //  - une erreur ne fait plus sauter la table : même position réessayée (attente croissante),
 //    abandon signalé seulement après 3 échecs au même endroit ;
-//  - preuve de couverture par table (comptage exact au début et à la fin) ;
-//  - « _termine.json » uniquement si toutes les tables sont prouvées complètes ;
+//  - comptes début/fin = observations, PAS preuve de couverture/cohérence/restauration ;
+//  - « _export_termine.json » = parcours achevé, intégrité/restauration NON PROUVÉES ;
 //  - une journée incomplète peut être RÉPARÉE sur demande explicite ({ jour, reparer: true }) :
 //    nouvel export complet des seules tables en erreur dans « _reparation-1/ », sans toucher
 //    aux fichiers déjà écrits ni à « _incomplet.json ». Jamais lancé automatiquement.
@@ -129,8 +129,9 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
       const preuve = job.preuves[t];
       if (preuve && finale !== null) {
         preuve.fin = finale; preuve.dernier = curseur;
-        // Toute ligne présente au début est exportée (n ≥ début) ; rien d'inventé (n ≤ fin).
-        if (total < preuve.debut || total > finale) job.erreurs.push(`${t}: couverture non prouvée (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
+        // Une variation détectée est signalée ; des comptes égaux n'excluent ni
+        // une insertion derrière le curseur ni une mise à jour concomitante.
+        if (total !== preuve.debut || total !== finale) job.erreurs.push(`${t}: comptes divergents (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
       } else if (decalage) {
         job.preuves[t] = { debut: -1, mode: "decalage" };
       }
@@ -197,7 +198,7 @@ Deno.serve(async (req) => {
   // Journée terminée : rien à refaire, sauf réparation EXPLICITE d'une journée incomplète.
   if (etat?.termine) {
     const incomplet = (etat.erreurs?.length ?? 0) > 0;
-    if (!incomplet) return json({ ok: true, deja_termine: true, jour, version: etat.version ?? 1, tables: etat.table_names?.length ?? Object.keys(etat.comptes).length });
+    if (!incomplet) return json({ ok: true, deja_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", jour, version: etat.version ?? 1, tables: etat.table_names?.length ?? Object.keys(etat.comptes).length });
     if (etat.reparation?.termine) return json({ ok: (etat.reparation.erreurs ?? []).length === 0, deja_repare: true, jour, erreurs: etat.reparation.erreurs });
     if (!etat.reparation) {
       if (!reparer) return json({ ok: false, incomplet: true, jour, erreurs: etat.erreurs, action: "réparation sur demande explicite { jour, reparer: true }" });
@@ -208,7 +209,8 @@ Deno.serve(async (req) => {
     } else if (!chaine && Date.now() - new Date(etat.maj).getTime() < BAIL_MS) {
       return json({ ok: true, chaine_active: true, reparation: true, i: etat.reparation.i, from: etat.reparation.from });
     }
-    const r = etat.reparation!;
+    const r = etat.reparation;
+    if (!r) return json({ ok: false, erreur: "reparation_absente" });
     const tables = r.table_names ?? [];
     let resultat: string = "avance";
     if (r.i < tables.length) {
@@ -220,22 +222,20 @@ Deno.serve(async (req) => {
       const manquantes = tables.filter((t) => !r.preuves?.[t] || r.preuves[t].mode !== "cle" || typeof r.preuves[t].fin !== "number");
       const erreurs = [...r.erreurs, ...manquantes.map((t) => `${t}: preuve de couverture absente`)];
       etat.maj = new Date().toISOString();
-      if (erreurs.length === 0) {
-        const comptes = { ...etat.comptes, ...r.comptes };
-        const manifeste = {
-          jour, fin: etat.maj, ...exportManifest(comptes, []),
-          repare: true, reparation_debut: r.debut, reparation_dossier: REPARATION_DOSSIER,
-          sources: Object.fromEntries(tables.map((t) => [t, `${REPARATION_DOSSIER}/${t}`])),
-          preuves: { ...(etat.preuves ?? {}), ...r.preuves }, erreurs_initiales: etat.erreurs,
-        };
-        if (manifeste.erreurs.length === 0) await up(`${jour}/_termine.json`, manifeste);
-        r.erreurs = manifeste.erreurs;
-      } else {
-        r.erreurs = erreurs;
-      }
+      // Réexport indépendant : jamais fusionné avec les tables d'une autre nuit,
+      // jamais un nouveau _termine.json pour la journée historique.
+      const manifeste = {
+        jour, fin: etat.maj, tables: tables.length, comptes: r.comptes, erreurs,
+        export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee",
+        instantane_coherent: false, provenance: "reexport_independant_tables_selectionnees",
+        reparation_debut: r.debut, observations: r.preuves ?? {},
+        sources: Object.fromEntries(tables.map((t) => [t, `${REPARATION_DOSSIER}/${t}`])),
+      };
+      await up(`${jour}/${REPARATION_DOSSIER}/${erreurs.length ? "_incomplet.json" : "_export_termine.json"}`, manifeste);
+      r.erreurs = erreurs;
       r.termine = true;
       await up(`${jour}/_etat.json`, etat);
-      return json({ ok: r.erreurs.length === 0, repare: r.erreurs.length === 0, jour, erreurs: r.erreurs });
+      return json({ ok: r.erreurs.length === 0, reexport_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", jour, erreurs: r.erreurs });
     }
     etat.maj = new Date().toISOString();
     await up(`${jour}/_etat.json`, etat);
@@ -268,8 +268,8 @@ Deno.serve(async (req) => {
 
   if (etat.i >= TABLES.length) {
     etat.maj = new Date().toISOString();
-    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), preuves: etat.preuves ?? {} };
-    await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_termine.json`, manifeste);
+    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), observations: etat.preuves ?? {}, export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false, ancien_curseur: Object.values(etat.preuves ?? {}).some((p) => p.mode === "decalage") };
+    await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_export_termine.json`, manifeste);
     etat.erreurs = manifeste.erreurs;
     etat.termine = true;
     await up(`${jour}/_etat.json`, etat);
