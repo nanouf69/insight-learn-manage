@@ -22,6 +22,8 @@ export interface MarqueurOriginal {
   v: string;
   b64: string;
   projection: unknown;
+  /** Posé par le serveur : numéro d'écriture de la question (reponses_meta.seq). */
+  seq?: number;
 }
 
 export function contientNul(value: unknown): boolean {
@@ -88,11 +90,13 @@ export type StatutOriginal = "sans_marqueur" | "exact" | "marqueur_perime" | "ve
  * cohérent avec la valeur stockée ; sinon renvoie la valeur stockée telle quelle
  * avec un statut explicite (jamais de décodage deviné).
  */
-export function lireOriginal(valeurStockee: unknown, marqueur: unknown): { statut: StatutOriginal; valeur: unknown } {
+export function lireOriginal(valeurStockee: unknown, marqueur: unknown, seqStockee?: unknown): { statut: StatutOriginal; valeur: unknown } {
   if (marqueur == null) return { statut: "sans_marqueur", valeur: valeurStockee };
   const m = marqueur as Partial<MarqueurOriginal>;
   if (typeof m !== "object" || m.v !== ORIGINAL_VERSION) return { statut: "version_inconnue", valeur: valeurStockee };
   if (canonique(m.projection) !== canonique(valeurStockee)) return { statut: "marqueur_perime", valeur: valeurStockee };
+  // Une écriture ultérieure par un autre chemin (même texte visible) invalide le marqueur.
+  if (seqStockee !== undefined && (m.seq == null || Number(m.seq) !== Number(seqStockee))) return { statut: "marqueur_perime", valeur: valeurStockee };
   try {
     const original = JSON.parse(depuisBase64(String(m.b64 ?? "")));
     if (canonique(projeterSansNul(original)) !== canonique(valeurStockee)) return { statut: "marqueur_invalide", valeur: valeurStockee };
@@ -106,11 +110,12 @@ export function lireOriginal(valeurStockee: unknown, marqueur: unknown): { statu
 export function lireReponsesExactes(
   reponses: Record<string, unknown> | null | undefined,
   originaux: Record<string, unknown> | null | undefined,
+  meta: Record<string, { seq?: unknown } | null | undefined> | null | undefined,
 ): { reponses: Record<string, unknown>; anomalies: Record<string, StatutOriginal> } {
   const out: Record<string, unknown> = {};
   const anomalies: Record<string, StatutOriginal> = {};
   for (const [k, v] of Object.entries(reponses ?? {})) {
-    const r = lireOriginal(v, originaux?.[k]);
+    const r = lireOriginal(v, originaux?.[k], originaux?.[k] == null ? undefined : meta?.[k]?.seq ?? null);
     out[k] = r.valeur;
     if (r.statut !== "sans_marqueur" && r.statut !== "exact") anomalies[k] = r.statut;
   }
