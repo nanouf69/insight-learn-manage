@@ -103,7 +103,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     console.log('DBG', JSON.stringify(fin).slice(0,600), [...h.objects.keys()].filter(k=>!k.includes('part-')));
     expect(fin.ok).toBe(false);
     expect(h.objects.has(`${JOUR}/_termine.json`)).toBe(false);
-    const inc = h.objects.get(`${JOUR}/_incomplet.json`);
+    const inc = h.objects.get(`${JOUR}/_incomplet.json`); console.log('INC', typeof inc, JSON.stringify(inc).slice(0,300));
     expect(inc.erreurs.join(' ')).toMatch(/reponses_apprenants_journal@2000: 3 échecs/);
     expect(h.alerts).toHaveLength(1);
   });
