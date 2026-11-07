@@ -128,13 +128,13 @@ def main():
         CREATE TABLE qrc_instances_v2(qrc_instance_id uuid PRIMARY KEY,attempt_id uuid,apprenant_id uuid,question_id text,etat text);
         CREATE TABLE qrc_ia_config(id boolean,actif boolean,pause_depuis timestamptz); INSERT INTO qrc_ia_config VALUES(true,true,NULL);
         CREATE TABLE qrc_ia_corrections(id uuid DEFAULT gen_random_uuid(),cle_idempotence text UNIQUE,qrc_instance_id uuid,attempt_id uuid,apprenant_id uuid,question_id text,exam_id text,matiere text,reponse_hash text,modele text,bareme numeric,statut text,http_status int,created_at timestamptz DEFAULT now(),termine_at timestamptz);
-        CREATE TABLE qrc_ia_reprises(id uuid DEFAULT gen_random_uuid(),qrc_instance_id uuid,base jsonb,numero int,statut text DEFAULT 'en_cours',created_at timestamptz DEFAULT now(),lease_until timestamptz DEFAULT now()+interval '10 minutes',termine_at timestamptz,http_status int,resultat jsonb,run_id text,UNIQUE(qrc_instance_id,numero));''')
+        CREATE TABLE qrc_ia_reprises(id uuid DEFAULT gen_random_uuid(),qrc_instance_id uuid,base jsonb,numero int,statut text DEFAULT 'en_cours',created_at timestamptz DEFAULT now(),lease_until timestamptz DEFAULT now()+interval '10 minutes',termine_at timestamptz,http_status int,message text,resultat jsonb,run_id text,UNIQUE(qrc_instance_id,numero));''')
         sql('''ALTER TABLE qrc_ia_corrections ADD COLUMN note numeric, ADD COLUMN justification text, ADD COLUMN motif text;
         ALTER TABLE qrc_instances_v2 ADD COLUMN reponse jsonb;
         CREATE TABLE published(q uuid);
         CREATE FUNCTION public.core_correct_qrc_publish(uuid,uuid,numeric,text,text) RETURNS jsonb LANGUAGE plpgsql AS $$BEGIN INSERT INTO published VALUES($2); RETURN jsonb_build_object('qrc_instance_id',$2,'etat','corrigee','note',$3); END $$;''')
         reprises = (ROOT/'drizzle/migrations/0178_qrc_ia_reprises_append_only.sql').read_text()
-        sql(reprises[reprises.index('CREATE OR REPLACE FUNCTION public.qrc_ia_reprise_immuable'):])
+        sql(reprises[reprises.index('CREATE OR REPLACE FUNCTION public.qrc_ia_publier_reprise'):])
         sql((ROOT/'drizzle/migrations/0179_qrc_reprise_guard_legacy_reservation.sql').read_text())
         sql((ROOT/'drizzle/migrations/0180_qrc_ia_reservation_auto.sql').read_text())
         sql((ROOT/'drizzle/migrations/0182_qrc_ia_auto_publication_guard.sql').read_text())
