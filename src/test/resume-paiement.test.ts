@@ -24,4 +24,8 @@ describe("virements reçus correspondants", () => {
     expect(virementsCorrespondants([{ montant: 200, libelle: "Virement de Meziane DJOUDI" }], "MEZIANE", "Meziane")).toHaveLength(0));
   it("virement trop ancien ignoré", () =>
     expect(virementsCorrespondants([v], "LAGHOUATI", "Abdallah", "2026-10-01")).toHaveLength(0));
+  it("même virement lié malgré une date de saisie différente : jamais compté deux fois", () =>
+    expect(resumePaiement(200, [{ montant: 50, date_paiement: "2026-09-22", transaction_bancaire_id: "tx-a" }], [{ ...v, id: "tx-a" }]).paye).toBe(50));
+  it("deux vrais virements égaux avec deux identités : tous deux comptés", () =>
+    expect(resumePaiement(200, [{ montant: 50, date_paiement: "2026-09-22", transaction_bancaire_id: "tx-a" }], [{ ...v, id: "tx-a" }, { ...v, id: "tx-b", date_operation: "2026-09-22" }]).paye).toBe(100));
 });

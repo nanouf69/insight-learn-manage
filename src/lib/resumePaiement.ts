@@ -6,8 +6,14 @@
 const eur = (n: number) =>
   `${(Math.round(n * 100) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
 
-export type PaiementLike = { montant?: number | string | null; date_paiement?: string | null };
+export type PaiementLike = {
+  montant?: number | string | null;
+  date_paiement?: string | null;
+  moyen_paiement?: string | null;
+  transaction_bancaire_id?: string | null;
+};
 export type VirementLike = { id?: string; montant?: number | string | null; date_operation?: string | null; libelle?: string | null };
+export type LienVirementLike = { apprenant_id?: string | null; transaction_bancaire_id?: string | null };
 
 const norm = (s: string) =>
   (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
