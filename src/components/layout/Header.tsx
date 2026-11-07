@@ -26,9 +26,9 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
     .slice(0, 2);
 
   return (
-    <header className="bg-card border-b border-border px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <header className="bg-card border-b border-border pl-16 pr-3 py-3 md:px-6 md:py-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
           {onMenuClick && (
             <button 
               onClick={onMenuClick}
@@ -48,15 +48,15 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
               Précédent
             </Button>
           )}
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl font-bold text-foreground truncate">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+              <p className="hidden md:block text-sm text-muted-foreground mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <GlobalSearch onSelectApprenant={onSelectApprenant} onNavigate={onNavigate} />
 
           <Button size="sm" className="gap-2">
@@ -69,7 +69,7 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
           </button>
 
-          <div className="flex items-center gap-3 pl-4 border-l border-border">
+          <div className="flex items-center gap-3 pl-2 md:pl-4 border-l border-border">
             <Avatar className="w-9 h-9">
               <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${initials}`} />
               <AvatarFallback>{initials}</AvatarFallback>
