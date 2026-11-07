@@ -8,44 +8,79 @@
 -- Contextes autorisés :
 --   * service_role (fonction IA qrc-ia-correction via qrc_ia_publier_*) ;
 --   * administrateur authentifié (Correction QRC V2, révision) ;
---   * contexte interne sans JWT (pg_cron : qrc_ia_reconcilier, rattrapage) ;
+--   * cron : identité SQL dédiée ftransport_qrc_cron, jamais absence de JWT ;
+--     rôle NOLOGIN ci-dessous : connexion dédiée à provisionner/revoir séparément.
+--     Le cron existant sous postgres est REFUSÉ tant que son identité n’est pas migrée.
 --   * core_note_attempt / core_recalc_result : en plus, l'élève propriétaire
 --     de la tentative (fin de passage, pontV2.ts).
 -- Refus par défaut : anon, authentifié non admin, JWT sans identité (sub nul).
 -- =====================================================================
 
+-- Identité de connexion et rôle effectif, pas current_user (propriétaire du definer).
+-- Les claims ne sont fiables que sur une connexion API authenticator autorisée
+-- à SET ROLE par le serveur après vérification du JWT. Aucun rôle API ne reçoit
+-- la capacité de choisir session_user ou de rejoindre le rôle cron.
+DO $roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'ftransport_qrc_cron') THEN
+    CREATE ROLE ftransport_qrc_cron NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+  END IF;
+END;
+$roles$;
+
+CREATE OR REPLACE FUNCTION public.core_identite_api_verifiee()
+ RETURNS uuid LANGUAGE plpgsql STABLE SECURITY DEFINER
+ SET search_path TO pg_catalog, public, pg_temp
+AS $function$
+DECLARE
+  claims jsonb;
+  sub text;
+BEGIN
+  IF session_user <> 'authenticator'
+     OR coalesce(current_setting('role', true), 'none') <> 'authenticated' THEN
+    RETURN NULL;
+  END IF;
+  claims := nullif(current_setting('request.jwt.claims', true), '')::jsonb;
+  IF claims IS NULL OR claims->>'role' IS DISTINCT FROM 'authenticated' THEN RETURN NULL; END IF;
+  sub := claims->>'sub';
+  IF sub IS NULL OR sub !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN RETURN NULL; END IF;
+  IF auth.uid() IS DISTINCT FROM sub::uuid OR auth.role() IS DISTINCT FROM 'authenticated' THEN RETURN NULL; END IF;
+  RETURN sub::uuid;
+EXCEPTION WHEN invalid_text_representation THEN RETURN NULL;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.core_contexte_correction_autorise()
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
   SELECT CASE
-    WHEN coalesce(auth.role(), '') = 'service_role' THEN true
-    WHEN coalesce(auth.role(), '') IN ('anon', 'authenticated') OR auth.uid() IS NOT NULL
-      THEN auth.uid() IS NOT NULL AND public.has_role(auth.uid(), 'admin')
-    -- Aucun JWT du tout : tâche interne (pg_cron / maintenance), jamais l'API.
-    WHEN nullif(current_setting('request.jwt.claims', true), '') IS NULL
-     AND nullif(current_setting('request.jwt.claim.role', true), '') IS NULL THEN true
-    ELSE false
+    WHEN session_user = 'ftransport_qrc_cron'
+      AND coalesce(current_setting('role', true), 'none') IN ('none', 'ftransport_qrc_cron') THEN true
+    WHEN session_user = 'service_role'
+      AND coalesce(current_setting('role', true), 'none') IN ('none', 'service_role') THEN true
+    WHEN session_user = 'authenticator'
+      AND current_setting('role', true) = 'service_role' THEN true
+    ELSE coalesce(public.has_role(public.core_identite_api_verifiee(), 'admin'), false)
   END
 $function$;
 
 CREATE OR REPLACE FUNCTION public.core_contexte_tentative_autorise(p_apprenant_id uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
   SELECT public.core_contexte_correction_autorise()
-      OR (auth.uid() IS NOT NULL AND p_apprenant_id IS NOT NULL AND public.core_est_proprietaire(p_apprenant_id))
+    OR (p_apprenant_id IS NOT NULL AND EXISTS (
+      SELECT 1 FROM public.apprenants a
+      WHERE a.id = p_apprenant_id AND a.auth_user_id = public.core_identite_api_verifiee()
+    ))
 $function$;
 
 CREATE OR REPLACE FUNCTION public.core_correct_qrc(p_operation_id uuid, p_qrc_instance_id uuid, p_note numeric, p_commentaire text DEFAULT NULL::text, p_corrige_email text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
 DECLARE
   rejeu jsonb;
@@ -100,7 +135,7 @@ CREATE OR REPLACE FUNCTION public.core_correct_qrc_publish(p_operation_id uuid, 
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
 DECLARE
   rejoue jsonb;
@@ -139,7 +174,7 @@ CREATE OR REPLACE FUNCTION public.core_revise_qrc_publish(p_operation_id uuid, p
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
 DECLARE
   rejoue jsonb;
@@ -218,7 +253,7 @@ CREATE OR REPLACE FUNCTION public.core_note_attempt(p_attempt_id uuid)
  RETURNS TABLE(points_qcm numeric, points_qrc numeric, total numeric, score20 numeric, qrc_restantes integer)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
 DECLARE
   att public.exam_attempts_v2;
@@ -279,10 +314,10 @@ END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.core_recalc_result(p_attempt_id uuid)
- RETURNS core_exam_results
+ RETURNS public.core_exam_results
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO pg_catalog, public, pg_temp
 AS $function$
 DECLARE
   att public.exam_attempts_v2;
@@ -324,8 +359,8 @@ $function$;
 -- réservés aux fonctions appelantes (exécutées en tant que propriétaire).
 REVOKE ALL ON FUNCTION public.core_contexte_correction_autorise() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.core_contexte_tentative_autorise(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.core_contexte_correction_autorise() TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.core_contexte_tentative_autorise(uuid) TO authenticated, service_role;
+
+
 
 REVOKE ALL ON FUNCTION public.core_correct_qrc(uuid, uuid, numeric, text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.core_note_attempt(uuid) FROM PUBLIC, anon, authenticated;
@@ -338,3 +373,13 @@ GRANT EXECUTE ON FUNCTION public.core_note_attempt(uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.core_recalc_result(uuid) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.core_correct_qrc_publish(uuid, uuid, numeric, text, text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.core_revise_qrc_publish(uuid, uuid, numeric, numeric, text, text) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.core_identite_api_verifiee() FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.core_contexte_correction_autorise() FROM authenticated, service_role;
+REVOKE ALL ON FUNCTION public.core_contexte_tentative_autorise(uuid) FROM authenticated, service_role;
+GRANT USAGE ON SCHEMA public TO ftransport_qrc_cron;
+GRANT EXECUTE ON FUNCTION public.core_recalc_result(uuid) TO ftransport_qrc_cron;
+-- Le cron de réconciliation doit appeler sa fonction de haut niveau documentée ;
+-- aucun accès direct à la correction ni membership pour anon/authenticated/authenticator.
+-- Activation BLOQUÉE : prouver les identités de connexion API/IA et provisionner
+-- la connexion dédiée du scheduler avant toute application réelle.

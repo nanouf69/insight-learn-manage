@@ -18,6 +18,8 @@ Q1, Q2 = str(uuid.uuid4()), str(uuid.uuid4())
 
 SCHEMA = f"""
 CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;
+CREATE ROLE authenticator NOLOGIN NOINHERIT; CREATE ROLE untrusted NOLOGIN;
+GRANT anon, authenticated, service_role TO authenticator;
 CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'))::uuid $$;
 CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'))::text $$;
@@ -57,10 +59,10 @@ class Pg:
         subprocess.run(self.user + ['pg_ctl', '-D', self.dir + '/d', '-m', 'immediate', 'stop'], capture_output=True)
 
 def as_ctx(role, claims, call):
-    c = '' if claims is None else json.dumps(claims).replace("'", "''")
+    c = '' if claims is None else (claims if isinstance(claims, str) else json.dumps(claims)).replace("'", "''")
     setc = '' if claims is None else f"SELECT set_config('request.jwt.claims', '{c}', false);"
     setr = '' if role is None else f'SET ROLE {role};'
-    return f"{setc} {setr} {call}"
+    return f"{setc} SET SESSION AUTHORIZATION authenticator; {setr} {call}"
 
 def correct(op, q, note=1):
     return f"SELECT public.core_correct_qrc_publish('{op}','{q}',{note},'c','x@y');"
@@ -121,10 +123,31 @@ class Contrat(unittest.TestCase):
         self.assertEqual(c, 0, o); self.assertIn('"definitif"', o)
         # (QCM 2 + QRC 1.5 + 2) / 6 * 20 = 18.33 : calcul inchangé.
         self.assertIn('18.33', o)
-        # Tâche interne pg_cron (aucun JWT) : autorisée ; une QRC corrigée reste définitive.
+        # Aucun JWT ne prouve une identité interne : même postgres sans claims échoue.
         c, o = pg.sql(f"SELECT (public.core_recalc_result('{ATT}')).score;")
+        self.assertNotEqual(c, 0, o); self.assertIn('TENTATIVE_NON_AUTORISEE', o)
+        for role in ('anon', 'authenticated'):
+            refuse(role, None, correct(uuid.uuid4(), Q1), 'claims manquants')
+            refuse(role, None, f"SELECT (public.core_recalc_result('{ATT}')).score;", 'recalc sans JWT')
+        for claims in ('{malformed', {'role':'authenticated','sub':'invalid'}, {'role':'service_role','sub':ADMIN}, {'role':'unexpected','sub':ADMIN}):
+            refuse('authenticated', claims, correct(uuid.uuid4(), Q1), 'claims invalides ou rôle usurpé')
+            refuse('authenticated', claims, f"SELECT (public.core_recalc_result('{ATT}')).score;", 'identité invalide')
+        # Session SQL non fiable, même avec des claims admin forgés : refus.
+        c, o = pg.sql(f"SET request.jwt.claims = '{json.dumps(admin)}'; SET SESSION AUTHORIZATION untrusted; SELECT public.core_correct_qrc_publish('{uuid.uuid4()}','{Q1}',1,null,null);")
+        self.assertNotEqual(c, 0, o)
+        # Cron : véritable session_user dédiée, pas SET ROLE depuis authenticator.
+        c, o = pg.sql(f"SET SESSION AUTHORIZATION ftransport_qrc_cron; SELECT (public.core_recalc_result('{ATT}')).score;")
         self.assertEqual(c, 0, o); self.assertEqual(o.splitlines()[-1], '18.33')
-        self.assertIn('QRC_DEJA_CORRIGEE', refuse(None, None, correct(uuid.uuid4(), Q1), 'recorrection'))
+        c, o = pg.sql("SET SESSION AUTHORIZATION authenticator; SET ROLE ftransport_qrc_cron;")
+        self.assertNotEqual(c, 0, o)
+        # Matrice EXECUTE : helper interne inaccessible et brut réservé au service.
+        for role in ('anon','authenticated','service_role'):
+            c, o = pg.sql(f"SELECT has_function_privilege('{role}', 'public.core_identite_api_verifiee()', 'EXECUTE');")
+            self.assertEqual(o, 'f')
+        for role, expected in [('anon','f'),('authenticated','f'),('service_role','t')]:
+            self.assertEqual(pg.sql(f"SELECT has_function_privilege('{role}', 'public.core_correct_qrc(uuid,uuid,numeric,text,text)', 'EXECUTE');")[1], expected)
+        c, o = pg.sql("SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname LIKE 'core_%' AND proconfig @> ARRAY['search_path=pg_catalog, public, pg_temp'];")
+        self.assertEqual(c, 0, o); self.assertEqual(o, '9')
         # Révision admin avec CAS : autorisée.
         ok('authenticated', admin, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{Q1}',2,1.5,'c','x');")
 
