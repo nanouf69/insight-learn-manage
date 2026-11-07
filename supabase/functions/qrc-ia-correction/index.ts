@@ -20,8 +20,8 @@ import { z } from "npm:zod@3";
 import { creditsMax, creditsReels, debutMoisSuivant, SORTIE_MAX_JETONS, type PRIX_CREDITS } from "../_shared/qrcIaBudget.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
-  CONSIGNE_IA, MARQUEUR_IA, MODELE_IA_QRC, admissibilite, cleIdempotence, estApprenantElearning, estElearning, estPauseGlobale,
-  messageUtilisateur, texteReponse, validerResultatIa, type QuestionSnapshot,
+  CONSIGNE_IA, MARQUEUR_IA, MODELE_IA_QRC, admissibilite, cleIdempotence, estApprenantElearning, estCompteTestApprenant, estPauseGlobale,
+  messageUtilisateur, questionsDuSnapshot, texteReponse, validerResultatIa, type QuestionSnapshot,
 } from "../_shared/qrcIaRegles.ts";
 
 const cors = corsHeaders;

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { classerEchecIa, planSuite, TIMEOUT_IA_MS } from '../../supabase/functions/_shared/qrcIaSuite';
+import { classerEchecIa, planSuite, prochaineActionIa, TIMEOUT_IA_MS } from '../../supabase/functions/_shared/qrcIaSuite';
 
 const fonction = readFileSync(join(process.cwd(), 'supabase/functions/qrc-ia-correction/index.ts'), 'utf8');
 

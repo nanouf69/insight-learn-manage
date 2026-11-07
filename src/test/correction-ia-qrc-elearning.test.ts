@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
-  admissibilite, cleIdempotence, estElearning, estPauseGlobale, messageUtilisateur, validerResultatIa,
+  admissibilite, cleIdempotence, estCompteTestApprenant, estElearning, estPauseGlobale, messageUtilisateur, questionsDuSnapshot, validerResultatIa,
   MARQUEUR_IA, MODELE_IA_QRC,
 } from "../../supabase/functions/_shared/qrcIaRegles";
 import { celluleCompacte } from "@/features/correction-qrc-v2/celluleCompacte";

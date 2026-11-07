@@ -11,8 +11,10 @@ export const LIBELLE_MODELE_IA_QRC = "Gemini 3.8 Flash";
 /** Marqueur d'origine écrit dans qrc_instances_v2.corrige_email. */
 export const MARQUEUR_IA = `ia:${MODELE_IA_QRC}`;
 
-/** Matières exclues : G(T) — Connaissance du territoire TAXI (corrigés insuffisants). */
-export const MATIERES_EXCLUES = new Set(["reglementation_taxi2"]);
+/**
+ * Aucune matière n'est exclue globalement : l'admissibilité est décidée pour
+ * chaque question figée, avec son propre énoncé, corrigé et barème.
+ */
 
 /** Même règle que isElearningType (src/lib/dossierFormation.ts). */
 export function estElearning(type?: string | null): boolean {
