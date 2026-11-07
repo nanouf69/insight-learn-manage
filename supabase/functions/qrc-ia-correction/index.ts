@@ -281,7 +281,7 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       if (error) throw error;
     };
     try {
-      const gateway = createOpenAICompatible({ name: "lovable", baseURL: "https://ai.gateway.lovable.dev/v1", headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" }, fetch: async (input, init) => {
+      const gateway = createOpenAICompatible({ name: "lovable", baseURL: Deno.env.get("QRC_IA_GATEWAY_BASE_URL") ?? "https://ai.gateway.lovable.dev/v1", headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" }, fetch: async (input, init) => {
         trace.requete_at ??= new Date().toISOString();
         const response = await fetch(input, init);
         runId = response.headers.get("X-Lovable-AIG-Run-ID");

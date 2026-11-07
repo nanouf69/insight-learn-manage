@@ -73,10 +73,11 @@ describe("Correction IA — validation du résultat", () => {
     expect(validerResultatIa({ note: -0.5, justification: "x" }, 2)).toEqual({ valide: false, motif: "hors_bareme" });
     expect(validerResultatIa({ note: 1.25, justification: "x" }, 2)).toEqual({ valide: false, motif: "hors_bareme" });
   });
-  it("résultat invalide → refus (jamais de note inventée)", () => {
+  it("résultat invalide ou ambigu → refus (jamais de note inventée)", () => {
     expect(validerResultatIa("pas du json", 2)).toMatchObject({ valide: false });
     expect(validerResultatIa({ note: "beaucoup", justification: "x" }, 2)).toMatchObject({ valide: false });
     expect(validerResultatIa({ note: 1 }, 2)).toMatchObject({ valide: false });
+    expect(validerResultatIa({ note: 1, justification: "doute", ambigu: true }, 2)).toEqual({ valide: false, motif: "reponse_ou_corrige_ambigu" });
   });
   it("accepte un JSON entouré de texte", () => {
     expect(validerResultatIa('```json\n{"note": 1.5, "justification": "Bien"}\n```', 2)).toEqual({ valide: true, note: 1.5, justification: "Bien" });
@@ -84,6 +85,21 @@ describe("Correction IA — validation du résultat", () => {
 });
 
 describe("Correction IA — anonymat et source de vérité", () => {
+  it("snapshot historique : matière récupérée depuis matieres[].subject_id sans contenu actuel", () => {
+    const questions = questionsDuSnapshot({
+      matieres: [{ subject_id: "reglementation_taxi2", questions: [{ id: "1", type: "QRC", enonce: "Citez 4 musées de Lyon.", reponseQRC: "Beaux-Arts. Confluences. Imprimerie. Lugdunum.", points: 4 }] }],
+    });
+    expect(questions).toHaveLength(1);
+    expect(questions[0].matiere).toBe("reglementation_taxi2");
+    expect(admissibilite(questions[0], "Beaux-Arts, Confluences, Imprimerie, Lugdunum")).toEqual({ admissible: true, bareme: 4 });
+    expect(questionsDuSnapshot({ matieres: [{ subject_id: "reglementation_taxi2" }], questions: [{ ...q(), matiere: undefined }] })[0].matiere).toBe("reglementation_taxi2");
+  });
+  it("FICTIF/DÉMO/TEST TECHNIQUE sont refusés même sans flag technique", () => {
+    for (const app of [{ prenom: "ESSAI IA", nom: "FICTIF" }, { prenom: "Compte", nom: "Démo" }, { prenom: "TEST", nom: "TECHNIQUE" }, { email: "test.technique@example.invalid" }]) {
+      expect(estCompteTestApprenant(app)).toBe(true);
+    }
+    expect(estCompteTestApprenant({ prenom: "David", nom: "FERREIRA" })).toBe(false);
+  });
   it("l'IA ne reçoit que question + corrigé + barème + réponse", () => {
     const m = messageUtilisateur(q(), 2, "B2 vierge");
     expect(m).toContain("Qu'est-ce que l'honorabilité");

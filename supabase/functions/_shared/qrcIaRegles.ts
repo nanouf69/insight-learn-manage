@@ -100,13 +100,20 @@ export function admissibilite(q: QuestionSnapshot | null | undefined, reponse: u
   if ((q.type ?? "") !== "QRC") return { admissible: false, statut: "a_verifier", motif: "type_non_qrc" };
   const matiere = (q.matiere ?? "").trim().toLowerCase();
   if (!matiere) return { admissible: false, statut: "a_verifier", motif: "matiere_inconnue" };
-  if (MATIERES_EXCLUES.has(matiere)) return { admissible: false, statut: "exclue", motif: "matiere_exclue_gt" };
   const rep = texteReponse(reponse).trim();
   if (!rep) return { admissible: false, statut: "exclue", motif: "reponse_vide" };
   const enonce = (q.enonce ?? "").trim();
   const corrige = (q.reponseQRC ?? "").trim();
   if (enonce.length < 5) return { admissible: false, statut: "a_verifier", motif: "question_absente" };
-  if (corrige.length < 3) return { admissible: false, statut: "a_verifier", motif: "corrige_absent" };
+  if (corrige.length < 3 || corrige.endsWith("?") || corrige.toLocaleLowerCase("fr") === enonce.toLocaleLowerCase("fr")) {
+    return { admissible: false, statut: "a_verifier", motif: "corrige_absent" };
+  }
+  // Un calcul dont le dernier terme est seulement « + supplément bagages » ne
+  // contient pas la donnée nécessaire à une note complète : revue formateur.
+  const dernierTerme = corrige.split("+").pop() ?? "";
+  if (/\b(calculez|calculer|montant)\b/i.test(enonce) && corrige.includes("+") && !/\d/.test(dernierTerme)) {
+    return { admissible: false, statut: "a_verifier", motif: "corrige_incomplet_calcul" };
+  }
   const bareme = Number(q.points);
   if (q.points == null || q.points === "" || !Number.isFinite(bareme) || bareme <= 0 || bareme > 20 || (bareme * 2) % 1 !== 0) {
     return { admissible: false, statut: "a_verifier", motif: "bareme_absent" };
@@ -130,6 +137,7 @@ export function validerResultatIa(brut: unknown, bareme: number): ResultatIa {
     try { obj = JSON.parse(m[0]); } catch { return { valide: false, motif: "resultat_invalide" }; }
   }
   if (!obj || typeof obj !== "object") return { valide: false, motif: "resultat_invalide" };
+  if (obj.ambigu === true) return { valide: false, motif: "reponse_ou_corrige_ambigu" };
   const raw = obj.note;
   const note = typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() !== "" ? Number(raw.replace(",", ".")) : NaN;
   if (!Number.isFinite(note)) return { valide: false, motif: "resultat_invalide" };
