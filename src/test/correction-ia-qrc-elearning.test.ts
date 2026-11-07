@@ -39,7 +39,16 @@ describe("Correction IA QRC e-learning — périmètre", () => {
 
 describe("Correction IA — règles d'exclusion déterministes", () => {
   it("cas admissible", () => expect(admissibilite(q(), "B2 vierge")).toEqual({ admissible: true, bareme: 2 }));
-  it("G(T) → aucun appel IA", () => expect(admissibilite(q({ matiere: "reglementation_taxi2" }), "x y z")).toMatchObject({ admissible: false, motif: "matiere_exclue_gt" }));
+  it("G(T) valide → admissible question par question, jamais d'exclusion globale", () => expect(admissibilite(q({ matiere: "reglementation_taxi2" }), "x y z")).toEqual({ admissible: true, bareme: 2 }));
+  it("G(T) avec corrigé de calcul incomplet → revue, aucune note arbitraire", () => {
+    const decision = admissibilite(q({
+      matiere: "reglementation_taxi2",
+      enonce: "Ces clients ont 15 bagages. Calculez le montant de la prise en charge.",
+      reponseQRC: "Prise en charge = 3 € + supplément passagers (4 × 4 € = 16 €) + supplément bagages.",
+      points: 4,
+    }), "J'additionne les suppléments");
+    expect(decision).toMatchObject({ admissible: false, statut: "a_verifier", motif: "corrige_incomplet_calcul" });
+  });
   it("réponse vide → aucun appel IA", () => {
     expect(admissibilite(q(), "   ")).toMatchObject({ admissible: false, motif: "reponse_vide" });
     expect(admissibilite(q(), null)).toMatchObject({ admissible: false, motif: "reponse_vide" });

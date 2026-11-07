@@ -34,6 +34,12 @@ export function estApprenantElearning(type?: string | null, modalite?: string | 
   return estElearning(type);
 }
 
+/** Filet de sécurité complémentaire aux indicateurs techniques, jamais une formation. */
+export function estCompteTestApprenant(app?: { nom?: string | null; prenom?: string | null; email?: string | null } | null): boolean {
+  const identite = `${app?.prenom ?? ""} ${app?.nom ?? ""} ${app?.email ?? ""}`.toLowerCase();
+  return /fictif|d[ée]mo|test[ _-]?technique|compte[ _-]?test|essai[ _-]?ia/.test(identite);
+}
+
 export const texteReponse = (v: unknown): string =>
   typeof v === "string" ? v : v == null ? "" : typeof v === "number" ? String(v) : JSON.stringify(v);
 
@@ -46,6 +52,38 @@ export type QuestionSnapshot = {
   matiere?: string | null;
   motsCles?: unknown;
 };
+
+type SnapshotExamen = { questions?: unknown; matiere?: unknown; matieres?: unknown };
+
+/**
+ * Lit uniquement le snapshot. Les passages historiques peuvent ranger leurs
+ * questions dans matieres[] et leur matière dans subject_id/matiereId.
+ */
+export function questionsDuSnapshot(snapshot: SnapshotExamen | null | undefined): QuestionSnapshot[] {
+  if (!snapshot || typeof snapshot !== "object") return [];
+  const matiereRacine = typeof snapshot.matiere === "string" ? snapshot.matiere : "";
+  const matieres = Array.isArray(snapshot.matieres) ? snapshot.matieres : [];
+  const matiereUnique = matieres.length === 1 && matieres[0] && typeof matieres[0] === "object"
+    ? ["matiere", "matiereId", "subject_id", "id"].map((k) => (matieres[0] as Record<string, unknown>)[k]).find((v) => typeof v === "string" && v.trim())
+    : "";
+  const sortie: QuestionSnapshot[] = [];
+  const ajouter = (valeur: unknown, matiere: unknown) => {
+    if (!Array.isArray(valeur)) return;
+    for (const brut of valeur) {
+      if (!brut || typeof brut !== "object" || Array.isArray(brut)) continue;
+      const q = brut as QuestionSnapshot;
+      sortie.push({ ...q, matiere: q.matiere ?? (typeof matiere === "string" ? matiere : "") });
+    }
+  };
+  ajouter(snapshot.questions, matiereRacine || matiereUnique);
+  for (const brut of matieres) {
+    if (!brut || typeof brut !== "object" || Array.isArray(brut)) continue;
+    const m = brut as Record<string, unknown>;
+    const matiere = ["matiere", "matiereId", "subject_id", "id"].map((k) => m[k]).find((v) => typeof v === "string" && v.trim());
+    ajouter(m.questions, matiere ?? matiereRacine);
+  }
+  return sortie;
+}
 
 export type Admissibilite =
   | { admissible: true; bareme: number }

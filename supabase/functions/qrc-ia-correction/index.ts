@@ -144,11 +144,23 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       return json({ ok: true, statut: "passage_anterieur_activation" });
     }
 
-    // 3. E-learning uniquement
-    const { data: app } = await service.from("apprenants").select("type_apprenant, modalite_formation").eq("id", att.apprenant_id).maybeSingle();
+    // 3. E-learning réel uniquement. Les passages archivés, réinitialisés ou
+    // neutralisés et tous les comptes de test restent hors correction payante.
+    const { data: app, error: appError } = await service.from("apprenants").select("type_apprenant, modalite_formation, nom, prenom, email, compte_cours_archive_at").eq("id", att.apprenant_id).maybeSingle();
+    if (appError) throw appError;
     if (!estApprenantElearning(app?.type_apprenant, app?.modalite_formation)) return json({ ok: true, statut: "non_elearning" });
+    if (app?.compte_cours_archive_at) return json({ ok: true, statut: "compte_archive_exclu" });
+    const { data: technique, error: techniqueError } = await service.from("comptes_test_techniques").select("apprenant_id").eq("apprenant_id", att.apprenant_id).maybeSingle();
+    if (techniqueError) throw techniqueError;
+    if (technique || estCompteTestApprenant(app)) return json({ ok: true, statut: "compte_test_exclu" });
+    const [{ data: neutralise, error: neutraliseError }, { data: resets, error: resetsError }] = await Promise.all([
+      service.from("core_tentatives_neutralisees").select("attempt_id").eq("attempt_id", attempt_id).maybeSingle(),
+      service.from("core_exam_resets").select("reset_id").contains("archived_attempt_ids", [attempt_id]).limit(1),
+    ]);
+    if (neutraliseError || resetsError) throw neutraliseError ?? resetsError;
+    if (neutralise || resets?.length) return json({ ok: true, statut: "passage_archive_ou_neutralise" });
 
-    const questions: QuestionSnapshot[] = Array.isArray(att.snapshot?.questions) ? att.snapshot.questions : [];
+    const questions: QuestionSnapshot[] = questionsDuSnapshot(att.snapshot);
     const { data: qrcs, error: lectureErreur } = await service.from("qrc_instances_v2")
       .select("qrc_instance_id, question_id, reponse, etat").eq("attempt_id", attempt_id).eq("etat", "en_attente");
     if (lectureErreur) throw lectureErreur;
@@ -207,7 +219,7 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       if (!q) { await finirSuite("a_verifier", "Question absente du snapshot", 60000, "question_absente"); return json({ ok: false, message: "Question absente" }, 400); }
       candidats.set(inst.qrc_instance_id, { inst, q, bareme: decision.bareme, base, cle });
       if (automatique) {
-        const { data: old, error: oldError } = await service.from("qrc_ia_corrections").select("statut,http_status,termine_at,created_at").eq("qrc_instance_id", inst.qrc_instance_id).maybeSingle();
+        const { data: old, error: oldError } = await service.from("qrc_ia_corrections").select("statut,motif,http_status,termine_at,created_at").eq("qrc_instance_id", inst.qrc_instance_id).maybeSingle();
         const { data: retries, error: retriesError } = await service.from("qrc_ia_reprises").select("statut,http_status,termine_at,created_at,numero").eq("qrc_instance_id", inst.qrc_instance_id).order("numero", { ascending: false }).limit(1);
         if (oldError || retriesError) throw oldError ?? retriesError;
         actions.push({ id: inst.qrc_instance_id, ...prochaineActionIa(retries?.[0] ?? old) });
