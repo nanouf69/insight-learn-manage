@@ -154,7 +154,8 @@ GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, p
                 length = int(self.headers.get("Content-Length", "0"))
                 body = self.rfile.read(length) if length else None
                 headers = {k: v for k, v in self.headers.items() if k.lower() not in ("host", "content-length", "connection")}
-                req = Request(f"http://127.0.0.1:{integration.rest_port}{self.path}", data=body, headers=headers, method=self.command)
+                chemin_rest = self.path[len("/rest/v1"):] if self.path.startswith("/rest/v1/") else self.path
+                req = Request(f"http://127.0.0.1:{integration.rest_port}{chemin_rest}", data=body, headers=headers, method=self.command)
                 try:
                     res = urlopen(req)
                 except HTTPError as exc:
