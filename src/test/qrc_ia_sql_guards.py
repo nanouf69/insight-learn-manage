@@ -17,7 +17,10 @@ DATA = TEMP + '/data'
 PORT = '55439'
 
 def sql(query):
-    return subprocess.check_output(['psql', '-X', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
+    try:
+        return subprocess.check_output(['psql', '-X', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(exc.output) from exc
 
 class Guards(unittest.TestCase):
     def setUp(self):
