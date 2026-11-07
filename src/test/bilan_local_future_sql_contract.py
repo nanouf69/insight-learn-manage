@@ -65,7 +65,7 @@ try:
         # Avant : la faille est bien reproductible, pas seulement déduite du SQL.
         assert sql("SET ROLE authenticated; SELECT count(*) FROM bilan_snapshot_flags") == '2'
         sql((ROOT / 'docs/sql-revue/2026-11-07-rls-configuration-admin.sql').read_text())
-        for table, expected in [('bilan_future_opening','1'),('bilan_identite_flags','2'),('bilan_snapshot_flags','2'),('module_regles_validation','1')]:
+        for table, expected in [('bilan_future_opening','1'),('bilan_identite_flags','1'),('bilan_snapshot_flags','2'),('module_regles_validation','1')]:
             try:
                 sql(f"SET ROLE anon; SELECT count(*) FROM {table}")
                 raise AssertionError('anonymous configuration read accepted: '+table)
