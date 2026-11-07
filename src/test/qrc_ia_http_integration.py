@@ -148,10 +148,10 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
     def setUp(self):
         self.provider_prompts.clear()
 
-    def passage(self, reponses=("Réponse un", "Réponse deux"), type_app="taxi-e", nom="FERREIRA", prenom="David", anciennes=True, corrige=None, historique=False):
+    def passage(self, reponses=("Réponse un", "Réponse deux"), type_app="taxi-e", nom="FERREIRA", prenom="David", anciennes=True, corrige=None, enonce=None, historique=False):
         attempt, exam = str(uuid.uuid4()), "EB3-TAXI"
         qrc_ids = [str(uuid.uuid4()) for _ in reponses]
-        questions = [{"id": str(i + 1), "type": "QRC", "matiere": "reglementation_taxi2", "enonce": f"Citez 4 musées de Lyon, question {i + 1}.", "reponseQRC": corrige or "Beaux-Arts. Confluences. Imprimerie. Lugdunum.", "points": 4} for i in range(len(reponses))]
+        questions = [{"id": str(i + 1), "type": "QRC", "matiere": "reglementation_taxi2", "enonce": enonce or f"Citez 4 musées de Lyon, question {i + 1}.", "reponseQRC": corrige or "Beaux-Arts. Confluences. Imprimerie. Lugdunum.", "points": 4} for i in range(len(reponses))]
         snapshot = {"matieres": [{"subject_id": "reglementation_taxi2"}], "questions": questions}
         if historique:
             snapshot = {"matieres": [{"subject_id": "reglementation_taxi2", "questions": questions}]}
@@ -194,7 +194,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
         self.assertEqual(self.pg.sql(f"SELECT count(*) FROM qrc_ia_corrections WHERE attempt_id='{attempt}' AND statut='exclue' AND motif='matiere_exclue_gt'"), "2")
 
     def test_corrige_incomplet_revue_sans_appel(self):
-        attempt, token, _ = self.passage(reponses=("Quinze bagages",), corrige="Prise en charge = 3 € + supplément passagers (4 × 4 € = 16 €) + supplément bagages.")
+        attempt, token, _ = self.passage(reponses=("Quinze bagages",), enonce="Ces clients ont 15 bagages. Calculez le montant de la prise en charge.", corrige="Prise en charge = 3 € + supplément passagers (4 × 4 € = 16 €) + supplément bagages.")
         result = self.appel(attempt, token)
         self.assertEqual(result["statut"], "revue")
         self.assertEqual(len(self.provider_prompts), 0)
