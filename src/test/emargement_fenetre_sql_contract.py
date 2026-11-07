@@ -23,6 +23,7 @@ class Contrat(unittest.TestCase):
   cls.sql('ALTER TABLE emargements_fc ADD UNIQUE(apprenant_id,date_emargement,demi_journee);')
   cls.sql(Path('drizzle/migrations/0215_attendance_early_window.sql').read_text())
   cls.sql(Path(os.environ.get('ATTENDANCE_MIGRATION','drizzle/migrations/0235_attendance_enrollment_rights.sql')).read_text())
+  cls.sql(Path('drizzle/migrations/0236_vtc_november_enrollment_attendance.sql').read_text())
   if os.environ.get('ATTENDANCE_OVERLAY'): cls.sql(Path(os.environ['ATTENDANCE_OVERLAY']).read_text())
  @classmethod
  def tearDownClass(cls):
