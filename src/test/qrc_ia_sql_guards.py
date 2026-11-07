@@ -3,6 +3,7 @@ import concurrent.futures
 import os
 import pathlib
 import subprocess
+import sys
 import tempfile
 import unittest
 
