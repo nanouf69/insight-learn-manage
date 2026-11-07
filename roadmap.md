@@ -1174,3 +1174,10 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] 22P05 : codec inactif, originaux préservés, lecteurs non marqués inchangés ; prototype SQL lossless PASS.
 - [x] Sécurité : brouillon identité session/role vérifiée, refus par défaut, matrice SQL isolée PASS ; non appliqué.
 - [x] Rapport fichiers/tests/limites ; 53 tests ciblés + 2 contrats SQL PASS ; aucune publication, migration, donnée réelle ou appel payant.
+
+## 07/11 14:12 UTC — Lever les quatre alertes RLS puis publication conditionnelle
+- [ ] Identifier les quatre alertes, leurs politiques/droits réels et tous leurs appelants légitimes.
+- [ ] Préparer et valider sur PostgreSQL jetable les corrections minimales, avec matrice anonyme/propriétaire/autre élève/admin/service/tâches internes.
+- [ ] Sauvegarder définitions et droits, appliquer progressivement sans donnée/backfill, puis relire et comparer les empreintes.
+- [ ] Relancer le scan, vérifier tests/build et le diff global publiable sans embarquer de changement non validé.
+- [ ] Publier seulement si toutes les conditions sont réunies ; contrôler la version servie sans écriture élève.
