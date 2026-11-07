@@ -43,9 +43,10 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
               size="sm"
               onClick={onGoBack}
               className="gap-1.5 shrink-0"
+              aria-label="Précédent"
             >
               <ArrowLeft className="w-4 h-4" />
-              Précédent
+              <span className="hidden sm:inline">Précédent</span>
             </Button>
           )}
           <div className="min-w-0">
