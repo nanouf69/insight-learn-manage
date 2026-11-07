@@ -166,6 +166,9 @@ def build(db, schema_sql, migration=None):
             print('ÉCHEC CANDIDAT — fin de la sortie PostgreSQL :\n' + e.output[-6000:])
             raise
         print(f'[{db}] candidat appliqué')
+    if migration and os.environ.get('RLS_CONFIG_CANDIDATE'):
+        sql((ROOT / 'docs/sql-revue/2026-11-07-rls-configuration-admin.sql').read_text(), db)
+        print(f'[{db}] restrictions RLS configuration appliquées')
     sql(f"""INSERT INTO apprenants(id,auth_user_id,type_apprenant,formation_choisie) VALUES
       ('{A}','{U}','vtc-e','vtc-elearning'),('{A2}','{U2}','taxi-e','taxi-elearning'),
       ('{A3}','{U3}','ta-e','ta-elearning'),('{A4}','{U4}','va-e','va-elearning'),('{ISMAIL}','{UI}',NULL,NULL);

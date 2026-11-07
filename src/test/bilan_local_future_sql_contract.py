@@ -46,7 +46,7 @@ try:
     sql(SQL_FILE.read_text())
     if os.environ.get('RLS_CONFIG_CANDIDATE'):
         sql("""
-        CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+        CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
         CREATE TABLE bilan_future_opening(id int, open_to_new boolean);
         CREATE TABLE module_regles_validation(module_id int);
         INSERT INTO bilan_future_opening VALUES(1,false);
@@ -129,6 +129,9 @@ try:
         uid = saved['exercices'][0]['questions'][0].get('uid')
         assert uid and sql(f"SELECT count(*) FROM bilan_question_identites WHERE uid='{uid}' AND module_id=11 AND exercice_id=699") == '1'
         print('PASS: internal identity trigger still reads its flag and assigns a permanent ID')
+        sql((ROOT / 'docs/sql-revue/2026-11-07-rls-configuration-admin-RETOUR-ARRIERE.sql').read_text())
+        assert sql("SET ROLE authenticated; SET test.admin='0'; SELECT count(*) FROM bilan_snapshot_flags") == '2'
+        print('PASS: targeted rollback restores the exact prior read behavior')
 finally:
     if started:
         subprocess.run(USER + ['pg_ctl','-D',TEMP+'/data','-m','fast','-w','stop'], check=True, stdout=subprocess.DEVNULL)
