@@ -1189,3 +1189,11 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Appliquer uniquement la migration additive de reprise des exclusions `matiere_exclue_gt`, puis déployer `qrc-ia-correction`.
 - [ ] Reprendre les 24 QRC réelles ciblées : 22 admissibles, 2 calculs bagages incomplets en revue ; FICTIF et 6 déjà corrigées exclus ; plafond 20 € intact.
 - [ ] Relire corrections, revues, exclusions, notes définitives et affichage ; aucun mail/SMS, contenu, réponse ou historique modifié.
+
+## 07/11 21:03 UTC — Corrections ciblées autorisées
+- [ ] Export 07/11 : identifier l'arrêt réel, contrôler charge/coût, réparer dans un répertoire indépendant sans toucher aux originaux ni provoquer de rotation ; vérifier manifeste et restauration jetable seulement.
+- [ ] Émargements : expliquer les 216 dates sans image par preuve/provenance ; contrôler les créneaux réels et dossiers liés, corriger seulement un défaut démontré, tester les PDF sans altérer les signatures.
+- [ ] CMA : vérifier rattachements/lignes existantes des quatre attentes, améliorer les noms composés sans fusion floue ; tester import/agenda/fiche et idempotence sur fixtures.
+- [ ] Paiements : vérifier Payé/Reste et la déduplication par identité de virement/liaison ; corriger le calcul seulement si fautif, sans écrire de donnée comptable.
+- [ ] Synchro : contrôler Q40/Q41/Q49 et comparer les 210 liens sécurité en lecture seule ; corriger le mécanisme uniquement sur reproduction, sans modifier les contenus.
+- [ ] Tests isolés, empreintes avant/après, déploiements strictement nécessaires et rapport des limites/coûts réels.
