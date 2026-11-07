@@ -98,7 +98,7 @@ CREATE TABLE public.reponses_apprenants_journal (id uuid DEFAULT gen_random_uuid
 INSERT INTO public.apprenants VALUES ('{APP}', '{UID}');
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, public.reponses_apprenants_journal TO service_role;
-""" + V2 + V3 + "GRANT EXECUTE ON FUNCTION public.persist_answer_batch_v2(uuid,uuid,integer,text,text,jsonb,boolean,numeric,bigint,jsonb) TO service_role;")
+""" + V2 + ";\n" + V3 + "GRANT EXECUTE ON FUNCTION public.persist_answer_batch_v2(uuid,uuid,integer,text,text,jsonb,boolean,numeric,bigint,jsonb) TO service_role;")
 
         cls.rest_port, cls.proxy_port = port_libre(), port_libre()
         cls.service_jwt = jwt_service()
