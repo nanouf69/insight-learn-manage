@@ -51,11 +51,15 @@ def restaurer(dossier, schema_sql, cible, pks=None):
     manifeste = json.loads(manifeste_f.read_text())
     if manifeste.get('erreurs'):
         rapport['erreurs'].append('manifeste avec erreurs')
+    tables = manifeste.get('table_names')
+    if not isinstance(tables, list) or not tables or any(not isinstance(t, str) or not t for t in tables):
+        rapport['erreurs'].append('table_names absent ou vide : aucune restauration ne peut être certifiée')
+        return rapport
     code, out = _psql(cible, schema_sql)
     if code:
         rapport['erreurs'].append(f'schéma refusé : {out[-300:]}')
         return rapport
-    for table in manifeste.get('table_names', []):
+    for table in tables:
         parts = sorted((dossier / table).glob('part-*.json')) if (dossier / table).exists() else []
         attendu = manifeste.get('comptes', {}).get(table)
         lignes = 0
