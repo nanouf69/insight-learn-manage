@@ -106,7 +106,7 @@ class OriginauxExacts(unittest.TestCase):
         l1 = lot({"1": "Réponse é😀 normale", "2": NUL_TXT, "3": ["A", "C"]}, [e1, e2])
         # v2 inchangée : refuse toujours tout le lot (reproduction 22P05), rien d'écrit.
         rc, out = self.pg.sql(CALL2 % lit(json.dumps(l1)))
-        self.assertIn('22P05', self.pg.sql("SELECT 1")[1] + out if rc else 'pas de refus')
+        self.assertNotEqual(rc, 0); self.assertIn('unsupported Unicode escape sequence', out)
         self.assertEqual(self.pg.sql(f"SELECT count(*) FROM public.reponses_apprenants WHERE exercice_id='{EX}'")[1], '0')
 
         rc, out = self.appel3(l1)
