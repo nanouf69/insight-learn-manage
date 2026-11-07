@@ -1176,8 +1176,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Rapport fichiers/tests/limites ; 53 tests ciblés + 2 contrats SQL PASS ; aucune publication, migration, donnée réelle ou appel payant.
 
 ## 07/11 14:12 UTC — Lever les quatre alertes RLS puis publication conditionnelle
-- [ ] Identifier les quatre alertes, leurs politiques/droits réels et tous leurs appelants légitimes.
-- [ ] Préparer et valider sur PostgreSQL jetable les corrections minimales, avec matrice anonyme/propriétaire/autre élève/admin/service/tâches internes.
-- [ ] Sauvegarder définitions et droits, appliquer progressivement sans donnée/backfill, puis relire et comparer les empreintes.
-- [ ] Relancer le scan, vérifier tests/build et le diff global publiable sans embarquer de changement non validé.
-- [ ] Publier seulement si toutes les conditions sont réunies ; contrôler la version servie sans écriture élève.
+- [x] Quatre alertes et droits réels identifiés ; appelants légitimes vérifiés, aucune preuve d'exploitation.
+- [x] 0245 appliquée : lectures admin seules, anonymes refusés ; fonctions/EXECUTE inchangés ; retour arrière testé.
+- [x] Matrices jetables, Bilans/snapshots/trigger, validation modules ; 3 688 tests globaux, build et navigateur admin PASS.
+- [x] Scan frais : 0 erreur, 6 avertissements, 2 informations ; empreintes contenus/réponses/notes/tentatives/émargements identiques.
+- [x] Publication globale demandée sur commit `afda34b573528b93a9c136a26022ad12577545b8`.
+- [ ] Bascule frontend effective NON PROUVÉE : contrôle HTTP 200 mais ancienne version encore servie ; attente du déploiement programmé, sans nouvelle publication.
