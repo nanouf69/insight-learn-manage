@@ -46,7 +46,7 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
               aria-label="Précédent"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Précédent</span>
+              <span className="hidden lg:inline">Précédent</span>
             </Button>
           )}
           <div className="min-w-0">
