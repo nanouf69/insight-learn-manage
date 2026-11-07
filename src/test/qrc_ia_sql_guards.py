@@ -3,7 +3,6 @@ import concurrent.futures
 import os
 import pathlib
 import subprocess
-import sys
 import tempfile
 import unittest
 
@@ -18,11 +17,7 @@ DATA = TEMP + '/data'
 PORT = '55439'
 
 def sql(query):
-    try:
-        return subprocess.check_output(['psql', '-X', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
-    except subprocess.CalledProcessError as exc:
-        print(exc.output, file=sys.stderr)
-        raise
+    return subprocess.check_output(['psql', '-X', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', 'postgres', '-At', '-v', 'ON_ERROR_STOP=1', '-c', query], text=True, stderr=subprocess.STDOUT).strip()
 
 class Guards(unittest.TestCase):
     def setUp(self):
