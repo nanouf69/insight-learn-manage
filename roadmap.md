@@ -1133,6 +1133,7 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Tests fictifs de régression et contrôle de non-modification des données réelles ; aucune publication globale.
 
 ## 07/11 — Notes EB1 VTC soir 2–13 novembre
-- [ ] Audit lecture seule des 18 comptes, dernières matières actives et archives/reset, 59 faux pending et vrai pending.
-- [ ] Affichage source V2 immuable, indépendant des questions actuelles, sans écriture/recalcul.
-- [ ] Régressions sur données anonymisées des 18 comptes et contrôle mobile ; publication bloquée sans accord.
+- [x] Audit des 18 comptes : 119 matières actives, 118 définitives, 59 faux pending/13 élèves, une vraie attente (4 QRC).
+- [x] Affichage V2 par preuve unique réponses/QRC ; archives exclues, aucun recalcul ni écriture.
+- [x] Régressions anonymisées et 18 vues CRM élève consultées avec écritures bloquées.
+- [ ] Mobile élève autonome non prouvé (contrôle effectué dans CRM uniquement) ; publication bloquée sans accord/sécurité globale.
