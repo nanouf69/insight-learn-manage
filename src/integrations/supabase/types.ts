@@ -9539,6 +9539,11 @@ export type Database = {
         Args: { p_apprenant_id: string }
         Returns: boolean
       }
+      core_contexte_correction_autorise: { Args: never; Returns: boolean }
+      core_contexte_tentative_autorise: {
+        Args: { p_apprenant_id: string }
+        Returns: boolean
+      }
       core_correct_qrc: {
         Args: {
           p_commentaire?: string
@@ -9573,6 +9578,7 @@ export type Database = {
         }
         Returns: Json
       }
+      core_identite_api_verifiee: { Args: never; Returns: string }
       core_import_passage_finalise: {
         Args: { p_result_id: string }
         Returns: Json
