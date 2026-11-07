@@ -9,6 +9,11 @@
 -- éventuellement REVOKE EXECUTE sur v3. Ne jamais supprimer les colonnes : elles peuvent
 -- contenir les seuls originaux exacts.
 
+-- La migration est appliquée dans une transaction par l'outil de migration.
+-- Ne jamais attendre indéfiniment un verrou pendant les examens.
+SET LOCAL lock_timeout = '1500ms';
+SET LOCAL statement_timeout = '20s';
+
 ALTER TABLE public.reponses_apprenants
   ADD COLUMN IF NOT EXISTS originaux_exacts jsonb NOT NULL DEFAULT '{}'::jsonb;
 COMMENT ON COLUMN public.reponses_apprenants.originaux_exacts IS
