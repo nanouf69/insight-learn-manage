@@ -38,6 +38,8 @@ const BAIL_MS = 90_000;
 const RETENTION_JOURS = 30;
 const MAX_ECHECS = 3;
 const REPARATION_DOSSIER = "_reparation-1";
+// Réparation bornée du seul journal volumineux : moins d'appels, pages par clé inchangées.
+const PART_REPARATION: Record<string, number> = { reponses_apprenants_journal: 10_000 };
 
 type Preuve = { debut: number; fin?: number; mode: "cle" | "decalage"; dernier?: string | number | null };
 /** Avancement d'un export (journée principale ou réparation). Champs historiques conservés. */
@@ -58,10 +60,11 @@ const json = (b: unknown) => new Response(JSON.stringify(b), { headers: { ...cor
 const pkDe = (t: string) => TABLES.find(([n]) => n === t)?.[1] ?? "id";
 
 /** Avance d'UN paquet. Ne lève jamais pour une erreur de lecture : la position est conservée. */
-async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: string, up: (p: string, c: unknown) => Promise<unknown>): Promise<"avance" | "echec" | "abandon"> {
+async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: string, up: (p: string, c: unknown) => Promise<unknown>, partReparation?: number): Promise<"avance" | "echec" | "abandon"> {
   const t = tables[job.i];
   const pk = pkDe(t);
-  const [page, part] = TAILLES[t] ?? [PAGE, PART];
+  const [page, partDefaut] = TAILLES[t] ?? [PAGE, PART];
+  const part = partReparation ?? partDefaut;
   job.preuves ??= {};
   const pos = `${job.i}:${job.from}`;
   job.essais = job.pos === pos ? (job.essais ?? 0) + 1 : 1;
@@ -199,7 +202,7 @@ Deno.serve(async (req) => {
   if (etat?.termine) {
     const incomplet = (etat.erreurs?.length ?? 0) > 0;
     if (!incomplet) return json({ ok: true, deja_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", jour, version: etat.version ?? 1, tables: etat.table_names?.length ?? Object.keys(etat.comptes).length });
-    if (etat.reparation?.termine) return json({ ok: (etat.reparation.erreurs ?? []).length === 0, deja_repare: true, jour, erreurs: etat.reparation.erreurs });
+    if (etat.reparation?.termine) return json({ ok: (etat.reparation.erreurs ?? []).length === 0, deja_repare: true, jour, erreurs: etat.reparation.erreurs, comptes: etat.reparation.comptes, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false });
     if (!etat.reparation) {
       if (!reparer) return json({ ok: false, incomplet: true, jour, erreurs: etat.erreurs, action: "réparation sur demande explicite { jour, reparer: true }" });
       const aRefaire = [...new Set(etat.erreurs.map((e) => e.split(/[@:]/)[0]).filter((n) => TABLES.some(([t]) => t === n)))];
@@ -216,7 +219,7 @@ Deno.serve(async (req) => {
     if (r.i < tables.length) {
       etat.maj = new Date().toISOString();
       await up(`${jour}/_etat.json`, etat);
-      resultat = await exporterPaquet(sb, r, tables, `${jour}/${REPARATION_DOSSIER}`, up);
+      resultat = await exporterPaquet(sb, r, tables, `${jour}/${REPARATION_DOSSIER}`, up, tables[r.i] ? PART_REPARATION[tables[r.i]] : undefined);
     }
     if (r.i >= tables.length) {
       const manquantes = tables.filter((t) => !r.preuves?.[t] || r.preuves[t].mode !== "cle" || typeof r.preuves[t].fin !== "number");
@@ -235,7 +238,7 @@ Deno.serve(async (req) => {
       r.erreurs = erreurs;
       r.termine = true;
       await up(`${jour}/_etat.json`, etat);
-      return json({ ok: r.erreurs.length === 0, reexport_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", jour, erreurs: r.erreurs });
+      return json({ ok: r.erreurs.length === 0, reexport_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false, jour, erreurs: r.erreurs, comptes: r.comptes });
     }
     etat.maj = new Date().toISOString();
     await up(`${jour}/_etat.json`, etat);
