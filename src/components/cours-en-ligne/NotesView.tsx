@@ -164,6 +164,16 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         { event: '*', schema: 'public', table: 'apprenant_module_completion', filter: `apprenant_id=eq.${apprenantId}` },
         () => fetchAll()
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'core_exam_results', filter: `apprenant_id=eq.${apprenantId}` },
+        () => fetchAll()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'qrc_instances_v2', filter: `apprenant_id=eq.${apprenantId}` },
+        () => fetchAll()
+      )
       .subscribe();
 
     return () => {
