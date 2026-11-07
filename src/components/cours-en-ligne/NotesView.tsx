@@ -8,7 +8,7 @@ import { MODULES_DATA } from "./formations-data";
 import { isExamAttemptPublicationPending, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
-import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
+import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies } from "@/lib/noteExamenAffichee";
 
 interface QuizResult {
   id: string;
@@ -217,14 +217,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   // propre passage (QRC V2 + note persistée) : une matière encore à corriger
   // ne masque plus les notes définitives des autres matières du même examen.
   // Une ligne sans état fiable (lecture impossible) reste non publiée.
-  const pendingResultIds = useMemo(() => {
-    const ids = new Set<string>();
-    quizResults.forEach((row) => {
-      const etat = noteExamenAffichee(row).etat;
-      if (etat === "lecture_impossible" || isExamAttemptPublicationPending([row])) ids.add(row.id);
-    });
-    return ids;
-  }, [quizResults]);
+  const pendingResultIds = useMemo(() => idsResultatsNonPublies(quizResults), [quizResults]);
+  // Verrou commun conservé ligne par ligne : isExamAttemptPublicationPending([row]).
 
   const publishedQuizResults = useMemo(
     () => quizResults.filter((row) => !pendingResultIds.has(row.id)),

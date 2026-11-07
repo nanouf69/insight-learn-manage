@@ -1,5 +1,5 @@
 import { matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
-import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
+import { isQrcPendingCorrection, isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 import { MENTION_NOTE_RECALCULEE, verifierPassageV2, verifierContenuPassage, contenuFicheTronqueCompatible } from "@/lib/passagesV2NonFiables";
 import { nativeSnapshotSupportsResult } from "./nativeExamResultIdentity";
 
@@ -105,4 +105,19 @@ export function noteExamenAffichee(row: any): NoteAffichee {
   const n = noteAncienSur20(row);
   if (n == null) return { etat: "en_attente", note20: null, source: "ancien", mention };
   return { etat: "note", note20: n, source: "ancien", mention };
+}
+
+/**
+ * Lignes NON publiées d'un écran de notes : chaque matière est jugée seule,
+ * sur l'état serveur de son propre passage. Une matière à QRC encore non
+ * corrigée ne masque jamais la note définitive d'une autre matière du même
+ * examen ; une ligne sans état fiable (lecture impossible) reste masquée.
+ * Lecture seule.
+ */
+export function idsResultatsNonPublies(rows: Array<{ id: string } & Record<string, any>>): Set<string> {
+  const ids = new Set<string>();
+  for (const row of rows) {
+    if (noteExamenAffichee(row).etat === "lecture_impossible" || isExamAttemptPublicationPending([row])) ids.add(String(row.id));
+  }
+  return ids;
 }
