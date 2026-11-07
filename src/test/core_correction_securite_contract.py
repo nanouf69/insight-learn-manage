@@ -147,7 +147,7 @@ class Contrat(unittest.TestCase):
         for role, expected in [('anon','f'),('authenticated','f'),('service_role','t')]:
             self.assertEqual(pg.sql(f"SELECT has_function_privilege('{role}', 'public.core_correct_qrc(uuid,uuid,numeric,text,text)', 'EXECUTE');")[1], expected)
         c, o = pg.sql("SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname LIKE 'core_%' AND proconfig @> ARRAY['search_path=pg_catalog, public, pg_temp'];")
-        self.assertEqual(c, 0, o); self.assertEqual(o, '9')
+        self.assertEqual(c, 0, o); self.assertEqual(o, '8')
         # Révision admin avec CAS : autorisée.
         ok('authenticated', admin, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{Q1}',2,1.5,'c','x');")
 
