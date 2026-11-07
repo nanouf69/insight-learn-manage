@@ -1131,3 +1131,8 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Protéger en aperçu toute modification/ajout/suppression/réorganisation/clé/barème/corrigé pour les futures tentatives seules.
 - [ ] Signaler sans reconstruction les historiques dont le snapshot est insuffisant.
 - [ ] Tests fictifs de régression et contrôle de non-modification des données réelles ; aucune publication globale.
+
+## 07/11 — Notes EB1 VTC soir 2–13 novembre
+- [ ] Audit lecture seule des 18 comptes, dernières matières actives et archives/reset, 59 faux pending et vrai pending.
+- [ ] Affichage source V2 immuable, indépendant des questions actuelles, sans écriture/recalcul.
+- [ ] Régressions sur données anonymisées des 18 comptes et contrôle mobile ; publication bloquée sans accord.
