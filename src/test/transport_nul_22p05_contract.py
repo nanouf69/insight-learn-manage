@@ -9,6 +9,7 @@ serveur), puis vérifie :
      est identique octet pour octet à la saisie (réponses + journal) ;
   3. renvoi de la même opération : aucun doublon dans le journal ;
   4. export nocturne (lecture JSON des lignes) : décodage sans perte du même contenu.
+Prototype isolé NON ACTIVÉ : le marqueur manque dans le schéma/lecteurs réels.
 Aucune connexion à la base réelle. Usage : python3 src/test/transport_nul_22p05_contract.py
 """
 import json, os, pathlib, subprocess, tempfile, unittest, uuid
@@ -107,11 +108,20 @@ class Transport22P05(unittest.TestCase):
         self.assertEqual(rc, 0, out)
         res = json.loads(out)
         self.assertTrue(res['saved'])
+        # Preuve du blocage d'activation : RPC actuel ne conserve aucun marqueur.
+        meta = json.loads(self.pg.sql("SELECT reponses_meta::text FROM public.reponses_apprenants")[1])
+        self.assertNotIn('transport_encodage', json.dumps(meta))
+        # Prototype de schéma uniquement sur base jetable : marqueur PAR VALEUR,
+        # séparé des données (pas de backfill d'anciennes réponses).
+        rc, out = self.pg.sql("ALTER TABLE public.reponses_apprenants ADD COLUMN encodages_par_question jsonb NOT NULL DEFAULT '{}'; ALTER TABLE public.reponses_apprenants_journal ADD COLUMN transport_encodage text;")
+        self.assertEqual(rc, 0, out)
+        rc, out = self.pg.sql("UPDATE public.reponses_apprenants SET encodages_par_question = '{\"1\":\"nul-u2400-v1\",\"2\":\"nul-u2400-v1\"}'; UPDATE public.reponses_apprenants_journal SET transport_encodage = 'nul-u2400-v1';")
+        self.assertEqual(rc, 0, out)
         stockees = self.pg.sql("SELECT reponses::text FROM public.reponses_apprenants")[1]
-        decode = json.loads(js(f"process.stdout.write(JSON.stringify(T.decoderTransport({stockees})))"))
+        decode = json.loads(js(f"process.stdout.write(JSON.stringify(T.decoderValeurMarquee({stockees}, T.TRANSPORT_ENCODAGE)))"))
         self.assertEqual(decode, SAISIE['p_reponses'])
         journal = self.pg.sql("SELECT json_agg(valeur ORDER BY client_saved_at)::text FROM public.reponses_apprenants_journal")[1]
-        jdec = json.loads(js(f"process.stdout.write(JSON.stringify(T.decoderTransport({journal})))"))
+        jdec = json.loads(js(f"process.stdout.write(JSON.stringify(T.decoderValeurMarquee({journal}, T.TRANSPORT_ENCODAGE)))"))
         self.assertEqual(jdec, [e['valeur'] for e in SAISIE['p_events']])
 
         # 3. Renvoi identique (réseau coupé après écriture) : aucun doublon dans le journal.
@@ -121,8 +131,12 @@ class Transport22P05(unittest.TestCase):
 
         # 4. Export nocturne : lignes lues en JSON (comme l'API) puis décodées sans perte.
         export = self.pg.sql("SELECT json_agg(to_jsonb(r) ORDER BY id)::text FROM public.reponses_apprenants r")[1]
-        lignes = json.loads(js(f"process.stdout.write(JSON.stringify(T.decoderTransport({export})))"))
+        lignes = json.loads(js(f"const rows = {export}; process.stdout.write(JSON.stringify(rows.map(r => ({{...r, reponses:Object.fromEntries(Object.entries(r.reponses).map(([k,v])=>[k,T.decoderValeurMarquee(v,r.encodages_par_question[k])]))}}))))"))
         self.assertEqual(lignes[0]['reponses'], SAISIE['p_reponses'])
+        # Une ancienne réponse non marquée est strictement préservée.
+        literal = '␀␀ et ␀\u034f'
+        decoded = json.loads(js(f"process.stdout.write(JSON.stringify(T.decoderValeurMarquee({json.dumps(literal)}, null)))"))
+        self.assertEqual(decoded, literal)
 
 
 if __name__ == '__main__':

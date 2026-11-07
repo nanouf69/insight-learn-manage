@@ -7,7 +7,7 @@ import { expect, it, vi } from 'vitest';
 import { statutEchecPersistance, traceSauvegarde } from '../../supabase/functions/upsert-reponse-apprenant/diagnostic';
 import * as transportSansNul from '../../supabase/functions/upsert-reponse-apprenant/transportSansNul';
 
-async function invoke(code?: string, authenticated = true) {
+async function invoke(code?: string, authenticated = true, encoding?: string) {
   let handler: ((req: Request) => Promise<Response>) | undefined;
   const rpc = vi.fn().mockResolvedValue({ data: code ? null : [{ saved: true, stored_write_seq: 3, frozen: false }], error: code ? { code, message: 'Test error', details: 'must never be returned' } : null });
   const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { id: 'learner', auth_user_id: 'owner' }, error: null }) };
@@ -23,7 +23,7 @@ async function invoke(code?: string, authenticated = true) {
     Deno: { env: { get: () => 'fictitious' }, serve: (fn: typeof handler) => { handler = fn; } },
   });
   if (!handler) throw new Error('Handler absent');
-  const response = await handler(new Request('https://fictitious.invalid', { method: 'POST', headers: { Authorization: 'Bearer fictitious' }, body: JSON.stringify({ operation_id: 'EB2__fictitious_operation', apprenant_id: '11111111-1111-4111-8111-111111111111', exercice_id: 'EB2__fictitious', exercice_type: 'examen_blanc', reponses: { q1: 'fictitious-only' } }) }));
+  const response = await handler(new Request('https://fictitious.invalid', { method: 'POST', headers: { Authorization: 'Bearer fictitious' }, body: JSON.stringify({ operation_id: 'EB2__fictitious_operation', apprenant_id: '11111111-1111-4111-8111-111111111111', exercice_id: 'EB2__fictitious', exercice_type: 'examen_blanc', reponses: { q1: 'fictitious-only' }, transport_encodage: encoding }) }));
   return { response, body: await response.json(), rpc };
 }
 it('400 contraint : un seul appel et identifiant de diagnostic, aucune confirmation inventée', async () => {
@@ -44,4 +44,11 @@ it('une confirmation serveur réussie n’est publiée qu’une fois par invocat
   const result = await invoke();
   expect(result.response.status).toBe(200); expect(result.body).toMatchObject({ success: true, confirmed: true, write_seq: 3 });
   expect(result.rpc).toHaveBeenCalledTimes(1);
+});
+it('transport marqué non activé : refus avant RPC, aucun faux ACK', async () => {
+  const result = await invoke(undefined, true, 'nul-u2400-v1');
+  expect(result.response.status).toBe(409);
+  expect(result.body.code).toBe('ENCODAGE_NON_ACTIVE');
+  expect(result.rpc).not.toHaveBeenCalled();
+  expect(result.body.confirmed).toBeUndefined();
 });
