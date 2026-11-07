@@ -168,7 +168,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
         conn = http.client.HTTPConnection("127.0.0.1", 8000, timeout=45)
         conn.request("POST", "/", body=json.dumps({"attempt_id": attempt, "suite_token": token}), headers={"Content-Type": "application/json"})
         res = conn.getresponse(); data = json.loads(res.read().decode()); conn.close()
-        if res.status >= 500: raise AssertionError(data)
+        if res.status >= 500 or data.get("message") == "Paramètres de correction invalides": raise AssertionError({"attempt": attempt, "token": token, "reponse": data})
         return data
 
     def relancer(self, attempt, token):
