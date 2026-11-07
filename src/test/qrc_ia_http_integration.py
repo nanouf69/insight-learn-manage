@@ -155,7 +155,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
             snapshot = {"matieres": [{"subject_id": "reglementation_taxi2", "questions": questions}]}
             # core_note_attempt lit le snapshot racine : on conserve aussi la projection figée d'origine.
             snapshot["questions"] = questions
-        self.pg.sql(f"INSERT INTO apprenants VALUES('{APP}','{type_app}',NULL,'{nom}','{prenom}',NULL,NULL); INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,snapshot,etat,finished_at,is_test) SELECT '{attempt}','{APP}','{exam}','{json.dumps(snapshot, ensure_ascii=False)}'::jsonb,'terminee',now(),false WHERE NOT EXISTS(SELECT 1 FROM exam_attempts_v2 WHERE attempt_id='{attempt}');")
+        self.pg.sql(f"INSERT INTO apprenants VALUES('{APP}','{type_app}',NULL,'{nom}','{prenom}',NULL,NULL) ON CONFLICT (id) DO UPDATE SET type_apprenant=EXCLUDED.type_apprenant,nom=EXCLUDED.nom,prenom=EXCLUDED.prenom; INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,snapshot,etat,finished_at,is_test) SELECT '{attempt}','{APP}','{exam}','{json.dumps(snapshot, ensure_ascii=False)}'::jsonb,'terminee',now(),false WHERE NOT EXISTS(SELECT 1 FROM exam_attempts_v2 WHERE attempt_id='{attempt}');")
         for i, (qid, reponse) in enumerate(zip(qrc_ids, reponses)):
             self.pg.sql(f"INSERT INTO qrc_instances_v2(qrc_instance_id,attempt_id,apprenant_id,question_id,reponse,etat) VALUES('{qid}','{attempt}','{APP}','{i+1}','{json.dumps(reponse, ensure_ascii=False)}'::jsonb,'en_attente');")
             if anciennes:
@@ -202,7 +202,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
     def test_ambigu_ia_refuse_sans_publication(self):
         attempt, token, _ = self.passage(reponses=("AMBIGU_TEST",))
         result = self.appel(attempt, token)
-        self.assertEqual(result["statut"], "attendre")
+        self.assertEqual(result["message"], "reponse_ou_corrige_ambigu")
         self.assertEqual(len(self.provider_prompts), 1)
         self.assertEqual(self.pg.sql(f"SELECT etat FROM qrc_instances_v2 WHERE attempt_id='{attempt}'"), "en_attente")
         self.assertEqual(self.pg.sql(f"SELECT statut FROM qrc_ia_reprises r JOIN qrc_instances_v2 q ON q.qrc_instance_id=r.qrc_instance_id WHERE q.attempt_id='{attempt}'"), "a_verifier")
