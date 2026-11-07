@@ -8,7 +8,7 @@ import { MODULES_DATA } from "./formations-data";
 import { isExamAttemptPublicationPending, computeReussiForResult, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
-import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies } from "@/lib/noteExamenAffichee";
+import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies, verdictMatiereAffiche } from "@/lib/noteExamenAffichee";
 
 interface QuizResult {
   id: string;
@@ -687,7 +687,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                             // Statut calculé avec la MÊME règle que le résultat
                             // définitif (barème + seuil éliminatoire), jamais le
                             // champ brut enregistré.
-                            const admis = computeReussiForResult(r as any) ?? false;
+                            const admis = verdictMatiereAffiche(r) ?? false;
                             return (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${admis ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                                 {admis ? "✅ Réussi" : "❌ Échoué"}
@@ -724,7 +724,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             .map(([quizId, results]) => {
               const failed = results.filter(r => {
                 // Tant qu'une QRC reste à corriger : aucun statut définitif.
-                const admis = computeReussiForResult(r as any);
+                const admis = verdictMatiereAffiche(r);
                 if (admis === null) return false;
                 const note = normalizeQuizNoteSur20(r);
                 return note != null && (!admis || note < 10);
