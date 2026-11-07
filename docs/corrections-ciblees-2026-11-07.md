@@ -29,7 +29,7 @@
 - Le nouvel ajout explicite depuis un virement conserve son identifiant ; une modification du montant/date empêche la liaison. Un virement lié à un autre dossier est exclu du calcul de la session courante. Deux vrais virements égaux avec deux identifiants restent additionnés.
 - Un paiement existant de 200 € correspond exactement à un virement de même date ; il restait déjà dédupliqué par le repli historique.
 - Tests : 14 Vitest et un contrat PostgreSQL jetable (dates différentes, virements égaux, refus de double liaison dans un autre dossier) réussis.
-- Publication frontend demandée ; la bascule effective reste à confirmer au dernier contrôle HTTP.
+- Publication frontend confirmée à 21:18 UTC sur `insight-learn-manage.lovable.app` et `gestion.ftransport.fr` : paquet `index-Dl3wEx4I.js`, SHA-256 `7a6251ce909e45eceebac962ddde67428af48034d6c8cf97c5f276a2c14c5a6e`, contenant la liaison `transaction_bancaire_id`.
 
 ## 5. Synchronisation des questions
 
@@ -50,4 +50,3 @@
 
 1. Rattachement MESBAHI : session administrateur habilitée indispensable ; les trois autres lignes exigent un choix humain ou une fiche supplémentaire.
 2. Restauration du réexport réel non exécutée ; seule la restauration fictive sur base jetable est prouvée.
-3. Publication frontend programmée mais non confirmée tant que l’ancien paquet JavaScript est encore servi.
