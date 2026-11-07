@@ -5,6 +5,7 @@ import { webcrypto } from 'node:crypto';
 import { transformSync } from 'esbuild';
 import { expect, it, vi } from 'vitest';
 import { statutEchecPersistance, traceSauvegarde } from '../../supabase/functions/upsert-reponse-apprenant/diagnostic';
+import * as transportSansNul from '../../supabase/functions/upsert-reponse-apprenant/transportSansNul';
 
 async function invoke(code?: string, authenticated = true) {
   let handler: ((req: Request) => Promise<Response>) | undefined;
@@ -13,10 +14,11 @@ async function invoke(code?: string, authenticated = true) {
   const source = readFileSync('supabase/functions/upsert-reponse-apprenant/index.ts', 'utf8')
     .replace('import { createClient } from "npm:@supabase/supabase-js@2";', 'const createClient = globalThis.client;')
     .replace("import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';", 'const corsHeaders = {"Access-Control-Allow-Origin":"*"};')
-    .replace("import { statutEchecPersistance, traceSauvegarde } from './diagnostic.ts';", 'const {statutEchecPersistance,traceSauvegarde} = globalThis.diagnostic;');
+    .replace("import { statutEchecPersistance, traceSauvegarde } from './diagnostic.ts';", 'const {statutEchecPersistance,traceSauvegarde} = globalThis.diagnostic;')
+    .replace("import { contientNul, encoderTransport, TRANSPORT_ENCODAGE } from './transportSansNul.ts';", 'const {contientNul,encoderTransport,TRANSPORT_ENCODAGE} = globalThis.transportSansNul;');
   runInNewContext(transformSync(source, { loader: 'ts', format: 'cjs' }).code, {
     Request, Response, URL, crypto: webcrypto, console,
-    diagnostic: { statutEchecPersistance, traceSauvegarde },
+    diagnostic: { statutEchecPersistance, traceSauvegarde }, transportSansNul,
     client: () => ({ auth: { getUser: async () => ({ data: { user: authenticated ? { id: 'owner' } : null }, error: null }) }, from: () => chain, rpc }),
     Deno: { env: { get: () => 'fictitious' }, serve: (fn: typeof handler) => { handler = fn; } },
   });

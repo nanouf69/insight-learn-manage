@@ -1145,3 +1145,12 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Migration de sécurité des fonctions de correction : brouillon revu (docs/sql-revue), en attente d'accord distinct.
 - [ ] Parcours élève autonome iPhone Safari + rafraîchissement QRC en direct : NON PROUVÉS (pas d'identifiants élève).
 - [ ] Publication : lot global non découpable, en attente d'accord.
+
+## 07/11 — Causes communes (sauvegarde, 22P05, propagation)
+- [x] Sauvegarde nocturne : lecture par clé, réessai sans saut, preuve de couverture, réparation explicite séparée ; tests isolés.
+- [ ] Réparation de la journée 07/11 : à lancer sur accord, hors examens ; état déployé de la fonction non vérifié.
+- [x] 22P05 : codage réversible U+0000 (file, service réponses, examens V2) ; défaut reproduit et corrigé sur base jetable.
+- [ ] Champ exact du refus d'Ahmed MALKI : non prouvable (corps de requête non conservé) ; file de son appareil non vérifiée.
+- [x] Propagation exercice 62 : réintroduction reproduite, brouillon SQL testé (docs/sql-revue), non appliqué.
+- [ ] Q40/Q41 toujours présentes en TAXI 10/62 et Q49 en TAXI : décision admin requise, aucune modification faite.
+- [x] Contrat sécurité fonctions de correction : 6 profils testés ; correcteurs réels = 1 admin + service IA.

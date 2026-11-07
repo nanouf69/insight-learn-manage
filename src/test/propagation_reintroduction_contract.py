@@ -72,7 +72,7 @@ def scenario(pg, fonction):
     # 14:19 TAXI supprime Q40 puis Q41 (2 enregistrements manuels).
     save(10, [41, 47, 49, 51])
     save(10, [47, 49, 51])
-    apres_taxi = (ids(2), ids(10))
+    apres_taxi = (sorted(ids(2)), sorted(ids(10)))
     # 19:30 VTC supprime Q49 et modifie le texte de Q51.
     save(2, [40, 41, 47, 51], {51: "Texte corrigé fictif"})
     apres_vtc = (ids(2), ids(10), txt(10, 51))
