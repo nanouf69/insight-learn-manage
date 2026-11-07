@@ -93,23 +93,43 @@ describe("File de réponses : transport codé, original conservé", () => {
       rejection: { exerciceId: "EB1__gestion__t2", reason: "refused", at: "2026-11-06T21:22:49.000Z" },
     };
     localStorage.setItem("answer_save_queue_v1", JSON.stringify([original]));
-    // Clé réelle de la file : relue depuis le module si différente.
-    const key = Object.keys((localStorage as any)).length ? "answer_save_queue_v1" : "answer_save_queue_v1";
-    void key;
+    // Pire cas : le serveur refuse encore (ex. ancienne version déployée).
     const refus = { ok: false, status: 400, text: async () => JSON.stringify({ code: "22P05", error: "unsupported Unicode escape sequence" }) };
     const fetchMock = vi.fn().mockResolvedValue(refus);
     vi.stubGlobal("fetch", fetchMock);
-    // Une nouvelle frappe déclenche le traitement.
+    // Une réponse d'un autre exercice déclenche le traitement de la file.
     enqueueAnswerSave({ apprenant_id: APP, user_id: UID, exercice_id: "autre_exo", exercice_type: "quiz", reponses: { "1": "x" } });
     await flush();
-    await flush(120_000);
+    for (let i = 0; i < 20; i++) await flush(60_000);
     const corpsGestion = fetchMock.mock.calls.map((c) => JSON.parse(c[1].body)).filter((b) => b.exercice_id === "EB1__gestion__t2");
-    if (getPendingAnswers(APP, "EB1__gestion__t2") !== null) {
-      // L'original reste en file, jamais tronqué.
-      expect(getPendingAnswers(APP, "EB1__gestion__t2")).toMatchObject(saisie);
-    }
-    // Au plus un renvoi même si le serveur refuse encore : aucune boucle.
-    expect(corpsGestion.length).toBeLessThanOrEqual(1);
-    expect(getBlockedAnswerSaves()).toBeGreaterThanOrEqual(0);
+    // Exactement un renvoi codé, puis plus rien : aucune boucle.
+    expect(corpsGestion).toHaveLength(1);
+    expect(corpsGestion[0].transport_encodage).toBe(TRANSPORT_ENCODAGE);
+    expect(JSON.stringify(corpsGestion[0]).includes("\\u0000")).toBe(false);
+    // L'original reste en file, intact (U+0000 compris), bloqué et visible.
+    expect(getPendingAnswers(APP, "EB1__gestion__t2")).toEqual(saisie);
+    const file = JSON.parse(localStorage.getItem("answer_save_queue_v1")!);
+    const gestion = file.find((i: any) => i.payload.exercice_id === "EB1__gestion__t2");
+    expect(gestion.blocked).toBe(true);
+    expect(gestion.transport_nul_reessai).toBe(true);
+    expect(gestion.payload.events[0].valeur).toBe(saisie["2"]);
+    expect(getBlockedAnswerSaves()).toBeGreaterThanOrEqual(1);
+  });
+
+  it("élément bloqué 22P05 : le renvoi codé confirmé vide la file (preuve serveur seulement)", async () => {
+    const original = {
+      id: "EB1__t3p__op1",
+      payload: { apprenant_id: APP, user_id: UID, exercice_id: "EB1__t3p", exercice_type: "examen_blanc", reponses: saisie, base_seq: 26 },
+      queued_at: "2026-11-05T18:40:06.000Z", attempts: 1, owner_user_id: UID, blocked: true,
+      rejection: { exerciceId: "EB1__t3p", reason: "refused", at: "2026-11-05T18:40:06.000Z" },
+    };
+    localStorage.setItem("answer_save_queue_v1", JSON.stringify([original]));
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 27 }), text: async () => "" });
+    vi.stubGlobal("fetch", fetchMock);
+    enqueueAnswerSave({ apprenant_id: APP, user_id: UID, exercice_id: "autre_exo", exercice_type: "quiz", reponses: { "1": "x" } });
+    await flush();
+    await flush(60_000);
+    expect(getPendingAnswers(APP, "EB1__t3p")).toBeNull();
+    expect(getBlockedAnswerSaves()).toBe(0);
   });
 });
