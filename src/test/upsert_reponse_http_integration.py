@@ -262,7 +262,7 @@ GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, p
             resultats = list(pool.map(self.appel, (b1, b2)))
         self.assertTrue(all(s == 200 for s, _ in resultats), resultats)
         self.assertEqual(sum("2" in r.get("skipped_questions", []) for _, r in resultats), 1)
-        final = json.loads(self.pg.sql("SELECT reponses->>'2', write_seq::text FROM public.reponses_apprenants WHERE exercice_id='concurrence'").split("|")[0])
+        final = self.pg.sql("SELECT reponses->>'2' FROM public.reponses_apprenants WHERE exercice_id='concurrence'")
         self.assertIn(final, ("B", "C"))
         self.assertEqual(self.pg.sql("SELECT write_seq FROM public.reponses_apprenants WHERE exercice_id='concurrence'"), "2")
 
