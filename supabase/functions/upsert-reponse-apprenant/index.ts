@@ -1,6 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { statutEchecPersistance, traceSauvegarde } from './diagnostic.ts';
+import { canonique, cleAvecNul, contientNul, lireOriginal, lireReponsesExactes, preparerLotSansNul } from './originauxExacts.ts';
+
+// v3 absente (migration non appliquée) : mémorisé 10 min par instance, aucune boucle d'appels.
+let v3AbsenteJusqua = 0;
+const refusNul = (requestId: string, code: string, message: string, status = 422) =>
+  new Response(JSON.stringify({ error: `22P05 ${message}`, code, request_id: requestId }), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 Deno.serve(async (req) => {
   const requestId = crypto.randomUUID();
@@ -102,8 +110,20 @@ Deno.serve(async (req) => {
         status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const reponsesTransport = reponses;
-    const safeEvents = safeEventsBruts;
+    // U+0000 (refus 22P05) : lot routé vers persist_answer_batch_v3 qui stocke la
+    // projection sans U+0000 ET l'original exact versionné. Tout autre lot reste sur v2.
+    const avecNul = contientNul(reponses) || contientNul(safeEventsBruts);
+    if (avecNul && (cleAvecNul(reponses) || safeEventsBruts.some((e: any) => cleAvecNul(e) || (typeof e?.question_id === 'string' && e.question_id.includes('\u0000'))))) {
+      traceSauvegarde(requestId, 'nul_cle_refusee', 422, operation, 'NUL_CLE_NON_SUPPORTEE');
+      return refusNul(requestId, 'NUL_CLE_NON_SUPPORTEE', 'identifiant contenant U+0000 refusé ; réponse conservée sur l\'appareil');
+    }
+    if (avecNul && Date.now() < v3AbsenteJusqua) {
+      traceSauvegarde(requestId, 'nul_non_supporte', 422, operation, 'NUL_NON_SUPPORTE');
+      return refusNul(requestId, 'NUL_NON_SUPPORTE', 'conservation exacte non activée ; réponse conservée sur l\'appareil');
+    }
+    const lot = avecNul ? preparerLotSansNul(reponses as Record<string, unknown>, safeEventsBruts) : null;
+    const reponsesTransport = lot ? lot.reponses : reponses;
+    const safeEvents = lot ? lot.events : safeEventsBruts;
     // ORDRE DES ÉCRITURES DÉCIDÉ PAR LE SERVEUR.
     // `base_seq` = dernier numéro d'écriture connu du client au moment où la
     // réponse a été composée. Le serveur refuse toute valeur plus ancienne que
@@ -112,7 +132,7 @@ Deno.serve(async (req) => {
     // n'est conservé que pour compatibilité des anciens envois).
     void updated_at;
     const safeBaseSeq = Number.isFinite(Number(base_seq)) ? Math.max(0, Math.floor(Number(base_seq))) : 0;
-    const { data, error } = await supabase.rpc("persist_answer_batch_v2", {
+    const argsRpc = {
       p_apprenant_id: apprenant_id,
       p_user_id: effectiveUserId,
       p_module_id: typeof module_id === "number" ? module_id : null,
@@ -123,7 +143,15 @@ Deno.serve(async (req) => {
       p_score: score ?? null,
       p_base_seq: safeBaseSeq,
       p_events: safeEvents,
-    });
+    };
+    const { data, error } = lot
+      ? await supabase.rpc("persist_answer_batch_v3", { ...argsRpc, p_originaux: lot.originaux })
+      : await supabase.rpc("persist_answer_batch_v2", argsRpc);
+    if (lot && (error?.code === 'PGRST202' || error?.code === '42883')) {
+      v3AbsenteJusqua = Date.now() + 10 * 60_000;
+      traceSauvegarde(requestId, 'nul_non_supporte', 422, operation, error.code);
+      return refusNul(requestId, 'NUL_NON_SUPPORTE', 'conservation exacte non activée ; réponse conservée sur l\'appareil');
+    }
 
     if (error || !data?.[0]?.saved) {
       const status = statutEchecPersistance(error?.code);
@@ -142,6 +170,46 @@ Deno.serve(async (req) => {
     }
 
     const confirmation = data[0];
+
+    // ACK EXACT (lot avec U+0000) : chaque original appliqué et chaque événement
+    // accepté doivent se relire identiques à la saisie, sinon aucune confirmation.
+    let storedReponsesExactes: unknown = confirmation.stored_reponses ?? null;
+    if (lot) {
+      const sautees = new Set<string>(confirmation.skipped_questions ?? []);
+      const nonProuve = (detail: string) => {
+        traceSauvegarde(requestId, 'original_non_prouve', 500, operation, detail);
+        return new Response(JSON.stringify({ error: 'Original exact non relu', code: 'ORIGINAL_NON_PROUVE', request_id: requestId }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      };
+      if (!confirmation.frozen) {
+        for (const k of Object.keys(lot.originaux)) {
+          if (sautees.has(k)) continue;
+          const r = lireOriginal(confirmation.stored_reponses?.[k], confirmation.stored_originaux?.[k], confirmation.stored_meta?.[k]?.seq ?? null);
+          if (r.statut !== 'exact' || canonique(r.valeur) !== canonique((reponses as Record<string, unknown>)[k])) return nonProuve('reponse');
+        }
+      }
+      const attendus = new Map<string, unknown>();
+      for (const e of safeEventsBruts as any[]) {
+        if (e && typeof e.event_id === 'string' && contientNul(e.valeur)) attendus.set(e.event_id, e.valeur);
+      }
+      const acceptes = new Set<string>(confirmation.accepted_event_ids ?? []);
+      const ids = [...attendus.keys()].filter((id) => acceptes.has(id));
+      if (ids.length > 0) {
+        const { data: relus, error: relError } = await supabase
+          .from('reponses_apprenants_journal')
+          .select('event_id, valeur, valeur_originale')
+          .eq('apprenant_id', apprenant_id)
+          .eq('exercice_id', exercice_id)
+          .in('event_id', ids);
+        if (relError || !Array.isArray(relus) || relus.length !== ids.length) return nonProuve('journal_lecture');
+        for (const row of relus as any[]) {
+          const r = lireOriginal(row.valeur, row.valeur_originale);
+          if (r.statut !== 'exact' || canonique(r.valeur) !== canonique(attendus.get(row.event_id))) return nonProuve('journal');
+        }
+      }
+      storedReponsesExactes = lireReponsesExactes(confirmation.stored_reponses, confirmation.stored_originaux, confirmation.stored_meta).reponses;
+    }
 
     // Sécurité : dès que la dernière réponse est confirmée en base, on vérifie
     // côté serveur si le module est intégralement répondu et, si oui, on force
@@ -174,7 +242,8 @@ Deno.serve(async (req) => {
       skipped_questions: confirmation.skipped_questions ?? [],
       // Nécessaire uniquement pour prouver côté client qu'une recomposition
       // conserve déjà toutes les réponses serveur. Aucun conflit n'est résolu ici.
-      stored_reponses: (confirmation.skipped_questions ?? []).length > 0 ? confirmation.stored_reponses ?? null : null,
+      stored_reponses: (confirmation.skipped_questions ?? []).length > 0 ? storedReponsesExactes : null,
+      original_exact_preserve: lot ? Object.keys(lot.originaux).filter((k) => !(confirmation.skipped_questions ?? []).includes(k)) : [],
       accepted_event_ids: confirmation.accepted_event_ids ?? [],
       auto_validation: autoValidation,
     }), {

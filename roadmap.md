@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 07/11 — Blocages restants (22P05, sécurité, sauvegarde cohérente)
+- [x] 22P05 : projection + original exact versionné (v3 additive), ACK par relecture exacte, refus définitif sans boucle si non activé, V2 écarté localement, message RAM honnête ; tests jetables + Vitest PASS.
+- [x] Sécurité : appelants réels vérifiés en SELECT, aucun cron dépendant, rôle cron retiré, garde-fou d'application, retour arrière testé.
+- [x] Sauvegarde : script de restauration sur base jetable testé ; instantané cohérent = sauvegarde gérée/Export data uniquement.
+- [ ] Appliquer migration v3, déployer la fonction, appliquer le durcissement, publier : interdits pendant cette tâche (attente d'une exécution autorisée).
+- [ ] Restauration d'un « Export data » réel sur base jetable : nécessite que le responsable lance l'export depuis l'interface.
+
 ## 06/11 — Trois accords nominatifs et prévention des jalons prématurés
 - [x] Audit lecture seule des trois UUID : aucune ligne EDOF et aucun connecteur/preuve externe de NON-validation ; CATANIA, NIKA et KEBBAB restent donc PROTÉGÉS. Projections confirmées comme indicatives, jamais écrites.
 - [x] Aucun taux, relevé gel-v2, réponse, note, signature ou autre dossier modifié ; aucune exécution de `geler_releves_fin_acces()`.

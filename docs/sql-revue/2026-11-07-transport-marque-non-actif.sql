@@ -1,3 +1,4 @@
+-- OBSOLÈTE (07/11 13:20 UTC) : remplacé par 2026-11-07-originaux-exacts-nul.sql. Ne pas appliquer.
 -- BROUILLON UNIQUEMENT — NE PAS APPLIQUER, aucun backfill des réponses anciennes.
 -- Prérequis structurel seulement, PAS une activation du codec.
 -- Une version par question est indispensable : les lots mélangent anciens et nouveaux textes.

@@ -306,9 +306,18 @@ const notifyAnswerSaveRejected = (
   message?: string,
   code?: AnswerSaveRejection["code"],
 ) => {
-  lastRejection = { exerciceId, reason, at: new Date().toISOString(), message, ...(code ? { code } : {}) };
+  lastRejection = { exerciceId, reason, at: new Date().toISOString(), message: messageSelonStockage(message), ...(code ? { code } : {}) };
   emitRejection();
 };
+
+/** File en mémoire seulement (stockage local refusé) : jamais « conservée » durablement. */
+export const MESSAGE_MEMOIRE_SEULE =
+  "ATTENTION : le stockage de cet appareil est plein ; votre réponse n'est gardée que tant que cette page reste ouverte. Ne fermez pas et ne rechargez pas la page, prévenez le formateur.";
+
+export function messageSelonStockage(message?: string): string | undefined {
+  if (!storageSaturated || !message) return message;
+  return `${message.replace(/\s*(Votre|Vos) réponses? (est|sont|restent?) (affichées? et )?conservées? sur cet appareil\.?/gi, "")} ${MESSAGE_MEMOIRE_SEULE}`.trim();
+}
 
 export const onAnswerSaveRejected = (
   listener: (rejection: AnswerSaveRejection | null) => void,

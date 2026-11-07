@@ -8,9 +8,12 @@
 -- Contextes autorisés :
 --   * service_role (fonction IA qrc-ia-correction via qrc_ia_publier_*) ;
 --   * administrateur authentifié (Correction QRC V2, révision) ;
---   * cron : identité SQL dédiée ftransport_qrc_cron, jamais absence de JWT ;
---     rôle NOLOGIN ci-dessous : connexion dédiée à provisionner/revoir séparément.
---     Le cron existant sous postgres est REFUSÉ tant que son identité n’est pas migrée.
+--   * cron : AUCUN. Vérifié en SELECT le 07/11 13:15 UTC : 21 tâches planifiées, aucune
+--     n'appelle ces fonctions directement ni via qrc_ia_publier_* (graphe d'appels complet :
+--     appelants = core_correct_qrc_publish, core_revise_qrc_publish, qrc_ia_publier_initial,
+--     qrc_ia_publier_reprise, qrc_ia_publier_auto ; aucun déclencheur). Une session SQL
+--     directe (postgres, tâche planifiée) est donc REFUSÉE par défaut, sans rôle dédié.
+--     Le garde-fou ci-dessous interrompt l'application si une tâche apparaît entre-temps.
 --   * core_note_attempt / core_recalc_result : en plus, l'élève propriétaire
 --     de la tentative (fin de passage, pontV2.ts).
 -- Refus par défaut : anon, authentifié non admin, JWT sans identité (sub nul).
@@ -19,14 +22,16 @@
 -- Identité de connexion et rôle effectif, pas current_user (propriétaire du definer).
 -- Les claims ne sont fiables que sur une connexion API authenticator autorisée
 -- à SET ROLE par le serveur après vérification du JWT. Aucun rôle API ne reçoit
--- la capacité de choisir session_user ou de rejoindre le rôle cron.
-DO $roles$
+-- la capacité de choisir session_user.
+DO $precheck$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'ftransport_qrc_cron') THEN
-    CREATE ROLE ftransport_qrc_cron NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+  IF EXISTS (SELECT 1 FROM cron.job WHERE active AND command ~* '(core_(correct_qrc|revise_qrc|note_attempt|recalc_result)|qrc_ia_publier_)') THEN
+    RAISE EXCEPTION 'Tâche planifiée dépendante détectée : durcissement interrompu, rien appliqué.';
   END IF;
+EXCEPTION WHEN undefined_table OR invalid_schema_name THEN
+  NULL; -- base sans pg_cron (base jetable de test) : aucune tâche possible
 END;
-$roles$;
+$precheck$;
 
 CREATE OR REPLACE FUNCTION public.core_identite_api_verifiee()
  RETURNS uuid LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -55,8 +60,6 @@ CREATE OR REPLACE FUNCTION public.core_contexte_correction_autorise()
  SET search_path TO pg_catalog, public, pg_temp
 AS $function$
   SELECT CASE
-    WHEN session_user = 'ftransport_qrc_cron'
-      AND coalesce(current_setting('role', true), 'none') IN ('none', 'ftransport_qrc_cron') THEN true
     WHEN session_user = 'service_role'
       AND coalesce(current_setting('role', true), 'none') IN ('none', 'service_role') THEN true
     WHEN session_user = 'authenticator'
@@ -377,9 +380,10 @@ GRANT EXECUTE ON FUNCTION public.core_revise_qrc_publish(uuid, uuid, numeric, nu
 REVOKE ALL ON FUNCTION public.core_identite_api_verifiee() FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.core_contexte_correction_autorise() FROM authenticated, service_role;
 REVOKE ALL ON FUNCTION public.core_contexte_tentative_autorise(uuid) FROM authenticated, service_role;
-GRANT USAGE ON SCHEMA public TO ftransport_qrc_cron;
-GRANT EXECUTE ON FUNCTION public.core_recalc_result(uuid) TO ftransport_qrc_cron;
--- Le cron de réconciliation doit appeler sa fonction de haut niveau documentée ;
--- aucun accès direct à la correction ni membership pour anon/authenticated/authenticator.
--- Activation BLOQUÉE : prouver les identités de connexion API/IA et provisionner
--- la connexion dédiée du scheduler avant toute application réelle.
+-- Aucun accès direct à la correction ni membership pour anon/authenticated/authenticator.
+-- Identités réelles vérifiées en SELECT le 07/11 : authenticator (LOGIN) porte les appels
+-- API ; service_role NOLOGIN (atteint seulement par SET ROLE depuis authenticator) ;
+-- appels réels = Correction QRC V2 admin (publish/revise), élève fin de passage
+-- (core_recalc_result), fonction IA via qrc_ia_publier_auto/reprise (service_role, imbriqué).
+-- Application : une transaction, hors correction en cours ; retour arrière =
+-- docs/sql-revue/2026-11-07-securiser-fonctions-RETOUR-ARRIERE.sql (définitions figées).
