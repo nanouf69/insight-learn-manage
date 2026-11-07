@@ -77,6 +77,8 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
             if name.startswith("0178"):
                 source = source[source.index("CREATE OR REPLACE FUNCTION public.qrc_ia_reserver_reprise"):]
             cls.pg.sql(source)
+        file_sql = (ROOT / "drizzle/migrations/0195_qrc_ia_file_serveur.sql").read_text()
+        cls.pg.sql(file_sql[file_sql.index("CREATE OR REPLACE FUNCTION public.qrc_ia_suite_claim"):file_sql.index("CREATE OR REPLACE FUNCTION public.qrc_ia_dispatch_suites")])
         cls.pg.sql(GT.read_text())
         cls.pg.sql("GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;")
 
