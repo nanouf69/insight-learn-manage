@@ -8561,6 +8561,7 @@ export type Database = {
           exercice_id: string
           exercice_type: string
           id: string
+          originaux_exacts: Json
           reponses: Json
           reponses_meta: Json
           score: number | null
@@ -8581,6 +8582,7 @@ export type Database = {
           exercice_id: string
           exercice_type?: string
           id?: string
+          originaux_exacts?: Json
           reponses?: Json
           reponses_meta?: Json
           score?: number | null
@@ -8601,6 +8603,7 @@ export type Database = {
           exercice_id?: string
           exercice_type?: string
           id?: string
+          originaux_exacts?: Json
           reponses?: Json
           reponses_meta?: Json
           score?: number | null
@@ -8688,6 +8691,7 @@ export type Database = {
           tentative: number
           user_id: string | null
           valeur: Json
+          valeur_originale: Json | null
         }
         Insert: {
           apprenant_id: string
@@ -8702,6 +8706,7 @@ export type Database = {
           tentative?: number
           user_id?: string | null
           valeur?: Json
+          valeur_originale?: Json | null
         }
         Update: {
           apprenant_id?: string
@@ -8716,6 +8721,7 @@ export type Database = {
           tentative?: number
           user_id?: string | null
           valeur?: Json
+          valeur_originale?: Json | null
         }
         Relationships: []
       }
@@ -10197,6 +10203,33 @@ export type Database = {
           stored_write_seq: number
         }[]
       }
+      persist_answer_batch_v3: {
+        Args: {
+          p_apprenant_id: string
+          p_base_seq: number
+          p_completed: boolean
+          p_events: Json
+          p_exercice_id: string
+          p_exercice_type: string
+          p_module_id: number
+          p_originaux: Json
+          p_reponses: Json
+          p_score: number
+          p_user_id: string
+        }
+        Returns: {
+          accepted_event_ids: string[]
+          frozen: boolean
+          saved: boolean
+          skipped_questions: string[]
+          stored_meta: Json
+          stored_originaux: Json
+          stored_reponses: Json
+          stored_tentative: number
+          stored_updated_at: string
+          stored_write_seq: number
+        }[]
+      }
       peut_lire_contenu_pedagogique: {
         Args: { _uid: string }
         Returns: boolean
@@ -10427,6 +10460,7 @@ export type Database = {
           exercice_id: string
           exercice_type: string
           id: string
+          originaux_exacts: Json
           reponses: Json
           reponses_meta: Json
           score: number | null
@@ -10744,6 +10778,7 @@ export type Database = {
           exercice_id: string
           exercice_type: string
           id: string
+          originaux_exacts: Json
           reponses: Json
           reponses_meta: Json
           score: number | null
