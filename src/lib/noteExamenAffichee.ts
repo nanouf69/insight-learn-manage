@@ -1,6 +1,7 @@
 import { matchCoreState, coreStateScore, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { isQrcPendingCorrection } from "@/components/cours-en-ligne/exam-helpers";
 import { MENTION_NOTE_RECALCULEE, verifierPassageV2, verifierContenuPassage, contenuFicheTronqueCompatible } from "@/lib/passagesV2NonFiables";
+import { nativeSnapshotSupportsResult } from "./nativeExamResultIdentity";
 
 /**
  * FONCTION COMMUNE — note et statut affichés d'un résultat d'examen blanc.
@@ -44,6 +45,11 @@ export function attacherSourceUnique<T extends Record<string, any>>(
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
   const original = row?.__preuveOriginaleDetails ?? row?.details;
   const reponsesFiables = !nonFiables.has(core.attemptId) && verifierPassageV2(core, original?.reponses ?? row?.reponses) === "fiable";
+  // Unique native passage established from server-owned frozen answers. Current
+  // questions, legacy pending flags and timestamps cannot invalidate its note.
+  if (!core.resultId && core.provenResultIds?.includes(String(row.id))) {
+    return { ...row, __core: reponsesFiables && nativeSnapshotSupportsResult(core.questions) ? core : CORE_LECTURE_IMPOSSIBLE };
+  }
   // Matière à QRC, passage natif définitif, mêmes réponses : une ancienne fiche tronquée
   // (sans corrigé) ne peut pas porter la correction QRC ; le passage moteur fait foi.
   const qrcDefinitif = reponsesFiables && core.qrcTotal > 0 && !core.pending;

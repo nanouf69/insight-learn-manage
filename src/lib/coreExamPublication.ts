@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { nativeResultMatchesAnswers } from "./nativeExamResultIdentity";
 
 /**
  * SOURCE UNIQUE DE L'ÉTAT QRC / NOTE D'UNE MATIÈRE D'EXAMEN BLANC.
@@ -38,6 +39,8 @@ export interface CoreMatiereState {
   coefficient?: number | null;
   duree?: number | null;
   candidateResultIds?: string[];
+  /** One-to-one result/attempt proof from frozen answers, without timestamp matching. */
+  provenResultIds?: string[];
 }
 
 /** Fenêtre de rapprochement entre la fin du passage et la ligne de résultat. */
@@ -78,16 +81,20 @@ export async function fetchCoreMatiereStatesBulk(
   try {
     for (let i = 0; i < ids.length; i += CHUNK) {
       const chunk = ids.slice(i, i + CHUNK);
-      const [attempts, qrcs, results, neutres, legacyResults] = await Promise.all([
+      const [attempts, qrcs, results, neutres, legacyResults, answers, resets] = await Promise.all([
         all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, questions:snapshot->questions, result_id:snapshot->source_historique->>result_id, historique:snapshot->source_historique, tentative:snapshot->>tentative", chunk, (q) => q.eq("etat", "terminee")),
         all("qrc_instances_v2", "attempt_id, question_id, reponse, etat, note", chunk),
         all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes", chunk),
         // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
         // jamais prises en compte dans la notation ni l'affichage.
         all("core_tentatives_neutralisees", "attempt_id", chunk),
-        all("apprenant_quiz_results", "id, apprenant_id, quiz_id, matiere_id, completed_at, tentative", chunk),
+        all("apprenant_quiz_results", "id, apprenant_id, quiz_id, matiere_id, completed_at, tentative, details", chunk),
+        all("answer_state", "attempt_id, question_id, valeur", chunk),
+        all("core_exam_resets", "archived_attempt_ids, archived_legacy_result_ids", chunk),
       ]);
       const neutralises = new Set(neutres.map((n) => String(n.attempt_id)));
+      const archivedAttempts = new Set(resets.flatMap(r => r.archived_attempt_ids ?? []).map(String));
+      const archivedResults = new Set(resets.flatMap(r => r.archived_legacy_result_ids ?? []).map(String));
       const qrcByAttempt = new Map<string, { total: number; pending: number }>();
       qrcs.forEach((q) => {
         const e = qrcByAttempt.get(q.attempt_id) || { total: 0, pending: 0 };
@@ -108,7 +115,7 @@ export async function fetchCoreMatiereStatesBulk(
           }
           return a;
         })
-        .filter((a) => a?.finished_at && a?.matiere && (opts?.inclureNeutralises || !neutralises.has(String(a.attempt_id))))
+        .filter((a) => a?.finished_at && a?.matiere && !archivedAttempts.has(String(a.attempt_id)) && (opts?.inclureNeutralises || !neutralises.has(String(a.attempt_id))))
         .forEach((a) => {
           const q = qrcByAttempt.get(a.attempt_id) || { total: 0, pending: 0 };
           const r = latestResult.get(a.attempt_id);
@@ -138,6 +145,7 @@ export async function fetchCoreMatiereStatesBulk(
             apprenantId: key,
             tentative: a.tentative != null ? Number(a.tentative) : a.historique?.tentative ?? null,
             historicalDetails: a.historique?.details,
+            answers: Object.fromEntries(answers.filter(v => v.attempt_id === a.attempt_id).map(v => [String(v.question_id), v.valeur])),
             questions: a.questions,
             matiereNom: meta?.titre ?? null,
             noteEliminatoire: nombreOuNull(meta?.note_eliminatoire),
@@ -149,6 +157,20 @@ export async function fetchCoreMatiereStatesBulk(
           });
           out.set(key, list);
         });
+      for (const key of chunk) {
+        const list = out.get(key) ?? [];
+        const matches = new Map<string, string[]>();
+        for (const state of list.filter(s => !s.resultId && !s.neutralise)) {
+          matches.set(state.attemptId, legacyResults.filter(l => !archivedResults.has(String(l.id))
+            && String(l.apprenant_id) === key && l.quiz_id === state.examId && l.matiere_id === state.matiereId
+            && (state.tentative == null || l.tentative == null || Number(l.tentative) === state.tentative)
+            && nativeResultMatchesAnswers(state, l.details)).map(l => String(l.id)));
+        }
+        for (const state of list) {
+          const candidates = matches.get(state.attemptId) ?? [];
+          state.provenResultIds = candidates.length === 1 && [...matches.values()].filter(ids => ids.includes(candidates[0])).length === 1 ? candidates : [];
+        }
+      }
     }
   } catch (e) {
     console.warn("[coreExamPublication] lecture impossible:", e);
@@ -174,6 +196,9 @@ export function matchCoreState(
     const exact = scoped.filter((s) => s.resultId && s.resultId === String(resultId));
     if (exact.length === 1) return exact[0];
     if (exact.length > 1) return null;
+    const native = scoped.filter(s => s.provenResultIds?.includes(String(resultId)));
+    if (native.length === 1) return native[0];
+    if (native.length > 1) return null;
   }
   if (!quizId || !matiereId || !completedAt) return null;
   const t = new Date(String(completedAt)).getTime();
