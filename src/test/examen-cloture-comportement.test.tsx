@@ -122,9 +122,13 @@ const flushAll = async () => { for (let i = 0; i < 8; i++) await act(async () =>
 
 const preparerV2 = (valeur: any = ["A"]) => {
   h.remaining = 1800;
+  // Copie figée complète, telle qu'écrite par le serveur à l'ouverture (une copie
+  // incomplète est désormais refusée : « Examen indisponible », jamais devinée).
   const snapshot = {
     matiere: matiere.id,
-    questions: [{ id: `${matiere.id}:1`, matiere: matiere.id, type: "QCM" }],
+    matieres: [{ subject_id: matiere.id, titre: matiere.nom, duree: 30, coefficient: 3, note_sur: 20, note_eliminatoire: 6 }],
+    questions: [{ id: `${matiere.id}:1`, matiere: matiere.id, type: "QCM", enonce: "Question fictive", points: 1,
+      choix: [{ lettre: "A", texte: "a", correct: true }, { lettre: "B", texte: "b" }] }],
   };
   h.routage = () => Promise.resolve({ moteur: "v2", attemptId: "nouvelle" });
   h.tentativesListe = [{ attempt_id: "nouvelle", etat: "en_cours", snapshot }];
