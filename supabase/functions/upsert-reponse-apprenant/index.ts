@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { statutEchecPersistance, traceSauvegarde } from './diagnostic.ts';
+import { contientNul, encoderTransport, TRANSPORT_ENCODAGE } from './transportSansNul.ts';
 
 Deno.serve(async (req) => {
   const requestId = crypto.randomUUID();
@@ -94,7 +95,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const safeEvents = Array.isArray(events) ? events.slice(0, 500) : [];
+    const safeEventsBruts = Array.isArray(events) ? events.slice(0, 500) : [];
+    // U+0000 est refusé par la base (22P05) : un seul caractère invisible bloquait
+    // toute la matière. Les clients récents codent déjà le transport (marqueur) ;
+    // pour les autres, le serveur applique le MÊME codage réversible, sans perte.
+    const dejaCode = body?.transport_encodage === TRANSPORT_ENCODAGE;
+    const nulPresent = contientNul(reponses) || contientNul(safeEventsBruts);
+    if (dejaCode && nulPresent) {
+      traceSauvegarde(requestId, 'transport_incoherent', 400, operation, 'NUL_APRES_CODAGE');
+      return new Response(JSON.stringify({ error: "Transport encoding mismatch", code: "NUL_APRES_CODAGE", request_id: requestId }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const codageServeur = !dejaCode && nulPresent;
+    if (codageServeur) traceSauvegarde(requestId, 'transport_nul_code', 200, operation);
+    const reponsesTransport = codageServeur ? encoderTransport(reponses) : reponses;
+    const safeEvents = codageServeur ? encoderTransport(safeEventsBruts) : safeEventsBruts;
     // ORDRE DES ÉCRITURES DÉCIDÉ PAR LE SERVEUR.
     // `base_seq` = dernier numéro d'écriture connu du client au moment où la
     // réponse a été composée. Le serveur refuse toute valeur plus ancienne que
@@ -109,7 +126,7 @@ Deno.serve(async (req) => {
       p_module_id: typeof module_id === "number" ? module_id : null,
       p_exercice_id: exercice_id,
       p_exercice_type: exercice_type,
-      p_reponses: reponses ?? {},
+      p_reponses: reponsesTransport ?? {},
       p_completed: Boolean(completed),
       p_score: score ?? null,
       p_base_seq: safeBaseSeq,
@@ -167,6 +184,7 @@ Deno.serve(async (req) => {
       // conserve déjà toutes les réponses serveur. Aucun conflit n'est résolu ici.
       stored_reponses: (confirmation.skipped_questions ?? []).length > 0 ? confirmation.stored_reponses ?? null : null,
       accepted_event_ids: confirmation.accepted_event_ids ?? [],
+      transport_encodage: dejaCode || codageServeur ? TRANSPORT_ENCODAGE : null,
       auto_validation: autoValidation,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
