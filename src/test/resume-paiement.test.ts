@@ -7,7 +7,7 @@ describe("resumePaiement", () => {
   it("deux paiements", () => expect(resumePaiement(200, [{ montant: 50 }, { montant: "100" }]).reste).toBe(50));
   it("intégral", () => expect(resumePaiement(200, [{ montant: 150 }, { montant: 50 }]).libelle).toBe("✅ Payé intégralement : 200 € / 200 €"));
 });
-import { virementsCorrespondants } from "@/lib/resumePaiement";
+import { exclureVirementsLiesAilleurs, virementsCorrespondants } from "@/lib/resumePaiement";
 describe("virements reçus correspondants", () => {
   const v = { montant: 50, date_operation: "2026-09-20", libelle: "Laghouati Abdallah" };
   it("Laghouati : virement de 50 € compté", () =>
