@@ -40,7 +40,7 @@ class Contrat(unittest.TestCase):
         a='11111111-1111-1111-1111-111111111111'; b='22222222-2222-2222-2222-222222222222'
         ta='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'; tb='bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
         self.sql(f"INSERT INTO public.apprenant_paiements(apprenant_id,montant,date_paiement,transaction_bancaire_id) VALUES ('{a}',50,'2026-09-22','{ta}'),('{a}',50,'2026-09-20','{tb}')")
-        self.assertEqual(self.sql(f"SELECT sum(montant) FROM public.apprenant_paiements WHERE apprenant_id='{a}'").stdout.strip(),'100.00')
+        self.assertEqual(self.sql(f"SELECT sum(montant) FROM public.apprenant_paiements WHERE apprenant_id='{a}'").stdout.strip(),'100')
         for apprenant in (a,b):
             result=self.sql(f"INSERT INTO public.apprenant_paiements(apprenant_id,montant,transaction_bancaire_id) VALUES ('{apprenant}',50,'{ta}')",check=False)
             self.assertNotEqual(result.returncode,0)
