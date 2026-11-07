@@ -13,6 +13,7 @@ import os
 import pathlib
 import subprocess
 import threading
+import time
 import unittest
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -89,6 +90,15 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
         cls.rest_log = open(cls.pg.dir + "/postgrest-qrc.log", "w")
         cls.rest = subprocess.Popen(["nix", "run", "nixpkgs#postgrest", "--"], env=env, stdout=cls.rest_log, stderr=subprocess.STDOUT)
         attendre_http(cls.rest_port)
+        fin_schema = time.time() + 45
+        while True:
+            try:
+                req_schema = Request(f"http://127.0.0.1:{cls.rest_port}/qrc_ia_suites?select=attempt_id&limit=1", headers={"Authorization": f"Bearer {cls.service_jwt}", "apikey": cls.service_jwt})
+                with urlopen(req_schema, timeout=2) as res_schema:
+                    if res_schema.status == 200: break
+            except Exception:
+                if time.time() >= fin_schema: raise
+                time.sleep(0.2)
         integration = cls
 
         class Proxy(BaseHTTPRequestHandler):
