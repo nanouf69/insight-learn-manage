@@ -135,11 +135,15 @@ class Contrat(unittest.TestCase):
         # Session SQL non fiable, même avec des claims admin forgés : refus.
         c, o = pg.sql(f"SET request.jwt.claims = '{json.dumps(admin)}'; SET SESSION AUTHORIZATION untrusted; SELECT public.core_correct_qrc_publish('{uuid.uuid4()}','{Q1}',1,null,null);")
         self.assertNotEqual(c, 0, o)
-        # Cron : véritable session_user dédiée, pas SET ROLE depuis authenticator.
-        c, o = pg.sql(f"SET SESSION AUTHORIZATION ftransport_qrc_cron; SELECT (public.core_recalc_result('{ATT}')).score;")
-        self.assertEqual(c, 0, o); self.assertEqual(o.splitlines()[-1], '18.33')
-        c, o = pg.sql("SET SESSION AUTHORIZATION authenticator; SET ROLE ftransport_qrc_cron;")
-        self.assertNotEqual(c, 0, o)
+        # Chemin IA réel : qrc_ia_publier_* (SECURITY DEFINER, propriétaire postgres) imbriqué,
+        # appelé par la fonction serveur avec la clé service (authenticator + SET ROLE service_role).
+        pg.sql("CREATE FUNCTION public.qrc_ia_publier_fictif(p_op uuid, p_q uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN RETURN public.core_correct_qrc_publish(p_op, p_q, 2, 'ia', 'ia@fictif'); END $$; REVOKE ALL ON FUNCTION public.qrc_ia_publier_fictif(uuid,uuid) FROM PUBLIC; GRANT EXECUTE ON FUNCTION public.qrc_ia_publier_fictif(uuid,uuid) TO service_role;")
+        ok('service_role', service, f"SELECT public.qrc_ia_publier_fictif('{uuid.uuid4()}','{Q2}');")
+        # Même fonction imbriquée appelée par une tâche planifiée (session postgres) : refus par défaut.
+        c, o = pg.sql(f"BEGIN; SELECT public.qrc_ia_publier_fictif('{uuid.uuid4()}','{Q1}'); ROLLBACK;")
+        self.assertNotEqual(c, 0, o); self.assertIn('CORRECTION_NON_AUTORISEE', o)
+        # Aucun rôle cron dédié n'est créé (aucune tâche réelle n'en dépend).
+        self.assertEqual(pg.sql("SELECT count(*) FROM pg_roles WHERE rolname = 'ftransport_qrc_cron'")[1], '0')
         # Matrice EXECUTE : helper interne inaccessible et brut réservé au service.
         for role in ('anon','authenticated','service_role'):
             c, o = pg.sql(f"SELECT has_function_privilege('{role}', 'public.core_identite_api_verifiee()', 'EXECUTE');")
@@ -150,6 +154,16 @@ class Contrat(unittest.TestCase):
         self.assertEqual(c, 0, o); self.assertEqual(o, '8')
         # Révision admin avec CAS : autorisée.
         ok('authenticated', admin, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{Q1}',2,1.5,'c','x');")
+        # Retour arrière préparé : rétablit exactement définitions et droits d'origine.
+        c, o = pg.sql((ROOT / 'docs/sql-revue/2026-11-07-securiser-fonctions-RETOUR-ARRIERE.sql').read_text()); self.assertEqual(c, 0, o)
+        self.assertEqual(pg.sql("SELECT has_function_privilege('anon', 'public.core_correct_qrc(uuid,uuid,numeric,text,text)', 'EXECUTE')")[1], 't')
+        for f in FNS:
+            live = (FIX / f'{f}_live_20261107.sql').read_text()
+            nom = live.split('FUNCTION public.')[1].split('(')[0]
+            c, o = pg.sql(f"SELECT md5(prosrc) FROM pg_proc WHERE proname = '{nom}'")
+            corps = live.split('$function$')[1]
+            self.assertEqual(o, pg.sql("SELECT md5(" + "$x$" + corps + "$x$" + ")")[1], nom)
+        self.assertEqual(pg.sql("SELECT count(*) FROM pg_proc WHERE proname LIKE 'core_contexte_%' OR proname = 'core_identite_api_verifiee'")[1], '0')
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
