@@ -127,7 +127,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
         cls.deno_log = open(cls.pg.dir + "/deno-qrc.log", "w")
         deno_env = os.environ.copy()
         deno_env.update({"SUPABASE_URL": f"http://127.0.0.1:{cls.proxy_port}", "SUPABASE_SERVICE_ROLE_KEY": cls.service_jwt, "SUPABASE_ANON_KEY": cls.service_jwt, "LOVABLE_API_KEY": "fixture-locale-sans-valeur", "QRC_IA_GATEWAY_BASE_URL": f"http://127.0.0.1:{cls.provider_port}/v1"})
-        cls.deno = subprocess.Popen(["deno", "run", "--allow-all", "supabase/functions/qrc-ia-correction/index.ts"], cwd=ROOT, env=deno_env, stdout=cls.deno_log, stderr=subprocess.STDOUT)
+        cls.deno = subprocess.Popen(["deno", "run", "--allow-all", "--node-modules-dir=auto", "supabase/functions/qrc-ia-correction/index.ts"], cwd=ROOT, env=deno_env, stdout=cls.deno_log, stderr=subprocess.STDOUT)
         attendre_http(8000, timeout=90)
 
     @classmethod
