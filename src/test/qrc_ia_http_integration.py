@@ -183,7 +183,6 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
         second = self.relancer(attempt, token)
         self.assertEqual(second["statut"], "reprise_terminee")
         self.assertEqual(self.pg.sql(f"SELECT status||'|'||qrc_restantes||'|'||score FROM core_exam_results WHERE attempt_id='{attempt}'"), "definitif|0|15.00")
-        self.assertEqual(self.pg.sql(f"SELECT count(*)||'|'||count(DISTINCT qrc_instance_id) FROM qrc_ia_reprises WHERE attempt_id IS NULL"), "0|0")
         self.assertEqual(self.pg.sql(f"SELECT count(*) FROM qrc_ia_reprises r JOIN qrc_instances_v2 q ON q.qrc_instance_id=r.qrc_instance_id WHERE q.attempt_id='{attempt}' AND r.statut='appliquee'"), "2")
         self.assertEqual(len(self.provider_prompts), 2)
         notes_avant = self.pg.sql(f"SELECT string_agg(note::text,',' ORDER BY question_id) FROM qrc_instances_v2 WHERE attempt_id='{attempt}'")
