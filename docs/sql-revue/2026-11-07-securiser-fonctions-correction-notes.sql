@@ -22,7 +22,7 @@
 -- Identité de connexion et rôle effectif, pas current_user (propriétaire du definer).
 -- Les claims ne sont fiables que sur une connexion API authenticator autorisée
 -- à SET ROLE par le serveur après vérification du JWT. Aucun rôle API ne reçoit
--- la capacité de choisir session_user ou de rejoindre le rôle cron.
+-- la capacité de choisir session_user.
 DO $precheck$
 BEGIN
   IF EXISTS (SELECT 1 FROM cron.job WHERE active AND command ~* '(core_(correct_qrc|revise_qrc|note_attempt|recalc_result)|qrc_ia_publier_)') THEN
