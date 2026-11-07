@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
       // Réexport indépendant : jamais fusionné avec les tables d'une autre nuit,
       // jamais un nouveau _termine.json pour la journée historique.
       const manifeste = {
-        jour, fin: etat.maj, tables: tables.length, comptes: r.comptes, erreurs,
+        jour, fin: etat.maj, tables: tables.length, table_names: tables, comptes: r.comptes, erreurs,
         export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee",
         instantane_coherent: false, provenance: "reexport_independant_tables_selectionnees",
         reparation_debut: r.debut, observations: r.preuves ?? {},
