@@ -19,7 +19,7 @@ COMMENT ON COLUMN public.reponses_apprenants_journal.valeur_originale IS
   'Marqueur {v:"nul-b64-v1", b64, projection} lorsque la saisie contenait U+0000 ; NULL sinon.';
 
 CREATE OR REPLACE FUNCTION public.persist_answer_batch_v3(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb, p_originaux jsonb)
- RETURNS TABLE(saved boolean, stored_reponses jsonb, stored_originaux jsonb, stored_tentative integer, stored_updated_at timestamp with time zone, stored_write_seq bigint, frozen boolean, skipped_questions text[], accepted_event_ids uuid[])
+ RETURNS TABLE(saved boolean, stored_reponses jsonb, stored_originaux jsonb, stored_meta jsonb, stored_tentative integer, stored_updated_at timestamp with time zone, stored_write_seq bigint, frozen boolean, skipped_questions text[], accepted_event_ids uuid[])
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'pg_catalog', 'public', 'pg_temp'
@@ -148,7 +148,7 @@ BEGIN
     END LOOP;
   END IF;
 
-  RETURN QUERY SELECT true, v_current.reponses, COALESCE(v_current.originaux_exacts, '{}'::jsonb),
+  RETURN QUERY SELECT true, v_current.reponses, COALESCE(v_current.originaux_exacts, '{}'::jsonb), COALESCE(v_current.reponses_meta, '{}'::jsonb),
     COALESCE(v_current.tentative, v_tentative), v_current.updated_at,
     COALESCE(v_current.write_seq, 0), v_frozen, v_skipped, v_accepted;
 END;
