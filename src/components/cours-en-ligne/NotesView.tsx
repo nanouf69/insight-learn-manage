@@ -77,7 +77,9 @@ const normalizeQuizNoteSur20 = (result: QuizResult): number | null => {
 };
 
 const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: NotesViewProps) => {
-  const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
+  const [quizResultState, setQuizResultState] = useState<{ owner: string; rows: QuizResult[] }>({ owner: apprenantId, rows: [] });
+  const quizResults = quizResultState.owner === apprenantId ? quizResultState.rows : [];
+  const setQuizResults = useCallback((rows: QuizResult[]) => setQuizResultState({ owner: apprenantId, rows }), [apprenantId]);
   const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>(moduleCompletionsSeed);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
@@ -98,7 +100,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     setQuizResults([]);
     setLoading(true);
     setSelectedDetail(null);
-  }, [apprenantId]);
+  }, [apprenantId, setQuizResults]);
 
   const fetchAll = useCallback(async () => {
     if (!apprenantId) {

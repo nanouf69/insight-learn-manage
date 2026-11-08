@@ -16,7 +16,7 @@ FOR SELECT TO authenticated USING (public.core_est_proprietaire(apprenant_id) OR
 
 -- Covers old clients too; no constraint/backfill on historical results.
 CREATE FUNCTION public.revision_fausses_insert_guard() RETURNS trigger
-LANGUAGE plpgsql SET search_path = public AS $$
+LANGUAGE plpgsql SET search_path = public SET lock_timeout = '3s' AS $$
 DECLARE k text;
 BEGIN
   IF NEW.quiz_type <> 'revision_fausses' THEN RETURN NEW; END IF;
