@@ -66,6 +66,9 @@ class AlignmentContract(unittest.TestCase):
             INSERT INTO public.bilan_identite_flags VALUES(5,false),(11,false);
             CREATE TABLE public.bilan_future_french_releases(version_id uuid,activated_at timestamptz DEFAULT now());
             CREATE TABLE public.bilan_passage_snapshots(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),apprenant_id uuid,module_id int,exercice_id int,questions jsonb);
+            CREATE TABLE public.bilan_passage_categories(apprenant_id uuid,module_id int);
+            CREATE TABLE public.bilan_passages_figes(apprenant_id uuid,module_id int);
+            CREATE TABLE public.apprenants(id uuid PRIMARY KEY,auth_user_id uuid,deleted_at timestamptz);
             CREATE TABLE public.reponses_apprenants(id serial PRIMARY KEY,apprenant_id uuid,exercice_id text,reponses jsonb);
             CREATE TABLE public.apprenant_module_completion(apprenant_id uuid,module_id int,status text,details jsonb,PRIMARY KEY(apprenant_id,module_id));
             """)
