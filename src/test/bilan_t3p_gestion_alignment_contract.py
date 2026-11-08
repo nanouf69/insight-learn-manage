@@ -111,6 +111,8 @@ class AlignmentContract(unittest.TestCase):
                     question['uid'] = f'00000000-0000-4000-8000-{str(serial).zfill(12)}'
             data5 = {'exercices':[exo(500,vtc_t3p,'t3p_test'),exo(501,vtc_gestion,'gestion_test'),exo(999,[q(999, uid='aaaaaaaa-aaaa-4000-8000-000000000995')],'hors_perimetre')]}
             data11 = {'exercices':[exo(600,taxi_t3p,'t3p_test'),exo(601,taxi_gestion,'gestion_test'),exo(999,[q(999, uid='aaaaaaaa-aaaa-4000-8000-000000000996')],'hors_perimetre')]}
+            data5['exercices'][2]['numero_plancher'] = 999
+            data11['exercices'][2]['numero_plancher'] = 999
             data2 = {'exercices':[exo(500,[q(1,'Ne pas propager')],'t3p_test')]}
             lit = lambda value: "'" + json.dumps(value).replace("'", "''") + "'::jsonb"
             pg.sql(f"INSERT INTO public.module_editor_state(module_id,module_data) VALUES(5,{lit(data5)}),(11,{lit(data11)}),(2,{lit(data2)});")
