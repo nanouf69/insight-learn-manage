@@ -571,7 +571,7 @@ function EcranResultats({
 
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
-    const out: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
+    const out: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[] = [];
     examenPourCalcul.matieres.forEach((matiere, mi) => {
       if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
       const r = resultats.find((item) => item.matiereId === matiere.id) ?? resultats[mi];
@@ -582,7 +582,7 @@ function EcranResultats({
         const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
         if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) return;
         const isCorrect = reponseCorrecteDansRevision(q, rep, matiereDuPassage, r as any);
-        if (!isCorrect) out.push({ matiere: matiereDuPassage, question: q, matiereNom: matiere.nom });
+        if (!isCorrect) out.push({ matiere: matiereDuPassage, question: q, matiereNom: matiere.nom, sourceResultId: r.resultId });
       });
     });
     return out;
@@ -1232,7 +1232,7 @@ function RevisionFausses({
   userId,
   examenId,
 }: {
-  wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[];
+  wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[];
   onTerminer: () => void;
   apprenantId?: string | null;
   userId?: string | null;
@@ -1248,6 +1248,7 @@ function RevisionFausses({
   const derniereValidationRef = useRef(0);
   const revisionRowsRef = useRef<RevisionRowLike[]>([]);
   const correctedQuestionsRef = useRef<string[]>([]);
+  const sourceResultIdsRef = useRef<Record<string, string>>({});
 
   const baseExerciceId = revisionBaseId(examenId);
   const questionOrder = useMemo(() => revisionQuestionOrder(wrongQuestions), [wrongQuestions]);
@@ -1305,6 +1306,9 @@ function RevisionFausses({
         const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);
         const restored = restaurerRevisionProgressState(merged, examenId, questionOrder);
         if (annule) return;
+        sourceResultIdsRef.current = restored.sourceResultIds ?? Object.fromEntries(wrongQuestions
+          .filter(item => typeof item.sourceResultId === "string")
+          .map(item => [revisionQuestionKey(item), item.sourceResultId as string]));
         setReponses(restored.answers as Reponses);
         setCorrectedCount(restored.correctedCount);
         correctedQuestionsRef.current = restored.correctedQuestions;
@@ -1343,6 +1347,7 @@ function RevisionFausses({
       correctedQuestions,
       showCorrection: correctionVisible,
       questionOrder,
+      sourceResultIds: sourceResultIdsRef.current,
     });
     enqueueAnswerSave({
       apprenant_id: apprenantId,

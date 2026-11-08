@@ -45,13 +45,15 @@ BEGIN
     IF (SELECT count(*) FROM public.apprenant_quiz_results r
       WHERE r.apprenant_id=p_apprenant_id AND r.quiz_id=p_examen_id AND r.quiz_type='examen_blanc'
         AND r.details->'snapshot'->>'matiereId'=split_part(k,':',1)
-        AND r.completed_at<=preuve.updated_at)<>1 THEN
+        AND r.completed_at<=preuve.updated_at
+        AND (st->'sourceResultIds'->>k IS NULL OR r.id::text=st->'sourceResultIds'->>k))<>1 THEN
       RAISE EXCEPTION 'Identité de copie initiale non prouvée : revue admin requise' USING ERRCODE='55000';
     END IF;
     SELECT r.* INTO source FROM public.apprenant_quiz_results r
     WHERE r.apprenant_id=p_apprenant_id AND r.quiz_id=p_examen_id AND r.quiz_type='examen_blanc'
       AND r.details->'snapshot'->>'matiereId'=split_part(k,':',1)
       AND r.completed_at<=preuve.updated_at
+      AND (st->'sourceResultIds'->>k IS NULL OR r.id::text=st->'sourceResultIds'->>k)
     ORDER BY r.completed_at DESC, r.id DESC LIMIT 1;
     IF NOT FOUND OR jsonb_typeof(source.details->'snapshot'->'questions') IS DISTINCT FROM 'array' THEN
       RAISE EXCEPTION 'Copie figée introuvable : revue admin requise' USING ERRCODE='55000';
