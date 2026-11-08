@@ -891,6 +891,24 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
       if (confirmation?.success === true && confirmation?.confirmed === true) {
+        const acceptedEventIds = Array.isArray(confirmation.accepted_event_ids)
+          ? confirmation.accepted_event_ids.filter((id: unknown): id is string => typeof id === "string")
+          : [];
+        const accepted = new Set(acceptedEventIds);
+        const missingEventIds = (item.payload.events ?? [])
+          .map((event) => event.event_id)
+          .filter((id): id is string => typeof id === "string" && !accepted.has(id));
+        if (missingEventIds.length > 0) {
+          // Un succès HTTP ne suffit pas : chaque événement doit avoir été relu
+          // comme accepté. Le lot reste intact et sera rejoué idempotemment.
+          console.error("[answerPersistence] Accusé de journalisation incomplet", {
+            operation: item.id,
+            attendus: (item.payload.events ?? []).length,
+            confirmes: accepted.size,
+          });
+          return "retry";
+        }
+        item.confirmed_event_ids = acceptedEventIds;
         const skipped = Array.isArray(confirmation.skipped_questions) ? confirmation.skipped_questions : [];
         if (skipped.length > 0) {
           // Réparation uniquement si la version locale est une extension stricte
@@ -985,7 +1003,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
       delaiDepasse
         ? `[answerPersistence] Délai d'envoi dépassé (${delaiEnvoi / 1000} s) — réponse conservée en file, nouvel essai`
         : "[answerPersistence] Erreur réseau sauvegarde — réponse conservée en file, nouvel essai",
-      { tentative: (item.attempts ?? 0) + 1, enLigne: typeof navigator !== "undefined" ? navigator.onLine : null, enFile: readQueue().length },
+      { operation: item.id, exercice_id: item.payload.exercice_id, tentative: (item.attempts ?? 0) + 1, enLigne: typeof navigator !== "undefined" ? navigator.onLine : null, enFile: readQueue().length },
       delaiDepasse ? "" : e,
     );
     return "retry";
