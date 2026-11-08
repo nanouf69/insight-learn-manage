@@ -8,6 +8,8 @@ import { creerRevisionProgressState } from "@/lib/revisionFaussesProgression";
 const h = vi.hoisted(() => ({
   rows: [] as any[], saved: null as any, insertError: null as any, inserts: [] as any[], failAfterCommit: false, tables: [] as string[],
 }));
+// Candidate server finalization path (not yet published).
+vi.mock("@/lib/revisionFinalisationServeur", () => ({ REVISION_FINALISATION_SERVEUR_ACTIVE: true }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: { rpc: async (_name: string, args: any) => {
     const st = h.saved?.reponses?.revisionState;

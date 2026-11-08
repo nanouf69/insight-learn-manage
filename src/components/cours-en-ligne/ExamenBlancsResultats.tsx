@@ -40,6 +40,7 @@ import {
 import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
 import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
+import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisationServeur";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
@@ -1280,21 +1281,29 @@ function RevisionFausses({
         }
         const rows = (tentatives as RevisionRowLike[]) || [];
         revisionRowsRef.current = rows;
-        // A completed draft without a result is an interrupted finalization, not a new revision.
-        const { data: finalises, error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
-          .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
-        if (erreurFinalises) throw erreurFinalises;
-        const interrupted = rows.some(r => r.completed !== true) ? undefined : rows.filter(r => r.completed === true).at(-1);
-        const idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
+        let idTentative: string;
+        if (REVISION_FINALISATION_SERVEUR_ACTIVE) {
+          // A completed draft without a result is an interrupted finalization, not a new revision.
+          const { error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
+            .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
+          if (erreurFinalises) throw erreurFinalises;
+          const interrupted = rows.some(r => r.completed !== true) ? undefined : rows.filter(r => r.completed === true).at(-1);
+          idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
+        } else {
+          idTentative = choisirTentativeRevision(baseExerciceId, rows);
+        }
         if (annule) return;
         setExerciceId(idTentative);
         tentativePreteRef.current = true;
-        const { data, error } = await supabase
+        let lecture = supabase
           .from("reponses_apprenants")
           .select("reponses, score")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", idTentative)
-          .eq("exercice_type", "revision_fausses")
+          .eq("exercice_type", "revision_fausses");
+        // Published path: only an open draft is resumed (a completed one starts a new revision).
+        if (!REVISION_FINALISATION_SERVEUR_ACTIVE) lecture = lecture.eq("completed", false);
+        const { data, error } = await lecture
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -1469,6 +1478,42 @@ function RevisionFausses({
       termineeRef.current = true;
       const confirme = restaurerRevisionProgressState(relu.reponses, examenId, questionOrder);
       const finalCorrected = Number.isFinite(relu.score) ? Number(relu.score) : confirme.correctedCount;
+      if (!REVISION_FINALISATION_SERVEUR_ACTIVE) {
+        // Published path, unchanged until the server finalization is installed.
+        const { error: erreurInsertion } = await supabase
+          .from("apprenant_quiz_results")
+          .insert({
+            apprenant_id: apprenantId,
+            user_id: userId,
+            quiz_type: "revision_fausses",
+            quiz_id: examenId,
+            quiz_titre: `Révision questions fausses — ${examenId}`,
+            score_obtenu: finalCorrected,
+            score_max: wrongQuestions.length,
+            note_sur_20: Math.round((finalCorrected / wrongQuestions.length) * 20 * 2) / 2,
+            reussi: finalCorrected === wrongQuestions.length,
+            details: {
+              reponses: confirme.answers,
+              revision_exercice_id: exerciceId,
+              questionOrder,
+              questions: wrongQuestions.map(wq => ({
+                questionKey: revisionQuestionKey(wq),
+                questionId: wq.question.id,
+                matiereId: wq.matiere.id,
+                matiereNom: wq.matiereNom,
+                enonce: wq.question.enonce,
+              })),
+            } as any,
+          });
+        if (erreurInsertion) {
+          console.error("Erreur sauvegarde révision:", erreurInsertion.message, erreurInsertion.details);
+        } else {
+          finEnregistree = true;
+          toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
+          onTerminer();
+        }
+        return;
+      }
       const { data: receipt, error } = await supabase.rpc("finaliser_revision_fausses" as any, {
         p_apprenant_id: apprenantId, p_examen_id: examenId, p_revision_exercice_id: exerciceId,
       });

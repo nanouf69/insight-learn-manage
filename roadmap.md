@@ -1228,3 +1228,7 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Paiements : 0247 + identité stable appliqués, multi-session et virements égaux testés ; 18 paiements intacts, zéro backfill. Publication confirmée (`index-Dl3wEx4I.js`) sur les deux URL.
 - [x] Synchro : 0248 appliquée, réintroduction future bloquée ; Q40/Q41/Q49 et 210 contenus inchangés, empreintes modules identiques.
 - [x] Tests : 3 695 globaux PASS, scan 0 critique/6 avertissements/2 infos ; rapport final et bascule publique confirmée. Seul le rattachement CMA reste bloqué par la session admin habilitée.
+
+## 08/11 22:01 UTC — Publication ciblée
+- [x] Rattrapage QRC écran ouvert publié (`index-XoqG3L5A.js`) ; fin de révision publiée = chemin existant, appel serveur désactivé (`uoe=!1`).
+- [ ] Finalisation atomique révision : bloquée, pas de source serveur structurée pour ~30 % des copies récentes (151/509 en novembre sans snapshot, seulement un résumé texte) ; décision nécessaire.
