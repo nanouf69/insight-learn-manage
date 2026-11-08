@@ -36,6 +36,11 @@ const basePayload = (overrides: Record<string, any> = {}) => ({
 const sentBodies = (fetchMock: any) =>
   fetchMock.mock.calls.map((call: any[]) => JSON.parse(call[1].body));
 
+const ackJson = (init: RequestInit, values: Record<string, unknown>) => async () => {
+  const body = JSON.parse(String(init.body));
+  return { ...values, accepted_event_ids: (body.events ?? []).map((event: any) => event.event_id).filter(Boolean) };
+};
+
 describe("Ordre des écritures décidé par le serveur", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -46,9 +51,9 @@ describe("Ordre des écritures décidé par le serveur", () => {
 
   it("envoie base_seq = 0 à la première réponse, puis le numéro renvoyé par le serveur", async () => {
     let seq = 0;
-    const fetchMock = vi.fn().mockImplementation(async () => ({
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init: RequestInit) => ({
       ok: true,
-      json: async () => ({ success: true, confirmed: true, write_seq: ++seq }),
+      json: ackJson(init, { success: true, confirmed: true, write_seq: ++seq }),
       text: async () => "",
     }));
     vi.stubGlobal("fetch", fetchMock);
@@ -64,11 +69,11 @@ describe("Ordre des écritures décidé par le serveur", () => {
   });
 
   it("n'utilise jamais l'horloge de l'appareil pour trancher (aucun updated_at décisif)", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init: RequestInit) => ({
       ok: true,
-      json: async () => ({ success: true, confirmed: true, write_seq: 5 }),
+      json: ackJson(init, { success: true, confirmed: true, write_seq: 5 }),
       text: async () => "",
-    });
+    }));
     vi.stubGlobal("fetch", fetchMock);
 
     enqueueAnswerSave(basePayload());
@@ -79,11 +84,11 @@ describe("Ordre des écritures décidé par le serveur", () => {
   });
 
   it("une version ignorée par le serveur reste locale, bloque la clôture et n'avance pas base_seq", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => ({
       ok: true,
-      json: async () => ({ success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"] }),
+      json: ackJson(init, { success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"] }),
       text: async () => "",
-    }));
+    })));
     enqueueAnswerSave(basePayload({
       exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
       reponses: { revisionState: { currentIndex: 0, answers: { "t3p:1": ["A"] } } },
@@ -111,18 +116,18 @@ describe("Ordre des écritures décidé par le serveur", () => {
   it("une réponse composée pendant un envoi lent repart avec le numéro confirmé précédent", async () => {
     let confirmerPremierEnvoi: (() => void) | undefined;
     const fetchMock = vi.fn()
-      .mockImplementationOnce(() => new Promise((resolve) => {
+      .mockImplementationOnce((_url: string, init: RequestInit) => new Promise((resolve) => {
         confirmerPremierEnvoi = () => resolve({
           ok: true,
-          json: async () => ({ success: true, confirmed: true, write_seq: 1 }),
+          json: ackJson(init, { success: true, confirmed: true, write_seq: 1 }),
           text: async () => "",
         });
       }))
-      .mockResolvedValueOnce({
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => ({
         ok: true,
-        json: async () => ({ success: true, confirmed: true, write_seq: 2 }),
+        json: ackJson(init, { success: true, confirmed: true, write_seq: 2 }),
         text: async () => "",
-      });
+      }));
     vi.stubGlobal("fetch", fetchMock);
 
     enqueueAnswerSave(basePayload());
@@ -195,16 +200,16 @@ describe("Ordre des écritures décidé par le serveur", () => {
       }),
     }]));
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce({
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => ({
         ok: true,
-        json: async () => ({ success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"], stored_reponses: { revisionState: serveur } }),
+        json: ackJson(init, { success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"], stored_reponses: { revisionState: serveur } }),
         text: async () => "",
-      })
-      .mockResolvedValueOnce({
+      }))
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => ({
         ok: true,
-        json: async () => ({ success: true, confirmed: true, write_seq: 10, skipped_questions: [] }),
+        json: ackJson(init, { success: true, confirmed: true, write_seq: 10, skipped_questions: [] }),
         text: async () => "",
-      });
+      }));
     vi.stubGlobal("fetch", fetchMock);
 
     enqueueAnswerSave(basePayload({
@@ -225,9 +230,9 @@ describe("Ordre des écritures décidé par le serveur", () => {
   });
 
   it("refuse la recomposition si une réponse serveur diffère, et conserve la version locale", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => ({
       ok: true,
-      json: async () => ({
+      json: ackJson(init, {
         success: true, confirmed: true, write_seq: 9, skipped_questions: ["revisionState"],
         stored_reponses: { revisionState: {
           version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
