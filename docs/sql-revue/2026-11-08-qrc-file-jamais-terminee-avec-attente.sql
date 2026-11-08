@@ -9,12 +9,12 @@ BEGIN
  r := public.qrc_ia_raison_file(p_attempt);
  IF r<>'admissible' THEN
   IF r='rien_a_corriger' THEN
-   UPDATE public.qrc_ia_suites s SET statut='a_verifier',
+   UPDATE public.qrc_ia_suites qcs SET statut='a_verifier',
     message='QRC encore en attente mais non admissibles à une reprise automatique',
     dernier_code='qrc_en_attente_non_admissible', maj_at=now()
-    WHERE s.attempt_id=p_attempt AND s.statut='terminee'
+    WHERE qcs.attempt_id=p_attempt AND qcs.statut='terminee'
       AND EXISTS(SELECT 1 FROM public.qrc_instances_v2 q WHERE q.attempt_id=p_attempt AND q.etat='en_attente')
-   RETURNING attempt_id INTO ins;
+   RETURNING qcs.attempt_id INTO ins;
    IF ins IS NOT NULL THEN
     INSERT INTO public.alertes_systeme(type,titre,message,details,lu) VALUES(
      'qrc_ia_suite','Correction QRC à vérifier',
