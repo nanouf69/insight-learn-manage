@@ -13,6 +13,7 @@ class Query {
   order() { return this; }
   limit() { return this; }
   range() { return this; }
+  upsert(payload: unknown) { return request({ table:this.table, write:payload }); }
   maybeSingle() { return request({table:this.table,filters:this.filters,single:true}); }
   then(ok: any, fail: any) { return request({table:this.table,filters:this.filters}).then(ok,fail); }
 }
