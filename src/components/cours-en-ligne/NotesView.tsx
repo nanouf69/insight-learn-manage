@@ -76,7 +76,8 @@ const normalizeQuizNoteSur20 = (result: QuizResult): number | null => {
   return n.etat === "note" ? n.note20 : null;
 };
 
-const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: NotesViewProps) => {
+const EMPTY_COMPLETIONS: ModuleCompletion[] = [];
+const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COMPLETIONS }: NotesViewProps) => {
   const [quizResultState, setQuizResultState] = useState<{ owner: string; rows: QuizResult[] }>({ owner: apprenantId, rows: [] });
   const quizResults = quizResultState.owner === apprenantId ? quizResultState.rows : [];
   const setQuizResults = useCallback((rows: QuizResult[]) => setQuizResultState({ owner: apprenantId, rows }), [apprenantId]);
