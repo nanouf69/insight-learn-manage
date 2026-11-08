@@ -80,9 +80,9 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
     def test_receipt_rls_and_admin(self):
         self.fixture('ADMIN')
         self.call('ADMIN',ADMIN)
-        self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{UID}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'"))
-        self.assertEqual('0',self.pg.sql("SET ROLE authenticated; SET request.jwt.claim.sub='33333333-3333-4333-8333-000000000003'; SELECT count(*) FROM revision_fausses_receipts"))
-        self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'"))
+        self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{UID}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'").splitlines()[-1])
+        self.assertEqual('0',self.pg.sql("SET ROLE authenticated; SET request.jwt.claim.sub='33333333-3333-4333-8333-000000000003'; SELECT count(*) FROM revision_fausses_receipts").splitlines()[-1])
+        self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'").splitlines()[-1])
         with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql("SET ROLE anon; SELECT * FROM revision_fausses_receipts")
         with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql(f"SET ROLE anon; SELECT finaliser_revision_fausses('{APP}','ADMIN','revision_fausses_ADMIN')")
         with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql("SET ROLE authenticated; INSERT INTO revision_fausses_receipts VALUES(null,null,null,null,null,now())")
