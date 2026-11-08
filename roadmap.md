@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 08/11 — Trois priorités persistantes autorisées
+- [ ] Persistance BENNANI / CLERC : identifier les opérations et la cause des délais, reproduire sur isolé, corriger sans faux ACK ni purge de file ; réconciliation appareil seulement avec preuve.
+- [ ] QRC restantes : relire les motifs actuels, corriger seulement les cas admissibles du snapshot, préserver les vraies ambiguïtés et réponses vides, puis vérifier les notes effectivement publiées.
+- [ ] Sauvegarde cohérente : vérifier les capacités privées disponibles, ne pas mélanger les exports ; restauration réelle uniquement sur environnement jetable isolé si un instantané cohérent est disponible.
+- [ ] Tests ciblés, déploiements strictement nécessaires, contrôles avant/après, rapport des limites et coût connu.
+
 ## 07/11 — Mise en service progressive autorisée (depuis 280112574)
 - [x] Vraie intégration handler Deno + PostgREST + PostgreSQL jetable : v2/v3, concurrence, rejeu après commit, gel, journal et faux ACK — 1/1 PASS le 07/11.
 - [x] Empreintes avant/après identiques ; migration additive 0243, fonction réponses déployée, durcissement 0244 appliqué ; rejeu admin réel sans écriture PASS.
