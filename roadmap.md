@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 08/11 — Preuve de clôture de révision des réponses fausses EB
-- [ ] Lire le vrai composant RevisionFausses et les traces du 06/11, sans écriture de production.
-- [ ] Tester clôture, ACK, concurrence, reprise et copies figées avec les harnais existants ; distinguer UI simulée et handler/SQL réels.
-- [ ] Rapporter les résultats persistés, versions et limites sans modifier l’application ni publier.
+- [x] RevisionFausses identifié ; vendredi 06/11 : 25 occurrences de « Dernières réponses non confirmées », contexte sans identifiant d'opération, cause individuelle non démontrable.
+- [x] 21 tests composant/projection PASS (serveur simulé), 8 tests queue PASS, vrai handler/PostgREST/PostgreSQL PASS (501 événements, concurrence, gel, ACK refusé puis rejeu).
+- [x] Défaut reproduit composant + PostgreSQL isolés séparément : retour perdu après insertion du résultat puis nouvel essai = deux insertions même revision_exercice_id ; trigger réel attribue tentatives 1/2. Test durable revision-fausses-retry-diagnostic ; aucun code applicatif modifié.
+- [ ] E2E navigateur + handler/SQL réunis, captures, délai de clôture persistée après reload et session réellement expirée NON PROUVÉS. Nécessite harnais UI privé branché sur API isolée ; aucun test sur compte réel ni publication.
 
 ## 08/11 — Preuve du rafraîchissement QRC sur écran déjà ouvert
 - [x] Paquet public index-Dy9_Awa8.js : abonnements NotesView et useCoreChangeTick confirmés ; publication des quatre tables et droits propriétaire/admin lus, aucune authentification reprise.
