@@ -79,7 +79,7 @@ class File(unittest.TestCase):
 
     def test_trace_existante_pas_de_nouvelle_file(self):
         self.passage(11)
-        sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut) VALUES('k','{qrc(11)}','{att(11)}','{EL}','q:1','h','appliquee')")
+        sql(f"UPDATE qrc_ia_suites SET statut='terminee'; UPDATE qrc_instances_v2 SET etat='corrigee' WHERE attempt_id='{att(11)}'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut) VALUES('k','{qrc(11)}','{att(11)}','{EL}','q:1','h','appliquee')")
         self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(11)}','x')"), 'rien_a_corriger')
 
     def test_ancienne_exclusion_gt_seule_reouverte_sans_effacer_audit(self):

@@ -14,7 +14,7 @@ BEGIN
     dernier_code='qrc_en_attente_non_admissible', maj_at=now()
     WHERE s.attempt_id=p_attempt AND s.statut='terminee'
       AND EXISTS(SELECT 1 FROM public.qrc_instances_v2 q WHERE q.attempt_id=p_attempt AND q.etat='en_attente')
-   RETURNING s.attempt_id INTO ins;
+   RETURNING attempt_id INTO ins;
    IF ins IS NOT NULL THEN
     INSERT INTO public.alertes_systeme(type,titre,message,details,lu) VALUES(
      'qrc_ia_suite','Correction QRC à vérifier',
