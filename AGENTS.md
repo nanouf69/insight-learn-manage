@@ -58,3 +58,4 @@
 - TAXI/TA form defaults mirror FORMATION_MODULES (test modeles-taxi-ta-fin-formation); why: no missing modules.
 - CRM month extension: crm_reactiver_un_mois adds the month; send-prolongation-acces only emails per extension_id; why: resend never adds a month.
 - FC convocations use a separate evidence/outbox/journal workflow, with explicit bank-to-enrollment and contractual amount proofs, server revalidation and unknown-delivery quarantine; the accounting screen never auto-writes or sends; why: names and import duplicates cannot authorize a financial mutation or a duplicate convocation.
+- EB "corriger mes réponses fausses" server finalization (finaliser_revision_fausses) is gated by REVISION_FINALISATION_SERVEUR_ACTIVE (src/lib/revisionFinalisationServeur.ts), false until its migration ships with a server-verified score; why: a published bundle must never call an uninstalled RPC or a falsifiable score path.
