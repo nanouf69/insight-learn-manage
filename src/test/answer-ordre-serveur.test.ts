@@ -240,7 +240,7 @@ describe("Ordre des écritures décidé par le serveur", () => {
         } },
       }),
       text: async () => "",
-    }));
+    })));
     enqueueAnswerSave(basePayload({
       exercice_id: "revision_fausses_EB1", exercice_type: "revision_fausses",
       reponses: { revisionState: {
