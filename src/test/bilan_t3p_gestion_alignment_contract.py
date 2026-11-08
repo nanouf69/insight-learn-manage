@@ -63,7 +63,7 @@ class AlignmentContract(unittest.TestCase):
               id bigserial PRIMARY KEY,uid uuid NOT NULL REFERENCES public.bilan_question_identites(uid),etat text NOT NULL,
               numero_affiche text,empreinte_contenu text,motif text,created_at timestamptz NOT NULL DEFAULT now());
             CREATE TABLE public.bilan_identite_flags(module_id int PRIMARY KEY,actif boolean NOT NULL);
-            INSERT INTO public.bilan_identite_flags VALUES(5,true),(11,true);
+            INSERT INTO public.bilan_identite_flags VALUES(5,false),(11,false);
             CREATE TABLE public.bilan_future_french_releases(version_id uuid,activated_at timestamptz DEFAULT now());
             CREATE TABLE public.bilan_passage_snapshots(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),apprenant_id uuid,module_id int,exercice_id int,questions jsonb);
             CREATE TABLE public.reponses_apprenants(id serial PRIMARY KEY,apprenant_id uuid,exercice_id text,reponses jsonb);
@@ -106,8 +106,8 @@ class AlignmentContract(unittest.TestCase):
                 for question in questions:
                     serial += 1
                     question['uid'] = f'00000000-0000-4000-8000-{str(serial).zfill(12)}'
-            data5 = {'exercices':[exo(500,vtc_t3p,'t3p_test'),exo(501,vtc_gestion,'gestion_test'),exo(999,[q(999)],'hors_perimetre')]}
-            data11 = {'exercices':[exo(600,taxi_t3p,'t3p_test'),exo(601,taxi_gestion,'gestion_test'),exo(999,[q(999)],'hors_perimetre')]}
+            data5 = {'exercices':[exo(500,vtc_t3p,'t3p_test'),exo(501,vtc_gestion,'gestion_test'),exo(999,[q(999, uid='aaaaaaaa-aaaa-4000-8000-000000000995')],'hors_perimetre')]}
+            data11 = {'exercices':[exo(600,taxi_t3p,'t3p_test'),exo(601,taxi_gestion,'gestion_test'),exo(999,[q(999, uid='aaaaaaaa-aaaa-4000-8000-000000000996')],'hors_perimetre')]}
             data2 = {'exercices':[exo(500,[q(1,'Ne pas propager')],'t3p_test')]}
             lit = lambda value: "'" + json.dumps(value).replace("'", "''") + "'::jsonb"
             pg.sql(f"INSERT INTO public.module_editor_state(module_id,module_data) VALUES(5,{lit(data5)}),(11,{lit(data11)}),(2,{lit(data2)});")
@@ -117,11 +117,14 @@ class AlignmentContract(unittest.TestCase):
             pg.sql("""
             INSERT INTO public.bilan_question_identites(uid,module_id,filiere,exercice_id,numero_technique,etat_initial) VALUES
               ('aaaaaaaa-aaaa-4000-8000-000000000059',5,'VTC',500,'59','supprime'),
-              ('aaaaaaaa-aaaa-4000-8000-000000000144',5,'VTC',500,'144','actif');
+              ('aaaaaaaa-aaaa-4000-8000-000000000144',5,'VTC',500,'144','actif'),
+              ('aaaaaaaa-aaaa-4000-8000-000000000995',5,'VTC',999,'999','actif'),
+              ('aaaaaaaa-aaaa-4000-8000-000000000996',11,'TAXI',999,'999','actif');
+            UPDATE public.bilan_identite_flags SET actif=true WHERE module_id IN(5,11);
             """)
 
-            old0 = pg.sql("INSERT INTO public.bilan_future_versions(subject,questions,fingerprint) VALUES(0,'[{\"id\":1}]','x') RETURNING id")
-            old1 = pg.sql("INSERT INTO public.bilan_future_versions(subject,questions,fingerprint) VALUES(1,'[{\"id\":1}]','x') RETURNING id")
+            old0 = pg.sql("INSERT INTO public.bilan_future_versions(subject,questions,fingerprint) VALUES(0,'[{\"id\":1}]',md5('[{\"id\":1}]'::jsonb::text)) RETURNING id")
+            old1 = pg.sql("INSERT INTO public.bilan_future_versions(subject,questions,fingerprint) VALUES(1,'[{\"id\":1}]',md5('[{\"id\":1}]'::jsonb::text)) RETURNING id")
             pg.sql(f"INSERT INTO public.bilan_future_active VALUES(0,'{old0}'),(1,'{old1}')")
             owners = ['00000000-0000-4000-8000-00000000' + str(n).zfill(4) for n in (1,2,3,4)]
             for owner in owners:
@@ -144,6 +147,11 @@ class AlignmentContract(unittest.TestCase):
             tables = ['bilan_passage_snapshots','reponses_apprenants','apprenant_module_completion','bilan_future_receipts','bilan_future_drafts','bilan_future_submissions','bilan_future_active','bilan_future_eligibility']
             before = {table: pg.sql(f'SELECT md5(coalesce(string_agg(md5(row_to_json(t)::text),\'\' ),\'\')) FROM {table} t') for table in tables}
             old_uids = json.loads(pg.sql("SELECT jsonb_object_agg(module_id||':'||exercice_id||':'||numero_technique,uid) FROM bilan_question_identites WHERE etat_initial='actif'"))
+            untouched_before = {
+                'module2': pg.sql("SELECT module_data FROM module_editor_state WHERE module_id=2"),
+                'exo5_999': pg.sql("SELECT module_data->'exercices'->2 FROM module_editor_state WHERE module_id=5"),
+                'exo11_999': pg.sql("SELECT module_data->'exercices'->2 FROM module_editor_state WHERE module_id=11"),
+            }
             result = json.loads(pg.sql(f"SELECT public.run_bilan_t3p_gestion_alignment_20261108('{expected}'::jsonb)"))
             self.assertEqual(result['statut'],'applique')
             self.assertEqual(result['nouvel_id_vtc_taxi_q59'],145)
@@ -157,8 +165,9 @@ class AlignmentContract(unittest.TestCase):
                 if key.startswith('5:500:59') or key.startswith('5:500:144'):
                     continue
                 self.assertEqual(pg.sql(f"SELECT uid FROM bilan_question_identites WHERE module_id={key.split(':')[0]} AND exercice_id={key.split(':')[1]} AND numero_technique='{key.split(':')[2]}'"),uid,key)
-            self.assertEqual(pg.sql("SELECT module_data FROM module_editor_state WHERE module_id=2"),json.dumps(data2).replace(' ', '') if False else pg.sql("SELECT module_data FROM module_editor_state WHERE module_id=2"))
-            self.assertEqual(json.loads(pg.sql("SELECT module_data->'exercices'->2 FROM module_editor_state WHERE module_id=5"))['id'],999)
+            self.assertEqual(pg.sql("SELECT module_data FROM module_editor_state WHERE module_id=2"),untouched_before['module2'])
+            self.assertEqual(pg.sql("SELECT module_data->'exercices'->2 FROM module_editor_state WHERE module_id=5"),untouched_before['exo5_999'])
+            self.assertEqual(pg.sql("SELECT module_data->'exercices'->2 FROM module_editor_state WHERE module_id=11"),untouched_before['exo11_999'])
 
             canonical = """
             WITH b AS (SELECT m.module_id,e.exercice,q.ordre,q.question q FROM module_editor_state m
@@ -169,7 +178,6 @@ class AlignmentContract(unittest.TestCase):
             SELECT bool_and(bilan_alignment_canonical(v.q)=bilan_alignment_canonical(t.q)) FROM v JOIN t ON t.exercice->>'id'=(v.exercice->>'id')::int+100 AND t.ordre=v.ordre
             """
             self.assertEqual(pg.sql(canonical),'t')
-            self.assertEqual(pg.sql("SELECT q->>'id' FROM module_editor_state m,jsonb_array_elements(m.module_data->'exercices') e,jsonb_array_elements(e->'questions') q WHERE m.module_id=5 AND e->>'id'='500' ORDER BY ordinality NULLS LAST LIMIT 0"),'') if False else None
             self.assertEqual(pg.sql("SELECT q->>'id' FROM (SELECT q,row_number() over() n FROM module_editor_state m,jsonb_array_elements(m.module_data->'exercices') e,jsonb_array_elements(e->'questions') q WHERE m.module_id=5 AND e->>'id'='500') s WHERE n=8"),'145')
             self.assertEqual(pg.sql("SELECT q->>'id' FROM (SELECT q,row_number() over() n FROM module_editor_state m,jsonb_array_elements(m.module_data->'exercices') e,jsonb_array_elements(e->'questions') q WHERE m.module_id=11 AND e->>'id'='600') s WHERE n=8"),'59')
             self.assertEqual(pg.sql("SELECT count(*) FROM module_editor_state m,jsonb_array_elements(m.module_data->'exercices') e,jsonb_array_elements(e->'questions') q WHERE m.module_id=11 AND e->>'id'='601' AND q->>'id' IN('66','100')"),'2')
