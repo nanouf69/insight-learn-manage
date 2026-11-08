@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 08/11 20:17 — Finalisation idempotente et rattrapage QRC ciblés
-- [ ] Reçu serveur atomique de révision, compatibilité anciens doublons sans mutation, reprise après retour perdu.
-- [ ] Rattrapage QRC sur réabonnement/online/onglet actif, regroupé et isolé par compte, sans polling périodique.
-- [ ] Tests SQL jetables/concurrence et vrais écrans, empreintes avant/après, scan et déploiement ciblé si sûr.
+- [x] Reçu serveur atomique candidat et garde INSERT ; tests concurrence/rejeu/propriétaire PostgreSQL PASS, aucun ancien résultat modifié.
+- [x] Rattrapage QRC événementiel 400 ms + une lecture à 2,4 s, identité isolée ; boucle de lectures NotesView corrigée ; écran fictif 18,3/20 sans reload capturé.
+- [x] Tests ciblés, handler/PostgREST isolés, empreintes et scan réalisés ; rapport docs/revision-qrc-corrections-2026-11-08.md.
+- [ ] Mise en service non engagée : suite globale interrompue sans résumé ; matrice complète admin/RLS/conflits historiques et mobile à terminer avant migration/publication. Realtime hébergé non prouvé, paquet public inchangé.
 
 ## 08/11 — Preuve de clôture de révision des réponses fausses EB
 - [x] RevisionFausses identifié ; vendredi 06/11 : 25 occurrences de « Dernières réponses non confirmées », contexte sans identifiant d'opération, cause individuelle non démontrable.
