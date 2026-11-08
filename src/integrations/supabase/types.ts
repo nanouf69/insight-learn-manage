@@ -1436,6 +1436,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_alignment_archives: {
+        Row: {
+          created_at: string
+          id: string
+          new_value: Json | null
+          object_key: string
+          object_type: string
+          operation: string
+          previous_value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          object_key: string
+          object_type: string
+          operation: string
+          previous_value: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          object_key?: string
+          object_type?: string
+          operation?: string
+          previous_value?: Json
+        }
+        Relationships: []
+      }
       bilan_future_active: {
         Row: {
           subject: number
@@ -1452,6 +1482,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "bilan_future_active_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bilan_future_common_releases: {
+        Row: {
+          activated_at: string
+          id: string
+          subject: number
+          version_id: string
+        }
+        Insert: {
+          activated_at?: string
+          id?: string
+          subject: number
+          version_id: string
+        }
+        Update: {
+          activated_at?: string
+          id?: string
+          subject?: number
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_future_common_releases_version_id_fkey"
             columns: ["version_id"]
             isOneToOne: false
             referencedRelation: "bilan_future_versions"
@@ -9316,6 +9375,12 @@ export type Database = {
           validated: boolean
         }[]
       }
+      bilan_alignment_canonical: { Args: { q: Json }; Returns: Json }
+      bilan_alignment_future: { Args: { q: Json }; Returns: Json }
+      bilan_alignment_set_questions: {
+        Args: { exo: number; md: Json; qs: Json }
+        Returns: Json
+      }
       bilan_autoriser_nouvelle_tentative: {
         Args: {
           p_apprenant_id: string
@@ -10499,6 +10564,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      run_bilan_t3p_gestion_alignment_20261108: {
+        Args: { p_expected: Json }
+        Returns: Json
       }
       save_canonical_quiz_question: {
         Args: {
