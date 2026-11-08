@@ -4,6 +4,7 @@ import os, pathlib, subprocess, sys, tempfile, unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MIGRATION = pathlib.Path(os.environ.get('QRC_FILE_SQL') or next(ROOT.glob('drizzle/migrations/*qrc_ia_file_serveur*.sql')))
 GT_SQL = os.environ.get('QRC_GT_SQL')
+EXTRA_SQL = os.environ.get('QRC_EXTRA_SQL')
 TEMP = tempfile.mkdtemp(prefix='qrc-file-', dir='/tmp'); os.chown(TEMP, 1000, 1000)
 DATA = TEMP + '/data'; PORT = '55441'
 EL = '11111111-1111-4111-8111-000000000001'   # e-learning learner
@@ -177,6 +178,7 @@ def main():
         sql('ALTER TABLE public.qrc_ia_suites ADD COLUMN dispatches integer NOT NULL DEFAULT 0;')
         sql(MIGRATION.read_text())
         if GT_SQL: sql(pathlib.Path(GT_SQL).read_text())
+        if EXTRA_SQL: sql(pathlib.Path(EXTRA_SQL).read_text())
         result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(File))
         if not result.wasSuccessful(): raise SystemExit(1)
     finally:

@@ -54,7 +54,7 @@ describe("Persistance des réponses apprenants", () => {
   it("envoie la réponse au serveur et vide la file après confirmation", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, confirmed: true }),
+      json: async () => ({ success: true, confirmed: true, accepted_event_ids: [JSON.parse(fetchMock.mock.calls[0][1].body).events[0].event_id] }),
       text: async () => "",
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -136,7 +136,7 @@ describe("Persistance des réponses apprenants", () => {
   it("attend la confirmation serveur avant d'autoriser la finalisation", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 503, text: async () => "offline" })
-      .mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true }) });
+      .mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true, accepted_event_ids: [JSON.parse(fetchMock.mock.calls.at(-1)![1].body).events[0].event_id] }) });
     vi.stubGlobal("fetch", fetchMock);
     enqueueAnswerSave(payload());
     await flush();
