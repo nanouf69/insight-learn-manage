@@ -34,7 +34,7 @@ class Pg:
 
     def sql(self, query, check=True):
         env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
-        result = subprocess.run(['psql', '-X', '-At', '-h', self.dir, '-p', str(self.port), '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], input=query, capture_output=True, text=True, env=env)
+        result = subprocess.run(['psql', '-X', '-q', '-At', '-h', self.dir, '-p', str(self.port), '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], input=query, capture_output=True, text=True, env=env)
         if check and result.returncode:
             raise AssertionError(result.stderr)
         return result.stdout.strip() if result.returncode == 0 else result.stderr
