@@ -9,6 +9,7 @@ import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassag
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies, verdictMatiereAffiche } from "@/lib/noteExamenAffichee";
+import { useLearnerResultRefresh } from "@/hooks/useLearnerResultRefresh";
 
 interface QuizResult {
   id: string;
@@ -75,8 +76,11 @@ const normalizeQuizNoteSur20 = (result: QuizResult): number | null => {
   return n.etat === "note" ? n.note20 : null;
 };
 
-const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: NotesViewProps) => {
-  const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
+const EMPTY_COMPLETIONS: ModuleCompletion[] = [];
+const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COMPLETIONS }: NotesViewProps) => {
+  const [quizResultState, setQuizResultState] = useState<{ owner: string; rows: QuizResult[] }>({ owner: apprenantId, rows: [] });
+  const quizResults = quizResultState.owner === apprenantId ? quizResultState.rows : [];
+  const setQuizResults = useCallback((rows: QuizResult[]) => setQuizResultState({ owner: apprenantId, rows }), [apprenantId]);
   const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>(moduleCompletionsSeed);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
@@ -85,6 +89,10 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   // Un état de chargement par élève : une réponse tardive de l'élève précédent
   // ne peut jamais être affichée sur la fiche d'un autre élève.
   const fetchStateRef = useRef<{ id: string; inFlight: boolean; pending: boolean }>({ id: apprenantId, inFlight: false, pending: false });
+  const refreshTick = useLearnerResultRefresh(apprenantId, true);
+  if (fetchStateRef.current.id !== apprenantId) {
+    fetchStateRef.current = { id: apprenantId, inFlight: false, pending: false };
+  }
   useEffect(() => {
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
@@ -93,7 +101,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     setQuizResults([]);
     setLoading(true);
     setSelectedDetail(null);
-  }, [apprenantId]);
+  }, [apprenantId, setQuizResults]);
 
   const fetchAll = useCallback(async () => {
     if (!apprenantId) {
@@ -168,40 +176,13 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
   useEffect(() => {
     fetchAll();
-  }, [fetchAll]);
-
-  // Realtime subscription to auto-refresh results
+  }, [fetchAll, refreshTick]);
   useEffect(() => {
-    if (!apprenantId) return;
-
-    const channel = supabase
-      .channel(`notes-view-${apprenantId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'apprenant_quiz_results', filter: `apprenant_id=eq.${apprenantId}` },
-        () => fetchAll()
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'apprenant_module_completion', filter: `apprenant_id=eq.${apprenantId}` },
-        () => fetchAll()
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'core_exam_results', filter: `apprenant_id=eq.${apprenantId}` },
-        () => fetchAll()
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'qrc_instances_v2', filter: `apprenant_id=eq.${apprenantId}` },
-        () => fetchAll()
-      )
-      .subscribe();
-
+    const state = fetchStateRef.current;
     return () => {
-      supabase.removeChannel(channel);
+      if (fetchStateRef.current === state) fetchStateRef.current = { id: "", inFlight: false, pending: false };
     };
-  }, [apprenantId, fetchAll]);
+  }, [apprenantId]);
 
   // NO polling — realtime subscription above handles updates
 

@@ -88,9 +88,13 @@ function EcranResultats({
   // Source unique : état serveur des passages du nouveau système (même source
   // que l'écran Correction QRC et la fiche Admin). Lecture seule.
   const [coreStates, setCoreStates] = useState<CoreMatiereState[] | null>(null);
+  const coreOwnerRef = useRef(apprenantId);
+  const sameCoreOwner = coreOwnerRef.current === apprenantId;
   const coreTick = useCoreChangeTick(apprenantId);
   useEffect(() => {
     let cancelled = false;
+    if (coreOwnerRef.current !== apprenantId) setCoreStates(null);
+    coreOwnerRef.current = apprenantId;
     fetchCoreMatiereStates(apprenantId).then(async (st) => {
       // Passages non fiables (défaut du 23/09) : note de l'ancien système.
       const nf = st && apprenantId ? await fetchPassagesV2NonFiables(new Map([[apprenantId, st]])) : null;
@@ -102,8 +106,8 @@ function EcranResultats({
   // Les emplacements vides (matière sans résultat) restent à leur index : jamais de plantage.
   resultats = useMemo(() => resultatsSource.map((r) => (r == null ? r : {
     ...r,
-    __core: coreFiablePourLigne(coreStates, { ...r, quizId: r.quizId ?? examen?.id }),
-  })), [resultatsSource, coreStates, examen?.id]);
+    __core: coreFiablePourLigne(sameCoreOwner ? coreStates : null, { ...r, quizId: r.quizId ?? examen?.id }),
+  })), [resultatsSource, coreStates, examen?.id, sameCoreOwner]);
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
@@ -1275,7 +1279,12 @@ function RevisionFausses({
         }
         const rows = (tentatives as RevisionRowLike[]) || [];
         revisionRowsRef.current = rows;
-        const idTentative = choisirTentativeRevision(baseExerciceId, rows);
+        // A completed draft without a result is an interrupted finalization, not a new revision.
+        const { data: finalises, error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
+          .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
+        if (erreurFinalises) throw erreurFinalises;
+        const interrupted = rows.some(r => r.completed !== true) ? undefined : rows.filter(r => r.completed === true).at(-1);
+        const idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
         if (annule) return;
         setExerciceId(idTentative);
         tentativePreteRef.current = true;
@@ -1285,7 +1294,6 @@ function RevisionFausses({
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses")
-          .eq("completed", false)
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -1456,34 +1464,18 @@ function RevisionFausses({
       termineeRef.current = true;
       const confirme = restaurerRevisionProgressState(relu.reponses, examenId, questionOrder);
       const finalCorrected = Number.isFinite(relu.score) ? Number(relu.score) : confirme.correctedCount;
-      const { error } = await supabase
-        .from("apprenant_quiz_results")
-        .insert({
-          apprenant_id: apprenantId,
-          user_id: userId,
-          quiz_type: "revision_fausses",
-          quiz_id: examenId,
-          quiz_titre: `Révision questions fausses — ${examenId}`,
-          score_obtenu: finalCorrected,
-          score_max: wrongQuestions.length,
-          note_sur_20: Math.round((finalCorrected / wrongQuestions.length) * 20 * 2) / 2,
-          reussi: finalCorrected === wrongQuestions.length,
-          details: {
-            reponses: confirme.answers,
-            revision_exercice_id: exerciceId,
-            questionOrder,
-            questions: wrongQuestions.map(wq => ({
-              questionKey: revisionQuestionKey(wq),
-              questionId: wq.question.id,
-              matiereId: wq.matiere.id,
-              matiereNom: wq.matiereNom,
-              enonce: wq.question.enonce,
-            })),
-          } as any,
-        });
+      const { data: receipt, error } = await supabase.rpc("finaliser_revision_fausses" as any, {
+        p_apprenant_id: apprenantId, p_examen_id: examenId, p_revision_exercice_id: exerciceId,
+      });
       if (error) {
         console.error("Erreur sauvegarde révision:", error.message, error.details);
       } else {
+        const result = receipt as any;
+        if (!result?.id || result.apprenant_id !== apprenantId || result.quiz_id !== examenId
+          || result.details?.revision_exercice_id !== exerciceId || Number(result.score_obtenu) !== finalCorrected
+          || JSON.stringify(result.details?.questionOrder) !== JSON.stringify(questionOrder)) {
+          throw new Error("Reçu de finalisation non conforme");
+        }
         finEnregistree = true;
         toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
         onTerminer();
