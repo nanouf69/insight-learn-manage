@@ -8,6 +8,7 @@ from upsert_reponse_http_integration import PgJetable
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 APP = '11111111-1111-4111-8111-000000000001'
 UID = '22222222-2222-4222-8222-000000000002'
+ADMIN = '44444444-4444-4444-8444-000000000004'
 
 class RevisionSql(unittest.TestCase):
     @classmethod
@@ -20,8 +21,8 @@ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current
 CREATE TYPE public.app_role AS ENUM ('admin','moderator','user');
 CREATE TABLE apprenants(id uuid PRIMARY KEY,auth_user_id uuid);
 CREATE FUNCTION core_est_proprietaire(uuid) RETURNS boolean LANGUAGE sql SECURITY DEFINER AS $$ SELECT EXISTS(SELECT 1 FROM apprenants WHERE id=$1 AND auth_user_id=auth.uid()) $$;
-CREATE FUNCTION has_role(uuid,app_role) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
-CREATE TABLE reponses_apprenants(id uuid DEFAULT gen_random_uuid(),apprenant_id uuid,user_id uuid,exercice_id text,exercice_type text,reponses jsonb,score numeric,completed boolean);
+CREATE FUNCTION has_role(uuid,app_role) RETURNS boolean LANGUAGE sql AS $$ SELECT $1='44444444-4444-4444-8444-000000000004'::uuid AND $2='admin' $$;
+CREATE TABLE reponses_apprenants(id uuid DEFAULT gen_random_uuid(),apprenant_id uuid,user_id uuid,exercice_id text,exercice_type text,reponses jsonb,score numeric,completed boolean,updated_at timestamptz DEFAULT now());
 CREATE TABLE apprenant_quiz_results(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),apprenant_id uuid,user_id uuid,quiz_type text,quiz_id text,quiz_titre text,matiere_id text,score_obtenu numeric,score_max numeric,note_sur_20 numeric,reussi boolean,details jsonb,completed_at timestamptz DEFAULT now(),tentative integer DEFAULT 1);
 CREATE FUNCTION set_next_quiz_tentative() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE v_next integer; BEGIN IF NEW.tentative IS NULL OR NEW.tentative=1 THEN SELECT coalesce(max(tentative),0)+1 INTO v_next FROM apprenant_quiz_results WHERE apprenant_id=NEW.apprenant_id AND quiz_id=NEW.quiz_id AND coalesce(matiere_id,'')=coalesce(NEW.matiere_id,''); IF v_next>1 THEN NEW.tentative:=v_next; END IF; END IF; RETURN NEW; END $$;
 CREATE TRIGGER trg_set_next_quiz_tentative BEFORE INSERT ON apprenant_quiz_results FOR EACH ROW EXECUTE FUNCTION set_next_quiz_tentative();
@@ -36,7 +37,10 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
 
     def fixture(self, exam):
         state={'examenId':exam,'answers':{'t3p:1':['B','C'],'gestion:1':'texte'},'questionOrder':['t3p:1','gestion:1'],'correctedQuestions':['t3p:1','gestion:1'],'correctedCount':2}
-        self.pg.sql(f"INSERT INTO reponses_apprenants VALUES(gen_random_uuid(),'{APP}','{UID}','revision_fausses_{exam}','revision_fausses','{json.dumps({'revisionState':state})}',2,true)")
+        for matter, question in [('t3p',{'id':1,'type':'QCM','choix':[{'lettre':'A','correct':False},{'lettre':'B','correct':True},{'lettre':'C','correct':True}]}),('gestion',{'id':1,'type':'QRC','reponses_possibles':['texte']})]:
+            snapshot={'snapshot':{'matiereId':matter,'questions':[question]}}
+            self.pg.sql(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_type,matiere_id,details,completed_at) VALUES('{APP}','{UID}','{exam}','examen_blanc','{matter}','{json.dumps(snapshot)}',now()-interval '1 second')")
+        self.pg.sql(f"INSERT INTO reponses_apprenants(id,apprenant_id,user_id,exercice_id,exercice_type,reponses,score,completed) VALUES(gen_random_uuid(),'{APP}','{UID}','revision_fausses_{exam}','revision_fausses','{json.dumps({'revisionState':state})}',2,true)")
     def call(self, exam, uid=UID):
         return self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{uid}'; SELECT finaliser_revision_fausses('{APP}','{exam}','revision_fausses_{exam}')")
 
@@ -54,7 +58,7 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
         self.fixture('EB1')
         with self.assertRaisesRegex(RuntimeError,'Accès refusé'): self.call('EB1','33333333-3333-4333-8333-000000000003')
         with self.assertRaisesRegex(RuntimeError,'Accès refusé'): self.call('EB1','')
-        self.assertEqual('0',self.pg.sql("SELECT count(*) FROM apprenant_quiz_results WHERE quiz_id='EB1'"))
+        self.assertEqual('0',self.pg.sql("SELECT count(*) FROM apprenant_quiz_results WHERE quiz_id='EB1' AND quiz_type='revision_fausses'"))
 
     def test_old_client_duplicate_guard(self):
         self.fixture('EB3')
@@ -66,5 +70,28 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
         self.fixture('EB4')
         self.pg.sql("UPDATE reponses_apprenants SET completed=false WHERE exercice_id='revision_fausses_EB4'")
         with self.assertRaisesRegex(RuntimeError,'Clôture non confirmée'): self.call('EB4')
+
+    def test_forged_score_refused(self):
+        self.fixture('FORGED')
+        self.pg.sql("UPDATE reponses_apprenants SET reponses=jsonb_set(reponses,'{revisionState,answers,t3p:1}','[\"A\"]') WHERE exercice_id='revision_fausses_FORGED'")
+        with self.assertRaisesRegex(RuntimeError,'Score de révision non confirmé'): self.call('FORGED')
+        self.assertEqual('0',self.pg.sql("SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='FORGED'"))
+
+    def test_receipt_rls_and_admin(self):
+        self.fixture('ADMIN')
+        self.call('ADMIN',ADMIN)
+        self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{UID}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'"))
+        self.assertEqual('0',self.pg.sql("SET ROLE authenticated; SET request.jwt.claim.sub='33333333-3333-4333-8333-000000000003'; SELECT count(*) FROM revision_fausses_receipts"))
+        self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'"))
+        with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql("SET ROLE anon; SELECT * FROM revision_fausses_receipts")
+        with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql(f"SET ROLE anon; SELECT finaliser_revision_fausses('{APP}','ADMIN','revision_fausses_ADMIN')")
+        with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql("SET ROLE authenticated; INSERT INTO revision_fausses_receipts VALUES(null,null,null,null,null,now())")
+
+    def test_historical_conflict_preserved(self):
+        self.fixture('CONFLICT')
+        self.pg.sql(f"INSERT INTO apprenant_quiz_results(apprenant_id,quiz_id,quiz_type,score_obtenu,score_max,details) VALUES('{APP}','CONFLICT','revision_fausses',0,2,'{{\"revision_exercice_id\":\"revision_fausses_CONFLICT\"}}')")
+        before=self.pg.sql("SELECT md5(to_jsonb(r)::text) FROM apprenant_quiz_results r WHERE quiz_id='CONFLICT' AND quiz_type='revision_fausses'")
+        with self.assertRaisesRegex(RuntimeError,'Preuve historique différente'): self.call('CONFLICT')
+        self.assertEqual(before,self.pg.sql("SELECT md5(to_jsonb(r)::text) FROM apprenant_quiz_results r WHERE quiz_id='CONFLICT' AND quiz_type='revision_fausses'"))
 
 if __name__=='__main__': unittest.main(verbosity=2)
