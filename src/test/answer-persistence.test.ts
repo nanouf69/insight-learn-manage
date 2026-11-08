@@ -62,7 +62,7 @@ describe("Persistance des réponses apprenants", () => {
     await flush();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
     expect(body.apprenant_id).toBeTruthy();
     expect(body.module_id).toBe(7);
     expect(body.exercice_id).toBe("module_7_exo_1");

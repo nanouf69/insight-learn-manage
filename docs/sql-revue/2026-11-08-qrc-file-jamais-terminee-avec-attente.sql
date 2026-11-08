@@ -8,7 +8,7 @@ BEGIN
  IF auth.role() IS DISTINCT FROM 'service_role' AND current_user NOT IN ('postgres','supabase_admin') THEN RAISE EXCEPTION 'Service uniquement' USING ERRCODE='42501'; END IF;
  r := public.qrc_ia_raison_file(p_attempt);
  IF r<>'admissible' THEN
-  IF r='rien_a_corriger' THEN
+  IF r IN ('rien_a_corriger','hors_periode') THEN
    UPDATE public.qrc_ia_suites qcs SET statut='a_verifier',
     message='QRC encore en attente mais non admissibles à une reprise automatique',
     dernier_code='qrc_en_attente_non_admissible', maj_at=now()

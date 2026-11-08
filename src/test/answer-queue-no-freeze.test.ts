@@ -123,7 +123,7 @@ describe("File des réponses : jamais figée (incident du 10/10)", () => {
     reponses[0]({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 1, accepted_event_ids: [e1] }), text: async () => "" });
     await vi.advanceTimersByTimeAsync(0);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    const second = JSON.parse(fetchMock.mock.calls[1][1].body);
+    const second = JSON.parse((fetchMock.mock.calls[1] as any)[1].body);
     expect(second.events.map((e: any) => e.event_id)).toEqual([e2]);
 
     reponses[1]({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 2, accepted_event_ids: [e2] }), text: async () => "" });
