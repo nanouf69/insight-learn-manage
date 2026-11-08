@@ -146,18 +146,18 @@ describe("Ordre des écritures décidé par le serveur", () => {
   it("ne rebase pas une révision d'un autre onglet qui ne contient pas la réponse précédente", async () => {
     let confirmerPremierEnvoi: (() => void) | undefined;
     const fetchMock = vi.fn()
-      .mockImplementationOnce(() => new Promise((resolve) => {
+      .mockImplementationOnce((_url: string, init: RequestInit) => new Promise((resolve) => {
         confirmerPremierEnvoi = () => resolve({
           ok: true,
-          json: async () => ({ success: true, confirmed: true, write_seq: 1, skipped_questions: [] }),
+          json: ackJson(init, { success: true, confirmed: true, write_seq: 1, skipped_questions: [] }),
           text: async () => "",
         });
       }))
-      .mockResolvedValueOnce({
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => ({
         ok: true,
-        json: async () => ({ success: true, confirmed: true, write_seq: 1, skipped_questions: ["revisionState"] }),
+        json: ackJson(init, { success: true, confirmed: true, write_seq: 1, skipped_questions: ["revisionState"] }),
         text: async () => "",
-      });
+      }));
     vi.stubGlobal("fetch", fetchMock);
     const etat = (answers: Record<string, unknown>) => ({
       version: 1, examenId: "EB1", currentIndex: 0, correctedCount: 0,
