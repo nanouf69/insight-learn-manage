@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 08/11 — Alignement ciblé Bilan T3P/Gestion VTC/TAXI
+- [ ] Comparer exhaustivement les seules banques 5/500–11/600 et 5/501–11/601, y compris doublons, choix, clés, images et explications.
+- [ ] Sauvegarder les quatre états actuels et les empreintes des copies/réponses/résultats ; confirmer l'immutabilité des passages.
+- [ ] Aligner additivement numéros affichés et ordre sans renuméroter les identifiants de stockage ni modifier une bonne réponse.
+- [ ] Rejouer les tests fictifs, contrôler l'égalité intégrale et les preuves inchangées, puis vérifier les écrans et la publication ciblée.
+
 ## 08/11 — Trois priorités persistantes autorisées
 - [x] Persistance BENNANI / CLERC : cause des renvois confirmés et troncature 500 corrigée ; vrai handler/PostgreSQL jetable validé ; aucune purge ni récupération appareil non prouvée.
 - [x] QRC restantes : 2 corrigés de calcul incomplets, 5 ambiguïtés et 3 réponses vides conservées en revue ; 0 nouvel appel IA/note ; faux état terminé corrigé, empreintes QRC/résultats inchangées.
