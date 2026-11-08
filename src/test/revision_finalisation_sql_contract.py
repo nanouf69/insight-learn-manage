@@ -94,4 +94,19 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
         with self.assertRaisesRegex(RuntimeError,'Preuve historique différente'): self.call('CONFLICT')
         self.assertEqual(before,self.pg.sql("SELECT md5(to_jsonb(r)::text) FROM apprenant_quiz_results r WHERE quiz_id='CONFLICT' AND quiz_type='revision_fausses'"))
 
+    def test_source_identity_never_guessed(self):
+        self.fixture('IDENTITY')
+        source=self.pg.sql("SELECT id FROM apprenant_quiz_results WHERE quiz_id='IDENTITY' AND matiere_id='t3p'")
+        self.pg.sql("INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_type,matiere_id,details,completed_at) SELECT apprenant_id,user_id,quiz_id,quiz_type,matiere_id,details,completed_at FROM apprenant_quiz_results WHERE quiz_id='IDENTITY' AND matiere_id='t3p'")
+        with self.assertRaisesRegex(RuntimeError,'Identité de copie initiale non prouvée'): self.call('IDENTITY')
+        self.pg.sql(f"UPDATE reponses_apprenants SET reponses=jsonb_set(reponses,'{{revisionState,sourceResultIds}}','{{\"t3p:1\":\"{source}\"}}') WHERE exercice_id='revision_fausses_IDENTITY'")
+        self.call('IDENTITY')
+        self.assertEqual('1',self.pg.sql("SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='IDENTITY'"))
+
+    def test_missing_qrc_key_refused_not_invented(self):
+        self.fixture('NO_KEY')
+        self.pg.sql("UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{snapshot,questions,0,reponses_possibles}','[]') WHERE quiz_id='NO_KEY' AND matiere_id='gestion'")
+        with self.assertRaisesRegex(RuntimeError,'corrigé figé insuffisant'): self.call('NO_KEY')
+        self.assertEqual('0',self.pg.sql("SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='NO_KEY'"))
+
 if __name__=='__main__': unittest.main(verbosity=2)
