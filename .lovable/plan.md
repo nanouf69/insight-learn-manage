@@ -1,34 +1,16 @@
-# Comparaison TAXI / VTC des matières communes (lecture seule)
+# Alignement ciblé T3P et Gestion VTC/TAXI
 
-## Ce qui sera fait
-Je compare le contenu actuel du serveur avec ce qu'affichent vraiment les écrans élève, pour les matières communes uniquement : T3P, gestion, sécurité routière, français et anglais. J'ajouterai d'autres matières seulement si elles sont prouvées communes. Les matières propres à chaque filière sont exclues et ne seront jamais rapprochées : réglementation TAXI, connaissance du territoire et réglementation VTC.
-
-Je traite trois familles séparément : Bilans, Examens blancs et Exercices des modules.
+## Périmètre
+- Uniquement modules 5/11, exercices 500/600 (T3P) et 501/601 (Gestion).
+- Contenu actuel et nouvelles versions seulement ; aucune autre matière, copie, réponse, note, signature, progression ou version figée.
 
 ## Étapes
-1. **Repérage** : je relève dans le code (modules, sélection des bilans et des examens blancs, projection nationale) et dans les tables de contenu les éléments qui servent vraiment à l'élève. J'établis pour chaque filière la liste exacte module → exercice → matière. Les identifiants ne sont jamais rapprochés par leur seul numéro : je m'appuie sur l'identité permanente, la matière et l'exercice. Les cas ambigus sont listés avant toute comparaison.
-2. **Extraction** : des lectures SELECT seulement, sur le contenu courant (versions actives, registre de synchronisation). Les copies figées des examens commencés et les relevés figés sont exclus, et je le dirai.
-3. **Comparaison paire par paire** : pour chaque paire, je compare :
-   - le nombre de questions, et les questions manquantes ou en trop ;
-   - les énoncés ;
-   - les choix, avec leur ordre et leur lettre ;
-   - les bonnes réponses et les réponses multiples ;
-   - le type (QCM ou QRC), le corrigé QRC et le barème ;
-   - les images et l'ordre des questions.
+1. Comparer les quatre banques complètes par UID, identifiant interne et contenu intégral : énoncé, choix et bonnes réponses, type, explication, barème et images. Établir les correspondances bijectives, les vrais doublons et les cas ambigus sans rapprochement par simple numéro.
+2. Capturer les empreintes avant des quatre banques, des copies figées, réponses et résultats. Confirmer par tests que l’écran élève et les corrections lisent exclusivement le snapshot/version du passage.
+3. Construire l’union additive sur la numérotation VTC : recopier les questions manquantes avec leur UID et leur contenu, ajouter la question propre au TAXI au numéro VTC libre prouvé, trier les deux banques à l’identique et préserver les doublons ambigus. Aucune suppression ni modification d’une bonne réponse existante.
+4. Appliquer avec contrôle de version et journalisation via les mécanismes serveur existants ; créer de nouvelles versions pour les futurs passages sans réattribuer les passages déjà ouverts. Préparer le retour arrière à partir des empreintes et contenus antérieurs conservés.
+5. Tester sur données fictives : ajouts unilatéraux, doublon Gestion 66/100, ordre des choix et bonnes réponses, numéros uniques, égalité exhaustive VTC/TAXI, immutabilité des passages et absence d’effet sur les jalons.
+6. Relire les quatre banques après application, vérifier les empreintes des données élèves inchangées, contrôler les écrans admin/élève en lecture seule, puis publier uniquement si les tests et le scan sont bons.
 
-   Seuls les espaces et l'Unicode d'affichage sont normalisés. Une question renumérotée est rapprochée par son contenu, et les correspondances ambiguës restent visibles. Chaque écart est classé **cosmétique** ou **pédagogique**.
-4. **Contrôles ciblés** :
-   - registre : 193 anglais, 97 français, 210 sécurité routière en attente sans références, ainsi que les 119 positions et les métadonnées ou images déjà signalées ;
-   - exercice 62 (VTC module 2 et TAXI module 10) : présence et contenu des anciennes Q40, Q41 et Q49.
-
-## Résultat livré dans le chat
-- Un tableau avec : matière, type, modules et exercices, nombre de questions par filière, et le verdict (identique / écart / non comparable).
-- La liste des seuls écarts réels : identifiants, courts extraits TAXI et VTC, bonne réponse, ordre et impact.
-- Le périmètre exact contrôlé, les exclusions et les lectures impossibles. Je ne conclurai pas « tout est identique » sans preuve que la comparaison est complète.
-
-## Garanties
-Aucune modification de code, de données, de questions ni de notes. Aucun fichier modifié, y compris ce plan au-delà de cette version et la feuille de route. Pas de publication, pas d'IA, pas d'email ni de SMS, pas de sous-agents.
-
-## Détails techniques
-- Sources : `module_editor_state`, `bilan_sync_liens`, `bilan_question_identites`, `exam_content_versions` (versions actives), `canonical_questions`, ainsi que les définitions de modules et de sélection dans `src/`.
-- Comparaison faite par des requêtes SQL d'empreintes (md5 sur un JSON normalisé) par question, puis le détail des seules différences.
+## Décision sans invention
+Toute divergence de fond non résolue par le contenu complet restera telle quelle et sera isolée dans le rapport ; les autres alignements indépendants pourront être terminés.
