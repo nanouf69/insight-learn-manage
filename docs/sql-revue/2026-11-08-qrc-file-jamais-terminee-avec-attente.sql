@@ -66,7 +66,7 @@ BEGIN
     AND NOT EXISTS(SELECT 1 FROM public.comptes_test_techniques t WHERE t.apprenant_id=a.apprenant_id)
     AND NOT EXISTS(SELECT 1 FROM public.core_tentatives_neutralisees n WHERE n.attempt_id=a.attempt_id)
     AND NOT EXISTS(SELECT 1 FROM public.core_exam_resets x WHERE x.archived_attempt_ids ? a.attempt_id::text)
-    AND q.etat='en_attente'
+    AND q.etat='en_attente' AND (q.reponse IS NOT NULL OR s.statut='terminee')
     AND NOT EXISTS(SELECT 1 FROM public.qrc_ia_reprises rr WHERE rr.qrc_instance_id=q.qrc_instance_id)
     AND (NOT EXISTS(SELECT 1 FROM public.qrc_ia_corrections x WHERE x.qrc_instance_id=q.qrc_instance_id)
       OR EXISTS(SELECT 1 FROM public.qrc_ia_corrections x WHERE x.qrc_instance_id=q.qrc_instance_id AND x.statut='exclue' AND x.motif IN ('matiere_exclue_gt','reponse_vide')))
