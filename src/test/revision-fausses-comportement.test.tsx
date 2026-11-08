@@ -9,7 +9,14 @@ const h = vi.hoisted(() => ({
   rows: [] as any[], saved: null as any, insertError: null as any, inserts: [] as any[], tables: [] as string[],
 }));
 vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { from: (table: string) => {
+  supabase: { rpc: async (_name: string, args: any) => {
+    const st = h.saved?.reponses?.revisionState;
+    const payload = {id: "receipt-1", apprenant_id: args.p_apprenant_id, quiz_id: args.p_examen_id,
+      score_obtenu: h.saved?.score, details: { reponses: st?.answers, questionOrder: st?.questionOrder, revision_exercice_id: args.p_revision_exercice_id }};
+    if (!h.inserts.length) h.inserts.push(payload);
+    if ("insertError" in h && h.insertError) return {data: null, error: h.insertError};
+    return {data: payload, error: null};
+  }, from: (table: string) => {
     h.tables.push(table);
     const query: any = {
       filters: {},
