@@ -1878,7 +1878,7 @@ function RevisionPhaseView({
     } catch {}
   }, []);
 
-  const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
+  const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[] = [];
   examenChoisi.matieres.forEach((matiere, mi) => {
     if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
     const r = tousResultats[mi];
@@ -1908,7 +1908,7 @@ function RevisionPhaseView({
           isCorrect = nbTrouvees >= motsCles.length;
         }
       }
-      if (!isCorrect) wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
+      if (!isCorrect) wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom, sourceResultId: r.resultId });
     });
   });
 

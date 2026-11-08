@@ -1,6 +1,7 @@
 export interface RevisionQuestionIdentity {
   matiere: { id?: string | number | null };
   question: { id?: string | number | null };
+  sourceResultId?: string | null;
 }
 
 export interface RevisionProgressState {
@@ -12,6 +13,7 @@ export interface RevisionProgressState {
   correctedQuestions: string[];
   showCorrection: boolean;
   questionOrder: string[];
+  sourceResultIds?: Record<string, string>;
 }
 
 export const revisionQuestionKey = (item: RevisionQuestionIdentity): string =>
@@ -28,6 +30,7 @@ export function creerRevisionProgressState(input: {
   correctedQuestions: string[];
   showCorrection: boolean;
   questionOrder: string[];
+  sourceResultIds?: Record<string, string>;
 }): RevisionProgressState {
   return {
     version: 1,
@@ -38,6 +41,7 @@ export function creerRevisionProgressState(input: {
     correctedQuestions: [...new Set(input.correctedQuestions.map(String))],
     showCorrection: input.showCorrection,
     questionOrder: [...input.questionOrder],
+    ...(input.sourceResultIds ? { sourceResultIds: { ...input.sourceResultIds } } : {}),
   };
 }
 
@@ -79,6 +83,8 @@ export function restaurerRevisionProgressState(
     correctedQuestions,
     showCorrection,
     questionOrder: [...questionOrder],
+    ...(state.sourceResultIds && typeof state.sourceResultIds === "object" && !Array.isArray(state.sourceResultIds)
+      ? { sourceResultIds: { ...state.sourceResultIds } } : {}),
     contexteChange: Boolean(enveloppe) && (!sameExam || !sameOrder),
   };
 }

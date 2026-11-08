@@ -1,6 +1,30 @@
 # Corrections ciblées révision / QRC — 08 novembre 2026
 
-## État : préparé et testé partiellement, non mis en service
+## État au 08/11 21:52 UTC : contrôles complétés, mise en service NO-GO
+
+### Complément exécuté dans ce tour
+
+- Ancien processus absent après reprise du sandbox. Une suite détachée avec fichiers de sortie persistants a terminé : **424 fichiers PASS, 2 ignorés ; 3 706 tests PASS, 13 ignorés, zéro échec**, 244,81 s. Après renforcement du candidat, une unique suite finale : mêmes chiffres, **223,42 s**, sortie 0. Logs `/tmp/revision-final/global-tests.log` et `final-global-tests.log` ; les fichiers `.exit` confirment la fin.
+- **9 tests PostgreSQL privés PASS**, 5,34 s : concurrence/ACK perdu, propriétaire/expiration, admin, anon refusé, autre apprenant sans lecture de reçu, insertion de reçu interdite, conflit historique préservé, score falsifié refusé, source multiple sans identité refusée puis identité explicite acceptée, QRC sans clé refusée sans faux zéro.
+- Vrai handler Deno/PostgREST/PostgreSQL privé réexécuté : **1 PASS**, 56,24 s (501 événements et contrôles de persistance). Aucun appel Cloud d'écriture.
+- Vrai RevisionFausses mobile 390 × 844, file réelle, sauvegarde interceptée localement et finalisation réellement SQL : QCM B+C, QRC « texte », commit suivi d'ACK perdu puis reload : **un résultat**, UUID de reçu identique `854ef05e-c69c-46a7-b13f-ea2edc9a8260`. Erreur réseau volontaire affichée dans la console, succès uniquement après relecture du reçu. Captures sous `/tmp/browser/revision-final/mobile-ack-lost.png` et `mobile-receipt.png`. Cette première capture n'avait pas la CSS chargée : elle prouve le DOM/fonctionnement, pas l'aspect mobile final.
+- NotesView/EcranResultats mobiles avec CSS du projet : SQL fictif 6,67 → 11,67 en attente → 18,33 définitif ; événement final volontairement non envoyé, reprise `online` locale : **18.3 / 20 visible sans reload après 2,242 s**. Changement d'apprenant : ancienne note définitive absente. Captures `qrc-mobile-pending/partial/final/other.png`. Transport local, lectures SQL réelles de fixtures, **pas Realtime hébergé** ; la correction n'est pas effectuée par le handler QRC dans ce harnais.
+- Compilation automatique **OK** 21:47:50 UTC ; scan 21:40:04 : **0 critique, 6 avertissements, 2 infos**, connecteur non configuré donc analyse connecteur ignorée, aucun finding contourné.
+
+### Défaut supplémentaire corrigé dans le candidat, mais bloquant pour mise en service
+
+La finalisation préparée utilisait `reponses_apprenants.score`, envoyé par le navigateur. La propriété seule ne garantissait pas le score. Le candidat vérifie maintenant le score contre les réponses/corrigés de la copie initiale et stocke l'identifiant de résultat source pour chaque question dans les nouveaux états de révision. Les copies historiques restent inchangées. Les conflits et corrigés absents refusent la clôture au lieu de fabriquer une note.
+
+**Le candidat ne peut pas encore être déployé sans régression** : seulement **1 278 / 6 009** résultats initiaux disposent du snapshot complet recherché ; **11 / 23** révisions identifiées ont au moins un tel snapshot (cela ne prouve pas que toutes leurs matières sont couvertes). Les **124 révisions fermées** ne portent aucune identité de résultat source. Imposer maintenant ce nouveau contrôle à l'ancien INSERT bloquerait des parcours légitimes ; le retirer réintroduirait le score falsifiable. De plus, les politiques INSERT/UPDATE propriétaire du résultat initial et le trigger de protection des corrections admin examinés ne prouvent pas que son JSON snapshot est une source serveur non falsifiable. Il faut raccorder la vérification au snapshot serveur immuable de la tentative avec identité prouvée, et assurer le chemin des anciens clients, sans utiliser les banques courantes ni inventer les clés QRC absentes. Cette garantie reste **NON PROUVÉE** ; aucun durcissement risqué n'a été appliqué.
+
+### Déploiement et données
+
+- **Migration non appliquée ; publication non appelée**, faute de garantie score/source et compatibilité historique. Ce n'est pas une approbation outil manquante. Les deux correctifs ne sont pas déclarés résolus en production.
+- Candidat code/test : `92530ca9e040e2bc7d76942b385367abf40600af`, 21:47:49 UTC, avant ce complément documentaire. Public relu : `assets/index-Dy9_Awa8.js`, SHA256 `89ac7fd6c8ae9f8eb806294de183b5497adf4d114946e5cd6d2d91e63081a14a`, ne contient pas `finaliser_revision_fausses` ; commit public non déterminable depuis ce paquet seul.
+- SELECT avant/après de ce tour : **118 révisions**, empreinte `0a6c635f44d8566a4b150c55a8bb7630` inchangée ; modules 5/11 `026ecdf81d2a5a3ced71c723a65108cd` inchangée. Les empreintes antérieures ci-dessous étaient obtenues avec une autre représentation et ne sont pas comparées à celles-ci. Zéro groupe doublonné avec identité explicite. Aucun résultat, réponse, snapshot, signature, jalon ni contenu pédagogique écrit.
+- Veille OS réelle, session réellement expirée, Realtime hébergé et matrice Data API hébergée restent NON PROUVÉS. Les timers testés sont événementiels 400 ms puis une reprise à 2,4 s, pas une garantie réseau ni un polling périodique.
+
+## Historique du tour précédent (ne décrit pas la version actuelle)
 
 Pas de migration appliquée ni de publication demandée dans ce tour. Paquet public relu : `assets/index-Dy9_Awa8.js`. Révision candidate relevée avant rédaction : `8df8427e34398aee2445a65f283d7fb8581d5700` (20:32:34 UTC), suivie des edits du harnais/rapport ; ne pas présenter ce hash comme version déployée.
 
