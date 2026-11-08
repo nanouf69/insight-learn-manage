@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 08/11 — Preuve du rafraîchissement QRC sur écran déjà ouvert
+- [x] Paquet public index-Dy9_Awa8.js : abonnements NotesView et useCoreChangeTick confirmés ; publication des quatre tables et droits propriétaire/admin lus, aucune authentification reprise.
+- [x] Contrat PostgreSQL sécurité/correction PASS, 5 vrais tests handler/PostgREST/SQL avec fournisseur local fictif PASS, 20 tests source/identité/copies figées PASS. SQL mesuré : 6,67 → 11,67 provisoire → 18,33 définitif → révision 20 ; retours 28–29 ms.
+- [ ] DOM temps réel NON PROUVÉ : PostgreSQL/PostgREST isolés disponibles mais aucun service Realtime isolé configuré. Veille/réseau/changement d'élève non exercés en E2E ; aucune correction réelle ni publication. Code : regroupement 400 ms sur résultats, aucun rattrapage explicite NotesView/useCoreChangeTick à la reconnexion.
+
 ## 08/11 — Alignement ciblé Bilan T3P/Gestion VTC/TAXI
 - [ ] Comparer exhaustivement les seules banques 5/500–11/600 et 5/501–11/601, y compris doublons, choix, clés, images et explications.
 - [ ] Sauvegarder les quatre états actuels et les empreintes des copies/réponses/résultats ; confirmer l'immutabilité des passages.
