@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 08/11 — Preuve de clôture de révision des réponses fausses EB
+- [ ] Lire le vrai composant RevisionFausses et les traces du 06/11, sans écriture de production.
+- [ ] Tester clôture, ACK, concurrence, reprise et copies figées avec les harnais existants ; distinguer UI simulée et handler/SQL réels.
+- [ ] Rapporter les résultats persistés, versions et limites sans modifier l’application ni publier.
+
 ## 08/11 — Preuve du rafraîchissement QRC sur écran déjà ouvert
 - [x] Paquet public index-Dy9_Awa8.js : abonnements NotesView et useCoreChangeTick confirmés ; publication des quatre tables et droits propriétaire/admin lus, aucune authentification reprise.
 - [x] Contrat PostgreSQL sécurité/correction PASS, 5 vrais tests handler/PostgREST/SQL avec fournisseur local fictif PASS, 20 tests source/identité/copies figées PASS. SQL mesuré : 6,67 → 11,67 provisoire → 18,33 définitif → révision 20 ; retours 28–29 ms.
