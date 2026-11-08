@@ -93,7 +93,9 @@ class File(unittest.TestCase):
     def test_autre_exclusion_et_compte_nom_test_jamais_reouverts(self):
         self.passage(21)
         sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut,motif,termine_at) VALUES('vide','{qrc(21)}','{att(21)}','{EL}','q:1','h','exclue','reponse_vide',now())")
-        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(21)}','x')"), 'rien_a_corriger')
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(21)}','x')"), 'revue_qrc_en_attente')
+        self.assertEqual(sql(f"SELECT statut||'|'||dernier_code FROM qrc_ia_suites WHERE attempt_id='{att(21)}'"), 'a_verifier|qrc_en_attente_non_admissible')
+        self.assertEqual(sql(f"SELECT etat FROM qrc_instances_v2 WHERE attempt_id='{att(21)}'"), 'en_attente')
         self.passage(22)
         sql(f"UPDATE apprenants SET nom='FICTIF',prenom='ESSAI IA' WHERE id='{EL}'")
         self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(22)}')"), 'compte_test')

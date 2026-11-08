@@ -228,6 +228,16 @@ GRANT SELECT, INSERT, UPDATE ON public.apprenants, public.reponses_apprenants, p
         self.assertEqual((statut, rep.get("confirmed")), (200, True), rep)
         self.assertEqual(self.pg.sql("SELECT originaux_exacts::text FROM public.reponses_apprenants WHERE exercice_id='ordinaire'"), "{}")
 
+        # Plus de 500 événements : aucun ACK partiel et aucune perte silencieuse du journal.
+        evenements_nombreux = [
+            {"event_id": str(uuid.uuid4()), "question_id": "1", "valeur": f"saisie-{i}", "client_saved_at": "2026-11-08T10:00:00Z"}
+            for i in range(501)
+        ]
+        statut, rep_nombreux = self.appel(self.lot("grand-lot", {"1": "valeur finale"}, evenements_nombreux))
+        self.assertEqual((statut, rep_nombreux.get("confirmed")), (200, True), rep_nombreux)
+        self.assertEqual(len(rep_nombreux.get("accepted_event_ids", [])), 501)
+        self.assertEqual(self.pg.sql("SELECT count(*) FROM public.reponses_apprenants_journal WHERE exercice_id='grand-lot'"), "501")
+
         # Lot U+0000 + ␀ littéral + Unicode valide : vrai handler -> vraie RPC -> PostgreSQL.
         texte = "texte\u0000invisible ␀ littéral ␀\u034f é😀"
         ev1, ev2 = str(uuid.uuid4()), str(uuid.uuid4())

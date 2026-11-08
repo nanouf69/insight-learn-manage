@@ -135,6 +135,8 @@ interface QueueItem {
   refused_user_ids?: string[];
   /** Numéro confirmé par l'envoi en cours, utilisé pour chaîner les réponses composées pendant cet envoi. */
   confirmed_write_seq?: number;
+  /** Événements dont le serveur a confirmé la journalisation dans cette opération. */
+  confirmed_event_ids?: string[];
   /** Nouvel identifiant d'opération après une recomposition sans conflit. */
   rebase_operation_id?: string;
   /** Déjà débloqué une fois pour le transport sans U+0000 (aucune boucle). */
