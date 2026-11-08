@@ -97,7 +97,7 @@ describe("Persistance des réponses apprenants", () => {
       .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" })
       .mockResolvedValue({
         ok: true,
-        json: async () => ({ success: true, confirmed: true }),
+        json: async () => ({ success: true, confirmed: true, accepted_event_ids: [JSON.parse(fetchMock.mock.calls.at(-1)![1].body).events[0].event_id] }),
         text: async () => "",
       });
     vi.stubGlobal("fetch", fetchMock);

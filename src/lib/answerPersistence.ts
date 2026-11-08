@@ -1040,11 +1040,23 @@ async function processQueue(): Promise<void> {
       tried += 1;
       queue = readQueue();
       if (result === "ok") {
+        const confirmedSeq = item.confirmed_write_seq ?? 0;
+        const confirmedEvents = new Set(item.confirmed_event_ids ?? []);
+        // Les successeurs compactés pendant cet envoi contiennent encore une copie
+        // des événements déjà confirmés. Ne jamais les renvoyer au serveur.
+        if (confirmedEvents.size > 0) {
+          queue = queue.map((q) => q.id === item.id ? q : {
+            ...q,
+            payload: {
+              ...q.payload,
+              events: (q.payload.events ?? []).filter((event) => !event.event_id || !confirmedEvents.has(event.event_id)),
+            },
+          });
+        }
         // Une réponse composée pendant l'envoi précédent est nécessairement plus
         // récente sur CET appareil. Elle doit partir depuis le numéro qui vient
         // d'être confirmé, même si son compactage lui avait conservé la base 0.
         // Les éléments bloqués et ceux d'un autre compte ne sont jamais rebasés.
-        const confirmedSeq = item.confirmed_write_seq ?? 0;
         if (confirmedSeq > 0) {
           queue = queue.map((q) =>
             q.id !== item.id &&
