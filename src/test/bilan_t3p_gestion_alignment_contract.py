@@ -180,7 +180,7 @@ class AlignmentContract(unittest.TestCase):
               CROSS JOIN LATERAL jsonb_array_elements(e.exercice->'questions') WITH ORDINALITY q(question,ordre)
               WHERE (m.module_id=5 AND e.exercice->>'id' IN('500','501')) OR (m.module_id=11 AND e.exercice->>'id' IN('600','601'))),
             v AS (SELECT * FROM b WHERE module_id=5),t AS (SELECT * FROM b WHERE module_id=11)
-            SELECT bool_and(bilan_alignment_canonical(v.q)=bilan_alignment_canonical(t.q)) FROM v JOIN t ON t.exercice->>'id'=(v.exercice->>'id')::int+100 AND t.ordre=v.ordre
+            SELECT bool_and(bilan_alignment_canonical(v.q)=bilan_alignment_canonical(t.q)) FROM v JOIN t ON (t.exercice->>'id')::int=(v.exercice->>'id')::int+100 AND t.ordre=v.ordre
             """
             self.assertEqual(pg.sql(canonical),'t')
             self.assertEqual(pg.sql("SELECT q->>'id' FROM (SELECT q,row_number() over() n FROM module_editor_state m,jsonb_array_elements(m.module_data->'exercices') e,jsonb_array_elements(e->'questions') q WHERE m.module_id=5 AND e->>'id'='500') s WHERE n=8"),'145')
