@@ -231,7 +231,9 @@ async function traiter(body: CorpsT, auth: string): Promise<Response> {
       if (filtreAllowlist && !qrcAutoriseeAbaBakre(inst.qrc_instance_id, attempt_id)) return false;
       const question = questions.find((q) => String(q.id) === String(inst.question_id)) ?? null;
       const decision = admissibilite(question, inst.reponse);
-      return !decision.admissible && decision.statut === "a_verifier";
+      // Toute QRC encore en attente doit rester visible en revue, y compris une
+      // réponse vide exclue de l'IA. Jamais « terminée » et jamais de zéro inventé.
+      return !decision.admissible;
     });
     const plan = planSuite(actions, revueNecessaire);
     if (plan.type === "attente") { await finirSuite("attente", "QRC en délai de reprise contrôlée", plan.delai, "delai_reprise"); return json({ ok: true, statut: "attendre", bilan }); }

@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 08/11 — Trois priorités persistantes autorisées
+- [x] Persistance BENNANI / CLERC : cause des renvois confirmés et troncature 500 corrigée ; vrai handler/PostgreSQL jetable validé ; aucune purge ni récupération appareil non prouvée.
+- [x] QRC restantes : 2 corrigés de calcul incomplets, 5 ambiguïtés et 3 réponses vides conservées en revue ; 0 nouvel appel IA/note ; faux état terminé corrigé, empreintes QRC/résultats inchangées.
+- [ ] Sauvegarde cohérente : parcours 08/11 terminé mais non snapshot ; restauration réelle subordonnée à un Export data géré et à une destination privée isolée distincte.
+- [x] 3 697 tests globaux, contrats SQL/handler, compilation et déploiements ciblés ; rapport `docs/priorites-persistance-qrc-sauvegarde-2026-11-08.md`.
+- [ ] Publication frontend demandée ; ancien paquet encore servi au dernier contrôle, bascule à confirmer avant de déclarer le correctif client en ligne.
+
 ## 07/11 — Mise en service progressive autorisée (depuis 280112574)
 - [x] Vraie intégration handler Deno + PostgREST + PostgreSQL jetable : v2/v3, concurrence, rejeu après commit, gel, journal et faux ACK — 1/1 PASS le 07/11.
 - [x] Empreintes avant/après identiques ; migration additive 0243, fonction réponses déployée, durcissement 0244 appliqué ; rejeu admin réel sans écriture PASS.

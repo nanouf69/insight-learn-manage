@@ -219,6 +219,15 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public,auth TO service_role;
         self.assertEqual(self.pg.sql(f"SELECT etat FROM qrc_instances_v2 WHERE attempt_id='{attempt}'"), "en_attente")
         self.assertEqual(self.pg.sql(f"SELECT statut FROM qrc_ia_reprises r JOIN qrc_instances_v2 q ON q.qrc_instance_id=r.qrc_instance_id WHERE q.attempt_id='{attempt}'"), "a_verifier")
 
+    def test_reponse_vide_reste_en_revue_jamais_terminee_ni_notee(self):
+        attempt, token, qrc_ids = self.passage(reponses=("Réponse",), anciennes=False)
+        self.pg.sql(f"UPDATE qrc_instances_v2 SET reponse=NULL WHERE qrc_instance_id='{qrc_ids[0]}'")
+        result = self.appel(attempt, token)
+        self.assertEqual(result["statut"], "revue")
+        self.assertEqual(self.pg.sql(f"SELECT statut FROM qrc_ia_suites WHERE attempt_id='{attempt}'"), "a_verifier")
+        self.assertEqual(self.pg.sql(f"SELECT etat||'|'||coalesce(note::text,'NULL') FROM qrc_instances_v2 WHERE qrc_instance_id='{qrc_ids[0]}'"), "en_attente|NULL")
+        self.assertEqual(len(self.provider_prompts), 0)
+
     def test_presentiel_et_comptes_test_exclus_sans_appel(self):
         for type_app, nom, prenom in (("taxi", "FERREIRA", "David"), ("taxi-e", "FICTIF", "ESSAI IA"), ("taxi-e", "COMPTE", "Démo")):
             attempt, token, _ = self.passage(reponses=("Réponse",), type_app=type_app, nom=nom, prenom=prenom)

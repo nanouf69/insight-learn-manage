@@ -97,6 +97,50 @@ describe("File des réponses : jamais figée (incident du 10/10)", () => {
     expect(getPendingAnswerSaves()).toBe(0);
   });
 
+  it("un événement confirmé n'est pas renvoyé dans le lot compacté suivant", async () => {
+    auth.bloque = false;
+    const e1 = "11111111-1111-4111-8111-111111111111";
+    const e2 = "22222222-2222-4222-8222-222222222222";
+    const reponses: Array<(value: any) => void> = [];
+    const fetchMock = vi.fn(() => new Promise((resolve) => reponses.push(resolve)));
+    vi.stubGlobal("fetch", fetchMock);
+
+    enqueueAnswerSave(payload({ "q-1": ["A"] }));
+    // Remplacer les événements par des identifiants stables pour suivre les ACK.
+    const brut = JSON.parse(localStorage.getItem("answer_save_queue_v1")!);
+    brut[0].payload.events = [{ event_id: e1, question_id: "q-1", valeur: ["A"] }];
+    localStorage.setItem("answer_save_queue_v1", JSON.stringify(brut));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    enqueueAnswerSave(payload({ "q-1": ["A"], "q-2": ["B"] }));
+    const enAttente = JSON.parse(localStorage.getItem("answer_save_queue_v1")!);
+    enAttente[0].payload.events = [
+      { event_id: e1, question_id: "q-1", valeur: ["A"] },
+      { event_id: e2, question_id: "q-2", valeur: ["B"] },
+    ];
+    localStorage.setItem("answer_save_queue_v1", JSON.stringify(enAttente));
+    reponses[0]({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 1, accepted_event_ids: [e1] }), text: async () => "" });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const second = JSON.parse((fetchMock.mock.calls[1] as any)[1].body);
+    expect(second.events.map((e: any) => e.event_id)).toEqual([e2]);
+
+    reponses[1]({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 2, accepted_event_ids: [e2] }), text: async () => "" });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(getPendingAnswerSaves()).toBe(0);
+  });
+
+  it("un accusé incomplet conserve tout le lot pour un renvoi idempotent", async () => {
+    auth.bloque = false;
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 1, accepted_event_ids: [] }), text: async () => "" });
+    vi.stubGlobal("fetch", fetchMock);
+    enqueueAnswerSave({ ...payload({ "q-1": ["A"] }), events: [{ event_id: "11111111-1111-4111-8111-111111111111", question_id: "q-1", valeur: ["A"] }] });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(getPendingAnswerSaves()).toBe(1);
+    expect(getPendingAnswers(A, "module_8_exo_fictif")).toMatchObject({ "q-1": ["A"] });
+  });
+
   it("réponses ajoutées pendant la panne : toutes envoyées après rétablissement (rechargement simulé)", async () => {
     auth.bloque = false;
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Failed to fetch")));

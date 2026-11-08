@@ -83,7 +83,7 @@ describe("Révision fictive complète — file réelle et serveur simulé", () =
         if ((body.base_seq ?? 0) < revisionSeq) {
           return {
             ok: true,
-            json: async () => ({ success: true, confirmed: true, write_seq: writeSeq, skipped_questions: ["revisionState"], stored_reponses: h.saved.reponses }),
+            json: async () => ({ success: true, confirmed: true, write_seq: writeSeq, skipped_questions: ["revisionState"], stored_reponses: h.saved.reponses, accepted_event_ids: (body.events ?? []).map((event: any) => event.event_id) }),
             text: async () => "",
           };
         }
@@ -96,7 +96,7 @@ describe("Révision fictive complète — file réelle et serveur simulé", () =
         };
         return {
           ok: true,
-          json: async () => ({ success: true, confirmed: true, write_seq: writeSeq, skipped_questions: [] }),
+          json: async () => ({ success: true, confirmed: true, write_seq: writeSeq, skipped_questions: [], accepted_event_ids: (body.events ?? []).map((event: any) => event.event_id) }),
           text: async () => "",
         };
       };

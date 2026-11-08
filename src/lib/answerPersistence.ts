@@ -135,6 +135,8 @@ interface QueueItem {
   refused_user_ids?: string[];
   /** Numéro confirmé par l'envoi en cours, utilisé pour chaîner les réponses composées pendant cet envoi. */
   confirmed_write_seq?: number;
+  /** Événements dont le serveur a confirmé la journalisation dans cette opération. */
+  confirmed_event_ids?: string[];
   /** Nouvel identifiant d'opération après une recomposition sans conflit. */
   rebase_operation_id?: string;
   /** Déjà débloqué une fois pour le transport sans U+0000 (aucune boucle). */
@@ -889,6 +891,24 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
       if (confirmation?.success === true && confirmation?.confirmed === true) {
+        const acceptedEventIds = Array.isArray(confirmation.accepted_event_ids)
+          ? confirmation.accepted_event_ids.filter((id: unknown): id is string => typeof id === "string")
+          : [];
+        const accepted = new Set(acceptedEventIds);
+        const missingEventIds = (item.payload.events ?? [])
+          .map((event) => event.event_id)
+          .filter((id): id is string => typeof id === "string" && !accepted.has(id));
+        if (missingEventIds.length > 0) {
+          // Un succès HTTP ne suffit pas : chaque événement doit avoir été relu
+          // comme accepté. Le lot reste intact et sera rejoué idempotemment.
+          console.error("[answerPersistence] Accusé de journalisation incomplet", {
+            operation: item.id,
+            attendus: (item.payload.events ?? []).length,
+            confirmes: accepted.size,
+          });
+          return "retry";
+        }
+        item.confirmed_event_ids = acceptedEventIds;
         const skipped = Array.isArray(confirmation.skipped_questions) ? confirmation.skipped_questions : [];
         if (skipped.length > 0) {
           // Réparation uniquement si la version locale est une extension stricte
@@ -983,7 +1003,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
       delaiDepasse
         ? `[answerPersistence] Délai d'envoi dépassé (${delaiEnvoi / 1000} s) — réponse conservée en file, nouvel essai`
         : "[answerPersistence] Erreur réseau sauvegarde — réponse conservée en file, nouvel essai",
-      { tentative: (item.attempts ?? 0) + 1, enLigne: typeof navigator !== "undefined" ? navigator.onLine : null, enFile: readQueue().length },
+      { operation: item.id, exercice_id: item.payload.exercice_id, tentative: (item.attempts ?? 0) + 1, enLigne: typeof navigator !== "undefined" ? navigator.onLine : null, enFile: readQueue().length },
       delaiDepasse ? "" : e,
     );
     return "retry";
@@ -1020,11 +1040,23 @@ async function processQueue(): Promise<void> {
       tried += 1;
       queue = readQueue();
       if (result === "ok") {
+        const confirmedSeq = item.confirmed_write_seq ?? 0;
+        const confirmedEvents = new Set(item.confirmed_event_ids ?? []);
+        // Les successeurs compactés pendant cet envoi contiennent encore une copie
+        // des événements déjà confirmés. Ne jamais les renvoyer au serveur.
+        if (confirmedEvents.size > 0) {
+          queue = queue.map((q) => q.id === item.id ? q : {
+            ...q,
+            payload: {
+              ...q.payload,
+              events: (q.payload.events ?? []).filter((event) => !event.event_id || !confirmedEvents.has(event.event_id)),
+            },
+          });
+        }
         // Une réponse composée pendant l'envoi précédent est nécessairement plus
         // récente sur CET appareil. Elle doit partir depuis le numéro qui vient
         // d'être confirmé, même si son compactage lui avait conservé la base 0.
         // Les éléments bloqués et ceux d'un autre compte ne sont jamais rebasés.
-        const confirmedSeq = item.confirmed_write_seq ?? 0;
         if (confirmedSeq > 0) {
           queue = queue.map((q) =>
             q.id !== item.id &&

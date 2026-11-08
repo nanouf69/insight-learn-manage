@@ -4,6 +4,7 @@ import os, pathlib, subprocess, sys, tempfile, unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MIGRATION = pathlib.Path(os.environ.get('QRC_FILE_SQL') or next(ROOT.glob('drizzle/migrations/*qrc_ia_file_serveur*.sql')))
 GT_SQL = os.environ.get('QRC_GT_SQL')
+EXTRA_SQL = os.environ.get('QRC_EXTRA_SQL')
 TEMP = tempfile.mkdtemp(prefix='qrc-file-', dir='/tmp'); os.chown(TEMP, 1000, 1000)
 DATA = TEMP + '/data'; PORT = '55441'
 EL = '11111111-1111-4111-8111-000000000001'   # e-learning learner
@@ -78,7 +79,7 @@ class File(unittest.TestCase):
 
     def test_trace_existante_pas_de_nouvelle_file(self):
         self.passage(11)
-        sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut) VALUES('k','{qrc(11)}','{att(11)}','{EL}','q:1','h','appliquee')")
+        sql(f"UPDATE qrc_ia_suites SET statut='terminee'; UPDATE qrc_instances_v2 SET etat='corrigee' WHERE attempt_id='{att(11)}'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut) VALUES('k','{qrc(11)}','{att(11)}','{EL}','q:1','h','appliquee')")
         self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(11)}','x')"), 'rien_a_corriger')
 
     def test_ancienne_exclusion_gt_seule_reouverte_sans_effacer_audit(self):
@@ -93,7 +94,9 @@ class File(unittest.TestCase):
     def test_autre_exclusion_et_compte_nom_test_jamais_reouverts(self):
         self.passage(21)
         sql(f"UPDATE qrc_ia_suites SET statut='terminee'; INSERT INTO qrc_ia_corrections(cle_idempotence,qrc_instance_id,attempt_id,apprenant_id,question_id,reponse_hash,statut,motif,termine_at) VALUES('vide','{qrc(21)}','{att(21)}','{EL}','q:1','h','exclue','reponse_vide',now())")
-        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(21)}','x')"), 'rien_a_corriger')
+        self.assertEqual(sql(f"SELECT qrc_ia_enfiler('{att(21)}','x')"), 'revue_qrc_en_attente')
+        self.assertEqual(sql(f"SELECT statut||'|'||dernier_code FROM qrc_ia_suites WHERE attempt_id='{att(21)}'"), 'a_verifier|qrc_en_attente_non_admissible')
+        self.assertEqual(sql(f"SELECT etat FROM qrc_instances_v2 WHERE attempt_id='{att(21)}'"), 'en_attente')
         self.passage(22)
         sql(f"UPDATE apprenants SET nom='FICTIF',prenom='ESSAI IA' WHERE id='{EL}'")
         self.assertEqual(sql(f"SELECT qrc_ia_raison_file('{att(22)}')"), 'compte_test')
@@ -175,6 +178,7 @@ def main():
         sql('ALTER TABLE public.qrc_ia_suites ADD COLUMN dispatches integer NOT NULL DEFAULT 0;')
         sql(MIGRATION.read_text())
         if GT_SQL: sql(pathlib.Path(GT_SQL).read_text())
+        if EXTRA_SQL: sql(pathlib.Path(EXTRA_SQL).read_text())
         result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(File))
         if not result.wasSuccessful(): raise SystemExit(1)
     finally:

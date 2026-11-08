@@ -102,7 +102,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const safeEventsBruts = Array.isArray(events) ? events.slice(0, 500) : [];
+    // Ne jamais confirmer un lot partiellement journalisé : les événements sont
+    // idempotents par event_id et le client retire seulement ceux réellement ACK.
+    // Une ancienne limite de 500 perdait silencieusement le surplus de journal.
+    const safeEventsBruts = Array.isArray(events) ? events : [];
     // Refuser un codec partiellement supporté AVANT toute écriture : le marqueur
     // doit être durable, par valeur, et pris en charge par tous les lecteurs.
     if (body?.transport_encodage != null) {
