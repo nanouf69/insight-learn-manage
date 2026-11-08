@@ -93,8 +93,8 @@ function EcranResultats({
   const coreTick = useCoreChangeTick(apprenantId);
   useEffect(() => {
     let cancelled = false;
+    if (coreOwnerRef.current !== apprenantId) setCoreStates(null);
     coreOwnerRef.current = apprenantId;
-    setCoreStates(null);
     fetchCoreMatiereStates(apprenantId).then(async (st) => {
       // Passages non fiables (défaut du 23/09) : note de l'ancien système.
       const nf = st && apprenantId ? await fetchPassagesV2NonFiables(new Map([[apprenantId, st]])) : null;
@@ -1283,8 +1283,7 @@ function RevisionFausses({
         const { data: finalises, error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
           .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
         if (erreurFinalises) throw erreurFinalises;
-        const identities = new Set((finalises || []).map(r => (r.details as any)?.revision_exercice_id));
-        const interrupted = rows.filter(r => r.completed === true && !identities.has(r.exercice_id)).at(-1);
+        const interrupted = rows.some(r => r.completed !== true) ? undefined : rows.filter(r => r.completed === true).at(-1);
         const idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
         if (annule) return;
         setExerciceId(idTentative);

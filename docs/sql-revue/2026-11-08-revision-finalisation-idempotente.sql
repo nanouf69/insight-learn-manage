@@ -48,7 +48,7 @@ BEGIN
     RAISE EXCEPTION 'Identité de révision invalide' USING ERRCODE='22023';
   END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(p_apprenant_id::text || '|' || p_examen_id || '|' || p_revision_exercice_id,0));
-  SELECT resultat INTO rec FROM public.revision_fausses_receipts WHERE apprenant_id=p_apprenant_id AND examen_id=p_examen_id AND revision_exercice_id=p_revision_exercice_id;
+  SELECT r.resultat INTO rec FROM public.revision_fausses_receipts r WHERE r.apprenant_id=p_apprenant_id AND r.examen_id=p_examen_id AND r.revision_exercice_id=p_revision_exercice_id;
   IF FOUND THEN RETURN rec; END IF;
   SELECT * INTO preuve FROM public.reponses_apprenants WHERE apprenant_id=p_apprenant_id
     AND exercice_id=p_revision_exercice_id AND exercice_type='revision_fausses' FOR UPDATE;
