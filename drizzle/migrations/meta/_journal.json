@@ -1744,6 +1744,13 @@
       "when": 1794085792423,
       "tag": "0248_propagation_sans_reintroduction",
       "breakpoints": true
+    },
+    {
+      "idx": 249,
+      "version": "7",
+      "when": 1794134796243,
+      "tag": "0249_qrc_file_jamais_terminee_avec_attente",
+      "breakpoints": true
     }
   ]
 }
