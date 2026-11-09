@@ -1,16 +1,17 @@
-# Alignement ciblé T3P et Gestion VTC/TAXI
+# Accès administrateur aux QRC historiques EB2 VTC
 
-## Périmètre
-- Uniquement modules 5/11, exercices 500/600 (T3P) et 501/601 (Gestion).
-- Contenu actuel et nouvelles versions seulement ; aucune autre matière, copie, réponse, note, signature, progression ou version figée.
+## Périmètre autorisé
+- Ajouter « EB2 — VTC — ancien circuit » dans Correction QRC V2, pour les copies historiques remises existantes.
+- Préserver les options/circuits actuels, les filtres sessions et dates, et séparer les anciennes copies déjà représentées en V2.
+- Aucune migration, activation de version, création de copie, écriture de réponse, note, statut ou progression. Aucun changement au verdict d’examen ni aux protections EB3.
 
-## Étapes
-1. Comparer les quatre banques complètes par UID, identifiant interne et contenu intégral : énoncé, choix et bonnes réponses, type, explication, barème et images. Établir les correspondances bijectives, les vrais doublons et les cas ambigus sans rapprochement par simple numéro.
-2. Capturer les empreintes avant des quatre banques, des copies figées, réponses et résultats. Confirmer par tests que l’écran élève et les corrections lisent exclusivement le snapshot/version du passage.
-3. Construire l’union additive sur la numérotation VTC : recopier les questions manquantes avec leur UID et leur contenu, ajouter la question propre au TAXI au numéro VTC libre prouvé, trier les deux banques à l’identique et préserver les doublons ambigus. Aucune suppression ni modification d’une bonne réponse existante.
-4. Appliquer avec contrôle de version et journalisation via les mécanismes serveur existants ; créer de nouvelles versions pour les futurs passages sans réattribuer les passages déjà ouverts. Préparer le retour arrière à partir des empreintes et contenus antérieurs conservés.
-5. Tester sur données fictives : ajouts unilatéraux, doublon Gestion 66/100, ordre des choix et bonnes réponses, numéros uniques, égalité exhaustive VTC/TAXI, immutabilité des passages et absence d’effet sur les jalons.
-6. Relire les quatre banques après application, vérifier les empreintes des données élèves inchangées, contrôler les écrans admin/élève en lecture seule, puis publier uniquement si les tests et le scan sont bons.
+## Correctif et vérifications
+1. Lire les résultats historiques EB2 par pages stables ; exclure ceux dont le snapshot V2 porte exactement leur identifiant de résultat, sans rapprochement par date ou nom.
+2. Réutiliser le lecteur historique par identifiants de résultats, conserver les réponses et corrigés figés. Vérifier sa fidélité ; si une incompatibilité empêche cette garantie, arrêter la publication.
+3. Tester le menu, novembre journée/soirée, pagination, filtrage date et absence de doublons ; conserver les circuits EB1, EB2-TAXI et EB3–EB6.
+4. Comparer les fichiers actifs avec la version publique, vérifier tests et compilation, puis sécurité. Publier uniquement si le correctif est le seul changement fonctionnel embarqué.
 
-## Décision sans invention
-Toute divergence de fond non résolue par le contenu complet restera telle quelle et sera isolée dans le rapport ; les autres alignements indépendants pourront être terminés.
+## Détails techniques
+- Modifications ciblées : liste historique dans `noyauReel.ts`, libellé dans `AdminCorrectionQrcV2Reel.tsx`, tests ciblés ; lecteur historique uniquement si nécessaire à la fidélité EB2.
+- Contrôle préalable : les fichiers actifs correspondent à la référence publique examinée ; les prototypes EB2/EB3 restent hors imports applicatifs et hors migrations actives.
+- La confirmation navigateur authentifiée reste nécessaire ; une lecture des sources ou un écran fictif seul ne sera pas présenté comme une vérification du compte administrateur.
