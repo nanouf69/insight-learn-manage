@@ -1,7 +1,7 @@
 # Feuille de route
 
 ## 09/11 13:49 — Rectification EB2 VTC, correcteur V2 exclusivement
-- [x] Ancien correcteur explicitement refusé ; approche précédente à annuler dans l'aperçu uniquement.
+- [x] Ancien correcteur explicitement refusé ; approche précédente annulée dans l'aperçu uniquement, trois fichiers fonctionnels identiques à la référence préalable ; 76 tests V2 PASS, build OK.
 - [x] Lecture serveur : core_correct_qrc exige une qrc_instances_v2 existante ; les 44 résultats matière novembre jour/soir ne portent aucun lien V2 prouvé.
 - [ ] Intégration V2 sans copie/doublon : nécessite une adaptation serveur de lecture et correction append-only sur identité historique immuable ; aucune adaptation réelle autorisée implicitement, aucun import exécuté.
 - [ ] Publication STOP : workflow complet V2 non compatible avec ces identités à ce jour ; ne pas publier une simple option ni restaurer le correcteur refusé.
