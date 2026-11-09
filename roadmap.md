@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 — Tous les bilans d’exercices VTC, TAXI, TA et VA
+- [ ] Inventorier chaque bilan d’exercices et ses sources réelles ; exclure strictement bilans d’examen et examens blancs.
+- [ ] Produire le tableau par matière : sources, compte attendu/actuel, écarts, IDs, contenus, ordre, doublons et manquantes.
+- [ ] Étendre la projection non destructive uniquement aux compositions erronées prouvées, coordonnée avec T3P module 9/exercice 100.
+- [ ] Tests exhaustifs, empreintes et rapport avant/après ; aucune publication sans accord explicite.
+
 ## 09/11 — Bilan T3P limité aux 128 questions sources
 - [x] Audit lecture seule : 206 = 114 références + 14 uniques + 59 doublons + 19 références obsolètes ; projection 128, IDs et contenus historiques conservés.
 - [x] Correction non destructive limitée au module 9 / exercice 100 ; sauvegarde restaurant les 206 objets serveur avant intention explicite, autres modules inchangés.
