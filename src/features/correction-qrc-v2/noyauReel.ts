@@ -2,7 +2,6 @@
 // Toutes les écritures passent par des fonctions serveur idempotentes.
 import { supabase } from "@/integrations/supabase/client";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
-import { eb2HistoriqueNonCopie } from "@/features/correction-qrc-v2/eb2Historique";
 
 export type QuestionSnapshot = {
   id: string;
@@ -90,7 +89,7 @@ export type SessionListee = {
   heureMin: string;
   heureMax: string;
   attemptIds: string[];
-  /** Circuit de correction à utiliser ; les identités historiques restent séparées de V2. */
+  /** Circuit de correction à utiliser. EB3 reste toujours dans le circuit historique. */
   circuit?: "v2" | "ancien";
   /** Lignes historiques finalisées autorisées dans le correcteur ancien. */
   legacyResultIds?: string[];
@@ -215,39 +214,21 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     if ((data ?? []).length < 1000) break;
   }
 
-  // EB2 retiré et EB3 : résultats historiques finalisés, sans nouvelle copie.
-  // Une ancienne fiche EB2 déjà copiée en V2 n'est pas affichée deux fois.
+  // EB3 reste volontairement hors V2. On lit uniquement ses résultats historiques
+  // déjà finalisés afin de l'afficher dans le même menu, sans copie ni migration.
   const legacyResults: any[] = [];
   if (mode === "migre") {
-    const copiedEb2Ids = new Set<string>();
-    for (let de = 0; ; de += 1000) {
-      const { data, error } = await supabase.from("exam_attempts_v2")
-        .select("attempt_id, snapshot")
-        .eq("exam_id", "EB2")
-        .eq("is_test", false)
-        .order("attempt_id")
-        .range(de, de + 999);
-      if (error) throw error;
-      for (const row of data ?? []) {
-        const snapshot = row.snapshot as { source_historique?: { result_id?: unknown } } | null;
-        const id = snapshot?.source_historique?.result_id;
-        if (typeof id === "string") copiedEb2Ids.add(id);
-      }
-      if ((data ?? []).length < 1000) break;
-    }
     for (let de = 0; ; de += 1000) {
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, completed_at")
         .in("quiz_type", ["examen_blanc", "bilan"])
-        .or("quiz_id.eq.EB2,quiz_id.ilike.eb3%")
+        .ilike("quiz_id", "eb3%")
         .order("completed_at", { ascending: false })
-        .order("id")
         .range(de, de + 999);
       if (error) throw error;
-      const historiques = (data ?? []).filter((r: any) =>
-        eb2HistoriqueNonCopie(r, copiedEb2Ids) || /^eb3(?:$|-)/i.test(String(r.quiz_id ?? "")));
-      legacyResults.push(...historiques.map((r: any) => ({
+      const eb3 = (data ?? []).filter((r: any) => /^eb3(?:$|-)/i.test(String(r.quiz_id ?? "")));
+      legacyResults.push(...eb3.map((r: any) => ({
         ...r,
         attempt_id: `ancien:${r.id}`,
         exam_id: r.quiz_id,
