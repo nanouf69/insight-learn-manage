@@ -15,6 +15,8 @@ import { ExamQuestionImage } from "./ExamQuestionImage";
 import { enqueueDraft, flushQueue, readQueue } from "@/lib/bilanFutureTransport";
 import type { FutureReceipt } from "@/lib/bilanFutureVersion";
 import { lireCorrection, questionsFausses, reponseExacte, type Correction } from "@/lib/bilanFutureCorrection";
+import { baremeReference, examenReferenceBilan, moyenneBilan, noterMatiere, type BaremeMatiere, type NoteMatiere } from "@/lib/bilanFutureBareme";
+import { fetchLiveExamens } from "./useLiveExamens";
 
 export const FUTURE_SUBJECT_NAMES = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
 
@@ -84,9 +86,45 @@ function CarteQuestion({ q, numero, selection, onToggle, disabled, correct, mont
   );
 }
 
+/** Same card form as the Examen Blanc "Résultats par matière" (Coeff., Barème, Éliminatoire, x / 20). */
+export function CarteNoteMatiere({ n, index, total, nom }: { n: NoteMatiere; index: number; total: number; nom: string }) {
+  const couleur = n.seuilInconnu ? "#F4A227" : n.admis ? "#00B4D8" : "#ef4444";
+  return (
+    <div className="border-l-4 rounded-lg border overflow-hidden" style={{ borderLeftColor: couleur }} data-testid="bilan-note-matiere">
+      <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: "#0D2540" }}>
+        <span className="text-xs font-semibold text-white">Matière {index + 1}/{total}</span>
+        <span className="text-xs font-medium" style={{ color: "#00B4D8" }}>— Coeff. {n.coefficient}</span>
+        {!n.admis && !n.seuilInconnu && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
+        {n.seuilInconnu && <span className="text-xs font-semibold text-amber-400 ml-auto">⚠ Seuil introuvable</span>}
+      </div>
+      <div className="py-3 px-4 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm" style={{ color: "#0D2540" }}>{nom}</p>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <span className="text-xs text-muted-foreground">Barème : {n.maxPoints} pts ({n.ptsQcm} pt{n.ptsQcm > 1 ? "s" : ""} par QCM)</span>
+            {n.seuil != null && <span className="text-xs text-muted-foreground">{"Éliminatoire < "}{n.seuil}/20</span>}
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="text-2xl font-bold" style={{ color: couleur }}>{n.noteSur20.toFixed(1)} / 20</span>
+          <p className="text-xs text-muted-foreground">{n.points} / {n.maxPoints} pts</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; ownerId: string }) {
   const base = moduleId === 5 ? 500 : 600;
-  const [statuts, setStatuts] = useState<Record<number, { submitted: boolean; score?: string } | "erreur" | undefined>>({});
+  const [statuts, setStatuts] = useState<Record<number, { submitted: boolean; score?: string; correct?: number; total?: number } | "erreur" | undefined>>({});
+  const [bareme, setBareme] = useState<BaremeMatiere[] | null | "erreur">(null);
+  useEffect(() => {
+    let annule = false;
+    fetchLiveExamens().then(ex => { if (!annule) setBareme(baremeReference(ex, moduleId) ?? "erreur"); }).catch(() => { if (!annule) setBareme("erreur"); });
+    return () => { annule = true; };
+  }, [moduleId]);
+  const noteDe = (k: number, correct?: number, total?: number): NoteMatiere | null =>
+    bareme && bareme !== "erreur" && correct != null && total ? noterMatiere(bareme[k], correct, total) : null;
   const [ouvert, setOuvert] = useState<number | null>(null);
   const [passage, setPassage] = useState<Passage | null>(null);
   const [correction, setCorrection] = useState<Correction | null>(null);
@@ -105,7 +143,7 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
     const s: typeof statuts = {};
     for (const r of data ?? []) {
       const sub = Array.isArray(r.bilan_future_submissions) ? r.bilan_future_submissions[0] : r.bilan_future_submissions;
-      s[r.exercise_id] = sub ? { submitted: true, score: `${sub.correct_count}/${sub.question_count}` } : { submitted: false };
+      s[r.exercise_id] = sub ? { submitted: true, score: `${sub.correct_count}/${sub.question_count}`, correct: sub.correct_count, total: sub.question_count } : { submitted: false };
     }
     setStatuts(s);
   }, [ownerId, moduleId]);
@@ -194,6 +232,9 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
         {passage?.submitted && !enRevision && (
           <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 space-y-3" data-testid="bilan-future-resultat">
             <p className="font-semibold">Matière remise : {passage.submitted.correct_count}/{passage.submitted.question_count} bonnes réponses.</p>
+            {(() => { const n = noteDe(ouvert - base, passage.submitted.correct_count, passage.submitted.question_count);
+              return n ? <CarteNoteMatiere n={n} index={ouvert - base} total={5} nom={n.matiere.nom} />
+                : bareme === "erreur" ? <p className="text-sm text-muted-foreground">Barème de l'examen blanc n°1 indisponible : note /20 non affichée.</p> : null; })()}
             {correction && (
               <div className="flex flex-wrap gap-2">
                 {fausses.length > 0 ? (
@@ -270,6 +311,23 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
   return (
     <div className="mx-auto max-w-[1400px] p-4 space-y-3" data-testid="bilan-future-matieres">
       {erreur && <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">{erreur}</div>}
+      {bareme && bareme !== "erreur" && (() => {
+        const notes = FUTURE_SUBJECT_NAMES.map((_, k) => { const s = statuts[base + k]; return s && s !== "erreur" && s.submitted ? noteDe(k, s.correct, s.total) : null; });
+        if (!notes.some(Boolean)) return null;
+        const m = moyenneBilan(bareme, notes);
+        return (
+          <div className="space-y-3" data-testid="bilan-bareme-eb1">
+            <p className="text-sm text-muted-foreground">Barème identique à l'examen blanc n°1 ({examenReferenceBilan(moduleId)}) : mêmes coefficients, points par QCM et notes éliminatoires.</p>
+            {notes.map((n, k) => n && <CarteNoteMatiere key={k} n={n} index={k} total={5} nom={n.matiere.nom} />)}
+            <div className="rounded-lg border p-4" data-testid="bilan-moyenne">
+              <p className="font-semibold">Moyenne pondérée : {m.moyenne.toFixed(1)} / 20 ({m.matieresPassees}/{m.matieresTotal} matières remises)</p>
+              <p className="text-sm">{m.verdict === "reussi" ? "Admis : moyenne ≥ 10 et aucune note éliminatoire."
+                : m.verdict === "echoue" ? (m.eliminatoires.length ? `Échec : note éliminatoire en ${m.eliminatoires.join(", ")}.` : "Échec : moyenne inférieure à 10.")
+                : m.verdict === "incomplet" ? "Résultat définitif quand les 5 matières sont remises." : "Résultat indéterminé : seuil introuvable."}</p>
+            </div>
+          </div>
+        );
+      })()}
       {FUTURE_SUBJECT_NAMES.map((nom, k) => {
         const s = statuts[base + k];
         return (

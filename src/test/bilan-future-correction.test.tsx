@@ -64,3 +64,27 @@ describe("Correction Bilan examen (écran)", () => {
     await waitFor(() => expect(screen.getByLabelText("Q1 choix B").getAttribute("data-state")).toBe("checked"));
   });
 });
+
+import { baremeReference, noterMatiere, moyenneBilan } from "@/lib/bilanFutureBareme";
+import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI } from "@/components/cours-en-ligne/examens-blancs-data";
+describe("Barème Bilan = barème EB1 de la filière", () => {
+  it("VTC = EB1, TAXI = EB1-TAXI : coefficients 3/2/3/2/1, éliminatoires 6/6/6/6/4, points QCM", () => {
+    for (const [mod, ex] of [[5, EXAMENS_BLANCS_VTC], [11, EXAMENS_BLANCS_TAXI]] as const) {
+      const b = baremeReference(ex as any, mod)!;
+      expect(b.map(x => x.coefficient)).toEqual([3, 2, 3, 2, 1]);
+      expect(b.map(x => x.seuil)).toEqual([6, 6, 6, 6, 4]);
+      expect(b.map(x => x.ptsQcm)).toEqual([1, 1, 1, 2, 1]);
+    }
+  });
+  it("note /20, éliminatoire et moyenne comme l'EB", () => {
+    const b = baremeReference(EXAMENS_BLANCS_TAXI as any, 11)!;
+    const fr = noterMatiere(b[3], 10, 97);
+    expect(fr.maxPoints).toBe(194); expect(fr.noteSur20).toBe(2.1); expect(fr.admis).toBe(false);
+    const an = noterMatiere(b[4], 39, 194); expect(an.noteSur20).toBe(4); expect(an.admis).toBe(true);
+    const notes = [noterMatiere(b[0], 114, 114), noterMatiere(b[1], 200, 200), noterMatiere(b[2], 249, 249), fr, an];
+    const m = moyenneBilan(b, notes);
+    expect(m.verdict).toBe("echoue"); expect(m.eliminatoires.length).toBe(1);
+    expect(moyenneBilan(b, [notes[0], null, null, null, null]).verdict).toBe("incomplet");
+    expect(baremeReference([], 5)).toBeNull();
+  });
+});
