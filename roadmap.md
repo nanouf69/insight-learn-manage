@@ -1,10 +1,16 @@
 # Feuille de route
 
+## 09/11 16:01 — Zine DAKHLI : contradiction EB1 carte / compte
+- [x] Zine DAKHLI identifié ; sept notes V2 définitives 15,5/10/7/14/11/12,5/6, 16 QRC corrigées ; public index-BNKO-425.js, carte/détail/CRM/Notes consultés = réussi. Contradiction passée non reproduite sur version actuelle.
+- [x] Lacune de rafraîchissement partagé corrigée en aperçu : écoute des résultats historiques aussi ; 74 tests PASS, scénario Zine + 24 EB / 108 matières source. Cause de l'ancienne capture non prouvée.
+- [x] Consultation publique admin du dossier + vue apprenant + carte + détail : réussi 10,7 ; tablette aperçu réussi. Session personnelle et restauration détail après reload NON PROUVÉES.
+- [ ] Publication du correctif de rafraîchissement — attend validation ; aucune écriture élève. Rapport docs/incident-zine-eb1-2026-11-09.md.
+
 ## 09/11 15:22 — Audit + correctifs exhaustifs calcul/remontée EB1–EB6 VTC/TAXI
 - [x] Inventaire config (24 EB, 112 matières) et données réelles (lecture seule).
 - [x] Contrôle cohérence (719 ensembles élève/examen rejoués) ; 3 bugs prouvés corrigés en aperçu.
 - [x] Tests automatisés + rejeu réel avant/après.
-- [ ] Publication — attend l'accord de l'utilisateur.
+- [x] Publication demandée après accord ; marqueurs vérifiés sur index-BNKO-425.js à 15:58:55 UTC ; 181 tests PASS, EB2 VTC public visible.
 - [ ] 398 ensembles encore en attente (QRC réellement non corrigées ou anciennes copies sans fiche V2) — notation historique = migration, bloquée sans accord.
 - [ ] Décision : 5 anciens EB1 de juillet dont note stockée ≠ points/barème (carte et admin peuvent différer de 0,1 à 2,2 pts).
 - [ ] Décision : 2 EB2 VTC bloqués « en attente » par l'ancienne liste pilote QRC de septembre.

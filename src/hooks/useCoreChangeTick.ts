@@ -7,5 +7,7 @@ import { useLearnerResultRefresh } from "./useLearnerResultRefresh";
  * pour relire immédiatement le même état serveur.
  */
 export function useCoreChangeTick(apprenantId: string | null | undefined): number {
-  return useLearnerResultRefresh(apprenantId);
+  // The legacy result row can change after a QRC correction too. Cards,
+  // details and CRM must catch up on the same events as learner notes.
+  return useLearnerResultRefresh(apprenantId, true);
 }

@@ -1,11 +1,19 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLearnerResultRefresh } from '@/hooks/useLearnerResultRefresh';
-const h=vi.hoisted(()=>({events:[] as (()=>void)[],statuses:[] as ((s:string)=>void)[],removed:vi.fn()}));
-vi.mock('@/integrations/supabase/client',()=>({supabase:{channel:()=>{const c={on:(_e:any,_f:any,cb:any)=>{h.events.push(cb);return c;},subscribe:(cb:any)=>{h.statuses.push(cb);return c;}};return c;},removeChannel:h.removed}}));
+import { useCoreChangeTick } from '@/hooks/useCoreChangeTick';
+const h=vi.hoisted(()=>({events:[] as (()=>void)[],tables:[] as string[],statuses:[] as ((s:string)=>void)[],removed:vi.fn()}));
+vi.mock('@/integrations/supabase/client',()=>({supabase:{channel:()=>{const c={on:(_e:any,f:any,cb:any)=>{h.tables.push(f.table);h.events.push(cb);return c;},subscribe:(cb:any)=>{h.statuses.push(cb);return c;}};return c;},removeChannel:h.removed}}));
 beforeEach(()=>{vi.useFakeTimers();h.events=[];h.statuses=[];h.removed.mockClear();});
 afterEach(()=>{cleanup();vi.useRealTimers();});
 describe('QRC event catch-up',()=>{
+  it('cards, detail and CRM also refresh on a legacy result correction without remount',()=>{
+    h.tables=[];
+    const {result}=renderHook(()=>useCoreChangeTick('zine'));
+    const index=h.tables.indexOf('apprenant_quiz_results');
+    expect(index).toBeGreaterThanOrEqual(0);
+    act(()=>{h.events[index]();vi.advanceTimersByTime(400);});expect(result.current).toBe(1);
+  });
   it('coalesces corrections at 400ms, resume at 400ms and one 2400ms read, no recurring polling',()=>{
     const {result}=renderHook(()=>useLearnerResultRefresh('a'));
     act(()=>{h.events[0]();h.events[1]();vi.advanceTimersByTime(399);});expect(result.current).toBe(0);
