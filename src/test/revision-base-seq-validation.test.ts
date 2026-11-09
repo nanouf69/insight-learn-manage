@@ -16,6 +16,7 @@ import {
   flushAnswerSavesAndWait,
   getBlockedAnswerSavesFor,
   primeKnownWriteSeq,
+  __testResetMemorySeq,
   setAnswerSaveAuthToken,
   setAnswerSaveOwnership,
 } from "@/lib/answerPersistence";
@@ -60,6 +61,7 @@ const save = (reponses: Record<string, any>) =>
 
 describe("Révision « refaire les fausses » : validation après réouverture (cas Barry Alpha)", () => {
   beforeEach(() => {
+    __testResetMemorySeq();
     localStorage.clear();
     setAnswerSaveAuthToken("tok");
     setAnswerSaveOwnership({ apprenantId: APP });
@@ -124,6 +126,26 @@ describe("Révision « refaire les fausses » : validation après réouverture (
     save({ "102-1": ["C"] });
     expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
     expect(st.reponses["102-1"]).toEqual(["C"]);
+  });
+
+  it("tablette dont le navigateur refuse d'enregistrer le numéro : la correction passe quand même", async () => {
+    const { st, fetchMock } = serveur({});
+    vi.stubGlobal("fetch", fetchMock);
+    const orig = localStorage.setItem;
+    (localStorage as any).setItem = (k: string, v: string) => {
+      if (k === "answer_write_seq_v1") throw new Error("QuotaExceededError");
+      return orig.call(localStorage, k, v);
+    };
+    try {
+      save({ "101-1": ["A"] });
+      expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
+      save({ "101-1": ["B"] });
+      expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
+      expect(st.reponses["101-1"]).toEqual(["B"]);
+      expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(0);
+    } finally {
+      (localStorage as any).setItem = orig;
+    }
   });
 
   it("protection conservée : une écriture d'un autre appareil après la lecture n'est jamais écrasée", async () => {
