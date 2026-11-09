@@ -2,6 +2,7 @@
 // Toutes les écritures passent par des fonctions serveur idempotentes.
 import { supabase } from "@/integrations/supabase/client";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
+import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
 
 export type QuestionSnapshot = {
   id: string;
@@ -239,9 +240,18 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     }
   }
 
+  // EB2 VTC : copies enregistrées sans fiche V2, affichées dans la même grille V2 en consultation.
+  const consultationEb2: any[] = [];
+  if (mode === "migre") {
+    for (const r of await lirePassagesEb2Consultation()) {
+      consultationEb2.push({ ...r, attempt_id: `consultation:${r.id}`, exam_id: "EB2", started_at: r.completed_at, circuit: "v2" as const });
+    }
+  }
+
   const neutralises = await idsNeutralises();
   const passages = [
     ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, circuit: "v2" as const })),
+    ...consultationEb2,
     ...legacyResults,
   ];
 
@@ -427,6 +437,13 @@ export async function chargerSessionTest(
     return out;
   };
 
+  // Copies EB2 en consultation : lues à part (identifiant non V2), jamais envoyées au moteur V2.
+  const consultation = mode === "migre" && attemptIdsFiltre?.some(estConsultation)
+    ? await chargerConsultationEb2(attemptIdsFiltre)
+    : null;
+  if (attemptIdsFiltre) attemptIdsFiltre = attemptIdsFiltre.filter((a) => !estConsultation(a));
+  if (consultation && attemptIdsFiltre && attemptIdsFiltre.length === 0) return consultation;
+
   const colonnes = "attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at, finished_at";
   let attempts: any[] = [];
   if (attemptIdsFiltre?.length) {
@@ -524,12 +541,12 @@ export async function chargerSessionTest(
   });
 
   return {
-    tentatives: attempts.map((a) => ({
+    tentatives: [...attempts.map((a) => ({
       ...a,
       snapshot: asSnapshot(a.snapshot),
       candidat: nomDe.get(a.apprenant_id) ?? "(apprenant)",
-    })) as TentativeReelle[],
-    qrc,
+    })) as TentativeReelle[], ...(consultation?.tentatives ?? [])],
+    qrc: [...qrc, ...(consultation?.qrc ?? [])],
     resultats,
     baremesRestaures: baremes,
   };

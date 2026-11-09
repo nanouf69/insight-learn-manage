@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
+import { estConsultation } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -342,7 +343,7 @@ export default function AdminCorrectionQrcV2Reel() {
     void supabase.auth.getUser().then(({ data }) => setEmailAdmin(data.user?.email ?? undefined));
   }, []);
   useEffect(() => {
-    const ids = (session?.qrc ?? []).map((q) => q.qrc_instance_id);
+    const ids = (session?.qrc ?? []).map((q) => q.qrc_instance_id).filter((id) => !estConsultation(id));
     if (!ids.length) { setCorrectionsIa([]); setDemandes([]); return; }
     let vivant = true;
     void Promise.all([lireCorrectionsIa(ids), lireDemandesVerification(ids)]).then(([c, d]) => {
@@ -383,7 +384,7 @@ export default function AdminCorrectionQrcV2Reel() {
 
   // Historique des corrections (lecture seule) : l'ancienne note n'est jamais effacée.
   useEffect(() => {
-    if (!selection) { setHistorique([]); return; }
+    if (!selection || estConsultation(selection)) { setHistorique([]); return; }
     let vivant = true;
     void lireHistoriqueQrc(selection).then((h) => { if (vivant) setHistorique(h); }).catch(() => undefined);
     return () => { vivant = false; };
@@ -409,6 +410,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
+    // Copies EB2 en consultation : aucune écriture possible (pas de fiche QRC V2 serveur).
+    if (estConsultation(qrcSel.qrc_instance_id)) return;
     if (etatEnvoi === "encours") return;
     const revision = qrcSel.etat === "corrigee";
     const ancienne = qrcSel.note;
@@ -1011,7 +1014,21 @@ export default function AdminCorrectionQrcV2Reel() {
                 </Button>
               </div>
             )}
-            {qrcSel.etat === "corrigee" ? (
+            {estConsultation(qrcSel.qrc_instance_id) ? (
+              <div className="rounded-lg border-2 border-warning/60 bg-warning/10 p-3 space-y-1 text-sm" data-testid="consultation-eb2">
+                <p className="font-semibold">CONSULTATION — notation dans le correcteur V2 pas encore disponible pour cette copie</p>
+                <p className="text-xs text-muted-foreground">
+                  Copie EB2 enregistrée avant la création de sa fiche dans le correcteur V2 : réponse et corrigé affichés tels
+                  qu’enregistrés, sans aucune modification. {tentativeSel.etat === "remise_non_certifiee"
+                    ? "Remise non certifiée : aucune fiche remise identique retrouvée."
+                    : "Remise prouvée par la fiche élève identique."}
+                </p>
+                {qrcSel.etat === "corrigee" && (
+                  <p className="text-xs">Note historique enregistrée : {String(qrcSel.note).replace(".", ",")}{baremeSel != null ? ` / ${baremeSel}` : ""} (correction automatique historique).</p>
+                )}
+                {navigationCopies}
+              </div>
+            ) : qrcSel.etat === "corrigee" ? (
               <div className="rounded-lg border p-3 space-y-2 text-sm" data-testid="correction-verrouillee">
                 <p className={`font-semibold ${origineSel === "ia" ? "text-ia" : "text-success"}`} data-testid="points-attribues">
                   NOTE : {String(qrcSel.note).replace(".", ",")}
