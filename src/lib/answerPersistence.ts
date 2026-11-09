@@ -80,9 +80,11 @@ function rememberWriteSeq(apprenantId: string, exerciceId: string, seq: number):
     const key = seqKeyFor(apprenantId, exerciceId);
     if ((map[key] ?? 0) >= seq) return;
     map[key] = seq;
-    memorySeqMap[key] = seq;
     localStorage.setItem(SEQ_KEY, JSON.stringify(map));
   } catch {
+    // Écriture refusée par le navigateur : le numéro reste connu en mémoire.
+    const key = seqKeyFor(apprenantId, exerciceId);
+    if (!((memorySeqMap[key] ?? 0) >= seq)) memorySeqMap[key] = seq;
     /* le serveur reste de toute façon l'arbitre : au pire, base_seq reste bas */
   }
 }
