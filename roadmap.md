@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 13:55 — Correcteur QRC global, préparation jetable autorisée
+- [ ] Lecture unifiée des 24 identités, preuves figées, pagination et sessions ; prototypes sans import actif.
+- [ ] Notation historique admin append-only, concurrence/rejeu/atomicité et intégration du seul écran V2 sur PostgreSQL jetable.
+- [ ] Rapport, diff et limites ; migration réelle, écriture Cloud et publication strictement interdites.
+
 ## 09/11 13:52 — Toutes les QRC EB1–EB6 dans le correcteur V2
 - [x] Audit lecture seule 24 identités d'examen : 4 591 résultats historiques sans copie V2 (2 374 remises prouvées) ; rapport docs/audit-qrc-v2-tous-eb-2026-11-09.md.
 - [ ] STOP : notation V2 impossible sans fonction serveur (migration) ; attend accord pour prototype jetable. Aucune écriture ni publication.
