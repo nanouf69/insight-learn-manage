@@ -21,7 +21,7 @@ describe("EB2 VTC en consultation dans le correcteur V2", () => {
   it("lit les preuves au-delà de 1000 sans masquer une remise située sur la seconde page", async () => {
     const ranges:number[]=[];
     const proof={apprenant_id:'a1',exercice_id:'EB2__t3p',tentative:1,completed:true,status:'submitted',submitted_at:'2026-11-09T09:00:00Z',reponses:base().details.reponses};
-    const builder=(table:string):any=>({select(){return this;},eq(){return this;},order(){return this;},in(){return table==='reponses_apprenants'?this:Promise.resolve({data:table==='apprenants'?[{id:'a1',nom:'X',prenom:'Y'}]:[base()],error:null});},range(from:number){ranges.push(from);return Promise.resolve({data:from===0?Array.from({length:1000},()=>({...proof,apprenant_id:'other'})):[proof],error:null});}});
+    const builder=(table:string):any=>({select(){return this;},eq(){return this;},order(){return this;},in(){return this;},then(resolve:any){return Promise.resolve({data:table==='apprenants'?[{id:'a1',nom:'X',prenom:'Y'}]:[base()],error:null}).then(resolve);},range(from:number){ranges.push(from);return Promise.resolve({data:from===0?Array.from({length:1000},()=>({...proof,apprenant_id:'other'})):[proof],error:null});}});
     Object.assign(supabase,{from:vi.fn(builder)});
     const result=await chargerConsultationEb2(['consultation:r1']);
     expect(ranges).toEqual([0,1000]);expect(result.tentatives[0].etat).toBe('terminee');expect(result.qrc[0].note).toBeNull();
