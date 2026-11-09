@@ -115,7 +115,7 @@ BEGIN
  PERFORM pg_advisory_xact_lock(hashtextextended('qrc:'||p_identity,0));
  -- Hold the ORIGINAL source row against concurrent source edits until commit.
  PERFORM 1 FROM public.apprenant_quiz_results r
- WHERE 'history:'||r.id||':'||split_part(p_identity,':',3)=p_identity FOR UPDATE;
+ WHERE 'history:'||r.id||':'=left(p_identity,45) FOR UPDATE;
  SELECT * INTO v FROM public.qrc_unified_candidate WHERE identity=p_identity;
  IF NOT FOUND OR v.origin<>'historical' THEN RAISE EXCEPTION 'historical identity required'; END IF;
  IF v.issue IS NOT NULL THEN RAISE EXCEPTION 'proof refused: %',v.issue; END IF;

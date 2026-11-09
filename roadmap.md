@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 09/11 17:16 — Notation sûre des QRC historiques
-- [ ] Prévisualisation lecture seule des identités, contenu figé, remises et corrections existantes ; compte d’éligibilité conservateur.
-- [ ] Renforcer le candidat jetable : corrections existantes protégées, liens divergents jamais masqués, verrouillage des preuves et tests.
-- [ ] Rapport de migration proposée et parcours manuel des preuves ambiguës, sans application réelle.
+- [x] Prévisualisation 24 EB ; EB2 VTC 81 copies/261 QRC figées sans lien, 139 avec remise identique mais aucun horodatage exact ; corrections historiques en attente à qualifier, zéro création automatique autorisée.
+- [x] Candidat jetable renforcé : corrections existantes protégées, liens divergents gardés, verrou source ; 15 SQL PASS + navigateur 168 corrections synthétiques, une révision/retry et reprises tactiles PASS.
+- [x] Rapport docs/qrc-historique-notable-preparation-2026-11-09.md : migration proposée, autorisation admin des ambiguïtés et publication révisée, aucune application réelle.
 - [ ] Intégration réelle notation/remontée — validation spécifique de migration et compatibilité catalogue complet requises.
 
 ## 09/11 17:13 — Règle statistique parfaite explicite
