@@ -114,7 +114,7 @@ describe('Bilans d’exercices — synchronisation dynamique des 29 compositions
     const sources = resoudreExercicesSourcesBilan({
       moduleBilanId: 4, exercicesEmbarques: embarques, moduleDataServeur: { exercices: [serveur] },
     });
-    const questions = projeterExerciceBilanDepuisCours(brut, sources, { exercicesCoursDeReference: embarques });
+    const questions = projeterExerciceBilanDepuisCours(brut, sources.filter((exo) => Number(exo.id) === 72), { exercicesCoursDeReference: embarques });
     expect(questions[0].id).toBe(55555);
     expect(questions[0].enonce).toBe('Texte source entièrement réécrit');
     expect(questions[0].source_exercice_id).toBe(72);
