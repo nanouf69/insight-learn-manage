@@ -6,6 +6,11 @@ const people=new Map([['a',new Set<'jour'|'soir'>(['jour'])],['b',new Set<'jour'
 const evidence=():ExamStatsEvidence=>({attempts:[{attempt_id:'native',apprenant_id:'a',exam_id:'EB1',started_at:'2026-11-04T09:00:00Z',is_test:false,snapshot:{matiere:'gestion',questions:[{...q,id:'gestion:1',matiere:'gestion'}]}}],events:[{event_id:1,attempt_id:'native',apprenant_id:'a',question_id:'gestion:1',valeur_nouvelle:['A'],valeur_precedente:null,revision_precedente:null,revision_nouvelle:1,auteur:'auth-a',created_at:'2026-11-04T09:01:00Z'}],legacy:[],journal:[],results:[],retakes:[],accounts:[{id:'a',auth_user_id:'auth-a'},{id:'b',auth_user_id:'auth-b'}]});
 const calc=(e:ExamStatsEvidence,question=q)=>computeExamFirstPassage([question],['EB1','EB1-TAXI'],'gestion',people,e)['1'];
 describe('EB premier passage — preuves et conservation',()=>{
+ it.each([
+  {answer:['A'],incorrect:1},
+  {answer:['B','A'],incorrect:0},
+  {answer:['A','B','C'],incorrect:1},
+ ])('QCM clé A+B, réponse $answer : $incorrect échec statistique',({answer,incorrect})=>{const e=evidence();const ab={...q,choix:q.choix.map(c=>({...c,correct:c.lettre==='A'||c.lettre==='B'}))};e.attempts[0].snapshot.questions=[{...ab,id:'gestion:1',matiere:'gestion'}];e.events[0].valeur_nouvelle=answer;expect(calc(e,ab)).toMatchObject({incorrect,total:1,unknown:0});});
  it('premier événement incorrect même si réponse finale changée, 1/1',()=>{const e=evidence();e.events.push({...e.events[0],event_id:2,revision_precedente:1,revision_nouvelle:2,valeur_nouvelle:['A','C'],created_at:'2026-11-04T09:02:00Z'});expect(calc(e)).toMatchObject({incorrect:1,total:1,unknown:0});});
  it('réponse multiple A+C correcte quel que soit ordre',()=>{const e=evidence();e.events[0].valeur_nouvelle=['C','A'];expect(calc(e)).toMatchObject({incorrect:0,total:1});});
  it('corrigé courant ne remplace pas le corrigé figé',()=>{const current={...q,choix:q.choix.map(c=>({...c,correct:c.lettre==='A'}))};expect(calc(evidence(),current).incorrect).toBe(1);});
@@ -33,6 +38,7 @@ describe('EB premier passage — preuves et conservation',()=>{
  describe('QRC sur la copie soumise et sa correction validée',()=>{
   const qrcQuestion={id:1,enonce:'Documents ?',type:'QRC',choix:[]};
   const qrcEvidence=(note:number|null=1,email:string|null='formateur@ftransport.fr')=>{const e=evidence();e.attempts[0].etat='terminee';e.attempts[0].finished_at='2026-11-04T10:00:00Z';e.attempts[0].snapshot.questions=[{id:'gestion:1',matiere:'gestion',type:'QRC',enonce:'Documents ?',points:2}];e.events=[{...e.events[0],valeur_nouvelle:'P'}];e.qrc=[{qrc_instance_id:'qrc-1',attempt_id:'native',apprenant_id:'a',question_id:'gestion:1',reponse:'Permis et carte professionnelle',etat:note==null?'en_attente':'corrigee',note,corrige_email:email}];return e;};
+  it.each([{note:0,incorrect:1},{note:1,incorrect:1},{note:2,incorrect:0}])('QRC $note/2 : $incorrect échec statistique, note pédagogique conservée',({note,incorrect})=>{const e=qrcEvidence(note);const before=JSON.stringify(e);expect(calc(e,qrcQuestion)).toMatchObject({incorrect,total:1,unknown:0});expect(e.qrc?.[0].note).toBe(note);expect(JSON.stringify(e)).toBe(before);});
   it('note humaine 1/2 = échec de la copie soumise, pas de la première lettre tapée',()=>{expect(calc(qrcEvidence(1),qrcQuestion)).toMatchObject({incorrect:1,total:1,unknown:0});});
   it('note humaine 2/2 = réussite',()=>{expect(calc(qrcEvidence(2),qrcQuestion)).toMatchObject({incorrect:0,total:1,unknown:0});});
   it('QRC en attente reste hors dénominateur et explicitement non prouvée',()=>{expect(calc(qrcEvidence(null,null),qrcQuestion)).toMatchObject({incorrect:0,total:0,unknown:1});});
