@@ -45,15 +45,28 @@ const SEQ_KEY = "answer_write_seq_v1";
 
 const seqKeyFor = (apprenantId: string, exerciceId: string) => `${apprenantId}__${exerciceId}`;
 
+// Miroir mémoire des numéros d'écriture : si le navigateur refuse d'écrire
+// (stockage plein, navigation privée, tablette restreinte), le numéro connu
+// reste disponible pendant la session au lieu de retomber à 0 (envois ignorés).
+const memorySeqMap: Record<string, number> = {};
+
 function readSeqMap(): Record<string, number> {
+  let stored: Record<string, number> = {};
   try {
     const raw = localStorage.getItem(SEQ_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+    if (parsed && typeof parsed === "object") stored = parsed as Record<string, number>;
   } catch {
-    return {};
+    /* lecture impossible : miroir mémoire seul */
   }
+  const merged: Record<string, number> = { ...stored };
+  for (const [k, v] of Object.entries(memorySeqMap)) {
+    if (!Number.isFinite(merged[k]) || merged[k] < v) merged[k] = v;
+  }
+  return merged;
 }
+
+export const __testResetMemorySeq = () => { for (const k of Object.keys(memorySeqMap)) delete memorySeqMap[k]; };
 
 function getKnownWriteSeq(apprenantId: string, exerciceId: string): number {
   const value = readSeqMap()[seqKeyFor(apprenantId, exerciceId)];
@@ -67,6 +80,7 @@ function rememberWriteSeq(apprenantId: string, exerciceId: string, seq: number):
     const key = seqKeyFor(apprenantId, exerciceId);
     if ((map[key] ?? 0) >= seq) return;
     map[key] = seq;
+    memorySeqMap[key] = seq;
     localStorage.setItem(SEQ_KEY, JSON.stringify(map));
   } catch {
     /* le serveur reste de toute façon l'arbitre : au pire, base_seq reste bas */
