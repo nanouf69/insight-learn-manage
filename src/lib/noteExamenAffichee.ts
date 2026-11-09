@@ -52,7 +52,8 @@ export function attacherSourceUnique<T extends Record<string, any>>(
   // strictement identique à la ligne : même passage prouvé. Les anciens résumés
   // (sans choix ni « reponseQRC ») ne peuvent pas passer la comparaison de contenu
   // et resteraient « en attente » alors que leurs QRC sont corrigées dans le V2.
-  if (reponsesFiables && core.resultId && core.resultId === String(row.id) && fichesIdentiques(core.historicalDetails, original)) {
+  // Seulement pour une note V2 DÉFINITIVE : ne remet jamais « en attente » un résultat déjà publié.
+  if (reponsesFiables && !core.pending && core.resultId && core.resultId === String(row.id) && fichesIdentiques(core.historicalDetails, original)) {
     return { ...row, __core: core };
   }
   // Unique native passage established from server-owned frozen answers. Current
