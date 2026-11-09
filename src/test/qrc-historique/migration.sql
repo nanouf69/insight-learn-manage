@@ -90,7 +90,7 @@ BEGIN
   IF FOUND THEN
     IF v_prior.result_id <> p_result_id OR v_prior.question_id <> p_question_id
        OR v_prior.note <> p_note OR v_prior.acteur <> v_uid THEN
-      RAISE EXCEPTION 'Conflit d''opération' USING ERRCODE = '40001';
+      RAISE EXCEPTION 'Conflit d''opération' USING ERRCODE = 'P0409';
     END IF;
     RETURN to_jsonb(v_prior) || jsonb_build_object('rejeu', true);
   END IF;
@@ -153,7 +153,7 @@ BEGIN
     RAISE EXCEPTION 'Score enregistré non prouvé par la copie : correction refusée' USING ERRCODE = 'P0001';
   END IF;
   IF abs(r.score_obtenu - p_score_attendu) > 0.001 THEN
-    RAISE EXCEPTION 'Copie modifiée depuis l''affichage : recharger' USING ERRCODE = '40001';
+    RAISE EXCEPTION 'Copie modifiée depuis l''affichage : recharger' USING ERRCODE = 'P0409';
   END IF;
 
   -- Provenance de la remise (jamais d'identité par texte ou fenêtre de temps).
