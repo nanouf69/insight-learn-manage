@@ -3,7 +3,8 @@
 ## 09/11 13:26 — Audit lecture seule EB2 VTC absent de Correction QRC V2
 - [x] Cause prouvée : EB2 sans version V2 publiée active (retrait 24/09), nouvelles copies ancien circuit ; menu historique limité à EB3. Site public index-BbNPGt9M.js contient ce filtre.
 - [x] Contrôle 13:31 UTC : journée 27 résultats matière / 9 élèves / 78 QRC sur 22 passages ; soir 2 / 1 / 7 QRC sur 2 passages ; 0 tentative EB2 V2 novembre chez ces inscrits. 36 tests fictifs PASS ; aucune écriture Cloud ni publication.
-- [ ] Affichage EB2 ancien circuit proposé seulement, attend accord ; écran administrateur non vérifié (session disponible redirigée, écritures réseau empêchées). Rapport docs/audit-eb2-vtc-menu-qrc-2026-11-09.md. Aucun mélange avec verdicts ou EB3.
+- [x] Accord 13:33 : option EB2 historique ajoutée, exclusion par result_id V2 exact, identité tentative et références figées EB2 ; 62 tests PASS, build OK, lecture admin journée/soir/date/reload vérifiée sans écriture.
+- [ ] Publication autorisée : demande à lancer après revue du diff ; confirmation du déploiement public reste requise. Rapport docs/correctif-eb2-vtc-menu-qrc-2026-11-09.md. Aucun mélange avec verdicts ou EB3.
 
 ## 09/11 13:10 — Audit lecture seule verdicts examens blancs novembre
 - [x] Sessions journée/soir et TAXI lié identifiées ; 368 lignes matière dont 286 novembre, 47 derniers ensembles avec activité novembre : 19 réussites, 7 échecs tous <10, 21 attentes. Aucune donnée ou préparation EB3 modifiée.
