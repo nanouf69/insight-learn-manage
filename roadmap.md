@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 19:55 — Rectification présélection QRC
+- [x] Supprimer panneau doublonné ; sélection locale sur boutons standard, sauvegarde humaine normale.
+- [x] 77 tests de proposition, sauvegarde/relecture et révision ; contrôle réel sans écriture ; publication ciblée demandée. Rapport docs/qrc-preselection-2026-11-09.md.
+- Activation EB3 reste bloquée et distincte de ce correctif d'interface.
+
 ## 09/11 19:49 — EB3 futur et pré-note QRC
 - [x] Lecture réelle : deux brouillons EB3 vides, sources 107 questions × deux filières ; 234/45 marqueurs matière anciens en cours, identité de passage global non certifiée. Aucune activation.
 - [x] Pré-note locale conservatrice distincte, validation humaine explicite, trace dans la correction ; 76 tests ciblés PASS.
