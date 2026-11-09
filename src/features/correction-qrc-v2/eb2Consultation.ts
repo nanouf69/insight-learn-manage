@@ -117,6 +117,7 @@ export async function lirePassagesEb2Consultation(): Promise<Array<{ id: string;
       .from("exam_attempts_v2")
       .select("rid:snapshot->source_historique->>result_id")
       .eq("exam_id", "EB2")
+      .order("attempt_id", { ascending: true })
       .range(de, de + 999);
     if (error) throw error;
     (data ?? []).forEach((r: any) => { if (r.rid) lies.add(String(r.rid)); });
@@ -131,6 +132,7 @@ export async function lirePassagesEb2Consultation(): Promise<Array<{ id: string;
       .eq("quiz_id", "EB2")
       .not("completed_at", "is", null)
       .order("completed_at", { ascending: false })
+      .order("id", { ascending: true })
       .range(de, de + 999);
     if (error) throw error;
     out.push(...(data ?? []).filter((r: any) => !lies.has(String(r.id))));
@@ -163,13 +165,18 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
     if (ea) throw ea;
     (a ?? []).forEach((x: any) => noms.set(x.id, `${x.nom} ${x.prenom}`));
     const exos = Array.from(new Set(lignes.filter((l) => lot.includes(l.apprenant_id)).map(exerciceIdEb2)));
-    const { data: p, error: ep } = await supabase
-      .from("reponses_apprenants")
-      .select("apprenant_id, exercice_id, tentative, completed, status, submitted_at, reponses")
-      .in("apprenant_id", lot)
-      .in("exercice_id", exos);
-    if (ep) throw ep;
-    preuves.push(...((p ?? []) as any[]));
+    for (let de = 0; ; de += 1000) {
+      const { data: p, error: ep } = await supabase
+        .from("reponses_apprenants")
+        .select("apprenant_id, exercice_id, tentative, completed, status, submitted_at, reponses")
+        .in("apprenant_id", lot)
+        .in("exercice_id", exos)
+        .order("id", { ascending: true })
+        .range(de, de + 999);
+      if (ep) throw ep;
+      preuves.push(...((p ?? []) as any[]));
+      if ((p ?? []).length < 1000) break;
+    }
   }
   for (const l of lignes) {
     const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves));
