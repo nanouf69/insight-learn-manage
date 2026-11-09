@@ -51,7 +51,8 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .from("apprenant_quiz_results")
         .select("id, quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
         .eq("apprenant_id", apprenantId)
-        .order("completed_at", { ascending: false }),
+        .order("completed_at", { ascending: false })
+        .order("created_at", { ascending: false }),
       fetchCoreMatiereStates(apprenantId),
       // Bilans
       supabase
