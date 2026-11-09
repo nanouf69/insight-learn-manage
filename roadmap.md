@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 09/11 12:49 — EB2 : préparation strictement jetable
-- [ ] Préparer un candidat SQL atomique terminé/résultat/reçu, hors migrations actives ; vérifier isolation PostgreSQL locale.
-- [ ] Préparer une copie de test minimale de RevisionFausses : amorçage write_seq, reprise même identité et refus QRC sans mots-clés utilisables.
-- [ ] Tester concurrence, interruption/rollback, accusé perdu/retries, VTC/TAXI par matière et non-régression ; rapport précis.
+- [x] Candidat SQL atomique terminé/résultat/reçu, hors migrations actives ; isolation PostgreSQL locale contrôlée.
+- [x] Copie de test RevisionFausses : amorçage write_seq, reprise même identité et refus QRC sans mots-clés utilisables ; application active inchangée.
+- [x] 18 SQL + 96 tests ciblés PASS ; 2 parcours Chromium tactiles, sept matières synthétiques chacun, Terminer/retry/reload PASS ; rapport docs/eb2-preparation-isolee-2026-11-09.md. SQL et navigateur séparés, catalogue complet/appareils physiques non prouvés.
 - [ ] Activation réelle et publication INTERDITES : nouvelle autorisation et revue de compatibilité nécessaires.
 
 ## 09/11 — Synchronisation dynamique des bilans d’exercices après édition admin
