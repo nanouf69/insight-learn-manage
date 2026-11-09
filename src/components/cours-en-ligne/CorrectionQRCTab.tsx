@@ -14,6 +14,7 @@ import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
 import { loadQrcEngineQuizIds, fetchQrcEngineAttemptIds, buildQrcAttemptId } from "@/lib/qrcInstances";
 import { QrcInstancesPanel } from "./QrcInstancesPanel";
+import { memePassageEb2 } from "@/features/correction-qrc-v2/eb2Historique";
 
 /** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
 const EB2_QUIZ_IDS = new Set(["EB2", "EB2-TAXI", "eb2-va", "eb2-ta"]);
@@ -829,6 +830,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
       answerSignature: string | null;
       /** Numéros de tentative techniques regroupés dans ce passage réel. */
       mergedTentatives: number[];
+      frozenSubject?: any;
     };
     const groupsByMatiere = new Map<string, AttemptGroup[]>();
     let doublonsTechniques = 0;
@@ -875,7 +877,9 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
       // Cible de fusion : même numéro de tentative persistant, ou signature de
       // réponses strictement identique. Jamais une simple proximité horaire.
       const target = list.find((g) =>
-        (storedTentative != null && g.dbTentative === storedTentative)
+        idsAutorises && r.quiz_id === "EB2"
+          ? memePassageEb2({ id: r.id, tentative: storedTentative }, { id: g.primaryId, tentative: g.dbTentative })
+          : (storedTentative != null && g.dbTentative === storedTentative)
         || (!!signature && g.answerSignature === signature),
       );
 
@@ -934,6 +938,7 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
         lastTime: time,
         answerSignature: signature,
         mergedTentatives: storedTentative != null ? [storedTentative] : [],
+        frozenSubject: details.snapshot,
       });
       groupsByMatiere.set(mKey, list);
 
@@ -1073,7 +1078,10 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
         if (seenQrcKeys.has(qrcKey)) continue;
         seenQrcKeys.add(qrcKey);
 
-        const pts = getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
+        const scopedEb2 = !!idsAutorises && g.quizId === "EB2";
+        const frozenPts = Number(g.frozenSubject?.ptsQRC);
+        const pts = scopedEb2 && Number.isFinite(frozenPts) && frozenPts > 0
+          ? frozenPts : getPointsParQuestion(effectiveMatiereId, "QRC", perQuestionMatiere || undefined);
 
         const reponseEleveRaw = q.reponseEleve != null && q.reponseEleve !== ""
           ? q.reponseEleve
@@ -1120,10 +1128,12 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
 
         const reponseCorrecteStr = q.reponseCorrecte
           ? safeStr(q.reponseCorrecte)
-          : safeStr(questionDef?.reponseQRC || (questionDef?.reponses_possibles || []).join(" / "));
+          : scopedEb2
+            ? safeStr(g.frozenSubject?.questions?.find((sq: any) => Number(sq.id ?? sq.questionId) === questionId)?.reponseQRC)
+            : safeStr(questionDef?.reponseQRC || (questionDef?.reponses_possibles || []).join(" / "));
 
         // Fiche sans copie des questions : jamais de recalcul avec la question actuelle.
-        const questionHistoriqueIndisponible = !g.questions;
+        const questionHistoriqueIndisponible = !g.questions || (scopedEb2 && !(Number.isFinite(frozenPts) && frozenPts > 0));
         const ancienneCorrectionAuto = questionHistoriqueIndisponible && correction && typeof correction === "object"
           ? { points: typeof correction.pointsObtenus === "number" ? correction.pointsObtenus : null, explication: correction.explication || null }
           : null;
@@ -1135,6 +1145,9 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
         } else if (questionHistoriqueIndisponible) {
           autoScore = 0;
           autoExplication = null;
+        } else if (scopedEb2) {
+          autoScore = typeof correction?.pointsObtenus === "number" ? correction.pointsObtenus : 0;
+          autoExplication = correction?.explication ?? null;
         } else if (questionDef) {
           const recomputed = recomputeQrcAutoScore(questionDef, reponseEleveStr, pts);
           autoScore = recomputed.autoScore;
