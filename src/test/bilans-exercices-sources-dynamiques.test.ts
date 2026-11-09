@@ -57,7 +57,7 @@ describe('Bilans d’exercices — synchronisation dynamique des 29 compositions
         const modifiee = { ...reste[0], enonce: `MODIFICATION SERVEUR ${moduleId}:${exerciceId}` };
         const nouvelId = Math.max(...serveurModifie.flatMap((exo) => exo.questions!.map((q) => Number(q.id)))) + 1000;
         const ajoutee = { id: nouvelId, enonce: `AJOUT SERVEUR ${moduleId}:${exerciceId}`, choix: [] };
-        premiereSource.questions = [...reste.slice(1), ajoutee, modifiee, reste[0]];
+        premiereSource.questions = [...reste.slice(1), ajoutee, modifiee];
         premiereSource.deletedQuestionIds = [Number(supprimee.id)];
 
         const sourcesActives = resoudreExercicesSourcesBilan({
@@ -129,7 +129,7 @@ describe('Bilans d’exercices — synchronisation dynamique des 29 compositions
         { id: 1, questions: [], deletedQuestionIds: [1] },
         { id: 2, questions: [], deletedQuestionIds: [1] },
       ] },
-    }).filter((exo) => [1, 2].includes(Number(exo.id));
+    }).filter((exo) => [1, 2].includes(Number(exo.id)));
     const questions = projeterExerciceBilanDepuisCours({ id: 100, questions: [{ id: 9, enonce: 'Historique conservé' }] }, sources);
     expect(questions).toEqual([]);
   });
