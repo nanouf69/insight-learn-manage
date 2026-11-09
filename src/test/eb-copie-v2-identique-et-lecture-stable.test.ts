@@ -47,7 +47,9 @@ describe("Copie V2 identique à la ligne d'origine", () => {
     expect(noteExamenAffichee(r)).toMatchObject({ etat: "note", source: "noyau", note20: 12 });
   });
   it("copie V2 encore en correction : jamais rattachée (aucun résultat publié remis en attente)", () => {
-    expect(attacherSourceUnique(row(fiche), [core({ pending: true, note20: null, qrcRestantes: 1 })], new Set()).__core).toBeNull();
+    const r = attacherSourceUnique(row(fiche), [core({ pending: true, note20: null, qrcRestantes: 1 })], new Set());
+    expect(r.__core?.note20 ?? null).toBeNull();
+    expect(r.__core?.resultId).not.toBe("res-1");
   });
   it("fiche modifiée après la copie : rattachement refusé", () => {
     const modifiee = { ...fiche, correctionsIA: { 1: { points: 1 } } };
