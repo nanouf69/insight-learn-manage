@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 09/11 14:15 — EB2 VTC absent du menu, préparation de lecture seule
-- [ ] Auditer la session du 2–13 novembre, réponses soumises/en cours et absence V2 ; compter sans fusion destructive.
-- [ ] Préparer/tester une projection ciblée EB2 sans mutation ni notation, dans les fichiers isolés uniquement.
-- [ ] Rapporter preuves, limites de notation, tests et aucun déploiement.
+- [x] Audit : journée 9 élèves/39 résultats QRC/127 réponses (101 le 09/11), V2 absent ; soir 1/5/16 ; 78 QRC preuve exacte, 49 non certifiées ; 5 fiches en cours distinctes.
+- [x] Projection test-only sans mutation/notation : 8 tests + 45 existants PASS ; même écran V2 synthétique PC/tablette/rechargement PASS, aucun ancien écran.
+- [x] Rapport : docs/eb2-vtc-consultation-ciblee-2026-11-09.md ; aucune écriture réelle/migration/publication.
+- [ ] Activation réelle non effectuée : capacité explicite consultation à intégrer, droits/lecture réelle et preuves restantes à vérifier ; notation historique exige adaptation serveur séparée.
 
 ## 09/11 14:07 — Audit prioritaire des faux verdicts EB, lecture seule
 - [x] Captures Ilies MEMDOUH TAXI EB1/EB2 identifiées exactement ; 14 matières définitives, zéro QRC restante ; faux échec et sept éliminatoires reproduits avec le vrai calcul de carte.
