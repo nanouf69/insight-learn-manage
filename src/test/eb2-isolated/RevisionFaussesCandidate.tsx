@@ -51,7 +51,6 @@ import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
-import { RefaireMatiereButton } from './RefaireMatiereButton';
 import { buildExamMatiereExerciceId } from '@/lib/quizAttempts';
 import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 import { questionsRevisionDuPassage, reponseCorrecteDansRevision } from "@/lib/revisionQuestionsFigees";
