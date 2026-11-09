@@ -246,7 +246,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .range(de, de + 999);
       if (error) throw error;
       const historiques = (data ?? []).filter((r: any) =>
-        eb2HistoriqueNonCopie(r, copiedEb2Ids) || /^eb3(?:$|-)/i.test(String(r.quiz_id ?? ""))));
+        eb2HistoriqueNonCopie(r, copiedEb2Ids) || /^eb3(?:$|-)/i.test(String(r.quiz_id ?? "")));
       legacyResults.push(...historiques.map((r: any) => ({
         ...r,
         attempt_id: `ancien:${r.id}`,
