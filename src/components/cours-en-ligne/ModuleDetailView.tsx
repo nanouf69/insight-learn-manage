@@ -4397,15 +4397,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
   const canonicalRowsRef = useRef<CanonicalQuestionRow[]>([]);
   const canonicalSectionIdsRef = useRef<Set<number>>(new Set());
-  // Bilan = somme exacte des questions du cours (matières sans quiz canonique :
-  // T3P, Gestion). Projection d'affichage en mémoire, jamais réécrite en base.
+  // Bilan T3P = 66 questions de la partie 1 puis 62 de la partie 2.
+  // Projection d'affichage en mémoire, jamais réécrite en base ; Gestion et les
+  // autres matières restent inchangées, et le contenu historique est préservé.
   const coursSommeExercicesRef = useRef<any[] | null>(null);
   const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
     const config = projectionSommeCoursActive(Number(module.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module.id)] : undefined;
     const coursExercices = coursSommeExercicesRef.current;
     if (!config || !coursExercices || !Array.isArray(data?.exercices)) return data;
     try {
-      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices) as any };
+      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices, { preserverContenuExistant: true }) as any };
     } catch (projectionError) {
       // Source indisponible : conserver l'affichage précédent, jamais fabriquer un vide.
       console.error("[BilanSommeCours] Projection indisponible", projectionError);
