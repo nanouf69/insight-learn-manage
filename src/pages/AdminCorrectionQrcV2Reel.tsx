@@ -446,7 +446,10 @@ export default function AdminCorrectionQrcV2Reel() {
       }
     }
     const revision = qrcSel.etat === "corrigee";
-    const traceProposition = !revision && baremeSel != null ? tracePrenote(proposition, n, baremeSel) : undefined;
+    const auto = !revision && baremeSel != null && proposition.note === baremeSel && n === baremeSel;
+    const traceProposition = !revision && baremeSel != null
+      ? (auto ? `[VALIDATION AUTO ${proposition.regle}] ${n}/${baremeSel} — ${proposition.motif}` : tracePrenote(proposition, n, baremeSel))
+      : undefined;
     const commentaireValidation = [commentaire, traceProposition].filter(Boolean).join('\n');
     const ancienne = qrcSel.note;
     if (revision) {
