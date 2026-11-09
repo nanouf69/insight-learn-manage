@@ -160,7 +160,7 @@ BEGIN
   v_exo := 'EB' || substring(r.quiz_id from '^EB([1-6])') || '__' || coalesce(r.matiere_id,'')
            || CASE WHEN coalesce(r.tentative,1) <= 1 THEN '' ELSE '__t' || r.tentative END;
   IF r.quiz_id LIKE '%-TAXI' THEN v_exo := NULL; END IF;
-  SELECT CASE WHEN bool_or(a.submitted_at = r.completed_at) THEN 'remise_identique' ELSE 'remise_horodatage_divergent' END
+  SELECT CASE WHEN count(*) = 0 THEN NULL WHEN bool_or(a.submitted_at = r.completed_at) THEN 'remise_identique' ELSE 'remise_horodatage_divergent' END
     INTO v_prov
   FROM public.reponses_apprenants a
   WHERE v_exo IS NOT NULL AND a.apprenant_id = r.apprenant_id AND a.exercice_id = v_exo
