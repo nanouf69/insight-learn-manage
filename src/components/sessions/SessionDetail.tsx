@@ -1669,6 +1669,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return (emargementsHoursMap as Record<string, number>)[apprenantId] || 0;
   };
 
+  const controlesFC = useQuery({
+    queryKey: ['fc-controles-papier', session?.id, apprenantsInSession.map((s: any) => s.apprenant?.id).join(',')],
+    enabled: open && !!session?.id && /continue/i.test(session?.title ?? '') && apprenantsInSession.length > 0,
+    queryFn: async () => Object.fromEntries(await Promise.all(apprenantsInSession.filter((s: any)=>s.apprenant).map(async (s: any) => [s.apprenant.id, await controlerAttestationFC(s.apprenant.id)]))),
+  });
+
   // Heures effectuées en ligne EN DEHORS des dates de formation (e-learning à la maison)
   const { data: onlineHoursMap = {} } = useQuery({
     queryKey: ['online-hours-out', session?.id, session?.dateDebut, session?.dateFin, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
@@ -5299,13 +5305,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             const a = sa.apprenant;
             const isAbsent = absentIds.has(a.id);
             const heures = Number((emargementsHoursMap as any)?.[a.id] || 0);
-            const present = !isAbsent && heures > 0;
+            const controle = controlesFC.data?.[a.id];
+            const present = heures > 0 && controle?.autorise === true;
             const facture: any = (facturesFCMap as any)?.[a.id] || null;
             const paiements: any[] = (facture?.id && (paiementsByFactureId as any)?.[facture.id]) || [];
             const totalPaye = paiements.reduce((t: number, p: any) => t + Number(p?.montant || 0), 0);
             const montant = getMontantFactureFor(a, sa);
             const paye = !!facture && (facture.statut === 'payee' || (paiements.length > 0 && totalPaye + 0.001 >= montant));
-            const raison = isAbsent ? 'Absent' : heures <= 0 ? 'Aucune feuille d\'émargement signée' : !facture ? 'Pas de facture' : !paye ? 'Facture non acquittée' : '';
+            const raison = !controle ? 'Vérification des signatures en cours' : !controle.autorise ? messageRefusAttestationFC(controle) : heures <= 0 ? 'Aucune heure signée' : !facture ? 'Pas de facture' : !paye ? 'Facture non acquittée' : '';
             return { sa, a, heures, present, paye, eligible: present && paye, raison };
           });
           const attestationsEligibles = attestationRows.filter(r => r.eligible);
