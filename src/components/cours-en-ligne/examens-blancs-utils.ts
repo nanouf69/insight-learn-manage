@@ -210,10 +210,6 @@ export function selectLatestAttemptRows<T extends Record<string, any>>(rows: T[]
     const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom) || `prior-${index}`;
     if (!latestByMatiere.has(key)) {
       latestByMatiere.set(key, row);
-    } else {
-      // Garde la ligne existante (tentative la plus récente) sauf si elle est corrompue
-      const current = latestByMatiere.get(key);
-      latestByMatiere.set(key, pickBestScoreRow(current, row) as T);
     }
   });
 
