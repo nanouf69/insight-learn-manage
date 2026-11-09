@@ -4397,9 +4397,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
   const canonicalRowsRef = useRef<CanonicalQuestionRow[]>([]);
   const canonicalSectionIdsRef = useRef<Set<number>>(new Set());
-  // Bilan T3P = 66 questions de la partie 1 puis 62 de la partie 2.
-  // Projection d'affichage en mémoire, jamais réécrite en base ; Gestion et les
-  // autres matières restent inchangées, et le contenu historique est préservé.
+  // Bilans d'exercices = composition exacte de leurs sources embarquées.
+  // Projection d'affichage en mémoire, jamais réécrite en base ; les contenus
+  // historiques sont préservés et les bilans d'examen/EB restent hors périmètre.
   const coursSommeExercicesRef = useRef<any[] | null>(null);
   const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
     const config = projectionSommeCoursActive(Number(module.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module.id)] : undefined;
@@ -5864,26 +5864,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, moduleData?.exercices?.length]);
 
-  // Bilan T3P : les 66 + 62 questions sources affichées dans l'application
-  // définissent uniquement la composition et l'ordre. Les objets historiques du
-  // bilan restent prioritaires pour les énoncés, choix, images et identifiants.
+  // Les sources embarquées définissent uniquement la composition et l'ordre.
+  // Les objets historiques restent prioritaires pour les énoncés, choix, images
+  // et identifiants ; aucune écriture du module de cours n'est effectuée.
   useEffect(() => {
     const config = projectionSommeCoursActive(Number(module?.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module?.id)] : undefined;
     if (!config || !editorStateHydrated) return;
-    let cancelled = false;
-    if (Number(module.id) === 9) {
-      coursSommeExercicesRef.current = TAXI_COURS_DATA.exercices.filter((exo) => [1, 2].includes(Number(exo.id)));
-      setModuleData((prev) => appliquerSommeCoursBilan(prev));
-      return () => { cancelled = true; };
-    }
-    loadModuleEditorStateRow(config.moduleCours)
-      .then((row) => {
-        if (cancelled || !row?.module_data?.exercices) return;
-        coursSommeExercicesRef.current = row.module_data.exercices as any;
-        setModuleData((prev) => appliquerSommeCoursBilan(prev));
-      })
-      .catch((lectureError) => console.error("[BilanSommeCours] Lecture du module cours impossible", lectureError));
-    return () => { cancelled = true; };
+    const sourceData = config.moduleCours === 2 ? VTC_COURS_DATA : TAXI_COURS_DATA;
+    const sourceIds = new Set(Object.values(config.correspondances).flat().map(Number));
+    coursSommeExercicesRef.current = sourceData.exercices.filter((exo) => sourceIds.has(Number(exo.id)));
+    setModuleData((prev) => appliquerSommeCoursBilan(prev));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, editorStateHydrated]);
 
