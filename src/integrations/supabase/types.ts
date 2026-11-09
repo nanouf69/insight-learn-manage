@@ -5216,6 +5216,74 @@ export type Database = {
         }
         Relationships: []
       }
+      fc_signatures_papier: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          creneau: string
+          date_presence: string
+          document_id: string
+          heures: number
+          id: string
+          inscription_id: string
+          session_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by: string
+          creneau: string
+          date_presence: string
+          document_id: string
+          heures: number
+          id?: string
+          inscription_id: string
+          session_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string
+          creneau?: string
+          date_presence?: string
+          document_id?: string
+          heures?: number
+          id?: string
+          inscription_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fc_signatures_papier_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fc_signatures_papier_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_inscription"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fc_signatures_papier_inscription_id_fkey"
+            columns: ["inscription_id"]
+            isOneToOne: false
+            referencedRelation: "session_apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fc_signatures_papier_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeurs_fc: {
         Row: {
           adresse: string | null
@@ -10027,6 +10095,17 @@ export type Database = {
       examens_blancs_valider_si_complet: {
         Args: { _apprenant_id: string; _exam_id: string }
         Returns: undefined
+      }
+      fc_papier_creneaux: {
+        Args: { p_apprenant: string }
+        Returns: {
+          date_emargement: string
+          demi_journee: string
+          document_id: string
+          heures: number
+          id: string
+          session_id: string
+        }[]
       }
       figer_releve_jalons: {
         Args: {
