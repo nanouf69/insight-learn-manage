@@ -97,8 +97,11 @@ describe("Pogos SARKISIAN — échecs et attentes légitimes conservés", () => 
       ...coreRow(i >= 5 ? null : n, i >= 5),
     }));
     expect(isExamAttemptPublicationPending(rows, e)).toBe(true);
-    // Les matières en attente ne produisent aucune note : jamais de verdict définitif inventé.
-    expect(computeMatiereScoreForAttempt(e.matieres[5], rows[5] as any)).toBeNull();
+    // La carte affiche « En attente » AVANT tout verdict ; la note serveur en attente n'est jamais lue.
+    expect(rows.filter((r) => r.__core.pending).map((r) => r.matiereId)).toEqual([e.matieres[5].id, e.matieres[6].id]);
+    // Une fois F/G corrigées (7 et 10), plus d'attente et le verdict est calculable.
+    const corriges = rows.map((r, i) => ({ ...r, ...coreRow([13, 10, 11, 4, 4, 7, 10][i]) }));
+    expect(isExamAttemptPublicationPending(corriges, e)).toBe(false);
   });
 });
 
