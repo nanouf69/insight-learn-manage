@@ -32,6 +32,14 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (n: string, 
 
 import { BilanFutureExam, lireRouteBilanFuture } from "@/components/cours-en-ligne/BilanFutureExam";
 
+const choix = (qid: number, l: string) => document.querySelector(`[data-question-id="${qid}"] [data-choix="${l}"]`) as HTMLElement;
+const lastOpen = () => calls.filter(c => c.name === "bilan_future_open").at(-1)?.args;
+async function ouvrirMatiere(nom: string) {
+  await screen.findAllByText(`📝 Quiz — ${nom}`);
+  fireEvent.click(screen.getAllByText(`📝 Quiz — ${nom}`)[0]);
+  await waitFor(() => expect(screen.getByRole("heading", { name: `📝 ${nom}` })).toBeTruthy());
+}
+
 beforeEach(() => { calls.length = 0; server.drafts = {}; server.submitted = null; localStorage.clear(); });
 
 describe("Nouveau Bilan examen — écran élève", () => {
@@ -42,18 +50,18 @@ describe("Nouveau Bilan examen — écran élève", () => {
 
   it("ouvre une matière, affiche énoncé/choix/image sans aucune bonne réponse", async () => {
     render(<BilanFutureExam moduleId={5} ownerId="u1" />);
-    fireEvent.click(screen.getByText("Sécurité routière"));
+    await ouvrirMatiere("Sécurité routière");
     await screen.findByText(/Ce panneau annonce/);
-    expect(calls.find(c => c.name === "bilan_future_open")?.args).toEqual({ p_module: 5, p_exercise: 502 });
+    await waitFor(() => expect(lastOpen()).toEqual({ p_module: 5, p_exercise: 502 }));
     expect(screen.getByText("Sans barrières")).toBeTruthy();
     expect(document.body.innerHTML).not.toMatch(/correct/i);
   });
 
   it("sauvegarde chaque réponse par reçu+version, reprend après rechargement, puis remet", async () => {
     const { unmount } = render(<BilanFutureExam moduleId={5} ownerId="u1" />);
-    fireEvent.click(screen.getByText("Sécurité routière"));
+    await ouvrirMatiere("Sécurité routière");
     await screen.findByText(/Ce panneau annonce/);
-    fireEvent.click(screen.getByLabelText("Q1 choix B"));
+    fireEvent.click(choix(62, "B"));
     await waitFor(() => expect(server.drafts["62"]).toEqual(["B"]));
     const save = calls.find(c => c.name === "bilan_future_save_draft")!.args;
     expect(save).toMatchObject({ p_receipt: "rcpt-1", p_version: "ver-1", p_question: 62, p_revision: 1 });
@@ -61,27 +69,27 @@ describe("Nouveau Bilan examen — écran élève", () => {
 
     // Reprise : la réponse revient du serveur.
     render(<BilanFutureExam moduleId={5} ownerId="u1" />);
-    fireEvent.click(screen.getByText("Sécurité routière"));
+    await ouvrirMatiere("Sécurité routière");
     await screen.findByText(/Ce panneau annonce/);
-    expect(screen.getByLabelText("Q1 choix B").getAttribute("data-state")).toBe("checked");
+    await waitFor(() => expect(choix(62, "B").getAttribute("data-selected")).toBe("1"));
 
     // Remise refusée tant qu'une question est vide.
-    fireEvent.click(screen.getByText("Remettre la matière"));
+    fireEvent.click(screen.getByText("Valider les QCM"));
     expect((await screen.findByRole("alert")).textContent).toMatch(/1 question/);
     expect(calls.some(c => c.name === "bilan_future_submit")).toBe(false);
 
-    fireEvent.click(screen.getByLabelText("Q2 choix A"));
+    fireEvent.click(choix(64, "A"));
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    fireEvent.click(screen.getByText("Remettre la matière"));
+    fireEvent.click(screen.getByText("Valider les QCM"));
     expect((await screen.findByTestId("bilan-future-resultat")).textContent).toContain("1/2");
     expect(calls.find(c => c.name === "bilan_future_submit")!.args).toEqual({ p_receipt: "rcpt-1", p_answers: { "62": ["B"], "64": ["A"] } });
   });
 
   it("n'écrit jamais dans les anciennes tables du Bilan", async () => {
     render(<BilanFutureExam moduleId={11} ownerId="u1" />);
-    fireEvent.click(screen.getByText("Gestion"));
+    await ouvrirMatiere("Gestion");
     await screen.findByText(/Ce panneau annonce/);
     expect(calls.every(c => c.name.startsWith("bilan_future_"))).toBe(true);
-    expect(calls.find(c => c.name === "bilan_future_open")?.args).toEqual({ p_module: 11, p_exercise: 601 });
+    await waitFor(() => expect(lastOpen()).toEqual({ p_module: 11, p_exercise: 601 }));
   });
 });

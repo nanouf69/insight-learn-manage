@@ -41,27 +41,42 @@ describe("Correction Bilan examen (règles)", () => {
 });
 
 describe("Correction Bilan examen (écran)", () => {
-  it("après remise : réponse élève + bonnes réponses visibles, bouton 2 fausses, révision locale sans écriture", async () => {
+  it("après remise : même écran que les modules, réponse élève + bonnes réponses, bouton 2 fausses, révision locale sans écriture", async () => {
+    const choix = (qid: number, l: string) => document.querySelector(`[data-question-id="${qid}"] [data-choix="${l}"]`) as HTMLElement;
     render(<BilanFutureExam moduleId={5} ownerId="u1" />);
-    fireEvent.click(screen.getByText("Gestion"));
+    await screen.findAllByText("📝 Quiz — Gestion");
+    fireEvent.click(screen.getAllByText("📝 Quiz — Gestion")[0]);
     const btn = await screen.findByTestId("refaire-fausses");
-    expect(btn.textContent).toContain("(2 questions)");
+    expect(btn.textContent).toContain("Refaire les fausses (2)");
+    // Classic result block: score circle + Réponses grid + Progrès/Actions.
+    expect(screen.getByText("Points : 1 / 3")).toBeTruthy();
+    expect(screen.getByText("Réponses")).toBeTruthy();
+    expect(screen.getByText("Progrès")).toBeTruthy();
     expect(document.querySelectorAll('[data-question-faute="1"]').length).toBe(2);
-    expect(screen.getAllByTestId("corrige-question")[0].textContent).toContain("Bonne(s) réponse(s) : A");
-    expect(screen.getAllByTestId("corrige-question")[0].textContent).toContain("votre réponse : B");
-    expect(screen.getByLabelText("Q1 choix B").getAttribute("data-state")).toBe("checked");
+    // Q1: learner chose B (wrong, red), correct A highlighted green.
+    expect(choix(1, "B").getAttribute("data-selected")).toBe("1");
+    expect(choix(1, "B").className).toContain("border-destructive");
+    expect(choix(1, "A").getAttribute("data-bonne")).toBe("1");
+    // Q2 multiple: A selected, A+B correct.
+    expect(choix(2, "B").getAttribute("data-bonne")).toBe("1");
+    expect(choix(2, "B").getAttribute("data-selected")).toBeNull();
     fireEvent.click(btn);
+    // Mandatory "Relisez vos erreurs" dialog, same as other modules.
+    await screen.findByText("📖 Relisez vos erreurs avant de recommencer");
+    expect(screen.getAllByText(/Votre réponse :/).length).toBe(2);
+    fireEvent.click(screen.getByText("✅ J'ai relu mes erreurs — Refaire les fausses"));
     await screen.findByTestId("bilan-future-revision");
     expect(document.querySelectorAll("[data-learner-question]").length).toBe(2);
-    expect(screen.getByLabelText("Q1 choix B").getAttribute("data-state")).toBe("unchecked");
-    fireEvent.click(screen.getByLabelText("Q1 choix A"));
-    fireEvent.click(screen.getByLabelText("Q2 choix A"));
-    fireEvent.click(screen.getByText("Corriger ma révision"));
+    expect(choix(1, "B").getAttribute("data-selected")).toBeNull();
+    fireEvent.click(choix(1, "A"));
+    fireEvent.click(choix(2, "A"));
+    fireEvent.click(screen.getByText("Valider les QCM"));
     expect((await screen.findByTestId("revision-score")).textContent).toContain("1/2");
     const writes = calls.filter(c => /save_draft|submit/.test(c.name));
     expect(writes).toEqual([]);
-    fireEvent.click(screen.getByText("← Retour à la correction"));
-    await waitFor(() => expect(screen.getByLabelText("Q1 choix B").getAttribute("data-state")).toBe("checked"));
+    fireEvent.click(screen.getByText("Voir toutes les questions"));
+    await waitFor(() => expect(choix(1, "B").getAttribute("data-selected")).toBe("1"));
+    expect(document.querySelectorAll("[data-learner-question]").length).toBe(3);
   });
 });
 
