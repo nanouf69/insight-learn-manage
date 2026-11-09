@@ -1129,36 +1129,9 @@ function EcranResultats({
 
       {/* Bouton refaire les fausses — EN HAUT bien visible */}
       {!hasQrcPendingValidation && (() => {
-        let nbFaussesTop = 0;
-        resultatsAvecIA.forEach((r, mi) => {
-          if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
-          const matiere = examen.matieres[mi];
-          if (!matiere) return;
-          const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
-          qSafe.forEach(q => {
-            // FIX: try both numeric and string keys (JSON round-trip from DB makes keys strings)
-            const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
-            // FIX: skip unanswered questions — they shouldn't appear as "wrong to redo"
-            const isUnanswered = rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "");
-            if (isUnanswered) return;
-            if (q?.type === "QCM" && q.choix) {
-              const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-               const donnees = safeArray<string>(rep).sort();
-               if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
-            } else if (q?.type === "QRC") {
-              const corrIA = correctionsIA[mi]?.[q.id] ?? correctionsIA[mi]?.[String(q.id)];
-              const officielle = correctionOfficielleQrc((r as any).__core, r.matiereId ?? matiere.id, q.id, getPointsParQuestion(matiere.id, "QRC", matiere));
-              if (officielle) {
-                if (!officielle.estCorrect) nbFaussesTop++;
-              } else if (corrIA && corrIA !== "loading" && corrIA !== "error") {
-                if (!corrIA.estCorrect) nbFaussesTop++;
-              } else {
-                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC", matiere));
-                if (!fallback.estCorrect) nbFaussesTop++;
-              }
-            }
-          });
-        });
+        // Source unique : même liste que l'onglet révision (questions figées du passage,
+        // réponses de la tentative affichée, corrections QRC officielles).
+        const nbFaussesTop = wrongQuestions.length;
         if (nbFaussesTop === 0) return null;
         return (
           <Button

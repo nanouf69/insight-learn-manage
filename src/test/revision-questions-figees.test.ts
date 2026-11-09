@@ -30,3 +30,14 @@ describe("révision depuis le bon passage", () => {
     expect(questionsRevisionDuPassage(matiere, { matiereId: "gestion", __core: { questions: [{ id: "gestion:1", type: "QCM", points: null }] } })).toEqual([]);
   });
 });
+
+describe("compteur Refaire = réponses du passage, pas le contenu actuel", () => {
+  it("Q9 A+B correcte dans le snapshot n'est pas fausse même si l'admin a changé la clé ensuite", async () => {
+    const { questionsRevisionDuPassage, reponseCorrecteDansRevision } = await import("@/lib/revisionQuestionsFigees");
+    const matiere: any = { id: "securite", nom: "Sécurité", questions: [{ id: 9, type: "QCM", points: 1, enonce: "x", choix: [{ lettre: "A", correct: true }, { lettre: "B", correct: false }] }] };
+    const r: any = { matiereId: "securite", reponses: { "9": ["B", "A"] }, __core: { questions: [{ id: "securite:9", type: "QCM", points: 1, enonce: "x", choix: [{ lettre: "A", correct: true }, { lettre: "B", correct: true }] }] } };
+    const qs = questionsRevisionDuPassage(matiere, r);
+    expect(qs).toHaveLength(1);
+    expect(reponseCorrecteDansRevision(qs[0], r.reponses["9"], { ...matiere, questions: qs }, r)).toBe(true);
+  });
+});
