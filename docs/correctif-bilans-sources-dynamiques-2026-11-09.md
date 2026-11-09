@@ -65,8 +65,7 @@ Ces valeurs ne sont pas écrites dans les modules : elles découlent de la lectu
 - Identité legacy sans référence directe conservée après réécriture du texte source.
 - Suppression de toutes les questions avec preuves explicites = vue vide ; source vide sans preuve = refus sûr.
 - Transport local fictif : événement puis sonde de reprise en ligne ; la suppression apparaît, puis la modification et l’ajout sont relus. **Ce test ne prouve pas le Realtime hébergé.**
-- Tests ciblés initiaux : **122 réussis, zéro échec** ; nouveau test de transport : **32/32** dans le fichier dynamique.
-- Sauvegarde admin, banque nationale et snapshots figés : **28/28**.
+- Série ciblée finale : **151 tests réussis, zéro échec** dans 9 fichiers (32 dynamiques, compositions précédentes, sauvegarde admin, banque nationale et snapshots figés).
 - Suite globale : résultat final à consigner après la fin du processus détaché.
 
 ## Données et production
