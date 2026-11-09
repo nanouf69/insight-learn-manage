@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 09/11 14:07 — Audit prioritaire des faux verdicts EB, lecture seule
+- [x] Captures Ilies MEMDOUH TAXI EB1/EB2 identifiées exactement ; 14 matières définitives, zéro QRC restante ; faux échec et sept éliminatoires reproduits avec le vrai calcul de carte.
+- [x] Cause : appel de la liste sans reussi + seuil absent du snapshot V2 ⇒ Boolean(undefined) faux ; moyenne indépendante correcte. 32 tests existants PASS ; deux reproductions du défaut exécutées.
+- [x] Pogos SARKISIAN identifié : EB1 7,5 légitimement échoué (C=5 seule éliminatoire), EB2 six QRC F/G réellement en attente ; aucun déblocage inventé.
+- [x] Rapport et plan minimal non appliqué : docs/audit-verdict-eb-captures-2026-11-09.md. Aucun code actif, donnée, migration ou publication modifié.
+- [ ] Correctif et validation navigateur non autorisés : attend accord explicite ; chantier QRC global et protections EB3 laissés intacts.
+
 ## 09/11 13:55 — Correcteur QRC global, préparation jetable autorisée
 - [x] Prototype hors imports actifs : 24 identités × sept matières, lecture unifiée, preuves, pages >1000 et sessions ; 12 contrats PostgreSQL PASS.
 - [x] Notation append-only, concurrence/rejeu/rollback ; vrai écran V2 → HTTP local → PostgreSQL jetable : 168 corrections + une révision/retry et reprises tablette/téléphone PASS ; 76 tests existants PASS.
