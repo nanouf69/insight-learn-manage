@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 15:22 — Audit + correctifs exhaustifs calcul/remontée EB1–EB6 VTC/TAXI
+- [ ] Inventaire config (EB × filière × matière : coef, seuil, points, QCM/QRC) et données réelles (lecture seule).
+- [ ] Contrôle cohérence notes stockées vs recalcul, 0 technique, terminé fantôme, doublons, QRC en attente.
+- [ ] Tests matriciels automatisés par EB/matière réellement configurés ; tableau couverture + anomalies.
+- [ ] Correctifs code partagés seulement si bug prouvé ; aucune écriture de note/copie sans accord ; publication après tests.
+
 ## 09/11 14:21 — « FAIS LE » : faux verdicts EB (P1) puis QRC V2 global (P2)
 - [x] P1 correctif calcul/affichage seul (scoring + carte + détail) : seuil figé → seuil configuré → statut explicite ; incomplet/à vérifier jamais « échoué ».
 - [x] P1 tests : 17 nouveaux + 48 existants PASS ; suite complète 3 863 PASS / 2 échecs préexistants (heures de présence) ; vraies cartes sur copies réelles lues seule PC/tablette/téléphone + rechargement : Ilies 14,8/13,4 RÉUSSIS, Pogos 7,5 ÉCHOUÉ C seule, EB2 EN ATTENTE ; 0 écriture.
