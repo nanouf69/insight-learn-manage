@@ -9595,88 +9595,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     const exoPoints = etatQrc === "terminee"
                       ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
                       : exoCorrect;
-                    const pct = exoTotalQ > 0 ? Math.round((exoPoints / exoTotalQ) * 100) : 0;
-                    const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
-                    const circleBg = pct >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pct >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
-                    const circumference = 2 * Math.PI * 54;
-                    const strokeDashoffset = circumference - (pct / 100) * circumference;
-
                     return (
                     <div className="w-full space-y-5">
                       {/* Score circle */}
-                      <div className="flex flex-col items-center gap-3">
-                        <div className={`relative w-36 h-36 rounded-full flex items-center justify-center ${circleBg}`}>
-                          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 120 120">
-                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/20" />
-                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className={circleColor} strokeLinecap="round"
-                              strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1s ease-out" }} />
-                          </svg>
-                          <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
-                        </div>
-                        <p className="text-lg font-bold">Points : {exoPoints} / {exoTotalQ}</p>
-                        {passageFigeExo && (
-                          <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
-                        )}
-                      </div>
+                      <QuizScoreSummary points={exoPoints} total={exoTotalQ} footnote={passageFigeExo && (
+                        <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
+                      )} />
 
                       {/* Answer grid */}
-                      <div className="rounded-lg border p-4 space-y-2">
-                        <h4 className="font-semibold text-sm">Réponses</h4>
-                        <p className="text-xs text-muted-foreground">Cliquez sur une question pour revoir la correction</p>
-                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-                          {questionsSafe.map((q, qi) => {
-                            const key = `${exo.id}-${q.id}`;
-                            const selected = selectedAnswers[key];
-                            const qrcR = qrcResults[key];
-                            const isCorrect = estQuestionQrc(q)
-                              ? !!qrcR && qrcR !== "loading" && !qrcR.indisponible && qrcR.estCorrect === true
-                              : isAnswerCorrect(selected, q as any);
-                            return (
-                              <div key={q.id}
-                                className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
-                                onClick={() => {
-                                  const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
-                                  if (!el) {
-                                    console.warn(`[Réponses] Anchor introuvable: exo-q-${exo.id}-${qi}`);
-                                    return;
-                                  }
-                                  el.scrollIntoView({ behavior: "smooth", block: "start" });
-                                  el.classList.add("ring-4", "ring-primary");
-                                  setTimeout(() => el.classList.remove("ring-4", "ring-primary"), 1500);
-                                }}
-
-                              >
-                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
-                                <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      <QuizAnswerGrid
+                        items={questionsSafe.map((q) => {
+                          const key = `${exo.id}-${q.id}`;
+                          const selected = selectedAnswers[key];
+                          const qrcR = qrcResults[key];
+                          const isCorrect = estQuestionQrc(q)
+                            ? !!qrcR && qrcR !== "loading" && !qrcR.indisponible && qrcR.estCorrect === true
+                            : isAnswerCorrect(selected, q as any);
+                          return { key: q.id, correct: isCorrect };
+                        })}
+                        onJump={(qi) => flashQuestionAnchor(`exo-q-${exo.id}-${qi}`)}
+                      />
 
                       {/* Progress + Actions */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-lg border p-4 space-y-2">
-                          <h4 className="font-semibold text-sm">Progrès</h4>
-                          <div className="flex gap-4">
-                            <div className="flex flex-col items-center gap-1">
-                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                              </div>
-                              <span className="text-xs text-muted-foreground">Soumis</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-1">
-                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                              </div>
-                              <span className="text-xs text-muted-foreground">Noté</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="rounded-lg border p-4 space-y-2">
-                          <h4 className="font-semibold text-sm">Actions</h4>
-                          <div className="flex flex-col gap-2">
+                      <QuizResultPanels>
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
               if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Vos réponses actuelles seront effacées.")) return;
               const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
