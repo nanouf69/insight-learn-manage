@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 09/11 13:02 — Protections nouvelles tentatives EB3–EB6 uniquement
-- [ ] Vérifier les identifiants VTC/TAXI, identité originale et compatibilité snapshots/déclencheurs en lecture seule.
-- [ ] Préparer et tester le périmètre prospectif en environnement isolé, exclure EB1/EB2 et toute révision d'une copie préactivation.
-- [ ] Mise en service uniquement après preuve complète de sécurité ; STOP sans migration/publication si incompatibilité grave.
+- [x] Identifiants et déclencheurs réels lus ; identité parent originale absente du démarrage par matière, formats snapshots distincts ; 23 lignes V2 en cours protégées, aucun changement actif.
+- [x] Prototype de périmètre hors application/migrations : 9 contrats PostgreSQL + 18 contrats atomicité préexistants + 94 Vitest PASS ; exclusion EB1/2 et parent préactivation vérifiée sur fictifs.
+- [ ] STOP migration/publication : identité parent/cohorte immuable au démarrage original manquante, compatibilité source historique et intégration complète anciens clients/triggers/navigateur non prouvées. Rapport docs/eb3-protections-prospectives-2026-11-09.md ; site public index-BbNPGt9M.js inchangé au contrôle.
 
 ## 09/11 12:59 — Autorisation de publication des trois correctifs EB2
 - [x] Schéma et déclencheurs réels contrôlés en lecture seule ; candidats et diff examinés, aucun changement actif.
