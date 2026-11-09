@@ -6339,7 +6339,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <div key={r.a.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
                         <span className="flex-1">{r.a.prenom} {r.a.nom}</span>
                         <span className="text-xs text-muted-foreground">{r.raison}</span>
-                        <DebloquerAttestationFC inscription={r.sa} sessionId={session.id} raison={r.raison} />
+                        <DebloquerAttestationFC inscription={r.sa} sessionId={session.id} raison={r.raison} eligible={r.eligible}
+                          onDownload={() => handleBulkDownloadAttestations([r.sa])}
+                          onRefresh={async () => { await queryClient.invalidateQueries({ queryKey: ['emargements-hours'] }); await controlesFC.refetch(); }} />
                       </div>
                     ))}
                   </div>
