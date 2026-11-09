@@ -446,7 +446,7 @@ export default function AdminCorrectionQrcV2Reel() {
       }
     }
     const revision = qrcSel.etat === "corrigee";
-    const auto = !revision && baremeSel != null && proposition.note === baremeSel && n === baremeSel;
+    const auto = !revision && baremeSel != null && proposition.autoValidable && proposition.note === baremeSel && n === baremeSel;
     const traceProposition = !revision && baremeSel != null
       ? (auto ? `[VALIDATION AUTO ${proposition.regle}] ${n}/${baremeSel} — ${proposition.motif}` : tracePrenote(proposition, n, baremeSel))
       : undefined;
@@ -569,17 +569,20 @@ export default function AdminCorrectionQrcV2Reel() {
     setEtatEnvoi("vide");
     setErreur(null);
   };
-  // Validation automatique : uniquement réponse certaine (règle stricte), note = barème plein,
-  // copie non corrigée, provenance prouvée (pas de confirmation requise). Une seule tentative par QRC.
+  // Validation automatique : UNIQUEMENT réponse littéralement identique au corrigé figé
+  // (normalisation conservatrice : signes, unités, montants, % et négations conservés),
+  // note = barème plein, copie non corrigée, provenance prouvée. Une seule tentative par QRC.
+  // Toute autre proposition (ex. équivalence B2) n'est qu'une présélection à enregistrer.
   const autoTentees = useRef(new Set<string>());
   useEffect(() => {
     if (!qrcSel || qrcSel.etat === 'corrigee' || videSel || confirmationSel) return;
+    if (!proposition.autoValidable) return;
     if (baremeSel == null || proposition.note == null || proposition.note !== baremeSel) return;
     if (etatEnvoi === 'encours' || autoTentees.current.has(qrcSel.qrc_instance_id)) return;
     autoTentees.current.add(qrcSel.qrc_instance_id);
     void valider(baremeSel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrcSel?.qrc_instance_id, qrcSel?.etat, proposition.note, baremeSel, videSel, confirmationSel, etatEnvoi]);
+  }, [qrcSel?.qrc_instance_id, qrcSel?.etat, proposition.note, proposition.autoValidable, baremeSel, videSel, confirmationSel, etatEnvoi]);
 
   const navigationCopies = (
     <div className="flex items-center gap-2 border-y py-2" data-testid="navigation-copies">
@@ -1187,9 +1190,11 @@ export default function AdminCorrectionQrcV2Reel() {
                     Copie vide — aucune correction historique, aucune note automatique.
                   </p>
                 )}
-                {proposition.note == null
-                  ? <p className="text-xs text-muted-foreground">Aucune note automatique : cliquez la note pour l'enregistrer.</p>
-                  : <p className="text-xs text-success" data-testid="validation-auto">Réponse identique au corrigé : note maximale validée automatiquement.</p>}
+                {proposition.autoValidable && proposition.note != null
+                  ? <p className="text-xs text-success" data-testid="validation-auto">Réponse littéralement identique au corrigé : note maximale validée automatiquement.</p>
+                  : proposition.note != null
+                    ? <p className="text-xs text-muted-foreground" data-testid="preselection-qrc">Présélection proposée ({proposition.motif}) — rien n'est enregistré tant que vous ne cliquez pas « Enregistrer ».</p>
+                    : <p className="text-xs text-muted-foreground">Aucune note automatique : choisissez la note puis cliquez « Enregistrer ».</p>}
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                     <Button
@@ -1200,12 +1205,22 @@ export default function AdminCorrectionQrcV2Reel() {
                       aria-pressed={noteChoisie === v}
                       data-testid={`note-${v}`}
                       disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
-                      onClick={() => { setChoixLocal({ cle: cleProposition, note: v }); void valider(v); }}
+                      onClick={() => setChoixLocal({ cle: cleProposition, note: v })}
                     >
                       {String(v).replace(".", ",")}
                     </Button>
                   ))}
                 </div>
+                <Button
+                  type="button"
+                  data-testid="enregistrer-correction"
+                  disabled={noteChoisie == null || etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
+                  onClick={() => { if (noteChoisie != null) void valider(noteChoisie); }}
+                >
+                  {noteChoisie == null
+                    ? "Enregistrer la note"
+                    : `Enregistrer la note ${String(noteChoisie).replace(".", ",")}/${String(baremeSel).replace(".", ",")}`}
+                </Button>
                 <Textarea
                   placeholder="Commentaire (facultatif)"
                   rows={2}
