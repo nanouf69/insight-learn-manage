@@ -278,6 +278,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               score_max: toFiniteNumber(scoreSource.score_max, 0),
               completed_at: scoreSource.completed_at,
               created_at: scoreSource.created_at,
+              tentative: r.tentative,
+              reussi: r.reussi,
               lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
               reponses: r?.details?.reponses ?? null,
               correctionsIA: r?.details?.correctionsIA ?? null,
@@ -596,7 +598,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                        // Passage entièrement présent dans le nouveau système → son état
                        // serveur est la seule source (ancien moteur ignoré).
                        const allCore = scores.length > 0 && scores.every((s: any) => !!s?.__core);
-                       const enginePending = allCore ? null : legacyEnginePendingForRows(scores, (mid) => qrcEngine.isMatierePending(examen.id, mid));
+                       const enginePending = allCore ? null : legacyEnginePendingForRows(scores, (mid, row) => qrcEngine.isMatierePending(examen.id, mid, row));
                        const publicationPending = enginePending === true
                          || isExamAttemptPublicationPending(scores, examen);
                        if (publicationPending) {
@@ -717,7 +719,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         // STATUT PAR MATIÈRE (jamais hérité du blocage global de l'examen) :
                         // une matière est « en attente » uniquement si ELLE contient encore
                         // une QRC répondue non validée manuellement pour CE passage.
-                        const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id);
+                        const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id, scoreData);
                         const coreRow = (scoreData as any)?.__core ?? null;
                         const publicationPending = coreRow
                           ? coreRow.pending === true
