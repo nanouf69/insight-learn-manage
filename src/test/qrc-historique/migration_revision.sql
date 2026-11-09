@@ -248,7 +248,7 @@ BEGIN
   END IF;
   v_prev := v_corrs->p_question_id;
   -- Révision : seulement d'une note validée, et seulement si elle n'a pas changé depuis l'affichage.
-  IF NOT public.qrc_historique_valide(v_prev) OR jsonb_typeof(v_prev->'pointsObtenus') IS DISTINCT FROM 'number' THEN
+  IF NOT coalesce(public.qrc_historique_valide(v_prev), false) OR jsonb_typeof(v_prev->'pointsObtenus') IS DISTINCT FROM 'number' THEN
     RAISE EXCEPTION 'QRC non corrigée : utiliser la première notation' USING ERRCODE = 'P0001';
   END IF;
   IF p_note_attendue IS NULL OR (v_prev->>'pointsObtenus')::numeric <> p_note_attendue THEN
