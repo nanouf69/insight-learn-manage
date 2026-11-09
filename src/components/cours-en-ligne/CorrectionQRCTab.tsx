@@ -14,6 +14,7 @@ import { loadSavedExamens } from "./ExamensBlancsEditor";
 import { buildExamenMap, findMatiereWithFallback, getSourceQuestions, computeReussiForResult, isResultPlaceholder, isQrcAnswerCertainlyEmpty, isExamAttemptPublicationPending, isMatiereQrcPendingForAttempt } from "./exam-helpers";
 import { loadQrcEngineQuizIds, fetchQrcEngineAttemptIds, buildQrcAttemptId } from "@/lib/qrcInstances";
 import { QrcInstancesPanel } from "./QrcInstancesPanel";
+import { memePassageEb2 } from "@/features/correction-qrc-v2/eb2Historique";
 
 /** Examens Blancs N°2, toutes filières (VTC, TAXI, VA, TA). */
 const EB2_QUIZ_IDS = new Set(["EB2", "EB2-TAXI", "eb2-va", "eb2-ta"]);
@@ -875,7 +876,9 @@ const CorrectionQRCTab = ({ resultIds, embeddedLabel, hideV2Panel = false }: Cor
       // Cible de fusion : même numéro de tentative persistant, ou signature de
       // réponses strictement identique. Jamais une simple proximité horaire.
       const target = list.find((g) =>
-        (storedTentative != null && g.dbTentative === storedTentative)
+        idsAutorises && r.quiz_id === "EB2"
+          ? memePassageEb2({ id: r.id, tentative: storedTentative }, { id: g.primaryId, tentative: g.dbTentative })
+          : (storedTentative != null && g.dbTentative === storedTentative)
         || (!!signature && g.answerSignature === signature),
       );
 
