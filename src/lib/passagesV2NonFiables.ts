@@ -174,6 +174,7 @@ export async function fetchPassagesV2NonFiables(
           .from("answer_state" as any)
           .select("attempt_id, question_id, valeur")
           .in("attempt_id", chunk)
+          .order("response_id", { ascending: true })
           .range(from, from + PAGE - 1);
         if (error) throw error;
         ((data as any[]) || []).forEach((r) => {
