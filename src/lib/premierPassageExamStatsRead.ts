@@ -3,7 +3,7 @@ import { freshSessionRead } from './sessionRpc';
 import { activeLearners, activeSessions, type SessionStats, type InscriptionStats, type QuestionStatsTarget, type AttemptStats, type FirstAnswerEvent } from './premierPassageStats';
 import { firstPassageExamIds, computeExamSessionFirstPassage, type ExamStatsAttempt, type ExamStatsEvent, type ExamStatsResult, type ExamStatsRetake, type ExamStatsEvidence, type ExamStatsState, type ExamStatsQrc, type ExamStatsQrcIa } from './premierPassageExamStats';
 
-async function pages<T>(query:(a:number,b:number)=>PromiseLike<{data:unknown;error:unknown}>):Promise<T[]> {
+export async function pages<T>(query:(a:number,b:number)=>PromiseLike<{data:unknown;error:unknown}>):Promise<T[]> {
   const rows:T[]=[];
   for(let a=0;a<20000;a+=500){const {data,error}=await freshSessionRead(()=>query(a,a+499));if(error)throw error;if(!Array.isArray(data))throw new Error('Lecture incomplète');rows.push(...data as T[]);if(data.length<500)return rows;}
   throw new Error('Volume de preuves trop important');
