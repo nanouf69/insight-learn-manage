@@ -94,6 +94,21 @@ describe("Révision « refaire les fausses » : validation après réouverture (
     expect(st.reponses).toEqual({ "101-42": ["B"], "101-48": ["D"] });
   });
 
+  it("cas Ahmed : réponse modifiée après le blocage, rechargement → enregistrée, aucune question locale perdue", async () => {
+    const { st, fetchMock } = serveur({ "102-1": ["A"], "102-2": ["B"] });
+    st.meta["102-1"] = 5; st.meta["102-2"] = 5; st.seq = 5;
+    vi.stubGlobal("fetch", fetchMock);
+    primeKnownWriteSeq(APP, EXO, 3); // numéro local périmé
+    save({ "102-1": ["C"], "102-9": ["D"] });
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(false);
+    // Rechargement : relecture serveur write_seq = 5, puis l'élève change encore 102-1
+    primeKnownWriteSeq(APP, EXO, 5);
+    save({ "102-1": ["A", "C"], "102-2": ["B"] });
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
+    expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(0);
+    expect(st.reponses).toEqual({ "102-1": ["A", "C"], "102-2": ["B"], "102-9": ["D"] });
+  });
+
   it("protection conservée : une écriture d'un autre appareil après la lecture n'est jamais écrasée", async () => {
     const { st, fetchMock } = serveur({ "101-42": ["C"] });
     vi.stubGlobal("fetch", fetchMock);
