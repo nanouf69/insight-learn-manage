@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { VTC_COURS_DATA } from '@/components/cours-en-ligne/vtc-cours-data';
 import { TAXI_COURS_DATA } from '@/components/cours-en-ligne/taxi-cours-data';
 import { resoudreExercicesSourcesBilan } from '@/components/cours-en-ligne/bilanCoursSources';
+import { createLiveRefresher } from '@/lib/moduleLiveRefresh';
 import {
   BILAN_SOMME_COURS_SOURCES,
   projeterBilanDepuisCours,
@@ -119,6 +120,59 @@ describe('Bilans d’exercices — synchronisation dynamique des 29 compositions
     expect(questions[0].enonce).toBe('Texte source entièrement réécrit');
     expect(questions[0].source_exercice_id).toBe(72);
     expect(questions[0].source_question_id).toBe(Number(ancienne.id));
+  });
+
+  it('transport local : événement puis reprise en ligne relisent la même source serveur', async () => {
+    const moduleId = 9;
+    const embarques = embarquesPour(moduleId);
+    const reference = embarques.filter((exo) => [1, 2].includes(Number(exo.id)));
+    const brut = {
+      id: 100,
+      questions: reference.flatMap((exo) => exo.questions!.map((q) => ({
+        ...q, id: Number(exo.id) * 100000 + Number(q.id),
+        source_exercice_id: Number(exo.id), source_question_id: Number(q.id),
+      }))),
+    };
+    let row = { exercices: clone(reference), updated_at: '2026-11-09T08:00:00Z' };
+    let affichees: any[] = [];
+    let lectures = 0;
+    const refresher = createLiveRefresher({
+      probe: async () => row.updated_at,
+      fetchFull: async () => {
+        lectures += 1;
+        const sources = resoudreExercicesSourcesBilan({
+          moduleBilanId: moduleId, exercicesEmbarques: embarques,
+          moduleDataServeur: { exercices: row.exercices },
+        }).filter((exo) => [1, 2].includes(Number(exo.id)));
+        affichees = projeterExerciceBilanDepuisCours(brut, sources, { exercicesCoursDeReference: embarques });
+        return true;
+      },
+      random: () => 0,
+    });
+
+    await refresher.fullNow();
+    await refresher.poll({ ignoreHidden: true }); // jeton initial, comme après ouverture
+    expect(affichees).toHaveLength(128);
+
+    const apresSuppression = clone(row.exercices);
+    apresSuppression[0].questions = apresSuppression[0].questions!.slice(1);
+    apresSuppression[0].deletedQuestionIds = [1];
+    row = { exercices: apresSuppression, updated_at: '2026-11-09T08:01:00Z' };
+    refresher.trigger(); // transport local, pas une preuve du Realtime hébergé
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(affichees).toHaveLength(127);
+    expect(affichees.some((q) => q.source_exercice_id === 1 && q.source_question_id === 1)).toBe(false);
+
+    const apresReprise = clone(row.exercices);
+    apresReprise[0].questions![0] = { ...apresReprise[0].questions![0], enonce: 'Modification lue à la reprise' };
+    apresReprise[0].questions!.push({ id: 999, enonce: 'Ajout lu à la reprise', choix: [] });
+    row = { exercices: apresReprise, updated_at: '2026-11-09T08:02:00Z' };
+    await refresher.poll({ ignoreHidden: true }); // sonde au retour en ligne
+    expect(affichees).toHaveLength(128);
+    expect(affichees.some((q) => q.enonce === 'Modification lue à la reprise')).toBe(true);
+    expect(affichees.some((q) => q.enonce === 'Ajout lu à la reprise')).toBe(true);
+    expect(lectures).toBe(4);
+    refresher.dispose();
   });
 
   it('une source entièrement vidée par suppressions explicites produit un bilan vide, sans fallback', () => {
