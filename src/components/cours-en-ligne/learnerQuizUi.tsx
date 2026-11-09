@@ -37,7 +37,7 @@ export function ExerciseQuestionPrompt({ questionNumber, prompt }: { questionNum
   );
 }
 
-export interface QcmChoiceView { lettre: string; texte: string; correct?: boolean }
+export interface QcmChoiceView { lettre: string; texte?: string; correct?: boolean }
 
 /** Classic QCM choice buttons (square ✓ box when multi, lettered circle otherwise). */
 export function QcmChoiceButtons({ choices, selected, multi, showResults, onSelect, disabled }: {
