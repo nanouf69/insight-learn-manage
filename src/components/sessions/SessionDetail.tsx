@@ -61,6 +61,7 @@ import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { SignaturesPapierFC } from "./SignaturesPapierFC";
 import { DebloquerAttestationFC } from "./DebloquerAttestationFC";
 import { chargerPreuvesPapier } from "@/lib/fcSignaturesPapier";
+import { facturePourAttestationFC, factureFCReglee } from "@/lib/factureAttestationFC";
 import { aPreuveSignatureEmargement } from "@/lib/preuveSignatureEmargement";
 import { MarquerPresentButton, estAbsentSession } from "./MarquerPresentButton";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
@@ -5308,11 +5309,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             const heures = Number((emargementsHoursMap as any)?.[a.id] || 0);
             const controle = controlesFC.data?.[a.id];
             const present = heures > 0 && controle?.autorise === true;
-            const facture: any = (facturesFCMap as any)?.[a.id] || null;
+            const facture = facturePourAttestationFC(
+              (facturesFCMap as any)?.[a.id], (extraFacturesByApprenantId as any)?.[a.id] || [],
+              session.id, a.id, session.title || '', paiementsByFactureId,
+            );
             const paiements: any[] = (facture?.id && (paiementsByFactureId as any)?.[facture.id]) || [];
-            const totalPaye = paiements.reduce((t: number, p: any) => t + Number(p?.montant || 0), 0);
-            const montant = getMontantFactureFor(a, sa);
-            const paye = !!facture && (facture.statut === 'payee' || (paiements.length > 0 && totalPaye + 0.001 >= montant));
+            const paye = !!facture && factureFCReglee(facture, paiements);
             const raison = !controle ? 'Vérification des signatures en cours' : !controle.autorise ? messageRefusAttestationFC(controle) : heures <= 0 ? 'Aucune heure signée' : !facture ? 'Pas de facture' : !paye ? 'Facture non acquittée' : '';
             return { sa, a, heures, present, paye, eligible: present && paye, raison };
           });
@@ -6341,7 +6343,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         <span className="text-xs text-muted-foreground">{r.raison}</span>
                         <DebloquerAttestationFC inscription={r.sa} sessionId={session.id} raison={r.raison} eligible={r.eligible}
                           onDownload={() => handleBulkDownloadAttestations([r.sa])}
-                          onRefresh={async () => { await queryClient.invalidateQueries({ queryKey: ['emargements-hours'] }); await controlesFC.refetch(); }} />
+                          onRefresh={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['emargements-hours'] }), controlesFC.refetch(), refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]); }} />
                       </div>
                     ))}
                   </div>
