@@ -109,6 +109,23 @@ describe("Révision « refaire les fausses » : validation après réouverture (
     expect(st.reponses).toEqual({ "102-1": ["A", "C"], "102-2": ["B"], "102-9": ["D"] });
   });
 
+  it("changement d'appareil (téléphone → tablette) : la tablette relit la ligne et valide", async () => {
+    const { st, fetchMock } = serveur({});
+    vi.stubGlobal("fetch", fetchMock);
+    // Téléphone : crée la révision puis continue
+    save({ "102-1": ["A"] });
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
+    save({ "102-1": ["B"] });
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
+    // Tablette : stockage local distinct (vide)
+    localStorage.clear();
+    setAnswerSaveOwnership({ apprenantId: APP });
+    primeKnownWriteSeq(APP, EXO, st.seq); // lecture serveur à l'ouverture
+    save({ "102-1": ["C"] });
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(true);
+    expect(st.reponses["102-1"]).toEqual(["C"]);
+  });
+
   it("protection conservée : une écriture d'un autre appareil après la lecture n'est jamais écrasée", async () => {
     const { st, fetchMock } = serveur({ "101-42": ["C"] });
     vi.stubGlobal("fetch", fetchMock);
