@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 09/11 13:52 — Toutes les QRC EB1–EB6 dans le correcteur V2
+- [x] Audit lecture seule 24 identités d'examen : 4 591 résultats historiques sans copie V2 (2 374 remises prouvées) ; rapport docs/audit-qrc-v2-tous-eb-2026-11-09.md.
+- [ ] STOP : notation V2 impossible sans fonction serveur (migration) ; attend accord pour prototype jetable. Aucune écriture ni publication.
+
 ## 09/11 13:49 — Rectification EB2 VTC, correcteur V2 exclusivement
 - [x] Ancien correcteur explicitement refusé ; approche précédente annulée dans l'aperçu uniquement, trois fichiers fonctionnels identiques à la référence préalable ; 76 tests V2 PASS, build OK.
 - [x] Lecture serveur : core_correct_qrc exige une qrc_instances_v2 existante ; les 44 résultats matière novembre jour/soir ne portent aucun lien V2 prouvé.
