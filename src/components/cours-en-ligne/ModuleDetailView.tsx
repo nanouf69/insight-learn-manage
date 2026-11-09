@@ -7596,6 +7596,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         const exoId = exoIdDepuisRevision(row.exercice_id);
         if (exoId == null) return;
         const base = row.reponses && typeof row.reponses === "object" ? { ...(row.reponses as Record<string, any>) } : {};
+        // L'écran repart de CETTE version serveur : les prochaines réponses
+        // doivent partir de son numéro d'écriture (sinon base 0 → ignorées).
+        primeKnownWriteSeq(apprenantId, row.exercice_id, (row as any).write_seq);
         const rep = { ...base, ...mergeSavedAndPendingAnswers(base, apprenantId, row.exercice_id) };
         revisionActiveRef.current.add(exoId);
         setSelectedAnswers((prev) => {
