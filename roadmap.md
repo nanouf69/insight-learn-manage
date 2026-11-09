@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 19:49 — EB3 futur et pré-note QRC
+- [ ] Comparer versions/source et passages engagés ; activation seulement sur contenu identique certifié.
+- [ ] Pré-note locale distincte, validation humaine explicite, trace dans la correction ; tests ciblés.
+- [ ] Vérifier aperçu/publication ciblée ; aucune donnée réelle de test.
+
 ## 09/11 17:23 — Urgence opérationnelle EB2 journée/soir
 - [x] Public et aperçu : 156 QRC journée / 16 soir visibles, notation bloquée ; 95/9 remises identiques, zéro lien V2 ; import existant insuffisamment protégé, non exécuté.
 - [x] Aperçu : IDs originaux visibles, pagination complète des remises et ordre stable ; 8 tests PASS, aucun faux bouton de note, candidat précédent conservé.
