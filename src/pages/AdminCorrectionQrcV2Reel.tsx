@@ -1188,6 +1188,16 @@ export default function AdminCorrectionQrcV2Reel() {
             )}
 
             <div className="space-y-1 border-t pt-2 text-[11px] text-muted-foreground">
+              {histoSel && (
+                <p data-testid="provenance-remise">
+                  Copie originale {histoSel.result_id} · question {qrcSel.question_id} ·{" "}
+                  {histoSel.provenance === "resultat_seul"
+                    ? "remise non retrouvée : confirmation demandée"
+                    : histoSel.provenance === "remise_identique"
+                      ? "remise vérifiée automatiquement (identique)"
+                      : "remise vérifiée automatiquement (réponses identiques, horodatage différent)"}
+                </p>
+              )}
               {iaSel.length > 0 && (
                 <div data-testid="historique-ia">
                   <p className="font-medium text-ia">Historique IA (conservé)</p>
