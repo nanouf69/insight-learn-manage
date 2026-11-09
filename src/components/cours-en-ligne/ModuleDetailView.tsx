@@ -9876,18 +9876,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       const quizCompleted = quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur((p as any).exercice.id)).length;
 
       return (
-        <div className="pt-4 mt-3 border-t space-y-2">
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-            <span className="font-medium">Avancement</span>
-            <span className="font-bold text-primary text-base">{progressPercent}%</span>
-          </div>
-          <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          {(coursPages.length > 0 || quizPages.length > 0) && (
+        <ProgressionBar percent={progressPercent} legend={(coursPages.length > 0 || quizPages.length > 0) && (
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
               {coursPages.length > 0 && (
                 <span className="flex items-center gap-1">
@@ -9902,8 +9891,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                 </span>
               )}
             </div>
-          )}
-        </div>
+          )} />
       );
     };
 
@@ -10101,48 +10089,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             if (!e.questions) return s;
             return s + e.questions.filter(q => hasRecordedAnswer(selectedAnswers[`${e.id}-${q.id}`])).length;
           }, 0);
-          if (totalQ === 0) return null;
-          const pctAnswered = Math.round((answeredQ / totalQ) * 100);
-          const remaining = totalQ - answeredQ;
-          return (
-            <div className="flex items-center gap-3 px-4 py-2 rounded-lg border bg-muted/30 text-sm">
-              <div className="flex-1">
-                <div className="flex justify-between mb-1">
-                  <span className="font-medium">📝 Réponses : {answeredQ} / {totalQ}</span>
-                  <span className="text-muted-foreground">{pctAnswered}%</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary/60 transition-all duration-500"
-                    style={{ width: `${pctAnswered}%` }}
-                  />
-                </div>
-              </div>
-              {remaining > 0 && (
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {remaining} restante{remaining > 1 ? "s" : ""}
-                </span>
-              )}
-              {remaining === 0 && (
-                <span className="text-xs text-emerald-600 font-semibold shrink-0">✅ Complet</span>
-              )}
-            </div>
-          );
+          return <AnswersCompletionStrip answered={answeredQ} total={totalQ} />;
         })()}
 
         {/* Navigation buttons */}
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            variant="outline"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 0}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" /> Précédent
-          </Button>
-          <span className="text-sm text-muted-foreground font-medium">
-            {currentPage + 1} / {totalPages}
-          </span>
+        <QuizPageNavigation onPrev={() => goToPage(currentPage - 1)} prevDisabled={currentPage === 0} current={currentPage} total={totalPages}>
           {currentPage < totalPages - 1 ? (() => {
             // Check if current page has an unvalidated quiz → block navigation
             const pageData = pages[currentPage];
