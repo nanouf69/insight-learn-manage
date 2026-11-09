@@ -1,7 +1,7 @@
 # Feuille de route
 
 ## 09/11 16:01 — Zine DAKHLI : contradiction EB1 carte / compte
-- [ ] Identité et sept matières, preuves V2 / historique, version publique (lecture seule).
+- [x] Zine DAKHLI identifié ; sept notes V2 définitives 15,5/10/7/14/11/12,5/6, 16 QRC corrigées ; public index-BNKO-425.js, carte/détail/CRM/Notes consultés = réussi. Contradiction passée non reproduite sur version actuelle.
 - [ ] Corriger uniquement la source / le verdict partagé après reproduction ; tests Zine + 24 EB et rafraîchissement.
 - [ ] Contrôler les écrans ; aucune écriture élève ; publication attend une nouvelle validation.
 

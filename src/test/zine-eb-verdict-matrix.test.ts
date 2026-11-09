@@ -35,8 +35,8 @@ describe('Zine DAKHLI — definitive V2 notes, never old G=5.5', () => {
   });
 });
 describe('24 configured exams: card/detail/account per-subject parity', () => {
-  it('covers exactly 24 configured EB and 112 subjects', () => {
-    expect(exams).toHaveLength(24); expect(exams.reduce((n,e) => n + e.matieres.length, 0)).toBe(112);
+  it('covers exactly 24 source EB and all 108 source subjects', () => {
+    expect(exams).toHaveLength(24); expect(exams.reduce((n,e) => n + e.matieres.length, 0)).toBe(108);
   });
   for (const exam of exams) {
     it(`${exam.id}: pass, fail, pending and every subject threshold`, () => {
