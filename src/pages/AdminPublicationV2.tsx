@@ -24,8 +24,8 @@ import {
 } from "@/features/noyau-passage/publicationV2";
 import { useQuery } from "@tanstack/react-query";
 
-/** EB3 VTC/TAXI réintégrés (ordre admin 09/11 20:06) : futurs passages seuls, passages engagés conservés. */
-const EXCLUS = new Set<string>();
+/** Examens exclus du périmètre tant que la session en cours n'est pas terminée. */
+const EXCLUS = new Set(["EB3", "EB3-TAXI"]);
 
 const VAGUES: { nom: string; examens: string[] }[] = [
   { nom: "Vague 0 — examen de test", examens: ["EB99TEST"] },
@@ -36,7 +36,7 @@ const VAGUES: { nom: string; examens: string[] }[] = [
     nom: "Vague 4 — TA et VA",
     examens: ["eb1-ta", "eb2-ta", "eb3-ta", "eb4-ta", "eb5-ta", "eb6-ta", "eb1-va", "eb2-va", "eb3-va", "eb4-va", "eb5-va", "eb6-va"],
   },
-  { nom: "Vague 5 — EB3 VTC et TAXI (futurs passages)", examens: ["EB3", "EB3-TAXI"] },
+  { nom: "Hors périmètre (session en cours)", examens: ["EB3", "EB3-TAXI"] },
 ];
 
 const MODULE_PAR_EXAMEN: Record<string, number> = {
