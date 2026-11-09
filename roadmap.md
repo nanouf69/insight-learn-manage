@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 16:10 — Audit global toutes tentatives EB
+- [ ] Compter tous les élèves/passages EB1–EB6 VTC/TAXI/TA/VA, défauts de sources et visibilité ; lecture seule.
+- [ ] Corriger uniquement les défauts partagés prouvés et exécuter les régressions.
+- [ ] Rapport couverture réelle/limites et contrôle du site public ; aucune écriture élève, publication non autorisée implicitement.
+
 ## 09/11 16:01 — Zine DAKHLI : contradiction EB1 carte / compte
 - [x] Zine DAKHLI identifié ; sept notes V2 définitives 15,5/10/7/14/11/12,5/6, 16 QRC corrigées ; public index-BNKO-425.js, carte/détail/CRM/Notes consultés = réussi. Contradiction passée non reproduite sur version actuelle.
 - [x] Lacune de rafraîchissement partagé corrigée en aperçu : écoute des résultats historiques aussi ; 74 tests PASS, scénario Zine + 24 EB / 108 matières source. Cause de l'ancienne capture non prouvée.
