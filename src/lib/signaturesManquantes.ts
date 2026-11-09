@@ -144,7 +144,7 @@ export function calculerSignaturesManquantes(
     const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
     if (!estDate(date) || !demi) continue;
     const key = `${date}|${demi}`;
-    const signe = (aPreuveSignatureEmargement(e) || (e?.preuve_papier === true && Number(e.heures) === (e.demi_journee === "matin" ? 3 : 4)));
+    const signe = (aPreuveSignatureEmargement(e) || preuvePapierComplete(e));
     if (signe) signes.add(key);
     else if (e?.absent === true) absents.add(key);
   }
@@ -338,7 +338,7 @@ export function calculerBilanSignaturesEdof(
     const date = normDate(e?.date_emargement);
     const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
     if (!estDate(date) || !demi) continue;
-    const signe = (aPreuveSignatureEmargement(e) || (e?.preuve_papier === true && Number(e.heures) === (e.demi_journee === "matin" ? 3 : 4)));
+    const signe = (aPreuveSignatureEmargement(e) || preuvePapierComplete(e));
     const key = `${date}|${demi}`;
     if (!signe || vus.has(key)) continue;
     vus.add(key);
