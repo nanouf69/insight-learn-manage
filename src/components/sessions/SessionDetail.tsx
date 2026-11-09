@@ -59,6 +59,7 @@ import {
 import { RIB_INFO } from "@/lib/pdf/devis-canonical";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { SignaturesPapierFC } from "./SignaturesPapierFC";
+import { DebloquerAttestationFC } from "./DebloquerAttestationFC";
 import { chargerPreuvesPapier } from "@/lib/fcSignaturesPapier";
 import { aPreuveSignatureEmargement } from "@/lib/preuveSignatureEmargement";
 import { MarquerPresentButton, estAbsentSession } from "./MarquerPresentButton";
@@ -6333,11 +6334,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               {attestationsExclues.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-2">Non éligibles ({attestationsExclues.length})</p>
-                  <div className="divide-y border rounded-lg opacity-60">
+                  <div className="divide-y border rounded-lg">
                     {attestationsExclues.map(r => (
-                      <div key={r.a.id} className="flex items-center gap-3 p-3 text-sm">
+                      <div key={r.a.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
                         <span className="flex-1">{r.a.prenom} {r.a.nom}</span>
                         <span className="text-xs text-muted-foreground">{r.raison}</span>
+                        <DebloquerAttestationFC inscription={r.sa} sessionId={session.id} raison={r.raison} />
                       </div>
                     ))}
                   </div>
