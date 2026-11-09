@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 17:23 — Urgence opérationnelle EB2 journée/soir
+- [ ] Contrôler copies réelles par session et disponibilité actuelle du circuit de notation/import serveur.
+- [ ] Préparer affichage des preuves et capacités sans faux bouton de sauvegarde ; conserver le candidat historique précédent.
+- [ ] Vérifier parcours nouveaux passages soir et reprise isolée ; aucune écriture réelle autorisée.
+- [ ] Déploiement effectif — attend rapport de sécurité et validation spécifique, aucun déblocage annoncé sans preuve.
+
 ## 09/11 17:16 — Notation sûre des QRC historiques
 - [x] Prévisualisation 24 EB ; EB2 VTC 81 copies/261 QRC figées sans lien, 139 avec remise identique mais aucun horodatage exact ; corrections historiques en attente à qualifier, zéro création automatique autorisée.
 - [x] Candidat jetable renforcé : corrections existantes protégées, liens divergents gardés, verrou source ; 15 SQL PASS + navigateur 168 corrections synthétiques, une révision/retry et reprises tactiles PASS.
