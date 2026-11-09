@@ -126,28 +126,52 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
-  it.each(['EB3', 'EB3-TAXI'])('valide automatiquement 2/2 une réponse certaine (B2 vierge) %s, une seule écriture', async (examId) => {
+  it.each(['EB3', 'EB3-TAXI'])('valide automatiquement 2/2 une réponse littéralement identique %s, une seule écriture', async (examId) => {
     if (!etat.session) throw new Error('Session absente');
     for (const t of etat.session.tentatives) t.exam_id = examId;
     etat.session.tentatives[0].snapshot.questions[0].reponseQRC = 'Casier judiciaire vierge (B2)';
-    etat.session.qrc[0].reponse = "C'est avoir un casier judiciaire b2 vierge";
+    etat.session.qrc[0].reponse = 'casier judiciaire vierge (B2).';
     await ouvrirCopie('a1-q1');
     await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
-    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ note: 2, qrcInstanceId: 'a1-q1', operationId: 'qrcv2:a1-q1:2', commentaire: expect.stringContaining('VALIDATION AUTO') });
+    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ note: 2, qrcInstanceId: 'a1-q1', operationId: 'qrcv2:a1-q1:2', commentaire: expect.stringContaining('VALIDATION AUTO identique-conservateur-v2') });
     await waitFor(() => expect(window.location.search).toContain('qrc=a2-q1'));
     expect(mocks.corriger).toHaveBeenCalledOnce();
   });
-  it.each(['Casier judiciaire B2', 'Casier judiciaire B2 non vierge', 'Réponse fausse'])('aucune note automatique (ni zéro) pour %s ; un clic manuel enregistre', async (rep) => {
+  it('équivalence B2 : présélection 2/2 seulement, rien enregistré avant « Enregistrer »', async () => {
     if (!etat.session) throw new Error('Session absente');
     etat.session.tentatives[0].snapshot.questions[0].reponseQRC = 'Casier judiciaire vierge (B2)';
+    etat.session.qrc[0].reponse = "C'est avoir un casier judiciaire b2 vierge";
+    await ouvrirCopie('a1-q1');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    expect(screen.getByTestId('note-2')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByTestId('enregistrer-correction'));
+    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
+    expect(mocks.corriger.mock.calls[0][0].note).toBe(2);
+    expect(mocks.corriger.mock.calls[0][0].commentaire).not.toContain('VALIDATION AUTO');
+  });
+  it.each([
+    ['−10 euros', '10 euros'],
+    ['-10 euros', '10 euros'],
+    ['10 %', '10 €'],
+    ['Casier judiciaire B2', 'Casier judiciaire vierge (B2)'],
+    ['Casier judiciaire B2 non vierge', 'Casier judiciaire vierge (B2)'],
+    ['Réponse fausse', 'Casier judiciaire vierge (B2)'],
+  ])('aucune note automatique (ni zéro) pour « %s » vs « %s » ; un clic sur une note n’enregistre rien, seul « Enregistrer » enregistre', async (rep, officiel) => {
+    if (!etat.session) throw new Error('Session absente');
+    etat.session.tentatives[0].snapshot.questions[0].reponseQRC = officiel;
     etat.session.qrc[0].reponse = rep;
     await ouvrirCopie('a1-q1');
     await new Promise((r) => setTimeout(r, 50));
     expect(mocks.corriger).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('enregistrer-correction')).not.toBeInTheDocument();
+    expect(screen.getByTestId('enregistrer-correction')).toBeDisabled();
     fireEvent.click(screen.getByTestId('note-0.5'));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('note-1'));
+    fireEvent.click(screen.getByTestId('enregistrer-correction'));
     await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
-    expect(mocks.corriger.mock.calls[0][0].note).toBe(0.5);
+    expect(mocks.corriger.mock.calls[0][0].note).toBe(1);
   });
   it('garde la révision volontaire séparée sans proposition ni nouvelle première correction', async () => {
     appliquerNote('a1-q1', 1.5);
@@ -174,6 +198,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     }));
     await ouvrirCopie("a1-q1");
     fireEvent.click(screen.getByTestId("note-1.5"));
+    fireEvent.click(screen.getByTestId("enregistrer-correction"));
     await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
     expect(window.location.search).toContain("qrc=a1-q1");
     expect(screen.getByTestId("copie-suivante")).toBeDisabled();
@@ -189,6 +214,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     mocks.corriger.mockRejectedValue(new Error("Refus serveur fictif"));
     await ouvrirCopie("a1-q1");
     fireEvent.click(screen.getByTestId("note-1"));
+    fireEvent.click(screen.getByTestId("enregistrer-correction"));
     expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("Refus serveur fictif");
     expect(window.location.search).toContain("qrc=a1-q1");
     expect(screen.getByTestId("reponse-eleve")).toHaveTextContent("Réponse a1");
@@ -198,6 +224,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     mocks.corriger.mockResolvedValue({});
     await ouvrirCopie("a1-q1");
     fireEvent.click(screen.getByTestId("note-1"));
+    fireEvent.click(screen.getByTestId("enregistrer-correction"));
     expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("relecture");
     expect(window.location.search).toContain("qrc=a1-q1");
     expect(mocks.corriger).toHaveBeenCalledOnce();
@@ -206,6 +233,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
   it("reste sur la dernière copie et signale la fin de liste après confirmation", async () => {
     await ouvrirCopie("a2-q1");
     fireEvent.click(screen.getByTestId("note-2"));
+    fireEvent.click(screen.getByTestId("enregistrer-correction"));
     expect(await screen.findByTestId("fin-liste-copies")).toHaveTextContent("dernière copie de la liste");
     expect(window.location.search).toContain("qrc=a2-q1");
     expect(screen.getByTestId("copie-suivante")).toBeDisabled();

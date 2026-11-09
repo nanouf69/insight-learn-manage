@@ -2,6 +2,23 @@ import { describe, it, expect } from 'vitest';
 import { proposerPrenote, tracePrenote } from '@/features/correction-qrc-v2/prenote';
 
 describe('Pré-note distincte de la note définitive', () => {
+  it.each([
+    ['−10 euros', '10 euros'], ['-10 euros', '10 euros'], ['10 euros', '-10 euros'], ['+10 euros', '10 euros'],
+    ['10 %', '10 €'], ['10 €', '10 %'], ['10%', '10 €'], ['1,5 €', '15 €'], ['10 km', '10 m'],
+    ['ne pas stationner', 'stationner'], ['non obligatoire', 'obligatoire'], ['pas de casier judiciaire B2 vierge', 'Casier judiciaire vierge (B2)'],
+  ])('jamais de note ni d’auto-validation : « %s » vs « %s »', (r, o) => {
+    const p = proposerPrenote(r, o, 2);
+    expect(p.note).toBeNull();
+    expect(p.autoValidable).toBe(false);
+  });
+  it('auto-validation seulement pour un texte littéralement identique (casse, espaces, point final)', () => {
+    expect(proposerPrenote('  10   EUROS. ', '10 euros', 2)).toMatchObject({ note: 2, autoValidable: true });
+    expect(proposerPrenote('−10 euros', '-10 euros', 2)).toMatchObject({ note: 2, autoValidable: true });
+    expect(proposerPrenote('l’arrêté', "l'arrêté", 2)).toMatchObject({ note: 2, autoValidable: true });
+  });
+  it('équivalence B2 = présélection seulement, jamais auto-validée', () => {
+    expect(proposerPrenote("C'est avoir un casier judiciaire b2 vierge", 'Casier judiciaire vierge (B2)', 2)).toMatchObject({ note: 2, autoValidable: false });
+  });
   it('propose 2/2 pour l’équivalence B2 vierge donnée par le formateur', () => {
     expect(proposerPrenote("C'est avoir un casier judiciaire b2 vierge", 'Casier judiciaire vierge (B2)', 2).note).toBe(2);
   });
