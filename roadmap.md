@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 — Bilan T3P limité aux 128 questions sources
+- [ ] Auditer en lecture seule les 206 questions affichées, les sources 66 + 62 et l’origine/les doublons/les IDs des 78 écarts.
+- [ ] Préparer une correction non destructive de la seule composition du bilan, dans l’ordre des sources, sans modifier énoncés, réponses, copies, notes, progressions ou autres modules.
+- [ ] Vérifier les empreintes et tests avant/après ; ne pas publier sans accord explicite.
+
 ## 08/11 20:17 — Finalisation idempotente et rattrapage QRC ciblés
 - [x] Reçu serveur atomique candidat et garde INSERT ; tests concurrence/rejeu/propriétaire PostgreSQL PASS, aucun ancien résultat modifié.
 - [x] Rattrapage QRC événementiel 400 ms + une lecture à 2,4 s, identité isolée ; boucle de lectures NotesView corrigée ; écran fictif 18,3/20 sans reload capturé.
