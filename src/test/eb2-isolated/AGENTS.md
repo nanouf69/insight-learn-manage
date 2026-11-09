@@ -1,0 +1,3 @@
+# Isolated EB revision candidates
+- These files are test-only copies; never import them from the running application or put candidate SQL in active migration history, because test authorization does not authorize production activation.
+- Database contracts must create disposable local PostgreSQL and use explicit loopback connections with inherited PG credentials removed, because drafts may share production data.
