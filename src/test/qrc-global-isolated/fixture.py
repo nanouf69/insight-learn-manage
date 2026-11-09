@@ -49,12 +49,14 @@ GRANT USAGE ON SCHEMA public,auth TO authenticated,anon;
   answers={q.get('id','q1'):'Réponse synthétique '+matter for q in qs}
   details={'snapshot':{'questions':qs},'reponses':answers,'source_exercice_id':exercise,'source_tentative':tentative}
   if ambiguous: details['questions']=[{**q,'enonce':'différent'} for q in qs]
-  self.pg.sql(f"INSERT INTO apprenant_quiz_results VALUES('{rid}','{APP}',{literal(exam)},'examen_blanc',{literal(matter)},{tentative},{literal(json.dumps(details))}::jsonb,'2026-11-09T10:00:00Z',12); INSERT INTO reponses_apprenants(apprenant_id,exercice_id,tentative,reponses,completed,status,submitted_at) VALUES('{APP}','{exercise}',{tentative},{literal(json.dumps(answers))}::jsonb,{'true' if submitted else 'false'},'submitted',now())")
+  self.pg.sql(f"INSERT INTO apprenant_quiz_results VALUES('{rid}','{APP}',{literal(exam)},'examen_blanc',{literal(matter)},{tentative},{literal(json.dumps(details))}::jsonb,'2026-11-09T10:00:00Z',12); INSERT INTO reponses_apprenants(apprenant_id,exercice_id,tentative,reponses,completed,status,submitted_at) VALUES('{APP}','{exercise}',{tentative},{literal(json.dumps(answers))}::jsonb,{'true' if submitted else 'false'},'submitted','2026-11-09T10:00:00Z')")
   return rid
  def native(self,exam='EB2',matter='A',linked=None,state='terminee'):
   aid=str(uuid.uuid4()); qid=str(uuid.uuid4())
   snapshot={'matiere':matter,'tentative':1,'questions':[{'id':'q1','type':'QRC','matiere':matter,'enonce':'Question native','points':2,'reponseQRC':'Corrigé natif'}]}
-  if linked: snapshot['result_id']=linked
+  if linked:
+   snapshot['result_id']=linked
+   snapshot['source_historique']={'details':json.loads(self.pg.sql(f"SELECT details FROM apprenant_quiz_results WHERE id={literal(linked)}"))}
   self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{aid}','{APP}',{literal(exam)},{literal(json.dumps(snapshot))}::jsonb,'fingerprint-native',{literal(state)},now(),{'now()' if state=='terminee' else 'NULL'}); INSERT INTO qrc_instances_v2 VALUES('{qid}','{aid}','{APP}','q1','\"Réponse native\"','corrigee',1)")
   return aid
  def admin(self,sql,uid=ADMIN): return self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{uid}'; "+sql).splitlines()[-1]

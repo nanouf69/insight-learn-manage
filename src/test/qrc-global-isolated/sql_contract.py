@@ -33,6 +33,27 @@ class Contracts(unittest.TestCase):
   # Wrong exam link cannot erase the historical row.
   self.f.pg.sql("UPDATE exam_attempts_v2 SET exam_id='EB2-TAXI'")
   self.assertEqual(2,len(self.f.rows()))
+ def test_divergent_native_link_keeps_original_and_refuses_merge(self):
+  rid=self.f.historical(); self.f.native(linked=rid)
+  self.f.pg.sql("UPDATE exam_attempts_v2 SET snapshot=jsonb_set(snapshot,'{source_historique,details}','{}')")
+  rows=self.f.rows(); self.assertEqual(2,len(rows))
+  r=next(r for r in rows if r['origin']=='historical')
+  self.assertEqual('lien_natif_a_verifier',r['issue'])
+  with self.assertRaisesRegex(RuntimeError,'proof refused'): self.f.grade(r,'no-merge')
+ def test_already_corrected_partial_and_final_notes_never_regraded(self):
+  for i,note in enumerate([0,1,2]):
+   rid=self.f.historical(matter=str(i))
+   self.f.pg.sql(f"UPDATE apprenant_quiz_results SET details=details||'{json.dumps({'correctionsIA':{'q1':{'pointsObtenus':note}}})}'::jsonb WHERE id='{rid}'")
+  before=self.f.fingerprint()
+  for r in self.f.rows():
+   self.assertEqual('correction_existante_a_preserver',r['issue'])
+   with self.assertRaisesRegex(RuntimeError,'proof refused'): self.f.grade(r,str(uuid.uuid4()))
+  self.assertEqual(before,self.f.fingerprint())
+  self.assertEqual('0',self.f.pg.sql('SELECT count(*) FROM qrc_history_events'))
+ def test_submission_timestamp_must_match_original_result(self):
+  self.f.historical(); self.f.pg.sql("UPDATE reponses_apprenants SET submitted_at=submitted_at+interval '1 day'")
+  r=self.f.rows()[0]; self.assertEqual('remise_non_prouvee',r['issue'])
+  with self.assertRaisesRegex(RuntimeError,'proof refused'): self.f.grade(r,'wrong-passage')
  def test_no_text_or_time_dedup_tentatives_preserved(self):
   self.f.historical(tentative=1); self.f.historical(tentative=2)
   self.assertEqual(2,len(self.f.rows())); self.assertEqual({1,2},{r['tentative'] for r in self.f.rows()})
