@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 let fail = "";
 const data: Record<string, any[]> = {};
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: string) => {
-  const q: any = { select: () => q, in: () => q, eq: () => q, range: async () => fail === table ? { data: null, error: new Error("lecture") } : { data: data[table] ?? [], error: null } };
+  const q: any = { select: () => q, in: () => q, eq: () => q, order: () => q, range: async () => fail === table ? { data: null, error: new Error("lecture") } : { data: data[table] ?? [], error: null } };
   return q;
 } } }));
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
