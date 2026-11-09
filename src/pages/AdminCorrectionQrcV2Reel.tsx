@@ -3,6 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
+import { PrenoteQrc } from "@/features/correction-qrc-v2/PrenoteQrc";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
@@ -422,7 +423,7 @@ export default function AdminCorrectionQrcV2Reel() {
     ? ((tentativeSel as unknown as { historique?: InfosHistorique } | undefined)?.historique ?? null)
     : null;
   const confirmationSel = !!histoSel && confirmationRemiseRequise(histoSel.provenance);
-  const valider = async (valeur?: number, confirmationIa = false) => {
+  const valider = async (valeur?: number, confirmationIa = false, traceProposition?: string) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
     if (etatEnvoi === "encours") return;
@@ -438,6 +439,8 @@ export default function AdminCorrectionQrcV2Reel() {
       }
     }
     const revision = qrcSel.etat === "corrigee";
+    if (traceProposition && revision) return; // A proposal never revises an existing grade.
+    const commentaireValidation = [commentaire, traceProposition].filter(Boolean).join('\n');
     const ancienne = qrcSel.note;
     if (revision) {
       const fmt = (v: number | null) => `${String(v).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`;
@@ -474,7 +477,7 @@ export default function AdminCorrectionQrcV2Reel() {
             note: n,
             scoreAttendu: histo.score_obtenu as number,
             seuil: histo.seuil,
-            commentaire: commentaire || undefined,
+            commentaire: commentaireValidation || undefined,
             reconnaissance,
           });
         }
@@ -494,7 +497,7 @@ export default function AdminCorrectionQrcV2Reel() {
           operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
           note: n,
-          commentaire: commentaire || undefined,
+          commentaire: commentaireValidation || undefined,
           email: emailAdmin,
         });
       }
@@ -1161,6 +1164,12 @@ export default function AdminCorrectionQrcV2Reel() {
                     Copie vide — aucune correction historique, aucune note automatique.
                   </p>
                 )}
+                <PrenoteQrc key={`${qrcSel.qrc_instance_id}:${texte(qrcSel.reponseComplete ?? qrcSel.reponse)}:${questionSel.reponseQRC}:${baremeSel}`}
+                  reponse={texte(qrcSel.reponseComplete ?? qrcSel.reponse)} officiel={questionSel.reponseQRC ?? ''}
+                  bareme={baremeSel} disabled={etatEnvoi === 'encours' || (confirmationSel && !confirmeRemise)}
+                  onValider={(n, trace) => {
+                    if (window.confirm(`Valider humainement ${String(n).replace('.', ',')}/${baremeSel} pour cette copie ?`)) void valider(n, false, trace);
+                  }} />
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                     <Button

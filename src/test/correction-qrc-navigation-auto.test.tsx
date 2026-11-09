@@ -126,6 +126,23 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it("la pré-note ne déclenche aucune écriture sans validation humaine et trace le choix", async () => {
+    if (!etat.session) throw new Error('Session absente');
+    etat.session.tentatives[0].snapshot.questions[0].reponseQRC = "Casier judiciaire vierge (B2)";
+    etat.session.qrc[0].reponse = "C'est avoir un casier judiciaire b2 vierge";
+    await ouvrirCopie('a1-q1');
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Valider la pré-note comme note définitive' }));
+    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
+    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ note: 2, qrcInstanceId: 'a1-q1', commentaire: expect.stringContaining('validation humaine 2/2') });
+  });
+  it("n'affiche pas de pré-note sur une note déjà corrigée", async () => {
+    appliquerNote('a1-q1', 1.5);
+    await ouvrirCopie('a1-q1');
+    expect(screen.queryByTestId('prenote-qrc')).not.toBeInTheDocument();
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    expect(mocks.reviser).not.toHaveBeenCalled();
+  });
   it("reste sur la copie pendant l'écriture puis avance après la relecture conforme", async () => {
     let terminer: (() => void) | undefined;
     mocks.corriger.mockImplementation(({ qrcInstanceId, note }) => new Promise((resolve) => {
