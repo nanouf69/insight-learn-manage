@@ -28,6 +28,35 @@ export interface MatiereScore {
   noteSur20: number;
   admis: boolean;
   passee: boolean;
+  /**
+   * Vrai quand aucun seuil éliminatoire fiable n'a pu être résolu ET qu'aucun
+   * statut enregistré explicite n'existe : `admis` n'est alors PAS une preuve
+   * d'éliminatoire. Le verdict global devient « indéterminé », jamais « échoué ».
+   */
+  seuilInconnu?: boolean;
+}
+
+/** Seuil éliminatoire numérique fiable (/20), sinon null. */
+export function seuilEliminatoireFiable(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 20 ? v : null;
+}
+
+/**
+ * Verdict matière d'une note serveur définitive : seuil figé du passage, sinon
+ * seuil configuré de la matière (barème officiel déjà présent), sinon statut
+ * enregistré explicite ; jamais `Boolean(undefined)` assimilé à une éliminatoire.
+ */
+function admisNoteServeur(
+  noteSur20: number,
+  seuilFige: unknown,
+  seuilMatiere: unknown,
+  statutEnregistre: unknown,
+  noteSur: unknown,
+): { admis: boolean; seuilInconnu?: boolean } {
+  const seuil = seuilEliminatoireFiable(seuilFige) ?? seuilEliminatoireFiable(seuilMatiere);
+  if (seuil !== null) return { admis: computeAdmisForMatiere(noteSur20, 20, seuil, noteSur || 20, false) };
+  if (typeof statutEnregistre === "boolean") return { admis: statutEnregistre };
+  return { admis: false, seuilInconnu: true };
 }
 
 // ===== SEUIL ÉLIMINATOIRE AFFICHÉ (texte uniquement) =====
@@ -328,12 +357,15 @@ export function computeMatiereScoreForAttempt(
   // Passage du nouveau système publié : note serveur définitive, jamais recalculée.
   const core = coreStateScore((row as any).__core);
   if (core) {
-    const noteEliminatoire = (row as any).__core?.noteEliminatoire;
     return {
       ...core,
-      admis: typeof noteEliminatoire === "number"
-        ? computeAdmisForMatiere(core.noteSur20, 20, noteEliminatoire, (row as any).__core?.noteSur || 20, false)
-        : Boolean((row as any).reussi),
+      ...admisNoteServeur(
+        core.noteSur20,
+        (row as any).__core?.noteEliminatoire,
+        (matiereCourante as any)?.noteEliminatoire,
+        (row as any).reussi,
+        (row as any).__core?.noteSur,
+      ),
       passee: true,
     };
   }
@@ -390,15 +422,15 @@ export function computeResultatMatiereScore(
   if (core) {
     // Seuil éliminatoire : celui figé dans le passage, sinon celui de la matière
     // (6/20, 4/20 en anglais) ; le champ « admis » enregistré n'est qu'un dernier repli.
-    const seuilFige = (resultat as any).__core?.noteEliminatoire;
-    const noteEliminatoire = typeof seuilFige === "number"
-      ? seuilFige
-      : (typeof (matiere as any)?.noteEliminatoire === "number" ? (matiere as any).noteEliminatoire : null);
     return {
       ...core,
-      admis: typeof noteEliminatoire === "number"
-        ? computeAdmisForMatiere(core.noteSur20, 20, noteEliminatoire, (resultat as any).__core?.noteSur || 20, false)
-        : Boolean((resultat as any).admis),
+      ...admisNoteServeur(
+        core.noteSur20,
+        (resultat as any).__core?.noteEliminatoire,
+        (matiere as any)?.noteEliminatoire,
+        (resultat as any).admis,
+        (resultat as any).__core?.noteSur,
+      ),
       passee: true,
     };
   }
@@ -419,6 +451,16 @@ export interface MoyenneExamen {
   eliminatoires: string[];
   hasScores: boolean;
   admisGlobal: boolean;
+  /** Matières dont le seuil n'a pas pu être résolu (jamais comptées éliminatoires). */
+  seuilsInconnus: string[];
+  /**
+   * Verdict affiché, commun à la carte et au détail :
+   * - « echoue » seulement si prouvé (éliminatoire prouvée, ou toutes matières passées et moyenne < 10) ;
+   * - « incomplet » si des matières manquent sans échec prouvé ;
+   * - « indetermine » si toutes passées, moyenne ≥ 10, mais un seuil est inconnu ;
+   * - « reussi » = admisGlobal.
+   */
+  verdict: "reussi" | "echoue" | "incomplet" | "indetermine";
 }
 
 /**
@@ -435,6 +477,7 @@ export function computeMoyenneExamen(
   let totalCoef = 0;
   let matieresPassees = 0;
   const eliminatoires: string[] = [];
+  const seuilsInconnus: string[] = [];
 
   for (const m of matieres) {
     const score = resolveMatiereScore(m);
@@ -443,7 +486,8 @@ export function computeMoyenneExamen(
     weightedSum += score.noteSur20 * coef;
     totalCoef += coef;
     matieresPassees++;
-    if (!score.admis) eliminatoires.push(m.nom.split(" - ")[0]);
+    if (score.seuilInconnu) seuilsInconnus.push(m.nom.split(" - ")[0]);
+    else if (!score.admis) eliminatoires.push(m.nom.split(" - ")[0]);
   }
 
   const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
@@ -452,7 +496,16 @@ export function computeMoyenneExamen(
     hasScores &&
     moyenne >= 10 &&
     eliminatoires.length === 0 &&
+    seuilsInconnus.length === 0 &&
     matieresPassees === matieres.length;
+  const complet = hasScores && matieresPassees === matieres.length;
+  const verdict: MoyenneExamen["verdict"] = admisGlobal
+    ? "reussi"
+    : eliminatoires.length > 0 || (complet && moyenne < 10)
+      ? "echoue"
+      : !complet
+        ? "incomplet"
+        : "indetermine";
 
   return {
     moyenne,
@@ -462,5 +515,7 @@ export function computeMoyenneExamen(
     eliminatoires,
     hasScores,
     admisGlobal,
+    seuilsInconnus,
+    verdict,
   };
 }

@@ -189,7 +189,7 @@ function EcranResultats({
           note: score.noteSur20,
           coef: m.coefficient || 1,
           noteElim: m.noteEliminatoire || 6,
-          isElim: !score.admis,
+          isElim: !score.admis && !score.seuilInconnu,
         };
       })
       .filter((v): v is { nom: string; note: number; coef: number; noteElim: number; isElim: boolean } => v !== null);
@@ -207,6 +207,8 @@ function EcranResultats({
 
     if (isReussi) {
       lines.push(`✅ Bravo ! Vous avez obtenu une moyenne de ${moyenne.toFixed(1)}/20, vous avez réussi cet examen blanc.`);
+    } else if (bilan.verdict === "incomplet" || bilan.verdict === "indetermine") {
+      lines.push(`⏳ Votre moyenne provisoire est de ${moyenne.toFixed(1)}/20. Le verdict sera publié quand toutes les matières et leurs seuils seront disponibles.`);
     } else {
       lines.push(`❌ Votre moyenne est de ${moyenne.toFixed(1)}/20. L'examen n'est pas validé (il faut 10/20 minimum sans note éliminatoire).`);
     }
@@ -532,6 +534,7 @@ function EcranResultats({
       noteObtenue: Number(safeNote.toFixed(1)),
       maxPoints: safeMax,
       admis: score?.admis ?? computeAdmisForMatiere(safeNote, safeMax, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
+      seuilInconnu: score?.seuilInconnu === true,
     };
   });
 
@@ -563,12 +566,13 @@ function EcranResultats({
   const hasNoteEliminatoire = bilanExamen.eliminatoires.length > 0;
   const moyenneSuffisante = noteGlobale >= 10;
   const admisGlobal = bilanExamen.admisGlobal;
+  // Verdict commun avec la carte de la liste (jamais « échoué » sans preuve).
+  const verdictExamen = bilanExamen.verdict;
+  const verdictNeutre = verdictExamen === "incomplet" || verdictExamen === "indetermine";
 
 
-  // Matières avec note éliminatoire
-  const matieresEliminatoires = resultatsAvecIA
-    .filter(r => !r.admis)
-    .map(r => r.nomMatiere.split(" - ")[0]);
+  // Matières avec note éliminatoire : même liste que la carte (helper partagé).
+  const matieresEliminatoires = bilanExamen.eliminatoires;
 
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
@@ -628,10 +632,14 @@ function EcranResultats({
           ) : (
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
           )}
-          <h3 className="text-2xl font-bold mb-1">
+          <h3 className="text-2xl font-bold mb-1" data-testid="eb-verdict-detail" data-verdict={verdictExamen}>
             {admisGlobal
               ? "Examen blanc réussi ✅"
-              : "Examen blanc échoué ❌"
+              : verdictExamen === "incomplet"
+                ? "Résultat incomplet ⏳"
+                : verdictExamen === "indetermine"
+                  ? "Verdict à vérifier ⚠"
+                  : "Examen blanc échoué ❌"
             }
           </h3>
           <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
@@ -641,9 +649,16 @@ function EcranResultats({
           <p className="text-sm text-gray-300 mt-1">
             Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
           </p>
+          {verdictNeutre && (
+            <p className="text-sm text-amber-300 font-medium mt-3">
+              {verdictExamen === "incomplet"
+                ? `${bilanExamen.matieresPassees}/${bilanExamen.matieresTotal} matières disponibles : verdict publié quand toutes les matières seront terminées.`
+                : `Seuil éliminatoire introuvable pour : ${bilanExamen.seuilsInconnus.join(", ")}.`}
+            </p>
+          )}
           {!admisGlobal && (
             <div className="mt-3 space-y-1">
-              {!moyenneSuffisante && (
+              {!moyenneSuffisante && !verdictNeutre && (
                 <p className="text-sm text-red-300 font-medium">
                   <AlertTriangle className="w-4 h-4 inline mr-1" />
                   Moyenne inférieure à 10/20
@@ -783,7 +798,8 @@ function EcranResultats({
               <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
                 <span className="text-xs font-semibold text-white">Matière {mi + 1}/{resultatsAvecIA.length}</span>
                 <span className="text-xs font-medium" style={{ color: '#00B4D8' }}>— Coeff. {r.coefficient || 1}</span>
-                {!r.admis && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
+                {!r.admis && !r.seuilInconnu && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
+                {r.seuilInconnu && <span className="text-xs font-semibold text-amber-400 ml-auto">⚠ Seuil introuvable</span>}
                 {matiereEnCours && <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: '#00B4D8' }}><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
               </div>
               <div className="cursor-pointer" onClick={() => toggleMatiere(mi)}>
@@ -1086,7 +1102,7 @@ function EcranResultats({
                   {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
                 </p>
                 <p className="text-xs font-semibold" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
-                  {admisGlobal ? "ADMIS" : "NON ADMIS"}
+                  {admisGlobal ? "ADMIS" : verdictNeutre ? "À VÉRIFIER" : "NON ADMIS"}
                 </p>
               </div>
             </div>

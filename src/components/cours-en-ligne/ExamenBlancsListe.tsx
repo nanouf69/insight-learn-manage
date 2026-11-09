@@ -636,8 +636,27 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                       const hasScores = bilan.hasScores;
                       const eliminatoiresMatieres = bilan.eliminatoires;
                       const isReussi = bilan.admisGlobal;
+                      const verdict = bilan.verdict;
+                      if (verdict === "incomplet" || verdict === "indetermine") {
+                        // Jamais « échoué » sans preuve : matière manquante ou seuil introuvable.
+                        return (
+                          <div data-testid="eb-verdict-carte" data-verdict={verdict} className="flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border-2 bg-amber-50 border-amber-400">
+                            <span className="text-amber-700 font-bold text-base uppercase tracking-wide text-center">
+                              {verdict === "incomplet" ? "⏳ Résultat incomplet" : "⚠ Verdict à vérifier"}
+                            </span>
+                            {hasScores && (
+                              <span className="text-xl font-extrabold text-amber-700">{moyenne.toFixed(1)} / 20</span>
+                            )}
+                            <span className="text-xs text-amber-700 text-center">
+                              {verdict === "incomplet"
+                                ? `${bilan.matieresPassees}/${bilan.matieresTotal} matières disponibles : verdict publié quand toutes les matières seront terminées.`
+                                : `Seuil éliminatoire introuvable pour : ${bilan.seuilsInconnus.join(", ")}.`}
+                            </span>
+                          </div>
+                        );
+                      }
                       return (
-                        <div className={`flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border ${
+                        <div data-testid="eb-verdict-carte" data-verdict={verdict} className={`flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border ${
                           isReussi
                             ? "bg-green-100 border-green-300"
                             : "bg-red-50 border-red-400 border-2"
@@ -766,7 +785,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                                       🔍
                                     </button>
                                   )}
-                                  <span className={`font-bold ${(score?.admis ?? computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true)) ? "text-green-600" : "text-red-500"}`}>
+                                  <span className={`font-bold ${score?.seuilInconnu ? "text-amber-600" : (score?.admis ?? computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true)) ? "text-green-600" : "text-red-500"}`}>
                                     {noteSur20.toFixed(1)}/20
                                   </span>
                                 </span>
