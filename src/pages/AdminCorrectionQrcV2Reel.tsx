@@ -1038,24 +1038,72 @@ export default function AdminCorrectionQrcV2Reel() {
                 </Button>
               </div>
             )}
-            {estConsultation(qrcSel.qrc_instance_id) ? (
-              <div className="rounded-lg border-2 border-warning/60 bg-warning/10 p-3 space-y-1 text-sm" data-testid="consultation-eb2">
-                <p className="font-semibold">CONSULTATION — notation dans le correcteur V2 pas encore disponible pour cette copie</p>
+            {estConsultation(qrcSel.qrc_instance_id) ? (() => {
+              const histo = (tentativeSel as unknown as { historique?: InfosHistorique }).historique;
+              const notable = !!histo && histo.score_obtenu != null && baremeSel != null && qrcSel.etat !== "corrigee";
+              const libelleProvenance = histo?.provenance === "remise_identique"
+                ? "Remise prouvée : fiche élève identique (mêmes réponses, même instant)."
+                : histo?.provenance === "remise_horodatage_divergent"
+                  ? "Remise à confirmer : fiche élève aux réponses identiques, mais horodatage différent de la copie."
+                  : "Remise à confirmer : aucune fiche élève identique retrouvée ; seule la copie enregistrée fait foi.";
+              return (
+              <div className="rounded-lg border-2 border-warning/60 bg-warning/10 p-3 space-y-2 text-sm" data-testid="copie-historique-eb2">
+                <p className="font-semibold">Copie EB2 historique — notation directe sur la copie originale (tracée)</p>
                 <dl className="text-xs break-all space-y-1">
                   <div><dt className="inline font-semibold">Copie originale : </dt><dd className="inline">{tentativeSel.attempt_id.replace(/^consultation:/, "")}</dd></div>
                   <div><dt className="inline font-semibold">Question : </dt><dd className="inline">{qrcSel.question_id}</dd></div>
                 </dl>
-                <p className="text-xs text-muted-foreground">
-                  Copie EB2 enregistrée avant la création de sa fiche dans le correcteur V2 : réponse et corrigé affichés tels
-                  qu’enregistrés, sans aucune modification. {tentativeSel.etat === "remise_non_certifiee"
-                    ? "Remise non certifiée : aucune fiche remise identique retrouvée."
-                    : "Remise prouvée par la fiche élève identique."}
-                </p>
-                {qrcSel.etat === "corrigee" && (
-                  <p className="text-xs">Note historique enregistrée : {String(qrcSel.note).replace(".", ",")}{baremeSel != null ? ` / ${baremeSel}` : ""} (correction automatique historique).</p>
-                )}
+                <p className="text-xs text-muted-foreground" data-testid="provenance-remise">{libelleProvenance}</p>
                 {navigationCopies}
+                {qrcSel.etat === "corrigee" ? (
+                  <p className="font-semibold text-success" data-testid="points-attribues">
+                    NOTE : {String(qrcSel.note).replace(".", ",")}{baremeSel != null ? ` / ${baremeSel}` : ""}
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      {origineSel === "automatique" ? "Correction automatique historique." : "Correction validée par un formateur."} Verrouillée : aucune réécriture.
+                    </span>
+                  </p>
+                ) : !notable ? (
+                  <p className="text-xs text-destructive" data-testid="historique-non-notable">
+                    🔴 Notation impossible : barème figé ou score de la copie absent. Aucune note n'est inventée.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notation — barème : {baremeSel} points</p>
+                    {histo!.provenance !== "remise_identique" && (
+                      <label className="flex items-start gap-2 text-xs" data-testid="confirmation-remise">
+                        <input type="checkbox" className="mt-0.5" checked={confirmeRemise} onChange={(e) => setConfirmeRemise(e.target.checked)} />
+                        <span>Je confirme que cette copie est bien celle remise par l'élève (confirmation enregistrée avec la note).</span>
+                      </label>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
+                        <Button
+                          key={v}
+                          size="lg"
+                          className="min-w-[56px] text-base font-semibold"
+                          variant={note === v ? "default" : "outline"}
+                          data-testid={`note-${v}`}
+                          disabled={etatEnvoi === "encours" || (histo!.provenance !== "remise_identique" && !confirmeRemise)}
+                          onClick={() => void valider(v)}
+                        >
+                          {String(v).replace(".", ",")}
+                        </Button>
+                      ))}
+                    </div>
+                    <Textarea placeholder="Commentaire (facultatif)" rows={2} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
+                    {qrcSel.note == null && texte(qrcSel.reponse).trim() && (
+                      <p className="text-xs text-muted-foreground">Une éventuelle proposition automatique en attente est conservée dans la copie ; elle ne devient jamais une note sans votre choix.</p>
+                    )}
+                    <div className="text-sm" data-testid="etat-correction">
+                      {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
+                      {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
+                      {etatEnvoi === "echec" && <span className="text-destructive">🔴 CORRECTION NON ENREGISTRÉE</span>}
+                    </div>
+                  </>
+                )}
               </div>
+              );
+            })()
             ) : qrcSel.etat === "corrigee" ? (
               <div className="rounded-lg border p-3 space-y-2 text-sm" data-testid="correction-verrouillee">
                 <p className={`font-semibold ${origineSel === "ia" ? "text-ia" : "text-success"}`} data-testid="points-attribues">
