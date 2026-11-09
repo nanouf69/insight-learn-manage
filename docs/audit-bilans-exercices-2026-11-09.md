@@ -120,7 +120,7 @@ Lecture seule des données liées : **785 réponses** et **203 complétions** su
 
 - **398 tests ciblés réussis, zéro échec**, dont 33 tests exhaustifs de composition, identité, ordre, contenu, sauvegarde et exclusion des examens.
 - Projection rejouée sur une copie en lecture seule des vrais modules : **29 compositions, zéro collision d’ID, zéro omission après projection**.
-- Suite complète lancée avec journal persistant ; son résultat final est ajouté ci-dessous avant clôture.
+- **Suite complète : 427 fichiers réussis, 2 ignorés ; 3 743 tests réussis, 13 ignorés, zéro échec**, en 336,68 s.
 - Compilation de l’aperçu : **build OK**.
 - Affichage navigateur admin non revérifié : la session disponible lors du chantier T3P n’avait pas le rôle admin. Aucun droit n’a été modifié.
 

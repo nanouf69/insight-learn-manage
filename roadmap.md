@@ -4,7 +4,7 @@
 - [x] 29 compositions inventorées dans les modules 4, 9, 27, 29 et héritages 81/82 ; bilans d’examen 5/11/28/30 et examens blancs exclus.
 - [x] Tableau sources/attendu/actuel/écart/cause, IDs, contenus, ordre, doublons et manquantes : `docs/audit-bilans-exercices-2026-11-09.md` et JSON détaillé.
 - [x] Projection non destructive étendue, T3P conservé, 39 identités déterministes contrôlées sans collision, restauration serveur avant sauvegarde.
-- [ ] 398 tests ciblés PASS et build OK ; suite complète en cours, empreintes modules inchangées. Aucune publication sans accord explicite.
+- [x] 398 tests ciblés PASS ; suite complète 3 743 PASS / 13 ignorés / 0 échec ; build OK et empreintes modules inchangées. Aucune publication.
 
 ## 09/11 — Bilan T3P limité aux 128 questions sources
 - [x] Audit lecture seule : 206 = 114 références + 14 uniques + 59 doublons + 19 références obsolètes ; projection 128, IDs et contenus historiques conservés.
