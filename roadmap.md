@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 14:15 — EB2 VTC absent du menu, préparation de lecture seule
+- [ ] Auditer la session du 2–13 novembre, réponses soumises/en cours et absence V2 ; compter sans fusion destructive.
+- [ ] Préparer/tester une projection ciblée EB2 sans mutation ni notation, dans les fichiers isolés uniquement.
+- [ ] Rapporter preuves, limites de notation, tests et aucun déploiement.
+
 ## 09/11 14:07 — Audit prioritaire des faux verdicts EB, lecture seule
 - [x] Captures Ilies MEMDOUH TAXI EB1/EB2 identifiées exactement ; 14 matières définitives, zéro QRC restante ; faux échec et sept éliminatoires reproduits avec le vrai calcul de carte.
 - [x] Cause : appel de la liste sans reussi + seuil absent du snapshot V2 ⇒ Boolean(undefined) faux ; moyenne indépendante correcte. 32 tests existants PASS ; deux reproductions du défaut exécutées.
