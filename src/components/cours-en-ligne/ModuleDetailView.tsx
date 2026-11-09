@@ -1,11 +1,12 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
 import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
-import { signalerContenuModifie } from "@/lib/contenuModifie";
+import { signalerContenuModifie, ecouterContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
 import { isStatementTimeout, nextFailedSave, retryPayload } from "@/lib/adminSaveFailure";
 import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/controleConnaissancesDisplay";
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projectionSommeCoursActive, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
+import { resoudreExercicesSourcesBilan } from "./bilanCoursSources";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
@@ -4397,16 +4398,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
   const canonicalRowsRef = useRef<CanonicalQuestionRow[]>([]);
   const canonicalSectionIdsRef = useRef<Set<number>>(new Set());
-  // Bilans d'exercices = composition exacte de leurs sources embarquées.
-  // Projection d'affichage en mémoire, jamais réécrite en base ; les contenus
-  // historiques sont préservés et les bilans d'examen/EB restent hors périmètre.
+  // Bilans d'exercices = composition et contenu des sources serveur actives.
+  // Projection d'affichage en mémoire, jamais réécrite en base ; les IDs et
+  // objets historiques restent conservés, les bilans d'examen/EB hors périmètre.
   const coursSommeExercicesRef = useRef<any[] | null>(null);
   const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
     const config = projectionSommeCoursActive(Number(module.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module.id)] : undefined;
     const coursExercices = coursSommeExercicesRef.current;
     if (!config || !coursExercices || !Array.isArray(data?.exercices)) return data;
     try {
-      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices, { preserverContenuExistant: true }) as any };
+      const sourceData = config.moduleCours === 2 ? VTC_COURS_DATA : TAXI_COURS_DATA;
+      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices, { exercicesCoursDeReference: sourceData.exercices as any }) as any };
     } catch (projectionError) {
       // Source indisponible : conserver l'affichage précédent, jamais fabriquer un vide.
       console.error("[BilanSommeCours] Projection indisponible", projectionError);
@@ -4868,7 +4870,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       }
       canonicalRowsRef.current = rows;
       canonicalSectionIdsRef.current = sectionIds;
-      setModuleData((previous) => applyCanonicalQuestionsToModule(previous, rows, sectionIds));
+      setModuleData((previous) => appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(previous, rows, sectionIds)));
       setLastSyncAt(new Date());
     };
 
@@ -5135,7 +5137,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, initialData);
             if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} forcé depuis module ${parentModuleId} (sans Gestion)`);
-                setModuleData(fcMerged);
+                setModuleData((prev) => appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "initial FC parent refetch")));
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(true);
@@ -5277,7 +5279,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, initialData);
             if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} hydraté depuis module ${parentModuleId} (sans Gestion)`);
-                setModuleData(fcMerged);
+                setModuleData((prev) => appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "initial FC parent refetch")));
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(false);
@@ -5365,7 +5367,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, sourceModuleData);
           if (!fcMerged) return;
           console.log("[Realtime] Refetched FC bilan from parent module", parentModuleId, "for module", module.id);
-          setModuleData((prev) => preserveNewerLocalQuestionEdits(fcMerged, prev, "realtime FC parent refetch"));
+          setModuleData((prev) => appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "realtime FC parent refetch")));
           setDeletedCours([]);
           setDeletedExercices([]);
           setLoadedModuleEditorState(true);
@@ -5407,11 +5409,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               resolvedRealtimeModuleData = applyManualExerciseEditsFromSource(resolvedRealtimeModuleData, syncedVtcBilan);
             }
           }
-          setModuleData((prev) => applyCanonicalQuestionsToModule(
+          setModuleData((prev) => appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(
             preserveNewerLocalQuestionEdits(resolvedRealtimeModuleData, prev, "realtime module_editor_state refetch"),
             canonicalRowsRef.current,
             canonicalSectionIdsRef.current,
-          ));
+          )));
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
@@ -5717,7 +5719,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             }
             console.log("[Visibility] Refreshed FC bilan from parent module", parentModuleId, "for module", module.id);
             didUpdate = true;
-            return preserveNewerLocalQuestionEdits(fcMerged, prev, "visibility FC parent refresh");
+            return appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "visibility FC parent refresh"));
           });
           markDbSnapshotApplied(latest.updated_at);
           if (didUpdate) setTrainerOverridesReapplyKey((k) => k + 1);
@@ -5858,22 +5860,93 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     loadModuleEditorStateRow(id)
       .then((row) => {
         if (!row?.module_data) return;
-        setModuleData((prev) => garderExercicesDuServeur(prev, row.module_data, exercicesAjoutesSessionRef.current));
+        setModuleData((prev) => appliquerSommeCoursBilan(garderExercicesDuServeur(prev, row.module_data, exercicesAjoutesSessionRef.current)));
       })
       .catch(() => { nettoyageOuvertureFaitRef.current = null; });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, moduleData?.exercices?.length]);
 
-  // Les sources embarquées définissent uniquement la composition et l'ordre.
-  // Les objets historiques restent prioritaires pour les énoncés, choix, images
-  // et identifiants ; aucune écriture du module de cours n'est effectuée.
+  // Les modules de cours 2/10 sont la source active des bilans. Leur état
+  // enregistré est relu à l'ouverture, après chaque sauvegarde et à la reconnexion.
+  // Aucune écriture n'est faite ici ; les copies figées utilisent leurs snapshots.
   useEffect(() => {
     const config = projectionSommeCoursActive(Number(module?.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module?.id)] : undefined;
     if (!config || !editorStateHydrated) return;
+    let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     const sourceData = config.moduleCours === 2 ? VTC_COURS_DATA : TAXI_COURS_DATA;
-    const sourceIds = new Set(Object.values(config.correspondances).flat().map(Number));
-    coursSommeExercicesRef.current = sourceData.exercices.filter((exo) => sourceIds.has(Number(exo.id)));
-    setModuleData((prev) => appliquerSommeCoursBilan(prev));
+
+    const fetchSources = async (): Promise<boolean> => {
+      try {
+        const { data: row, error } = await supabase
+          .from("module_editor_state")
+          .select("module_data, deleted_exercices, updated_at")
+          .eq("module_id", config.moduleCours)
+          .maybeSingle();
+        if (error) throw error;
+        if (cancelled) return false;
+        coursSommeExercicesRef.current = resoudreExercicesSourcesBilan({
+          moduleBilanId: Number(module.id),
+          exercicesEmbarques: sourceData.exercices as any,
+          moduleDataServeur: (row?.module_data as any) ?? null,
+          deletedExercicesServeur: row?.deleted_exercices,
+        });
+        setModuleData((prev) => appliquerSommeCoursBilan(prev));
+        setLastSyncAt(new Date());
+        return true;
+      } catch (sourceError) {
+        console.error(`[BilanSommeCours] Lecture du module source ${config.moduleCours} impossible`, sourceError);
+        return false; // conserver la dernière composition prouvée, jamais fabriquer un vide
+      }
+    };
+
+    const refresher = createLiveRefresher({
+      probe: async () => {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("module_id, updated_at")
+          .eq("module_id", config.moduleCours)
+          .maybeSingle();
+        if (error) return null;
+        return moduleVersionToken(data ? [data] : []);
+      },
+      fetchFull: fetchSources,
+    });
+    void refresher.fullNow();
+
+    const channel = supabase
+      .channel(`bilan-cours-source-${module.id}-${config.moduleCours}`)
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "module_editor_state",
+        filter: `module_id=eq.${config.moduleCours}`,
+      }, () => refresher.trigger())
+      .on("broadcast", { event: "module-updated" }, () => refresher.trigger())
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") void refresher.fullNow();
+        if ((status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") && !reconnectTimer) {
+          reconnectTimer = setTimeout(() => {
+            reconnectTimer = null;
+            if (!cancelled) void refresher.poll({ ignoreHidden: true });
+          }, 3000);
+        }
+      });
+    const onResume = () => void refresher.poll({ ignoreHidden: true });
+    const onVisibility = () => { if (!document.hidden) onResume(); };
+    const stopContenu = ecouterContenuModifie(onResume);
+    window.addEventListener("focus", onResume);
+    window.addEventListener("online", onResume);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      stopContenu();
+      window.removeEventListener("focus", onResume);
+      window.removeEventListener("online", onResume);
+      document.removeEventListener("visibilitychange", onVisibility);
+      refresher.dispose();
+      void supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, editorStateHydrated]);
 
@@ -5978,7 +6051,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           lastSavedPayloadSignatureRef.current = confirmedSignature;
           // Ne jamais réinjecter ici le snapshot canonique antérieur à cette
           // sauvegarde. La relecture fraîche, plus bas, mettra l'éditeur à jour.
-          setModuleData(previous => acknowledgedEditorState(previous, normalizedModuleData, savedLocalRevision, adminLocalRevisionRef.current));
+          setModuleData(previous => appliquerSommeCoursBilan(acknowledgedEditorState(previous, normalizedModuleData, savedLocalRevision, adminLocalRevisionRef.current)));
           if (savedLocalRevision === adminLocalRevisionRef.current) {
             setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
@@ -6277,11 +6350,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           (bindings ?? []) as unknown as CanonicalQuestionBinding[],
         );
         canonicalRowsRef.current = mappedConfirmedRows;
-        setModuleData((previous) => savedLocalRevision !== adminLocalRevisionRef.current ? previous : applyCanonicalQuestionsToModule(
+        setModuleData((previous) => savedLocalRevision !== adminLocalRevisionRef.current ? previous : appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(
           previous,
           mappedConfirmedRows,
           canonicalSectionIdsRef.current,
-        ));
+        )));
         setCanonicalRefreshKey((key) => key + 1);
       }
 

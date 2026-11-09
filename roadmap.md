@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 — Synchronisation dynamique des bilans d’exercices après édition admin
+- [x] Défaut reproduit : projection statique + ancien contenu conservé ; 128 figées et Q1 toujours visible après suppression fictive, contre 126 et texte source modifié attendu.
+- [x] Sources serveur 2/10 actives, projection après chaque lecture/sauvegarde/reconnexion, IDs historiques et JSON brut préservés ; bilans d’examen/EB et exercices indépendants exclus.
+- [x] 29 compositions dynamiques testées (suppression/ajout/édition/ordre/sauvegarde), 151 tests ciblés puis 3 775 globaux PASS / 13 ignorés / 0 échec ; build OK, empreintes modules inchangées. Rapport `docs/correctif-bilans-sources-dynamiques-2026-11-09.md`.
+- [x] Aucune publication : paquet public `index-Cv2PoEkg.js` inchangé. Limites : écran admin indisponible avec le compte expiré ; Realtime hébergé non prouvé, reprise testée sur transport local.
+
 ## 09/11 — Tous les bilans d’exercices VTC, TAXI, TA et VA
 - [x] 29 compositions inventorées dans les modules 4, 9, 27, 29 et héritages 81/82 ; bilans d’examen 5/11/28/30 et examens blancs exclus.
 - [x] Tableau sources/attendu/actuel/écart/cause, IDs, contenus, ordre, doublons et manquantes : `docs/audit-bilans-exercices-2026-11-09.md` et JSON détaillé.
