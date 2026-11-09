@@ -1,10 +1,13 @@
 # Feuille de route
 
 ## 09/11 15:22 — Audit + correctifs exhaustifs calcul/remontée EB1–EB6 VTC/TAXI
-- [ ] Inventaire config (EB × filière × matière : coef, seuil, points, QCM/QRC) et données réelles (lecture seule).
-- [ ] Contrôle cohérence notes stockées vs recalcul, 0 technique, terminé fantôme, doublons, QRC en attente.
-- [ ] Tests matriciels automatisés par EB/matière réellement configurés ; tableau couverture + anomalies.
-- [ ] Correctifs code partagés seulement si bug prouvé ; aucune écriture de note/copie sans accord ; publication après tests.
+- [x] Inventaire config (24 EB, 112 matières) et données réelles (lecture seule).
+- [x] Contrôle cohérence (719 ensembles élève/examen rejoués) ; 3 bugs prouvés corrigés en aperçu.
+- [x] Tests automatisés + rejeu réel avant/après.
+- [ ] Publication — attend l'accord de l'utilisateur.
+- [ ] 398 ensembles encore en attente (QRC réellement non corrigées ou anciennes copies sans fiche V2) — notation historique = migration, bloquée sans accord.
+- [ ] Décision : 5 anciens EB1 de juillet dont note stockée ≠ points/barème (carte et admin peuvent différer de 0,1 à 2,2 pts).
+- [ ] Décision : 2 EB2 VTC bloqués « en attente » par l'ancienne liste pilote QRC de septembre.
 
 ## 09/11 14:21 — « FAIS LE » : faux verdicts EB (P1) puis QRC V2 global (P2)
 - [x] P1 correctif calcul/affichage seul (scoring + carte + détail) : seuil figé → seuil configuré → statut explicite ; incomplet/à vérifier jamais « échoué ».
