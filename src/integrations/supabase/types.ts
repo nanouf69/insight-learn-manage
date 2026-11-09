@@ -7193,6 +7193,81 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_historique_corrections: {
+        Row: {
+          acteur: string
+          apprenant_id: string
+          bareme: number
+          commentaire: string
+          correction_precedente: Json | null
+          created_at: string
+          id: string
+          matiere_id: string | null
+          note: number
+          note20_apres: number | null
+          note20_avant: number | null
+          operation_id: string
+          provenance: string
+          question_id: string
+          quiz_id: string
+          reconnaissance: string | null
+          result_id: string
+          reussi_apres: boolean | null
+          reussi_avant: boolean | null
+          score_apres: number | null
+          score_avant: number | null
+          tentative: number | null
+        }
+        Insert: {
+          acteur: string
+          apprenant_id: string
+          bareme: number
+          commentaire?: string
+          correction_precedente?: Json | null
+          created_at?: string
+          id?: string
+          matiere_id?: string | null
+          note: number
+          note20_apres?: number | null
+          note20_avant?: number | null
+          operation_id: string
+          provenance: string
+          question_id: string
+          quiz_id: string
+          reconnaissance?: string | null
+          result_id: string
+          reussi_apres?: boolean | null
+          reussi_avant?: boolean | null
+          score_apres?: number | null
+          score_avant?: number | null
+          tentative?: number | null
+        }
+        Update: {
+          acteur?: string
+          apprenant_id?: string
+          bareme?: number
+          commentaire?: string
+          correction_precedente?: Json | null
+          created_at?: string
+          id?: string
+          matiere_id?: string | null
+          note?: number
+          note20_apres?: number | null
+          note20_avant?: number | null
+          operation_id?: string
+          provenance?: string
+          question_id?: string
+          quiz_id?: string
+          reconnaissance?: string | null
+          result_id?: string
+          reussi_apres?: boolean | null
+          reussi_avant?: boolean | null
+          score_apres?: number | null
+          score_avant?: number | null
+          tentative?: number | null
+        }
+        Relationships: []
+      }
       qrc_ia_budget_config: {
         Row: {
           eur_par_credit: number
@@ -10420,6 +10495,21 @@ export type Database = {
         Returns: boolean
       }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
+      qrc_historique_choix: { Args: { p: Json }; Returns: Json }
+      qrc_historique_noter: {
+        Args: {
+          p_commentaire?: string
+          p_note: number
+          p_operation_id: string
+          p_question_id: string
+          p_reconnaissance?: string
+          p_result_id: string
+          p_score_attendu: number
+          p_seuil?: number
+        }
+        Returns: Json
+      }
+      qrc_historique_valide: { Args: { c: Json }; Returns: boolean }
       qrc_ia_bilan_statuts: {
         Args: never
         Returns: {
