@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 13:02 — Protections nouvelles tentatives EB3–EB6 uniquement
+- [x] Identifiants et déclencheurs réels lus ; identité parent originale absente du démarrage par matière, formats snapshots distincts ; 23 lignes V2 en cours protégées, aucun changement actif.
+- [x] Prototype de périmètre hors application/migrations : 9 contrats PostgreSQL + 18 contrats atomicité préexistants + 94 Vitest PASS ; exclusion EB1/2 et parent préactivation vérifiée sur fictifs.
+- [ ] STOP migration/publication : identité parent/cohorte immuable au démarrage original manquante, compatibilité source historique et intégration complète anciens clients/triggers/navigateur non prouvées. Rapport docs/eb3-protections-prospectives-2026-11-09.md ; site public index-BbNPGt9M.js inchangé au contrôle.
+
 ## 09/11 12:59 — Autorisation de publication des trois correctifs EB2
 - [x] Schéma et déclencheurs réels contrôlés en lecture seule ; candidats et diff examinés, aucun changement actif.
 - [x] STOP : 873/1034 copies EB2 et 144/173 copies TAXI sans le snapshot exigé ; 17/18 révisions ouvertes repérées par clé sont au format ancien sans revisionState. Le candidat/commutateur sont globaux EB1–EB6, pas isolés EB2 ; statut/submitted_at modifiés par un trigger réel absent des fixtures.

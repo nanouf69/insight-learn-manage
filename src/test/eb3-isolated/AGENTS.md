@@ -1,0 +1,4 @@
+# Prospective EB revision scope candidates
+- Keep every file here test-only and outside active imports and migration history, because prospective authorization still requires verified original-attempt identity before activation.
+- Scope enrollment requires server-derived immutable source attempts for the complete original exam, never revision creation time or a client flag, because later revisions of preactivation exams must stay legacy.
+- Run database contracts only on disposable loopback PostgreSQL with inherited PG credentials removed; never copy learner records, because the real backend is shared.
