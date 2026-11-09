@@ -73,11 +73,13 @@ Cas test antignac : T2 `04298836-81c2-4bce-b70c-4d95095f5c19` ne doit pas être 
 
 ## Tests et site public
 - **109 tests PASS**, 13 fichiers : matrice 24 définitions/108 matières source, Zine, seuils, QRC attente, source unique, identité native, 2501 lignes/3 pages, panne seconde page, correction tardive même ID, ancienne tentative, réponses hors ligne.
+- Suite critique officielle exécutée séparément : **123 tests PASS**, 8 fichiers, incluant finalisation, panne réseau, snapshots et préservation des corrections ; suites partiellement communes, nombres non additionnés.
 - Build automatique OK après changements.
 - Parcours aperçu avec données réelles, en consultation admin puis Vue apprenant : Zine EB1 réussi 10,7 ; Moumouni SAWADOGO : EB1 échoué, EB2 échoué **10,6 avec D éliminatoire**, EB3 attente, EB4 réussi, EB5 échoué, EB6 réussi ; six badges CRM concordent visuellement avec six cartes. Il ne faut pas transformer son EB2 en réussite pour sa seule moyenne.
 - Sessions personnelles des 191 élèves : NON VÉRIFIÉES. Ce n'est pas une comparaison live exhaustive de toutes leurs interfaces/tentatives.
 - Public recontrôlé : `/assets/index-BNKO-425.js`, version déjà observée du commit a5945bd815c2d5e5f89b74f542310e020408d89a. Les trois anciens correctifs sont bien publiés ; absence de publication exclue comme cause générale. Un onglet personnel ancien n'est pas vérifié.
 - Nouveaux correctifs de ce rapport : **NON PUBLIÉS**.
+- Dernier contrôle tablette après changements : CRM et détail Zine réussis ; rechargement revient au dossier CRM, pas au détail, restauration du détail NON PROUVÉE.
 
 ## Limites / chantiers non résolus
 Inventaire exhaustif SQL réel effectué, mais rejeu fonctionnel exhaustif de chaque ancien passage avec configuration live/proofs et toutes les interfaces NON PROUVÉ. Aucun total fiable de verdicts opposés restants n'est annoncé. Les anciennes copies sans preuves, 167 divergences, QRC réellement en attente, passages sans résultat, définition live 112 versus matrice source 108, restauration après reload et erreurs de lecture nécessitent encore des contrôles. Aucun recalcul stocké effectué. La remontée/notation globale dans le correcteur V2 reste un chantier serveur séparé non autorisé ici.

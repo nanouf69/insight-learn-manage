@@ -2,7 +2,7 @@
 
 ## 09/11 16:10 — Audit global toutes tentatives EB
 - [x] Inventaire SQL réel complet : 191 élèves, 5848 résultats, 1025 groupes tentative, 2545 passages V2 ; 17 écarts candidats/8 ensembles/7 élèves, 167 copies différentes non forcées.
-- [x] Correctifs partagés aperçu : tentative CRM, priorité dernière tentative, QRC pilote par tentative connue, détail même ID/reset-aware, pagination complète ; 109 tests PASS.
+- [x] Correctifs partagés aperçu : tentative CRM, priorité dernière tentative, QRC pilote par tentative connue, détail même ID/reset-aware, pagination complète ; 109 tests ciblés + suite critique 123 tests PASS (partiellement communes).
 - [x] Rapport docs/audit-global-eb-2026-11-09-1610.md ; public index-BNKO-425.js confirmé ; parcours réels Zine + SAWADOGO CRM/cartes concordants.
 - [ ] Publication des nouveaux correctifs — attend accord explicite ; aucune écriture élève.
 - [ ] Rejeu exact toutes interfaces et toutes anciennes copies — non prouvé : sessions personnelles indisponibles et preuves anciennes ambiguës ; aucun statut inventé.
