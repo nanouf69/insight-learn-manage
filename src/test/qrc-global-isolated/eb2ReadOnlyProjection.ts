@@ -36,7 +36,7 @@ function exactJson(a: unknown, b: unknown): boolean {
   }
   const left = a as Record<string, unknown>, right = b as Record<string, unknown>;
   const keys = Object.keys(left);
-  return keys.length === Object.keys(right).length && keys.every(k => Object.hasOwn(right, k) && exactJson(left[k], right[k]));
+  return keys.length === Object.keys(right).length && keys.every(k => Object.prototype.hasOwnProperty.call(right, k) && exactJson(left[k], right[k]));
 }
 export function projectEb2ReadOnly(rows: HistoricalEb2Row[], submissions: SubmissionEvidence[], enrolled: Set<string>) {
   return rows.filter(r => r.quiz_id === 'EB2' && enrolled.has(r.apprenant_id)).flatMap(r => {
