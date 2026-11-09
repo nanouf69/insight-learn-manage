@@ -60,6 +60,7 @@ async def main():
        row=next(r for r in f.rows(exam=exam) if r['subject_id']==matter)
        await page.get_by_test_id('cellule-'+row['identity']).click()
        await page.get_by_test_id('note-1').click()
+       await page.get_by_test_id('enregistrer-correction').click()
        # Database readback plus UI guard must clear before the next action.
        await page.get_by_test_id('copie-suivante').wait_for()
        await page.wait_for_function("!document.querySelector('[data-testid=\"note-1\"]')?.disabled && !document.body.innerText.includes('Enregistrement…')")
