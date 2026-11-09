@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
-import { confirmationRemiseRequise, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
+import { chargerConsultationEb2, confirmationRemiseRequise, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -501,7 +501,21 @@ export default function AdminCorrectionQrcV2Reel() {
 
       // Aucune navigation sur la seule promesse d'écriture : la QRC relue doit
       // porter exactement la note choisie et l'état corrigé.
-      const sessionRelue = await recharger();
+      // Copie historique : relecture ciblée de cette seule copie (rapide), fusionnée dans la grille ;
+      // le rechargement complet de toutes les copies prenait jusqu'à ~30 s sous charge.
+      const sessionRelue = histo && session
+        ? await (async () => {
+            const copie = await chargerConsultationEb2([tentativeSel!.attempt_id]);
+            const id = tentativeSel!.attempt_id;
+            const fusion: SessionReelle = {
+              ...session,
+              tentatives: session.tentatives.map((t) => copie.tentatives.find((c) => c.attempt_id === t.attempt_id) ?? t),
+              qrc: session.qrc.map((q) => (q.attempt_id === id ? copie.qrc.find((c) => c.qrc_instance_id === q.qrc_instance_id) ?? q : q)),
+            };
+            setSession(fusion);
+            return fusion;
+          })()
+        : await recharger();
       const decision = decisionApresCorrection(sessionRelue, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
