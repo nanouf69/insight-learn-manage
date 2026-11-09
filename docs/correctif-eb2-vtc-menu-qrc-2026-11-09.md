@@ -26,4 +26,4 @@ Site public lu avant changement : `/assets/index-BbNPGt9M.js`, métadonnée de c
 ## Limites et publication
 Vérifications du lecteur admin réalisées sur données réelles mais sans action de correction, conformément à l'autorisation. Pas de test sur appareil physique ; aucun changement de validation élève. Les anciennes fiches sans preuve complète restent signalées, jamais reconstituées depuis un nouveau sujet.
 
-Demande de publication à lancer après cette revue. Un retour de l'outil indiquera une demande programmée, pas encore une preuve du site déployé ; contrôle HTTP et parcours public restent requis avant de dire « en ligne ».
+Publication demandée : outil confirme une programmation pour https://gestion.ftransport.fr, pas la fin du déploiement. Le contrôle navigateur public immédiatement suivant ouvre les sessions réelles mais sert encore l'ancien menu sans option historique EB2. La bascule publique n'est donc pas confirmée ; ne pas annoncer le correctif en ligne. Les modifications de statut dans ce rapport/roadmap après l'appel ne font pas partie du paquet demandé et n'ajoutent aucun code fonctionnel.
