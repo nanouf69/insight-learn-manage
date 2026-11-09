@@ -230,7 +230,7 @@ export default function AdminCorrectionQrcV2Reel() {
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
         : ebChoisi?.legacyResultIds)?.filter((id) =>
-          !idsTrouves || idsTrouves.has(ebChoisi?.apprenantParAttempt?.[`ancien:${id}`] ?? ""))
+          ebChoisi?.exam_id !== "EB2" || !idsTrouves || idsTrouves.has(ebChoisi?.apprenantParAttempt?.[`ancien:${id}`] ?? ""))
     : undefined;
 
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
