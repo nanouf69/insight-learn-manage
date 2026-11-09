@@ -189,7 +189,7 @@ function EcranResultats({
           note: score.noteSur20,
           coef: m.coefficient || 1,
           noteElim: m.noteEliminatoire || 6,
-          isElim: !score.admis,
+          isElim: !score.admis && !score.seuilInconnu,
         };
       })
       .filter((v): v is { nom: string; note: number; coef: number; noteElim: number; isElim: boolean } => v !== null);
@@ -207,6 +207,8 @@ function EcranResultats({
 
     if (isReussi) {
       lines.push(`✅ Bravo ! Vous avez obtenu une moyenne de ${moyenne.toFixed(1)}/20, vous avez réussi cet examen blanc.`);
+    } else if (bilan.verdict === "incomplet" || bilan.verdict === "indetermine") {
+      lines.push(`⏳ Votre moyenne provisoire est de ${moyenne.toFixed(1)}/20. Le verdict sera publié quand toutes les matières et leurs seuils seront disponibles.`);
     } else {
       lines.push(`❌ Votre moyenne est de ${moyenne.toFixed(1)}/20. L'examen n'est pas validé (il faut 10/20 minimum sans note éliminatoire).`);
     }
