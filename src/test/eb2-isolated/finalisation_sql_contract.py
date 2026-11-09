@@ -87,7 +87,7 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
         self.assertEqual('0',self.pg.sql("SET ROLE authenticated; SET request.jwt.claim.sub='33333333-3333-4333-8333-000000000003'; SELECT count(*) FROM revision_fausses_receipts").splitlines()[-1])
         self.assertEqual('1',self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT count(*) FROM revision_fausses_receipts WHERE examen_id='ADMIN'").splitlines()[-1])
         with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql("SET ROLE anon; SELECT * FROM revision_fausses_receipts")
-        with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql(f"SET ROLE anon; SELECT finaliser_revision_fausses('{APP}','ADMIN','revision_fausses_ADMIN',7,'{}')")
+        with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql(f"SET ROLE anon; SELECT finaliser_revision_fausses('{APP}','ADMIN','revision_fausses_ADMIN',7,'{{}}')")
         with self.assertRaisesRegex(RuntimeError,'permission denied'): self.pg.sql("SET ROLE authenticated; INSERT INTO revision_fausses_receipts VALUES(null,null,null,null,null,now())")
 
     def test_historical_conflict_preserved(self):
@@ -170,7 +170,7 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
 
     def test_qrc_blank_keywords_refused(self):
         self.fixture('BLANK_KEY')
-        self.pg.sql("UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{snapshot,questions,0,reponses_possibles}','[\"   ",\"!!!\"]') WHERE quiz_id='BLANK_KEY' AND matiere_id='gestion'")
+        self.pg.sql("UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{snapshot,questions,0,reponses_possibles}',jsonb_build_array('   ','!!!')) WHERE quiz_id='BLANK_KEY' AND matiere_id='gestion'")
         with self.assertRaisesRegex(RuntimeError,'insuffisant'): self.call('BLANK_KEY')
 
 if __name__=='__main__': unittest.main(verbosity=2)
