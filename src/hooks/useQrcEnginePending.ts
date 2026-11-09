@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchLearnerQrcPending } from "@/lib/qrcInstances";
+import { fetchLearnerQrcPending, buildQrcAttemptId } from "@/lib/qrcInstances";
 
 /**
  * Blocage de note côté apprenant pour les examens branchés sur le nouveau
@@ -8,7 +8,7 @@ import { fetchLearnerQrcPending } from "@/lib/qrcInstances";
  * alors strictement son comportement actuel.
  */
 export function useQrcEnginePending(apprenantId: string | null | undefined, quizIds: string[]) {
-  const [state, setState] = useState<Record<string, { pendingByMatiere: Set<string>; pendingTotal: number }>>({});
+  const [state, setState] = useState<Record<string, { pendingByMatiere: Set<string>; pendingTotal: number; pendingAttemptIds?: Set<string> }>>({});
   const key = quizIds.filter(Boolean).sort().join("|");
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function useQrcEnginePending(apprenantId: string | null | undefined, quiz
     if (!apprenantId || ids.length === 0) { setState({}); return; }
 
     const load = async () => {
-      const next: Record<string, { pendingByMatiere: Set<string>; pendingTotal: number }> = {};
+      const next: Record<string, { pendingByMatiere: Set<string>; pendingTotal: number; pendingAttemptIds?: Set<string> }> = {};
       for (const quizId of ids) {
         const res = await fetchLearnerQrcPending({ apprenantId, quizId });
         if (res) next[quizId] = res;
@@ -41,9 +41,12 @@ export function useQrcEnginePending(apprenantId: string | null | undefined, quiz
       if (!entry) return null;
       return entry.pendingTotal > 0;
     },
-    isMatierePending(quizId: string, matiereId: string): boolean | null {
+    isMatierePending(quizId: string, matiereId: string, row?: any): boolean | null {
       const entry = state[quizId];
       if (!entry) return null;
+      if (row && apprenantId && Number.isFinite(Number(row.tentative)) && Number(row.tentative) > 0 && entry.pendingAttemptIds) {
+        return entry.pendingAttemptIds.has(buildQrcAttemptId(apprenantId, quizId, matiereId, Number(row.tentative)));
+      }
       return entry.pendingByMatiere.has(matiereId);
     },
   };

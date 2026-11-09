@@ -28,6 +28,7 @@ import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDe
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
+import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -141,13 +142,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           await new Promise((r) => setTimeout(r, 600 * attempt));
           try { await assurerSessionFraiche(); } catch { /* best effort */ }
         }
-        const result = await supabase
-          .from("apprenant_quiz_results" as any)
-          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
-          .eq("apprenant_id", apprenantId)
-          .eq("quiz_type", "examen_blanc")
-          .order("completed_at", { ascending: false })
-          .order("created_at", { ascending: false });
+        const result = await lireResultatsQuizEleve(apprenantId, undefined, 'examen_blanc');
         lastResult = result;
         if (!result.error && result.data) return result;
         console.warn(`[ExamensBlancs] Fetch attempt ${attempt + 1} failed:`, result.error);

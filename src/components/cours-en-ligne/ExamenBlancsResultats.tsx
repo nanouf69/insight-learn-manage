@@ -139,7 +139,7 @@ function EcranResultats({
   const qrcEngine = useQrcEnginePending(apprenantId, [examen?.id].filter(Boolean) as string[]);
   const allCore = resultats.filter((r) => !r.nonPassee).length > 0
     && resultats.filter((r) => !r.nonPassee).every((r) => !!r.__core);
-  const engineExamPending = allCore ? null : legacyEnginePendingForRows(resultats, (mid) => qrcEngine.isMatierePending(examen?.id || "", mid));
+  const engineExamPending = allCore ? null : legacyEnginePendingForRows(resultats, (mid, row) => qrcEngine.isMatierePending(examen?.id || "", mid, row));
   // JAMAIS de mélange : le nouveau moteur ne peut QUE bloquer en plus.
   // Il ne débloque jamais un passage historique encore en attente.
   const hasQrcPendingValidation = engineExamPending === true
