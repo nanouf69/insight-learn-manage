@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 09/11 19:55 — Rectification présélection QRC
-- [ ] Supprimer panneau doublonné ; sélection locale sur boutons standard, sauvegarde humaine normale.
-- [ ] Tests de proposition, sauvegarde/relecture et révision ; contrôle réel sans écriture et publication ciblée.
+- [x] Supprimer panneau doublonné ; sélection locale sur boutons standard, sauvegarde humaine normale.
+- [x] 77 tests de proposition, sauvegarde/relecture et révision ; contrôle réel sans écriture ; publication ciblée demandée. Rapport docs/qrc-preselection-2026-11-09.md.
 - Activation EB3 reste bloquée et distincte de ce correctif d'interface.
 
 ## 09/11 19:49 — EB3 futur et pré-note QRC
