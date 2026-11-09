@@ -510,7 +510,7 @@ export default function AdminCorrectionQrcV2Reel() {
             const fusion: SessionReelle = {
               ...session,
               tentatives: session.tentatives.map((t) => copie.tentatives.find((c) => c.attempt_id === t.attempt_id) ?? t),
-              qrc: [...session.qrc.filter((q) => q.attempt_id !== id), ...copie.qrc.filter((q) => q.attempt_id === id)],
+              qrc: session.qrc.map((q) => (q.attempt_id === id ? copie.qrc.find((c) => c.qrc_instance_id === q.qrc_instance_id) ?? q : q)),
             };
             setSession(fusion);
             return fusion;
