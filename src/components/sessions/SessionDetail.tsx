@@ -5133,7 +5133,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     <>
         <DialogHeader className={asPage ? "" : "shrink-0"}>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             {asPage ? (
               <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight flex-wrap">
                 {session.title}
@@ -5319,7 +5319,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const attestationsExclues = attestationRows.filter(r => !r.eligible);
           return (
         <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
-          <TabsList className={`shrink-0 grid w-full ${gridColsClass}`}>
+          <TabsList className={`shrink-0 grid w-full h-auto grid-cols-2 sm:${gridColsClass}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})

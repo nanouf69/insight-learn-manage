@@ -49,7 +49,7 @@ function DossierPapier({ inscription, sessionId }: { inscription: any; sessionId
   return <div className="space-y-4 max-w-2xl">
     <Label>Feuille signée dans le dossier</Label><Select value={doc} onValueChange={setDoc}><SelectTrigger><SelectValue placeholder="Choisir la feuille signée" /></SelectTrigger><SelectContent>{documents.data?.filter(d=>d.url).map(d=><SelectItem key={d.id} value={d.id}>{d.titre || d.nom_fichier}</SelectItem>)}</SelectContent></Select>
     <Button variant="outline" disabled={!doc} onClick={view}><Eye className="mr-2 h-4 w-4" />Consulter la feuille</Button>
-    <Label htmlFor="papier-date">Date de présence</Label><Input id="papier-date" type="date" value={date} onChange={e=>setDate(e.target.value)} />
+    <Label htmlFor="papier-date" className="block">Date de présence</Label><Input id="papier-date" type="date" value={date} onChange={e=>setDate(e.target.value)} />
     <Label>Créneau signé</Label><Select value={creneau} onValueChange={setCreneau}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="matin">Matin</SelectItem><SelectItem value="apres_midi">Après-midi</SelectItem></SelectContent></Select>
     <Label htmlFor="papier-heures">Nombre d’heures signées pour ce créneau</Label><Input id="papier-heures" type="number" min="0.25" max="4" step="0.25" value={heures} onChange={e=>setHeures(e.target.value)} />
     <label className="flex items-start gap-2"><Checkbox checked={confirme} onCheckedChange={v=>setConfirme(v===true)} /><span>J’ai vérifié sur la feuille la signature de cet apprenant, la date, le créneau et les heures indiquées.</span></label>
