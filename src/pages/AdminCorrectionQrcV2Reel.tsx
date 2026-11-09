@@ -446,7 +446,10 @@ export default function AdminCorrectionQrcV2Reel() {
       }
     }
     const revision = qrcSel.etat === "corrigee";
-    const traceProposition = !revision && baremeSel != null ? tracePrenote(proposition, n, baremeSel) : undefined;
+    const auto = !revision && baremeSel != null && proposition.note === baremeSel && n === baremeSel;
+    const traceProposition = !revision && baremeSel != null
+      ? (auto ? `[VALIDATION AUTO ${proposition.regle}] ${n}/${baremeSel} — ${proposition.motif}` : tracePrenote(proposition, n, baremeSel))
+      : undefined;
     const commentaireValidation = [commentaire, traceProposition].filter(Boolean).join('\n');
     const ancienne = qrcSel.note;
     if (revision) {
@@ -566,6 +569,18 @@ export default function AdminCorrectionQrcV2Reel() {
     setEtatEnvoi("vide");
     setErreur(null);
   };
+  // Validation automatique : uniquement réponse certaine (règle stricte), note = barème plein,
+  // copie non corrigée, provenance prouvée (pas de confirmation requise). Une seule tentative par QRC.
+  const autoTentees = useRef(new Set<string>());
+  useEffect(() => {
+    if (!qrcSel || qrcSel.etat === 'corrigee' || videSel || confirmationSel) return;
+    if (baremeSel == null || proposition.note == null || proposition.note !== baremeSel) return;
+    if (etatEnvoi === 'encours' || autoTentees.current.has(qrcSel.qrc_instance_id)) return;
+    autoTentees.current.add(qrcSel.qrc_instance_id);
+    void valider(baremeSel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrcSel?.qrc_instance_id, qrcSel?.etat, proposition.note, baremeSel, videSel, confirmationSel, etatEnvoi]);
+
   const navigationCopies = (
     <div className="flex items-center gap-2 border-y py-2" data-testid="navigation-copies">
       <Button
@@ -1172,7 +1187,9 @@ export default function AdminCorrectionQrcV2Reel() {
                     Copie vide — aucune correction historique, aucune note automatique.
                   </p>
                 )}
-                {proposition.note == null && <p className="text-xs text-muted-foreground">Appréciation humaine nécessaire.</p>}
+                {proposition.note == null
+                  ? <p className="text-xs text-muted-foreground">Aucune note automatique : cliquez la note pour l'enregistrer.</p>
+                  : <p className="text-xs text-success" data-testid="validation-auto">Réponse identique au corrigé : note maximale validée automatiquement.</p>}
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                     <Button
@@ -1183,7 +1200,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       aria-pressed={noteChoisie === v}
                       data-testid={`note-${v}`}
                       disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
-                      onClick={() => setChoixLocal({ cle: cleProposition, note: v })}
+                      onClick={() => { setChoixLocal({ cle: cleProposition, note: v }); void valider(v); }}
                     >
                       {String(v).replace(".", ",")}
                     </Button>
@@ -1195,8 +1212,6 @@ export default function AdminCorrectionQrcV2Reel() {
                   value={commentaire}
                   onChange={(e) => setCommentaire(e.target.value)}
                 />
-                <Button data-testid="enregistrer-correction" disabled={noteChoisie == null || etatEnvoi === 'encours' || (confirmationSel && !confirmeRemise)}
-                  onClick={() => { if (noteChoisie != null) void valider(noteChoisie); }}>Enregistrer la correction</Button>
                 <div className="text-sm" data-testid="etat-correction">
                   {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
                   {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}

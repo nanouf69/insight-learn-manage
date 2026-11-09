@@ -126,27 +126,26 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
-  it.each(['EB3', 'EB3-TAXI'])('présélectionne sans écriture dans le panneau natif %s et ne mélange pas les copies', async (examId) => {
+  it.each(['EB3', 'EB3-TAXI'])('valide automatiquement 2/2 une réponse certaine (B2 vierge) %s, une seule écriture', async (examId) => {
     if (!etat.session) throw new Error('Session absente');
     for (const t of etat.session.tentatives) t.exam_id = examId;
     etat.session.tentatives[0].snapshot.questions[0].reponseQRC = 'Casier judiciaire vierge (B2)';
-    etat.session.qrc[0].reponse = 'avoir un casier judiciaire B2 vierge';
+    etat.session.qrc[0].reponse = "C'est avoir un casier judiciaire b2 vierge";
     await ouvrirCopie('a1-q1');
-    expect(screen.getByTestId('note-2')).toHaveAttribute('aria-pressed', 'true');
-    expect(mocks.corriger).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByTestId('copie-suivante'));
-    expect(screen.getByTestId('enregistrer-correction')).toBeDisabled();
-    expect(mocks.corriger).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
+    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ note: 2, qrcInstanceId: 'a1-q1', operationId: 'qrcv2:a1-q1:2', commentaire: expect.stringContaining('VALIDATION AUTO') });
+    await waitFor(() => expect(window.location.search).toContain('qrc=a2-q1'));
+    expect(mocks.corriger).toHaveBeenCalledOnce();
   });
-  it('laisse une réponse partielle sans sélection jusqu’au choix humain', async () => {
+  it.each(['Casier judiciaire B2', 'Casier judiciaire B2 non vierge', 'Réponse fausse'])('aucune note automatique (ni zéro) pour %s ; un clic manuel enregistre', async (rep) => {
     if (!etat.session) throw new Error('Session absente');
     etat.session.tentatives[0].snapshot.questions[0].reponseQRC = 'Casier judiciaire vierge (B2)';
-    etat.session.qrc[0].reponse = 'Casier judiciaire B2';
+    etat.session.qrc[0].reponse = rep;
     await ouvrirCopie('a1-q1');
-    expect(screen.getByTestId('enregistrer-correction')).toBeDisabled();
-    fireEvent.click(screen.getByTestId('note-0.5'));
+    await new Promise((r) => setTimeout(r, 50));
     expect(mocks.corriger).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByTestId('enregistrer-correction'));
+    expect(screen.queryByTestId('enregistrer-correction')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('note-0.5'));
     await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
     expect(mocks.corriger.mock.calls[0][0].note).toBe(0.5);
   });
@@ -160,19 +159,6 @@ describe("Correction QRC — passage automatique après confirmation de persista
     await waitFor(() => expect(mocks.reviser).toHaveBeenCalledOnce());
     expect(mocks.reviser.mock.calls[0][0]).toMatchObject({ note: 2, noteAttendue: 1.5 });
     expect(mocks.corriger).not.toHaveBeenCalled();
-  });
-  it("la pré-note ne déclenche aucune écriture sans validation humaine et trace le choix", async () => {
-    if (!etat.session) throw new Error('Session absente');
-    etat.session.tentatives[0].snapshot.questions[0].reponseQRC = "Casier judiciaire vierge (B2)";
-    etat.session.qrc[0].reponse = "C'est avoir un casier judiciaire b2 vierge";
-    await ouvrirCopie('a1-q1');
-    expect(mocks.corriger).not.toHaveBeenCalled();
-    expect(screen.getByTestId('note-2')).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByTestId('note-1.5'));
-    expect(mocks.corriger).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByTestId('enregistrer-correction'));
-    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
-    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ note: 1.5, qrcInstanceId: 'a1-q1', commentaire: expect.stringContaining('validation humaine 1.5/2') });
   });
   it("n'affiche pas de pré-note sur une note déjà corrigée", async () => {
     appliquerNote('a1-q1', 1.5);
@@ -188,7 +174,6 @@ describe("Correction QRC — passage automatique après confirmation de persista
     }));
     await ouvrirCopie("a1-q1");
     fireEvent.click(screen.getByTestId("note-1.5"));
-    fireEvent.click(screen.getByTestId('enregistrer-correction'));
     await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
     expect(window.location.search).toContain("qrc=a1-q1");
     expect(screen.getByTestId("copie-suivante")).toBeDisabled();
@@ -204,7 +189,6 @@ describe("Correction QRC — passage automatique après confirmation de persista
     mocks.corriger.mockRejectedValue(new Error("Refus serveur fictif"));
     await ouvrirCopie("a1-q1");
     fireEvent.click(screen.getByTestId("note-1"));
-    fireEvent.click(screen.getByTestId('enregistrer-correction'));
     expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("Refus serveur fictif");
     expect(window.location.search).toContain("qrc=a1-q1");
     expect(screen.getByTestId("reponse-eleve")).toHaveTextContent("Réponse a1");
@@ -214,7 +198,6 @@ describe("Correction QRC — passage automatique après confirmation de persista
     mocks.corriger.mockResolvedValue({});
     await ouvrirCopie("a1-q1");
     fireEvent.click(screen.getByTestId("note-1"));
-    fireEvent.click(screen.getByTestId('enregistrer-correction'));
     expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("relecture");
     expect(window.location.search).toContain("qrc=a1-q1");
     expect(mocks.corriger).toHaveBeenCalledOnce();
@@ -223,7 +206,6 @@ describe("Correction QRC — passage automatique après confirmation de persista
   it("reste sur la dernière copie et signale la fin de liste après confirmation", async () => {
     await ouvrirCopie("a2-q1");
     fireEvent.click(screen.getByTestId("note-2"));
-    fireEvent.click(screen.getByTestId('enregistrer-correction'));
     expect(await screen.findByTestId("fin-liste-copies")).toHaveTextContent("dernière copie de la liste");
     expect(window.location.search).toContain("qrc=a2-q1");
     expect(screen.getByTestId("copie-suivante")).toBeDisabled();
