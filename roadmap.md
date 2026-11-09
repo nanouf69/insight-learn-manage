@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 17:13 — Règle statistique parfaite explicite
+- [x] Règle permanente enregistrée ; moteur existant conforme, notes/barèmes/verdicts inchangés.
+- [x] Six cas explicites supplémentaires QCM A+B et QRC 0/2–1/2–2/2 ; 86 tests ciblés PASS ; rejeu preuves audit 3/5, 7/14, 8/18 inchangé.
+- [x] Rapport complété sans confondre rejeu conservé et nouvelle vérification publique.
+- [ ] Publication statistique séparée — attend validation explicite.
+
 ## 09/11 17:01 — Audit taux QRC premier essai
 - [x] Public reproduit 2/4, 5/12, 6/16 ; preuves individuelles relues, aperçu réel 3/5, 7/14, 8/18.
 - [x] Correctif QRC commun : soumission prouvée, brouillons miroirs ignorés, reprises suivantes exclues sans masquer le premier passage ; 80 tests ciblés et 123 critiques PASS.

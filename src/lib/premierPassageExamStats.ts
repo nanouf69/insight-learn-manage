@@ -31,7 +31,10 @@ function grade(q: QuestionStatsTarget, frozen: FrozenQuestion | undefined, answe
   return same(answer, keys);
 }
 
-/** Une QRC est évaluée sur sa copie soumise, jamais sur la première lettre tapée.
+/** Statistique seule : QCM réussi = toutes les bonnes cases et aucune mauvaise.
+ * Une QRC est évaluée sur sa copie soumise, jamais sur la première lettre tapée.
+ * Réussie uniquement avec tous les points ; une note partielle compte comme
+ * un échec statistique sans modifier sa note pédagogique. Attente = exclue.
  * Humain prioritaire ; IA seulement avec sa preuve appliquée au même barème et à la même note. */
 function gradeQrc(q:QuestionStatsTarget,frozen:FrozenQuestion|undefined,qrc:ExamStatsQrc|undefined,corrections:ExamStatsQrcIa[]):boolean|null {
   if(q.type!=='QRC' || frozen?.type!=='QRC' || frozen.enonce!==q.enonce || !qrc || qrc.etat!=='corrigee' || qrc.note==null)return null;

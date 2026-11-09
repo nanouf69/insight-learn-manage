@@ -6,6 +6,10 @@ Correctif préparé et contrôlé en aperçu, NON PUBLIÉ. Aucune migration, cor
 La question est `t3p:1`, EB1 / EB1-TAXI : « Je me fais contrôler sur la route quels documents communs aux trois professions dois-je présenter aux forces de l'ordre ? (QRC) ». Barème figé 2 points. EB2 comporte un énoncé semblable sous `t3p:5`, expressément non agrégé.
 
 ## Définition conservée
+Précision explicite utilisateur 09/11 à 17:13 UTC : QCM réussi seulement avec toutes les bonnes propositions et aucune mauvaise ; QRC réussie seulement avec la totalité des points. 0/2 et 1/2 = chacun un échec statistique, 2/2 = zéro échec ; non corrigée exclue jusqu’à correction. Le calcul préparé respectait déjà cette définition : aucun changement des notes, barèmes ou verdicts n’est nécessaire.
+
+Contrôle complémentaire : 86 tests exécutés PASS (cinq fichiers), dont six cas explicites supplémentaires A+B partiel/exact/avec mauvaise proposition et QRC 0/2, 1/2, 2/2, avec conservation intégrale des preuves. En attente, correction tardive et essais suivants sont également testés. Rejeu des lectures réelles conservées de l’audit : mêmes taux 3/5, 7/14, 8/18 ; pas de nouvel écart induit par cette précision. Aucun nouveau parcours public n’a été exécuté pour ce complément ; les preuves publiques et aperçu du premier audit restent celles décrites ci-dessous. Publication séparée NON EFFECTUÉE, attend validation.
+
 Une observation par apprenant et question dans le périmètre d’examen existant. QRC : réponse de la première copie soumise, note humaine prioritaire ou reçu IA appliqué à la même instance/note/barème ; 2/2 = correcte, toute note partielle = erreur. Jamais la première lettre tapée. Non corrigée, non soumise, ambiguë ou ancienne non prouvée : hors dénominateur, jamais fausse. QCM : premier choix journalisé prouvé, selon la règle existante, inchangé.
 
 Les groupes représentent les inscrits actuellement éligibles des sessions CRM ; une inscription croisée apparaît dans chaque session concernée mais une seule fois au global. L’audit ne remplace pas cette règle par une règle de date de passage dans la session.
