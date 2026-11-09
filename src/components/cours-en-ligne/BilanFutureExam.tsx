@@ -105,6 +105,8 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
   const [mobileProgressOpen, setMobileProgressOpen] = useState(false);
   const flushing = useRef(false);
   const ouvertureAuto = useRef(false);
+  // Only the latest opened matière may update the screen (fast page changes never mix two passages).
+  const ouvertureCourante = useRef(0);
 
   const chargerStatuts = useCallback(async () => {
     const { data, error } = await (supabase as any).from("bilan_future_receipts")
@@ -121,8 +123,9 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
   }, [ownerId, moduleId]);
   useEffect(() => { void chargerStatuts(); }, [chargerStatuts]);
 
-  const chargerCorrection = useCallback(async (receipt: FutureReceipt) => {
+  const chargerCorrection = useCallback(async (receipt: FutureReceipt, tok?: number) => {
     const { data, error } = await rpc("bilan_future_correction", { p_receipt: receipt.passageId });
+    if (tok !== undefined && tok !== ouvertureCourante.current) return;
     const c = error ? null : lireCorrection(data, receipt.passageId, receipt.versionId);
     if (!c) { setErreur("Matière remise, mais la correction n'a pas pu être lue. Rechargez la page."); return; }
     setCorrection(c);
@@ -138,12 +141,16 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
   }, []);
 
   const ouvrir = useCallback(async (exo: number) => {
+    const tok = ++ouvertureCourante.current;
+    const actuel = () => tok === ouvertureCourante.current;
     setErreur(null); setPassage(null); setCorrection(null); setRevision(null); setRelecture(false); setNonRepondues(new Set()); setOuvert(exo);
     window.scrollTo?.({ top: 0, behavior: "smooth" });
     const o = await rpc("bilan_future_open", { p_module: moduleId, p_exercise: exo });
+    if (!actuel()) return;
     if (o.error || !o.data?.id) { setErreur("Ouverture de la matière impossible. Rechargez la page."); return; }
     const receipt: FutureReceipt = { passageId: o.data.id, versionId: o.data.version_id, moduleId, exerciseId: exo, ownerId };
     const [qs, rs] = await Promise.all([rpc("bilan_future_questions", { p_receipt: receipt.passageId }), rpc("bilan_future_resume", { p_receipt: receipt.passageId })]);
+    if (!actuel()) return;
     if (qs.error || rs.error || qs.data?.version_id !== receipt.versionId || rs.data?.version_id !== receipt.versionId) {
       setErreur("Chargement de votre passage impossible. Vos réponses sont conservées ; rechargez la page."); return;
     }
@@ -154,8 +161,9 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
       if ((revisions[d.questionId] ?? 0) < d.revision) { answers[d.questionId] = d.answer; revisions[d.questionId] = d.revision; }
     }
     const sub = rs.data.submitted ? (await (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", receipt.passageId).maybeSingle()).data : null;
+    if (!actuel()) return;
     setPassage({ receipt, questions: qs.data.questions ?? [], answers, revisions, submitted: sub });
-    if (sub) void chargerCorrection(receipt); else void flush(receipt);
+    if (sub) void chargerCorrection(receipt, tok); else void flush(receipt);
   }, [moduleId, ownerId, chargerCorrection, flush]);
 
   // Like every module, the learner lands directly on a quiz page: the first matière not yet handed in.
@@ -199,6 +207,7 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
     // Validation only after the server acknowledgement + readback.
     const back = await (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", passage.receipt.passageId).maybeSingle();
     if (back.error || !back.data || back.data.correct_count !== data.correct_count) { setErreur("Remise envoyée mais non relue. Rechargez la page pour vérifier."); return; }
+    if (passage.receipt.exerciseId !== ouvert) return;
     setPassage({ ...passage, submitted: back.data });
     toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
     void chargerCorrection(passage.receipt);
