@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 12:59 — Autorisation de publication des trois correctifs EB2
+- [x] Schéma et déclencheurs réels contrôlés en lecture seule ; candidats et diff examinés, aucun changement actif.
+- [x] STOP : 873/1034 copies EB2 et 144/173 copies TAXI sans le snapshot exigé ; 17/18 révisions ouvertes repérées par clé sont au format ancien sans revisionState. Le candidat/commutateur sont globaux EB1–EB6, pas isolés EB2 ; statut/submitted_at modifiés par un trigger réel absent des fixtures.
+- [ ] Migration/publication bloquées : compatibilité historique et périmètre EB2 strict non résolus ; intégration catalogue complet + navigateur/SQL requise. Autorisation reçue mais aucune migration ni publication appelée. Rapport docs/eb2-publication-stop-2026-11-09.md.
+
 ## 09/11 12:49 — EB2 : préparation strictement jetable
 - [x] Candidat SQL atomique terminé/résultat/reçu, hors migrations actives ; isolation PostgreSQL locale contrôlée.
 - [x] Copie de test RevisionFausses : amorçage write_seq, reprise même identité et refus QRC sans mots-clés utilisables ; application active inchangée.
