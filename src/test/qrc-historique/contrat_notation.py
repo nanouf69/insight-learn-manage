@@ -143,9 +143,10 @@ class Contrat(unittest.TestCase):
 
     def test_remise_ambigue_exige_confirmation_tracee(self):
         # Réponses identiques + IDs : identité prouvée, plus de case malgré l'horodatage différent.
+        # Le correcteur envoie lui-même une trace de vérification automatique (aucune case).
         rid, s = self.copie(remise='decalee')
-        r = self.noter(rid, '1', 1, s)
-        self.assertEqual('remise_horodatage_divergent', r['provenance']); self.assertIsNone(r['reconnaissance'])
+        r = self.noter(rid, '1', 1, s, reco='Vérification automatique : réponses identiques')
+        self.assertEqual('remise_horodatage_divergent', r['provenance']); self.assertIn('automatique', r['reconnaissance'])
         # Aucune fiche identique : confirmation explicite toujours exigée.
         rid2, s2 = self.copie(remise=None, matiere='autre')
         with self.assertRaisesRegex(RuntimeError, 'resultat_seul'): self.noter(rid2, '1', 1, s2)
