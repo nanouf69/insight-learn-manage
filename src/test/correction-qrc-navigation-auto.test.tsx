@@ -126,6 +126,41 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it.each(['EB3', 'EB3-TAXI'])('présélectionne sans écriture dans le panneau natif %s et ne mélange pas les copies', async (examId) => {
+    if (!etat.session) throw new Error('Session absente');
+    for (const t of etat.session.tentatives) t.exam_id = examId;
+    etat.session.tentatives[0].snapshot.questions[0].reponseQRC = 'Casier judiciaire vierge (B2)';
+    etat.session.qrc[0].reponse = 'avoir un casier judiciaire B2 vierge';
+    await ouvrirCopie('a1-q1');
+    expect(screen.getByTestId('note-2')).toHaveAttribute('aria-pressed', 'true');
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('copie-suivante'));
+    expect(screen.getByTestId('enregistrer-correction')).toBeDisabled();
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it('laisse une réponse partielle sans sélection jusqu’au choix humain', async () => {
+    if (!etat.session) throw new Error('Session absente');
+    etat.session.tentatives[0].snapshot.questions[0].reponseQRC = 'Casier judiciaire vierge (B2)';
+    etat.session.qrc[0].reponse = 'Casier judiciaire B2';
+    await ouvrirCopie('a1-q1');
+    expect(screen.getByTestId('enregistrer-correction')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('note-0.5'));
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('enregistrer-correction'));
+    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
+    expect(mocks.corriger.mock.calls[0][0].note).toBe(0.5);
+  });
+  it('garde la révision volontaire séparée sans proposition ni nouvelle première correction', async () => {
+    appliquerNote('a1-q1', 1.5);
+    mocks.reviser.mockImplementation(async ({ qrcInstanceId, note }) => { appliquerNote(qrcInstanceId, note); return {}; });
+    await ouvrirCopie('a1-q1');
+    fireEvent.click(screen.getByTestId('modifier-note'));
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('revision-note-2'));
+    await waitFor(() => expect(mocks.reviser).toHaveBeenCalledOnce());
+    expect(mocks.reviser.mock.calls[0][0]).toMatchObject({ note: 2, noteAttendue: 1.5 });
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
   it("la pré-note ne déclenche aucune écriture sans validation humaine et trace le choix", async () => {
     if (!etat.session) throw new Error('Session absente');
     etat.session.tentatives[0].snapshot.questions[0].reponseQRC = "Casier judiciaire vierge (B2)";
