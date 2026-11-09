@@ -28740,6 +28740,501 @@
         }
       ],
       "questions_hors_projection": []
+    },
+    {
+      "module": 82,
+      "exercice": 104,
+      "matiere": "Développement commercial",
+      "sources": [
+        7
+      ],
+      "comptes_sources": [
+        66
+      ],
+      "attendu": 66,
+      "avant_affiche": 66,
+      "avant_brut": 66,
+      "apres": 66,
+      "ecart_avant_affiche": 0,
+      "historiques_conserves": 0,
+      "nouvelles_identites_source": 0,
+      "historiques_hors_projection": 0,
+      "doublons_ids_actuels": 0,
+      "doublons_enonces_actuels": 0,
+      "doublons_enonces_sources": 0,
+      "differences_contenu_historique_vs_source": {
+        "enonce": 0,
+        "choix": 0,
+        "bonnes_reponses": 0,
+        "image": 0,
+        "explication": 0
+      },
+      "sequence_apres": [
+        {
+          "position": 1,
+          "source": "7:1",
+          "id": 1,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le marketing ?"
+        },
+        {
+          "position": 2,
+          "source": "7:2",
+          "id": 2,
+          "origine": "source_statique_conforme",
+          "enonce": "Comment dit-on « marketing » en français ?"
+        },
+        {
+          "position": 3,
+          "source": "7:3",
+          "id": 3,
+          "origine": "source_statique_conforme",
+          "enonce": "Le marketing stratégique permet de faire :"
+        },
+        {
+          "position": 4,
+          "source": "7:4",
+          "id": 4,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'une analyse externe ?"
+        },
+        {
+          "position": 5,
+          "source": "7:5",
+          "id": 5,
+          "origine": "source_statique_conforme",
+          "enonce": "Réaliser une étude de marché, c'est rechercher des informations sur :"
+        },
+        {
+          "position": 6,
+          "source": "7:6",
+          "id": 6,
+          "origine": "source_statique_conforme",
+          "enonce": "Quels sont les autres noms donnés au marketing opérationnel ?"
+        },
+        {
+          "position": 7,
+          "source": "7:7",
+          "id": 7,
+          "origine": "source_statique_conforme",
+          "enonce": "Que signifient les 4P ?"
+        },
+        {
+          "position": 8,
+          "source": "7:8",
+          "id": 8,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que la cohérence du plan de marchéage ?"
+        },
+        {
+          "position": 9,
+          "source": "7:9",
+          "id": 9,
+          "origine": "source_statique_conforme",
+          "enonce": "Pourquoi l'entreprise doit-elle contrôler ses actions marketing ?"
+        },
+        {
+          "position": 10,
+          "source": "7:10",
+          "id": 10,
+          "origine": "source_statique_conforme",
+          "enonce": "Quels sont les outils servant à la réalisation d'une étude de marché ?"
+        },
+        {
+          "position": 11,
+          "source": "7:11",
+          "id": 11,
+          "origine": "source_statique_conforme",
+          "enonce": "Que signifie SWOT ?"
+        },
+        {
+          "position": 12,
+          "source": "7:12",
+          "id": 12,
+          "origine": "source_statique_conforme",
+          "enonce": "L'analyse SWOT peut être utilisée :"
+        },
+        {
+          "position": 13,
+          "source": "7:13",
+          "id": 13,
+          "origine": "source_statique_conforme",
+          "enonce": "Quelles sont les 5 forces de Porter ?"
+        },
+        {
+          "position": 14,
+          "source": "7:14",
+          "id": 14,
+          "origine": "source_statique_conforme",
+          "enonce": "Que signifie PESTEL ?"
+        },
+        {
+          "position": 15,
+          "source": "7:15",
+          "id": 15,
+          "origine": "source_statique_conforme",
+          "enonce": "Dans l'analyse PESTEL appliquée au VTC, le facteur « Écologique » concerne :"
+        },
+        {
+          "position": 16,
+          "source": "7:16",
+          "id": 16,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'une zone de chalandise ?"
+        },
+        {
+          "position": 17,
+          "source": "7:17",
+          "id": 17,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'un prix psychologique ?"
+        },
+        {
+          "position": 18,
+          "source": "7:18",
+          "id": 18,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le B to B ?"
+        },
+        {
+          "position": 19,
+          "source": "7:19",
+          "id": 19,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le B to C ?"
+        },
+        {
+          "position": 20,
+          "source": "7:20",
+          "id": 20,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que la notoriété ?"
+        },
+        {
+          "position": 21,
+          "source": "7:21",
+          "id": 21,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le marketing direct ?"
+        },
+        {
+          "position": 22,
+          "source": "7:22",
+          "id": 22,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le packaging pour un chauffeur VTC ?"
+        },
+        {
+          "position": 23,
+          "source": "7:23",
+          "id": 23,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le street marketing ?"
+        },
+        {
+          "position": 24,
+          "source": "7:24",
+          "id": 24,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'un service premium ?"
+        },
+        {
+          "position": 25,
+          "source": "7:25",
+          "id": 25,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'un marché de niche ?"
+        },
+        {
+          "position": 26,
+          "source": "7:26",
+          "id": 26,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que la segmentation ?"
+        },
+        {
+          "position": 27,
+          "source": "7:27",
+          "id": 27,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le positionnement pour un VTC ?"
+        },
+        {
+          "position": 28,
+          "source": "7:28",
+          "id": 28,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'une cible en marketing ?"
+        },
+        {
+          "position": 29,
+          "source": "7:29",
+          "id": 29,
+          "origine": "source_statique_conforme",
+          "enonce": "Un client se présente lors d'une mission. Que faites-vous ?"
+        },
+        {
+          "position": 30,
+          "source": "7:30",
+          "id": 30,
+          "origine": "source_statique_conforme",
+          "enonce": "Un client seul demande à monter à l'avant car il est mal en voiture."
+        },
+        {
+          "position": 31,
+          "source": "7:31",
+          "id": 31,
+          "origine": "source_statique_conforme",
+          "enonce": "Vous devez prendre en charge un client dans un grand hôtel à une heure précise."
+        },
+        {
+          "position": 32,
+          "source": "7:32",
+          "id": 32,
+          "origine": "source_statique_conforme",
+          "enonce": "Quel est le premier critère d'une bonne conduite professionnelle ?"
+        },
+        {
+          "position": 33,
+          "source": "7:33",
+          "id": 33,
+          "origine": "source_statique_conforme",
+          "enonce": "Vous réalisez que vous allez arriver en retard. Que faites-vous ?"
+        },
+        {
+          "position": 34,
+          "source": "7:34",
+          "id": 34,
+          "origine": "source_statique_conforme",
+          "enonce": "Le nombre de personnes que vous pouvez transporter est au maximum de :"
+        },
+        {
+          "position": 35,
+          "source": "7:35",
+          "id": 35,
+          "origine": "source_statique_conforme",
+          "enonce": "Avant de fermer le coffre, je demande aux clients de vérifier le nombre de valises."
+        },
+        {
+          "position": 36,
+          "source": "7:36",
+          "id": 36,
+          "origine": "source_statique_conforme",
+          "enonce": "Un client se fait conduire en boîte de nuit et me demande de l'attendre."
+        },
+        {
+          "position": 37,
+          "source": "7:37",
+          "id": 37,
+          "origine": "source_statique_conforme",
+          "enonce": "Après un violent orage, dès que possible, je lave la voiture."
+        },
+        {
+          "position": 38,
+          "source": "7:38",
+          "id": 38,
+          "origine": "source_statique_conforme",
+          "enonce": "Un client allume une cigarette alors que votre entreprise ne le permet pas."
+        },
+        {
+          "position": 39,
+          "source": "7:39",
+          "id": 39,
+          "origine": "source_statique_conforme",
+          "enonce": "En accueillant un client seul, le chauffeur VTC l'invite à prendre place :"
+        },
+        {
+          "position": 40,
+          "source": "7:40",
+          "id": 40,
+          "origine": "source_statique_conforme",
+          "enonce": "Lors d'un transfert aéroport vers l'hôtel, les clients demandent un détour devant un monument. Pas de mission suivante."
+        },
+        {
+          "position": 41,
+          "source": "7:41",
+          "id": 41,
+          "origine": "source_statique_conforme",
+          "enonce": "Le client vous donne un pourboire qui était destiné au voiturier."
+        },
+        {
+          "position": 42,
+          "source": "7:42",
+          "id": 42,
+          "origine": "source_statique_conforme",
+          "enonce": "Vous partez pour une course et votre réservoir est dans son dernier quart."
+        },
+        {
+          "position": 43,
+          "source": "7:43",
+          "id": 43,
+          "origine": "source_statique_conforme",
+          "enonce": "Les clients veulent dîner dans un restaurant gastronomique et vous demandent de réserver."
+        },
+        {
+          "position": 44,
+          "source": "7:44",
+          "id": 44,
+          "origine": "source_statique_conforme",
+          "enonce": "En présence d'un client, j'utilise le GPS seulement quand je ne peux pas faire autrement."
+        },
+        {
+          "position": 45,
+          "source": "7:45",
+          "id": 45,
+          "origine": "source_statique_conforme",
+          "enonce": "J'utilise des applications de suivi des vols pour anticiper les retards."
+        },
+        {
+          "position": 46,
+          "source": "7:46",
+          "id": 46,
+          "origine": "source_statique_conforme",
+          "enonce": "Après 2h30 d'attente, les clients arrivent contrariés car leurs valises sont perdues."
+        },
+        {
+          "position": 47,
+          "source": "7:47",
+          "id": 47,
+          "origine": "source_statique_conforme",
+          "enonce": "Quelles sont les stratégies de différenciation tarifaire pour un VTC ?"
+        },
+        {
+          "position": 48,
+          "source": "7:48",
+          "id": 48,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce qu'un prospect ?"
+        },
+        {
+          "position": 49,
+          "source": "7:49",
+          "id": 49,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que la fidélisation ?"
+        },
+        {
+          "position": 50,
+          "source": "7:50",
+          "id": 50,
+          "origine": "source_statique_conforme",
+          "enonce": "Comment fidéliser une clientèle VTC ?"
+        },
+        {
+          "position": 51,
+          "source": "7:51",
+          "id": 51,
+          "origine": "source_statique_conforme",
+          "enonce": "Un client insatisfait en parlera en moyenne à combien de personnes ?"
+        },
+        {
+          "position": 52,
+          "source": "7:52",
+          "id": 52,
+          "origine": "source_statique_conforme",
+          "enonce": "Quelles sont les formes de prospection ?"
+        },
+        {
+          "position": 53,
+          "source": "7:53",
+          "id": 53,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que la communication média ?"
+        },
+        {
+          "position": 54,
+          "source": "7:54",
+          "id": 54,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que la communication hors média ?"
+        },
+        {
+          "position": 55,
+          "source": "7:55",
+          "id": 55,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que le SEO (référencement naturel) ?"
+        },
+        {
+          "position": 56,
+          "source": "7:56",
+          "id": 56,
+          "origine": "source_statique_conforme",
+          "enonce": "Qu'est-ce que Google My Business ?"
+        },
+        {
+          "position": 57,
+          "source": "7:57",
+          "id": 57,
+          "origine": "source_statique_conforme",
+          "enonce": "Quels réseaux sociaux sont pertinents pour un chauffeur VTC ?"
+        },
+        {
+          "position": 58,
+          "source": "7:58",
+          "id": 58,
+          "origine": "source_statique_conforme",
+          "enonce": "Quel pourcentage de clients consultent les avis en ligne avant de réserver ?"
+        },
+        {
+          "position": 59,
+          "source": "7:59",
+          "id": 59,
+          "origine": "source_statique_conforme",
+          "enonce": "Quels éléments doit contenir un site web professionnel VTC ?"
+        },
+        {
+          "position": 60,
+          "source": "7:60",
+          "id": 60,
+          "origine": "source_statique_conforme",
+          "enonce": "Quels types de partenaires un chauffeur VTC peut-il développer ?"
+        },
+        {
+          "position": 61,
+          "source": "7:61",
+          "id": 61,
+          "origine": "source_statique_conforme",
+          "enonce": "Quel est le taux de commission moyen prélevé par les plateformes VTC ?"
+        },
+        {
+          "position": 62,
+          "source": "7:62",
+          "id": 62,
+          "origine": "source_statique_conforme",
+          "enonce": "Comment développer un partenariat avec un hôtel ?"
+        },
+        {
+          "position": 63,
+          "source": "7:63",
+          "id": 63,
+          "origine": "source_statique_conforme",
+          "enonce": "Combien de mentions obligatoires doit comporter un devis VTC ?"
+        },
+        {
+          "position": 64,
+          "source": "7:64",
+          "id": 64,
+          "origine": "source_statique_conforme",
+          "enonce": "Parmi les éléments suivants, lesquels sont des mentions obligatoires du devis ?"
+        },
+        {
+          "position": 65,
+          "source": "7:65",
+          "id": 65,
+          "origine": "source_statique_conforme",
+          "enonce": "Quelle est la différence entre un devis et une facture ?"
+        },
+        {
+          "position": 66,
+          "source": "7:66",
+          "id": 66,
+          "origine": "source_statique_conforme",
+          "enonce": "Combien de temps minimum doit-on conserver les factures ?"
+        }
+      ],
+      "questions_sources_sans_historique": [],
+      "questions_hors_projection": []
     }
   ]
 }
