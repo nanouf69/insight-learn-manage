@@ -90,3 +90,17 @@ describe("EB2 VTC en consultation dans le correcteur V2", () => {
     expect(typeof tentative.historique.seuil).toBe("number");
   });
 });
+
+import { confirmationRemiseRequise, reconnaissanceRemise } from "@/features/correction-qrc-v2/eb2Consultation";
+describe("Identité de remise des copies historiques", () => {
+  it("aucune case quand réponses identiques prouvées (même instant ou horodatage différent)", () => {
+    expect(confirmationRemiseRequise("remise_identique")).toBe(false);
+    expect(confirmationRemiseRequise("remise_horodatage_divergent")).toBe(false);
+    expect(reconnaissanceRemise("remise_identique", "r", "q", "a")).toBeNull();
+    expect(reconnaissanceRemise("remise_horodatage_divergent", "r", "q", null)).toMatch(/^Vérification automatique/);
+  });
+  it("confirmation explicite seulement sans fiche remise identique", () => {
+    expect(confirmationRemiseRequise("resultat_seul")).toBe(true);
+    expect(reconnaissanceRemise("resultat_seul", "r", "q", "admin@x")).toMatch(/Confirmé par admin@x/);
+  });
+});

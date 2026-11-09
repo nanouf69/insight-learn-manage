@@ -7204,6 +7204,7 @@ export type Database = {
           id: string
           matiere_id: string | null
           note: number
+          note_precedente: number | null
           note20_apres: number | null
           note20_avant: number | null
           operation_id: string
@@ -7214,6 +7215,7 @@ export type Database = {
           result_id: string
           reussi_apres: boolean | null
           reussi_avant: boolean | null
+          revision: number
           score_apres: number | null
           score_avant: number | null
           tentative: number | null
@@ -7228,6 +7230,7 @@ export type Database = {
           id?: string
           matiere_id?: string | null
           note: number
+          note_precedente?: number | null
           note20_apres?: number | null
           note20_avant?: number | null
           operation_id: string
@@ -7238,6 +7241,7 @@ export type Database = {
           result_id: string
           reussi_apres?: boolean | null
           reussi_avant?: boolean | null
+          revision?: number
           score_apres?: number | null
           score_avant?: number | null
           tentative?: number | null
@@ -7252,6 +7256,7 @@ export type Database = {
           id?: string
           matiere_id?: string | null
           note?: number
+          note_precedente?: number | null
           note20_apres?: number | null
           note20_avant?: number | null
           operation_id?: string
@@ -7262,6 +7267,7 @@ export type Database = {
           result_id?: string
           reussi_apres?: boolean | null
           reussi_avant?: boolean | null
+          revision?: number
           score_apres?: number | null
           score_avant?: number | null
           tentative?: number | null
@@ -10501,6 +10507,20 @@ export type Database = {
         Args: {
           p_commentaire?: string
           p_note: number
+          p_operation_id: string
+          p_question_id: string
+          p_reconnaissance?: string
+          p_result_id: string
+          p_score_attendu: number
+          p_seuil?: number
+        }
+        Returns: Json
+      }
+      qrc_historique_reviser: {
+        Args: {
+          p_commentaire?: string
+          p_note: number
+          p_note_attendue: number
           p_operation_id: string
           p_question_id: string
           p_reconnaissance?: string

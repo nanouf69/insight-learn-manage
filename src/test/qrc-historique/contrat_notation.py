@@ -6,7 +6,7 @@ from upsert_reponse_http_integration import PgJetable
 ADMIN = '44444444-4444-4444-8444-000000000004'
 AUTRE = '55555555-4444-4444-8444-000000000005'
 APP = '11111111-1111-4111-8111-000000000001'
-MIGRATION = pathlib.Path(__file__).with_name('migration.sql').read_text()
+MIGRATION = pathlib.Path(__file__).with_name('migration.sql').read_text() + '\n' + pathlib.Path(__file__).with_name('migration_revision.sql').read_text()
 
 def lit(v): return "'" + str(v).replace("'", "''") + "'"
 
@@ -142,12 +142,47 @@ class Contrat(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'non prouvé'): self.noter(rid, '1', 1, 4)
 
     def test_remise_ambigue_exige_confirmation_tracee(self):
+        # Réponses identiques + IDs : identité prouvée, plus de case malgré l'horodatage différent.
+        # Le correcteur envoie lui-même une trace de vérification automatique (aucune case).
         rid, s = self.copie(remise='decalee')
-        with self.assertRaisesRegex(RuntimeError, 'remise_horodatage_divergent'): self.noter(rid, '1', 1, s)
-        r = self.noter(rid, '1', 1, s, reco='Réponses identiques vérifiées, horodatage différent')
-        self.assertEqual('remise_horodatage_divergent', r['provenance']); self.assertIn('vérifiées', r['reconnaissance'])
+        r = self.noter(rid, '1', 1, s, reco='Vérification automatique : réponses identiques')
+        self.assertEqual('remise_horodatage_divergent', r['provenance']); self.assertIn('automatique', r['reconnaissance'])
+        # Aucune fiche identique : confirmation explicite toujours exigée.
         rid2, s2 = self.copie(remise=None, matiere='autre')
         with self.assertRaisesRegex(RuntimeError, 'resultat_seul'): self.noter(rid2, '1', 1, s2)
+        r2 = self.noter(rid2, '1', 1, s2, reco='vérifié')
+        self.assertEqual('resultat_seul', r2['provenance'])
+
+    def reviser(self, rid, q, note, ancienne, attendu, op=None, uid=ADMIN, reco=None):
+        op = op or str(uuid.uuid4())
+        out = self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{uid}'; SELECT qrc_historique_reviser({lit(op)},'{rid}',{lit(q)},{note},{ancienne},{attendu},6,'motif',{lit(reco) if reco else 'NULL'})")
+        return json.loads(out.splitlines()[-1])
+
+    def test_modifier_la_note_revision_tracee(self):
+        rid, s = self.copie()
+        self.noter(rid, '1', 2, s)
+        avant = self.ligne(rid)
+        r = self.reviser(rid, '1', 1, 2, avant['score_obtenu'], op='rev-1')
+        apres = self.ligne(rid)
+        self.assertEqual(2, r['revision']); self.assertEqual(2, float(r['note_precedente']))
+        self.assertEqual(float(avant['score_obtenu']) - 1, float(apres['score_obtenu']))
+        self.assertEqual(avant['details']['reponses'], apres['details']['reponses'])
+        self.assertEqual(2, apres['details']['correctionsIA']['1']['propositionPrecedente']['pointsObtenus'])
+        self.assertEqual('2', self.pg.sql('SELECT count(*) FROM qrc_historique_corrections'))
+        # rejeu idempotent, puis ancienne note périmée refusée
+        self.assertTrue(self.reviser(rid, '1', 1, 2, avant['score_obtenu'], op='rev-1')['rejeu'])
+        with self.assertRaisesRegex(RuntimeError, 'modifiée depuis'): self.reviser(rid, '1', 0, 2, apres['score_obtenu'])
+        with self.assertRaisesRegex(RuntimeError, 'identique'): self.reviser(rid, '1', 1, 1, apres['score_obtenu'])
+        with self.assertRaisesRegex(RuntimeError, 'Administrateur'): self.reviser(rid, '1', 0, 1, apres['score_obtenu'], uid=AUTRE)
+        self.assertEqual('2', self.pg.sql('SELECT count(*) FROM qrc_historique_corrections'))
+
+    def test_revision_refusee_si_non_notee_et_correction_ancienne_revisable(self):
+        rid, s = self.copie()
+        with self.assertRaisesRegex(RuntimeError, 'non corrigée'): self.reviser(rid, '1', 1, 0, s)
+        rid2, _ = self.copie()
+        self.pg.sql(f"UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{{correctionsIA,1}}','{{\"pointsObtenus\":1,\"validatedByAdmin\":true}}'), score_obtenu=2.5 WHERE id='{rid2}'")
+        r = self.reviser(rid2, '1', 2, 1, 2.5)
+        self.assertEqual(1, r['revision']); self.assertEqual(3.5, float(self.ligne(rid2)['score_obtenu']))
 
     def test_journal_append_only(self):
         rid, s = self.copie(); self.noter(rid, '1', 1, s)

@@ -244,3 +244,57 @@ export async function noterQrcHistorique(params: {
   if (error) throw error;
   return data as Record<string, unknown>;
 }
+
+/** Révision append-only d'une QRC historique déjà notée (« Modifier la note »), refusée si la note a changé depuis l'affichage. */
+export async function reviserQrcHistorique(params: {
+  operationId: string;
+  resultId: string;
+  questionId: string;
+  note: number;
+  noteAttendue: number;
+  scoreAttendu: number;
+  seuil: number | null;
+  commentaire?: string;
+  reconnaissance?: string | null;
+}) {
+  const { data, error } = await (supabase as any).rpc("qrc_historique_reviser", {
+    p_operation_id: params.operationId,
+    p_result_id: params.resultId,
+    p_question_id: params.questionId,
+    p_note: params.note,
+    p_note_attendue: params.noteAttendue,
+    p_score_attendu: params.scoreAttendu,
+    p_seuil: params.seuil,
+    p_commentaire: params.commentaire ?? "",
+    p_reconnaissance: params.reconnaissance ?? null,
+  });
+  if (error) throw error;
+  return data as Record<string, unknown>;
+}
+
+/**
+ * Trace de remise envoyée avec la note. Identité prouvée (élève + exercice + tentative + réponses identiques) :
+ * vérification automatique, sans case. Aucune fiche identique : confirmation humaine obligatoire.
+ */
+export function reconnaissanceRemise(provenance: ProvenanceRemise, resultId: string, questionId: string, confirmeePar: string | null): string | null {
+  if (provenance === "remise_identique") return null;
+  if (provenance === "remise_horodatage_divergent") {
+    return `Vérification automatique : fiche remise de l'élève aux réponses identiques (élève, exercice, tentative), horodatage différent — copie ${resultId}, question ${questionId}.`;
+  }
+  return confirmeePar ? `Confirmé par ${confirmeePar} : copie originale ${resultId}, question ${questionId} (resultat_seul).` : null;
+}
+
+export const confirmationRemiseRequise = (provenance: ProvenanceRemise) => provenance === "resultat_seul";
+
+/** Historique des corrections d'une QRC historique (journal append-only), au format de l'historique V2. */
+export async function lireHistoriqueQrcHistorique(resultId: string, questionId: string) {
+  const { data, error } = await (supabase as any)
+    .from("qrc_historique_corrections")
+    .select("note, note_precedente, created_at, acteur, revision")
+    .eq("result_id", resultId).eq("question_id", questionId)
+    .order("revision", { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as Array<{ note: number; note_precedente: number | null; created_at: string }>).map((h) => ({
+    note_precedente: h.note_precedente, note_nouvelle: h.note, created_at: h.created_at, corrige_email: "administrateur (journal tracé)" as string | null, etat_precedent: null, etat_nouveau: "corrigee",
+  }));
+}
