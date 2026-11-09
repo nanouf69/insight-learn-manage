@@ -9781,64 +9781,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
         </div>
-        <aside className="block">
-          <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
-            <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
-              Questions
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {questionsSafe.map((q: any, qi: number) => {
-                const isAnswered = isQuestionAnsweredForSidebar(q);
-                // Après validation (ou mode révision), les erreurs s'affichent en rouge
-                const sidebarKey = `${exo.id}-${q.id}`;
-                const isQrcQ = isQuestionQrc(q);
-                const sidebarShowResults = showResultsFor.has(exo.id);
-                const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
-                let isWrong = false;
-                if (isQrcQ) {
-                  const qr = qrcResults[sidebarKey];
-                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.indisponible && !qr.estCorrect);
-                } else {
-                  const sel = selectedAnswers[sidebarKey];
-                  const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];
-                  const ok = isAnswerCorrect(sel, q);
-                  isWrong = (!!sidebarInRevision && selArr.length > 0 && !ok) || (sidebarShowResults && !ok);
-                }
-                return (
-                  <button
-                    key={q.id ?? qi}
-                    type="button"
-                    onClick={() => scrollToExerciseQuestion(qi)}
-                    className={`w-full aspect-square rounded-md text-xs font-bold transition-colors flex items-center justify-center ${
-                      isWrong
-                        ? "bg-red-600 text-white border-2 border-red-800 hover:bg-red-700"
-                        : isAnswered
-                          ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
-                          : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
-                    }`}
-                    title={isWrong ? `Q${qi + 1} — erreur ❌` : isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
-                  >
-                    {qi + 1}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-3 space-y-1.5 text-[10px] text-muted-foreground border-t pt-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-green-500 border border-green-600" />
-                <span>Répondu</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-500 border border-red-600" />
-                <span>À faire</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-600 border-2 border-red-800" />
-                <span>Erreur</span>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <QuizQuestionSidebar
+          onJump={scrollToExerciseQuestion}
+          items={questionsSafe.map((q: any, qi: number) => {
+            const isAnswered = isQuestionAnsweredForSidebar(q);
+            // Après validation (ou mode révision), les erreurs s'affichent en rouge
+            const sidebarKey = `${exo.id}-${q.id}`;
+            const isQrcQ = isQuestionQrc(q);
+            const sidebarShowResults = showResultsFor.has(exo.id);
+            const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
+            let isWrong = false;
+            if (isQrcQ) {
+              const qr = qrcResults[sidebarKey];
+              isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.indisponible && !qr.estCorrect);
+            } else {
+              const sel = selectedAnswers[sidebarKey];
+              const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];
+              const ok = isAnswerCorrect(sel, q);
+              isWrong = (!!sidebarInRevision && selArr.length > 0 && !ok) || (sidebarShowResults && !ok);
+            }
+            return { key: q.id ?? qi, answered: isAnswered, wrong: isWrong };
+          })}
+        />
       </div>
     );
     };
