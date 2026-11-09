@@ -27,6 +27,7 @@ import { RefaireExamenDialog } from "./RefaireExamenDialog";
 import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDelay";
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
+import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -185,7 +186,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
             allRowsByQuiz.get(r.quiz_id)!.push(r);
           });
 
-          const latestRows = Array.from(allRowsByQuiz.values()).flatMap((rows) => selectLatestAttemptRows(rows));
+          // Sélection commune avec la fiche Résultats admin (même tentative affichée).
+          const latestRows = lignesExamenAffichees(data as any[], resetRows as any[]);
 
           // FALLBACK: some rows have an empty details.reponses (the grading
           // snapshot never captured the answers, e.g. a save that failed
