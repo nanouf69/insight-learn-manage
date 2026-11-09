@@ -1,3 +1,4 @@
+import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
@@ -1884,35 +1885,12 @@ function RevisionPhaseView({
   const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[] = [];
   examenChoisi.matieres.forEach((matiere, mi) => {
     if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
-    const r = tousResultats[mi];
+    // Résultat de CETTE matière (par identifiant, jamais par position).
+    const r = tousResultats.find((x) => x?.matiereId === matiere.id) ?? null;
     if (!r) return;
-    const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
-    const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
-    qSafe.forEach((q) => {
-      const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
-      if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) return;
-      let isCorrect = false;
-      if (q?.type === "QCM" && q.choix) {
-        const correctes = safeArray<string>(q.choix?.filter((c) => c.correct).map((c) => c.lettre)).sort();
-        const donnees = safeArray<string>(rep).sort();
-        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-      } else if (q?.type === "QRC") {
-        const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
-        if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
-          isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
-        } else {
-          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-          const motsCles = q.reponses_possibles || [];
-          let nbTrouvees = 0;
-          motsCles.forEach((mc) => {
-            const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-            if (repStr.includes(mcN)) nbTrouvees++;
-          });
-          isCorrect = nbTrouvees >= motsCles.length;
-        }
-      }
-      if (!isCorrect) wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom, sourceResultId: r.resultId });
-    });
+    const bilan = questionsFaussesDuPassage(matiere, r as any);
+    const matiereDuPassage = { ...matiere, questions: bilan.fausses.map((f) => f.question) };
+    bilan.fausses.forEach((f) => wrongQuestions.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId }));
   });
 
   return (
