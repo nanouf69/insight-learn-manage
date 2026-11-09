@@ -1,6 +1,7 @@
 <!-- LOVABLE:BEGIN -->
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
+ - Absents-tab presence corrections use a scoped inscription/session write with returned-row confirmation, independently of legacy presence side effects; why: declaring presence must not create signatures, send mail, extend access or change exam results.
 
 
 - save_module_completion refuses a first validation while any QCM in the sent details lacks an answer (not covered by a full submitted exercise proof), P0501; optional-rule modules and EB 35–38 exempt; late progress saves never blank a stored answer; why: browser never decides alone.

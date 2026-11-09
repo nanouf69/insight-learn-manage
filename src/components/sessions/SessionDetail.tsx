@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import { RIB_INFO } from "@/lib/pdf/devis-canonical";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
+import { MarquerPresentButton } from "./MarquerPresentButton";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { cn } from "@/lib/utils";
@@ -6342,8 +6343,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   const reasons: string[] = [];
                   if (sa.presence_pratique === 'absent') reasons.push('Absent en pratique');
                   if (ap.resultat_examen === 'absent') reasons.push('Absent à l\'examen');
+                  if (hasNoSignature(ap.id)) reasons.push('Signature manquante');
                   return (
-                    <div key={sa.id} className="p-3 rounded-xl border bg-card flex items-center gap-3">
+                    <div key={sa.id} className="p-3 rounded-xl border bg-card flex flex-wrap items-center gap-3">
                       <Avatar className="w-8 h-8 shrink-0">
                         <AvatarFallback className="bg-red-100 text-red-700 font-semibold text-xs">
                           {ap.prenom?.[0] || ''}{ap.nom?.[0] || ''}
@@ -6376,6 +6378,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             ❌ {r}
                           </span>
                         ))}
+                        <MarquerPresentButton
+                          inscriptionId={sa.id}
+                          sessionId={session.id}
+                          nom={`${ap.prenom} ${ap.nom}`}
+                          present={sa.presence_pratique === 'present'}
+                          onSaved={refetchApprenants}
+                        />
                       </div>
                     </div>
                   );
