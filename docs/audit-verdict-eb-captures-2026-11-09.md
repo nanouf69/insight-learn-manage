@@ -11,7 +11,7 @@ Sessions : TAXI/TA du 26 octobre au 16 novembre ; VTC/TAXI du 2 au 13 novembre.
 
 | Examen | A | B | C | D | E | F | G | Moyenne pondérée |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| EB1-TAXI | 14,5 | 15 | 12 | 15 | 6 | 16,5 | 19 | 251/17 = 14,7647 → 14,8 |
+| EB1-TAXI | 14,5 | 15 | 12 | 15 | 6 | 16,5 | 19 | 252/17 = 14,8235 → 14,8 |
 | EB2-TAXI | 17,5 | 17,5 | 13 | 9 | 4 | 14,5 | 12 | 228/17 = 13,4118 → 13,4 |
 
 Les 14 résultats `core_exam_results` sont `definitif`, `qrc_restantes=0`. Les copies QRC et leurs notes serveur correspondent exactement aux captures ; les anciennes lignes ne sont PAS la source finale de certaines notes (ex. EB1 F ancien 15,5 contre serveur corrigé 16,5 ; G ancien 15 contre serveur 19 ; EB2 A ancien 13,5 contre serveur 17,5, D ancien 13,5 contre serveur 9). Ces écarts expliquent pourquoi une recherche limitée aux anciennes notes ne retrouvait pas les captures ; ils ne prouvent pas une perte ou une corruption.
