@@ -9594,6 +9594,7 @@ export type Database = {
         Args: { p_apprenant: string; p_module: number }
         Returns: boolean
       }
+      bilan_future_correction: { Args: { p_receipt: string }; Returns: Json }
       bilan_future_grant_internal: {
         Args: { p_module: number; p_owner: string }
         Returns: boolean
