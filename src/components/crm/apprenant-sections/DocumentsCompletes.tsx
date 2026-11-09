@@ -26,6 +26,7 @@ import { SignaturesRassembleesExport } from './SignaturesRassembleesExport';
 import { chargerClassificationSignatures, chargerBilanSignaturesEdof } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
+import { SignaturesPapierDossier } from './SignaturesPapierDossier';
 
 interface Props {
   apprenant: any;
@@ -822,6 +823,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   }
   return (
     <div className="space-y-4">
+      <SignaturesPapierDossier apprenant={apprenant} />
       <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
         <CardContent className="p-4">
           <p className="text-sm font-semibold text-foreground">

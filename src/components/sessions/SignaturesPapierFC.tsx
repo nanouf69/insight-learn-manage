@@ -10,8 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { chargerPreuvesPapier } from '@/lib/fcSignaturesPapier';
 
-export function SignaturesPapierFC({ inscriptions, sessionId }: { inscriptions: any[]; sessionId: string }) {
-  const [id, setId] = useState('');
+export function SignaturesPapierFC({ inscriptions, sessionId, initialInscriptionId = '' }: { inscriptions: any[]; sessionId: string; initialInscriptionId?: string }) {
+  const [id, setId] = useState(initialInscriptionId);
   return <section className="space-y-4">
     <h2 className="text-lg font-semibold">Signatures papier</h2>
     <Label>Apprenant</Label>
@@ -35,7 +35,7 @@ function DossierPapier({ inscription, sessionId }: { inscription: any; sessionId
       const {data,error}=await (supabase as any).from('fc_signatures_papier').insert({inscription_id:inscription.id,session_id:sessionId,apprenant_id:ap.id,document_id:doc,date_presence:date,creneau,heures:Number(heures),created_by:auth.user.id}).select('id').single();
       if(error || !data?.id) throw error ?? new Error('Enregistrement non confirmé');
       await preuves.refetch();
-      const keys=['emargements-hours','fc-controles-papier','relance-signatures-manquantes','apprenant-signatures-manquantes','apprenant-bilan-signatures-edof','apprenant-documents-completes'];
+      const keys=['emargements-hours','fc-controles-papier','relance-signatures-manquantes','apprenant-signatures-manquantes','apprenant-bilan-signatures-edof','apprenant-documents-completes','apprenant-presence-heures'];
       await Promise.all(keys.map(key=>client.invalidateQueries({queryKey:[key]})));
       toast({title:'Signature papier enregistrée'}); setConfirme(false);
     }catch(e){toast({title:'Enregistrement refusé',description:e instanceof Error?e.message:'Vérifiez le créneau, les heures et le document.',variant:'destructive'});}finally{setBusy(false);}
