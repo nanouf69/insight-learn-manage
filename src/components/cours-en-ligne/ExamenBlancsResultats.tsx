@@ -54,7 +54,7 @@ import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { RefaireMatiereButton } from './RefaireMatiereButton';
 import { buildExamMatiereExerciceId } from '@/lib/quizAttempts';
 import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
-import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
+import { questionsRevisionDuPassage, reponseCorrecteDansRevision } from "@/lib/revisionQuestionsFigees";
 
 
 function EcranResultats({
@@ -597,9 +597,14 @@ function EcranResultats({
       if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
       const r = resultats.find((item) => item.matiereId === matiere.id) ?? resultats[mi];
       if (!r) return;
-      const bilan = questionsFaussesDuPassage(matiere, r as any);
-      const matiereDuPassage = { ...matiere, questions: bilan.fausses.map((f) => f.question) };
-      bilan.fausses.forEach((f) => out.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId }));
+      const qSafe = questionsRevisionDuPassage(matiere, r as any);
+      const matiereDuPassage = { ...matiere, questions: qSafe };
+      qSafe.forEach((q) => {
+        const rep = r.reponses?.[q.id] ?? r.reponses?.[String(q.id)];
+        if (rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "")) return;
+        const isCorrect = reponseCorrecteDansRevision(q, rep, matiereDuPassage, r as any);
+        if (!isCorrect) out.push({ matiere: matiereDuPassage, question: q, matiereNom: matiere.nom, sourceResultId: r.resultId });
+      });
     });
     return out;
   }, [examenPourCalcul, resultats]);
