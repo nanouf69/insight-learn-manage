@@ -66,7 +66,7 @@ Ces valeurs ne sont pas écrites dans les modules : elles découlent de la lectu
 - Suppression de toutes les questions avec preuves explicites = vue vide ; source vide sans preuve = refus sûr.
 - Transport local fictif : événement puis sonde de reprise en ligne ; la suppression apparaît, puis la modification et l’ajout sont relus. **Ce test ne prouve pas le Realtime hébergé.**
 - Série ciblée finale : **151 tests réussis, zéro échec** dans 9 fichiers (32 dynamiques, compositions précédentes, sauvegarde admin, banque nationale et snapshots figés).
-- Suite globale : résultat final à consigner après la fin du processus détaché.
+- Suite globale complète : **428 fichiers réussis, 2 ignorés ; 3 775 tests réussis, 13 ignorés, zéro échec**, en 279,31 s. Compilation de l’aperçu : **build OK**.
 
 ## Données et production
 
