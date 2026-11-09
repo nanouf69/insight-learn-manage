@@ -9847,76 +9847,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
               : rawLabel);
 
+          // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
+          const hLabel = hierarchicalLabelsByPage[i] || "";
+          const partMatch = hLabel.match(/^(\d+)\.(\d+)\s/) || hLabel.match(/^(\d+)\s/);
+          const partNum = partMatch ? (partMatch[2] || partMatch[1]) : null;
           return (
-            <div key={i} className="flex items-start gap-3">
-              {/* Vertical line + dot */}
-              <div className="flex flex-col items-center shrink-0">
-                <button
-                  onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
-                  disabled={!unlocked}
-                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
-                    isCurrent
-                      ? "border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/30"
-                      : isCompleted
-                        ? "border-emerald-500 bg-emerald-500 text-white"
-                        : unlocked
-                          ? "border-destructive bg-background text-destructive"
-                          : "border-muted/50 bg-muted/30 cursor-not-allowed"
-                  }`}
-                >
-                  {isCompleted && !isCurrent && (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                  {isCurrent && (
-                    <div className="w-2 h-2 rounded-full bg-current" />
-                  )}
-                  {!unlocked && !isCompleted && !isCurrent && (
-                    <Lock className="w-3 h-3 text-muted-foreground/50" />
-                  )}
-                </button>
-                {i < pages.length - 1 && (
-                  <div className={`w-0.5 h-8 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
-                )}
-              </div>
-              {/* Label + Badge */}
-              <button
-                onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
-                disabled={!unlocked}
-                className={`text-left text-sm leading-snug pt-1 transition-colors flex items-start gap-1.5 ${
-                  isCurrent
-                    ? "font-bold text-primary"
-                    : isCompleted
-                      ? "text-emerald-600 font-medium"
-                      : estEtapeFacultative
-                        ? "text-foreground hover:text-primary"
-                        : unlocked
-                        ? "text-destructive hover:text-destructive"
-                        : "text-muted-foreground/40 cursor-not-allowed"
-                }`}
-              >
-                <span className="flex-1">{label}{estEtapeFacultative
-                  ? <span className="block text-xs text-muted-foreground">Facultatif — non compté</span>
-                  : !isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
-                {(() => {
-                  // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
-                  const hLabel = hierarchicalLabelsByPage[i] || "";
-                  const partMatch = hLabel.match(/^(\d+)\.(\d+)\s/) || hLabel.match(/^(\d+)\s/);
-                  const partNum = partMatch ? (partMatch[2] || partMatch[1]) : null;
-                  
-                  return isQuizPage ? (
-                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
-                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
-                    </span>
-                  ) : p?.type === "cours" ? (
-                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
-                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
-                    </span>
-                  ) : null;
-                })()}
-              </button>
-            </div>
+            <ProgressionStep
+              key={i}
+              label={label}
+              current={isCurrent}
+              completed={isCompleted}
+              unlocked={unlocked}
+              isLast={i >= pages.length - 1}
+              facultative={estEtapeFacultative}
+              badge={isQuizPage ? "quiz" : p?.type === "cours" ? "cours" : null}
+              partNum={partNum}
+              onClick={() => { goToPage(i); if (isMobileView) setMobileProgressOpen(false); }}
+            />
           );
         })}
       </div>
