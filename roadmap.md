@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 — Synchronisation dynamique des bilans d’exercices après édition admin
+- [ ] Reproduire suppression, ajout et modification d’une question source sur les vrais chemins lecture/projection/sauvegarde, avec rechargement et reconnexion.
+- [ ] Identifier la cause racine et corriger uniquement les bilans d’exercices actifs ; préserver les objets historiques, copies, réponses, notes, jalons et progressions.
+- [ ] Vérifier les 29 compositions, les exclusions bilans d’examen/examens blancs, la non-réintroduction après sauvegarde et la compilation. Aucune publication sans nouvel accord.
+
 ## 09/11 — Tous les bilans d’exercices VTC, TAXI, TA et VA
 - [x] 29 compositions inventorées dans les modules 4, 9, 27, 29 et héritages 81/82 ; bilans d’examen 5/11/28/30 et examens blancs exclus.
 - [x] Tableau sources/attendu/actuel/écart/cause, IDs, contenus, ordre, doublons et manquantes : `docs/audit-bilans-exercices-2026-11-09.md` et JSON détaillé.
