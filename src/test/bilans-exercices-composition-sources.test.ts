@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { VTC_COURS_DATA } from '@/components/cours-en-ligne/vtc-cours-data';
 import { TAXI_COURS_DATA } from '@/components/cours-en-ligne/taxi-cours-data';
+import { BILAN_EXERCICES_FC_TAXI } from '@/components/cours-en-ligne/bilan-exercices-fc-taxi-data';
+import { BILAN_EXERCICES_VTC } from '@/components/cours-en-ligne/bilan-exercices-vtc-data';
 import {
   BILAN_SOMME_COURS_SOURCES,
   projectionSommeCoursActive,
@@ -109,6 +111,15 @@ describe('Tous les bilans d’exercices = somme exacte de leurs sources', () => 
       { id: 106, questions: historiques } as any, [source] as any,
       { preserverContenuExistant: true },
     )).toThrow('collision');
+  });
+
+  it('FC TAXI développement commercial reprend déjà exactement les 66 questions VTC', () => {
+    const fc = BILAN_EXERCICES_FC_TAXI.find((exo) => exo.id === 104)!;
+    const vtc = BILAN_EXERCICES_VTC.find((exo) => exo.id === 104)!;
+    const source = VTC_COURS_DATA.exercices.find((exo) => Number(exo.id) === 7)!;
+    expect(source.questions).toHaveLength(66);
+    expect(fc.questions).toEqual(vtc.questions);
+    expect(fc.questions.map((q) => q.enonce)).toEqual(source.questions.map((q) => q.enonce));
   });
 
   it('ne projette aucun bilan d’examen et ne change pas leurs objets', () => {
