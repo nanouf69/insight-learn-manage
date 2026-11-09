@@ -1,10 +1,10 @@
 # Feuille de route
 
 ## 09/11 — Tous les bilans d’exercices VTC, TAXI, TA et VA
-- [ ] Inventorier chaque bilan d’exercices et ses sources réelles ; exclure strictement bilans d’examen et examens blancs.
-- [ ] Produire le tableau par matière : sources, compte attendu/actuel, écarts, IDs, contenus, ordre, doublons et manquantes.
-- [ ] Étendre la projection non destructive uniquement aux compositions erronées prouvées, coordonnée avec T3P module 9/exercice 100.
-- [ ] Tests exhaustifs, empreintes et rapport avant/après ; aucune publication sans accord explicite.
+- [x] 29 compositions inventorées dans les modules 4, 9, 27, 29 et héritages 81/82 ; bilans d’examen 5/11/28/30 et examens blancs exclus.
+- [x] Tableau sources/attendu/actuel/écart/cause, IDs, contenus, ordre, doublons et manquantes : `docs/audit-bilans-exercices-2026-11-09.md` et JSON détaillé.
+- [x] Projection non destructive étendue, T3P conservé, 39 identités déterministes contrôlées sans collision, restauration serveur avant sauvegarde.
+- [ ] 398 tests ciblés PASS et build OK ; suite complète en cours, empreintes modules inchangées. Aucune publication sans accord explicite.
 
 ## 09/11 — Bilan T3P limité aux 128 questions sources
 - [x] Audit lecture seule : 206 = 114 références + 14 uniques + 59 doublons + 19 références obsolètes ; projection 128, IDs et contenus historiques conservés.
