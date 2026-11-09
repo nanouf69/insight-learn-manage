@@ -217,7 +217,9 @@ describe("Ordre des écritures décidé par le serveur", () => {
       reponses: { revisionState: local }, score: 1,
       events: [{ question_id: "gestion:1", valeur: "réponse QRC fictive" }],
     }));
-    await new Promise((r) => setTimeout(r, 3000));
+    // Attente bornée de la seconde écriture (backoff réel) : pas de délai fixe sensible à la charge.
+    await vi.waitFor(() => expect(sentBodies(fetchMock)).toHaveLength(2), { timeout: 10_000, interval: 50 });
+    await vi.waitFor(() => expect(JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]")).toHaveLength(0), { timeout: 5_000, interval: 50 });
 
     const bodies = sentBodies(fetchMock);
     expect(bodies).toHaveLength(2);
@@ -227,7 +229,7 @@ describe("Ordre des écritures décidé par le serveur", () => {
     expect(bodies[1].reponses.revisionState.answers["gestion:1"]).toBe("réponse QRC fictive");
     expect(JSON.parse(localStorage.getItem("answer_save_queue_v1") || "[]")).toHaveLength(0);
     await expect(flushAnswerSavesAndWait(APPRENANT, "revision_fausses_EB1", 50)).resolves.toBe(true);
-  });
+  }, 20_000);
 
   it("refuse la recomposition si une réponse serveur diffère, et conserve la version locale", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => ({

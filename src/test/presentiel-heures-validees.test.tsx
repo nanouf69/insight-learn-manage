@@ -25,6 +25,8 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     return channel;
   },
   removeChannel: vi.fn(() => Promise.resolve("ok")),
+  // Preuves papier FC (fc_papier_creneaux…) : aucune pour ces cas fictifs.
+  rpc: async () => ({ data: [], error: null }),
 }}));
 vi.mock("@/lib/pratiqueSlots", async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/pratiqueSlots')>(), fetchPratiqueSlotDetails: async () => [] }));
 vi.mock("@/components/cours-en-ligne/modules-config", () => ({ FORMATION_MODULES: { "vtc-e": { modules: [] } } }));
