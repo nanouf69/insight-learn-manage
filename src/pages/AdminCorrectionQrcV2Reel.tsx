@@ -1017,6 +1017,10 @@ export default function AdminCorrectionQrcV2Reel() {
             {estConsultation(qrcSel.qrc_instance_id) ? (
               <div className="rounded-lg border-2 border-warning/60 bg-warning/10 p-3 space-y-1 text-sm" data-testid="consultation-eb2">
                 <p className="font-semibold">CONSULTATION — notation dans le correcteur V2 pas encore disponible pour cette copie</p>
+                <dl className="text-xs break-all space-y-1">
+                  <div><dt className="inline font-semibold">Copie originale : </dt><dd className="inline">{tentativeSel.attempt_id.replace(/^consultation:/, "")}</dd></div>
+                  <div><dt className="inline font-semibold">Question : </dt><dd className="inline">{qrcSel.question_id}</dd></div>
+                </dl>
                 <p className="text-xs text-muted-foreground">
                   Copie EB2 enregistrée avant la création de sa fiche dans le correcteur V2 : réponse et corrigé affichés tels
                   qu’enregistrés, sans aucune modification. {tentativeSel.etat === "remise_non_certifiee"

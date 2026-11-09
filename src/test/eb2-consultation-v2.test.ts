@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
-import { estConsultation, exerciceIdEb2, projeterResultatEb2, remiseProuvee, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
+import { estConsultation, exerciceIdEb2, projeterResultatEb2, remiseProuvee, chargerConsultationEb2, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
+import { supabase } from "@/integrations/supabase/client";
 
 const base = (o: Partial<ResultatEb2> = {}): ResultatEb2 => ({
   id: "r1", apprenant_id: "a1", quiz_id: "EB2", matiere_id: "t3p", tentative: 1, completed_at: "2026-11-09T09:00:00Z",
@@ -17,6 +18,14 @@ const base = (o: Partial<ResultatEb2> = {}): ResultatEb2 => ({
 });
 
 describe("EB2 VTC en consultation dans le correcteur V2", () => {
+  it("lit les preuves au-delà de 1000 sans masquer une remise située sur la seconde page", async () => {
+    const ranges:number[]=[];
+    const proof={apprenant_id:'a1',exercice_id:'EB2__t3p',tentative:1,completed:true,status:'submitted',submitted_at:'2026-11-09T09:00:00Z',reponses:base().details.reponses};
+    const builder=(table:string):any=>({select(){return this;},eq(){return this;},order(){return this;},in(){return this;},then(resolve:any){return Promise.resolve({data:table==='apprenants'?[{id:'a1',nom:'X',prenom:'Y'}]:[base()],error:null}).then(resolve);},range(from:number){ranges.push(from);return Promise.resolve({data:from===0?Array.from({length:1000},()=>({...proof,apprenant_id:'other'})):[proof],error:null});}});
+    Object.assign(supabase,{from:vi.fn(builder)});
+    const result=await chargerConsultationEb2(['consultation:r1']);
+    expect(ranges).toEqual([0,1000]);expect(result.tentatives[0].etat).toBe('terminee');expect(result.qrc[0].note).toBeNull();
+  });
   it("projette seulement les QRC, avec la réponse enregistrée et l'identité de la copie d'origine", () => {
     const { tentative, qrc } = projeterResultatEb2(base(), "DUPONT Jean", true);
     expect(tentative.attempt_id).toBe("consultation:r1");
