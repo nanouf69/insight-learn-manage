@@ -92,7 +92,7 @@ const bilanGestion = {
 };
 const bilanAutre = { id: 102, questions: [{ id: 1, enonce: 'Sécurité intacte' }] };
 
-describe('bilan T3P/Gestion = somme exacte des questions du cours', () => {
+describe('projection T3P ciblée, Gestion inchangée', () => {
   it('T3P affiche exactement 53 + 80 = 133 questions du cours, dans l’ordre', () => {
     const projete = projeterBilanDepuisCours(9, [bilanT3P, bilanGestion, bilanAutre] as any, coursComplet as any);
     const t3p = projete.find(e => e.id === 100)!;
@@ -102,11 +102,12 @@ describe('bilan T3P/Gestion = somme exacte des questions du cours', () => {
     expect(t3p.questions![53].enonce).toBe('T3P P2 Q1');
     expect(new Set(t3p.questions!.map(q => q.id)).size).toBe(133);
   });
-  it('Gestion affiche exactement 45 + 59 + 46 = 150 questions du cours', () => {
+  it('Gestion conserve ses 171 questions enregistrées et la même référence', () => {
     const projete = projeterBilanDepuisCours(9, [bilanT3P, bilanGestion, bilanAutre] as any, coursComplet as any);
     const gestion = projete.find(e => e.id === 101)!;
-    expect(gestion.questions).toHaveLength(150);
-    expect(new Set(gestion.questions!.map(q => q.id)).size).toBe(150);
+    expect(gestion).toBe(bilanGestion);
+    expect(gestion.questions).toHaveLength(171);
+    expect(new Set(gestion.questions!.map(q => q.id)).size).toBe(171);
   });
   it('préserve les identités historiques pour les questions déjà rattachées', () => {
     const projete = projeterBilanDepuisCours(9, [bilanT3P] as any, coursT3P as any);

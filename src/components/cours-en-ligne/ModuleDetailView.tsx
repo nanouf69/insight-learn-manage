@@ -4397,15 +4397,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const [canonicalRefreshKey, setCanonicalRefreshKey] = useState(0);
   const canonicalRowsRef = useRef<CanonicalQuestionRow[]>([]);
   const canonicalSectionIdsRef = useRef<Set<number>>(new Set());
-  // Bilan = somme exacte des questions du cours (matières sans quiz canonique :
-  // T3P, Gestion). Projection d'affichage en mémoire, jamais réécrite en base.
+  // Bilan T3P = 66 questions de la partie 1 puis 62 de la partie 2.
+  // Projection d'affichage en mémoire, jamais réécrite en base ; Gestion et les
+  // autres matières restent inchangées, et le contenu historique est préservé.
   const coursSommeExercicesRef = useRef<any[] | null>(null);
   const appliquerSommeCoursBilan = (data: ModuleData): ModuleData => {
     const config = projectionSommeCoursActive(Number(module.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module.id)] : undefined;
     const coursExercices = coursSommeExercicesRef.current;
     if (!config || !coursExercices || !Array.isArray(data?.exercices)) return data;
     try {
-      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices) as any };
+      return { ...data, exercices: projeterBilanDepuisCours(Number(module.id), data.exercices as any, coursExercices, { preserverContenuExistant: true }) as any };
     } catch (projectionError) {
       // Source indisponible : conserver l'affichage précédent, jamais fabriquer un vide.
       console.error("[BilanSommeCours] Projection indisponible", projectionError);
@@ -5863,12 +5864,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, moduleData?.exercices?.length]);
 
-  // Bilan = somme des cours : charge une seule fois les exercices du module
-  // cours source (lecture seule) pour projeter les matières sans quiz canonique.
+  // Bilan T3P : les 66 + 62 questions sources affichées dans l'application
+  // définissent uniquement la composition et l'ordre. Les objets historiques du
+  // bilan restent prioritaires pour les énoncés, choix, images et identifiants.
   useEffect(() => {
     const config = projectionSommeCoursActive(Number(module?.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module?.id)] : undefined;
     if (!config || !editorStateHydrated) return;
     let cancelled = false;
+    if (Number(module.id) === 9) {
+      coursSommeExercicesRef.current = TAXI_COURS_DATA.exercices.filter((exo) => [1, 2].includes(Number(exo.id)));
+      setModuleData((prev) => appliquerSommeCoursBilan(prev));
+      return () => { cancelled = true; };
+    }
     loadModuleEditorStateRow(config.moduleCours)
       .then((row) => {
         if (cancelled || !row?.module_data?.exercices) return;

@@ -1,13 +1,15 @@
 /**
  * Projection d'affichage « Bilan = somme exacte des questions du cours ».
  *
- * Pour les matières sans quiz canonique (T3P, Gestion), le Bilan exercices TAXI
- * (module 9) affiche exactement les questions des sections correspondantes de
- * « Cours et exercices TAXI » (module 10), dans leur ordre. Projection en
- * mémoire uniquement : le JSON enregistré du module 9 n'est jamais réécrit,
- * les questions historiques du bilan restent en base et les identités
- * historiques sont conservées quand la question existe déjà dans le bilan,
- * afin que les réponses et résultats enregistrés restent rattachés.
+ * Le Bilan exercices TAXI (module 9) peut afficher les questions des sections
+ * correspondantes de « Cours et exercices TAXI » (module 10), dans leur ordre.
+ * Projection en mémoire uniquement : le JSON enregistré du module 9 n'est
+ * jamais réécrit, les questions historiques restent en base et leurs identités
+ * sont conservées afin que réponses et résultats restent rattachés.
+ *
+ * Depuis le 09/11, seule la matière T3P (exercice 100) est active : exactement
+ * 66 questions de la partie 1 puis 62 de la partie 2. Gestion et toutes les
+ * autres matières conservent leur affichage enregistré.
  */
 
 export type QuestionBilanJson = {
@@ -34,15 +36,16 @@ export const BILAN_SOMME_COURS_SOURCES: Record<number, { moduleCours: number; co
   9: { moduleCours: 10, correspondances: { 100: [1, 2], 101: [60, 61, 62] } },
 };
 
-/**
- * Modules dont la projection est ACTIVE à l'écran. Vide depuis le 29/10 :
- * décision utilisateur, le Bilan exercices TAXI (module 9) affiche toutes les
- * questions enregistrées T3P (206) et Gestion (171), comme le VTC (module 4).
- * Aucune donnée n'est réécrite, supprimée ou dupliquée.
- */
-export const BILAN_SOMME_COURS_ACTIFS: ReadonlySet<number> = new Set<number>();
-export const projectionSommeCoursActive = (moduleId: number): boolean =>
-  BILAN_SOMME_COURS_ACTIFS.has(Number(moduleId)) && !!BILAN_SOMME_COURS_SOURCES[Number(moduleId)];
+/** Seul T3P est projeté ; Gestion reste explicitement hors du correctif du 09/11. */
+const BILAN_SOMME_COURS_EXERCICES_ACTIFS: Record<number, ReadonlySet<number>> = {
+  9: new Set([100]),
+};
+
+export const projectionSommeCoursActive = (moduleId: number, exerciceId?: number): boolean => {
+  const actifs = BILAN_SOMME_COURS_EXERCICES_ACTIFS[Number(moduleId)];
+  if (!actifs || !BILAN_SOMME_COURS_SOURCES[Number(moduleId)]) return false;
+  return exerciceId === undefined ? actifs.size > 0 : actifs.has(Number(exerciceId));
+};
 
 /** Préfixe d'identifiant d'affichage pour une question du cours sans historique bilan. */
 const ID_AFFICHAGE_NOUVEAU = 900000;
@@ -56,6 +59,11 @@ const cleSource = (exerciceId: unknown, questionId: unknown): string | null => {
   return Number.isFinite(exo) && Number.isFinite(q) && exo > 0 && q > 0 ? `${exo}:${q}` : null;
 };
 
+export type ProjectionBilanOptions = {
+  /** Conserver énoncé, choix, images et tout autre contenu de l'objet historique. */
+  preserverContenuExistant?: boolean;
+};
+
 /**
  * Construit les questions affichées d'un exercice de bilan à partir des
  * exercices du cours. Lève une erreur si une section source est absente ou
@@ -64,6 +72,7 @@ const cleSource = (exerciceId: unknown, questionId: unknown): string | null => {
 export function projeterExerciceBilanDepuisCours(
   exerciceBilan: ExerciceBilanJson,
   exercicesCours: ExerciceBilanJson[],
+  options: ProjectionBilanOptions = {},
 ): QuestionBilanJson[] {
   const questionsCours = exercicesCours.flatMap((exo) => {
     if (!exo || !Array.isArray(exo.questions) || exo.questions.length === 0) {
@@ -97,6 +106,13 @@ export function projeterExerciceBilanDepuisCours(
     }
     if (historique) {
       identitesUtilisees.add(Number(historique.id));
+      if (options.preserverContenuExistant) {
+        return {
+          ...historique,
+          source_exercice_id: _sourceExo,
+          source_question_id: Number(contenu.id),
+        };
+      }
       return {
         ...contenu,
         id: Number(historique.id),
@@ -115,18 +131,20 @@ export function projeterExerciceBilanDepuisCours(
 }
 
 /**
- * Applique la projection à toutes les matières configurées du module bilan.
- * Retourne les exercices inchangés (même référence) si le module n'est pas
- * concerné. Lève une erreur si une source est indisponible.
+ * Applique la projection aux seules matières explicitement actives.
+ * Retourne les autres exercices inchangés (même référence). Lève une erreur
+ * si une source active est indisponible.
  */
 export function projeterBilanDepuisCours<T extends ExerciceBilanJson>(
   moduleBilanId: number,
   exercicesBilan: T[],
   exercicesCours: ExerciceBilanJson[],
+  options: ProjectionBilanOptions = {},
 ): T[] {
   const config = BILAN_SOMME_COURS_SOURCES[moduleBilanId];
   if (!config) return exercicesBilan;
   return exercicesBilan.map((exercice) => {
+    if (!projectionSommeCoursActive(moduleBilanId, Number(exercice.id))) return exercice;
     const sourcesIds = config.correspondances[Number(exercice.id)];
     if (!sourcesIds) return exercice;
     const sources = sourcesIds.map((id) => {
@@ -134,7 +152,7 @@ export function projeterBilanDepuisCours<T extends ExerciceBilanJson>(
       if (!trouve) throw new Error(`Bilan somme des cours : exercice source ${id} absent du module cours.`);
       return trouve;
     });
-    return { ...exercice, questions: projeterExerciceBilanDepuisCours(exercice, sources) };
+    return { ...exercice, questions: projeterExerciceBilanDepuisCours(exercice, sources, options) };
   });
 }
 
@@ -151,6 +169,7 @@ export function retablirExercicesProjetesDuServeur<T extends ExerciceBilanJson>(
   const config = BILAN_SOMME_COURS_SOURCES[moduleBilanId];
   if (!config || !Array.isArray(exercicesServeur)) return exercices;
   return exercices.map((exercice) => {
+    if (!projectionSommeCoursActive(moduleBilanId, Number(exercice.id))) return exercice;
     if (!config.correspondances[Number(exercice.id)]) return exercice;
     const serveur = exercicesServeur.find((exo) => Number(exo.id) === Number(exercice.id));
     if (!serveur || !Array.isArray(serveur.questions)) return exercice;

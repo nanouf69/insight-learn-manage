@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 — Bilan T3P limité aux 128 questions sources
+- [x] Audit lecture seule : 206 = 114 références + 14 uniques + 59 doublons + 19 références obsolètes ; projection 128, IDs et contenus historiques conservés.
+- [x] Correction non destructive limitée au module 9 / exercice 100 ; sauvegarde restaurant les 206 objets serveur avant intention explicite, autres modules inchangés.
+- [x] 218 tests PASS, build OK, empreintes des modules 5/9/10/11 inchangées ; activité concurrente sur réponses/progressions consignée. Rapport `docs/audit-bilan-t3p-128-2026-11-09.md`. Aucune publication ; affichage navigateur admin non vérifié faute de session admin.
+
 ## 08/11 20:17 — Finalisation idempotente et rattrapage QRC ciblés
 - [x] Reçu serveur atomique candidat et garde INSERT ; tests concurrence/rejeu/propriétaire PostgreSQL PASS, aucun ancien résultat modifié.
 - [x] Rattrapage QRC événementiel 400 ms + une lecture à 2,4 s, identité isolée ; boucle de lectures NotesView corrigée ; écran fictif 18,3/20 sans reload capturé.
