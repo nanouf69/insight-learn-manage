@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
-import { estConsultation, noterQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
+import { confirmationRemiseRequise, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -384,8 +384,17 @@ export default function AdminCorrectionQrcV2Reel() {
 
   // Historique des corrections (lecture seule) : l'ancienne note n'est jamais effacée.
   useEffect(() => {
-    if (!selection || estConsultation(selection)) { setHistorique([]); return; }
+    if (!selection) { setHistorique([]); return; }
     let vivant = true;
+    if (estConsultation(selection)) {
+      const q = session?.qrc.find((x) => x.qrc_instance_id === selection);
+      const t = q ? session?.tentatives.find((x) => x.attempt_id === q.attempt_id) : undefined;
+      const h = (t as unknown as { historique?: InfosHistorique } | undefined)?.historique;
+      if (!q || !h) { setHistorique([]); return; }
+      void lireHistoriqueQrcHistorique(h.result_id, q.question_id)
+        .then((r) => { if (vivant) setHistorique(r as unknown as EvenementCorrection[]); }).catch(() => undefined);
+      return () => { vivant = false; };
+    }
     void lireHistoriqueQrc(selection).then((h) => { if (vivant) setHistorique(h); }).catch(() => undefined);
     return () => { vivant = false; };
   }, [selection, session]);
@@ -409,6 +418,10 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const [confirmeRemise, setConfirmeRemise] = useState(false);
   useEffect(() => { setConfirmeRemise(false); }, [selection]);
+  const histoSel = qrcSel && estConsultation(qrcSel.qrc_instance_id)
+    ? ((tentativeSel as unknown as { historique?: InfosHistorique } | undefined)?.historique ?? null)
+    : null;
+  const confirmationSel = !!histoSel && confirmationRemiseRequise(histoSel.provenance);
   const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
@@ -418,8 +431,8 @@ export default function AdminCorrectionQrcV2Reel() {
       : null;
     if (estConsultation(qrcSel.qrc_instance_id)) {
       // Copie historique sans fiche V2 : jamais de réécriture d'une QRC déjà validée.
-      if (!histo || qrcSel.etat === "corrigee" || histo.score_obtenu == null) return;
-      if (histo.provenance !== "remise_identique" && !confirmeRemise) {
+      if (!histo || histo.score_obtenu == null) return;
+      if (confirmationRemiseRequise(histo.provenance) && !confirmeRemise) {
         setErreur("Cochez la confirmation de remise avant d'enregistrer la note.");
         return;
       }
@@ -439,18 +452,32 @@ export default function AdminCorrectionQrcV2Reel() {
     setMessageNavigation(null);
     try {
       if (histo) {
-        await noterQrcHistorique({
-          // identité déterministe : double-clic / plusieurs appareils = une seule correction
-          operationId: `qrchist:${histo.result_id}:${qrcSel.question_id}:${n}:${jeton}`,
-          resultId: histo.result_id,
-          questionId: qrcSel.question_id,
-          note: n,
-          scoreAttendu: histo.score_obtenu as number,
-          seuil: histo.seuil,
-          commentaire: commentaire || undefined,
-          reconnaissance: histo.provenance === "remise_identique" ? null
-            : `Confirmé par ${emailAdmin ?? "l'administrateur"} : copie originale ${histo.result_id}, question ${qrcSel.question_id} (${histo.provenance}).`,
-        });
+        const reconnaissance = reconnaissanceRemise(histo.provenance, histo.result_id, qrcSel.question_id, emailAdmin ?? "l'administrateur");
+        if (revision) {
+          await reviserQrcHistorique({
+            operationId: `qrchistrev:${histo.result_id}:${qrcSel.question_id}:${ancienne}:${n}:${jeton}`,
+            resultId: histo.result_id,
+            questionId: qrcSel.question_id,
+            note: n,
+            noteAttendue: ancienne as number,
+            scoreAttendu: histo.score_obtenu as number,
+            seuil: histo.seuil,
+            commentaire: commentaire || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
+            reconnaissance,
+          });
+        } else {
+          await noterQrcHistorique({
+            // identité déterministe : double-clic / plusieurs appareils = une seule correction
+            operationId: `qrchist:${histo.result_id}:${qrcSel.question_id}:${n}:${jeton}`,
+            resultId: histo.result_id,
+            questionId: qrcSel.question_id,
+            note: n,
+            scoreAttendu: histo.score_obtenu as number,
+            seuil: histo.seuil,
+            commentaire: commentaire || undefined,
+            reconnaissance,
+          });
+        }
       } else if (revision) {
         await reviserQrc({
           // identité déterministe : double-clic ou 10 envois = une seule révision
@@ -1038,72 +1065,10 @@ export default function AdminCorrectionQrcV2Reel() {
                 </Button>
               </div>
             )}
-            {estConsultation(qrcSel.qrc_instance_id) ? ((() => {
-              const histo = (tentativeSel as unknown as { historique?: InfosHistorique }).historique;
-              const notable = !!histo && histo.score_obtenu != null && baremeSel != null && qrcSel.etat !== "corrigee";
-              const libelleProvenance = histo?.provenance === "remise_identique"
-                ? "Remise prouvée : fiche élève identique (mêmes réponses, même instant)."
-                : histo?.provenance === "remise_horodatage_divergent"
-                  ? "Remise à confirmer : fiche élève aux réponses identiques, mais horodatage différent de la copie."
-                  : "Remise à confirmer : aucune fiche élève identique retrouvée ; seule la copie enregistrée fait foi.";
-              return (
-              <div className="rounded-lg border-2 border-warning/60 bg-warning/10 p-3 space-y-2 text-sm" data-testid="copie-historique-eb2">
-                <p className="font-semibold">Copie EB2 historique — notation directe sur la copie originale (tracée)</p>
-                <dl className="text-xs break-all space-y-1">
-                  <div><dt className="inline font-semibold">Copie originale : </dt><dd className="inline">{tentativeSel.attempt_id.replace(/^consultation:/, "")}</dd></div>
-                  <div><dt className="inline font-semibold">Question : </dt><dd className="inline">{qrcSel.question_id}</dd></div>
-                </dl>
-                <p className="text-xs text-muted-foreground" data-testid="provenance-remise">{libelleProvenance}</p>
-                {navigationCopies}
-                {qrcSel.etat === "corrigee" ? (
-                  <p className="font-semibold text-success" data-testid="points-attribues">
-                    NOTE : {String(qrcSel.note).replace(".", ",")}{baremeSel != null ? ` / ${baremeSel}` : ""}
-                    <span className="block text-xs font-normal text-muted-foreground">
-                      {origineSel === "automatique" ? "Correction automatique historique." : "Correction validée par un formateur."} Verrouillée : aucune réécriture.
-                    </span>
-                  </p>
-                ) : !notable ? (
-                  <p className="text-xs text-destructive" data-testid="historique-non-notable">
-                    🔴 Notation impossible : barème figé ou score de la copie absent. Aucune note n'est inventée.
-                  </p>
-                ) : (
-                  <>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notation — barème : {baremeSel} points</p>
-                    {histo!.provenance !== "remise_identique" && (
-                      <label className="flex items-start gap-2 text-xs" data-testid="confirmation-remise">
-                        <input type="checkbox" className="mt-0.5" checked={confirmeRemise} onChange={(e) => setConfirmeRemise(e.target.checked)} />
-                        <span>Je confirme que cette copie est bien celle remise par l'élève (confirmation enregistrée avec la note).</span>
-                      </label>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
-                        <Button
-                          key={v}
-                          size="lg"
-                          className="min-w-[56px] text-base font-semibold"
-                          variant={note === v ? "default" : "outline"}
-                          data-testid={`note-${v}`}
-                          disabled={etatEnvoi === "encours" || (histo!.provenance !== "remise_identique" && !confirmeRemise)}
-                          onClick={() => void valider(v)}
-                        >
-                          {String(v).replace(".", ",")}
-                        </Button>
-                      ))}
-                    </div>
-                    <Textarea placeholder="Commentaire (facultatif)" rows={2} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
-                    {qrcSel.note == null && texte(qrcSel.reponse).trim() && (
-                      <p className="text-xs text-muted-foreground">Une éventuelle proposition automatique en attente est conservée dans la copie ; elle ne devient jamais une note sans votre choix.</p>
-                    )}
-                    <div className="text-sm" data-testid="etat-correction">
-                      {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
-                      {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
-                      {etatEnvoi === "echec" && <span className="text-destructive">🔴 CORRECTION NON ENREGISTRÉE</span>}
-                    </div>
-                  </>
-                )}
-              </div>
-              );
-            })()
+            {estConsultation(qrcSel.qrc_instance_id) && (!histoSel || histoSel.score_obtenu == null || baremeSel == null) ? (
+              <p className="rounded border bg-muted p-2 text-sm text-destructive" data-testid="historique-non-notable">
+                🔴 Notation impossible : barème figé ou score de la copie absent. Aucune note n'est inventée.
+              </p>
             ) : qrcSel.etat === "corrigee" ? (
               <div className="rounded-lg border p-3 space-y-2 text-sm" data-testid="correction-verrouillee">
                 <p className={`font-semibold ${origineSel === "ia" ? "text-ia" : "text-success"}`} data-testid="points-attribues">
@@ -1121,6 +1086,12 @@ export default function AdminCorrectionQrcV2Reel() {
                   </p>
                 ) : (
                   <>
+                    {confirmationSel && (
+                      <label className="flex items-start gap-2 rounded border border-warning/50 bg-warning/5 p-2 text-xs" data-testid="confirmation-remise">
+                        <input type="checkbox" className="mt-0.5" checked={confirmeRemise} onChange={(e) => setConfirmeRemise(e.target.checked)} />
+                        <span>Aucune fiche remise identique n'a été retrouvée pour cette copie : seule la copie enregistrée fait foi. Je confirme que c'est bien celle de l'élève (confirmation enregistrée avec la note).</span>
+                      </label>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {Array.from({ length: Math.round(baremeSel / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                         <Button
@@ -1129,7 +1100,7 @@ export default function AdminCorrectionQrcV2Reel() {
                           className="min-w-[56px] text-base font-semibold"
                           variant={qrcSel.note === v ? "default" : "outline"}
                           data-testid={`revision-note-${v}`}
-                          disabled={etatEnvoi === "encours"}
+                          disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
                           onClick={() => void valider(v)}
                         >
                           {String(v).replace(".", ",")}
@@ -1165,6 +1136,12 @@ export default function AdminCorrectionQrcV2Reel() {
                   Notation — barème : {baremeSel} points
                 </p>
                 {navigationCopies}
+                {confirmationSel && (
+                  <label className="flex items-start gap-2 rounded border border-warning/50 bg-warning/5 p-2 text-xs" data-testid="confirmation-remise">
+                    <input type="checkbox" className="mt-0.5" checked={confirmeRemise} onChange={(e) => setConfirmeRemise(e.target.checked)} />
+                    <span>Aucune fiche remise identique n'a été retrouvée pour cette copie : seule la copie enregistrée fait foi. Je confirme que c'est bien celle de l'élève (confirmation enregistrée avec la note).</span>
+                  </label>
+                )}
                 {videSel && (
                   <p className="text-xs text-muted-foreground" data-testid="copie-vide-en-attente">
                     Copie vide — aucune correction historique, aucune note automatique.
@@ -1178,7 +1155,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       className="min-w-[56px] text-base font-semibold"
                       variant={note === v ? "default" : "outline"}
                       data-testid={`note-${v}`}
-                      disabled={etatEnvoi === "encours"}
+                      disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
                       onClick={() => void valider(v)}
                     >
                       {String(v).replace(".", ",")}
