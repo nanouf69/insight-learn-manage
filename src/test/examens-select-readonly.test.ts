@@ -12,6 +12,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: (table: str
     select: () => q,
     in: (key: string, values: unknown[]) => { rows = rows.filter((r: any) => values.includes(r[key])); return q; },
     eq: (key: string, value: unknown) => { rows = rows.filter((r: any) => r[key] === value); return q; },
+    order: () => q,
     range: async (from: number, to: number) => ({ data: rows.slice(from, to + 1), error: null }),
   };
   return q;
