@@ -4,14 +4,21 @@
  * writes only through receipt+version scoped RPCs; never touches legacy module_X_exo_Y data.
  * After submission: read-only correction (bilan_future_correction) and a local-only
  * review of the wrong questions of this passage (never saved, never changes the submission).
+ * Presentation = the shared classic quiz components (learnerQuizUi), same as every other module.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { ArrowDown, Calculator, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RichText } from "@/lib/richText";
+import { Card, CardContent } from "@/components/ui/card";
 import { ExamQuestionImage } from "./ExamQuestionImage";
+import Calculatrice from "./Calculatrice";
+import {
+  ExerciseQuestionPrompt, QcmChoiceButtons, QuizQuestionSidebar, QuizScoreSummary, QuizAnswerGrid, flashQuestionAnchor,
+  QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ProgressionStep, ProgressionBar, AnswersCompletionStrip,
+  QuizPageNavigation, QUESTION_IMAGE_SIZES,
+} from "./learnerQuizUi";
 import { enqueueDraft, flushQueue, readQueue } from "@/lib/bilanFutureTransport";
 import type { FutureReceipt } from "@/lib/bilanFutureVersion";
 import { lireCorrection, questionsFausses, reponseExacte, type Correction } from "@/lib/bilanFutureCorrection";
@@ -25,8 +32,6 @@ type Passage = { receipt: FutureReceipt; questions: Q[]; answers: Record<string,
 type Revision = { ids: number[]; answers: Record<string, string[]>; validee: boolean };
 
 const rpc = (name: string, args: Record<string, unknown>) => (supabase as any).rpc(name, args);
-// Same image sizes as the original exercise screen.
-const IMAGE_SIZES: Record<string, string> = { sm: "max-h-40", md: "max-h-64", lg: "max-h-96", xl: "max-h-[32rem]", "2xl": "max-h-[48rem]" };
 
 /** Server route: 'future' | 'legacy'. A read error returns 'legacy' (status quo for everyone before opening). */
 export async function lireRouteBilanFuture(moduleId: number): Promise<"future" | "legacy"> {
@@ -36,54 +41,6 @@ export async function lireRouteBilanFuture(moduleId: number): Promise<"future" |
     if (error) { console.error("[BilanFuture] route", error.code); return "legacy"; }
     return data === "future" ? "future" : "legacy";
   } catch { return "legacy"; }
-}
-
-/** Question card with the original exercise presentation (badge, rich text, image size, square boxes). */
-function CarteQuestion({ q, numero, selection, onToggle, disabled, correct, montrer }: {
-  q: Q; numero: number; selection: string[]; onToggle: (lettre: string, on: boolean) => void; disabled: boolean;
-  correct?: string[]; montrer: boolean;
-}) {
-  const fausse = montrer && !!correct && correct.length > 0 && !reponseExacte(selection, correct);
-  return (
-    <div data-learner-question data-question-faute={fausse ? "1" : undefined}
-      className={`space-y-2 p-4 border rounded-lg bg-card ${fausse ? "border-destructive border-4 bg-destructive/10" : ""}`}>
-      <p className="learner-question-title font-medium whitespace-pre-line">
-        <span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{numero}</span>
-        <RichText value={q.enonce} />
-      </p>
-      {q.image && (
-        <ExamQuestionImage image={q.image} alt={`Illustration question ${numero}`}
-          className={`${IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40"} rounded border object-contain ml-2`}
-          fallbackClassName="ml-2 text-xs text-muted-foreground italic" />
-      )}
-      <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
-      <div className="space-y-1.5 ml-2">
-        {q.choix.map(c => {
-          const coche = selection.includes(c.lettre);
-          const bonne = montrer && !!correct?.includes(c.lettre);
-          let bg = "bg-background hover:bg-muted/50 border";
-          if (coche && !montrer) bg = "bg-primary/10 border-primary border-2";
-          if (bonne) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
-          if (montrer && coche && !bonne) bg = "bg-destructive/10 border-destructive border-2";
-          return (
-            <label key={c.lettre} data-choix={c.lettre} data-bonne={bonne ? "1" : undefined} data-cochee={coche ? "1" : undefined}
-              className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${disabled ? "" : "cursor-pointer"} ${bg}`}>
-              <Checkbox checked={coche} disabled={disabled} onCheckedChange={v => onToggle(c.lettre, v === true)} aria-label={`Q${numero} choix ${c.lettre}`} />
-              <span className="text-sm"><strong>{c.lettre}.</strong> <RichText value={c.texte} /></span>
-              {montrer && coche && <span className="ml-auto text-xs font-semibold shrink-0">Votre réponse</span>}
-              {bonne && <CheckCircle2 className={`w-4 h-4 text-emerald-600 shrink-0 ${coche ? "" : "ml-auto"}`} />}
-            </label>
-          );
-        })}
-      </div>
-      {montrer && correct && (
-        <p className="text-sm ml-2" data-testid="corrige-question">
-          {correct.length === 0 ? "Corrigé non disponible pour cette question."
-            : <>Bonne(s) réponse(s) : <strong>{correct.join(", ")}</strong>{fausse ? ` — votre réponse : ${selection.length ? selection.join(", ") : "aucune"}` : " — réponse exacte"}</>}
-        </p>
-      )}
-    </div>
-  );
 }
 
 /** Same card form as the Examen Blanc "Résultats par matière" (Coeff., Barème, Éliminatoire, x / 20). */
@@ -114,9 +71,19 @@ export function CarteNoteMatiere({ n, index, total, nom }: { n: NoteMatiere; ind
   );
 }
 
-export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; ownerId: string }) {
+type Statut = { submitted: boolean; score?: string; correct?: number; total?: number };
+
+/** Classic exercise prompt data: the reading support is shown in the same passage box as other modules. */
+const promptDe = (q: Q) => q.support
+  ? { question: q.enonce, passageTitle: `Texte ${q.support.numero}`, passageBody: q.support.paragraphes.join("\n\n") }
+  : { question: q.enonce };
+
+export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack }: {
+  moduleId: 5 | 11; ownerId: string; titre?: string; description?: string; onBack?: () => void;
+}) {
   const base = moduleId === 5 ? 500 : 600;
-  const [statuts, setStatuts] = useState<Record<number, { submitted: boolean; score?: string; correct?: number; total?: number } | "erreur" | undefined>>({});
+  const [statuts, setStatuts] = useState<Record<number, Statut | undefined>>({});
+  const [statutsLus, setStatutsLus] = useState(false);
   const [bareme, setBareme] = useState<BaremeMatiere[] | null | "erreur">(null);
   useEffect(() => {
     let annule = false;
@@ -129,28 +96,36 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
   const [passage, setPassage] = useState<Passage | null>(null);
   const [correction, setCorrection] = useState<Correction | null>(null);
   const [revision, setRevision] = useState<Revision | null>(null);
-  const [fautesSeules, setFautesSeules] = useState(false);
+  const [relecture, setRelecture] = useState(false);
+  const [nonRepondues, setNonRepondues] = useState<Set<number>>(new Set());
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [enAttente, setEnAttente] = useState(0);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [mobileProgressOpen, setMobileProgressOpen] = useState(false);
   const flushing = useRef(false);
+  const ouvertureAuto = useRef(false);
+  // Only the latest opened matière may update the screen (fast page changes never mix two passages).
+  const ouvertureCourante = useRef(0);
 
   const chargerStatuts = useCallback(async () => {
     const { data, error } = await (supabase as any).from("bilan_future_receipts")
       .select("id, exercise_id, bilan_future_submissions(correct_count, question_count)")
       .eq("owner_id", ownerId).eq("module_id", moduleId);
-    if (error) { setErreur("Lecture de vos matières impossible. Rechargez la page."); return; }
-    const s: typeof statuts = {};
+    if (error) { setErreur("Lecture de vos matières impossible. Rechargez la page."); setStatutsLus(true); return; }
+    const s: Record<number, Statut> = {};
     for (const r of data ?? []) {
       const sub = Array.isArray(r.bilan_future_submissions) ? r.bilan_future_submissions[0] : r.bilan_future_submissions;
       s[r.exercise_id] = sub ? { submitted: true, score: `${sub.correct_count}/${sub.question_count}`, correct: sub.correct_count, total: sub.question_count } : { submitted: false };
     }
     setStatuts(s);
+    setStatutsLus(true);
   }, [ownerId, moduleId]);
   useEffect(() => { void chargerStatuts(); }, [chargerStatuts]);
 
-  const chargerCorrection = useCallback(async (receipt: FutureReceipt) => {
+  const chargerCorrection = useCallback(async (receipt: FutureReceipt, tok?: number) => {
     const { data, error } = await rpc("bilan_future_correction", { p_receipt: receipt.passageId });
+    if (tok !== undefined && tok !== ouvertureCourante.current) return;
     const c = error ? null : lireCorrection(data, receipt.passageId, receipt.versionId);
     if (!c) { setErreur("Matière remise, mais la correction n'a pas pu être lue. Rechargez la page."); return; }
     setCorrection(c);
@@ -165,12 +140,17 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
     } finally { flushing.current = false; }
   }, []);
 
-  const ouvrir = async (exo: number) => {
-    setErreur(null); setPassage(null); setCorrection(null); setRevision(null); setFautesSeules(false); setOuvert(exo);
+  const ouvrir = useCallback(async (exo: number) => {
+    const tok = ++ouvertureCourante.current;
+    const actuel = () => tok === ouvertureCourante.current;
+    setErreur(null); setPassage(null); setCorrection(null); setRevision(null); setRelecture(false); setNonRepondues(new Set()); setOuvert(exo);
+    window.scrollTo?.({ top: 0, behavior: "smooth" });
     const o = await rpc("bilan_future_open", { p_module: moduleId, p_exercise: exo });
+    if (!actuel()) return;
     if (o.error || !o.data?.id) { setErreur("Ouverture de la matière impossible. Rechargez la page."); return; }
     const receipt: FutureReceipt = { passageId: o.data.id, versionId: o.data.version_id, moduleId, exerciseId: exo, ownerId };
     const [qs, rs] = await Promise.all([rpc("bilan_future_questions", { p_receipt: receipt.passageId }), rpc("bilan_future_resume", { p_receipt: receipt.passageId })]);
+    if (!actuel()) return;
     if (qs.error || rs.error || qs.data?.version_id !== receipt.versionId || rs.data?.version_id !== receipt.versionId) {
       setErreur("Chargement de votre passage impossible. Vos réponses sont conservées ; rechargez la page."); return;
     }
@@ -181,27 +161,46 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
       if ((revisions[d.questionId] ?? 0) < d.revision) { answers[d.questionId] = d.answer; revisions[d.questionId] = d.revision; }
     }
     const sub = rs.data.submitted ? (await (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", receipt.passageId).maybeSingle()).data : null;
+    if (!actuel()) return;
     setPassage({ receipt, questions: qs.data.questions ?? [], answers, revisions, submitted: sub });
-    if (sub) void chargerCorrection(receipt); else void flush(receipt);
-  };
+    if (sub) void chargerCorrection(receipt, tok); else void flush(receipt);
+  }, [moduleId, ownerId, chargerCorrection, flush]);
 
-  const cocher = (q: Q, lettre: string, on: boolean) => {
+  // Like every module, the learner lands directly on a quiz page: the first matière not yet handed in.
+  useEffect(() => {
+    if (!statutsLus || ouvertureAuto.current) return;
+    if (ouvertureCourante.current > 0) { ouvertureAuto.current = true; return; } // learner already chose a page
+    ouvertureAuto.current = true;
+    const k = FUTURE_SUBJECT_NAMES.findIndex((_, i) => !statuts[base + i]?.submitted);
+    void ouvrir(base + (k < 0 ? 0 : k));
+  }, [statutsLus, statuts, base, ouvrir]);
+
+  const cocher = (q: Q, lettre: string) => {
     if (!passage || passage.submitted) return;
     const k = String(q.id);
     const cur = passage.answers[k] ?? [];
-    const answer = (on ? [...new Set([...cur, lettre])] : cur.filter(x => x !== lettre)).sort();
+    const answer = (cur.includes(lettre) ? cur.filter(x => x !== lettre) : [...new Set([...cur, lettre])]).sort();
     const rev = (passage.revisions[k] ?? 0) + 1;
     enqueueDraft(localStorage, passage.receipt, { questionId: q.id, revision: rev, answer, token: crypto.randomUUID() });
     setPassage({ ...passage, answers: { ...passage.answers, [k]: answer }, revisions: { ...passage.revisions, [k]: rev } });
+    setNonRepondues(prev => { if (!prev.has(q.id)) return prev; const n = new Set(prev); n.delete(q.id); return n; });
     void flush(passage.receipt);
   };
 
   const remettre = async () => {
     if (!passage) return;
     const manquantes = passage.questions.filter(q => !(passage.answers[q.id]?.length));
-    if (manquantes.length) { setErreur(`Il reste ${manquantes.length} question(s) sans réponse.`); return; }
+    if (manquantes.length) {
+      setNonRepondues(new Set(manquantes.map(q => q.id)));
+      setErreur(`Il reste ${manquantes.length} question(s) sans réponse.`);
+      toast.error("Répondez à toutes les questions QCM avant de valider");
+      const idx = passage.questions.indexOf(manquantes[0]);
+      setTimeout(() => document.getElementById(`exo-q-${passage.receipt.exerciseId}-${idx}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      return;
+    }
     if (!window.confirm("Remettre définitivement cette matière ? Vous ne pourrez plus modifier vos réponses.")) return;
-    setEnvoi(true); setErreur(null);
+    const tok = ouvertureCourante.current;
+    setEnvoi(true); setErreur(null); setNonRepondues(new Set());
     await flush(passage.receipt);
     const ans = Object.fromEntries(passage.questions.map(q => [String(q.id), passage.answers[q.id]]));
     const { data, error } = await rpc("bilan_future_submit", { p_receipt: passage.receipt.passageId, p_answers: ans });
@@ -210,135 +209,314 @@ export function BilanFutureExam({ moduleId, ownerId }: { moduleId: 5 | 11; owner
     // Validation only after the server acknowledgement + readback.
     const back = await (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", passage.receipt.passageId).maybeSingle();
     if (back.error || !back.data || back.data.correct_count !== data.correct_count) { setErreur("Remise envoyée mais non relue. Rechargez la page pour vérifier."); return; }
-    setPassage({ ...passage, submitted: back.data });
-    void chargerCorrection(passage.receipt);
     void chargerStatuts();
+    if (tok !== ouvertureCourante.current) return;
+    setPassage({ ...passage, submitted: back.data });
+    toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
+    void chargerCorrection(passage.receipt, tok);
   };
 
-  if (ouvert !== null) {
-    const nom = FUTURE_SUBJECT_NAMES[ouvert - base];
-    const corr = new Map((correction?.questions ?? []).map(c => [c.id, c]));
-    const fausses = correction ? questionsFausses(correction) : [];
-    const enRevision = !!revision;
-    const visibles = !passage ? [] : enRevision ? passage.questions.filter(q => revision!.ids.includes(q.id))
-      : fautesSeules ? passage.questions.filter(q => fausses.includes(q.id)) : passage.questions;
-    const bonnesRevision = revision?.validee ? revision.ids.filter(id => reponseExacte(revision.answers[id], corr.get(id)?.correct)).length : 0;
-    return (
-      <div className="mx-auto max-w-[1400px] p-4 space-y-4" data-testid="bilan-future-passage">
-        <Button variant="outline" onClick={() => { setOuvert(null); setPassage(null); setCorrection(null); setRevision(null); setErreur(null); void chargerStatuts(); }}>← Retour aux matières</Button>
-        <h2 className="text-2xl font-bold">{nom}</h2>
-        {erreur && <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">{erreur}</div>}
-        {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
-        {passage?.submitted && !enRevision && (
-          <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 space-y-3" data-testid="bilan-future-resultat">
-            <p className="font-semibold">Matière remise : {passage.submitted.correct_count}/{passage.submitted.question_count} bonnes réponses.</p>
-            {(() => { const n = noteDe(ouvert - base, passage.submitted.correct_count, passage.submitted.question_count);
-              return n ? <CarteNoteMatiere n={n} index={ouvert - base} total={5} nom={n.matiere.nom} />
-                : bareme === "erreur" ? <p className="text-sm text-muted-foreground">Barème de l'examen blanc n°1 indisponible : note /20 non affichée.</p> : null; })()}
-            {correction && (
-              <div className="flex flex-wrap gap-2">
-                {fausses.length > 0 ? (
-                  <>
-                    <Button onClick={() => setRevision({ ids: fausses, answers: {}, validee: false })} data-testid="refaire-fausses">
-                      🎯 Refaire uniquement les questions fausses ({fausses.length} questions)
-                    </Button>
-                    <Button variant="outline" onClick={() => setFautesSeules(v => !v)}>
-                      {fautesSeules ? "Voir toute la correction" : `Voir seulement mes erreurs (${fausses.length})`}
-                    </Button>
-                  </>
-                ) : <p className="text-sm">Toutes vos réponses sont exactes.</p>}
-              </div>
-            )}
-            {correction && <p className="text-xs text-muted-foreground">Correction de votre passage remis : vos réponses enregistrées et les bonnes réponses sont surlignées ci-dessous.</p>}
-          </div>
-        )}
-        {enRevision && (
-          <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 space-y-2" data-testid="bilan-future-revision">
-            <p className="font-semibold">Révision des questions fausses ({revision!.ids.length}) — entraînement : votre note et votre copie remise ne changent pas.</p>
-            {revision!.validee && <p data-testid="revision-score">Révision : {bonnesRevision}/{revision!.ids.length} bonnes réponses.</p>}
-            <Button variant="outline" onClick={() => setRevision(null)}>← Retour à la correction</Button>
-          </div>
-        )}
-        {passage && visibles.map(q => {
-          const i = passage.questions.indexOf(q);
-          const c = corr.get(q.id);
-          const showSupport = q.support && (enRevision || fautesSeules || i === 0 || passage.questions[i - 1]?.support?.numero !== q.support.numero);
-          return (
-            <section key={q.id} className="space-y-3" data-question-id={q.id}>
-              {showSupport && q.support && (
-                <div className="border-y py-6 space-y-4" data-support-number={q.support.numero}>
-                  <h3 className="text-xl font-bold">Texte {q.support.numero}</h3>
-                  {q.support.paragraphes.map((p, n) => <p key={n} className="whitespace-pre-wrap leading-relaxed">{p}</p>)}
-                </div>
-              )}
-              {enRevision ? (
-                <CarteQuestion q={q} numero={i + 1} selection={revision!.answers[q.id] ?? []} disabled={revision!.validee}
-                  correct={c?.correct} montrer={revision!.validee}
-                  onToggle={(l, on) => setRevision(r => {
-                    if (!r || r.validee) return r;
-                    const cur = r.answers[q.id] ?? [];
-                    return { ...r, answers: { ...r.answers, [q.id]: (on ? [...new Set([...cur, l])] : cur.filter(x => x !== l)).sort() } };
-                  })} />
-              ) : (
-                <CarteQuestion q={q} numero={i + 1}
-                  selection={passage.submitted && c ? c.answer : (passage.answers[q.id] ?? [])}
-                  disabled={!!passage.submitted} correct={c?.correct} montrer={!!passage.submitted && !!c}
-                  onToggle={(l, on) => cocher(q, l, on)} />
-              )}
-            </section>
-          );
-        })}
-        {enRevision && !revision!.validee && (
-          <Button onClick={() => {
-            const manque = revision!.ids.filter(id => !(revision!.answers[id]?.length)).length;
-            if (manque) { setErreur(`Il reste ${manque} question(s) sans réponse dans la révision.`); return; }
-            setErreur(null); setRevision({ ...revision!, validee: true });
-          }}>Corriger ma révision</Button>
-        )}
-        {enRevision && revision!.validee && (
-          <Button variant="outline" onClick={() => setRevision({ ids: revision!.ids, answers: {}, validee: false })}>Recommencer la révision</Button>
-        )}
-        {passage && !passage.submitted && (
-          <div className="flex items-center gap-4">
-            <Button onClick={remettre} disabled={envoi}>{envoi ? "Remise en cours…" : "Remettre la matière"}</Button>
-            {enAttente > 0 && <span className="text-sm text-muted-foreground">{enAttente} réponse(s) en attente d'envoi</span>}
-          </div>
-        )}
+  const pageCourante = ouvert === null ? 0 : ouvert - base;
+  const total = FUTURE_SUBJECT_NAMES.length;
+  const remises = FUTURE_SUBJECT_NAMES.filter((_, k) => statuts[base + k]?.submitted).length;
+  const progressPercent = Math.round((remises / total) * 100);
+  const allerA = (k: number) => { if (k >= 0 && k < total && base + k !== ouvert) void ouvrir(base + k); };
+
+  const renderProgressionSteps = (isMobileView = false) => (
+    <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
+      {FUTURE_SUBJECT_NAMES.map((nom, i) => (
+        <ProgressionStep key={i} label={`📝 Quiz — ${nom}`} current={i === pageCourante} completed={!!statuts[base + i]?.submitted}
+          unlocked isLast={i >= total - 1} badge="quiz"
+          onClick={() => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} />
+      ))}
+    </div>
+  );
+  const renderProgressBar = () => (
+    <ProgressionBar percent={progressPercent} legend={
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+          {statutsLus ? `${remises}/${total} quiz` : "Chargement…"}
+        </span>
       </div>
-    );
-  }
+    } />
+  );
+
+  const nom = FUTURE_SUBJECT_NAMES[pageCourante];
+  const corr = new Map((correction?.questions ?? []).map(c => [c.id, c]));
+  const fausses = correction ? questionsFausses(correction) : [];
+  const enRevision = !!revision;
+  const soumis = !!passage?.submitted;
+  const questions = passage?.questions ?? [];
+  const exoId = ouvert ?? base;
+  const anchor = (qi: number) => `exo-q-${exoId}-${qi}`;
+  const reponseAffichee = (q: Q): string[] => enRevision && revision!.ids.includes(q.id) ? (revision!.answers[q.id] ?? [])
+    : soumis ? (corr.get(q.id)?.answer ?? passage!.answers[q.id] ?? []) : (passage?.answers[q.id] ?? []);
+  const resultatsVisibles = enRevision ? revision!.validee : soumis && !!correction;
+  const estFausse = (q: Q) => {
+    const c = corr.get(q.id);
+    if (!c || c.correct.length === 0) return false;
+    const sel = reponseAffichee(q);
+    if (enRevision) return revision!.ids.includes(q.id) && (revision!.validee || sel.length > 0) && !reponseExacte(sel, c.correct);
+    return resultatsVisibles && !reponseExacte(sel, c.correct);
+  };
+  const visibles = enRevision ? questions.filter(q => revision!.ids.includes(q.id)) : questions;
+  const faussesRevision = revision?.validee ? revision.ids.filter(id => !reponseExacte(revision.answers[id], corr.get(id)?.correct)) : [];
+  const bonnesRevision = revision?.validee ? revision.ids.length - faussesRevision.length : 0;
+  const reponduesCompte = questions.filter(q => reponseAffichee(q).length > 0).length;
+  const relireItems = (ids: number[]) => questions.filter(q => ids.includes(q.id)).map(q => {
+    const learner = reponseAffichee(q);
+    const c = corr.get(q.id);
+    return {
+      id: q.id, enonce: q.enonce, isQrc: false, explication: c?.explication ?? undefined,
+      learnerText: learner.length > 0 ? learner.map(l => `${l}. ${q.choix.find(ch => ch.lettre === l)?.texte ?? ""}`).join(" | ") : "(sans réponse)",
+      expectedText: q.choix.filter(ch => c?.correct.includes(ch.lettre)).map(ch => `${ch.lettre}. ${ch.texte ?? ""}`).join(" | "),
+    };
+  });
+  const idsARelire = enRevision ? faussesRevision : fausses;
+  const demarrerRevision = () => {
+    setRelecture(false);
+    setRevision({ ids: idsARelire, answers: {}, validee: false });
+    window.scrollTo?.({ top: 0, behavior: "smooth" });
+  };
+
+  const boutonSuivantOuFin = pageCourante < total - 1 ? (
+    <Button onClick={() => allerA(pageCourante + 1)} disabled={!soumis} className="gap-2" title={!soumis ? "Validez le quiz avant de continuer" : ""}>
+      {!soumis && <span>🔒</span>}
+      Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
+    </Button>
+  ) : (
+    <Button variant="secondary" className="gap-2" disabled={remises < total || !onBack} onClick={() => onBack?.()}>
+      <CheckCircle2 className="w-4 h-4" />
+      Terminé
+    </Button>
+  );
+
+  const notesBilan = bareme && bareme !== "erreur"
+    ? FUTURE_SUBJECT_NAMES.map((_, k) => { const s = statuts[base + k]; return s?.submitted ? noteDe(k, s.correct, s.total) : null; })
+    : null;
 
   return (
-    <div className="mx-auto max-w-[1400px] p-4 space-y-3" data-testid="bilan-future-matieres">
-      {erreur && <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">{erreur}</div>}
-      {bareme && bareme !== "erreur" && (() => {
-        const notes = FUTURE_SUBJECT_NAMES.map((_, k) => { const s = statuts[base + k]; return s && s !== "erreur" && s.submitted ? noteDe(k, s.correct, s.total) : null; });
-        if (!notes.some(Boolean)) return null;
-        const m = moyenneBilan(bareme, notes);
-        return (
-          <div className="space-y-3" data-testid="bilan-bareme-eb1">
-            <p className="text-sm text-muted-foreground">Barème identique à l'examen blanc n°1 ({examenReferenceBilan(moduleId)}) : mêmes coefficients, points par QCM et notes éliminatoires.</p>
-            {notes.map((n, k) => n && <CarteNoteMatiere key={k} n={n} index={k} total={5} nom={n.matiere.nom} />)}
-            <div className="rounded-lg border p-4" data-testid="bilan-moyenne">
-              <p className="font-semibold">Moyenne pondérée : {m.moyenne.toFixed(1)} / 20 ({m.matieresPassees}/{m.matieresTotal} matières remises)</p>
-              <p className="text-sm">{m.verdict === "reussi" ? "Admis : moyenne ≥ 10 et aucune note éliminatoire."
-                : m.verdict === "echoue" ? (m.eliminatoires.length ? `Échec : note éliminatoire en ${m.eliminatoires.join(", ")}.` : "Échec : moyenne inférieure à 10.")
-                : m.verdict === "incomplet" ? "Résultat définitif quand les 5 matières sont remises." : "Résultat indéterminé : seuil introuvable."}</p>
+    <>
+    <div className="flex gap-4 lg:gap-6 max-w-[1760px] mx-auto" data-testid="bilan-future-matieres">
+      {/* Vertical progress sidebar — desktop */}
+      <div className="hidden md:block shrink-0 w-48 lg:w-56 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <div className="rounded-xl border bg-card shadow-sm p-5 space-y-2">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Progression</h3>
+          {renderProgressionSteps()}
+          {renderProgressBar()}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0 space-y-6">
+        <div className="space-y-3">
+          {(titre || description) && (
+            <div className="text-center space-y-1">
+              {titre && <h2 className="text-2xl font-bold">{titre}</h2>}
+              {description && <p className="text-muted-foreground text-sm">{description}</p>}
             </div>
+          )}
+          {notesBilan && notesBilan.some(Boolean) && (() => {
+            const m = moyenneBilan(bareme as BaremeMatiere[], notesBilan);
+            return (
+              <div className="space-y-3" data-testid="bilan-bareme-eb1">
+                <p className="text-sm text-muted-foreground">Barème identique à l'examen blanc n°1 ({examenReferenceBilan(moduleId)}) : mêmes coefficients, points par QCM et notes éliminatoires.</p>
+                <div className="rounded-lg border p-4" data-testid="bilan-moyenne">
+                  <p className="font-semibold">Moyenne pondérée : {m.moyenne.toFixed(1)} / 20 ({m.matieresPassees}/{m.matieresTotal} matières remises)</p>
+                  <p className="text-sm">{m.verdict === "reussi" ? "Admis : moyenne ≥ 10 et aucune note éliminatoire."
+                    : m.verdict === "echoue" ? (m.eliminatoires.length ? `Échec : note éliminatoire en ${m.eliminatoires.join(", ")}.` : "Échec : moyenne inférieure à 10.")
+                    : m.verdict === "incomplet" ? "Résultat définitif quand les 5 matières sont remises." : "Résultat indéterminé : seuil introuvable."}</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Mobile/tablet collapsible progression */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setMobileProgressOpen(!mobileProgressOpen)}
+              className="w-full flex items-center justify-between rounded-xl border bg-card shadow-sm px-4 py-3"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold text-sm">{progressPercent}%</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-semibold text-foreground">Progression</span>
+                    <span className="text-xs text-muted-foreground block">
+                      📝 Exercices — {pageCourante + 1}/{total}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2.5 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                {mobileProgressOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+              </div>
+            </button>
+            {mobileProgressOpen && (
+              <div className="mt-2 rounded-xl border bg-card shadow-sm p-4 animate-fade-in max-h-[60vh] overflow-y-auto">
+                {renderProgressionSteps(true)}
+                {renderProgressBar()}
+              </div>
+            )}
           </div>
-        );
-      })()}
-      {FUTURE_SUBJECT_NAMES.map((nom, k) => {
-        const s = statuts[base + k];
-        return (
-          <Button key={k} variant="outline" onClick={() => void ouvrir(base + k)} className="w-full h-auto justify-start text-left rounded-lg p-4 whitespace-normal">
-            <span className="text-lg font-semibold">{nom}</span>
-            <span className="ml-3 text-sm text-muted-foreground">
-              {s && s !== "erreur" ? (s.submitted ? `Remise — ${s.score}` : "En cours") : "À commencer"}
-            </span>
-          </Button>
-        );
-      })}
+        </div>
+
+        {/* Current page content */}
+        <div className="animate-fade-in">
+          <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4" data-testid="bilan-future-passage">
+            <div className="space-y-4 min-w-0">
+              <Card className="scroll-mt-4 transition-all">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <h3 className="text-lg font-bold">📝 {nom}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1">
+                        <Calculator className="w-4 h-4" />
+                        Calculatrice
+                      </Button>
+                    </div>
+                  </div>
+                  {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
+                  {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
+                  {enRevision && (
+                    <div data-testid="bilan-future-revision" className="space-y-2">
+                      <RevisionModeBanner count={revision!.ids.length} onShowAll={() => setRevision(null)} />
+                      <p className="text-xs text-muted-foreground">Entraînement : votre note et votre copie remise ne changent pas.</p>
+                    </div>
+                  )}
+                  {visibles.map(q => {
+                    const qi = questions.indexOf(q);
+                    const c = corr.get(q.id);
+                    const fausse = estFausse(q);
+                    const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
+                    return (
+                      <div key={q.id} id={anchor(qi)} data-learner-question data-answer-scroll-anchor data-question-id={q.id}
+                        data-question-faute={fausse ? "1" : undefined}
+                        className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${fausse ? 'border-destructive border-4 bg-destructive/10' : nonRepondues.has(q.id) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                        <ExerciseQuestionPrompt questionNumber={qi + 1} prompt={promptDe(q)} />
+                        {q.image && (
+                          <ExamQuestionImage image={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic" />
+                        )}
+                        <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
+                        <QcmChoiceButtons
+                          choices={q.choix.map(ch => ({ lettre: ch.lettre, texte: ch.texte, correct: resultatsVisibles ? !!c?.correct.includes(ch.lettre) : undefined }))}
+                          selected={reponseAffichee(q)}
+                          multi
+                          showResults={resultatsVisibles}
+                          disabled={enRevision ? revision!.validee : soumis}
+                          onSelect={(l) => {
+                            if (enRevision) {
+                              setRevision(r => {
+                                if (!r || r.validee) return r;
+                                const cur = r.answers[q.id] ?? [];
+                                return { ...r, answers: { ...r.answers, [q.id]: (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort() } };
+                              });
+                            } else cocher(q, l);
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {passage && (
+                    <div className="flex justify-center gap-4">
+                      {(!soumis || (enRevision && !revision!.validee)) ? (
+                        <div className="flex flex-col items-center gap-3 w-full">
+                          <Button size="lg" className="gap-2" disabled={envoi} onClick={() => {
+                            if (!enRevision) { void remettre(); return; }
+                            const manque = revision!.ids.filter(id => !(revision!.answers[id]?.length));
+                            if (manque.length) {
+                              setNonRepondues(new Set(manque));
+                              toast.error("Répondez à toutes les questions QCM avant de valider");
+                              return;
+                            }
+                            setNonRepondues(new Set()); setErreur(null);
+                            setRevision({ ...revision!, validee: true });
+                          }}>
+                            <CheckCircle2 className="w-5 h-5" />
+                            {envoi ? "Enregistrement en cours…" : "Valider les QCM"}
+                          </Button>
+                          {enAttente > 0 && <span className="text-sm text-muted-foreground">{enAttente} réponse(s) en attente d'envoi</span>}
+                        </div>
+                      ) : (
+                        <div className="w-full space-y-5" data-testid={enRevision ? undefined : "bilan-future-resultat"}>
+                          <QuizScoreSummary
+                            points={enRevision ? bonnesRevision : passage.submitted!.correct_count}
+                            total={enRevision ? revision!.ids.length : passage.submitted!.question_count}
+                            footnote={enRevision
+                              ? <p className="text-xs text-muted-foreground" data-testid="revision-score">Révision : {bonnesRevision}/{revision!.ids.length} — copie remise inchangée</p>
+                              : <p className="text-xs text-muted-foreground">Matière remise : {passage.submitted!.correct_count}/{passage.submitted!.question_count} bonnes réponses</p>} />
+                          {!enRevision && (() => {
+                            const n = noteDe(pageCourante, passage.submitted!.correct_count, passage.submitted!.question_count);
+                            return n ? <CarteNoteMatiere n={n} index={pageCourante} total={total} nom={n.matiere.nom} />
+                              : bareme === "erreur" ? <p className="text-sm text-muted-foreground text-center">Barème de l'examen blanc n°1 indisponible : note /20 non affichée.</p> : null;
+                          })()}
+                          {correction && (
+                            <QuizAnswerGrid
+                              items={(enRevision ? visibles : questions).map(q => ({ key: q.id, correct: !estFausse(q) }))}
+                              onJump={(i) => flashQuestionAnchor(anchor(questions.indexOf((enRevision ? visibles : questions)[i])))}
+                            />
+                          )}
+                          {!correction && <p className="text-sm text-muted-foreground text-center">Chargement de la correction…</p>}
+                          <QuizResultPanels>
+                            {correction && (
+                              <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" data-testid="refaire-fausses"
+                                onClick={() => {
+                                  if (idsARelire.length === 0) { toast.success("🎉 Aucune question fausse à refaire !"); return; }
+                                  setRelecture(true);
+                                }}>
+                                🎯 Refaire les fausses ({idsARelire.length})
+                              </Button>
+                            )}
+                            {pageCourante < total - 1 && (
+                              <Button size="sm" className="gap-2" onClick={() => allerA(pageCourante + 1)}>
+                                Suivant ➡️
+                              </Button>
+                            )}
+                            {pageCourante === total - 1 && (
+                              <Button size="sm" variant="secondary" className="gap-2" disabled={remises < total || !onBack} onClick={() => onBack?.()}>
+                                <CheckCircle2 className="w-4 h-4" /> Terminé
+                              </Button>
+                            )}
+                            {onBack && (
+                              <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={onBack}>
+                                🏠 Retour à l'accueil
+                              </Button>
+                            )}
+                          </QuizResultPanels>
+                          <WrongAnswersReviewDialog open={relecture} onOpenChange={(o) => { if (!o) setRelecture(false); }}
+                            items={relecture ? relireItems(idsARelire) : []} onConfirm={demarrerRevision} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            <QuizQuestionSidebar
+              onJump={(qi) => document.getElementById(anchor(qi))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              items={questions.map(q => ({ key: q.id, answered: reponseAffichee(q).length > 0, wrong: estFausse(q) }))}
+            />
+          </div>
+        </div>
+
+        <AnswersCompletionStrip answered={reponduesCompte} total={questions.length} />
+
+        <QuizPageNavigation onPrev={() => allerA(pageCourante - 1)} prevDisabled={pageCourante === 0} current={pageCourante} total={total}>
+          {boutonSuivantOuFin}
+        </QuizPageNavigation>
+      </div>
     </div>
+    {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
+    </>
   );
 }

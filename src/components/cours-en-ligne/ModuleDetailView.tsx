@@ -109,6 +109,11 @@ import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
 import { ExamQuestionImage } from "./ExamQuestionImage";
+import {
+  ExerciseQuestionPrompt as ExerciseQuestionPromptView, QcmChoiceButtons, QuizQuestionSidebar, QuizScoreSummary, QuizAnswerGrid,
+  flashQuestionAnchor, QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ProgressionStep, ProgressionBar,
+  AnswersCompletionStrip, QuizPageNavigation, QUESTION_IMAGE_SIZES,
+} from "./learnerQuizUi";
 import { isRoadSafetyCourseExercise } from "./roadSafetyQuestionImage";
 import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
@@ -1282,21 +1287,7 @@ const buildExerciseQuestionPrompts = <T extends { enonce: string }>(questions: T
 };
 
 const renderExerciseQuestionPrompt = (questionNumber: number, prompt: ExerciseQuestionPrompt) => (
-  <div className="space-y-2">
-    <p className="learner-question-title font-medium whitespace-pre-line">
-      <span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">
-        Q{questionNumber}
-      </span>
-      <RichText value={prompt.question} />
-    </p>
-
-    {prompt.passageTitle && prompt.passageBody ? (
-      <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed">
-        <p className="mb-2 font-semibold text-foreground"><RichText value={prompt.passageTitle} /></p>
-        <p className="whitespace-pre-line text-foreground"><RichText value={prompt.passageBody} /></p>
-      </div>
-    ) : null}
-  </div>
+  <ExerciseQuestionPromptView questionNumber={questionNumber} prompt={prompt} />
 );
 
 interface ModuleDetailViewProps {
@@ -9180,17 +9171,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                 const isRevisionMode = !!revisionSet;
                 if (isRevisionMode) {
                   return (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <span>🎯 Mode révision — vous ne voyez que les {revisionSet.size} question{revisionSet.size > 1 ? "s" : ""} fausse{revisionSet.size > 1 ? "s" : ""}.</span>
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
-                        }}>Voir toutes les questions</Button>
-                      </div>
-                      <div className="font-semibold text-amber-900 dark:text-amber-200">
-                        📖 Relisez vos erreurs avant de recommencer les questions fausses.
-                      </div>
-                    </div>
+                    <RevisionModeBanner count={revisionSet.size} onShowAll={() => {
+                      setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                    }} />
                   );
                 }
                 return null;
@@ -9266,14 +9249,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-learner-question data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
-                      const sizeMap: Record<string, string> = {
-                        sm: "max-h-40",
-                        md: "max-h-64",
-                        lg: "max-h-96",
-                        xl: "max-h-[32rem]",
-                        "2xl": "max-h-[48rem]",
-                      };
-                      const sizeClass = sizeMap[q.imageSize ?? "sm"] ?? "max-h-40";
+                      const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
                       return (
                         <ExamQuestionImage image={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic"
                           {...(isRoadSafetyCourseExercise(exo) ? { frameClassName: "road-safety-question-image", fitFrameToImage: true } : {})}
@@ -9283,35 +9259,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
-                    <div className="space-y-1.5 ml-2">
-                      {getQuestionChoices(q).map((c: any) => {
-                        const exoShowResults = showResultsFor.has(exo.id);
-                        const isSelected = selectedArr.includes(c.lettre);
-                        let bg = "bg-background hover:bg-muted/50 border";
-                        if (isSelected && !exoShowResults) bg = "bg-primary/10 border-primary border-2";
-                        if (exoShowResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
-                        if (exoShowResults && isSelected && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
-                        return (
-                          <button
-                            key={c.lettre}
-                            onClick={(event) => handleAnswer(exo.id, q.id, c.lettre, multi, event.currentTarget)}
-                            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
-                          >
-                            {multi ? (
-                              <span className={`w-5 h-5 rounded border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/40'}`}>
-                                {isSelected ? '✓' : ''}
-                              </span>
-                            ) : (
-                              <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'border-primary bg-primary text-primary-foreground' : ''}`}>
-                                {c.lettre}
-                              </span>
-                            )}
-                            <span className="text-sm">{c.texte}</span>
-                            {exoShowResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <QcmChoiceButtons
+                      choices={getQuestionChoices(q)}
+                      selected={selectedArr}
+                      multi={multi}
+                      showResults={exoShowResults}
+                      onSelect={(lettre, el) => handleAnswer(exo.id, q.id, lettre, multi, el)}
+                    />
                   </div>
                 );
               })}
@@ -9641,88 +9595,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     const exoPoints = etatQrc === "terminee"
                       ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
                       : exoCorrect;
-                    const pct = exoTotalQ > 0 ? Math.round((exoPoints / exoTotalQ) * 100) : 0;
-                    const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
-                    const circleBg = pct >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pct >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
-                    const circumference = 2 * Math.PI * 54;
-                    const strokeDashoffset = circumference - (pct / 100) * circumference;
-
                     return (
                     <div className="w-full space-y-5">
                       {/* Score circle */}
-                      <div className="flex flex-col items-center gap-3">
-                        <div className={`relative w-36 h-36 rounded-full flex items-center justify-center ${circleBg}`}>
-                          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 120 120">
-                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/20" />
-                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className={circleColor} strokeLinecap="round"
-                              strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1s ease-out" }} />
-                          </svg>
-                          <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
-                        </div>
-                        <p className="text-lg font-bold">Points : {exoPoints} / {exoTotalQ}</p>
-                        {passageFigeExo && (
-                          <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
-                        )}
-                      </div>
+                      <QuizScoreSummary points={exoPoints} total={exoTotalQ} footnote={passageFigeExo && (
+                        <p className="text-xs text-muted-foreground">Résultat historique figé — non recalculé</p>
+                      )} />
 
                       {/* Answer grid */}
-                      <div className="rounded-lg border p-4 space-y-2">
-                        <h4 className="font-semibold text-sm">Réponses</h4>
-                        <p className="text-xs text-muted-foreground">Cliquez sur une question pour revoir la correction</p>
-                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-                          {questionsSafe.map((q, qi) => {
-                            const key = `${exo.id}-${q.id}`;
-                            const selected = selectedAnswers[key];
-                            const qrcR = qrcResults[key];
-                            const isCorrect = estQuestionQrc(q)
-                              ? !!qrcR && qrcR !== "loading" && !qrcR.indisponible && qrcR.estCorrect === true
-                              : isAnswerCorrect(selected, q as any);
-                            return (
-                              <div key={q.id}
-                                className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
-                                onClick={() => {
-                                  const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
-                                  if (!el) {
-                                    console.warn(`[Réponses] Anchor introuvable: exo-q-${exo.id}-${qi}`);
-                                    return;
-                                  }
-                                  el.scrollIntoView({ behavior: "smooth", block: "start" });
-                                  el.classList.add("ring-4", "ring-primary");
-                                  setTimeout(() => el.classList.remove("ring-4", "ring-primary"), 1500);
-                                }}
-
-                              >
-                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
-                                <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      <QuizAnswerGrid
+                        items={questionsSafe.map((q) => {
+                          const key = `${exo.id}-${q.id}`;
+                          const selected = selectedAnswers[key];
+                          const qrcR = qrcResults[key];
+                          const isCorrect = estQuestionQrc(q)
+                            ? !!qrcR && qrcR !== "loading" && !qrcR.indisponible && qrcR.estCorrect === true
+                            : isAnswerCorrect(selected, q as any);
+                          return { key: q.id, correct: isCorrect };
+                        })}
+                        onJump={(qi) => flashQuestionAnchor(`exo-q-${exo.id}-${qi}`)}
+                      />
 
                       {/* Progress + Actions */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-lg border p-4 space-y-2">
-                          <h4 className="font-semibold text-sm">Progrès</h4>
-                          <div className="flex gap-4">
-                            <div className="flex flex-col items-center gap-1">
-                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                              </div>
-                              <span className="text-xs text-muted-foreground">Soumis</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-1">
-                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                              </div>
-                              <span className="text-xs text-muted-foreground">Noté</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="rounded-lg border p-4 space-y-2">
-                          <h4 className="font-semibold text-sm">Actions</h4>
-                          <div className="flex flex-col gap-2">
+                      <QuizResultPanels>
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
               if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Vos réponses actuelles seront effacées.")) return;
               const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
@@ -9825,75 +9720,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             }}>
                               🏠 Retour à l'accueil
                             </Button>
-                          </div>
-                        </div>
-                      </div>
+                      </QuizResultPanels>
                       {/* Relecture obligatoire des erreurs avant de refaire les fausses */}
-                      <Dialog open={wrongReviewFor?.exoId === exo.id} onOpenChange={(open) => { if (!open) setWrongReviewFor(null); }}>
-                        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>📖 Relisez vos erreurs avant de recommencer</DialogTitle>
-                          </DialogHeader>
-                          <p className="text-sm text-muted-foreground">
-                            Prenez le temps de relire chaque question, votre réponse et la bonne réponse. Vous pourrez ensuite refaire uniquement les questions fausses.
-                          </p>
-                          <div className="space-y-4 mt-2">
-                            {wrongReviewFor?.exoId === exo.id && questionsSafe
-                              .filter((q: any) => wrongReviewFor.pending.wrongIds.includes(q.id))
-                              .map((q: any, idx: number) => {
-                                const key = `${exo.id}-${q.id}`;
-                                const learner = selectedAnswers[key];
-                                const learnerLetters = Array.isArray(learner) ? learner : learner ? [learner] : [];
-                                const choix = getQuestionChoices(q);
-                                const isQrc = isQuestionQrc({ ...q, choix });
-                                return (
-                                  <div key={q.id} className="rounded-lg border border-red-200 bg-red-50/50 p-3 space-y-2">
-                                    <div className="font-semibold text-sm">Question {idx + 1} — {q.enonce}</div>
-                                    {isQrc ? (
-                                      <div className="space-y-1 text-sm">
-                                        <div className="text-red-700"><span className="font-medium">Votre réponse :</span> {typeof learner === "string" && learner.trim() ? learner : "(sans réponse)"}</div>
-                                        {Array.isArray(q.reponsesAttendues) && q.reponsesAttendues.length > 0 && (
-                                          <div className="text-emerald-700"><span className="font-medium">Réponse attendue :</span> {q.reponsesAttendues[0]}</div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <div className="space-y-1 text-sm">
-                                        <div className="text-red-700">
-                                          <span className="font-medium">Votre réponse :</span>{" "}
-                                          {learnerLetters.length > 0
-                                            ? learnerLetters.map((l) => {
-                                                const c = choix.find((ch) => ch.lettre === l);
-                                                return `${l}. ${c?.texte ?? ""}`;
-                                              }).join(" | ")
-                                            : "(sans réponse)"}
-                                        </div>
-                                        <div className="text-emerald-700">
-                                          <span className="font-medium">Bonne réponse :</span>{" "}
-                                          {choix.filter((ch) => ch.correct).map((ch) => `${ch.lettre}. ${ch.texte ?? ""}`).join(" | ")}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {q.explication && (
-                                      <div className="text-xs text-muted-foreground border-t pt-1">💡 {q.explication}</div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                          </div>
-                          <Button
-                            className="mt-4 w-full gap-2"
-                            onClick={() => {
-                              const pending = wrongReviewFor?.pending;
-                              if (!pending) return;
-                              setWrongReviewFor(null);
-                              startWrongQuestionRevision(pending);
-                              window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
-                          >
-                            ✅ J'ai relu mes erreurs — Refaire les fausses
-                          </Button>
-                        </DialogContent>
-                      </Dialog>
+                      <WrongAnswersReviewDialog
+                        open={wrongReviewFor?.exoId === exo.id}
+                        onOpenChange={(open) => { if (!open) setWrongReviewFor(null); }}
+                        items={wrongReviewFor?.exoId === exo.id ? questionsSafe
+                          .filter((q: any) => wrongReviewFor.pending.wrongIds.includes(q.id))
+                          .map((q: any) => {
+                            const key = `${exo.id}-${q.id}`;
+                            const learner = selectedAnswers[key];
+                            const learnerLetters = Array.isArray(learner) ? learner : learner ? [learner] : [];
+                            const choix = getQuestionChoices(q);
+                            const isQrc = isQuestionQrc({ ...q, choix });
+                            return isQrc ? {
+                              id: q.id, enonce: q.enonce, isQrc: true, explication: q.explication,
+                              learnerText: typeof learner === "string" && learner.trim() ? learner : "(sans réponse)",
+                              expectedText: Array.isArray(q.reponsesAttendues) && q.reponsesAttendues.length > 0 ? q.reponsesAttendues[0] : undefined,
+                            } : {
+                              id: q.id, enonce: q.enonce, isQrc: false, explication: q.explication,
+                              learnerText: learnerLetters.length > 0
+                                ? learnerLetters.map((l) => {
+                                    const c = choix.find((ch) => ch.lettre === l);
+                                    return `${l}. ${c?.texte ?? ""}`;
+                                  }).join(" | ")
+                                : "(sans réponse)",
+                              expectedText: choix.filter((ch) => ch.correct).map((ch) => `${ch.lettre}. ${ch.texte ?? ""}`).join(" | "),
+                            };
+                          }) : []}
+                        onConfirm={() => {
+                          const pending = wrongReviewFor?.pending;
+                          if (!pending) return;
+                          setWrongReviewFor(null);
+                          startWrongQuestionRevision(pending);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      />
                       {(attemptHistoryFor[exo.id]?.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-lg border bg-muted/30 p-4">
                           <h4 className="font-semibold text-sm mb-2">📜 Historique des tentatives</h4>
@@ -9919,64 +9781,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
         </div>
-        <aside className="block">
-          <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
-            <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
-              Questions
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {questionsSafe.map((q: any, qi: number) => {
-                const isAnswered = isQuestionAnsweredForSidebar(q);
-                // Après validation (ou mode révision), les erreurs s'affichent en rouge
-                const sidebarKey = `${exo.id}-${q.id}`;
-                const isQrcQ = isQuestionQrc(q);
-                const sidebarShowResults = showResultsFor.has(exo.id);
-                const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
-                let isWrong = false;
-                if (isQrcQ) {
-                  const qr = qrcResults[sidebarKey];
-                  isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.indisponible && !qr.estCorrect);
-                } else {
-                  const sel = selectedAnswers[sidebarKey];
-                  const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];
-                  const ok = isAnswerCorrect(sel, q);
-                  isWrong = (!!sidebarInRevision && selArr.length > 0 && !ok) || (sidebarShowResults && !ok);
-                }
-                return (
-                  <button
-                    key={q.id ?? qi}
-                    type="button"
-                    onClick={() => scrollToExerciseQuestion(qi)}
-                    className={`w-full aspect-square rounded-md text-xs font-bold transition-colors flex items-center justify-center ${
-                      isWrong
-                        ? "bg-red-600 text-white border-2 border-red-800 hover:bg-red-700"
-                        : isAnswered
-                          ? "bg-green-500 text-white border border-green-600 hover:bg-green-600"
-                          : "bg-red-500 text-white border border-red-600 hover:bg-red-600"
-                    }`}
-                    title={isWrong ? `Q${qi + 1} — erreur ❌` : isAnswered ? `Q${qi + 1} — répondue ✓` : `Q${qi + 1} — non répondue ✗`}
-                  >
-                    {qi + 1}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-3 space-y-1.5 text-[10px] text-muted-foreground border-t pt-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-green-500 border border-green-600" />
-                <span>Répondu</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-500 border border-red-600" />
-                <span>À faire</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-600 border-2 border-red-800" />
-                <span>Erreur</span>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <QuizQuestionSidebar
+          onJump={scrollToExerciseQuestion}
+          items={questionsSafe.map((q: any, qi: number) => {
+            const isAnswered = isQuestionAnsweredForSidebar(q);
+            // Après validation (ou mode révision), les erreurs s'affichent en rouge
+            const sidebarKey = `${exo.id}-${q.id}`;
+            const isQrcQ = isQuestionQrc(q);
+            const sidebarShowResults = showResultsFor.has(exo.id);
+            const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
+            let isWrong = false;
+            if (isQrcQ) {
+              const qr = qrcResults[sidebarKey];
+              isWrong = !!sidebarInRevision || (!!qr && qr !== "loading" && !qr.indisponible && !qr.estCorrect);
+            } else {
+              const sel = selectedAnswers[sidebarKey];
+              const selArr = Array.isArray(sel) ? sel : sel ? [sel] : [];
+              const ok = isAnswerCorrect(sel, q);
+              isWrong = (!!sidebarInRevision && selArr.length > 0 && !ok) || (sidebarShowResults && !ok);
+            }
+            return { key: q.id ?? qi, answered: isAnswered, wrong: isWrong };
+          })}
+        />
       </div>
     );
     };
@@ -10021,76 +9847,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
               : rawLabel);
 
+          // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
+          const hLabel = hierarchicalLabelsByPage[i] || "";
+          const partMatch = hLabel.match(/^(\d+)\.(\d+)\s/) || hLabel.match(/^(\d+)\s/);
+          const partNum = partMatch ? (partMatch[2] || partMatch[1]) : null;
           return (
-            <div key={i} className="flex items-start gap-3">
-              {/* Vertical line + dot */}
-              <div className="flex flex-col items-center shrink-0">
-                <button
-                  onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
-                  disabled={!unlocked}
-                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
-                    isCurrent
-                      ? "border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/30"
-                      : isCompleted
-                        ? "border-emerald-500 bg-emerald-500 text-white"
-                        : unlocked
-                          ? "border-destructive bg-background text-destructive"
-                          : "border-muted/50 bg-muted/30 cursor-not-allowed"
-                  }`}
-                >
-                  {isCompleted && !isCurrent && (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                  {isCurrent && (
-                    <div className="w-2 h-2 rounded-full bg-current" />
-                  )}
-                  {!unlocked && !isCompleted && !isCurrent && (
-                    <Lock className="w-3 h-3 text-muted-foreground/50" />
-                  )}
-                </button>
-                {i < pages.length - 1 && (
-                  <div className={`w-0.5 h-8 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
-                )}
-              </div>
-              {/* Label + Badge */}
-              <button
-                onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
-                disabled={!unlocked}
-                className={`text-left text-sm leading-snug pt-1 transition-colors flex items-start gap-1.5 ${
-                  isCurrent
-                    ? "font-bold text-primary"
-                    : isCompleted
-                      ? "text-emerald-600 font-medium"
-                      : estEtapeFacultative
-                        ? "text-foreground hover:text-primary"
-                        : unlocked
-                        ? "text-destructive hover:text-destructive"
-                        : "text-muted-foreground/40 cursor-not-allowed"
-                }`}
-              >
-                <span className="flex-1">{label}{estEtapeFacultative
-                  ? <span className="block text-xs text-muted-foreground">Facultatif — non compté</span>
-                  : !isCompleted && !isCurrent && <span className="block text-xs text-destructive">À terminer</span>}</span>
-                {(() => {
-                  // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
-                  const hLabel = hierarchicalLabelsByPage[i] || "";
-                  const partMatch = hLabel.match(/^(\d+)\.(\d+)\s/) || hLabel.match(/^(\d+)\s/);
-                  const partNum = partMatch ? (partMatch[2] || partMatch[1]) : null;
-                  
-                  return isQuizPage ? (
-                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
-                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
-                    </span>
-                  ) : p?.type === "cours" ? (
-                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
-                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
-                    </span>
-                  ) : null;
-                })()}
-              </button>
-            </div>
+            <ProgressionStep
+              key={i}
+              label={label}
+              current={isCurrent}
+              completed={isCompleted}
+              unlocked={unlocked}
+              isLast={i >= pages.length - 1}
+              facultative={estEtapeFacultative}
+              badge={isQuizPage ? "quiz" : p?.type === "cours" ? "cours" : null}
+              partNum={partNum}
+              onClick={() => { goToPage(i); if (isMobileView) setMobileProgressOpen(false); }}
+            />
           );
         })}
       </div>
@@ -10103,18 +9876,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       const quizCompleted = quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur((p as any).exercice.id)).length;
 
       return (
-        <div className="pt-4 mt-3 border-t space-y-2">
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-            <span className="font-medium">Avancement</span>
-            <span className="font-bold text-primary text-base">{progressPercent}%</span>
-          </div>
-          <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          {(coursPages.length > 0 || quizPages.length > 0) && (
+        <ProgressionBar percent={progressPercent} legend={(coursPages.length > 0 || quizPages.length > 0) && (
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
               {coursPages.length > 0 && (
                 <span className="flex items-center gap-1">
@@ -10129,8 +9891,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                 </span>
               )}
             </div>
-          )}
-        </div>
+          )} />
       );
     };
 
@@ -10328,48 +10089,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             if (!e.questions) return s;
             return s + e.questions.filter(q => hasRecordedAnswer(selectedAnswers[`${e.id}-${q.id}`])).length;
           }, 0);
-          if (totalQ === 0) return null;
-          const pctAnswered = Math.round((answeredQ / totalQ) * 100);
-          const remaining = totalQ - answeredQ;
-          return (
-            <div className="flex items-center gap-3 px-4 py-2 rounded-lg border bg-muted/30 text-sm">
-              <div className="flex-1">
-                <div className="flex justify-between mb-1">
-                  <span className="font-medium">📝 Réponses : {answeredQ} / {totalQ}</span>
-                  <span className="text-muted-foreground">{pctAnswered}%</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary/60 transition-all duration-500"
-                    style={{ width: `${pctAnswered}%` }}
-                  />
-                </div>
-              </div>
-              {remaining > 0 && (
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {remaining} restante{remaining > 1 ? "s" : ""}
-                </span>
-              )}
-              {remaining === 0 && (
-                <span className="text-xs text-emerald-600 font-semibold shrink-0">✅ Complet</span>
-              )}
-            </div>
-          );
+          return <AnswersCompletionStrip answered={answeredQ} total={totalQ} />;
         })()}
 
         {/* Navigation buttons */}
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            variant="outline"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 0}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" /> Précédent
-          </Button>
-          <span className="text-sm text-muted-foreground font-medium">
-            {currentPage + 1} / {totalPages}
-          </span>
+        <QuizPageNavigation onPrev={() => goToPage(currentPage - 1)} prevDisabled={currentPage === 0} current={currentPage} total={totalPages}>
           {currentPage < totalPages - 1 ? (() => {
             // Check if current page has an unvalidated quiz → block navigation
             const pageData = pages[currentPage];
@@ -10405,7 +10129,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </Button>
 
           )}
-        </div>
+        </QuizPageNavigation>
         </div>
       </div>
       {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
@@ -10462,7 +10186,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
-          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} />
+          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
         ) : etatSnapshotsEleve.statut === "chargement" ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : etatSnapshotsEleve.statut === "bloque" ? (
