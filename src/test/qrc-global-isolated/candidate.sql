@@ -24,14 +24,15 @@ WITH h AS (
  SELECT 1 FROM public.reponses_apprenants a WHERE a.apprenant_id=r.apprenant_id
  AND a.exercice_id=r.details->>'source_exercice_id' AND a.tentative::text=r.details->>'source_tentative'
  AND a.completed AND a.status='submitted' AND a.submitted_at IS NOT NULL
- AND a.reponses=r.details->'reponses') ELSE false END submitted_proof,
+ AND a.submitted_at=r.completed_at AND a.reponses=r.details->'reponses') ELSE false END submitted_proof,
  (r.details->'snapshot'->'questions' IS NOT NULL AND r.details->'questions' IS NOT NULL
  AND r.details->'snapshot'->'questions' <> r.details->'questions') ambiguous
  FROM public.apprenant_quiz_results r
  WHERE r.quiz_id ~* '^eb[1-6]($|-(taxi|ta|va)$)' AND r.quiz_type='examen_blanc'
  AND NOT EXISTS(SELECT 1 FROM public.exam_attempts_v2 a
  WHERE a.snapshot->>'result_id'=r.id::text AND a.apprenant_id=r.apprenant_id AND a.exam_id=r.quiz_id
- AND a.snapshot->>'matiere'=r.matiere_id AND a.snapshot->>'tentative'=r.tentative::text)
+ AND a.snapshot->>'matiere'=r.matiere_id AND a.snapshot->>'tentative'=r.tentative::text
+ AND a.snapshot->'source_historique'->'details'=r.details)
 ), projected AS (
  SELECT 'historical'::text origin,'history:'||h.id||':'||coalesce(q->>'id','missing-'||ordinality) identity,
  'history:'||h.id copy_id,h.id source_result_id,h.apprenant_id,h.quiz_id exam_id,h.matiere_id subject_id,
@@ -41,6 +42,12 @@ WITH h AS (
  h.details->'reponses'->(q->>'id') reponse,h.completed_at passage_at,h.tentative,
  CASE WHEN NOT h.submitted_proof THEN 'remise_non_prouvee'
  WHEN h.ambiguous THEN 'snapshot_ambigu'
+ WHEN EXISTS(SELECT 1 FROM public.exam_attempts_v2 a
+ WHERE coalesce(a.snapshot->'source_historique'->>'result_id',a.snapshot->>'result_id')=h.id::text) THEN 'lien_natif_a_verifier'
+ WHEN h.details->'correctionsIA' ? (q->>'id')
+ OR h.details->'correctionsQRC' ? (q->>'id')
+ OR h.details->'notesQRC' ? (q->>'id')
+ OR h.details->'qrc_pending_correction'='false'::jsonb THEN 'correction_existante_a_preserver'
  WHEN q->>'id' IS NULL THEN 'identite_absente'
  WHEN (SELECT count(*) FROM jsonb_array_elements(h.questions) d WHERE d->>'id'=q->>'id')<>1 THEN 'identite_ambigue'
  WHEN EXISTS(SELECT 1 FROM public.apprenant_quiz_results other WHERE other.id<>h.id
@@ -106,6 +113,9 @@ BEGIN
  RETURN prior;
  END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended('qrc:'||p_identity,0));
+ -- Hold the ORIGINAL source row against concurrent source edits until commit.
+ PERFORM 1 FROM public.apprenant_quiz_results r
+ WHERE 'history:'||r.id||':'=left(p_identity,45) FOR UPDATE;
  SELECT * INTO v FROM public.qrc_unified_candidate WHERE identity=p_identity;
  IF NOT FOUND OR v.origin<>'historical' THEN RAISE EXCEPTION 'historical identity required'; END IF;
  IF v.issue IS NOT NULL THEN RAISE EXCEPTION 'proof refused: %',v.issue; END IF;

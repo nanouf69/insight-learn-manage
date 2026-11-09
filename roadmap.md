@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 17:16 — Notation sûre des QRC historiques
+- [x] Prévisualisation 24 EB ; EB2 VTC 81 copies/261 QRC figées sans lien, 139 avec remise identique mais aucun horodatage exact ; corrections historiques en attente à qualifier, zéro création automatique autorisée.
+- [x] Candidat jetable renforcé : corrections existantes protégées, liens divergents gardés, verrou source ; 15 SQL PASS + navigateur 168 corrections synthétiques, une révision/retry et reprises tactiles PASS.
+- [x] Rapport docs/qrc-historique-notable-preparation-2026-11-09.md : migration proposée, autorisation admin des ambiguïtés et publication révisée, aucune application réelle.
+- [ ] Intégration réelle notation/remontée — validation spécifique de migration et compatibilité catalogue complet requises.
+
 ## 09/11 17:13 — Règle statistique parfaite explicite
 - [x] Règle permanente enregistrée ; moteur existant conforme, notes/barèmes/verdicts inchangés.
 - [x] Six cas explicites supplémentaires QCM A+B et QRC 0/2–1/2–2/2 ; 86 tests ciblés PASS ; rejeu preuves audit 3/5, 7/14, 8/18 inchangé.
