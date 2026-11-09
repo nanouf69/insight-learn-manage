@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 import { RIB_INFO } from "@/lib/pdf/devis-canonical";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
-import { MarquerPresentButton } from "./MarquerPresentButton";
+import { MarquerPresentButton, estAbsentSession } from "./MarquerPresentButton";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { cn } from "@/lib/utils";
@@ -4075,12 +4075,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return sessionIsOver && (!h || h <= 0);
   };
 
-  // Exclure les absents (présence pratique, résultat examen, ou aucune signature) pour la facturation FC
+  // La déclaration explicite permet la facturation, jamais la certification sans signatures.
   const nonAbsentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
     const ap = sa.apprenant;
-    if (sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent') return false;
-    if (hasNoSignature(ap?.id)) return false;
-    return true;
+    return !estAbsentSession(sa.presence_pratique, ap?.resultat_examen, hasNoSignature(ap?.id));
   });
 
 
@@ -5276,7 +5274,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         {(() => {
           const absentApprenants = (apprenantsInSession as any[]).filter((sa: any) => {
             const ap = sa.apprenant;
-            return sa.presence_pratique === 'absent' || ap?.resultat_examen === 'absent' || hasNoSignature(ap?.id);
+            return estAbsentSession(sa.presence_pratique, ap?.resultat_examen, hasNoSignature(ap?.id));
           });
 
           const absentCount = absentApprenants.length;

@@ -1,11 +1,19 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MarquerPresentButton } from "@/components/sessions/MarquerPresentButton";
+import { MarquerPresentButton, estAbsentSession } from "@/components/sessions/MarquerPresentButton";
 
 const mocks = vi.hoisted(() => ({ from: vi.fn(), update: vi.fn(), eq: vi.fn(), select: vi.fn(), single: vi.fn(), toast: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: mocks.from } }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: mocks.toast }) }));
 describe("Déclaration de présence depuis les absents", () => {
+  it("une présence explicite permet la facture même sans signature", () => {
+    expect(estAbsentSession("present", null, true)).toBe(false);
+    expect(estAbsentSession("absent", null, true)).toBe(true);
+  });
+  it("ne transforme pas une absence d'examen ni une présence inconnue en présence", () => {
+    expect(estAbsentSession("present", "absent", false)).toBe(true);
+    expect(estAbsentSession(null, null, true)).toBe(true);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     const chain = { update: mocks.update, eq: mocks.eq, select: mocks.select, single: mocks.single };

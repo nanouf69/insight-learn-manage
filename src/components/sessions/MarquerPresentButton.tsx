@@ -12,6 +12,10 @@ interface Props {
   onSaved: () => Promise<unknown>;
 }
 
+export function estAbsentSession(presence: string | null | undefined, resultatExamen: string | null | undefined, signatureManquante: boolean): boolean {
+  return presence === "absent" || resultatExamen === "absent" || (signatureManquante && presence !== "present");
+}
+
 // Une déclaration de présence ne crée aucune preuve d'émargement ni autre action.
 export function MarquerPresentButton({ inscriptionId, sessionId, nom, present, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
