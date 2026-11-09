@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { T3P_EXERCICES } from '@/components/cours-en-ligne/exercices/t3p-exercices-data';
+import { TAXI_COURS_DATA } from '@/components/cours-en-ligne/taxi-cours-data';
 import {
   projeterBilanDepuisCours,
   retablirExercicesProjetesDuServeur,
@@ -51,12 +52,12 @@ const bilanGestion = {
   id: 101,
   questions: Array.from({ length: 171 }, (_, index) => ({ id: 40000 + index, enonce: `Gestion ${index + 1}` })),
 };
-const autreMatiere = { id: 102, questions: [{ id: 50000, enonce: 'Sécurité inchangée' }] };
+const autreMatiere = { id: 999999, questions: [{ id: 50000, enonce: 'Exercice non configuré inchangé' }] };
 
 const projeter = () => projeterBilanDepuisCours(
   9,
   [bilanT3P, bilanGestion, autreMatiere] as any,
-  T3P_EXERCICES as any,
+  TAXI_COURS_DATA.exercices as any,
   { preserverContenuExistant: true },
 );
 
@@ -106,20 +107,22 @@ describe('Bilan T3P — composition réelle 206 vers 128 sans réécriture', () 
     expect(questions.some((q) => Number(q.id) >= 900000)).toBe(false);
   });
 
-  it('ne mute pas les 206 enregistrements et ne touche ni Gestion ni les autres matières', () => {
+  it('ne mute pas les enregistrements et laisse les exercices non configurés identiques', () => {
     const avant = JSON.stringify([bilanT3P, bilanGestion, autreMatiere]);
     const projete = projeter();
     expect(JSON.stringify([bilanT3P, bilanGestion, autreMatiere])).toBe(avant);
     expect(bilanT3P.questions).toHaveLength(206);
-    expect(projete.find((exo) => exo.id === 101)).toBe(bilanGestion);
-    expect(projete.find((exo) => exo.id === 102)).toBe(autreMatiere);
+    expect(bilanGestion.questions).toHaveLength(171);
+    expect(projete.find((exo) => exo.id === 101)!.questions).toHaveLength(94);
+    expect(projete.find((exo) => exo.id === 999999)).toBe(autreMatiere);
   });
 
-  it('une sauvegarde rétablit les 206 questions serveur de T3P seulement', () => {
+  it('une sauvegarde rétablit les questions serveur de chaque exercice projeté', () => {
     const projete = projeter();
     const restaure = retablirExercicesProjetesDuServeur(9, projete as any, [bilanT3P, bilanGestion, autreMatiere] as any);
     expect(restaure.find((exo) => exo.id === 100)!.questions).toBe(bilanT3P.questions);
     expect(restaure.find((exo) => exo.id === 100)!.questions).toHaveLength(206);
-    expect(restaure.find((exo) => exo.id === 101)).toBe(bilanGestion);
+    expect(restaure.find((exo) => exo.id === 101)!.questions).toBe(bilanGestion.questions);
+    expect(restaure.find((exo) => exo.id === 999999)).toBe(autreMatiere);
   });
 });
