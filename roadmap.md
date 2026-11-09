@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 22:36 — Correctif urgent existant et activation EB3 TAXI
+- [x] Correctif QRC du ticket urgent réutilisé sans correctif concurrent : public index-Cv4rxQEI.js confirmé, 39 tests PASS.
+- [x] EB3 TAXI : source admin 90008 univoque, 7 matières/107 questions (91 QCM/16 QRC), comparaison intégrale questions/choix/corrigés/ordre et coefficients/seuils ; version 2 publiée en base à 22:40:49 UTC, relecture conforme, signal core_sujet_publie=true.
+- [x] 66 tests partagés sauvegarde/reprise/soumission/QRC/notes PASS ; aucune note ni réponse réelle saisie, source admin intacte, EB3 VTC non modifié.
+- [ ] Garantie exhaustive des anciennes reprises et parcours élève réel complet NON PROUVÉS : ancien historique V2 peut prendre priorité sur un passage ancien, identité parent serveur absente. Ne pas présenter cette limite comme résolue. Rapport docs/eb3-taxi-activation-2026-11-09-2236.md.
+
 ## 09/11 19:55 — Rectification présélection QRC
 - [x] Supprimer panneau doublonné ; sélection locale sur boutons standard, sauvegarde humaine normale.
 - [x] 77 tests de proposition, sauvegarde/relecture et révision ; contrôle réel sans écriture ; publication ciblée demandée. Rapport docs/qrc-preselection-2026-11-09.md.
