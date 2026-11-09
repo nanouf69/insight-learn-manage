@@ -1038,7 +1038,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 </Button>
               </div>
             )}
-            {estConsultation(qrcSel.qrc_instance_id) ? (() => {
+            {estConsultation(qrcSel.qrc_instance_id) ? ((() => {
               const histo = (tentativeSel as unknown as { historique?: InfosHistorique }).historique;
               const notable = !!histo && histo.score_obtenu != null && baremeSel != null && qrcSel.etat !== "corrigee";
               const libelleProvenance = histo?.provenance === "remise_identique"
