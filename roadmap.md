@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 09/11 17:23 — Urgence opérationnelle EB2 journée/soir
-- [ ] Contrôler copies réelles par session et disponibilité actuelle du circuit de notation/import serveur.
-- [ ] Préparer affichage des preuves et capacités sans faux bouton de sauvegarde ; conserver le candidat historique précédent.
-- [ ] Vérifier parcours nouveaux passages soir et reprise isolée ; aucune écriture réelle autorisée.
+- [x] Public et aperçu : 156 QRC journée / 16 soir visibles, notation bloquée ; 95/9 remises identiques, zéro lien V2 ; import existant insuffisamment protégé, non exécuté.
+- [x] Aperçu : IDs originaux visibles, pagination complète des remises et ordre stable ; 8 tests PASS, aucun faux bouton de note, candidat précédent conservé.
+- [x] Routage soir vérifié source + versions réelles : EB2 aucune version publiée, risque de nouvelles copies consultation ; rapport docs/eb2-urgence-journee-soir-2026-11-09.md.
+- [ ] E2E complet soumission soir→notation→note élève — attend adaptation additive serveur et qualification catalogue réel, non prouvé.
 - [ ] Déploiement effectif — attend rapport de sécurité et validation spécifique, aucun déblocage annoncé sans preuve.
 
 ## 09/11 17:16 — Notation sûre des QRC historiques
