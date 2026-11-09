@@ -37,7 +37,9 @@ import {
   evaluateQrcDeterministic, ENABLE_AI_QRC_CORRECTION, AI_ONLY_UPGRADES,
   getQuestionImageValue,
 } from "./examens-blancs-utils";
-import { computeMoyenneExamen, computeResultatMatiereScore, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
+import { computeMoyenneExamen, computeResultatMatiereScore, computeMatiereScoreForAttempt, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
+import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
+import { rafraichirCopiesAffichees } from "@/lib/refreshSavedExamResults";
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
 import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
 import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisationServeur";
@@ -92,6 +94,16 @@ function EcranResultats({
   const coreOwnerRef = useRef(apprenantId);
   const sameCoreOwner = coreOwnerRef.current === apprenantId;
   const coreTick = useCoreChangeTick(apprenantId);
+  const [freshCopies, setFreshCopies] = useState<{ owner: string; rows: any[] } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!isViewingSaved || !apprenantId || !examen?.id) return;
+    const owner = `${apprenantId}:${examen.id}`;
+    lireResultatsQuizEleve(apprenantId, examen.id).then(res => {
+      if (!cancelled) setFreshCopies({ owner, rows: res.error ? [] : res.data ?? [] });
+    });
+    return () => { cancelled = true; };
+  }, [apprenantId, examen?.id, coreTick, isViewingSaved]);
   useEffect(() => {
     let cancelled = false;
     if (coreOwnerRef.current !== apprenantId) setCoreStates(null);
@@ -103,7 +115,11 @@ function EcranResultats({
     });
     return () => { cancelled = true; };
   }, [apprenantId, examen?.id, coreTick]);
-  const resultatsSource = resultats;
+  const resultatsSource = freshCopies?.owner === `${apprenantId}:${examen?.id}`
+    ? rafraichirCopiesAffichees(resultats, freshCopies.rows, (row, previous) => {
+      const matiere = examen.matieres.find(m => m.id === previous.matiereId);
+      return matiere ? computeMatiereScoreForAttempt(matiere, row) : null;
+    }) : resultats;
   // Les emplacements vides (matière sans résultat) restent à leur index : jamais de plantage.
   resultats = useMemo(() => resultatsSource.map((r) => (r == null ? r : {
     ...r,
