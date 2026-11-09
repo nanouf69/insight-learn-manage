@@ -5864,12 +5864,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module?.id, moduleData?.exercices?.length]);
 
-  // Bilan = somme des cours : charge une seule fois les exercices du module
-  // cours source (lecture seule) pour projeter les matières sans quiz canonique.
+  // Bilan T3P : les 66 + 62 questions sources affichées dans l'application
+  // définissent uniquement la composition et l'ordre. Les objets historiques du
+  // bilan restent prioritaires pour les énoncés, choix, images et identifiants.
   useEffect(() => {
     const config = projectionSommeCoursActive(Number(module?.id)) ? BILAN_SOMME_COURS_SOURCES[Number(module?.id)] : undefined;
     if (!config || !editorStateHydrated) return;
     let cancelled = false;
+    if (Number(module.id) === 9) {
+      coursSommeExercicesRef.current = TAXI_COURS_DATA.exercices.filter((exo) => [1, 2].includes(Number(exo.id)));
+      setModuleData((prev) => appliquerSommeCoursBilan(prev));
+      return () => { cancelled = true; };
+    }
     loadModuleEditorStateRow(config.moduleCours)
       .then((row) => {
         if (cancelled || !row?.module_data?.exercices) return;
