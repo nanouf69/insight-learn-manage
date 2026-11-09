@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 17:16 — Notation sûre des QRC historiques
+- [ ] Prévisualisation lecture seule des identités, contenu figé, remises et corrections existantes ; compte d’éligibilité conservateur.
+- [ ] Renforcer le candidat jetable : corrections existantes protégées, liens divergents jamais masqués, verrouillage des preuves et tests.
+- [ ] Rapport de migration proposée et parcours manuel des preuves ambiguës, sans application réelle.
+- [ ] Intégration réelle notation/remontée — validation spécifique de migration et compatibilité catalogue complet requises.
+
 ## 09/11 17:13 — Règle statistique parfaite explicite
 - [x] Règle permanente enregistrée ; moteur existant conforme, notes/barèmes/verdicts inchangés.
 - [x] Six cas explicites supplémentaires QCM A+B et QRC 0/2–1/2–2/2 ; 86 tests ciblés PASS ; rejeu preuves audit 3/5, 7/14, 8/18 inchangé.
