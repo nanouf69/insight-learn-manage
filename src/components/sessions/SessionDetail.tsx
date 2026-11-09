@@ -5300,7 +5300,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
           const facturesCount = apprenantsForFactures.length;
           const tabCount = 2 + (isFormationContinue ? 3 : 0) + 1;
-          const gridColsClass = tabCount === 6 ? 'grid-cols-6' : tabCount === 5 ? 'grid-cols-5' : tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+          const gridColsClass = tabCount === 6 ? 'sm:grid-cols-6' : tabCount === 5 ? 'sm:grid-cols-5' : tabCount === 4 ? 'sm:grid-cols-4' : tabCount === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2';
           const attestationRows = (apprenantsInSession as any[]).filter((sa: any) => sa.apprenant).map((sa: any) => {
             const a = sa.apprenant;
             const isAbsent = absentIds.has(a.id);
@@ -5319,7 +5319,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const attestationsExclues = attestationRows.filter(r => !r.eligible);
           return (
         <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col">
-          <TabsList className={`shrink-0 grid w-full h-auto grid-cols-2 sm:${gridColsClass}`}>
+          <TabsList className={`shrink-0 grid w-full h-auto grid-cols-2 ${gridColsClass}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})
