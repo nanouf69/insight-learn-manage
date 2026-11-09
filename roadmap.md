@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 09/11 13:10 — Audit lecture seule verdicts examens blancs novembre
-- [ ] Identifier sessions JOURNÉE/SOIRÉE VTC/TAXI et comparer toutes les copies concernées : notes finales, minima matière, global, QRC restantes et verdict.
-- [ ] Établir cause, décomptes, exemples anonymisés et plan minimal ; aucune note/copie/progression modifiée, aucun test en écriture ni publication ; préparation EB3 inchangée.
+- [x] Sessions journée/soir et TAXI lié identifiées ; 368 lignes matière dont 286 novembre, 47 derniers ensembles avec activité novembre : 19 réussites, 7 échecs tous <10, 21 attentes. Aucune donnée ou préparation EB3 modifiée.
+- [x] Règle 10 + minima 6/4 + complétude vérifiée, formule publique confirmée ; classement incomplet comme échoué identifié dans le code, cache/source soupçons distincts ; rapport docs/audit-verdict-eb-novembre-2026-11-09.md et plan minimal non appliqué.
+- [ ] Cause exacte terrain non prouvée : aucun écran/copie précis fourni ; 0 verdict définitif >10/échec retrouvé. Correction/publication attendent accord explicite et rattachement d'une capture au passage.
 
 ## 09/11 13:02 — Protections nouvelles tentatives EB3–EB6 uniquement
 - [x] Identifiants et déclencheurs réels lus ; identité parent originale absente du démarrage par matière, formats snapshots distincts ; 23 lignes V2 en cours protégées, aucun changement actif.
