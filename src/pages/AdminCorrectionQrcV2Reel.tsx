@@ -3,7 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
-import { PrenoteQrc } from "@/features/correction-qrc-v2/PrenoteQrc";
+import { proposerPrenote, tracePrenote } from "@/features/correction-qrc-v2/prenote";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
@@ -333,6 +333,13 @@ export default function AdminCorrectionQrcV2Reel() {
   const restaureSel = qrcSel ? baremeRestaureDe.get(qrcSel.qrc_instance_id) ?? null : null;
   const baremeSel = questionSel?.points ?? restaureSel?.bareme ?? null;
   const videSel = !texte(qrcSel?.reponseComplete ?? qrcSel?.reponse).trim();
+  const proposition = useMemo(() => proposerPrenote(
+    texte(qrcSel?.reponseComplete ?? qrcSel?.reponse), questionSel?.reponseQRC ?? '', baremeSel,
+  ), [qrcSel?.reponseComplete, qrcSel?.reponse, questionSel?.reponseQRC, baremeSel]);
+  const [choixLocal, setChoixLocal] = useState<{ cle: string; note: number } | null>(null);
+  const cleProposition = JSON.stringify([selection, qrcSel?.reponseComplete ?? qrcSel?.reponse, questionSel?.reponseQRC, baremeSel]);
+  const noteChoisie = qrcSel?.etat === 'corrigee' ? null
+    : choixLocal?.cle === cleProposition ? choixLocal.note : proposition.note;
 
   // ——— Correction IA (lecture seule ici ; l'écriture se fait côté serveur) ———
   const [configIa, setConfigIa] = useState<ConfigIa | null>(null);
@@ -423,7 +430,7 @@ export default function AdminCorrectionQrcV2Reel() {
     ? ((tentativeSel as unknown as { historique?: InfosHistorique } | undefined)?.historique ?? null)
     : null;
   const confirmationSel = !!histoSel && confirmationRemiseRequise(histoSel.provenance);
-  const valider = async (valeur?: number, confirmationIa = false, traceProposition?: string) => {
+  const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
     if (etatEnvoi === "encours") return;
@@ -439,7 +446,7 @@ export default function AdminCorrectionQrcV2Reel() {
       }
     }
     const revision = qrcSel.etat === "corrigee";
-    if (traceProposition && revision) return; // A proposal never revises an existing grade.
+    const traceProposition = !revision && baremeSel != null ? tracePrenote(proposition, n, baremeSel) : undefined;
     const commentaireValidation = [commentaire, traceProposition].filter(Boolean).join('\n');
     const ancienne = qrcSel.note;
     if (revision) {
@@ -508,8 +515,9 @@ export default function AdminCorrectionQrcV2Reel() {
       // le rechargement complet de toutes les copies prenait jusqu'à ~30 s sous charge.
       const sessionRelue = histo && session
         ? await (async () => {
-            const copie = await chargerConsultationEb2([tentativeSel!.attempt_id]);
-            const id = tentativeSel!.attempt_id;
+            if (!tentativeSel) throw new Error('Identité de copie absente.');
+            const id = tentativeSel.attempt_id;
+            const copie = await chargerConsultationEb2([id]);
             const fusion: SessionReelle = {
               ...session,
               tentatives: session.tentatives.map((t) => copie.tentatives.find((c) => c.attempt_id === t.attempt_id) ?? t),
@@ -1164,22 +1172,18 @@ export default function AdminCorrectionQrcV2Reel() {
                     Copie vide — aucune correction historique, aucune note automatique.
                   </p>
                 )}
-                <PrenoteQrc key={`${qrcSel.qrc_instance_id}:${texte(qrcSel.reponseComplete ?? qrcSel.reponse)}:${questionSel.reponseQRC}:${baremeSel}`}
-                  reponse={texte(qrcSel.reponseComplete ?? qrcSel.reponse)} officiel={questionSel.reponseQRC ?? ''}
-                  bareme={baremeSel} disabled={etatEnvoi === 'encours' || (confirmationSel && !confirmeRemise)}
-                  onValider={(n, trace) => {
-                    if (window.confirm(`Valider humainement ${String(n).replace('.', ',')}/${baremeSel} pour cette copie ?`)) void valider(n, false, trace);
-                  }} />
+                {proposition.note == null && <p className="text-xs text-muted-foreground">Appréciation humaine nécessaire.</p>}
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                     <Button
                       key={v}
                       size="lg"
                       className="min-w-[56px] text-base font-semibold"
-                      variant={note === v ? "default" : "outline"}
+                      variant={noteChoisie === v ? "default" : "outline"}
+                      aria-pressed={noteChoisie === v}
                       data-testid={`note-${v}`}
                       disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
-                      onClick={() => void valider(v)}
+                      onClick={() => setChoixLocal({ cle: cleProposition, note: v })}
                     >
                       {String(v).replace(".", ",")}
                     </Button>
@@ -1191,6 +1195,8 @@ export default function AdminCorrectionQrcV2Reel() {
                   value={commentaire}
                   onChange={(e) => setCommentaire(e.target.value)}
                 />
+                <Button data-testid="enregistrer-correction" disabled={noteChoisie == null || etatEnvoi === 'encours' || (confirmationSel && !confirmeRemise)}
+                  onClick={() => { if (noteChoisie != null) void valider(noteChoisie); }}>Enregistrer la correction</Button>
                 <div className="text-sm" data-testid="etat-correction">
                   {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
                   {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
