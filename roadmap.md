@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 09/11 19:49 — EB3 futur et pré-note QRC
-- [ ] Comparer versions/source et passages engagés ; activation seulement sur contenu identique certifié.
-- [ ] Pré-note locale distincte, validation humaine explicite, trace dans la correction ; tests ciblés.
-- [ ] Vérifier aperçu/publication ciblée ; aucune donnée réelle de test.
+- [x] Lecture réelle : deux brouillons EB3 vides, sources 107 questions × deux filières ; 234/45 marqueurs matière anciens en cours, identité de passage global non certifiée. Aucune activation.
+- [x] Pré-note locale conservatrice distincte, validation humaine explicite, trace dans la correction ; 76 tests ciblés PASS.
+- [x] Aperçu authentifié vraie copie EB2 soir vérifié, RPC de notation bloquées ; aucune donnée réelle de test. Rapport docs/eb3-prenote-2026-11-09.md.
+- [ ] Publication/activation bloquées : candidat EB3 vide et reprise serveur non certifiée ; sémantique générale/pré-note publique non prouvées.
 
 ## 09/11 17:23 — Urgence opérationnelle EB2 journée/soir
 - [x] Public et aperçu : 156 QRC journée / 16 soir visibles, notation bloquée ; 95/9 remises identiques, zéro lien V2 ; import existant insuffisamment protégé, non exécuté.
