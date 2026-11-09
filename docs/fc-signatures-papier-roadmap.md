@@ -1,5 +1,6 @@
 # Signatures papier FC
-- [ ] Preuves papier par inscription/date/créneau, document existant et validation admin, sans modifier les originaux.
-- [ ] Onglet Signatures papier, heures saisies, contrôles serveur et relecture.
-- [ ] Heures, signatures manquantes et attestation FC mis à jour sans double comptage ; historiques figés exclus.
-- [ ] Tests privés SQL/droits et écran fictif ; aucune écriture élève ni envoi réel.
+- [x] Registre 0252 appliqué : document du même dossier, dates/créneaux/heures contrôlés, admin seul, preuves immuables.
+- [x] Onglet en aperçu, sélection feuille existante, saisie et relecture ; téléphone sans débordement.
+- [x] Heures et listes de signatures manquantes alimentées sans doublons ; contrôle attestation reconnaît les créneaux papier complets (3 h matin / 4 h après-midi), paiement conservé. Historiques figés exclus.
+- [x] 30 tests ciblés et SQL privé droits/immutabilité/4 sur 4 réussis ; écran réel vérifié sans sauvegarde, 39 signatures numériques identiques avant/après.
+- [ ] Publication frontend : attend un accord explicite ; aucune preuve papier réelle créée, aucun document généré/envoyé. Parcours d'enregistrement hébergé complet non testé sur compte fictif.
