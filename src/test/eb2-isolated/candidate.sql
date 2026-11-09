@@ -77,7 +77,7 @@ BEGIN
       matched:=true;
       FOR keyword IN SELECT value FROM jsonb_array_elements_text(q->'reponses_possibles') LOOP
         keyword:=regexp_replace(translate(lower(keyword),'àâäáãéèêëîïíôöóùûüúç','aaaaaeeeeiiiooouuuuc'),'[^a-z0-9 ]','','g');
-        IF keyword='' THEN RAISE EXCEPTION 'Corrigé figé insuffisant' USING ERRCODE='55000'; END IF;
+        IF btrim(keyword)='' THEN RAISE EXCEPTION 'Corrigé figé insuffisant' USING ERRCODE='55000'; END IF;
         matched:=matched AND strpos(normalized,keyword)>0;
       END LOOP;
       IF matched THEN earned:=earned+1; END IF;

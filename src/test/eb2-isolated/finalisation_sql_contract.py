@@ -173,4 +173,9 @@ GRANT SELECT ON reponses_apprenants,apprenant_quiz_results TO authenticated;
         self.pg.sql("UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{snapshot,questions,0,reponses_possibles}',jsonb_build_array('   ','!!!')) WHERE quiz_id='BLANK_KEY' AND matiere_id='gestion'")
         with self.assertRaisesRegex(RuntimeError,'insuffisant'): self.call('BLANK_KEY')
 
+    def test_qrc_whitespace_only_keyword_refused(self):
+        self.fixture('SPACE_KEY')
+        self.pg.sql("UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{snapshot,questions,0,reponses_possibles}',jsonb_build_array('   ')) WHERE quiz_id='SPACE_KEY' AND matiere_id='gestion'")
+        with self.assertRaisesRegex(RuntimeError,'insuffisant'): self.call('SPACE_KEY')
+
 if __name__=='__main__': unittest.main(verbosity=2)
