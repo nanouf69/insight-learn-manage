@@ -1,0 +1,109 @@
+--- published/RevisionFausses
++++ test-only/RevisionFausses
+@@ -56,20 +56,22 @@
+         let idTentative: string;
+         if (REVISION_FINALISATION_SERVEUR_ACTIVE) {
+           // A completed draft without a result is an interrupted finalization, not a new revision.
+-          const { error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
++          const { data: finalises, error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
+             .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
+           if (erreurFinalises) throw erreurFinalises;
+-          const interrupted = rows.some(r => r.completed !== true) ? undefined : rows.filter(r => r.completed === true).at(-1);
++          const ids = new Set((finalises ?? []).map(r => (r.details as any)?.revision_exercice_id));
++          const interrupted = rows.filter(r => r.completed === true && !ids.has(r.exercice_id))
++            .sort((a, b) => a.exercice_id.localeCompare(b.exercice_id, undefined, { numeric: true })).at(-1);
+           idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
+         } else {
+           idTentative = choisirTentativeRevision(baseExerciceId, rows);
+         }
+         if (annule) return;
+         setExerciceId(idTentative);
+-        tentativePreteRef.current = true;
++
+         let lecture = supabase
+           .from("reponses_apprenants")
+-          .select("reponses, score")
++          .select("reponses, score, completed, write_seq")
+           .eq("apprenant_id", apprenantId)
+           .eq("exercice_id", idTentative)
+           .eq("exercice_type", "revision_fausses");
+@@ -83,6 +85,9 @@
+           console.error("Erreur chargement révision:", error.message);
+           return;
+         }
++        if (annule) return;
++        primeKnownWriteSeq(apprenantId, idTentative, Number(data?.write_seq ?? 0));
++        tentativePreteRef.current = true;
+         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
+         const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);
+         const restored = restaurerRevisionProgressState(merged, examenId, questionOrder);
+@@ -198,11 +203,14 @@
+        const donnees = safeArray<string>(rep).sort();
+        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+      } else if (q?.type === "QRC") {
+-       const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+-       const motsCles = Array.isArray(q.reponses_possibles) ? q.reponses_possibles : [];
+-      let nbTrouvees = 0;
+-      motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+-      isCorrect = nbTrouvees >= motsCles.length;
++      const normalize = (v: string) => v.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "").trim();
++      const keys = Array.isArray(q.reponses_possibles) ? q.reponses_possibles : [];
++      if (!keys.length || keys.some(k => typeof k !== "string" || !normalize(k))) {
++        toast.info("Correction automatique indisponible : réponse conservée, vérification du corrigé requise.");
++        return;
++      }
++      const answer = normalize(safeStr(rep));
++      isCorrect = keys.every(k => answer.includes(normalize(k)));
+     }
+     const newCorrected = isCorrect ? correctedCount + 1 : correctedCount;
+     if (isCorrect) setCorrectedCount(newCorrected);
+@@ -234,20 +242,20 @@
+     try {
+       // La clôture passe par la même file ordonnée : aucune écriture directe
+       // ne peut dépasser une réponse encore en attente ou un autre appareil.
+-      persistProgress(reponses, currentIndex, correctedCount, correctedQuestionsRef.current, true, undefined, true);
++      persistProgress(reponses, currentIndex, correctedCount, correctedQuestionsRef.current, true, undefined, !REVISION_FINALISATION_SERVEUR_ACTIVE);
+       const confirmations = await flushAnswerSavesAndWait(apprenantId, exerciceId);
+       if (!confirmations) throw new Error("Dernières réponses non confirmées");
+       const { data: relu, error: erreurRelecture } = await supabase
+         .from("reponses_apprenants")
+-        .select("reponses, score, completed")
++        .select("reponses, score, completed, write_seq")
+         .eq("apprenant_id", apprenantId)
+         .eq("exercice_id", exerciceId)
+         .eq("exercice_type", "revision_fausses")
+         .maybeSingle();
+-      if (erreurRelecture || relu?.completed !== true) {
++      if (erreurRelecture || !relu || (!REVISION_FINALISATION_SERVEUR_ACTIVE && relu.completed !== true)) {
+         throw new Error(erreurRelecture?.message || "Clôture non confirmée");
+       }
+-      termineeRef.current = true;
++      if (!REVISION_FINALISATION_SERVEUR_ACTIVE) termineeRef.current = true;
+       const confirme = restaurerRevisionProgressState(relu.reponses, examenId, questionOrder);
+       const finalCorrected = Number.isFinite(relu.score) ? Number(relu.score) : confirme.correctedCount;
+       if (!REVISION_FINALISATION_SERVEUR_ACTIVE) {
+@@ -288,6 +296,7 @@
+       }
+       const { data: receipt, error } = await supabase.rpc("finaliser_revision_fausses" as any, {
+         p_apprenant_id: apprenantId, p_examen_id: examenId, p_revision_exercice_id: exerciceId,
++        p_expected_write_seq: relu.write_seq, p_expected_state: relu.reponses,
+       });
+       if (error) {
+         console.error("Erreur sauvegarde révision:", error.message, error.details);
+@@ -298,6 +307,7 @@
+           || JSON.stringify(result.details?.questionOrder) !== JSON.stringify(questionOrder)) {
+           throw new Error("Reçu de finalisation non conforme");
+         }
++        termineeRef.current = true;
+         finEnregistree = true;
+         toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
+         onTerminer();
+@@ -410,7 +420,7 @@
+                         onClick={() => {
+                           if (showCorrection) return;
+                           const prev = safeArray<string>(rep);
+-                          const correctCount = q.choix!.filter(ch => ch.correct).length;
++                          const correctCount = (q.choix ?? []).filter(ch => ch.correct).length;
+                           if (correctCount <= 1) {
+                             updateReponse(currentKey, [c.lettre]);
+                           } else {
