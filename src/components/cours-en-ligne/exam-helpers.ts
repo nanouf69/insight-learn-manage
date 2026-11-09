@@ -501,14 +501,14 @@ export function excludeResultPlaceholders<T>(rows: T[] | null | undefined): T[] 
  */
 export function legacyEnginePendingForRows(
   rows: any[] | null | undefined,
-  isMatierePending: (matiereId: string) => boolean | null,
+  isMatierePending: (matiereId: string, row?: any) => boolean | null,
 ): boolean | null {
   const list = (rows || []).filter((row) => row && !row?.nonPassee && !row?.__core);
   let any: boolean | null = null;
   for (const row of list) {
     const id = String(row?.matiereId ?? row?.matiere_id ?? "");
     if (!id) continue;
-    const p = isMatierePending(id);
+    const p = isMatierePending(id, row);
     if (p === true) return true;
     if (p === false) any = false;
   }

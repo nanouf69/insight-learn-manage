@@ -10,6 +10,7 @@ import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique, noteExamenAffichee, idsResultatsNonPublies, verdictMatiereAffiche } from "@/lib/noteExamenAffichee";
 import { useLearnerResultRefresh } from "@/hooks/useLearnerResultRefresh";
+import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 
 interface QuizResult {
   id: string;
@@ -128,11 +129,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
         state.pending = false;
 
         const [quizRes, moduleRes, resetsRes] = await Promise.all([
-          supabase
-            .from("apprenant_quiz_results")
-            .select("*")
-            .eq("apprenant_id", apprenantId)
-            .order("completed_at", { ascending: true }),
+          lireResultatsQuizEleve(apprenantId).then(res => ({ ...res, data: res.data?.slice().reverse() ?? null })),
           supabase
             .from("apprenant_module_completion")
             .select("*")

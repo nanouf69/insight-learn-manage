@@ -28,6 +28,7 @@ import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDe
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
+import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -141,13 +142,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           await new Promise((r) => setTimeout(r, 600 * attempt));
           try { await assurerSessionFraiche(); } catch { /* best effort */ }
         }
-        const result = await supabase
-          .from("apprenant_quiz_results" as any)
-          .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
-          .eq("apprenant_id", apprenantId)
-          .eq("quiz_type", "examen_blanc")
-          .order("completed_at", { ascending: false })
-          .order("created_at", { ascending: false });
+        const result = await lireResultatsQuizEleve(apprenantId, undefined, 'examen_blanc');
         lastResult = result;
         if (!result.error && result.data) return result;
         console.warn(`[ExamensBlancs] Fetch attempt ${attempt + 1} failed:`, result.error);
@@ -283,6 +278,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               score_max: toFiniteNumber(scoreSource.score_max, 0),
               completed_at: scoreSource.completed_at,
               created_at: scoreSource.created_at,
+              tentative: r.tentative,
+              reussi: r.reussi,
               lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
               reponses: r?.details?.reponses ?? null,
               correctionsIA: r?.details?.correctionsIA ?? null,
@@ -601,7 +598,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                        // Passage entièrement présent dans le nouveau système → son état
                        // serveur est la seule source (ancien moteur ignoré).
                        const allCore = scores.length > 0 && scores.every((s: any) => !!s?.__core);
-                       const enginePending = allCore ? null : legacyEnginePendingForRows(scores, (mid) => qrcEngine.isMatierePending(examen.id, mid));
+                       const enginePending = allCore ? null : legacyEnginePendingForRows(scores, (mid, row) => qrcEngine.isMatierePending(examen.id, mid, row));
                        const publicationPending = enginePending === true
                          || isExamAttemptPublicationPending(scores, examen);
                        if (publicationPending) {
@@ -722,7 +719,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         // STATUT PAR MATIÈRE (jamais hérité du blocage global de l'examen) :
                         // une matière est « en attente » uniquement si ELLE contient encore
                         // une QRC répondue non validée manuellement pour CE passage.
-                        const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id);
+                        const engineMatierePending = qrcEngine.isMatierePending(examen.id, m.id, scoreData);
                         const coreRow = (scoreData as any)?.__core ?? null;
                         const publicationPending = coreRow
                           ? coreRow.pending === true

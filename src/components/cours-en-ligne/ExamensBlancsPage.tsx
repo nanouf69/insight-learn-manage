@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from "./ExamensBlancsEditor";
+import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
+import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
 import ConfirmationPresentielEB from "./ConfirmationPresentielEB";
 import { confirmationPresentielRequise } from "@/lib/confirmationPresentielEB";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
@@ -936,14 +938,15 @@ export default function ExamensBlancsPage({
     const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
-    const { data } = await supabase
-      .from("apprenant_quiz_results" as any)
-      .select("*")
-      .eq("apprenant_id", apprenantId)
-      .eq("quiz_id", examReference.id)
-      .eq("quiz_type", quizType);
-
-    const rows = selectLatestAttemptRows(mergePassageSiblingRows(excludeResultPlaceholders(data as any[])));
+    const [{ data, error }, resets] = await Promise.all([
+      lireResultatsQuizEleve(apprenantId, examReference.id, quizType),
+      supabase.from('core_exam_resets').select('exam_id, cutoff_at').eq('apprenant_id', apprenantId),
+    ]);
+    if (error || resets.error) {
+      toast.error('Lecture des résultats impossible. Réessayez sans relancer votre examen.');
+      return;
+    }
+    const rows = lignesExamenAffichees(data, resets.data);
     // Surveillance (lecture seule) : journalise toute divergence « élève en
     // attente / aucune QRC réellement à corriger ». Ne modifie jamais rien.
     // Même règle que l'affichage (EcranResultats) : une matière ayant un passage

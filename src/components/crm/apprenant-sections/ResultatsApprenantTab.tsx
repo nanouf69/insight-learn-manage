@@ -17,6 +17,7 @@ import { AutoriserNouveauPassageButton } from "./AutoriserNouveauPassageButton";
 import { BilanPassagesStatutsPanel } from "./BilanPassagesStatutsPanel";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
 import { estExamenBlanc } from "@/lib/noteExamenAffichee";
+import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -47,12 +48,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
 
     Promise.all([
       // Exam blanc scores
-      supabase
-        .from("apprenant_quiz_results")
-        .select("id, quiz_id, quiz_titre, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, quiz_type, completed_at, created_at, details")
-        .eq("apprenant_id", apprenantId)
-        .order("completed_at", { ascending: false })
-        .order("created_at", { ascending: false }),
+      lireResultatsQuizEleve(apprenantId),
       fetchCoreMatiereStates(apprenantId),
       // Bilans
       supabase

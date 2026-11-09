@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 09/11 16:10 — Audit global toutes tentatives EB
+- [x] Inventaire SQL réel complet : 191 élèves, 5848 résultats, 1025 groupes tentative, 2545 passages V2 ; 17 écarts candidats/8 ensembles/7 élèves, 167 copies différentes non forcées.
+- [x] Correctifs partagés aperçu : tentative CRM, priorité dernière tentative, QRC pilote par tentative connue, détail même ID/reset-aware, pagination complète ; 109 tests ciblés + suite critique 123 tests PASS (partiellement communes).
+- [x] Rapport docs/audit-global-eb-2026-11-09-1610.md ; public index-BNKO-425.js confirmé ; parcours réels Zine + SAWADOGO CRM/cartes concordants.
+- [ ] Publication des nouveaux correctifs — attend accord explicite ; aucune écriture élève.
+- [ ] Rejeu exact toutes interfaces et toutes anciennes copies — non prouvé : sessions personnelles indisponibles et preuves anciennes ambiguës ; aucun statut inventé.
+
 ## 09/11 16:01 — Zine DAKHLI : contradiction EB1 carte / compte
 - [x] Zine DAKHLI identifié ; sept notes V2 définitives 15,5/10/7/14/11/12,5/6, 16 QRC corrigées ; public index-BNKO-425.js, carte/détail/CRM/Notes consultés = réussi. Contradiction passée non reproduite sur version actuelle.
 - [x] Lacune de rafraîchissement partagé corrigée en aperçu : écoute des résultats historiques aussi ; 74 tests PASS, scénario Zine + 24 EB / 108 matières source. Cause de l'ancienne capture non prouvée.

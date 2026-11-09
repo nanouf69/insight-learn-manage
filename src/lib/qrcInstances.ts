@@ -265,14 +265,14 @@ export async function fetchQrcPublicationState(attemptId: string) {
 export async function fetchLearnerQrcPending(args: {
   apprenantId: string;
   quizId: string;
-}): Promise<{ pendingByMatiere: Set<string>; pendingTotal: number } | null> {
+}): Promise<{ pendingByMatiere: Set<string>; pendingTotal: number; pendingAttemptIds: Set<string> } | null> {
   const { apprenantId, quizId } = args;
   if (!apprenantId || !quizId) return null;
   if (!(await isQrcEngineEnabled(quizId))) return null;
 
   const { data, error } = await supabase
     .from("qrc_instances")
-    .select("matiere_id, etat")
+    .select("matiere_id, etat, attempt_id")
     .eq("apprenant_id", apprenantId)
     .eq("quiz_id", quizId)
     .eq("etat", "en_attente");
@@ -281,5 +281,5 @@ export async function fetchLearnerQrcPending(args: {
     return null;
   }
   const pendingByMatiere = new Set<string>((data || []).map((r: any) => String(r.matiere_id)));
-  return { pendingByMatiere, pendingTotal: (data || []).length };
+  return { pendingByMatiere, pendingTotal: (data || []).length, pendingAttemptIds: new Set((data || []).map(r => String(r.attempt_id))) };
 }
