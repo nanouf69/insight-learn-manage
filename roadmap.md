@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 09/11 13:10 — Audit lecture seule verdicts examens blancs novembre
+- [ ] Identifier sessions JOURNÉE/SOIRÉE VTC/TAXI et comparer toutes les copies concernées : notes finales, minima matière, global, QRC restantes et verdict.
+- [ ] Établir cause, décomptes, exemples anonymisés et plan minimal ; aucune note/copie/progression modifiée, aucun test en écriture ni publication ; préparation EB3 inchangée.
+
 ## 09/11 13:02 — Protections nouvelles tentatives EB3–EB6 uniquement
 - [x] Identifiants et déclencheurs réels lus ; identité parent originale absente du démarrage par matière, formats snapshots distincts ; 23 lignes V2 en cours protégées, aucun changement actif.
 - [x] Prototype de périmètre hors application/migrations : 9 contrats PostgreSQL + 18 contrats atomicité préexistants + 94 Vitest PASS ; exclusion EB1/2 et parent préactivation vérifiée sur fictifs.
