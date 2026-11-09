@@ -15,6 +15,8 @@ import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassag
 import { isSnapshotOutdated, findSnapshotWrongExamSource, KNOWN_EB1_SERVED_IN_EB2_RESULT_IDS } from "@/components/cours-en-ligne/exam-content-integrity";
 import { AutoriserNouveauPassageButton } from "./AutoriserNouveauPassageButton";
 import { BilanPassagesStatutsPanel } from "./BilanPassagesStatutsPanel";
+import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
+import { estExamenBlanc } from "@/lib/noteExamenAffichee";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -58,13 +60,23 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .eq("apprenant_id", apprenantId)
         .eq("type_document", "bilan_examen_blanc")
         .order("completed_at", { ascending: false }),
-    ]).then(async ([scoresRes, coreStates, bilansRes]) => {
+      // Remises à zéro : même sélection de tentative que l'espace apprenant.
+      supabase
+        .from("core_exam_resets")
+        .select("exam_id, cutoff_at")
+        .eq("apprenant_id", apprenantId),
+    ]).then(async ([scoresRes, coreStates, bilansRes, resetsRes]) => {
       if (scoresRes.data) {
         // Source unique : même fonction commune que « Mes notes » (élève).
         const nonFiables = coreStates === null
           ? null
           : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
-        const rows = mergePassageSiblingRows(excludeResultPlaceholders(scoresRes.data)) as any[];
+        const toutes = scoresRes.data as any[];
+        // Examens blancs : tentative affichée = celle de l'espace apprenant (numéro de
+        // tentative, remise à zéro), jamais un mélange de tentatives par date.
+        const eb = lignesExamenAffichees(toutes.filter((r: any) => estExamenBlanc(r)), resetsRes?.error ? null : (resetsRes?.data as any[]));
+        const autres = mergePassageSiblingRows(excludeResultPlaceholders(toutes.filter((r: any) => !estExamenBlanc(r)))) as any[];
+        const rows = [...eb, ...autres];
         setExamScores(rows.map((r: any) => attacherSourceUnique(r, coreStates, nonFiables)));
       }
       if (bilansRes.data) {
@@ -157,7 +169,9 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   })
                 : null;
               const moyenne = bilanExamen?.moyenne ?? 0;
-              const isReussi = bilanExamen?.admisGlobal ?? moyenne >= 10;
+              // Verdict commun avec la carte élève ; jamais « échoué » sans définition chargée.
+              const verdict = bilanExamen?.verdict ?? null;
+              const isReussi = verdict === "reussi";
               const bilan = bilans[quizId];
               // QRC non encore corrigées manuellement : pas de statut définitif.
               // Règle générale : le drapeau `qrc_pending_correction` n'existe que sur
@@ -167,7 +181,8 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                // Examen incomplet : toutes les matières de l'examen n'ont pas été passées.
                const matsDef = Array.isArray(examenDef?.matieres) ? examenDef.matieres : [];
                const examIncomplet = matsDef.length > 0 && !matsDef.every((md: any) => exam.matieres.some((m: any) => m.matiere_id === md.id || m.matiere_nom === md.nom));
-               const sansNoteFinale = enAttenteCorrection || examIncomplet;
+               const verdictNeutre = !verdict || verdict === "incomplet" || verdict === "indetermine";
+               const sansNoteFinale = enAttenteCorrection || (examIncomplet && verdict !== "echoue") || verdictNeutre;
                // LECTURE SEULE : signale un passage réalisé sur une version
                // antérieure de l'examen. Aucune note n'est recalculée ni corrigée.
                const versionAnterieure = exam.matieres.some((m: any) => {
@@ -202,16 +217,24 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-sm">{exam.titre}</h4>
-                      {examIncomplet ? (
-                        <Badge variant="secondary" className="text-xs">
-                          Examen incomplet — notes par matière uniquement
-                        </Badge>
-                      ) : enAttenteCorrection ? (
-                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
+                      {enAttenteCorrection ? (
+                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700" data-testid="eb-verdict-admin" data-verdict="attente">
                           ⏳ En attente de correction
                         </Badge>
+                      ) : !verdict ? (
+                        <Badge variant="secondary" className="text-xs" data-testid="eb-verdict-admin" data-verdict="chargement">
+                          Chargement de l'examen…
+                        </Badge>
+                      ) : verdict === "incomplet" || (examIncomplet && verdict !== "echoue") ? (
+                        <Badge variant="secondary" className="text-xs" data-testid="eb-verdict-admin" data-verdict="incomplet">
+                          Examen incomplet — notes par matière uniquement
+                        </Badge>
+                      ) : verdict === "indetermine" ? (
+                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700" data-testid="eb-verdict-admin" data-verdict="indetermine">
+                          ⚠ Verdict à vérifier
+                        </Badge>
                       ) : (
-                        <Badge variant={isReussi ? "default" : "destructive"} className="text-xs">
+                        <Badge variant={isReussi ? "default" : "destructive"} className="text-xs" data-testid="eb-verdict-admin" data-verdict={verdict}>
                           {isReussi ? "Réussi ✅" : "Échoué ❌"}
                         </Badge>
                       )}
@@ -230,7 +253,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
                       )}
                     </div>
                     {sansNoteFinale ? (
-                      <span className="text-sm font-semibold text-amber-600">{examIncomplet ? "Pas de note finale" : "Note finale en attente"}</span>
+                      <span className="text-sm font-semibold text-amber-600">{enAttenteCorrection ? "Note finale en attente" : "Pas de note finale"}</span>
                     ) : (
                       <span className={`text-lg font-bold ${isReussi ? "text-green-600" : "text-red-500"}`}>
                         {moyenne.toFixed(1)}/20
