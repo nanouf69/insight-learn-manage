@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 09/11 13:55 — Correcteur QRC global, préparation jetable autorisée
+- [x] Prototype hors imports actifs : 24 identités × sept matières, lecture unifiée, preuves, pages >1000 et sessions ; 12 contrats PostgreSQL PASS.
+- [x] Notation append-only, concurrence/rejeu/rollback ; vrai écran V2 → HTTP local → PostgreSQL jetable : 168 corrections + une révision/retry et reprises tablette/téléphone PASS ; 76 tests existants PASS.
+- [x] Rapport et limites : docs/qrc-global-preparation-isolee-2026-11-09.md ; aucun changement actif, migration réelle, écriture Cloud ou publication.
+- [ ] Mise en service BLOQUÉE : inventaire sans snapshot, corrections historiques existantes, liens/imports et snapshots natifs ambigus, catalogue/triggers complets, verrouillage source et transport production non certifiés ; nouvel accord réel indispensable.
+
 ## 09/11 13:52 — Toutes les QRC EB1–EB6 dans le correcteur V2
 - [x] Audit lecture seule 24 identités d'examen : 4 591 résultats historiques sans copie V2 (2 374 remises prouvées) ; rapport docs/audit-qrc-v2-tous-eb-2026-11-09.md.
 - [ ] STOP : notation V2 impossible sans fonction serveur (migration) ; attend accord pour prototype jetable. Aucune écriture ni publication.
