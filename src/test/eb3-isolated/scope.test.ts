@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OriginalSource, prospectiveExamIds, prospectiveScope } from './scope';
 const activation = '2026-11-09T13:02:00Z';
 function sources(examId = 'EB3'): OriginalSource[] {
-  return ['A','B','C','D','E','F','G'].map(subjectId => ({ examId, learnerId:'learner',subjectId,attemptId:`attempt-${subjectId}`,startedAt:'2026-11-09T13:02:01Z',snapshotFingerprint:'frozen',snapshotSubjectId:subjectId,questions:[{id:1}],isTest:false }));
+  return ['A','B','C','D','E','F','G'].map(subjectId => ({ examId, learnerId:'learner',subjectId,attemptId:`attempt-${subjectId}`,originalId:'original',originalStartedAt:'2026-11-09T13:02:01Z',startedAt:'2026-11-09T13:02:01Z',snapshotFingerprint:'frozen',snapshotSubjectId:subjectId,questions:[{id:1}],isTest:false }));
 }
 describe('EB3–EB6 prospective scope, test-only', () => {
   it.each(prospectiveExamIds)('allows only a complete new original %s', id => expect(prospectiveScope(id,'learner',activation,sources(id))).toBe(true));
@@ -19,4 +19,6 @@ describe('EB3–EB6 prospective scope, test-only', () => {
   it('excludes mismatched snapshot subject', () => { const s=sources();s[0].snapshotSubjectId='B';expect(prospectiveScope('EB3','learner',activation,s)).toBe(false); });
   it('excludes empty snapshot', () => { const s=sources();s[0].questions=[];expect(prospectiveScope('EB3','learner',activation,s)).toBe(false); });
   it('does not activate without server activation', () => expect(prospectiveScope('EB3','learner',null,sources())).toBe(false));
+  it('excludes old parent even if every subject is new', () => { const s=sources();s.forEach(a=>a.originalStartedAt='2026-11-09T13:01:59Z');expect(prospectiveScope('EB3','learner',activation,s)).toBe(false); });
+  it('excludes mixed originals', () => { const s=sources();s[0].originalId='another';expect(prospectiveScope('EB3','learner',activation,s)).toBe(false); });
 });
