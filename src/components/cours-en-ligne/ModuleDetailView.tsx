@@ -10129,7 +10129,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </Button>
 
           )}
-        </div>
+        </QuizPageNavigation>
         </div>
       </div>
       {showCalculator && <Calculatrice onClose={() => setShowCalculator(false)} />}
