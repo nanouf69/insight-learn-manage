@@ -109,6 +109,11 @@ import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
 import { ExamQuestionImage } from "./ExamQuestionImage";
+import {
+  ExerciseQuestionPrompt as ExerciseQuestionPromptView, QcmChoiceButtons, QuizQuestionSidebar, QuizScoreSummary, QuizAnswerGrid,
+  flashQuestionAnchor, QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ProgressionStep, ProgressionBar,
+  AnswersCompletionStrip, QuizPageNavigation, QUESTION_IMAGE_SIZES,
+} from "./learnerQuizUi";
 import { isRoadSafetyCourseExercise } from "./roadSafetyQuestionImage";
 import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
@@ -1282,21 +1287,7 @@ const buildExerciseQuestionPrompts = <T extends { enonce: string }>(questions: T
 };
 
 const renderExerciseQuestionPrompt = (questionNumber: number, prompt: ExerciseQuestionPrompt) => (
-  <div className="space-y-2">
-    <p className="learner-question-title font-medium whitespace-pre-line">
-      <span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">
-        Q{questionNumber}
-      </span>
-      <RichText value={prompt.question} />
-    </p>
-
-    {prompt.passageTitle && prompt.passageBody ? (
-      <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed">
-        <p className="mb-2 font-semibold text-foreground"><RichText value={prompt.passageTitle} /></p>
-        <p className="whitespace-pre-line text-foreground"><RichText value={prompt.passageBody} /></p>
-      </div>
-    ) : null}
-  </div>
+  <ExerciseQuestionPromptView questionNumber={questionNumber} prompt={prompt} />
 );
 
 interface ModuleDetailViewProps {
@@ -9180,17 +9171,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                 const isRevisionMode = !!revisionSet;
                 if (isRevisionMode) {
                   return (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <span>🎯 Mode révision — vous ne voyez que les {revisionSet.size} question{revisionSet.size > 1 ? "s" : ""} fausse{revisionSet.size > 1 ? "s" : ""}.</span>
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
-                        }}>Voir toutes les questions</Button>
-                      </div>
-                      <div className="font-semibold text-amber-900 dark:text-amber-200">
-                        📖 Relisez vos erreurs avant de recommencer les questions fausses.
-                      </div>
-                    </div>
+                    <RevisionModeBanner count={revisionSet.size} onShowAll={() => {
+                      setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                    }} />
                   );
                 }
                 return null;
@@ -9266,14 +9249,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} data-learner-question data-answer-scroll-anchor className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${isQcmWrong ? 'border-destructive border-4 bg-destructive/10' : unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (() => {
-                      const sizeMap: Record<string, string> = {
-                        sm: "max-h-40",
-                        md: "max-h-64",
-                        lg: "max-h-96",
-                        xl: "max-h-[32rem]",
-                        "2xl": "max-h-[48rem]",
-                      };
-                      const sizeClass = sizeMap[q.imageSize ?? "sm"] ?? "max-h-40";
+                      const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
                       return (
                         <ExamQuestionImage image={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic"
                           {...(isRoadSafetyCourseExercise(exo) ? { frameClassName: "road-safety-question-image", fitFrameToImage: true } : {})}
@@ -9283,35 +9259,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
-                    <div className="space-y-1.5 ml-2">
-                      {getQuestionChoices(q).map((c: any) => {
-                        const exoShowResults = showResultsFor.has(exo.id);
-                        const isSelected = selectedArr.includes(c.lettre);
-                        let bg = "bg-background hover:bg-muted/50 border";
-                        if (isSelected && !exoShowResults) bg = "bg-primary/10 border-primary border-2";
-                        if (exoShowResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
-                        if (exoShowResults && isSelected && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
-                        return (
-                          <button
-                            key={c.lettre}
-                            onClick={(event) => handleAnswer(exo.id, q.id, c.lettre, multi, event.currentTarget)}
-                            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
-                          >
-                            {multi ? (
-                              <span className={`w-5 h-5 rounded border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/40'}`}>
-                                {isSelected ? '✓' : ''}
-                              </span>
-                            ) : (
-                              <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'border-primary bg-primary text-primary-foreground' : ''}`}>
-                                {c.lettre}
-                              </span>
-                            )}
-                            <span className="text-sm">{c.texte}</span>
-                            {exoShowResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <QcmChoiceButtons
+                      choices={getQuestionChoices(q)}
+                      selected={selectedArr}
+                      multi={multi}
+                      showResults={exoShowResults}
+                      onSelect={(lettre, el) => handleAnswer(exo.id, q.id, lettre, multi, el)}
+                    />
                   </div>
                 );
               })}
