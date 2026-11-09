@@ -7,7 +7,7 @@ describe('Validation humaine de pré-note', () => {
     const save = vi.fn();
     render(<PrenoteQrc reponse="C'est avoir un casier judiciaire b2 vierge" officiel="Casier judiciaire vierge (B2)" bareme={2} disabled={false} onValider={save} />);
     expect(save).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '1,5', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^1,5$/ }));
     expect(save).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Valider la pré-note comme note définitive' }));
     expect(save).toHaveBeenCalledWith(1.5, expect.stringContaining('Proposition 2/2 ; validation humaine 1.5/2'));
