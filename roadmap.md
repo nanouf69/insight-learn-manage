@@ -1,5 +1,14 @@
 # Feuille de route
 
+## 09/11 15:22 — Audit + correctifs exhaustifs calcul/remontée EB1–EB6 VTC/TAXI
+- [x] Inventaire config (24 EB, 112 matières) et données réelles (lecture seule).
+- [x] Contrôle cohérence (719 ensembles élève/examen rejoués) ; 3 bugs prouvés corrigés en aperçu.
+- [x] Tests automatisés + rejeu réel avant/après.
+- [ ] Publication — attend l'accord de l'utilisateur.
+- [ ] 398 ensembles encore en attente (QRC réellement non corrigées ou anciennes copies sans fiche V2) — notation historique = migration, bloquée sans accord.
+- [ ] Décision : 5 anciens EB1 de juillet dont note stockée ≠ points/barème (carte et admin peuvent différer de 0,1 à 2,2 pts).
+- [ ] Décision : 2 EB2 VTC bloqués « en attente » par l'ancienne liste pilote QRC de septembre.
+
 ## 09/11 14:21 — « FAIS LE » : faux verdicts EB (P1) puis QRC V2 global (P2)
 - [x] P1 correctif calcul/affichage seul (scoring + carte + détail) : seuil figé → seuil configuré → statut explicite ; incomplet/à vérifier jamais « échoué ».
 - [x] P1 tests : 17 nouveaux + 48 existants PASS ; suite complète 3 863 PASS / 2 échecs préexistants (heures de présence) ; vraies cartes sur copies réelles lues seule PC/tablette/téléphone + rechargement : Ilies 14,8/13,4 RÉUSSIS, Pogos 7,5 ÉCHOUÉ C seule, EB2 EN ATTENTE ; 0 écriture.

@@ -48,6 +48,14 @@ export function attacherSourceUnique<T extends Record<string, any>>(
   if (nonFiables === null) return { ...row, __core: CORE_LECTURE_IMPOSSIBLE };
   const original = row?.__preuveOriginaleDetails ?? row?.details;
   const reponsesFiables = !nonFiables.has(core.attemptId) && verifierPassageV2(core, original?.reponses ?? row?.reponses) === "fiable";
+  // Copie V2 de CETTE ligne précise (result_id d'origine) dont la fiche figée est
+  // strictement identique à la ligne : même passage prouvé. Les anciens résumés
+  // (sans choix ni « reponseQRC ») ne peuvent pas passer la comparaison de contenu
+  // et resteraient « en attente » alors que leurs QRC sont corrigées dans le V2.
+  // Seulement pour une note V2 DÉFINITIVE : ne remet jamais « en attente » un résultat déjà publié.
+  if (reponsesFiables && !core.pending && core.resultId && core.resultId === String(row.id) && fichesIdentiques(core.historicalDetails, original)) {
+    return { ...row, __core: core };
+  }
   // Unique native passage established from server-owned frozen answers. Current
   // questions, legacy pending flags and timestamps cannot invalidate its note.
   if (!core.resultId && core.provenResultIds?.includes(String(row.id))) {
@@ -65,6 +73,19 @@ export function attacherSourceUnique<T extends Record<string, any>>(
     return { ...row, __core: null, __noteRecalculee: true };
   }
   return { ...row, __core: core };
+}
+
+function jsonCanonique(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
+  if (Array.isArray(value)) return `[${value.map(jsonCanonique).join(",")}]`;
+  const obj = value as Record<string, unknown>;
+  return `{${Object.keys(obj).filter((k) => obj[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${jsonCanonique(obj[k])}`).join(",")}}`;
+}
+
+/** Fiche historique copiée = fiche de la ligne, octet pour octet (hors ordre des clés). */
+export function fichesIdentiques(a: unknown, b: unknown): boolean {
+  if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+  return jsonCanonique(a) === jsonCanonique(b);
 }
 
 /** Screens with mapped rows use the same strict same-attempt rule. */

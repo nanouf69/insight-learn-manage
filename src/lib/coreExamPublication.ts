@@ -66,11 +66,19 @@ export async function fetchCoreMatiereStatesBulk(
   const ids = Array.from(new Set((apprenantIds || []).filter(Boolean)));
   const CHUNK = 150;
   const PAGE = 1000;
+  // Pagination par clé primaire : sans ordre stable, deux pages successives peuvent
+  // répéter ou omettre des lignes (> 1000), et une copie corrigée paraître « en attente ».
+  const PK: Record<string, string> = {
+    exam_attempts_v2: "attempt_id", qrc_instances_v2: "qrc_instance_id", core_exam_results: "result_id",
+    core_tentatives_neutralisees: "attempt_id", apprenant_quiz_results: "id", answer_state: "response_id",
+    core_exam_resets: "reset_id",
+  };
   const all = async (table: string, cols: string, chunk: string[], extra?: (q: any) => any) => {
     const rows: any[] = [];
     for (let from = 0; ; from += PAGE) {
       let q: any = supabase.from(table as any).select(cols).in("apprenant_id", chunk);
       if (extra) q = extra(q);
+      q = q.order(PK[table], { ascending: true });
       const { data, error } = await q.range(from, from + PAGE - 1);
       if (error) throw error;
       rows.push(...((data as any[]) || []));
