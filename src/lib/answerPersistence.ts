@@ -1231,11 +1231,19 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     // serveur. Si un autre appareil a écrit depuis, le serveur ignorera encore
     // ces réponses et rien ne sera écrasé.
     const baseNouvelle = item.payload.base_seq ?? 0;
-    const ancienBloqueContenu =
+    // Un élément bloqué de CE compte, sur CET appareil, est une version locale
+    // plus ancienne que l'écran actuel : la nouvelle version (état complet de
+    // l'écran) la remplace ; ses questions absentes de la nouvelle version sont
+    // reprises telles quelles (aucune réponse locale perdue).
+    const ancienBloquePerime =
       previous.blocked === true &&
       baseNouvelle > (previous.payload.base_seq ?? 0) &&
-      reponsesContiennentSansConflit(item.payload.reponses, previous.payload.reponses);
-    item.payload.base_seq = ancienBloqueContenu
+      estObjet(previous.payload.reponses) &&
+      estObjet(item.payload.reponses);
+    if (ancienBloquePerime) {
+      item.payload.reponses = { ...(previous.payload.reponses as Record<string, unknown>), ...(item.payload.reponses as Record<string, unknown>) } as any;
+    }
+    item.payload.base_seq = ancienBloquePerime
       ? baseNouvelle
       : Math.min(previous.payload.base_seq ?? 0, baseNouvelle);
     queue.splice(sameExoIdx, 1);
