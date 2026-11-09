@@ -2,8 +2,9 @@
 
 ## 09/11 16:01 — Zine DAKHLI : contradiction EB1 carte / compte
 - [x] Zine DAKHLI identifié ; sept notes V2 définitives 15,5/10/7/14/11/12,5/6, 16 QRC corrigées ; public index-BNKO-425.js, carte/détail/CRM/Notes consultés = réussi. Contradiction passée non reproduite sur version actuelle.
-- [ ] Corriger uniquement la source / le verdict partagé après reproduction ; tests Zine + 24 EB et rafraîchissement.
-- [ ] Contrôler les écrans ; aucune écriture élève ; publication attend une nouvelle validation.
+- [x] Lacune de rafraîchissement partagé corrigée en aperçu : écoute des résultats historiques aussi ; 74 tests PASS, scénario Zine + 24 EB / 108 matières source. Cause de l'ancienne capture non prouvée.
+- [x] Consultation publique admin du dossier + vue apprenant + carte + détail : réussi 10,7 ; tablette aperçu réussi. Session personnelle et restauration détail après reload NON PROUVÉES.
+- [ ] Publication du correctif de rafraîchissement — attend validation ; aucune écriture élève. Rapport docs/incident-zine-eb1-2026-11-09.md.
 
 ## 09/11 15:22 — Audit + correctifs exhaustifs calcul/remontée EB1–EB6 VTC/TAXI
 - [x] Inventaire config (24 EB, 112 matières) et données réelles (lecture seule).
