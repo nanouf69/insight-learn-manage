@@ -3,7 +3,7 @@
 ## 09/11 14:21 — « FAIS LE » : faux verdicts EB (P1) puis QRC V2 global (P2)
 - [x] P1 correctif calcul/affichage seul (scoring + carte + détail) : seuil figé → seuil configuré → statut explicite ; incomplet/à vérifier jamais « échoué ».
 - [x] P1 tests : 17 nouveaux + 48 existants PASS ; suite complète 3 863 PASS / 2 échecs préexistants (heures de présence) ; vraies cartes sur copies réelles lues seule PC/tablette/téléphone + rechargement : Ilies 14,8/13,4 RÉUSSIS, Pogos 7,5 ÉCHOUÉ C seule, EB2 EN ATTENTE ; 0 écriture.
-- [x] P1 diff app vs public = 3 fichiers seulement ; publication demandée.
+- [x] P1 diff app vs public = 3 fichiers seulement ; publié, contrôle 14:35:50 UTC : index-B5unSckE.js contient le correctif, option EB2 refusée absente.
 - [ ] P2 QRC V2 global : STOP sécurité non démontrée (copies déjà corrigées, snapshots absents, liens natifs/imports, transport production) ; aucune migration/écriture/publication.
 
 ## 09/11 14:15 — EB2 VTC absent du menu, préparation de lecture seule

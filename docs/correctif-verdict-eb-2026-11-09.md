@@ -17,3 +17,4 @@ Note serveur V2 définitive + snapshot sans seuil + carte sans `reussi` ⇒ `Boo
 
 ## Publication
 Diff application vs version publique (`index-BbNPGt9M.js`) : ces 3 fichiers uniquement ; le reste est test/documentation. Publication demandée à 14:34 UTC.
+Contrôle public 14:35:50 UTC : index-B5unSckE.js contient le correctif.
