@@ -229,8 +229,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const legacyResultIds = ancienCircuit
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
-        : ebChoisi?.legacyResultIds)?.filter((id) =>
-          ebChoisi?.exam_id !== "EB2" || !idsTrouves || idsTrouves.has(ebChoisi?.apprenantParAttempt?.[`ancien:${id}`] ?? ""))
+        : ebChoisi?.legacyResultIds)
     : undefined;
 
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
@@ -561,7 +560,7 @@ export default function AdminCorrectionQrcV2Reel() {
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
-                  {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id}{e.circuit === "ancien" && e.exam_id === "EB2" ? " — VTC — ancien circuit" : e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                  {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
                   {Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length > 0
@@ -732,7 +731,7 @@ export default function AdminCorrectionQrcV2Reel() {
           <div style={{ zoom: `${zoom}%` }}>
             <CorrectionQRCTab
               resultIds={legacyResultIds ?? []}
-              embeddedLabel={ebChoisi?.exam_id === "EB2" ? "EB2 — VTC — ancien circuit" : `${ebChoisi?.exam_id ?? "EB3"} — ANCIEN CIRCUIT`}
+              embeddedLabel={`${ebChoisi?.exam_id ?? "EB3"} — ANCIEN CIRCUIT`}
               hideV2Panel
             />
           </div>
