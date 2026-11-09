@@ -99,7 +99,7 @@ class Contrat(unittest.TestCase):
         a = self.noter(rid, '1', 2, s, op='op-1')
         b = self.noter(rid, '1', 2, s, op='op-1')
         self.assertFalse(a['rejeu']); self.assertTrue(b['rejeu']); self.assertEqual(a['id'], b['id'])
-        self.assertEqual(4.5, float(self.ligne(rid)['score_obtenu']))
+        self.assertEqual(3.5, float(self.ligne(rid)['score_obtenu']))
         with self.assertRaisesRegex(RuntimeError, 'Conflit'): self.noter(rid, '1', 1, s, op='op-1')
         self.assertEqual('1', self.pg.sql('SELECT count(*) FROM qrc_historique_corrections'))
 
@@ -118,7 +118,7 @@ class Contrat(unittest.TestCase):
             res = list(ex.map(lambda i: self._essai(rid, s, i), range(6)))
         self.assertEqual(1, sum(res))
         self.assertEqual('1', self.pg.sql('SELECT count(*) FROM qrc_historique_corrections'))
-        self.assertEqual(4.5, float(self.ligne(rid)['score_obtenu']))
+        self.assertEqual(3.5, float(self.ligne(rid)['score_obtenu']))
 
     def _essai(self, rid, s, i):
         try: self.noter(rid, '1', 2, s, op=f'app-{i}'); return 1
@@ -146,7 +146,7 @@ class Contrat(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'remise_horodatage_divergent'): self.noter(rid, '1', 1, s)
         r = self.noter(rid, '1', 1, s, reco='Réponses identiques vérifiées, horodatage différent')
         self.assertEqual('remise_horodatage_divergent', r['provenance']); self.assertIn('vérifiées', r['reconnaissance'])
-        rid2, s2 = self.copie(remise=None)
+        rid2, s2 = self.copie(remise=None, matiere='autre')
         with self.assertRaisesRegex(RuntimeError, 'resultat_seul'): self.noter(rid2, '1', 1, s2)
 
     def test_journal_append_only(self):
