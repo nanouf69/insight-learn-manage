@@ -169,6 +169,7 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
   // Like every module, the learner lands directly on a quiz page: the first matière not yet handed in.
   useEffect(() => {
     if (!statutsLus || ouvertureAuto.current) return;
+    if (ouvertureCourante.current > 0) { ouvertureAuto.current = true; return; } // learner already chose a page
     ouvertureAuto.current = true;
     const k = FUTURE_SUBJECT_NAMES.findIndex((_, i) => !statuts[base + i]?.submitted);
     void ouvrir(base + (k < 0 ? 0 : k));
