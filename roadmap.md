@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 09/11 13:02 — Protections nouvelles tentatives EB3–EB6 uniquement
+- [ ] Vérifier les identifiants VTC/TAXI, identité originale et compatibilité snapshots/déclencheurs en lecture seule.
+- [ ] Préparer et tester le périmètre prospectif en environnement isolé, exclure EB1/EB2 et toute révision d'une copie préactivation.
+- [ ] Mise en service uniquement après preuve complète de sécurité ; STOP sans migration/publication si incompatibilité grave.
+
 ## 09/11 12:59 — Autorisation de publication des trois correctifs EB2
 - [x] Schéma et déclencheurs réels contrôlés en lecture seule ; candidats et diff examinés, aucun changement actif.
 - [x] STOP : 873/1034 copies EB2 et 144/173 copies TAXI sans le snapshot exigé ; 17/18 révisions ouvertes repérées par clé sont au format ancien sans revisionState. Le candidat/commutateur sont globaux EB1–EB6, pas isolés EB2 ; statut/submitted_at modifiés par un trigger réel absent des fixtures.
