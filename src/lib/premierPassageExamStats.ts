@@ -8,7 +8,7 @@ export function firstPassageExamIds(examId: string): string[] {
 }
 
 type FrozenQuestion = { id: string | number; matiere?: string; type?: string; enonce?: string; points?: number | string; choix?: QuestionStatsTarget['choix'] | null };
-export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_id: string; started_at: string; finished_at?: string | null; etat?: string; is_test: boolean; snapshot: { matiere?: string; questions?: FrozenQuestion[]; source_historique?: unknown } };
+export type ExamStatsAttempt = { attempt_id: string; apprenant_id: string; exam_id: string; started_at: string; is_test: boolean; snapshot: { matiere?: string; questions?: FrozenQuestion[]; source_historique?: unknown } };
 export type ExamStatsEvent = { event_id: number; attempt_id: string; apprenant_id: string; question_id: string; valeur_nouvelle: unknown; valeur_precedente: unknown; revision_precedente: number | null; revision_nouvelle: number; auteur: string | null; created_at: string };
 export type ExamStatsResult = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string; details: { snapshot?: { questions?: FrozenQuestion[] }; reponses?: Record<string, unknown> } | null };
 export type ExamStatsRetake = { apprenant_id: string; exam_id: string; matiere_id: string; attempt_id: string | null; exercice_id: string; created_at: string };
@@ -31,10 +31,7 @@ function grade(q: QuestionStatsTarget, frozen: FrozenQuestion | undefined, answe
   return same(answer, keys);
 }
 
-/** Statistique seule : QCM réussi = toutes les bonnes cases et aucune mauvaise.
- * Une QRC est évaluée sur sa copie soumise, jamais sur la première lettre tapée.
- * Réussie uniquement avec tous les points ; une note partielle compte comme
- * un échec statistique sans modifier sa note pédagogique. Attente = exclue.
+/** Une QRC est évaluée sur sa copie soumise, jamais sur la première lettre tapée.
  * Humain prioritaire ; IA seulement avec sa preuve appliquée au même barème et à la même note. */
 function gradeQrc(q:QuestionStatsTarget,frozen:FrozenQuestion|undefined,qrc:ExamStatsQrc|undefined,corrections:ExamStatsQrcIa[]):boolean|null {
   if(q.type!=='QRC' || frozen?.type!=='QRC' || frozen.enonce!==q.enonce || !qrc || qrc.etat!=='corrigee' || qrc.note==null)return null;
@@ -64,10 +61,8 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
           const copies=evidence.qrc?.filter(c=>c.apprenant_id===learner && c.attempt_id===a.attempt_id && c.question_id===qid)??[];
           const copy=copies[0];
           if(!copy || !hasAnswer(copy.reponse))continue;
-          // A later retake must never remove the independently proven first copy.
-          if(evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id)) continue;
-          const submitted=a.etat==='terminee' && !!a.finished_at && Number.isFinite(Date.parse(a.finished_at));
-          const correct=submitted && copies.length===1 ? gradeQrc(q,frozen.length===1?frozen[0]:undefined,copy,evidence.qrcIa??[]) : null;
+          if(copies.length!==1 || evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id)) {uncertain=true;continue;}
+          const correct=gradeQrc(q,frozen.length===1?frozen[0]:undefined,copy,evidence.qrcIa??[]);
           observations.push({at:a.started_at,correct,answer:copy.reponse});
           continue;
         }
@@ -86,14 +81,6 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         for (const row of rows) {
           const answer=row.reponses?.[String(q.id)];
           if (!hasAnswer(answer)) continue;
-          if(q.type==='QRC') {
-            // Typing/drafts are not submitted QRC observations. The native copy
-            // owns its correction; its legacy mirror cannot invalidate that proof.
-            if(row.status!=='submitted' || !row.submitted_at) continue;
-            const mirrored=attempts.some(a=>a.exam_id===exam && a.etat==='terminee' && a.finished_at===row.submitted_at && evidence.qrc?.some(c=>c.attempt_id===a.attempt_id && c.apprenant_id===learner && c.question_id===`${subject}:${q.id}` && same(c.reponse,answer)));
-            if(!mirrored) observations.push({at:row.submitted_at,correct:null,answer});
-            continue;
-          }
           const history=evidence.journal.filter(e=>e.apprenant_id===learner && e.exercice_id===row.exercice_id && e.question_id===String(q.id) && e.tentative===1 && hasAnswer(e.valeur)).sort((a,b)=>a.created_at.localeCompare(b.created_at));
           const first=history[0];
           if (!first || row.tentative!==1 || row.exercice_id!==base) {uncertain=true;continue;}
@@ -105,12 +92,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         }
         // An imported/result-only copy proves a prior answer exists, not its first choice.
         const resultOnly=evidence.results.some(r=>r.apprenant_id===learner && r.quiz_id===exam && r.matiere_id===subject && hasAnswer(r.details?.reponses?.[String(q.id)]) && !rows.some(row=>hasAnswer(row.reponses?.[String(q.id)])));
-        if(resultOnly && q.type!=='QRC')uncertain=true;
-        if(q.type==='QRC') for(const r of evidence.results.filter(r=>r.apprenant_id===learner && r.quiz_id===exam && r.matiere_id===subject && hasAnswer(r.details?.reponses?.[String(q.id)]))) {
-          const answer=r.details?.reponses?.[String(q.id)];
-          const mirrored=attempts.some(a=>a.exam_id===exam && a.etat==='terminee' && a.finished_at===r.completed_at && evidence.qrc?.some(c=>c.attempt_id===a.attempt_id && c.apprenant_id===learner && c.question_id===`${subject}:${q.id}` && same(c.reponse,answer)));
-          if(!mirrored) observations.push({at:r.completed_at,correct:null,answer});
-        }
+        if(resultOnly)uncertain=true;
         const imported=evidence.attempts.some(a=>a.apprenant_id===learner && a.exam_id===exam && !a.is_test && a.snapshot.source_historique && a.snapshot.questions?.some(f=>f.matiere===subject && String(f.id)===String(q.id)) && evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===String(q.id) && hasAnswer(s.valeur)) && !rows.some(row=>hasAnswer(row.reponses?.[String(q.id)])));
         if(imported)uncertain=true;
       }
