@@ -198,6 +198,7 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
       return;
     }
     if (!window.confirm("Remettre définitivement cette matière ? Vous ne pourrez plus modifier vos réponses.")) return;
+    const tok = ouvertureCourante.current;
     setEnvoi(true); setErreur(null); setNonRepondues(new Set());
     await flush(passage.receipt);
     const ans = Object.fromEntries(passage.questions.map(q => [String(q.id), passage.answers[q.id]]));
@@ -207,11 +208,11 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
     // Validation only after the server acknowledgement + readback.
     const back = await (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", passage.receipt.passageId).maybeSingle();
     if (back.error || !back.data || back.data.correct_count !== data.correct_count) { setErreur("Remise envoyée mais non relue. Rechargez la page pour vérifier."); return; }
-    if (passage.receipt.exerciseId !== ouvert) return;
+    void chargerStatuts();
+    if (tok !== ouvertureCourante.current) return;
     setPassage({ ...passage, submitted: back.data });
     toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
-    void chargerCorrection(passage.receipt);
-    void chargerStatuts();
+    void chargerCorrection(passage.receipt, tok);
   };
 
   const pageCourante = ouvert === null ? 0 : ouvert - base;
