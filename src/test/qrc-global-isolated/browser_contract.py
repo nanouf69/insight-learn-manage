@@ -65,6 +65,18 @@ async def main():
        await page.wait_for_function("!document.querySelector('[data-testid=\"note-1\"]')?.disabled && !document.body.innerText.includes('Enregistrement…')")
        assert next(r for r in f.rows(exam=exam) if r['subject_id']==matter)['note']==1
       print('PASS actual V2 screen seven subjects',exam)
+     row=next(r for r in f.rows(exam='EB2') if r['subject_id']=='A')
+     await page.goto('http://localhost:8080/src/test/qrc-global-isolated/harness.html?qrc_groupe=day&qrc_eb=day:EB2&qrc='+row['identity'])
+     await page.get_by_test_id('modifier-note').click()
+     page.on('dialog',lambda d:d.accept())
+     Handler.lost=True
+     await page.get_by_test_id('revision-note-2').click()
+     await page.get_by_test_id('erreur-correction-copie').wait_for()
+     assert next(r for r in f.rows(exam='EB2') if r['subject_id']=='A')['note']==2
+     await page.get_by_test_id('revision-note-2').click()
+     await page.wait_for_function("!document.body.innerText.includes('Enregistrement…') && !document.body.innerText.includes('NON ENREGISTRÉE')")
+     assert f.pg.sql('SELECT count(*) FROM qrc_history_events')=='169'
+     print('PASS lost HTTP confirmation after commit, same-intent retry and V2 readback, no duplicate')
     else:
      exam='EB2';session='evening' if name=='phone' else 'day'
      row=next(r for r in f.rows(exam=exam) if r['subject_id']=='A')
@@ -77,8 +89,8 @@ async def main():
     await ctx.close()
    await browser.close()
   assert before==f.fingerprint(),'source mutation'
-  assert f.pg.sql('SELECT count(*) FROM qrc_history_events')=='168'
-  print('PASS 168 actual screen corrections, 24 exams; sources unchanged; no JS errors')
+  assert f.pg.sql('SELECT count(*) FROM qrc_history_events')=='169'
+  print('PASS 168 actual screen corrections + 1 append-only revision, 24 exams; sources unchanged; no JS errors')
   api.shutdown()
  finally:f.pg.stop()
 asyncio.run(main())
