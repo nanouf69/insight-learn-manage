@@ -4870,7 +4870,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       }
       canonicalRowsRef.current = rows;
       canonicalSectionIdsRef.current = sectionIds;
-      setModuleData((previous) => applyCanonicalQuestionsToModule(previous, rows, sectionIds));
+      setModuleData((previous) => appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(previous, rows, sectionIds)));
       setLastSyncAt(new Date());
     };
 
@@ -5137,7 +5137,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, initialData);
             if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} forcé depuis module ${parentModuleId} (sans Gestion)`);
-                setModuleData(fcMerged);
+                setModuleData((prev) => appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "initial FC parent refetch")));
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(true);
@@ -5279,7 +5279,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, initialData);
             if (fcMerged) {
                 console.log(`[FC-Bilan] Module ${module.id} hydraté depuis module ${parentModuleId} (sans Gestion)`);
-                setModuleData(fcMerged);
+                setModuleData((prev) => appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "initial FC parent refetch")));
                 setDeletedCours([]);
                 setDeletedExercices([]);
                 setLoadedModuleEditorState(false);
@@ -5367,7 +5367,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const fcMerged = buildFcBilanModuleFromParent(module.id, authoritativeParentMd, sourceModuleData);
           if (!fcMerged) return;
           console.log("[Realtime] Refetched FC bilan from parent module", parentModuleId, "for module", module.id);
-          setModuleData((prev) => preserveNewerLocalQuestionEdits(fcMerged, prev, "realtime FC parent refetch"));
+          setModuleData((prev) => appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "realtime FC parent refetch")));
           setDeletedCours([]);
           setDeletedExercices([]);
           setLoadedModuleEditorState(true);
@@ -5409,11 +5409,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               resolvedRealtimeModuleData = applyManualExerciseEditsFromSource(resolvedRealtimeModuleData, syncedVtcBilan);
             }
           }
-          setModuleData((prev) => applyCanonicalQuestionsToModule(
+          setModuleData((prev) => appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(
             preserveNewerLocalQuestionEdits(resolvedRealtimeModuleData, prev, "realtime module_editor_state refetch"),
             canonicalRowsRef.current,
             canonicalSectionIdsRef.current,
-          ));
+          )));
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
@@ -5719,7 +5719,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             }
             console.log("[Visibility] Refreshed FC bilan from parent module", parentModuleId, "for module", module.id);
             didUpdate = true;
-            return preserveNewerLocalQuestionEdits(fcMerged, prev, "visibility FC parent refresh");
+            return appliquerSommeCoursBilan(preserveNewerLocalQuestionEdits(fcMerged, prev, "visibility FC parent refresh"));
           });
           markDbSnapshotApplied(latest.updated_at);
           if (didUpdate) setTrainerOverridesReapplyKey((k) => k + 1);
@@ -5860,7 +5860,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     loadModuleEditorStateRow(id)
       .then((row) => {
         if (!row?.module_data) return;
-        setModuleData((prev) => garderExercicesDuServeur(prev, row.module_data, exercicesAjoutesSessionRef.current));
+        setModuleData((prev) => appliquerSommeCoursBilan(garderExercicesDuServeur(prev, row.module_data, exercicesAjoutesSessionRef.current)));
       })
       .catch(() => { nettoyageOuvertureFaitRef.current = null; });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -6051,7 +6051,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           lastSavedPayloadSignatureRef.current = confirmedSignature;
           // Ne jamais réinjecter ici le snapshot canonique antérieur à cette
           // sauvegarde. La relecture fraîche, plus bas, mettra l'éditeur à jour.
-          setModuleData(previous => acknowledgedEditorState(previous, normalizedModuleData, savedLocalRevision, adminLocalRevisionRef.current));
+          setModuleData(previous => appliquerSommeCoursBilan(acknowledgedEditorState(previous, normalizedModuleData, savedLocalRevision, adminLocalRevisionRef.current)));
           if (savedLocalRevision === adminLocalRevisionRef.current) {
             setDeletedCours(Array.isArray(confirmedRow.deleted_cours) ? (confirmedRow.deleted_cours as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(confirmedRow.deleted_exercices) ? (confirmedRow.deleted_exercices as ExerciceItem[]) : []);
@@ -6350,11 +6350,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           (bindings ?? []) as unknown as CanonicalQuestionBinding[],
         );
         canonicalRowsRef.current = mappedConfirmedRows;
-        setModuleData((previous) => savedLocalRevision !== adminLocalRevisionRef.current ? previous : applyCanonicalQuestionsToModule(
+        setModuleData((previous) => savedLocalRevision !== adminLocalRevisionRef.current ? previous : appliquerSommeCoursBilan(applyCanonicalQuestionsToModule(
           previous,
           mappedConfirmedRows,
           canonicalSectionIdsRef.current,
-        ));
+        )));
         setCanonicalRefreshKey((key) => key + 1);
       }
 
