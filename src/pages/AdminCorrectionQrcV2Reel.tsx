@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
-import { estConsultation } from "@/features/correction-qrc-v2/eb2Consultation";
+import { estConsultation, noterQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -407,12 +407,23 @@ export default function AdminCorrectionQrcV2Reel() {
     return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
   }, [session]);
 
+  const [confirmeRemise, setConfirmeRemise] = useState(false);
+  useEffect(() => { setConfirmeRemise(false); }, [selection]);
   const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
-    // Copies EB2 en consultation : aucune écriture possible (pas de fiche QRC V2 serveur).
-    if (estConsultation(qrcSel.qrc_instance_id)) return;
     if (etatEnvoi === "encours") return;
+    const histo = estConsultation(qrcSel.qrc_instance_id)
+      ? ((tentativeSel as unknown as { historique?: InfosHistorique })?.historique ?? null)
+      : null;
+    if (estConsultation(qrcSel.qrc_instance_id)) {
+      // Copie historique sans fiche V2 : jamais de réécriture d'une QRC déjà validée.
+      if (!histo || qrcSel.etat === "corrigee" || histo.score_obtenu == null) return;
+      if (histo.provenance !== "remise_identique" && !confirmeRemise) {
+        setErreur("Cochez la confirmation de remise avant d'enregistrer la note.");
+        return;
+      }
+    }
     const revision = qrcSel.etat === "corrigee";
     const ancienne = qrcSel.note;
     if (revision) {
@@ -427,7 +438,20 @@ export default function AdminCorrectionQrcV2Reel() {
     setErreur(null);
     setMessageNavigation(null);
     try {
-      if (revision) {
+      if (histo) {
+        await noterQrcHistorique({
+          // identité déterministe : double-clic / plusieurs appareils = une seule correction
+          operationId: `qrchist:${histo.result_id}:${qrcSel.question_id}:${n}:${jeton}`,
+          resultId: histo.result_id,
+          questionId: qrcSel.question_id,
+          note: n,
+          scoreAttendu: histo.score_obtenu as number,
+          seuil: histo.seuil,
+          commentaire: commentaire || undefined,
+          reconnaissance: histo.provenance === "remise_identique" ? null
+            : `Confirmé par ${emailAdmin ?? "l'administrateur"} : copie originale ${histo.result_id}, question ${qrcSel.question_id} (${histo.provenance}).`,
+        });
+      } else if (revision) {
         await reviserQrc({
           // identité déterministe : double-clic ou 10 envois = une seule révision
           operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}:${jeton}`,
