@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
-import { estConsultation, exerciceIdEb2, projeterResultatEb2, remiseProuvee, chargerConsultationEb2, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
+import { estConsultation, exerciceIdEb2, projeterResultatEb2, remiseProuvee, provenanceRemise, chargerConsultationEb2, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
 import { supabase } from "@/integrations/supabase/client";
 
 const base = (o: Partial<ResultatEb2> = {}): ResultatEb2 => ({
@@ -63,5 +63,30 @@ describe("EB2 VTC en consultation dans le correcteur V2", () => {
     const r = base(); const avant = JSON.stringify(r);
     projeterResultatEb2(r, "x", true);
     expect(JSON.stringify(r)).toBe(avant);
+  });
+  it("une QRC validée par un formateur est verrouillée comme corrigée, même si la copie reste marquée en attente", () => {
+    const r = base(); r.details.correctionsIA = { "1": { pointsObtenus: 1, validatedByAdmin: true, manuel: true, correctedAt: "2026-11-09T18:00:00Z" } };
+    const { qrc } = projeterResultatEb2(r, "x", true);
+    expect(qrc[0].etat).toBe("corrigee");
+    expect(qrc[0].note).toBe(1);
+    expect(qrc[0].corrige_email).toBe("formateur (copie historique)");
+  });
+  it("une proposition automatique en attente n'est jamais présentée comme note (QRC partielle à corriger)", () => {
+    const { qrc } = projeterResultatEb2(base(), "x", true);
+    expect(qrc[0].etat).toBe("en_attente"); expect(qrc[0].note).toBeNull();
+  });
+  it("provenance : même instant = identique ; réponses identiques mais autre instant = à confirmer ; aucune fiche = résultat seul", () => {
+    const r = base();
+    const ok = { apprenant_id: "a1", exercice_id: "EB2__t3p", tentative: 1, completed: true, status: "submitted", submitted_at: "2026-11-09T09:00:00.000Z", reponses: r.details.reponses };
+    expect(provenanceRemise(r, [ok])).toBe("remise_identique");
+    expect(provenanceRemise(r, [{ ...ok, submitted_at: "2026-11-09T09:02:00Z" }])).toBe("remise_horodatage_divergent");
+    expect(provenanceRemise(r, [{ ...ok, reponses: { "1": "autre" } }])).toBe("resultat_seul");
+    expect(provenanceRemise(r, [])).toBe("resultat_seul");
+  });
+  it("expose l'identité serveur de notation (copie + score attendu + seuil configuré EB2)", () => {
+    const { tentative } = projeterResultatEb2(base({ score_obtenu: 9.5 }), "x", true);
+    expect(tentative.historique.result_id).toBe("r1");
+    expect(tentative.historique.score_obtenu).toBe(9.5);
+    expect(typeof tentative.historique.seuil).toBe("number");
   });
 });

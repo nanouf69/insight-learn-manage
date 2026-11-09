@@ -1,10 +1,11 @@
-// EB2 VTC — consultation dans le correcteur V2 (lecture seule).
-// Les copies EB2 VTC enregistrées sans fiche V2 sont projetées dans la même grille
-// V2. Aucune écriture, aucune copie créée, aucune notation : la notation exige une
-// vraie fiche QRC V2 côté serveur (core_correct_qrc), qui n'existe pas pour ces copies.
+// EB2 VTC — copies historiques sans fiche V2, dans la même grille du correcteur V2.
+// Lecture : projection pure, aucune copie créée. Notation : uniquement via la fonction
+// serveur qrc_historique_noter (copie originale verrouillée, preuve du score, journal
+// append-only) ; une QRC déjà validée n'est jamais réécrite.
 import { supabase } from "@/integrations/supabase/client";
 import { EXAMENS_BLANCS_VTC } from "@/components/cours-en-ligne/examens-blancs-data";
 import type { QrcReelle, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
+import { isQrcCorrectionValidated } from "@/components/cours-en-ligne/exam-helpers";
 
 export const PREFIXE_CONSULTATION = "consultation:";
 export const MARQUEUR_CORRECTION_HISTORIQUE = "correction historique importée";
@@ -18,7 +19,18 @@ export type ResultatEb2 = {
   matiere_nom?: string | null;
   tentative: number | null;
   completed_at: string | null;
+  score_obtenu?: number | null;
   details: any;
+};
+
+export type ProvenanceRemise = "remise_identique" | "remise_horodatage_divergent" | "resultat_seul";
+
+/** Infos de notation d'une copie historique (identité serveur = result_id + question_id). */
+export type InfosHistorique = {
+  result_id: string;
+  score_obtenu: number | null;
+  provenance: ProvenanceRemise;
+  seuil: number | null;
 };
 
 export type PreuveRemise = {
@@ -53,13 +65,24 @@ export function remiseProuvee(r: ResultatEb2, preuves: PreuveRemise[]): boolean 
     && p.submitted_at != null && memeJson(p.reponses, r.details?.reponses ?? {}));
 }
 
+/** Même règle que le serveur : réponses identiques ET même instant = remise identique. */
+export function provenanceRemise(r: ResultatEb2, preuves: PreuveRemise[]): ProvenanceRemise {
+  const exo = exerciceIdEb2(r);
+  const memes = preuves.filter((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo
+    && (p.tentative ?? 1) === (r.tentative ?? 1) && p.completed === true && p.status === "submitted"
+    && p.submitted_at != null && memeJson(p.reponses, r.details?.reponses ?? {}));
+  if (!memes.length) return "resultat_seul";
+  const t = r.completed_at ? Date.parse(r.completed_at) : NaN;
+  return memes.some((p) => Date.parse(String(p.submitted_at)) === t) ? "remise_identique" : "remise_horodatage_divergent";
+}
+
 const matieresEb2 = () => {
   const eb = EXAMENS_BLANCS_VTC.find((e) => e.id === "EB2");
   return (eb?.matieres ?? []).map((m, i) => ({ subject_id: m.id, lettre: String.fromCharCode(65 + i), titre: m.nom, ordre: i }));
 };
 
 /** Projection pure d'un résultat EB2 vers la forme V2 (tentative + QRC). Jamais de note inventée. */
-export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: boolean): { tentative: TentativeReelle; qrc: QrcReelle[] } {
+export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: boolean, provenance: ProvenanceRemise = remise ? "remise_identique" : "resultat_seul"): { tentative: TentativeReelle & { historique: InfosHistorique }; qrc: QrcReelle[] } {
   const attemptId = `${PREFIXE_CONSULTATION}${r.id}`;
   const det = r.details ?? {};
   const questionsSrc: any[] = det.snapshot?.questions ?? det.questions ?? [];
@@ -68,8 +91,15 @@ export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: bo
     ?? { subject_id: r.matiere_id, lettre: "?", titre: r.matiere_nom ?? r.matiere_id, ordre: 99 };
   const qrcSrc = questionsSrc.filter((q) => String(q?.type ?? "").toUpperCase() === "QRC");
   const enAttente = det.qrc_pending_correction === true;
-  const corrections = (det.correctionsIA ?? {}) as Record<string, { pointsObtenus?: number }>;
-  const tentative: TentativeReelle = {
+  const corrections = (det.correctionsIA ?? {}) as Record<string, any>;
+  const seuilCfg = (EXAMENS_BLANCS_VTC.find((e) => e.id === "EB2")?.matieres ?? []).find((m) => m.id === r.matiere_id)?.noteEliminatoire;
+  const tentative: TentativeReelle & { historique: InfosHistorique } = {
+    historique: {
+      result_id: r.id,
+      score_obtenu: typeof r.score_obtenu === "number" ? r.score_obtenu : r.score_obtenu == null ? null : Number(r.score_obtenu),
+      provenance,
+      seuil: typeof seuilCfg === "number" ? seuilCfg : null,
+    },
     attempt_id: attemptId,
     apprenant_id: r.apprenant_id,
     exam_id: "EB2",
@@ -90,10 +120,12 @@ export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: bo
     finished_at: r.completed_at,
   };
   const qrc: QrcReelle[] = qrcSrc.map((q) => {
-    const note = corrections[String(q.id)]?.pointsObtenus;
-    // Correction considérée enregistrée seulement si la copie n'est pas marquée « en attente » et
-    // qu'une note historique existe ; sinon la QRC reste à corriger. Origine = automatique historique.
-    const corrigee = !enAttente && typeof note === "number";
+    const c = corrections[String(q.id)];
+    const note = c?.pointsObtenus;
+    // Corrigée si validée par un formateur (même règle que carte/CRM/élève), ou copie non marquée
+    // « en attente » avec une note historique. Une proposition IA en attente n'est jamais une note.
+    const validee = isQrcCorrectionValidated(c) && typeof note === "number";
+    const corrigee = validee || (!enAttente && typeof note === "number");
     return {
       qrc_instance_id: `${attemptId}:${q.id}`,
       attempt_id: attemptId,
@@ -102,8 +134,8 @@ export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: bo
       reponse: det.reponses?.[String(q.id)] ?? null,
       etat: corrigee ? "corrigee" : "en_attente",
       note: corrigee ? note! : null,
-      corrige_email: corrigee ? MARQUEUR_CORRECTION_HISTORIQUE : null,
-      corrige_at: null,
+      corrige_email: validee ? "formateur (copie historique)" : corrigee ? MARQUEUR_CORRECTION_HISTORIQUE : null,
+      corrige_at: validee ? (c?.correctedAt ?? null) : null,
     };
   });
   return { tentative, qrc };
@@ -150,7 +182,7 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
   for (let i = 0; i < ids.length; i += 100) {
     const { data, error } = await supabase
       .from("apprenant_quiz_results")
-      .select("id, apprenant_id, quiz_id, matiere_id, matiere_nom, tentative, completed_at, details")
+      .select("id, apprenant_id, quiz_id, matiere_id, matiere_nom, tentative, completed_at, score_obtenu, details")
       .in("id", ids.slice(i, i + 100))
       .eq("quiz_id", "EB2");
     if (error) throw error;
@@ -179,11 +211,36 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
     }
   }
   for (const l of lignes) {
-    const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves));
+    const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves), provenanceRemise(l, preuves));
     if (!qrc.length) continue;
     vide.tentatives.push(tentative);
     vide.qrc.push(...qrc);
   }
   vide.tentatives.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
   return vide;
+}
+
+/** Notation admin d'une QRC de copie historique : écriture serveur unique, idempotente, tracée. */
+export async function noterQrcHistorique(params: {
+  operationId: string;
+  resultId: string;
+  questionId: string;
+  note: number;
+  scoreAttendu: number;
+  seuil: number | null;
+  commentaire?: string;
+  reconnaissance?: string | null;
+}) {
+  const { data, error } = await (supabase as any).rpc("qrc_historique_noter", {
+    p_operation_id: params.operationId,
+    p_result_id: params.resultId,
+    p_question_id: params.questionId,
+    p_note: params.note,
+    p_score_attendu: params.scoreAttendu,
+    p_seuil: params.seuil,
+    p_commentaire: params.commentaire ?? "",
+    p_reconnaissance: params.reconnaissance ?? null,
+  });
+  if (error) throw error;
+  return data as Record<string, unknown>;
 }
