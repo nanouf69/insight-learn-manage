@@ -30,7 +30,7 @@ Les fonctions réellement présentes dans le projet ont été appelées localeme
 - **0/286 lignes matière de novembre** avec `reussi=false` et `note_sur_20>10`.
 - **0/47 ensembles** avec moyenne projetée >10, toutes matières présentes, aucune éliminatoire, mais verdict calculé échoué.
 - Les **7 échecs sans attente** ont des moyennes entre **5,6 et 8,2/20**, pas >10.
-- **16 ensembles, 7 personnes** ont une moyenne de travail >10 mais une attente/non-finalité ; huit ensembles sont aussi incomplets. Aucun ne doit être certifié échoué ni réussi définitivement sur cette moyenne de travail.
+- **16 ensembles, 9 personnes** ont une moyenne de travail >10 mais une attente/non-finalité ; huit ensembles sont aussi incomplets. Aucun ne doit être certifié échoué ni réussi définitivement sur cette moyenne de travail.
 - Les quatre ensembles en attente de soirée ont des moyennes projetées 8,3–9,5. Deux possèdent des notes anciennes >10 globalement avant substitution de notes serveur du même passage : c'est une divergence de source de note, pas une preuve que le site montre une note finale >10 avec échec.
 
 Lectures effectuées pendant une activité élève réelle : la base n'a pas été figée et les différents SELECT ne constituent pas un instantané transactionnel. Les projections sont un contrôle des lectures, **pas un constat DOM authentifié de chaque élève**. Le compteur réel peut évoluer pendant l'audit.
