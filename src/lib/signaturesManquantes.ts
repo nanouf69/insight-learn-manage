@@ -1,4 +1,4 @@
-import { completerEmargementsPapier } from '@/lib/fcSignaturesPapier';
+import { completerEmargementsPapier, preuvePapierComplete } from '@/lib/fcSignaturesPapier';
 import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { supabase } from '@/integrations/supabase/client';
@@ -417,7 +417,7 @@ export interface ClassificationSignatures {
   aVerifier: SignatureClassee[];
 }
 
-const estSignee = aPreuveSignatureEmargement;
+const estSignee = (e: any) => aPreuveSignatureEmargement(e) || preuvePapierComplete(e);
 
 export function classifierSignatures(
   emargements: any[],
