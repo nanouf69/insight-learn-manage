@@ -58,6 +58,9 @@ import {
 } from "lucide-react";
 import { RIB_INFO } from "@/lib/pdf/devis-canonical";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
+import { SignaturesPapierFC } from "./SignaturesPapierFC";
+import { chargerPreuvesPapier } from "@/lib/fcSignaturesPapier";
+import { aPreuveSignatureEmargement } from "@/lib/preuveSignatureEmargement";
 import { MarquerPresentButton, estAbsentSession } from "./MarquerPresentButton";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -1618,7 +1621,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
       let q = supabase
         .from('emargements_fc')
-        .select('apprenant_id, date_emargement, demi_journee').filter("masque", "eq", false)
+        .select('apprenant_id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').filter("masque", "eq", false)
         .in('apprenant_id', apprenantIds)
         .eq('absent', false);
       if (dateDebut) q = q.gte('date_emargement', dateDebut);
@@ -1637,7 +1640,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           apprenant?.type_apprenant,
         );
         result[id] = computePresenceHours(
-          (data || []).filter((row: any) => row.apprenant_id === id),
+          (data || []).filter((row: any) => row.apprenant_id === id && aPreuveSignatureEmargement(row)),
           {
             isEvening: learnerIsEvening,
             isFormationContinue: isFormationContinueValue(apprenant?.type_apprenant, apprenant?.formation_choisie),
@@ -1648,6 +1651,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         );
 
       });
+      if (isFormationContinue) {
+        for (const id of apprenantIds) {
+          const papier = await chargerPreuvesPapier(id);
+          for (const p of papier.filter(p => p.session_id === session?.id)) {
+            const digital = (data || []).some(r => r.apprenant_id === id && r.date_emargement === p.date_emargement && r.demi_journee === p.demi_journee && aPreuveSignatureEmargement(r));
+            if (!digital) result[id] += Number(p.heures);
+          }
+        }
+      }
       return result;
     },
     enabled: !!session?.id && open && apprenantsInSession.length > 0,
@@ -5281,8 +5293,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const absentIds = new Set(absentApprenants.map((sa: any) => sa.apprenant?.id).filter(Boolean));
           const apprenantsForFactures = (apprenantsInSession as any[]).filter((sa: any) => !absentIds.has(sa.apprenant?.id));
           const facturesCount = apprenantsForFactures.length;
-          const tabCount = 2 + (isFormationContinue ? 2 : 0) + 1;
-          const gridColsClass = tabCount === 5 ? 'grid-cols-5' : tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+          const tabCount = 2 + (isFormationContinue ? 3 : 0) + 1;
+          const gridColsClass = tabCount === 6 ? 'grid-cols-6' : tabCount === 5 ? 'grid-cols-5' : tabCount === 4 ? 'grid-cols-4' : tabCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
           const attestationRows = (apprenantsInSession as any[]).filter((sa: any) => sa.apprenant).map((sa: any) => {
             const a = sa.apprenant;
             const isAbsent = absentIds.has(a.id);
@@ -5321,6 +5333,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 Attestations ({attestationsEligibles.length})
               </TabsTrigger>
             )}
+            {isFormationContinue && <TabsTrigger value="papier"><FileCheck className="w-4 h-4 mr-2" />Signatures papier</TabsTrigger>}
             <TabsTrigger value="absents" className="gap-2">
               <X className="w-4 h-4" />
               Absents ({absentCount})
@@ -6326,6 +6339,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </TabsContent>
           )}
 
+          {isFormationContinue && <TabsContent value="papier" className="flex-1 min-h-0 overflow-auto mt-4">
+            <SignaturesPapierFC inscriptions={apprenantsInSession} sessionId={session.id} />
+          </TabsContent>}
           {/* Absents Tab */}
           <TabsContent value="absents" className="flex-1 min-h-0 overflow-auto mt-4">
             {absentApprenants.length === 0 ? (

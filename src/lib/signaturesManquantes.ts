@@ -1,3 +1,4 @@
+import { completerEmargementsPapier } from '@/lib/fcSignaturesPapier';
 import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 import { planningSignaturesReel } from '@/lib/signaturesPlanningReel';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,7 +144,7 @@ export function calculerSignaturesManquantes(
     const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
     if (!estDate(date) || !demi) continue;
     const key = `${date}|${demi}`;
-    const signe = aPreuveSignatureEmargement(e);
+    const signe = (aPreuveSignatureEmargement(e) || (e?.preuve_papier === true && Number(e.heures) === (e.demi_journee === "matin" ? 3 : 4)));
     if (signe) signes.add(key);
     else if (e?.absent === true) absents.add(key);
   }
@@ -201,7 +202,7 @@ export async function chargerSignaturesManquantes(apprenantId: string): Promise<
   if (apprenant.error) throw apprenant.error;
   const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
   const rows = marquerFiliereRows(sessionsRes, filiereSignatures(apprenant.data.type_apprenant || apprenant.data.formation_choisie)).map(r => ({...r, elearning_apprenant: elearning}));
-  return calculerSignaturesManquantes(emargRes, rows, reservationsRes, dateDuJourParis(), configs, blocs);
+  return calculerSignaturesManquantes(await completerEmargementsPapier(emargRes, apprenantId), rows, reservationsRes, dateDuJourParis(), configs, blocs);
 }
 
 // ── Objectif EDOF : nombre de signatures attendues selon la formation ──
@@ -337,7 +338,7 @@ export function calculerBilanSignaturesEdof(
     const date = normDate(e?.date_emargement);
     const demi = String(e?.demi_journee ?? '').trim().toLowerCase();
     if (!estDate(date) || !demi) continue;
-    const signe = aPreuveSignatureEmargement(e);
+    const signe = (aPreuveSignatureEmargement(e) || (e?.preuve_papier === true && Number(e.heures) === (e.demi_journee === "matin" ? 3 : 4)));
     const key = `${date}|${demi}`;
     if (!signe || vus.has(key)) continue;
     vus.add(key);
@@ -382,7 +383,7 @@ export async function chargerBilanSignaturesEdof(apprenantId: string, formation:
   ]);
   if (apprenant.error) throw apprenant.error;
   const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
-  return calculerBilanSignaturesEdof(emargRes, sessionsRes.map(r => ({...r, elearning_apprenant: elearning})), reservationsRes, formation, configs, blocs);
+  return calculerBilanSignaturesEdof(await completerEmargementsPapier(emargRes, apprenantId), sessionsRes.map(r => ({...r, elearning_apprenant: elearning})), reservationsRes, formation, configs, blocs);
 }
 
 // ── Classification attendu / valide / hors session ──
@@ -516,7 +517,7 @@ export async function chargerClassificationSignatures(apprenantId: string): Prom
   if (apprenant.error) throw apprenant.error;
   const elearning = /^(vtc|taxi|ta|va)-e$/.test(apprenant.data.type_apprenant ?? '') || /en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(apprenant.data.creneau_horaire ?? '');
   const rows = marquerFiliereRows(sessionsRes, filiereSignatures(apprenant.data.type_apprenant || apprenant.data.formation_choisie)).map(r => ({...r, elearning_apprenant: elearning}));
-  return classifierSignatures(emargRes, rows, reservationsRes, dateDuJourParis(), configs, blocs);
+  return classifierSignatures(await completerEmargementsPapier(emargRes, apprenantId), rows, reservationsRes, dateDuJourParis(), configs, blocs);
 }
 
 /** Live-only display filter. Never used to rewrite evidence or calculate frozen history. */
