@@ -1,15 +1,10 @@
 /**
- * Projection d'affichage « Bilan = somme exacte des questions du cours ».
+ * Projection d'affichage « Bilan d'exercices = somme exacte de ses sources ».
  *
- * Le Bilan exercices TAXI (module 9) peut afficher les questions des sections
- * correspondantes de « Cours et exercices TAXI » (module 10), dans leur ordre.
- * Projection en mémoire uniquement : le JSON enregistré du module 9 n'est
- * jamais réécrit, les questions historiques restent en base et leurs identités
- * sont conservées afin que réponses et résultats restent rattachés.
- *
- * Depuis le 09/11, seule la matière T3P (exercice 100) est active : exactement
- * 66 questions de la partie 1 puis 62 de la partie 2. Gestion et toutes les
- * autres matières conservent leur affichage enregistré.
+ * Le JSON enregistré n'est jamais réécrit par la projection. Les objets
+ * historiques retrouvés conservent leur identité et leur contenu ; les objets
+ * hors composition restent en base. Les bilans d'examen et examens blancs ne
+ * sont pas référencés ici et restent strictement hors périmètre.
  */
 
 export type QuestionBilanJson = {
@@ -31,23 +26,54 @@ export type ExerciceBilanJson = {
   [cle: string]: unknown;
 };
 
-/** Module bilan -> module cours -> { exercice bilan : exercices cours dans l'ordre }. */
-export const BILAN_SOMME_COURS_SOURCES: Record<number, { moduleCours: number; correspondances: Record<number, number[]> }> = {
-  9: { moduleCours: 10, correspondances: { 100: [1, 2], 101: [60, 61, 62] } },
+type ConfigurationBilan = {
+  moduleCours: 2 | 10;
+  correspondances: Record<number, number[]>;
 };
 
-/** Seul T3P est projeté ; Gestion reste explicitement hors du correctif du 09/11. */
-const BILAN_SOMME_COURS_EXERCICES_ACTIFS: Record<number, ReadonlySet<number>> = {
-  9: new Set([100]),
+/** Modules de bilans d'exercices uniquement, y compris les héritages FC. */
+export const BILAN_SOMME_COURS_SOURCES: Record<number, ConfigurationBilan> = {
+  4: {
+    moduleCours: 2,
+    correspondances: {
+      100: [1, 2], 101: [60, 61, 62], 102: [80, 81, 82], 103: [50],
+      104: [7], 105: [3, 4, 5, 6], 106: [72],
+    },
+  },
+  9: {
+    moduleCours: 10,
+    correspondances: {
+      100: [1, 2], 101: [60, 61, 62], 102: [80, 81, 82], 103: [50],
+      105: [3, 4, 5, 6], 203: [70, 71], 204: [73, 76, 74, 75],
+    },
+  },
+  27: {
+    moduleCours: 10,
+    correspondances: { 250: [70, 71], 251: [73, 76, 74, 75] },
+  },
+  29: {
+    moduleCours: 2,
+    correspondances: { 103: [50], 104: [7], 105: [3, 4, 5, 6], 106: [72] },
+  },
+  81: {
+    moduleCours: 2,
+    correspondances: { 100: [1, 2], 102: [80, 81, 82], 104: [7], 106: [72] },
+  },
+  82: {
+    moduleCours: 10,
+    correspondances: { 100: [1, 2], 102: [80, 81, 82], 203: [70, 71], 204: [73, 76, 74, 75] },
+  },
 };
 
 export const projectionSommeCoursActive = (moduleId: number, exerciceId?: number): boolean => {
-  const actifs = BILAN_SOMME_COURS_EXERCICES_ACTIFS[Number(moduleId)];
-  if (!actifs || !BILAN_SOMME_COURS_SOURCES[Number(moduleId)]) return false;
-  return exerciceId === undefined ? actifs.size > 0 : actifs.has(Number(exerciceId));
+  const config = BILAN_SOMME_COURS_SOURCES[Number(moduleId)];
+  if (!config) return false;
+  return exerciceId === undefined
+    ? Object.keys(config.correspondances).length > 0
+    : Boolean(config.correspondances[Number(exerciceId)]);
 };
 
-/** Préfixe d'identifiant d'affichage pour une question du cours sans historique bilan. */
+/** Base d'identifiants réservée aux questions sources sans historique bilan. */
 const ID_AFFICHAGE_NOUVEAU = 900000;
 
 const normaliserEnonce = (valeur: unknown): string =>
@@ -65,9 +91,9 @@ export type ProjectionBilanOptions = {
 };
 
 /**
- * Construit les questions affichées d'un exercice de bilan à partir des
- * exercices du cours. Lève une erreur si une section source est absente ou
- * vide : l'appelant conserve alors l'affichage précédent, jamais un vide.
+ * Construit la composition exacte des sources, dans leur ordre. Une question
+ * source sans historique reçoit une identité déterministe source/question ;
+ * toute collision avec un historique est refusée au lieu d'écraser une preuve.
  */
 export function projeterExerciceBilanDepuisCours(
   exerciceBilan: ExerciceBilanJson,
@@ -82,6 +108,7 @@ export function projeterExerciceBilanDepuisCours(
   });
 
   const historiques = Array.isArray(exerciceBilan.questions) ? exerciceBilan.questions : [];
+  const identitesHistoriques = new Set(historiques.map((q) => Number(q.id)));
   const parCleSource = new Map<string, QuestionBilanJson>();
   const parEnonce = new Map<string, QuestionBilanJson[]>();
   for (const q of historiques) {
@@ -96,7 +123,7 @@ export function projeterExerciceBilanDepuisCours(
   }
 
   const identitesUtilisees = new Set<number>();
-  return questionsCours.map((questionCours, index) => {
+  return questionsCours.map((questionCours) => {
     const { _sourceExo, ...contenu } = questionCours as QuestionBilanJson & { _sourceExo: number };
     const cle = cleSource(_sourceExo, contenu.id);
     let historique = cle ? parCleSource.get(cle) : undefined;
@@ -121,20 +148,22 @@ export function projeterExerciceBilanDepuisCours(
         source_question_id: Number(contenu.id),
       };
     }
+
+    const idAffichage = ID_AFFICHAGE_NOUVEAU + _sourceExo * 1000 + Number(contenu.id);
+    if (identitesHistoriques.has(idAffichage) || identitesUtilisees.has(idAffichage)) {
+      throw new Error(`Bilan somme des cours : collision d'identité pour la source ${cle ?? "inconnue"}.`);
+    }
+    identitesUtilisees.add(idAffichage);
     return {
       ...contenu,
-      id: ID_AFFICHAGE_NOUVEAU + index,
+      id: idAffichage,
       source_exercice_id: _sourceExo,
       source_question_id: Number(contenu.id),
     };
   });
 }
 
-/**
- * Applique la projection aux seules matières explicitement actives.
- * Retourne les autres exercices inchangés (même référence). Lève une erreur
- * si une source active est indisponible.
- */
+/** Applique la projection aux seuls bilans d'exercices configurés. */
 export function projeterBilanDepuisCours<T extends ExerciceBilanJson>(
   moduleBilanId: number,
   exercicesBilan: T[],
@@ -144,7 +173,6 @@ export function projeterBilanDepuisCours<T extends ExerciceBilanJson>(
   const config = BILAN_SOMME_COURS_SOURCES[moduleBilanId];
   if (!config) return exercicesBilan;
   return exercicesBilan.map((exercice) => {
-    if (!projectionSommeCoursActive(moduleBilanId, Number(exercice.id))) return exercice;
     const sourcesIds = config.correspondances[Number(exercice.id)];
     if (!sourcesIds) return exercice;
     const sources = sourcesIds.map((id) => {
@@ -157,9 +185,9 @@ export function projeterBilanDepuisCours<T extends ExerciceBilanJson>(
 }
 
 /**
- * Protection d'enregistrement : la projection est un affichage, jamais une
- * écriture. Avant une sauvegarde du module bilan, les exercices projetés
- * reprennent exactement les questions de la version serveur relue juste avant.
+ * Protection d'enregistrement : avant toute sauvegarde, chaque exercice projeté
+ * reprend exactement les questions serveur ; seules les intentions explicites
+ * appliquées ensuite peuvent modifier le contenu.
  */
 export function retablirExercicesProjetesDuServeur<T extends ExerciceBilanJson>(
   moduleBilanId: number,
@@ -169,7 +197,6 @@ export function retablirExercicesProjetesDuServeur<T extends ExerciceBilanJson>(
   const config = BILAN_SOMME_COURS_SOURCES[moduleBilanId];
   if (!config || !Array.isArray(exercicesServeur)) return exercices;
   return exercices.map((exercice) => {
-    if (!projectionSommeCoursActive(moduleBilanId, Number(exercice.id))) return exercice;
     if (!config.correspondances[Number(exercice.id)]) return exercice;
     const serveur = exercicesServeur.find((exo) => Number(exo.id) === Number(exercice.id));
     if (!serveur || !Array.isArray(serveur.questions)) return exercice;
