@@ -456,6 +456,20 @@ export function getPendingAnswerSavesFor(apprenantId: string, exerciceId: string
 }
 
 /** ÉTAPE 3 (lecture seule) — écritures conservées mais refusées pour ce passage. */
+/**
+ * Amorce le dernier numéro d'écriture serveur connu, à partir d'une LECTURE
+ * serveur de la ligne qui sert de base à l'écran (ex. révision « refaire les
+ * fausses » rouverte sur un autre appareil ou après un nettoyage du
+ * navigateur). Sans cela, base_seq restait 0 : toute réponse était ignorée
+ * (skipped) puis bloquée, et la validation affichait « Réessayer » sans fin.
+ * Monotone : ne fait jamais reculer un numéro déjà connu.
+ */
+export function primeKnownWriteSeq(apprenantId: string, exerciceId: string, seq: unknown): void {
+  const n = Number(seq);
+  if (!apprenantId || !exerciceId || !Number.isFinite(n) || n <= 0) return;
+  rememberWriteSeq(apprenantId, exerciceId, n);
+}
+
 export function getBlockedAnswerSavesFor(apprenantId: string, exerciceId: string): number {
   return readQueue().filter(
     (item) =>
@@ -1211,10 +1225,19 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     // Compactage : on conserve le numéro d'écriture le PLUS ANCIEN des deux.
     // Prudence volontaire — si une écriture plus récente est arrivée côté
     // serveur entre-temps, elle ne sera pas écrasée.
-    item.payload.base_seq = Math.min(
-      previous.payload.base_seq ?? 0,
-      item.payload.base_seq ?? 0,
-    );
+    // Exception : un ancien élément BLOQUÉ (base périmée refusée par le
+    // serveur) entièrement contenu dans la nouvelle version, sans contradiction,
+    // ne transmet pas sa base périmée : la nouvelle base vient d'une lecture
+    // serveur. Si un autre appareil a écrit depuis, le serveur ignorera encore
+    // ces réponses et rien ne sera écrasé.
+    const baseNouvelle = item.payload.base_seq ?? 0;
+    const ancienBloqueContenu =
+      previous.blocked === true &&
+      baseNouvelle > (previous.payload.base_seq ?? 0) &&
+      reponsesContiennentSansConflit(item.payload.reponses, previous.payload.reponses);
+    item.payload.base_seq = ancienBloqueContenu
+      ? baseNouvelle
+      : Math.min(previous.payload.base_seq ?? 0, baseNouvelle);
     queue.splice(sameExoIdx, 1);
   }
   queue.push(item);

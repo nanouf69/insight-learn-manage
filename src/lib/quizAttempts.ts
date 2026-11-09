@@ -173,7 +173,7 @@ export async function fetchQuizAttempts(
   const { data, error } = await (supabase as any)
     .from("reponses_apprenants")
     .select(
-      "exercice_id, exercice_type, reponses, status, submitted_at, score, bonnes_reponses, total_questions, tentative"
+      "exercice_id, exercice_type, reponses, status, submitted_at, score, bonnes_reponses, total_questions, tentative, write_seq"
     )
     .eq("apprenant_id", apprenantId)
     .in("exercice_id", exerciceIds);
