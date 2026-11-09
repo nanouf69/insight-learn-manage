@@ -23,6 +23,7 @@ export type QuestionBilanJson = {
 export type ExerciceBilanJson = {
   id: number;
   questions?: QuestionBilanJson[];
+  deletedQuestionIds?: number[];
   [cle: string]: unknown;
 };
 
@@ -88,6 +89,8 @@ const cleSource = (exerciceId: unknown, questionId: unknown): string | null => {
 export type ProjectionBilanOptions = {
   /** Conserver énoncé, choix, images et tout autre contenu de l'objet historique. */
   preserverContenuExistant?: boolean;
+  /** Ancienne composition utilisée seulement pour retrouver les IDs legacy sans référence. */
+  exercicesCoursDeReference?: ExerciceBilanJson[];
 };
 
 /**
@@ -101,11 +104,24 @@ export function projeterExerciceBilanDepuisCours(
   options: ProjectionBilanOptions = {},
 ): QuestionBilanJson[] {
   const questionsCours = exercicesCours.flatMap((exo) => {
-    if (!exo || !Array.isArray(exo.questions) || exo.questions.length === 0) {
+    if (!exo || !Array.isArray(exo.questions)) {
       throw new Error(`Bilan somme des cours : section source ${exo?.id ?? "absente"} indisponible.`);
+    }
+    // Zéro question est valide uniquement lorsque des suppressions explicites
+    // le prouvent ; une section vide accidentelle ne doit jamais vider le bilan.
+    if (exo.questions.length === 0 && (exo.deletedQuestionIds?.length ?? 0) === 0) {
+      throw new Error(`Bilan somme des cours : section source ${exo.id} vide sans suppression explicite.`);
     }
     return exo.questions.map((q) => ({ ...q, _sourceExo: Number(exo.id) }));
   });
+
+  const referenceParCle = new Map<string, string>();
+  for (const exo of options.exercicesCoursDeReference ?? []) {
+    for (const question of exo.questions ?? []) {
+      const cle = cleSource(exo.id, question.id);
+      if (cle) referenceParCle.set(cle, normaliserEnonce(question.enonce));
+    }
+  }
 
   const historiques = Array.isArray(exerciceBilan.questions) ? exerciceBilan.questions : [];
   const identitesHistoriques = new Set(historiques.map((q) => Number(q.id)));
@@ -129,6 +145,13 @@ export function projeterExerciceBilanDepuisCours(
     let historique = cle ? parCleSource.get(cle) : undefined;
     if (!historique) {
       const candidats = parEnonce.get(normaliserEnonce(contenu.enonce)) ?? [];
+      historique = candidats.find((q) => !identitesUtilisees.has(Number(q.id)));
+    }
+    if (!historique && cle && referenceParCle.has(cle)) {
+      // Les anciennes entrées sans source_exercice_id/source_question_id ont
+      // été rapprochées par leur énoncé. Une édition du texte ne doit pas leur
+      // faire perdre leur identité historique : on compare alors à la référence.
+      const candidats = parEnonce.get(referenceParCle.get(cle)!) ?? [];
       historique = candidats.find((q) => !identitesUtilisees.has(Number(q.id)));
     }
     if (historique) {
