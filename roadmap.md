@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 09/11 17:01 — Audit taux QRC premier essai
-- [ ] Recompter Q1 T3P EB1 dans les trois sessions de novembre, preuve individuelle et comparaison publique.
-- [ ] Corriger uniquement les défauts partagés démontrés ; tests QRC/QCM, corrections, tentatives et pagination.
-- [ ] Rapport avant/après et limites ; aucune écriture élève ni publication pendant l’audit.
+- [x] Public reproduit 2/4, 5/12, 6/16 ; preuves individuelles relues, aperçu réel 3/5, 7/14, 8/18.
+- [x] Correctif QRC commun : soumission prouvée, brouillons miroirs ignorés, reprises suivantes exclues sans masquer le premier passage ; 80 tests ciblés et 123 critiques PASS.
+- [x] Rapport docs/audit-qrc-premier-essai-2026-11-09.md ; aucune écriture élève ni publication.
+- [ ] Taux exhaustifs des copies anciennes sans preuve et extension VA — non prouvés ; périmètres et inscriptions actuelles conservés.
 
 ## 09/11 16:10 — Audit global toutes tentatives EB
 - [x] Inventaire SQL réel complet : 191 élèves, 5848 résultats, 1025 groupes tentative, 2545 passages V2 ; 17 écarts candidats/8 ensembles/7 élèves, 167 copies différentes non forcées.
