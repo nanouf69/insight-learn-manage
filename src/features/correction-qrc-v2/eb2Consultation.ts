@@ -113,7 +113,7 @@ export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: bo
 export async function lirePassagesEb2Consultation(): Promise<Array<{ id: string; apprenant_id: string; quiz_id: string; completed_at: string }>> {
   const lies = new Set<string>();
   for (let de = 0; ; de += 1000) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("exam_attempts_v2")
       .select("rid:snapshot->source_historique->>result_id")
       .eq("exam_id", "EB2")
