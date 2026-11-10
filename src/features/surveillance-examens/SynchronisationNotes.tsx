@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   actualiserCopie, compterParType, EVENEMENT_NOTES_CORRIGEES, LIBELLES_ECART, lireDiagnostic, lireDiagnosticCopie,
-  ORDRE_ECARTS, remplacerLigne, type Diagnostic, type LigneDiagnostic,
+  ORDRE_ECARTS, remplacerLigne, VerificationAnnulee, type Diagnostic, type LigneDiagnostic, type Progression,
 } from "./synchronisationNotes";
 
 const heure = (s: string | null | undefined) =>
@@ -27,17 +27,29 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
   const diagCharge = useRef(false);
   useEffect(() => { diagCharge.current = !!diag; }, [diag]);
 
+  const [progression, setProgression] = useState<Progression | null>(null);
+  const annulation = useRef<AbortController | null>(null);
+  useEffect(() => () => annulation.current?.abort(), []);
+
   const verifier = useCallback(async () => {
-    setLecture(true); setErreur(null); setMessage(null);
+    annulation.current?.abort();
+    const ctrl = new AbortController();
+    annulation.current = ctrl;
+    setLecture(true); setErreur(null); setMessage(null); setDiag(null); setProgression(null);
     try {
-      setDiag(await lireDiagnostic());
+      const d = await lireDiagnostic(undefined, { signal: ctrl.signal, onProgress: (p) => { if (!ctrl.signal.aborted) setProgression(p); } });
+      if (!ctrl.signal.aborted) setDiag(d);
     } catch (e) {
+      if (annulation.current !== ctrl) return;  // remplacée par une nouvelle vérification
       setDiag(null);
-      setErreur(`Vérification impossible : ${(e as Error).message}. Aucun résultat partiel n'est affiché.`);
+      setErreur(e instanceof VerificationAnnulee
+        ? `${e.message}.`
+        : `Vérification impossible : ${(e as Error).message}. Aucun résultat partiel n'est affiché.`);
     } finally {
-      setLecture(false);
+      if (annulation.current === ctrl) { setLecture(false); setProgression(null); annulation.current = null; }
     }
   }, []);
+  const annuler = useCallback(() => annulation.current?.abort(), []);
 
   const relireCopie = useCallback(async (attemptId: string) => {
     const relue = await lireDiagnosticCopie(attemptId);
@@ -93,6 +105,9 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
         <Button data-testid="verifier-actualiser" onClick={() => void verifier()} disabled={lecture}>
           {lecture ? "Vérification en cours…" : "Vérifier et actualiser"}
         </Button>
+        {lecture && (
+          <Button variant="outline" size="sm" data-testid="annuler-verification" onClick={annuler}>Annuler</Button>
+        )}
         {reparables.length > 0 && (
           <Button variant="destructive" data-testid="actualiser-tout" disabled={enCours.size > 0} onClick={() => void actualiserTout()}>
             Actualiser les {reparables.length} copie(s) réparable(s)
@@ -104,12 +119,31 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
         La vérification ne modifie rien. Une actualisation ne recalcule que le statut d'une copie terminée avec la formule serveur ;
         elle n'attribue jamais de note, ne change jamais une note existante et ne transforme jamais une correction automatique en correction humaine.
       </p>
+      {lecture && progression && (
+        <div role="status" data-testid="progression-verification" className="space-y-1">
+          <p className="text-sm">
+            {progression.circuit === "nouveau" ? "Étape 1/2 — nouveau correcteur" : "Étape 2/2 — anciennes copies"} :{" "}
+            {progression.lues}{progression.total != null ? ` / ${progression.total}` : ""} copies lues (lot {progression.lot})
+          </p>
+          {progression.total ? (
+            <div className="h-2 w-full overflow-hidden rounded bg-muted">
+              <div className="h-full bg-primary transition-all" style={{ width: `${Math.min(100, Math.round((progression.lues / progression.total) * 100))}%` }} />
+            </div>
+          ) : null}
+          <p className="text-xs text-muted-foreground">Aucun résultat n'est affiché avant la fin complète de la lecture.</p>
+        </div>
+      )}
       {erreur && <p role="alert" className="rounded border border-destructive bg-destructive/10 p-2 font-semibold text-destructive">{erreur}</p>}
       {message && <p role="status" className="rounded border bg-muted p-2">{message}</p>}
 
       {diag && comptes && (
         <>
           <div className="flex flex-wrap gap-2" data-testid="compteurs-synchronisation">
+            {diag.couverture && (
+              <Badge variant="secondary" data-testid="couverture-verification">
+                Lecture complète : {diag.couverture.nouveau.lues}/{diag.couverture.nouveau.total ?? "?"} copies nouveau correcteur · {diag.couverture.ancien.lues}/{diag.couverture.ancien.total ?? "?"} anciennes copies
+              </Badge>
+            )}
             <Badge variant="outline">{diag.terminees} copies terminées vérifiées</Badge>
             <Badge variant="outline">{diag.enCours} en cours (jamais touchées)</Badge>
             <Badge variant={defauts ? "destructive" : "secondary"}>{defauts} défaut(s)</Badge>
