@@ -159,3 +159,24 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.revision_corrige_commande(uuid,bigint,text,uuid,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.revision_corrige_commande(uuid,bigint,text,uuid,jsonb) TO authenticated;
+
+CREATE FUNCTION public.revision_corrige_admin(p_owner uuid,p_after uuid DEFAULT NULL) RETURNS jsonb
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+DECLARE v_out jsonb;
+BEGIN
+ IF auth.uid() IS NULL OR NOT public.has_role(auth.uid(),'admin') THEN
+  RAISE EXCEPTION 'Administrateur requis' USING ERRCODE='42501'; END IF;
+ WITH sessions AS MATERIALIZED (
+  SELECT * FROM public.revision_corrige_sessions WHERE owner_id=p_owner AND (p_after IS NULL OR id>p_after) ORDER BY id LIMIT 50
+ ), latest AS (
+  SELECT DISTINCT ON(e.session_id,e.payload->>'key') e.session_id,e.seq,e.created_at,e.payload
+  FROM public.revision_corrige_events e JOIN sessions s ON s.id=e.session_id
+  WHERE e.payload->>'kind'='answer' ORDER BY e.session_id,e.payload->>'key',e.seq DESC
+ ) SELECT coalesce(jsonb_agg(jsonb_build_object('session_id',s.id,'owner_id',s.owner_id,'refs',s.refs,
+  'answers',coalesce((SELECT jsonb_agg(jsonb_build_object('key',e.payload->>'key','answer',e.payload->'answer','saved_at',e.created_at,'seq',e.seq)
+   ORDER BY e.payload->>'key') FROM latest e WHERE e.session_id=s.id),'[]'::jsonb)) ORDER BY s.id),'[]'::jsonb)
+ INTO v_out FROM sessions s;
+ RETURN v_out;
+END; $$;
+REVOKE ALL ON FUNCTION public.revision_corrige_admin(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.revision_corrige_admin(uuid,uuid) TO authenticated;
