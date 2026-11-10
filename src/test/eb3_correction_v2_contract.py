@@ -161,6 +161,19 @@ class EB3(unittest.TestCase):
     def test_vtc_gestion_note_remonte(self):
         self.parcours_complet('snap_eb3_vtc_gestion.json')
 
+    def test_commentaire_seul_non_persiste_defaut_bloquant(self):
+        # Diagnostic de la fonction publiée : ne jamais prétendre ce parcours fonctionnel.
+        att, qrcs, *_ = self.preparer('snap_eb3_vtc_gestion.json')
+        qi, _ = qrcs[0]
+        (code, out), _ = self.corriger(qi, 1)
+        self.assertEqual(code, 0, out)
+        avant = self.pg.sql(f"SELECT count(*) FROM public.qrc_correction_events WHERE qrc_instance_id='{qi}'")[1]
+        code, out = self.pg.sql(ctx(ADMIN_C, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{qi}',1,1,'Précisez !!!','admin@test');"))
+        self.assertEqual(code, 0, out)
+        apres = self.pg.sql(f"SELECT count(*) FROM public.qrc_correction_events WHERE qrc_instance_id='{qi}'")[1]
+        self.assertEqual(apres, avant, 'Le diagnostic doit être revu si le serveur journalise maintenant ce commentaire.')
+        self.assertEqual(self.pg.sql(f"SELECT count(*) FROM public.qrc_correction_events WHERE qrc_instance_id='{qi}' AND commentaire='Précisez !!!'")[1], '0')
+
     def test_taxi_note_remonte(self):
         self.parcours_complet('snap_eb3_taxi.json')
 

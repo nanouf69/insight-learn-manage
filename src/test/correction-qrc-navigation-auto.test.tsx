@@ -149,6 +149,19 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it("ne signale pas de succès si une note inchangée ne persiste pas le commentaire", async () => {
+    appliquerNote("a1-q1", 1);
+    mocks.reviser.mockResolvedValue({});
+    await ouvrirCopie("a1-q1");
+    const modifier = await screen.findByTestId("modifier-note");
+    await waitFor(() => expect(modifier).toBeEnabled());
+    fireEvent.click(modifier);
+    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!" }));
+    fireEvent.click(screen.getByTestId("revision-note-1"));
+    expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("commentaire n’a pas été confirmé");
+    expect(screen.getByPlaceholderText("Motif de la révision (facultatif)")).toHaveValue("Précisez !!!");
+    expect(window.location.search).toContain("qrc=a1-q1");
+  });
   it("ajoute plusieurs commentaires sans doublon, envoie la bonne QRC et relit après réouverture", async () => {
     let persiste = "";
     mocks.lireCommentaires.mockImplementation(async (id) => id === "a1-q1" && persiste
