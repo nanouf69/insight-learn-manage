@@ -265,14 +265,14 @@ export async function fetchQrcPublicationState(attemptId: string) {
 export async function fetchLearnerQrcPending(args: {
   apprenantId: string;
   quizId: string;
-}): Promise<{ pendingByMatiere: Set<string>; pendingTotal: number; pendingAttemptIds: Set<string> } | null> {
+}): Promise<{ pendingByMatiere: Set<string>; pendingTotal: number; pendingAttemptIds: Set<string>; pendingQuestionsByAttempt: Map<string, Set<string>> } | null> {
   const { apprenantId, quizId } = args;
   if (!apprenantId || !quizId) return null;
   if (!(await isQrcEngineEnabled(quizId))) return null;
 
   const { data, error } = await supabase
     .from("qrc_instances")
-    .select("matiere_id, etat, attempt_id")
+    .select("matiere_id, etat, attempt_id, question_id")
     .eq("apprenant_id", apprenantId)
     .eq("quiz_id", quizId)
     .eq("etat", "en_attente");
@@ -281,5 +281,11 @@ export async function fetchLearnerQrcPending(args: {
     return null;
   }
   const pendingByMatiere = new Set<string>((data || []).map((r: any) => String(r.matiere_id)));
-  return { pendingByMatiere, pendingTotal: (data || []).length, pendingAttemptIds: new Set((data || []).map(r => String(r.attempt_id))) };
+  const pendingQuestionsByAttempt = new Map<string, Set<string>>();
+  for (const r of (data || []) as any[]) {
+    const k = String(r.attempt_id);
+    if (!pendingQuestionsByAttempt.has(k)) pendingQuestionsByAttempt.set(k, new Set());
+    pendingQuestionsByAttempt.get(k)!.add(String(r.question_id));
+  }
+  return { pendingByMatiere, pendingTotal: (data || []).length, pendingAttemptIds: new Set((data || []).map(r => String(r.attempt_id))), pendingQuestionsByAttempt };
 }
