@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 08:34 — P0 EB2 notes en attente malgré QRC validées
+- [x] Correctif déjà public (index-ryoThghQ.js) ; aucun autre changement de code en attente ; 3 997 tests PASS.
+- [x] Rejeu réel : 111 matières/29 élèves débloquées (Kamal 5/5), 125/37 élèves restent sur 379 QRC non validées ; V2 EB1–EB6 sans divergence.
+- [ ] 379 QRC EB2 VTC + 6 QRC EB2-TAXI de Pogos — attendent une correction admin.
+
 ## 10/11 07:34 — Audit lecture seule doublons T3P Bilans examen VTC/TAXI
 - [x] Données courantes 5/500 et 11/600 : 114 entrées, IDs/UID distincts, 112 énoncés normalisés uniques ; deux paires strictes 25/43 et 37/47 avec mêmes choix/clés dans chaque filière.
 - [x] Treize familles sémantiques à validation nominative ; divergences location à la place et attente voie publique isolées, aucune fusion proposée automatiquement.

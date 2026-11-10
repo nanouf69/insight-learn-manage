@@ -24,3 +24,13 @@ Aucune note, réponse, copie, tentative ni historique modifié.
 
 ## Tests
 `src/test/qrc-pilot-pending-resolved-by-copy.test.ts` : 7/7 (cas Kamal + 2 cas Pogos).
+
+## 10/11 08:35 UTC — Vérification publication et audit exhaustif (lecture seule)
+- Public `gestion.ftransport.fr` : `assets/index-ryoThghQ.js` contient déjà le correctif (`pendingQuestionsByAttempt`, lecture `question_id`, contrôle des corrections validées de la copie). Seuls des tests/rapports ont changé dans l'aperçu depuis ; « Refaire les questions fausses » et l'écran EB3 étaient déjà publics avant ce correctif. Aucune nouvelle publication nécessaire.
+- Fiches pilote : moteur activé seulement pour `EB2` (VTC). 742 fiches en attente → 236 matières bloquées avant ; 111 débloquées (29 élèves), 125 restent (37 élèves, 379 QRC). Aucune régression (0 matière bloquée en plus).
+- Les 379 QRC restantes n'ont qu'une pré-correction automatique « Correction déterministe » non validée, aucune entrée `qrc_historique_corrections` : attente légitime, à corriger par l'admin.
+- Kamal : 5 matières (francais, gestion, reglementation_vtc, reglementation_vtc2, t3p) débloquées ; anglais/securite jamais bloquées.
+- V2 EB1–EB6 VTC/TAXI/TA/VA : 0 QRC en attente avec événement de correction, 0 compteur `qrc_restantes` divergent, 0 résultat définitif avec QRC restantes.
+- Pogos EB2-TAXI : passage du 30/10, 6 QRC sur 6 toujours en attente, aucune correction ; rien attribué.
+- Suite complète : 449 fichiers / 3 997 tests PASS, 13 ignorés.
+- Non fait : ouverture de l'écran élève sous le compte de Kamal (connexion unique : cela le déconnecterait) ; vérifié par rejeu du code publié sur ses données réelles.
