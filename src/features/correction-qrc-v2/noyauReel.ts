@@ -205,7 +205,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   // Lecture paginée : au-delà de 1000 lignes, une lecture simple serait tronquée.
   const attempts: any[] = [];
   for (let de = 0; ; de += 1000) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("exam_attempts_v2")
       .select("attempt_id, apprenant_id, exam_id, started_at, rid:snapshot->source_historique->>result_id")
       .eq("is_test", mode === "test")
