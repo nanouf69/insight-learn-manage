@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -10134,6 +10134,10 @@ export type Database = {
         }
       }
       core_sujet_publie: { Args: { p_exam_id: string }; Returns: boolean }
+      corrige_officiel_actuel: {
+        Args: { p_attempt_ids: string[] }
+        Returns: Json
+      }
       crm_date_examen_iso: { Args: { p_text: string }; Returns: string }
       crm_enregistrer_reinscription: {
         Args: {
