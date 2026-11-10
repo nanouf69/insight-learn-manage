@@ -16,7 +16,7 @@ describe("Correction QRC — affichage compact (présentation uniquement)", () =
   });
   it("panneau fermé sans sélection, bouton fermer, en-têtes Q1…", () => {
     const src = readFileSync("src/pages/AdminCorrectionQrcV2Reel.tsx", "utf8");
-    expect(src).toContain("const panneauOuvert = !ancienCircuit && !!qrcSel");
+    expect(src).toContain("const panneauOuvert = !ancienCircuit && !!selection");
     expect(src).toContain("{panneauOuvert && <aside");
     expect(src).toContain('data-testid="fermer-panneau"');
     expect(src).toContain("Q{i + 1}");

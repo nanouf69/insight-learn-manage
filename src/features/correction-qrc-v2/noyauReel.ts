@@ -202,39 +202,59 @@ const numeroEb = (examId: string) => {
  *  - plusieurs qui se chevauchent → « Conflit de sessions CRM » (jamais choisi automatiquement)
  * Les apprenants e-learning (type se terminant par « -e ») forment un regroupement séparé.
  */
-export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
-  // Lecture paginée : au-delà de 1000 lignes, une lecture simple serait tronquée.
-  const attempts: any[] = [];
-  for (let de = 0; ; de += 1000) {
-    const { data, error } = await (supabase as any)
+/** Pagination complète (ordre stable) par vagues de pages parallèles ; erreur = erreur. */
+export async function lirePagesParalleles<T>(lirePage: (de: number) => PromiseLike<{ data: T[] | null; error: unknown }>, vague = 4): Promise<T[]> {
+  const out: T[] = [];
+  for (let base = 0; ; base += vague * 1000) {
+    const pages = await Promise.all(Array.from({ length: vague }, (_, k) => lirePage(base + k * 1000)));
+    for (const p of pages) {
+      if (p.error) throw p.error;
+      const d = p.data ?? [];
+      out.push(...d);
+      if (d.length < 1000) return out;
+    }
+  }
+}
+
+/** Lots d'identifiants traités 4 par 4 en parallèle, ordre des résultats conservé. */
+async function parLotsParalleles<T>(ids: string[], taille: number, lire: (lot: string[]) => Promise<T[]>): Promise<T[]> {
+  const lots: string[][] = [];
+  for (let k = 0; k < ids.length; k += taille) lots.push(ids.slice(k, k + taille));
+  const out: T[] = [];
+  for (let k = 0; k < lots.length; k += 4) for (const r of await Promise.all(lots.slice(k, k + 4).map(lire))) out.push(...r);
+  return out;
+}
+
+// Dernière liste lue (mémoire de l'onglet seulement, jamais stockée) et lecture en cours partagée :
+// la réouverture de l'onglet affiche immédiatement la liste précédente pendant l'actualisation serveur.
+const derniereListe = new Map<string, GroupeSessionCrm[]>();
+const lectureEnCours = new Map<string, Promise<GroupeSessionCrm[]>>();
+export function listeGroupesEnMemoire(mode: "test" | "migre" = "migre"): GroupeSessionCrm[] | null {
+  return derniereListe.get(mode) ?? null;
+}
+export function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
+  const enCours = lectureEnCours.get(mode);
+  if (enCours) return enCours;
+  const p = listerGroupesCrmServeur(mode)
+    .then((l) => { derniereListe.set(mode, l); return l; })
+    .finally(() => lectureEnCours.delete(mode));
+  lectureEnCours.set(mode, p);
+  return p;
+}
+
+async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSessionCrm[]> {
+  // Lectures indépendantes lancées en parallèle (auparavant ~30 pages lues l'une après l'autre).
+  const db = supabase as any;
+  const pAttempts = lirePagesParalleles<any>((de) => db
       .from("exam_attempts_v2")
       .select("attempt_id, apprenant_id, exam_id, started_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
       .eq("is_test", mode === "test")
       .order("started_at", { ascending: false })
       .order("attempt_id", { ascending: true })
-      .range(de, de + 999);
-    if (error) throw error;
-    attempts.push(...(data ?? []));
-    if ((data ?? []).length < 1000) break;
-  }
-
-  // Toutes les copies historiques d'EB (EB1…EB6, VTC/TAXI/TA/VA) non migrées vers V2 et
-  // hors EB2 VTC (consultation V2) sont listées dans le même menu, sans copie ni migration.
-  // Les copies déjà migrées sont exclues ici : elles apparaissent une seule fois, côté V2.
-  const legacyResults: any[] = [];
-  if (mode === "migre") {
-    const migres = resultatsMigres(attempts as any);
-    const qrcV2: any[] = [];
-    for (let de = 0; ; de += 1000) {
-      const { data, error } = await (supabase as any).from("qrc_instances_v2")
-        .select("qrc_instance_id, attempt_id, reponse").order("qrc_instance_id", { ascending: true }).range(de, de + 999);
-      if (error) throw error;
-      qrcV2.push(...(data ?? []));
-      if ((data ?? []).length < 1000) break;
-    }
-    const bruts: any[] = [];
-    for (let de = 0; ; de += 1000) {
-      const { data, error } = await (supabase as any)
+      .range(de, de + 999));
+  const pQrcV2 = mode === "migre" ? lirePagesParalleles<any>((de) => db.from("qrc_instances_v2")
+      .select("qrc_instance_id, attempt_id, reponse").order("qrc_instance_id", { ascending: true }).range(de, de + 999)) : Promise.resolve([] as any[]);
+  const pBruts = mode === "migre" ? lirePagesParalleles<any>((de) => db
         .from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, matiere_id, completed_at, rep:details->reponses")
         .eq("quiz_type", "examen_blanc")
@@ -242,11 +262,18 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
         .order("id", { ascending: true })
-        .range(de, de + 999);
-      if (error) throw error;
-      bruts.push(...(data ?? []));
-      if ((data ?? []).length < 1000) break;
-    }
+        .range(de, de + 999), 1) : Promise.resolve([] as any[]);
+  const pConsultation = mode === "migre" ? lirePassagesEb2Consultation() : Promise.resolve([] as any[]);
+  const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
+
+  // Toutes les copies historiques d'EB (EB1…EB6, VTC/TAXI/TA/VA) non migrées vers V2 et
+  // hors EB2 VTC (consultation V2) sont listées dans le même menu, sans copie ni migration.
+  // Les copies déjà migrées sont exclues ici : elles apparaissent une seule fois, côté V2.
+  const legacyResults: any[] = [];
+  if (mode === "migre") {
+    const migres = resultatsMigres(attempts as any);
+    const qrcV2 = qrcV2Lu;
+    const bruts = brutsLus;
     // Miroirs prouvés d'un passage V2 natif (mêmes réponses QRC exactes) : affichés une seule fois, côté V2.
     for (const m of miroirsV2Prouves(bruts, attempts as any, qrcV2)) migres.add(m);
     {
@@ -266,12 +293,12 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   // EB2 VTC : copies enregistrées sans fiche V2, affichées dans la même grille V2 en consultation.
   const consultationEb2: any[] = [];
   if (mode === "migre") {
-    for (const r of await lirePassagesEb2Consultation()) {
+    for (const r of consultationLue) {
       consultationEb2.push({ ...r, attempt_id: `consultation:${r.id}`, exam_id: "EB2", started_at: r.completed_at, circuit: "v2" as const });
     }
   }
 
-  const neutralises = await idsNeutralises();
+  const neutralises = neutralisesLus;
   const passages = [
     ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, circuit: "v2" as const })),
     ...consultationEb2,
@@ -281,25 +308,21 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   const apprenantIds = Array.from(new Set(passages.map((a) => a.apprenant_id as string)));
   // Lectures par lots de 150 : une liste d'identifiants trop longue dans l'URL échouerait
   // et ferait basculer silencieusement des candidats (dont cours du soir) hors de leur session.
-  const apprenants: { id: string; type_apprenant: string | null }[] = [];
-  const liens: any[] = [];
-  for (let i = 0; i < apprenantIds.length; i += 150) {
-    const lot = apprenantIds.slice(i, i + 150);
-    const { data: a, error: ea } = await supabase.from("apprenants").select("id, type_apprenant").in("id", lot);
-    if (ea) throw ea;
-    apprenants.push(...((a ?? []) as any[]));
-    for (let de = 0; ; de += 1000) {
-      const { data: l, error: el } = await supabase
+  const parLot = await parLotsParalleles(apprenantIds, 150, async (lot) => {
+    const [{ data: a, error: ea }, l] = await Promise.all([
+      supabase.from("apprenants").select("id, type_apprenant").in("id", lot),
+      lirePagesParalleles<any>((de) => supabase
         .from("session_apprenants")
         .select("id, apprenant_id, session_id, date_debut, date_fin")
         .in("apprenant_id", lot)
         .order("id", { ascending: true })
-        .range(de, de + 999);
-      if (el) throw el;
-      liens.push(...((l ?? []) as any[]));
-      if ((l ?? []).length < 1000) break;
-    }
-  }
+        .range(de, de + 999) as any, 1),
+    ]);
+    if (ea) throw ea;
+    return [{ a: (a ?? []) as any[], l }];
+  });
+  const apprenants: { id: string; type_apprenant: string | null }[] = parLot.flatMap((x) => x.a);
+  const liens: any[] = parLot.flatMap((x) => x.l);
   const typesApprenant = new Map(
     (apprenants ?? []).map((a) => [a.id, (a.type_apprenant ?? "").trim().toLowerCase()]),
   );
@@ -308,12 +331,11 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   );
 
   const sessionIds = Array.from(new Set(liens.map((l: any) => l.session_id as string)));
-  const sessionsCrm: any[] = [];
-  for (let i = 0; i < sessionIds.length; i += 150) {
-    const { data: s, error: es } = await supabase.from("sessions").select("id, nom, date_debut, date_fin").in("id", sessionIds.slice(i, i + 150));
+  const sessionsCrm: any[] = await parLotsParalleles(sessionIds, 150, async (lot) => {
+    const { data: sx, error: es } = await supabase.from("sessions").select("id, nom, date_debut, date_fin").in("id", lot);
     if (es) throw es;
-    sessionsCrm.push(...((s ?? []) as any[]));
-  }
+    return (sx ?? []) as any[];
+  });
   const sessionDe = new Map((sessionsCrm ?? []).map((s: any) => [s.id as string, s]));
 
   const liensDe = new Map<string, Array<{ session: any; debut: string; fin: string }>>();
@@ -761,10 +783,10 @@ export async function lireResultat(attemptId: string): Promise<ResultatReel | nu
 }
 
 /** Temps réel : simple signal « une nouvelle donnée serveur existe », aucune vérité métier. */
-export function souscrireSignal(canal: string, table: "qrc_instances_v2" | "core_exam_results" | "exam_attempts_v2" | "apprenant_quiz_results", onSignal: () => void) {
+export function souscrireSignal(canal: string, table: "qrc_instances_v2" | "core_exam_results" | "exam_attempts_v2" | "apprenant_quiz_results", onSignal: () => void, filter?: string) {
   const ch = supabase
     .channel(canal)
-    .on("postgres_changes", { event: "*", schema: "public", table }, () => onSignal())
+    .on("postgres_changes", { event: "*", schema: "public", table, ...(filter ? { filter } : {}) }, () => onSignal())
     .subscribe();
   return () => {
     supabase.removeChannel(ch);

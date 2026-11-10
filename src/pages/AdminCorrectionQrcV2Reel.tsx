@@ -25,6 +25,7 @@ import {
   corrigerQrc,
   lireHistoriqueQrc,
   listerGroupesCrm,
+  listeGroupesEnMemoire,
   origineCorrection,
   reviserQrc,
   souscrireSignal,
@@ -69,7 +70,9 @@ export default function AdminCorrectionQrcV2Reel() {
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
-  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
+  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>(() => listeGroupesEnMemoire(mode) ?? []);
+  // Liste affichée depuis la mémoire de l'onglet, en attente de la relecture serveur.
+  const [listeProvisoire, setListeProvisoire] = useState<boolean>(() => listeGroupesEnMemoire(mode) != null);
   const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
@@ -143,7 +146,8 @@ export default function AdminCorrectionQrcV2Reel() {
     void (async () => {
       try {
         const liste = await listerGroupesCrm(mode);
-        setGroupes(liste);
+        setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
+        setListeProvisoire(false);
         if (!param("qrc_groupe")) {
           setGroupeCleState(liste[0]?.cle ?? null);
           setEbCleState(liste[0]?.examens[0]?.cle ?? null);
@@ -273,20 +277,36 @@ export default function AdminCorrectionQrcV2Reel() {
   }, [mode, attemptsAffiches]);
 
   useEffect(() => { void recharger(); }, [recharger]);
-  useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
+  const rechargerRef = useRef(recharger);
+  useEffect(() => { rechargerRef.current = recharger; }, [recharger]);
+  // Signal temps réel : regroupé (1,5 s) et ignoré pendant notre propre enregistrement,
+  // pour ne jamais relancer la lecture complète de toutes les copies à chaque note.
+  const envoiEnCoursRef = useRef(false);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const arreter = souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (!envoiEnCoursRef.current) void recharger(); }, 1500);
+    });
+    return () => { clearTimeout(timer); arreter(); };
+  }, [recharger]);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let actif = true;
     const actualiser = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
+        if (envoiEnCoursRef.current) { actualiser(); return; }
+        // Passage terminé/repris : relecture des seules copies affichées (fin réelle, ordre).
+        void rechargerRef.current?.();
         void listerGroupesCrm(mode).then((liste) => {
-          if (actif) setGroupes(liste);
+          // Liste identique : aucune mise à jour (pas de re-rendu ni de nouveau rapprochement).
+          if (actif) setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
         }).catch((e: Error) => { if (actif) setErreur(e.message); });
-      }, 500);
+      }, 2000);
     };
     const arreterV2 = souscrireSignal("admin-qrc-v2-passages", "exam_attempts_v2", actualiser);
-    const arreterHistorique = souscrireSignal("admin-qrc-v2-passages-historiques", "apprenant_quiz_results", actualiser);
+    const arreterHistorique = souscrireSignal("admin-qrc-v2-passages-historiques", "apprenant_quiz_results", actualiser, "quiz_type=eq.examen_blanc");
     return () => { actif = false; clearTimeout(timer); arreterV2(); arreterHistorique(); };
   }, [mode]);
 
@@ -501,6 +521,8 @@ export default function AdminCorrectionQrcV2Reel() {
       if (!window.confirm(msg)) return;
     }
     setNote(n);
+    envoiEnCoursRef.current = true;
+    const t0 = performance.now();
     setEtatEnvoi("encours");
     setErreur(null);
     setMessageNavigation(null);
@@ -590,7 +612,31 @@ export default function AdminCorrectionQrcV2Reel() {
             setSession(fusion);
             return fusion;
           })()
-        : await recharger();
+        : session && tentativeSel
+          ? await (async () => {
+              // Relecture serveur ciblée de la seule copie corrigée (après commit), fusionnée
+              // dans la grille : jamais de rechargement complet de toutes les copies.
+              const id = tentativeSel.attempt_id;
+              const copie = await chargerSessionTest(mode, [id]);
+              if (!copie.tentatives.some((t) => t.attempt_id === id)) return await recharger();
+              const fusion: SessionReelle = {
+                ...session,
+                tentatives: session.tentatives.map((t) => copie.tentatives.find((c) => c.attempt_id === t.attempt_id) ?? t),
+                qrc: [
+                  ...session.qrc.map((q) => (q.attempt_id === id ? copie.qrc.find((c) => c.qrc_instance_id === q.qrc_instance_id) ?? q : q)),
+                  ...copie.qrc.filter((c) => !session.qrc.some((q) => q.qrc_instance_id === c.qrc_instance_id)),
+                ],
+                resultats: [...session.resultats.filter((r) => r.attempt_id !== id), ...copie.resultats],
+                baremesRestaures: [
+                  ...(session.baremesRestaures ?? []).filter((b) => !copie.qrc.some((q) => q.qrc_instance_id === b.qrc_instance_id)),
+                  ...(copie.baremesRestaures ?? []),
+                ],
+              };
+              setSession(fusion);
+              return fusion;
+            })()
+          : await recharger();
+      if (import.meta.env.DEV) console.info(`[qrc-v2] note enregistrée et relue en ${Math.round(performance.now() - t0)} ms`);
       const decision = decisionApresCorrection(sessionRelue, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
@@ -625,6 +671,8 @@ export default function AdminCorrectionQrcV2Reel() {
     } catch (e) {
       setEtatEnvoi("echec");
       setErreur((e as Error).message);
+    } finally {
+      envoiEnCoursRef.current = false;
     }
   };
 
@@ -767,7 +815,8 @@ export default function AdminCorrectionQrcV2Reel() {
     `${estEnCours(g) ? "🔴 EN COURS — " : ""}${g.libelle}${g.periode ? ` (${g.periode})` : ""} · ${g.nbCandidats} candidat${g.nbCandidats > 1 ? "s" : ""}`;
 
   const ebsRecents = ebsLesPlusRecents(groupeChoisi, groupeChoisi?.examens ?? [], jourActuel);
-  const panneauOuvert = !ancienCircuit && !!qrcSel;
+  // Panneau tenu ouvert tant qu'une copie est sélectionnée (même pendant une relecture) : largeur stable.
+  const panneauOuvert = !ancienCircuit && !!selection;
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
       <div
@@ -795,7 +844,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
             <select
               data-testid="choix-session"
-              className={`rounded border bg-background px-2 py-1 text-sm max-w-[420px] ${groupeChoisi && estEnCours(groupeChoisi) ? "text-red-600 font-semibold" : ""}`}
+              className={`min-w-0 rounded border bg-background px-2 py-1 text-sm max-w-full sm:max-w-[420px] ${groupeChoisi && estEnCours(groupeChoisi) ? "text-red-600 font-semibold" : ""}`}
               value={groupeCle ?? ""}
               onChange={(e) => setGroupeCle(e.target.value)}
             >
@@ -807,7 +856,7 @@ export default function AdminCorrectionQrcV2Reel() {
             </select>
             <select
               data-testid="choix-eb"
-              className={`rounded border bg-background px-2 py-1 text-sm ${ebChoisi && ebsRecents.has(ebChoisi.cle) ? "text-red-600 font-semibold" : ""}`}
+              className={`min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm ${ebChoisi && ebsRecents.has(ebChoisi.cle) ? "text-red-600 font-semibold" : ""}`}
               title={ebChoisi && ebsRecents.has(ebChoisi.cle) ? "Dernier examen blanc réalisé par la session CRM en cours sélectionnée" : undefined}
               value={ebChoisi?.cle ?? ""}
               onChange={(e) => setEbCle(e.target.value)}
@@ -823,7 +872,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 </option>
               ))}
             </select>
-            <div className="relative">
+            <div className="relative min-w-0 max-w-full">
               <input
                 data-testid="recherche-candidat"
                 type="text"
@@ -831,7 +880,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Rechercher un candidat par nom ou prénom"
                 aria-label="Rechercher un candidat par nom ou prénom"
-                className="w-72 rounded border bg-background px-2 py-1 pr-7 text-sm"
+                className="w-72 max-w-full rounded border bg-background px-2 py-1 pr-7 text-sm"
               />
               {recherche && (
                 <button
@@ -847,7 +896,7 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
 
 
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex shrink-0 items-center gap-1">
               <Button size="icon" variant="outline" onClick={() => setZoom(zoom - 10)} aria-label="Réduire le zoom">
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -970,7 +1019,13 @@ export default function AdminCorrectionQrcV2Reel() {
               ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
             </p>
           )}
-          {mode === "migre" && <PanneauRapprochement groupes={groupes} />}
+          {groupes.length === 0 && !erreur && (
+            <p className="text-xs text-muted-foreground" data-testid="chargement-liste">Lecture des sessions et des copies en cours…</p>
+          )}
+          {listeProvisoire && (
+            <p className="text-xs text-muted-foreground" data-testid="liste-provisoire">Liste précédente affichée — actualisation serveur en cours…</p>
+          )}
+          {mode === "migre" && !listeProvisoire && <PanneauRapprochement groupes={groupes} />}
         </header>
 
         {archiveOuverte ? (

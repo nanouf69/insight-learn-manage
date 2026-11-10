@@ -210,7 +210,7 @@ const ApprenantSearchPreview = () => {
     <div className="space-y-6 animate-fade-in">
       {isAdmin && <AlertesNotesGlobales />}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex w-full max-w-5xl flex-wrap">
+        <TabsList className="flex h-auto w-full max-w-5xl flex-wrap justify-start gap-1">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil
@@ -251,7 +251,12 @@ const ApprenantSearchPreview = () => {
             <Car className="w-4 h-4" />
             Notation pratique
           </TabsTrigger>
-          <TabsTrigger value="correction-qrc" className="flex items-center gap-2">
+          <TabsTrigger
+            value="correction-qrc"
+            className="flex items-center gap-2"
+            // Lecture anticipée (lecture seule) dès le survol : l'onglet s'ouvre plus vite.
+            onPointerEnter={() => { void import("@/features/correction-qrc-v2/noyauReel").then((m) => m.listerGroupesCrm("migre")).catch(() => undefined); }}
+          >
             <MessageSquareText className="w-4 h-4" />
             Correction QRC
           </TabsTrigger>
