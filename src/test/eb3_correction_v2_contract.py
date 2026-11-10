@@ -97,7 +97,7 @@ class EB3(unittest.TestCase):
         """Copie terminée réaliste : QCM répondues (moitié justes), QRC remises en attente."""
         snap = json.loads((FIX / snap_file).read_text())
         att = str(uuid.uuid4())
-        code, out = self.pg.sql(f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat, finished_at) VALUES ('{att}','{apprenant}',{lit(snap['exam_id'])},{lit(json.dumps(snap, ensure_ascii=False))}::jsonb,'terminee',now())")
+        code, out = self.pg.sql(f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat) VALUES ('{att}','{apprenant}',{lit(snap['exam_id'])},{lit(json.dumps(snap, ensure_ascii=False))}::jsonb,'en_cours')")
         self.assertEqual(code, 0, out[-600:])
         qcm_ok, qrcs, total, i = 0.0, [], 0.0, 0
         for q in snap['questions']:
@@ -113,6 +113,9 @@ class EB3(unittest.TestCase):
                 rep = bonnes if i % 2 else ['E' if 'E' not in bonnes else 'D']
                 if rep == bonnes: qcm_ok += q['points']
                 self.pg.sql(f"INSERT INTO public.answer_state (attempt_id, apprenant_id, question_id, valeur) VALUES ('{att}','{apprenant}',{lit(q['id'])},{lit(json.dumps(rep))}::jsonb)")
+        # Remise : la tentative se ferme comme en production, après les réponses.
+        code, out = self.pg.sql(f"UPDATE public.exam_attempts_v2 SET etat='terminee', finished_at=now() WHERE attempt_id='{att}'")
+        self.assertEqual(code, 0, out)
         return att, qrcs, qcm_ok, total, snap
 
     def corriger(self, qi, note, op=None, claims=ADMIN_C):
