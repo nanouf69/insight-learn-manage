@@ -53,6 +53,18 @@ class Base(Contrat):
                 self.pg.sql(f"INSERT INTO reponses_apprenants_journal(apprenant_id,exercice_id,question_id,valeur,tentative) "
                             f"VALUES('{APP}','EB2__{m}__t3','1','\"x\"',1)")
 
+    def test_remise_ambigue_exige_confirmation_tracee(self):
+        # Remplace le contrat live hérité : v2 refuse désormais la première notation d'une copie sans remise
+        # prouvée, même avec une confirmation saisie (l'écran n'en envoie jamais). Horodatage divergent inchangé.
+        rid, s = self.copie(remise='decalee')
+        r = self.noter(rid, '1', 1, s, reco='Vérification automatique : réponses identiques')
+        self.assertEqual('remise_horodatage_divergent', r['provenance'])
+        rid2, s2 = self.copie(remise=None, matiere='autre')
+        avant = self.ligne(rid2)
+        for reco in (None, 'vérifié'):
+            with self.assertRaisesRegex(RuntimeError, 'Remise non prouvée'): self.noter(rid2, '1', 1, s2, reco=reco)
+        self.assertEqual(avant, self.ligne(rid2))
+
     def preflight(self, rid, uid=ADMIN):
         return json.loads(self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{uid}'; SELECT qrc_historique_preuve_remise('{rid}')").splitlines()[-1])
 
@@ -143,8 +155,8 @@ class Notation(Base):
             self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT qrc_historique_liaison_prouvee('{IDS['t3p']}')")
         with self.assertRaises(RuntimeError):
             self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; INSERT INTO qrc_historique_liaisons_remise(result_id) VALUES(gen_random_uuid())")
-        self.assertEqual('0', self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{AUTRE}'; SELECT count(*) FROM qrc_historique_liaisons_remise"))
-        self.assertEqual('5', self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT count(*) FROM qrc_historique_liaisons_remise"))
+        self.assertEqual('0', self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{AUTRE}'; SELECT count(*) FROM qrc_historique_liaisons_remise").splitlines()[-1])
+        self.assertEqual('5', self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{ADMIN}'; SELECT count(*) FROM qrc_historique_liaisons_remise").splitlines()[-1])
         with self.assertRaisesRegex(RuntimeError, 'Administrateur'): self.noter(IDS['t3p'], '1', 1, 1, uid=AUTRE)
 
 
