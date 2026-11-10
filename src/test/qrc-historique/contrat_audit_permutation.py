@@ -1,26 +1,31 @@
-"""Audit 10/11 : cas manquants + aller-retour rollback, PostgreSQL jetable uniquement."""
+"""Audit 10/11 (rejoué sur le correctif v2 réellement candidat) : cas manquants + aller-retour rollback, PostgreSQL jetable uniquement."""
 import pathlib, json, uuid, unittest, sys, concurrent.futures
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from contrat_notation import Contrat, lit, ADMIN, AUTRE, APP
 ROOT = pathlib.Path(__file__).resolve().parents[3] / 'docs/sql-revue'
-PATCH = (ROOT / '2026-11-10-qrc-liaison-choix-ordre.sql').read_text()
-ROLLBACK = (ROOT / '2026-11-10-qrc-liaison-choix-ordre-ROLLBACK.sql').read_text()
+PATCH = (ROOT / '2026-11-10-qrc-liaison-v2-PATCH.sql').read_text()
+ROLLBACK = (ROOT / '2026-11-10-qrc-liaison-v2-ROLLBACK.sql').read_text()
 CATALOGUE = ("SELECT string_agg(proname||':'||md5(pg_get_functiondef(p.oid))||':'||prosecdef||':'||coalesce(array_to_string(proacl,','),''),'|' ORDER BY proname) "
-             "FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND proname LIKE 'qrc_historique%'")
+             "FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND proname LIKE 'qrc_historique%' AND proname<>'qrc_historique_liaisons_append_only'")
+JOURNAL = ('CREATE TABLE public.reponses_apprenants_journal(id uuid DEFAULT gen_random_uuid() PRIMARY KEY, apprenant_id uuid, '
+           'exercice_id text, question_id text, valeur jsonb, tentative integer DEFAULT 1, created_at timestamptz DEFAULT now())')
 DONNEES = ("SELECT md5(coalesce((SELECT string_agg(to_jsonb(r)::text,'|' ORDER BY id) FROM apprenant_quiz_results r),'')||"
            "coalesce((SELECT string_agg(to_jsonb(a)::text,'|' ORDER BY id) FROM reponses_apprenants a),''))")
 
 class Base(Contrat):
     def setUp(self):
         super().setUp()
+        self.pg.sql(JOURNAL)
         self.pg.sql(ROLLBACK)   # état exact de production (définitions relues le 10/11)
         self.prod = self.pg.sql(CATALOGUE)
         self.pg.sql(PATCH)
 
     def test_remise_ambigue_exige_confirmation_tracee(self):
-        # Règle du correctif : horodatage divergent prouvé = notable ; aucune fiche = refus même avec confirmation.
+        # v2 : horodatage divergent prouvé = notable avec la trace automatique envoyée par l'écran (comportement live
+        # conservé) ; aucune fiche = refus même avec une confirmation saisie.
         rid, s = self.copie(remise='decalee')
-        self.assertEqual('remise_horodatage_divergent', self.noter(rid, '1', 1, s)['provenance'])
+        with self.assertRaisesRegex(RuntimeError, 'Remise ambiguë'): self.noter(rid, '1', 1, s)
+        self.assertEqual('remise_horodatage_divergent', self.noter(rid, '1', 1, s, reco='Vérification automatique')['provenance'])
         rid2, s2 = self.copie(remise=None, matiere='autre')
         with self.assertRaisesRegex(RuntimeError, 'Remise non prouvée'): self.noter(rid2, '1', 1, s2, reco='vérifié')
 
@@ -122,14 +127,16 @@ class Notes(Base):
         self.assertEqual(1, res.count('ok'), res)
         self.assertEqual('1', self.pg.sql('SELECT count(*) FROM qrc_historique_corrections'))
 
-    def test_regression_revision_ancienne_reconnaissance_manuelle(self):
-        """Constat : une copie notée hier via « resultat_seul + reconnaissance » n'est plus révisable avec le correctif."""
+    def test_revision_ancienne_reconnaissance_manuelle_inchangee(self):
+        """v2 : une copie déjà notée via « resultat_seul + reconnaissance » garde la révision serveur live (pas de régression)."""
         rid, s = self.copie(remise=None, matiere='hist')
         self.pg.sql(ROLLBACK)
         self.noter(rid, '1', 1, s, reco='vérifié')
         self.pg.sql(PATCH)
-        with self.assertRaisesRegex(RuntimeError, 'Remise non prouvée'):
-            self.reviser(rid, '1', 2, 1, self.ligne(rid)['score_obtenu'], reco='vérifié')
+        r = self.reviser(rid, '1', 2, 1, self.ligne(rid)['score_obtenu'], reco='vérifié')
+        self.assertEqual('resultat_seul', r['provenance'])
+        with self.assertRaisesRegex(RuntimeError, 'Remise ambiguë'):
+            self.reviser(rid, '1', 1, 2, self.ligne(rid)['score_obtenu'])
 
 class Rollback(Base):
     def test_aller_retour_catalogue_identique_donnees_intactes(self):
