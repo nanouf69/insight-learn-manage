@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 10/11 07:34 — Audit lecture seule doublons T3P Bilans examen VTC/TAXI
+- [x] Données courantes 5/500 et 11/600 : 114 entrées, IDs/UID distincts, 112 énoncés normalisés uniques ; deux paires strictes 25/43 et 37/47 avec mêmes choix/clés dans chaque filière.
+- [x] Treize familles sémantiques à validation nominative ; divergences location à la place et attente voie publique isolées, aucune fusion proposée automatiquement.
+- [x] Origine prouvée hors concaténation T3P 1/2 : banque d'examen indépendante, zéro correspondance exacte avec les 128 exercices sources ; copies figées et affichage élève vérifiés par versions/reçus/rendu.
+- [x] Rapport `docs/audit-doublons-t3p-bilans-examen-2026-11-10.md` ; aucune donnée, question, copie, réponse, note ou publication modifiée.
+- [ ] Correctif minimal en attente d'accord : nouvelle version 112 entrées pour nouveaux passages seulement, IDs 43/47 exclus sans renuméroter, anciennes copies et scores intacts.
+
 ## 09/11 22:36 — Correctif urgent existant et activation EB3 TAXI
 - [x] Correctif QRC du ticket urgent réutilisé sans correctif concurrent : public index-Cv4rxQEI.js confirmé, 39 tests PASS.
 - [x] EB3 TAXI : source admin 90008 univoque, 7 matières/107 questions (91 QCM/16 QRC), comparaison intégrale questions/choix/corrigés/ordre et coefficients/seuils ; version 2 publiée en base à 22:40:49 UTC, relecture conforme, signal core_sujet_publie=true.
