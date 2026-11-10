@@ -297,17 +297,15 @@ export async function reviserQrcHistorique(params: {
 
 /**
  * Trace de remise envoyée avec la note. Identité prouvée (élève + exercice + tentative + réponses identiques) :
- * vérification automatique, sans case. Aucune fiche identique : confirmation humaine obligatoire.
+ * vérification automatique, sans case. Aucune fiche identique : refus, jamais d'attestation humaine inventée.
  */
-export function reconnaissanceRemise(provenance: ProvenanceRemise, resultId: string, questionId: string, confirmeePar: string | null): string | null {
+export function reconnaissanceRemise(provenance: ProvenanceRemise, resultId: string, questionId: string): string | null {
   if (provenance === "remise_identique") return null;
   if (provenance === "remise_horodatage_divergent") {
     return `Vérification automatique : fiche remise de l'élève aux réponses identiques (élève, exercice, tentative), horodatage différent — copie ${resultId}, question ${questionId}.`;
   }
-  return confirmeePar ? `Confirmé par ${confirmeePar} : copie originale ${resultId}, question ${questionId} (resultat_seul).` : null;
+  throw new Error("Note non enregistrée : aucune remise correspondant à cet élève, cette matière, cette tentative et ces réponses n’est prouvée. La liaison de cette copie doit être vérifiée ; aucune note n’a été attribuée.");
 }
-
-export const confirmationRemiseRequise = (provenance: ProvenanceRemise) => provenance === "resultat_seul";
 
 /** Historique des corrections d'une QRC historique (journal append-only), au format de l'historique V2. */
 export async function lireHistoriqueQrcHistorique(resultId: string, questionId: string) {

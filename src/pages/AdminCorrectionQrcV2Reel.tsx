@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
-import { chargerConsultationEb2, confirmationRemiseRequise, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
+import { chargerConsultationEb2, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -439,12 +439,9 @@ export default function AdminCorrectionQrcV2Reel() {
     return Array.from(m.values()).sort((a, b) => (a.lettre ?? "").localeCompare(b.lettre ?? ""));
   }, [session]);
 
-  const [confirmeRemise, setConfirmeRemise] = useState(false);
-  useEffect(() => { setConfirmeRemise(false); }, [selection]);
   const histoSel = qrcSel && estConsultation(qrcSel.qrc_instance_id)
     ? ((tentativeSel as unknown as { historique?: InfosHistorique } | undefined)?.historique ?? null)
     : null;
-  const confirmationSel = !!histoSel && confirmationRemiseRequise(histoSel.provenance);
   const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
@@ -455,10 +452,6 @@ export default function AdminCorrectionQrcV2Reel() {
     if (estConsultation(qrcSel.qrc_instance_id)) {
       // Copie historique sans fiche V2 : jamais de réécriture d'une QRC déjà validée.
       if (!histo || histo.score_obtenu == null) return;
-      if (confirmationRemiseRequise(histo.provenance) && !confirmeRemise) {
-        setErreur("Cochez la confirmation de remise avant d'enregistrer la note.");
-        return;
-      }
     }
     const revision = qrcSel.etat === "corrigee";
     const auto = !revision && baremeSel != null && proposition.autoValidable && proposition.note === baremeSel && n === baremeSel;
@@ -479,8 +472,14 @@ export default function AdminCorrectionQrcV2Reel() {
     setErreur(null);
     setMessageNavigation(null);
     try {
+      if (!tentativeSel || tentativeSel.apprenant_id !== qrcSel.apprenant_id
+        || tentativeSel.attempt_id !== qrcSel.attempt_id
+        || !questionSel || questionSel.id !== qrcSel.question_id
+        || (histo && tentativeSel.attempt_id !== `consultation:${histo.result_id}`)) {
+        throw new Error("Note non enregistrée : la liaison entre la copie, la question et l’élève est incohérente. Rechargez cette copie ; aucune note n’a été attribuée.");
+      }
       if (histo) {
-        const reconnaissance = reconnaissanceRemise(histo.provenance, histo.result_id, qrcSel.question_id, emailAdmin ?? "l'administrateur");
+        const reconnaissance = reconnaissanceRemise(histo.provenance, histo.result_id, qrcSel.question_id);
         if (revision) {
           await reviserQrcHistorique({
             operationId: `qrchistrev:${histo.result_id}:${qrcSel.question_id}:${ancienne}:${n}:${jeton}`,
@@ -1154,12 +1153,6 @@ export default function AdminCorrectionQrcV2Reel() {
                   </p>
                 ) : (
                   <>
-                    {confirmationSel && (
-                      <label className="flex items-start gap-2 rounded border border-warning/50 bg-warning/5 p-2 text-xs" data-testid="confirmation-remise">
-                        <input type="checkbox" className="mt-0.5" checked={confirmeRemise} onChange={(e) => setConfirmeRemise(e.target.checked)} />
-                        <span>Aucune fiche remise identique n'a été retrouvée pour cette copie : seule la copie enregistrée fait foi. Je confirme que c'est bien celle de l'élève (confirmation enregistrée avec la note).</span>
-                      </label>
-                    )}
                     <div className="flex flex-wrap gap-2">
                       {Array.from({ length: Math.round(baremeSel / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                         <Button
@@ -1168,7 +1161,7 @@ export default function AdminCorrectionQrcV2Reel() {
                           className="min-w-[56px] text-base font-semibold"
                           variant={qrcSel.note === v ? "default" : "outline"}
                           data-testid={`revision-note-${v}`}
-                          disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
+                          disabled={etatEnvoi === "encours"}
                           onClick={() => void valider(v)}
                         >
                           {String(v).replace(".", ",")}
@@ -1204,12 +1197,6 @@ export default function AdminCorrectionQrcV2Reel() {
                   Notation — barème : {baremeSel} points
                 </p>
                 {navigationCopies}
-                {confirmationSel && (
-                  <label className="flex items-start gap-2 rounded border border-warning/50 bg-warning/5 p-2 text-xs" data-testid="confirmation-remise">
-                    <input type="checkbox" className="mt-0.5" checked={confirmeRemise} onChange={(e) => setConfirmeRemise(e.target.checked)} />
-                    <span>Aucune fiche remise identique n'a été retrouvée pour cette copie : seule la copie enregistrée fait foi. Je confirme que c'est bien celle de l'élève (confirmation enregistrée avec la note).</span>
-                  </label>
-                )}
                 {videSel && (
                   <p className="text-xs text-muted-foreground" data-testid="copie-vide-en-attente">
                     Copie vide — aucune correction historique, aucune note automatique.
@@ -1229,7 +1216,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       variant={noteChoisie === v ? "default" : "outline"}
                       aria-pressed={noteChoisie === v}
                       data-testid={`note-${v}`}
-                      disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
+                      disabled={etatEnvoi === "encours"}
                       onClick={() => { setChoixLocal({ cle: cleProposition, note: v }); void valider(v); }}
                     >
                       {String(v).replace(".", ",")}

@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 10/11 09:25 — Retrait confirmation de copie QRC
+- [ ] Supprimer case et avertissement ; noter directement les copies prouvées, refuser clairement les identités ambiguës sans attestation humaine automatique.
+- [ ] Tester enregistrement, relecture, identité et note finale ; aucune publication sans accord.
+
 ## 10/11 09:19 — Tri admin QRC par fin décroissante
 - [x] Tri partagé par fin réelle décroissante et navigation ; pagination déterministe, actualisation des nouveaux passages par Realtime sans écriture élève.
 - [x] 89 tests PASS ; navigateur réel TAXI 7 matières et VTC soir 5 matières QRC, rechargement mobile identique ; rapport docs/tri-qrc-fin-decroissante-2026-11-10.md.
