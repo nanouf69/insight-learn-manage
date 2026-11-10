@@ -1923,7 +1923,7 @@ function RevisionPhaseView({
       {officiels.error ? <p>Révision suspendue : le corrigé actuel n’est pas confirmé.</p> : officiels.loading ? <p>Lecture du corrigé officiel…</p> : CORRIGES_TROIS_SURFACES_ACTIFS && apprenantId ? (
         <RevisionCorrigeVersionnee owner={apprenantId}
               refs={wrongQuestions.flatMap(w=>w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle?[{type:w.corrigeSource.source_type,id:w.corrigeSource.source_id,question:w.corrigeSource.question_id}]:[])}
-              nonRapprochees={wrongQuestions.filter(w=>!(w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle)).map(w=>({libelle:`${w.matiereNom} · question ${w.question.id}`,raison:w.corrigeSource?.raison ?? (w.corrigeSource?null:"sans_snapshot")}))}
+              nonRapprochees={wrongQuestions.filter(w=>!(w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle)).map(w=>({libelle:`${w.matiereNom} · question ${w.question.id}`,raison:w.corrigeSource?.raison ?? null}))}
               onExit={onRetour}/>
       ) : <RevisionFausses
         wrongQuestions={wrongQuestions}
