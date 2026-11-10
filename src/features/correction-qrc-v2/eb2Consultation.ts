@@ -33,6 +33,8 @@ export type InfosHistorique = {
   result_id: string;
   score_obtenu: number | null;
   provenance: ProvenanceRemise;
+  /** Permuted QCM choices require the prepared server comparator, not the old recognition fallback. */
+  preuveServeurRequise?: boolean;
   seuil: number | null;
 };
 
@@ -253,7 +255,11 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
     }
   }
   for (const l of lignes) {
-    const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves), provenanceRemise(l, preuves));
+    const provenance = provenanceRemise(l, preuves);
+    const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves), provenance);
+    tentative.historique.preuveServeurRequise = provenance !== "resultat_seul" && !preuves.some(p => p.apprenant_id === l.apprenant_id
+      && p.exercice_id === exerciceIdEb2(l) && (p.tentative ?? 1) === (l.tentative ?? 1) && p.completed === true && p.status === "submitted"
+      && p.submitted_at != null && memeJson(p.reponses, l.details?.reponses));
     if (!qrc.length) continue;
     vide.tentatives.push(tentative);
     vide.qrc.push(...qrc);
@@ -262,6 +268,17 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
   }
   vide.tentatives.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
   return vide;
+}
+
+/** Fail closed until the prepared server rule is actually installed. Never use recognition to bypass it. */
+export async function verifierLiaisonHistoriqueServeur(resultId: string, apprenantId: string): Promise<ProvenanceRemise> {
+  const { data, error } = await (supabase as any).rpc("qrc_historique_preuve_remise", { p_result_id: resultId });
+  if (error) throw new Error("Note non enregistrée : réparation serveur de liaison non disponible ou vérification refusée ; aucune note n’a été attribuée.");
+  if (!data || data.result_id !== resultId || data.apprenant_id !== apprenantId
+    || !["remise_identique", "remise_horodatage_divergent"].includes(data.provenance)) {
+    throw new Error("Note non enregistrée : remise non prouvée par le serveur ; aucune confirmation manuelle ne peut la remplacer.");
+  }
+  return data.provenance;
 }
 
 /** Notation admin d'une QRC de copie historique : écriture serveur unique, idempotente, tracée. */

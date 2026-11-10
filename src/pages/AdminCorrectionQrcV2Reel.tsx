@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
-import { chargerConsultationEb2, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
+import { chargerConsultationEb2, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
   corrigerQrc,
@@ -488,7 +488,10 @@ export default function AdminCorrectionQrcV2Reel() {
           || !copieActuelle.qrc.some(q => q.qrc_instance_id === qrcSel.qrc_instance_id && q.apprenant_id === qrcSel.apprenant_id)) {
           throw new Error("Note non enregistrée : identité de la copie non confirmée par la relecture serveur.");
         }
-        const reconnaissance = reconnaissanceRemise(infos.provenance, histo.result_id, qrcSel.question_id);
+        const provenance = infos.preuveServeurRequise
+          ? await verifierLiaisonHistoriqueServeur(histo.result_id, qrcSel.apprenant_id)
+          : infos.provenance;
+        const reconnaissance = reconnaissanceRemise(provenance, histo.result_id, qrcSel.question_id);
         if (revision) {
           await reviserQrcHistorique({
             operationId: `qrchistrev:${histo.result_id}:${qrcSel.question_id}:${ancienne}:${n}:${jeton}`,
