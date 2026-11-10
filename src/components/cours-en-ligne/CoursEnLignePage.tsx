@@ -20,7 +20,6 @@ import ApprenantActivityReport from "./ApprenantActivityReport";
 import SuiviHeuresElearning from "./SuiviHeuresElearning";
 import CorrectionQRCTab from "./CorrectionQRCTab";
 import AdminCorrectionQrcV2Reel from "@/pages/AdminCorrectionQrcV2Reel";
-import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 import CorrectionQCMTab from "./CorrectionQCMTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
 import NotationPratiqueTab from "./NotationPratiqueTab";
