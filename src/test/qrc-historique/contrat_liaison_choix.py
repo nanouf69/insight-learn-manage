@@ -1,3 +1,5 @@
+"""SUPERSEDED 10/11 10:49: exercises the first candidate (2026-11-10-qrc-liaison-choix-ordre.sql), never deployed.
+The deployed candidate is covered by contrat_liaison_v2.py and contrat_audit_permutation.py."""
 """Prepared live RPC patch exercised only on disposable PostgreSQL."""
 import pathlib, json, unittest, sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent))

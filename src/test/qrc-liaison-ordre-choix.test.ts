@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: vi.fn() } }));
 import { supabase } from "@/integrations/supabase/client";
-import { memesReponsesRemise, provenanceRemise, verifierLiaisonHistoriqueServeur, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
+import { memesReponsesRemise, provenanceRemise, reconnaissanceRemise, verifierLiaisonHistoriqueServeur, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
 import { projeterResultatEb2, projeterNoteHistoriqueEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
 import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 const row: ResultatEb2 = { id: "r", apprenant_id: "a", quiz_id: "EB2", matiere_id: "gestion", tentative: 1, completed_at: "2026-11-09T18:00:01Z", details: {
@@ -53,5 +53,29 @@ describe("preuve de remise QRC et permutation des cases QCM", () => {
     const exam = { id: "EB2", type: "VTC", matieres: mats } as any;
     const result = computeMoyenneExamen(exam, m => computeMatiereScoreForAttempt(m, reload));
     expect(result).toMatchObject({ moyenne: 11, matieresPassees: 7, verdict: "reussi" });
+  });
+});
+describe("copies suffixées __tN avec colonne tentative restée à 1 (cas Meriem BENNANI EB2 T3)", () => {
+  const t3: ResultatEb2 = { ...row, id: "r3", tentative: 3 };
+  const remise = { ...proof, exercice_id: "EB2__gestion__t3", tentative: 1 };
+  it("reconnue seulement comme « à prouver » : le serveur doit répondre liaison_prouvee", () => {
+    expect(provenanceRemise(t3, [remise])).toBe("liaison_a_prouver");
+    expect(() => reconnaissanceRemise("liaison_a_prouver", "r3", "1")).toThrow(/aucune note/);
+    expect(reconnaissanceRemise("liaison_prouvee", "r3", "1")).toMatch(/preuve serveur de liaison/);
+  });
+  it("aucune tolérance hors du motif exact", () => {
+    for (const change of [{ exercice_id: "EB2__gestion" }, { exercice_id: "EB2__gestion__t2" }, { tentative: 2 }, { apprenant_id: "b" }, { status: "draft" }, { reponses: { ...proof.reponses, 1: "autre" } }]) {
+      expect(provenanceRemise(t3, [{ ...remise, ...change }])).toBe("resultat_seul");
+    }
+    expect(provenanceRemise(t3, [remise, { ...remise, submitted_at: "2026-11-09T18:00:05Z" }])).toBe("resultat_seul");
+    expect(provenanceRemise({ ...t3, tentative: 1 }, [{ ...remise, exercice_id: "EB2__gestion" , reponses: { 1: "x" } }])).toBe("resultat_seul");
+  });
+  it("le serveur seul peut accepter liaison_prouvee, pour la même copie et le même élève", async () => {
+    vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: { result_id: "r3", apprenant_id: "a", provenance: "liaison_prouvee" }, error: null } as any);
+    await expect(verifierLiaisonHistoriqueServeur("r3", "a")).resolves.toBe("liaison_prouvee");
+    vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: { result_id: "r3", apprenant_id: "a", provenance: "liaison_a_prouver" }, error: null } as any);
+    await expect(verifierLiaisonHistoriqueServeur("r3", "a")).rejects.toThrow(/non prouvée/);
+    vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: { result_id: "autre", apprenant_id: "a", provenance: "liaison_prouvee" }, error: null } as any);
+    await expect(verifierLiaisonHistoriqueServeur("r3", "a")).rejects.toThrow(/non prouvée/);
   });
 });

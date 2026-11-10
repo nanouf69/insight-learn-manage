@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 10:49 — Reprise activation liaison QRC
+- [ ] Preuve serveur ciblée des cinq remises Meriem BENNANI EB2 T3 (suffixe __t3, tentative=1), sans réécriture ni assouplissement global.
+- [ ] Mocks supabase.channel des 20 tests navigation corrigés, vrais échecs visibles.
+- [ ] Suite PostgreSQL isolée complète + rollback + non-régression.
+- [ ] Empreintes avant/après + sauvegarde vérifiable ; activation/publication seulement si tout est vert.
+
 ## 10/11 10:17 — Activation conditionnelle liaison QRC
 - [x] Sauvegarde privée ciblée + SHA-256, cinq résultats complets et empreintes avant/après identiques ; cinq remises originales Meriem BENNANI EB2 T3 retrouvées, suffixe __t3 mais champ tentative=1 contradictoire.
 - [x] Tests rejoués : 51 PASS / 20 FAIL (transport fictif sans channel) ; suite PostgreSQL interrompue à 180 s sans bilan final, non prouvée ; tri dédié PASS, clic réel non exécuté.

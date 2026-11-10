@@ -69,6 +69,17 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: { email: "admin@fictif.test" } } }) },
     from: () => ({ select: () => ({ in: async () => ({ data: [], error: null }) }) }),
+    // Realtime double for the read-only global-grade alert mounted on /admin/ pages:
+    // records subscriptions only, never emits events, never writes.
+    channel: (nom: string) => {
+      const canal = {
+        nom,
+        on: () => canal,
+        subscribe: () => canal,
+      };
+      return canal;
+    },
+    removeChannel: async () => "ok",
   },
 }));
 
