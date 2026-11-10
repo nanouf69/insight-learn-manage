@@ -12,3 +12,4 @@
 - Learner/session lookups in listerGroupesCrm are chunked (150 ids) and read errors throw; why: oversized `.in()` URLs failed silently and pushed candidates out of their CRM session.
 - `trg_qrc_v2_bareme` refuses a V2 QRC note < 0 or above the restored/frozen barème (P0478, unknown barème = only the 0 bound); why: the UI buttons were the only bound.
 
+- Comment-only changes on an already graded QRC go through `core_commenter_qrc` (V2) or `qrc_historique_commenter` (legacy), append-only with CAS on note + last event/revision and operation idempotence; candidates read the latest via commentaireQrcPersistant / `qrc_historique_commentaires_eleve`; why: same-note revisions never journal a comment and grades must never change to carry feedback.
