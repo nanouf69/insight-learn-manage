@@ -230,6 +230,23 @@ class Sync(m.EB3):
         self.assertEqual(self.pg.sql(f"SELECT count(*) FROM public.qrc_historique_corrections WHERE result_id='{rid}'")[1], '0')
         self.assertNotEqual(self.pg.sql(ctx(ELEVE_C, "SELECT public.eb_notes_diagnostic_ancien(NULL, 10);"))[0], 0)
 
+    def test_importee_sans_bareme_signalee_jamais_recalculee(self):
+        snap = {'exam_id': 'EB3', 'matiere': 'gestion', 'source_historique': {'result_id': str(uuid.uuid4())},
+                'questions': [{'id': '1', 'type': 'QRC', 'points': None}, {'id': '2', 'type': 'QCM', 'points': None, 'choix': [{'lettre': 'A', 'correct': True}]}]}
+        att, qi = str(uuid.uuid4()), str(uuid.uuid4())
+        for q in (f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat) VALUES ('{att}','{APP}','EB3',{lit(json.dumps(snap))}::jsonb,'en_cours')",
+                  f"INSERT INTO public.qrc_instances_v2 (qrc_instance_id, attempt_id, question_id, apprenant_id, reponse) VALUES ('{qi}','{att}','1','{APP}','\"x\"'::jsonb)",
+                  f"UPDATE public.exam_attempts_v2 SET etat='terminee', finished_at=now() WHERE attempt_id='{att}'",
+                  f"INSERT INTO public.core_exam_results (attempt_id, apprenant_id, status, score, total, qrc_restantes) VALUES ('{att}','{APP}','provisoire',13,20,1)"):
+            code, out = self.pg.sql(q)
+            self.assertEqual(code, 0, out)
+        l = self.ligne(att)
+        self.assertEqual((l['type'], l['reparable']), ('importee_sans_bareme_qrc_restantes', False))
+        code, out, _ = self.actualiser(att, l['result_revision'])
+        self.assertNotEqual(code, 0)
+        self.assertIn('IMPORTEE_SANS_BAREME', out)
+        self.assertEqual(self.resultat(att)[1], '13')
+
     def test_zz_rollback(self):
         code, out = self.pg.sql(ROLLBACK)
         self.assertEqual(code, 0, out)
