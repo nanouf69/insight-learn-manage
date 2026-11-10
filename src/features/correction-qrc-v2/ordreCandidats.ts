@@ -8,10 +8,10 @@ const instant = (v?: string | null): number | null => {
 
 /**
  * Ordre d'affichage admin uniquement (aucune donnée modifiée) :
- * 1) matière terminée avec fin serveur → fin croissante (premier fini en haut) ;
+ * 1) matière terminée avec fin serveur → fin décroissante (dernier fini en haut) ;
  * 2) terminée sans horodatage de fin fiable → début croissant (aucune fin inventée) ;
  * 3) non terminée → début croissant.
- * Ex aequo départagés par début puis identifiant : ordre stable et déterministe.
+ * Fins connues ex aequo départagées par identifiant, jamais par début ou correction.
  */
 export function ordonnerCandidatsParFin<T extends Pick<TentativeReelle, "attempt_id" | "etat" | "started_at" | "finished_at">>(tentatives: readonly T[]): T[] {
   const groupe = (t: T) => (t.etat === "terminee" ? (instant(t.finished_at) !== null ? 0 : 1) : 2);
@@ -21,8 +21,9 @@ export function ordonnerCandidatsParFin<T extends Pick<TentativeReelle, "attempt
       const ga = groupe(a.t), gb = groupe(b.t);
       if (ga !== gb) return ga - gb;
       if (ga === 0) {
-        const d = (instant(a.t.finished_at) as number) - (instant(b.t.finished_at) as number);
+        const d = (instant(b.t.finished_at) as number) - (instant(a.t.finished_at) as number);
         if (d !== 0) return d;
+        return a.t.attempt_id.localeCompare(b.t.attempt_id);
       }
       const sa = instant(a.t.started_at), sb = instant(b.t.started_at);
       if (sa !== sb) {

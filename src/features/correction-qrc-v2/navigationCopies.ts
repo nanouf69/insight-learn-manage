@@ -21,7 +21,7 @@ export function copieVoisine(
   if (!courante || !tentativeCourante || !questionCourante) return null;
 
   const matiere = questionCourante.matiere;
-  // Même ordre que le tableau affiché (terminés par fin croissante, puis les autres).
+  // Même ordre que le tableau affiché (terminés par fin décroissante, puis les autres).
   const tentatives = ordonnerCandidatsParFin(session.tentatives.filter((t) =>
     (t.snapshot.matieres ?? []).some((m) => m.subject_id === matiere),
   ));

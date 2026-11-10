@@ -209,6 +209,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
       .select("attempt_id, apprenant_id, exam_id, started_at")
       .eq("is_test", mode === "test")
       .order("started_at", { ascending: false })
+      .order("attempt_id", { ascending: true })
       .range(de, de + 999);
     if (error) throw error;
     attempts.push(...(data ?? []));
@@ -226,6 +227,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .in("quiz_type", ["examen_blanc", "bilan"])
         .ilike("quiz_id", "eb3%")
         .order("completed_at", { ascending: false })
+        .order("id", { ascending: true })
         .range(de, de + 999);
       if (error) throw error;
       const eb3 = (data ?? []).filter((r: any) => /^eb3(?:$|-)/i.test(String(r.quiz_id ?? "")));
