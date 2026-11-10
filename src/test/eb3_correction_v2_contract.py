@@ -82,7 +82,8 @@ class EB3(unittest.TestCase):
     def setUpClass(cls):
         cls.pg = pg = Pg()
         for part in (PRELUDE, (FIX / 'schema_live.sql').read_text(), POST, (FIX / 'fonctions_live.sql').read_text(), TRIGGERS,
-                     'REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC;', (FIX / 'droits_live.sql').read_text().replace('FUNCTION core_', 'FUNCTION public.core_')):
+                     'REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC;', (FIX / 'droits_live.sql').read_text().replace('FUNCTION core_', 'FUNCTION public.core_'),
+                     (pathlib.Path(__file__).resolve().parents[2] / 'docs/sql-revue/2026-11-10-qrc-v2-bareme-garde.sql').read_text()):
             code, out = pg.sql(part)
             assert code == 0, out[-800:]
 
@@ -192,14 +193,17 @@ class EB3(unittest.TestCase):
         self.assertEqual(self.pg.sql(f"SELECT count(*) FROM public.qrc_instances_v2 WHERE attempt_id='{att}' AND etat='corrigee'")[1], '0')
         self.assertIsNone(self.resultat(att))
 
-    # Constat 10/11 : core_correct_qrc ne borne pas la note au barème figé (seuls les boutons du
-    # correcteur la bornent). Échec attendu documenté tant qu'un garde serveur n'est pas autorisé.
-    @unittest.expectedFailure
+    # Garde serveur trg_qrc_v2_bareme (10/11) : note > barème ou négative refusée, rien écrit.
     def test_note_hors_bareme_refusee(self):
         att, qrcs, *_ = self.preparer('snap_eb3_vtc_gestion.json')
         (code, out), _ = self.corriger(qrcs[0][0], qrcs[0][1] + 1)
         self.assertNotEqual(code, 0, out)
         self.assertEqual(self.pg.sql(f"SELECT etat FROM public.qrc_instances_v2 WHERE qrc_instance_id='{qrcs[0][0]}'")[1], 'en_attente')
+        (code, out), _ = self.corriger(qrcs[0][0], -1)
+        self.assertNotEqual(code, 0, out)
+        (code, out), _ = self.corriger(qrcs[0][0], qrcs[0][1])
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.pg.sql(f"SELECT etat FROM public.qrc_instances_v2 WHERE qrc_instance_id='{qrcs[0][0]}'")[1], 'corrigee')
 
 
 if __name__ == '__main__':
