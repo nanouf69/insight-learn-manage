@@ -1,7 +1,9 @@
 -- ROLLBACK for 2026-11-10-qrc-liaison-v2: restores the exact LIVE definitions read on 10/11 (md5 80ad81be… / 3c1c1efd…).
 -- Code only: the append-only proof table, its rows, the widened provenance CHECK and every correction stay in place
--- (no learner or journal row is deleted). Without the patched functions the proofs are simply no longer consulted.
+-- (no learner or journal row is deleted); only the unused helper functions are dropped, the append-only trigger stays. Without the patched functions the proofs are simply no longer consulted.
 DROP FUNCTION IF EXISTS public.qrc_historique_preuve_remise(uuid);
+DROP FUNCTION IF EXISTS public.qrc_historique_liaison_prouvee(uuid);
+DROP FUNCTION IF EXISTS public.qrc_historique_reponses_identiques(jsonb, jsonb);
 CREATE OR REPLACE FUNCTION public.qrc_historique_noter(p_operation_id text, p_result_id uuid, p_question_id text, p_note numeric, p_score_attendu numeric, p_seuil numeric DEFAULT NULL::numeric, p_commentaire text DEFAULT ''::text, p_reconnaissance text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql

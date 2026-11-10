@@ -232,7 +232,11 @@ BEGIN
   v_prov := coalesce(v_prov, 'resultat_seul');
   -- Targeted append-only proof (suffix __tN, legacy tentative column left at its default): re-verified live.
   IF v_prov = 'resultat_seul' AND public.qrc_historique_liaison_prouvee(r.id) THEN v_prov := 'liaison_prouvee'; END IF;
-  IF v_prov NOT IN ('remise_identique','liaison_prouvee') AND nullif(btrim(coalesce(p_reconnaissance,'')),'') IS NULL THEN
+  -- First grading of an unproven copy is refused even with a typed recognition (UI never sends one).
+  IF v_prov = 'resultat_seul' THEN
+    RAISE EXCEPTION 'Remise non prouvée : correction refusée sans contournement manuel' USING ERRCODE = 'P0001';
+  END IF;
+  IF v_prov = 'remise_horodatage_divergent' AND nullif(btrim(coalesce(p_reconnaissance,'')),'') IS NULL THEN
     RAISE EXCEPTION 'Remise ambiguë (%) : confirmation explicite requise', v_prov USING ERRCODE = 'P0001';
   END IF;
 
