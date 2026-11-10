@@ -25,7 +25,6 @@ import {
   corrigerQrc,
   lireHistoriqueQrc,
   listerGroupesCrm,
-  listeGroupesEnMemoire,
   origineCorrection,
   reviserQrc,
   souscrireSignal,
@@ -69,9 +68,11 @@ export default function AdminCorrectionQrcV2Reel() {
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
-  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>(() => listeGroupesEnMemoire(mode) ?? []);
+  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
   // Liste affichée depuis la mémoire de l'onglet, en attente de la relecture serveur.
-  const [listeProvisoire, setListeProvisoire] = useState<boolean>(() => listeGroupesEnMemoire(mode) != null);
+  // Nouveaux passages signalés par le temps réel : la liste complète n'est relue que sur demande.
+  const [nouveauxPassages, setNouveauxPassages] = useState(false);
+  const [relectureListe, setRelectureListe] = useState(false);
   const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
@@ -146,7 +147,6 @@ export default function AdminCorrectionQrcV2Reel() {
       try {
         const liste = await listerGroupesCrm(mode);
         setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
-        setListeProvisoire(false);
         if (!param("qrc_groupe")) {
           setGroupeCleState(liste[0]?.cle ?? null);
           setEbCleState(liste[0]?.examens[0]?.cle ?? null);
@@ -297,17 +297,26 @@ export default function AdminCorrectionQrcV2Reel() {
       timer = setTimeout(() => {
         if (envoiEnCoursRef.current) { actualiser(); return; }
         // Passage terminé/repris : relecture des seules copies affichées (fin réelle, ordre).
+        // Seules les copies affichées sont relues (léger). La relecture complète de toutes les
+        // sessions (~25 s de lecture serveur) n'est plus relancée automatiquement à chaque réponse
+        // d'élève : un bouton discret apparaît.
         void rechargerRef.current?.();
-        void listerGroupesCrm(mode).then((liste) => {
-          // Liste identique : aucune mise à jour (pas de re-rendu ni de nouveau rapprochement).
-          if (actif) setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
-        }).catch((e: Error) => { if (actif) setErreur(e.message); });
-      }, 2000);
+        if (actif) setNouveauxPassages(true);
+      }, 5000);
     };
     const arreterV2 = souscrireSignal("admin-qrc-v2-passages", "exam_attempts_v2", actualiser);
-    const arreterHistorique = souscrireSignal("admin-qrc-v2-passages-historiques", "apprenant_quiz_results", actualiser, "quiz_type=eq.examen_blanc");
-    return () => { actif = false; clearTimeout(timer); arreterV2(); arreterHistorique(); };
+    return () => { actif = false; clearTimeout(timer); arreterV2(); };
   }, [mode]);
+  const actualiserListe = async () => {
+    setRelectureListe(true);
+    try {
+      const liste = await listerGroupesCrm(mode);
+      setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
+      setNouveauxPassages(false);
+      setErreur(null);
+    } catch (e) { setErreur((e as Error).message); }
+    finally { setRelectureListe(false); }
+  };
 
   // Plein écran natif du navigateur sur la zone de correction
   const basculerPleinEcran = async () => {
@@ -1025,10 +1034,15 @@ export default function AdminCorrectionQrcV2Reel() {
           {groupes.length === 0 && !erreur && (
             <p className="text-xs text-muted-foreground" data-testid="chargement-liste">Lecture des sessions et des copies en cours…</p>
           )}
-          {listeProvisoire && (
-            <p className="text-xs text-muted-foreground" data-testid="liste-provisoire">Liste précédente affichée — actualisation serveur en cours…</p>
+          {groupes.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {nouveauxPassages && <span className="text-muted-foreground" data-testid="nouveaux-passages">Nouveaux passages détectés.</span>}
+              <Button size="sm" variant="outline" className="h-6 px-2 text-xs" data-testid="actualiser-liste" disabled={relectureListe} onClick={() => void actualiserListe()}>
+                {relectureListe ? "Lecture de la liste…" : "Actualiser la liste des copies"}
+              </Button>
+            </div>
           )}
-          {mode === "migre" && !listeProvisoire && <PanneauRapprochement groupes={groupes} />}
+          {mode === "migre" && <PanneauRapprochement groupes={groupes} />}
         </header>
 
         {archiveOuverte ? (
