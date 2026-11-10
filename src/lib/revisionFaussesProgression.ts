@@ -19,6 +19,25 @@ export interface RevisionProgressState {
 export const revisionQuestionKey = (item: RevisionQuestionIdentity): string =>
   `${String(item.matiere?.id ?? "matiere")}:${String(item.question?.id ?? "question")}`;
 
+/**
+ * Réponse de révision affichée pour une question : la clé matière:question
+ * fait foi. Une ancienne clé nue (« 2 ») n'est reprise que si une seule
+ * question de la liste porte cet identifiant ; sinon elle pourrait venir
+ * d'une autre matière et n'est jamais proposée.
+ */
+export function reponseRevisionAffichee(
+  reponses: Record<string, unknown>,
+  items: RevisionQuestionIdentity[],
+  current: RevisionQuestionIdentity,
+): unknown {
+  const key = revisionQuestionKey(current);
+  if (Object.prototype.hasOwnProperty.call(reponses, key)) return reponses[key];
+  const bare = String(current.question?.id ?? "");
+  if (!bare || !Object.prototype.hasOwnProperty.call(reponses, bare)) return undefined;
+  const homonymes = items.filter((it) => String(it.question?.id ?? "") === bare).length;
+  return homonymes === 1 ? reponses[bare] : undefined;
+}
+
 export const revisionQuestionOrder = (items: RevisionQuestionIdentity[]): string[] =>
   items.map(revisionQuestionKey);
 
