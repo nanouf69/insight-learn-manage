@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 14:32 — Incident notes QRC EB3 TAXI
+- [x] Diagnostic lecture seule : captures identifiées (candidat = CHEMOUN Mourad), nouveau correcteur cohérent 2 735/2 735, 14 tests jetables PASS. Rapport docs/incident-notes-qrc-eb3-taxi-2026-11-10-1432.md.
+- [ ] Anciennes copies TAXI non notables (8 : CHEMOUN, FERREIRA) — preuves ciblées + notation serveur, attend accord.
+- [ ] Note globale EB calculée serveur — attend accord.
+- [ ] 48 copies VTC récentes ancien circuit — attend accord et liste nominative.
+
 ## 10/11 14:14 — Mots-clés personnalisés QRC
 - [x] Liste serveur partagée admin uniquement (migration 0260) ; ajout, renommage confirmé, retrait = archivage ; commentaires historiques indépendants.
 - [x] Tests : 5 HTTP/PostgreSQL jetables PASS (droits, conflit, rejeu, archivage, candidat inchangé), suite complète 4 097 PASS.
