@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_aqr_revision_fausses_finalisation ON public.apprenant_quiz_results (apprenant_id, quiz_id, ((details->>'revision_exercice_id'))) WHERE quiz_type = 'revision_fausses' AND details ? 'revision_exercice_id';
+COMMENT ON INDEX public.uniq_aqr_revision_fausses_finalisation IS 'At most one finalised result per owner/exam/revision draft; concurrent devices get 23505 and read back the single result. Legacy rows without revision_exercice_id are not covered. Rollback: DROP INDEX.';
