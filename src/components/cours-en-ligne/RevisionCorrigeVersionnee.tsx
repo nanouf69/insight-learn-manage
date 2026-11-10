@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { RichText } from "@/components/ui/rich-text";
 import { commanderRevisionVersionnee, ouvrirRevisionVersionnee, relireRevisionVersionnee, type RevisionRef, type RevisionVersionnee } from "@/lib/revisionCorrigeVersionnee";
 import { cleSource, statutPedagogique } from "@/lib/corrigesSources";
 
@@ -49,7 +48,7 @@ export function RevisionCorrigeVersionnee({owner,refs,onExit}: {owner:string;ref
       {state.submission.qrc_a_verifier>0 && <p>{state.submission.qrc_a_verifier} QRC à vérifier, sans note humaine attribuée.</p>}
       <Button onClick={onExit}>Retour aux résultats</Button></div> : q && state && <>
       <p>{source.exam_id} · {source.question_id} · Corrigé officiel version {source.version}</p>
-      <RichText content={q.enonce}/>
+      <p className="whitespace-pre-wrap break-words font-semibold">{q.enonce}</p>
       {q.type==="QCM" ? <div className="space-y-2">{q.choix?.map(c=><label key={c.lettre} className="flex items-start gap-3 border border-border rounded-md p-3">
         <input type="checkbox" checked={Array.isArray(answer)&&answer.includes(c.lettre)} onChange={()=>{
           const prev=Array.isArray(answer)?answer:[];
