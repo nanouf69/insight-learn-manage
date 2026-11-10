@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 10/11 09:32 — Alerte note globale EB présentiel
-- [ ] Diagnostiquer les sources serveur, identités de tentative et attentes QRC ancien/V2.
-- [ ] Ajouter une surveillance sans écriture pédagogique, vérification différée unique, alerte dédupliquée et résolution automatique.
-- [ ] Tester absence/présence de note, QRC en attente, nouvelles tentatives et fournir le rapport.
+- [x] Diagnostic : global assemblé à l’écran ; correction distincte de publication, sept matières même tentative strictes, QRC figées ancien/V2.
+- [x] Alerte administrative en aperçu sans écriture : relecture 5 s, déduplication, événements sans polling, résolution automatique ; petits groupes de lecture séquentiels.
+- [x] 77 tests PASS ; navigateur authentifié avec transport synthétique PC/mobile, alerte puis résolution sans écriture ; lecture réelle 563 groupes/128 prêts tous publiables. Rapport docs/alerte-note-globale-eb-2026-11-10.md.
+- [ ] Détection persistante administration fermée — extension serveur et accord sur écritures de suivi requis ; Realtime après correction réelle non prouvé, aucune correction réelle autorisée pour test.
 - [ ] Publication — attend accord explicite.
 
 ## 10/11 09:25 — Retrait confirmation de copie QRC
