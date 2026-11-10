@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 10:17 — Activation conditionnelle liaison QRC
+- [x] Sauvegarde privée ciblée + SHA-256, cinq résultats complets et empreintes avant/après identiques ; cinq remises originales Meriem BENNANI EB2 T3 retrouvées, suffixe __t3 mais champ tentative=1 contradictoire.
+- [x] Tests rejoués : 51 PASS / 20 FAIL (transport fictif sans channel) ; suite PostgreSQL interrompue à 180 s sans bilan final, non prouvée ; tri dédié PASS, clic réel non exécuté.
+- [ ] Activation/publication BLOQUÉES : preuve serveur ciblée de liaison encore absente et suite d'enregistrement en échec ; STOP/NO-GO demandé, aucune migration ni publication.
+- [x] Rapport précis docs/activation-qrc-2026-11-10-1017-no-go.md ; notes, copies, réponses et historique inchangés.
+
 ## 10/11 09:46 — Régression liaison correction QRC
 - [x] Défaut reproduit en lecture sur ABDELHAK/DIANE Gestion QCM18 A+B/B+A et AIT BALLAGH Réglementation QCM10 B+C/C+B ; mêmes QRC, IDs, remise et tentative.
 - [x] Comparaison QCM figée corrigée, relecture avant note, contrôle serveur requis pour permutation, résultat matière relu incorporé ; candidat SQL des RPC réelles préparé hors migrations, non appliqué.
