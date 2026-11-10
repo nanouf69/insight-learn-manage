@@ -30,7 +30,7 @@ export function projeterRevisionsAdmin(apprenant: string, revisions: RevisionSer
       const qs = Array.isArray(snapshot.questions) ? snapshot.questions.filter((q: any) => String(q.id) === question || String(q.id) === identity) : [];
       const q = qs.length === 1 ? qs[0] : null;
       const rep = objet(source?.details?.reponses);
-      const initialKeys = [question, identity].filter((k): k is string => !!k && Object.hasOwn(rep, k));
+      const initialKeys = [question, identity].filter((k): k is string => !!k && Object.prototype.hasOwnProperty.call(rep, k));
       const initiale = initialKeys.length === 1 ? rep[initialKeys[0]] : undefined;
       let cause = !identity || !matiere ? "Matière non prouvée (ancienne clé ambiguë)" : state.examenId && state.examenId !== examen ? "Examen contradictoire" : !source ? "Copie d’origine non liée" : !q ? "Question absente ou ambiguë dans le snapshot" : !source.tentative ? "Tentative non prouvée" : initialKeys.length !== 1 ? "Réponse initiale non prouvée" : null;
       if (Object.keys(exact.anomalies).length) cause = "Original exact non vérifiable";
