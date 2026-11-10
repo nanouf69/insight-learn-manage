@@ -32,9 +32,7 @@ async def main():
                     fn=url.split('/rpc/')[-1]
                     args=route.request.post_data_json
                     literal=lambda v:"'"+json.dumps(v).replace("'","''")+"'::jsonb"
-                    if fn=='revision_corrige_ouvrir' and saved_session:
-                        sql=f"SELECT revision_corrige_etat('{saved_session}')"
-                    elif fn=='revision_corrige_ouvrir':
+                    if fn=='revision_corrige_ouvrir':
                         sql=f"SELECT revision_corrige_ouvrir('{args['p_owner']}',{literal(args['p_refs'])})"
                     elif fn=='revision_corrige_etat':
                         sql=f"SELECT revision_corrige_etat('{args['p_session']}')"

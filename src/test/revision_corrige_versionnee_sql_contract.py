@@ -136,5 +136,30 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
             self.pg.sql("SET statement_timeout='5ms'; SELECT pg_sleep(0.03)")
         self.assertEqual(self.answer(state,['A','C'],op)['seq'],1)
 
+    def test_reload_open_resumes_same_identity(self):
+        state=self.answer(self.open(),['C'])
+        resumed=self.open()
+        self.assertEqual(resumed['id'],state['id'])
+        self.assertEqual(resumed['answers'],state['answers'])
+
+    def test_unknown_or_duplicate_choices_refused(self):
+        state=self.open()
+        for answer in [['Z'],['A','A','C']]:
+            with self.assertRaisesRegex(RuntimeError,'Choix inconnu ou duplique'):
+                self.answer(state,answer)
+
+    def test_qrc_literal_only_never_human_grade(self):
+        copy=str(uuid.uuid4())
+        q={'id':'gestion:1','type':'QRC','enonce':'Valeur','reponseQRC':'−10 €','points':2}
+        self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{copy}','{OWNER}','EBQ','terminee','{json.dumps({'matiere':'gestion','questions':[q]})}'); INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('EBQ',1,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
+        refs=[{'type':'attempt','id':copy,'question':'gestion:1'}]
+        for text,perfect,pending in [('−10 €',1,0),('10 €',0,1),('-10 euros',0,1)]:
+            state=self.call(f"SELECT revision_corrige_ouvrir('{OWNER}','{json.dumps(refs)}')")
+            state=self.command(state,{'kind':'answer','key':f'attempt|{copy}|gestion:1','answer':text})
+            result=self.command(state,{'kind':'submit'})['submission']
+            self.assertEqual(result['perfect'],perfect)
+            self.assertEqual(result['qrc_a_verifier'],pending)
+            self.assertFalse(result['note_examen_modifiee'])
+
 
 if __name__=='__main__': unittest.main(verbosity=2)

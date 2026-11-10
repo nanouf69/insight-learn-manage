@@ -13,6 +13,7 @@ CREATE TABLE public.revision_corrige_events (
  seq bigint NOT NULL, operation_id uuid NOT NULL, payload jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  UNIQUE(session_id,seq), UNIQUE(session_id,operation_id)
 );
+CREATE INDEX revision_corrige_event_latest ON public.revision_corrige_events(session_id,seq DESC);
 GRANT SELECT ON public.revision_corrige_events TO authenticated;
 GRANT ALL ON public.revision_corrige_events TO service_role;
 ALTER TABLE public.revision_corrige_events ENABLE ROW LEVEL SECURITY;
@@ -82,6 +83,12 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE v_id uuid;
 BEGIN
  PERFORM public.revision_corrige_sources(p_owner,p_refs);
+ -- Concurrent openings/reloads resume the exact same immutable source set.
+ PERFORM pg_advisory_xact_lock(hashtextextended(p_owner::text||p_refs::text,0));
+ SELECT s.id INTO v_id FROM public.revision_corrige_sessions s WHERE s.owner_id=p_owner AND s.refs=p_refs
+ AND NOT EXISTS(SELECT 1 FROM public.revision_corrige_events e WHERE e.session_id=s.id AND e.payload->>'kind'='submit')
+ ORDER BY s.created_at DESC,s.id DESC LIMIT 1;
+ IF v_id IS NOT NULL THEN RETURN public.revision_corrige_etat(v_id); END IF;
  INSERT INTO public.revision_corrige_sessions(owner_id,refs) VALUES(p_owner,p_refs) RETURNING id INTO v_id;
  RETURN public.revision_corrige_etat(v_id);
 END; $$;
@@ -119,6 +126,11 @@ BEGIN
   IF (v_source#>>'{actuelle,type}'='QCM' AND jsonb_typeof(p_payload->'answer') IS DISTINCT FROM 'array') OR
    (v_source#>>'{actuelle,type}'='QRC' AND jsonb_typeof(p_payload->'answer') IS DISTINCT FROM 'string') THEN
    RAISE EXCEPTION 'Type de reponse invalide' USING ERRCODE='22023'; END IF;
+  IF v_source#>>'{actuelle,type}'='QCM' AND (EXISTS(
+   SELECT 1 FROM jsonb_array_elements(p_payload->'answer') c WHERE jsonb_typeof(c)<>'string'
+    OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v_source#>'{actuelle,choix}') o WHERE o->>'lettre'=c#>>'{}'))
+   OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_payload->'answer') c GROUP BY c HAVING count(*)>1)) THEN
+   RAISE EXCEPTION 'Choix inconnu ou duplique' USING ERRCODE='22023'; END IF;
   v_payload:=p_payload;
  ELSIF p_payload->>'kind'='submit' THEN
   v_answers:=v_state->'answers';
