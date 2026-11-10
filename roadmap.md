@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 10/11 14:14 — Mots-clés personnalisés QRC
-- [ ] Liste serveur partagée admin uniquement ; ajout, renommage avec confirmation et retrait réversible sans toucher aux commentaires historiques.
-- [ ] Tests droits, concurrence, persistance et parcours commentaire candidat isolé ; contrôle ordinateur/mobile.
-- [ ] Publication seulement après contrôles critiques verts et vérification du site public ; rapport précis.
+- [x] Liste serveur partagée admin uniquement (migration 0260) ; ajout, renommage confirmé, retrait = archivage ; commentaires historiques indépendants.
+- [x] Tests : 5 HTTP/PostgreSQL jetables PASS (droits, conflit, rejeu, archivage, candidat inchangé), suite complète 4 097 PASS.
+- [ ] Contrôle navigateur ordinateur/mobile NON PROUVÉ : le compte de contrôle est redirigé (accès élève expiré 30/04/2026), pas d'accès admin.
+- [ ] Publication NON FAITE : attend le contrôle navigateur ou votre accord explicite.
 
 ## 10/11 13:02 — Commentaires prédéfinis QRC
 - [x] Aperçu : quatre textes exacts, cumul/doublon/édition, relecture du journal et projection candidat V2/historique ; 107 tests applicatifs et 7 PostgreSQL jetables exécutés, navigateur VTC soir sans écriture.
