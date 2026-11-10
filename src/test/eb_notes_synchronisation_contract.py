@@ -234,7 +234,7 @@ class Sync(m.EB3):
         code, out = self.pg.sql(ROLLBACK)
         self.assertEqual(code, 0, out)
         self.assertEqual(self.pg.sql("SELECT count(*) FROM pg_proc WHERE proname LIKE 'eb_notes_%'")[1], '0')
-        self.assertNotEqual(self.pg.sql("SELECT count(*) FROM public.eb_notes_synchronisations")[0], 1)
+        self.assertEqual(self.pg.sql("SELECT count(*) >= 0 FROM public.eb_notes_synchronisations")[1], 't')  # journal conservé
         code, out = self.pg.sql(SQL)  # réinstallation idempotente
         self.assertEqual(code, 0, out)
 
