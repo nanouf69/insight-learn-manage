@@ -1695,7 +1695,11 @@ function RevisionFausses({
                         onClick={() => {
                           if (showCorrection) return;
                           const prev = safeArray<string>(rep);
-                          updateReponse(currentKey, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
+                          if (!CORRIGES_TROIS_SURFACES_ACTIFS && q.choix && q.choix.filter(ch => ch.correct).length <= 1) {
+                            updateReponse(currentKey, [c.lettre]);
+                          } else {
+                            updateReponse(currentKey, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
+                          }
                         }}
                       >
                         <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${

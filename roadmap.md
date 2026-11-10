@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 10/11 16:49 — Synchronisation des trois corrigés
-- [ ] Corrigé publié, correction examen et révision/admin : source serveur, identité question et version, sans recalcul historique.
-- [ ] Tests tout-ou-rien, changement faux/juste, pagination, rechargement et concurrence ; vérifier les limites legacy/Bilans/QRC.
-- [ ] Publication uniquement après parcours critiques vérifiés ; rapport des couvertures et blocages.
+- [x] Lecture officielle A+C VTC v23/TAXI v10 ; candidat EB source unique strict+legacy/QRC et panneaux correction/révision/admin préparés, désactivés ; aucune installation serveur ni écriture pédagogique.
+- [x] 76 Vitest, 7 PostgreSQL lecture et 14 cas tout-ou-rien PASS ; branche réelle CHEMOUN en attente reproduite, aucun panneau candidat activé.
+- [ ] STOP : contrat serveur version du corrigé→validation de révision/concurrence absent ; Bilans/autres quiz non intégrés, anciennes copies sans preuve et EB2 VTC sans publication à qualifier.
+- [ ] Publication NO-GO : E2E positif des trois parcours, PC/mobile, publication concurrente et rollback d'activation non prouvés. Rapport docs/corriges-trois-parcours-2026-11-10.md.
 
 ## 10/11 16:38 — QCM tout-ou-rien et corrigé titiller
 - [x] Fonctions serveur et chemins partagés inspectés ; A+C actuel 2 points VTC v23/TAXI v10 confirmé ; 115 Vitest PASS et 14 calculs PostgreSQL jetables PASS, historique intact.
