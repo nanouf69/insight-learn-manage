@@ -35,12 +35,13 @@ class Catalogue(m.E2E):
         self.assertEqual(self.save(m.ADMIN,id,row['texte'])[1]['version'],1)
         status, rows = self.http(ADMIN2,f'qrc_commentaires_rapides?id=eq.{id}'); self.assertEqual(status,200); self.assertEqual(rows[0]['texte'],row['texte'])
         status, edited = self.save(ADMIN2,id,'Renommé',1); self.assertEqual(status,200,edited); self.assertEqual(edited['version'],2)
-        self.assertEqual(self.save(m.ADMIN,id,'Écrasement périmé',1)[0],400)
+        status, erreur = self.save(m.ADMIN,id,'Écrasement périmé',1)
+        self.assertEqual(status,500); self.assertIn('P0551',erreur)
         self.assertEqual(self.save(ADMIN2,id,'Renommé',1)[1]['version'],2)
         status, removed = self.save(m.ADMIN,id,'Renommé',2,True); self.assertEqual(status,200,removed)
         self.assertEqual(self.http(ADMIN2,f'qrc_commentaires_rapides?id=eq.{id}&archive=eq.false')[1],[])
         self.assertEqual(self.http(ADMIN2,f'qrc_commentaires_rapides?id=eq.{id}')[1][0]['texte'],'Renommé')
-        self.assertEqual(self.save(m.ADMIN,id,'Résurrection',3)[0],400)
+        self.assertEqual(self.save(m.ADMIN,id,'Résurrection',3)[0],500)
 
     def test_acces_admin_exclusif(self):
         id = str(uuid.uuid4()); self.assertEqual(self.save(m.ADMIN,id,'Privé')[0],200)
