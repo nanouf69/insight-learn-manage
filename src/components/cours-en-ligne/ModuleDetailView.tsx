@@ -10188,7 +10188,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
-          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} apprenantId={apprenantId} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
+          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
         ) : etatSnapshotsEleve.statut === "chargement" ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : etatSnapshotsEleve.statut === "bloque" ? (

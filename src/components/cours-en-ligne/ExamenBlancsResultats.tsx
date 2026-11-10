@@ -1269,7 +1269,10 @@ function EcranResultats({
             </p>
           </div>
           {sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : CORRIGES_TROIS_SURFACES_ACTIFS && apprenantId ? (
-            wrongQuestions.some(w=>!w.corrigeSource?.actuelle) ? <p role="alert" className="text-destructive">Révision non rapprochée : le corrigé officiel ne peut pas être confirmé pour chaque copie.</p> : <RevisionCorrigeVersionnee owner={apprenantId} refs={wrongQuestions.flatMap(w=>w.corrigeSource?[{type:w.corrigeSource.source_type,id:w.corrigeSource.source_id,question:w.corrigeSource.question_id}]:[])} onExit={()=>setActiveTab("resultats")}/>
+            <RevisionCorrigeVersionnee owner={apprenantId}
+              refs={wrongQuestions.flatMap(w=>w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle?[{type:w.corrigeSource.source_type,id:w.corrigeSource.source_id,question:w.corrigeSource.question_id}]:[])}
+              nonRapprochees={wrongQuestions.filter(w=>!(w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle)).map(w=>({libelle:`${w.matiereNom} · question ${w.question.id}`,raison:w.corrigeSource?.raison ?? (w.corrigeSource?null:"sans_snapshot")}))}
+              onExit={()=>setActiveTab("resultats")}/>
           ) : <RevisionFausses
             wrongQuestions={wrongQuestions}
             onTerminer={() => setActiveTab("resultats")}
