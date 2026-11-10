@@ -30,10 +30,9 @@ Aucune autre copie n'est concernée (710 autres remises au même défaut non tra
 - Correcteur V2 : chargé, case « Je confirme… » et encadré absents, 0 écriture REST. Tri : fin réelle décroissante (la colonne « Passage » affiche l'heure de **début** ; l'ordre suit la fin).
 
 ## 5. Publication
-Publication de l'interface demandée après activation.
+Publication de l'interface effectuée après activation ; le site public (bundle `index-DSRzIv6V.js`) contient le nouveau code de liaison (`liaison_a_prouver`), vérifié vers 11:38 UTC.
 
 ## 6. Non testé / risques résiduels
 - Aucune vraie note enregistrée en production (interdit : pas de note fictive). La persistance réelle d'un clic est prouvée en base jetable seulement.
-- Bundle public : vérification de déploiement à faire après publication.
 - 710 autres remises `__tN`/tentative=1 (46 élèves) restent non prouvables tant que non traitées nominativement.
 - Rollback : `docs/sql-revue/2026-11-10-qrc-liaison-v2-ROLLBACK.sql` (restaure les RPC live, conserve preuves et notes).
