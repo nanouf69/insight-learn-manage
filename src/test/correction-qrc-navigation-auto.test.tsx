@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminCorrectionQrcV2Reel from "@/pages/AdminCorrectionQrcV2Reel";
 import type { QrcReelle, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
 
@@ -16,6 +17,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const etat = vi.hoisted(() => ({ session: null as SessionReelle | null }));
+vi.mock("@/features/correction-qrc-v2/motsClesPersonnalises", () => ({
+  MOTS_CLES_QUERY: ["qrc-mots-cles-admin"], lireMotsClesQrc: async () => [], enregistrerMotCleQrc: vi.fn(),
+}));
+const ecran = () => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><AdminCorrectionQrcV2Reel /></QueryClientProvider>;
 
 vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
   const reel = await importOriginal<typeof import("@/features/correction-qrc-v2/noyauReel")>();
@@ -132,7 +137,7 @@ const appliquerNote = (qrcInstanceId: string, note: number) => {
 };
 
 const ouvrirCopie = async (qrcInstanceId: string) => {
-  render(<AdminCorrectionQrcV2Reel />);
+  render(ecran());
   fireEvent.click(await screen.findByTestId(`cellule-${qrcInstanceId}`));
   await screen.findByTestId("panneau-correction");
 };
@@ -282,7 +287,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     if (!etat.session) throw new Error("Session absente");
     etat.session.tentatives[0] = { ...etat.session.tentatives[0], etat: "terminee", finished_at: "2026-11-09T19:27:00Z" };
     etat.session.tentatives[1] = { ...etat.session.tentatives[1], etat: "terminee", finished_at: "2026-11-09T19:59:00Z" };
-    render(<AdminCorrectionQrcV2Reel />);
+    render(ecran());
     await screen.findByTestId("cellule-a2-q1");
     const lignes = () => Array.from(screen.getByTestId("matrice-A").querySelectorAll("tbody tr")).map(r => r.querySelector("a")?.getAttribute("data-testid"));
     expect(lignes()).toEqual(["lien-crm-a2", "lien-crm-a1"]);
