@@ -175,7 +175,7 @@ function LotRevision({owner, refs, onExit}: {owner: string; refs: RevisionRef[];
           <Button variant="outline" disabled={busy} onClick={() => { setDrafts(d => { const {[key]: _x, ...r} = d; return r; }); delete bases.current[key]; setConflict(null); }}>Prendre la réponse enregistrée</Button>
         </div></div>}
       <Button disabled={busy || !!conflict} onClick={() => void save(key, answer ?? (q.type === "QCM" ? [] : ""))}>Enregistrer la réponse</Button>
-      <p className="text-sm" aria-live="polite">{dirtyKeys.includes(key) ? "Modification en cours d’enregistrement automatique…" : saved ? `Enregistrée le ${heure(saved.saved_at)} (sauvegarde n° ${saved.seq}).` : ""}</p>
+      <p className="text-sm" aria-live="polite">{conflict?.key === key ? "Enregistrement suspendu : choisissez la réponse à garder." : dirtyKeys.includes(key) ? "Modification en cours d’enregistrement automatique…" : saved ? `Enregistrée le ${heure(saved.saved_at)} (sauvegarde n° ${saved.seq}).` : ""}</p>
       {hasSaved && <p>Dernière réponse enregistrée : {texteReponse(state.answers[key])} · {statutPedagogique(source, state.answers[key])}</p>}
       <p>Corrigé actuel : {bonnesReponses(q)}</p>
       <p className="text-sm text-muted-foreground">Corrigé figé de votre copie (sert à la note, inchangée) : {bonnesReponses(source.historique) || "non disponible"}.</p>
