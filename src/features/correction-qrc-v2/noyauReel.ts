@@ -3,6 +3,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
+import { resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 
 export type QuestionSnapshot = {
   id: string;
