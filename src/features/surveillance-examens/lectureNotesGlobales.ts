@@ -7,8 +7,15 @@ import { fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { lireParLotsEtPages, lireToutesLesPages } from "./lectureComplete";
 import { observerNotesGlobales, type ObservationNoteGlobale, type DefinitionSurveillee } from "./noteGlobale";
 
+// Multiple administrative surfaces share the same in-flight read, never a stale cache.
+let lectureEnCours: Promise<ObservationNoteGlobale[]> | null = null;
+export function lireObservationsNotesGlobales(): Promise<ObservationNoteGlobale[]> {
+  if (!lectureEnCours) lectureEnCours = chargerObservations().finally(() => { lectureEnCours = null; });
+  return lectureEnCours;
+}
+
 /** Paginated administrative SELECTs only. No result creation, grading, RPC mutation or migration. */
-export async function lireObservationsNotesGlobales(): Promise<ObservationNoteGlobale[]> {
+async function chargerObservations(): Promise<ObservationNoteGlobale[]> {
   const [inscriptions, examens] = await Promise.all([
     lireToutesLesPages<any>((d, f) => supabase.from("session_apprenants").select("id, apprenant_id").order("id").range(d, f) as any),
     fetchLiveExamens(),
@@ -22,15 +29,22 @@ export async function lireObservationsNotesGlobales(): Promise<ObservationNoteGl
   const eligibles = profils.filter(a => !testIds.has(a.id) && modeExamenBlancStrict(a) === "presentiel");
   const appIds = eligibles.map(a => a.id);
   if (!appIds.length) return [];
-  const [rows, coreMap, resets] = await Promise.all([
+  const [rows, resets] = await Promise.all([
     lireParLotsEtPages<any>(appIds, (lot, d, f) => supabase.from("apprenant_quiz_results").select("*")
       .in("apprenant_id", lot).in("quiz_type", ["examen_blanc", "examen_blanc_taxi"]).order("id").range(d, f) as any),
-    fetchCoreMatiereStatesBulk(appIds),
     lireParLotsEtPages<any>(appIds, (lot, d, f) => supabase.from("core_exam_resets")
       .select("reset_id, apprenant_id, exam_id, cutoff_at, archived_legacy_result_ids").in("apprenant_id", lot).order("reset_id").range(d, f) as any),
   ]);
+  // Serial small groups avoid flooding the connection pool with seven-table reads.
+  const coreMap = new Map();
+  for (let i = 0; i < appIds.length; i += 20) {
+    const group = await fetchCoreMatiereStatesBulk(appIds.slice(i, i + 20));
+    if (group === null) throw new Error("Lecture des passages serveur impossible");
+    for (const [id, states] of group) coreMap.set(id, states);
+  }
   if (coreMap === null) throw new Error("Lecture des passages serveur impossible");
-  const nonFiables = await fetchPassagesV2NonFiables(coreMap);
+  // The shared reader already loaded the immutable answers used by this same verifier.
+  const nonFiables = new Set<string>();
   if (nonFiables === null) throw new Error("Lecture des preuves serveur impossible");
   const definitions = examens.filter(e => /^EB[1-6](-TAXI)?$/.test(e.id) && (e.type === "VTC" || e.type === "TAXI")) as DefinitionSurveillee[];
   return eligibles.flatMap(a => {
