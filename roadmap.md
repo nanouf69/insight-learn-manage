@@ -1,6 +1,10 @@
 # Feuille de route
 
 ## 10/11 16:49 — Synchronisation des trois corrigés
+- [x] Reprise 17:30 : adaptateurs Bilans figés/futurs + EB, lots 400, sauvegarde auto serveur, conflits 2 onglets, lecteur admin complet, couverture admin ; 27+7 PostgreSQL, 243+24 Vitest, navigateur PC/mobile 2 onglets PASS ; couverture réelle mesurée ; rien installé/publié.
+- [ ] Installation serveur + contrôle en ligne — attend votre accord et un compte élève de test autorisé.
+- [ ] Règle de rapprochement si énoncé légèrement modifié (12 503 questions) — attend votre décision.
+- [ ] EB2 VTC sans version publiée (11 846 questions sans corrigé actuel) — attend publication décidée par vous.
 - [x] Reprise 17:04 : contrat EB append-only/version/CAS/idempotence + composant branché désactivé ; 16 PostgreSQL (24 EB fictifs) et 52 Vitest PASS, E2E vrai SQL jetable PC/mobile PASS, inventaire Cloud actualisé ; aucune écriture réelle.
 - [ ] Nouveau circuit : adapters Bilans/autres quiz + preuve historique/EB2, >50 questions, journal durable et provenance admin complète non finis ; attente d'implémentation, pas d'action utilisateur requise.
 - [ ] NO-GO confirmé : tests trois surfaces réelles/éditeur et 2 onglets navigateur, vrais jours/soirs, rollback complet et site publié non prouvés. Rapport mis à jour, candidat et serveur restent inactifs.

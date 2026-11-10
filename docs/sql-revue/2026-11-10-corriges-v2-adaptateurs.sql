@@ -33,6 +33,10 @@ CREATE TRIGGER revision_corrige_events_immutable BEFORE UPDATE OR DELETE ON publ
  FOR EACH ROW EXECUTE FUNCTION public.revision_corrige_immutable();
 REVOKE ALL ON FUNCTION public.revision_corrige_immutable() FROM PUBLIC,anon,authenticated;
 
+-- JSON null/scalars (e.g. "choix": null on QRC) are treated as empty arrays, never as an error.
+CREATE FUNCTION public.corrige_tableau(x jsonb) RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public AS $$
+ SELECT CASE WHEN jsonb_typeof(x)='array' THEN x ELSE '[]'::jsonb END $$;
+
 -- Pure proof that the frozen question and the current official question are the same question.
 -- NULL = proven same question with an official key; otherwise the explicit reason.
 CREATE FUNCTION public.corrige_raison(h jsonb,a jsonb,n_frozen bigint,n_actuelle bigint) RETURNS text
@@ -42,10 +46,10 @@ LANGUAGE sql IMMUTABLE SET search_path=public AS $$
   WHEN a IS NULL THEN 'question_absente'
   WHEN h->>'type' IS DISTINCT FROM a->>'type' OR h->>'enonce' IS DISTINCT FROM a->>'enonce' THEN 'contenu_modifie'
   WHEN a->>'type'='QCM' AND (
-   (SELECT jsonb_agg(jsonb_build_array(c->>'lettre',c->>'texte') ORDER BY c->>'lettre',c->>'texte') FROM jsonb_array_elements(coalesce(h->'choix','[]'::jsonb)) c)
+   (SELECT jsonb_agg(jsonb_build_array(c->>'lettre',c->>'texte') ORDER BY c->>'lettre',c->>'texte') FROM jsonb_array_elements(public.corrige_tableau(h->'choix')) c)
    IS DISTINCT FROM
-   (SELECT jsonb_agg(jsonb_build_array(c->>'lettre',c->>'texte') ORDER BY c->>'lettre',c->>'texte') FROM jsonb_array_elements(coalesce(a->'choix','[]'::jsonb)) c)) THEN 'contenu_modifie'
-  WHEN a->>'type'='QCM' AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(a->'choix','[]'::jsonb)) c WHERE c->>'correct'='true') THEN 'sans_bonne_reponse'
+   (SELECT jsonb_agg(jsonb_build_array(c->>'lettre',c->>'texte') ORDER BY c->>'lettre',c->>'texte') FROM jsonb_array_elements(public.corrige_tableau(a->'choix')) c)) THEN 'contenu_modifie'
+  WHEN a->>'type'='QCM' AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.corrige_tableau(a->'choix')) c WHERE c->>'correct'='true') THEN 'sans_bonne_reponse'
   WHEN a->>'type'='QRC' AND coalesce(btrim(a->>'reponseQRC'),'')='' THEN 'sans_bonne_reponse'
   WHEN a->>'type' NOT IN ('QCM','QRC') THEN 'type_inconnu'
   ELSE NULL END
@@ -108,7 +112,7 @@ BEGIN
   ORDER BY v.exam_id,v.published_at DESC NULLS LAST,v.version_number DESC,v.id DESC
  ), editeur AS MATERIALIZED (
   SELECT ok.source_id,m.updated_at,m.source_fingerprint,
-   (SELECT jsonb_agg(e) FROM jsonb_array_elements(coalesce(m.module_data->'exercices','[]'::jsonb)) e
+   (SELECT jsonb_agg(e) FROM jsonb_array_elements(public.corrige_tableau(m.module_data->'exercices')) e
      WHERE e->>'id'=ok.ex_id::text AND NOT coalesce(m.deleted_exercices,'[]'::jsonb) @> to_jsonb(ok.ex_id)
      AND NOT coalesce(m.deleted_exercices,'[]'::jsonb) @> to_jsonb(ok.ex_id::text)) exercices
   FROM ok JOIN public.module_editor_state m ON m.module_id=ok.m_id WHERE ok.circuit='bilan_historique'
@@ -126,10 +130,10 @@ BEGIN
   SELECT f.*,count(*) OVER (PARTITION BY f.source_type,f.source_id,f.qid) n_frozen FROM frozen f
  ), matched AS (
   SELECT f.*,
-   CASE f.circuit WHEN 'eb' THEN (SELECT jsonb_agg(x) FROM jsonb_array_elements(coalesce(ea.content->'questions','[]'::jsonb)) x WHERE x->>'id'=f.qid)
-    WHEN 'bilan_historique' THEN (SELECT jsonb_agg(x) FROM jsonb_array_elements(coalesce(ed.exercices,'[]'::jsonb)) e,
-      jsonb_array_elements(coalesce(e->'questions','[]'::jsonb)) x WHERE x->>'uid'=f.qid)
-    ELSE (SELECT jsonb_agg(x) FROM jsonb_array_elements(coalesce(fu.questions,'[]'::jsonb)) x WHERE x->>'id'=f.qid) END cand,
+   CASE f.circuit WHEN 'eb' THEN (SELECT jsonb_agg(x) FROM jsonb_array_elements(public.corrige_tableau(ea.content->'questions')) x WHERE x->>'id'=f.qid)
+    WHEN 'bilan_historique' THEN (SELECT jsonb_agg(x) FROM jsonb_array_elements(public.corrige_tableau(ed.exercices)) e,
+      jsonb_array_elements(public.corrige_tableau(e->'questions')) x WHERE x->>'uid'=f.qid)
+    ELSE (SELECT jsonb_agg(x) FROM jsonb_array_elements(public.corrige_tableau(fu.questions)) x WHERE x->>'id'=f.qid) END cand,
    CASE f.circuit WHEN 'eb' THEN CASE WHEN ea.id IS NULL THEN 'sans_publication' END
     WHEN 'bilan_historique' THEN CASE WHEN ed.exercices IS NULL THEN 'exercice_absent' WHEN jsonb_array_length(ed.exercices)>1 THEN 'identite_ambigue' END
     ELSE CASE WHEN fu.version_id IS NULL THEN 'sans_publication' END END source_raison,
@@ -182,7 +186,7 @@ DECLARE v_expected jsonb;v_given jsonb;
 BEGIN
  IF p_source#>>'{actuelle,type}'='QCM' THEN
   IF jsonb_typeof(p_answer) IS DISTINCT FROM 'array' OR jsonb_array_length(p_answer)=0 THEN RETURN 'fausse'; END IF;
-  SELECT jsonb_agg(l ORDER BY l) INTO v_expected FROM (SELECT DISTINCT c->>'lettre' l FROM jsonb_array_elements(p_source#>'{actuelle,choix}') c WHERE c->>'correct'='true') e;
+  SELECT jsonb_agg(l ORDER BY l) INTO v_expected FROM (SELECT DISTINCT c->>'lettre' l FROM jsonb_array_elements(public.corrige_tableau(p_source#>'{actuelle,choix}')) c WHERE c->>'correct'='true') e;
   SELECT jsonb_agg(l ORDER BY l) INTO v_given FROM (SELECT DISTINCT x#>>'{}' l FROM jsonb_array_elements(p_answer) x) g;
   RETURN CASE WHEN v_given=v_expected THEN 'juste' ELSE 'fausse' END;
  END IF;
@@ -307,13 +311,13 @@ BEGIN
    RAISE EXCEPTION 'Type de reponse invalide' USING ERRCODE='22023'; END IF;
   IF v_source#>>'{actuelle,type}'='QCM' AND (EXISTS(
     SELECT 1 FROM jsonb_array_elements(p_payload->'answer') c WHERE jsonb_typeof(c)<>'string'
-    OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v_source#>'{actuelle,choix}') o WHERE o->>'lettre'=c#>>'{}'))
+    OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.corrige_tableau(v_source#>'{actuelle,choix}')) o WHERE o->>'lettre'=c#>>'{}'))
    OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_payload->'answer') c GROUP BY c HAVING count(*)>1)) THEN
    RAISE EXCEPTION 'Choix inconnu ou duplique' USING ERRCODE='22023'; END IF;
   v_payload:=p_payload||jsonb_build_object('statut',public.revision_corrige_statut(v_source,p_payload->'answer'),
    'corrige',jsonb_build_object('version',v_source->'version','provenance',v_source->'provenance',
     'bonnes',CASE WHEN v_source#>>'{actuelle,type}'='QCM' THEN (SELECT coalesce(jsonb_agg(c->>'lettre' ORDER BY c->>'lettre'),'[]'::jsonb)
-      FROM jsonb_array_elements(v_source#>'{actuelle,choix}') c WHERE c->>'correct'='true') ELSE v_source#>'{actuelle,reponseQRC}' END));
+      FROM jsonb_array_elements(public.corrige_tableau(v_source#>'{actuelle,choix}')) c WHERE c->>'correct'='true') ELSE v_source#>'{actuelle,reponseQRC}' END));
  ELSIF p_payload->>'kind'='submit' AND p_payload='{"kind":"submit"}'::jsonb THEN
   v_answers:=v_state->'answers';
   FOR v_source IN SELECT x FROM jsonb_array_elements(v_state->'sources') x LOOP

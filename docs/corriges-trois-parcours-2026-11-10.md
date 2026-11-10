@@ -1,4 +1,47 @@
-# Synchronisation des trois parcours — 10/11/2026 17:00 UTC
+# Synchronisation des trois parcours — 10/11/2026
+
+## Reprise du 10/11 17:30 — état à 18:00 UTC
+
+**NO-GO d'activation maintenu : rien installé sur le serveur réel, rien publié, garde `CORRIGES_TROIS_SURFACES_ACTIFS=false`.** Aucune écriture en production (lectures seules).
+
+### Implémenté (désactivé)
+
+- Version serveur unique `docs/sql-revue/2026-11-10-corriges-v2-adaptateurs.sql` (remplace les deux candidats précédents) : `corriges_sources_v2` lit 4 types de copies — EB nouveau circuit, EB résultats enregistrés, Bilans figés (`bilan_passage_snapshots`, identité `uid` → éditeur actuel), Bilans futurs (reçu → version active du même sujet). Une ligne par question, ou une ligne « copie non rapprochée » avec raison (`copie_non_terminee`, `sans_snapshot`, `matiere_ambigue`, `sans_publication`, `question_absente`, `contenu_modifie`, `identite_ambigue`, `sans_bonne_reponse`). Réponse initiale de la copie lue côté serveur. Bilan figé : seul un passage remis de la même tentative est accepté.
+- Révision : jusqu'à 400 questions par lot (résolution par 50 copies), lots supplémentaires côté écran, sans troncature ; réouverture dans un autre ordre = même révision ; chaque sauvegarde enregistre le corrigé utilisé et le statut (QCM ensemble exact, QRC littérale seule sinon « à vérifier »).
+- Écran élève : sauvegarde automatique durable par question (serveur, pas de stockage local), accusé perdu rejoué à l'identique, conflit deux onglets = les deux versions affichées, l'élève choisit ; corrigé modifié = relecture et revalidation, jamais de remise automatique.
+- Adaptateur commun `RevisionCopieCorrigee`, branché (désactivé) dans les Bilans figés et les Bilans futurs, sans toucher leur révision locale existante. Examens blancs : questions prouvées proposées, autres listées avec raison (au lieu de tout bloquer).
+- Admin : lecteur des révisions (20 par page) avec réponse initiale, dernière réponse refaite, heure, nombre d'enregistrements, corrigé utilisé, corrigé actuel et sa provenance, corrigé figé de la copie, état de validation. Contrôle de couverture admin par pages de 50, annulable, sans résultat partiel.
+- Défaut réel trouvé et corrigé dans la version serveur : les QRC du nouveau circuit ont `"choix": null`, ce qui faisait échouer toute lecture (« cannot extract elements from a scalar »). Autre fait réel : 1 511/2 758 passages n'ont pas `snapshot.matiere`, seulement `matieres[0]` ; pris en compte.
+
+### Tests exécutés (tous PASS)
+
+- 27 contrats PostgreSQL jetables (Bilans figés/futurs, ancienne copie sans questions, EB2 sans publication, matière ambiguë, 60 copies × 3 = 180 questions, limite 400, interruption au milieu d'une commande puis reprise même opération, lecture admin, couverture paginée sans doublon/oubli, forme réelle `choix: null`, plus les 16 précédents) + 7 contrats de lecture.
+- 8 nouveaux + 16 mis à jour Vitest corrigés ; 25 fichiers / 243 tests de non-régression examens blancs, Bilans, correcteur, révisions.
+- Navigateur avec vrai PostgreSQL jetable, 1280×1800 et 390×844 : sauvegarde automatique, rechargement, **deux onglets** (conflit affiché, choix de l'élève), corrigé modifié, revalidation, remise ; copie figée identique avant/après.
+
+### Couverture réelle (lecture seule, mêmes règles que le serveur)
+
+| Circuit | Copies | Questions rapprochées | Non rapprochées |
+|---|---:|---:|---|
+| EB nouveau circuit (hors test) | 2 757 | 22 922 / 41 048 (56 %) | 11 527 énoncé/propositions modifiés, 108 absentes, 6 491 EB2 VTC sans publication |
+| EB résultats enregistrés | 6 382 | 18 907 (sur 1 651 copies avec questions) | 4 731 copies sans questions figées ; 735 modifiées, 10 absentes, 5 355 EB2 VTC sans publication |
+| Bilans figés | 233 (103 remis même tentative) | 12 235 | 241 modifiées, 6 sans bonne réponse ; 130 passages non prouvés remis |
+| Bilans futurs remis | 44 | 5 924 / 5 954 | 28 absentes, 2 modifiées |
+
+Autres quiz de modules : pas de clé figée par passage, hors de ce circuit (non couverts, non prétendus).
+
+### Obstacles restants avant activation
+
+1. Installation de la version serveur et contrôle en ligne : non faits (règle : pas de mise en production sans contrôle du site). Un compte admin est disponible pour les lectures, mais le parcours élève en ligne exige d'écrire une révision ; aucun compte élève de test autorisé dans cette session.
+2. Comparaison stricte du texte : 11 527 + 735 + 241 questions non rapprochées parce que l'énoncé ou les propositions ont changé. Assouplir (espaces, ponctuation) demande votre règle.
+3. EB2 VTC : aucune version publiée, donc aucun corrigé actuel affichable (11 846 questions) tant qu'il n'est pas publié.
+4. Non prouvés : éditeur réel → corrigé élève → révision → admin sur le site, vraies sessions jour/soir, mise à jour en direct de l'écran admin (relecture au focus et bouton seulement), retour arrière d'un vrai déploiement.
+
+Retour arrière prévu : garde à `false` (écran inchangé), puis retrait des fonctions/tables nouvelles, vides tant que la garde est fermée ; aucune donnée existante concernée.
+
+
+---
+
 
 ## Reprise du 10/11 17:04 — état à 17:17 UTC
 

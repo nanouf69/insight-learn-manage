@@ -12,7 +12,7 @@ const heure = (d?: string | null) => d ? new Date(d).toLocaleString("fr-FR", {ti
 const STATUTS: Record<string, string> = {juste: "juste", fausse: "fausse", a_verifier: "QRC à vérifier (aucune note humaine)"};
 
 /** Every page of 20 sessions is read until the server returns a short page; identity is checked on each row. */
-export async function lireSessionsAdmin(owner: string, rpc = (args: object) => supabase.rpc("revision_corrige_admin" as never, args as never)) {
+export async function lireSessionsAdmin(owner: string, rpc: (args: object) => PromiseLike<{data: unknown; error: unknown}> = args => supabase.rpc("revision_corrige_admin" as never, args as never)) {
   const all: SessionAdmin[] = []; let after: string | null = null;
   for (;;) {
     const {data, error} = await rpc({p_owner: owner, p_after: after});

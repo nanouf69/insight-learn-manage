@@ -382,5 +382,21 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
         self.assertEqual(self.pg.sql(f"SELECT count(*) FROM revision_corrige_events WHERE session_id='{state['id']}'"),'0')
         self.assertEqual(self.command(state,payload,op)['seq'],1)
 
+    def test_real_shape_qrc_choix_null_and_scalar_content(self):
+        # Production V2 snapshots store "choix": null on QRC; must never raise "cannot extract elements from a scalar".
+        a=str(uuid.uuid4());exam='EBNULL'
+        qrc={'id':'1','type':'QRC','choix':None,'enonce':'Valeur ?','reponseQRC':'4 800 €'}
+        qcm={'id':'2','type':'QCM','choix':[{'lettre':'A','texte':'A','correct':True},{'lettre':'B','texte':'B'}],'enonce':'Q'}
+        cur_qrc={**qrc,'id':'gestion:1'};cur_qcm={**qcm,'id':'gestion:2'}
+        self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{a}','{OWNER}','{exam}','terminee',{self.lit({'matieres':[{'subject_id':'gestion'}],'questions':[qrc,qcm]})},false);"
+            f"INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('{exam}',1,now(),{self.lit({'questions':[cur_qrc,cur_qcm,{'id':'gestion:3','type':'QCM','choix':'oops','enonce':'z'}]})},'publiee',false)")
+        rows=self.sources([{'type':'attempt','id':a}])
+        self.assertEqual([(r['question_id'],r['statut']) for r in rows],[('gestion:1','rapproche'),('gestion:2','rapproche')])
+        st=self.call(f"SELECT revision_corrige_ouvrir('{OWNER}',{self.lit([{'type':'attempt','id':a,'question':'gestion:1'},{'type':'attempt','id':a,'question':'gestion:2'}])})")
+        st=self.command(st,{'kind':'answer','key':f'attempt|{a}|gestion:1','answer':'4 800 €'})
+        st=self.command(st,{'kind':'answer','key':f'attempt|{a}|gestion:2','answer':['A']})
+        res=self.command(st,{'kind':'submit'})['submission']
+        self.assertEqual((res['perfect'],res['qrc_a_verifier']),(2,0))
+
 
 if __name__=='__main__': unittest.main(verbosity=2)

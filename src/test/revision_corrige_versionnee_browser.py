@@ -43,17 +43,38 @@ async def main():
                         state=json.loads(out.splitlines()[-1]);saved_session=state['id']
                         await route.fulfill(status=200,content_type='application/json',body=json.dumps(state))
                     except RuntimeError as exc:
-                        await route.fulfill(status=409,content_type='application/json',body=json.dumps({'code':'P0556','message':str(exc)}))
+                        msg=str(exc)
+                        code='P0555' if 'Conflit de version' in msg else 'P0556' if 'Corrige modifie' in msg else 'P0557' if 'Toutes les reponses' in msg else 'P0554' if 'deja remise' in msg else '22023'
+                        await route.fulfill(status=409,content_type='application/json',body=json.dumps({'code':code,'message':msg}))
                 await context.route('**/*supabase.co/**',intercept)
                 await page.goto('http://localhost:8080/src/test/verdict-eb-browser/revision.html')
                 await page.get_by_text('Corrigé actuel : A + C',exact=True).wait_for()
                 await page.get_by_label('A. A',exact=True).check()
                 await page.get_by_label('C. C',exact=True).check()
-                await page.get_by_role('button',name='Enregistrer la réponse').click()
+                # Durable autosave: no click, the answer is confirmed by the server.
                 await page.get_by_text('Dernière réponse enregistrée : A + C',exact=False).wait_for()
+                await page.get_by_text('Enregistrée le',exact=False).wait_for()
                 await page.screenshot(path=str(OUT/f'{width}-saved.png'))
                 await page.reload()
                 await page.get_by_text('Dernière réponse enregistrée : A + C',exact=False).wait_for()
+                # Second tab of the same learner changes the same question.
+                tab2=await context.new_page()
+                tab2.on('pageerror',lambda e:errors.append(str(e)))
+                await tab2.goto('http://localhost:8080/src/test/verdict-eb-browser/revision.html')
+                await tab2.get_by_text('Dernière réponse enregistrée : A + C',exact=False).wait_for()
+                await tab2.get_by_label('C. C',exact=True).uncheck()
+                await tab2.get_by_text('Dernière réponse enregistrée : A ·',exact=False).wait_for()
+                # Stale first tab edits too: CAS refusal, both versions kept, learner chooses.
+                await page.get_by_label('B. B',exact=True).check()
+                await page.get_by_text('Une autre fenêtre a enregistré une réponse différente',exact=False).wait_for()
+                await page.get_by_text('Réponse enregistrée : A · Votre saisie ici : A + C + B',exact=True).wait_for()
+                await page.screenshot(path=str(OUT/f'{width}-conflict.png'))
+                await page.get_by_role('button',name='Garder ma saisie').click()
+                await page.get_by_text('Dernière réponse enregistrée : A + C + B',exact=False).wait_for()
+                await page.get_by_label('B. B',exact=True).uncheck()
+                await page.get_by_text('Dernière réponse enregistrée : A + C ·',exact=False).wait_for()
+                n_events=pg.sql("SELECT count(*) FROM revision_corrige_events")
+                await tab2.close()
                 # Publication changes only the disposable official row; frozen attempt stays intact.
                 before=pg.sql("SELECT md5(snapshot::text) FROM exam_attempts_v2")
                 pg.sql("UPDATE exam_content_versions SET version_number=24,content=jsonb_set(content,'{questions,0,choix,0,correct}','false')")
@@ -63,7 +84,6 @@ async def main():
                 await page.get_by_text('Corrigé actuel : C',exact=True).wait_for()
                 await page.get_by_text('Dernière réponse enregistrée : A + C',exact=False).wait_for()
                 await page.get_by_label('A. A',exact=True).uncheck()
-                await page.get_by_role('button',name='Enregistrer la réponse').click()
                 await page.get_by_text('Dernière réponse enregistrée : C · juste',exact=True).wait_for()
                 await page.get_by_role('button',name='Terminer la révision').click()
                 await page.get_by_text('Révision remise : 1/1 réponses parfaites.',exact=True).wait_for()
@@ -71,7 +91,7 @@ async def main():
                 assert before==pg.sql("SELECT md5(snapshot::text) FROM exam_attempts_v2")
                 assert not errors,errors
                 assert await page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
-                print(f'PASS {width}: real SQL save/readback/reload/CAS official version change/revalidation/submit, historical snapshot unchanged')
+                print(f'PASS {width}: autosave/readback/reload, two tabs CAS conflict kept both then chosen, official version change/revalidation/submit, events={n_events}, snapshot unchanged')
                 pg.sql("UPDATE exam_content_versions SET version_number=23,content=jsonb_set(content,'{questions,0,choix,0,correct}','true')")
                 await context.close()
         finally:
