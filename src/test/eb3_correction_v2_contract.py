@@ -207,5 +207,15 @@ class EB3(unittest.TestCase):
         self.assertEqual(self.pg.sql(f"SELECT etat FROM public.qrc_instances_v2 WHERE qrc_instance_id='{qrcs[0][0]}'")[1], 'corrigee')
 
 
+    def test_bareme_restaure_prioritaire(self):
+        att, qrcs, *_ = self.preparer('snap_eb3_vtc_gestion.json')
+        qi, pts = qrcs[0][0], qrcs[0][1]
+        self.assertEqual(self.pg.sql(f"INSERT INTO public.qrc_bareme_restaure (qrc_instance_id, bareme) VALUES ('{qi}', {pts + 2})")[0], 0)
+        (code, out), _ = self.corriger(qi, pts + 1)
+        self.assertEqual(code, 0, out)
+        code, out = self.pg.sql(ctx(ADMIN_C, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{qi}',0,{pts + 3},'r','admin@test');"))
+        self.assertNotEqual(code, 0, out)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
