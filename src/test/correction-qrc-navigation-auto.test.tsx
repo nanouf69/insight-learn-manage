@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   charger: vi.fn(),
   signaux: new Map<string, () => void>(),
   noterHistorique: vi.fn(),
+  lireCommentaires: vi.fn(),
 }));
 
 const etat = vi.hoisted(() => ({ session: null as SessionReelle | null }));
@@ -42,7 +43,7 @@ vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
     chargerSessionTest: mocks.charger,
     corrigerQrc: mocks.corriger,
     reviserQrc: mocks.reviser,
-    lireHistoriqueQrc: async () => [],
+    lireHistoriqueQrc: mocks.lireCommentaires,
     souscrireSignal: (_canal: string, table: string, cb: () => void) => {
       mocks.signaux.set(table, cb);
       return () => mocks.signaux.delete(table);
@@ -141,12 +142,41 @@ beforeEach(() => {
   });
   mocks.reviser.mockReset();
   mocks.noterHistorique.mockReset();
+  mocks.lireCommentaires.mockReset().mockResolvedValue([]);
   window.history.replaceState(null, "", "/admin/correction-qrc-v2");
   window.sessionStorage.clear();
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it("ajoute plusieurs commentaires sans doublon, envoie la bonne QRC et relit après réouverture", async () => {
+    let persiste = "";
+    mocks.lireCommentaires.mockImplementation(async (id) => id === "a1-q1" && persiste
+      ? [{ note_nouvelle: 1, created_at: "2026-11-10T13:02:00Z", commentaire: persiste }]
+      : []);
+    mocks.corriger.mockImplementation(async ({ qrcInstanceId, note, commentaire }) => {
+      persiste = commentaire;
+      appliquerNote(qrcInstanceId, note);
+    });
+    await ouvrirCopie("a1-q1");
+    fireEvent.change(screen.getByPlaceholderText("Commentaire (facultatif)"), { target: { value: "Retour personnel" } });
+    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Attention aux fautes !!!", exact: true }));
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("note-1"));
+    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
+    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ qrcInstanceId: "a1-q1", note: 1,
+      commentaire: expect.stringContaining("Retour personnel\nPrécisez !!!\nAttention aux fautes !!!") });
+    await waitFor(() => expect(window.location.search).toContain("qrc=a2-q1"));
+    expect(screen.getByPlaceholderText("Commentaire (facultatif)")).toHaveValue("");
+    fireEvent.click(screen.getByTestId("cellule-a1-q1"));
+    expect(await screen.findByTestId("commentaire-enregistre")).toHaveTextContent("Précisez !!!");
+    fireEvent.click(screen.getByTestId("modifier-note"));
+    expect(screen.getByPlaceholderText("Motif de la révision (facultatif)")).toHaveValue(persiste);
+    fireEvent.click(screen.getByRole("button", { name: "Mal dit !!!", exact: true }));
+    expect(screen.getByPlaceholderText("Motif de la révision (facultatif)")).toHaveValue(`${persiste}\nMal dit !!!`);
+  });
   const copieHistorique = (provenance: string) => {
     const t = { ...tentative("a1"), attempt_id: "consultation:r1", historique: { result_id: "r1", score_obtenu: 2, seuil: 6, provenance } };
     etat.session = { tentatives: [t as TentativeReelle], qrc: [{ ...qrc(t.attempt_id), apprenant_id: t.apprenant_id, qrc_instance_id: "consultation:r1:q1" }], resultats: [], baremesRestaures: [] };
