@@ -1,0 +1,11 @@
+GRANT EXECUTE ON FUNCTION core_operation_replay(uuid,text) TO anon;
+GRANT EXECUTE ON FUNCTION core_correct_qrc_publish(uuid,uuid,numeric,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION core_operation_replay(uuid,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION core_recalc_result(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION core_revise_qrc_publish(uuid,uuid,numeric,numeric,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION core_correct_qrc(uuid,uuid,numeric,text,text) TO service_role;
+GRANT EXECUTE ON FUNCTION core_correct_qrc_publish(uuid,uuid,numeric,text,text) TO service_role;
+GRANT EXECUTE ON FUNCTION core_note_attempt(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION core_operation_replay(uuid,text) TO service_role;
+GRANT EXECUTE ON FUNCTION core_recalc_result(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION core_revise_qrc_publish(uuid,uuid,numeric,numeric,text,text) TO service_role;
