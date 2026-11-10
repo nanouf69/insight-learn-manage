@@ -4,7 +4,7 @@ const objet = (v: unknown): Record<string, any> => v && typeof v === "object" &&
 export type RevisionServeur = { id: string; apprenant_id: string; exercice_id: string; reponses: unknown; updated_at: string; completed?: boolean | null; originaux_exacts?: any; reponses_meta?: any };
 export type SourceRevision = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; matiere_nom?: string; tentative?: number | null; details: any };
 export type EvenementRevision = { id: string; apprenant_id: string; exercice_id: string; question_id: string; created_at: string; valeur: unknown; valeur_originale?: unknown };
-export type LigneRevision = { cle: string; revisionId: string; examen: string; revision: string; matiere: string; question: string; tentative: number | null; sourceId: string | null; initiale: unknown; derniere: unknown; type: string; heureQuestion: string | null; heureEtat: string; terminee: boolean; cause: string | null };
+export type LigneRevision = { cle: string; revisionId: string; examen: string; revision: string; matiere: string; matiereId?: string; question: string; tentative: number | null; sourceId: string | null; initiale: unknown; derniere: unknown; type: string; heureQuestion: string | null; heureEtat: string; terminee: boolean; cause: string | null };
 
 /** La ligne persistée fait foi, jamais le dernier événement reçu ni une tentative devinée. */
 export function projeterRevisionsAdmin(apprenant: string, revisions: RevisionServeur[], sources: SourceRevision[], events: EvenementRevision[]): LigneRevision[] {
@@ -42,7 +42,7 @@ export function projeterRevisionsAdmin(apprenant: string, revisions: RevisionSer
         const original = lireOriginal(e.valeur, e.valeur_originale);
         return ["exact", "sans_marqueur"].includes(original.statut) && canonique(original.valeur) === canonique(derniere);
       }) ? latest.created_at : null;
-      out.push({ cle: `${r.id}:${key}`, revisionId:r.id, examen, revision: match[2] ?? "1", matiere: source?.matiere_nom ?? matiere ?? "À VÉRIFIER", question, tentative: cause ? null : source?.tentative ?? null, sourceId: cause ? null : source?.id ?? null, initiale: cause ? undefined : initiale, derniere, type: q?.type ?? (Array.isArray(derniere) ? "QCM" : "QRC"), heureQuestion: provenTime, heureEtat:r.updated_at, terminee:r.completed === true, cause });
+      out.push({ cle: `${r.id}:${key}`, revisionId:r.id, examen, revision: match[2] ?? "1", matiere: source?.matiere_nom ?? matiere ?? "À VÉRIFIER", matiereId: matiere ?? undefined, question, tentative: cause ? null : source?.tentative ?? null, sourceId: cause ? null : source?.id ?? null, initiale: cause ? undefined : initiale, derniere, type: q?.type ?? (Array.isArray(derniere) ? "QCM" : "QRC"), heureQuestion: provenTime, heureEtat:r.updated_at, terminee:r.completed === true, cause });
     }
   }
   return out.sort((a,b) => Date.parse(b.heureEtat) - Date.parse(a.heureEtat) || a.cle.localeCompare(b.cle));

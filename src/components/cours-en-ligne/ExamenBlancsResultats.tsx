@@ -50,6 +50,10 @@ import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPub
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
 import { correctionOfficielleQrc } from "@/lib/correctionOfficielleQrc";
 import { corrigeActuelPour, lireCorrigesActuels, type CarteCorrigesActuels } from "@/lib/corrigeOfficielActuel";
+import { useCorrigesSources } from "@/hooks/useCorrigesSources";
+import { sourcePour, matierePedagogique, type CorrigeSource } from "@/lib/corrigesSources";
+import { CorrigeSourceNotice } from "./CorrigeSourceNotice";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -135,6 +139,7 @@ function EcranResultats({
     [resultats],
   );
   const cleAttempts = attemptIdsCore.join(",");
+  const sourcesOfficielles = useCorrigesSources(apprenantId, attemptIdsCore, resultats.flatMap(r => r.resultId ? [r.resultId] : []));
   useEffect(() => {
     let cancelled = false;
     if (attemptIdsCore.length === 0) { setCorrigesActuels(new Map()); return; }
@@ -623,17 +628,17 @@ function EcranResultats({
 
   // Questions fausses à réviser (même logique que RevisionPhaseView)
   const wrongQuestions = useMemo(() => {
-    const out: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[] = [];
+    const out: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
     examenPourCalcul.matieres.forEach((matiere, mi) => {
-      if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
+      if (!matiere || (!CORRIGES_TROIS_SURFACES_ACTIFS && (matiere.id === "francais" || matiere.id === "bilan_francais"))) return;
       const r = resultats.find((item) => item.matiereId === matiere.id) ?? resultats[mi];
       if (!r) return;
-      const bilan = questionsFaussesDuPassage(matiere, r as any);
+      const bilan = questionsFaussesDuPassage(matierePedagogique(matiere, r, sourcesOfficielles.map), r as any);
       const matiereDuPassage = { ...matiere, questions: bilan.fausses.map((f) => f.question) };
-      bilan.fausses.forEach((f) => out.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId }));
+      bilan.fausses.forEach((f) => out.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId, corrigeSource: sourcePour(sourcesOfficielles.map,r,matiere.id,f.question.id) }));
     });
     return out;
-  }, [examenPourCalcul, resultats]);
+  }, [examenPourCalcul, resultats, sourcesOfficielles.map]);
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "resultats" | "revision")} className="space-y-6">
@@ -643,6 +648,7 @@ function EcranResultats({
       </TabsList>
 
       <TabsContent value="resultats" className="space-y-6">
+        {sourcesOfficielles.error && <p role="alert" className="text-destructive">{sourcesOfficielles.error}</p>}
         {/* Bandeau correction IA en cours */}
       {!hasQrcPendingValidation && correctionEnCours && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
@@ -777,6 +783,7 @@ function EcranResultats({
                         {q?.type === "QCM" && !aRepondu && (
                           <p className="text-xs text-muted-foreground mt-1">— Aucune réponse enregistrée</p>
                         )}
+                        <CorrigeSourceNotice source={sourcePour(sourcesOfficielles.map, r, r.matiereId, q.id)} answer={rep} />
                       </div>
                     );
                   })}
@@ -1018,9 +1025,10 @@ function EcranResultats({
                                 })}
                                 <div className="mt-2 flex flex-wrap gap-3 text-sm">
                                   <span className="font-medium text-muted-foreground">Votre réponse : <strong className={isCorrect ? "text-green-700" : "text-red-600"}>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></span>
-                                  <span className="font-medium text-green-700">Bonne réponse : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
+                                  <span className="font-medium text-green-700">Corrigé de notation du passage : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
                                 </div>
-                                {(() => {
+                                <CorrigeSourceNotice source={sourcePour(sourcesOfficielles.map, r, r.matiereId, q.id)} answer={rep} />
+                                {!CORRIGES_TROIS_SURFACES_ACTIFS && (() => {
                                   const maj = corrigeActuelPour(
                                     corrigesActuels,
                                     (r as any).__core?.attemptId,
@@ -1042,6 +1050,7 @@ function EcranResultats({
 
                             {q?.type === "QRC" && (
                               <div className="mt-1 space-y-1">
+                                <CorrigeSourceNotice source={sourcePour(sourcesOfficielles.map, r, r.matiereId, q.id)} answer={rep} />
                                 {rep != null && <p className="text-xs italic text-muted-foreground">Votre réponse : {String(rep) || "Aucune"}</p>}
                                 {isCalculQuestion(q) && !isLoadingIA && pointsObtenus > 0 && !isCorrect && (
                                   <div className="flex items-start gap-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5 border border-amber-200">
@@ -1255,16 +1264,16 @@ function EcranResultats({
           </div>
           <div className="rounded-lg px-4 py-3" style={{ backgroundColor: "#FFF3E0", border: "2px solid #F4A227" }}>
             <p className="text-sm font-semibold" style={{ color: "#D84315" }}>
-              {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)
+              {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser · corrigé pédagogique actuel, notes d’examen conservées
             </p>
           </div>
-          <RevisionFausses
+          {sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
             wrongQuestions={wrongQuestions}
             onTerminer={() => setActiveTab("resultats")}
             apprenantId={apprenantId}
             userId={userId}
             examenId={examen.id}
-          />
+          />}
         </div>
       </TabsContent>}
     </Tabs>
@@ -1281,7 +1290,7 @@ function RevisionFausses({
   userId,
   examenId,
 }: {
-  wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[];
+  wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[];
   onTerminer: () => void;
   apprenantId?: string | null;
   userId?: string | null;
@@ -1686,8 +1695,7 @@ function RevisionFausses({
                         onClick={() => {
                           if (showCorrection) return;
                           const prev = safeArray<string>(rep);
-                          const correctCount = q.choix!.filter(ch => ch.correct).length;
-                          if (correctCount <= 1) {
+                          if (!CORRIGES_TROIS_SURFACES_ACTIFS && q.choix && q.choix.filter(ch => ch.correct).length <= 1) {
                             updateReponse(currentKey, [c.lettre]);
                           } else {
                             updateReponse(currentKey, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
@@ -1757,6 +1765,7 @@ function RevisionFausses({
               )}
             </Button>
           )}
+          {showCorrection && <CorrigeSourceNotice source={current.corrigeSource ?? null} answer={rep} />}
         </CardContent>
       </Card>
     </div>
