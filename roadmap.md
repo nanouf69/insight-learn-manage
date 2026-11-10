@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 12:41 — Révisions admin et correcteur unique
+- [ ] Afficher les réponses de révision persistées par identité complète, initiale distincte et heure prouvée ; aucun cache ni écriture.
+- [ ] Tests de projection, isolation, concurrence et rechargement ; vérification publiée clé matière:question et rapprochement.
+- [ ] Anciennes copies : consultation unique sûre, À VÉRIFIER sans barème/snapshot, aucune note humaine inventée.
+- [ ] Rapport code/test/live, empreintes et retour arrière ; publication seulement si contrôles critiques entièrement prouvés.
+
 ## 10/11 10:49 — Reprise activation liaison QRC
 - [x] Preuve serveur ciblée des cinq remises Meriem BENNANI EB2 T3 : 5/5 prouvées (migration 0257, table append-only), sans réécriture ni assouplissement global.
 - [x] Mocks supabase.channel des 20 tests navigation corrigés, vrais échecs visibles.
