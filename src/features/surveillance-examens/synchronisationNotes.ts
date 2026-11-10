@@ -52,6 +52,8 @@ export interface Diagnostic {
   lignes: LigneDiagnostic[];
   anciennes: LigneAncienne[];
   luA: string;
+  /** Copies lues / total serveur par circuit (contrôle d'exhaustivité). */
+  couverture?: { nouveau: { lues: number; total: number | null }; ancien: { lues: number; total: number | null } };
 }
 
 export const LIBELLES_ECART: Record<TypeEcart, string> = {
@@ -89,35 +91,110 @@ function erreur(e: unknown): Error {
   return new Error(m || "Lecture serveur impossible");
 }
 
-/** Lecture complète paginée (identifiant croissant). Toute erreur = erreur, jamais un résultat partiel. */
-export async function lireDiagnostic(rpc: Rpc = rpcParDefaut): Promise<Diagnostic> {
-  const lignes: LigneDiagnostic[] = [];
-  let terminees = 0, enCours = 0, importees = 0, apres: string | null = null, luA = "";
-  for (let page = 0; page < 200; page++) {
-    const { data, error } = await rpc("eb_notes_diagnostic", { p_apres: apres, p_limite: 300, p_attempt_id: null });
-    if (error) throw erreur(error);
-    const d = data as any;
-    lignes.push(...(d.lignes ?? []));
-    terminees += d.terminees ?? 0;
-    enCours += d.en_cours ?? 0;
-    importees += d.importees_sans_bareme ?? 0;
-    luA = d.lu_a ?? luA;
-    apres = d.suivant ?? null;
-    if (!apres) break;
-    if (page === 199) throw new Error("Lecture interrompue : trop de pages");
+/** Taille des lots : le serveur borne aussi chaque lot à 3 s et rend un curseur de reprise. */
+export const LOT_NOUVEAU = 50;
+export const LOT_ANCIEN = 200;
+
+export interface Progression { circuit: "nouveau" | "ancien"; lues: number; total: number | null; lot: number }
+export interface OptionsLecture {
+  signal?: AbortSignal;
+  onProgress?: (p: Progression) => void;
+  /** Attente avant une nouvelle tentative d'un lot (remplaçable en test). */
+  pause?: (ms: number) => Promise<void>;
+}
+
+export class VerificationAnnulee extends Error {
+  constructor() { super("Vérification annulée : aucun résultat partiel n'est affiché"); this.name = "VerificationAnnulee"; }
+}
+
+const CODES_TRANSITOIRES = new Set(["57014", "40001", "40P01", "55P03", "53300", "08006", "08001", "PGRST000", "PGRST001", "PGRST002"]);
+/** Erreur transitoire (délai, réseau, surcharge) : le même lot peut être relu sans risque (lecture seule). */
+export function estTransitoire(e: unknown): boolean {
+  const o = (e ?? {}) as { code?: string; message?: string; status?: number };
+  if (o.code && CODES_TRANSITOIRES.has(o.code)) return true;
+  if (typeof o.status === "number" && o.status >= 500) return true;
+  return /statement timeout|timed out|failed to fetch|network|fetch failed|load failed|503|504/i.test(o.message ?? "");
+}
+
+const RETRAITS_MS = [500, 1500, 3000];
+const pauseParDefaut = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Appel d'un lot : relu au même curseur en cas d'erreur transitoire (3 fois au plus), sinon erreur détaillée. */
+async function lireLot(rpc: Rpc, fn: string, args: Record<string, unknown>, contexte: string, opts: OptionsLecture) {
+  for (let essai = 0; ; essai++) {
+    if (opts.signal?.aborted) throw new VerificationAnnulee();
+    let res: { data: unknown; error: unknown };
+    try {
+      res = await rpc(fn, args);
+    } catch (e) {
+      res = { data: null, error: e };
+    }
+    if (!res.error) return res.data as any;
+    const code = (res.error as { code?: string })?.code;
+    if (!estTransitoire(res.error) || essai >= RETRAITS_MS.length) {
+      const base = erreur(res.error).message;
+      throw new Error(`${contexte} : ${base}${code ? ` [${code}]` : ""}${essai ? ` (après ${essai + 1} essais)` : ""}`);
+    }
+    await (opts.pause ?? pauseParDefaut)(RETRAITS_MS[essai]);
   }
-  const anciennes: LigneAncienne[] = [];
-  apres = null;
-  for (let page = 0; page < 200; page++) {
-    const { data, error } = await rpc("eb_notes_diagnostic_ancien", { p_apres: apres, p_limite: 800 });
-    if (error) throw erreur(error);
-    const d = data as any;
-    anciennes.push(...(d.lignes ?? []));
-    apres = d.suivant ?? null;
-    if (!apres) break;
-    if (page === 199) throw new Error("Lecture interrompue : trop de pages");
+}
+
+interface Parcours<T> { lignes: T[]; lues: number; total: number | null; terminees: number; enCours: number; importees: number; luA: string }
+
+/** Parcours complet par curseur (identifiant croissant), sans doublon ; total serveur contrôlé à la fin. */
+async function parcourir<T>(rpc: Rpc, circuit: "nouveau" | "ancien", opts: OptionsLecture, cle: (l: T) => string): Promise<Parcours<T>> {
+  const fn = circuit === "nouveau" ? "eb_notes_diagnostic" : "eb_notes_diagnostic_ancien";
+  const libelle = circuit === "nouveau" ? "nouveau correcteur" : "anciennes copies";
+  const vues = new Map<string, T>();
+  let apres: string | null = null, lues = 0, total: number | null = null, terminees = 0, enCours = 0, importees = 0, luA = "";
+  for (let lot = 1; lot <= 2000; lot++) {
+    const args: Record<string, unknown> = circuit === "nouveau"
+      ? { p_apres: apres, p_limite: LOT_NOUVEAU, p_attempt_id: null }
+      : { p_apres: apres, p_limite: LOT_ANCIEN };
+    const d = await lireLot(rpc, fn, args, `Lot ${lot} (${libelle}, ${lues}${total != null ? `/${total}` : ""} copies lues)`, opts);
+    for (const l of (d?.lignes ?? []) as T[]) {
+      const k = cle(l);
+      if (vues.has(k)) throw new Error(`Lot ${lot} (${libelle}) : copie ${k} reçue deux fois, vérification interrompue`);
+      vues.set(k, l);
+    }
+    lues += d?.scannees ?? 0;
+    terminees += d?.terminees ?? 0;
+    enCours += d?.en_cours ?? 0;
+    importees += d?.importees_sans_bareme ?? 0;
+    if (typeof d?.total === "number") total = d.total;
+    luA = d?.lu_a ?? luA;
+    opts.onProgress?.({ circuit, lues, total, lot });
+    const suivant: string | null = d?.suivant ?? null;
+    const fini = typeof d?.fini === "boolean" ? d.fini : !suivant;
+    if (fini) return { lignes: [...vues.values()], lues, total, terminees, enCours, importees, luA };
+    if (!suivant || (apres && suivant <= apres)) throw new Error(`Lot ${lot} (${libelle}) : curseur de reprise invalide, vérification interrompue`);
+    apres = suivant;
   }
-  return { terminees, enCours, importeesSansBareme: importees, lignes, anciennes, luA };
+  throw new Error(`Lecture interrompue (${libelle}) : trop de lots`);
+}
+
+/**
+ * Lecture complète des deux circuits par lots bornés. Toute erreur, annulation ou couverture incomplète = erreur,
+ * jamais un résultat partiel. Si des copies sont créées pendant la lecture (total final ≠ copies lues),
+ * le circuit est relu une fois en entier ; s'il reste incomplet, la vérification échoue explicitement.
+ */
+export async function lireDiagnostic(rpc: Rpc = rpcParDefaut, opts: OptionsLecture = {}): Promise<Diagnostic> {
+  const complet = async <T>(circuit: "nouveau" | "ancien", cle: (l: T) => string) => {
+    for (let passe = 1; passe <= 2; passe++) {
+      const r = await parcourir<T>(rpc, circuit, opts, cle);
+      if (r.total == null || r.lues === r.total) return r;
+      if (passe === 2) {
+        throw new Error(`Couverture incomplète (${circuit === "nouveau" ? "nouveau correcteur" : "anciennes copies"}) : ${r.lues} copies lues sur ${r.total} — des copies ont été créées pendant la lecture, relancez la vérification`);
+      }
+    }
+    throw new Error("Lecture interrompue");
+  };
+  const n = await complet<LigneDiagnostic>("nouveau", (l) => l.attempt_id);
+  const a = await complet<LigneAncienne>("ancien", (l) => l.result_id);
+  return {
+    terminees: n.terminees, enCours: n.enCours, importeesSansBareme: n.importees, lignes: n.lignes, anciennes: a.lignes, luA: n.luA,
+    couverture: { nouveau: { lues: n.lues, total: n.total }, ancien: { lues: a.lues, total: a.total } },
+  };
 }
 
 /** Relecture d'une seule copie (après une correction ou une actualisation). */
