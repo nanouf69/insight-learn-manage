@@ -189,6 +189,8 @@ import {
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
 import { BilanFutureExam, lireRouteBilanFuture } from "./BilanFutureExam";
+import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { BilanFutureApercuAdmin, lireApercuFutureAdmin, type ApercuFuture } from "./BilanFutureApercuAdmin";
 import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
 import { reponsesVerrouilleesDepuis, separerQuestionsVerrouillees, type StatutRow, type CategorieRow } from "./bilanReponsesVerrouillees";
@@ -10186,7 +10188,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
-          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
+          <BilanFutureExam moduleId={module.id as 5 | 11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
         ) : etatSnapshotsEleve.statut === "chargement" ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : etatSnapshotsEleve.statut === "bloque" ? (
@@ -10197,6 +10199,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           </div>
         ) : (
           <ActivitesModuleContext.Provider value={activitesEtat}>
+            {CORRIGES_TROIS_SURFACES_ACTIFS && MODULES_BILAN_SNAPSHOT.has(module.id) && etatSnapshotsEleve.statut === "pret" && apprenantId && (
+              <div className="m-4"><RevisionCopieCorrigee owner={apprenantId} copies={Object.values(etatSnapshotsEleve.parExo).map(p => ({ type: "bilan_snapshot" as const, id: p.snapshotId }))} /></div>
+            )}
             <LearnerPreview secureMode />
           </ActivitesModuleContext.Provider>
         )}

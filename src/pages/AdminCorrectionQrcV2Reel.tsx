@@ -37,6 +37,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 import { SynchronisationNotes } from "@/features/surveillance-examens/SynchronisationNotes";
+import { CouvertureCorrigesAdmin } from "@/features/correction-qrc-v2/CouvertureCorrigesAdmin";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import {
   compterCopiesEnAttenteIa,
   definirIaActif,
@@ -780,6 +782,12 @@ export default function AdminCorrectionQrcV2Reel() {
           <details data-testid="synchronisation-dans-correcteur" className="rounded border">
             <summary className="cursor-pointer px-2 py-1 text-sm font-semibold">Actualiser les notes (vérification serveur)</summary>
             <SynchronisationNotes compact />
+          </details>
+        )}
+        {mode !== "test" && CORRIGES_TROIS_SURFACES_ACTIFS && (
+          <details className="rounded border">
+            <summary className="cursor-pointer px-2 py-1 text-sm font-semibold">Couverture des corrigés officiels (lecture seule)</summary>
+            <div className="p-2"><CouvertureCorrigesAdmin /></div>
           </details>
         )}
         <header className="sticky top-0 z-10 bg-background/95 py-1 space-y-1">

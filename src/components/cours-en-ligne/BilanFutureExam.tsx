@@ -24,6 +24,7 @@ import type { FutureReceipt } from "@/lib/bilanFutureVersion";
 import { lireCorrection, questionsFausses, reponseExacte, type Correction } from "@/lib/bilanFutureCorrection";
 import { baremeReference, examenReferenceBilan, moyenneBilan, noterMatiere, type BaremeMatiere, type NoteMatiere } from "@/lib/bilanFutureBareme";
 import { fetchLiveExamens } from "./useLiveExamens";
+import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 
 export const FUTURE_SUBJECT_NAMES = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
 
@@ -78,8 +79,8 @@ const promptDe = (q: Q) => q.support
   ? { question: q.enonce, passageTitle: `Texte ${q.support.numero}`, passageBody: q.support.paragraphes.join("\n\n") }
   : { question: q.enonce };
 
-export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack }: {
-  moduleId: 5 | 11; ownerId: string; titre?: string; description?: string; onBack?: () => void;
+export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, description, onBack }: {
+  moduleId: 5 | 11; ownerId: string; apprenantId?: string; titre?: string; description?: string; onBack?: () => void;
 }) {
   const base = moduleId === 5 ? 500 : 600;
   const [statuts, setStatuts] = useState<Record<number, Statut | undefined>>({});
@@ -493,6 +494,8 @@ export function BilanFutureExam({ moduleId, ownerId, titre, description, onBack 
                               </Button>
                             )}
                           </QuizResultPanels>
+                          {/* Separate persisted revision against the current official key; the local review above is unchanged. */}
+                          {correction && apprenantId && <RevisionCopieCorrigee owner={apprenantId} copies={[{ type: "bilan_future", id: passage.receipt.passageId }]} />}
                           <WrongAnswersReviewDialog open={relecture} onOpenChange={(o) => { if (!o) setRelecture(false); }}
                             items={relecture ? relireItems(idsARelire) : []} onConfirm={demarrerRevision} />
                         </div>
