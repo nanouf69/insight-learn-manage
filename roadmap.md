@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 14:14 — Mots-clés personnalisés QRC
+- [ ] Liste serveur partagée admin uniquement ; ajout, renommage avec confirmation et retrait réversible sans toucher aux commentaires historiques.
+- [ ] Tests droits, concurrence, persistance et parcours commentaire candidat isolé ; contrôle ordinateur/mobile.
+- [ ] Publication seulement après contrôles critiques verts et vérification du site public ; rapport précis.
+
 ## 10/11 13:02 — Commentaires prédéfinis QRC
 - [x] Aperçu : quatre textes exacts, cumul/doublon/édition, relecture du journal et projection candidat V2/historique ; 107 tests applicatifs et 7 PostgreSQL jetables exécutés, navigateur VTC soir sans écriture.
 - [x] Rapport docs/commentaires-qrc-2026-11-10.md : NO-GO, perte du commentaire seul à note V2 inchangée reproduite ; pas de mutation réelle ni publication.
