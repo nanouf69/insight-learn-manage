@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   corriger: vi.fn(),
   reviser: vi.fn(),
   charger: vi.fn(),
+  signaux: new Map<string, () => void>(),
 }));
 
 const etat = vi.hoisted(() => ({ session: null as SessionReelle | null }));
@@ -41,7 +42,10 @@ vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
     corrigerQrc: mocks.corriger,
     reviserQrc: mocks.reviser,
     lireHistoriqueQrc: async () => [],
-    souscrireSignal: () => () => undefined,
+    souscrireSignal: (_canal: string, table: string, cb: () => void) => {
+      mocks.signaux.set(table, cb);
+      return () => mocks.signaux.delete(table);
+    },
   };
 });
 
@@ -126,6 +130,20 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it("reclasse un passage terminé après signal serveur, sans enregistrer une note", async () => {
+    if (!etat.session) throw new Error("Session absente");
+    etat.session.tentatives[0] = { ...etat.session.tentatives[0], etat: "terminee", finished_at: "2026-11-09T19:27:00Z" };
+    etat.session.tentatives[1] = { ...etat.session.tentatives[1], etat: "terminee", finished_at: "2026-11-09T19:59:00Z" };
+    render(<AdminCorrectionQrcV2Reel />);
+    await screen.findByTestId("cellule-a2-q1");
+    const lignes = () => Array.from(screen.getByTestId("matrice-A").querySelectorAll("tbody tr")).map(r => r.querySelector("a")?.getAttribute("data-testid"));
+    expect(lignes()).toEqual(["lien-crm-a2", "lien-crm-a1"]);
+    etat.session.tentatives[0] = { ...etat.session.tentatives[0], finished_at: "2026-11-09T20:01:00Z" };
+    mocks.signaux.get("exam_attempts_v2")?.();
+    await waitFor(() => expect(lignes()).toEqual(["lien-crm-a1", "lien-crm-a2"]));
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    expect(mocks.reviser).not.toHaveBeenCalled();
+  });
   it.each(['EB3', 'EB3-TAXI'])('valide automatiquement 2/2 une réponse littéralement identique %s, une seule écriture', async (examId) => {
     if (!etat.session) throw new Error('Session absente');
     for (const t of etat.session.tentatives) t.exam_id = examId;

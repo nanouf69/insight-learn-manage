@@ -254,6 +254,21 @@ export default function AdminCorrectionQrcV2Reel() {
 
   useEffect(() => { void recharger(); }, [recharger]);
   useEffect(() => souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => void recharger()), [recharger]);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let actif = true;
+    const actualiser = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        void listerGroupesCrm(mode).then((liste) => {
+          if (actif) setGroupes(liste);
+        }).catch((e: Error) => { if (actif) setErreur(e.message); });
+      }, 500);
+    };
+    const arreterV2 = souscrireSignal("admin-qrc-v2-passages", "exam_attempts_v2", actualiser);
+    const arreterHistorique = souscrireSignal("admin-qrc-v2-passages-historiques", "apprenant_quiz_results", actualiser);
+    return () => { actif = false; clearTimeout(timer); arreterV2(); arreterHistorique(); };
+  }, [mode]);
 
   // Plein écran natif du navigateur sur la zone de correction
   const basculerPleinEcran = async () => {
