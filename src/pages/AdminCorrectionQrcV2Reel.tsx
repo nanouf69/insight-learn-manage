@@ -841,6 +841,7 @@ export default function AdminCorrectionQrcV2Reel() {
               ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
             </p>
           )}
+          {mode === "migre" && <PanneauRapprochement groupes={groupes} />}
         </header>
 
         {archiveOuverte ? (

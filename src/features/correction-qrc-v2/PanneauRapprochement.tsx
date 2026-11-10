@@ -31,7 +31,7 @@ export function PanneauRapprochement({ groupes }: { groupes: GroupeSessionCrm[] 
         <ul className="mt-1 max-h-48 space-y-0.5 overflow-auto" data-testid="rapprochement-liste">
           {r.manquantes.slice(0, 200).map((m) => (
             <li key={m.cle}>
-              <a className="underline" href={`/crm?apprenant=${m.apprenant_id}`} target="_blank" rel="noreferrer">{m.nom}</a>
+              <a className="underline" href={`/?section=crm&apprenant=${encodeURIComponent(m.apprenant_id)}`} target="_blank" rel="noreferrer">{m.nom}</a>
               {" "}— {m.exam_id} — {m.qrc} QRC{m.date ? ` — ${new Date(m.date).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}` : ""} — {m.cause}
             </li>
           ))}
