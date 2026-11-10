@@ -159,7 +159,6 @@ class PasDAssouplissementGlobal(Base):
         self.pg.sql(f"INSERT INTO apprenant_quiz_results VALUES('{rid}','{AUTRE}','EB2','examen_blanc','t3p',3,{lit(json.dumps(det))}::jsonb,now(),1,3,6.7,false)")
         self.pg.sql(f"INSERT INTO reponses_apprenants(apprenant_id,exercice_id,tentative,reponses,completed,status,submitted_at) VALUES('{AUTRE}','EB2__t3p__t3',1,{lit(json.dumps(rep))}::jsonb,true,'submitted',now())")
         self.pg.sql(f"INSERT INTO reponses_apprenants_journal(apprenant_id,exercice_id,question_id,valeur,tentative) VALUES('{AUTRE}','EB2__t3p__t3','1','\"x\"',3)")
-        self.pg.sql(BACKFILL.replace("DO $assert$", "DO $skip$ BEGIN END $skip$; DO $assert$ BEGIN RETURN; END $assert$; DO $old$").replace("END $assert$;\n", "END $old$;\n", 1)) if False else None
         self.assertEqual('resultat_seul', self.preflight(rid)['provenance'])
         with self.assertRaisesRegex(RuntimeError, 'Remise non prouvée'): self.noter(rid, '1', 1, 1, reco='vérifié')
         self.assertEqual(0, self.preuves())
