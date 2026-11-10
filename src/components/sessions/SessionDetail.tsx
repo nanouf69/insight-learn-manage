@@ -1,3 +1,4 @@
+import { estApprenantHandicap } from "@/lib/apprenantsHandicap";
 import { exclureVirementsLiesAilleurs, resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
