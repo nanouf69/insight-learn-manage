@@ -114,7 +114,7 @@ BEGIN
  IF v_state->>'epoch' IS DISTINCT FROM p_epoch THEN RAISE EXCEPTION 'Corrige modifie, relire et verifier vos reponses' USING ERRCODE='P0556'; END IF;
  IF p_payload->>'kind'='answer' THEN
   SELECT x INTO v_source FROM jsonb_array_elements(v_state->'sources') x
-   WHERE x->>'source_type'||'|'||x->>'source_id'||'|'||x->>'question_id'=p_payload->>'key';
+   WHERE (x->>'source_type')||'|'||(x->>'source_id')||'|'||(x->>'question_id')=p_payload->>'key';
   IF v_source IS NULL OR NOT(p_payload ? 'answer') THEN RAISE EXCEPTION 'Question et reponse requises' USING ERRCODE='22023'; END IF;
   IF (v_source#>>'{actuelle,type}'='QCM' AND jsonb_typeof(p_payload->'answer') IS DISTINCT FROM 'array') OR
    (v_source#>>'{actuelle,type}'='QRC' AND jsonb_typeof(p_payload->'answer') IS DISTINCT FROM 'string') THEN
@@ -123,7 +123,7 @@ BEGIN
  ELSIF p_payload->>'kind'='submit' THEN
   v_answers:=v_state->'answers';
   FOR v_source IN SELECT x FROM jsonb_array_elements(v_state->'sources') x LOOP
-   v_answer:=v_answers->(v_source->>'source_type'||'|'||v_source->>'source_id'||'|'||v_source->>'question_id');
+   v_answer:=v_answers->((v_source->>'source_type')||'|'||(v_source->>'source_id')||'|'||(v_source->>'question_id'));
    IF v_answer IS NULL OR v_answer='null'::jsonb OR v_answer='[]'::jsonb OR v_answer='""'::jsonb THEN
     RAISE EXCEPTION 'Toutes les reponses doivent etre sauvegardees' USING ERRCODE='P0557'; END IF;
    v_count:=v_count+1;
