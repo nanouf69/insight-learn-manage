@@ -23,7 +23,7 @@ export function agreger(items: Item[]): Bilan {
 }
 /** Exhaustive keyset audit, 50 copies per call; a cancelled or failed audit is never shown as complete. */
 export async function auditerCircuit(type: SourceType, onPage: (n: number) => void, stop: () => boolean,
-  rpc = (args: object) => supabase.rpc("corriges_couverture_admin" as never, args as never)) {
+  rpc: (args: object) => PromiseLike<{data: unknown; error: unknown}> = args => supabase.rpc("corriges_couverture_admin" as never, args as never)) {
   const items: Item[] = []; const vus = new Set<string>(); let after: string | null = null;
   for (;;) {
     if (stop()) throw new Error("annule");
