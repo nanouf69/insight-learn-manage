@@ -25,15 +25,22 @@ CREATE TYPE app_role AS ENUM ('admin','moderator','user');
 CREATE TABLE apprenants(id uuid PRIMARY KEY,auth_user_id uuid);
 CREATE FUNCTION core_est_proprietaire(uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$SELECT EXISTS(SELECT 1 FROM apprenants WHERE id=$1 AND auth_user_id=auth.uid())$$;
 CREATE FUNCTION has_role(uuid,app_role) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT false$$;
-CREATE TABLE exam_attempts_v2(attempt_id uuid PRIMARY KEY,apprenant_id uuid,exam_id text,etat text,snapshot jsonb);
-CREATE TABLE apprenant_quiz_results(id uuid PRIMARY KEY,apprenant_id uuid,quiz_id text,matiere_id text,details jsonb,quiz_type text,completed_at timestamptz,note numeric);
+CREATE TABLE exam_attempts_v2(attempt_id uuid PRIMARY KEY,apprenant_id uuid,exam_id text,etat text,snapshot jsonb,is_test boolean DEFAULT false);
+CREATE TABLE answer_state(attempt_id uuid,question_id text,valeur jsonb);
+CREATE TABLE apprenant_quiz_results(id uuid PRIMARY KEY,apprenant_id uuid,quiz_id text,matiere_id text,details jsonb,quiz_type text,completed_at timestamptz,note numeric,tentative integer);
 CREATE TABLE exam_content_versions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),exam_id text,version_number integer,published_at timestamptz,content jsonb,statut text,retired_at timestamptz,is_test boolean);
+CREATE TABLE bilan_passage_snapshots(id uuid PRIMARY KEY,apprenant_id uuid,module_id integer,exercice_id integer,tentative integer,passage_cle text,questions jsonb);
+CREATE TABLE reponses_apprenants(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),apprenant_id uuid,exercice_id text,tentative integer,status text,completed boolean,reponses jsonb,UNIQUE(apprenant_id,exercice_id));
+CREATE TABLE module_editor_state(module_id integer PRIMARY KEY,module_data jsonb,deleted_exercices jsonb,source_fingerprint text,updated_at timestamptz DEFAULT now());
+CREATE TABLE bilan_future_versions(id uuid PRIMARY KEY,subject integer,questions jsonb,fingerprint text,created_at timestamptz DEFAULT now());
+CREATE TABLE bilan_future_active(subject integer PRIMARY KEY,version_id uuid);
+CREATE TABLE bilan_future_receipts(id uuid PRIMARY KEY,owner_id uuid,module_id integer,exercise_id integer,version_id uuid);
+CREATE TABLE bilan_future_submissions(receipt_id uuid PRIMARY KEY,answers jsonb,submitted_at timestamptz DEFAULT now());
 GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
 """)
-        cls.pg.sql((ROOT/'docs/sql-revue/2026-11-10-corriges-trois-surfaces.sql').read_text())
-        cls.pg.sql((ROOT/'docs/sql-revue/2026-11-10-revision-corrige-versionnee.sql').read_text())
+        cls.pg.sql((ROOT/'docs/sql-revue/2026-11-10-corriges-v2-adaptateurs.sql').read_text())
         q={'id':'francais:4','type':'QCM','enonce':'titiller','points':2,'choix':[{'lettre':l,'texte':l,'correct':l in ['A','C']} for l in ['A','B','C']]}
-        cls.pg.sql(f"INSERT INTO apprenants VALUES('{OWNER}','{UID}'); INSERT INTO exam_attempts_v2 VALUES('{COPY}','{OWNER}','EB3','terminee','{json.dumps({'matiere':'francais','questions':[q]})}'); INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('EB3',23,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
+        cls.pg.sql(f"INSERT INTO apprenants VALUES('{OWNER}','{UID}'); INSERT INTO exam_attempts_v2 VALUES('{COPY}','{OWNER}','EB3','terminee','{json.dumps({'matiere':'francais','questions':[q]})}',false); INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('EB3',23,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
 
     @classmethod
     def tearDownClass(cls):
@@ -43,7 +50,7 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
         # Each test owns a different dossier/copy; reload-resume must not leak across tests.
         global OWNER,COPY
         OWNER=str(uuid.uuid4());COPY=str(uuid.uuid4())
-        self.pg.sql(f"INSERT INTO apprenants VALUES('{OWNER}','{UID}'); INSERT INTO exam_attempts_v2 SELECT '{COPY}','{OWNER}',exam_id,etat,snapshot FROM exam_attempts_v2 WHERE exam_id='EB3' LIMIT 1")
+        self.pg.sql(f"INSERT INTO apprenants VALUES('{OWNER}','{UID}'); INSERT INTO exam_attempts_v2 SELECT '{COPY}','{OWNER}',exam_id,etat,snapshot,false FROM exam_attempts_v2 WHERE exam_id='EB3' LIMIT 1")
 
     def call(self, sql, user=UID):
         raw=self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{user}'; "+sql)
@@ -177,7 +184,7 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
                 q={'id':'francais:4','type':'QCM','enonce':'titiller','choix':[{'lettre':l,'texte':l,'correct':l in ['A','C']} for l in ['A','B','C']]}
                 if exam!='EB3':
                     self.pg.sql(f"INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('{exam}',1,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
-                self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{copy}','{OWNER}','{exam}','terminee','{json.dumps({'matiere':'francais','questions':[q]})}')")
+                self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{copy}','{OWNER}','{exam}','terminee','{json.dumps({'matiere':'francais','questions':[q]})}',false)")
                 refs=[{'type':'attempt','id':copy,'question':'francais:4'}]
                 state=self.call(f"SELECT revision_corrige_ouvrir('{OWNER}','{json.dumps(refs)}')")
                 self.assertEqual(state['sources'][0]['exam_id'],exam)
@@ -193,7 +200,7 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
     def test_qrc_literal_only_never_human_grade(self):
         copy=str(uuid.uuid4())
         q={'id':'gestion:1','type':'QRC','enonce':'Valeur','reponseQRC':'−10 €','points':2}
-        self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{copy}','{OWNER}','EBQ','terminee','{json.dumps({'matiere':'gestion','questions':[q]})}'); INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('EBQ',1,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
+        self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{copy}','{OWNER}','EBQ','terminee','{json.dumps({'matiere':'gestion','questions':[q]})}',false); INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('EBQ',1,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
         refs=[{'type':'attempt','id':copy,'question':'gestion:1'}]
         for text,perfect,pending in [('−10 €',1,0),('10 €',0,1),('-10 euros',0,1)]:
             state=self.call(f"SELECT revision_corrige_ouvrir('{OWNER}','{json.dumps(refs)}')")
