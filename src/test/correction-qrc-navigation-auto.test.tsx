@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   corriger: vi.fn(),
   reviser: vi.fn(),
   charger: vi.fn(),
+  catalogue: vi.fn(),
   signaux: new Map<string, () => void>(),
   noterHistorique: vi.fn(),
   lireCommentaires: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
   const reel = await importOriginal<typeof import("@/features/correction-qrc-v2/noyauReel")>();
   return {
     ...reel,
-    listerGroupesCrm: async () => [{
+    listerGroupesCrm: async () => { mocks.catalogue(); return [{
       cle: "groupe-test",
       type: "crm",
       libelle: "Session fictive",
@@ -47,7 +48,7 @@ vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
         dates: [],
         apprenantParAttempt: { a1: "apprenant-a1", a2: "apprenant-a2" },
       }],
-    }],
+    }]; },
     chargerSessionTest: mocks.charger,
     corrigerQrc: mocks.corriger,
     reviserQrc: mocks.reviser,
@@ -144,6 +145,8 @@ const ouvrirCopie = async (qrcInstanceId: string) => {
 
 beforeEach(() => {
   etat.session = sessionFictive();
+  mocks.catalogue.mockReset();
+  mocks.signaux.clear();
   mocks.charger.mockReset().mockImplementation(async () => etat.session);
   mocks.corriger.mockReset().mockImplementation(async ({ qrcInstanceId, note }) => {
     appliquerNote(qrcInstanceId, note);
@@ -161,6 +164,43 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it("survol, zoom et retour onglet ne relisent ni catalogue ni copies", async () => {
+    await ouvrirCopie("a1-q1");
+    const lectures = mocks.charger.mock.calls.length;
+    fireEvent.mouseEnter(screen.getByTestId("choix-session"));
+    fireEvent.mouseEnter(screen.getByTestId("cellule-a2-q1"));
+    fireEvent.click(screen.getByRole("button", { name: "Augmenter le zoom" }));
+    fireEvent(window, new Event("focus"));
+    fireEvent(document, new Event("visibilitychange"));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(mocks.catalogue).toHaveBeenCalledOnce();
+    expect(mocks.charger).toHaveBeenCalledTimes(lectures);
+  });
+  it("double clic Actualiser ne relit le catalogue qu'une fois et une erreur ne détruit pas les copies", async () => {
+    await ouvrirCopie("a1-q1");
+    const bouton = screen.getByTestId("actualiser-liste");
+    fireEvent.click(bouton);
+    fireEvent.click(bouton);
+    await waitFor(() => expect(bouton).toBeEnabled());
+    expect(mocks.catalogue).toHaveBeenCalledTimes(2);
+    mocks.charger.mockRejectedValue(new Error("Réseau fictif coupé"));
+    mocks.signaux.get("qrc_instances_v2")?.();
+    await waitFor(() => expect(screen.getByTestId("erreur-admin")).toHaveTextContent("Réseau fictif coupé"), { timeout: 3000 });
+    expect(screen.getByTestId("reponse-eleve")).toHaveTextContent("Réponse a1");
+    expect(mocks.catalogue).toHaveBeenCalledTimes(2);
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it("rafale de signaux QRC : une lecture des copies affichées, aucun scan du catalogue", async () => {
+    await ouvrirCopie("a1-q1");
+    const lectures = mocks.charger.mock.calls.length;
+    appliquerNote("a2-q1", 1.5);
+    for (let n = 0; n < 10; n++) mocks.signaux.get("qrc_instances_v2")?.();
+    await waitFor(() => expect(mocks.charger).toHaveBeenCalledTimes(lectures + 1), { timeout: 3000 });
+    expect(mocks.catalogue).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByTestId("cellule-a2-q1"));
+    expect(await screen.findByTestId("points-attribues")).toHaveTextContent("1,5");
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
   it("note inchangée : commentaire seul refusé en succès si la relecture ne le confirme pas", async () => {
     appliquerNote("a1-q1", 1);
     mocks.lireCommentaires.mockResolvedValue([{ correction_event_id: 7, note_nouvelle: 1, created_at: "2026-11-10T13:00:00Z", commentaire: null }]);
@@ -295,10 +335,12 @@ describe("Correction QRC — passage automatique après confirmation de persista
     // Le serveur renvoie une nouvelle lecture (objets neufs), comme en production.
     mocks.charger.mockImplementation(async () => structuredClone(etat.session));
     mocks.signaux.get("exam_attempts_v2")?.();
-    await waitFor(() => expect(lignes()).toEqual(["lien-crm-a1", "lien-crm-a2"]), { timeout: 4000 });
+    await waitFor(() => expect(lignes()).toEqual(["lien-crm-a1", "lien-crm-a2"]), { timeout: 6500 });
+    expect(mocks.catalogue).toHaveBeenCalledOnce();
+    expect(await screen.findByTestId("nouveaux-passages")).toBeInTheDocument();
     expect(mocks.corriger).not.toHaveBeenCalled();
     expect(mocks.reviser).not.toHaveBeenCalled();
-  });
+  }, 8000);
   it.each(['EB3', 'EB3-TAXI'])('valide automatiquement 2/2 une réponse littéralement identique %s, une seule écriture', async (examId) => {
     if (!etat.session) throw new Error('Session absente');
     for (const t of etat.session.tentatives) t.exam_id = examId;
