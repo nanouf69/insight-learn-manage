@@ -2,15 +2,9 @@ import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAlertesNotesGlobales } from "./useAlertesNotesGlobales";
 
-export function AlertesNotesGlobales() {
+export function AlertesNotesGlobales({ modeSepare = false }: { modeSepare?: boolean } = {}) {
   const { alertes, erreur, verification } = useAlertesNotesGlobales();
-  if (!alertes.length && !erreur && !verification) return null;
-  return (
-    <section aria-label="Alertes notes globales examens blancs" aria-live="polite" className="w-full space-y-3 border-y border-destructive/40 bg-destructive/5 px-3 py-3">
-      <h2 className="flex items-center gap-2 font-semibold text-destructive"><AlertTriangle className="h-5 w-5 shrink-0" /> Notes globales — examens blancs présentiel</h2>
-      {erreur && <p role="alert" className="text-sm text-destructive">{erreur}</p>}
-      {verification && <p className="text-sm text-muted-foreground">Publication en cours de vérification…</p>}
-      {alertes.map(a => (
+  const carte = (a: (typeof alertes)[number]) => (
         <div key={a.cle} data-testid="alerte-note-globale" className="space-y-2 border-t border-destructive/20 pt-2">
           <div className="flex flex-wrap items-center gap-2">
             <a href={`/?section=crm&apprenant=${encodeURIComponent(a.apprenantId)}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">{a.nom}</a>
@@ -23,7 +17,26 @@ export function AlertesNotesGlobales() {
             {a.matieres.map(m => <li key={m.id}>{m.nom} : terminée · QRC validées · {m.publication === "publiee" ? "note publiée" : "note non publiée"}</li>)}
           </ul>
         </div>
-      ))}
+  );
+  if (!modeSepare && !alertes.length && !erreur && !verification) return null;
+  return (
+    <section aria-label="Alertes notes globales examens blancs" aria-live="polite" className="w-full space-y-3 border-y border-destructive/40 bg-destructive/5 px-3 py-3">
+      <h2 className="flex items-center gap-2 font-semibold text-destructive"><AlertTriangle className="h-5 w-5 shrink-0" /> Notes globales non remontées — examens blancs</h2>
+      {erreur && <p role="alert" className="text-sm text-destructive">{erreur}</p>}
+      {verification && <p className="text-sm text-muted-foreground">Publication en cours de vérification…</p>}
+      {modeSepare ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {(["presentiel", "elearning"] as const).map(m => {
+            const liste = alertes.filter(a => (a.mode ?? "presentiel") === m);
+            return (
+              <div key={m} className="min-w-0 space-y-2 rounded border p-2" data-testid={`notes-non-remontees-${m}`}>
+                <h3 className="font-semibold">{m === "presentiel" ? "Formations présentielles" : "Formations e-learning"} ({liste.length})</h3>
+                {liste.length === 0 ? <p className="text-sm text-muted-foreground">Aucun élève concerné.</p> : liste.map(carte)}
+              </div>
+            );
+          })}
+        </div>
+      ) : alertes.map(carte)}
     </section>
   );
 }

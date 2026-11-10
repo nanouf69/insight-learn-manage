@@ -20,6 +20,7 @@ import ApprenantActivityReport from "./ApprenantActivityReport";
 import SuiviHeuresElearning from "./SuiviHeuresElearning";
 import CorrectionQRCTab from "./CorrectionQRCTab";
 import AdminCorrectionQrcV2Reel from "@/pages/AdminCorrectionQrcV2Reel";
+import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 import CorrectionQCMTab from "./CorrectionQCMTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
 import NotationPratiqueTab from "./NotationPratiqueTab";
@@ -266,6 +267,10 @@ const ApprenantSearchPreview = () => {
               Actualiser les notes
             </TabsTrigger>
           )}
+          <TabsTrigger value="notes-non-remontees" className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Notes non remontées
+          </TabsTrigger>
           <TabsTrigger value="correction-qrc-archive" className="flex items-center gap-2">
             <MessageSquareText className="w-4 h-4" />
             Ancienne correction QRC — archive
@@ -550,6 +555,9 @@ const ApprenantSearchPreview = () => {
         </TabsContent>
         <TabsContent value="notation-pratique" className="mt-6">
           <NotationPratiqueTab />
+        </TabsContent>
+        <TabsContent value="notes-non-remontees" className="mt-6">
+          <AlertesNotesGlobales modeSepare />
         </TabsContent>
         <TabsContent value="correction-qrc" className="mt-6">
           <AdminCorrectionQrcV2Reel />
