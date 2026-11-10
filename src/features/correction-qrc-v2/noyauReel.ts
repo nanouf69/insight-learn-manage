@@ -207,7 +207,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   for (let de = 0; ; de += 1000) {
     const { data, error } = await (supabase as any)
       .from("exam_attempts_v2")
-      .select("attempt_id, apprenant_id, exam_id, started_at, rid:snapshot->source_historique->>result_id")
+      .select("attempt_id, apprenant_id, exam_id, started_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
       .eq("is_test", mode === "test")
       .order("started_at", { ascending: false })
       .order("attempt_id", { ascending: true })
@@ -223,10 +223,19 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   const legacyResults: any[] = [];
   if (mode === "migre") {
     const migres = resultatsMigres(attempts as any);
+    const qrcV2: any[] = [];
     for (let de = 0; ; de += 1000) {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any).from("qrc_instances_v2")
+        .select("qrc_instance_id, attempt_id, reponse").order("qrc_instance_id", { ascending: true }).range(de, de + 999);
+      if (error) throw error;
+      qrcV2.push(...(data ?? []));
+      if ((data ?? []).length < 1000) break;
+    }
+    const bruts: any[] = [];
+    for (let de = 0; ; de += 1000) {
+      const { data, error } = await (supabase as any)
         .from("apprenant_quiz_results")
-        .select("id, apprenant_id, quiz_id, completed_at")
+        .select("id, apprenant_id, quiz_id, matiere_id, completed_at, rep:details->reponses")
         .eq("quiz_type", "examen_blanc")
         .ilike("quiz_id", "eb%")
         .not("completed_at", "is", null)
@@ -234,7 +243,15 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .order("id", { ascending: true })
         .range(de, de + 999);
       if (error) throw error;
-      const anciens = resultatsAncienCircuit((data ?? []) as any[], migres);
+      bruts.push(...(data ?? []));
+      if ((data ?? []).length < 1000) break;
+    }
+    // Miroirs prouvés d'un passage V2 natif (mêmes réponses QRC exactes) : affichés une seule fois, côté V2.
+    for (const m of miroirsV2Prouves(bruts, attempts as any, qrcV2)) migres.add(m);
+    {
+      // Seules les copies contenant au moins une QRC écrite relèvent du correcteur.
+      const anciens = resultatsAncienCircuit(bruts, migres).filter((r: any) => nbQrcEcrites(r.rep) > 0)
+        .map(({ rep: _rep, ...r }: any) => r);
       legacyResults.push(...anciens.map((r: any) => ({
         ...r,
         attempt_id: `ancien:${r.id}`,
