@@ -25,6 +25,7 @@ import ResultatsSessionPage from "./ResultatsSessionPage";
 import NotationPratiqueTab from "./NotationPratiqueTab";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
+import { SynchronisationNotes } from "@/features/surveillance-examens/SynchronisationNotes";
 
 // IDs des modules bilan qui ouvrent directement l'onglet examens
 const BILAN_MODULE_IDS: Record<number, string> = {
@@ -254,6 +255,12 @@ const ApprenantSearchPreview = () => {
             <MessageSquareText className="w-4 h-4" />
             Correction QRC
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="actualiser-notes" className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Actualiser les notes
+            </TabsTrigger>
+          )}
           <TabsTrigger value="correction-qrc-archive" className="flex items-center gap-2">
             <MessageSquareText className="w-4 h-4" />
             Ancienne correction QRC — archive
@@ -542,6 +549,11 @@ const ApprenantSearchPreview = () => {
         <TabsContent value="correction-qrc" className="mt-6">
           <AdminCorrectionQrcV2Reel />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="actualiser-notes" className="mt-6">
+            <SynchronisationNotes />
+          </TabsContent>
+        )}
         <TabsContent value="correction-qrc-archive" className="mt-6">
           <CorrectionQRCTab />
         </TabsContent>
