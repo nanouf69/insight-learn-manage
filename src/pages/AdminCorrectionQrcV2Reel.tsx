@@ -13,6 +13,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { CommentairesPredefinis } from "@/features/correction-qrc-v2/CommentairesPredefinis";
+import { ajouterCommentaireQrc } from "@/features/correction-qrc-v2/commentairesPredefinis";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { CopiesHistoriquesLecture } from "@/features/correction-qrc-v2/CopiesHistoriquesLecture";
 import { chargerConsultationEb2, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
@@ -120,6 +122,17 @@ export default function AdminCorrectionQrcV2Reel() {
   // renouvelé après chaque validation pour qu'une révision ultérieure de même valeur soit bien enregistrée.
   const [jeton, setJeton] = useState(() => Math.random().toString(36).slice(2, 10));
   const [historique, setHistorique] = useState<EvenementCorrection[]>([]);
+  const [historiqueCharge, setHistoriqueCharge] = useState(false);
+  const [commentaireModifie, setCommentaireModifie] = useState(false);
+  const commentaireSauve = historique.at(-1)?.commentaire ?? "";
+  const commentaireCourant = commentaireModifie ? commentaire : commentaireSauve;
+  const modifierCommentaire = (valeur: string) => {
+    setCommentaire(valeur);
+    setCommentaireModifie(true);
+  };
+  const ajouterCommentaire = (texte: string) => {
+    modifierCommentaire(ajouterCommentaireQrc(commentaireCourant, texte));
+  };
 
   useEffect(() => {
     void (async () => {
@@ -409,6 +422,8 @@ export default function AdminCorrectionQrcV2Reel() {
 
   // Historique des corrections (lecture seule) : l'ancienne note n'est jamais effacée.
   useEffect(() => {
+    setHistorique([]);
+    setHistoriqueCharge(false);
     if (!selection) { setHistorique([]); return; }
     let vivant = true;
     if (estConsultation(selection)) {
@@ -417,13 +432,13 @@ export default function AdminCorrectionQrcV2Reel() {
       const h = (t as unknown as { historique?: InfosHistorique } | undefined)?.historique;
       if (!q || !h) { setHistorique([]); return; }
       void lireHistoriqueQrcHistorique(h.result_id, q.question_id)
-        .then((r) => { if (vivant) setHistorique(r as unknown as EvenementCorrection[]); }).catch(() => undefined);
+        .then((r) => { if (vivant) { setHistorique(r as unknown as EvenementCorrection[]); setHistoriqueCharge(true); } }).catch(() => undefined);
       return () => { vivant = false; };
     }
-    void lireHistoriqueQrc(selection).then((h) => { if (vivant) setHistorique(h); }).catch(() => undefined);
+    void lireHistoriqueQrc(selection).then((h) => { if (vivant) { setHistorique(h); setHistoriqueCharge(true); } }).catch(() => undefined);
     return () => { vivant = false; };
   }, [selection, session]);
-  useEffect(() => { setModeRevision(false); setMessageNavigation(null); }, [selection]);
+  useEffect(() => { setModeRevision(false); setMessageNavigation(null); setCommentaire(""); setCommentaireModifie(false); }, [selection]);
 
   const total = session?.qrc.length ?? 0;
   const corrigees = session?.qrc.filter((q) => q.etat === "corrigee").length ?? 0;
@@ -456,11 +471,16 @@ export default function AdminCorrectionQrcV2Reel() {
       if (!histo || histo.score_obtenu == null) return;
     }
     const revision = qrcSel.etat === "corrigee";
+    if (revision && !historiqueCharge) {
+      setErreur("Commentaire existant non relu : réessayez après rechargement de cette copie.");
+      setEtatEnvoi("echec");
+      return;
+    }
     const auto = !revision && baremeSel != null && proposition.autoValidable && proposition.note === baremeSel && n === baremeSel;
     const traceProposition = !revision && baremeSel != null
       ? (auto ? `[VALIDATION AUTO ${proposition.regle}] ${n}/${baremeSel} — ${proposition.motif}` : tracePrenote(proposition, n, baremeSel))
       : undefined;
-    const commentaireValidation = [commentaire, traceProposition].filter(Boolean).join('\n');
+    const commentaireValidation = [commentaireCourant, traceProposition].filter(Boolean).join('\n');
     const ancienne = qrcSel.note;
     if (revision) {
       const fmt = (v: number | null) => `${String(v).replace(".", ",")}${baremeSel != null ? `/${baremeSel}` : ""}`;
@@ -502,7 +522,7 @@ export default function AdminCorrectionQrcV2Reel() {
             noteAttendue: ancienne as number,
             scoreAttendu: histo.score_obtenu as number,
             seuil: histo.seuil,
-            commentaire: commentaire || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
+            commentaire: commentaireCourant || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
             reconnaissance,
           });
         } else {
@@ -525,7 +545,7 @@ export default function AdminCorrectionQrcV2Reel() {
           qrcInstanceId: qrcSel.qrc_instance_id,
           note: n,
           noteAttendue: ancienne as number,
-          commentaire: commentaire || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
+          commentaire: commentaireCourant || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
           email: emailAdmin,
         });
       } else {
@@ -564,9 +584,22 @@ export default function AdminCorrectionQrcV2Reel() {
         setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
         return;
       }
+      if (commentaireModifie) {
+        const journalRelu = histo
+          ? await lireHistoriqueQrcHistorique(histo.result_id, qrcSel.question_id)
+          : await lireHistoriqueQrc(qrcSel.qrc_instance_id);
+        const dernierCommentaire = journalRelu.at(-1)?.commentaire ?? "";
+        const attendu = revision ? commentaireCourant : commentaireValidation;
+        if (dernierCommentaire !== attendu) {
+          setEtatEnvoi("echec");
+          setErreur("La note a été relue, mais le commentaire n’a pas été confirmé. Votre texte reste affiché ; ne changez pas de copie.");
+          return;
+        }
+      }
 
       setNote(null);
       setCommentaire("");
+      setCommentaireModifie(false);
       setModeRevision(false);
       setJeton(Math.random().toString(36).slice(2, 10));
       if (decision.suivante) {
@@ -588,7 +621,7 @@ export default function AdminCorrectionQrcV2Reel() {
     if (etatEnvoi === "encours") return;
     const cible = copieVoisine(session, selection, direction);
     if (!cible) return;
-    if (commentaire.trim() && !window.confirm(
+    if (commentaireModifie && commentaire !== commentaireSauve && !window.confirm(
       "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
     )) return;
     setSelection(cible.qrc_instance_id);
@@ -1155,7 +1188,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 </p>
                 {navigationCopies}
                 {!modeRevision ? (
-                  <Button variant="outline" size="sm" data-testid="modifier-note" onClick={() => setModeRevision(true)}>
+                  <Button variant="outline" size="sm" data-testid="modifier-note" disabled={!historiqueCharge} onClick={() => setModeRevision(true)}>
                     ✏️ Modifier la note
                   </Button>
                 ) : baremeSel == null ? (
@@ -1182,9 +1215,11 @@ export default function AdminCorrectionQrcV2Reel() {
                     <Textarea
                       placeholder="Motif de la révision (facultatif)"
                       rows={2}
-                      value={commentaire}
-                      onChange={(e) => setCommentaire(e.target.value)}
+                      value={commentaireCourant}
+                      disabled={etatEnvoi === "encours"}
+                      onChange={(e) => modifierCommentaire(e.target.value)}
                     />
+                    <CommentairesPredefinis disabled={etatEnvoi === "encours"} onAjouter={ajouterCommentaire} />
                     <Button variant="ghost" size="sm" data-testid="annuler-revision" onClick={() => setModeRevision(false)}>Annuler</Button>
                   </>
                 )}
@@ -1237,9 +1272,11 @@ export default function AdminCorrectionQrcV2Reel() {
                 <Textarea
                   placeholder="Commentaire (facultatif)"
                   rows={2}
-                  value={commentaire}
-                  onChange={(e) => setCommentaire(e.target.value)}
+                  value={commentaireCourant}
+                  disabled={etatEnvoi === "encours"}
+                  onChange={(e) => modifierCommentaire(e.target.value)}
                 />
+                <CommentairesPredefinis disabled={etatEnvoi === "encours"} onAjouter={ajouterCommentaire} />
                 <div className="text-sm" data-testid="etat-correction">
                   {etatEnvoi === "encours" && <span className="text-warning">🟠 Enregistrement de la correction…</span>}
                   {etatEnvoi === "ok" && <span className="text-success">🟢 Correction enregistrée</span>}
@@ -1252,6 +1289,9 @@ export default function AdminCorrectionQrcV2Reel() {
               <p role="status" className="rounded border border-success/40 bg-success/10 p-2 text-sm font-semibold text-success" data-testid="fin-liste-copies">
                 {messageNavigation}
               </p>
+            )}
+            {historiqueCharge && commentaireSauve && (
+              <p className="whitespace-pre-wrap text-sm" data-testid="commentaire-enregistre">{commentaireSauve}</p>
             )}
             {etatEnvoi === "echec" && erreur && (
               <p role="alert" className="rounded border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive" data-testid="erreur-correction-copie">

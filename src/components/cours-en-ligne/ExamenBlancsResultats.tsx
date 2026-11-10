@@ -900,7 +900,7 @@ function EcranResultats({
                        } else if (corrIA && corrIA !== "error") {
                          pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
                          isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
-                         correctionDetail = corrIA.explication;
+                         correctionDetail = [corrIA.explication, (corrIA as CorrectionQRC & { commentaire?: string }).commentaire].filter(Boolean).join("\n");
                          isCorrectionIA = estCorrectionIaEnregistree(corrIA);
                        } else {
                         isCorrect = fallback.estCorrect;
@@ -1004,7 +1004,7 @@ function EcranResultats({
                                 )}
                                  {correctionDetail && (
                                    <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
-                                     <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
+                                     <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span className="whitespace-pre-wrap">{correctionDetail}</span>
                                    </div>
                                  )}
                                  {isCorrectionIA && (

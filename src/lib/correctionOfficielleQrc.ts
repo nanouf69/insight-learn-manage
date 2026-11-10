@@ -4,7 +4,7 @@
  * le détail par question doit afficher exactement la note validée.
  * Lecture seule — ne modifie aucune donnée.
  */
-export interface QrcProof { questionId: string; etat: string; note: number | null }
+export interface QrcProof { questionId: string; etat: string; note: number | null; commentaire?: string | null }
 
 export function correctionOfficielleQrc(
   core: { qrcProofs?: QrcProof[] } | null | undefined,
@@ -23,6 +23,6 @@ export function correctionOfficielleQrc(
     estCorrect: max > 0 && note >= max,
     pointsObtenus: note,
     nombrefautes: 0,
-    explication: `Correction validée par le correcteur : ${note}/${max} pts`,
+    explication: [`Correction validée par le correcteur : ${note}/${max} pts`, p.commentaire].filter(Boolean).join("\n"),
   };
 }
