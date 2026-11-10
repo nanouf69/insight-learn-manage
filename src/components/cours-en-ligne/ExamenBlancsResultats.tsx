@@ -49,6 +49,7 @@ import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
 import { correctionOfficielleQrc } from "@/lib/correctionOfficielleQrc";
+import { corrigeActuelPour, lireCorrigesActuels, type CarteCorrigesActuels } from "@/lib/corrigeOfficielActuel";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -127,6 +128,22 @@ function EcranResultats({
     ...r,
     __core: coreFiablePourLigne(sameCoreOwner ? coreStates : null, { ...r, quizId: r.quizId ?? examen?.id }),
   })), [resultatsSource, coreStates, examen?.id, sameCoreOwner]);
+  // Corrigé officiel actuel (affichage seul) : la note reste celle du snapshot du passage.
+  const [corrigesActuels, setCorrigesActuels] = useState<CarteCorrigesActuels>(() => new Map());
+  const attemptIdsCore = useMemo(
+    () => [...new Set(resultats.map((r: any) => r?.__core?.attemptId).filter(Boolean) as string[])].sort(),
+    [resultats],
+  );
+  const cleAttempts = attemptIdsCore.join(",");
+  useEffect(() => {
+    let cancelled = false;
+    if (attemptIdsCore.length === 0) { setCorrigesActuels(new Map()); return; }
+    lireCorrigesActuels(attemptIdsCore)
+      .then((carte) => { if (!cancelled) setCorrigesActuels(carte); })
+      .catch(() => { if (!cancelled) setCorrigesActuels(new Map()); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleAttempts, coreTick]);
   // Commentaires du correcteur sur les anciennes copies : dernière ligne du journal serveur (lecture seule).
   const idsCopies = resultats.map((r: any) => r?.resultId).filter(Boolean).map(String).sort().join(",");
   const [commentairesHisto, setCommentairesHisto] = useState<{ cle: string; map: Map<string, CommentaireHistorique> } | null>(null);
@@ -1003,6 +1020,23 @@ function EcranResultats({
                                   <span className="font-medium text-muted-foreground">Votre réponse : <strong className={isCorrect ? "text-green-700" : "text-red-600"}>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></span>
                                   <span className="font-medium text-green-700">Bonne réponse : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
                                 </div>
+                                {(() => {
+                                  const maj = corrigeActuelPour(
+                                    corrigesActuels,
+                                    (r as any).__core?.attemptId,
+                                    r.matiereId ?? matiere?.id,
+                                    q.id,
+                                    (q.choix || []).filter(c => c.correct).map(c => c.lettre),
+                                  );
+                                  if (!maj) return null;
+                                  const date = maj.publiee_le ? new Date(maj.publiee_le).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" }) : "date inconnue";
+                                  return (
+                                    <div data-testid="corrige-officiel-actuel" className="mt-2 rounded-lg border-2 border-amber-400 bg-amber-50 p-2 text-sm text-amber-900">
+                                      <p className="font-semibold">Corrigé officiel mis à jour : bonne(s) réponse(s) <strong>{maj.bonnes_actuelles.join(", ")}</strong></p>
+                                      <p className="text-xs">Version {maj.version} publiée le {date}. Votre note reste calculée avec le corrigé en vigueur lors de votre passage ({maj.bonnes_passage.join(", ") || "—"}).</p>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             )}
 
