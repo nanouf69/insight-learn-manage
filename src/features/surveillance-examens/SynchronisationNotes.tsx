@@ -24,6 +24,8 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
   const [enCours, setEnCours] = useState<Set<string>>(new Set());
   // Une opération par copie et par révision lue : double clic = même opération (rejeu serveur).
   const operations = useRef(new Map<string, string>());
+  const diagCharge = useRef(false);
+  useEffect(() => { diagCharge.current = !!diag; }, [diag]);
 
   const verifier = useCallback(async () => {
     setLecture(true); setErreur(null); setMessage(null);
@@ -47,11 +49,8 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
   useEffect(() => {
     const surCorrection = (e: Event) => {
       const id = (e as CustomEvent).detail?.attemptId as string | undefined;
-      if (!id) return;
-      setDiag((d) => {
-        if (d) void relireCopie(id).catch((err) => setErreur(`Relecture de la copie impossible : ${(err as Error).message}`));
-        return d;
-      });
+      if (!id || !diagCharge.current) return;
+      void relireCopie(id).catch((err) => setErreur(`Relecture de la copie impossible : ${(err as Error).message}`));
     };
     window.addEventListener(EVENEMENT_NOTES_CORRIGEES, surCorrection);
     return () => window.removeEventListener(EVENEMENT_NOTES_CORRIGEES, surCorrection);
