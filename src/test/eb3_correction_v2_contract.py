@@ -263,8 +263,6 @@ class EB3(unittest.TestCase):
         (code, out), _ = self.commenter(qi, pts / 2, ev1, cumul)
         self.assertEqual(code, 0, out)
         # Rechargement (nouvelle session) : dernier commentaire, même note, aucune autre donnée modifiée.
-        self.assertEqual(self.pg.sql(f"SELECT commentaire||'|'||note_precedente||'|'||note_nouvelle||'|'||etat_nouveau FROM public.qrc_correction_events WHERE qrc_instance_id='{qi}' ORDER BY created_at DESC, correction_event_id DESC LIMIT 1")[1],
-                         f"{cumul}|{pts / 2:g}|{pts / 2:g}|corrigee".replace('\\n', '\n') if False else self.pg.sql(f"SELECT commentaire||'|'||note_precedente||'|'||note_nouvelle||'|'||etat_nouveau FROM public.qrc_correction_events WHERE qrc_instance_id='{qi}' ORDER BY created_at DESC, correction_event_id DESC LIMIT 1")[1])
         derniere = self.pg.sql(f"SELECT json_build_object('c',commentaire,'np',note_precedente,'nn',note_nouvelle,'e',etat_nouveau) FROM public.qrc_correction_events WHERE qrc_instance_id='{qi}' ORDER BY created_at DESC, correction_event_id DESC LIMIT 1")[1]
         d = json.loads(derniere)
         self.assertEqual(d['c'], 'Précisez !!!\nMal dit !!!')
