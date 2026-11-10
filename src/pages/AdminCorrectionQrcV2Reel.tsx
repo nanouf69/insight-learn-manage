@@ -257,7 +257,10 @@ export default function AdminCorrectionQrcV2Reel() {
         : ebChoisi?.legacyResultIds)
     : undefined;
 
+  // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
+  const generationRef = useRef(0);
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
+    const generation = ++generationRef.current;
     if (!attemptsAffiches) { setSession(null); return null; }
     // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
     if (attemptsAffiches.length === 0) {
@@ -267,10 +270,11 @@ export default function AdminCorrectionQrcV2Reel() {
     }
     try {
       const relue = await chargerSessionTest(mode, attemptsAffiches);
+      if (generation !== generationRef.current) return null;
       setSession(relue);
       return relue;
     } catch (e) {
-      setErreur((e as Error).message);
+      if (generation === generationRef.current) setErreur((e as Error).message);
       return null;
     }
   }, [mode, attemptsAffiches]);
@@ -305,15 +309,19 @@ export default function AdminCorrectionQrcV2Reel() {
       }, 5000);
     };
     const arreterV2 = souscrireSignal("admin-qrc-v2-passages", "exam_attempts_v2", actualiser);
-    return () => { actif = false; clearTimeout(timer); arreterV2(); };
+    // Ancien circuit : signal seulement (aucun scan automatique) ; la liste est relue sur demande.
+    const arreterHisto = souscrireSignal("admin-qrc-v2-historique", "apprenant_quiz_results", () => { if (actif) setNouveauxPassages(true); });
+    return () => { actif = false; clearTimeout(timer); arreterV2(); arreterHisto(); };
   }, [mode]);
   const actualiserListe = async () => {
     setRelectureListe(true);
     try {
       const liste = await listerGroupesCrm(mode);
       setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
-      setNouveauxPassages(false);
-      setErreur(null);
+      // Catalogue inchangé : les notes des copies affichées sont tout de même relues
+      // (notes IA/humaines modifiées pendant une coupure du temps réel).
+      const relue = await rechargerRef.current?.();
+      if (relue !== null) { setNouveauxPassages(false); setErreur(null); }
     } catch (e) { setErreur((e as Error).message); }
     finally { setRelectureListe(false); }
   };
@@ -1101,7 +1109,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   </colgroup>
                   <thead>
                     <tr className="border-b">
-                      <th className="sticky left-0 z-[1] bg-background px-1 py-0.5 text-left">Candidat</th>
+                      <th className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-left`}>Candidat</th>
                       <th className="px-1 py-0.5 text-left">Passage</th>
                       <th className="px-1 py-0.5 text-left whitespace-nowrap">Note /20</th>
                       {questions.map((q, i) => <th key={q.id} className="px-0.5 py-0.5 text-center" title={`QRC ${i + 1}`}>Q{i + 1}</th>)}
@@ -1111,7 +1119,7 @@ export default function AdminCorrectionQrcV2Reel() {
                     {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
                         <td
-                          className="sticky left-0 z-[1] bg-background px-1 py-0.5 font-medium"
+                          className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 font-medium`}
                           title={`${t.candidat}${ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? ` — Inscription croisée, également visible dans ${ebChoisi.inscriptionCroiseeParAttempt[t.attempt_id].join(" et ")}` : ""}`}
                         >
                           <a
