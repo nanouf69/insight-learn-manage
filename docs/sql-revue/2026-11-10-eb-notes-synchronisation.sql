@@ -190,6 +190,7 @@ DECLARE
   v_id_ko integer;
   v_avant jsonb;
   v_retour jsonb;
+  v_statut_attendu text;
 BEGIN
   IF NOT public.core_contexte_correction_autorise() THEN
     RAISE EXCEPTION 'ACTUALISATION_NON_AUTORISEE: administrateur requis.' USING ERRCODE = '42501';
@@ -241,9 +242,10 @@ BEGIN
   END IF;
 
   v_avant := CASE WHEN res.result_id IS NULL THEN NULL ELSE to_jsonb(res) END;
+  v_statut_attendu := CASE WHEN n.qrc_restantes = 0 THEN 'definitif' ELSE 'provisoire' END;
 
   IF res.result_id IS NOT NULL
-     AND res.status = CASE WHEN n.qrc_restantes = 0 THEN 'definitif' ELSE 'provisoire' END
+     AND res.status = v_statut_attendu
      AND res.qrc_restantes IS NOT DISTINCT FROM n.qrc_restantes THEN
     v_retour := jsonb_build_object('statut', 'deja_coherent', 'attempt_id', p_attempt_id,
       'result_revision', res.result_revision, 'status', res.status, 'score', res.score, 'qrc_restantes', res.qrc_restantes);
