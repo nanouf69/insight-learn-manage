@@ -584,6 +584,18 @@ export default function AdminCorrectionQrcV2Reel() {
         setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
         return;
       }
+      if (commentaireModifie) {
+        const journalRelu = histo
+          ? await lireHistoriqueQrcHistorique(histo.result_id, qrcSel.question_id)
+          : await lireHistoriqueQrc(qrcSel.qrc_instance_id);
+        const dernierCommentaire = journalRelu.at(-1)?.commentaire ?? "";
+        const attendu = revision ? commentaireCourant : commentaireValidation;
+        if (dernierCommentaire !== attendu) {
+          setEtatEnvoi("echec");
+          setErreur("La note a été relue, mais le commentaire n’a pas été confirmé. Votre texte reste affiché ; ne changez pas de copie.");
+          return;
+        }
+      }
 
       setNote(null);
       setCommentaire("");
