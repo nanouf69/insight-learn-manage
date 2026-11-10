@@ -28,8 +28,12 @@ describe("Synchronisation officielle séparée des réponses élèves", () => {
     const map=indexerSources([source]); expect(sourcePour(map,{resultId:"other"},"francais",4)).toBeNull();
     expect(sourcePour(map,{resultId:"copy"},"gestion",4)).toBeNull();
   });
-  it("QRC actuel reste distinct : aucune note automatique fabriquée", () => {
-    expect(statutPedagogique({...source,actuelle:{...q,type:"QRC",reponseQRC:"texte"}},"texte")).toBe("à vérifier");
+  it("QRC actuel : identité littérale seule = juste (même règle que le serveur), sinon à vérifier, jamais fausse", () => {
+    const qrc={...source,actuelle:{...q,type:"QRC",reponseQRC:"−10 €"}};
+    expect(statutPedagogique(qrc,"−10 €")).toBe("juste");
+    expect(statutPedagogique(qrc,"10 €")).toBe("à vérifier");
+    expect(statutPedagogique(qrc,"-10 euros")).toBe("à vérifier");
+    expect(statutPedagogique(qrc,"")).toBe("à vérifier");
   });
   it("un changement de contenu non rapproché ne produit pas de réponse officielle", () => {
     const map=indexerSources([{...source,actuelle:null,statut:"non_rapproche"}]);
@@ -44,7 +48,9 @@ describe("Synchronisation officielle séparée des réponses élèves", () => {
   });
   it("lit 121 sources en trois lots sans troncature", async () => {
     h.calls=[];h.fail=false;await lireSources(Array.from({length:61},(_,i)=>`a${i}`),Array.from({length:60},(_,i)=>`r${i}`));
-    expect(h.calls).toHaveLength(3);expect(h.calls.flatMap(c=>c.p_attempt_ids)).toHaveLength(61);expect(h.calls.flatMap(c=>c.p_result_ids)).toHaveLength(60);
+    expect(h.calls).toHaveLength(3);const all=h.calls.flatMap(c=>c.p_copies);
+    expect(all.filter((c:any)=>c.type==="attempt")).toHaveLength(61);expect(all.filter((c:any)=>c.type==="result")).toHaveLength(60);
+    expect(h.calls.every(c=>c.p_copies.length<=50)).toBe(true);
   });
   it("un lot refusé invalide toute la lecture", async () => {h.fail=true;await expect(lireSources(["a"],[])).rejects.toThrow("lecture refusée");h.fail=false;});
   it("une identité dupliquée est refusée", () => expect(()=>indexerSources([source,source])).toThrow("ambiguë"));
