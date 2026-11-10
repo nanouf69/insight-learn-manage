@@ -1,9 +1,12 @@
 # Feuille de route
 
 ## 10/11 16:49 — Synchronisation des trois corrigés
+- [x] Reprise 17:04 : contrat EB append-only/version/CAS/idempotence + composant branché désactivé ; 16 PostgreSQL (24 EB fictifs) et 52 Vitest PASS, E2E vrai SQL jetable PC/mobile PASS, inventaire Cloud actualisé ; aucune écriture réelle.
+- [ ] Nouveau circuit : adapters Bilans/autres quiz + preuve historique/EB2, >50 questions, journal durable et provenance admin complète non finis ; attente d'implémentation, pas d'action utilisateur requise.
+- [ ] NO-GO confirmé : tests trois surfaces réelles/éditeur et 2 onglets navigateur, vrais jours/soirs, rollback complet et site publié non prouvés. Rapport mis à jour, candidat et serveur restent inactifs.
 - [x] Lecture officielle A+C VTC v23/TAXI v10 ; candidat EB source unique strict+legacy/QRC et panneaux correction/révision/admin préparés, désactivés ; aucune installation serveur ni écriture pédagogique.
 - [x] 76 Vitest, 7 PostgreSQL lecture et 14 cas tout-ou-rien PASS ; branche réelle CHEMOUN en attente reproduite, aucun panneau candidat activé.
-- [ ] STOP : contrat serveur version du corrigé→validation de révision/concurrence absent ; Bilans/autres quiz non intégrés, anciennes copies sans preuve et EB2 VTC sans publication à qualifier.
+- [ ] STOP : contrat serveur versionné préparé mais non installé ; Bilans/autres quiz non intégrés, anciennes copies sans preuve et EB2 VTC sans publication à qualifier.
 - [ ] Publication NO-GO : E2E positif des trois parcours, PC/mobile, publication concurrente et rollback d'activation non prouvés. Rapport docs/corriges-trois-parcours-2026-11-10.md.
 
 ## 10/11 16:38 — QCM tout-ou-rien et corrigé titiller

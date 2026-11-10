@@ -2,6 +2,7 @@ import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
 import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { matierePedagogique, sourcePour, type CorrigeSource } from "@/lib/corrigesSources";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
+import { RevisionCorrigeVersionnee } from "./RevisionCorrigeVersionnee";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
@@ -1919,7 +1920,9 @@ function RevisionPhaseView({
         </p>
       </div>
       {officiels.error && <p role="alert" className="text-destructive">{officiels.error}</p>}
-      {officiels.error ? <p>Révision suspendue : le corrigé actuel n’est pas confirmé.</p> : officiels.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
+      {officiels.error ? <p>Révision suspendue : le corrigé actuel n’est pas confirmé.</p> : officiels.loading ? <p>Lecture du corrigé officiel…</p> : CORRIGES_TROIS_SURFACES_ACTIFS && apprenantId ? (
+        wrongQuestions.some(w=>!w.corrigeSource?.actuelle) ? <p role="alert" className="text-destructive">Révision non rapprochée : corrigé officiel non confirmé pour chaque copie.</p> : <RevisionCorrigeVersionnee owner={apprenantId} refs={wrongQuestions.flatMap(w=>w.corrigeSource?[{type:w.corrigeSource.source_type,id:w.corrigeSource.source_id,question:w.corrigeSource.question_id}]:[])} onExit={onRetour}/>
+      ) : <RevisionFausses
         wrongQuestions={wrongQuestions}
         onTerminer={onRetour}
         apprenantId={apprenantId}

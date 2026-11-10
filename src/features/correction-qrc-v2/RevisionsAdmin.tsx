@@ -7,6 +7,8 @@ import type { LigneRevision } from "./revisionsAdmin";
 import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { sourcePour } from "@/lib/corrigesSources";
 import { CorrigeSourceNotice } from "@/components/cours-en-ligne/CorrigeSourceNotice";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
+import { RevisionsVersionneesAdmin } from "./RevisionsVersionneesAdmin";
 
 const valeur = (v: unknown) => v === undefined ? "Non prouvée" : Array.isArray(v) ? v.join(" + ") || "Sans réponse" : typeof v === "string" ? v || "Sans réponse" : JSON.stringify(v);
 const heure = (v: string) => new Date(v).toLocaleString("fr-FR",{timeZone:"Europe/Paris"});
@@ -29,6 +31,7 @@ export function RevisionsAdmin({apprenantId}: {apprenantId:string}) {
   const rows = state.owner === apprenantId ? state.rows : [];
   const officiels = useCorrigesSources(apprenantId, [], rows.flatMap(r => r.sourceId ? [r.sourceId] : []));
   return <section aria-label="Questions à refaire — réponses enregistrées" className="space-y-3 border-t pt-4">
+    {CORRIGES_TROIS_SURFACES_ACTIFS && <RevisionsVersionneesAdmin owner={apprenantId}/>}
     <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-semibold">Questions à refaire — réponses enregistrées ({rows.length})</h3><Button variant="outline" size="icon" aria-label="Actualiser les révisions" title="Actualiser les révisions" onClick={() => void charger()} disabled={state.loading}><RefreshCw className="h-4 w-4" /></Button></div>
     {state.error && <p role="alert" className="text-destructive font-semibold">{state.error}</p>}
     {officiels.error && <p role="alert" className="text-destructive">{officiels.error}</p>}

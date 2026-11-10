@@ -54,6 +54,7 @@ import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { sourcePour, matierePedagogique, type CorrigeSource } from "@/lib/corrigesSources";
 import { CorrigeSourceNotice } from "./CorrigeSourceNotice";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
+import { RevisionCorrigeVersionnee } from "./RevisionCorrigeVersionnee";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -1267,7 +1268,9 @@ function EcranResultats({
               {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser · corrigé pédagogique actuel, notes d’examen conservées
             </p>
           </div>
-          {sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
+          {sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : CORRIGES_TROIS_SURFACES_ACTIFS && apprenantId ? (
+            wrongQuestions.some(w=>!w.corrigeSource?.actuelle) ? <p role="alert" className="text-destructive">Révision non rapprochée : le corrigé officiel ne peut pas être confirmé pour chaque copie.</p> : <RevisionCorrigeVersionnee owner={apprenantId} refs={wrongQuestions.flatMap(w=>w.corrigeSource?[{type:w.corrigeSource.source_type,id:w.corrigeSource.source_id,question:w.corrigeSource.question_id}]:[])} onExit={()=>setActiveTab("resultats")}/>
+          ) : <RevisionFausses
             wrongQuestions={wrongQuestions}
             onTerminer={() => setActiveTab("resultats")}
             apprenantId={apprenantId}
