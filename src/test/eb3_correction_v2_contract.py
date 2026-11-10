@@ -83,6 +83,7 @@ class EB3(unittest.TestCase):
         cls.pg = pg = Pg()
         for part in (PRELUDE, (FIX / 'schema_live.sql').read_text(), POST, (FIX / 'fonctions_live.sql').read_text(), TRIGGERS,
                      'REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC;', (FIX / 'droits_live.sql').read_text().replace('FUNCTION core_', 'FUNCTION public.core_'),
+                     'CREATE TABLE IF NOT EXISTS public.qrc_bareme_restaure (qrc_instance_id uuid PRIMARY KEY, bareme numeric NOT NULL CHECK (bareme > 0));',
                      (pathlib.Path(__file__).resolve().parents[2] / 'docs/sql-revue/2026-11-10-qrc-v2-bareme-garde.sql').read_text()):
             code, out = pg.sql(part)
             assert code == 0, out[-800:]
