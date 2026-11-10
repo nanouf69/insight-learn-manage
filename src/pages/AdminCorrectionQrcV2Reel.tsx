@@ -1193,8 +1193,8 @@ export default function AdminCorrectionQrcV2Reel() {
                 {proposition.autoValidable && proposition.note != null
                   ? <p className="text-xs text-success" data-testid="validation-auto">Réponse littéralement identique au corrigé : note maximale validée automatiquement.</p>
                   : proposition.note != null
-                    ? <p className="text-xs text-muted-foreground" data-testid="preselection-qrc">Présélection proposée ({proposition.motif}) — rien n'est enregistré tant que vous ne cliquez pas « Enregistrer ».</p>
-                    : <p className="text-xs text-muted-foreground">Aucune note automatique : choisissez la note puis cliquez « Enregistrer ».</p>}
+                    ? <p className="text-xs text-muted-foreground" data-testid="preselection-qrc">Présélection proposée ({proposition.motif}) — cliquez sur une note pour l'enregistrer immédiatement.</p>
+                    : <p className="text-xs text-muted-foreground">Aucune note automatique : cliquez sur la note, elle est enregistrée immédiatement.</p>}
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: Math.round((baremeSel ?? 0) / 0.5) + 1 }, (_, i) => i * 0.5).map((v) => (
                     <Button
@@ -1205,22 +1205,12 @@ export default function AdminCorrectionQrcV2Reel() {
                       aria-pressed={noteChoisie === v}
                       data-testid={`note-${v}`}
                       disabled={etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
-                      onClick={() => setChoixLocal({ cle: cleProposition, note: v })}
+                      onClick={() => { setChoixLocal({ cle: cleProposition, note: v }); void valider(v); }}
                     >
                       {String(v).replace(".", ",")}
                     </Button>
                   ))}
                 </div>
-                <Button
-                  type="button"
-                  data-testid="enregistrer-correction"
-                  disabled={noteChoisie == null || etatEnvoi === "encours" || (confirmationSel && !confirmeRemise)}
-                  onClick={() => { if (noteChoisie != null) void valider(noteChoisie); }}
-                >
-                  {noteChoisie == null
-                    ? "Enregistrer la note"
-                    : `Enregistrer la note ${String(noteChoisie).replace(".", ",")}/${String(baremeSel).replace(".", ",")}`}
-                </Button>
                 <Textarea
                   placeholder="Commentaire (facultatif)"
                   rows={2}
