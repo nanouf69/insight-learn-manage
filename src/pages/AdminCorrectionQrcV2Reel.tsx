@@ -551,6 +551,7 @@ export default function AdminCorrectionQrcV2Reel() {
           // identité déterministe : double-clic ou 10 envois = une seule révision
           operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}:${jeton}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
+          attemptId: qrcSel.attempt_id,
           note: n,
           noteAttendue: ancienne as number,
           commentaire: commentaireCourant || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
@@ -561,6 +562,7 @@ export default function AdminCorrectionQrcV2Reel() {
           // identité déterministe : 10 envois = une seule correction
           operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
+          attemptId: qrcSel.attempt_id,
           note: n,
           commentaire: commentaireValidation || undefined,
           email: emailAdmin,
