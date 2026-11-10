@@ -131,6 +131,21 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
         with self.assertRaisesRegex(RuntimeError,'permission denied'):
             self.pg.sql(f"SET ROLE authenticated; INSERT INTO revision_corrige_events(session_id,seq,operation_id,payload) VALUES('{state['id']}',1,gen_random_uuid(),'{{}}')")
 
+    def test_admin_latest_answer_and_time(self):
+        state=self.answer(self.open(),['B']);state=self.answer(state,['C','A'])
+        with self.assertRaisesRegex(RuntimeError,'Administrateur requis'):
+            self.call(f"SELECT revision_corrige_admin('{OWNER}')")
+        self.pg.sql(f"CREATE OR REPLACE FUNCTION has_role(uuid,app_role) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT $1='{OTHER}'::uuid AND $2='admin'$$")
+        try:
+            rows=self.call(f"SELECT revision_corrige_admin('{OWNER}')",OTHER)
+            self.assertEqual(len(rows),1)
+            self.assertEqual(rows[0]['answers'][0]['answer'],['C','A'])
+            self.assertEqual(rows[0]['answers'][0]['seq'],2)
+            self.assertTrue(rows[0]['answers'][0]['saved_at'])
+            self.assertEqual(rows[0]['refs'][0]['id'],COPY)
+        finally:
+            self.pg.sql("CREATE OR REPLACE FUNCTION has_role(uuid,app_role) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT false$$")
+
     def test_historical_fingerprint_unchanged(self):
         before=self.pg.sql("SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY attempt_id)::text) FROM exam_attempts_v2 t")
         self.command(self.answer(self.open(),['A','C']),{'kind':'submit'})

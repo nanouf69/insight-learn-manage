@@ -1,5 +1,46 @@
 # Synchronisation des trois parcours — 10/11/2026 17:00 UTC
 
+## Reprise du 10/11 17:04 — état à 17:17 UTC
+
+**NO-GO maintenu, chantier non terminé et non livré.** Le contrat EB transactionnel nouveau est préparé dans `docs/sql-revue/2026-11-10-revision-corrige-versionnee.sql`, avec tables séparées append-only, propriété/copie/question, verrou par session, CAS séquence + empreinte de corrigé, idempotence exacte, reprise sur la même source et horodatage serveur. Le garde global reste `false`. Les deux RPC candidats sont absents du serveur réel (lecture du catalogue confirmée). Aucun appel de migration/écriture/publication n'a été fait.
+
+### Preuves nouvelles
+
+- 15 contrats PostgreSQL jetables PASS, dont boucle sur les 24 identités EB1–6 VTC/TAXI/TA/VA, QCM A+C/C+A parfaits et A/C/A+B+C/B faux, choix inconnus/doublons refusés, deux commandes concurrentes une seule acceptée, rechargement, opération identique rejouée sans ajout, clôture et réponses immuables, changement de corrigé conservant la dernière réponse mais refusant une validation périmée, autre élève/anon/droits directs refusés, QRC `−10 €` littérale seule reconnue (`10 €`, `-10 euros` à vérifier). 24 identités = fixtures, pas 24 parcours réels validés.
+- 52 Vitest de régression/projection/panneau PASS après branchement désactivé du nouveau composant aux deux entrées EB. Le chemin publié ancien reste inchangé.
+- Deux parcours navigateur **avec vrai PostgreSQL jetable** (1280×1800 et 390×844) : cocher A+C, enregistrer, lire après réponse serveur, recharger, modifier la version officielle jetable C seule, refus CAS, relire sans perdre A+C, corriger en C, sauvegarder/remettre. Snapshot historique avant/après identique et aucune erreur navigateur. Captures contrôlées. Ce test ne couvre pas l'éditeur officiel réel, l'admin réel, les Bilans, ni deux onglets navigateur ; la concurrence est testée au niveau SQL.
+- Le retour arrière testé est une révocation transactionnelle annulée par ROLLBACK, pas une répétition d'un déploiement complet. Les effets d'une publication concurrente avec le vrai workflow d'éditeur et le Realtime ne sont pas prouvés.
+- Nouveau lecteur admin par curseur de sessions (50), dernière réponse par question et heure serveur préparé, pas activé. Il n'affiche pas encore tout le rapprochement initiale/examen/tentative/corrigé sur cette nouvelle table.
+
+### Inventaire réel à cette reprise (lecture seule)
+
+| Circuit | Inventaire | Couverture de synchronisation réellement activée par ce chantier |
+|---|---:|---:|
+| EB résultats enregistrés | 6 382 terminés | 0 |
+| EB résultats avec questions figées | 1 651 | candidat strict seulement |
+| EB résultats sans questions figées | 4 731 | non rapprochés par le candidat |
+| Passages V2 hors tests | 2 805, dont 2 749 terminés | candidat strict seulement, ne pas additionner aux résultats (miroirs possibles) |
+| Publications EB actives | 23/24 (EB2 VTC absent) | aucun changement de publication |
+| Bilans historiques | 233 snapshots, 15 exercices : 5/500–507 et 11/600–606 | non intégrés au nouveau résolveur |
+| Bilans futurs | 76 reçus, 44 soumissions ; 5/500–504 et 11/600–602 présents | corrigé de version figée existant seulement ; nouveau corrigé courant/révision persistée non intégrés |
+| Révisions anciennes | 148 résultats | historiques inchangés |
+
+Les 4 731 résultats sans snapshot n'ont aucun lien explicite **dans `snapshot.result_id`** d'un passage V2 terminé. Cette requête ne prouve pas l'absence d'autres liaisons sûres (imports, anciennes clés, journaux) ; aucun rapprochement automatique effectué. Les comptes techniques EB99/EB99TEST apparaissaient dans l'inventaire précédent mais ne sont pas des examens de formation à publier.
+
+Modules éditeur Bilan/exercices réellement enregistrés : 4=7 exercices, 5=8, 9=7, 11=7, 27=2, 28=2, 29=2, 30=4, 87=1. Il n'existe pas de lignes de résultats d'autres `quiz_type` que `examen_blanc` et `revision_fausses` dans `apprenant_quiz_results`; les autres activités ont des preuves dans d'autres tables. Donc l'inventaire de cette table ne permet pas de prétendre qu'elles n'existent pas.
+
+### Blocages restant à résoudre sans intervention utilisateur requise
+
+1. Bilan futur et legacy : adaptateurs lecture seule avec sources/UID/tombstones et version editor/release explicite, nouvelle révision séparée et persistée, lecture admin. **Non réalisés.** Ne pas altérer `bilan_future_correction` ni les copies figées.
+2. Historiques sans snapshot et EB2 VTC : qualifier les autres preuves immuables ou afficher non rapproché ; absence de publication ne doit jamais inventer A/C ou un corrigé. **Pas de qualification complète par copie.**
+3. Nouvelle ouverture limitée à 50 questions ; il faut le protocole borné pour une révision exhaustive >50. Provenance de tentative native à compléter dans le lecteur admin, rafraîchissement direct de l'admin et trois surfaces ensemble non prouvé.
+4. Nouveau composant conserve les brouillons dans l'état local uniquement : une réponse non confirmée lors d'une fermeture n'a pas encore de journal durable multi-appareil ; relire/annulation doivent protéger les nouvelles saisies pendant requête. Ce n'est pas prêt à remplacer la file durable existante.
+5. E2E éditeur→correcteur élève/admin→révision→admin, deux onglets navigateur, véritables sessions jour/soir, Bilans/autres quiz, déploiement/rollback et site live **NON PROUVÉS**.
+
+Une lecture d'empreinte agrégée complète de production a dépassé le délai : aucune empreinte finale fiable produite, aucune comparaison avant/après revendiquée. Aucun outil d'écriture production utilisé. Budgets IA consommés par ce chantier : aucune correction IA appelée.
+
+Écart zéro polling signalé à l'utilisateur avant modification des écrans EB : le fallback 8 s préexistant est conservé en attendant sa réponse, aucun polling ajouté.
+
 ## Verdict : NO-GO, aucune publication ni installation serveur
 
 La demande complète n'est pas livrée. Le candidat est préparé et **désactivé** par `CORRIGES_TROIS_SURFACES_ACTIFS=false`. Le SQL est dans `docs/sql-revue/2026-11-10-corriges-trois-surfaces.sql`, pas dans une migration active. Aucune écriture sur notes, réponses, copies, questions, signatures ou contenu publié. Aucun appel IA.
