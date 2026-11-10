@@ -26,7 +26,12 @@ export type ResultatEb2 = {
   details: any;
 };
 
-export type ProvenanceRemise = "remise_identique" | "remise_horodatage_divergent" | "resultat_seul";
+/**
+ * `liaison_a_prouver` : client only — the submission key carries the attempt (`__tN`) while the legacy tentative
+ * column kept its default 1; never gradable before the server answers `liaison_prouvee` (append-only proof row
+ * re-verified live). No other attempt mismatch is tolerated.
+ */
+export type ProvenanceRemise = "remise_identique" | "remise_horodatage_divergent" | "resultat_seul" | "liaison_a_prouver" | "liaison_prouvee";
 
 /** Infos de notation d'une copie historique (identité serveur = result_id + question_id). */
 export type InfosHistorique = {
@@ -91,13 +96,22 @@ export function remiseProuvee(r: ResultatEb2, preuves: PreuveRemise[]): boolean 
     && p.submitted_at != null && memesReponsesRemise(r, p.reponses));
 }
 
+/** Seule remise de l'exercice suffixé `__tN` (N = tentative du résultat), colonne tentative restée à 1, mêmes réponses. */
+export function remiseSuffixeCandidate(r: ResultatEb2, preuves: PreuveRemise[]): boolean {
+  if ((r.tentative ?? 1) <= 1) return false;
+  const exo = exerciceIdEb2(r);
+  const toutes = preuves.filter((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo);
+  return toutes.length === 1 && (toutes[0].tentative ?? 1) === 1 && toutes[0].completed === true
+    && toutes[0].status === "submitted" && toutes[0].submitted_at != null && memesReponsesRemise(r, toutes[0].reponses);
+}
+
 /** Même règle que le serveur : réponses identiques ET même instant = remise identique. */
 export function provenanceRemise(r: ResultatEb2, preuves: PreuveRemise[]): ProvenanceRemise {
   const exo = exerciceIdEb2(r);
   const memes = preuves.filter((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo
     && (p.tentative ?? 1) === (r.tentative ?? 1) && p.completed === true && p.status === "submitted"
     && p.submitted_at != null && memesReponsesRemise(r, p.reponses));
-  if (!memes.length) return "resultat_seul";
+  if (!memes.length) return remiseSuffixeCandidate(r, preuves) ? "liaison_a_prouver" : "resultat_seul";
   const t = r.completed_at ? Date.parse(r.completed_at) : NaN;
   return memes.some((p) => Date.parse(String(p.submitted_at)) === t) ? "remise_identique" : "remise_horodatage_divergent";
 }
@@ -257,7 +271,7 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
   for (const l of lignes) {
     const provenance = provenanceRemise(l, preuves);
     const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves), provenance);
-    tentative.historique.preuveServeurRequise = provenance !== "resultat_seul" && !preuves.some(p => p.apprenant_id === l.apprenant_id
+    tentative.historique.preuveServeurRequise = provenance === "liaison_a_prouver" || provenance !== "resultat_seul" && !preuves.some(p => p.apprenant_id === l.apprenant_id
       && p.exercice_id === exerciceIdEb2(l) && (p.tentative ?? 1) === (l.tentative ?? 1) && p.completed === true && p.status === "submitted"
       && p.submitted_at != null && memeJson(p.reponses, l.details?.reponses));
     if (!qrc.length) continue;
@@ -275,7 +289,7 @@ export async function verifierLiaisonHistoriqueServeur(resultId: string, apprena
   const { data, error } = await (supabase as any).rpc("qrc_historique_preuve_remise", { p_result_id: resultId });
   if (error) throw new Error("Note non enregistrée : réparation serveur de liaison non disponible ou vérification refusée ; aucune note n’a été attribuée.");
   if (!data || data.result_id !== resultId || data.apprenant_id !== apprenantId
-    || !["remise_identique", "remise_horodatage_divergent"].includes(data.provenance)) {
+    || !["remise_identique", "remise_horodatage_divergent", "liaison_prouvee"].includes(data.provenance)) {
     throw new Error("Note non enregistrée : remise non prouvée par le serveur ; aucune confirmation manuelle ne peut la remplacer.");
   }
   return data.provenance;
@@ -339,6 +353,9 @@ export async function reviserQrcHistorique(params: {
  */
 export function reconnaissanceRemise(provenance: ProvenanceRemise, resultId: string, questionId: string): string | null {
   if (provenance === "remise_identique") return null;
+  if (provenance === "liaison_prouvee") {
+    return `Vérification automatique : preuve serveur de liaison enregistrée (remise suffixée de la tentative, réponses identiques) — copie ${resultId}, question ${questionId}.`;
+  }
   if (provenance === "remise_horodatage_divergent") {
     return `Vérification automatique : fiche remise de l'élève aux réponses identiques (élève, exercice, tentative), horodatage différent — copie ${resultId}, question ${questionId}.`;
   }
