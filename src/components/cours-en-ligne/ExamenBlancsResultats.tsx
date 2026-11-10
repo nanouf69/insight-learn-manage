@@ -1414,7 +1414,7 @@ function RevisionFausses({
   const { question: q, matiereNom, matiere: currentMatiere } = current;
   const qNumero = (currentMatiere?.questions || []).indexOf(q) + 1;
   const currentKey = revisionQuestionKey(current);
-  const rep = reponses[currentKey] ?? reponses[q.id];
+  const rep = reponseRevisionAffichee(reponses as Record<string, unknown>, wrongQuestions, current) as any;
 
   const checkAnswer = () => {
     // Double clic / double tap : une question n'est comptée et validée qu'une fois.
