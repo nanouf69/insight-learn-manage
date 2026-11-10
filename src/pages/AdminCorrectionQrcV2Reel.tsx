@@ -78,6 +78,8 @@ export default function AdminCorrectionQrcV2Reel() {
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [session, setSession] = useState<SessionReelle | null>(null);
+  const [lectureCopies, setLectureCopies] = useState(false);
+  const generationRef = useRef(0);
   const [selection, setSelectionState] = useState<string | null>(() => param("qrc"));
   const [zoom, setZoomState] = useState<number>(() => {
     const z = Number(param("qrc_zoom"));
@@ -92,6 +94,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const conteneurRef = useRef<HTMLDivElement>(null);
 
   const setGroupeCle = (cle: string | null) => {
+    generationRef.current++;
+    setSession(null);
     setGroupeCleState(cle);
     setEbCleState(null);
     setJourFiltreState(null);
@@ -99,12 +103,16 @@ export default function AdminCorrectionQrcV2Reel() {
     majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
   };
   const setEbCle = (cle: string | null) => {
+    generationRef.current++;
+    setSession(null);
     setEbCleState(cle);
     setJourFiltreState(null);
     setSelectionState(null);
     majUrl({ qrc_eb: cle, qrc_date: null, qrc: null });
   };
   const setJourFiltre = (jour: string | null) => {
+    generationRef.current++;
+    setSession(null);
     setJourFiltreState(jour);
     setSelectionState(null);
     majUrl({ qrc_date: jour, qrc: null });
@@ -258,16 +266,17 @@ export default function AdminCorrectionQrcV2Reel() {
     : undefined;
 
   // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
-  const generationRef = useRef(0);
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
     const generation = ++generationRef.current;
-    if (!attemptsAffiches) { setSession(null); return null; }
+    if (!attemptsAffiches) { setSession(null); setLectureCopies(false); return null; }
     // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
     if (attemptsAffiches.length === 0) {
       const vide = { tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle;
       setSession(vide);
+      setLectureCopies(false);
       return vide;
     }
+    setLectureCopies(true);
     try {
       const relue = await chargerSessionTest(mode, attemptsAffiches);
       if (generation !== generationRef.current) return null;
@@ -276,6 +285,8 @@ export default function AdminCorrectionQrcV2Reel() {
     } catch (e) {
       if (generation === generationRef.current) setErreur((e as Error).message);
       return null;
+    } finally {
+      if (generation === generationRef.current) setLectureCopies(false);
     }
   }, [mode, attemptsAffiches]);
 
@@ -313,7 +324,10 @@ export default function AdminCorrectionQrcV2Reel() {
     const arreterHisto = souscrireSignal("admin-qrc-v2-historique", "apprenant_quiz_results", () => { if (actif) setNouveauxPassages(true); });
     return () => { actif = false; clearTimeout(timer); arreterV2(); arreterHisto(); };
   }, [mode]);
+  const actualisationEnCoursRef = useRef(false);
   const actualiserListe = async () => {
+    if (actualisationEnCoursRef.current) return;
+    actualisationEnCoursRef.current = true;
     setRelectureListe(true);
     try {
       const liste = await listerGroupesCrm(mode);
@@ -323,7 +337,7 @@ export default function AdminCorrectionQrcV2Reel() {
       const relue = await rechargerRef.current?.();
       if (relue !== null) { setNouveauxPassages(false); setErreur(null); }
     } catch (e) { setErreur((e as Error).message); }
-    finally { setRelectureListe(false); }
+    finally { actualisationEnCoursRef.current = false; setRelectureListe(false); }
   };
 
   // Plein écran natif du navigateur sur la zone de correction
@@ -992,7 +1006,7 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
           )}
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
-            Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
+            {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
             {qrcSel && (
               <span className="block font-medium text-foreground" data-testid="compteur-candidat">
                 Candidat sélectionné : {corrigeesCandidat}/{totalCandidat} QRC corrigées — {totalCandidat - corrigeesCandidat} restantes
@@ -1050,7 +1064,7 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           )}
-          {mode === "migre" && <PanneauRapprochement groupes={groupes} />}
+          {mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
         {archiveOuverte ? (

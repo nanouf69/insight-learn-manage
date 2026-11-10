@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 20:24 — Correctifs performance QRC autorisés
+- [ ] Mobile sans interception sticky, Actualiser avec notes même catalogue inchangé, signal historique sans scan automatique, résultats tardifs écartés.
+- [ ] Inventaire différé après première grille, profilage avant/après ; transport et règles de notation conservés.
+- [ ] Régressions et navigateur PC/mobile synthétique, types/lint ciblés, rollback ; NO-GO tant que preuves critiques incomplètes.
+
 ## 10/11 20:01 — Tests approfondis performance Correction QRC V2
 - [x] 122 régressions PASS, 15 contrats PostgreSQL jetables PASS, compilation observée OK ; lint FAIL (90 erreurs/8 avertissements), types autonome non exécuté. Aucun code fonctionnel changé.
 - [x] Admin preview/production lecture seule : 20,189/14,133 s première grille, 59/56 requêtes ; EB3 soir 34 requêtes ; survol/scroll 0 ; inventaire 4480/4480 ; aucune écriture réelle.
