@@ -213,7 +213,7 @@ export default function AdminCorrectionQrcV2Reel() {
           .map((e) => ({ ...e, groupeCle: g.cle, groupeLibelle: g.libelle }))),
       }))
       .sort((a, b) => a.nom.localeCompare(b.nom));
-  }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]);
   const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
 
   // Recherche dans les archives de l'ancien circuit (lecture seule, aucune copie ni migration).
@@ -227,30 +227,30 @@ export default function AdminCorrectionQrcV2Reel() {
     const t = setTimeout(async () => {
       const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom")
         .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).limit(50);
-      const retenus = (apps ?? []).filter((a: any) => {
+      const retenus = (apps ?? []).filter((a) => {
         const n = normaliser(`${a.nom ?? ""} ${a.prenom ?? ""}`);
         return mots.every((m) => n.includes(m));
       });
       if (!retenus.length) { if (!annule) setArchivesTrouvees([]); return; }
       const { data: res } = await supabase.from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, quiz_titre, completed_at")
-        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a: any) => a.id))
+        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a) => a.id))
         .order("completed_at", { ascending: false }).limit(500);
       const groupesArch = new Map<string, ArchivePassage>();
-      for (const r of (res ?? []) as any[]) {
+      for (const r of res ?? []) {
         const jour = (r.completed_at ?? "").slice(0, 10);
         const cle = `${r.apprenant_id}|${r.quiz_id}|${jour}`;
-        const a: any = retenus.find((x: any) => x.id === r.apprenant_id);
+        const a = retenus.find((x) => x.id === r.apprenant_id);
         if (!groupesArch.has(cle)) {
           const d = jour ? jour.split("-").reverse().join("/") : "date inconnue";
           groupesArch.set(cle, { cle, apprenantId: r.apprenant_id, nom: `${a?.nom ?? ""} ${a?.prenom ?? ""}`.trim(), libelle: `${r.quiz_titre ?? r.quiz_id} — ${d}`, resultIds: [] });
         }
-        groupesArch.get(cle)!.resultIds.push(r.id);
+        groupesArch.get(cle)?.resultIds.push(r.id);
       }
       if (!annule) setArchivesTrouvees(Array.from(groupesArch.values()));
     }, 300);
     return () => { annule = true; clearTimeout(t); };
-  }, [rechercheNorm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rechercheNorm]);
 
   const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
   const cleAttempts = idsTrouves
