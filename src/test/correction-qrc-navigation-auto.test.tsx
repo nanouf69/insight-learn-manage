@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => ({
   signaux: new Map<string, () => void>(),
   noterHistorique: vi.fn(),
   lireCommentaires: vi.fn(),
+  commenter: vi.fn(),
+  commenterHistorique: vi.fn(),
+  lireHistoriqueHisto: vi.fn(),
 }));
 
 const etat = vi.hoisted(() => ({ session: null as SessionReelle | null }));
@@ -43,6 +46,7 @@ vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
     chargerSessionTest: mocks.charger,
     corrigerQrc: mocks.corriger,
     reviserQrc: mocks.reviser,
+    commenterQrc: mocks.commenter,
     lireHistoriqueQrc: mocks.lireCommentaires,
     souscrireSignal: (_canal: string, table: string, cb: () => void) => {
       mocks.signaux.set(table, cb);
@@ -64,7 +68,7 @@ vi.mock("@/features/correction-qrc-v2/correctionIa", async (importOriginal) => {
 vi.mock("@/components/cours-en-ligne/CorrectionQRCTab", () => ({ default: () => null }));
 vi.mock("@/features/correction-qrc-v2/eb2Consultation", async (importOriginal) => {
   const reel = await importOriginal<typeof import("@/features/correction-qrc-v2/eb2Consultation")>();
-  return { ...reel, noterQrcHistorique: mocks.noterHistorique, chargerConsultationEb2: async () => etat.session, lireHistoriqueQrcHistorique: async () => [] };
+  return { ...reel, noterQrcHistorique: mocks.noterHistorique, commenterQrcHistorique: mocks.commenterHistorique, chargerConsultationEb2: async () => etat.session, lireHistoriqueQrcHistorique: mocks.lireHistoriqueHisto };
 });
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -143,15 +147,19 @@ beforeEach(() => {
   mocks.reviser.mockReset();
   mocks.noterHistorique.mockReset();
   mocks.lireCommentaires.mockReset().mockResolvedValue([]);
+  mocks.commenter.mockReset();
+  mocks.commenterHistorique.mockReset();
+  mocks.lireHistoriqueHisto.mockReset().mockResolvedValue([]);
   window.history.replaceState(null, "", "/admin/correction-qrc-v2");
   window.sessionStorage.clear();
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
-  it("ne signale pas de succès si une note inchangée ne persiste pas le commentaire", async () => {
+  it("note inchangée : commentaire seul refusé en succès si la relecture ne le confirme pas", async () => {
     appliquerNote("a1-q1", 1);
-    mocks.reviser.mockResolvedValue({});
+    mocks.lireCommentaires.mockResolvedValue([{ correction_event_id: 7, note_nouvelle: 1, created_at: "2026-11-10T13:00:00Z", commentaire: null }]);
+    mocks.commenter.mockResolvedValue({});
     await ouvrirCopie("a1-q1");
     const modifier = await screen.findByTestId("modifier-note");
     await waitFor(() => expect(modifier).toBeEnabled());
@@ -159,8 +167,58 @@ describe("Correction QRC — passage automatique après confirmation de persista
     fireEvent.click(screen.getByRole("button", { name: "Précisez !!!" }));
     fireEvent.click(screen.getByTestId("revision-note-1"));
     expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("commentaire n’a pas été confirmé");
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    expect(mocks.commenter.mock.calls[0][0]).toMatchObject({ qrcInstanceId: "a1-q1", noteAttendue: 1, dernierEvenementAttendu: 7, commentaire: "Précisez !!!" });
     expect(screen.getByPlaceholderText("Motif de la révision (facultatif)")).toHaveValue("Précisez !!!");
     expect(window.location.search).toContain("qrc=a1-q1");
+  });
+  it("QRC corrigée : 4 boutons, cumul, édition libre, enregistrement seul sans note, relu, double clic = un envoi", async () => {
+    appliquerNote("a1-q1", 1);
+    const journal: Array<Record<string, unknown>> = [{ correction_event_id: 7, note_nouvelle: 1, created_at: "2026-11-10T13:00:00Z", commentaire: null }];
+    mocks.lireCommentaires.mockImplementation(async () => [...journal]);
+    mocks.commenter.mockImplementation(async ({ commentaire, dernierEvenementAttendu }) => {
+      if (dernierEvenementAttendu !== journal.at(-1)?.correction_event_id) throw new Error("COMMENTAIRE_CONFLIT");
+      journal.push({ correction_event_id: 8, note_precedente: 1, note_nouvelle: 1, created_at: "2026-11-10T13:05:00Z", commentaire });
+      return { commentaire_seul: true };
+    });
+    await ouvrirCopie("a1-q1");
+    const bouton = await screen.findByTestId("enregistrer-commentaire");
+    await waitFor(() => expect(screen.getByPlaceholderText("Commentaire pour l’élève (la note ne change pas)")).toBeEnabled());
+    expect(bouton).toBeDisabled();
+    for (const t of ["Précisez !!!", "Mal dit !!!", "Précisez permis de conduire hors période probatoire", "Attention aux fautes !!!"]) {
+      fireEvent.click(screen.getByRole("button", { name: t }));
+    }
+    const champ = screen.getByPlaceholderText("Commentaire pour l’élève (la note ne change pas)");
+    fireEvent.change(champ, { target: { value: `${(champ as HTMLTextAreaElement).value}\nRevoir le cours` } });
+    const attendu = "Précisez !!!\nMal dit !!!\nPrécisez permis de conduire hors période probatoire\nAttention aux fautes !!!\nRevoir le cours";
+    expect(champ).toHaveValue(attendu);
+    fireEvent.click(bouton);
+    fireEvent.click(bouton);
+    expect(await screen.findByText("Commentaire enregistré — note inchangée.")).toBeInTheDocument();
+    expect(mocks.commenter).toHaveBeenCalledOnce();
+    expect(mocks.commenter.mock.calls[0][0]).toMatchObject({ qrcInstanceId: "a1-q1", noteAttendue: 1, dernierEvenementAttendu: 7, commentaire: attendu });
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    expect(screen.getByTestId("points-attribues")).toHaveTextContent("1");
+    expect(screen.getByTestId("commentaire-enregistre")).toHaveTextContent("Revoir le cours");
+    expect(window.location.search).toContain("qrc=a1-q1");
+  });
+  it("ancienne copie corrigée : commentaire seul via le journal historique avec la révision relue", async () => {
+    const t = { ...tentative("a1"), attempt_id: "consultation:r1", historique: { result_id: "r1", score_obtenu: 2, seuil: 6, provenance: "remise_identique" } };
+    etat.session = { tentatives: [t as TentativeReelle], qrc: [{ ...qrc(t.attempt_id), apprenant_id: t.apprenant_id, qrc_instance_id: "consultation:r1:q1", etat: "corrigee", note: 1.5 }], resultats: [], baremesRestaures: [] };
+    const journal: Array<Record<string, unknown>> = [{ revision: 1, note_nouvelle: 1.5, created_at: "2026-11-10T12:00:00Z", commentaire: "" }];
+    mocks.lireHistoriqueHisto.mockImplementation(async () => [...journal]);
+    mocks.commenterHistorique.mockImplementation(async ({ commentaire }) => {
+      journal.push({ revision: 2, note_precedente: 1.5, note_nouvelle: 1.5, created_at: "2026-11-10T13:05:00Z", commentaire });
+      return {};
+    });
+    await ouvrirCopie("consultation:r1:q1");
+    await waitFor(() => expect(screen.getByPlaceholderText("Commentaire pour l’élève (la note ne change pas)")).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Mal dit !!!" }));
+    fireEvent.click(screen.getByTestId("enregistrer-commentaire"));
+    expect(await screen.findByText("Commentaire enregistré — note inchangée.")).toBeInTheDocument();
+    expect(mocks.commenterHistorique.mock.calls[0][0]).toMatchObject({ resultId: "r1", questionId: "q1", noteAttendue: 1.5, revisionAttendue: 1, commentaire: "Mal dit !!!" });
+    expect(mocks.noterHistorique).not.toHaveBeenCalled();
   });
   it("ajoute plusieurs commentaires sans doublon, envoie la bonne QRC et relit après réouverture", async () => {
     let persiste = "";

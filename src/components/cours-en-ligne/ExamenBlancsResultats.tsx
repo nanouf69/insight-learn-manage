@@ -29,6 +29,7 @@ import {
 import { RefaireExamenDialog } from "./RefaireExamenDialog";
 import { getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
+import { commentaireHistoriqueAffiche, lireCommentairesHistoriques, type CommentaireHistorique } from "@/lib/commentairesHistoriquesEleve";
 import { toast } from "sonner";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { ResultatMatiere, Reponses, CorrectionQRC, CorrectionCache, ReponseQCM, ReponseQRC as ReponseQRCType } from "./examens-blancs-types";
@@ -126,6 +127,18 @@ function EcranResultats({
     ...r,
     __core: coreFiablePourLigne(sameCoreOwner ? coreStates : null, { ...r, quizId: r.quizId ?? examen?.id }),
   })), [resultatsSource, coreStates, examen?.id, sameCoreOwner]);
+  // Commentaires du correcteur sur les anciennes copies : dernière ligne du journal serveur (lecture seule).
+  const idsCopies = resultats.map((r: any) => r?.resultId).filter(Boolean).map(String).sort().join(",");
+  const [commentairesHisto, setCommentairesHisto] = useState<{ cle: string; map: Map<string, CommentaireHistorique> } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!idsCopies) return;
+    lireCommentairesHistoriques(idsCopies.split(","))
+      .then((map) => { if (!cancelled) setCommentairesHisto({ cle: idsCopies, map }); })
+      .catch(() => undefined); // un commentaire indisponible ne change jamais la note affichée
+    return () => { cancelled = true; };
+  }, [idsCopies, coreTick]);
+  const journalCommentaires = commentairesHisto?.cle === idsCopies ? commentairesHisto.map : null;
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
@@ -900,7 +913,7 @@ function EcranResultats({
                        } else if (corrIA && corrIA !== "error") {
                          pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
                          isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
-                         correctionDetail = [corrIA.explication, (corrIA as CorrectionQRC & { commentaire?: string }).commentaire].filter(Boolean).join("\n");
+                         correctionDetail = [corrIA.explication, commentaireHistoriqueAffiche(journalCommentaires, (r as any).resultId, q.id, corrIA as CorrectionQRC & { commentaire?: string })].filter(Boolean).join("\n");
                          isCorrectionIA = estCorrectionIaEnregistree(corrIA);
                        } else {
                         isCorrect = fallback.estCorrect;
