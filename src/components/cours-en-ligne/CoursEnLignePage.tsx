@@ -208,7 +208,6 @@ const ApprenantSearchPreview = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {isAdmin && <AlertesNotesGlobales />}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="flex h-auto w-full max-w-5xl flex-wrap justify-start gap-1">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
@@ -266,6 +265,10 @@ const ApprenantSearchPreview = () => {
               Actualiser les notes
             </TabsTrigger>
           )}
+          <TabsTrigger value="notes-non-remontees" className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Notes non remontées
+          </TabsTrigger>
           <TabsTrigger value="correction-qrc-archive" className="flex items-center gap-2">
             <MessageSquareText className="w-4 h-4" />
             Ancienne correction QRC — archive
@@ -550,6 +553,9 @@ const ApprenantSearchPreview = () => {
         </TabsContent>
         <TabsContent value="notation-pratique" className="mt-6">
           <NotationPratiqueTab />
+        </TabsContent>
+        <TabsContent value="notes-non-remontees" className="mt-6">
+          <AlertesNotesGlobales modeSepare />
         </TabsContent>
         <TabsContent value="correction-qrc" className="mt-6">
           <AdminCorrectionQrcV2Reel />

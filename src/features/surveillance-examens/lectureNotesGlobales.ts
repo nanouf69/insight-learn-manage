@@ -25,7 +25,7 @@ async function chargerObservations(): Promise<ObservationNoteGlobale[]> {
     .in("id", lot).is("deleted_at", null).order("id").range(d, f) as any);
   const tests = await lireToutesLesPages<any>((d, f) => supabase.from("comptes_test_techniques").select("apprenant_id").order("apprenant_id").range(d, f) as any);
   const testIds = new Set(tests.map(t => t.apprenant_id));
-  const eligibles = profils.filter(a => !testIds.has(a.id) && modeExamenBlancStrict(a) === "presentiel");
+  const eligibles = profils.filter(a => !testIds.has(a.id) && ["presentiel", "elearning"].includes(modeExamenBlancStrict(a)));
   const appIds = eligibles.map(a => a.id);
   if (!appIds.length) return [];
   const [rows, resets] = await Promise.all([
@@ -48,9 +48,10 @@ async function chargerObservations(): Promise<ObservationNoteGlobale[]> {
     const rs = resets.filter(r => r.apprenant_id === a.id);
     const cutoffs = latestExamResetCutoffs(rs);
     const archives = new Set(rs.flatMap(r => r.archived_legacy_result_ids ?? []));
+    const mode = modeExamenBlancStrict(a) === "elearning" ? "elearning" as const : "presentiel" as const;
     return observerNotesGlobales({ apprenant: a,
       rows: rows.filter(r => r.apprenant_id === a.id && !archives.has(r.id) && isAfterExamReset(r.completed_at, cutoffs[r.quiz_id])),
       states: (coreMap.get(a.id) ?? []).filter(s => isAfterExamReset(s.finishedAt, cutoffs[s.examId])),
-      nonFiables, examens: definitions });
+      nonFiables, examens: definitions }).map(o => ({ ...o, mode }));
   });
 }

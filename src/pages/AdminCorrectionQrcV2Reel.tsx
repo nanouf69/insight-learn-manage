@@ -36,7 +36,6 @@ import {
   type TentativeReelle,
 } from "@/features/correction-qrc-v2/noyauReel";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 import { SynchronisationNotes } from "@/features/surveillance-examens/SynchronisationNotes";
 import { CouvertureCorrigesAdmin } from "@/features/correction-qrc-v2/CouvertureCorrigesAdmin";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
@@ -830,7 +829,7 @@ export default function AdminCorrectionQrcV2Reel() {
           ? { flex: "0 0 100%", width: "100%" }
           : { flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
       >
-        {mode !== "test" && window.location.pathname.startsWith("/admin/") && <AlertesNotesGlobales />}
+        
         {mode !== "test" && (
           <details data-testid="synchronisation-dans-correcteur" className="rounded border">
             <summary className="cursor-pointer px-2 py-1 text-sm font-semibold">Actualiser les notes (vérification serveur)</summary>

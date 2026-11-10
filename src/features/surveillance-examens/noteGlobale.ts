@@ -12,7 +12,7 @@ export type StatutMatiereGlobale = {
   cause: string | null;
 };
 export type ObservationNoteGlobale = {
-  cle: string; apprenantId: string; nom: string; filiere: "TAXI" | "VTC";
+  cle: string; apprenantId: string; nom: string; filiere: "TAXI" | "VTC"; mode?: "presentiel" | "elearning";
   examen: string; tentative: number; matieres: StatutMatiereGlobale[];
   signature: string; prete: boolean; publiee: boolean; cause: string;
 };
