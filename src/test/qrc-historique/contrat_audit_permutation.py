@@ -17,6 +17,13 @@ class Base(Contrat):
         self.prod = self.pg.sql(CATALOGUE)
         self.pg.sql(PATCH)
 
+    def test_remise_ambigue_exige_confirmation_tracee(self):
+        # Règle du correctif : horodatage divergent prouvé = notable ; aucune fiche = refus même avec confirmation.
+        rid, s = self.copie(remise='decalee')
+        self.assertEqual('remise_horodatage_divergent', self.noter(rid, '1', 1, s)['provenance'])
+        rid2, s2 = self.copie(remise=None, matiere='autre')
+        with self.assertRaisesRegex(RuntimeError, 'Remise non prouvée'): self.noter(rid2, '1', 1, s2, reco='vérifié')
+
     def eq(self, details, sub):
         return self.pg.sql(f"SELECT qrc_historique_reponses_identiques({lit(json.dumps(details))}::jsonb,{lit(json.dumps(sub))}::jsonb)") == 't'
 
