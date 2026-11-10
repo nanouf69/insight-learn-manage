@@ -121,7 +121,7 @@ describe("Révision questions fausses — comportement", () => {
 
   it("termine seulement après flush, relecture completed et un seul résultat malgré le double clic", async () => {
     h.saved = { reponses: { revisionState: creerRevisionProgressState({
-      examenId: "EB2-TAXI", answers: { "gestion:1": "texte" }, currentIndex: 1,
+      examenId: "EB2-TAXI", answers: { "t3p:1": ["B"], "gestion:1": "texte" }, currentIndex: 1,
       correctedCount: 1, correctedQuestions: order, showCorrection: true, questionOrder: order,
     }) }, score: 1 };
     const { onTerminer } = monter();

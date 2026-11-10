@@ -1365,7 +1365,7 @@ function RevisionFausses({
         tentativePreteRef.current = true;
         let lecture = supabase
           .from("reponses_apprenants")
-          .select("reponses, score")
+          .select("reponses, score, completed")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses");
