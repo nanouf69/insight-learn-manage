@@ -53,6 +53,7 @@ import { corrigeActuelPour, lireCorrigesActuels, type CarteCorrigesActuels } fro
 import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { sourcePour, matierePedagogique, type CorrigeSource } from "@/lib/corrigesSources";
 import { CorrigeSourceNotice } from "./CorrigeSourceNotice";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import CorrectionsIaEleve from "@/components/cours-en-ligne/CorrectionsIaEleve";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
@@ -629,7 +630,7 @@ function EcranResultats({
   const wrongQuestions = useMemo(() => {
     const out: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
     examenPourCalcul.matieres.forEach((matiere, mi) => {
-      if (!matiere) return;
+      if (!matiere || (!CORRIGES_TROIS_SURFACES_ACTIFS && (matiere.id === "francais" || matiere.id === "bilan_francais"))) return;
       const r = resultats.find((item) => item.matiereId === matiere.id) ?? resultats[mi];
       if (!r) return;
       const bilan = questionsFaussesDuPassage(matierePedagogique(matiere, r, sourcesOfficielles.map), r as any);
@@ -1027,7 +1028,7 @@ function EcranResultats({
                                   <span className="font-medium text-green-700">Corrigé de notation du passage : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
                                 </div>
                                 <CorrigeSourceNotice source={sourcePour(sourcesOfficielles.map, r, r.matiereId, q.id)} answer={rep} />
-                                {false && (() => {
+                                {!CORRIGES_TROIS_SURFACES_ACTIFS && (() => {
                                   const maj = corrigeActuelPour(
                                     corrigesActuels,
                                     (r as any).__core?.attemptId,
@@ -1266,13 +1267,13 @@ function EcranResultats({
               {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser · corrigé pédagogique actuel, notes d’examen conservées
             </p>
           </div>
-          <RevisionFausses
+          {sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
             wrongQuestions={wrongQuestions}
             onTerminer={() => setActiveTab("resultats")}
             apprenantId={apprenantId}
             userId={userId}
             examenId={examen.id}
-          />
+          />}
         </div>
       </TabsContent>}
     </Tabs>

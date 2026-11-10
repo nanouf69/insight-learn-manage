@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lireSources, type CarteSources } from "@/lib/corrigesSources";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 
 export function useCorrigesSources(owner: string | null | undefined, attempts: string[], results: string[]) {
   const key = JSON.stringify([owner, [...new Set(attempts)].sort(), [...new Set(results)].sort()]);
   const [state, setState] = useState<{key:string; map:CarteSources; loading:boolean; error:string|null}>({key:"",map:new Map(),loading:true,error:null});
   useEffect(() => {
+    if (!CORRIGES_TROIS_SURFACES_ACTIFS) return;
     let alive = true, generation = 0;
     const load = async () => {
       const g = ++generation;
@@ -25,5 +27,6 @@ export function useCorrigesSources(owner: string | null | undefined, attempts: s
     // IDs are serialized to avoid request loops caused by fresh arrays.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
+  if (!CORRIGES_TROIS_SURFACES_ACTIFS) return {key,map:new Map() as CarteSources,loading:false,error:null};
   return state.key === key ? state : {key,map:new Map() as CarteSources,loading:true,error:null};
 }

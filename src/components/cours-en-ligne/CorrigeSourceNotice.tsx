@@ -1,6 +1,8 @@
 import { statutPedagogique, type CorrigeSource } from "@/lib/corrigesSources";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 
 export function CorrigeSourceNotice({source, answer}: {source: CorrigeSource | null; answer?: unknown}) {
+  if (!CORRIGES_TROIS_SURFACES_ACTIFS) return null;
   if (!source) return <p className="text-sm text-muted-foreground">Corrigé officiel actuel non rapproché de cette copie.</p>;
   const q = source.actuelle;
   if (!q) return <p className="text-sm text-destructive">Corrigé actuel non rapproché : identité ou contenu de question à vérifier.</p>;

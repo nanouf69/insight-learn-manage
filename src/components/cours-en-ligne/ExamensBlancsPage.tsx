@@ -1,6 +1,7 @@
 import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
 import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { matierePedagogique, sourcePour, type CorrigeSource } from "@/lib/corrigesSources";
+import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
@@ -1887,7 +1888,7 @@ function RevisionPhaseView({
   const officiels = useCorrigesSources(apprenantId, tousResultats.flatMap(r => r.__core?.attemptId ? [r.__core.attemptId] : []), tousResultats.flatMap(r => r.resultId ? [r.resultId] : []));
   const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
   examenChoisi.matieres.forEach((matiere, mi) => {
-    if (!matiere) return;
+    if (!matiere || (!CORRIGES_TROIS_SURFACES_ACTIFS && (matiere.id === "francais" || matiere.id === "bilan_francais"))) return;
     // Résultat de CETTE matière (par identifiant, jamais par position).
     const r = tousResultats.find((x) => x?.matiereId === matiere.id) ?? null;
     if (!r) return;
@@ -1918,7 +1919,7 @@ function RevisionPhaseView({
         </p>
       </div>
       {officiels.error && <p role="alert" className="text-destructive">{officiels.error}</p>}
-      {officiels.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
+      {officiels.error ? <p>Révision suspendue : le corrigé actuel n’est pas confirmé.</p> : officiels.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
         wrongQuestions={wrongQuestions}
         onTerminer={onRetour}
         apprenantId={apprenantId}
