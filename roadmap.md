@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 10/11 09:32 — Alerte note globale EB présentiel
+- [x] Diagnostic : global assemblé à l’écran ; correction distincte de publication, sept matières même tentative strictes, QRC figées ancien/V2.
+- [x] Alerte administrative en aperçu sans écriture : relecture 5 s, déduplication, événements sans polling, résolution automatique ; petits groupes de lecture séquentiels.
+- [x] 77 tests PASS ; navigateur authentifié avec transport synthétique PC/mobile, alerte puis résolution sans écriture ; lecture réelle 563 groupes/128 prêts tous publiables. Rapport docs/alerte-note-globale-eb-2026-11-10.md.
+- [ ] Détection persistante administration fermée — extension serveur et accord sur écritures de suivi requis ; Realtime après correction réelle non prouvé, aucune correction réelle autorisée pour test.
+- [ ] Publication — attend accord explicite.
+
 ## 10/11 09:25 — Retrait confirmation de copie QRC
 - [x] Case et avertissement supprimés ; clic direct pour copies prouvées, erreur explicite sans envoi pour identités ambiguës, serveur inchangé.
 - [x] 53 tests ciblés et 12 contrats PostgreSQL jetables PASS ; rapport docs/qrc-retrait-confirmation-2026-11-10.md ; aucune note réelle saisie.
