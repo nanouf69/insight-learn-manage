@@ -64,6 +64,16 @@ describe("alerte globale EB sur sept matières de la même tentative", () => {
     s.qrcProofs = [];
     expect(observe(rs, [s])[0].matieres[0].qrc).toBe("inconnues");
   });
+  it("note V2 définitive sans preuve de publication : alerte, sans modifier la note", () => {
+    const rs = rows(), s = { ...core(rs[0]), publishedAt: null };
+    expect(observe(rs, [s])[0]).toMatchObject({ prete: true, publiee: false });
+    expect(s.note20).toBe(12);
+    expect(observe(rs, [{ ...s, publishedAt: "2026-11-10T09:00:00Z" }])[0].publiee).toBe(true);
+  });
+  it("copie technique exclue : ne complète pas les sept matières réelles", () => {
+    const rs = rows(), s = { ...core(rs[0]), isTest: true };
+    expect(observe(rs.slice(1), [s])[0].prete).toBe(false);
+  });
   it("copie V2 terminée sans résultat d’affichage : anomalie détectable sans création de note", () => {
     const rs = rows(), s = core(rs[0], true);
     s.resultId = null as any;
