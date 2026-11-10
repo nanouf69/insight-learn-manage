@@ -28,7 +28,7 @@ describe("fiche pilote QRC en attente vs copie notée par l'admin", () => {
     expect(engineMatierePending(entry(), A, "EB2", "t3p", { tentative: 1, details: { correctionsIA: {} } })).toBe(true);
   });
   it("cas Pogos (EB2-TAXI natif V2) : aucune fiche pilote, rien n'est ajouté au blocage", () => {
-    expect(engineMatierePending(undefined as any, A, "EB2-TAXI", "t3p", { tentative: 1, details: { correctionsIA: {} } })).toBe(false);
+    expect(engineMatierePending({ pendingByMatiere: new Set(), pendingTotal: 0, pendingAttemptIds: new Set(), pendingQuestionsByAttempt: new Map() } as any, A, "EB2-TAXI", "t3p", { tentative: 1, details: { correctionsIA: {} } })).toBe(false);
   });
   it("cas Pogos : QRC V2 réellement non corrigées (F/G) restent en attente, matières définitives notées", async () => {
     const { coreStateScore } = await import("@/lib/coreExamPublication");
