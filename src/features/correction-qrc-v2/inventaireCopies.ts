@@ -42,6 +42,44 @@ export function resultatsAncienCircuit<T extends ResultatHistoriqueMin>(resultat
   });
 }
 
+const textesQrc = (reponses: unknown): string[] =>
+  !reponses || typeof reponses !== "object" || Array.isArray(reponses) ? []
+    : Object.values(reponses as Record<string, unknown>).filter((v): v is string => typeof v === "string" && v.trim().length > 0).sort();
+
+const texteV2 = (v: unknown): string | null => (typeof v === "string" && v.trim().length > 0 ? v : null);
+
+/**
+ * Copies historiques écrites en miroir d'un passage V2 natif (même élève, même examen, même matière,
+ * passage V2 terminé) dont TOUTES les réponses QRC texte sont strictement identiques.
+ * Preuve par contenu exact, jamais par fenêtre de temps ; ambigu (plusieurs passages) = pas un miroir.
+ */
+export function miroirsV2Prouves(
+  resultats: Array<ResultatHistoriqueMin & { matiere_id?: string | null; rep?: unknown }>,
+  tentatives: Array<TentativeV2Min & { matiere?: string | null }>,
+  qrcV2: Array<{ attempt_id: string; reponse: unknown }>,
+): Set<string> {
+  const textes = new Map<string, string[]>();
+  for (const q of qrcV2) {
+    const t = texteV2(q.reponse);
+    if (t != null) (textes.get(q.attempt_id) ?? textes.set(q.attempt_id, []).get(q.attempt_id)!).push(t);
+  }
+  const parCle = new Map<string, string[]>();
+  for (const t of tentatives) {
+    if (t.rid || t.etat !== "terminee" || !t.matiere) continue;
+    const k = `${t.apprenant_id}|${t.exam_id}|${t.matiere}`;
+    (parCle.get(k) ?? parCle.set(k, []).get(k)!).push(t.attempt_id);
+  }
+  const out = new Set<string>();
+  for (const r of resultats) {
+    const l = textesQrc(r.rep);
+    if (!l.length || !r.matiere_id) continue;
+    const cands = (parCle.get(`${r.apprenant_id}|${r.quiz_id}|${r.matiere_id}`) ?? [])
+      .filter((a) => { const v = [...(textes.get(a) ?? [])].sort(); return v.length === l.length && v.every((x, i) => x === l[i]); });
+    if (cands.length === 1) out.add(r.id);
+  }
+  return out;
+}
+
 /** Nombre de réponses texte non vides (QRC) dans une copie historique. */
 export function nbQrcEcrites(reponses: unknown): number {
   if (!reponses || typeof reponses !== "object" || Array.isArray(reponses)) return 0;
@@ -65,8 +103,10 @@ export function inventaireAttendu(params: {
   neutralises: Set<string>;
   resultats: Array<ResultatHistoriqueMin & { qrc: number }>;
   exclus: Set<string>;
+  miroirs?: Set<string>;
 }): CopieAttendue[] {
   const migres = resultatsMigres(params.tentatives);
+  for (const m of params.miroirs ?? []) migres.add(m);
   const out: CopieAttendue[] = [];
   for (const t of params.tentatives) {
     if (params.exclus.has(t.apprenant_id) || t.etat !== "terminee" || params.neutralises.has(t.attempt_id)) continue;
