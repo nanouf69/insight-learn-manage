@@ -480,7 +480,15 @@ export default function AdminCorrectionQrcV2Reel() {
         throw new Error("Note non enregistrée : la liaison entre la copie, la question et l’élève est incohérente. Rechargez cette copie ; aucune note n’a été attribuée.");
       }
       if (histo) {
-        const reconnaissance = reconnaissanceRemise(histo.provenance, histo.result_id, qrcSel.question_id);
+        // Read this original copy again: a stale grid or a partial old read cannot decide its provenance.
+        const copieActuelle = await chargerConsultationEb2([`consultation:${histo.result_id}`]);
+        const actuelle = copieActuelle.tentatives.find(t => t.attempt_id === tentativeSel.attempt_id);
+        const infos = (actuelle as (TentativeReelle & { historique?: InfosHistorique }) | undefined)?.historique;
+        if (!actuelle || actuelle.apprenant_id !== qrcSel.apprenant_id || !infos || infos.result_id !== histo.result_id
+          || !copieActuelle.qrc.some(q => q.qrc_instance_id === qrcSel.qrc_instance_id && q.apprenant_id === qrcSel.apprenant_id)) {
+          throw new Error("Note non enregistrée : identité de la copie non confirmée par la relecture serveur.");
+        }
+        const reconnaissance = reconnaissanceRemise(infos.provenance, histo.result_id, qrcSel.question_id);
         if (revision) {
           await reviserQrcHistorique({
             operationId: `qrchistrev:${histo.result_id}:${qrcSel.question_id}:${ancienne}:${n}:${jeton}`,
@@ -540,6 +548,7 @@ export default function AdminCorrectionQrcV2Reel() {
               ...session,
               tentatives: session.tentatives.map((t) => copie.tentatives.find((c) => c.attempt_id === t.attempt_id) ?? t),
               qrc: session.qrc.map((q) => (q.attempt_id === id ? copie.qrc.find((c) => c.qrc_instance_id === q.qrc_instance_id) ?? q : q)),
+              resultats: [...session.resultats.filter(r => r.attempt_id !== id), ...copie.resultats],
             };
             setSession(fusion);
             return fusion;

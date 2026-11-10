@@ -57,6 +57,27 @@ function memeJson(a: unknown, b: unknown): boolean {
   return k.length === Object.keys(d).length && k.every((x) => Object.prototype.hasOwnProperty.call(d, x) && memeJson(g[x], d[x]));
 }
 
+/** Checkbox order is not an answer change. All QRC text and the complete key set stay exact. */
+export function memesReponsesRemise(r: ResultatEb2, reponses: unknown): boolean {
+  const source = r.details?.reponses;
+  if (!source || !reponses || typeof source !== "object" || typeof reponses !== "object" || Array.isArray(source) || Array.isArray(reponses)) return false;
+  const left = source as Record<string, unknown>, right = reponses as Record<string, unknown>;
+  const keys = Object.keys(left);
+  if (!keys.length || keys.length !== Object.keys(right).length || keys.some(k => !Object.prototype.hasOwnProperty.call(right, k))) return false;
+  const questions = r.details?.snapshot?.questions;
+  return keys.every(id => {
+    const a = left[id], b = right[id];
+    if (memeJson(a, b)) return true;
+    if (!Array.isArray(questions)) return false;
+    const qs = questions.filter((q: any) => String(q?.id ?? q?.questionId) === id);
+    if (qs.length !== 1 || String(qs[0].type).toUpperCase() !== "QCM") return false;
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length || !a.length) return false;
+    if (!a.every(v => typeof v === "string" && /^[A-E]$/.test(v)) || !b.every(v => typeof v === "string" && /^[A-E]$/.test(v))) return false;
+    if (new Set(a).size !== a.length || new Set(b).size !== b.length) return false;
+    return memeJson([...a].sort(), [...b].sort());
+  });
+}
+
 export const exerciceIdEb2 = (r: Pick<ResultatEb2, "matiere_id" | "tentative">) =>
   `EB2__${r.matiere_id}${(r.tentative ?? 1) <= 1 ? "" : `__t${r.tentative}`}`;
 
@@ -65,7 +86,7 @@ export function remiseProuvee(r: ResultatEb2, preuves: PreuveRemise[]): boolean 
   const exo = exerciceIdEb2(r);
   return preuves.some((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo
     && (p.tentative ?? 1) === (r.tentative ?? 1) && p.completed === true && p.status === "submitted"
-    && p.submitted_at != null && memeJson(p.reponses, r.details?.reponses ?? {}));
+    && p.submitted_at != null && memesReponsesRemise(r, p.reponses));
 }
 
 /** Même règle que le serveur : réponses identiques ET même instant = remise identique. */
@@ -73,7 +94,7 @@ export function provenanceRemise(r: ResultatEb2, preuves: PreuveRemise[]): Prove
   const exo = exerciceIdEb2(r);
   const memes = preuves.filter((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo
     && (p.tentative ?? 1) === (r.tentative ?? 1) && p.completed === true && p.status === "submitted"
-    && p.submitted_at != null && memeJson(p.reponses, r.details?.reponses ?? {}));
+    && p.submitted_at != null && memesReponsesRemise(r, p.reponses));
   if (!memes.length) return "resultat_seul";
   const t = r.completed_at ? Date.parse(r.completed_at) : NaN;
   return memes.some((p) => Date.parse(String(p.submitted_at)) === t) ? "remise_identique" : "remise_horodatage_divergent";
