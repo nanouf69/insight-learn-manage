@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   reviser: vi.fn(),
   charger: vi.fn(),
   signaux: new Map<string, () => void>(),
+  noterHistorique: vi.fn(),
 }));
 
 const etat = vi.hoisted(() => ({ session: null as SessionReelle | null }));
@@ -60,6 +61,10 @@ vi.mock("@/features/correction-qrc-v2/correctionIa", async (importOriginal) => {
 });
 
 vi.mock("@/components/cours-en-ligne/CorrectionQRCTab", () => ({ default: () => null }));
+vi.mock("@/features/correction-qrc-v2/eb2Consultation", async (importOriginal) => {
+  const reel = await importOriginal<typeof import("@/features/correction-qrc-v2/eb2Consultation")>();
+  return { ...reel, noterQrcHistorique: mocks.noterHistorique, chargerConsultationEb2: async () => etat.session, lireHistoriqueQrcHistorique: async () => [] };
+});
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: { email: "admin@fictif.test" } } }) },
@@ -124,12 +129,43 @@ beforeEach(() => {
     return {};
   });
   mocks.reviser.mockReset();
+  mocks.noterHistorique.mockReset();
   window.history.replaceState(null, "", "/admin/correction-qrc-v2");
   window.sessionStorage.clear();
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  const copieHistorique = (provenance: string) => {
+    const t = { ...tentative("a1"), attempt_id: "consultation:r1", historique: { result_id: "r1", score_obtenu: 2, seuil: 6, provenance } };
+    etat.session = { tentatives: [t as TentativeReelle], qrc: [{ ...qrc(t.attempt_id), apprenant_id: t.apprenant_id, qrc_instance_id: "consultation:r1:q1" }], resultats: [], baremesRestaures: [] };
+  };
+  it.each(["remise_identique", "remise_horodatage_divergent"])("copie historique %s : clic enregistré puis note relue sans confirmation", async (provenance) => {
+    copieHistorique(provenance);
+    mocks.noterHistorique.mockImplementation(async ({ note }) => { appliquerNote("consultation:r1:q1", note); return {}; });
+    await ouvrirCopie("consultation:r1:q1");
+    fireEvent.click(screen.getByTestId("note-1.5"));
+    await waitFor(() => expect(mocks.noterHistorique).toHaveBeenCalledOnce());
+    expect(mocks.noterHistorique.mock.calls[0][0]).toMatchObject({ resultId: "r1", questionId: "q1", note: 1.5, scoreAttendu: 2 });
+    expect(window.confirm).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByTestId("points-attribues")).toHaveTextContent("1,5"));
+  });
+  it("copie historique sans remise prouvée : erreur claire et aucune écriture", async () => {
+    copieHistorique("resultat_seul");
+    await ouvrirCopie("consultation:r1:q1");
+    fireEvent.click(screen.getByTestId("note-1"));
+    expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("aucune remise");
+    expect(mocks.noterHistorique).not.toHaveBeenCalled();
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it("liaison QRC vers un autre élève : refus avant tout envoi", async () => {
+    if (!etat.session) throw new Error("Session absente");
+    etat.session.qrc[0].apprenant_id = "autre-eleve";
+    await ouvrirCopie("a1-q1");
+    fireEvent.click(screen.getByTestId("note-1"));
+    expect(await screen.findByTestId("erreur-correction-copie")).toHaveTextContent("liaison");
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
   it("reclasse un passage terminé après signal serveur, sans enregistrer une note", async () => {
     if (!etat.session) throw new Error("Session absente");
     etat.session.tentatives[0] = { ...etat.session.tentatives[0], etat: "terminee", finished_at: "2026-11-09T19:27:00Z" };

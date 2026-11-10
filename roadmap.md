@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 09:25 — Retrait confirmation de copie QRC
+- [x] Case et avertissement supprimés ; clic direct pour copies prouvées, erreur explicite sans envoi pour identités ambiguës, serveur inchangé.
+- [x] 53 tests ciblés et 12 contrats PostgreSQL jetables PASS ; rapport docs/qrc-retrait-confirmation-2026-11-10.md ; aucune note réelle saisie.
+- [ ] Publication — attend accord explicite ; parcours de notation réel non exécuté pour préserver les copies.
+
 ## 10/11 09:19 — Tri admin QRC par fin décroissante
 - [x] Tri partagé par fin réelle décroissante et navigation ; pagination déterministe, actualisation des nouveaux passages par Realtime sans écriture élève.
 - [x] 89 tests PASS ; navigateur réel TAXI 7 matières et VTC soir 5 matières QRC, rechargement mobile identique ; rapport docs/tri-qrc-fin-decroissante-2026-11-10.md.
