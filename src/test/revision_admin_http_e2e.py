@@ -24,7 +24,17 @@ CREATE TABLE public.apprenant_quiz_results (id uuid PRIMARY KEY, apprenant_id uu
 GRANT SELECT ON public.apprenant_quiz_results TO service_role;
 INSERT INTO public.apprenant_quiz_results VALUES
  ('{SRC1}','{h.APP}','EB2','gestion','Gestion',3, jsonb_build_object('reponses', '{{"2":["C"]}}'::jsonb, 'snapshot', '{snap(2, "QCM")}'::jsonb)),
- ('{SRC2}','{h.APP}','EB2','t3p','T3P',3, jsonb_build_object('reponses', '{{"5":"ancienne réponse"}}'::jsonb, 'snapshot', '{snap(5, "QRC")}'::jsonb));""")
+ ('{SRC2}','{h.APP}','EB2','t3p','T3P',3, jsonb_build_object('reponses', '{{"5":"ancienne réponse"}}'::jsonb, 'snapshot', '{snap(5, "QRC")}'::jsonb));
+NOTIFY pgrst, 'reload schema';""")
+        import time
+        fin = time.time() + 30
+        while True:
+            try:
+                urlopen(Request(f"http://127.0.0.1:{cls.rest_port}/apprenant_quiz_results?select=id&limit=1", headers={"Authorization": f"Bearer {cls.service_jwt}"})).read()
+                break
+            except Exception:
+                if time.time() > fin: raise
+                time.sleep(0.3)
 
     def lot_rev(self, answers, events, base, completed=False):
         state = {"examenId": "EB2", "answers": answers, "questionOrder": ["gestion:2", "t3p:5"], "sourceResultIds": {"gestion:2": SRC1, "t3p:5": SRC2}}
