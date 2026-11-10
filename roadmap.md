@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 09:46 — Régression liaison correction QRC
+- [ ] Identifier la copie via les traces disponibles et vérifier la provenance serveur sans écriture.
+- [ ] Réparer les preuves de liaison pour les copies authentiques, sans confirmation manuelle ni contournement serveur.
+- [ ] Tester notation fictive, refus ambigu, remontée et reprise après rechargement ; rapport précis.
+- [ ] Publication — attend accord explicite.
+
 ## 10/11 09:32 — Alerte note globale EB présentiel
 - [x] Diagnostic : global assemblé à l’écran ; correction distincte de publication, sept matières même tentative strictes, QRC figées ancien/V2.
 - [x] Alerte administrative en aperçu sans écriture : relecture 5 s, déduplication, événements sans polling, résolution automatique ; petits groupes de lecture séquentiels.
