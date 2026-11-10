@@ -138,7 +138,7 @@ describe("Révision questions fausses — comportement", () => {
   it("une clôture non confirmée ou un reset concurrent ne crée aucun résultat et conserve l'écran", async () => {
     vi.mocked(flushAnswerSavesAndWait).mockResolvedValue(false);
     h.saved = { reponses: { revisionState: creerRevisionProgressState({
-      examenId: "EB2-TAXI", answers: {}, currentIndex: 1, correctedCount: 0,
+      examenId: "EB2-TAXI", answers: { "t3p:1": ["A"], "gestion:1": "autre réponse" }, currentIndex: 1, correctedCount: 0,
       correctedQuestions: order, showCorrection: true, questionOrder: order,
     }) }, score: 0 };
     const { onTerminer } = monter();
@@ -152,7 +152,7 @@ describe("Révision questions fausses — comportement", () => {
   it("une relecture encore non terminée après un reset concurrent bloque le résultat", async () => {
     vi.mocked(flushAnswerSavesAndWait).mockResolvedValue(true);
     h.saved = { reponses: { revisionState: creerRevisionProgressState({
-      examenId: "EB2-TAXI", answers: {}, currentIndex: 1, correctedCount: 0,
+      examenId: "EB2-TAXI", answers: { "t3p:1": ["A"], "gestion:1": "autre réponse" }, currentIndex: 1, correctedCount: 0,
       correctedQuestions: order, showCorrection: true, questionOrder: order,
     }) }, score: 0, completed: false };
     const { onTerminer } = monter();
