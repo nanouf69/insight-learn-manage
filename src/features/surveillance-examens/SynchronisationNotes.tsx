@@ -40,7 +40,7 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
       const d = await lireDiagnostic(undefined, { signal: ctrl.signal, onProgress: (p) => { if (!ctrl.signal.aborted) setProgression(p); } });
       if (!ctrl.signal.aborted) setDiag(d);
     } catch (e) {
-      if (annulation.current !== ctrl && !(e instanceof VerificationAnnulee)) return;
+      if (annulation.current !== ctrl) return;  // remplacée par une nouvelle vérification
       setDiag(null);
       setErreur(e instanceof VerificationAnnulee
         ? `${e.message}.`
