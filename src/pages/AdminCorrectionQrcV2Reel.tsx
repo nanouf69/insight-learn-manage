@@ -290,7 +290,10 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   }, [mode, attemptsAffiches]);
 
-  useEffect(() => { void recharger(); }, [recharger]);
+  useEffect(() => {
+    void recharger();
+    return () => { generationRef.current++; };
+  }, [recharger]);
   const rechargerRef = useRef(recharger);
   useEffect(() => { rechargerRef.current = recharger; }, [recharger]);
   // Signal temps réel : regroupé (1,5 s) et ignoré pendant notre propre enregistrement,
@@ -1390,7 +1393,7 @@ export default function AdminCorrectionQrcV2Reel() {
                         onChange={(e) => modifierCommentaire(e.target.value)}
                       />
                       <CommentairesPredefinis disabled={etatEnvoi === "encours" || !historiqueCharge} onAjouter={ajouterCommentaire} />
-                      <Button size="sm" data-testid="enregistrer-commentaire"
+                      <Button size="sm" className="h-auto max-w-full whitespace-normal py-2" data-testid="enregistrer-commentaire"
                         disabled={etatEnvoi === "encours" || !historiqueCharge || !commentaireModifie || commentaireCourant === commentaireSauve}
                         onClick={() => void enregistrerCommentaireSeul()}>
                         Enregistrer le commentaire
