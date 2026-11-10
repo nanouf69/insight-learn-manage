@@ -1,5 +1,5 @@
 export interface EvenementCommentaireQrc {
-  correction_event_id: string;
+  correction_event_id: string | number;
   qrc_instance_id: string;
   attempt_id: string;
   question_id: string;
@@ -15,7 +15,9 @@ export function commentaireQrcPersistant(events: EvenementCommentaireQrc[], qrc:
 }): string | null {
   const identiques = events.filter(e => e.qrc_instance_id === qrc.qrc_instance_id
     && e.attempt_id === qrc.attempt_id && e.question_id === qrc.question_id && e.apprenant_id === qrc.apprenant_id)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.correction_event_id.localeCompare(a.correction_event_id));
+    // Identifiant numérique (bigint renvoyé en nombre) : comparaison numérique, jamais lexicale (« 9 » > « 10 »).
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      || Number(b.correction_event_id) - Number(a.correction_event_id));
   const dernier = identiques[0];
   if (!dernier || dernier.note_nouvelle == null || qrc.note == null || Number(dernier.note_nouvelle) !== Number(qrc.note)) return null;
   return dernier.commentaire;
