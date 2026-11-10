@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 10/11 09:19 — Tri admin QRC par fin décroissante
-- [ ] Corriger le tri partagé de chaque matière et navigation ; vérifier pagination, rechargement et nouveau passage, sans écriture élève.
-- [ ] Tests ciblés et contrôle navigateur en lecture seule ; rapport. Publication interdite sans nouvel accord.
+- [x] Tri partagé par fin réelle décroissante et navigation ; pagination déterministe, actualisation des nouveaux passages par Realtime sans écriture élève.
+- [x] 89 tests PASS ; navigateur réel TAXI 7 matières et VTC soir 5 matières QRC, rechargement mobile identique ; rapport docs/tri-qrc-fin-decroissante-2026-11-10.md.
+- [ ] Publication — attend nouvel accord explicite ; nouveau passage réel non créé, événement testé isolément.
 
 ## 10/11 08:34 — P0 EB2 notes en attente malgré QRC validées
 - [x] Correctif déjà public (index-ryoThghQ.js) ; aucun autre changement de code en attente ; 3 997 tests PASS.
