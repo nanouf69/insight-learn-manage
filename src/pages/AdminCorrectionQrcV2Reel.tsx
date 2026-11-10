@@ -273,6 +273,8 @@ export default function AdminCorrectionQrcV2Reel() {
   }, [mode, attemptsAffiches]);
 
   useEffect(() => { void recharger(); }, [recharger]);
+  const rechargerRef = useRef(recharger);
+  useEffect(() => { rechargerRef.current = recharger; }, [recharger]);
   // Signal temps réel : regroupé (1,5 s) et ignoré pendant notre propre enregistrement,
   // pour ne jamais relancer la lecture complète de toutes les copies à chaque note.
   const envoiEnCoursRef = useRef(false);
@@ -291,6 +293,8 @@ export default function AdminCorrectionQrcV2Reel() {
       clearTimeout(timer);
       timer = setTimeout(() => {
         if (envoiEnCoursRef.current) { actualiser(); return; }
+        // Passage terminé/repris : relecture des seules copies affichées (fin réelle, ordre).
+        void rechargerRef.current?.();
         void listerGroupesCrm(mode).then((liste) => {
           // Liste identique : aucune mise à jour (pas de re-rendu ni de nouveau rapprochement).
           if (actif) setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
