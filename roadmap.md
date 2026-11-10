@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 10/11 17:59 — Finalisation publiée des questions fausses
-- [ ] Diagnostiquer les révisions complètes sans résultat et le badge non rafraîchi, en lecture seule.
-- [ ] Sécuriser reprise, confirmation et rejeu de Terminer sans réécriture historique.
-- [ ] Tests ciblés PC/mobile, interruption/concurrence, preuve admin et contrôle publié ; publication uniquement si critiques prouvés.
+- [x] Diagnostic lecture seule : 105 clôtures sans résultat lié, dont 2 récentes prouvées complètes ; badge non rafraîchi et admin « terminé » sur simple clôture.
+- [x] Correctif aperçu : reprise des clôtures orphelines, preuve de couverture, relecture du résultat exact, accusé perdu sans seconde insertion, badge relu et rattaché aux copies affichées, admin fondé sur le résultat.
+- [x] 61 tests et contrôle navigateur PC/mobile PASS ; 151 résultats de révision inchangés.
+- [ ] Publication NO-GO : deux appareils simultanés sans contrainte serveur unique, parcours authentifié réel et site publié non prouvés ; installation serveur à autoriser.
 
 ## 10/11 16:49 — Synchronisation des trois corrigés
 - [x] Reprise 17:30 : adaptateurs Bilans figés/futurs + EB, lots 400, sauvegarde auto serveur, conflits 2 onglets, lecteur admin complet, couverture admin ; 27+7 PostgreSQL, 243+24 Vitest, navigateur PC/mobile 2 onglets PASS ; couverture réelle mesurée ; rien installé/publié.
