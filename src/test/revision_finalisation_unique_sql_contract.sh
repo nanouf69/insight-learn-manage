@@ -2,9 +2,10 @@
 # Contrat jetable : une seule finalisation de révision par propriétaire/examen/brouillon,
 # même avec deux appareils simultanés. Aucune connexion à la production.
 set -euo pipefail
-D=$(mktemp -d /tmp/pgrev.XXXX); P=55437
-initdb -D "$D/db" -U postgres >/dev/null; pg_ctl -D "$D/db" -o "-p $P -k $D" -l "$D/log" start >/dev/null
-trap 'pg_ctl -D "$D/db" stop -m immediate >/dev/null; rm -rf "$D"' EXIT
+D=$(mktemp -d /tmp/pgrev.XXXX); P=55437; chown 1000:1000 "$D"
+U=(setpriv --reuid=1000 --regid=1000 --clear-groups)
+"${U[@]}" initdb -D "$D/db" -A trust --no-locale -U postgres >/dev/null; "${U[@]}" pg_ctl -D "$D/db" -o "-p $P -k $D -h ''" -l "$D/log" -w start >/dev/null
+trap '"${U[@]}" pg_ctl -D "$D/db" stop -m immediate >/dev/null; rm -rf "$D"' EXIT
 Q() { psql -h "$D" -p $P -U postgres -v ON_ERROR_STOP=1 -qtAc "$1"; }
 Q "create table public.apprenant_quiz_results(id uuid primary key default gen_random_uuid(), apprenant_id uuid, quiz_id text, quiz_type text, matiere_id text, tentative int, score_obtenu int, details jsonb);"
 # Historique : anciens résultats sans lien (dont doublons) doivent rester acceptés et intacts.
@@ -18,7 +19,7 @@ fail=0
 # Deux appareils : A garde son insertion ouverte, B tente la même finalisation.
 ( psql -h "$D" -p $P -U postgres -qtAc "begin; $ins; select pg_sleep(1.5); commit;" ) & A=$!
 sleep 0.5
-if psql -h "$D" -p $P -U postgres -qtAc "$ins" 2>"$D/b.err"; then echo "FAIL: second appareil inséré"; fail=1; else grep -q 23505 "$D/b.err" -o -q "duplicate key" "$D/b.err" 2>/dev/null || grep -q "duplicate key" "$D/b.err" && echo "PASS: second appareil refusé (doublon)"; fi
+if psql -h "$D" -p $P -U postgres -qtAc "$ins" 2>"$D/b.err"; then echo "FAIL: second appareil inséré"; fail=1; elif grep -q "duplicate key" "$D/b.err"; then echo "PASS: second appareil refusé (doublon)"; else echo "FAIL: erreur inattendue"; cat "$D/b.err"; fail=1; fi
 wait $A
 n=$(Q "select count(*) from apprenant_quiz_results where details->>'revision_exercice_id'='rev_EB1_r1'"); [ "$n" = 1 ] && echo "PASS: un seul résultat" || { echo "FAIL: $n résultats"; fail=1; }
 # Rejeu après accusé perdu : refusé, ligne existante inchangée.
