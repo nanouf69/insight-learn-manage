@@ -22,7 +22,8 @@ DECLARE
   res public.core_exam_results;
   v_lim integer := least(greatest(coalesce(p_limite, 50), 1), 100);
   v_debut timestamptz := clock_timestamp();
-  v_budget interval := interval '3 seconds';
+  -- Budget borné à 3 s ; un réglage de test ne peut que le réduire, jamais l'allonger.
+  v_budget interval := least(3000, greatest(coalesce(nullif(current_setting('eb_notes.budget_ms', true), '')::integer, 3000), 1)) * interval '1 millisecond';
   v_lignes jsonb := '[]'::jsonb;
   v_scan integer := 0;
   v_terminees integer := 0;
@@ -134,7 +135,8 @@ DECLARE
   r record;
   v_lim integer := least(greatest(coalesce(p_limite, 200), 1), 200);
   v_debut timestamptz := clock_timestamp();
-  v_budget interval := interval '3 seconds';
+  -- Budget borné à 3 s ; un réglage de test ne peut que le réduire, jamais l'allonger.
+  v_budget interval := least(3000, greatest(coalesce(nullif(current_setting('eb_notes.budget_ms', true), '')::integer, 3000), 1)) * interval '1 millisecond';
   v_lignes jsonb := '[]'::jsonb;
   v_scan integer := 0;
   v_dernier uuid;
