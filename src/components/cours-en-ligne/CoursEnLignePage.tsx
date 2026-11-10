@@ -24,6 +24,7 @@ import CorrectionQCMTab from "./CorrectionQCMTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
 import NotationPratiqueTab from "./NotationPratiqueTab";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 
 // IDs des modules bilan qui ouvrent directement l'onglet examens
 const BILAN_MODULE_IDS: Record<number, string> = {
@@ -206,6 +207,7 @@ const ApprenantSearchPreview = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {isAdmin && <AlertesNotesGlobales />}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="flex w-full max-w-5xl flex-wrap">
           <TabsTrigger value="accueil" className="flex items-center gap-2">

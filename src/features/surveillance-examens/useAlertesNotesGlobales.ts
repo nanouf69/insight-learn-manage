@@ -14,6 +14,7 @@ export function useAlertesNotesGlobales() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let confirmation: ReturnType<typeof setTimeout> | undefined;
     let premieres = new Map<string, { signature: string; observee: number }>();
+    const dates = new Map<string, string>();
     const lire = async () => {
       if (!active) return;
       if (running) { dirty = true; return; }
@@ -23,7 +24,8 @@ export function useAlertesNotesGlobales() {
         if (!active) return;
         const etat = confirmerAlertesNotes(premieres, observations, performance.now());
         // Monotonic elapsed time, wall clock is presentation only.
-        const dates = new Map(alertes.map(a => [a.cle, a.heure]));
+        for (const a of etat.alertes) if (!dates.has(a.cle)) dates.set(a.cle, new Date().toISOString());
+        for (const cle of dates.keys()) if (!etat.prochaines.has(cle)) dates.delete(cle);
         setAlertes(etat.alertes.map(a => ({ ...a, heure: dates.get(a.cle) ?? new Date().toISOString() })));
         premieres = etat.prochaines;
         setErreur(null);

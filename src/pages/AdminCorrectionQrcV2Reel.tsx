@@ -30,6 +30,7 @@ import {
   type TentativeReelle,
 } from "@/features/correction-qrc-v2/noyauReel";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 import {
   compterCopiesEnAttenteIa,
   definirIaActif,
@@ -647,6 +648,7 @@ export default function AdminCorrectionQrcV2Reel() {
           ? { flex: "0 0 100%", width: "100%" }
           : { flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
       >
+        {mode !== "test" && window.location.pathname.startsWith("/admin/") && <AlertesNotesGlobales />}
         <header className="sticky top-0 z-10 bg-background/95 py-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>

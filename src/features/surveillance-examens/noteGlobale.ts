@@ -1,6 +1,8 @@
 import type { CoreMatiereState } from "@/lib/coreExamPublication";
 import { attacherSourceUnique, noteExamenAffichee } from "@/lib/noteExamenAffichee";
 import { isQrcCorrectionValidated } from "@/components/cours-en-ligne/exam-helpers";
+import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
+import type { ExamenBlanc } from "@/components/cours-en-ligne/examens-blancs-data";
 
 export const DELAI_CONFIRMATION_NOTE_MS = 5_000;
 export type StatutMatiereGlobale = {
@@ -14,7 +16,7 @@ export type ObservationNoteGlobale = {
   examen: string; tentative: number; matieres: StatutMatiereGlobale[];
   signature: string; prete: boolean; publiee: boolean; cause: string;
 };
-export type DefinitionSurveillee = { id: string; type: "TAXI" | "VTC"; matieres: { id: string; nom: string }[] };
+export type DefinitionSurveillee = { id: string; type: "TAXI" | "VTC"; matieres: { id: string; nom: string; coefficient?: number; noteEliminatoire?: number }[] };
 
 const numero = (v: unknown): number | null => {
   const n = Number(v);
@@ -30,7 +32,7 @@ export function observerNotesGlobales(p: {
 }): ObservationNoteGlobale[] {
   const out: ObservationNoteGlobale[] = [];
   for (const exam of p.examens) {
-    if (exam.matieres.length !== 7) continue;
+    if (exam.matieres.length !== 7 || new Set(exam.matieres.map(m => m.id)).size !== 7) continue;
     const rows = p.rows.filter(r => r.apprenant_id === p.apprenant.id && r.quiz_id === exam.id && r.matiere_id && dateValide(r.completed_at));
     const states = p.states.filter(s => s.apprenantId === p.apprenant.id && s.examId === exam.id && !s.neutralise);
     // A V2 copy may have its tentative only in its explicitly linked legacy row.
@@ -53,9 +55,9 @@ export function observerNotesGlobales(p: {
           if (!Array.isArray(questions) || questions.length === 0) return { ...base, qrc: "inconnues", publication: "a_verifier", cause: "Questions figées absentes" };
           const ids = questions.filter((q: any) => String(q.type).toUpperCase() === "QRC").map((q: any) => String(q.id ?? q.questionId));
           const proofs = state.qrcProofs ?? [];
-          const normalize = (id: string) => id.replace(new RegExp(`^${m.id}:`), "");
-          const complete = ids.every((id: string) => proofs.some(q => normalize(q.questionId) === normalize(id)));
-          const validated = complete && ids.every((id: string) => proofs.some(q => normalize(q.questionId) === normalize(id) && q.etat === "corrigee" && q.note != null && Number.isFinite(q.note)));
+          const normalize = (id: string) => id.startsWith(`${m.id}:`) ? id.slice(m.id.length + 1) : id;
+          const complete = new Set(ids.map(normalize)).size === ids.length && ids.every((id: string) => proofs.filter(q => normalize(q.questionId) === normalize(id)).length === 1);
+          const validated = complete && proofs.length === ids.length && proofs.every(q => q.etat === "corrigee" && q.note != null && Number.isFinite(q.note));
           const qrc = !complete ? "inconnues" : validated ? "validees" : "en_attente";
           const projected = row ? attacherSourceUnique(row, p.states, p.nonFiables) : null;
           const visible = projected && noteExamenAffichee(projected).etat === "note";
@@ -77,10 +79,19 @@ export function observerNotesGlobales(p: {
       });
       const cle = `${p.apprenant.id}:${exam.id}:T${tentative}`;
       const causes = Array.from(new Set(matieres.map(m => m.cause).filter(Boolean)));
+      let publiee = matieres.every(m => m.publication === "publiee");
+      if (publiee) {
+        const bilan = computeMoyenneExamen(exam as ExamenBlanc, m => {
+          const r = rows.find(r => numero(r.tentative) === tentative && r.matiere_id === m.id);
+          return r ? computeMatiereScoreForAttempt(m, attacherSourceUnique(r, p.states, p.nonFiables)) : null;
+        });
+        publiee = bilan.verdict === "reussi" || bilan.verdict === "echoue";
+        if (!publiee) causes.push("Verdict global non déterminé par le calcul d’affichage habituel");
+      }
       out.push({ cle, apprenantId: p.apprenant.id, nom: `${p.apprenant.nom} ${p.apprenant.prenom}`.trim(), filiere: exam.type, examen: exam.id, tentative, matieres,
-        signature: JSON.stringify(matieres.map(m => [m.copieId, m.qrc, m.publication, m.cause])),
+        signature: JSON.stringify([matieres.map(m => [m.copieId, m.qrc, m.publication, m.cause]), publiee]),
         prete: matieres.every(m => m.terminee && m.qrc === "validees"),
-        publiee: matieres.every(m => m.publication === "publiee"), cause: causes.join(" ; ") });
+        publiee, cause: causes.join(" ; ") });
     }
   }
   return out;
