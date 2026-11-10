@@ -295,7 +295,7 @@ export default function AdminCorrectionQrcV2Reel() {
           // Liste identique : aucune mise à jour (pas de re-rendu ni de nouveau rapprochement).
           if (actif) setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
         }).catch((e: Error) => { if (actif) setErreur(e.message); });
-      }, 5000);
+      }, 2000);
     };
     const arreterV2 = souscrireSignal("admin-qrc-v2-passages", "exam_attempts_v2", actualiser);
     const arreterHistorique = souscrireSignal("admin-qrc-v2-passages-historiques", "apprenant_quiz_results", actualiser, "quiz_type=eq.examen_blanc");
