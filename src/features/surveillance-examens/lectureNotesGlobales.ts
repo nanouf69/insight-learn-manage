@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCoreMatiereStatesBulk } from "@/lib/coreExamPublication";
-import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
+import { fetchCoreMatiereStatesBulk, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { modeExamenBlancStrict } from "@/lib/confirmationPresentielEB";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
@@ -36,16 +35,14 @@ async function chargerObservations(): Promise<ObservationNoteGlobale[]> {
       .select("reset_id, apprenant_id, exam_id, cutoff_at, archived_legacy_result_ids").in("apprenant_id", lot).order("reset_id").range(d, f) as any),
   ]);
   // Serial small groups avoid flooding the connection pool with seven-table reads.
-  const coreMap = new Map();
+  const coreMap = new Map<string, CoreMatiereState[]>();
   for (let i = 0; i < appIds.length; i += 20) {
     const group = await fetchCoreMatiereStatesBulk(appIds.slice(i, i + 20));
     if (group === null) throw new Error("Lecture des passages serveur impossible");
     for (const [id, states] of group) coreMap.set(id, states);
   }
-  if (coreMap === null) throw new Error("Lecture des passages serveur impossible");
   // The shared reader already loaded the immutable answers used by this same verifier.
   const nonFiables = new Set<string>();
-  if (nonFiables === null) throw new Error("Lecture des preuves serveur impossible");
   const definitions = examens.filter(e => /^EB[1-6](-TAXI)?$/.test(e.id) && (e.type === "VTC" || e.type === "TAXI")) as DefinitionSurveillee[];
   return eligibles.flatMap(a => {
     const rs = resets.filter(r => r.apprenant_id === a.id);

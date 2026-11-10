@@ -20,6 +20,9 @@ export interface CoreMatiereState {
   qrcTotal: number;
   qrcRestantes: number;
   status: string | null;
+  /** Optional read-only publication evidence for administrative diagnostics. */
+  publishedAt?: string | null;
+  isTest?: boolean;
   /** Passage copié depuis l'ancien système : identifiant de la ligne d'origine (apprenant_quiz_results.id). */
   resultId?: string | null;
   /** Tentative neutralisée (renvoyée seulement sur demande explicite, pour être écartée). */
@@ -92,7 +95,7 @@ export async function fetchCoreMatiereStatesBulk(
       const [attempts, qrcs, results, neutres, legacyResults, answers, resets] = await Promise.all([
         all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, questions:snapshot->questions, result_id:snapshot->source_historique->>result_id, historique:snapshot->source_historique, tentative:snapshot->>tentative", chunk, (q) => q.eq("etat", "terminee")),
         all("qrc_instances_v2", "attempt_id, question_id, reponse, etat, note", chunk),
-        all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes", chunk),
+        all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes, published_at", chunk),
         // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
         // jamais prises en compte dans la notation ni l'affichage.
         all("core_tentatives_neutralisees", "attempt_id", chunk),
@@ -146,6 +149,8 @@ export async function fetchCoreMatiereStatesBulk(
             qrcTotal: q.total,
             qrcRestantes,
             status: r?.status ?? null,
+            publishedAt: r?.published_at ?? null,
+            isTest: a.is_test === true,
             resultId: a.result_id ? String(a.result_id) : null,
             ...(neutralises.has(String(a.attempt_id)) ? { neutralise: true } : {}),
             note20,

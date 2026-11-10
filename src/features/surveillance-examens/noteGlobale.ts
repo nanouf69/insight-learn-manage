@@ -34,7 +34,7 @@ export function observerNotesGlobales(p: {
   for (const exam of p.examens) {
     if (exam.matieres.length !== 7 || new Set(exam.matieres.map(m => m.id)).size !== 7) continue;
     const rows = p.rows.filter(r => r.apprenant_id === p.apprenant.id && r.quiz_id === exam.id && r.matiere_id && dateValide(r.completed_at));
-    const states = p.states.filter(s => s.apprenantId === p.apprenant.id && s.examId === exam.id && !s.neutralise);
+    const states = p.states.filter(s => s.apprenantId === p.apprenant.id && s.examId === exam.id && !s.neutralise && !s.isTest);
     // A V2 copy may have its tentative only in its explicitly linked legacy row.
     const tentativeState = (s: CoreMatiereState) => numero(s.tentative) ?? numero(rows.find(r => r.id === s.resultId || s.provenResultIds?.includes(r.id))?.tentative);
     const tentatives = new Set<number>();
@@ -61,7 +61,7 @@ export function observerNotesGlobales(p: {
           const qrc = !complete ? "inconnues" : validated ? "validees" : "en_attente";
           const projected = row ? attacherSourceUnique(row, p.states, p.nonFiables) : null;
           const visible = projected && noteExamenAffichee(projected).etat === "note";
-          const publication = visible && !state.pending ? "publiee" : "absente";
+          const publication = visible && !state.pending && state.publishedAt !== null ? "publiee" : "absente";
           const cause = publication === "publiee" ? null : !row ? "Résultat matière absent du circuit d’affichage" : state.status == null ? "Résultat serveur absent" : state.qrcRestantes > 0 && validated ? "Compteur QRC serveur obsolète" : state.pending ? "Note matière non publiée définitivement" : "Liaison ou projection du résultat non vérifiable";
           return { ...base, qrc, publication, cause };
         }
