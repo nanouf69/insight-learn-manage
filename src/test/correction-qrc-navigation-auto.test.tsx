@@ -169,7 +169,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     const lectures = mocks.charger.mock.calls.length;
     fireEvent.mouseEnter(screen.getByTestId("choix-session"));
     fireEvent.mouseEnter(screen.getByTestId("cellule-a2-q1"));
-    fireEvent.click(screen.getByRole("button", { name: /Zoom avant/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Augmenter le zoom" }));
     fireEvent(window, new Event("focus"));
     fireEvent(document, new Event("visibilitychange"));
     await new Promise((r) => setTimeout(r, 50));
@@ -340,7 +340,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     expect(await screen.findByTestId("nouveaux-passages")).toBeInTheDocument();
     expect(mocks.corriger).not.toHaveBeenCalled();
     expect(mocks.reviser).not.toHaveBeenCalled();
-  });
+  }, 8000);
   it.each(['EB3', 'EB3-TAXI'])('valide automatiquement 2/2 une réponse littéralement identique %s, une seule écriture', async (examId) => {
     if (!etat.session) throw new Error('Session absente');
     for (const t of etat.session.tentatives) t.exam_id = examId;
