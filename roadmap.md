@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## 10/11 12:41 — Révisions admin et correcteur unique
-- [ ] Afficher les réponses de révision persistées par identité complète, initiale distincte et heure prouvée ; aucun cache ni écriture.
-- [ ] Tests de projection, isolation, concurrence et rechargement ; vérification publiée clé matière:question et rapprochement.
-- [ ] Anciennes copies : consultation unique sûre, À VÉRIFIER sans barème/snapshot, aucune note humaine inventée.
-- [ ] Rapport code/test/live, empreintes et retour arrière ; publication seulement si contrôles critiques entièrement prouvés.
+- [x] Aperçu : réponses persistées par identité explicite, initiale distincte, heure individuelle prouvée sinon signalée ; 55 réponses consultées et reload identique.
+- [x] Tests 32 nouveaux/lecture/inventaire, 79 révision, 46 tri/navigation/notes, 6 PostgreSQL jetable PASS ; clé matière:question confirmée dans paquet public, compteur live 4326/4326/0.
+- [x] Anciennes copies : remplacement de l’ancien écran par consultation unique sans notation, À VÉRIFIER ; pas de note humaine inventée.
+- [x] Rapport docs/revisions-admin-2026-11-10-1241-no-go.md ; empreinte 204 révisions identique avant/après ; aucune migration/publication.
+- [ ] Publication NO-GO : E2E sauvegarde élève → admin sur API isolée du chemin publié, concurrence/Terminer, écran mobile non recouvert, consultation historique visuelle et rollback déployé durable non prouvés ; dernière répétition compteur expirée.
 
 ## 10/11 10:49 — Reprise activation liaison QRC
 - [x] Preuve serveur ciblée des cinq remises Meriem BENNANI EB2 T3 : 5/5 prouvées (migration 0257, table append-only), sans réécriture ni assouplissement global.
