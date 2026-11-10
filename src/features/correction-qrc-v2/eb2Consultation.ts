@@ -347,6 +347,27 @@ export async function reviserQrcHistorique(params: {
   return data as Record<string, unknown>;
 }
 
+/** Commentaire seul sur une ancienne copie déjà corrigée : ligne de journal append-only, note et copie intactes. */
+export async function commenterQrcHistorique(params: {
+  operationId: string;
+  resultId: string;
+  questionId: string;
+  noteAttendue: number;
+  revisionAttendue: number;
+  commentaire: string;
+}) {
+  const { data, error } = await (supabase as any).rpc("qrc_historique_commenter", {
+    p_operation_id: params.operationId,
+    p_result_id: params.resultId,
+    p_question_id: params.questionId,
+    p_note_attendue: params.noteAttendue,
+    p_revision_attendue: params.revisionAttendue,
+    p_commentaire: params.commentaire,
+  });
+  if (error) throw error;
+  return data as Record<string, unknown>;
+}
+
 /**
  * Trace de remise envoyée avec la note. Identité prouvée (élève + exercice + tentative + réponses identiques) :
  * vérification automatique, sans case. Aucune fiche identique : refus, jamais d'attestation humaine inventée.
@@ -370,8 +391,8 @@ export async function lireHistoriqueQrcHistorique(resultId: string, questionId: 
     .eq("result_id", resultId).eq("question_id", questionId)
     .order("revision", { ascending: true });
   if (error) throw error;
-  return ((data ?? []) as Array<{ note: number; note_precedente: number | null; created_at: string; commentaire?: string | null }>).map((h) => ({
-    commentaire: h.commentaire,
+  return ((data ?? []) as Array<{ note: number; note_precedente: number | null; created_at: string; revision: number; commentaire?: string | null }>).map((h) => ({
+    commentaire: h.commentaire, revision: h.revision,
     note_precedente: h.note_precedente, note_nouvelle: h.note, created_at: h.created_at, corrige_email: "administrateur (journal tracé)" as string | null, etat_precedent: null, etat_nouveau: "corrigee",
   }));
 }

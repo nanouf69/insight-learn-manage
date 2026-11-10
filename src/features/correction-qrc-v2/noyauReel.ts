@@ -659,7 +659,35 @@ export async function reviserQrc(params: {
   return data as Record<string, unknown>;
 }
 
+/**
+ * Commentaire seul sur une QRC V2 déjà corrigée : nouvel événement append-only, même note.
+ * CAS sur la note et le dernier événement relu ; même opération = rejeu sans nouvelle écriture.
+ */
+export async function commenterQrc(params: {
+  operationId: string;
+  qrcInstanceId: string;
+  noteAttendue: number;
+  dernierEvenementAttendu: number | null;
+  commentaire: string;
+  email?: string;
+}) {
+  const { data, error } = await (supabase as any).rpc("core_commenter_qrc", {
+    p_operation_id: uuidDeterministe(params.operationId),
+    p_qrc_instance_id: params.qrcInstanceId,
+    p_note_attendue: params.noteAttendue,
+    p_dernier_evenement_attendu: params.dernierEvenementAttendu,
+    p_commentaire: params.commentaire,
+    p_corrige_email: params.email ?? null,
+  });
+  if (error) throw error;
+  return data as Record<string, unknown>;
+}
+
 export type EvenementCorrection = {
+  /** V2 : identité de l'événement (version CAS du commentaire seul). */
+  correction_event_id?: number | null;
+  /** Ancien circuit : numéro de révision du journal (version CAS). */
+  revision?: number | null;
   etat_precedent: string | null;
   etat_nouveau: string | null;
   note_precedente: number | null;
@@ -673,9 +701,10 @@ export type EvenementCorrection = {
 export async function lireHistoriqueQrc(qrcInstanceId: string): Promise<EvenementCorrection[]> {
   const { data, error } = await supabase
     .from("qrc_correction_events")
-    .select("etat_precedent, etat_nouveau, note_precedente, note_nouvelle, corrige_email, created_at, commentaire")
+    .select("correction_event_id, etat_precedent, etat_nouveau, note_precedente, note_nouvelle, corrige_email, created_at, commentaire")
     .eq("qrc_instance_id", qrcInstanceId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("correction_event_id", { ascending: true });
   if (error) throw error;
   return (data ?? []) as EvenementCorrection[];
 }
