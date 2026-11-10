@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 10/11 16:38 — QCM tout-ou-rien et corrigé titiller
-- [ ] Vérifier les fonctions serveur et calculs partagés, tester A+C exact et permutations sans modification historique.
-- [ ] Vérifier le corrigé officiel actuel côté candidat, rechargement et publication conditionnelle ; ne publier que si le parcours critique est prouvé.
-- [ ] Rapport avec limites et verdict.
+- [x] Fonctions serveur et chemins partagés inspectés ; A+C actuel 2 points VTC v23/TAXI v10 confirmé ; 115 Vitest PASS et 14 calculs PostgreSQL jetables PASS, historique intact.
+- [ ] Publication NO-GO : parcours réel CHEMOUN EB3 en branche attente sans encadré ; affichage positif A+C/rechargement/mobile et modification→candidat non prouvés. Ne pas forcer de correction ou modifier une question réelle pour tester.
+- [x] Rapport docs/qcm-tout-ou-rien-2026-11-10-1638.md, règle permanente enregistrée ; aucun code actif ni donnée pédagogique modifié.
 
 ## 10/11 14:32 — Incident notes QRC EB3 TAXI
 - [x] Diagnostic lecture seule : captures identifiées (candidat = CHEMOUN Mourad), nouveau correcteur cohérent 2 735/2 735, 14 tests jetables PASS. Rapport docs/incident-notes-qrc-eb3-taxi-2026-11-10-1432.md.
