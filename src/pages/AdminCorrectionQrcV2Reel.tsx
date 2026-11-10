@@ -589,14 +589,14 @@ export default function AdminCorrectionQrcV2Reel() {
   // Toute autre proposition (ex. équivalence B2) n'est qu'une présélection à enregistrer.
   const autoTentees = useRef(new Set<string>());
   useEffect(() => {
-    if (!qrcSel || qrcSel.etat === 'corrigee' || videSel || confirmationSel) return;
+    if (!qrcSel || qrcSel.etat === 'corrigee' || videSel || histoSel?.provenance === 'resultat_seul') return;
     if (!proposition.autoValidable) return;
     if (baremeSel == null || proposition.note == null || proposition.note !== baremeSel) return;
     if (etatEnvoi === 'encours' || autoTentees.current.has(qrcSel.qrc_instance_id)) return;
     autoTentees.current.add(qrcSel.qrc_instance_id);
     void valider(baremeSel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrcSel?.qrc_instance_id, qrcSel?.etat, proposition.note, proposition.autoValidable, baremeSel, videSel, confirmationSel, etatEnvoi]);
+  }, [qrcSel?.qrc_instance_id, qrcSel?.etat, proposition.note, proposition.autoValidable, baremeSel, videSel, histoSel?.provenance, etatEnvoi]);
 
   const navigationCopies = (
     <div className="flex items-center gap-2 border-y py-2" data-testid="navigation-copies">
