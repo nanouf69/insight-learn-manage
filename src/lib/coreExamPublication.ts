@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { nativeResultMatchesAnswers } from "./nativeExamResultIdentity";
+import { commentaireQrcPersistant, type EvenementCommentaireQrc } from "./commentaireQrcPersistant";
 
 /**
  * SOURCE UNIQUE DE L'ÉTAT QRC / NOTE D'UNE MATIÈRE D'EXAMEN BLANC.
@@ -32,7 +33,7 @@ export interface CoreMatiereState {
   pending: boolean;
   apprenantId?: string;
   tentative?: number | null;
-  qrcProofs?: Array<{ questionId: string; reponse: unknown; etat: string; note: number | null }>;
+  qrcProofs?: Array<{ questionId: string; reponse: unknown; etat: string; note: number | null; commentaire?: string | null }>;
   answers?: Record<string, unknown>;
   historicalDetails?: any;
   questions?: any[];
@@ -75,6 +76,7 @@ export async function fetchCoreMatiereStatesBulk(
     exam_attempts_v2: "attempt_id", qrc_instances_v2: "qrc_instance_id", core_exam_results: "result_id",
     core_tentatives_neutralisees: "attempt_id", apprenant_quiz_results: "id", answer_state: "response_id",
     core_exam_resets: "reset_id",
+    qrc_correction_events: "correction_event_id",
   };
   const all = async (table: string, cols: string, chunk: string[], extra?: (q: any) => any) => {
     const rows: any[] = [];
@@ -94,7 +96,7 @@ export async function fetchCoreMatiereStatesBulk(
       const chunk = ids.slice(i, i + CHUNK);
       const [attempts, qrcs, results, neutres, legacyResults, answers, resets] = await Promise.all([
         all("exam_attempts_v2", "attempt_id, apprenant_id, exam_id, finished_at, etat, is_test, matiere:snapshot->>matiere, matieres:snapshot->matieres, questions:snapshot->questions, result_id:snapshot->source_historique->>result_id, historique:snapshot->source_historique, tentative:snapshot->>tentative", chunk, (q) => q.eq("etat", "terminee")),
-        all("qrc_instances_v2", "attempt_id, question_id, reponse, etat, note", chunk),
+        all("qrc_instances_v2", "qrc_instance_id, apprenant_id, attempt_id, question_id, reponse, etat, note", chunk),
         all("core_exam_results", "attempt_id, result_revision, status, score, total, qrc_restantes, published_at", chunk),
         // Tentatives neutralisées (techniques/incomplètes) : conservées en base mais
         // jamais prises en compte dans la notation ni l'affichage.
@@ -103,6 +105,13 @@ export async function fetchCoreMatiereStatesBulk(
         all("answer_state", "attempt_id, question_id, valeur", chunk),
         all("core_exam_resets", "archived_attempt_ids, archived_legacy_result_ids", chunk),
       ]);
+      // Un commentaire indisponible ne doit jamais changer l'état ou la note d'une copie.
+      let commentaires: EvenementCommentaireQrc[] = [];
+      try {
+        commentaires = await all("qrc_correction_events", "correction_event_id, qrc_instance_id, attempt_id, question_id, apprenant_id, note_nouvelle, commentaire, created_at", chunk);
+      } catch (error) {
+        console.warn("Lecture du retour pédagogique QRC indisponible", error);
+      }
       const neutralises = new Set(neutres.map((n) => String(n.attempt_id)));
       const archivedAttempts = new Set(resets.flatMap(r => r.archived_attempt_ids ?? []).map(String));
       const archivedResults = new Set(resets.flatMap(r => r.archived_legacy_result_ids ?? []).map(String));
@@ -166,7 +175,7 @@ export async function fetchCoreMatiereStatesBulk(
             coefficient: nombreOuNull(meta?.coefficient),
             duree: nombreOuNull(meta?.duree),
             candidateResultIds: legacyResults.filter((l) => String(l.apprenant_id) === key && l.quiz_id === a.exam_id && l.matiere_id === a.matiere && Math.abs(new Date(l.completed_at).getTime() - new Date(a.finished_at).getTime()) <= CORE_MATCH_WINDOW_MS && (a.tentative == null || l.tentative == null || Number(a.tentative) === Number(l.tentative))).map((l) => String(l.id)),
-            qrcProofs: qrcs.filter((q) => q.attempt_id === a.attempt_id).map((q) => ({ questionId: String(q.question_id), reponse: q.reponse, etat: q.etat, note: q.note == null ? null : Number(q.note) })),
+            qrcProofs: qrcs.filter((q) => q.attempt_id === a.attempt_id).map((q) => ({ questionId: String(q.question_id), reponse: q.reponse, etat: q.etat, note: q.note == null ? null : Number(q.note), commentaire: commentaireQrcPersistant(commentaires, q) })),
           });
           out.set(key, list);
         });

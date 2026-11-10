@@ -160,9 +160,9 @@ describe("Correction QRC — passage automatique après confirmation de persista
     });
     await ouvrirCopie("a1-q1");
     fireEvent.change(screen.getByPlaceholderText("Commentaire (facultatif)"), { target: { value: "Retour personnel" } });
-    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!", exact: true }));
-    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!", exact: true }));
-    fireEvent.click(screen.getByRole("button", { name: "Attention aux fautes !!!", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!" }));
+    fireEvent.click(screen.getByRole("button", { name: "Précisez !!!" }));
+    fireEvent.click(screen.getByRole("button", { name: "Attention aux fautes !!!" }));
     expect(mocks.corriger).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("note-1"));
     await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
@@ -174,7 +174,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     expect(await screen.findByTestId("commentaire-enregistre")).toHaveTextContent("Précisez !!!");
     fireEvent.click(screen.getByTestId("modifier-note"));
     expect(screen.getByPlaceholderText("Motif de la révision (facultatif)")).toHaveValue(persiste);
-    fireEvent.click(screen.getByRole("button", { name: "Mal dit !!!", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Mal dit !!!" }));
     expect(screen.getByPlaceholderText("Motif de la révision (facultatif)")).toHaveValue(`${persiste}\nMal dit !!!`);
   });
   const copieHistorique = (provenance: string) => {
