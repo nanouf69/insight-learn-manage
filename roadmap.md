@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 16:38 — QCM tout-ou-rien et corrigé titiller
+- [ ] Vérifier les fonctions serveur et calculs partagés, tester A+C exact et permutations sans modification historique.
+- [ ] Vérifier le corrigé officiel actuel côté candidat, rechargement et publication conditionnelle ; ne publier que si le parcours critique est prouvé.
+- [ ] Rapport avec limites et verdict.
+
 ## 10/11 14:32 — Incident notes QRC EB3 TAXI
 - [x] Diagnostic lecture seule : captures identifiées (candidat = CHEMOUN Mourad), nouveau correcteur cohérent 2 735/2 735, 14 tests jetables PASS. Rapport docs/incident-notes-qrc-eb3-taxi-2026-11-10-1432.md.
 - [ ] Anciennes copies TAXI non notables (8 : CHEMOUN, FERREIRA) — preuves ciblées + notation serveur, attend accord.
