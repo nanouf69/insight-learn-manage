@@ -302,11 +302,13 @@ export default function AdminCorrectionQrcV2Reel() {
   const envoiEnCoursRef = useRef(false);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const arreter = souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => {
+    const signalNote = () => {
       clearTimeout(timer);
       timer = setTimeout(() => { if (!envoiEnCoursRef.current) void recharger(); }, 1500);
-    });
-    return () => { clearTimeout(timer); arreter(); };
+    };
+    const arreter = souscrireSignal("admin-qrc-v2", "qrc_instances_v2", signalNote);
+    const arreterResultats = souscrireSignal("admin-qrc-v2-resultats", "core_exam_results", signalNote);
+    return () => { clearTimeout(timer); arreter(); arreterResultats(); };
   }, [recharger]);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
