@@ -1828,6 +1828,13 @@
       "when": 1794320110148,
       "tag": "0260_qrc_mots_cles_admin_partages",
       "breakpoints": true
+    },
+    {
+      "idx": 261,
+      "version": "7",
+      "when": 1794321929287,
+      "tag": "0261_eb_notes_synchronisation",
+      "breakpoints": true
     }
   ]
 }
