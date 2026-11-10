@@ -138,7 +138,7 @@ beforeEach(() => {
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
   const copieHistorique = (provenance: string) => {
     const t = { ...tentative("a1"), attempt_id: "consultation:r1", historique: { result_id: "r1", score_obtenu: 2, seuil: 6, provenance } };
-    etat.session = { tentatives: [t as TentativeReelle], qrc: [{ ...qrc(t.attempt_id), qrc_instance_id: "consultation:r1:q1" }], resultats: [], baremesRestaures: [] };
+    etat.session = { tentatives: [t as TentativeReelle], qrc: [{ ...qrc(t.attempt_id), apprenant_id: t.apprenant_id, qrc_instance_id: "consultation:r1:q1" }], resultats: [], baremesRestaures: [] };
   };
   it.each(["remise_identique", "remise_horodatage_divergent"])("copie historique %s : clic enregistré puis note relue sans confirmation", async (provenance) => {
     copieHistorique(provenance);
