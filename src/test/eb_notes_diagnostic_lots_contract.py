@@ -101,7 +101,7 @@ ANALYZE;
     code, out = pg.sql(sql)
     assert code == 0, out[-1500:]
     # Résultats enregistrés = formule serveur réelle (core_note_attempt), lue en administrateur.
-    code, out = pg.sql("CREATE TEMP TABLE ids AS SELECT attempt_id FROM public.exam_attempts_v2 WHERE etat = 'terminee'; GRANT SELECT ON ids TO authenticated; " + ctx(ADMIN_C, """
+    code, out = pg.sql("CREATE TEMP TABLE ids AS SELECT attempt_id FROM public.exam_attempts_v2 WHERE etat = 'terminee'; GRANT SELECT ON ids TO authenticated; GRANT EXECUTE ON FUNCTION public.core_note_attempt(uuid) TO authenticated; " + ctx(ADMIN_C, """
 CREATE TEMP TABLE calc AS SELECT t.attempt_id, n.score20, n.total, n.qrc_restantes
 FROM ids t, LATERAL public.core_note_attempt(t.attempt_id) n;
 RESET ROLE; RESET SESSION AUTHORIZATION;
@@ -109,6 +109,7 @@ SET session_replication_role = replica;
 INSERT INTO public.core_exam_results (attempt_id, apprenant_id, status, score, total, qrc_restantes, published_at)
 SELECT c.attempt_id, (SELECT apprenant_id FROM public.exam_attempts_v2 t WHERE t.attempt_id = c.attempt_id), CASE WHEN qrc_restantes = 0 THEN 'definitif' ELSE 'provisoire' END, score20, total, qrc_restantes,
        CASE WHEN qrc_restantes = 0 THEN now() END FROM calc c;
+REVOKE EXECUTE ON FUNCTION public.core_note_attempt(uuid) FROM authenticated;  -- droit temporaire du chargement retiré
 """))
     assert code == 0, out[-1500:]
     # Défauts injectés (états dérivés incohérents) sur des copies du nouveau correcteur avec barème.
