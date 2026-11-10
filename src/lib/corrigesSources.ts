@@ -52,8 +52,10 @@ export function separerSources(data: unknown): {questions: CarteSources; copies:
   return {questions, copies};
 }
 export async function lireSources(attempts: string[], results: string[]): Promise<CarteSources> {
-  const copies = [...new Set(attempts)].map(id => ({type: "attempt" as const, id}))
-    .concat([...new Set(results)].map(id => ({type: "result" as const, id})));
+  const copies: {type: SourceType; id: string}[] = [
+    ...[...new Set(attempts)].map(id => ({type: "attempt" as const, id})),
+    ...[...new Set(results)].map(id => ({type: "result" as const, id})),
+  ];
   return (await lireSourcesCopies(copies)).questions;
 }
 /** Exhaustive bounded reads: 50 copies per call, every copy must come back (question or copy-level row). */
