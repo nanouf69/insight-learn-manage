@@ -496,6 +496,9 @@ export default function AdminCorrectionQrcV2Reel() {
       if (!histo || histo.score_obtenu == null) return;
     }
     const revision = qrcSel.etat === "corrigee";
+    // Note IA non vérifiée : cliquer la note proposée la confirme (devient humaine), sans étape intermédiaire.
+    const surIa = revision && origineSel === "ia";
+    if (surIa && n === qrcSel.note) confirmationIa = true;
     if (revision && !confirmationIa && n === qrcSel.note) {
       // Même note : seul le commentaire peut changer, sans révision de note ni recalcul.
       if (commentaireModifie && commentaireCourant !== commentaireSauve) await enregistrerCommentaireSeul();
@@ -518,7 +521,8 @@ export default function AdminCorrectionQrcV2Reel() {
       const msg = confirmationIa
         ? `Confirmer la note IA ${fmt(n)} ? Elle deviendra une correction humaine vérifiée.`
         : `Modifier la correction de ${fmt(ancienne)} à ${fmt(n)} ?`;
-      if (!window.confirm(msg)) return;
+      // Remplacement d'une proposition IA : enregistrement immédiat au clic (aucune note humaine écrasée).
+      if (!surIa && !window.confirm(msg)) return;
     }
     setNote(n);
     envoiEnCoursRef.current = true;
@@ -1337,7 +1341,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   {baremeSel != null ? ` / ${baremeSel}` : " (barème historique absent)"}
                 </p>
                 {navigationCopies}
-                {!modeRevision ? (
+                {!modeRevision && origineSel !== "ia" ? (
                   <>
                     <Button variant="outline" size="sm" data-testid="modifier-note" disabled={!historiqueCharge} onClick={() => setModeRevision(true)}>
                       ✏️ Modifier la note
@@ -1371,6 +1375,7 @@ export default function AdminCorrectionQrcV2Reel() {
                           size="lg"
                           className="min-w-[56px] text-base font-semibold"
                           variant={qrcSel.note === v ? "default" : "outline"}
+                          title={origineSel === "ia" && qrcSel.note === v ? "Note proposée par l'IA — cliquer pour la valider" : undefined}
                           data-testid={`revision-note-${v}`}
                           disabled={etatEnvoi === "encours"}
                           onClick={() => void valider(v)}
@@ -1387,7 +1392,11 @@ export default function AdminCorrectionQrcV2Reel() {
                       onChange={(e) => modifierCommentaire(e.target.value)}
                     />
                     <CommentairesPredefinis disabled={etatEnvoi === "encours"} onAjouter={ajouterCommentaire} />
-                    <Button variant="ghost" size="sm" data-testid="annuler-revision" onClick={() => setModeRevision(false)}>Annuler</Button>
+                    {origineSel === "ia" ? (
+                      <p className="text-xs text-ia" data-testid="aide-note-ia">🤖 Note surlignée = proposition IA non vérifiée. Un clic sur une note l’enregistre immédiatement comme correction humaine vérifiée.</p>
+                    ) : (
+                      <Button variant="ghost" size="sm" data-testid="annuler-revision" onClick={() => setModeRevision(false)}>Annuler</Button>
+                    )}
                   </>
                 )}
                 <p className="text-xs text-muted-foreground">
