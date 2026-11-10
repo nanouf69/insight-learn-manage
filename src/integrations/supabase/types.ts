@@ -9818,6 +9818,17 @@ export type Database = {
         Args: { p_apprenant_id: string }
         Returns: boolean
       }
+      core_commenter_qrc: {
+        Args: {
+          p_commentaire: string
+          p_corrige_email?: string
+          p_dernier_evenement_attendu: number
+          p_note_attendue: number
+          p_operation_id: string
+          p_qrc_instance_id: string
+        }
+        Returns: Json
+      }
       core_contexte_correction_autorise: { Args: never; Returns: boolean }
       core_contexte_tentative_autorise: {
         Args: { p_apprenant_id: string }
@@ -10557,6 +10568,28 @@ export type Database = {
       }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
       qrc_historique_choix: { Args: { p: Json }; Returns: Json }
+      qrc_historique_commentaires_eleve: {
+        Args: { p_result_ids: string[] }
+        Returns: {
+          commentaire: string
+          created_at: string
+          note: number
+          question_id: string
+          result_id: string
+          revision: number
+        }[]
+      }
+      qrc_historique_commenter: {
+        Args: {
+          p_commentaire: string
+          p_note_attendue: number
+          p_operation_id: string
+          p_question_id: string
+          p_result_id: string
+          p_revision_attendue: number
+        }
+        Returns: Json
+      }
       qrc_historique_liaison_prouvee: {
         Args: { p_result_id: string }
         Returns: boolean
