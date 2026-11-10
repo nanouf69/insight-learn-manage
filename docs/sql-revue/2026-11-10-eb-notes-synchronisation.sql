@@ -43,6 +43,8 @@ DECLARE
   v_id_ko integer;
   v_type text;
   v_reparable boolean;
+  v_sans_bareme boolean;
+  v_importees integer := 0;
 BEGIN
   IF NOT public.core_contexte_correction_autorise() THEN
     RAISE EXCEPTION 'DIAGNOSTIC_NON_AUTORISE: administrateur requis.' USING ERRCODE = '42501';
@@ -79,8 +81,15 @@ BEGIN
 
     v_type := NULL;
     v_reparable := false;
+    v_sans_bareme := (a.snapshot ? 'source_historique') AND coalesce(n.total, 0) = 0;
+    IF v_sans_bareme THEN v_importees := v_importees + 1; END IF;
     IF v_id_ko > 0 THEN
       v_type := 'identite_incoherente';
+    ELSIF v_sans_bareme THEN
+      -- Copie importée sans barème figé : note de l'ancien circuit conservée, jamais recalculée ici.
+      IF n.qrc_restantes > 0 THEN v_type := 'importee_sans_bareme_qrc_restantes';
+      ELSIF res.result_id IS NULL OR res.score IS NULL THEN v_type := 'importee_note_absente';
+      END IF;
     ELSIF res.result_id IS NULL THEN
       v_type := 'resultat_manquant'; v_reparable := true;
     ELSIF res.score IS DISTINCT FROM n.score20 THEN
@@ -110,7 +119,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  RETURN jsonb_build_object('scannees', v_scan, 'terminees', v_terminees, 'en_cours', v_en_cours,
+  RETURN jsonb_build_object('scannees', v_scan, 'terminees', v_terminees, 'en_cours', v_en_cours, 'importees_sans_bareme', v_importees,
     'suivant', CASE WHEN v_scan = v_lim AND p_attempt_id IS NULL THEN v_dernier END,
     'lignes', v_lignes, 'lu_a', now());
 END;
@@ -237,6 +246,9 @@ BEGIN
   END IF;
 
   SELECT * INTO n FROM public.core_note_attempt(p_attempt_id);
+  IF (att.snapshot ? 'source_historique') AND coalesce(n.total, 0) = 0 THEN
+    RAISE EXCEPTION 'IMPORTEE_SANS_BAREME: copie importée sans barème figé ; note de l''ancien circuit conservée, aucun recalcul.' USING ERRCODE = 'P0564';
+  END IF;
   IF res.result_id IS NOT NULL AND res.score IS DISTINCT FROM n.score20 THEN
     RAISE EXCEPTION 'NOTE_DIVERGENTE: note enregistrée différente du calcul ; vérification humaine requise, aucune note modifiée.' USING ERRCODE = 'P0563';
   END IF;
