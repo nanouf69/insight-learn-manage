@@ -121,6 +121,12 @@ const matieresEb2 = () => {
   return (eb?.matieres ?? []).map((m, i) => ({ subject_id: m.id, lettre: String.fromCharCode(65 + i), titre: m.nom, ordre: i }));
 };
 
+/** Correction historique produite par l'IA et jamais validée par un formateur. */
+export function estIaNonValidee(c: any): boolean {
+  if (!c || typeof c !== "object" || c.validatedByAdmin === true) return false;
+  return c.ia === true || (typeof c.correctedBy === "string" && c.correctedBy.startsWith("ia:"));
+}
+
 /** Projection pure d'un résultat EB2 vers la forme V2 (tentative + QRC). Jamais de note inventée. */
 export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: boolean, provenance: ProvenanceRemise = remise ? "remise_identique" : "resultat_seul"): { tentative: TentativeReelle & { historique: InfosHistorique }; qrc: QrcReelle[] } {
   const attemptId = `${PREFIXE_CONSULTATION}${r.id}`;
@@ -174,7 +180,8 @@ export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: bo
       reponse: det.reponses?.[String(q.id)] ?? null,
       etat: corrigee ? "corrigee" : "en_attente",
       note: corrigee && typeof note === "number" ? note : null,
-      corrige_email: validee ? "formateur (copie historique)" : corrigee ? MARQUEUR_CORRECTION_HISTORIQUE : null,
+      // Note IA non validée par un formateur : affichée en violet « IA non vérifiée », jamais en vert humain.
+      corrige_email: validee && estIaNonValidee(c) ? "ia:copie historique" : validee ? "formateur (copie historique)" : corrigee ? MARQUEUR_CORRECTION_HISTORIQUE : null,
       corrige_at: validee ? (c?.correctedAt ?? null) : null,
     };
   });

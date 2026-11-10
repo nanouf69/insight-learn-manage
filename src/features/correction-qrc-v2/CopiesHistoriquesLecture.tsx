@@ -1,5 +1,6 @@
 import {useEffect,useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
+import {estIaNonValidee} from "@/features/correction-qrc-v2/eb2Consultation";
 
 type Copie = {id:string;apprenant_id:string;quiz_id:string;matiere_nom:string;tentative:number|null;completed_at:string;details:any};
 /** Historique consultable dans le correcteur unique, sans ancien écran de notation. */
@@ -38,7 +39,14 @@ export function CopiesHistoriquesLecture({resultIds}: {resultIds:string[]}) {
         const questions=r.details?.snapshot?.questions;
         const candidates=Array.isArray(questions)?questions.filter((q:any)=>String(q.id)===id):[];
         const q=candidates.length===1?candidates[0]:null;
-        return <div key={id} className="space-y-1"><p className="font-medium">Q{id} — {q?.enonce??"Énoncé figé non prouvé"}</p><p className="whitespace-pre-wrap">{String(answer)}</p><p className="text-warning text-sm">Correction humaine non attestée dans cette consultation.</p></div>;
+        return <div key={id} className="space-y-1"><p className="font-medium">Q{id} — {q?.enonce??"Énoncé figé non prouvé"}</p><p className="whitespace-pre-wrap">{String(answer)}</p>{(()=>{const c=r.details?.correctionsIA?.[id];const pts=Number(c?.pointsObtenus);const bareme=Number(q?.points??c?.bareme);
+          const fiable=c&&Number.isFinite(pts)&&Number.isFinite(bareme)&&pts>=0&&pts<=bareme&&Math.abs(pts*2-Math.round(pts*2))<1e-9;
+          const fr=(v:number)=>String(v).replace(".",",");
+          if(c?.validatedByAdmin===true&&fiable) return <p className="text-success text-sm font-semibold" data-testid="note-historique-validee">✓ Note validée par un formateur : {fr(pts)}/{fr(bareme)}</p>;
+          if(estIaNonValidee(c)) return fiable
+            ? <p className="text-ia text-sm font-semibold" data-testid="note-ia-proposee">🤖 Note proposée par l’IA (non vérifiée) : {fr(pts)}/{fr(bareme)}{c.explication?<span className="block font-normal text-muted-foreground">{String(c.explication)}</span>:null}</p>
+            : <p className="text-ia text-sm" data-testid="note-ia-absente">🤖 Évaluation IA sans note chiffrée fiable — aucune note proposée.</p>;
+          return <p className="text-warning text-sm">Correction humaine non attestée dans cette consultation.</p>;})()}</div>;
       })}
     </article>)}
   </section>;
