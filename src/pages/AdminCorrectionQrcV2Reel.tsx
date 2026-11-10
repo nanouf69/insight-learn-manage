@@ -3,6 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
+import { PanneauRapprochement } from "@/features/correction-qrc-v2/PanneauRapprochement";
 import { proposerPrenote, tracePrenote } from "@/features/correction-qrc-v2/prenote";
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
