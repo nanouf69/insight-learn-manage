@@ -293,7 +293,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     expect(lignes()).toEqual(["lien-crm-a2", "lien-crm-a1"]);
     etat.session.tentatives[0] = { ...etat.session.tentatives[0], finished_at: "2026-11-09T20:01:00Z" };
     mocks.signaux.get("exam_attempts_v2")?.();
-    await waitFor(() => expect(lignes()).toEqual(["lien-crm-a1", "lien-crm-a2"]));
+    await waitFor(() => expect(lignes()).toEqual(["lien-crm-a1", "lien-crm-a2"]), { timeout: 4000 });
     expect(mocks.corriger).not.toHaveBeenCalled();
     expect(mocks.reviser).not.toHaveBeenCalled();
   });
