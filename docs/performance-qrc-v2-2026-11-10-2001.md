@@ -1,5 +1,38 @@
 # Performance Correction QRC V2 — vérification du 10 novembre 2026
 
+## Reprise autorisée 20:24 UTC — corrections implémentées, toujours NO-GO
+
+Cette section actualise les constats ci-dessous, qui restent le relevé historique de la première campagne.
+
+### Changements effectivement réalisés
+
+- Colonne du candidat non sticky sur mobile et lorsque le panneau est ouvert : les cellules ne sont plus masquées. Bouton de commentaire avec retour à la ligne dans le panneau étroit.
+- Actualiser relit les notes des copies affichées même si le catalogue est identique ; verrou synchrone contre le double clic. Une erreur de lecture n'est plus effacée par un faux succès d'actualisation.
+- Génération de lecture et invalidation au changement session/EB/date et au démontage : les réponses de lectures périmées sont écartées. Les anciens chiffres ne restent pas sous la nouvelle sélection pendant le chargement ; aucun faux 0/0 initial.
+- Signal des résultats historiques : notification sans scan complet automatique. Signal des résultats V2 regroupé avec les QRC. Aucun nouveau polling, préchargement survol, commande serveur ou frais IA.
+- Inventaire exhaustif lancé seulement après la première grille, puis une seule fois ou sur demande : pas de concurrence avec son premier chargement. Test spécifique ajoutant dix secondes d'attente avant la grille puis deux lectures de notes sans rescanner l'inventaire.
+- Appels de notation/commentaires, accusés ciblés et règles QRC inchangés. Les travaux des révisions et leur drapeau d'activation ne sont pas modifiés.
+
+### Vérifications exécutées sur cette reprise
+
+- **126/126 tests applicatifs, 15 fichiers PASS**, dont Actualiser sans événement, signal historique sans scan, réponse retardée écartée, inventaire différé, commentaire, préselection modifiable, humain protégé et finalisation des révisions.
+- **Types PASS** : `tsgo -p tsconfig.app.json --noEmit`, sortie sans erreur.
+- **Lint ciblé PASS**, zéro erreur/avertissement sur la page, le panneau d'inventaire et les deux tests modifiés/créés. Le reste du dossier n'a pas été nettoyé ni déclaré vert.
+- **Compilation PASS** : journal build OK, dernière entrée observée 20:33:03 UTC.
+- **E2E base jetable PASS PC jour EB3 VTC et mobile soir EB3 TAXI**, sans clic forcé : note au double clic, lecture confirmée, correction externe fictive, rafale de dix signaux, clic suivant auparavant intercepté, réseau interrompu, Actualiser et rechargement. Aucun appel de données extérieur, aucune erreur JS ; empreinte des sources fictives inchangée et quatre événements séparés.
+- Sauvegarde mesurée sur le dernier rejeu : **0,577 s PC / 0,611 s mobile**, comprenant l'attente fixe de test de 0,5 s ; **un POST + une lecture**, panneau **637/637 px PC et 192/192 px mobile**.
+- Actualiser au double clic : **une lecture catalogue + une lecture copies**, contre catalogue seul précédemment. Dix signaux QRC : une seule lecture copies, aucun scan catalogue. Survol : zéro appel.
+- Captures finales PC/mobile sauvegarde et erreur réseau inspectées ; bouton commentaire tient désormais dans le panneau. Transport SQL du prototype et bloc commentaires remplacé dans ce navigateur : la couverture n'est pas un test de toutes les RPC hébergées.
+- **Lecture admin réelle** aperçu/site publié : aucun POST de mutation ; première grille aperçu **17,765 s / 57 requêtes**, site inchangé **13,792 s / 56 requêtes** ; EB3 soir **35/34 requêtes**, survol/scroll zéro, largeur mobile document 390 px, aucun JS error. Un échantillon par écran : pas de gain statistiquement prouvé ; les premières grilles restent lentes.
+
+### Blocages encore réels
+
+**NO-GO maintenu** : pas de test navigateur complet des nouvelles copies historiques, des origines IA et humaine via les RPC hébergées, de tous les croisements jour/soir/filières ni de navigation rapide session/EB avec deux réponses réseau désordonnées. Le test de génération couvre deux lectures concurrentes sur un contexte, pas toutes ces navigations. Pas de parcours navigateur des questions fausses conjoint au correcteur. Les tests applicatifs de ces règles ne remplacent pas ces E2E.
+
+L'optimisation réalisée évite la concurrence du rapprochement avec la grille, mais le catalogue reste exhaustif et lent ; ses requêtes n'ont pas été amputées pour accélérer au prix de copies manquantes. Les lectures redondantes du catalogue EB2 restent candidates à un changement ultérieur après tests d'équivalence. Reconnexion temps réel automatique et droits de publication des événements historiques restent NON PROUVÉS ; bouton manuel testé comme secours.
+
+**Rollback** : aucune mutation/migration à annuler. Changements limités à la page et au panneau ; restaurer leurs fichiers pré-correction dans un paquet isolé tout en conservant les nouveaux tests, sans modifier les fonctions de notation, les révisions ni les données. Rejeu/retour de paquet public NON EXÉCUTÉ ; aucun GO de rollback. Aucune publication pendant cette reprise.
+
 ## Décision : NO-GO publication
 
 Aucune publication, migration, modification de configuration ni écriture pédagogique réelle effectuée pendant cette vérification. Seuls trois tests de régression ont été ajoutés et le délai d'un test existant adapté au regroupement de cinq secondes. Aucun code fonctionnel du correcteur ou de « refaire les questions fausses » n'a été modifié.
