@@ -17,9 +17,11 @@ import { CommentairesPredefinis } from "@/features/correction-qrc-v2/Commentaire
 import { ajouterCommentaireQrc } from "@/features/correction-qrc-v2/commentairesPredefinis";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { CopiesHistoriquesLecture } from "@/features/correction-qrc-v2/CopiesHistoriquesLecture";
-import { chargerConsultationEb2, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
+import { commentaireConfirme, cleOperationCommentaire, versionCommentaire } from "@/features/correction-qrc-v2/commentaireSeul";
+import { chargerConsultationEb2, commenterQrcHistorique, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
+  commenterQrc,
   corrigerQrc,
   lireHistoriqueQrc,
   listerGroupesCrm,
@@ -471,6 +473,12 @@ export default function AdminCorrectionQrcV2Reel() {
       if (!histo || histo.score_obtenu == null) return;
     }
     const revision = qrcSel.etat === "corrigee";
+    if (revision && !confirmationIa && n === qrcSel.note) {
+      // Même note : seul le commentaire peut changer, sans révision de note ni recalcul.
+      if (commentaireModifie && commentaireCourant !== commentaireSauve) await enregistrerCommentaireSeul();
+      else { setErreur(null); setMessageNavigation("Note identique et commentaire inchangé : rien à enregistrer."); }
+      return;
+    }
     if (revision && !historiqueCharge) {
       setErreur("Commentaire existant non relu : réessayez après rechargement de cette copie.");
       setEtatEnvoi("echec");
@@ -612,6 +620,76 @@ export default function AdminCorrectionQrcV2Reel() {
     } catch (e) {
       setEtatEnvoi("echec");
       setErreur((e as Error).message);
+    }
+  };
+
+  // Commentaire seul sur une QRC déjà corrigée : écriture append-only dédiée, note jamais renvoyée ni modifiée.
+  const enregistrerCommentaireSeul = async () => {
+    if (!qrcSel || qrcSel.etat !== "corrigee" || qrcSel.note == null || etatEnvoi === "encours") return;
+    if (!historiqueCharge) {
+      setErreur("Commentaire existant non relu : réessayez après rechargement de cette copie.");
+      setEtatEnvoi("echec");
+      return;
+    }
+    const texte = commentaireCourant;
+    const noteActuelle = Number(qrcSel.note);
+    const histo = estConsultation(qrcSel.qrc_instance_id)
+      ? ((tentativeSel as unknown as { historique?: InfosHistorique })?.historique ?? null)
+      : null;
+    if (texte === commentaireSauve) {
+      setCommentaireModifie(false);
+      setMessageNavigation("Commentaire déjà enregistré.");
+      return;
+    }
+    setEtatEnvoi("encours");
+    setErreur(null);
+    setMessageNavigation(null);
+    try {
+      if (!tentativeSel || tentativeSel.apprenant_id !== qrcSel.apprenant_id || tentativeSel.attempt_id !== qrcSel.attempt_id
+        || !questionSel || questionSel.id !== qrcSel.question_id
+        || (histo && tentativeSel.attempt_id !== `consultation:${histo.result_id}`)) {
+        throw new Error("Commentaire non enregistré : la liaison entre la copie, la question et l’élève est incohérente. Rechargez cette copie.");
+      }
+      const version = versionCommentaire(historique);
+      if (histo) {
+        await commenterQrcHistorique({
+          operationId: cleOperationCommentaire(`${histo.result_id}:${qrcSel.question_id}`, version, texte, jeton),
+          resultId: histo.result_id,
+          questionId: qrcSel.question_id,
+          noteAttendue: noteActuelle,
+          revisionAttendue: version.revision,
+          commentaire: texte,
+        });
+      } else {
+        await commenterQrc({
+          operationId: cleOperationCommentaire(qrcSel.qrc_instance_id, version, texte, jeton),
+          qrcInstanceId: qrcSel.qrc_instance_id,
+          noteAttendue: noteActuelle,
+          dernierEvenementAttendu: version.dernierEvenement,
+          commentaire: texte,
+          email: emailAdmin,
+        });
+      }
+      const journalRelu = histo
+        ? ((await lireHistoriqueQrcHistorique(histo.result_id, qrcSel.question_id)) as unknown as EvenementCorrection[])
+        : await lireHistoriqueQrc(qrcSel.qrc_instance_id);
+      if (!commentaireConfirme(journalRelu, texte, noteActuelle)) {
+        setEtatEnvoi("echec");
+        setErreur("Le commentaire n’a pas été confirmé par relecture. Votre texte reste affiché ; ne changez pas de copie.");
+        return;
+      }
+      setHistorique(journalRelu);
+      setCommentaire("");
+      setCommentaireModifie(false);
+      setJeton(Math.random().toString(36).slice(2, 10));
+      setEtatEnvoi("ok");
+      setMessageNavigation("Commentaire enregistré — note inchangée.");
+    } catch (e) {
+      setEtatEnvoi("echec");
+      const m = (e as Error).message ?? "";
+      setErreur(/CONFLIT|modifiée depuis|P0482|P0409/i.test(m)
+        ? "Cette correction a changé entre-temps (autre onglet ou autre correcteur). Rechargez la copie : votre texte reste affiché, rien n’a été écrasé."
+        : m);
     }
   };
 
@@ -1188,9 +1266,26 @@ export default function AdminCorrectionQrcV2Reel() {
                 </p>
                 {navigationCopies}
                 {!modeRevision ? (
-                  <Button variant="outline" size="sm" data-testid="modifier-note" disabled={!historiqueCharge} onClick={() => setModeRevision(true)}>
-                    ✏️ Modifier la note
-                  </Button>
+                  <>
+                    <Button variant="outline" size="sm" data-testid="modifier-note" disabled={!historiqueCharge} onClick={() => setModeRevision(true)}>
+                      ✏️ Modifier la note
+                    </Button>
+                    <div className="space-y-2" data-testid="commentaire-seul">
+                      <Textarea
+                        placeholder="Commentaire pour l’élève (la note ne change pas)"
+                        rows={2}
+                        value={commentaireCourant}
+                        disabled={etatEnvoi === "encours" || !historiqueCharge}
+                        onChange={(e) => modifierCommentaire(e.target.value)}
+                      />
+                      <CommentairesPredefinis disabled={etatEnvoi === "encours" || !historiqueCharge} onAjouter={ajouterCommentaire} />
+                      <Button size="sm" data-testid="enregistrer-commentaire"
+                        disabled={etatEnvoi === "encours" || !historiqueCharge || !commentaireModifie || commentaireCourant === commentaireSauve}
+                        onClick={() => void enregistrerCommentaireSeul()}>
+                        Enregistrer le commentaire
+                      </Button>
+                    </div>
+                  </>
                 ) : baremeSel == null ? (
                   <p className="text-xs text-muted-foreground">
                     Barème historique absent : la note ne peut pas être révisée tant que le barème n'est pas défini.
