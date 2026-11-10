@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 10:17 — Activation conditionnelle liaison QRC
+- [ ] Sauvegarde ciblée et empreintes, identification nominative des cinq copies historiques et recherche des preuves originales en lecture seule.
+- [ ] Tests isolés : liaison, identité, notes protégées, rollback, tri par fin décroissante et absence de confirmation manuelle.
+- [ ] Activation serveur/interface et publication seulement si les cinq copies sont prouvées et tous les tests passent ; sinon STOP/NO-GO sans déploiement.
+- [ ] Rapport des preuves, contrôles avant/après et éléments non prouvés.
+
 ## 10/11 09:46 — Régression liaison correction QRC
 - [x] Défaut reproduit en lecture sur ABDELHAK/DIANE Gestion QCM18 A+B/B+A et AIT BALLAGH Réglementation QCM10 B+C/C+B ; mêmes QRC, IDs, remise et tentative.
 - [x] Comparaison QCM figée corrigée, relecture avant note, contrôle serveur requis pour permutation, résultat matière relu incorporé ; candidat SQL des RPC réelles préparé hors migrations, non appliqué.
