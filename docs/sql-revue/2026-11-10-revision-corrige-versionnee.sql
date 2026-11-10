@@ -1,3 +1,4 @@
+-- SUPERSEDED 10/11 17:50 by 2026-11-10-corriges-v2-adaptateurs.sql (do not install this file).
 -- Isolated candidate: append-only pedagogical revision, no official grade mutation.
 CREATE TABLE public.revision_corrige_sessions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL,

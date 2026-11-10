@@ -1,3 +1,4 @@
+-- SUPERSEDED 10/11 17:50 by 2026-11-10-corriges-v2-adaptateurs.sql (do not install this file).
 -- Read-only candidate. No write to answers, grades, versions or attempts.
 CREATE OR REPLACE FUNCTION public.corriges_officiels_sources(p_attempt_ids uuid[], p_result_ids uuid[])
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
