@@ -36,6 +36,7 @@ export function AdminExamQuestionCard({
     <article className="group overflow-hidden rounded-xl border border-border/60 bg-background transition-colors hover:border-border">
       <div className={statsEnabled ? "grid lg:grid-cols-[minmax(0,1fr)_280px]" : ""}>
         <div className="min-w-0 p-4 sm:p-5">
+          <div data-testid="cadre-question" className="rounded-lg border-2 border-primary bg-primary/5 p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-[11px] font-semibold">
               {q.type} · Q{questionIndex + 1}
@@ -75,6 +76,7 @@ export function AdminExamQuestionCard({
             {q.image && (
               <ExamQuestionImage image={q.image} alt={`Question ${q.id}`} className="mt-3 max-h-40 rounded-md border" fallbackClassName="mt-2 text-xs text-muted-foreground italic" />
             )}
+          </div>
           </div>
 
           {q.type === "QCM" && q.choix && (
