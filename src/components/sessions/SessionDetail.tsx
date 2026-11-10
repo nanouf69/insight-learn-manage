@@ -1,3 +1,4 @@
+import { estApprenantHandicap } from "@/lib/apprenantsHandicap";
 import { exclureVirementsLiesAilleurs, resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
@@ -4146,6 +4147,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               {apprenant.prenom} {apprenant.nom}
                             </span>
                           </button>
+                          {estApprenantHandicap(apprenant.id) && (
+                            <span className="text-lg font-extrabold uppercase text-destructive">
+                              Personne en situation de handicap
+                            </span>
+                          )}
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); copyToClipboard(apprenant.nom || '', 'Nom'); }}
