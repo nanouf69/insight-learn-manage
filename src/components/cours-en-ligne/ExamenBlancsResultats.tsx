@@ -45,6 +45,7 @@ import { rafraichirCopiesAffichees } from "@/lib/refreshSavedExamResults";
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
 import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
 import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisationServeur";
+import { revisionCouvertureConfirmee, revisionResultatConfirme } from "@/lib/revisionFinalisationPreuve";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
@@ -184,6 +185,7 @@ function EcranResultats({
   const [editingQrc, setEditingQrc] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState<number>(0);
   const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
+  const [revisionFinTick, setRevisionFinTick] = useState(0);
   const [isRetake, setIsRetake] = useState(false);
   const [activeTab, setActiveTab] = useState<"resultats" | "revision">("resultats");
 
@@ -337,23 +339,37 @@ function EcranResultats({
   // Check if revision has already been done for this exam
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;
+    let cancelled = false;
+    let generation = 0;
+    setRevisionDejaFaite(false);
     const checkRevision = async () => {
+      const currentGeneration = ++generation;
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
-        .select("id")
+        .select("id,details")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_type", "revision_fausses")
-        .eq("quiz_id", examen.id)
-        .limit(1);
+        .eq("quiz_id", examen.id);
       if (error) {
         console.error("Erreur vérification révision:", error.message);
       }
-      if (data && data.length > 0) {
-        setRevisionDejaFaite(true);
-      }
+      const currentCopies = resultats.map(r => r.resultId).filter((id): id is string => typeof id === "string");
+      const matched = (data ?? []).some(row => {
+        const details = row.details as any;
+        const sourceIds = details?.sourceResultIds;
+        // No guessed attribution of an old revision to the passage currently shown.
+        return row.id && currentCopies.length > 0 && sourceIds && Object.values(sourceIds).length > 0
+          && Object.values(sourceIds).every(id => currentCopies.includes(String(id)));
+      });
+      if (!cancelled && currentGeneration === generation) setRevisionDejaFaite(!error && Boolean(matched));
     };
     checkRevision();
-  }, [apprenantId, examen?.id]);
+    const onVisible = () => { if (document.visibilityState === "visible") void checkRevision(); };
+    window.addEventListener("focus", checkRevision);
+    window.addEventListener("online", checkRevision);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { cancelled = true; window.removeEventListener("focus", checkRevision); window.removeEventListener("online", checkRevision); document.removeEventListener("visibilitychange", onVisible); };
+  }, [apprenantId, examen?.id, revisionFinTick, coreTick, resultats.map(r => r.resultId ?? "").join("|")]);
 
   const toggleMatiere = (mi: number) => {
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
@@ -1275,7 +1291,7 @@ function EcranResultats({
               onExit={()=>setActiveTab("resultats")}/>
           ) : <RevisionFausses
             wrongQuestions={wrongQuestions}
-            onTerminer={() => setActiveTab("resultats")}
+            onTerminer={() => { setRevisionFinTick(tick => tick + 1); setActiveTab("resultats"); }}
             apprenantId={apprenantId}
             userId={userId}
             examenId={examen.id}
@@ -1308,6 +1324,7 @@ function RevisionFausses({
   const [correctedCount, setCorrectedCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [finEnCours, setFinEnCours] = useState(false);
+  const [lectureErreur, setLectureErreur] = useState<string | null>(null);
   const finEnCoursRef = useRef(false);
   const derniereValidationRef = useRef(0);
   const revisionRowsRef = useRef<RevisionRowLike[]>([]);
@@ -1338,42 +1355,35 @@ function RevisionFausses({
           .eq("apprenant_id", apprenantId)
           .eq("exercice_type", "revision_fausses")
           .like("exercice_id", `${baseExerciceId}%`);
-        if (errTentatives) {
-          console.error("Erreur chargement révision (tentatives):", errTentatives.message);
-          return;
-        }
+        if (errTentatives) throw errTentatives;
         const rows = (tentatives as RevisionRowLike[]) || [];
         revisionRowsRef.current = rows;
         let idTentative: string;
-        if (REVISION_FINALISATION_SERVEUR_ACTIVE) {
-          // A completed draft without a result is an interrupted finalization, not a new revision.
-          const { error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
+        {
+          // Both paths: never abandon a closed draft whose result failed to persist.
+          const { data: finalises, error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
             .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
           if (erreurFinalises) throw erreurFinalises;
-          const interrupted = rows.some(r => r.completed !== true) ? undefined : rows.filter(r => r.completed === true).at(-1);
+          const finished = new Set((finalises ?? []).map((r: any) => r.details?.revision_exercice_id));
+          const interrupted = rows.filter(r => r.completed === true && !finished.has(r.exercice_id))
+            .sort((a, b) => a.exercice_id.localeCompare(b.exercice_id, undefined, { numeric: true })).at(-1);
           idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
-        } else {
-          idTentative = choisirTentativeRevision(baseExerciceId, rows);
         }
         if (annule) return;
         setExerciceId(idTentative);
         tentativePreteRef.current = true;
         let lecture = supabase
           .from("reponses_apprenants")
-          .select("reponses, score")
+          .select("reponses, score, completed")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses");
-        // Published path: only an open draft is resumed (a completed one starts a new revision).
-        if (!REVISION_FINALISATION_SERVEUR_ACTIVE) lecture = lecture.eq("completed", false);
         const { data, error } = await lecture
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (error) {
-          console.error("Erreur chargement révision:", error.message);
-          return;
-        }
+        if (error) throw error;
+        termineeRef.current = data?.completed === true;
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
         const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);
         const restored = restaurerRevisionProgressState(merged, examenId, questionOrder);
@@ -1391,6 +1401,8 @@ function RevisionFausses({
         }
       } catch (err) {
         console.error("Erreur chargement révision:", err);
+        tentativePreteRef.current = false;
+        if (!annule) setLectureErreur("Votre révision n’a pas pu être relue. Revenez aux résultats puis réessayez ; aucune réponse n’a été effacée.");
       } finally {
         if (!annule) setLoaded(true);
       }
@@ -1460,6 +1472,8 @@ function RevisionFausses({
     );
   }
 
+  if (lectureErreur) return <div role="alert" className="text-destructive"><p>{lectureErreur}</p><Button variant="outline" onClick={onTerminer}>Retour aux résultats</Button></div>;
+
   if (wrongQuestions.length === 0) {
     return (
       <Card>
@@ -1525,7 +1539,14 @@ function RevisionFausses({
     try {
       // La clôture passe par la même file ordonnée : aucune écriture directe
       // ne peut dépasser une réponse encore en attente ou un autre appareil.
-      persistProgress(reponses, currentIndex, correctedCount, correctedQuestionsRef.current, true, undefined, true);
+      if (!termineeRef.current) {
+        const local = creerRevisionProgressState({ examenId, answers: reponses, currentIndex, correctedCount,
+          correctedQuestions: correctedQuestionsRef.current, showCorrection: true, questionOrder });
+        if (!revisionCouvertureConfirmee({ revisionState: local }, examenId, questionOrder)) {
+          throw new Error("Toutes les questions doivent avoir une réponse validée avant de terminer.");
+        }
+        persistProgress(reponses, currentIndex, correctedCount, correctedQuestionsRef.current, true, undefined, true);
+      }
       const confirmations = await flushAnswerSavesAndWait(apprenantId, exerciceId);
       if (!confirmations) throw new Error("Dernières réponses non confirmées");
       const { data: relu, error: erreurRelecture } = await supabase
@@ -1539,10 +1560,19 @@ function RevisionFausses({
         throw new Error(erreurRelecture?.message || "Clôture non confirmée");
       }
       termineeRef.current = true;
+      if (!revisionCouvertureConfirmee(relu.reponses, examenId, questionOrder)) {
+        throw new Error("La révision conservée ne prouve pas toutes les réponses. Revue nécessaire ; aucune réponse ne sera réécrite.");
+      }
       const confirme = restaurerRevisionProgressState(relu.reponses, examenId, questionOrder);
       const finalCorrected = Number.isFinite(relu.score) ? Number(relu.score) : confirme.correctedCount;
       if (!REVISION_FINALISATION_SERVEUR_ACTIVE) {
-        // Published path, unchanged until the server finalization is installed.
+        const lireResultat = () => supabase.from("apprenant_quiz_results").select("*")
+          .eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses")
+          .eq("details->>revision_exercice_id", exerciceId).maybeSingle();
+        const existing = await lireResultat();
+        if (existing.error) throw existing.error;
+        // Reuse an existing result after a lost response; never blindly insert again.
+        if (!existing.data) {
         const { error: erreurInsertion } = await supabase
           .from("apprenant_quiz_results")
           .insert({
@@ -1557,6 +1587,7 @@ function RevisionFausses({
             reussi: finalCorrected === wrongQuestions.length,
             details: {
               reponses: confirme.answers,
+              sourceResultIds: sourceResultIdsRef.current,
               revision_exercice_id: exerciceId,
               questionOrder,
               questions: wrongQuestions.map(wq => ({
@@ -1570,11 +1601,14 @@ function RevisionFausses({
           });
         if (erreurInsertion) {
           console.error("Erreur sauvegarde révision:", erreurInsertion.message, erreurInsertion.details);
-        } else {
-          finEnregistree = true;
-          toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
-          onTerminer();
         }
+        }
+        const readback = await lireResultat();
+        if (readback.error || !revisionResultatConfirme(readback.data, apprenantId, examenId, exerciceId,
+          relu.reponses, questionOrder, finalCorrected)) throw new Error(readback.error?.message || "Résultat final non confirmé pour cette révision");
+        finEnregistree = true;
+        toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
+        onTerminer();
         return;
       }
       const { data: receipt, error } = await supabase.rpc("finaliser_revision_fausses" as any, {
@@ -1595,6 +1629,7 @@ function RevisionFausses({
       }
     } catch (err) {
       console.error("Erreur sauvegarde révision:", err);
+      toast.error(err instanceof Error ? err.message : "Finalisation non confirmée.");
     } finally {
       finEnCoursRef.current = false;
       setFinEnCours(false);

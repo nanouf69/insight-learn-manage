@@ -9,6 +9,7 @@ import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisation
 // Published bundle: the server RPC is not installed, so it must never be called.
 const h = vi.hoisted(() => ({
   saved: null as any, inserts: [] as any[], rpcs: [] as string[], lectures: [] as Record<string, unknown>[],
+  result: null as any, closed: false, loseResponse: false, failBeforeCommit: false, readError: false,
 }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -19,9 +20,14 @@ vi.mock("@/integrations/supabase/client", () => ({
         select: () => query,
         eq: (k: string, v: unknown) => { query.filters[k] = v; return query; },
         like: () => query, order: () => query, limit: () => query,
-        maybeSingle: async () => { h.lectures.push({ table, ...query.filters }); return { data: h.saved, error: null }; },
-        insert: async (payload: any) => { h.inserts.push({ table, payload }); return { error: null }; },
-        then: (ok: any) => ok({ data: [{ exercice_id: "revision_fausses_EB2-TAXI", completed: false }], error: null }),
+        maybeSingle: async () => { h.lectures.push({ table, ...query.filters }); return { data: table === "apprenant_quiz_results" ? h.result : h.saved, error: h.readError ? { message: "offline" } : null }; },
+        insert: async (payload: any) => {
+          h.inserts.push({ table, payload });
+          if (h.failBeforeCommit) { h.failBeforeCommit = false; return { error: { message: "offline" } }; }
+          h.result = { id: "result-1", ...payload };
+          return { error: h.loseResponse ? { message: "lost acknowledgement" } : null };
+        },
+        then: (ok: any) => ok({ data: table === "apprenant_quiz_results" ? (h.result ? [h.result] : []) : [{ exercice_id: "revision_fausses_EB2-TAXI", completed: h.closed }], error: null }),
       };
       return query;
     },
@@ -40,6 +46,7 @@ const order = ["gestion:1"];
 beforeEach(() => {
   cleanup(); vi.clearAllMocks();
   h.inserts = []; h.rpcs = []; h.lectures = [];
+  h.result = null; h.closed = false; h.loseResponse = false; h.failBeforeCommit = false; h.readError = false;
   h.saved = { reponses: { revisionState: creerRevisionProgressState({
     examenId: "EB2-TAXI", answers: { "gestion:1": "texte" }, currentIndex: 0,
     correctedCount: 1, correctedQuestions: order, showCorrection: true, questionOrder: order,
@@ -68,9 +75,40 @@ describe("Révision fausses — chemin publié tant que le serveur n'est pas ins
     expect(h.inserts[0].payload.details.revision_exercice_id).toBe("revision_fausses_EB2-TAXI");
   });
 
-  it("la reprise ne relit qu'un brouillon ouvert", async () => {
+  it("la reprise relit aussi une clôture dont l'insertion a été interrompue", async () => {
+    h.closed = true; h.saved.completed = true;
     render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
     await screen.findByText("Question Gestion");
-    expect(h.lectures[0]).toMatchObject({ table: "reponses_apprenants", completed: false });
+    expect(h.lectures[0]).toMatchObject({ table: "reponses_apprenants", exercice_id: "revision_fausses_EB2-TAXI" });
+    expect(h.lectures[0].completed).toBeUndefined();
+  });
+  it("un accusé perdu est confirmé par relecture sans seconde insertion", async () => {
+    h.loseResponse = true;
+    const done = vi.fn();
+    render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={done} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Terminer la révision/ }));
+    await waitFor(() => expect(done).toHaveBeenCalledTimes(1));
+    expect(h.inserts).toHaveLength(1);
+  });
+  it("échec avant insertion : réessaie la même clôture sans réécrire ses réponses", async () => {
+    h.closed = true; h.saved.completed = true; h.failBeforeCommit = true;
+    const done = vi.fn();
+    render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={done} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Terminer la révision/ }));
+    await waitFor(() => expect(h.inserts).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Terminer la révision/ })).toBeEnabled());
+    expect(done).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /Terminer la révision/ }));
+    await waitFor(() => expect(done).toHaveBeenCalledTimes(1));
+    expect(enqueueAnswerSave).not.toHaveBeenCalled();
+    expect(h.inserts.map(x => x.payload.details.revision_exercice_id)).toEqual(["revision_fausses_EB2-TAXI", "revision_fausses_EB2-TAXI"]);
+  });
+  it("aucun résultat inséré ni succès si la clôture serveur manque une réponse", async () => {
+    h.saved.reponses.revisionState.answers = {};
+    const done = vi.fn();
+    render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={done} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Terminer la révision/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Terminer la révision/ })).toBeEnabled());
+    expect(h.inserts).toHaveLength(0); expect(done).not.toHaveBeenCalled();
   });
 });
