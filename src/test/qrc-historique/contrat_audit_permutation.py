@@ -39,7 +39,6 @@ class Perimetre(Base):
                     {'1': 'x', '3': [1, 2]}, {'1': 'X', '3': ['B', 'A']}, {'1': ' x', '3': ['B', 'A']},
                     {'3': ['B', 'A']}, {'1': 'x', '3': ['B', 'A'], '9': 'extra'}):
             self.assertFalse(self.eq(self.d(base), sub), sub)
-        self.assertFalse(self.eq(self.d({'1': 'x', '3': ['A', 'A']}), {'1': 'x', '3': ['A', 'A']}) is False and False)
 
     def test_qrc_jamais_normalisee_meme_tableau(self):
         snap = {'questions': [{'id': '1', 'type': 'QRC'}]}
