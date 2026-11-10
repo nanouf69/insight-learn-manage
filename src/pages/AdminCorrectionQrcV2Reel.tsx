@@ -36,7 +36,6 @@ import {
   type TentativeReelle,
 } from "@/features/correction-qrc-v2/noyauReel";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
 import { SynchronisationNotes } from "@/features/surveillance-examens/SynchronisationNotes";
 import { CouvertureCorrigesAdmin } from "@/features/correction-qrc-v2/CouvertureCorrigesAdmin";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
