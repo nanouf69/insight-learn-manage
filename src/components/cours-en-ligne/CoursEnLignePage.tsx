@@ -251,7 +251,12 @@ const ApprenantSearchPreview = () => {
             <Car className="w-4 h-4" />
             Notation pratique
           </TabsTrigger>
-          <TabsTrigger value="correction-qrc" className="flex items-center gap-2">
+          <TabsTrigger
+            value="correction-qrc"
+            className="flex items-center gap-2"
+            // Lecture anticipée (lecture seule) dès le survol : l'onglet s'ouvre plus vite.
+            onPointerEnter={() => { void import("@/features/correction-qrc-v2/noyauReel").then((m) => m.listerGroupesCrm("migre")).catch(() => undefined); }}
+          >
             <MessageSquareText className="w-4 h-4" />
             Correction QRC
           </TabsTrigger>

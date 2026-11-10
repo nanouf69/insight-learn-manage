@@ -25,6 +25,7 @@ import {
   corrigerQrc,
   lireHistoriqueQrc,
   listerGroupesCrm,
+  listeGroupesEnMemoire,
   origineCorrection,
   reviserQrc,
   souscrireSignal,
