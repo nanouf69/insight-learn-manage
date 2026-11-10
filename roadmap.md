@@ -1,6 +1,7 @@
 # Feuille de route
 
 ## 10/11 16:49 — Synchronisation des trois corrigés
+- [ ] Reprise autorisée 17:04 : contrat transactionnel versionné isolé, inventaire actualisé de tous les circuits, tests deux onglets/PC/mobile ; aucun déploiement avant GO complet.
 - [x] Lecture officielle A+C VTC v23/TAXI v10 ; candidat EB source unique strict+legacy/QRC et panneaux correction/révision/admin préparés, désactivés ; aucune installation serveur ni écriture pédagogique.
 - [x] 76 Vitest, 7 PostgreSQL lecture et 14 cas tout-ou-rien PASS ; branche réelle CHEMOUN en attente reproduite, aucun panneau candidat activé.
 - [ ] STOP : contrat serveur version du corrigé→validation de révision/concurrence absent ; Bilans/autres quiz non intégrés, anciennes copies sans preuve et EB2 VTC sans publication à qualifier.
