@@ -9,14 +9,14 @@ BEGIN
   END IF;
   WITH sources AS (
     SELECT 'attempt'::text AS source_type, t.attempt_id AS source_id, t.exam_id AS exam_id,
-      t.matiere_id AS matiere_id, t.snapshot->'questions' AS questions
+      t.snapshot->>'matiere' AS matiere_id, t.snapshot->'questions' AS questions
     FROM public.exam_attempts_v2 t
     WHERE t.attempt_id=ANY(p_attempt_ids) AND t.etat='terminee'
       AND (public.core_est_proprietaire(t.apprenant_id) OR public.has_role(auth.uid(),'admin'))
     UNION ALL
     SELECT 'result', r.id, r.quiz_id, r.matiere_id, r.details#>'{snapshot,questions}'
     FROM public.apprenant_quiz_results r
-    WHERE r.id=ANY(p_result_ids) AND r.quiz_type IS DISTINCT FROM 'revision_fausses'
+    WHERE r.id=ANY(p_result_ids) AND r.quiz_type='examen_blanc' AND r.completed_at IS NOT NULL
       AND jsonb_typeof(r.details#>'{snapshot,questions}')='array'
       AND (public.core_est_proprietaire(r.apprenant_id) OR public.has_role(auth.uid(),'admin'))
   ), active AS (
