@@ -52,7 +52,7 @@ class Pg:
         self.dir = tempfile.mkdtemp(prefix='pg-eb3-', dir='/tmp')
         self.user = [] if os.geteuid() else ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
         if self.user: os.chown(self.dir, 1000, 1000)
-        subprocess.run(self.user + ['initdb', '-D', self.dir + '/d', '-U', 'postgres', '-A', 'trust', '--no-locale'], check=True, capture_output=True)
+        subprocess.run(self.user + ['initdb', '-D', self.dir + '/d', '-U', 'postgres', '-A', 'trust', '--no-locale', '-E', 'UTF8'], check=True, capture_output=True)
         subprocess.run(self.user + ['pg_ctl', '-D', self.dir + '/d', '-o', f"-k {self.dir} -p {PORT} -h ''", '-w', 'start', '-l', self.dir + '/log'], check=True, capture_output=True)
 
     def sql(self, q):
@@ -97,14 +97,14 @@ class EB3(unittest.TestCase):
         """Copie terminée réaliste : QCM répondues (moitié justes), QRC remises en attente."""
         snap = json.loads((FIX / snap_file).read_text())
         att = str(uuid.uuid4())
-        code, out = self.pg.sql(f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat, finished_at) VALUES ('{att}','{apprenant}',{lit(snap['exam_id'])},{lit(json.dumps(snap))}::jsonb,'terminee',now())")
+        code, out = self.pg.sql(f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat, finished_at) VALUES ('{att}','{apprenant}',{lit(snap['exam_id'])},{lit(json.dumps(snap, ensure_ascii=False))}::jsonb,'terminee',now())")
         self.assertEqual(code, 0, out[-600:])
         qcm_ok, qrcs, total, i = 0.0, [], 0.0, 0
         for q in snap['questions']:
             total += q['points']
             if q['type'] == 'QRC':
                 qi = str(uuid.uuid4())
-                code, out = self.pg.sql(f"INSERT INTO public.qrc_instances_v2 (qrc_instance_id, attempt_id, question_id, apprenant_id, reponse) VALUES ('{qi}','{att}',{lit(q['id'])},'{apprenant}',{lit(json.dumps('réponse fictive'))}::jsonb)")
+                code, out = self.pg.sql(f"INSERT INTO public.qrc_instances_v2 (qrc_instance_id, attempt_id, question_id, apprenant_id, reponse) VALUES ('{qi}','{att}',{lit(q['id'])},'{apprenant}',{lit(json.dumps('réponse fictive', ensure_ascii=False))}::jsonb)")
                 self.assertEqual(code, 0, out)
                 qrcs.append((qi, q['points']))
             elif q.get('choix'):
