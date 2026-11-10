@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 16:49 — Synchronisation des trois corrigés
+- [ ] Corrigé publié, correction examen et révision/admin : source serveur, identité question et version, sans recalcul historique.
+- [ ] Tests tout-ou-rien, changement faux/juste, pagination, rechargement et concurrence ; vérifier les limites legacy/Bilans/QRC.
+- [ ] Publication uniquement après parcours critiques vérifiés ; rapport des couvertures et blocages.
+
 ## 10/11 16:38 — QCM tout-ou-rien et corrigé titiller
 - [x] Fonctions serveur et chemins partagés inspectés ; A+C actuel 2 points VTC v23/TAXI v10 confirmé ; 115 Vitest PASS et 14 calculs PostgreSQL jetables PASS, historique intact.
 - [ ] Publication NO-GO : parcours réel CHEMOUN EB3 en branche attente sans encadré ; affichage positif A+C/rechargement/mobile et modification→candidat non prouvés. Ne pas forcer de correction ou modifier une question réelle pour tester.
