@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 20:24 — Correctifs performance QRC autorisés
+- [x] Mobile sans interception sticky et commentaire tenant dans panneau ; Actualiser avec notes même catalogue inchangé, signal historique sans scan automatique, lectures périmées écartées.
+- [x] Inventaire différé après première grille ; profiling réel aperçu 17,765 s/57 requêtes, site 13,792 s/56 ; pas de gain statistique revendiqué ; règles et transport de notation inchangés.
+- [x] 126 tests PASS, types PASS, lint ciblé zéro erreur/avertissement, build OK ; PC jour VTC/mobile soir TAXI EB3 base jetable PASS, sauvegarde 1 POST/1 lecture et largeur 637/192 stable, empreinte inchangée.
+- [ ] NO-GO : nouvelles copies/IA/historique complet, permutations session rapides navigateur, questions fausses conjointes, catalogue encore lent et rollback de paquet non prouvés. Aucune publication ni donnée réelle modifiée.
+
 ## 10/11 20:01 — Tests approfondis performance Correction QRC V2
 - [x] 122 régressions PASS, 15 contrats PostgreSQL jetables PASS, compilation observée OK ; lint FAIL (90 erreurs/8 avertissements), types autonome non exécuté. Aucun code fonctionnel changé.
 - [x] Admin preview/production lecture seule : 20,189/14,133 s première grille, 59/56 requêtes ; EB3 soir 34 requêtes ; survol/scroll 0 ; inventaire 4480/4480 ; aucune écriture réelle.

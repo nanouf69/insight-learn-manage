@@ -3,7 +3,7 @@ import type { GroupeSessionCrm } from "@/features/correction-qrc-v2/noyauReel";
 import { lireRapprochement, type Rapprochement } from "@/features/correction-qrc-v2/lectureRapprochement";
 
 /** Compteur copies attendues ↔ visibles et alerte nominative en cas d'absence. Lecture seule. */
-export function PanneauRapprochement({ groupes }: { groupes: GroupeSessionCrm[] }) {
+export function PanneauRapprochement({ groupes, pret: copiesPretes = true }: { groupes: GroupeSessionCrm[]; pret?: boolean }) {
   const visibles = useMemo(() => {
     const s = new Set<string>();
     for (const g of groupes) for (const e of g.examens) for (const a of e.attemptIds) s.add(a);
@@ -14,9 +14,11 @@ export function PanneauRapprochement({ groupes }: { groupes: GroupeSessionCrm[] 
   // Lecture lourde (inventaire serveur complet) : lancée une fois, différée après l'affichage
   // de la grille, puis seulement sur demande — jamais à chaque signal temps réel.
   const [relance, setRelance] = useState(0);
-  const pret = groupes.length > 0;
+  const pret = groupes.length > 0 && copiesPretes;
+  const [demarre, setDemarre] = useState(false);
+  useEffect(() => { if (pret) setDemarre(true); }, [pret]);
   useEffect(() => {
-    if (!pret) return;
+    if (!demarre) return;
     let annule = false;
     setR(null); setErreur(null);
     const t = setTimeout(() => {
@@ -24,7 +26,7 @@ export function PanneauRapprochement({ groupes }: { groupes: GroupeSessionCrm[] 
         .catch((e) => { if (!annule) setErreur((e as Error).message); });
     }, relance === 0 ? 2500 : 0);
     return () => { annule = true; clearTimeout(t); };
-  }, [pret, relance]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [demarre, relance]); // eslint-disable-line react-hooks/exhaustive-deps
   const bouton = <button type="button" className="ml-2 underline" data-testid="rapprochement-relancer" onClick={() => setRelance((n) => n + 1)}>Relancer</button>;
 
   if (erreur) return <p className="text-xs font-semibold text-destructive" data-testid="rapprochement-erreur">⚠️ Rapprochement des copies impossible ({erreur}) — l'exhaustivité n'est pas prouvée.{bouton}</p>;

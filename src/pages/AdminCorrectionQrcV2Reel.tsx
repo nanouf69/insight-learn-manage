@@ -78,6 +78,8 @@ export default function AdminCorrectionQrcV2Reel() {
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [session, setSession] = useState<SessionReelle | null>(null);
+  const [lectureCopies, setLectureCopies] = useState(false);
+  const generationRef = useRef(0);
   const [selection, setSelectionState] = useState<string | null>(() => param("qrc"));
   const [zoom, setZoomState] = useState<number>(() => {
     const z = Number(param("qrc_zoom"));
@@ -92,6 +94,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const conteneurRef = useRef<HTMLDivElement>(null);
 
   const setGroupeCle = (cle: string | null) => {
+    generationRef.current++;
+    setSession(null);
     setGroupeCleState(cle);
     setEbCleState(null);
     setJourFiltreState(null);
@@ -99,12 +103,16 @@ export default function AdminCorrectionQrcV2Reel() {
     majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
   };
   const setEbCle = (cle: string | null) => {
+    generationRef.current++;
+    setSession(null);
     setEbCleState(cle);
     setJourFiltreState(null);
     setSelectionState(null);
     majUrl({ qrc_eb: cle, qrc_date: null, qrc: null });
   };
   const setJourFiltre = (jour: string | null) => {
+    generationRef.current++;
+    setSession(null);
     setJourFiltreState(jour);
     setSelectionState(null);
     majUrl({ qrc_date: jour, qrc: null });
@@ -205,7 +213,7 @@ export default function AdminCorrectionQrcV2Reel() {
           .map((e) => ({ ...e, groupeCle: g.cle, groupeLibelle: g.libelle }))),
       }))
       .sort((a, b) => a.nom.localeCompare(b.nom));
-  }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]);
   const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
 
   // Recherche dans les archives de l'ancien circuit (lecture seule, aucune copie ni migration).
@@ -219,30 +227,30 @@ export default function AdminCorrectionQrcV2Reel() {
     const t = setTimeout(async () => {
       const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom")
         .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).limit(50);
-      const retenus = (apps ?? []).filter((a: any) => {
+      const retenus = (apps ?? []).filter((a) => {
         const n = normaliser(`${a.nom ?? ""} ${a.prenom ?? ""}`);
         return mots.every((m) => n.includes(m));
       });
       if (!retenus.length) { if (!annule) setArchivesTrouvees([]); return; }
       const { data: res } = await supabase.from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, quiz_titre, completed_at")
-        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a: any) => a.id))
+        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a) => a.id))
         .order("completed_at", { ascending: false }).limit(500);
       const groupesArch = new Map<string, ArchivePassage>();
-      for (const r of (res ?? []) as any[]) {
+      for (const r of res ?? []) {
         const jour = (r.completed_at ?? "").slice(0, 10);
         const cle = `${r.apprenant_id}|${r.quiz_id}|${jour}`;
-        const a: any = retenus.find((x: any) => x.id === r.apprenant_id);
+        const a = retenus.find((x) => x.id === r.apprenant_id);
         if (!groupesArch.has(cle)) {
           const d = jour ? jour.split("-").reverse().join("/") : "date inconnue";
           groupesArch.set(cle, { cle, apprenantId: r.apprenant_id, nom: `${a?.nom ?? ""} ${a?.prenom ?? ""}`.trim(), libelle: `${r.quiz_titre ?? r.quiz_id} — ${d}`, resultIds: [] });
         }
-        groupesArch.get(cle)!.resultIds.push(r.id);
+        groupesArch.get(cle)?.resultIds.push(r.id);
       }
       if (!annule) setArchivesTrouvees(Array.from(groupesArch.values()));
     }, 300);
     return () => { annule = true; clearTimeout(t); };
-  }, [rechercheNorm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rechercheNorm]);
 
   const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
   const cleAttempts = idsTrouves
@@ -257,25 +265,36 @@ export default function AdminCorrectionQrcV2Reel() {
         : ebChoisi?.legacyResultIds)
     : undefined;
 
+  // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
-    if (!attemptsAffiches) { setSession(null); return null; }
+    const generation = ++generationRef.current;
+    if (!attemptsAffiches) { setSession(null); setLectureCopies(false); return null; }
     // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
     if (attemptsAffiches.length === 0) {
       const vide = { tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle;
       setSession(vide);
+      setLectureCopies(false);
       return vide;
     }
+    setLectureCopies(true);
     try {
       const relue = await chargerSessionTest(mode, attemptsAffiches);
+      if (generation !== generationRef.current) return null;
       setSession(relue);
       return relue;
     } catch (e) {
-      setErreur((e as Error).message);
+      if (generation === generationRef.current) setErreur((e as Error).message);
       return null;
+    } finally {
+      if (generation === generationRef.current) setLectureCopies(false);
     }
   }, [mode, attemptsAffiches]);
 
-  useEffect(() => { void recharger(); }, [recharger]);
+  useEffect(() => {
+    const lectures = generationRef;
+    void recharger();
+    return () => { lectures.current++; };
+  }, [recharger]);
   const rechargerRef = useRef(recharger);
   useEffect(() => { rechargerRef.current = recharger; }, [recharger]);
   // Signal temps réel : regroupé (1,5 s) et ignoré pendant notre propre enregistrement,
@@ -283,11 +302,13 @@ export default function AdminCorrectionQrcV2Reel() {
   const envoiEnCoursRef = useRef(false);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const arreter = souscrireSignal("admin-qrc-v2", "qrc_instances_v2", () => {
+    const signalNote = () => {
       clearTimeout(timer);
       timer = setTimeout(() => { if (!envoiEnCoursRef.current) void recharger(); }, 1500);
-    });
-    return () => { clearTimeout(timer); arreter(); };
+    };
+    const arreter = souscrireSignal("admin-qrc-v2", "qrc_instances_v2", signalNote);
+    const arreterResultats = souscrireSignal("admin-qrc-v2-resultats", "core_exam_results", signalNote);
+    return () => { clearTimeout(timer); arreter(); arreterResultats(); };
   }, [recharger]);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -305,17 +326,24 @@ export default function AdminCorrectionQrcV2Reel() {
       }, 5000);
     };
     const arreterV2 = souscrireSignal("admin-qrc-v2-passages", "exam_attempts_v2", actualiser);
-    return () => { actif = false; clearTimeout(timer); arreterV2(); };
+    // Ancien circuit : signal seulement (aucun scan automatique) ; la liste est relue sur demande.
+    const arreterHisto = souscrireSignal("admin-qrc-v2-historique", "apprenant_quiz_results", () => { if (actif) setNouveauxPassages(true); });
+    return () => { actif = false; clearTimeout(timer); arreterV2(); arreterHisto(); };
   }, [mode]);
+  const actualisationEnCoursRef = useRef(false);
   const actualiserListe = async () => {
+    if (actualisationEnCoursRef.current) return;
+    actualisationEnCoursRef.current = true;
     setRelectureListe(true);
     try {
       const liste = await listerGroupesCrm(mode);
       setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
-      setNouveauxPassages(false);
-      setErreur(null);
+      // Catalogue inchangé : les notes des copies affichées sont tout de même relues
+      // (notes IA/humaines modifiées pendant une coupure du temps réel).
+      const relue = await rechargerRef.current?.();
+      if (relue !== null) { setNouveauxPassages(false); setErreur(null); }
     } catch (e) { setErreur((e as Error).message); }
-    finally { setRelectureListe(false); }
+    finally { actualisationEnCoursRef.current = false; setRelectureListe(false); }
   };
 
   // Plein écran natif du navigateur sur la zone de correction
@@ -984,7 +1012,7 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
           )}
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
-            Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes
+            {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
             {qrcSel && (
               <span className="block font-medium text-foreground" data-testid="compteur-candidat">
                 Candidat sélectionné : {corrigeesCandidat}/{totalCandidat} QRC corrigées — {totalCandidat - corrigeesCandidat} restantes
@@ -1042,7 +1070,7 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           )}
-          {mode === "migre" && <PanneauRapprochement groupes={groupes} />}
+          {mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
         {archiveOuverte ? (
@@ -1101,7 +1129,7 @@ export default function AdminCorrectionQrcV2Reel() {
                   </colgroup>
                   <thead>
                     <tr className="border-b">
-                      <th className="sticky left-0 z-[1] bg-background px-1 py-0.5 text-left">Candidat</th>
+                      <th className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-left`}>Candidat</th>
                       <th className="px-1 py-0.5 text-left">Passage</th>
                       <th className="px-1 py-0.5 text-left whitespace-nowrap">Note /20</th>
                       {questions.map((q, i) => <th key={q.id} className="px-0.5 py-0.5 text-center" title={`QRC ${i + 1}`}>Q{i + 1}</th>)}
@@ -1111,7 +1139,7 @@ export default function AdminCorrectionQrcV2Reel() {
                     {tentatives.map((t) => (
                       <tr key={t.attempt_id}>
                         <td
-                          className="sticky left-0 z-[1] bg-background px-1 py-0.5 font-medium"
+                          className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 font-medium`}
                           title={`${t.candidat}${ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? ` — Inscription croisée, également visible dans ${ebChoisi.inscriptionCroiseeParAttempt[t.attempt_id].join(" et ")}` : ""}`}
                         >
                           <a
@@ -1368,7 +1396,7 @@ export default function AdminCorrectionQrcV2Reel() {
                         onChange={(e) => modifierCommentaire(e.target.value)}
                       />
                       <CommentairesPredefinis disabled={etatEnvoi === "encours" || !historiqueCharge} onAjouter={ajouterCommentaire} />
-                      <Button size="sm" data-testid="enregistrer-commentaire"
+                      <Button size="sm" className="h-auto max-w-full whitespace-normal py-2" data-testid="enregistrer-commentaire"
                         disabled={etatEnvoi === "encours" || !historiqueCharge || !commentaireModifie || commentaireCourant === commentaireSauve}
                         onClick={() => void enregistrerCommentaireSeul()}>
                         Enregistrer le commentaire

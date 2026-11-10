@@ -201,6 +201,37 @@ describe("Correction QRC — passage automatique après confirmation de persista
     expect(await screen.findByTestId("points-attribues")).toHaveTextContent("1,5");
     expect(mocks.corriger).not.toHaveBeenCalled();
   });
+  it("Actualiser relit une note changée sans signal ni changement du catalogue", async () => {
+    await ouvrirCopie("a1-q1");
+    appliquerNote("a1-q1", 1.5);
+    fireEvent.click(screen.getByTestId("actualiser-liste"));
+    expect(await screen.findByTestId("points-attribues")).toHaveTextContent("1,5");
+    expect(mocks.catalogue).toHaveBeenCalledTimes(2);
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it("un résultat historique signale la liste sans scan ni correction automatique", async () => {
+    await ouvrirCopie("a1-q1");
+    const lectures = mocks.charger.mock.calls.length;
+    mocks.signaux.get("apprenant_quiz_results")?.();
+    expect(await screen.findByTestId("nouveaux-passages")).toBeInTheDocument();
+    expect(mocks.catalogue).toHaveBeenCalledOnce();
+    expect(mocks.charger).toHaveBeenCalledTimes(lectures);
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it("une lecture retardée ne remplace pas la relecture plus récente", async () => {
+    await ouvrirCopie("a1-q1");
+    const ancien = structuredClone(etat.session);
+    let terminer: ((v: SessionReelle | null) => void) | undefined;
+    mocks.charger.mockImplementationOnce(() => new Promise((resolve) => { terminer = resolve; }));
+    fireEvent.click(screen.getByTestId("actualiser-liste"));
+    await waitFor(() => expect(terminer).toBeDefined());
+    appliquerNote("a1-q1", 1.5);
+    mocks.signaux.get("qrc_instances_v2")?.();
+    expect(await screen.findByTestId("points-attribues", {}, { timeout: 3000 })).toHaveTextContent("1,5");
+    terminer?.(ancien);
+    await waitFor(() => expect(screen.getByTestId("actualiser-liste")).toBeEnabled());
+    expect(screen.getByTestId("points-attribues")).toHaveTextContent("1,5");
+  });
   it("note inchangée : commentaire seul refusé en succès si la relecture ne le confirme pas", async () => {
     appliquerNote("a1-q1", 1);
     mocks.lireCommentaires.mockResolvedValue([{ correction_event_id: 7, note_nouvelle: 1, created_at: "2026-11-10T13:00:00Z", commentaire: null }]);
