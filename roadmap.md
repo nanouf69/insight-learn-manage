@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 09:32 — Alerte note globale EB présentiel
+- [ ] Diagnostiquer les sources serveur, identités de tentative et attentes QRC ancien/V2.
+- [ ] Ajouter une surveillance sans écriture pédagogique, vérification différée unique, alerte dédupliquée et résolution automatique.
+- [ ] Tester absence/présence de note, QRC en attente, nouvelles tentatives et fournir le rapport.
+- [ ] Publication — attend accord explicite.
+
 ## 10/11 09:25 — Retrait confirmation de copie QRC
 - [x] Case et avertissement supprimés ; clic direct pour copies prouvées, erreur explicite sans envoi pour identités ambiguës, serveur inchangé.
 - [x] 53 tests ciblés et 12 contrats PostgreSQL jetables PASS ; rapport docs/qrc-retrait-confirmation-2026-11-10.md ; aucune note réelle saisie.
