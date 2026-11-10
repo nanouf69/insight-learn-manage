@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 10/11 13:02 — Commentaires prédéfinis QRC
-- [ ] Quatre textes exacts, ajout cumulatif sans doublon, édition libre, identité de copie conservée.
-- [ ] Vérifier enregistrement/relecture admin et candidat, V2 et historique compatible, sans écriture de test en production.
-- [ ] Rapport et décision de publication conditionnée aux tests critiques et aux blocages de publication antérieurs.
+- [x] Aperçu : quatre textes exacts, cumul/doublon/édition, relecture du journal et projection candidat V2/historique ; 107 tests applicatifs et 7 PostgreSQL jetables exécutés, navigateur VTC soir sans écriture.
+- [x] Rapport docs/commentaires-qrc-2026-11-10.md : NO-GO, perte du commentaire seul à note V2 inchangée reproduite ; pas de mutation réelle ni publication.
+- [ ] Correctif serveur append-only du commentaire seul : modification de règle serveur hors demande UI, attend accord spécifique ; ne jamais modifier artificiellement la note.
+- [ ] E2E admin/API/candidat isolé jour/soir et anciens circuits, sauvegarde/rollback et blocages du lot précédent : non prouvés, publication suspendue.
 
 ## 10/11 12:41 — Révisions admin et correcteur unique
 - [x] Aperçu : réponses persistées par identité explicite, initiale distincte, heure individuelle prouvée sinon signalée ; 55 réponses consultées et reload identique.
