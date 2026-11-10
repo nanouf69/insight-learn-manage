@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 13:02 — Commentaires prédéfinis QRC
+- [ ] Quatre textes exacts, ajout cumulatif sans doublon, édition libre, identité de copie conservée.
+- [ ] Vérifier enregistrement/relecture admin et candidat, V2 et historique compatible, sans écriture de test en production.
+- [ ] Rapport et décision de publication conditionnée aux tests critiques et aux blocages de publication antérieurs.
+
 ## 10/11 12:41 — Révisions admin et correcteur unique
 - [x] Aperçu : réponses persistées par identité explicite, initiale distincte, heure individuelle prouvée sinon signalée ; 55 réponses consultées et reload identique.
 - [x] Tests 32 nouveaux/lecture/inventaire, 79 révision, 46 tri/navigation/notes, 6 PostgreSQL jetable PASS ; clé matière:question confirmée dans paquet public, compteur live 4326/4326/0.
