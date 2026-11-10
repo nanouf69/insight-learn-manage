@@ -15,6 +15,6 @@ export async function lireRevisionsAdmin(apprenantId: string) {
   // Journaux par identité de révision, jamais la totalité des événements de tous les élèves.
   const events: EvenementRevision[] = [];
   for (const r of revisions) events.push(...await pages<EvenementRevision>(() => supabase.from("reponses_apprenants_journal").select("id,apprenant_id,exercice_id,question_id,created_at,valeur,valeur_originale").eq("apprenant_id",apprenantId).eq("exercice_id",r.exercice_id).eq("exercice_type","revision_fausses")));
-  const sources = await pages<SourceRevision>(() => supabase.from("apprenant_quiz_results").select("id,apprenant_id,quiz_id,matiere_id,matiere_nom,tentative,details").eq("apprenant_id",apprenantId).ilike("quiz_id","eb%"));
+  const sources = await pages<SourceRevision>(() => supabase.from("apprenant_quiz_results").select("id,apprenant_id,quiz_id,quiz_type,score_obtenu,score_max,matiere_id,matiere_nom,tentative,details").eq("apprenant_id",apprenantId).ilike("quiz_id","eb%"));
   return projeterRevisionsAdmin(apprenantId,revisions,sources,events);
 }

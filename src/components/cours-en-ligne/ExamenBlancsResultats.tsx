@@ -340,19 +340,28 @@ function EcranResultats({
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;
     let cancelled = false;
+    let generation = 0;
     setRevisionDejaFaite(false);
     const checkRevision = async () => {
+      const currentGeneration = ++generation;
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
-        .select("id")
+        .select("id,details")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_type", "revision_fausses")
-        .eq("quiz_id", examen.id)
-        .limit(1);
+        .eq("quiz_id", examen.id);
       if (error) {
         console.error("Erreur vérification révision:", error.message);
       }
-      if (!cancelled) setRevisionDejaFaite(!error && Boolean(data?.length));
+      const currentCopies = resultats.map(r => r.resultId).filter((id): id is string => typeof id === "string");
+      const matched = (data ?? []).some(row => {
+        const details = row.details as any;
+        const sourceIds = details?.sourceResultIds;
+        // No guessed attribution of an old revision to the passage currently shown.
+        return row.id && currentCopies.length > 0 && sourceIds && Object.values(sourceIds).length > 0
+          && Object.values(sourceIds).every(id => currentCopies.includes(String(id)));
+      });
+      if (!cancelled && currentGeneration === generation) setRevisionDejaFaite(!error && Boolean(matched));
     };
     checkRevision();
     const onVisible = () => { if (document.visibilityState === "visible") void checkRevision(); };
@@ -360,7 +369,7 @@ function EcranResultats({
     window.addEventListener("online", checkRevision);
     document.addEventListener("visibilitychange", onVisible);
     return () => { cancelled = true; window.removeEventListener("focus", checkRevision); window.removeEventListener("online", checkRevision); document.removeEventListener("visibilitychange", onVisible); };
-  }, [apprenantId, examen?.id, revisionFinTick, coreTick]);
+  }, [apprenantId, examen?.id, revisionFinTick, coreTick, resultats.map(r => r.resultId ?? "").join("|")]);
 
   const toggleMatiere = (mi: number) => {
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
@@ -1578,6 +1587,7 @@ function RevisionFausses({
             reussi: finalCorrected === wrongQuestions.length,
             details: {
               reponses: confirme.answers,
+              sourceResultIds: sourceResultIdsRef.current,
               revision_exercice_id: exerciceId,
               questionOrder,
               questions: wrongQuestions.map(wq => ({

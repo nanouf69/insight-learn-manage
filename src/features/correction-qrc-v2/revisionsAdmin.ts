@@ -1,8 +1,9 @@
 import { canonique, lireOriginal, lireReponsesExactes } from "@/lib/originauxExacts";
+import { revisionResultatConfirme } from "@/lib/revisionFinalisationPreuve";
 
 const objet = (v: unknown): Record<string, any> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, any> : {};
 export type RevisionServeur = { id: string; apprenant_id: string; exercice_id: string; reponses: unknown; updated_at: string; completed?: boolean | null; originaux_exacts?: any; reponses_meta?: any };
-export type SourceRevision = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; matiere_nom?: string; tentative?: number | null; details: any };
+export type SourceRevision = { id: string; apprenant_id: string; quiz_id: string; quiz_type?: string; score_obtenu?: number | null; score_max?: number | null; matiere_id: string; matiere_nom?: string; tentative?: number | null; details: any };
 export type EvenementRevision = { id: string; apprenant_id: string; exercice_id: string; question_id: string; created_at: string; valeur: unknown; valeur_originale?: unknown };
 export type LigneRevision = { cle: string; revisionId: string; examen: string; revision: string; matiere: string; matiereId?: string; question: string; tentative: number | null; sourceId: string | null; initiale: unknown; derniere: unknown; type: string; heureQuestion: string | null; heureEtat: string; terminee: boolean; cause: string | null };
 
@@ -17,6 +18,9 @@ export function projeterRevisionsAdmin(apprenant: string, revisions: RevisionSer
     const root = objet(exact.reponses), state = objet(root.revisionState ?? root);
     const examen = match[1];
     const answers = objet(state.answers);
+    const receipts = sources.filter(s => s.quiz_type === "revision_fausses" && s.details?.revision_exercice_id === r.exercice_id);
+    const completed = r.completed === true && receipts.length === 1 && revisionResultatConfirme(receipts[0], apprenant,
+      examen, r.exercice_id, exact.reponses, Array.isArray(state.questionOrder) ? state.questionOrder : [], Number(receipts[0].score_obtenu));
     for (const [key, derniere] of Object.entries(answers)) {
       const candidates = key.includes(":") ? [key] : (Array.isArray(state.questionOrder) ? state.questionOrder.filter((k: unknown) => typeof k === "string" && k.slice(k.indexOf(":") + 1) === key) : []);
       const identity = candidates.length === 1 ? String(candidates[0]) : null;
@@ -42,7 +46,8 @@ export function projeterRevisionsAdmin(apprenant: string, revisions: RevisionSer
         const original = lireOriginal(e.valeur, e.valeur_originale);
         return ["exact", "sans_marqueur"].includes(original.statut) && canonique(original.valeur) === canonique(derniere);
       }) ? latest.created_at : null;
-      out.push({ cle: `${r.id}:${key}`, revisionId:r.id, examen, revision: match[2] ?? "1", matiere: source?.matiere_nom ?? matiere ?? "À VÉRIFIER", matiereId: matiere ?? undefined, question, tentative: cause ? null : source?.tentative ?? null, sourceId: cause ? null : source?.id ?? null, initiale: cause ? undefined : initiale, derniere, type: q?.type ?? (Array.isArray(derniere) ? "QCM" : "QRC"), heureQuestion: provenTime, heureEtat:r.updated_at, terminee:r.completed === true, cause });
+      if (r.completed === true && !completed) cause = cause ?? "Clôture enregistrée, résultat final non confirmé";
+      out.push({ cle: `${r.id}:${key}`, revisionId:r.id, examen, revision: match[2] ?? "1", matiere: source?.matiere_nom ?? matiere ?? "À VÉRIFIER", matiereId: matiere ?? undefined, question, tentative: cause ? null : source?.tentative ?? null, sourceId: cause ? null : source?.id ?? null, initiale: cause ? undefined : initiale, derniere, type: q?.type ?? (Array.isArray(derniere) ? "QCM" : "QRC"), heureQuestion: provenTime, heureEtat:r.updated_at, terminee:completed, cause });
     }
   }
   return out.sort((a,b) => Date.parse(b.heureEtat) - Date.parse(a.heureEtat) || a.cle.localeCompare(b.cle));
