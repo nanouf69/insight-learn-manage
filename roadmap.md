@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 10/11 17:59 — Finalisation publiée des questions fausses
+- [ ] Diagnostiquer les révisions complètes sans résultat et le badge non rafraîchi, en lecture seule.
+- [ ] Sécuriser reprise, confirmation et rejeu de Terminer sans réécriture historique.
+- [ ] Tests ciblés PC/mobile, interruption/concurrence, preuve admin et contrôle publié ; publication uniquement si critiques prouvés.
+
 ## 10/11 16:49 — Synchronisation des trois corrigés
 - [x] Reprise 17:30 : adaptateurs Bilans figés/futurs + EB, lots 400, sauvegarde auto serveur, conflits 2 onglets, lecteur admin complet, couverture admin ; 27+7 PostgreSQL, 243+24 Vitest, navigateur PC/mobile 2 onglets PASS ; couverture réelle mesurée ; rien installé/publié.
 - [ ] Installation serveur + contrôle en ligne — attend votre accord et un compte élève de test autorisé.
