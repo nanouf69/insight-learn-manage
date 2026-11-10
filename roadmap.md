@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## 10/11 10:49 — Reprise activation liaison QRC
-- [ ] Preuve serveur ciblée des cinq remises Meriem BENNANI EB2 T3 (suffixe __t3, tentative=1), sans réécriture ni assouplissement global.
-- [ ] Mocks supabase.channel des 20 tests navigation corrigés, vrais échecs visibles.
-- [ ] Suite PostgreSQL isolée complète + rollback + non-régression.
-- [ ] Empreintes avant/après + sauvegarde vérifiable ; activation/publication seulement si tout est vert.
+- [x] Preuve serveur ciblée des cinq remises Meriem BENNANI EB2 T3 : 5/5 prouvées (migration 0257, table append-only), sans réécriture ni assouplissement global.
+- [x] Mocks supabase.channel des 20 tests navigation corrigés, vrais échecs visibles.
+- [x] PostgreSQL isolé 87 + 86 OK, Vitest 458 OK, répétition jetable sur données réelles OK.
+- [x] Empreintes avant/après : 0 copie disparue/modifiée (hors 1 EB3 en cours de composition) ; publication faite, bundle public vérifié. Rapport docs/activation-qrc-2026-11-10-1115-go.md.
+- [ ] 710 autres remises __tN/tentative=1 (46 élèves) — traitement nominatif seulement sur accord.
 
 ## 10/11 10:17 — Activation conditionnelle liaison QRC
 - [x] Sauvegarde privée ciblée + SHA-256, cinq résultats complets et empreintes avant/après identiques ; cinq remises originales Meriem BENNANI EB2 T3 retrouvées, suffixe __t3 mais champ tentative=1 contradictoire.
