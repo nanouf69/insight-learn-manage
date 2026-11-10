@@ -215,6 +215,7 @@ class EB3(unittest.TestCase):
         self.assertEqual(code, 0, out)
         code, out = self.pg.sql(ctx(ADMIN_C, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{qi}',0,{pts + 3},'r','admin@test');"))
         self.assertNotEqual(code, 0, out)
+        self.assertIn('HORS_BAREME', out)
 
 
 if __name__ == '__main__':
