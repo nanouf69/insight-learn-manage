@@ -40,6 +40,7 @@ class E2E(unittest.TestCase):
                      "ALTER TABLE public.qrc_correction_events ENABLE ROW LEVEL SECURITY; ALTER TABLE public.qrc_instances_v2 ENABLE ROW LEVEL SECURITY;"
                      "CREATE POLICY lecture ON public.qrc_correction_events FOR SELECT TO authenticated USING (public.core_est_proprietaire(apprenant_id) OR public.has_role(auth.uid(),'admin'));"
                      "CREATE POLICY lecture ON public.qrc_instances_v2 FOR SELECT TO authenticated USING (public.core_est_proprietaire(apprenant_id) OR public.has_role(auth.uid(),'admin'));"
+                     "GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role), public.core_est_proprietaire(uuid) TO authenticated;"
                      "ALTER ROLE authenticator LOGIN;"):
             pg.sql(part)
         cls.rest_port, cls.proxy_port = port_libre(), port_libre()
