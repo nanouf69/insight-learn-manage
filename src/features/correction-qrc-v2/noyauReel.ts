@@ -461,13 +461,17 @@ export async function chargerSessionTest(
     });
     attempts.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
   } else {
-    const { data, error } = await supabase
-      .from("exam_attempts_v2")
-      .select(colonnes)
-      .eq("is_test", mode === "test")
-      .order("started_at", { ascending: true });
-    if (error) throw error;
-    attempts = (data ?? []) as any[];
+    for (let de = 0; ; de += 1000) {
+      const { data, error } = await supabase
+        .from("exam_attempts_v2")
+        .select(colonnes)
+        .eq("is_test", mode === "test")
+        .order("attempt_id", { ascending: true })
+        .range(de, de + 999);
+      if (error) throw error;
+      attempts.push(...(data ?? []));
+      if ((data ?? []).length < 1000) break;
+    }
   }
 
   const neutralises = await idsNeutralises();
@@ -686,7 +690,7 @@ export async function lireResultat(attemptId: string): Promise<ResultatReel | nu
 }
 
 /** Temps réel : simple signal « une nouvelle donnée serveur existe », aucune vérité métier. */
-export function souscrireSignal(canal: string, table: "qrc_instances_v2" | "core_exam_results", onSignal: () => void) {
+export function souscrireSignal(canal: string, table: "qrc_instances_v2" | "core_exam_results" | "exam_attempts_v2" | "apprenant_quiz_results", onSignal: () => void) {
   const ch = supabase
     .channel(canal)
     .on("postgres_changes", { event: "*", schema: "public", table }, () => onSignal())
