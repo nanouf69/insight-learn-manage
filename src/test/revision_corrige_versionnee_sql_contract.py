@@ -368,5 +368,19 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
         with self.assertRaisesRegex(RuntimeError,'Commande inconnue'):
             self.command(st,{'kind':'submit','perfect':99})
 
+    def test_timeout_in_middle_of_command_rolls_back_then_same_operation_retries(self):
+        state=self.open();op=uuid.uuid4()
+        payload={'kind':'answer','key':f'attempt|{COPY}|francais:4','answer':['A','C']}
+        def hold():  # concurrent publication holds the official row while the command waits on it
+            self.pg.sql("BEGIN; SELECT 1 FROM exam_content_versions WHERE exam_id='EB3' FOR UPDATE; SELECT pg_sleep(1.5); COMMIT;")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            fut=pool.submit(hold)
+            import time; time.sleep(0.4)
+            with self.assertRaisesRegex(RuntimeError,'statement timeout'):
+                self.call(f"SET statement_timeout='300ms'; SELECT revision_corrige_commande('{state['id']}',0,'{state['epoch']}','{op}',{self.lit(payload)})")
+            fut.result()
+        self.assertEqual(self.pg.sql(f"SELECT count(*) FROM revision_corrige_events WHERE session_id='{state['id']}'"),'0')
+        self.assertEqual(self.command(state,payload,op)['seq'],1)
+
 
 if __name__=='__main__': unittest.main(verbosity=2)
