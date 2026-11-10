@@ -39,6 +39,12 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
     def tearDownClass(cls):
         cls.pg.stop()
 
+    def setUp(self):
+        # Each test owns a different dossier/copy; reload-resume must not leak across tests.
+        global OWNER,COPY
+        OWNER=str(uuid.uuid4());COPY=str(uuid.uuid4())
+        self.pg.sql(f"INSERT INTO apprenants VALUES('{OWNER}','{UID}'); INSERT INTO exam_attempts_v2 SELECT '{COPY}','{OWNER}',exam_id,etat,snapshot FROM exam_attempts_v2 WHERE exam_id='EB3' LIMIT 1")
+
     def call(self, sql, user=UID):
         raw=self.pg.sql(f"SET ROLE authenticated; SET request.jwt.claim.sub='{user}'; "+sql)
         return json.loads(raw.splitlines()[-1])
