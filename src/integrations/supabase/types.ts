@@ -7113,6 +7113,39 @@ export type Database = {
           },
         ]
       }
+      qrc_commentaires_rapides: {
+        Row: {
+          archive: boolean
+          created_at: string
+          created_by: string
+          id: string
+          texte: string
+          updated_at: string
+          updated_by: string
+          version: number
+        }
+        Insert: {
+          archive?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          texte: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Update: {
+          archive?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          texte?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Relationships: []
+      }
       qrc_correction_events: {
         Row: {
           apprenant_id: string
@@ -10557,6 +10590,30 @@ export type Database = {
           publiable: boolean
           total: number
         }[]
+      }
+      qrc_commentaire_rapide_enregistrer: {
+        Args: {
+          p_archive?: boolean
+          p_id: string
+          p_texte: string
+          p_version?: number
+        }
+        Returns: {
+          archive: boolean
+          created_at: string
+          created_by: string
+          id: string
+          texte: string
+          updated_at: string
+          updated_by: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "qrc_commentaires_rapides"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       qrc_demander_verification: {
         Args: { p_qrc_instance_id: string }
