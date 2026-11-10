@@ -12,6 +12,7 @@ import {
   restaurerRevisionProgressState,
   revisionQuestionKey,
   revisionQuestionOrder,
+  reponseRevisionAffichee,
 } from "@/lib/revisionFaussesProgression";
 
 import { Button } from "@/components/ui/button";
