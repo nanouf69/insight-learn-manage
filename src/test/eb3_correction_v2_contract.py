@@ -214,8 +214,7 @@ class EB3(unittest.TestCase):
         (code, out), _ = self.corriger(qi, pts + 1)
         self.assertEqual(code, 0, out)
         base = self.pg.sql(f"SELECT note FROM public.qrc_instances_v2 WHERE qrc_instance_id='{qi}'")[1]
-        print('BASE', base, 'PTS', pts)
-        code, out = self.pg.sql(ctx(ADMIN_C, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{qi}',{base},{pts + 3},'r','admin@test');"))
+        code, out = self.pg.sql(ctx(ADMIN_C, f"SELECT public.core_revise_qrc_publish('{uuid.uuid4()}','{qi}',{pts + 3},{base},'r','admin@test');"))
         self.assertNotEqual(code, 0, out)
         self.assertIn('HORS_BAREME', out)
 
