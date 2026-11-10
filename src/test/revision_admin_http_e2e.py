@@ -32,18 +32,18 @@ INSERT INTO public.apprenant_quiz_results VALUES
                 "exercice_type": "revision_fausses", "reponses": {"revisionState": state}, "score": 1, "completed": completed,
                 "events": [{"event_id": str(uuid.uuid4()), "question_id": q, "valeur": v, "tentative": 1} for q, v in events], "base_seq": base}
 
-    def rest(self, path):
+    def lire_rest(self, path):
         req = Request(f"http://127.0.0.1:{self.rest_port}/{path}", headers={"Authorization": f"Bearer {self.service_jwt}", "apikey": self.service_jwt})
         with urlopen(req) as r:
             return json.loads(r.read())
 
     def lecture_admin(self):
         # Mêmes colonnes et filtres que lireRevisionsAdmin, triés par id.
-        revisions = self.rest(f"reponses_apprenants?select=id,apprenant_id,exercice_id,reponses,updated_at,completed,originaux_exacts,reponses_meta&apprenant_id=eq.{h.APP}&exercice_type=eq.revision_fausses&order=id")
+        revisions = self.lire_rest(f"reponses_apprenants?select=id,apprenant_id,exercice_id,reponses,updated_at,completed,originaux_exacts,reponses_meta&apprenant_id=eq.{h.APP}&exercice_type=eq.revision_fausses&order=id")
         events = []
         for r in revisions:
-            events += self.rest(f"reponses_apprenants_journal?select=id,apprenant_id,exercice_id,question_id,created_at,valeur,valeur_originale&apprenant_id=eq.{h.APP}&exercice_id=eq.{r['exercice_id']}&exercice_type=eq.revision_fausses&order=id")
-        sources = self.rest(f"apprenant_quiz_results?select=id,apprenant_id,quiz_id,matiere_id,matiere_nom,tentative,details&apprenant_id=eq.{h.APP}&quiz_id=ilike.eb*&order=id")
+            events += self.lire_rest(f"reponses_apprenants_journal?select=id,apprenant_id,exercice_id,question_id,created_at,valeur,valeur_originale&apprenant_id=eq.{h.APP}&exercice_id=eq.{r['exercice_id']}&exercice_type=eq.revision_fausses&order=id")
+        sources = self.lire_rest(f"apprenant_quiz_results?select=id,apprenant_id,quiz_id,matiere_id,matiere_nom,tentative,details&apprenant_id=eq.{h.APP}&quiz_id=ilike.eb*&order=id")
         out = subprocess.run(["bun", "run", str(ROOT / "src/test/revision_admin_projection_cli.ts")], input=json.dumps({"apprenant": h.APP, "revisions": revisions, "sources": sources, "events": events}), capture_output=True, text=True, cwd=ROOT, timeout=60)
         self.assertEqual(out.returncode, 0, out.stderr)
         return {l["question"]: l for l in json.loads(out.stdout)}
