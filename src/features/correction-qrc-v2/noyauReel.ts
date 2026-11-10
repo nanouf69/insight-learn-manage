@@ -206,7 +206,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   for (let de = 0; ; de += 1000) {
     const { data, error } = await supabase
       .from("exam_attempts_v2")
-      .select("attempt_id, apprenant_id, exam_id, started_at")
+      .select("attempt_id, apprenant_id, exam_id, started_at, rid:snapshot->source_historique->>result_id")
       .eq("is_test", mode === "test")
       .order("started_at", { ascending: false })
       .order("attempt_id", { ascending: true })
@@ -216,22 +216,25 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     if ((data ?? []).length < 1000) break;
   }
 
-  // EB3 reste volontairement hors V2. On lit uniquement ses résultats historiques
-  // déjà finalisés afin de l'afficher dans le même menu, sans copie ni migration.
+  // Toutes les copies historiques d'EB (EB1…EB6, VTC/TAXI/TA/VA) non migrées vers V2 et
+  // hors EB2 VTC (consultation V2) sont listées dans le même menu, sans copie ni migration.
+  // Les copies déjà migrées sont exclues ici : elles apparaissent une seule fois, côté V2.
   const legacyResults: any[] = [];
   if (mode === "migre") {
+    const migres = resultatsMigres(attempts as any);
     for (let de = 0; ; de += 1000) {
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, completed_at")
-        .in("quiz_type", ["examen_blanc", "bilan"])
-        .ilike("quiz_id", "eb3%")
+        .eq("quiz_type", "examen_blanc")
+        .ilike("quiz_id", "eb%")
+        .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
         .order("id", { ascending: true })
         .range(de, de + 999);
       if (error) throw error;
-      const eb3 = (data ?? []).filter((r: any) => /^eb3(?:$|-)/i.test(String(r.quiz_id ?? "")));
-      legacyResults.push(...eb3.map((r: any) => ({
+      const anciens = resultatsAncienCircuit((data ?? []) as any[], migres);
+      legacyResults.push(...anciens.map((r: any) => ({
         ...r,
         attempt_id: `ancien:${r.id}`,
         exam_id: r.quiz_id,
@@ -258,9 +261,27 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
   ];
 
   const apprenantIds = Array.from(new Set(passages.map((a) => a.apprenant_id as string)));
-  const { data: apprenants } = apprenantIds.length
-    ? await supabase.from("apprenants").select("id, type_apprenant").in("id", apprenantIds)
-    : { data: [] as { id: string; type_apprenant: string | null }[] };
+  // Lectures par lots de 150 : une liste d'identifiants trop longue dans l'URL échouerait
+  // et ferait basculer silencieusement des candidats (dont cours du soir) hors de leur session.
+  const apprenants: { id: string; type_apprenant: string | null }[] = [];
+  const liens: any[] = [];
+  for (let i = 0; i < apprenantIds.length; i += 150) {
+    const lot = apprenantIds.slice(i, i + 150);
+    const { data: a, error: ea } = await supabase.from("apprenants").select("id, type_apprenant").in("id", lot);
+    if (ea) throw ea;
+    apprenants.push(...((a ?? []) as any[]));
+    for (let de = 0; ; de += 1000) {
+      const { data: l, error: el } = await supabase
+        .from("session_apprenants")
+        .select("id, apprenant_id, session_id, date_debut, date_fin")
+        .in("apprenant_id", lot)
+        .order("id", { ascending: true })
+        .range(de, de + 999);
+      if (el) throw el;
+      liens.push(...((l ?? []) as any[]));
+      if ((l ?? []).length < 1000) break;
+    }
+  }
   const typesApprenant = new Map(
     (apprenants ?? []).map((a) => [a.id, (a.type_apprenant ?? "").trim().toLowerCase()]),
   );
@@ -268,18 +289,13 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
     (apprenants ?? []).map((a) => [a.id, /-e$/.test((a.type_apprenant ?? "").trim().toLowerCase())]),
   );
 
-  const { data: liens } = apprenantIds.length
-    ? await supabase
-        .from("session_apprenants")
-        .select("apprenant_id, session_id, date_debut, date_fin")
-        .in("apprenant_id", apprenantIds)
-        .range(0, 4999)
-    : { data: [] as any[] };
-
-  const sessionIds = Array.from(new Set((liens ?? []).map((l: any) => l.session_id as string)));
-  const { data: sessionsCrm } = sessionIds.length
-    ? await supabase.from("sessions").select("id, nom, date_debut, date_fin").in("id", sessionIds)
-    : { data: [] as any[] };
+  const sessionIds = Array.from(new Set(liens.map((l: any) => l.session_id as string)));
+  const sessionsCrm: any[] = [];
+  for (let i = 0; i < sessionIds.length; i += 150) {
+    const { data: s, error: es } = await supabase.from("sessions").select("id, nom, date_debut, date_fin").in("id", sessionIds.slice(i, i + 150));
+    if (es) throw es;
+    sessionsCrm.push(...((s ?? []) as any[]));
+  }
   const sessionDe = new Map((sessionsCrm ?? []).map((s: any) => [s.id as string, s]));
 
   const liensDe = new Map<string, Array<{ session: any; debut: string; fin: string }>>();
