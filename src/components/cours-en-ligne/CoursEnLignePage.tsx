@@ -210,7 +210,7 @@ const ApprenantSearchPreview = () => {
     <div className="space-y-6 animate-fade-in">
       {isAdmin && <AlertesNotesGlobales />}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex w-full max-w-5xl flex-wrap">
+        <TabsList className="flex h-auto w-full max-w-5xl flex-wrap justify-start gap-1">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil

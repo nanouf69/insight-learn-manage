@@ -761,10 +761,10 @@ export async function lireResultat(attemptId: string): Promise<ResultatReel | nu
 }
 
 /** Temps réel : simple signal « une nouvelle donnée serveur existe », aucune vérité métier. */
-export function souscrireSignal(canal: string, table: "qrc_instances_v2" | "core_exam_results" | "exam_attempts_v2" | "apprenant_quiz_results", onSignal: () => void) {
+export function souscrireSignal(canal: string, table: "qrc_instances_v2" | "core_exam_results" | "exam_attempts_v2" | "apprenant_quiz_results", onSignal: () => void, filter?: string) {
   const ch = supabase
     .channel(canal)
-    .on("postgres_changes", { event: "*", schema: "public", table }, () => onSignal())
+    .on("postgres_changes", { event: "*", schema: "public", table, ...(filter ? { filter } : {}) }, () => onSignal())
     .subscribe();
   return () => {
     supabase.removeChannel(ch);
