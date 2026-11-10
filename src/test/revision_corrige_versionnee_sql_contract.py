@@ -154,6 +154,27 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
             with self.assertRaisesRegex(RuntimeError,'Choix inconnu ou duplique'):
                 self.answer(state,answer)
 
+    def test_all_24_eb_identities_are_isolated(self):
+        for number in range(1,7):
+            for suffix in ['', '-TAXI', '-ta', '-va']:
+                exam=f'EB{number}{suffix}' if suffix not in ['-ta','-va'] else f'eb{number}{suffix}'
+                copy=str(uuid.uuid4())
+                q={'id':'francais:4','type':'QCM','enonce':'titiller','choix':[{'lettre':l,'texte':l,'correct':l in ['A','C']} for l in ['A','B','C']]}
+                if exam!='EB3':
+                    self.pg.sql(f"INSERT INTO exam_content_versions(exam_id,version_number,published_at,content,statut,is_test) VALUES('{exam}',1,now(),'{json.dumps({'questions':[q]})}','publiee',false)")
+                self.pg.sql(f"INSERT INTO exam_attempts_v2 VALUES('{copy}','{OWNER}','{exam}','terminee','{json.dumps({'matiere':'francais','questions':[q]})}')")
+                refs=[{'type':'attempt','id':copy,'question':'francais:4'}]
+                state=self.call(f"SELECT revision_corrige_ouvrir('{OWNER}','{json.dumps(refs)}')")
+                self.assertEqual(state['sources'][0]['exam_id'],exam)
+                state=self.command(state,{'kind':'answer','key':f'attempt|{copy}|francais:4','answer':['C','A']})
+                self.assertEqual(self.command(state,{'kind':'submit'})['submission']['perfect'],1)
+
+    def test_schema_rollback_preserves_original_exam(self):
+        before=self.pg.sql("SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY attempt_id)::text) FROM exam_attempts_v2 t")
+        self.pg.sql("BEGIN;REVOKE EXECUTE ON FUNCTION revision_corrige_commande(uuid,bigint,text,uuid,jsonb) FROM authenticated;ROLLBACK")
+        self.command(self.answer(self.open(),['A','C']),{'kind':'submit'})
+        self.assertEqual(before,self.pg.sql("SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY attempt_id)::text) FROM exam_attempts_v2 t"))
+
     def test_qrc_literal_only_never_human_grade(self):
         copy=str(uuid.uuid4())
         q={'id':'gestion:1','type':'QRC','enonce':'Valeur','reponseQRC':'−10 €','points':2}
