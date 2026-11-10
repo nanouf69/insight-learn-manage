@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
-import CorrectionQRCTab from "@/components/cours-en-ligne/CorrectionQRCTab";
+import { CopiesHistoriquesLecture } from "@/features/correction-qrc-v2/CopiesHistoriquesLecture";
 import { chargerConsultationEb2, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
   chargerSessionTest,
@@ -851,16 +851,11 @@ export default function AdminCorrectionQrcV2Reel() {
               <span className="font-semibold">Archive : {archiveOuverte.nom} — {archiveOuverte.libelle}</span>
               <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => setArchiveOuverte(null)}>Fermer l'archive</Button>
             </div>
-            <CorrectionQRCTab key={archiveOuverte.cle} resultIds={archiveOuverte.resultIds}
-              embeddedLabel={`${archiveOuverte.libelle} — ANCIEN CIRCUIT`} hideV2Panel />
+            <CopiesHistoriquesLecture key={archiveOuverte.cle} resultIds={archiveOuverte.resultIds} />
           </div>
         ) : ancienCircuit ? (
           <div style={{ zoom: `${zoom}%` }}>
-            <CorrectionQRCTab
-              resultIds={legacyResultIds ?? []}
-              embeddedLabel={`${ebChoisi?.exam_id ?? "EB3"} — ANCIEN CIRCUIT`}
-              hideV2Panel
-            />
+            <CopiesHistoriquesLecture resultIds={legacyResultIds ?? []} />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {matieres.map((m) => {

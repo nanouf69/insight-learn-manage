@@ -18,6 +18,7 @@ import { BilanPassagesStatutsPanel } from "./BilanPassagesStatutsPanel";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
 import { estExamenBlanc } from "@/lib/noteExamenAffichee";
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
+import { RevisionsAdmin } from "@/features/correction-qrc-v2/RevisionsAdmin";
 
 interface ResultatsApprenantTabProps {
   apprenantId: string;
@@ -122,6 +123,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
 
   return (
     <div className="space-y-6">
+      <RevisionsAdmin key={apprenantId} apprenantId={apprenantId} />
       <BilanPassagesStatutsPanel apprenantId={apprenantId} />
       {/* Examens blancs */}
       <Card>
