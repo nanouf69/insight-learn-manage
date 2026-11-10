@@ -1379,5 +1379,5 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 
 ## 10/11 — Notes historiques EB2 VTC dans le correcteur (accord explicite)
 - [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
-- [ ] Tests dédiés, relecture journée/soir et non-régression TAXI/V2.
+- [x] 77 tests PASS ; journée 49/49 et soir 54/54 notes définitives concordantes ; 34 copies soir en attente gardées sans note ; rechargement PC/mobile identique, 42 notes TAXI conservées.
 - [ ] Publication ciblée et contrôle du bundle public.
