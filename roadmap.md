@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## 10/11 20:01 — Tests approfondis performance Correction QRC V2
-- [ ] Régressions, lint et compilation observée ; aucun changement fonctionnel non autorisé.
-- [ ] Navigateur admin preview/production en lecture seule, réseau mesuré, sessions jour/soir et EB3, zoom/scroll.
-- [ ] Propagation et sauvegarde sur copies synthétiques jetables : nouvelle copie, IA/humain, double clic, panne, concurrence, actualisation.
-- [ ] Comparaison avant/après strictement comparable et rollback coordonné avec finalisation/révisions ; publication uniquement après preuves critiques complètes.
+- [x] 122 régressions PASS, 15 contrats PostgreSQL jetables PASS, compilation observée OK ; lint FAIL (90 erreurs/8 avertissements), types autonome non exécuté. Aucun code fonctionnel changé.
+- [x] Admin preview/production lecture seule : 20,189/14,133 s première grille, 59/56 requêtes ; EB3 soir 34 requêtes ; survol/scroll 0 ; inventaire 4480/4480 ; aucune écriture réelle.
+- [x] PC synthétique : double clic note = 1 écriture/1 lecture, fenêtre 0,558 s dont attente fixe 0,5 s ; panneau 637 px stable ; rafale regroupée, panne, actualisation et reload exécutés.
+- [ ] NO-GO : chevauchement mobile reproduit ; nouvelle copie/IA/historique, refresh après Realtime perdu, chargement concurrent, session JOURNÉE, types/lint et rollback complet restent à résoudre/prouver avant publication.
+- [ ] Avant/après comparable indisponible : production affiche déjà bouton et absence bandeau ; ne pas utiliser preview/production comme gain. Rapport docs/performance-qrc-v2-2026-11-10-2001.md.
 
 ## 10/11 17:59 — Finalisation publiée des questions fausses
 - [x] 18:20 : garantie serveur installée (index unique 0265, additif, 151 résultats inchangés en nombre) ; 23505 = déjà finalisé puis relecture exacte ; contrat PostgreSQL jetable 8/8 (deux appareils, rejeu, historique, rollback) + 68 Vitest PASS.
