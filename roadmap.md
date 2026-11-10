@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 10/11 20:01 — Tests approfondis performance Correction QRC V2
+- [ ] Régressions, lint et compilation observée ; aucun changement fonctionnel non autorisé.
+- [ ] Navigateur admin preview/production en lecture seule, réseau mesuré, sessions jour/soir et EB3, zoom/scroll.
+- [ ] Propagation et sauvegarde sur copies synthétiques jetables : nouvelle copie, IA/humain, double clic, panne, concurrence, actualisation.
+- [ ] Comparaison avant/après strictement comparable et rollback coordonné avec finalisation/révisions ; publication uniquement après preuves critiques complètes.
+
 ## 10/11 17:59 — Finalisation publiée des questions fausses
 - [x] 18:20 : garantie serveur installée (index unique 0265, additif, 151 résultats inchangés en nombre) ; 23505 = déjà finalisé puis relecture exacte ; contrat PostgreSQL jetable 8/8 (deux appareils, rejeu, historique, rollback) + 68 Vitest PASS.
 - [x] Diagnostic lecture seule : 105 clôtures sans résultat lié, dont 2 récentes prouvées complètes ; badge non rafraîchi et admin « terminé » sur simple clôture.
