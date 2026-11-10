@@ -1376,3 +1376,8 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 ## 08/11 22:01 UTC — Publication ciblée
 - [x] Rattrapage QRC écran ouvert publié (`index-XoqG3L5A.js`) ; fin de révision publiée = chemin existant, appel serveur désactivé (`uoe=!1`).
 - [ ] Finalisation atomique révision : bloquée, pas de source serveur structurée pour ~30 % des copies récentes (151/509 en novembre sans snapshot, seulement un résumé texte) ; décision nécessaire.
+
+## 10/11 — Notes historiques EB2 VTC dans le correcteur (accord explicite)
+- [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
+- [ ] Tests dédiés, relecture journée/soir et non-régression TAXI/V2.
+- [ ] Publication ciblée et contrôle du bundle public.
