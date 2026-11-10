@@ -3,7 +3,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
-import { resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { miroirsV2Prouves, nbQrcEcrites, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 
 export type QuestionSnapshot = {
   id: string;
@@ -259,7 +259,6 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         started_at: r.completed_at,
         circuit: "ancien" as const,
       })));
-      if ((data ?? []).length < 1000) break;
     }
   }
 

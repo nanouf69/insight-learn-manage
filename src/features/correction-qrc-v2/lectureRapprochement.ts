@@ -1,7 +1,7 @@
 // Lecture serveur (lecture seule, paginée par identifiant) de l'inventaire attendu des copies d'EB.
 // Une erreur de lecture est une erreur : jamais un « 0 manquante » rassurant.
 import { supabase } from "@/integrations/supabase/client";
-import { inventaireAttendu, nbQrcEcrites, rapprocher, type CopieManquante } from "@/features/correction-qrc-v2/inventaireCopies";
+import { inventaireAttendu, miroirsV2Prouves, nbQrcEcrites, rapprocher, type CopieManquante } from "@/features/correction-qrc-v2/inventaireCopies";
 
 async function toutLire<T>(construire: (de: number) => any, ordre: string): Promise<T[]> {
   const out: T[] = [];
@@ -24,11 +24,11 @@ export type Rapprochement = {
 export async function lireRapprochement(visibles: Set<string>): Promise<Rapprochement> {
   const db = supabase as any;
   const [tentatives, qrc, neut, tests, resultats] = await Promise.all([
-    toutLire<any>(() => db.from("exam_attempts_v2").select("attempt_id, apprenant_id, exam_id, etat, rid:snapshot->source_historique->>result_id").eq("is_test", false), "attempt_id"),
-    toutLire<any>(() => db.from("qrc_instances_v2").select("qrc_instance_id, attempt_id"), "qrc_instance_id"),
+    toutLire<any>(() => db.from("exam_attempts_v2").select("attempt_id, apprenant_id, exam_id, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id").eq("is_test", false), "attempt_id"),
+    toutLire<any>(() => db.from("qrc_instances_v2").select("qrc_instance_id, attempt_id, reponse"), "qrc_instance_id"),
     toutLire<any>(() => db.from("core_tentatives_neutralisees").select("attempt_id"), "attempt_id"),
     toutLire<any>(() => db.from("comptes_test_techniques").select("apprenant_id"), "apprenant_id"),
-    toutLire<any>(() => db.from("apprenant_quiz_results").select("id, apprenant_id, quiz_id, completed_at, rep:details->reponses").eq("quiz_type", "examen_blanc").ilike("quiz_id", "eb%"), "id"),
+    toutLire<any>(() => db.from("apprenant_quiz_results").select("id, apprenant_id, quiz_id, matiere_id, completed_at, rep:details->reponses").eq("quiz_type", "examen_blanc").ilike("quiz_id", "eb%"), "id"),
   ]);
   const qrcParTentative = new Map<string, number>();
   for (const q of qrc) qrcParTentative.set(q.attempt_id, (qrcParTentative.get(q.attempt_id) ?? 0) + 1);
@@ -37,6 +37,7 @@ export async function lireRapprochement(visibles: Set<string>): Promise<Rapproch
     qrcParTentative,
     neutralises: new Set(neut.map((n) => n.attempt_id)),
     exclus: new Set(tests.map((t) => t.apprenant_id)),
+    miroirs: miroirsV2Prouves(resultats, tentatives, qrc),
     resultats: resultats.map((r) => ({ id: r.id, apprenant_id: r.apprenant_id, quiz_id: r.quiz_id, completed_at: r.completed_at, qrc: nbQrcEcrites(r.rep) })),
   });
   const r = rapprocher(attendues, visibles);

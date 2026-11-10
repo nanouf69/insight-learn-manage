@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleAffichage, estExamenBlancReel, inventaireAttendu, nbQrcEcrites, rapprocher, resultatsAncienCircuit, resultatsMigres } from "./inventaireCopies";
+import { miroirsV2Prouves, cleAffichage, estExamenBlancReel, inventaireAttendu, nbQrcEcrites, rapprocher, resultatsAncienCircuit, resultatsMigres } from "./inventaireCopies";
 
 const r = (id: string, quiz_id: string, extra: any = {}) => ({ id, apprenant_id: "a-" + id, quiz_id, completed_at: "2026-11-05T19:00:00Z", ...extra });
 
@@ -53,5 +53,21 @@ describe("inventaire des copies EB", () => {
   it("zéro manquante quand tout est affiché", () => {
     const att = inventaireAttendu({ tentatives: [{ attempt_id: "a", apprenant_id: "x", exam_id: "EB2-TAXI", etat: "terminee" }], qrcParTentative: new Map([["a", 1]]), neutralises: new Set(), exclus: new Set(), resultats: [] });
     expect(rapprocher(att, new Set(["a"])).manquantes).toEqual([]);
+  });
+
+  it("miroir V2 natif prouvé seulement par réponses QRC identiques, unique, même matière", () => {
+    const res = [
+      { ...r("m", "EB1"), apprenant_id: "x", matiere_id: "gestion", rep: { 1: "TNS", 2: "Cotisation", 3: ["B"] } },
+      { ...r("d", "EB1"), apprenant_id: "x", matiere_id: "gestion", rep: { 1: "TNS", 2: "autre" } },
+      { ...r("o", "EB1"), apprenant_id: "x", matiere_id: "t3p", rep: { 1: "TNS", 2: "Cotisation" } },
+      { ...r("s", "EB3"), apprenant_id: "y", matiere_id: "gestion", rep: { 1: "A" } },
+    ];
+    const tent = [
+      { attempt_id: "v1", apprenant_id: "x", exam_id: "EB1", etat: "terminee", matiere: "gestion" },
+      { attempt_id: "y1", apprenant_id: "y", exam_id: "EB3", etat: "terminee", matiere: "gestion" },
+      { attempt_id: "y2", apprenant_id: "y", exam_id: "EB3", etat: "terminee", matiere: "gestion" },
+    ];
+    const qrc = [{ attempt_id: "v1", reponse: "Cotisation" }, { attempt_id: "v1", reponse: "TNS" }, { attempt_id: "y1", reponse: "A" }, { attempt_id: "y2", reponse: "A" }];
+    expect([...miroirsV2Prouves(res, tent, qrc)]).toEqual(["m"]);
   });
 });
