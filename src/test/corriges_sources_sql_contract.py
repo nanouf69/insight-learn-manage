@@ -11,14 +11,23 @@ class Sources(unittest.TestCase):
         cls.sql(SCHEMA)
         cls.sql("""ALTER TABLE exam_attempts_v2 ADD COLUMN exam_id text, ADD COLUMN etat text;
         CREATE TABLE exam_content_versions(id uuid,exam_id text,version_number int,published_at timestamptz,content jsonb,statut text,retired_at timestamptz,is_test boolean);
-        CREATE TABLE apprenant_quiz_results(id uuid,apprenant_id uuid,quiz_id text,matiere_id text,details jsonb,quiz_type text,completed_at timestamptz);
+        CREATE TABLE apprenant_quiz_results(id uuid,apprenant_id uuid,quiz_id text,matiere_id text,details jsonb,quiz_type text,completed_at timestamptz,tentative integer);
+        ALTER TABLE exam_attempts_v2 ADD COLUMN IF NOT EXISTS is_test boolean DEFAULT false;
+        CREATE TABLE IF NOT EXISTS answer_state(attempt_id uuid,question_id text,valeur jsonb);
+        CREATE TABLE bilan_passage_snapshots(id uuid PRIMARY KEY,apprenant_id uuid,module_id integer,exercice_id integer,tentative integer,passage_cle text,questions jsonb);
+        CREATE TABLE IF NOT EXISTS reponses_apprenants(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),apprenant_id uuid,exercice_id text,tentative integer,status text,completed boolean,reponses jsonb);
+        CREATE TABLE module_editor_state(module_id integer PRIMARY KEY,module_data jsonb,deleted_exercices jsonb,source_fingerprint text,updated_at timestamptz DEFAULT now());
+        CREATE TABLE bilan_future_versions(id uuid PRIMARY KEY,subject integer,questions jsonb,fingerprint text,created_at timestamptz DEFAULT now());
+        CREATE TABLE bilan_future_active(subject integer PRIMARY KEY,version_id uuid);
+        CREATE TABLE bilan_future_receipts(id uuid PRIMARY KEY,owner_id uuid,module_id integer,exercise_id integer,version_id uuid);
+        CREATE TABLE bilan_future_submissions(receipt_id uuid PRIMARY KEY,answers jsonb,submitted_at timestamptz DEFAULT now());
         """)
-        cls.sql((ROOT/'docs/sql-revue/2026-11-10-corriges-trois-surfaces.sql').read_text())
+        cls.sql((ROOT/'docs/sql-revue/2026-11-10-corriges-v2-adaptateurs.sql').read_text())
         q={'id':'francais:4','type':'QCM','enonce':'titiller','choix':[{'lettre':l,'texte':l,'correct':l=='C'} for l in ['A','B','C']]}
         cls.sql(f"UPDATE exam_attempts_v2 SET exam_id='EB3',etat='terminee',snapshot='{json.dumps({'matiere':'francais','questions':[q]})}' WHERE attempt_id='{ATT}';")
         current=json.loads(json.dumps(q));current['choix'][0]['correct']=True
         cls.sql(f"INSERT INTO exam_content_versions VALUES(gen_random_uuid(),'EB3',23,now(),'{json.dumps({'questions':[current]})}','publiee',NULL,false);")
-        cls.sql(f"INSERT INTO apprenant_quiz_results VALUES('{ATT}','{APP}','EB3','francais','{json.dumps({'snapshot':{'questions':[{**q,'id':4}]}})}','examen_blanc',now());")
+        cls.sql(f"INSERT INTO apprenant_quiz_results VALUES('{ATT}','{APP}','EB3','francais','{json.dumps({'snapshot':{'questions':[{**q,'id':4}]}})}','examen_blanc',now(),1);")
     @classmethod
     def sql(cls,q):
         c,o=cls.pg.sql(q)
