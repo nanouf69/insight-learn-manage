@@ -93,7 +93,7 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
 
   const comptes = diag ? compterParType(diag.lignes) : null;
   const lignesTriees = useMemo(() => [...(diag?.lignes ?? [])].sort((a, b) =>
-    ORDRE_ECARTS.indexOf(a.type) - ORDRE_ECARTS.indexOf(b.type) || nomComplet(a).localeCompare(nomComplet(b), "fr")), [diag]);
+    String(a.exam_id ?? "").localeCompare(String(b.exam_id ?? ""), "fr", { numeric: true }) || nomComplet(a).localeCompare(nomComplet(b), "fr")), [diag]);
   const anciennesSans = (diag?.anciennes ?? []).filter((a) => a.type === "ancienne_copie_sans_correction");
   const anciennesV2 = (diag?.anciennes ?? []).filter((a) => a.type === "ancienne_copie_v2_meme_matiere");
   const defauts = comptes ? ORDRE_ECARTS.filter((t) => t !== "qrc_non_corrigee").reduce((s, t) => s + comptes[t], 0) : 0;
@@ -201,7 +201,7 @@ export function SynchronisationNotes({ compact = false }: { compact?: boolean })
               <table className="mt-2 w-full text-sm" data-testid="anciennes-sans-correction">
                 <thead><tr className="text-left text-muted-foreground"><th className="p-1">Candidat</th><th className="p-1">Examen</th><th className="p-1">Matière</th><th className="p-1">Tentative</th><th className="p-1">Fin</th><th className="p-1">QRC</th><th className="p-1">Correction possible</th></tr></thead>
                 <tbody>
-                  {[...anciennesSans].sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? "")).map((a) => (
+                  {[...anciennesSans].sort((a, b) => String(a.exam_id ?? "").localeCompare(String(b.exam_id ?? ""), "fr", { numeric: true }) || nomComplet(a).localeCompare(nomComplet(b), "fr")).map((a) => (
                     <tr key={a.result_id} className="border-t">
                       <td className="p-1 font-medium">{nomComplet(a)}</td><td className="p-1">{a.exam_id}</td><td className="p-1">{a.titre ?? a.matiere}</td>
                       <td className="p-1">{a.tentative ?? "—"}</td><td className="p-1 whitespace-nowrap">{heure(a.completed_at)}</td><td className="p-1">{a.qrc_sans_correction_humaine}</td>
