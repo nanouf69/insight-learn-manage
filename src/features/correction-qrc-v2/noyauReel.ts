@@ -1,6 +1,7 @@
 // Accès au VRAI noyau sécurisé en base (aucun serveur simulé).
 // Toutes les écritures passent par des fonctions serveur idempotentes.
 import { supabase } from "@/integrations/supabase/client";
+import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/synchronisationNotes";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
 import { miroirsV2Prouves, nbQrcEcrites, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
@@ -619,6 +620,8 @@ export function uuidDeterministe(cle: string): string {
 export async function corrigerQrc(params: {
   operationId: string;
   qrcInstanceId: string;
+  /** Copie corrigée : relue par le panneau « Actualiser les notes » après l'écriture. */
+  attemptId?: string;
   note: number;
   commentaire?: string;
   email?: string;
@@ -631,6 +634,7 @@ export async function corrigerQrc(params: {
     p_corrige_email: params.email ?? null,
   });
   if (error) throw error;
+  signalerCorrectionEnregistree((data as Record<string, unknown> | null)?.attempt_id as string | undefined ?? params.attemptId);
   return data as Record<string, unknown>;
 }
 
@@ -642,6 +646,8 @@ export async function corrigerQrc(params: {
 export async function reviserQrc(params: {
   operationId: string;
   qrcInstanceId: string;
+  /** Copie corrigée : relue par le panneau « Actualiser les notes » après l'écriture. */
+  attemptId?: string;
   note: number;
   noteAttendue: number;
   commentaire?: string;
@@ -656,6 +662,7 @@ export async function reviserQrc(params: {
     p_corrige_email: params.email ?? null,
   });
   if (error) throw error;
+  signalerCorrectionEnregistree((data as Record<string, unknown> | null)?.attempt_id as string | undefined ?? params.attemptId);
   return data as Record<string, unknown>;
 }
 

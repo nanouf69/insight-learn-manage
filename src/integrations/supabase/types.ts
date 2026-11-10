@@ -3924,6 +3924,42 @@ export type Database = {
         }
         Relationships: []
       }
+      eb_notes_synchronisations: {
+        Row: {
+          acteur: string | null
+          apprenant_id: string
+          apres: Json
+          attempt_id: string
+          avant: Json | null
+          created_at: string
+          id: number
+          motif: string
+          operation_id: string
+        }
+        Insert: {
+          acteur?: string | null
+          apprenant_id: string
+          apres: Json
+          attempt_id: string
+          avant?: Json | null
+          created_at?: string
+          id?: never
+          motif: string
+          operation_id: string
+        }
+        Update: {
+          acteur?: string | null
+          apprenant_id?: string
+          apres?: Json
+          attempt_id?: string
+          avant?: Json | null
+          created_at?: string
+          id?: never
+          motif?: string
+          operation_id?: string
+        }
+        Relationships: []
+      }
       edof_fin_formation: {
         Row: {
           apprenant_id: string
@@ -10188,6 +10224,22 @@ export type Database = {
       }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
+      eb_notes_actualiser: {
+        Args: {
+          p_attempt_id: string
+          p_operation_id: string
+          p_revision_attendue: number
+        }
+        Returns: Json
+      }
+      eb_notes_diagnostic: {
+        Args: { p_apres?: string; p_attempt_id?: string; p_limite?: number }
+        Returns: Json
+      }
+      eb_notes_diagnostic_ancien: {
+        Args: { p_apres?: string; p_limite?: number }
+        Returns: Json
+      }
       eb_reponses_renseignees: { Args: { _r: Json }; Returns: boolean }
       emargement_controle_creneau: {
         Args: { p_apprenant_id: string; p_creneau: string; p_date: string }

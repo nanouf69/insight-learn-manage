@@ -6,6 +6,14 @@
 - [ ] Note globale EB calculée serveur — attend accord.
 - [ ] 48 copies VTC récentes ancien circuit — attend accord et liste nominative.
 
+## 10/11 14:39 — Onglet « Actualiser les notes »
+- [x] Commandes serveur diagnostic/actualisation (états dérivés seuls, CAS, idempotence, journal), onglet + panneau correcteur, revérification après correction.
+- [x] Tests : 14 PostgreSQL jetables, 4 103 applicatifs PASS ; empreinte production identique, journal vide. Rapport docs/synchronisation-notes-eb-2026-11-10.md.
+- [ ] Contrôle avec un compte administrateur et vue navigateur — compte de contrôle non admin.
+- [ ] Publication — attend votre accord après contrôle.
+- [ ] 36 copies importées sans barème : corriger effacerait la note — décision requise.
+- [ ] 56 notes divergentes du calcul — vérification humaine.
+
 ## 10/11 14:14 — Mots-clés personnalisés QRC
 - [x] Liste serveur partagée admin uniquement (migration 0260) ; ajout, renommage confirmé, retrait = archivage ; commentaires historiques indépendants.
 - [x] Tests : 5 HTTP/PostgreSQL jetables PASS (droits, conflit, rejeu, archivage, candidat inchangé), suite complète 4 097 PASS.

@@ -36,6 +36,7 @@ import {
 } from "@/features/correction-qrc-v2/noyauReel";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
+import { SynchronisationNotes } from "@/features/surveillance-examens/SynchronisationNotes";
 import {
   compterCopiesEnAttenteIa,
   definirIaActif,
@@ -551,6 +552,7 @@ export default function AdminCorrectionQrcV2Reel() {
           // identité déterministe : double-clic ou 10 envois = une seule révision
           operationId: `qrcv2rev:${qrcSel.qrc_instance_id}:${ancienne}:${n}:${jeton}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
+          attemptId: qrcSel.attempt_id,
           note: n,
           noteAttendue: ancienne as number,
           commentaire: commentaireCourant || (confirmationIa ? "Note IA confirmée par le formateur" : undefined),
@@ -561,6 +563,7 @@ export default function AdminCorrectionQrcV2Reel() {
           // identité déterministe : 10 envois = une seule correction
           operationId: `qrcv2:${qrcSel.qrc_instance_id}:${n}`,
           qrcInstanceId: qrcSel.qrc_instance_id,
+          attemptId: qrcSel.attempt_id,
           note: n,
           commentaire: commentaireValidation || undefined,
           email: emailAdmin,
@@ -773,6 +776,12 @@ export default function AdminCorrectionQrcV2Reel() {
           : { flex: `0 0 calc(${100 - partPanneau}% - 3px)`, width: `calc(${100 - partPanneau}% - 3px)` }}
       >
         {mode !== "test" && window.location.pathname.startsWith("/admin/") && <AlertesNotesGlobales />}
+        {mode !== "test" && (
+          <details data-testid="synchronisation-dans-correcteur" className="rounded border">
+            <summary className="cursor-pointer px-2 py-1 text-sm font-semibold">Actualiser les notes (vérification serveur)</summary>
+            <SynchronisationNotes compact />
+          </details>
+        )}
         <header className="sticky top-0 z-10 bg-background/95 py-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
