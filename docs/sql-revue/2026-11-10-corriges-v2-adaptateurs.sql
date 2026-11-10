@@ -186,7 +186,7 @@ DECLARE v_expected jsonb;v_given jsonb;
 BEGIN
  IF p_source#>>'{actuelle,type}'='QCM' THEN
   IF jsonb_typeof(p_answer) IS DISTINCT FROM 'array' OR jsonb_array_length(p_answer)=0 THEN RETURN 'fausse'; END IF;
-  SELECT jsonb_agg(l ORDER BY l) INTO v_expected FROM (SELECT DISTINCT c->>'lettre' l FROM jsonb_array_elements(p_source#>'{actuelle,choix}') c WHERE c->>'correct'='true') e;
+  SELECT jsonb_agg(l ORDER BY l) INTO v_expected FROM (SELECT DISTINCT c->>'lettre' l FROM jsonb_array_elements(public.corrige_tableau(p_source#>'{actuelle,choix}')) c WHERE c->>'correct'='true') e;
   SELECT jsonb_agg(l ORDER BY l) INTO v_given FROM (SELECT DISTINCT x#>>'{}' l FROM jsonb_array_elements(p_answer) x) g;
   RETURN CASE WHEN v_given=v_expected THEN 'juste' ELSE 'fausse' END;
  END IF;
@@ -311,13 +311,13 @@ BEGIN
    RAISE EXCEPTION 'Type de reponse invalide' USING ERRCODE='22023'; END IF;
   IF v_source#>>'{actuelle,type}'='QCM' AND (EXISTS(
     SELECT 1 FROM jsonb_array_elements(p_payload->'answer') c WHERE jsonb_typeof(c)<>'string'
-    OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v_source#>'{actuelle,choix}') o WHERE o->>'lettre'=c#>>'{}'))
+    OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.corrige_tableau(v_source#>'{actuelle,choix}')) o WHERE o->>'lettre'=c#>>'{}'))
    OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_payload->'answer') c GROUP BY c HAVING count(*)>1)) THEN
    RAISE EXCEPTION 'Choix inconnu ou duplique' USING ERRCODE='22023'; END IF;
   v_payload:=p_payload||jsonb_build_object('statut',public.revision_corrige_statut(v_source,p_payload->'answer'),
    'corrige',jsonb_build_object('version',v_source->'version','provenance',v_source->'provenance',
     'bonnes',CASE WHEN v_source#>>'{actuelle,type}'='QCM' THEN (SELECT coalesce(jsonb_agg(c->>'lettre' ORDER BY c->>'lettre'),'[]'::jsonb)
-      FROM jsonb_array_elements(v_source#>'{actuelle,choix}') c WHERE c->>'correct'='true') ELSE v_source#>'{actuelle,reponseQRC}' END));
+      FROM jsonb_array_elements(public.corrige_tableau(v_source#>'{actuelle,choix}')) c WHERE c->>'correct'='true') ELSE v_source#>'{actuelle,reponseQRC}' END));
  ELSIF p_payload->>'kind'='submit' AND p_payload='{"kind":"submit"}'::jsonb THEN
   v_answers:=v_state->'answers';
   FOR v_source IN SELECT x FROM jsonb_array_elements(v_state->'sources') x LOOP
