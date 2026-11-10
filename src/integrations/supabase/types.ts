@@ -7274,6 +7274,60 @@ export type Database = {
         }
         Relationships: []
       }
+      qrc_historique_liaisons_remise: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          empreinte_reponses_remise: string
+          empreinte_reponses_resultat: string
+          empreinte_snapshot: string
+          evenements_journal: number
+          exercice_id: string
+          id: string
+          matiere_id: string
+          motif: string
+          quiz_id: string
+          remise_id: string
+          result_id: string
+          tentative_remise: number
+          tentative_resultat: number
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          empreinte_reponses_remise: string
+          empreinte_reponses_resultat: string
+          empreinte_snapshot: string
+          evenements_journal: number
+          exercice_id: string
+          id?: string
+          matiere_id: string
+          motif: string
+          quiz_id: string
+          remise_id: string
+          result_id: string
+          tentative_remise: number
+          tentative_resultat: number
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          empreinte_reponses_remise?: string
+          empreinte_reponses_resultat?: string
+          empreinte_snapshot?: string
+          evenements_journal?: number
+          exercice_id?: string
+          id?: string
+          matiere_id?: string
+          motif?: string
+          quiz_id?: string
+          remise_id?: string
+          result_id?: string
+          tentative_remise?: number
+          tentative_resultat?: number
+        }
+        Relationships: []
+      }
       qrc_ia_budget_config: {
         Row: {
           eur_par_credit: number
@@ -10503,6 +10557,10 @@ export type Database = {
       }
       qrc_engine_enabled: { Args: { _quiz_id: string }; Returns: boolean }
       qrc_historique_choix: { Args: { p: Json }; Returns: Json }
+      qrc_historique_liaison_prouvee: {
+        Args: { p_result_id: string }
+        Returns: boolean
+      }
       qrc_historique_noter: {
         Args: {
           p_commentaire?: string
@@ -10515,6 +10573,14 @@ export type Database = {
           p_seuil?: number
         }
         Returns: Json
+      }
+      qrc_historique_preuve_remise: {
+        Args: { p_result_id: string }
+        Returns: Json
+      }
+      qrc_historique_reponses_identiques: {
+        Args: { p_details: Json; p_reponses: Json }
+        Returns: boolean
       }
       qrc_historique_reviser: {
         Args: {

@@ -1800,6 +1800,13 @@
       "when": 1794251136081,
       "tag": "0256_qrc_historique_revision",
       "breakpoints": true
+    },
+    {
+      "idx": 257,
+      "version": "7",
+      "when": 1794309179584,
+      "tag": "0257_qrc_liaison_v2_preuve_ciblee",
+      "breakpoints": true
     }
   ]
 }
