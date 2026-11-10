@@ -366,11 +366,12 @@ export function reconnaissanceRemise(provenance: ProvenanceRemise, resultId: str
 export async function lireHistoriqueQrcHistorique(resultId: string, questionId: string) {
   const { data, error } = await (supabase as any)
     .from("qrc_historique_corrections")
-    .select("note, note_precedente, created_at, acteur, revision")
+    .select("note, note_precedente, created_at, acteur, revision, commentaire")
     .eq("result_id", resultId).eq("question_id", questionId)
     .order("revision", { ascending: true });
   if (error) throw error;
-  return ((data ?? []) as Array<{ note: number; note_precedente: number | null; created_at: string }>).map((h) => ({
+  return ((data ?? []) as Array<{ note: number; note_precedente: number | null; created_at: string; commentaire?: string | null }>).map((h) => ({
+    commentaire: h.commentaire,
     note_precedente: h.note_precedente, note_nouvelle: h.note, created_at: h.created_at, corrige_email: "administrateur (journal tracé)" as string | null, etat_precedent: null, etat_nouveau: "corrigee",
   }));
 }

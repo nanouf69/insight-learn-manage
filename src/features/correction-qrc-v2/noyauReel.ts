@@ -666,15 +666,17 @@ export type EvenementCorrection = {
   note_nouvelle: number | null;
   corrige_email: string | null;
   created_at: string;
+  commentaire?: string | null;
 };
 
 /** Historique complet des corrections d'une QRC (lecture seule). */
 export async function lireHistoriqueQrc(qrcInstanceId: string): Promise<EvenementCorrection[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("qrc_correction_events")
-    .select("etat_precedent, etat_nouveau, note_precedente, note_nouvelle, corrige_email, created_at")
+    .select("etat_precedent, etat_nouveau, note_precedente, note_nouvelle, corrige_email, created_at, commentaire")
     .eq("qrc_instance_id", qrcInstanceId)
     .order("created_at", { ascending: true });
+  if (error) throw error;
   return (data ?? []) as EvenementCorrection[];
 }
 
