@@ -49,9 +49,13 @@ export function corrigeActuelPour(
 }
 
 export async function lireCorrigesActuels(attemptIds: string[]): Promise<CarteCorrigesActuels> {
-  const ids = [...new Set(attemptIds.filter(Boolean))].slice(0, 50);
+  const ids = [...new Set(attemptIds.filter(Boolean))];
   if (ids.length === 0) return new Map();
-  const { data, error } = await supabase.rpc("corrige_officiel_actuel" as never, { p_attempt_ids: ids } as never);
-  if (error) throw error;
-  return indexerCorrigesActuels(data);
+  const map: CarteCorrigesActuels = new Map();
+  for (let start = 0; start < ids.length; start += 50) {
+    const { data, error } = await supabase.rpc("corrige_officiel_actuel" as never, { p_attempt_ids: ids.slice(start, start + 50) } as never);
+    if (error) throw error;
+    for (const [key, value] of indexerCorrigesActuels(data)) map.set(key, value);
+  }
+  return map;
 }
