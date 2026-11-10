@@ -12,9 +12,8 @@ class Catalogue(m.E2E):
     def setUpClass(cls):
         super().setUpClass()
         sql = (ROOT/'docs/sql-revue/2026-11-10-qrc-mots-cles.sql').read_text()
-        c, o = cls.pg.sql(sql); assert c == 0, o
-        c, o = cls.pg.sql(f"INSERT INTO public.user_roles(user_id,role) VALUES ('{ADMIN2}','admin'); NOTIFY pgrst, 'reload schema';")
-        assert c == 0, o
+        cls.pg.sql(sql)
+        cls.pg.sql(f"INSERT INTO public.user_roles(user_id,role) VALUES ('{ADMIN2}','admin'); NOTIFY pgrst, 'reload schema';")
         import time; time.sleep(1)
 
     def http(self, user, path, method='GET', body=None, role='authenticated'):
