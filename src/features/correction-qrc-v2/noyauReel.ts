@@ -225,7 +225,24 @@ async function parLotsParalleles<T>(ids: string[], taille: number, lire: (lot: s
   return out;
 }
 
-export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
+// Dernière liste lue (mémoire de l'onglet seulement, jamais stockée) et lecture en cours partagée :
+// la réouverture de l'onglet affiche immédiatement la liste précédente pendant l'actualisation serveur.
+const derniereListe = new Map<string, GroupeSessionCrm[]>();
+const lectureEnCours = new Map<string, Promise<GroupeSessionCrm[]>>();
+export function listeGroupesEnMemoire(mode: "test" | "migre" = "migre"): GroupeSessionCrm[] | null {
+  return derniereListe.get(mode) ?? null;
+}
+export function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
+  const enCours = lectureEnCours.get(mode);
+  if (enCours) return enCours;
+  const p = listerGroupesCrmServeur(mode)
+    .then((l) => { derniereListe.set(mode, l); return l; })
+    .finally(() => lectureEnCours.delete(mode));
+  lectureEnCours.set(mode, p);
+  return p;
+}
+
+async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSessionCrm[]> {
   // Lectures indépendantes lancées en parallèle (auparavant ~30 pages lues l'une après l'autre).
   const db = supabase as any;
   const pAttempts = lirePagesParalleles<any>((de) => db
@@ -245,7 +262,7 @@ export async function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promis
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
         .order("id", { ascending: true })
-        .range(de, de + 999)) : Promise.resolve([] as any[]);
+        .range(de, de + 999), 1) : Promise.resolve([] as any[]);
   const pConsultation = mode === "migre" ? lirePassagesEb2Consultation() : Promise.resolve([] as any[]);
   const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
 

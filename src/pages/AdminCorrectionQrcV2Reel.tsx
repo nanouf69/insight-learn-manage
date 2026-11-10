@@ -69,7 +69,9 @@ export default function AdminCorrectionQrcV2Reel() {
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
-  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
+  const [groupes, setGroupes] = useState<GroupeSessionCrm[]>(() => listeGroupesEnMemoire(mode) ?? []);
+  // Liste affichée depuis la mémoire de l'onglet, en attente de la relecture serveur.
+  const [listeProvisoire, setListeProvisoire] = useState<boolean>(() => listeGroupesEnMemoire(mode) != null);
   const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
@@ -143,7 +145,8 @@ export default function AdminCorrectionQrcV2Reel() {
     void (async () => {
       try {
         const liste = await listerGroupesCrm(mode);
-        setGroupes(liste);
+        setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
+        setListeProvisoire(false);
         if (!param("qrc_groupe")) {
           setGroupeCleState(liste[0]?.cle ?? null);
           setEbCleState(liste[0]?.examens[0]?.cle ?? null);
@@ -1015,7 +1018,13 @@ export default function AdminCorrectionQrcV2Reel() {
               ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
             </p>
           )}
-          {mode === "migre" && <PanneauRapprochement groupes={groupes} />}
+          {groupes.length === 0 && !erreur && (
+            <p className="text-xs text-muted-foreground" data-testid="chargement-liste">Lecture des sessions et des copies en cours…</p>
+          )}
+          {listeProvisoire && (
+            <p className="text-xs text-muted-foreground" data-testid="liste-provisoire">Liste précédente affichée — actualisation serveur en cours…</p>
+          )}
+          {mode === "migre" && !listeProvisoire && <PanneauRapprochement groupes={groupes} />}
         </header>
 
         {archiveOuverte ? (
