@@ -1599,7 +1599,9 @@ function RevisionFausses({
               })),
             } as any,
           });
-        if (erreurInsertion) {
+        // 23505 = another device already finalised this exact revision (server unique
+        // index); the readback below must then confirm that single result.
+        if (erreurInsertion && erreurInsertion.code !== "23505") {
           console.error("Erreur sauvegarde révision:", erreurInsertion.message, erreurInsertion.details);
         }
         }

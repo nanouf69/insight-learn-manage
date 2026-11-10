@@ -40,3 +40,8 @@ Correctifs appliqués au circuit actif dans l'aperçu, pas au seul candidat dés
 
 ## Suite sûre
 Préparer une commande serveur spécifique de finalisation dérivée, idempotente et verrouillée, sans recalcul des notes QRC, avec preuve de couverture/identité et refus clair des historiques insuffisants. La tester contre le catalogue réel jetable, puis prouver concurrence, rollback et parcours autorisé avant installation/publication. Le chantier des trois corrigés reste désactivé.
+## Reprise 18:20
+- Blocage 1 levé côté serveur : index unique additif `uniq_aqr_revision_fausses_finalisation` (migration 0265) sur propriétaire/examen/brouillon, limité aux résultats de révision liés. Anciens résultats sans lien (95) non concernés. Aucune ligne modifiée ; 151 résultats avant/après en nombre (pas d'empreinte comparable avant).
+- Client : un refus 23505 signifie « déjà finalisé par un autre appareil », suivi de la relecture exacte existante ; pas de seconde insertion possible.
+- Tests : `src/test/revision_finalisation_unique_sql_contract.sh` 8/8 PASS (deux appareils simultanés, rejeu après accusé perdu, identités voisines, autres quiz, historique, rollback = DROP INDEX sans changement de données) ; 68 Vitest révision PASS.
+- Restent NO-GO pour publier l'écran : parcours élève authentifié réel PC/mobile → badge → admin, site publié, livraison isolée des autres chantiers désactivés. EB2 VTC toujours sans corrigé publié ; trois corrigés toujours désactivés.
