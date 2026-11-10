@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { COMMENTAIRES_QRC } from "./commentairesPredefinis";
+import { MotsClesPersonnalises } from "./MotsClesPersonnalises";
 
 export function CommentairesPredefinis({ disabled, onAjouter }: {
   disabled: boolean;
   onAjouter: (texte: string) => void;
 }) {
   return (
+    <div className="space-y-2">
     <div className="flex flex-wrap gap-2" aria-label="Commentaires prédéfinis">
       {COMMENTAIRES_QRC.map((texte) => (
         <Button key={texte} type="button" variant="outline" size="sm"
@@ -14,6 +16,8 @@ export function CommentairesPredefinis({ disabled, onAjouter }: {
           {texte}
         </Button>
       ))}
+    </div>
+    <MotsClesPersonnalises disabled={disabled} onAjouter={onAjouter} />
     </div>
   );
 }
