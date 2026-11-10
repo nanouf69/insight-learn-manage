@@ -889,7 +889,17 @@ export default function AdminCorrectionQrcV2Reel() {
                           className="sticky left-0 z-[1] bg-background px-1 py-0.5 font-medium"
                           title={`${t.candidat}${ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? ` — Inscription croisée, également visible dans ${ebChoisi.inscriptionCroiseeParAttempt[t.attempt_id].join(" et ")}` : ""}`}
                         >
-                          <span className="block truncate">{t.candidat}</span>
+                          <a
+                            href={`/?section=crm&apprenant=${encodeURIComponent(String(t.apprenant_id))}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate text-primary underline-offset-2 hover:underline"
+                            title={`Ouvrir la fiche CRM de ${t.candidat} (nouvel onglet)`}
+                            aria-label={`Ouvrir la fiche CRM de ${t.candidat} (nouvel onglet)`}
+                            data-testid={`lien-crm-${t.attempt_id}`}
+                          >
+                            {t.candidat}
+                          </a>
                           {ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? (
                             <span className="block text-[10px] font-semibold text-warning" data-testid={`inscription-croisee-${t.attempt_id}`}>
                               Inscription croisée
