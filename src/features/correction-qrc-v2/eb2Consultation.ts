@@ -33,6 +33,8 @@ export type InfosHistorique = {
   result_id: string;
   score_obtenu: number | null;
   provenance: ProvenanceRemise;
+  /** Permuted QCM choices require the prepared server comparator, not the old recognition fallback. */
+  preuveServeurRequise?: boolean;
   seuil: number | null;
 };
 
@@ -57,6 +59,27 @@ function memeJson(a: unknown, b: unknown): boolean {
   return k.length === Object.keys(d).length && k.every((x) => Object.prototype.hasOwnProperty.call(d, x) && memeJson(g[x], d[x]));
 }
 
+/** Checkbox order is not an answer change. All QRC text and the complete key set stay exact. */
+export function memesReponsesRemise(r: ResultatEb2, reponses: unknown): boolean {
+  const source = r.details?.reponses;
+  if (!source || !reponses || typeof source !== "object" || typeof reponses !== "object" || Array.isArray(source) || Array.isArray(reponses)) return false;
+  const left = source as Record<string, unknown>, right = reponses as Record<string, unknown>;
+  const keys = Object.keys(left);
+  if (!keys.length || keys.length !== Object.keys(right).length || keys.some(k => !Object.prototype.hasOwnProperty.call(right, k))) return false;
+  const questions = r.details?.snapshot?.questions;
+  return keys.every(id => {
+    const a = left[id], b = right[id];
+    if (memeJson(a, b)) return true;
+    if (!Array.isArray(questions)) return false;
+    const qs = questions.filter((q: any) => String(q?.id ?? q?.questionId) === id);
+    if (qs.length !== 1 || String(qs[0].type).toUpperCase() !== "QCM") return false;
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length || !a.length) return false;
+    if (!a.every(v => typeof v === "string" && /^[A-E]$/.test(v)) || !b.every(v => typeof v === "string" && /^[A-E]$/.test(v))) return false;
+    if (new Set(a).size !== a.length || new Set(b).size !== b.length) return false;
+    return memeJson([...a].sort(), [...b].sort());
+  });
+}
+
 export const exerciceIdEb2 = (r: Pick<ResultatEb2, "matiere_id" | "tentative">) =>
   `EB2__${r.matiere_id}${(r.tentative ?? 1) <= 1 ? "" : `__t${r.tentative}`}`;
 
@@ -65,7 +88,7 @@ export function remiseProuvee(r: ResultatEb2, preuves: PreuveRemise[]): boolean 
   const exo = exerciceIdEb2(r);
   return preuves.some((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo
     && (p.tentative ?? 1) === (r.tentative ?? 1) && p.completed === true && p.status === "submitted"
-    && p.submitted_at != null && memeJson(p.reponses, r.details?.reponses ?? {}));
+    && p.submitted_at != null && memesReponsesRemise(r, p.reponses));
 }
 
 /** Même règle que le serveur : réponses identiques ET même instant = remise identique. */
@@ -73,7 +96,7 @@ export function provenanceRemise(r: ResultatEb2, preuves: PreuveRemise[]): Prove
   const exo = exerciceIdEb2(r);
   const memes = preuves.filter((p) => p.apprenant_id === r.apprenant_id && p.exercice_id === exo
     && (p.tentative ?? 1) === (r.tentative ?? 1) && p.completed === true && p.status === "submitted"
-    && p.submitted_at != null && memeJson(p.reponses, r.details?.reponses ?? {}));
+    && p.submitted_at != null && memesReponsesRemise(r, p.reponses));
   if (!memes.length) return "resultat_seul";
   const t = r.completed_at ? Date.parse(r.completed_at) : NaN;
   return memes.some((p) => Date.parse(String(p.submitted_at)) === t) ? "remise_identique" : "remise_horodatage_divergent";
@@ -232,7 +255,11 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
     }
   }
   for (const l of lignes) {
-    const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves), provenanceRemise(l, preuves));
+    const provenance = provenanceRemise(l, preuves);
+    const { tentative, qrc } = projeterResultatEb2(l, noms.get(l.apprenant_id) ?? "(apprenant)", remiseProuvee(l, preuves), provenance);
+    tentative.historique.preuveServeurRequise = provenance !== "resultat_seul" && !preuves.some(p => p.apprenant_id === l.apprenant_id
+      && p.exercice_id === exerciceIdEb2(l) && (p.tentative ?? 1) === (l.tentative ?? 1) && p.completed === true && p.status === "submitted"
+      && p.submitted_at != null && memeJson(p.reponses, l.details?.reponses));
     if (!qrc.length) continue;
     vide.tentatives.push(tentative);
     vide.qrc.push(...qrc);
@@ -241,6 +268,17 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
   }
   vide.tentatives.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
   return vide;
+}
+
+/** Fail closed until the prepared server rule is actually installed. Never use recognition to bypass it. */
+export async function verifierLiaisonHistoriqueServeur(resultId: string, apprenantId: string): Promise<ProvenanceRemise> {
+  const { data, error } = await (supabase as any).rpc("qrc_historique_preuve_remise", { p_result_id: resultId });
+  if (error) throw new Error("Note non enregistrée : réparation serveur de liaison non disponible ou vérification refusée ; aucune note n’a été attribuée.");
+  if (!data || data.result_id !== resultId || data.apprenant_id !== apprenantId
+    || !["remise_identique", "remise_horodatage_divergent"].includes(data.provenance)) {
+    throw new Error("Note non enregistrée : remise non prouvée par le serveur ; aucune confirmation manuelle ne peut la remplacer.");
+  }
+  return data.provenance;
 }
 
 /** Notation admin d'une QRC de copie historique : écriture serveur unique, idempotente, tracée. */

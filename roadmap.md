@@ -1,5 +1,13 @@
 # Feuille de route
 
+## 10/11 09:46 — Régression liaison correction QRC
+- [x] Défaut reproduit en lecture sur ABDELHAK/DIANE Gestion QCM18 A+B/B+A et AIT BALLAGH Réglementation QCM10 B+C/C+B ; mêmes QRC, IDs, remise et tentative.
+- [x] Comparaison QCM figée corrigée, relecture avant note, contrôle serveur requis pour permutation, résultat matière relu incorporé ; candidat SQL des RPC réelles préparé hors migrations, non appliqué.
+- [x] 57 tests applicatifs + 27 PostgreSQL jetables PASS ; trois copies réelles relues sans écriture. Rapport docs/regression-qrc-liaison-2026-11-10-0946.md.
+- [ ] Clic exact 09:45 — télémétrie absente, attend nom ou identifiant de la copie affichée ; aucun candidat supposé.
+- [ ] Activation serveur — accord requis ; sans installation du candidat, les permutations restent non notables, sans contournement.
+- [ ] Publication — attend accord explicite.
+
 ## 10/11 09:32 — Alerte note globale EB présentiel
 - [x] Diagnostic : global assemblé à l’écran ; correction distincte de publication, sept matières même tentative strictes, QRC figées ancien/V2.
 - [x] Alerte administrative en aperçu sans écriture : relecture 5 s, déduplication, événements sans polling, résolution automatique ; petits groupes de lecture séquentiels.
