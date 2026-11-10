@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
 import { cleOperationCommentaire, commentaireConfirme, versionCommentaire } from "../features/correction-qrc-v2/commentaireSeul";
 import { commentaireQrcPersistant } from "../lib/commentaireQrcPersistant";
-import { COMMENTAIRES_QRC, ajouterCommentaireQrc } from "../features/correction-qrc-v2/commentairesPredefinis";
+import { COMMENTAIRES_QRC, ajouterCommentaireQrc } from "../features/correction-qrc-v2/commentairesPredefinis.ts";
 
 const [url, token, action, arg] = [process.env.E2E_URL!, process.env.E2E_TOKEN!, process.argv[2], JSON.parse(process.argv[3] ?? "{}")];
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(url)) throw new Error("URL non locale refusée");
