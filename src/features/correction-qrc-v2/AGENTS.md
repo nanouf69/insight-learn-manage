@@ -1,4 +1,5 @@
 # Correction QRC V2
+- Custom quick comments use a shared admin-only server catalog, version CAS and archival removal; their text is copied locally into the existing explicit correction save, never linked dynamically to learner history; why: editing the shared list must never rewrite feedback or grades.
 - Admin revision answers read persisted account-scoped rows, require explicit sourceResultIds matching owner/exam/subject and frozen question before displaying initial answers/attempts, and only attach journal times matching persisted values; why: events and revision round numbers cannot prove copy identity.
 - Historical-only copies use CopiesHistoriquesLecture without grading controls, never CorrectionQRCTab; why: missing frozen barèmes and automatic keyword marks must not become human corrections.
 - All subject grids and copy navigation use ordonnerCandidatsParFin after gathering their passages; completed passages use recorded finish instants descending, with immutable IDs for ties; why: server discovery order and correction timestamps must not override per-subject finishing order.
