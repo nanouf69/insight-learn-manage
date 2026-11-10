@@ -1,0 +1,3 @@
+# Global publication diagnostics
+- Global mock-exam alerts remain administrative read-only projections of seven distinct subjects in the same recorded tentative, frozen QRC coverage and the shared final-verdict logic; why: pending publication is not pending correction and older subjects cannot complete a new attempt.
+- Confirm anomalies with one delayed successful reread, deduplicate by learner/exam/tentative, and refresh only on server events or resume; why: normal calculation delay is not an incident and monitoring must not poll or alter grades.

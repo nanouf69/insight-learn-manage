@@ -83,7 +83,8 @@ describe("alerte globale EB sur sept matières de la même tentative", () => {
   it("7 notes disponibles mais verdict indéterminé : anomalie globale signalée", () => {
     const rs = rows(); rs.forEach(r => { r.reussi = null as any; r.details = { ...r.details, snapshot: { questions: [q] } } as any; });
     const definitions = [{ ...examen, matieres: examen.matieres.map(m => ({ ...m, noteEliminatoire: undefined })) }];
-    const obs = observerNotesGlobales({ apprenant, rows: rs, states: [], nonFiables: new Set(), examens: definitions });
+    const states = rs.map(r => ({ ...core(r), noteEliminatoire: null }));
+    const obs = observerNotesGlobales({ apprenant, rows: rs, states, nonFiables: new Set(), examens: definitions });
     expect(obs[0].prete).toBe(true);
     expect(obs[0].publiee).toBe(false);
     expect(obs[0].cause).toContain("Verdict global");
