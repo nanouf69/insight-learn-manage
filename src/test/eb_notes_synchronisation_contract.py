@@ -20,7 +20,7 @@ CREATE TABLE public.apprenant_quiz_results (id uuid PRIMARY KEY DEFAULT gen_rand
   matiere_id text, matiere_nom text, score_obtenu numeric, tentative integer DEFAULT 1, details jsonb, completed_at timestamptz);
 CREATE TABLE public.qrc_historique_corrections (id bigint GENERATED ALWAYS AS IDENTITY, result_id uuid, question_id text, note numeric);
 CREATE OR REPLACE FUNCTION public.qrc_historique_valide(c jsonb) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path TO 'public' AS $$
-  SELECT jsonb_typeof(c) = 'object' AND (c->>'validatedByAdmin' = 'true' OR c->>'manuel' = 'true' OR coalesce(c->>'correctedBy','') LIKE 'ia:%') $$;
+  SELECT jsonb_typeof(c) = 'object' AND (c->>'validatedByAdmin' = 'true' OR c->>'manuel' = 'true' OR coalesce(c->>'correctedBy','') LIKE 'ia:%%') $$;
 UPDATE public.apprenants SET nom = 'CANDIDAT', prenom = 'Un' WHERE id = '%s';
 UPDATE public.apprenants SET nom = 'CANDIDAT', prenom = 'Deux' WHERE id = '%s';
 """ % (APP, APP2)
