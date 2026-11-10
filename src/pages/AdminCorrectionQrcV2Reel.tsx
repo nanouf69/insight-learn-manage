@@ -291,8 +291,9 @@ export default function AdminCorrectionQrcV2Reel() {
   }, [mode, attemptsAffiches]);
 
   useEffect(() => {
+    const lectures = generationRef;
     void recharger();
-    return () => { generationRef.current++; };
+    return () => { lectures.current++; };
   }, [recharger]);
   const rechargerRef = useRef(recharger);
   useEffect(() => { rechargerRef.current = recharger; }, [recharger]);
