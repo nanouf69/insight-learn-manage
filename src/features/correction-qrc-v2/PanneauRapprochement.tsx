@@ -11,21 +11,30 @@ export function PanneauRapprochement({ groupes }: { groupes: GroupeSessionCrm[] 
   }, [groupes]);
   const [r, setR] = useState<Rapprochement | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  // Lecture lourde (inventaire serveur complet) : lancée une fois, différée après l'affichage
+  // de la grille, puis seulement sur demande — jamais à chaque signal temps réel.
+  const [relance, setRelance] = useState(0);
+  const pret = groupes.length > 0;
   useEffect(() => {
-    if (!groupes.length) return;
+    if (!pret) return;
     let annule = false;
-    lireRapprochement(visibles).then((x) => { if (!annule) { setR(x); setErreur(null); } })
-      .catch((e) => { if (!annule) setErreur((e as Error).message); });
-    return () => { annule = true; };
-  }, [visibles, groupes.length]);
+    setR(null); setErreur(null);
+    const t = setTimeout(() => {
+      lireRapprochement(visibles).then((x) => { if (!annule) setR(x); })
+        .catch((e) => { if (!annule) setErreur((e as Error).message); });
+    }, relance === 0 ? 2500 : 0);
+    return () => { annule = true; clearTimeout(t); };
+  }, [pret, relance]); // eslint-disable-line react-hooks/exhaustive-deps
+  const bouton = <button type="button" className="ml-2 underline" data-testid="rapprochement-relancer" onClick={() => setRelance((n) => n + 1)}>Relancer</button>;
 
-  if (erreur) return <p className="text-xs font-semibold text-destructive" data-testid="rapprochement-erreur">⚠️ Rapprochement des copies impossible ({erreur}) — l'exhaustivité n'est pas prouvée.</p>;
-  if (!r) return <p className="text-xs text-muted-foreground" data-testid="rapprochement-chargement">Rapprochement des copies en cours…</p>;
+  if (erreur) return <p className="text-xs font-semibold text-destructive" data-testid="rapprochement-erreur">⚠️ Rapprochement des copies impossible ({erreur}) — l'exhaustivité n'est pas prouvée.{bouton}</p>;
+  if (!r) return <p className="text-xs text-muted-foreground" data-testid="rapprochement-chargement">Contrôle d’exhaustivité des copies en arrière-plan… (la grille reste utilisable)</p>;
   const ok = r.manquantes.length === 0;
   return (
     <div className={ok ? "text-xs text-muted-foreground" : "rounded border border-destructive p-2 text-xs text-destructive"} data-testid="rapprochement">
       <p className="font-semibold">
         {ok ? "✓ " : "⚠️ "}Copies terminées avec QRC : {r.attendues} attendues · {r.visibles} visibles · {r.manquantes.length} manquante(s)
+        <span className="font-normal"> · lu à {new Date(r.luLe).toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris" })}</span>{bouton}
       </p>
       {!ok && (
         <ul className="mt-1 max-h-48 space-y-0.5 overflow-auto" data-testid="rapprochement-liste">
