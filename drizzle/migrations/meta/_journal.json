@@ -1835,6 +1835,13 @@
       "when": 1794321929287,
       "tag": "0261_eb_notes_synchronisation",
       "breakpoints": true
+    },
+    {
+      "idx": 262,
+      "version": "7",
+      "when": 1794322088413,
+      "tag": "0262_eb_notes_synchronisation_importees",
+      "breakpoints": true
     }
   ]
 }
