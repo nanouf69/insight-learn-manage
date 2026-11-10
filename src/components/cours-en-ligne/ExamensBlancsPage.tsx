@@ -1,4 +1,6 @@
 import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
+import { useCorrigesSources } from "@/hooks/useCorrigesSources";
+import { matierePedagogique, sourcePour, type CorrigeSource } from "@/lib/corrigesSources";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
@@ -1882,15 +1884,16 @@ function RevisionPhaseView({
     } catch {}
   }, []);
 
-  const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null }[] = [];
+  const officiels = useCorrigesSources(apprenantId, tousResultats.flatMap(r => r.__core?.attemptId ? [r.__core.attemptId] : []), tousResultats.flatMap(r => r.resultId ? [r.resultId] : []));
+  const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
   examenChoisi.matieres.forEach((matiere, mi) => {
-    if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
+    if (!matiere) return;
     // Résultat de CETTE matière (par identifiant, jamais par position).
     const r = tousResultats.find((x) => x?.matiereId === matiere.id) ?? null;
     if (!r) return;
-    const bilan = questionsFaussesDuPassage(matiere, r as any);
+    const bilan = questionsFaussesDuPassage(matierePedagogique(matiere, r, officiels.map), r as any);
     const matiereDuPassage = { ...matiere, questions: bilan.fausses.map((f) => f.question) };
-    bilan.fausses.forEach((f) => wrongQuestions.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId }));
+    bilan.fausses.forEach((f) => wrongQuestions.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId, corrigeSource: sourcePour(officiels.map,r,matiere.id,f.question.id) }));
   });
 
   return (
@@ -1911,16 +1914,17 @@ function RevisionPhaseView({
       </div>
       <div className="rounded-lg px-4 py-3" style={{ backgroundColor: "#FFF3E0", border: "2px solid #F4A227" }}>
         <p className="text-sm font-semibold" style={{ color: "#D84315" }}>
-          {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)
+          {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser · notes d’examen conservées
         </p>
       </div>
-      <RevisionFausses
+      {officiels.error && <p role="alert" className="text-destructive">{officiels.error}</p>}
+      {officiels.loading ? <p>Lecture du corrigé officiel…</p> : <RevisionFausses
         wrongQuestions={wrongQuestions}
         onTerminer={onRetour}
         apprenantId={apprenantId}
         userId={userId}
         examenId={examenChoisi.id}
-      />
+      />}
     </div>
   );
 }
