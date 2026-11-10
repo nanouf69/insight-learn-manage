@@ -16,7 +16,7 @@ beforeEach(() => {
     serveur.lignes = [...serveur.lignes.filter(x => x.id !== m.id), ligne]; return ligne;
   });
 });
-const monter = (ajouter = vi.fn()) => render(<QueryClientProvider client={new QueryClient()}><MotsClesPersonnalises disabled={false} onAjouter={ajouter} /></QueryClientProvider>);
+const monter = (ajouter: (texte: string) => void = vi.fn()) => render(<QueryClientProvider client={new QueryClient()}><MotsClesPersonnalises disabled={false} onAjouter={ajouter} /></QueryClientProvider>);
 
 describe("Catalogue partagé sans écriture pédagogique", () => {
   it("crée, relit après remontage, cumule sans doublon et conserve le texte libre", async () => {
