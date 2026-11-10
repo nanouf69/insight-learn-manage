@@ -631,6 +631,7 @@ export async function corrigerQrc(params: {
     p_corrige_email: params.email ?? null,
   });
   if (error) throw error;
+  signalerCorrectionEnregistree((data as Record<string, unknown> | null)?.attempt_id as string | undefined ?? params.attemptId);
   return data as Record<string, unknown>;
 }
 
@@ -656,6 +657,7 @@ export async function reviserQrc(params: {
     p_corrige_email: params.email ?? null,
   });
   if (error) throw error;
+  signalerCorrectionEnregistree((data as Record<string, unknown> | null)?.attempt_id as string | undefined ?? params.attemptId);
   return data as Record<string, unknown>;
 }
 
