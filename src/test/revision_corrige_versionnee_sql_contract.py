@@ -222,12 +222,12 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
         sid=str(uuid.uuid4());qs=[]
         for n in range(1,4):
             qs.append({'cle':f'500-{n}','uid':str(uuid.uuid4()),'type':'QCM','enonce':f'Q{n}','choix':[{'lettre':l,'texte':l,'correct':l=='B'} for l in 'ABC'],'question_source':{'x':1}})
-        cur=[{k:v for k,v in q.items() if k not in ('cle','question_source')} for q in qs]
+        cur=json.loads(json.dumps([{k:v for k,v in q.items() if k not in ('cle','question_source')} for q in qs]))
         cur[0]['choix'][0]['correct']=True   # official key changed B -> A+B
         if edit: edit(cur)
         self.pg.sql(f"INSERT INTO bilan_passage_snapshots VALUES('{sid}','{OWNER}',5,500,{tentative},'module_5_exo_500',{self.lit(qs)});"
             f"INSERT INTO module_editor_state(module_id,module_data,deleted_exercices,source_fingerprint) VALUES(5,{self.lit({'exercices':[{'id':500,'questions':cur}]})},'[]','fp1') ON CONFLICT(module_id) DO UPDATE SET module_data=EXCLUDED.module_data;"
-            f"INSERT INTO reponses_apprenants(apprenant_id,exercice_id,tentative,status,completed,reponses) VALUES('{OWNER}','module_5_exo_500',1,'{'submitted' if submitted else 'in_progress'}',{str(submitted).lower()},{self.lit({'500-1':['B'],'500-2':['A']})})")
+            f"INSERT INTO reponses_apprenants(apprenant_id,exercice_id,tentative,status,completed,reponses) VALUES('{OWNER}','module_5_exo_500',1,'{'submitted' if submitted else 'in_progress'}',{str(submitted).lower()},{self.lit({'500-1':['B'],'500-2':['A']})}) ON CONFLICT DO NOTHING")
         return sid,qs
 
     def test_bilan_historique_adapter_uid_and_current_editor(self):
@@ -293,8 +293,8 @@ GRANT USAGE ON SCHEMA auth,public TO authenticated,anon;
         r1=str(uuid.uuid4());r2=str(uuid.uuid4());a=str(uuid.uuid4())
         q={'id':4,'type':'QCM','enonce':'x','choix':[{'lettre':'A','texte':'A','correct':True}]}
         self.pg.sql(f"INSERT INTO apprenant_quiz_results VALUES('{r1}','{OWNER}','EB1','francais',{self.lit({'reponses':{'4':['A']}})},'examen_blanc',now(),NULL,1),"
-            f"('{r2}','{OWNER}','EB2','francais',{self.lit({'snapshot':{'questions':[q]},'reponses':{'4':['A']}})},'examen_blanc',now(),NULL,2);"
-            f"INSERT INTO exam_attempts_v2 VALUES('{a}','{OWNER}','EB2','terminee',{self.lit({'matieres':[{'subject_id':'francais'}],'questions':[q]})},false)")
+            f"('{r2}','{OWNER}','EB2X','francais',{self.lit({'snapshot':{'questions':[q]},'reponses':{'4':['A']}})},'examen_blanc',now(),NULL,2);"
+            f"INSERT INTO exam_attempts_v2 VALUES('{a}','{OWNER}','EB2X','terminee',{self.lit({'matieres':[{'subject_id':'francais'}],'questions':[q]})},false)")
         rows=self.sources([{'type':'result','id':r1},{'type':'result','id':r2},{'type':'attempt','id':a}])
         got={(r['source_id'],r['question_id']):r['raison'] for r in rows}
         self.assertEqual(got[(r1,None)],'sans_snapshot')
