@@ -41,6 +41,15 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'QRC_INTROUVABLE: QRC % inexistante.', p_qrc_instance_id USING ERRCODE = 'P0476';
   END IF;
+  -- Double clic simultané : le second appel attend le verrou puis rejoue l'opération déjà écrite.
+  SELECT * INTO v_op FROM public.core_operations WHERE operation_id = p_operation_id;
+  IF FOUND THEN
+    IF v_op.operation_type <> 'qrc_commentaire' OR v_op.cible->>'qrc_instance_id' <> p_qrc_instance_id::text
+       OR v_op.resultat->>'commentaire' IS DISTINCT FROM v_txt THEN
+      RAISE EXCEPTION 'COMMENTAIRE_OPERATION_CONFLIT: identifiant d''opération déjà utilisé pour une autre commande.' USING ERRCODE = 'P0484';
+    END IF;
+    RETURN v_op.resultat || jsonb_build_object('rejeu', true);
+  END IF;
   IF inst.etat <> 'corrigee' OR inst.note IS NULL THEN
     RAISE EXCEPTION 'QRC_NON_CORRIGEE: commentaire seul refusé, la QRC n''est pas corrigée.' USING ERRCODE = 'P0476';
   END IF;
