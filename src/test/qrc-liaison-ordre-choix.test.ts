@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: vi.fn() } }));
 import { supabase } from "@/integrations/supabase/client";
 import { memesReponsesRemise, provenanceRemise, verifierLiaisonHistoriqueServeur, type ResultatEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
+import { projeterResultatEb2, projeterNoteHistoriqueEb2 } from "@/features/correction-qrc-v2/eb2Consultation";
+import { computeMoyenneExamen, computeMatiereScoreForAttempt } from "@/components/cours-en-ligne/examens-blancs-scoring";
 const row: ResultatEb2 = { id: "r", apprenant_id: "a", quiz_id: "EB2", matiere_id: "gestion", tentative: 1, completed_at: "2026-11-09T18:00:01Z", details: {
   snapshot: { questions: [{ id: 1, type: "QRC" }, { id: 18, type: "QCM" }] }, reponses: { 1: "−10 € : pas autorisé", 18: ["A", "B"] },
 } };
@@ -39,5 +41,17 @@ describe("preuve de remise QRC et permutation des cases QCM", () => {
   it("preuve serveur même copie et propriétaire acceptée", async () => {
     vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: { result_id: "r", apprenant_id: "a", provenance: "remise_horodatage_divergent" }, error: null } as any);
     expect(await verifierLiaisonHistoriqueServeur("r", "a")).toBe("remise_horodatage_divergent");
+  });
+  it("copie relue après notation 1/2 : correction, matière et global suivent les preuves enregistrées", () => {
+    const corrected = { ...row, score_obtenu: 11, score_max: 20, note_sur_20: 11, reussi: true,
+      details: { ...row.details, correctionsIA: { 1: { pointsObtenus: 1, validatedByAdmin: true, manuel: true } } } };
+    const reload = JSON.parse(JSON.stringify(corrected));
+    const projected = projeterResultatEb2(reload, "Fictif", true);
+    expect(projected.qrc[0]).toMatchObject({ etat: "corrigee", note: 1 });
+    expect(projeterNoteHistoriqueEb2(reload, projected.qrc)).toMatchObject({ status: "definitif", score: 11 });
+    const mats = Array.from({ length: 7 }, (_, i) => ({ id: `m${i}`, nom: `M${i}`, coefficient: 1, noteEliminatoire: 6, noteSur: 20, questions: [] }));
+    const exam = { id: "EB2", type: "VTC", matieres: mats } as any;
+    const result = computeMoyenneExamen(exam, m => computeMatiereScoreForAttempt(m, reload));
+    expect(result).toMatchObject({ moyenne: 11, matieresPassees: 7, verdict: "reussi" });
   });
 });
