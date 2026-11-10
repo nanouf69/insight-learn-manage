@@ -97,7 +97,8 @@ class EB3(unittest.TestCase):
         """Copie terminée réaliste : QCM répondues (moitié justes), QRC remises en attente."""
         snap = json.loads((FIX / snap_file).read_text())
         att = str(uuid.uuid4())
-        self.assertEqual(self.pg.sql(f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat, finished_at) VALUES ('{att}','{apprenant}',{lit(snap['exam_id'])},{lit(json.dumps(snap))}::jsonb,'terminee',now())")[0], 0)
+        code, out = self.pg.sql(f"INSERT INTO public.exam_attempts_v2 (attempt_id, apprenant_id, exam_id, snapshot, etat, finished_at) VALUES ('{att}','{apprenant}',{lit(snap['exam_id'])},{lit(json.dumps(snap))}::jsonb,'terminee',now())")
+        self.assertEqual(code, 0, out[-600:])
         qcm_ok, qrcs, total, i = 0.0, [], 0.0, 0
         for q in snap['questions']:
             total += q['points']
