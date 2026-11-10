@@ -4,8 +4,9 @@
 // append-only) ; une QRC déjà validée n'est jamais réécrite.
 import { supabase } from "@/integrations/supabase/client";
 import { EXAMENS_BLANCS_VTC } from "@/components/cours-en-ligne/examens-blancs-data";
-import type { QrcReelle, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
+import type { QrcReelle, ResultatReel, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
 import { isQrcCorrectionValidated } from "@/components/cours-en-ligne/exam-helpers";
+import { noteExamenAffichee } from "@/lib/noteExamenAffichee";
 
 export const PREFIXE_CONSULTATION = "consultation:";
 export const MARQUEUR_CORRECTION_HISTORIQUE = "correction historique importée";
@@ -20,6 +21,8 @@ export type ResultatEb2 = {
   tentative: number | null;
   completed_at: string | null;
   score_obtenu?: number | null;
+  score_max?: number | null;
+  note_sur_20?: number | null;
   details: any;
 };
 
@@ -133,12 +136,30 @@ export function projeterResultatEb2(r: ResultatEb2, candidat: string, remise: bo
       apprenant_id: r.apprenant_id,
       reponse: det.reponses?.[String(q.id)] ?? null,
       etat: corrigee ? "corrigee" : "en_attente",
-      note: corrigee ? note! : null,
+      note: corrigee && typeof note === "number" ? note : null,
       corrige_email: validee ? "formateur (copie historique)" : corrigee ? MARQUEUR_CORRECTION_HISTORIQUE : null,
       corrige_at: validee ? (c?.correctedAt ?? null) : null,
     };
   });
   return { tentative, qrc };
+}
+
+/** Display-only result of this original copy, never a new V2 result or a QRC-only sum. */
+export function projeterNoteHistoriqueEb2(r: ResultatEb2, qrc: QrcReelle[]): ResultatReel | null {
+  if (r.quiz_id !== "EB2" || !r.completed_at) return null;
+  const note = noteExamenAffichee({ ...r, quiz_type: "examen_blanc", __core: null });
+  const restantes = qrc.filter((q) => q.etat !== "corrigee").length;
+  // An unresolved correction or a missing score is never promoted to a definitive note.
+  return {
+    result_id: r.id,
+    attempt_id: `${PREFIXE_CONSULTATION}${r.id}`,
+    result_revision: 0,
+    status: note.etat === "note" && restantes === 0 ? "definitif" : "provisoire",
+    score: note.etat === "note" && restantes === 0 ? note.note20 : null,
+    total: r.score_max ?? null,
+    qrc_restantes: restantes,
+    published_at: note.etat === "note" && restantes === 0 ? r.completed_at : null,
+  };
 }
 
 /** Résultats EB2 VTC exacts (jamais EB2-TAXI) sans fiche V2 liée. Lecture paginée complète, erreur = échec. */
@@ -182,7 +203,7 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
   for (let i = 0; i < ids.length; i += 100) {
     const { data, error } = await supabase
       .from("apprenant_quiz_results")
-      .select("id, apprenant_id, quiz_id, matiere_id, matiere_nom, tentative, completed_at, score_obtenu, details")
+      .select("id, apprenant_id, quiz_id, matiere_id, matiere_nom, tentative, completed_at, score_obtenu, score_max, note_sur_20, details")
       .in("id", ids.slice(i, i + 100))
       .eq("quiz_id", "EB2");
     if (error) throw error;
@@ -215,6 +236,8 @@ export async function chargerConsultationEb2(attemptIds: string[]): Promise<Sess
     if (!qrc.length) continue;
     vide.tentatives.push(tentative);
     vide.qrc.push(...qrc);
+    const resultat = projeterNoteHistoriqueEb2(l, qrc);
+    if (resultat) vide.resultats.push(resultat);
   }
   vide.tentatives.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
   return vide;

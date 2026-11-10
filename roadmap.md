@@ -1376,3 +1376,8 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 ## 08/11 22:01 UTC — Publication ciblée
 - [x] Rattrapage QRC écran ouvert publié (`index-XoqG3L5A.js`) ; fin de révision publiée = chemin existant, appel serveur désactivé (`uoe=!1`).
 - [ ] Finalisation atomique révision : bloquée, pas de source serveur structurée pour ~30 % des copies récentes (151/509 en novembre sans snapshot, seulement un résumé texte) ; décision nécessaire.
+
+## 10/11 — Notes historiques EB2 VTC dans le correcteur (accord explicite)
+- [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
+- [x] 77 tests PASS ; journée 49/49 et soir 54/54 notes définitives concordantes ; 34 copies soir en attente gardées sans note ; rechargement PC/mobile identique, 42 notes TAXI conservées.
+- [ ] Publication ciblée demandée ; contrôle public 07:21 UTC sert encore index-Cv4rxQEI.js sans projection. Bascule du déploiement non prouvée, attente du service de publication.
