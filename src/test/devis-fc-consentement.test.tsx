@@ -50,7 +50,7 @@ describe('Devis FC — périmètre et règle serveur', () => {
 
   it('le serveur refuse avant tout dépôt et conserve la protection contre le double envoi', () => {
     const edge = readFileSync('supabase/functions/upload-devis-signe/index.ts', 'utf8');
-    expect(edge.indexOf('refusConsentementFormationContinue')).toBeLessThan(edge.indexOf('// Upload signed file'));
+    expect(edge.indexOf('const refusFc = refusConsentementFormationContinue')).toBeLessThan(edge.indexOf('// Upload signed file'));
     expect(edge).toContain('construirePreuveConsentementFormationContinue');
     expect(edge).toContain('annulation_remboursement_fc');
     expect(edge).toMatch(/\.is\("signed_at", null\)/);

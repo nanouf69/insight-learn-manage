@@ -9,7 +9,7 @@ import { formatDevisDate } from "@/lib/devisDatesSignature";
 import { dureeDevisEnregistre } from "@/lib/devisDureesElearning";
 import { parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
 import { contractSections } from "@/lib/contratFormation/text";
-import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENTS_SIGNATURE, estDevisFormationContinue } from "@/lib/contratFormation/consentements";
+import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENT_FC_VERSION, CONSENTEMENTS_SIGNATURE, estDevisFormationContinue } from "@/lib/contratFormation/consentements";
 
 /* ─── DEVIS TYPE CONFIG ─── */
 interface DevisTypeConfig {
@@ -775,7 +775,7 @@ export default function DevisPublic() {
                   />
                   <span className="text-sm leading-relaxed">{CONSENTEMENT_FC_ANNULATION}</span>
                 </label>
-                <p className="text-xs text-muted-foreground">Version {`fc-annulation-remboursement-2026-11-11-v1`} — cette confirmation et son horodatage serveur sont conservés avec le devis.</p>
+                <p className="text-xs text-muted-foreground">Version {CONSENTEMENT_FC_VERSION} — cette confirmation et son horodatage serveur sont conservés avec le devis.</p>
               </div>
             )}
 
