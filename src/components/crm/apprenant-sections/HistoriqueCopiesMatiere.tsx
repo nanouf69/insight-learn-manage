@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ export default function HistoriqueCopiesMatiere({ account, exam, subject, nom }:
   const [lien, setLien] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [lectureLien, setLectureLien] = useState(false);
+  const generation = useRef(0);
   const query = useQuery({ queryKey: ["crm-copies-matiere", account, exam, subject], enabled: ouvert, retry: false, queryFn: async () => {
     const rows: CopieHistorique[] = [];
     for (let from = 0; ; from += 500) {
@@ -54,28 +55,30 @@ export default function HistoriqueCopiesMatiere({ account, exam, subject, nom }:
   const row = query.data?.find(r => r.id === selected);
   const rechercherLien = async () => {
     if (!row || lectureLien) return;
+    const version = ++generation.current;
+    const messageSiActuel = (text: string) => { if (version === generation.current) setMessage(text); };
     setLectureLien(true); setMessage(""); setLien(null);
     try {
       const { data, error } = await supabase.from("exam_attempts_v2").select("attempt_id,apprenant_id,exam_id,snapshot")
         .eq("apprenant_id", account).eq("exam_id", exam).eq("snapshot->source_historique->>result_id", row.id);
       if (error) throw error;
       const p = passageExact(row, data as Passage[] ?? []);
-      if (!p) { setMessage("Correspondance V2 absente ou ambiguë : cette copie reste consultable, sans ouvrir une autre tentative."); return; }
+      if (!p) { messageSiActuel("Correspondance V2 absente ou ambiguë : cette copie reste consultable, sans ouvrir une autre tentative."); return; }
       const { data: qrc, error: qerror } = await supabase.from("qrc_instances_v2").select("qrc_instance_id,attempt_id,apprenant_id").eq("attempt_id", p.attempt_id).eq("apprenant_id", account).order("question_id").limit(1);
       if (qerror) throw qerror;
       const id = qrc?.[0]?.qrc_instance_id;
-      if (!id) { setMessage("Aucune QRC V2 conservée pour cette copie."); return; }
+      if (!id) { messageSiActuel("Aucune QRC V2 conservée pour cette copie."); return; }
       const url = lienCorrectionExact(await listerGroupesCrm(), p, id);
-      if (!url) { setMessage("Cette copie exacte n’a pas été retrouvée dans le menu du correcteur."); return; }
-      setLien(url); setMessage(`Même passage V2 : ${p.attempt_id}`);
-    } catch { setMessage("Lecture du lien impossible. Aucune autre copie n’a été choisie."); }
-    finally { setLectureLien(false); }
+      if (!url) { messageSiActuel("Cette copie exacte n’a pas été retrouvée dans le menu du correcteur."); return; }
+      if (version === generation.current) { setLien(url); setMessage(`Même passage V2 : ${p.attempt_id}`); }
+    } catch { messageSiActuel("Lecture du lien impossible. Aucune autre copie n’a été choisie."); }
+    finally { if (version === generation.current) setLectureLien(false); }
   };
   return <>
     <Button size="sm" variant="outline" onClick={() => { setOuvert(true); setSelected(""); setLien(null); setMessage(""); }}>Historique des copies : {nom}</Button>
-    <Dialog open={ouvert} onOpenChange={setOuvert}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{exam} · {nom} — Historique des copies</DialogTitle></DialogHeader>
+    <Dialog open={ouvert} onOpenChange={v => { generation.current++; setLectureLien(false); setOuvert(v); }}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{exam} · {nom} — Historique des copies</DialogTitle></DialogHeader>
       {query.isLoading && <p role="status">Lecture des copies…</p>}{query.isError && <p role="alert">Lecture impossible : aucune copie remplacée.</p>}
-      {query.data && <><Label htmlFor={`copie-${subject}`}>Choisir explicitement un passage</Label><select id={`copie-${subject}`} className="w-full rounded-md border border-input bg-background p-3 text-sm" value={selected} onChange={e => { setSelected(e.target.value); setLien(null); setMessage(""); }}><option value="">Sélectionner une copie</option>{query.data.map(r => <option key={r.id} value={r.id}>Tentative {r.tentative ?? "?"} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "Date inconnue"} · {r.id}</option>)}</select>{!query.data.length && <p>Aucune copie enregistrée pour cette matière.</p>}</>}
+      {query.data && <><Label htmlFor={`copie-${subject}`}>Choisir explicitement un passage</Label><select id={`copie-${subject}`} className="w-full rounded-md border border-input bg-background p-3 text-sm" value={selected} onChange={e => { generation.current++; setLectureLien(false); setSelected(e.target.value); setLien(null); setMessage(""); }}><option value="">Sélectionner une copie</option>{query.data.map(r => <option key={r.id} value={r.id}>Tentative {r.tentative ?? "?"} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "Date inconnue"} · {r.id}</option>)}</select>{!query.data.length && <p>Aucune copie enregistrée pour cette matière.</p>}</>}
       {row && <div key={row.id} className="space-y-3"><LectureCopieSelectionnee row={row} /><Button variant="outline" disabled={lectureLien} onClick={() => void rechercherLien()}>Retrouver cette copie dans Correction QRC V2</Button>{message && <p role="status" className="text-xs break-all">{message}</p>}{lien && <Button asChild><a href={lien} target="_blank" rel="noopener noreferrer">Ouvrir cette copie exacte dans le correcteur</a></Button>}</div>}
     </DialogContent></Dialog>
   </>;
