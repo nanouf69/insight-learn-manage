@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 13:37 — Annulation ciblée d’un reset / Examens archivés
+- [ ] Ajouter l’onglet et confirmation exacte en aperçu, sans action réelle.
+- [ ] Préparer un candidat append-only séparé, tester droits/identité/rejeu/concurrence et refus après démarrage ; ne pas installer.
+- [ ] Vérifier HADDOU EB3 et EB4 en SELECT ; inventorier les lecteurs cutoff/neutralisations/autorisations et signaler tout blocage de couverture.
+- [ ] Vérifier tests et affichage PC/mobile ; rapport, limites et commit.
+
 ## 11/11 13:29 — Précédent essai Chemoun et sélection simulée
 - [x] Score précédent officiel par identité 13/20 et libellé T3P seule, carte PC/mobile fixture vérifiée.
 - [x] Simulation admin explicite préparée et désactivée pour enregistrement ; 24 tests PASS, navigateur 13,6/coef17/zéro éliminatoire, build OK ; défaut/copies intacts. Rapport docs/chemoun-eb3-precedent-selection-2026-11-11.md. Persistance serveur non préparée/non installée, aucun déploiement.
