@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 11/11 09:18 — Sécurité routière Bilan examen VTC → TAXI seulement
-- [ ] Inventaire source 5/502 immuable, cible 11/602, versions et copies anciennes ; effets indirects et empreintes hors cible.
-- [ ] Alignement versionné ciblé après contrats PostgreSQL fictifs ; aucun changement T3P/Gestion, cours, EB, reset ou QRC.
-- [ ] SELECT position par position, images exactes, historique avant/après et vérification écran futur ; verdict actif/préparé et limites explicites.
+- [x] Source 255/cible historique 252, 190 écarts ; 9 réponses TAXI dont 5 sans snapshot, banque ancienne conservée. 62 modules/161 exercices empreintes identiques.
+- [x] Migration 0266 + publication active nouveaux reçus TAXI 11/602 seulement : 255 positions, 0 divergence canonique/images/tailles, 210 IDs exacts conservés/45 nouveaux ; aucune modification autres matières.
+- [x] PostgreSQL jetable PASS, 13 Vitest PASS, écran fictif PC/mobile et reload PASS ; build OK. 241 snapshots/17 figés/88 reçus/notes préexistantes identiques ; activités simultanées réponses/progression signalées. Rapport docs/bilan-securite-routiere-alignement-2026-11-11.md.
+- [ ] Égalité de tous les écrans BLOQUÉE : 5 anciennes réponses sans snapshot sûr ; ancien JSON TAXI 252 et circuit futur VTC 249 restent intacts (source seule 255). Aucun remplacement historique ni élargissement VTC autorisé.
 
 ## 11/11 08:58 — Réinitialisation ciblée admin et démarrage élève
 - [x] Composition enregistrée complète, EB3 VTC sept matières/A sans note, ordre officiel/ID exacts et nombres distincts ; calculs/global inchangés. Sélection historique par version encore non prouvée.
