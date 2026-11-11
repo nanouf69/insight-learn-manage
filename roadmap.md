@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 13:48 — Reprise archives : vrai admin et contrôles intégrés
+- [x] Vrai profil admin en aperçu : fiche HADDOU → Examens blancs → Examens archivés ; reset EB3 exact, 7 copies/7 résultats visibles, bouton désactivé. Aucun POST mutateur autorisé.
+- [ ] Étendre contrats annulation : RLS inter-apprenant, rejeux/conflits, visibilité des projections ancien/V2 et démarrages réels jetables ; catalogue réel relu.
+- [ ] Rapport précis et chemin d’aperçu, aucune production/migration/publication.
+
 ## 11/11 13:42 — Sélecteur sessions accès EB
 - [x] Sessions présentielles compatibles en cours/futures seules, catalogue existant, tri Paris inclusif, Select accessible, rouge en cours et aucun UUID/préchoix.
 - [x] 31 tests PASS, PC/mobile fixture liste ouverte et invalidation immédiate vérifiés ; aucune mutation/migration/publication. Rapport docs/session-exam-access-selecteur-2026-11-11.md ; UI admin authentifiée réelle non testée, serveur candidat toujours non installé.
