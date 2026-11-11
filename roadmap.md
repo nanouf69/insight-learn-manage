@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 12:52 — Accès CRM aux deux passages Chemoun EB3 TAXI T3P
+- [ ] Vérifier consultation CRM et correction par identité exacte, complet puis partiel ; ajouter seulement l’accès manquant et tester sur fixtures.
+- [ ] Rapport précis, aucun changement de données ni publication ; diagnostic de sauvegarde précédent inchangé.
+
 ## 11/11 12:45 — Jeu de classement comptable GESTION
 - [x] Classement glissé/tactile de 19 cartes, hypothèses explicites, feedback/score/rejeu et calcul amortissement ; exemples indépendants et bilan net 40 000 € équilibré.
 - [x] Suivi facultatif versionné via file existante, module/score null sans registre obligatoire ; tests fictifs PC/mobile et compte rendu docs/jeu-gestion-classement-2026-11-11.md, aucun déploiement ni écriture réelle.
