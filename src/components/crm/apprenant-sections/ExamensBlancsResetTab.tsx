@@ -42,6 +42,7 @@ import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff"
 import { composeSubjectPanel } from '@/lib/examSubjectPanel';
 import { ResetMatiereAdminButton } from "./ResetMatiereAdminButton";
 import HistoriqueCopiesMatiere from "./HistoriqueCopiesMatiere";
+import SelectionCopieMoyennePreview from './SelectionCopieMoyennePreview';
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique } from "@/lib/noteExamenAffichee";
@@ -453,6 +454,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
                   {expanded && (
                     <div className="border-t divide-y">
+                      {examenDef && <div className="p-4"><SelectionCopieMoyennePreview account={apprenant.id} nom={`${apprenant.prenom} ${apprenant.nom}`} exam={examenDef}/></div>}
                       {!examenDef && <p role="alert" className="p-4 text-sm text-destructive">Composition officielle indisponible. Relisez avant toute action.</p>}
                       {panelRows.map(({subject: matiereDef,result:r})=>{
                         const recomputed=r ? computeMatiereScoreForAttempt(matiereDef,{
