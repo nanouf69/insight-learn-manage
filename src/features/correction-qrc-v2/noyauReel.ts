@@ -276,7 +276,8 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   const consultationLue:any[]=[];
   const neutralisesLus=await idsNeutralises();
   const nativeAnswers:any[]=[];
-  const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee');
+  const proofScopes=new Set(brutsLus.map((r:any)=>JSON.stringify([r.apprenant_id,r.quiz_id,r.matiere_id])));
+  const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee'&&proofScopes.has(JSON.stringify([a.apprenant_id,a.exam_id,a.matiere??a.snapshot?.matiere])));
   if(mode==='migre')for(let i=0;i<nativeCandidates.length;i+=150){
     const ids=nativeCandidates.slice(i,i+150).map((a:any)=>a.attempt_id);
     nativeAnswers.push(...await lirePagesParalleles<any>(de=>db.from('answer_state').select('attempt_id, question_id, valeur').in('attempt_id',ids).order('response_id').range(de,de+999),1));
