@@ -37,6 +37,12 @@ class Integration(base.Integrated):
    self.assertEqual(self.api(query,uid).stdout.strip().splitlines()[-1],'7')
    self.assertEqual(self.api(f"SELECT count(*) FROM apprenant_quiz_results q WHERE quiz_id='{exam}' AND NOT EXISTS(SELECT 1 FROM core_exam_resets_effective r WHERE r.archived_legacy_result_ids ? q.id::text)",uid).stdout.strip().splitlines()[-1],'7')
    self.assertEqual(self.api(f"SELECT count(*) FROM qrc_instances_v2 q JOIN exam_attempts_v2 a USING(attempt_id) WHERE a.exam_id='{exam}' AND NOT EXISTS(SELECT 1 FROM core_exam_neutralisations_effective n WHERE n.attempt_id=a.attempt_id)",uid).stdout.strip().splitlines()[-1],'7')
+  # Export ONLY fictitious projection rows for exercising existing TS readers.
+  tables={}
+  for table in ['core_exam_resets','core_exam_resets_effective','core_tentatives_neutralisees','core_exam_neutralisations_effective','exam_retake_authorizations','exam_retake_authorizations_effective','qrc_instances_v2','core_exam_results','apprenant_quiz_results','answer_state']:
+   tables[table]=json.loads(self.scalar(f"SELECT coalesce(jsonb_agg(to_jsonb(t)),'[]') FROM {table} t"))
+  tables['exam_attempts_v2']=json.loads(self.scalar("SELECT coalesce(jsonb_agg(to_jsonb(t)||jsonb_build_object('matiere',snapshot->>'matiere','matieres',snapshot->'matieres','questions',snapshot->'questions','tentative',snapshot->>'tentative','result_id',snapshot->'source_historique'->>'result_id','historique',snapshot->'source_historique')),'[]') FROM exam_attempts_v2 t"))
+  Path('/tmp/exam-reset-cancel-reader-fixture.json').write_text(json.dumps(tables))
   out=self.call(f"SELECT core_start_attempt('{uuid.uuid4()}','{A}','{exam}','t3p')",U,False)
   self.assertEqual(out.returncode,0,out.stderr)
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_retake_authorizations WHERE reset_id='{reset}' AND consumed_at IS NULL"),'1')
