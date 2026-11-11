@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 14:45 — File QRC de travail prioritaire
+- [x] Vue par défaut QRC notables restantes uniquement ; archives/inventaire secondaires, IA À valider et non notables À vérifier séparés.
+- [x] Navigation après relecture, zéro validé exclu, contexte conservé ; 53 tests PASS, aperçu PC/mobile fictif sans mutation/publication.
+
 ## 11/11 14:29 — Catalogue QRC unique
 - [x] Archives/ambiguïtés intégrées au menu normal session/examen, consultation seule ; zéro entrée Ancien circuit, sources conservées.
 - [x] Vrais lecteurs admin : 7304 attendues/7304 visibles/0 manquante ; 4323 archives, 2981 V2 ; 24 examens/filières. Rapport docs/qrc-catalogue-unifie-2026-11-11.md.
