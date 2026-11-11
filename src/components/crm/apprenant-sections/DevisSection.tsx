@@ -26,6 +26,7 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPratiqueDates";
 import { devisDatesSignature, formatDevisDate } from "@/lib/devisDatesSignature";
+import { PreuveConsentementFc } from "@/components/devis/PreuveConsentementFc";
 import { dureeDevisElearning, formationDevisAvecDuree } from "@/lib/devisDureesElearning";
 import type { TrainingContract } from "@/lib/contratFormation/model";
 import { emptyPratique, validateContract, pratiqueRecap } from "@/lib/contratFormation/model";
@@ -219,7 +220,8 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
       <CardContent>
         <div className="space-y-2">
           {devisEnvoyes.map((d) => (
-            <div key={d.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+            <div key={d.id} className="p-2 rounded-lg bg-muted/30 text-sm space-y-2">
+              <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3">
                 <FileText className="w-4 h-4 text-muted-foreground" />
                 <div>
@@ -357,6 +359,8 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
                   </Button>
                 )}
               </div>
+              </div>
+              <PreuveConsentementFc consentements={d.consentements} />
             </div>
           ))}
         </div>

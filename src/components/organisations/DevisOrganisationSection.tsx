@@ -11,6 +11,7 @@ import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { DEVIS_TEMPLATES } from "@/components/crm/apprenant-sections/DevisSection";
+import { PreuveConsentementFc } from "@/components/devis/PreuveConsentementFc";
 
 function formatDateFr(value: string): string {
   if (!value) return "";
@@ -41,7 +42,7 @@ export function DevisOrganisationSection({ organisation }: Props) {
     if (!organisation?.id) return;
     const { data } = await supabase
       .from("devis_envois")
-      .select("id, token, modele, montant, statut, signed_at, devis_signe_url, fichier_url, created_at")
+      .select("id, token, modele, montant, statut, signed_at, devis_signe_url, fichier_url, created_at, consentements")
       .eq("organisation_id", organisation.id)
       .order("created_at", { ascending: false });
     setHistorique(data || []);
@@ -314,8 +315,9 @@ ${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</s
           {historique.map((d) => (
             <div
               key={d.id}
-              className="rounded-md bg-background border p-3 text-sm flex flex-wrap items-center justify-between gap-2"
+              className="rounded-md bg-background border p-3 text-sm space-y-2"
             >
+              <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="font-medium">{d.modele}</p>
                 <p className="text-muted-foreground text-xs">
@@ -355,6 +357,8 @@ ${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</s
                   </a>
                 )}
               </div>
+              </div>
+              <PreuveConsentementFc consentements={d.consentements} />
             </div>
           ))}
         </div>

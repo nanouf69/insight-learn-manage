@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 11:18 — Devis formation continue : information écrite annulation/remboursement
+- [x] CGV/délais existants relus sans modification ; case FC non précochée et obligatoire, texte complet identité/session/motif, email/LRAR/adresse officielle, aucune renonciation ni nouveau délai. Formations initiales et historiques signés exclus.
+- [x] Preuve versionnée serveur avec date/heure, identité et devis dans le consentement protégé existant ; blocage client+serveur et affichage admin CRM/organisme. Verrou supplémentaire empêchant tout envoi réel avant activation des fonctions.
+- [x] 92 tests de devis PASS, 2 fonctions Deno compilées, parcours Chromium fictif PASS (blocage, case, envoi simulé, initial, historique, serveur non activé), build OK. Rapport docs/devis-fc-consentement-annulation-2026-11-11.md.
+- [ ] Activation effective : attend l’accord propriétaire pour déployer get-devis-public et upload-devis-signe ; aucune fonction déployée, aucune production publiée et aucune donnée réelle modifiée.
+
 ## 11/11 11:06 — EB3 TAXI Haddou/Memdouh : corrections et visibilité V2
 - [x] Dix QRC relues sur leurs trois copies exactes : aucune note/correcteur V2, aucun événement humain, ancien journal, audit ou validation ; seules les propositions déterministes et l’import sont tracés. Anciens totaux = QCM + propositions, toujours pending.
 - [x] Production gestion.ftransport.fr vérifiée avec mutations bloquées : session TAXI/TA 26/10–16/11, EB3-TAXI, date 30/10 ; trois lignes présentes, 4+4+2 boutons « À corriger », barèmes et boutons de note ouverts. Lien direct revérifié, aucune écriture.
