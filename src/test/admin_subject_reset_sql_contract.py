@@ -18,7 +18,7 @@ class Contract(unittest.TestCase):
   schema=subprocess.check_output(['pg_dump','--schema-only','--schema=public','--no-owner'],text=True).replace('CREATE SCHEMA public;','')
   r=c.sql(schema,False);Path(c.d+'/restore.log').write_text(r.stderr)
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
-  c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');")
+  c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');UPDATE apprenants SET modules_autorises=ARRAY[35,36,37,38];INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');")
  @classmethod
  def sql(c,q,check=True):
   r=subprocess.run(['psql','-X','-At','-h',c.d,'-p','55487','-U','postgres','-v','ON_ERROR_STOP=1'],input=q,env=c.env,text=True,capture_output=True)
@@ -31,6 +31,7 @@ class Contract(unittest.TestCase):
  def call(self,q,uid=ADMIN,check=True):return self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{uid}';"+q,check)
  def seed(self,exam,mid):
   s={'id':exam,'matieres':[{'id':mid,'nom':'A T3P','duree':45,'questions':[{'id':1,'enonce':'Fictif','type':'QCM','choix':[{'id':'A','texte':'Oui','correct':True}]}]},{'id':'anglais','nom':'E Anglais','duree':30,'questions':[{'id':1,'enonce':'Other','type':'QCM'}]}]}
+  self.sql(f"INSERT INTO examens_blancs_parcours(module_id,exam_id) VALUES({36 if '-TAXI' in exam else 37 if '-ta' in exam else 38 if '-va' in exam else 35},'{exam}') ON CONFLICT DO NOTHING")
   self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES({len(exam)*100+len(mid)},'{json.dumps(s)}')")
  def context(self,exam,mid,uid=ADMIN):return json.loads(self.call(f"SELECT exam_subject_reset_context('{A}','{exam}','{mid}')",uid).stdout.splitlines()[-1])
  def authorize(self,c,op=None,uid=ADMIN,check=True):

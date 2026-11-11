@@ -29,6 +29,12 @@ BEGIN
  track:=CASE WHEN p_exam_id ~ '^EB[1-6]$' THEN 'vtc' WHEN p_exam_id ~ '^EB[1-6]-TAXI$' THEN 'taxi'
   WHEN p_exam_id ~ '^eb[1-6]-ta$' THEN 'ta' WHEN p_exam_id ~ '^eb[1-6]-va$' THEN 'va' ELSE NULL END;
  IF track IS NULL THEN RAISE EXCEPTION 'Examen ou filière non supporté.' USING ERRCODE='P0482'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.examens_blancs_parcours p WHERE p.exam_id=p_exam_id
+   AND p.module_id=ANY(coalesce(learner.modules_autorises,ARRAY[]::integer[])))
+   AND NOT EXISTS(SELECT 1 FROM public.apprenant_quiz_results q WHERE q.apprenant_id=p_apprenant_id AND q.quiz_id=p_exam_id AND q.quiz_type='examen_blanc')
+   AND NOT EXISTS(SELECT 1 FROM public.reponses_apprenants r WHERE r.apprenant_id=p_apprenant_id AND r.exercice_type='examen_blanc' AND split_part(r.exercice_id,'__',1)=p_exam_id)
+   AND NOT EXISTS(SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id) THEN
+  RAISE EXCEPTION 'Attribution de cet examen non prouvée ; aucune ouverture hors parcours.' USING ERRCODE='42501'; END IF;
  SELECT count(*),jsonb_agg(module_data)->0 INTO n,whole FROM public.module_editor_state WHERE module_data->>'id'=p_exam_id;
  IF n<>1 THEN RAISE EXCEPTION 'Composition officielle absente ou ambiguë.' USING ERRCODE='P0487'; END IF;
  SELECT count(*),jsonb_agg(m)->0 INTO n,subject FROM jsonb_array_elements(whole->'matieres') m WHERE m->>'id'=p_matiere_id;
