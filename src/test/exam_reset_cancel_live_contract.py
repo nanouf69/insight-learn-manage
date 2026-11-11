@@ -51,7 +51,7 @@ class Integrated(unittest.TestCase):
   self.assertEqual(self.scalar('SELECT count(*) FROM core_exam_resets_effective'),'0')
   self.assertEqual(self.scalar('SELECT count(*) FROM core_exam_neutralisations_effective'),'0')
   self.assertEqual(self.scalar('SELECT count(*) FROM exam_retake_authorizations_effective'),'0')
-  self.assertEqual(self.scalar(f"SELECT score FROM core_exam_results WHERE attempt_id='{attempt}' AND NOT EXISTS(SELECT 1 FROM core_exam_neutralisations_effective n WHERE n.attempt_id='{attempt}')"),'17.00')
+  self.assertEqual(float(self.scalar(f"SELECT score FROM core_exam_results WHERE attempt_id='{attempt}' AND NOT EXISTS(SELECT 1 FROM core_exam_neutralisations_effective n WHERE n.attempt_id='{attempt}')")),17)
   self.assertEqual(self.scalar(f"SELECT score_obtenu FROM apprenant_quiz_results q WHERE id='{legacy}' AND NOT EXISTS(SELECT 1 FROM core_exam_resets_effective r WHERE r.archived_legacy_result_ids ? q.id::text)"),'17')
   after=self.scalar(f"SELECT md5(jsonb_build_array((SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{attempt}'),(SELECT to_jsonb(r) FROM core_exam_results r WHERE result_id='{result}'),(SELECT to_jsonb(q) FROM apprenant_quiz_results q WHERE id='{legacy}'))::text)")
   self.assertEqual(before,after)
