@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 16:44 — Timeout catalogue QRC
-- [ ] Reproduction réelle et identification requête exacte.
-- [ ] Lectures bornées/filtrées, erreur/retry sans faux vide, dernière grille même filtre.
-- [ ] Mesures couverture large/session, tests fictifs et rapport sans publication.
+- [x] Reproduction admin : catalogue apprenant_quiz_results 1000 fiches/date-sort, timeout 8170 ms.
+- [x] Curseur PK 100 copies, remises seules, scan QRC supprimé ; erreur/retry et grille même filtre, archives recherche secondaire.
+- [x] 7316 copies distinctes, EB1 large 664 passages/1548 QRC, novembre 68/157 ; 63 tests PASS et Chromium PC/mobile retry. Rapport avec délais variables, pas de publication.
 
 ## 11/11 16:33 — Détail des erreurs au premier essai
 - [x] Audit SELECT des sources/sessions ; capture insuffisante pour identifier la question, contrôle réel EB1 Gestion id8.
