@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { apposerSignatureTampon } from "../_shared/tamponFtransport.ts";
 import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
+import { construirePreuveConsentementFormationContinue, estDevisFormationContinue, refusConsentementFormationContinue } from "../_shared/devisConsentementFc.ts";
 
 
 const corsHeaders = {
@@ -46,7 +47,7 @@ Deno.serve(async (req) => {
     // Validate token
     const { data: devis, error: devisError } = await supabase
       .from("devis_envois")
-      .select("id, apprenant_id, devis_signe_url, signed_at, modele, formation, montant, client_nom, client_email, contrat_conditions")
+      .select("id, apprenant_id, devis_signe_url, signed_at, modele, formation, montant, client_nom, client_email, dates_formation, contrat_conditions")
       .eq("token", token)
       .single();
 
@@ -62,6 +63,26 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Le devis signé a déjà été envoyé" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Identité relue côté serveur : jamais reprise du navigateur pour la preuve.
+    let apprenant: any = null;
+    if (devis.apprenant_id) {
+      const { data } = await supabase
+        .from("apprenants")
+        .select("nom, prenom, email, auth_user_id, formation_choisie, date_debut_formation, date_fin_formation")
+        .eq("id", devis.apprenant_id)
+        .maybeSingle();
+      apprenant = data;
+    }
+    const clientLabel = devis.apprenant_id
+      ? `${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim()
+      : (devis.client_nom || "Client");
+
+    // Formation continue : case obligatoire vérifiée avant tout dépôt ou envoi.
+    const refusFc = refusConsentementFormationContinue(devis, formData.get("consentement_annulation_remboursement_fc") === "true");
+    if (refusFc) {
+      return new Response(JSON.stringify({ error: refusFc }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Devis valant contrat : contrôles serveur au moment réel de la signature.
@@ -91,6 +112,24 @@ Deno.serve(async (req) => {
         perte_apres_execution: { coche: perte, texte: CONSENTEMENTS_SIGNATURE.perteApresExecution },
         reserve: "Droits impératifs L6353-5 (10 jours) et L6353-6 (aucun paiement avant expiration) réservés ; ces cases n'avancent pas la date de début.",
         report_a_examiner: reportRequis,
+      };
+    }
+
+    if (estDevisFormationContinue(devis)) {
+      const preuveFc = construirePreuveConsentementFormationContinue({
+        devis,
+        identite: {
+          nom: clientLabel,
+          apprenant_id: devis.apprenant_id ?? null,
+          email: apprenant?.email ?? devis.client_email ?? null,
+        },
+        horodatageServeur: signedAt.toISOString(),
+        userAgent: req.headers.get("user-agent") ?? null,
+      });
+      consentements = {
+        ...preuveFc,
+        ...(consentements ?? {}),
+        annulation_remboursement_fc: preuveFc.annulation_remboursement_fc,
       };
     }
 
@@ -150,21 +189,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get apprenant info for notification (only for learner quotes)
-    let apprenant: any = null;
-    if (devis.apprenant_id) {
-      const { data } = await supabase
-        .from("apprenants")
-        .select("nom, prenom, email, auth_user_id, formation_choisie, date_debut_formation, date_fin_formation")
-        .eq("id", devis.apprenant_id)
-        .maybeSingle();
-      apprenant = data;
-    }
-
-    const clientLabel = devis.apprenant_id
-      ? `${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim()
-      : (devis.client_nom || "Client");
-
     if (devis.apprenant_id) {
       // Make the signed quote visible in the learner CRM > Formulaires tab
       const signedDocumentData = {
@@ -177,7 +201,8 @@ Deno.serve(async (req) => {
         fichier_url: urlData.publicUrl,
         statut: "signé",
         signed_at: signedAt.toISOString(),
-        ...(snap ? { devis_id: devis.id, contrat_reference: snap.contract?.reference ?? null, contrat_version: snap.version ?? null, consentements } : {}),
+        ...(consentements ? { consentements } : {}),
+        ...(snap ? { devis_id: devis.id, contrat_reference: snap.contract?.reference ?? null, contrat_version: snap.version ?? null } : {}),
       };
 
       const { data: existingSignedDocument } = await supabase
