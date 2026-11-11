@@ -9,6 +9,8 @@ import { fetchPassagesV2NonFiables } from '@/lib/passagesV2NonFiables';
 import { attacherSourceUnique, noteExamenAffichee } from '@/lib/noteExamenAffichee';
 import { lignesExamenAffichees } from '@/lib/ebLignesAffichees';
 import { lireCopiesParCurseur, lirePagesParalleles } from './noyauReel';
+import { deciderRattachementCrm } from './rattachementCrm';
+import type { DestinationCorrection } from './lienCorrectionSession';
 
 export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string };
 export type InscritNotes = {id:string;nom:string;prenom:string;type_apprenant:string|null;abandonnee?:boolean};
@@ -27,7 +29,21 @@ export function noteGeneraleSession(def:ExamenBlanc|undefined,rows:any[],indispo
   return {etat:'definitif',note:bilan.moyenne,verdict:bilan.verdict};
 }
 export type ExamenNotesSession={id:string;numero:number;filiere:ExamenBlanc['type'];matieres:Array<{id:string;nom:string}>};
-export type ReleveSession={inscrits:InscritNotes[];notes:Record<string,Record<number,NoteSession>>;examens?:ExamenNotesSession[];matieres?:Record<string,Record<string,Record<string,NoteSession>>>;erreur:string|null};
+export type SourceAttente={destinations:DestinationCorrection[];motif?:'publication'|'non_rattachee'|'ambigue'};
+export type ReleveSession={inscrits:InscritNotes[];notes:Record<string,Record<number,NoteSession>>;examens?:ExamenNotesSession[];matieres?:Record<string,Record<string,Record<string,NoteSession>>>;sourcesAttente?:Record<string,Record<string,Record<string,SourceAttente>>>;erreur:string|null};
+const jourParisIso=(iso:string)=>new Intl.DateTimeFormat('fr-CA',{timeZone:'Europe/Paris'}).format(new Date(iso));
+const jourFr=(j:string)=>j.split('-').reverse().join('/');
+/** Destinations only from the official attached V2 attempt and the CRM decision used by the correction catalogue. */
+export function sourceAttenteMatiere(row:any,liens:any[],sessionAffichee:string,typeApprenant:string):SourceAttente{
+  const core=row?.__core;
+  if(!core?.attemptId||!core.finishedAt)return {destinations:[],motif:'non_rattachee'};
+  if(Number(core.qrcRestantes)<=0)return {destinations:[],motif:'publication'};
+  const jour=jourParisIso(core.finishedAt);
+  const decision=deciderRattachementCrm({jour,examId:String(row.quiz_id),typeApprenant,liens});
+  if(decision.type!=='unique'&&decision.type!=='croisee')return {destinations:[],motif:'ambigue'};
+  const sessions=decision.sessions.some(l=>`crm:${l.session.id}`===sessionAffichee)?decision.sessions.filter(l=>`crm:${l.session.id}`===sessionAffichee):decision.sessions;
+  return {destinations:sessions.map(l=>({sessionCle:`crm:${l.session.id}`,jour,attemptId:core.attemptId,libelle:`${l.session.nom??'Session sans nom'} · ${jourFr(jour)}`,qrcRestantes:Number(core.qrcRestantes)}))};
+}
 /** Per-subject official display note; other pending subjects cannot hide it. */
 export function notesMatieresSession(def:ExamenBlanc,rows:any[],indisponible=false):Record<string,NoteSession>{
   const scores=rows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
@@ -55,22 +71,24 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
   const {data}=await supabase.auth.getSession();if(!data.session)throw new Error('Session administrateur requise');
   const role=await supabase.rpc('has_role',{_user_id:data.session.user.id,_role:'admin'});if(role.error||role.data!==true)throw new Error('Accès administrateur requis');
   const inscrits=await lireInscritsSession(sessionId);const notes:ReleveSession['notes']={};
-  let examens:ExamenNotesSession[]=[];const matieres:NonNullable<ReleveSession['matieres']>={};
+  let examens:ExamenNotesSession[]=[];const matieres:NonNullable<ReleveSession['matieres']>={};const sourcesAttente:NonNullable<ReleveSession['sourcesAttente']>={};
   try {
     const ids=inscrits.map(a=>a.id);const definitions=await loadSavedExamens(false,undefined,true);
     const tracks=new Set(inscrits.map(a=>filiereInscrit(a.type_apprenant)));
     examens=definitions.filter(d=>d.numero>=1&&d.numero<=6&&tracks.has(d.type)).map(d=>({id:d.id,numero:d.numero,filiere:d.type,matieres:d.matieres.map(m=>({id:m.id,nom:m.nom}))})).sort((a,b)=>a.numero-b.numero||a.filiere.localeCompare(b.filiere));
-    const rows:any[]=[];const resets:any[]=[];
+    const rows:any[]=[];const resets:any[]=[];const liens:any[]=[];
     for(let i=0;i<ids.length;i+=100){const lot=ids.slice(i,i+100);
       rows.push(...await lireCopiesParCurseur<any>('id',cursor=>{let q=supabase.from('apprenant_quiz_results').select('*').in('apprenant_id',lot).in('quiz_type',['examen_blanc','examen_blanc_taxi']).order('id').limit(100);if(cursor)q=q.gt('id',cursor);return q as any;}));
       resets.push(...await lirePagesParalleles<any>(de=>supabase.from('core_exam_resets').select('reset_id,apprenant_id,exam_id,cutoff_at,archived_legacy_result_ids').in('apprenant_id',lot).order('reset_id').range(de,de+999) as any,1));
+      liens.push(...await lirePagesParalleles<any>(de=>supabase.from('session_apprenants').select('id,apprenant_id,date_debut,date_fin,sessions:session_id(id,nom,date_debut,date_fin)').in('apprenant_id',lot).order('id').range(de,de+999) as any,1));
     }
     const core=await fetchCoreMatiereStatesBulk(ids);const preuves=core===null?null:await fetchPassagesV2NonFiables(core);
     if(core===null||preuves===null)throw new Error('Lecture des publications officielles indisponible');
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
       const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>attacherSourceUnique(r,core.get(a.id)??[],preuves));
-      notes[a.id]={};matieres[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def)matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);}
+      const liensApprenant=liens.filter(l=>l.apprenant_id===a.id&&l.sessions).map(l=>({session:l.sessions,debut:String(l.date_debut??l.sessions.date_debut).slice(0,10),fin:String(l.date_fin??l.sessions.date_fin).slice(0,10)}));
+      notes[a.id]={};matieres[a.id]={};sourcesAttente[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def){matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);sourcesAttente[a.id][def.id]={};const scores=examRows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));for(const m of def.matieres){if(matieres[a.id][def.id][m.id]?.etat==='attente')sourcesAttente[a.id][def.id][m.id]=sourceAttenteMatiere(findScoreForMatiere(scores,m),liensApprenant,`crm:${sessionId}`,a.type_apprenant??'');}}}
     }
-    return {inscrits,notes,examens,matieres,erreur:null};
+    return {inscrits,notes,examens,matieres,sourcesAttente,erreur:null};
   }catch(e){for(const a of inscrits){notes[a.id]={};matieres[a.id]={};for(let n=1;n<=6;n++)notes[a.id][n]={etat:'indisponible',note:null};for(const exam of examens)matieres[a.id][exam.id]=Object.fromEntries(exam.matieres.map(m=>[m.id,{etat:'indisponible',note:null}]));}return {inscrits,notes,examens,matieres,erreur:e instanceof Error?e.message:'Lecture indisponible'};}
 }
