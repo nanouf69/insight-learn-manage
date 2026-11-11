@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 16:44 — Timeout catalogue QRC
+- [ ] Reproduction réelle et identification requête exacte.
+- [ ] Lectures bornées/filtrées, erreur/retry sans faux vide, dernière grille même filtre.
+- [ ] Mesures couverture large/session, tests fictifs et rapport sans publication.
+
 ## 11/11 16:33 — Détail des erreurs au premier essai
 - [x] Audit SELECT des sources/sessions ; capture insuffisante pour identifier la question, contrôle réel EB1 Gestion id8.
 - [x] Détail exact issu du calcul, exclusions/droits conservés ; 87 tests PASS, Chromium PC/mobile fullscreen, détail réel 14 comptées + 2 exclues.
