@@ -3,6 +3,8 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
+import { NotesParSession } from '@/features/correction-qrc-v2/NotesParSession';
+import { sessionFormationActuelle, jourParis } from '@/features/correction-qrc-v2/sessionsActuelles';
 import {libelleExamen} from '@/features/correction-qrc-v2/libelleExamen';
 import { PanneauRapprochement } from "@/features/correction-qrc-v2/PanneauRapprochement";
 import { proposerPrenote, tracePrenote } from "@/features/correction-qrc-v2/prenote";
@@ -91,6 +93,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [passageFiltre, setPassageFiltre] = useState<string | null>(() => param("qrc_passage"));
   const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
+  const [notesParSession,setNotesParSession]=useState(()=>param('qrc_vue')==='notes-session');
   const [vueTravail,setVueTravail]=useState<VueQrc>('corriger');
   const [auditVisible,setAuditVisible]=useState(false);
   const [session, setSession] = useState<SessionReelle | null>(null);
@@ -184,9 +187,9 @@ export default function AdminCorrectionQrcV2Reel() {
     modifierCommentaire(ajouterCommentaireQrc(commentaireCourant, texte));
   };
 
-  useEffect(()=>{let alive=true;void listerChoixSessionsCrm().then(rows=>{if(!alive)return;setChoixSessions(rows);setChoixLus(true);if(!param('qrc_groupe')&&rows.length){const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Paris'});const g=rows.find(g=>g.debut&&g.fin&&g.debut<=today&&g.fin>=today)??rows[0];setGroupeCleState(g.cle);majUrl({qrc_groupe:g.cle});}}).catch(e=>{if(alive){setErreurLecture(e.message);setChoixLus(true);}});return()=>{alive=false};},[mode]);
+  useEffect(()=>{let alive=true;void listerChoixSessionsCrm().then(rows=>{if(!alive)return;setChoixSessions(rows);setChoixLus(true);if(!param('qrc_groupe')&&rows.length){const g=rows.find(g=>sessionFormationActuelle(g,jourParis()))??rows.find(g=>g.typeSession!=='examen');if(g){setGroupeCleState(g.cle);majUrl({qrc_groupe:g.cle});}}}).catch(e=>{if(alive){setErreurLecture(e.message);setChoixLus(true);}});return()=>{alive=false};},[mode]);
   useEffect(()=>{
-    if(!choixLus)return;
+    if(!choixLus||!groupeCle||notesParSession)return;
     let alive=true;setCatalogueLu(false);setErreurLecture(null);
     void listerGroupesCrm(mode,groupeCle??undefined).then(liste=>{
       if(!alive)return;setCatalogueLu(true);setGroupes(liste);
@@ -195,8 +198,8 @@ export default function AdminCorrectionQrcV2Reel() {
       if(!g?.examens.some(e=>e.cle===ebCle)){setEbCleState(g?.examens[0]?.cle??null);majUrl({qrc_eb:g?.examens[0]?.cle??null});}
     }).catch(e=>{if(alive){setErreurLecture(e.message);if(groupeCle===TOUS_GROUPES)setErreurGlobale(e.message);}});
     return()=>{alive=false};
-  },[mode,groupeCle,choixLus]);
-  const optionsSessions=useMemo(()=>{const m=new Map(choixSessions.map(g=>[g.cle,g]));for(const g of groupes)m.set(g.cle,g);for(const [cle,type,libelle] of [['elearning','elearning','E-learning — toutes sessions confondues'],['indetermine','indetermine','Session CRM non déterminée'],['conflit','conflit','Conflit de sessions CRM']] as const){if(!m.has(cle))m.set(cle,{cle,type,libelle,periode:null,debut:null,fin:null,tri:'0000-00-00',nbCandidats:0,examens:[]});}return [...m.values()];},[choixSessions,groupes]);
+  },[mode,groupeCle,choixLus,notesParSession]);
+  const optionsSessions=useMemo(()=>{const m=new Map(choixSessions.map(g=>[g.cle,g]));for(const g of groupes)m.set(g.cle,{...m.get(g.cle),...g});for(const [cle,type,libelle] of [['elearning','elearning','E-learning — toutes sessions confondues'],['indetermine','indetermine','Session CRM non déterminée'],['conflit','conflit','Conflit de sessions CRM']] as const){if(!m.has(cle))m.set(cle,{cle,type,libelle,periode:null,debut:null,fin:null,tri:'0000-00-00',nbCandidats:0,examens:[]});}return [...m.values()];},[choixSessions,groupes]);
 
   const tousGroupes = useMemo(() => groupeTousPassages(groupes), [groupes]);
   const groupeChoisi = groupeCle === TOUS_GROUPES ? tousGroupes : groupes.find((g) => g.cle === groupeCle) ?? null;
@@ -957,6 +960,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <div className="p-2"><CouvertureCorrigesAdmin /></div>
           </details>
         )}
+        <div aria-label="Sessions de formation en cours" className="flex flex-wrap gap-2">{choixSessions.filter(g=>sessionFormationActuelle(g)).map(g=><Button key={g.cle} size="sm" variant={groupeCle===g.cle&&!notesParSession?'default':'outline'} className="h-auto py-2 whitespace-normal text-left" onClick={()=>{setNotesParSession(false);majUrl({qrc_vue:null});setGroupeCle(g.cle);}}>{g.libelle}</Button>)}</div>
         <header className="sticky top-0 z-10 bg-background/95 py-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
@@ -1160,10 +1164,12 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           )}
-          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['toutes','Toutes les notes'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={vueTravail===v?'default':'ghost'} onClick={()=>{setVueTravail(v);setSelection(null);setArchiveOuverte(null);majUrl({qrc:null});}}>{label}</Button>)}<Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
+          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['toutes','Toutes les notes'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={!notesParSession&&vueTravail===v?'default':'ghost'} onClick={()=>{setNotesParSession(false);majUrl({qrc_vue:null});setVueTravail(v);setSelection(null);setArchiveOuverte(null);majUrl({qrc:null});}}>{label}</Button>)}<Button size="sm" variant={notesParSession?"default":"ghost"} onClick={()=>{setNotesParSession(true);setSelection(null);majUrl({qrc_vue:"notes-session",qrc:null});}}>Notes par session</Button><Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
           {auditVisible&&mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
+        {notesParSession&&<NotesParSession sessions={choixSessions}/> }
+        <div hidden={notesParSession}>
         {erreurGlobale&&groupeCle!==TOUS_GROUPES&&<p className="text-xs text-muted-foreground">Inventaire global interrompu ; cette session est chargée séparément.</p>}
         {erreurLecture&&<section role="alert" className="space-y-2 py-4"><p className="text-destructive">Chargement des notes interrompu — Réessayer</p><p className="text-xs text-muted-foreground">{erreurLecture}</p>{session&&filtreConfirme===filtreLecture&&<p>Dernière grille confirmée pour ce filtre — actualisation non confirmée.</p>}<Button variant="outline" disabled={lectureCopies||relectureListe} onClick={()=>void (catalogueLu?recharger():actualiserListe())}>Réessayer</Button></section>}
         {!erreurLecture&&(!catalogueLu||lectureCopies)&&<p role="status" className="py-4 text-muted-foreground">Chargement des notes…</p>}
@@ -1355,6 +1361,7 @@ export default function AdminCorrectionQrcV2Reel() {
         })}
         </div>}
         {erreur && <p className="text-sm text-destructive" data-testid="erreur-admin">{erreur}</p>}
+        </div>
       </div>
 
       {panneauOuvert && <div
