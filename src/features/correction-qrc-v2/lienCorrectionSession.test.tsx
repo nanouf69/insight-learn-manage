@@ -15,13 +15,15 @@ it('conserve les variantes exactes, l’identité stable et toutes les tentative
 it('liens seulement sur attente concernée dans Tous et dans les matières de l’examen choisi', async () => {
   const sessions = [{ cle: 'crm:s', libelle: 'Session', debut: '2026-01-01', fin: '2027-12-31', typeSession: 'theorique' }] as GroupeSessionCrm[];
   const releve: ReleveSession = { inscrits: [{ id: 'v', nom: 'Même nom', prenom: 'Test', type_apprenant: 'vtc' }, { id: 't', nom: 'Même nom', prenom: 'Test', type_apprenant: 'taxi' }], examens: [{ id: 'EB1', numero: 1, filiere: 'VTC', matieres: [{ id: 'gestion', nom: 'Gestion' }] }, { id: 'EB1-TAXI', numero: 1, filiere: 'TAXI', matieres: [] }], notes: { v: { 1: { etat: 'attente', note: null } }, t: { 1: { etat: 'attente', note: null } } }, matieres: { v: { EB1: { gestion: { etat: 'attente', note: null } } } }, erreur: null };
+  const source={sessionCle:'crm:ancien',jour:'2026-10-30',attemptId:'passage-prouve',libelle:'Session ancienne',qrcRestantes:2};
+  releve.sourcesAttente={v:{EB1:{gestion:{destinations:[source]}}},t:{'EB1-TAXI':{locale:{destinations:[source]}}}};
   render(<NotesParSession sessions={sessions} charger={async () => releve} souscrire={() => () => {}} />);
   fireEvent.change(screen.getByRole('combobox', { name: 'Session du relevé' }), { target: { value: 'crm:s' } });
   await screen.findByRole('combobox', { name: 'Examen blanc' });
   expect(screen.getAllByRole('link')).toHaveLength(2);
-  expect(screen.getAllByRole('link').map(a => a.getAttribute('href'))).toEqual([lienCorrectionSession('crm:s', 'EB1', 'v'), lienCorrectionSession('crm:s', 'EB1-TAXI', 't')]);
+  expect(screen.getAllByRole('link').map(a => a.getAttribute('href'))).toEqual([lienCorrectionSession('crm:ancien', 'EB1', 'v', source), lienCorrectionSession('crm:ancien', 'EB1-TAXI', 't', source)]);
   fireEvent.change(screen.getByRole('combobox', { name: 'Examen blanc' }), { target: { value: 'EB1' } });
   expect(screen.getAllByRole('link')).toHaveLength(2);
-  expect(screen.getByRole('link', { name: /Gestion.*nouvel onglet/ })).toHaveAttribute('href', lienCorrectionSession('crm:s', 'EB1', 'v'));
+  expect(screen.getByRole('link', { name: /Gestion.*nouvel onglet/ })).toHaveAttribute('href', lienCorrectionSession('crm:ancien', 'EB1', 'v', source));
   expect(screen.getByRole('link', { name: /Gestion.*nouvel onglet/ })).toHaveAttribute('target', '_blank');
 });
