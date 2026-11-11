@@ -5,8 +5,11 @@ import json
 import unittest
 import uuid
 from pathlib import Path
-from admin_subject_reset_live_contract import Live, J
+from admin_subject_reset_live_contract import Live
 from admin_subject_reset_sql_contract import A, U, ADMIN
+
+def J(value):
+    return "'" + json.dumps(value, ensure_ascii=False).replace("'", "''") + "'"
 
 
 class Bridge(unittest.TestCase):
@@ -22,7 +25,7 @@ class Bridge(unittest.TestCase):
         Live.sql(Path('docs/sql-revue/2026-11-11-eb456-manual-bridge.sql').read_text())
 
     def j(self, query):
-        return json.loads(Live.sql(query).stdout.splitlines()[-1])
+        return json.loads(Live.sql("SELECT to_jsonb(x) FROM (" + query.replace('SELECT ', 'SELECT ', 1) + ") AS t(x)").stdout.splitlines()[-1])
 
     def fixture(self, exam, mid, submitted=True, counter=1, attempt=1, answers=None):
         rid = str(uuid.uuid4())
@@ -108,4 +111,4 @@ class Bridge(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(defaultTest='Bridge', verbosity=2)
