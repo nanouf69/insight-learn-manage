@@ -1,4 +1,5 @@
 # Session exam access
+- Card session choices mirror the recorded exam/module catalog, exclude remote and ended sessions, and use inclusive Paris dates with current sessions first; invalid choices unmount the shared command immediately. Why: selector filtering must not extend entitlement or retain a stale action.
 - Exam cards reuse SessionExamAccess in exam-scoped compact mode, after the existing final action; session discovery requires fresh server role proof and no session is guessed. Why: learner commands stay untouched and placement must not create another access mechanism.
 - Session exam opening is an additional server restriction, never a course entitlement; no policy row preserves current behavior, and a started immutable attempt always remains usable. Why: closing must not interrupt evidence collection or expand another track.
 - Candidate SQL remains outside migration history and is exercised only on disposable PostgreSQL; unavailable server functions disable admin mutations. Why: preview shares production and preparation does not authorize activation.
