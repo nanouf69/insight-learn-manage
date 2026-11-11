@@ -986,12 +986,12 @@ export default function AdminCorrectionQrcV2Reel() {
           </div>
           {rechercheNorm && archivesTrouvees.length > 0 && (
             <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-archives">
-              <p className="font-semibold text-muted-foreground">Archives de l'ancien circuit (lecture de l'existant, aucune migration) :</p>
+              <p className="font-semibold text-muted-foreground">Copies archivées — consultation seule :</p>
               {archivesTrouvees.map((a) => (
                 <div key={a.cle} className="flex flex-wrap items-center gap-1" data-testid="archive-trouvee">
                   <span className="font-semibold">{a.nom}</span><span className="text-muted-foreground">—</span>
                   <Button size="sm" variant={archiveOuverte?.cle === a.cle ? "default" : "outline"} className="h-6 px-2 text-xs"
-                    onClick={() => setArchiveOuverte(a)}>{a.libelle} — ancien circuit</Button>
+                    onClick={() => setArchiveOuverte(a)}>{a.libelle} — archive, lecture seule</Button>
                 </div>
               ))}
             </div>
