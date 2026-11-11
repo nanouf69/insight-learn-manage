@@ -1884,6 +1884,13 @@
       "when": 1794391631728,
       "tag": "0268_exam_subject_reset_scoped",
       "breakpoints": true
+    },
+    {
+      "idx": 269,
+      "version": "7",
+      "when": 1794391658845,
+      "tag": "0269_exam_subject_reset_authorizations_least_privilege",
+      "breakpoints": true
     }
   ]
 }
