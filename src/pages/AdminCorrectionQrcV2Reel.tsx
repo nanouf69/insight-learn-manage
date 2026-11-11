@@ -94,7 +94,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [passageFiltre, setPassageFiltre] = useState<string | null>(() => param("qrc_passage"));
   const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
   const [notesParSession,setNotesParSession]=useState(()=>param('qrc_vue')==='notes-session');
-  const [vueTravail,setVueTravail]=useState<VueQrc>('corriger');
+  const [vueTravail,setVueTravail]=useState<VueQrc>(()=>{const vue=param('qrc_vue');return vue==='valider'||vue==='verifier'?vue:'corriger';});
   const [apprenantFiltre,setApprenantFiltre]=useState<string|null>(()=>param('qrc_apprenant'));
   const [auditVisible,setAuditVisible]=useState(false);
   const [session, setSession] = useState<SessionReelle | null>(null);
