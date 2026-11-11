@@ -300,6 +300,7 @@ export async function demarrerTentative(params: {
     const reopenOp = await operationId(`reopen:${attemptId}`);
     const { data: reopened, error: reopenError } = await demarrer(reopenOp);
     if (reopenError) {
+      if (reopenError.code === 'P0551') throw new Error(reopenError.message);
       console.warn("[PontV2] réouverture administrative refusée:", reopenError.message);
       return null;
     }
