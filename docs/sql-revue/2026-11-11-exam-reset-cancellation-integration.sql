@@ -62,8 +62,8 @@ BEGIN
  AND split_part(a.exercice_id,'__',1)=r.exam_id AND a.created_at>=r.cutoff_at) THEN reason:='Une nouvelle réponse ancienne existe.';
  ELSIF EXISTS(SELECT 1 FROM public.exam_subject_retakes a WHERE a.apprenant_id=r.apprenant_id
  AND a.exam_id=r.exam_id AND a.created_at>=r.cutoff_at) THEN reason:='Un repassage matière a commencé.';
- ELSIF EXISTS(SELECT 1 FROM public.exam_subject_reset_authorizations a WHERE a.apprenant_id=r.apprenant_id
- AND a.exam_id=r.exam_id AND a.consumed_at>=r.cutoff_at) THEN reason:='Une autorisation matière a été consommée.';
+ ELSIF EXISTS(SELECT 1 FROM public.exam_subject_reset_authorizations a JOIN public.exam_subject_retakes t ON t.authorization_id=a.operation_id
+ WHERE a.apprenant_id=r.apprenant_id AND a.exam_id=r.exam_id AND t.created_at>=r.cutoff_at) THEN reason:='Une autorisation matière a été consommée.';
  END IF;
  IF reason IS NOT NULL THEN c:=c||jsonb_build_object('eligible',false,'reason',reason); END IF;
  RETURN c;
