@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 11/11 12:26 — Chemoun EB3 TAXI A/B en attente
-- [ ] Rechercher traces exactes et reproduire correction des historiques importés sur PostgreSQL jetable.
-- [ ] Réparer seulement un défaut reproduit, contrôler statuts et intégrité, sans note réelle ni publication générale.
+- [x] SELECT exacts : A t2 1, B t2 2, A t1 5 QRC en attente, aucun résultat/correction ; A/B 16/16 retrouvés sur EB2 seulement. 15 contrats PostgreSQL jetables et 46 tests interface/lecture PASS.
+- [x] Aucun défaut métier reproduit : pas de correctif inventé, aucun point ni écriture réelle ; empreintes ciblées inchangées. Rapport docs/chemoun-eb3-ab-diagnostic-2026-11-11.md.
+- [ ] Reproduction visuelle admin réelle BLOQUÉE : session injectée élève indisponible comme admin ; écran/message/heure de saisie A/B EB3 non fournis. Aucun déploiement.
 
 ## 11/11 12:19 — Liens et vidéos dans les cours
 - [x] Deux actions dans l’éditeur de description et rendu cours dédié sécurisé ; RichText/examens inchangés.
