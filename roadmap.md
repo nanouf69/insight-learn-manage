@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 13:48 — Reprise archives : vrai admin et contrôles intégrés
+- [x] Vrai profil admin en aperçu : fiche HADDOU → Examens blancs → Examens archivés ; reset EB3 exact, 7 copies/7 résultats visibles, bouton désactivé. Aucun POST mutateur autorisé.
+- [x] 31 contrats SQL PASS + 1 scénario intégré schéma/triggers réels PASS + 17 Vitest PASS : RLS inter-apprenant, rejeux/conflits, résultats ancien/V2 réexposés via vues sans mutation des sources ; démarrage V2 reproduit le refus CANCELLED_RESET_GRANT, ancien reçu/timer prouvé sur examen distinct.
+- [x] Rapport actualisé avec lien fiche aperçu, chemin exact (onglet Examens blancs, pas Remise à zéro des cours), SELECT final inchangé, build OK ; aucune production/migration/publication. Mobile réel capture masquée par navigation, non compté PASS visuel.
+- [ ] Activation annulation BLOQUÉE : lecteurs/frontend et fonctions brutes à convertir ensemble, garde legacy/timer concurrente et vrai flux élève/CRM/QRC encore non prouvés. Gate false et confirmation désactivée ; consultation réelle des archives disponible sans migration.
+
 ## 11/11 13:42 — Sélecteur sessions accès EB
 - [x] Sessions présentielles compatibles en cours/futures seules, catalogue existant, tri Paris inclusif, Select accessible, rouge en cours et aucun UUID/préchoix.
 - [x] 31 tests PASS, PC/mobile fixture liste ouverte et invalidation immédiate vérifiés ; aucune mutation/migration/publication. Rapport docs/session-exam-access-selecteur-2026-11-11.md ; UI admin authentifiée réelle non testée, serveur candidat toujours non installé.
