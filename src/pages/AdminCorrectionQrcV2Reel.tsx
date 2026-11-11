@@ -713,7 +713,7 @@ export default function AdminCorrectionQrcV2Reel() {
           : await recharger();
       if (import.meta.env.DEV) console.info(`[qrc-v2] note enregistrée et relue en ${Math.round(performance.now() - t0)} ms`);
       const sessionNavigation = passageFiltre ? { ...sessionRelue, tentatives: sessionRelue.tentatives.filter(t=>t.attempt_id===passageFiltre), qrc: sessionRelue.qrc.filter(q=>q.attempt_id===passageFiltre) } : sessionRelue;
-      const navigationRestante={...sessionNavigation,qrc:sessionNavigation.qrc.filter(q=>vueTravail==='historique'||q.qrc_instance_id===qrcSel.qrc_instance_id||statutFile(q,sessionNavigation)===vueTravail)};
+      const navigationRestante={...sessionNavigation,qrc:sessionNavigation.qrc.filter(q=>vueTravail==='historique'||vueTravail==='toutes'||q.qrc_instance_id===qrcSel.qrc_instance_id||statutFile(q,sessionNavigation)===vueTravail)};
       const decision = decisionApresCorrection(navigationRestante, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
@@ -738,14 +738,14 @@ export default function AdminCorrectionQrcV2Reel() {
       setCommentaireModifie(false);
       setModeRevision(false);
       setJeton(Math.random().toString(36).slice(2, 10));
-      const suivante=decision.suivante??(vueTravail!=='historique'?qrcDansVue(sessionNavigation,vueTravail).find(q=>q.qrc_instance_id!==qrcSel.qrc_instance_id):null);
+      const suivante=decision.suivante??(vueTravail!=='historique'&&vueTravail!=='toutes'?qrcDansVue(sessionNavigation,vueTravail).find(q=>q.qrc_instance_id!==qrcSel.qrc_instance_id):null);
       if (suivante) {
         setEtatEnvoi("vide");
         setSelection(suivante.qrc_instance_id);
       } else {
         setEtatEnvoi("ok");
         setMessageNavigation("Correction enregistrée — dernière copie de la liste.");
-        if(vueTravail!=='historique')setSelection(null);
+        if(vueTravail!=='historique'&&vueTravail!=='toutes')setSelection(null);
       }
     } catch (e) {
       setEtatEnvoi("echec");
@@ -825,14 +825,14 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   };
 
-  const sessionNavigation = session?{...session,qrc:vueTravail==='historique'?session.qrc.filter(q=>!passageFiltre||q.attempt_id===passageFiltre):qrcDansVue(session,vueTravail,passageFiltre)}:null;
+  const sessionNavigation = session?{...session,qrc:(vueTravail==='historique'||vueTravail==='toutes')?session.qrc.filter(q=>!passageFiltre||q.attempt_id===passageFiltre):qrcDansVue(session,vueTravail,passageFiltre)}:null;
   const ordreFile=ordonnerCandidatsParFin(session?.tentatives??[]).map(t=>t.attempt_id);
   const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
-  const copiePrecedente = vueTravail==='historique'?copieVoisine(sessionNavigation, selection, -1):voisineFile(session,vueTravail,selection,-1,passageFiltre);
-  const copieSuivante = vueTravail==='historique'?copieVoisine(sessionNavigation, selection, 1):voisineFile(session,vueTravail,selection,1,passageFiltre);
+  const copiePrecedente = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, -1):voisineFile(session,vueTravail,selection,-1,passageFiltre);
+  const copieSuivante = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, 1):voisineFile(session,vueTravail,selection,1,passageFiltre);
   const naviguerCopie = (direction: DirectionCopie) => {
     if (etatEnvoi === "encours") return;
-    const cible = vueTravail==='historique'?copieVoisine(sessionNavigation, selection, direction):voisineFile(session,vueTravail,selection,direction,passageFiltre);
+    const cible = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, direction):voisineFile(session,vueTravail,selection,direction,passageFiltre);
     if (!cible) return;
     if (commentaireModifie && commentaire !== commentaireSauve && !window.confirm(
       "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
@@ -898,7 +898,7 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const ebsRecents = ebsLesPlusRecents(groupeChoisi, groupeChoisi?.examens ?? [], jourActuel);
   // Panneau tenu ouvert tant qu'une copie est sélectionnée (même pendant une relecture) : largeur stable.
-  const panneauOuvert = !ancienCircuit && !!selection&&!!qrcSel&&(vueTravail==='historique'||fileVisible.some(q=>q.qrc_instance_id===selection));
+  const panneauOuvert = !ancienCircuit && !!selection&&!!qrcSel&&(vueTravail==='historique'||vueTravail==='toutes'||fileVisible.some(q=>q.qrc_instance_id===selection));
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
       <div
@@ -1063,7 +1063,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <option value="">Tous les passages — toutes les tentatives du filtre</option>
             {(vueTravail==='historique'||vueTravail==='verifier')&&copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
               {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id} · Archive — lecture seule{ebChoisi?.aVerifierParAttempt?.[`ancien:${r.id}`]?' · À vérifier — rapprochement V2 non prouvé':''}
-            </option>)}{ordonnerCandidatsParFin((session?.tentatives ?? []).filter(t=>vueTravail==='historique'||qrcDansVue(session,vueTravail).some(q=>q.attempt_id===t.attempt_id))).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
+            </option>)}{ordonnerCandidatsParFin((session?.tentatives ?? []).filter(t=>vueTravail==='historique'||vueTravail==='toutes'||qrcDansVue(session,vueTravail).some(q=>q.attempt_id===t.attempt_id))).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
           </select>
           {vueTravail==='historique'&&!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
@@ -1124,7 +1124,7 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           )}
-          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={vueTravail===v?'default':'ghost'} onClick={()=>{setVueTravail(v);setSelection(null);setArchiveOuverte(null);setPassageFiltre(null);majUrl({qrc:null,qrc_passage:null});}}>{label}</Button>)}<Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
+          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['toutes','Toutes les notes'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={vueTravail===v?'default':'ghost'} onClick={()=>{setVueTravail(v);setSelection(null);setArchiveOuverte(null);majUrl({qrc:null});}}>{label}</Button>)}<Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
           {auditVisible&&mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
@@ -1143,10 +1143,12 @@ export default function AdminCorrectionQrcV2Reel() {
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {(vueTravail==='historique'||vueTravail==='verifier')&&(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
         {(vueTravail==='historique'||vueTravail==='verifier')&&!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
-        {vueTravail!=='historique'&&<section aria-label="File des questions" className="divide-y divide-border">{!lectureCopies&&fileVisible.length===0&&<p className="py-6 text-muted-foreground">{vueTravail==='corriger'?'Aucune question à corriger':vueTravail==='valider'?'Aucune question à valider':'Aucune QRC à vérifier'}</p>}{fileVisible.map(q=>{const t=parTentative.get(q.attempt_id);const question=t?.snapshot.questions.find(x=>x.id===q.question_id);const bareme=question?.points??baremeRestaureDe.get(q.qrc_instance_id)?.bareme;return <article key={q.qrc_instance_id} className="space-y-2 py-4"><p className="text-sm font-semibold">{t?.candidat} · {t?.exam_id} · {t?.snapshot.matieres.map(m=>m.titre).join(' / ')} · Tentative {t?numeroTentative(t):'non prouvée'}</p><h2 className="font-medium">{question?.enonce??'Question non prouvée'}</h2><p className="whitespace-pre-wrap break-words">{texte(q.reponseComplete??q.reponse)||'Sans réponse'}</p><p className="text-sm text-muted-foreground">Barème : {bareme??'non prouvé'}{bareme!=null?' points':''}</p>{vueTravail==='verifier'?<p className="text-warning text-sm">À vérifier — consultation seule, notation indisponible.</p>:<Button size="sm" data-testid={`cellule-${q.qrc_instance_id}`} onClick={()=>{setSelection(q.qrc_instance_id);setNote(null);setEtatEnvoi('vide');}}>{vueTravail==='valider'?'Examiner la proposition IA':'Noter cette réponse'}</Button>}</article>;})}</section>}
-        {vueTravail==='historique'&&matieres.map((m) => {
+        {vueTravail==='verifier'&&<section aria-label="File des questions" className="divide-y divide-border">{!lectureCopies&&fileVisible.length===0&&<p className="py-6 text-muted-foreground">Aucune QRC à vérifier</p>}{fileVisible.map(q=>{const t=parTentative.get(q.attempt_id);const question=t?.snapshot.questions.find(x=>x.id===q.question_id);const bareme=question?.points??baremeRestaureDe.get(q.qrc_instance_id)?.bareme;return <article key={q.qrc_instance_id} className="space-y-2 py-4"><p className="text-sm font-semibold">{t?.candidat} · {t?.exam_id} · {t?.snapshot.matieres.map(m=>m.titre).join(' / ')} · Tentative {t?numeroTentative(t):'non prouvée'}</p><h2 className="font-medium">{question?.enonce??'Question non prouvée'}</h2><p className="whitespace-pre-wrap break-words">{texte(q.reponseComplete??q.reponse)||'Sans réponse'}</p><p className="text-sm text-muted-foreground">Barème : {bareme??'non prouvé'}{bareme!=null?' points':''}</p><p className="text-warning text-sm">À vérifier — consultation seule, notation indisponible.</p></article>;})}</section>}
+        {(vueTravail==='corriger'||vueTravail==='valider')&&!lectureCopies&&fileVisible.length===0&&<div className="py-6 space-y-2"><p className="text-muted-foreground">{vueTravail==='corriger'?'Aucune question à corriger':'Aucune question à valider'}</p><Button size="sm" variant="outline" onClick={()=>{setVueTravail('toutes');setSelection(null);}}>Toutes les notes</Button></div>}
+        {vueTravail!=='verifier'&&matieres.map((m) => {
           const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => !t.consultationSeule&&(!passageFiltre || t.attempt_id === passageFiltre) &&
-            (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
+            (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id)&&
+            ((vueTravail==='historique'||vueTravail==='toutes')?session?.qrc.some(q=>q.attempt_id===t.attempt_id):fileVisible.some(q=>q.attempt_id===t.attempt_id&&t.snapshot.questions.some(x=>x.id===q.question_id&&x.matiere===m.subject_id))),
           ));
           // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
           // rencontrées dans les snapshots, sans jamais en inventer ni en fusionner d'un autre EB.
@@ -1158,6 +1160,7 @@ export default function AdminCorrectionQrcV2Reel() {
               }
             }
           }
+          if(!tentatives.length||!questions.length)return null;
           const attemptIds = new Set(tentatives.map((t) => t.attempt_id));
           const dansMatiere = (session?.qrc ?? []).filter((q) => attemptIds.has(q.attempt_id));
           const ok = dansMatiere.filter((q) => q.etat === "corrigee").length;
@@ -1258,7 +1261,7 @@ export default function AdminCorrectionQrcV2Reel() {
                             (x) => x.attempt_id === t.attempt_id && x.question_id === q.id,
                           );
                           // ⚪ GRIS : aucune QRC pour ce couple candidat / question.
-                          if (!inst) {
+                          if (!inst||((vueTravail==='corriger'||vueTravail==='valider')&&!fileVisible.some(q=>q.qrc_instance_id===inst.qrc_instance_id))) {
                             return (
                               <td key={q.id} className="px-0.5 py-0.5 text-center">
                                 <span className="block rounded border border-muted bg-muted px-1 py-0.5 text-muted-foreground">—</span>

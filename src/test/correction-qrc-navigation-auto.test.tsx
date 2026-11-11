@@ -165,6 +165,28 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it('grille première vue, Toutes les notes retrouve zéro validé et conserve le passage',async()=>{
+    appliquerNote('a2-q1',0);
+    render(ecran());
+    await screen.findByTestId('matrice-A');
+    expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();
+    fireEvent.change(screen.getByTestId('choix-passage'),{target:{value:'a1'}});
+    fireEvent.click(screen.getByRole('button',{name:'Toutes les notes'}));
+    expect(screen.getByTestId('choix-passage')).toHaveValue('a1');
+    fireEvent.change(screen.getByTestId('choix-passage'),{target:{value:''}});
+    fireEvent.click(await screen.findByTestId('cellule-a2-q1'));
+    expect(await screen.findByTestId('points-attribues')).toHaveTextContent('0');
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it('clic grille puis sauvegarde relue ouvre la QRC restante suivante',async()=>{
+    render(ecran());
+    fireEvent.click(await screen.findByTestId('cellule-a1-q1'));
+    expect(screen.getByTestId('reponse-eleve')).toHaveTextContent('Réponse a1');
+    fireEvent.click(screen.getByTestId('note-1'));
+    await waitFor(()=>expect(window.location.search).toContain('qrc=a2-q1'));
+    expect(screen.queryByTestId('cellule-a1-q1')).toBeNull();
+    expect(screen.getByTestId('reponse-eleve')).toHaveTextContent('Réponse a2');
+  });
   it('file par défaut : zéro validé exclu, sauvegarde relue retirée sans perdre le filtre',async()=>{
     appliquerNote('a2-q1',0);
     render(ecran());
