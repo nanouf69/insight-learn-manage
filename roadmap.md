@@ -2,7 +2,7 @@
 
 ## 11/11 13:24 — Moyenne EB3 TAXI Chemoun
 - [x] Lecture exacte : règle dernière tentative, T3P t2 définitif 2 et t1 définitif 13 ; coefficients 3/2/3/2/1/3/3, aucune sélection explicite de copie pour moyenne existante.
-- [ ] Corriger uniquement la projection V2 de la moyenne dans CRM Examen blanc, tests fictifs correction rétroactive/relecture ; aucune écriture ni publication.
+- [x] Projection V2 corrigée uniquement dans CRM Examen blanc, 26 tests PASS et navigateur PC/mobile fixture : moyenne 11,6, simulation t1 13,6 ; build OK. Aucune écriture ni publication. Rapport docs/chemoun-eb3-moyenne-2026-11-11.md ; affichage authentifié réel NON PROUVÉ, sélection explicite admin proposée seulement.
 
 ## 11/11 13:20 — Placement accès au bas des cartes EB
 - [x] Contrôle partagé compact au bas de chaque carte après pause/dernière action ; utilisateur+ rôle serveur vérifiés, sélection explicite de session, aucune deuxième mécanique.
