@@ -18,7 +18,7 @@ const row = (id: string, tentative: number, note: number, date: string): any => 
   id: `${id}-${tentative}`, apprenant_id: 'fiction', quiz_id: exam.id, quiz_type: 'examen_blanc',
   matiere_id: id, matiere_nom: id, tentative, completed_at: date,
   score_obtenu: note, score_max: 20, note_sur_20: note,
-  details: { qrc_pending_correction: true, reponses: { 1: `réponse ${tentative}` } },
+  details: { qrc_pending_correction: id !== 'securite', questions: id === 'securite' ? [] : [{ id: 1, type: 'QRC', enonce: 'Question fictive' }], reponses: { 1: `réponse ${tentative}` } },
 });
 const rows = () => [row('t3p', 1, 8.5, '2026-11-01T17:15:42Z'),
   ...subjects.map(([id, , note]) => row(id, 2, id === 't3p' ? 0 : note, '2026-11-09T20:21:19Z'))];
@@ -47,11 +47,11 @@ describe('Deux copies indépendantes, moyenne EB3 TAXI', () => {
     expect(average(selected).totalCoef).toBe(17);
     expect(average(selected).eliminatoires).toEqual(['t3p']);
   });
-  it('13 donne 13.5 uniquement si première copie explicitement calculée en simulation', () => {
+  it('13 donne 13.6 uniquement si première copie explicitement calculée en simulation', () => {
     const list = rows(); const core = states(list);
     const selected = project(list, core).filter(r => r.matiere_id !== 't3p');
     selected.push(attacherSourceUnique(list[0], core, new Set()));
-    expect(average(selected).moyenne).toBe(13.5);
+    expect(average(selected).moyenne).toBe(13.6);
     expect(average(selected).admisGlobal).toBe(true);
     expect(33 / 17).toBeCloseTo(1.9411764705882353);
   });
