@@ -22,7 +22,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentairesPredefinis } from "@/features/correction-qrc-v2/CommentairesPredefinis";
 import { ajouterCommentaireQrc } from "@/features/correction-qrc-v2/commentairesPredefinis";
-import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
+import { Maximize2, Minimize2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 import { CopiesHistoriquesLecture } from "@/features/correction-qrc-v2/CopiesHistoriquesLecture";
 import {CopieNativeLecture} from '@/features/correction-qrc-v2/CopieNativeLecture';
 import { commentaireConfirme, cleOperationCommentaire, versionCommentaire } from "@/features/correction-qrc-v2/commentaireSeul";
@@ -1182,7 +1182,8 @@ function CorrectionQrcReelle() {
           {groupes.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {nouveauxPassages && <span className="text-muted-foreground" data-testid="nouveaux-passages">Nouveaux passages détectés.</span>}
-              <Button size="sm" variant="outline" className="h-6 px-2 text-xs" data-testid="actualiser-liste" disabled={relectureListe} onClick={() => void actualiserListe()}>
+              <Button variant="default" className="min-h-11 gap-2 px-4 text-sm font-semibold" data-testid="actualiser-liste" disabled={relectureListe} onClick={() => void actualiserListe()}>
+                <RefreshCw className="h-4 w-4" aria-hidden="true" />
                 {relectureListe ? "Lecture de la liste…" : "Actualiser la liste des copies"}
               </Button>
             </div>
