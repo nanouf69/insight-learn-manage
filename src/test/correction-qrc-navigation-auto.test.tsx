@@ -194,6 +194,62 @@ describe("Correction QRC — passage automatique après confirmation de persista
     expect(await screen.findByTestId('points-attribues')).toHaveTextContent('0');
     expect(mocks.corriger).not.toHaveBeenCalled();
   });
+  it('numérote chaque matière dans son ordre et déduplique les passages du même candidat', async () => {
+    const copie = (id: string, apprenantId: string, finishedAt: string): TentativeReelle => {
+      const base = tentative(id);
+      return {
+        ...base,
+        apprenant_id: apprenantId,
+        candidat: apprenantId === 'apprenant-a1' ? 'Candidat a1' : 'Candidat a2',
+        etat: 'terminee',
+        finished_at: finishedAt,
+        snapshot: {
+          ...base.snapshot,
+          matieres: [
+            { subject_id: 'A', lettre: 'A', titre: 'Matière A', ordre: 1 },
+            { subject_id: 'B', lettre: 'B', titre: 'Matière B', ordre: 2 },
+          ],
+          questions: [
+            ...base.snapshot.questions,
+            { id: 'q2', matiere: 'B', type: 'QRC', enonce: 'Question B', reponseQRC: 'Corrigé B', points: 2 },
+          ],
+        },
+      };
+    };
+    const copies = [
+      copie('a1', 'apprenant-a1', '2026-11-09T10:00:00Z'),
+      copie('a2', 'apprenant-a2', '2026-11-09T11:00:00Z'),
+      copie('a3', 'apprenant-a1', '2026-11-09T12:00:00Z'),
+    ];
+    etat.session = {
+      tentatives: copies,
+      qrc: copies.flatMap((t) => ['q1', 'q2'].map((questionId) => ({
+        ...qrc(t.attempt_id),
+        qrc_instance_id: `${t.attempt_id}-${questionId}`,
+        question_id: questionId,
+        apprenant_id: t.apprenant_id,
+      }))),
+      resultats: [],
+      baremesRestaures: [],
+    };
+    render(ecran());
+    fireEvent.click(await screen.findByRole('button', { name: 'Toutes les notes' }));
+    expect(await screen.findByTestId('compteur-candidats-grille')).toHaveTextContent('2 candidats dans la session · 2 affichés');
+    for (const matiere of ['A', 'B']) {
+      const table = await screen.findByTestId(`matrice-${matiere}`);
+      expect(within(table).getByRole('columnheader', { name: 'N°' })).toBeInTheDocument();
+      const lignes = within(table).getAllByRole('row').slice(1);
+      expect(lignes).toHaveLength(3);
+      expect(lignes.map((ligne) => within(ligne).getAllByRole('cell')[0].textContent)).toEqual(['1', '2', '3']);
+      expect(lignes.map((ligne) => ligne.querySelector('a')?.getAttribute('data-testid'))).toEqual(['lien-crm-a3', 'lien-crm-a2', 'lien-crm-a1']);
+    }
+  });
+  it('aucune session choisie : libellé explicite, jamais un faux zéro', async () => {
+    window.history.replaceState(null, '', '/admin/correction-qrc-v2?qrc_groupe=absent');
+    render(ecran());
+    expect(await screen.findByTestId('compteur-candidats-grille')).toHaveTextContent('Aucune session sélectionnée');
+    expect(screen.getByTestId('compteur-candidats-grille')).not.toHaveTextContent('0 candidat');
+  });
   it('clic grille puis sauvegarde relue ouvre la QRC restante suivante',async()=>{
     render(ecran());
     fireEvent.click(await screen.findByTestId('cellule-a1-q1'));
