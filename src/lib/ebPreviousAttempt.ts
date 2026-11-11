@@ -9,7 +9,7 @@ export type PreviousAttempt = { note: number | null; label: string; count: numbe
 export function previousAttempt(exam: ExamenBlanc, rows: any[], core: CoreMatiereState[] | null, nonFiables: Set<string> | null): PreviousAttempt | null {
   const previous: Array<{ note: number | null; coefficient: number; nom: string }> = [];
   for (const m of exam.matieres) {
-    const candidates = rows.filter(r => r.quiz_id === exam.id && getMatiereCanonicalKey(r.matiere_id, r.matiere_nom) === getMatiereCanonicalKey(m.id, m.nom));
+    const candidates = rows.filter(r => r.quiz_id === exam.id && (r.matiere_id === m.id || (!r.matiere_id && getMatiereCanonicalKey(r.matiere_id, r.matiere_nom) === getMatiereCanonicalKey(m.id, m.nom))));
     const latest = Math.max(0, ...candidates.map(getAttemptNumber));
     const older = candidates.filter(r => getAttemptNumber(r) < latest);
     const prior = Math.max(0, ...older.map(getAttemptNumber));
