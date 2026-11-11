@@ -26,6 +26,7 @@ class Live(base.Contract):
   cat=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text())
   c.sql("CREATE ROLE authenticator LOGIN;GRANT authenticated TO authenticator;")
   c.sql(cat['schema'])
+  c.sql("ALTER TABLE public.core_tentatives_neutralisees ADD CONSTRAINT subject_reset_test_neutralisation_pk PRIMARY KEY(attempt_id)")
   for f in cat['functions']:c.sql(f)
   c.sql(cat['rls'])
   c.sql("CREATE TABLE IF NOT EXISTS public.bilan_reponse_statuts(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,uid text,statut text,reponse jsonb,created_at timestamptz);CREATE TABLE IF NOT EXISTS public.bilan_reponse_reclassements(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,nouveau_statut text);CREATE TABLE IF NOT EXISTS public.core_tentatives_neutralisees(attempt_id uuid PRIMARY KEY);")
