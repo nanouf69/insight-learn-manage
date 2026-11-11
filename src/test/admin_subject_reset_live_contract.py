@@ -163,9 +163,8 @@ class Live(base.Contract):
   self.api(f"SELECT core_finalize_attempt(gen_random_uuid(),'{na}','{{}}'::text[],'{{}}'::jsonb);SELECT core_recalc_result('{na}')",U)
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{na}'").stdout.strip(),'1')
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{att}'").stdout.strip(),'0')
-  immutable=self.sql(f"SELECT jsonb_build_object('attempt_id',attempt_id,'apprenant_id',apprenant_id,'exam_id',exam_id,'exam_version_id',exam_version_id,'snapshot',snapshot,'snapshot_fingerprint',snapshot_fingerprint,'started_at',started_at,'is_test',is_test) FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout
-  expected=self.sql(f"SELECT jsonb_build_object('attempt_id',attempt_id,'apprenant_id',apprenant_id,'exam_id',exam_id,'exam_version_id',exam_version_id,'snapshot',snapshot,'snapshot_fingerprint',snapshot_fingerprint,'started_at',started_at,'is_test',is_test) FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout
-  self.assertEqual(immutable,expected)
+  immutable_after=self.sql(f"SELECT jsonb_build_object('attempt_id',attempt_id,'apprenant_id',apprenant_id,'exam_id',exam_id,'exam_version_id',exam_version_id,'snapshot',snapshot,'snapshot_fingerprint',snapshot_fingerprint,'started_at',started_at,'is_test',is_test) FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout
+  self.assertEqual(immutable_before,immutable_after)
   self.assertEqual(other_before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{other}'").stdout)
   self.assertNotEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout)
   self.assertEqual(self.sql("SELECT count(*) FROM qrc_ia_corrections").stdout.strip(),'0')
