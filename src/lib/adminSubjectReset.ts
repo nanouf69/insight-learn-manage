@@ -1,4 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
+/** Missing server function (PostgREST schema cache): explicit refusal, never a fallback or a false success. */
+export const SUBJECT_RESET_UNAVAILABLE='Réinitialisation par matière indisponible : la fonction serveur dédiée n’est pas installée. Aucune action n’a été effectuée.';
+export function subjectResetError(error: {message?: string; code?: string}): Error {
+ const missing=error.code==='PGRST202'||/could not find the function/i.test(error.message??'');
+ return new Error(missing?SUBJECT_RESET_UNAVAILABLE:(error.message??'Erreur serveur.'));
+}
 export interface SubjectResetContext {
  apprenant_id: string; exam_id: string; matiere_id: string; filiere: string;
  learner_name: string; subject_name: string; status: 'non_commencee'|'en_cours'|'en_attente'|'notee'|'ambigu';
@@ -9,7 +15,7 @@ export async function readSubjectResetContext(account: string, exam: string, sub
  const {data,error}=await supabase.rpc('exam_subject_reset_context' as never,{
   p_apprenant_id:account,p_exam_id:exam,p_matiere_id:subject,
  } as never);
- if(error) throw new Error(error.message);
+ if(error) throw subjectResetError(error);
  const c=data as unknown as SubjectResetContext;
  if(!c || c.apprenant_id!==account || c.exam_id!==exam || c.matiere_id!==subject || !c.source_token || !c.version_token) throw new Error('Identité serveur non confirmée.');
  return c;
@@ -19,7 +25,7 @@ export async function authorizeSubjectReset(c: SubjectResetContext, operation: s
   p_operation_id:operation,p_apprenant_id:c.apprenant_id,p_exam_id:c.exam_id,p_filiere:c.filiere,
   p_matiere_id:c.matiere_id,p_learner_name:c.learner_name,p_source_token:c.source_token,p_version_token:c.version_token,
  } as never);
- if(error) throw new Error(error.message);
+ if(error) throw subjectResetError(error);
  const r=data as unknown as {operation_id:string;apprenant_id:string;exam_id:string;matiere_id:string;source_token:string;version_token:string};
  if(!r || r.apprenant_id!==c.apprenant_id || r.exam_id!==c.exam_id || r.matiere_id!==c.matiere_id || r.source_token!==c.source_token || r.version_token!==c.version_token) throw new Error('Autorisation non confirmée.');
  const current=await readSubjectResetContext(c.apprenant_id,c.exam_id,c.matiere_id);

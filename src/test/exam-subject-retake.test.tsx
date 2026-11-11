@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({ context: vi.fn(), rpc: vi.fn(), session: vi.fn(async (call: () => unknown) => call()) }));
-vi.mock('@/lib/adminSubjectReset',()=>({readSubjectResetContext:mocks.context}));
+vi.mock('@/lib/adminSubjectReset',async(orig)=>({...(await orig<typeof import('@/lib/adminSubjectReset')>()),readSubjectResetContext:mocks.context}));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock('@/lib/sessionRpc', () => ({ freshSessionCall: mocks.session }));
 vi.mock('@/features/noyau-passage/pontV2', () => ({ operationId: async (value: string) => value }));

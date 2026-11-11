@@ -1,4 +1,4 @@
-import { readSubjectResetContext } from '@/lib/adminSubjectReset';
+import { readSubjectResetContext, subjectResetError } from '@/lib/adminSubjectReset';
 import { supabase } from '@/integrations/supabase/client';
 import { freshSessionCall } from '@/lib/sessionRpc';
 import { operationId } from '@/features/noyau-passage/pontV2';
@@ -51,7 +51,7 @@ export async function startSubjectRetake(p: {
     p_operation_id: op, p_apprenant_id: p.account, p_exam_id: p.exam, p_matiere_id: p.subject,
     p_source_exercice_id: p.sourceExercise, p_source_attempt_id: p.sourceAttempt ?? null,
   } as never), p.owner);
-  if (error) throw new Error(error.message);
+  if (error) throw subjectResetError(error);
   const receipt = validateSubjectRetakeReceipt(data, p.account, p.exam, p.subject);
   if (receipt.source_exercice_id !== p.sourceExercise
     || receipt.source_attempt_id !== (p.sourceAttempt ?? null)) {
