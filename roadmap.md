@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 17:14 — Filtre EB et moyennes de session
-- [ ] Filtre EB/filière, tous inscrits conservés, notes matières et moyennes définitives avec n/N.
-- [ ] Tests zéro réel/attente/absence/filières/session vide, contrôle admin réel, aucun scan global ni publication.
+- [x] Filtre EB/filière, tous inscrits conservés, notes matières et moyennes définitives avec n/N, aucun nouvel appel au changement de filtre.
+- [x] Tests zéro réel/attente/absence/filières/session vide, fixture PC et admin réel 16 inscrits : EB1 VTC 11,3/20 (9/10) ; aucun scan global ni publication.
 
 ## 11/11 17:02 — Sessions actuelles et notes par session
 - [x] Accès direct trois sessions de formation actuelles Paris inclusif, liens explicites conservés, aucun catalogue global au premier accès testé.
