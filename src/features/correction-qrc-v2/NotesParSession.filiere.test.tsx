@@ -1,0 +1,23 @@
+import { cleanup,fireEvent,render,screen,within } from '@testing-library/react';
+import { afterEach,expect,it,vi } from 'vitest';
+import { NotesParSession } from './NotesParSession';
+import type { ReleveSession } from './notesSession';
+import type { GroupeSessionCrm } from './noyauReel';
+afterEach(cleanup);
+const sessions=[{cle:'crm:mixte',libelle:'Mixte',debut:'2026-01-01',fin:'2027-12-31',typeSession:'theorique'}] as GroupeSessionCrm[];
+const releve:ReleveSession={inscrits:[{id:'v',nom:'VTC',prenom:'Test',type_apprenant:'VTC-e'},{id:'t',nom:'TAXI',prenom:'Sans copie',type_apprenant:'taxi'},{id:'p',nom:'TAXI',prenom:'Attente',type_apprenant:'TAXI'}],notes:{v:{4:{etat:'definitif',note:0}},t:{4:{etat:'non_passe',note:null}},p:{4:{etat:'attente',note:null}}},examens:[{id:'EB4',numero:4,filiere:'VTC',matieres:[]},{id:'EB4-TAXI',numero:4,filiere:'TAXI',matieres:[]},{id:'EB4-TA',numero:4,filiere:'TA',matieres:[]}],erreur:null};
+it('EB4 TAXI garde tous les TAXI, EB4 VTC seulement VTC, Tous restaure le roster sans relecture',async()=>{
+ const charger=vi.fn(async()=>releve);
+ render(<NotesParSession sessions={sessions} charger={charger} souscrire={()=>()=>{}} chargerAbsences={async()=>new Set(['t'])}/>);
+ fireEvent.change(screen.getByRole('combobox',{name:'Session du relevé'}),{target:{value:'crm:mixte'}});
+ const filtre=await screen.findByRole('combobox',{name:'Examen blanc'});
+ const noms=()=>within(screen.getByRole('table')).getAllByRole('row').slice(2).map(r=>r.textContent);
+ expect(noms()).toHaveLength(3);
+ fireEvent.change(filtre,{target:{value:'EB4-TAXI'}});
+ expect(noms()).toHaveLength(2);expect(noms().every(n=>n?.includes('TAXI'))).toBe(true);
+ expect(screen.getByText('Non passé')).toBeInTheDocument();expect(screen.getByText('À corriger / en attente')).toBeInTheDocument();expect(screen.getByText('2 inscrits')).toBeInTheDocument();
+ fireEvent.change(filtre,{target:{value:'EB4'}});
+ expect(noms()).toHaveLength(1);expect(noms()[0]).toContain('VTC Test');expect(screen.getByText('1 inscrits')).toBeInTheDocument();
+ fireEvent.change(filtre,{target:{value:'tous'}});expect(noms()).toHaveLength(3);expect(screen.getByText('3 inscrits')).toBeInTheDocument();expect(charger).toHaveBeenCalledTimes(1);
+ fireEvent.change(filtre,{target:{value:'EB4-TA'}});expect(noms()).toHaveLength(0);expect(screen.getByText('0 inscrits')).toBeInTheDocument();expect(screen.getByText(/Aucun inscrit TA/)).toBeInTheDocument();
+});
