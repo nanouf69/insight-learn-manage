@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 13:29 — Précédent essai Chemoun et sélection simulée
+- [x] Score précédent officiel par identité 13/20 et libellé T3P seule, carte PC/mobile fixture vérifiée.
+- [x] Simulation admin explicite préparée et désactivée pour enregistrement ; 24 tests PASS, navigateur 13,6/coef17/zéro éliminatoire, build OK ; défaut/copies intacts. Rapport docs/chemoun-eb3-precedent-selection-2026-11-11.md. Persistance serveur non préparée/non installée, aucun déploiement.
+
 ## 11/11 13:24 — Moyenne EB3 TAXI Chemoun
 - [x] Lecture exacte : règle dernière tentative, T3P t2 définitif 2 et t1 définitif 13 ; coefficients 3/2/3/2/1/3/3, aucune sélection explicite de copie pour moyenne existante.
 - [x] Projection V2 corrigée uniquement dans CRM Examen blanc, 26 tests PASS et navigateur PC/mobile fixture : moyenne 11,6, simulation t1 13,6 ; build OK. Aucune écriture ni publication. Rapport docs/chemoun-eb3-moyenne-2026-11-11.md ; affichage authentifié réel NON PROUVÉ, sélection explicite admin proposée seulement.

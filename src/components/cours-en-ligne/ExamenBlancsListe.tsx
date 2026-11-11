@@ -28,6 +28,7 @@ import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDe
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
+import { previousAttempt, type PreviousAttempt } from '@/lib/ebPreviousAttempt';
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { ExamCardAccess, useExamAccessSessions } from '@/components/sessions/acces-examens/ExamCardAccess';
 
@@ -99,7 +100,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
     return () => clearInterval(id);
   }, []);
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
-  const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
+  const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, PreviousAttempt>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
   // without needing `examensData` as a dependency (its identity changes on
   // every fast question-definition refresh, which was causing this effect to
@@ -418,39 +419,12 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
 
           setExamScores(scores);
 
-          // Compute previous attempt averages per exam
-          const prevAvgs: Record<string, number | null> = {};
+          const prevAvgs: Record<string, PreviousAttempt> = {};
           allRowsByQuiz.forEach((rows, quizId) => {
             const examDef = examensDataRef.current.find(e => e.id === quizId);
             if (!examDef) return;
-            // Group rows by matiere canonical key, sorted by created_at desc
-            const byMatiere = new Map<string, any[]>();
-            rows.forEach(r => {
-              const key = getMatiereCanonicalKey(r.matiere_id, r.matiere_nom);
-              if (!byMatiere.has(key)) byMatiere.set(key, []);
-              byMatiere.get(key)!.push(r);
-            });
-            // For each matiere, sort by created_at desc, find the second row (previous attempt)
-            let hasPrev = false;
-            let totalCoef = 0;
-            let weightedSum = 0;
-            examDef.matieres.forEach(m => {
-              const mKey = getMatiereCanonicalKey(m.id, m.nom);
-              const mRows = byMatiere.get(mKey) || [];
-              mRows.sort((a: any, b: any) => toTimestamp(b.created_at) - toTimestamp(a.created_at));
-              const coef = m.coefficient || 1;
-              // BUG 4 fix: only count coef when prior attempt data exists, otherwise dilutes the average
-              if (mRows.length >= 2) {
-                hasPrev = true;
-                const prev = mRows[1];
-                const note = normalizeNoteSur20(prev.score_obtenu, prev.score_max, prev.note_sur_20);
-                weightedSum += note * coef;
-                totalCoef += coef;
-              }
-            });
-            if (hasPrev && totalCoef > 0) {
-              prevAvgs[quizId] = Math.round((weightedSum / totalCoef) * 10) / 10;
-            }
+            const previous = previousAttempt(examDef, rows, coreStates, nonFiablesV2);
+            if (previous) prevAvgs[quizId] = previous;
           });
           setPreviousExamAverages(prevAvgs);
 
@@ -687,7 +661,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                           )}
                           {previousExamAverages[examen.id] != null && (
                             <span className="text-xs text-muted-foreground italic">
-                              Précédent essai : {previousExamAverages[examen.id]!.toFixed(1)} / 20
+                              {previousExamAverages[examen.id]?.label} : {previousExamAverages[examen.id]?.note == null ? 'Note en attente de vérification' : `${previousExamAverages[examen.id]?.note?.toFixed(1)} / 20`}
                             </span>
                           )}
                         </div>

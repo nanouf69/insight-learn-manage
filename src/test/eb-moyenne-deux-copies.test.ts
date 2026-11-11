@@ -6,6 +6,8 @@ import { attacherSourceUnique, noteExamenAffichee } from '@/lib/noteExamenAffich
 import { computeMatiereScoreForAttempt, computeMoyenneExamen } from '@/components/cours-en-ligne/examens-blancs-scoring';
 import { isExamAttemptPublicationPending } from '@/components/cours-en-ligne/exam-helpers';
 import type { CoreMatiereState } from '@/lib/coreExamPublication';
+import { previousAttempt } from '@/lib/ebPreviousAttempt';
+import { simulateCopySelection } from '@/lib/ebCopySelectionPreview';
 
 const subjects = [
   ['t3p', 3, 2], ['gestion', 2, 13], ['securite', 3, 14],
@@ -38,6 +40,25 @@ function average(list: any[]) {
   return computeMoyenneExamen(exam, m => computeMatiereScoreForAttempt(m, list.find(r => r.matiere_id === m.id)));
 }
 describe('Deux copies indépendantes, moyenne EB3 TAXI', () => {
+  it('précédent T3P officiel 13, une seule matière sur sept, jamais 8.5 legacy', () => {
+    const list=rows(); const prior=previousAttempt(exam,list,states(list),new Set());
+    expect(prior).toEqual({note:13,label:'Précédent passage — t3p (matière seule)',count:1,total:7});
+    expect(previousAttempt(exam,list,null,null)?.note).toBeNull();
+    expect(previousAttempt(exam,list,[],new Set())?.note).toBeNull();
+  });
+  it('simulation explicite même identité : 11.6→13.6, coefficients 17, aucun éliminatoire, rien muté', () => {
+    const list=rows(); const before=JSON.stringify(list);
+    const result=simulateCopySelection('fiction',exam,list,[],states(list),new Set(),'t3p-1');
+    expect(result.before.moyenne).toBe(11.6);
+    expect(result.after.moyenne).toBe(13.6);
+    expect(result.after.totalCoef).toBe(17);
+    expect(result.after.eliminatoires).toEqual([]);
+    expect(result.after.verdict).toBe('reussi');
+    expect(result.chosen.__core.attemptId).toBe('copy-t3p-1');
+    expect(JSON.stringify(list)).toBe(before);
+    expect(()=>simulateCopySelection('autre',exam,list,[],states(list),new Set(),'t3p-1')).toThrow('identité');
+    expect(()=>simulateCopySelection('fiction',exam,list,[],null,null,'t3p-1')).toThrow('officielle');
+  });
   it('retient t2 09/11, pas t1 corrigée plus tard à 13', () => {
     const list = rows(); list[0].updated_at = '2026-11-11T13:04:52Z';
     const selected = project(list, states(list));
