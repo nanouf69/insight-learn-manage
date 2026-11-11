@@ -208,7 +208,11 @@ export async function routerPassage(params: {
   if (reprise === null) return { moteur: "bloque", message: "L'historique de vos tentatives est illisible. Aucun changement de circuit n'a été effectué." };
   if (!reprise && params.passageDejaEngage) return { moteur: "ancien", motif: "passage_deja_engage" };
 
-  const attemptId = await demarrerTentative(params);
+  let attemptId: string | null;
+  try { attemptId = await demarrerTentative(params); }
+  catch (error) {
+    return { moteur: 'bloque', message: error instanceof Error ? error.message : 'Démarrage refusé par le serveur.' };
+  }
   if (attemptId) return { moteur: "v2", attemptId };
   return {
     moteur: "bloque",
@@ -234,6 +238,7 @@ export async function demarrerTentative(params: {
   });
   const { data, error } = await demarrer(op);
   if (error) {
+    if (error.code === 'P0551') throw new Error(error.message);
     console.warn("[PontV2] démarrage refusé:", error.message);
     return null;
   }

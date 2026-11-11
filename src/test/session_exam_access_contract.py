@@ -68,11 +68,45 @@ class Access(unittest.TestCase):
   self.assertNotEqual(self.sql('UPDATE session_exam_access_events SET opened=true',False).returncode,0)
  def test_10_v2_continuation_save_and_finish_not_gated(self):
   self.set_access(True,expected=self.current());version=str(uuid.uuid4());attempt=str(uuid.uuid4())
-  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',1,'publiee','{{}}','f');INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint) VALUES('{attempt}','{A}','EB3','{version}','{{\"matiere\":\"gestion\",\"tentative\":2}}','f')")
+  snap={'matiere':'gestion','tentative':2,'matieres':[{'subject_id':'gestion','duree':30}], 'questions':[{'id':'gestion:1','matiere':'gestion','type':'QCM','points':1,'choix':[{'id':'A','texte':'Oui','correct':True}]}]}
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',1,'publiee','{{}}','f');INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint) VALUES('{attempt}','{A}','EB3','{version}',{J(snap)},'f')")
   self.set_access(False,expected=self.current())
   self.sql(f"INSERT INTO apprenant_examen_timers(apprenant_id,exercice_id,duree_secondes,tentative) VALUES('{A}','EB3__gestion',1800,2)")
-  self.sql(f"INSERT INTO answer_state(attempt_id,apprenant_id,question_id,valeur) VALUES('{attempt}','{A}','gestion:1','\"A\"');UPDATE exam_attempts_v2 SET etat='terminee',finished_at=now() WHERE attempt_id='{attempt}'")
+  self.call(f"SELECT core_save_answer(gen_random_uuid(),'{attempt}','gestion:1','[\"A\"]',0,NULL);SELECT core_finalize_attempt(gen_random_uuid(),'{attempt}',ARRAY[]::text[],'{{}}')",U)
   self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{attempt}'").stdout.strip(),'terminee')
   bad=self.sql(f"INSERT INTO exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint) VALUES('{A}','EB3','{version}','{{\"matiere\":\"gestion\"}}','f')",False)
   self.assertNotEqual(bad.returncode,0)
+ def test_11_waiting_list_and_other_session_untouched(self):
+  self.sql(f"UPDATE session_apprenants SET liste_attente=true WHERE apprenant_id='{A}'")
+  self.gate();self.sql(f"UPDATE session_apprenants SET liste_attente=false WHERE apprenant_id='{A}'")
+ def test_12_new_retake_closed_rolls_back(self):
+  before=self.sql('SELECT count(*) FROM exam_subject_retakes').stdout
+  r=self.sql(f"INSERT INTO exam_subject_retakes(operation_id,apprenant_id,exam_id,matiere_id,source_exercice_id,exercice_id,tentative,moteur,matiere) VALUES(gen_random_uuid(),'{A}','EB3','t3p','EB3__t3p','EB3__t3p__t2',2,'ancien','{{}}')",False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr);self.assertEqual(before,self.sql('SELECT count(*) FROM exam_subject_retakes').stdout)
+ def test_13_concurrent_admin_confirmation_only_one_wins(self):
+  from concurrent.futures import ThreadPoolExecutor
+  previous=self.current()
+  with ThreadPoolExecutor(max_workers=2) as pool:
+   outcomes=list(pool.map(lambda opened:self.set_access(opened,expected=previous,check=False)[1].returncode,[True,False]))
+  self.assertEqual(sum(x==0 for x in outcomes),1)
+ def test_14_start_lock_serializes_closure_until_commit(self):
+  # First prove the exact lock is held by the gate, then prove a concurrent closure waits.
+  import time
+  self.set_access(True,expected=self.current())
+  child=subprocess.Popen(['psql','-X','-At','-h',self.d,'-p','55489','-U','postgres','-v','ON_ERROR_STOP=1'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=self.env,text=True)
+  child.stdin.write(f"BEGIN;SELECT assert_session_exam_start('{A}','EB3');\\echo gate_locked\n")
+  child.stdin.flush()
+  while child.stdout.readline().strip()!='gate_locked':
+   if child.poll() is not None:self.fail('gate failed')
+  lock=self.sql("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND mode='ShareLock' AND granted").stdout.strip();self.assertGreater(int(lock),0)
+  from concurrent.futures import ThreadPoolExecutor
+  with ThreadPoolExecutor(max_workers=1) as pool:
+   future=pool.submit(self.set_access,False,S,self.current())
+   deadline=time.monotonic()+5;waiting=False
+   while time.monotonic()<deadline:
+    if self.sql("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND NOT granted").stdout.strip()!='0':waiting=True;break
+   self.assertTrue(waiting);self.assertFalse(future.done())
+   child.stdin.write('COMMIT;\\q\n');child.stdin.flush();child.wait(timeout=5)
+   self.assertEqual(future.result(timeout=5)[1].returncode,0)
+  self.assertNotEqual(self.gate(check=False).returncode,0)
 if __name__=='__main__':unittest.main(verbosity=2)
