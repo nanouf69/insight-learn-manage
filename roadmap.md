@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 17:52 — Notes par session autonome
-- [ ] Onglet principal après l'archive QRC, référentiel CRM seul, anciens liens redirigés sans monter la correction.
-- [ ] Vérifier onglet actif, accès direct/retour navigateur et liens exacts vers correction ; aucune publication ni donnée modifiée.
+- [x] Onglet principal après l'archive QRC, référentiel CRM seul (sessions sans copies incluses), anciens liens redirigés avant les hooks de correction.
+- [x] Admin réel Chromium : onglet actif, accès direct, retour navigateur, ancien lien avec session conservée et clic MEMDOUH vers copie nationale exacte (4 cellules) ; aucune requête de copie avant sélection, 5 tests PASS, aucune publication ni donnée modifiée.
 
 ## 11/11 17:45 — Provenance des QRC en attente
 - [x] Liens issus des passages officiels réellement retenus : session CRM de la date, date, passage, examen et apprenant ; plusieurs sources affichées séparément, classification exacte lue sur ces seules copies.
