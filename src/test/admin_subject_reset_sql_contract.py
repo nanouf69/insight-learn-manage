@@ -17,7 +17,6 @@ class Contract(unittest.TestCase):
   GRANT USAGE ON SCHEMA auth TO authenticated,anon;GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth TO authenticated,anon;""")
   catalog=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text())
   c.sql(catalog['schema'])
-  c.sql("""DO $$ DECLARE n text; BEGIN SELECT conname INTO n FROM pg_constraint WHERE conrelid='exam_subject_retakes'::regclass AND pg_get_constraintdef(oid)='UNIQUE (apprenant_id, exam_id, matiere_id, source_exercice_id)'; EXECUTE format('ALTER TABLE exam_subject_retakes RENAME CONSTRAINT %I TO exam_subject_retakes_apprenant_id_exam_id_matiere_id_source_key',n); END $$;""")
   for definition in catalog['functions']:c.sql(definition)
   c.sql(catalog['rls']);c.sql(catalog['triggers'])
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
