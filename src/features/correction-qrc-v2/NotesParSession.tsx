@@ -4,10 +4,10 @@ import type { GroupeSessionCrm } from './noyauReel';
 import { sessionFormationActuelle } from './sessionsActuelles';
 import { chargerNotesSession, filiereInscrit, moyenneSessionExamen, type NoteSession, type ReleveSession } from './notesSession';
 const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='definitif'?`${n.note?.toLocaleString('fr-FR')} /20`:n.etat==='non_passe'?'Non passé':n.etat==='attente'?'À corriger / en attente':n.etat==='incomplet'?`Incomplet (${n.couverture})`:'Lecture indisponible';
-export function NotesParSession({sessions}:{sessions:GroupeSessionCrm[]}){
+export function NotesParSession({sessions,charger=chargerNotesSession}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession}){
   const [examenId,setExamenId]=useState('tous');
   const [cle,setCle]=useState<string|null>(null);const [releve,setReleve]=useState<ReleveSession|null>(null);const [erreur,setErreur]=useState<string|null>(null);const [loading,setLoading]=useState(false);const [retry,setRetry]=useState(0);
-  useEffect(()=>{if(!cle)return;let alive=true;setLoading(true);setReleve(null);setExamenId('tous');setErreur(null);void chargerNotesSession(cle.slice(4)).then(r=>{if(alive){setReleve(r);setErreur(r.erreur);}}).catch(e=>{if(alive)setErreur(e.message);}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false};},[cle,retry]);
+  useEffect(()=>{if(!cle)return;let alive=true;setLoading(true);setReleve(null);setExamenId('tous');setErreur(null);void charger(cle.slice(4)).then(r=>{if(alive){setReleve(r);setErreur(r.erreur);}}).catch(e=>{if(alive)setErreur(e.message);}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false};},[cle,retry,charger]);
   const examens=releve?.examens??[];
   const choisi=examens.find(e=>e.id===examenId);
   const colonnes=choisi?[{id:'general',nom:`EB${choisi.numero} ${choisi.filiere} — général /20`},...choisi.matieres]:examens.map(e=>({id:e.id,nom:`EB${e.numero} ${e.filiere} — général /20`}));
