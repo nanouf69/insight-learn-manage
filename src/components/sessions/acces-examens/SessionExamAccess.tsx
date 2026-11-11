@@ -13,12 +13,12 @@ export function SessionExamAccess({sessionId,sessionName,examId,compact=false}:{
  const [confirmation,setConfirmation]=useState<{exam:ExamAccess;opened:boolean;op:string}|null>(null);
  const alive=useRef(0);const sending=useRef(false);
  const reload=async()=>{
-  const seq=++alive.current;setLoading(true);setError('');
+  const seq=++alive.current;setLoading(true);setError('');setConfirmation(null);setSuccess('');
   try{const c=await readSessionAccess(sessionId);if(seq===alive.current)setContext(c);}
   catch(e){if(seq===alive.current){setContext(null);setError(e instanceof Error?e.message:'Lecture impossible.');}}
   finally{if(seq===alive.current)setLoading(false);}
  };
- useEffect(()=>{setContext(null);setConfirmation(null);setSuccess('');void reload();return()=>{alive.current++;};},[sessionId]);
+ useEffect(()=>{setContext(null);setConfirmation(null);setSuccess('');void reload();return()=>{alive.current++;};},[sessionId,examId]);
  const confirm=async()=>{
   if(!context || !confirmation || sending.current)return;
   sending.current=true;setBusy(true);setError('');const seq=alive.current;
@@ -41,8 +41,8 @@ export function SessionExamAccess({sessionId,sessionName,examId,compact=false}:{
   {context && !loading && context.exams.filter(x=>!examId||x.exam_id===examId).map(exam=><div key={exam.exam_id} className="flex flex-wrap items-center gap-3 border-b border-border py-3">
    <div className="min-w-0 flex-1"><strong>{exam.exam_id}</strong><p className="text-sm">{exam.opened===null?'Accès existants conservés — aucune consigne':exam.opened?'Ouvert aux élèves inscrits et éligibles':'Fermé aux nouveaux démarrages'}</p>
    {exam.changed_at && <p className="text-xs text-muted-foreground">Confirmation du {new Date(exam.changed_at).toLocaleString('fr-FR',{timeZone:'Europe/Paris'})}</p>}</div>
-   <Button variant="outline" disabled={busy||exam.opened===true} onClick={()=>{setError('');setConfirmation({exam,opened:true,op:crypto.randomUUID()});}}><UnlockKeyhole className="mr-2 h-4 w-4"/>{compact?'Ouvrir l’accès':'Ouvrir'}</Button>
-   <Button variant="outline" disabled={busy||exam.opened===false} onClick={()=>{setError('');setConfirmation({exam,opened:false,op:crypto.randomUUID()});}}><LockKeyhole className="mr-2 h-4 w-4"/>{compact?'Fermer l’accès':'Fermer'}</Button>
+   <Button variant="outline" disabled={busy||exam.opened===true} onClick={()=>{setError('');setConfirmation({exam,opened:true,op:crypto.randomUUID()});}}><UnlockKeyhole className="mr-2 h-4 w-4"/>{compact?'Ouvrir cette session':'Ouvrir'}</Button>
+   <Button variant="outline" disabled={busy||exam.opened===false} onClick={()=>{setError('');setConfirmation({exam,opened:false,op:crypto.randomUUID()});}}><LockKeyhole className="mr-2 h-4 w-4"/>{compact?'Fermer cette session':'Fermer'}</Button>
   </div>)}
   <Dialog open={!!confirmation} onOpenChange={open=>{if(!open&&!busy)setConfirmation(null);}}><DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto" aria-describedby={undefined}><DialogHeader><DialogTitle>{confirmation?.opened?'Ouvrir':'Fermer'} l’accès à {confirmation?.exam.exam_id}</DialogTitle></DialogHeader>
    <p className="break-words">Session : {context?.session_name??sessionName}</p>

@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { readSessionAccess, ACCESS_NOT_INSTALLED, type SessionAccess } from './transport';
 import { sessionChoiceLabel, type AccessSession } from './sessionChoices';
+import { SessionExamAccess } from './SessionExamAccess';
 
 type State = { label: string; context?: SessionAccess; color: 'open'|'closed'|'unknown' };
 export function sessionAccessState(context: SessionAccess, examId: string): State {
@@ -36,6 +37,7 @@ export default function MultiSessionExamAccess({examId,choices}:{examId:string;c
   },[key,examId,reload]);
   const picked=choices.filter(s=>selected.includes(s.id));
   const readable=picked.length>0&&picked.every(s=>!!states[s.id]?.context);
+  const single=picked.length===1?picked[0]:undefined;
   return <div className="space-y-3 min-w-0">
     <fieldset className="space-y-2"><legend className="text-sm font-medium mb-2">Choisir explicitement les sessions présentielles</legend>
       {choices.map(s=><div key={s.id} className="border-b border-border py-2 space-y-1">
@@ -48,12 +50,18 @@ export default function MultiSessionExamAccess({examId,choices}:{examId:string;c
     </fieldset>
     <p className="text-xs text-muted-foreground">Vert : ouvert explicitement · Rouge « Fermé » : fermé explicitement. « En cours » en rouge indique uniquement les dates de la session.</p>
     <Button variant="outline" size="sm" onClick={()=>setReload(r=>r+1)}>Relire les états</Button>
-    <div className="flex flex-col gap-2">
+    {single ? <>
+      {readable ? <SessionExamAccess key={`${examId}|${single.id}`} sessionId={single.id} sessionName={single.nom??'Session sans nom'} examId={examId} compact/> : <div className="flex flex-col gap-2">
+        <Button variant="outline" disabled>Ouvrir cette session</Button>
+        <Button variant="outline" disabled>Fermer cette session</Button>
+        <p role="alert" className="text-sm text-muted-foreground">Commande unitaire indisponible : l’état serveur de cette session et de cet examen doit être vérifiable. Aucun accès n’a été modifié.</p>
+      </div>}
+    </> : <><div className="flex flex-col gap-2">
       <Button variant="outline" disabled={!readable} onClick={()=>setConfirm(true)}>Ouvrir les sessions sélectionnées</Button>
       <Button variant="outline" disabled={!readable} onClick={()=>setConfirm(false)}>Fermer les sessions sélectionnées</Button>
     </div>
-    <p className="text-xs text-muted-foreground">Enregistrement groupé non activé : aucune modification d’accès possible dans cet aperçu.</p>
-    <Dialog open={confirm!==null&&readable} onOpenChange={open=>{if(!open)setConfirm(null);}}><DialogContent className="max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
+    <p className="text-xs text-muted-foreground">Enregistrement groupé non activé : la commande de plusieurs sessions reste indisponible. Pour une seule session, cochez uniquement celle-ci.</p></>}
+    <Dialog open={confirm!==null&&readable&&!single} onOpenChange={open=>{if(!open)setConfirm(null);}}><DialogContent className="max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
       <DialogHeader><DialogTitle>{confirm?'Ouvrir':'Fermer'} les sessions sélectionnées — {examId}</DialogTitle></DialogHeader>
       <ul className="space-y-2">{picked.map(s=><li key={s.id} className="text-sm"><strong>{sessionChoiceLabel(s)}</strong><p>{states[s.id]?.label}</p></li>)}</ul>
       <p>Les épreuves déjà commencées, réponses, chronomètres et autres examens restent inchangés.</p>
