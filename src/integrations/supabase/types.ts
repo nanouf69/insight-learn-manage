@@ -4760,6 +4760,54 @@ export type Database = {
           },
         ]
       }
+      exam_subject_reset_authorizations: {
+        Row: {
+          actor: string
+          apprenant_id: string
+          created_at: string
+          exam_id: string
+          filiere: string
+          learner_name: string
+          matiere_id: string
+          operation_id: string
+          source_attempt_id: string | null
+          source_exercice_id: string
+          source_result_id: string | null
+          source_token: string
+          version_token: string
+        }
+        Insert: {
+          actor: string
+          apprenant_id: string
+          created_at?: string
+          exam_id: string
+          filiere: string
+          learner_name: string
+          matiere_id: string
+          operation_id: string
+          source_attempt_id?: string | null
+          source_exercice_id: string
+          source_result_id?: string | null
+          source_token: string
+          version_token: string
+        }
+        Update: {
+          actor?: string
+          apprenant_id?: string
+          created_at?: string
+          exam_id?: string
+          filiere?: string
+          learner_name?: string
+          matiere_id?: string
+          operation_id?: string
+          source_attempt_id?: string | null
+          source_exercice_id?: string
+          source_result_id?: string | null
+          source_token?: string
+          version_token?: string
+        }
+        Relationships: []
+      }
       exam_subject_retakes: {
         Row: {
           apprenant_id: string
@@ -9675,6 +9723,39 @@ export type Database = {
     }
     Functions: {
       activites_taxi_2026_protection_prete: { Args: never; Returns: boolean }
+      admin_authorize_exam_subject_reset: {
+        Args: {
+          p_apprenant_id: string
+          p_exam_id: string
+          p_filiere: string
+          p_learner_name: string
+          p_matiere_id: string
+          p_operation_id: string
+          p_source_token: string
+          p_version_token: string
+        }
+        Returns: {
+          actor: string
+          apprenant_id: string
+          created_at: string
+          exam_id: string
+          filiere: string
+          learner_name: string
+          matiere_id: string
+          operation_id: string
+          source_attempt_id: string | null
+          source_exercice_id: string
+          source_result_id: string | null
+          source_token: string
+          version_token: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_subject_reset_authorizations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_signalements_validation_modules: {
         Args: never
         Returns: {
@@ -10418,6 +10499,14 @@ export type Database = {
       exam_id_for_module: { Args: { _module_id: number }; Returns: string }
       exam_matiere_signature: { Args: { _matiere: Json }; Returns: string }
       exam_numero_from_id: { Args: { _exam_id: string }; Returns: number }
+      exam_subject_reset_context: {
+        Args: {
+          p_apprenant_id: string
+          p_exam_id: string
+          p_matiere_id: string
+        }
+        Returns: Json
+      }
       examens_blancs_controle: {
         Args: { _apprenant_id: string; _module_id: number }
         Returns: Json
