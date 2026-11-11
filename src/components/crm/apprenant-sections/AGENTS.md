@@ -1,2 +1,3 @@
 # Subject-reset boundary
-- The per-subject admin reset button is a blocked preview with no mutation transport until a deferred-start admin-only operation and learner readback are proven; why: owner retakes start timers immediately and global reset fallbacks affect other subjects.
+- Per-subject reset confirmation reads the server-owned source and version, verifies displayed learner/result identity, then requests a dedicated deferred authorization with readback; no global or owner-start fallback. Its SQL is staged until full learner-flow compatibility is proven; why: admin must never start timers or alter other subjects.
+- Subject resets use a dedicated append-only admin authorization and owner-only deferred start, with official subject IDs, exact source proof and no global fallback; why: admin actions must not start timers, rewrite grades or replace active copies. Candidate SQL remains staged until complete native/imported V2 learner-flow compatibility is proven.

@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 08:58 — Réinitialisation ciblée admin et démarrage élève
+- [x] Composition enregistrée complète, EB3 VTC sept matières/A sans note, ordre officiel/ID exacts et nombres distincts ; calculs/global inchangés. Sélection historique par version encore non prouvée.
+- [x] Candidat admin différé append-only et démarrage propriétaire avec reçu/durée publiés ; rôle, concurrence/rejeu, filières et refus en cours testés jetables. SQL non installé.
+- [x] 146 tests applicatifs, 8 PostgreSQL jetables, Chromium admin→élève→reload VTC ordinateur/TAXI mobile PASS ; zéro écriture réelle/publication. Rapport dédié.
+- [ ] Installation/action réelle BLOQUÉES : PassageMatiere complet et soumission/reprise chronomètre V2/importée non prouvés ; version historique du panneau non résolue. RPC non installées ; erreurs de lecture en aperçu réel, pas de faux succès.
+
 ## 11/11 08:52 — Rattachement nominatif QRC des cinq dossiers
 - [x] Périmètre fermé : CHEMOUN 2be4ac7b-32a6-4a0f-9a12-267381c6779b ; BENKHELIL b9058e7e-a81e-4741-adba-6da88238cc84 ; MEMDOUH 7dac2ec5-46f4-46f9-9573-2bf245041601 ; HADDOU c41a5034-8fa2-4fe5-a5d0-ad3f590d7fbe ; SARKISIAN 144ca7f4-6623-4063-861b-e139a4a0108b. Lecture du code et incident uniquement, aucune mutation ni interaction avec le bouton reset.
 - [ ] Inventaire et catalogue actuel BLOQUÉS : lectures Cloud échouent (pooler indisponible), sonde auth/base expirée, métriques indisponibles ; identités fournies non revalidées, compteurs actuels inconnus.

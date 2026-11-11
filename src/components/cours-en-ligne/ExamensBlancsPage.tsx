@@ -80,6 +80,7 @@ import { subjectRetakeStorageKey, validateSubjectRetakeReceipt, type SubjectReta
 import { freshSessionRead } from '@/lib/sessionRpc';
 import { rememberRetakeReturn, readRetakeReturn, retakeReturnKey } from '@/lib/subjectRetakeNavigation';
 import { SubjectCopyHistory } from './SubjectCopyHistory';
+import { AuthorizedSubjectRetakes } from './AuthorizedSubjectRetakes';
 import { RefaireMatiereButton } from './RefaireMatiereButton';
 import { lireDerogationsModules, matieresRestantesAvecDerogation } from '@/lib/moduleAccessDerogation';
 
@@ -1571,6 +1572,7 @@ export default function ExamensBlancsPage({
             Chargement en cours, veuillez patienter…
           </div>
         )}
+        {!isAdmin && <AuthorizedSubjectRetakes account={apprenantId} owner={userId} onStarted={activateSubjectRetake} />}
         <EcranSelection
           onStart={(examen, forceRetake) => handleStart(examen, forceRetake, null)}
           onStartPartial={(examen) => {

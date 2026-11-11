@@ -29,3 +29,22 @@ Les tests couvrent le blocage, l’annulation, les identités et l’absence de 
 - Toutes les requêtes externes ont été interceptées : un `log_error` de démarrage lié au chargement des définitions fictives a également été bloqué. **Zéro requête de mutation déclenchée par les clics**, zéro écriture Cloud.
 - Compilation automatique observée : `build OK` ; lint des nouveaux fichiers : zéro erreur. Comparaison des trois sections globales (gestionnaire, bouton et dialogue) à HEAD : identiques. Aucun changement des calculs de notes.
 - Session admin réelle et parcours élève réel positif : **NON PROUVÉS** ; volontairement aucune remise à zéro réelle, aucun email, IA ou publication.
+
+## Reprise autorisée 11/11 08:58 — candidat fonctionnel, installation suspendue
+- Le panneau compose toutes les matières du sujet enregistré en ordre officiel et associe les résultats par ID exact : EB3 VTC/TAXI = sept lignes, TA/VA = leurs deux matières spécifiques. Résultat absent = aucune note ajoutée. Calcul global existant, gestionnaire global, bouton global et dialogue global non modifiés.
+- Bouton « Réinitialiser la matière » : vraie lecture serveur, confirmation nominative, verrou immédiat, autorisation dédiée et relecture. Pas de lancement admin du chrono. Cas en cours, nom/résultat changé, version/source ambiguë : refus explicite.
+- Candidat `docs/sql-revue/2026-11-11-subject-reset.sql` : catalogue serveur de source, autorisations immuables avec rôle admin, identité/version, unicité/concurrence ; start propriétaire atomique et reçu avant insertion pour le délai ciblé. Sujet V2/durée issus de la publication actuelle, ancienne copie intacte. Premier passage non commencé = tentative 1, pas de résultat fictif ni délai 48 h emprunté aux autres matières.
+- Élève : liste des autorisations persistées ; « Refaire la matière » relit l’identité serveur au lieu de deviner un suffixe ; reçu existant relu sans seconde création. La navigation existante ouvre seulement la matière du reçu.
+
+### Vérifications exécutées
+- 146 tests applicatifs de boutons, composition, sauvegarde, délai, snapshots, notes et reset global PASS ; 19 tests ciblés rejoués après concordance du résultat PASS.
+- 8 contrats PostgreSQL réels sur schéma public copié sans données dans un cluster jetable PASS : admin→élève, absence de chrono admin/résultat zéro, sources et autres matières intactes, droits, filières TA/VA, refus en cours, V2 native avec copie historique identique, zéro IA, concurrence.
+- Chromium VTC 1280×1800 et TAXI 390×844 : vrais boutons/panneau CRM → SQL jetable → bouton élève → reçu → relecture après reload PASS, aucune erreur de page ; une autorisation et un démarrage par parcours. Captures vues. Le rendu de la copie dans ce harnais est une projection de test, PAS le composant PassageMatiere complet.
+- Lint ciblé sans erreur ; compilation automatique observée build OK. Aucune mutation Cloud, email, IA payante ni publication. Fichiers/données du rattachement des cinq dossiers non touchés.
+
+### Blocages et limites restant à prouver avant installation
+- Migration volontairement NON appliquée : la confirmation réelle affiche une erreur de lecture tant que les RPC ne sont pas installées ; ne pas annoncer l’action effective.
+- E2E du composant PassageMatiere complet avec routage V2/ancien, réponses/soumission et reprise du chrono sur catalogue isolé non exécuté. Le harnais positif vérifie les commandes réelles et le reçu, pas ce composant complet.
+- Sources V2 historiques importées sans métadonnées complètes restent refusées ; liens multiples/contradictoires ne sont pas tolérés. Source native avec ancien résultat de tentative différente doit encore être qualifiée exhaustivement. Composition historique spécifique à chaque version de passage non reconstituée dans le panneau : affichage actuel suit la définition enregistrée, pas une sélection explicite de version historique.
+- Le panneau d’état lit une matière à la fois ; Realtime d’une autorisation créée dans un autre onglet non prouvé. Site publié inchangé.
+- Le polling préexistant de ExamensBlancsPage contredit la préférence zéro polling : conservé hors scope, aucune correction non autorisée de cette règle.
