@@ -1,15 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { GroupeSessionCrm } from './noyauReel';
 import { sessionFormationActuelle } from './sessionsActuelles';
 import { extremesNotesSession, rangNoteSession } from './extremesNotesSession';
 import { noteDefinitiveManquante } from './noteDefinitiveManquante';
+import { souscrireNotesSession } from './signalNotesSession';
 import { chargerNotesSession, filiereInscrit, moyenneSessionExamen, type NoteSession, type ReleveSession } from './notesSession';
 const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='definitif'?`${n.note?.toLocaleString('fr-FR')} /20`:n.etat==='non_passe'?'Non passé':n.etat==='attente'?'À corriger / en attente':n.etat==='incomplet'?`Incomplet (${n.couverture})`:'Lecture indisponible';
-export function NotesParSession({sessions,charger=chargerNotesSession}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession}){
+export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=souscrireNotesSession}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession;souscrire?:typeof souscrireNotesSession}){
   const [examenId,setExamenId]=useState('tous');
   const [cle,setCle]=useState<string|null>(null);const [releve,setReleve]=useState<ReleveSession|null>(null);const [erreur,setErreur]=useState<string|null>(null);const [loading,setLoading]=useState(false);const [retry,setRetry]=useState(0);
-  useEffect(()=>{if(!cle)return;let alive=true;setLoading(true);setReleve(null);setExamenId('tous');setErreur(null);void charger(cle.slice(4)).then(r=>{if(alive){setReleve(r);setErreur(r.erreur);}}).catch(e=>{if(alive)setErreur(e.message);}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false};},[cle,retry,charger]);
+  const lecture=useRef<Promise<void>|null>(null);
+  const actualiser=useRef<()=>void>(()=>{});
+  useEffect(()=>{
+    if(!cle)return;
+    let alive=true,scheduled=false,dirty=false,initial=true;
+    setLoading(true);setReleve(null);setExamenId('tous');setErreur(null);
+    const lire=async()=>{
+      if(!alive||(!initial&&document.visibilityState==='hidden'))return;
+      if(scheduled){dirty=true;return;}
+      scheduled=true;
+      if(lecture.current)await lecture.current;
+      if(!alive){scheduled=false;return;}
+      const task=(async()=>{
+        try{
+          const r=await charger(cle.slice(4));
+          if(alive){setReleve(prev=>r.erreur&&prev?prev:r);setErreur(r.erreur);}
+        }catch(e){if(alive)setErreur(e instanceof Error?e.message:'Lecture indisponible');}
+        finally{if(alive){initial=false;setLoading(false);}}
+      })();
+      lecture.current=task;
+      await task;
+      if(lecture.current===task)lecture.current=null;
+      scheduled=false;
+      if(alive&&dirty){dirty=false;void lire();}
+    };
+    actualiser.current=()=>{void lire();};
+    void lire();
+    return()=>{alive=false;actualiser.current=()=>{};};
+  },[cle,charger]);
+  useEffect(()=>{if(retry)actualiser.current();},[retry]);
+  const inscritsSignal=releve?.inscrits.map(a=>a.id).sort().join(',')??'';
+  useEffect(()=>{
+    if(!cle||!inscritsSignal)return;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const signal=()=>{
+      if(document.visibilityState==='hidden'||timer)return;
+      timer=setTimeout(()=>{timer=undefined;actualiser.current();},400);
+    };
+    const stop=souscrire(inscritsSignal.split(','),signal);
+    document.addEventListener('visibilitychange',signal);
+    window.addEventListener('focus',signal);
+    window.addEventListener('online',signal);
+    return()=>{stop();if(timer)clearTimeout(timer);document.removeEventListener('visibilitychange',signal);window.removeEventListener('focus',signal);window.removeEventListener('online',signal);};
+  },[cle,inscritsSignal,souscrire]);
   const examens=releve?.examens??[];
   const choisi=examens.find(e=>e.id===examenId);
   const extremes= new Map(examens.map(e=>[e.id,releve?extremesNotesSession(releve,e):null]));
