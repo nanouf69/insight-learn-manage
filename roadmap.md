@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 13:10 — Accès examens blancs par session présentielle
+- [ ] Extension de la fiche session CRM, confirmation et états fiables ; candidat serveur séparé non appliqué en production, sans modification des droits par défaut.
+- [ ] Tests PostgreSQL jetables et interface PC/mobile : ouvert/fermé, épreuve commencée, droits, e-learning, inscriptions croisées, concurrence, journal ; rapport et commit.
+
 ## 11/11 12:58 — Menu Correction QRC : tous les passages remis
 - [x] Audit : plafonds API/recherche, brouillons V2, filtre QRC ancien et superposition dernière fiche corrigés ; toutes sessions/dates et copie individuelle par ID, archives en lecture seule.
 - [x] 48 tests PASS dont 1002 passages/1200 QRC, vrai menu/chargeur fictif PC/mobile, deux copies Chemoun séparées ; rapport docs/qrc-menu-tous-passages-2026-11-11.md, aucune écriture/publication. UI réelle authentifiée non prouvée.
