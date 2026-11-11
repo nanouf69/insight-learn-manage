@@ -2,6 +2,7 @@ import {vi,it,expect,beforeEach} from 'vitest';
 import {render,screen,fireEvent} from '@testing-library/react';
 const read=vi.hoisted(()=>vi.fn());
 vi.mock('./transport',()=>({readSessionAccess:read,ACCESS_NOT_INSTALLED:'not installed'}));
+vi.mock('./SessionExamAccess',()=>({SessionExamAccess:({sessionId,examId}: {sessionId:string;examId:string})=><div data-testid="unit-command">{sessionId} / {examId}</div>}));
 import Control,{sessionAccessState} from './MultiSessionExamAccess';
 const choices=['A','B'].map(id=>({id,nom:`Session ${id}`,date_debut:'2026-11-01',date_fin:'2099-11-30',type_session:'theorique',types_apprenant:['VTC'],current:true}));
 beforeEach(()=>{read.mockReset();});
@@ -31,4 +32,19 @@ it('états mixtes et noms exacts, confirmation préparée désactivée et relect
 it('erreur réseau ou examen absent restent non vérifiables',async()=>{
  read.mockImplementation(async(id:string)=>{if(id==='A')throw new Error('network');return {session_id:id,exams:[]};});
  render(<Control examId="EB6" choices={choices}/>);expect(await screen.findAllByText('Non vérifiable')).toHaveLength(2);
+});
+it('une seule session vérifiée monte la commande unitaire exacte sans dépendre du groupé',async()=>{
+ read.mockImplementation(async(id:string)=>({session_id:id,session_name:`Session ${id}`,exams:[{exam_id:'EB6',opened:null,operation_id:null}]}));
+ render(<Control examId="EB6" choices={choices}/>);await screen.findAllByText('Accès habituel (aucune restriction manuelle)');
+ fireEvent.click(screen.getAllByRole('checkbox')[0]);expect(screen.getByTestId('unit-command')).toHaveTextContent('A / EB6');
+ expect(screen.queryByText(/Enregistrement groupé non activé/)).toBeNull();
+ fireEvent.click(screen.getAllByRole('checkbox')[1]);expect(screen.queryByTestId('unit-command')).toBeNull();
+ expect(screen.getByText(/Enregistrement groupé non activé/)).toBeInTheDocument();
+});
+it('une seule session sans serveur ne monte aucune commande modifiante',async()=>{
+ read.mockRejectedValue(new Error('not installed'));render(<Control examId="EB6" choices={choices}/>);
+ await screen.findAllByText('Contrôle non installé');fireEvent.click(screen.getAllByRole('checkbox')[0]);
+ expect(screen.queryByTestId('unit-command')).toBeNull();
+ expect(screen.getByRole('button',{name:'Fermer cette session'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Ouvrir cette session'})).toBeDisabled();
 });
