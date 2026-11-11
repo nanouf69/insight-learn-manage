@@ -876,6 +876,16 @@ function CorrectionQrcReelle() {
   const sessionNavigation = session?{...session,qrc:(vueTravail==='historique'||vueTravail==='toutes')?session.qrc.filter(q=>!passageFiltre||q.attempt_id===passageFiltre):qrcDansVue(session,vueTravail,passageFiltre)}:null;
   const ordreFile=ordonnerCandidatsParFin(session?.tentatives??[]).map(t=>t.attempt_id);
   const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
+  // Décompte d'affichage local : un apprenant avec plusieurs passages ne compte qu'une fois.
+  // Le total de la session reste celui du catalogue ; aucune requête ni addition entre matières.
+  const candidatsAffiches = new Set<string>();
+  if(session && filtreConfirme===filtreLecture) for(const t of session.tentatives) {
+    if(t.consultationSeule || (passageFiltre && t.attempt_id!==passageFiltre)) continue;
+    const visible = vueTravail==='historique'||vueTravail==='toutes'
+      ? session.qrc.some(q=>q.attempt_id===t.attempt_id)
+      : fileVisible.some(q=>q.attempt_id===t.attempt_id&&t.snapshot.questions.some(x=>x.id===q.question_id&&x.type==='QRC'));
+    if(visible) candidatsAffiches.add(t.apprenant_id);
+  }
   const copiePrecedente = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, -1):voisineFile(session,vueTravail,selection,-1,passageFiltre);
   const copieSuivante = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, 1):voisineFile(session,vueTravail,selection,1,passageFiltre);
   const naviguerCopie = async (direction: DirectionCopie) => {
