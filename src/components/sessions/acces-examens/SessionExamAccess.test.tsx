@@ -14,4 +14,12 @@ describe('Accès session examens',()=>{
  it('lecture refuse une autre session',async()=>{rpc.mockResolvedValue({data:context});await expect(readSessionAccess('s2')).rejects.toThrow('session affichée');});
  it('accusé faux ne confirme pas une ouverture',async()=>{rpc.mockResolvedValue({data:{operation_id:'op',session_id:'s2',exam_id:'EB3',opened:true}});await expect(setSessionAccess(context,context.exams[0],true,'op')).rejects.toThrow('ne correspond pas');});
  it('confirmation non retrouvée reste incertaine',async()=>{rpc.mockResolvedValueOnce({data:{operation_id:'op',session_id:'s1',exam_id:'EB3',opened:true}}).mockResolvedValue({data:context});await expect(setSessionAccess(context,context.exams[0],true,'op')).rejects.toThrow('non retrouvée');});
+ it('changer l’examen invalide une confirmation encore ouverte',async()=>{
+  rpc.mockResolvedValue({data:{...context,exams:[context.exams[0],{...context.exams[0],exam_id:'EB4'}]}});
+  const view=render(<SessionExamAccess sessionId="s1" sessionName="VTC" examId="EB3" compact/>);
+  fireEvent.click(await screen.findByRole('button',{name:'Fermer cette session'}));expect(screen.getByRole('dialog')).toHaveTextContent('EB3');
+  view.rerender(<SessionExamAccess sessionId="s1" sessionName="VTC" examId="EB4" compact/>);
+  await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
+  expect(rpc.mock.calls.every(c=>c[0]==='admin_session_exam_access_context')).toBe(true);
+ });
 });

@@ -115,4 +115,11 @@ class Access(unittest.TestCase):
    self.sql(f"UPDATE apprenants SET type_apprenant='{kind}',creneau_horaire='{slot}' WHERE id='{A}'")
    self.gate()
   self.sql(f"UPDATE apprenants SET type_apprenant='vtc',creneau_horaire=NULL WHERE id='{A}'")
+ def test_16_unit_does_not_require_batch_or_touch_other_exam(self):
+  self.assertEqual(self.sql("SELECT count(*) FROM pg_proc WHERE proname='admin_set_sessions_exam_access'").stdout.strip(),'0')
+  before=self.sql(f"SELECT to_jsonb(e) FROM session_exam_access_events e WHERE session_id<>'{S}' OR exam_id<>'EB3' ORDER BY revision").stdout
+  self.set_access(False,expected=self.current());self.assertNotEqual(self.gate(check=False).returncode,0)
+  self.assertEqual(self.gate('EB3-TAXI',False).returncode,0)
+  after=self.sql(f"SELECT to_jsonb(e) FROM session_exam_access_events e WHERE session_id<>'{S}' OR exam_id<>'EB3' ORDER BY revision").stdout
+  self.assertEqual(before,after)
 if __name__=='__main__':unittest.main(verbosity=2)
