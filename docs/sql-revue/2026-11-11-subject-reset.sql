@@ -78,7 +78,7 @@ BEGIN
   'answer_id',answer.id,'timer_id',timer.id)::text);
  SELECT a.operation_id INTO grant_id FROM public.exam_subject_reset_authorizations a
   WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id AND a.matiere_id=p_matiere_id
-   AND a.source_token=source_token AND a.version_token=version_token
+   AND a.source_token=exam_subject_reset_context.source_token AND a.version_token=exam_subject_reset_context.version_token
    AND NOT EXISTS(SELECT 1 FROM public.exam_subject_retakes r WHERE r.authorization_id=a.operation_id);
  RETURN jsonb_build_object('apprenant_id',p_apprenant_id,'exam_id',p_exam_id,'filiere',track,'matiere_id',p_matiere_id,
   'learner_name',trim(learner.prenom||' '||learner.nom),'subject_name',subject->>'nom','status',status,'reason',reason,
