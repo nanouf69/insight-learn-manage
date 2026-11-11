@@ -11,6 +11,8 @@ class Integration(base.Integrated):
   c.sql(Path('docs/sql-revue/2026-11-11-exam-reset-cancellation-integration.sql').read_text())
   base.base.Live.env['PGCLIENTENCODING']='UTF8'
   c.sql(Path('src/test/fixtures/core_correct_qrc_live_20261107.sql').read_text())
+  # Fresh read-only live policy inspection: catalog fixture omitted QRC RLS.
+  c.sql("ALTER TABLE qrc_instances_v2 ENABLE ROW LEVEL SECURITY;CREATE POLICY fixture_live_qrc_read ON qrc_instances_v2 FOR SELECT TO authenticated USING(core_est_proprietaire(apprenant_id) OR has_role(auth.uid(),'admin'));CREATE POLICY fixture_live_qrc_insert ON qrc_instances_v2 FOR INSERT TO authenticated WITH CHECK(true);CREATE POLICY fixture_live_qrc_update ON qrc_instances_v2 FOR UPDATE TO authenticated USING(has_role(auth.uid(),'admin')) WITH CHECK(has_role(auth.uid(),'admin'));")
  def setup_exam(self,exam):
   mids=['t3p','gestion','securite','francais','anglais','reglementation_taxi','reglementation_taxi2']
   version=str(uuid.uuid4());reset=str(uuid.uuid4());ats=[];rs=[];ls=[]
