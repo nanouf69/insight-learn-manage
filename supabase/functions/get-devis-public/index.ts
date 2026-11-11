@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { CONSENTEMENT_FC_VERSION } from "../_shared/devisConsentementFc.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ devis: data }), {
+    return new Response(JSON.stringify({ devis: data, signature_consentement_fc_version: CONSENTEMENT_FC_VERSION }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

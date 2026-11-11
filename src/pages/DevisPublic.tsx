@@ -230,6 +230,7 @@ export default function DevisPublic() {
   const token = searchParams.get("token");
 
   const [devis, setDevis] = useState<any>(null);
+  const [fcServeurVersion, setFcServeurVersion] = useState<string | null>(null);
   const [apprenant, setApprenant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -298,6 +299,7 @@ export default function DevisPublic() {
         return;
       }
       const data = payload.devis;
+      setFcServeurVersion(payload.signature_consentement_fc_version ?? null);
       setDevis(data);
       setRetractation(data.retractation ?? null);
       setApprenant(
@@ -356,6 +358,7 @@ export default function DevisPublic() {
     if (!acceptCGV) { toast.error(contrat ? "Veuillez accepter le contrat de formation" : "Veuillez accepter les CGV"); return; }
     if (!contrat && !acceptEarlyStart) { toast.error("Veuillez cocher la clause de renonciation au délai de rétractation"); return; }
     if (estDevisFormationContinue(devis) && !consentAnnulationFc) { toast.error("Veuillez confirmer avoir pris connaissance de la procédure écrite de demande d’annulation et de remboursement"); return; }
+    if (estDevisFormationContinue(devis) && fcServeurVersion !== CONSENTEMENT_FC_VERSION) { toast.error("La preuve serveur n’est pas encore active : aucun document n’a été envoyé"); return; }
     if (!hasSigned) { toast.error("Veuillez signer le devis"); return; }
     if (!mentionAccord.toLowerCase().includes("lu et approuvé")) { toast.error("Veuillez écrire « Lu et approuvé, Bon pour accord »"); return; }
 
@@ -445,6 +448,7 @@ export default function DevisPublic() {
   const today = new Date().toLocaleDateString("fr-FR");
   const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);
   const fcRequis = estDevisFormationContinue(devis ?? {});
+  const fcServeurPret = fcServeurVersion === CONSENTEMENT_FC_VERSION;
   const dejaSigne = uploaded || !!devis?.signed_at;
   const nom = `${apprenant?.civilite || ""} ${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim();
   const formationLabel = devis?.formation || devis?.modele || "";
@@ -776,6 +780,7 @@ export default function DevisPublic() {
                   <span className="text-sm leading-relaxed">{CONSENTEMENT_FC_ANNULATION}</span>
                 </label>
                 <p className="text-xs text-muted-foreground">Version {CONSENTEMENT_FC_VERSION} — cette confirmation et son horodatage serveur sont conservés avec le devis.</p>
+                {!fcServeurPret && <p className="text-xs font-medium text-destructive" data-testid="fc-serveur-indisponible">La preuve serveur n’est pas encore active : la signature est temporairement indisponible et aucun document ne sera envoyé.</p>}
               </div>
             )}
 
@@ -923,7 +928,7 @@ export default function DevisPublic() {
               <div className="flex items-center gap-3 flex-wrap">
                 <Button
                   onClick={handleSendDevis}
-                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || (fcRequis && !consentAnnulationFc) || !hasSigned}
+                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || (fcRequis && (!consentAnnulationFc || !fcServeurPret)) || !hasSigned}
                   className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base"
                 >
                   {uploading ? (

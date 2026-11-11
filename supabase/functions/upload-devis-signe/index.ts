@@ -79,7 +79,10 @@ Deno.serve(async (req) => {
       ? `${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim()
       : (devis.client_nom || "Client");
 
-    // Formation continue : case obligatoire vérifiée avant tout dépôt ou envoi.
+    // Formation continue : identité et case obligatoire vérifiées avant tout dépôt ou envoi.
+    if (estDevisFormationContinue(devis) && ((devis.apprenant_id && !clientLabel) || (!devis.apprenant_id && !devis.client_nom?.trim()))) {
+      return new Response(JSON.stringify({ error: "Identité du stagiaire introuvable : signature impossible sans preuve nominative." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const refusFc = refusConsentementFormationContinue(devis, formData.get("consentement_annulation_remboursement_fc") === "true");
     if (refusFc) {
       return new Response(JSON.stringify({ error: refusFc }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
