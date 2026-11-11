@@ -44,7 +44,7 @@ export function SessionExamAccess({sessionId,sessionName}:{sessionId:string;sess
    <Button variant="outline" disabled={busy||exam.opened===true} onClick={()=>{setError('');setConfirmation({exam,opened:true,op:crypto.randomUUID()});}}><UnlockKeyhole className="mr-2 h-4 w-4"/>Ouvrir</Button>
    <Button variant="outline" disabled={busy||exam.opened===false} onClick={()=>{setError('');setConfirmation({exam,opened:false,op:crypto.randomUUID()});}}><LockKeyhole className="mr-2 h-4 w-4"/>Fermer</Button>
   </div>)}
-  <Dialog open={!!confirmation} onOpenChange={open=>{if(!open&&!busy)setConfirmation(null);}}><DialogContent><DialogHeader><DialogTitle>{confirmation?.opened?'Ouvrir':'Fermer'} l’accès à {confirmation?.exam.exam_id}</DialogTitle></DialogHeader>
+  <Dialog open={!!confirmation} onOpenChange={open=>{if(!open&&!busy)setConfirmation(null);}}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>{confirmation?.opened?'Ouvrir':'Fermer'} l’accès à {confirmation?.exam.exam_id}</DialogTitle></DialogHeader>
    <p className="break-words">Session : {context?.session_name??sessionName}</p>
    <p className="text-sm text-muted-foreground">{sessionId}</p>
    <p>Pour les élèves présentiels inscrits et éligibles uniquement. Aucun accès hors parcours, aucune modification des réponses, notes ou copies.</p>

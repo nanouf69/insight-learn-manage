@@ -2,7 +2,7 @@
 CREATE TABLE public.session_exam_access_events (
  operation_id uuid PRIMARY KEY,
  session_id uuid NOT NULL REFERENCES public.sessions(id),
- exam_id text NOT NULL REFERENCES public.examens_blancs_parcours(exam_id),
+ exam_id text NOT NULL,
  opened boolean NOT NULL,
  expected_operation_id uuid,
  author uuid NOT NULL,
@@ -122,8 +122,7 @@ CREATE FUNCTION public.session_exam_start_guard() RETURNS trigger
  BEGIN
  IF TG_TABLE_NAME='exam_attempts_v2' THEN
   -- Explicit immutable historical imports are not new learner starts.
-  IF NEW.snapshot->'source_historique'->>'result_id' IS NOT NULL THEN RETURN NEW; END IF;
-  IF NEW.etat<>'en_cours' THEN RETURN NEW; END IF;
+  IF NEW.etat<>'en_cours' AND NEW.snapshot->'source_historique'->>'result_id' IS NOT NULL THEN RETURN NEW; END IF;
   PERFORM public.assert_session_exam_start(NEW.apprenant_id,NEW.exam_id);
  ELSIF TG_TABLE_NAME='exam_subject_retakes' THEN
   -- Existing receipt replay does not insert; every inserted receipt authorizes a NEW start.
@@ -137,7 +136,11 @@ CREATE FUNCTION public.session_exam_start_guard() RETURNS trigger
   -- V2 creates its frozen attempt before its timer; permit only matching stored tentative.
   SELECT attempt_id INTO open_attempt FROM public.exam_attempts_v2 a
    WHERE a.apprenant_id=NEW.apprenant_id AND a.exam_id=eid AND a.etat='en_cours'
-   AND a.snapshot->>'matiere'=mid AND coalesce(nullif(a.snapshot->>'tentative','')::integer,1)=NEW.tentative;
+   AND a.snapshot->>'matiere'=mid
+   AND (coalesce(nullif(a.snapshot->>'tentative','')::integer,1)=NEW.tentative OR
+    (NOT (a.snapshot ? 'tentative') AND NEW.tentative=(SELECT count(*) FROM public.exam_attempts_v2 x
+      WHERE x.apprenant_id=a.apprenant_id AND x.exam_id=a.exam_id AND x.snapshot->>'matiere'=mid
+      AND x.started_at<=a.started_at)));
   IF open_attempt IS NOT NULL THEN RETURN NEW; END IF;
   PERFORM public.assert_session_exam_start(NEW.apprenant_id,eid);
  END IF;
