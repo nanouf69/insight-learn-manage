@@ -9,7 +9,7 @@ export function NotesParSession({sessions}:{sessions:GroupeSessionCrm[]}){
   useEffect(()=>{if(!cle)return;let alive=true;setLoading(true);setReleve(null);setErreur(null);void chargerNotesSession(cle.slice(4)).then(r=>{if(alive){setReleve(r);setErreur(r.erreur);}}).catch(e=>{if(alive)setErreur(e.message);}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false};},[cle,retry]);
   return <section aria-label="Notes par session" className="space-y-4 py-4">
     <h2 className="text-lg font-semibold">Notes par session</h2>
-    <div className="flex flex-wrap gap-2">{sessions.filter(sessionFormationActuelle).map(s=><Button key={s.cle} variant={cle===s.cle?'default':'outline'} onClick={()=>setCle(s.cle)} className="h-auto whitespace-normal text-left py-2">{s.libelle}</Button>)}</div>
+    <div className="flex flex-wrap gap-2">{sessions.filter(s=>sessionFormationActuelle(s)).map(s=><Button key={s.cle} variant={cle===s.cle?'default':'outline'} onClick={()=>setCle(s.cle)} className="h-auto whitespace-normal text-left py-2">{s.libelle}</Button>)}</div>
     <select aria-label="Session du relevé" className="max-w-full rounded border bg-background px-2 py-1 text-sm" value={cle??''} onChange={e=>setCle(e.target.value||null)}><option value="">Choisir une session</option>{sessions.map(s=><option key={s.cle} value={s.cle}>{s.libelle}</option>)}</select>
     {loading&&<p role="status">Chargement des notes de cette session…</p>}
     {erreur&&<div role="alert" className="text-destructive"><p>Lecture indisponible — {erreur}</p><Button variant="outline" onClick={()=>setRetry(n=>n+1)}>Réessayer</Button></div>}
