@@ -8,7 +8,8 @@ import { fetchCoreMatiereStatesBulk } from '@/lib/coreExamPublication';
 import { fetchPassagesV2NonFiables } from '@/lib/passagesV2NonFiables';
 import { attacherSourceUnique, noteExamenAffichee } from '@/lib/noteExamenAffichee';
 import { lignesExamenAffichees } from '@/lib/ebLignesAffichees';
-import { lireCopiesParCurseur, lirePagesParalleles } from './noyauReel';
+import { chargerSessionTest, lireCopiesParCurseur, lirePagesParalleles } from './noyauReel';
+import { statutFile } from './fileTravail';
 import { deciderRattachementCrm } from './rattachementCrm';
 import type { DestinationCorrection } from './lienCorrectionSession';
 
@@ -37,6 +38,7 @@ const jourFr=(j:string)=>j.split('-').reverse().join('/');
 export function sourceAttenteMatiere(row:any,liens:any[],sessionAffichee:string,typeApprenant:string):SourceAttente{
   const core=row?.__core;
   if(!core?.attemptId||!core.finishedAt)return {destinations:[],motif:'non_rattachee'};
+  if(/-e$/i.test(typeApprenant))return {destinations:[],motif:'non_rattachee'};
   if(Number(core.qrcRestantes)<=0)return {destinations:[],motif:'publication'};
   const jour=jourParisIso(core.finishedAt);
   const decision=deciderRattachementCrm({jour,examId:String(row.quiz_id),typeApprenant,liens});
@@ -88,6 +90,17 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
       const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>attacherSourceUnique(r,core.get(a.id)??[],preuves));
       const liensApprenant=liens.filter(l=>l.apprenant_id===a.id&&l.sessions).map(l=>({session:l.sessions,debut:String(l.date_debut??l.sessions.date_debut).slice(0,10),fin:String(l.date_fin??l.sessions.date_fin).slice(0,10)}));
       notes[a.id]={};matieres[a.id]={};sourcesAttente[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def){matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);sourcesAttente[a.id][def.id]={};const scores=examRows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));for(const m of def.matieres){if(matieres[a.id][def.id][m.id]?.etat==='attente')sourcesAttente[a.id][def.id][m.id]=sourceAttenteMatiere(findScoreForMatiere(scores,m),liensApprenant,`crm:${sessionId}`,a.type_apprenant??'');}}}
+    }
+    const sources=Object.values(sourcesAttente).flatMap(ex=>Object.values(ex).flatMap(ms=>Object.values(ms)));
+    const passageIds=[...new Set(sources.flatMap(s=>s.destinations.map(d=>d.attemptId)))];
+    const copies=await chargerSessionTest('migre',passageIds);
+    for(const source of sources){
+      source.destinations=source.destinations.flatMap(d=>{
+        const classes=copies.qrc.filter(q=>q.attempt_id===d.attemptId).map(q=>statutFile(q,copies));
+        const vues=(['corriger','valider','verifier'] as const).filter(v=>classes.includes(v));
+        return vues.map(vue=>({...d,vue,qrcRestantes:classes.filter(v=>v===vue).length}));
+      });
+      if(!source.destinations.length&&!source.motif)source.motif='publication';
     }
     return {inscrits,notes,examens,matieres,sourcesAttente,erreur:null};
   }catch(e){for(const a of inscrits){notes[a.id]={};matieres[a.id]={};for(let n=1;n<=6;n++)notes[a.id][n]={etat:'indisponible',note:null};for(const exam of examens)matieres[a.id][exam.id]=Object.fromEntries(exam.matieres.map(m=>[m.id,{etat:'indisponible',note:null}]));}return {inscrits,notes,examens,matieres,erreur:e instanceof Error?e.message:'Lecture indisponible'};}
