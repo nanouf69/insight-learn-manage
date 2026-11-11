@@ -44,6 +44,7 @@ export function ResetMatiereAdminButton({ target, onAuthorized }: { target: Rese
           try {
             const c=await readSubjectResetContext(target.apprenantId,target.examId,target.matiereId);
             if(c.learner_name!==`${target.prenom} ${target.nom}`.trim() || c.filiere!==target.filiere) throw new Error('Nom ou filière non concordants. Aucune autorisation envoyée.');
+            if((c.source_result_id ?? null)!==(target.resultId ?? null))throw new Error('Le résultat affiché a changé ; relisez le panneau avant confirmation.');
             setContext(c);
           } catch(e){setError(e instanceof Error?e.message:'Lecture impossible.');}
           finally{lock.current=false;setBusy(false);}

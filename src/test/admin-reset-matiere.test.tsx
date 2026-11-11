@@ -4,7 +4,7 @@ const mocks=vi.hoisted(()=>({read:vi.fn(),authorize:vi.fn()}));
 vi.mock('@/lib/adminSubjectReset',()=>({readSubjectResetContext:mocks.read,authorizeSubjectReset:mocks.authorize}));
 import {ResetMatiereAdminButton,type ResetMatiereAdminTarget} from '@/components/crm/apprenant-sections/ResetMatiereAdminButton';
 const target:ResetMatiereAdminTarget={apprenantId:'fictif',prenom:'Élève',nom:'FICTIF',examId:'EB3',examLabel:'EB3 VTC',filiere:'vtc',matiereId:'t3p',matiereNom:'A T3P'};
-const context={apprenant_id:'fictif',exam_id:'EB3',filiere:'vtc',matiere_id:'t3p',learner_name:'Élève FICTIF',status:'non_commencee',source_token:'s',version_token:'v',authorization_id:null};
+const context={apprenant_id:'fictif',exam_id:'EB3',filiere:'vtc',matiere_id:'t3p',learner_name:'Élève FICTIF',status:'non_commencee',source_token:'s',version_token:'v',authorization_id:null,source_result_id:null};
 afterEach(()=>{cleanup();vi.resetAllMocks()});
 async function open(){fireEvent.click(screen.getByRole('button',{name:'Réinitialiser la matière : A T3P'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeEnabled())}
 describe('Deferred admin authorization',()=>{

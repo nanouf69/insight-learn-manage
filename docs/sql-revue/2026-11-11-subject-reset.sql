@@ -40,7 +40,7 @@ BEGIN
  SELECT count(*),jsonb_agg(m)->0 INTO n,subject FROM jsonb_array_elements(whole->'matieres') m WHERE m->>'id'=p_matiere_id;
  IF n<>1 OR coalesce(jsonb_array_length(subject->'questions'),0)=0 OR (subject->>'duree')::integer<=0 THEN
   RAISE EXCEPTION 'Matière officielle absente ou incomplète.' USING ERRCODE='P0487'; END IF;
- v_version_token:=md5(whole::text);
+ v_version_token:=md5(whole::text||coalesce((SELECT v.fingerprint FROM public.exam_content_versions v WHERE v.exam_id=p_exam_id AND v.statut='publiee' ORDER BY v.version_number DESC LIMIT 1),''));
  SELECT * INTO result FROM public.apprenant_quiz_results WHERE apprenant_id=p_apprenant_id AND quiz_id=p_exam_id
   AND matiere_id=p_matiere_id AND quiz_type='examen_blanc' ORDER BY tentative DESC,completed_at DESC,id LIMIT 1;
  SELECT * INTO answer FROM public.reponses_apprenants WHERE apprenant_id=p_apprenant_id AND exercice_type='examen_blanc'
