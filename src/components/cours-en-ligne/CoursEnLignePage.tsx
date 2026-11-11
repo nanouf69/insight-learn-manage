@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from 'react-router-dom';
+import { NotesParSessionAutonome } from '@/features/correction-qrc-v2/NotesParSessionAutonome';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ const BILAN_MODULE_IDS: Record<number, string> = {
 };
 
 const CoursEnLignePage = () => {
+  const location=useLocation();const navigate=useNavigate();
   // Onglet mémorisé dans l'URL (?onglet=...) pour survivre à un F5 — préférence d'interface uniquement
   const [activeTab, setActiveTabState] = useState(
     () => new URLSearchParams(window.location.search).get("onglet") || "accueil"
@@ -40,8 +43,9 @@ const CoursEnLignePage = () => {
     setActiveTabState(tab);
     const params = new URLSearchParams(window.location.search);
     params.set("onglet", tab);
-    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    navigate(`${window.location.pathname}?${params.toString()}`);
   };
+  useEffect(()=>{setActiveTabState(new URLSearchParams(location.search).get('onglet')||'accueil');},[location.search]);
   const [selectedFormation, setSelectedFormation] = useState("vtc");
   const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
   const [bilanActif, setBilanActif] = useState<string | null>(null);
@@ -271,6 +275,7 @@ const ApprenantSearchPreview = () => {
             <MessageSquareText className="w-4 h-4" />
             Ancienne correction QRC — archive
           </TabsTrigger>
+          {isAdmin&&<TabsTrigger value="notes-session" className="flex items-center gap-2"><TableProperties className="w-4 h-4"/>Notes par session</TabsTrigger>}
         </TabsList>
 
         {/* Accueil */}
@@ -566,6 +571,7 @@ const ApprenantSearchPreview = () => {
         <TabsContent value="correction-qrc-archive" className="mt-6">
           <CorrectionQRCTab />
         </TabsContent>
+        {isAdmin&&<TabsContent value="notes-session" className="mt-6"><NotesParSessionAutonome/></TabsContent>}
       </Tabs>
     </div>
   );

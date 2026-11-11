@@ -3,7 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
-import { NotesParSession } from '@/features/correction-qrc-v2/NotesParSession';
+import { Navigate } from 'react-router-dom';
 import { sessionFormationActuelle, jourParis } from '@/features/correction-qrc-v2/sessionsActuelles';
 import {libelleExamen} from '@/features/correction-qrc-v2/libelleExamen';
 import { PanneauRapprochement } from "@/features/correction-qrc-v2/PanneauRapprochement";
@@ -64,6 +64,14 @@ const texte = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON
 const param = (cle: string) => new URLSearchParams(window.location.search).get(cle);
 
 export default function AdminCorrectionQrcV2Reel() {
+  if(param('qrc_vue')==='notes-session'){
+    const params=new URLSearchParams({section:'cours-en-ligne',onglet:'notes-session'});
+    const groupe=param('qrc_groupe');if(groupe?.startsWith('crm:'))params.set('notes_session',groupe);
+    return <Navigate replace to={`/?${params.toString()}`}/>;
+  }
+  return <CorrectionQrcReelle/>;
+}
+function CorrectionQrcReelle() {
   const mode: "test" | "migre" = param("mode") === "test" ? "test" : "migre";
 
   // Préférences d'interface mémorisées dans l'URL pour survivre à un F5.
@@ -93,7 +101,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [passageFiltre, setPassageFiltre] = useState<string | null>(() => param("qrc_passage"));
   const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
-  const [notesParSession,setNotesParSession]=useState(()=>param('qrc_vue')==='notes-session');
+  const notesParSession=false;
   const [vueTravail,setVueTravail]=useState<VueQrc>(()=>{const vue=param('qrc_vue');return vue==='valider'||vue==='verifier'?vue:'corriger';});
   const [apprenantFiltre,setApprenantFiltre]=useState<string|null>(()=>param('qrc_apprenant'));
   const [auditVisible,setAuditVisible]=useState(false);

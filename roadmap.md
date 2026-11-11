@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 17:52 — Notes par session autonome
+- [ ] Onglet principal après l'archive QRC, référentiel CRM seul, anciens liens redirigés sans monter la correction.
+- [ ] Vérifier onglet actif, accès direct/retour navigateur et liens exacts vers correction ; aucune publication ni donnée modifiée.
+
 ## 11/11 17:45 — Provenance des QRC en attente
 - [x] Liens issus des passages officiels réellement retenus : session CRM de la date, date, passage, examen et apprenant ; plusieurs sources affichées séparément, classification exacte lue sur ces seules copies.
 - [x] MEMDOUH EB4 TAXI 30/10 : six QRC visibles/corrigeables en lecture admin réelle (4 nationale, 2 locale), test croisé deux sessions et navigateur ; aucune donnée ni publication.
