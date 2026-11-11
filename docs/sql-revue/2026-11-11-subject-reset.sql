@@ -21,7 +21,7 @@ DECLARE
  subject jsonb; whole jsonb; v_version_token text; track text; learner public.apprenants;
  result public.apprenant_quiz_results; answer public.reponses_apprenants; timer public.apprenant_examen_timers;
  attempt public.exam_attempts_v2; source_key text; source_attempt uuid;
- n integer; status text; reason text; v_source_token text; grant_id uuid;
+ n integer; matched integer; status text; reason text; v_source_token text; grant_id uuid;
 BEGIN
  IF auth.uid() IS NULL OR NOT (public.core_est_proprietaire(p_apprenant_id) OR public.has_role(auth.uid(),'admin')) THEN
   RAISE EXCEPTION 'Droits insuffisants.' USING ERRCODE='42501'; END IF;
@@ -55,14 +55,27 @@ BEGIN
   result.details->>'source_exercice_id',p_exam_id||'__'||p_matiere_id||CASE WHEN result.tentative>1 THEN '__t'||result.tentative ELSE '' END);
  IF source_key IS NULL OR split_part(source_key,'__',1)<>p_exam_id OR split_part(source_key,'__',2)<>p_matiere_id THEN
   RAISE EXCEPTION 'Identité source contradictoire.' USING ERRCODE='P0482'; END IF;
+ IF answer.id IS NOT NULL AND timer.id IS NOT NULL AND answer.exercice_id<>timer.exercice_id THEN
+  RAISE EXCEPTION 'Réponse et chronomètre de passages différents ; revue manuelle requise.' USING ERRCODE='P0482'; END IF;
+ IF result.id IS NOT NULL AND answer.id IS NOT NULL AND result.tentative>coalesce(substring(source_key FROM '__t([0-9]+)$')::integer,1) THEN
+  RAISE EXCEPTION 'Résultat et réponse de passages différents ; revue manuelle requise.' USING ERRCODE='P0482'; END IF;
  -- V2 proof: explicit receipt, immutable imported result id, or sole native first copy.
  IF n>0 THEN
   SELECT a.* INTO attempt FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id
    AND (a.snapshot->>'matiere'=p_matiere_id OR EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(a.snapshot->'questions','[]')) q WHERE q->>'matiere'=p_matiere_id))
    AND (EXISTS(SELECT 1 FROM public.exam_subject_retakes r WHERE r.apprenant_id=p_apprenant_id AND r.exercice_id=source_key AND r.attempt_id=a.attempt_id)
-    OR (result.id IS NOT NULL AND a.snapshot->'source_historique'->>'result_id'=result.id::text)
+    OR (result.id IS NOT NULL AND a.snapshot->'source_historique'->>'result_id'=result.id::text
+      AND result.tentative=coalesce(substring(source_key FROM '__t([0-9]+)$')::integer,1))
     OR (n=1 AND source_key=p_exam_id||'__'||p_matiere_id AND a.snapshot->>'matiere'=p_matiere_id
         AND NOT a.snapshot ? 'source_historique' AND NOT a.snapshot ? 'subject_retake_source'));
+  SELECT count(*) INTO matched FROM public.exam_attempts_v2 aWHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id
+   AND (a.snapshot->>'matiere'=p_matiere_id OR EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(a.snapshot->'questions','[]')) q WHERE q->>'matiere'=p_matiere_id))
+   AND (EXISTS(SELECT 1 FROM public.exam_subject_retakes r WHERE r.apprenant_id=p_apprenant_id AND r.exercice_id=source_key AND r.attempt_id=a.attempt_id)
+    OR (result.id IS NOT NULL AND a.snapshot->'source_historique'->>'result_id'=result.id::text
+      AND result.tentative=coalesce(substring(source_key FROM '__t([0-9]+)$')::integer,1))
+    OR (n=1 AND source_key=p_exam_id||'__'||p_matiere_id AND a.snapshot->>'matiere'=p_matiere_id
+        AND NOT a.snapshot ? 'source_historique' AND NOT a.snapshot ? 'subject_retake_source'));
+  IF matched<>1 THEN attempt.attempt_id:=NULL; END IF;
   source_attempt:=attempt.attempt_id;
  END IF;
  status:=CASE
