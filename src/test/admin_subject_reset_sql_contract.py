@@ -34,7 +34,7 @@ class Contract(unittest.TestCase):
  def seed(self,exam,mid):
   s={'id':exam,'matieres':[{'id':mid,'nom':'A T3P','duree':45,'questions':[{'id':1,'enonce':'Fictif','type':'QCM','choix':[{'id':'A','texte':'Oui','correct':True}]}]},{'id':'anglais','nom':'E Anglais','duree':30,'questions':[{'id':1,'enonce':'Other','type':'QCM'}]}]}
   self.sql(f"INSERT INTO examens_blancs_parcours(module_id,exam_id) VALUES({36 if '-TAXI' in exam else 37 if '-ta' in exam else 38 if '-va' in exam else 35},'{exam}') ON CONFLICT DO NOTHING")
-  self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES({len(exam)*100+len(mid)},'{json.dumps(s)}')")
+  self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES((SELECT coalesce(max(module_id),0)+1 FROM module_editor_state),'{json.dumps(s)}')")
  def context(self,exam,mid,uid=ADMIN):return json.loads(self.call(f"SELECT exam_subject_reset_context('{A}','{exam}','{mid}')",uid).stdout.splitlines()[-1])
  def authorize(self,c,op=None,uid=ADMIN,check=True):
   op=op or 'aaaaaaaa-1111-1111-1111-111111111111'
