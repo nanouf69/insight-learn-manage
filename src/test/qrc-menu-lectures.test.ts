@@ -1,10 +1,11 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const fixture=vi.hoisted(()=>({tables:{} as Record<string,Record<string,unknown>[]>,calls:[] as {table:string;filters:unknown[]}[]}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{from:(table:string)=>{
- let start=0,end=999;const filters:Array<[string,string,unknown]>=[];
- const q={select:()=>q,order:()=>q,eq:(k:string,v:unknown)=>{filters.push(['eq',k,v]);return q;},in:(k:string,v:unknown[])=>{filters.push(['in',k,v]);return q;},ilike:()=>q,not:(k:string,_op:string,_v:unknown)=>{filters.push(['not',k,null]);return q;},range:(a:number,b:number)=>{start=a;end=b;return q;},then:(done:(v:unknown)=>unknown)=>{
+ let start=0,end=999;let orderKey:string|null=null;const filters:Array<[string,string,unknown]>=[];
+ const q={select:()=>q,order:(k:string)=>{orderKey=k;return q;},limit:(n:number)=>{end=start+n-1;return q;},gt:(k:string,v:unknown)=>{filters.push(['gt',k,v]);return q;},eq:(k:string,v:unknown)=>{filters.push(['eq',k,v]);return q;},in:(k:string,v:unknown[])=>{filters.push(['in',k,v]);return q;},ilike:()=>q,not:(k:string,_op:string,_v:unknown)=>{filters.push(['not',k,null]);return q;},range:(a:number,b:number)=>{start=a;end=b;return q;},then:(done:(v:unknown)=>unknown)=>{
  fixture.calls.push({table,filters});
- const rows=(fixture.tables[table]??[]).filter(r=>filters.every(([op,k,v])=>op==='eq'?r[k]===v:op==='in'?(v as unknown[]).includes(r[k]):r[k]!=null));
+ const rows=(fixture.tables[table]??[]).filter(r=>filters.every(([op,k,v])=>op==='eq'?r[k]===v:op==='gt'?String(r[k])>String(v):op==='in'?(v as unknown[]).includes(r[k]):r[k]!=null));
+ if(orderKey)rows.sort((a,b)=>String(a[orderKey as string]).localeCompare(String(b[orderKey as string])));
  return Promise.resolve({data:rows.slice(start,Math.min(end+1,start+1000)),error:null}).then(done);
  }};return q;
 }}}));

@@ -79,6 +79,8 @@ export default function AdminCorrectionQrcV2Reel() {
   // Nouveaux passages signalés par le temps réel : la liste complète n'est relue que sur demande.
   const [nouveauxPassages, setNouveauxPassages] = useState(false);
   const [relectureListe, setRelectureListe] = useState(false);
+  const [catalogueLu,setCatalogueLu]=useState(false);
+  const [erreurLecture,setErreurLecture]=useState<string|null>(null);
   const [groupeCle, setGroupeCleState] = useState<string | null>(() => param("qrc_groupe"));
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
@@ -89,6 +91,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [auditVisible,setAuditVisible]=useState(false);
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [lectureCopies, setLectureCopies] = useState(false);
+  const [filtreConfirme,setFiltreConfirme]=useState<string|null>(null);
   const generationRef = useRef(0);
   const [selection, setSelectionState] = useState<string | null>(() => param("qrc"));
   const [zoom, setZoomState] = useState<number>(() => {
@@ -179,7 +182,9 @@ export default function AdminCorrectionQrcV2Reel() {
   useEffect(() => {
     void (async () => {
       try {
+        setErreurLecture(null);
         const liste = await listerGroupesCrm(mode);
+        setCatalogueLu(true);
         setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
         if (!param("qrc_groupe")) {
           setGroupeCleState(liste[0]?.cle ?? null);
@@ -191,7 +196,7 @@ export default function AdminCorrectionQrcV2Reel() {
           majUrl({ qrc_eb: g?.examens[0]?.cle ?? null });
         }
       } catch (e) {
-        setErreur((e as Error).message);
+        setErreurLecture((e as Error).message);
       }
     })();
   }, [mode]);
@@ -250,7 +255,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [archiveOuverte, setArchiveOuverte] = useState<ArchivePassage | null>(null);
   useEffect(() => {
     const mots = rechercheNorm.split(" ").filter((m) => m.length >= 2);
-    if (!mots.length) { setArchivesTrouvees([]); return; }
+    if ((vueTravail!=='historique'&&vueTravail!=='verifier') || !mots.length) { setArchivesTrouvees([]); return; }
     let annule = false;
     const t = setTimeout(async () => {
       try {
@@ -281,7 +286,7 @@ export default function AdminCorrectionQrcV2Reel() {
       } catch { if(!annule) setErreur("Lecture complète des archives impossible : réessayez."); }
     }, 300);
     return () => { annule = true; clearTimeout(t); };
-  }, [rechercheNorm]);
+  }, [rechercheNorm,vueTravail]);
 
   const catalogueAttempts = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null;
   const attemptsBase = catalogueAttempts?.filter(id=>!id.startsWith('ancien:'))??null;
@@ -313,6 +318,7 @@ export default function AdminCorrectionQrcV2Reel() {
     return () => { cancelled = true; };
   }, [passageLegacyKey]);
 
+  const filtreLecture=JSON.stringify([mode,groupeCle,ebCle,jourFiltre,cleAttempts]);
   // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
     const generation = ++generationRef.current;
@@ -321,22 +327,26 @@ export default function AdminCorrectionQrcV2Reel() {
     if (attemptsAffiches.length === 0) {
       const vide = { tentatives: [], qrc: [], resultats: [], baremesRestaures: [] } as SessionReelle;
       setSession(vide);
+      setFiltreConfirme(filtreLecture);
+      setErreurLecture(null);
       setLectureCopies(false);
       return vide;
     }
     setLectureCopies(true);
+    setErreurLecture(null);
     try {
       const relue = await chargerSessionTest(mode, attemptsAffiches);
       if (generation !== generationRef.current) return null;
       setSession(relue);
+      setFiltreConfirme(filtreLecture);
       return relue;
     } catch (e) {
-      if (generation === generationRef.current) setErreur((e as Error).message);
+      if (generation === generationRef.current) setErreurLecture((e as Error).message);
       return null;
     } finally {
       if (generation === generationRef.current) setLectureCopies(false);
     }
-  }, [mode, attemptsAffiches]);
+  }, [mode, attemptsAffiches,filtreLecture]);
 
   useEffect(() => {
     const lectures = generationRef;
@@ -385,12 +395,15 @@ export default function AdminCorrectionQrcV2Reel() {
     setRelectureListe(true);
     try {
       const liste = await listerGroupesCrm(mode);
+      setCatalogueLu(true);
+      setErreurLecture(null);
       setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
+      if(!groupeCle){const g=liste[0];setGroupeCleState(g?.cle??null);setEbCleState(g?.examens[0]?.cle??null);}
       // Catalogue inchangé : les notes des copies affichées sont tout de même relues
       // (notes IA/humaines modifiées pendant une coupure du temps réel).
       const relue = await rechargerRef.current?.();
       if (relue !== null) { setNouveauxPassages(false); setErreur(null); }
-    } catch (e) { setErreur((e as Error).message); }
+    } catch (e) { setErreurLecture((e as Error).message); }
     finally { actualisationEnCoursRef.current = false; setRelectureListe(false); }
   };
 
@@ -1139,7 +1152,7 @@ export default function AdminCorrectionQrcV2Reel() {
               ⚠️ {nbIndetermines} candidat(s) sans session CRM déterminée · {nbConflits} candidat(s) avec des sessions CRM qui se chevauchent (aucun choix automatique).
             </p>
           )}
-          {groupes.length === 0 && !erreur && (
+          {!catalogueLu && !erreurLecture && (
             <p className="text-xs text-muted-foreground" data-testid="chargement-liste">Lecture des sessions et des copies en cours…</p>
           )}
           {groupes.length > 0 && (
@@ -1154,6 +1167,8 @@ export default function AdminCorrectionQrcV2Reel() {
           {auditVisible&&mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
+        {erreurLecture&&<section role="alert" className="space-y-2 py-4"><p className="text-destructive">Chargement des notes interrompu — Réessayer</p><p className="text-xs text-muted-foreground">{erreurLecture}</p>{session&&filtreConfirme===filtreLecture&&<p>Dernière grille confirmée pour ce filtre — actualisation non confirmée.</p>}<Button variant="outline" disabled={lectureCopies||relectureListe} onClick={()=>void (catalogueLu?recharger():actualiserListe())}>Réessayer</Button></section>}
+        {!erreurLecture&&(!catalogueLu||lectureCopies)&&<p role="status" className="py-4 text-muted-foreground">Chargement des notes…</p>}
         {(vueTravail==='historique'||vueTravail==='verifier')&&archiveOuverte ? (
           <div style={{ zoom: `${zoom}%` }} data-testid="archive-ouverte">
             <div className="mb-2 flex items-center gap-2 text-sm">
@@ -1169,8 +1184,8 @@ export default function AdminCorrectionQrcV2Reel() {
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {(vueTravail==='historique'||vueTravail==='verifier')&&(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
         {(vueTravail==='historique'||vueTravail==='verifier')&&!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
-        {vueTravail==='verifier'&&<section aria-label="File des questions" className="divide-y divide-border">{!lectureCopies&&fileVisible.length===0&&<p className="py-6 text-muted-foreground">Aucune QRC à vérifier</p>}{fileVisible.map(q=>{const t=parTentative.get(q.attempt_id);const question=t?.snapshot.questions.find(x=>x.id===q.question_id);const bareme=question?.points??baremeRestaureDe.get(q.qrc_instance_id)?.bareme;return <article key={q.qrc_instance_id} className="space-y-2 py-4"><p className="text-sm font-semibold">{t?.candidat} · {t?.exam_id} · {t?.snapshot.matieres.map(m=>m.titre).join(' / ')} · Tentative {t?numeroTentative(t):'non prouvée'}</p><h2 className="font-medium">{question?.enonce??'Question non prouvée'}</h2><p className="whitespace-pre-wrap break-words">{texte(q.reponseComplete??q.reponse)||'Sans réponse'}</p><p className="text-sm text-muted-foreground">Barème : {bareme??'non prouvé'}{bareme!=null?' points':''}</p><p className="text-warning text-sm">À vérifier — consultation seule, notation indisponible.</p></article>;})}</section>}
-        {(vueTravail==='corriger'||vueTravail==='valider')&&!lectureCopies&&fileVisible.length===0&&<div className="py-6 space-y-2"><p className="text-muted-foreground">{vueTravail==='corriger'?'Aucune question à corriger':'Aucune question à valider'}</p><Button size="sm" variant="outline" onClick={()=>{setVueTravail('toutes');setSelection(null);}}>Toutes les notes</Button></div>}
+        {vueTravail==='verifier'&&<section aria-label="File des questions" className="divide-y divide-border">{catalogueLu&&session!==null&&filtreConfirme===filtreLecture&&!erreurLecture&&!lectureCopies&&fileVisible.length===0&&<p className="py-6 text-muted-foreground">Aucune QRC à vérifier</p>}{fileVisible.map(q=>{const t=parTentative.get(q.attempt_id);const question=t?.snapshot.questions.find(x=>x.id===q.question_id);const bareme=question?.points??baremeRestaureDe.get(q.qrc_instance_id)?.bareme;return <article key={q.qrc_instance_id} className="space-y-2 py-4"><p className="text-sm font-semibold">{t?.candidat} · {t?.exam_id} · {t?.snapshot.matieres.map(m=>m.titre).join(' / ')} · Tentative {t?numeroTentative(t):'non prouvée'}</p><h2 className="font-medium">{question?.enonce??'Question non prouvée'}</h2><p className="whitespace-pre-wrap break-words">{texte(q.reponseComplete??q.reponse)||'Sans réponse'}</p><p className="text-sm text-muted-foreground">Barème : {bareme??'non prouvé'}{bareme!=null?' points':''}</p><p className="text-warning text-sm">À vérifier — consultation seule, notation indisponible.</p></article>;})}</section>}
+        {(vueTravail==='corriger'||vueTravail==='valider')&&catalogueLu&&session!==null&&filtreConfirme===filtreLecture&&!erreurLecture&&!lectureCopies&&fileVisible.length===0&&<div className="py-6 space-y-2"><p className="text-muted-foreground">{vueTravail==='corriger'?'Aucune question à corriger':'Aucune question à valider'}</p><Button size="sm" variant="outline" onClick={()=>{setVueTravail('toutes');setSelection(null);}}>Toutes les notes</Button></div>}
         {vueTravail!=='verifier'&&matieres.map((m) => {
           const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => !t.consultationSeule&&(!passageFiltre || t.attempt_id === passageFiltre) &&
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id)&&
