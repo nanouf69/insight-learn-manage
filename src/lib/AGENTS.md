@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Effective reset read adapters remain disconnected until all readers and refresh paths are approved; why: a passing isolated projection cannot establish coherent production displays.
 - Previous EB summaries resolve each older result through its exact official publication evidence and label single/partial subject coverage; admin copy-selection previews never persist or override latest-tentative defaults. Why: legacy pending grades and correction dates must not masquerade as historical exam averages.
 - FC paper attendance remains separate immutable document-linked admin evidence per inscription/date/slot; live missing-slot reads merge it without synthetic images, original timestamps or frozen milestone changes.
 - EB first-passage QRC statistics use the submitted qrc_instances_v2 copy and frozen points, with human correction priority or an exactly matching applied AI receipt; full marks = success, pending/retakes stay unproven, never grade the first keystroke; why: typing events are not submitted answers and unvalidated corrections cannot invent failure rates.

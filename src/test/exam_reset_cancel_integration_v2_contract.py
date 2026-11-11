@@ -52,6 +52,13 @@ class Integration(base.Integrated):
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_retake_authorizations WHERE reset_id='{reset}' AND consumed_at IS NULL"),'1')
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_attempts_v2 WHERE snapshot->>'reset_authorization_id'=(SELECT id::text FROM exam_retake_authorizations WHERE reset_id='{reset}')"),'0')
   self.assertEqual(self.scalar("SELECT count(*) FROM _effets_externes"),'0')
+ def test_05_other_owner_cannot_read_restore_or_see_qrc(self):
+  other='77777777-7777-4777-8777-777777777777';uid='88888888-8888-4888-8888-888888888888'
+  self.sql(f"INSERT INTO auth.users(id,email) VALUES('{uid}','other@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{other}','{uid}','OTHER','FICTIF','other@example.invalid')")
+  self.assertEqual(self.api("SELECT count(*) FROM core_exam_reset_cancellations",uid).stdout.strip().splitlines()[-1],'0')
+  self.assertEqual(self.api("SELECT count(*) FROM qrc_instances_v2",uid).stdout.strip().splitlines()[-1],'0')
+  reset=self.scalar(f"SELECT reset_id FROM core_exam_resets WHERE exam_id='EB3-TAXI' AND apprenant_id='{A}'")
+  self.assertNotEqual(self.api(f"SELECT admin_exam_reset_cancel_context('{A}','{reset}')",uid,False).returncode,0)
  def test_02_legacy_timer_new_start_refuses_restoration(self):
   exam='EB4-TAXI';reset,before=self.setup_exam(exam)
   out=self.api(f"SELECT start_or_get_exam_timer('{A}','{exam}__t3p__t2',1800,2)",U,False)
@@ -82,6 +89,6 @@ class Integration(base.Integrated):
   self.assertEqual(self.scalar("SELECT count(*) FROM _effets_externes"),'0')
 if __name__=='__main__':
  # Load only new scenarios; no inherited acquired tests.
- suite=unittest.TestSuite(Integration(n) for n in ['test_01_seven_copies_restored_reads_and_v2_no_cancelled_grant','test_02_legacy_timer_new_start_refuses_restoration','test_03_legacy_start_wins_concurrent_cancel','test_04_restoration_wins_legacy_start_does_not_consume_cancelled_grant'])
+ suite=unittest.TestSuite(Integration(n) for n in ['test_01_seven_copies_restored_reads_and_v2_no_cancelled_grant','test_02_legacy_timer_new_start_refuses_restoration','test_03_legacy_start_wins_concurrent_cancel','test_04_restoration_wins_legacy_start_does_not_consume_cancelled_grant','test_05_other_owner_cannot_read_restore_or_see_qrc'])
  result=unittest.TextTestRunner(verbosity=2).run(suite)
  raise SystemExit(not result.wasSuccessful())
