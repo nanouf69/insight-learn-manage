@@ -42,6 +42,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
+import { CourseMediaActions } from './CourseMediaActions';
+import { CourseDescription } from './CourseDescription';
 import { saveModuleCompletion, isCompletionDone, wasLastCompletionRefusedIncomplete, lastCompletionRefusalText } from "@/lib/moduleCompletion";
 import {
   buildExerciceId,
@@ -3936,7 +3938,20 @@ function RichDescriptionEditor({ value, onChange }: { value: string; onChange: (
           <button type="button" onClick={() => exec("removeFormat")} className="px-2 py-1 text-xs rounded border bg-background hover:bg-accent" title="Effacer le formatage">✕</button>
         </div>
       </div>
+      <div className="p-2 border-b">
+        <CourseMediaActions onInsert={markup => {
+          if (!ref.current) return;
+          ref.current.insertAdjacentHTML('beforeend', markup);
+          emit();
+        }} />
+      </div>
       <div ref={ref} contentEditable suppressContentEditableWarning
+        role="textbox" aria-label="Description / Contenu détaillé" aria-multiline="true"
+        onPaste={e => {
+          e.preventDefault();
+          document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+          emit();
+        }}
         onInput={emit}
         className="min-h-[200px] p-3 text-sm outline-none whitespace-pre-wrap" />
     </div>
@@ -3944,7 +3959,7 @@ function RichDescriptionEditor({ value, onChange }: { value: string; onChange: (
 }
 
 // ===== Éditeur inline pour un cours =====
-function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void; onPersist?: (updated: ContentItem) => void }) {
+export function CoursEditor({ item, onSave, onCancel, onPersist }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void; onPersist?: (updated: ContentItem) => void }) {
   const [titre, setTitre] = useState(item.titre);
   const [sousTitre, setSousTitre] = useState(item.sousTitre || "");
   const [description, setDescription] = useState(item.description || "");
@@ -4221,7 +4236,7 @@ const ContentCard = ({
           )}
 
           {item.description && (
-            <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto" dangerouslySetInnerHTML={{ __html: item.description }} />
+            <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto"><CourseDescription value={item.description} /></div>
           )}
         </div>
         {/* Photos du cours */}
@@ -8566,12 +8581,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           <CardContent className="p-5 space-y-2">
             <h4 className="font-bold text-lg">{cours.titre}</h4>
             {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
-            {cours.description && (
-              <div
-                className="text-sm whitespace-pre-line leading-relaxed mt-2"
-                dangerouslySetInnerHTML={{ __html: cours.description }}
-              />
-            )}
+            {cours.description && <CourseDescription value={cours.description} />}
             {Array.isArray(cours.images) && cours.images.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                 {cours.images.map((url, i) => (
