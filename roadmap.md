@@ -1698,7 +1698,8 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 ## 11/11 — Accès EB unitaire (préparation sans écriture réelle)
 - [x] Diagnostic catalogue serveur en SELECT : contrôle unitaire/groupé et journal absents.
 - [x] Dissocier une seule session du groupé, garder confirmation et relecture exactes.
-- [ ] Exécuter tests fictifs UI/SQL et vérifier aperçu ; installation réelle hors autorisation de ce tour.
+- [x] 43 tests UI/transport, 16 contrats SQL jetables et aperçu PC/mobile fictif ; admin réel lecture seule confirme le blocage serveur.
+- [ ] Installation réelle bloquée par absence d’accord séparé et prévol de compatibilité serveur ; aucune migration/publication dans ce tour.
 
 ## 10/11 — Notes historiques EB2 VTC dans le correcteur (accord explicite)
 - [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
