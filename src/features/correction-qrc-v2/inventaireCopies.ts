@@ -1,6 +1,7 @@
 // Inventaire exhaustif des copies d'Examens Blancs pour le correcteur unique.
 // Pur et testable : aucune lecture, aucune écriture. Une copie terminée n'est jamais
 // exclue silencieusement : soit elle est affichée, soit elle sort dans `manquantes` avec sa cause.
+import {proveNativeMirrors,type MirrorResult,type MirrorAttempt} from './preuveMiroir';
 
 export type ResultatHistoriqueMin = {
   id: string;
@@ -42,42 +43,19 @@ export function resultatsAncienCircuit<T extends ResultatHistoriqueMin>(resultat
   });
 }
 
-const textesQrc = (reponses: unknown): string[] =>
-  !reponses || typeof reponses !== "object" || Array.isArray(reponses) ? []
-    : Object.values(reponses as Record<string, unknown>).filter((v): v is string => typeof v === "string" && v.trim().length > 0).sort();
-
-const texteV2 = (v: unknown): string | null => (typeof v === "string" && v.trim().length > 0 ? v : null);
-
 /**
  * Copies historiques écrites en miroir d'un passage V2 natif (même élève, même examen, même matière,
  * passage V2 terminé) dont TOUTES les réponses QRC texte sont strictement identiques.
  * Preuve par contenu exact, jamais par fenêtre de temps ; ambigu (plusieurs passages) = pas un miroir.
  */
 export function miroirsV2Prouves(
-  resultats: Array<ResultatHistoriqueMin & { matiere_id?: string | null; rep?: unknown }>,
-  tentatives: Array<TentativeV2Min & { matiere?: string | null }>,
+  resultats: MirrorResult[],
+  tentatives: MirrorAttempt[],
   qrcV2: Array<{ attempt_id: string; reponse: unknown }>,
+  answers: Array<{attempt_id:string;question_id:string;valeur:unknown}>=[],
 ): Set<string> {
-  const textes = new Map<string, string[]>();
-  for (const q of qrcV2) {
-    const t = texteV2(q.reponse);
-    if (t != null) (textes.get(q.attempt_id) ?? textes.set(q.attempt_id, []).get(q.attempt_id)!).push(t);
-  }
-  const parCle = new Map<string, string[]>();
-  for (const t of tentatives) {
-    if (t.rid || t.etat !== "terminee" || !t.matiere) continue;
-    const k = `${t.apprenant_id}|${t.exam_id}|${t.matiere}`;
-    (parCle.get(k) ?? parCle.set(k, []).get(k)!).push(t.attempt_id);
-  }
-  const out = new Set<string>();
-  for (const r of resultats) {
-    const l = textesQrc(r.rep);
-    if (!l.length || !r.matiere_id) continue;
-    const cands = (parCle.get(`${r.apprenant_id}|${r.quiz_id}|${r.matiere_id}`) ?? [])
-      .filter((a) => { const v = [...(textes.get(a) ?? [])].sort(); return v.length === l.length && v.every((x, i) => x === l[i]); });
-    if (cands.length === 1) out.add(r.id);
-  }
-  return out;
+  void qrcV2;
+  return proveNativeMirrors(resultats,tentatives,answers).mirrors;
 }
 
 /** Nombre de réponses texte non vides (QRC) dans une copie historique. */
@@ -112,10 +90,10 @@ export function inventaireAttendu(params: {
     if (params.exclus.has(t.apprenant_id) || t.etat !== "terminee" || params.neutralises.has(t.attempt_id)) continue;
     if (!estExamenBlancReel(t.exam_id)) continue;
     const n = params.qrcParTentative.get(t.attempt_id) ?? 0;
-    if (n > 0) out.push({ cle: t.attempt_id, apprenant_id: t.apprenant_id, exam_id: t.exam_id, circuit: "v2", qrc: n, date: null });
+    out.push({ cle: t.attempt_id, apprenant_id: t.apprenant_id, exam_id: t.exam_id, circuit: "v2", qrc: n, date: null });
   }
   for (const r of params.resultats) {
-    if (params.exclus.has(r.apprenant_id) || !r.completed_at || !estExamenBlancReel(r.quiz_id) || migres.has(r.id) || r.qrc <= 0) continue;
+    if (params.exclus.has(r.apprenant_id) || !r.completed_at || !estExamenBlancReel(r.quiz_id) || migres.has(r.id)) continue;
     const circuit = estEb2Vtc(r.quiz_id) ? "consultation" : "ancien";
     out.push({ cle: cleAffichage(circuit, r.id), apprenant_id: r.apprenant_id, exam_id: r.quiz_id, circuit, qrc: r.qrc, date: r.completed_at });
   }

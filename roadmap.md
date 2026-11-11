@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 14:17 — Miroirs QCM/QRC catalogue
+- [ ] Provenance double écriture et rapprochement strict copie/contenu/réponses ; ambigu conservé.
+- [ ] Catalogue/compteur même preuve + régressions QCM/QRC/tentatives collisions.
+- [ ] SELECT avant/après Mamadou EB4 et copies récentes ; aucune donnée modifiée/publication.
+
 ## 11/11 14:06 — Annulation reset : intégration isolée
 - [x] Sélection V2 sans grant annulé et sérialisation timer/INSERT anciens préparées/testées ; matière ancien complet + UPDATE concurrents restent NON PROUVÉS.
 - [x] 5 scénarios fictifs SQL + 2 vrais lecteurs TS PASS : archivage/restauration/sept notes/QRC/admin/élève/isolation ; aucune répétition des tests acquis.
