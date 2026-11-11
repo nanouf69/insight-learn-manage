@@ -73,7 +73,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
           // A later retake must never remove the independently proven first copy.
           if(evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id)) continue;
           const submitted=a.etat==='terminee' && !!a.finished_at && Number.isFinite(Date.parse(a.finished_at));
-          const correct=submitted && copies.length===1 ? gradeQrc(q,frozen.length===1?frozen[0]:undefined,copy,evidence.qrcIa??[]) : null;
+          const correct=(a.snapshot.tentative??1)===1 && submitted && copies.length===1 ? gradeQrc(q,frozen.length===1?frozen[0]:undefined,copy,evidence.qrcIa??[]) : null;
           observations.push({at:a.started_at,correct,answer:copy.reponse,detail:{passage:a.attempt_id,exam:a.exam_id,subject,version:a.exam_version_id, tentative:a.snapshot.tentative??null,expected:frozen[0]?.reponseQRC,points:frozen[0]?.points,reason:correct===null?(submitted?"QRC non notée ou correction / barème non prouvé":"Passage non remis"):undefined}});
           continue;
         }
@@ -83,7 +83,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         const retake=evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id);
         const authUserId=evidence.accounts.find(account=>account.id===learner)?.auth_user_id;
         // Le trigger enregistre INSERT avec revision_precedente NULL et l'auteur avec auth.uid().
-        const proven=a.etat==='terminee' && !!a.finished_at && Number.isFinite(Date.parse(a.finished_at)) && first.created_at<=a.finished_at && !retake && frozen.length===1 && !!authUserId && first.auteur===authUserId && first.revision_precedente==null && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
+        const proven=(a.snapshot.tentative??1)===1 && a.etat==='terminee' && !!a.finished_at && Number.isFinite(Date.parse(a.finished_at)) && first.created_at<=a.finished_at && !retake && frozen.length===1 && !!authUserId && first.auteur===authUserId && first.revision_precedente==null && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
         observations.push({at:first.created_at,correct:proven?grade(q,frozen[0],first.valeur_nouvelle):null,answer:first.valeur_nouvelle,detail:{passage:a.attempt_id,exam:a.exam_id,subject,version:a.exam_version_id,tentative:a.snapshot.tentative??null,expected:frozen[0]?.choix?.filter(c=>c.correct===true).map(c=>c.lettre),points:frozen[0]?.points,reason:a.etat!=="terminee"?"Passage non remis":"Première révision, identité ou contenu figé non prouvé"}});
       }
       for (const exam of examIds) {
@@ -98,7 +98,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
             // Typing/drafts are not submitted QRC observations. The native copy
             // owns its correction; its legacy mirror cannot invalidate that proof.
             if(row.status!=='submitted' || !row.submitted_at) continue;
-            const mirrored=attempts.some(a=>a.exam_id===exam && a.etat==='terminee' && a.finished_at===row.submitted_at && evidence.qrc?.some(c=>c.attempt_id===a.attempt_id && c.apprenant_id===learner && c.question_id===`${subject}:${q.id}` && same(c.reponse,answer)));
+            const mirrored=false; // Only the complete strict mirror proof above can suppress a source row.
             if(!mirrored) observations.push({at:row.submitted_at,correct:null,answer,detail:{passage:row.exercice_id,exam,subject,tentative:row.tentative,reason:"QRC historique sans correction native prouvée"}});
             continue;
           }
@@ -116,7 +116,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         if(resultOnly && q.type!=='QRC')uncertain=true;
         if(q.type==='QRC') for(const r of resultsWithoutMirrors.filter(r=>r.apprenant_id===learner && r.quiz_id===exam && r.matiere_id===subject && hasAnswer(r.details?.reponses?.[String(q.id)]))) {
           const answer=r.details?.reponses?.[String(q.id)];
-          const mirrored=attempts.some(a=>a.exam_id===exam && a.etat==='terminee' && a.finished_at===r.completed_at && evidence.qrc?.some(c=>c.attempt_id===a.attempt_id && c.apprenant_id===learner && c.question_id===`${subject}:${q.id}` && same(c.reponse,answer)));
+          const mirrored=false; // Strict full-copy mirrors were removed before this loop.
           if(!mirrored) observations.push({at:r.completed_at,correct:null,answer,detail:{passage:r.id,exam,subject,tentative:r.tentative,version:r.id,reason:"Correction historique non prouvée"}});
         }
         const imported=evidence.attempts.some(a=>a.apprenant_id===learner && a.exam_id===exam && !a.is_test && a.snapshot.source_historique && a.snapshot.questions?.some(f=>f.matiere===subject && String(f.id)===String(q.id)) && evidence.states?.some(s=>s.attempt_id===a.attempt_id && s.apprenant_id===learner && s.question_id===String(q.id) && hasAnswer(s.valeur)) && !rows.some(row=>hasAnswer(row.reponses?.[String(q.id)])));
