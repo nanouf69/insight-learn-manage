@@ -171,8 +171,8 @@ describe("Correction QRC — passage automatique après confirmation de persista
     mocks.charger.mockRejectedValueOnce(new Error('canceling statement due to statement timeout'));
     render(ecran());await screen.findByText('Chargement des notes interrompu — Réessayer');
     expect(screen.queryByText('Aucune question à corriger')).toBeNull();expect(screen.queryByTestId('matrice-A')).toBeNull();
-    fireEvent.click(screen.getByRole('button',{name:'Réessayer',exact:true}));await screen.findByTestId('matrice-A');
-    fireEvent.click(screen.getByRole('button',{name:'Toutes les notes',exact:true}));expect(screen.getByTestId('cellule-a1-q1')).toBeInTheDocument();expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'Réessayer'}));await screen.findByTestId('matrice-A');
+    fireEvent.click(screen.getByRole('button',{name:'Toutes les notes'}));expect(screen.getByTestId('cellule-a1-q1')).toBeInTheDocument();expect(mocks.corriger).not.toHaveBeenCalled();
   });
   it('lecture permissions refusée ne devient jamais file vide',async()=>{
     mocks.charger.mockRejectedValueOnce(new Error('permission denied'));render(ecran());await screen.findByRole('alert');
