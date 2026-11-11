@@ -184,7 +184,7 @@ export default function AdminCorrectionQrcV2Reel() {
     modifierCommentaire(ajouterCommentaireQrc(commentaireCourant, texte));
   };
 
-  useEffect(()=>{let alive=true;void listerChoixSessionsCrm().then(rows=>{if(!alive)return;setChoixSessions(rows);setChoixLus(true);if(!param('qrc_groupe')&&rows.length){const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Paris'});const g=rows.find(g=>g.debut&&g.fin&&g.debut<=today&&g.fin>=today)??rows[0];setGroupeCleState(g.cle);}}).catch(e=>{if(alive){setErreurLecture(e.message);setChoixLus(true);}});return()=>{alive=false};},[mode]);
+  useEffect(()=>{let alive=true;void listerChoixSessionsCrm().then(rows=>{if(!alive)return;setChoixSessions(rows);setChoixLus(true);if(!param('qrc_groupe')&&rows.length){const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Paris'});const g=rows.find(g=>g.debut&&g.fin&&g.debut<=today&&g.fin>=today)??rows[0];setGroupeCleState(g.cle);majUrl({qrc_groupe:g.cle});}}).catch(e=>{if(alive){setErreurLecture(e.message);setChoixLus(true);}});return()=>{alive=false};},[mode]);
   useEffect(()=>{
     if(!choixLus)return;
     let alive=true;setCatalogueLu(false);setErreurLecture(null);
@@ -192,7 +192,7 @@ export default function AdminCorrectionQrcV2Reel() {
       if(!alive)return;setCatalogueLu(true);setGroupes(liste);
       const g=groupeCle===TOUS_GROUPES?groupeTousPassages(liste):liste.find(g=>g.cle===groupeCle)??liste[0];
       if(!groupeCle&&g){setGroupeCleState(g.cle);}
-      if(!g?.examens.some(e=>e.cle===ebCle)){setEbCleState(g?.examens[0]?.cle??null);}
+      if(!g?.examens.some(e=>e.cle===ebCle)){setEbCleState(g?.examens[0]?.cle??null);majUrl({qrc_eb:g?.examens[0]?.cle??null});}
     }).catch(e=>{if(alive){setErreurLecture(e.message);if(groupeCle===TOUS_GROUPES)setErreurGlobale(e.message);}});
     return()=>{alive=false};
   },[mode,groupeCle,choixLus]);
