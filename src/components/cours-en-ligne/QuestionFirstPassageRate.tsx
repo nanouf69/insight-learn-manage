@@ -39,7 +39,7 @@ export function QuestionFirstPassageRate({questionId,presentation='inline'}:{que
   const view=data ? selectFirstPassageView(data,filter,sessionId) : null;
   const sessions=view?.sessions ?? [];
   const r=view?.rates[String(questionId)];
-  const court=(r:QuestionRate)=>exam && r.total===0 && r.unknown>0 ? 'données insuffisantes' : r.total ? `${Math.round(r.incorrect/r.total*100)} % (${r.incorrect}/${r.total})` : 'aucune réponse';
+  const court=(r:QuestionRate)=>r.total===0 && r.unknown>0 ? 'données insuffisantes' : r.total ? `${Math.round(r.incorrect/r.total*100)} % (${r.incorrect}/${r.total})` : 'aucune réponse';
 
   const selected=sessions.find(s=>s.id===detailSession);
   const detailRate=selected?data?.sessionRates[selected.id]?.[String(questionId)]:undefined;
