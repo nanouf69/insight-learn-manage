@@ -109,6 +109,7 @@ export default function AdminCorrectionQrcV2Reel() {
     majUrl({ qrc_groupe: cle, qrc_eb: first ?? null, qrc_date: null, qrc: null, qrc_passage: null });
   };
   const setEbCle = (cle: string | null) => {
+    if (cle === ebCle) return;
     setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
