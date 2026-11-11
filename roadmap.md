@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 12:45 — Jeu de classement comptable GESTION
+- [ ] Ajouter classement glissé/tactile, hypothèses explicites, feedback/score/rejeu et calcul amortissement ; exemples indépendants et bilan net équilibré.
+- [ ] Suivi facultatif versionné via file existante, sans notes/jalons ni modification des exercices ; tests fictifs PC/mobile et compte rendu, aucun déploiement.
+
 ## 11/11 12:32 — Arezki autorisation EB3 A déjà accordée
 - [x] SELECT : autorisation inutilisée, tokens source/version concordants, copie abandonnée sans réponse/résultat/reçu ; état inchangé après tests.
 - [x] Dialogue CRM clarifié : confirmation déjà enregistrée + Fermer, sans bouton mort ; 22 tests UI, 14+9 contrats PostgreSQL et vrai PassageMatiere fictif PC/mobile exécutés. Aperçu seulement, aucun déploiement.
