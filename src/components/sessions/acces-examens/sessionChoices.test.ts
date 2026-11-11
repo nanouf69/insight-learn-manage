@@ -1,0 +1,18 @@
+import {describe,it,expect} from 'vitest';
+import {sessionChoices,sessionChoiceLabel,nextParisDayDelay,parisDay,type AccessSession} from './sessionChoices';
+const now=new Date('2026-11-11T13:42:00Z');
+const catalog=[{exam_id:'EB3',module_id:35},{exam_id:'EB3-TAXI',module_id:36},{exam_id:'eb3-ta',module_id:37},{exam_id:'eb3-va',module_id:38}];
+const session=(id:string,changes:Partial<AccessSession>={}):AccessSession=>({id,nom:id,date_debut:'2026-11-01',date_fin:'2026-11-20',type_session:'theorique',types_apprenant:['VTC'],...changes});
+describe('sessions accès EB — display scope',()=>{
+ it('excludes ended presential dates',()=>{expect(sessionChoices([session('past',{date_fin:'2026-11-10'})],'EB3',catalog,now)).toHaveLength(0);});
+ it('inclusive start and end in Paris',()=>{expect(sessionChoices([session('start',{date_debut:'2026-11-11'}),session('end',{date_fin:'2026-11-11'})],'EB3',catalog,now).map(s=>s.current)).toEqual([true,true]);});
+ it('Paris day differs from UTC before midnight',()=>{const n=new Date('2026-11-10T23:30:00Z');expect(sessionChoices([session('today',{date_debut:'2026-11-11',date_fin:'2026-11-11'})],'EB3',catalog,n)[0]?.current).toBe(true);});
+ for(const value of ['E-learning VTC','E learning','distanciel','cours en ligne','online'])it(`excludes ${value} current and future`,()=>{expect(sessionChoices([session('remote',{nom:value}),session('remote-future',{nom:value,date_debut:'2027-01-01',date_fin:'2027-01-10'})],'EB3',catalog,now)).toHaveLength(0);});
+ for(const track of ['VTC-E','VTC E','VTC-elearning'])it(`excludes track ${track}`,()=>{expect(sessionChoices([session('remote-track',{types_apprenant:['VTC',track]})],'EB3',catalog,now)).toHaveLength(0);});
+ it('keeps presentiel E labels (not remote sessions)',()=>{expect(sessionChoices([session('in-person',{types_apprenant:['VTC E Présentiel']})],'EB3',catalog,now)).toHaveLength(1);});
+ it('matches same server catalog including cross-track only',()=>{const taxi=session('taxi',{types_apprenant:['TAXI','TA']});expect(sessionChoices([taxi],'EB3',catalog,now)).toHaveLength(1);expect(sessionChoices([session('vtc')],'EB3-TAXI',catalog,now)).toHaveLength(0);expect(sessionChoices([taxi],'eb3-ta',catalog,now)).toHaveLength(1);expect(sessionChoices([taxi],'eb3-va',catalog,now)).toHaveLength(0);});
+ it('unknown exam/catalog/date/type fails closed',()=>{expect(sessionChoices([session('valid')],'unknown',catalog,now)).toHaveLength(0);expect(sessionChoices([session('no-date',{date_fin:null}),session('reverse',{date_fin:'2026-01-01'}),session('practice',{type_session:'pratique'})],'EB3',catalog,now)).toHaveLength(0);});
+ it('current first, future chronological, no arbitrary selection',()=>{const rows=[session('later',{date_debut:'2027-02-01',date_fin:'2027-02-10'}),session('current-b'),session('soon',{date_debut:'2027-01-01',date_fin:'2027-01-10'}),session('current-a')];expect(sessionChoices(rows,'EB3',catalog,now).map(s=>s.id)).toEqual(['current-a','current-b','soon','later']);});
+ it('UUID remains key, not label',()=>{const s=session('1234-uuid',{nom:'VTC SOIR'});const c=sessionChoices([s],'EB3',catalog,now)[0];expect(c.id).toBe('1234-uuid');expect(sessionChoiceLabel(c)).not.toContain('1234-uuid');expect(sessionChoiceLabel(c)).toContain('En cours');});
+ it('one shot boundary handles Paris DST days',()=>{for(const n of [now,new Date('2026-03-28T23:00:00Z'),new Date('2026-10-24T22:00:00Z')]){const delay=nextParisDayDelay(n);expect(parisDay(new Date(n.getTime()+delay))).not.toBe(parisDay(n));expect(delay).toBeGreaterThan(0);expect(delay).toBeLessThanOrEqual(26*3600_000);}});
+});

@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 13:42 — Sélecteur sessions accès EB
+- [x] Sessions présentielles compatibles en cours/futures seules, catalogue existant, tri Paris inclusif, Select accessible, rouge en cours et aucun UUID/préchoix.
+- [x] 31 tests PASS, PC/mobile fixture liste ouverte et invalidation immédiate vérifiés ; aucune mutation/migration/publication. Rapport docs/session-exam-access-selecteur-2026-11-11.md ; UI admin authentifiée réelle non testée, serveur candidat toujours non installé.
+
 ## 11/11 13:37 — Annulation ciblée d’un reset / Examens archivés
 - [x] Onglet admin/confirmation exacte en aperçu, enregistrement toujours désactivé, aucun reset réel.
 - [x] Candidat séparé append-only + trois projections préparé, 28 contrats jetables PASS et 17 Vitest PASS ; non installé.
