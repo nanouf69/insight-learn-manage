@@ -1256,6 +1256,7 @@ function CorrectionQrcReelle() {
                   style={{ minWidth: `${largeurMinimaleMatrice(questions.length)}rem` }}
                 >
                   <colgroup>
+                    <col style={{ width: `${LARGEURS_MATRICE.numero}rem` }} />
                     <col style={{ width: `${LARGEURS_MATRICE.candidat}rem` }} />
                     <col style={{ width: `${LARGEURS_MATRICE.passage}rem` }} />
                     <col style={{ width: `${LARGEURS_MATRICE.note}rem` }} />
@@ -1263,7 +1264,8 @@ function CorrectionQrcReelle() {
                   </colgroup>
                   <thead>
                     <tr className="border-b">
-                      <th className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-left`}>Candidat</th>
+                      <th className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-center`}>N°</th>
+                      <th style={{ left: `${LARGEURS_MATRICE.numero}rem` }} className={`${panneauOuvert ? "" : "md:sticky md:z-[1]"} bg-background px-1 py-0.5 text-left`}>Candidat</th>
                       <th className="px-1 py-0.5 text-left">Passage</th>
                       <th className="px-1 py-0.5 text-left whitespace-nowrap">Note /20</th>
                       {questions.map((q, i) => <th key={q.id} className="px-0.5 py-0.5 text-center" title={`QRC ${i + 1}`}>Q{i + 1}</th>)}
