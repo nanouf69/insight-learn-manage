@@ -5,14 +5,15 @@ import {PassageMatiere} from '@/components/cours-en-ligne/ExamenBlancsPassage';
 import {supabase} from '@/integrations/supabase/client';
 import {Button} from '@/components/ui/button';
 import {startSubjectRetake,type SubjectRetakeReceipt} from '@/lib/examSubjectRetake';
-import {configureAnswerPersistence} from '@/lib/answerPersistence';
+import {setAnswerSaveAuthToken,setAnswerSaveOwnership} from '@/lib/answerPersistence';
 import '@/index.css';
 const A='11111111-1111-1111-1111-111111111111',U='22222222-2222-2222-2222-222222222222';
 const exam=new URLSearchParams(location.search).get('exam')??'EB3';
 const fakeSession={user:{id:U},access_token:'fictif-token-only',expires_at:9999999999};
 (supabase.auth as any).getSession=async()=>({data:{session:fakeSession},error:null});
 (supabase.auth as any).refreshSession=async()=>({data:{session:fakeSession},error:null});
-configureAnswerPersistence({accessToken:'fictif-token-only',userId:U,apprenantId:A} as any);
+setAnswerSaveAuthToken('fictif-token-only',U);
+setAnswerSaveOwnership({apprenantId:A,previewReadOnly:false});
 function Harness(){
  const [r,setR]=useState<SubjectRetakeReceipt|null>(null); const [err,setErr]=useState('');const [done,setDone]=useState(false);
  const start=async()=>{try{setR(await startSubjectRetake({owner:U,account:A,exam,subject:'t3p',sourceExercise:`${exam}__t3p`}));}catch(e){setErr(String(e));}};
