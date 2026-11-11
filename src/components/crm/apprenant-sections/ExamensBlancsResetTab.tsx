@@ -47,6 +47,8 @@ import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique } from "@/lib/noteExamenAffichee";
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ExamensArchivesTab from './ExamensArchivesTab';
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
 const STATIC_EXAMENS_BLANCS = [
@@ -343,6 +345,13 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
         </p>
       </CardHeader>
       <CardContent>
+        <Tabs defaultValue="actifs">
+          <TabsList className="w-full h-auto flex flex-wrap">
+            <TabsTrigger value="actifs" className="flex-1">Examens actifs</TabsTrigger>
+            <TabsTrigger value="archives" className="flex-1">Examens archivés</TabsTrigger>
+          </TabsList>
+          <TabsContent value="archives"><ExamensArchivesTab account={apprenant.id} nom={`${apprenant.prenom} ${apprenant.nom}`} /></TabsContent>
+          <TabsContent value="actifs">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -481,6 +490,8 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             })}
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
 
       <AlertDialog open={!!confirmTarget} onOpenChange={(open) => !open && setConfirmTarget(null)}>
