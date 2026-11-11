@@ -16,6 +16,11 @@ const sessions:GroupeSessionCrm[]=['fictive','vide'].map(id=>({cle:`crm:${id}`,t
 const charger=async(id:string)=>id==='vide'?{inscrits:[],notes:{},examens,matieres:{},erreur:null}:structuredClone(releve);
 const actualisation=new URLSearchParams(location.search).has('actualisation');
 if(new URLSearchParams(location.search).has('liens'))releve.notes.c[1]={etat:'attente',note:null};
+if(new URLSearchParams(location.search).has('provenance')){
+ releve.notes.c[1]={etat:'attente',note:null};
+ const d={sessionCle:'crm:ancienne',jour:'2026-10-30',attemptId:'passage-vtc',libelle:'Session ancienne · 30/10/2026',qrcRestantes:4,vue:'corriger' as const};
+ releve.sourcesAttente={a:{EB1:{b:{destinations:[d]}}},b:{EB1:{a:{destinations:[d]}}},c:{'EB1-TAXI':{a:{destinations:[{...d,attemptId:'passage-taxi'}]}}}};
+}
 const souscrireFictif=(_ids:string[],signal:()=>void)=>{
   const valider=()=>{releve.notes.b[1]={etat:'definitif',note:0};signal();};
   window.addEventListener('fixture-validation',valider);
