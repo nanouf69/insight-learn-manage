@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 12:32 — Arezki autorisation EB3 A déjà accordée
+- [ ] Vérifier autorisation/token/reçu et CTA élève sans démarrer de tentative réelle.
+- [ ] Clarifier le dialogue CRM déjà autorisé, tester parcours admin/élève fictifs ; aperçu uniquement.
+
 ## 11/11 12:26 — Chemoun EB3 TAXI A/B en attente
 - [x] SELECT exacts : A t2 1, B t2 2, A t1 5 QRC en attente, aucun résultat/correction ; A/B 16/16 retrouvés sur EB2 seulement. 15 contrats PostgreSQL jetables et 46 tests interface/lecture PASS.
 - [x] Aucun défaut métier reproduit : pas de correctif inventé, aucun point ni écriture réelle ; empreintes ciblées inchangées. Rapport docs/chemoun-eb3-ab-diagnostic-2026-11-11.md.
