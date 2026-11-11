@@ -13,4 +13,10 @@ if(new URLSearchParams(location.search).has('extremes')){
 }
 const sessions:GroupeSessionCrm[]=['fictive','vide'].map(id=>({cle:`crm:${id}`,type:'crm',typeSession:'theorique',libelle:id==='vide'?'Session vide':'Session fictive',periode:null,debut:'2026-01-01',fin:'2027-12-31',tri:'2026-01-01',nbCandidats:0,examens:[]}));
 const charger=async(id:string)=>id==='vide'?{inscrits:[],notes:{},examens,matieres:{},erreur:null}:releve;
-const root=document.getElementById('root');if(root)createRoot(root).render(<NotesParSession sessions={sessions} charger={charger}/>);
+const actualisation=new URLSearchParams(location.search).has('actualisation');
+const souscrireFictif=(_ids:string[],signal:()=>void)=>{
+  const valider=()=>{releve.notes.b[1]={etat:'definitif',note:0};signal();};
+  window.addEventListener('fixture-validation',valider);
+  return()=>window.removeEventListener('fixture-validation',valider);
+};
+const root=document.getElementById('root');if(root)createRoot(root).render(<NotesParSession sessions={sessions} charger={charger} souscrire={actualisation?souscrireFictif:()=>()=>{}}/>);
