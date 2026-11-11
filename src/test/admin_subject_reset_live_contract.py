@@ -36,6 +36,9 @@ class Live(base.Contract):
    name=t.split(' ')[2];table=t.split(' ON ')[1].split(' ')[0]
    c.sql(f"DROP TRIGGER IF EXISTS {name} ON {table};"+t);c.installed.append(name+'@'+table)
   c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');UPDATE apprenants SET modules_autorises=ARRAY[35,36,37,38];INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');INSERT INTO qrc_ia_config(id,actif,actif_depuis) VALUES(true,true,now()-interval '30 days') ON CONFLICT DO NOTHING;")
+ def call(self,q,uid=ADMIN,check=True):
+  claims=json.dumps({'sub':uid,'role':'authenticated'})
+  return self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{uid}';SET request.jwt.claims='{claims}';"+q,check)
  def j(self,q):return json.loads(self.sql(q).stdout.splitlines()[-1])
  def snap(self,where):return self.sql(f"SELECT md5(coalesce(json_agg(x ORDER BY x::text)::text,'')) FROM (SELECT to_jsonb(r)::text x FROM reponses_apprenants r WHERE {where} UNION ALL SELECT to_jsonb(q)::text FROM apprenant_quiz_results q WHERE {where.replace('exercice_id','quiz_id||\'__\'||matiere_id')} UNION ALL SELECT to_jsonb(a)::text FROM exam_attempts_v2 a WHERE apprenant_id='{A}') s").stdout.strip()
  def learner_submit_legacy(self,key,tentative,mid,exam,score):
@@ -52,13 +55,14 @@ class Live(base.Contract):
   r=json.loads(self.start(c,str(uuid.uuid4())).stdout.splitlines()[-1]);self.assertEqual((r['tentative'],r['exercice_id']),(1,'EB3__t3p'))
   self.learner_submit_legacy('EB3__t3p',1,'t3p','EB3',17)
   rows=self.j(f"SELECT json_agg(json_build_object('t',tentative,'s',score_obtenu,'src',details->>'source_exercice_id','st',details->>'source_tentative')) FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND quiz_id='EB3' AND matiere_id='t3p'")
-  self.assertEqual(rows,[{'t':1,'s':17,'src':'EB3__t3p','st':'1'}])
+  self.assertEqual(rows,[{'t':1,'s':17,'src':None,'st':None}])  # answers arrive first: alert then regularised by this exact result
   self.assertEqual(self.sql("SELECT count(*) FROM alertes_systeme WHERE type='exam_result_missing' AND NOT lu").stdout.strip(),'0')
+  self.assertEqual(self.sql("SELECT count(*) FROM alertes_systeme WHERE type='exam_result_missing' AND lu AND details::jsonb->>'regularisee_tentative'='1'").stdout.strip(),'1')
   self.assertEqual(other,self.snap("exercice_id LIKE 'EB3__anglais%'"))
   self.assertEqual(self.sql("SELECT count(*) FROM _effets_externes").stdout.strip(),'0')
   self.assertEqual(self.j("SELECT to_jsonb(exam_subject_reset_context('%s','EB3','t3p'))"%A if False else f"SET request.jwt.claim.sub='{ADMIN}';SELECT exam_subject_reset_context('{A}','EB3','t3p')")['status'],'notee')
  def test_02_legacy_graded_retake_keeps_original_and_creates_t2(self):
-  self.seed('EB4','anglais')
+  self.seed('EB4','t3p')
   self.sql(f"INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at,tentative) VALUES('{A}','{U}','EB4__anglais','examen_blanc','{{\"1\":[\"B\"]}}',true,'submitted',now()-interval '5 days',1),('{A}','{U}','EB4__t3p','examen_blanc','{{\"1\":[\"A\"]}}',true,'submitted',now()-interval '5 days',1)")
   self.sql(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,score_obtenu,score_max,note_sur_20,tentative) VALUES('{A}','{U}','examen_blanc','EB4','Fictif','anglais','E',12,20,12,1),('{A}','{U}','examen_blanc','EB4','Fictif','t3p','A',15,20,15,1)")
   orig=self.sql("SELECT json_agg(to_jsonb(x) ORDER BY id) FROM (SELECT * FROM apprenant_quiz_results WHERE quiz_id='EB4' AND tentative=1) x").stdout;orig_ans=self.sql("SELECT json_agg(to_jsonb(r) ORDER BY id) FROM reponses_apprenants r WHERE exercice_id IN ('EB4__anglais','EB4__t3p')").stdout
