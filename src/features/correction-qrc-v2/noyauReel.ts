@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/synchronisationNotes";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
-import { miroirsV2Prouves, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 import { texteSourceExact } from "./menuPassages";
+import {proveNativeMirrors} from './preuveMiroir';
 
 export type QuestionSnapshot = {
   id: string;
@@ -103,6 +104,7 @@ export type SessionListee = {
   apprenantParAttempt?: Record<string, string>;
   /** Autres sessions affichant le même passage EB1-TAXI, sans nouvelle copie ni écriture. */
   inscriptionCroiseeParAttempt?: Record<string, string[]>;
+  aVerifierParAttempt?:Record<string,boolean>;
 };
 
 export type ResultatReel = {
@@ -248,9 +250,8 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   const db = supabase as any;
   const pAttempts = lirePagesParalleles<any>((de) => db
       .from("exam_attempts_v2")
-      .select("attempt_id, apprenant_id, exam_id, started_at, finished_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
+      .select("attempt_id, apprenant_id, exam_id, snapshot, started_at, finished_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
       .eq("is_test", mode === "test")
-      .eq("etat", "terminee")
       .order("started_at", { ascending: false })
       .order("attempt_id", { ascending: true })
       .range(de, de + 999));
@@ -258,7 +259,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
       .select("qrc_instance_id, attempt_id, reponse").order("qrc_instance_id", { ascending: true }).range(de, de + 999)) : Promise.resolve([] as any[]);
   const pBruts = mode === "migre" ? lirePagesParalleles<any>((de) => db
         .from("apprenant_quiz_results")
-        .select("id, apprenant_id, quiz_id, matiere_id, completed_at, rep:details->reponses")
+        .select("id, apprenant_id, quiz_id, matiere_id, tentative, details, completed_at, rep:details->reponses")
         .eq("quiz_type", "examen_blanc")
         .ilike("quiz_id", "eb%")
         .not("completed_at", "is", null)
@@ -267,6 +268,14 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
         .range(de, de + 999), 1) : Promise.resolve([] as any[]);
   const pConsultation = mode === "migre" ? lirePassagesEb2Consultation() : Promise.resolve([] as any[]);
   const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
+  const nativeAnswers:any[]=[];
+  const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee');
+  if(mode==='migre')for(let i=0;i<nativeCandidates.length;i+=150){
+    const ids=nativeCandidates.slice(i,i+150).map((a:any)=>a.attempt_id);
+    nativeAnswers.push(...await lirePagesParalleles<any>(de=>db.from('answer_state').select('attempt_id, question_id, valeur').in('attempt_id',ids).order('response_id').range(de,de+999),1));
+  }
+  const proof=proveNativeMirrors(brutsLus,attempts,nativeAnswers);
+  const submittedAttempts=attempts.filter((a:any)=>a.etat==='terminee');
 
   // Toutes les copies historiques d'EB (EB1…EB6, VTC/TAXI/TA/VA) non migrées vers V2 et
   // hors EB2 VTC (consultation V2) sont listées dans le même menu, sans copie ni migration.
@@ -274,10 +283,9 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   const legacyResults: any[] = [];
   if (mode === "migre") {
     const migres = resultatsMigres(attempts as any);
-    const qrcV2 = qrcV2Lu;
     const bruts = brutsLus;
-    // Miroirs prouvés d'un passage V2 natif (mêmes réponses QRC exactes) : affichés une seule fois, côté V2.
-    for (const m of miroirsV2Prouves(bruts, attempts as any, qrcV2)) migres.add(m);
+    // Preuve complète QCM/QRC et contenu figé : affichage V2 unique, jamais fusion en base.
+    for (const m of proof.mirrors) migres.add(m);
     {
       // Toutes les copies remises restent consultables, même sans QRC écrite.
       const anciens = resultatsAncienCircuit(bruts, migres)
@@ -288,6 +296,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
         exam_id: r.quiz_id,
         started_at: r.completed_at,
         circuit: "ancien" as const,
+        aVerifier:proof.ambiguous.has(r.id),
       })));
     }
   }
@@ -295,14 +304,14 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   // EB2 VTC : copies enregistrées sans fiche V2, affichées dans la même grille V2 en consultation.
   const consultationEb2: any[] = [];
   if (mode === "migre") {
-    for (const r of consultationLue) {
+    for (const r of consultationLue.filter(r=>!proof.mirrors.has(r.id)&&!resultatsMigres(attempts).has(r.id))) {
       consultationEb2.push({ ...r, attempt_id: `consultation:${r.id}`, exam_id: "EB2", started_at: r.completed_at, circuit: "v2" as const });
     }
   }
 
   const neutralises = neutralisesLus;
   const passages = [
-    ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
+    ...submittedAttempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
     ...consultationEb2,
     ...legacyResults,
   ];
@@ -390,6 +399,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
     }
     eb.attemptIds.push(a.attempt_id as string);
     (eb.apprenantParAttempt ??= {})[a.attempt_id as string] = a.apprenant_id as string;
+    if(a.aVerifier)(eb.aVerifierParAttempt??={})[a.attempt_id]=true;
     if (autresSessionsCroisees?.length) {
       (eb.inscriptionCroiseeParAttempt ??= {})[a.attempt_id as string] = autresSessionsCroisees;
     }

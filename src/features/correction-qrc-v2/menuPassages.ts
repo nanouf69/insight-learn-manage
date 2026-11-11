@@ -15,6 +15,7 @@ export function groupeTousPassages(groupes: GroupeSessionCrm[]): GroupeSessionCr
     for (const id of e.attemptIds) if (!dest.attemptIds.includes(id)) dest.attemptIds.push(id);
     for (const id of e.legacyResultIds ?? []) if (!dest.legacyResultIds?.includes(id)) dest.legacyResultIds?.push(id);
     Object.assign(dest.apprenantParAttempt ?? {}, e.apprenantParAttempt);
+    Object.assign(dest.aVerifierParAttempt??={},e.aVerifierParAttempt);
     Object.assign(dest.inscriptionCroiseeParAttempt ?? {}, e.inscriptionCroiseeParAttempt);
     for (const owner of Object.values(e.apprenantParAttempt ?? {})) candidats.add(owner);
     for (const d of e.dates) {
