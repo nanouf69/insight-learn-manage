@@ -1,0 +1,14 @@
+import {createRoot} from 'react-dom/client';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {Tabs,TabsList,TabsTrigger,TabsContent} from '@/components/ui/tabs';
+import ExamensArchivesTab from '@/components/crm/apprenant-sections/ExamensArchivesTab';
+import {supabase} from '@/integrations/supabase/client';
+import '@/index.css';
+const student=new URLSearchParams(location.search).has('student');
+const row={reset_id:'fixture-reset',apprenant_id:'fiction',exam_id:'EB3-TAXI',cutoff_at:'2026-11-11T13:16:10Z',archived_attempt_ids:Array(7).fill('copy'),archived_core_result_ids:Array(7).fill('result'),archived_legacy_result_ids:[]};
+const rows=[row,{...row,reset_id:'fixture-eb4',exam_id:'EB4-TAXI'}];
+supabase.auth.getUser=async()=>({data:{user:student?null:{id:'fiction-admin'} as any},error:null});
+(supabase as any).rpc=async(name:string,args:any)=>({data:name==='has_role'?!student:{...rows.find(r=>r.reset_id===args.p_reset_id),eligible:args.p_reset_id==='fixture-reset',cancelled:false,reason:args.p_reset_id==='fixture-reset'?'Copies conservées':'Une nouvelle tentative a commencé.'},error:null});
+(supabase as any).from=()=>{const q:any={select:()=>q,eq:()=>q,order:()=>q,range:async()=>({data:rows,error:null})};return q;};
+const root=document.getElementById('root');
+if(root)createRoot(root).render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><main className="p-4 max-w-3xl mx-auto"><h1 className="text-xl font-semibold mb-4">Examens blancs — Test FICTIF</h1><Tabs defaultValue="archives"><TabsList className="w-full"><TabsTrigger value="actifs">Examens actifs</TabsTrigger><TabsTrigger value="archives">Examens archivés</TabsTrigger></TabsList><TabsContent value="actifs">Remettre à zéro</TabsContent><TabsContent value="archives"><ExamensArchivesTab account="fiction" nom="Test FICTIF"/></TabsContent></Tabs></main></QueryClientProvider>);
