@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 17:02 — Sessions actuelles et notes par session
-- [ ] Accès direct sessions de formation actuelles Paris inclusif, liens explicites conservés, zéro scan global automatique.
-- [ ] Notes officielles EB1–6 de tous les inscrits, chargement ciblé, états incomplets/absence/erreur sans faux zéro.
-- [ ] Contrôle réel CRM 12/16/18, tests résultats et parcours admin, rapport/commit sans publication.
+- [x] Accès direct trois sessions de formation actuelles Paris inclusif, liens explicites conservés, aucun catalogue global au premier accès testé.
+- [x] Notes officielles EB1–6 de tous les inscrits, chargement ciblé, états incomplets/absence/erreur sans faux zéro ; filière par ligne.
+- [x] SELECT CRM et parcours admin réel 12/16/18, 70 tests PASS, PC/mobile, aucune écriture/publication ; résultat sans fiche officielle = indisponible.
 
 ## 11/11 16:44 — Timeout catalogue QRC
 - [x] Complément 16:55 : 103 sessions indépendantes (458 ms), lecture ciblée novembre (7,53 s), admin réel timeout global simulé puis 157 cellules ; 46 tests PASS, aucun scan global ciblé ni publication.

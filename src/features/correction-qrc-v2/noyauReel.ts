@@ -548,6 +548,7 @@ export async function chargerSessionTest(
     : null;
   if (attemptIdsFiltre) attemptIdsFiltre = attemptIdsFiltre.filter((a) => !estConsultation(a));
   if (consultation && attemptIdsFiltre && attemptIdsFiltre.length === 0) return consultation;
+  if (attemptIdsFiltre?.length === 0) return {tentatives:[],qrc:[],resultats:[],baremesRestaures:[]};
 
   const colonnes = "attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at, finished_at";
   let attempts: any[] = [];
