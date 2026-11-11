@@ -1,10 +1,11 @@
 # Feuille de route
 
 ## 11/11 13:37 — Annulation ciblée d’un reset / Examens archivés
-- [ ] Ajouter l’onglet et confirmation exacte en aperçu, sans action réelle.
-- [ ] Préparer un candidat append-only séparé, tester droits/identité/rejeu/concurrence et refus après démarrage ; ne pas installer.
-- [ ] Vérifier HADDOU EB3 et EB4 en SELECT ; inventorier les lecteurs cutoff/neutralisations/autorisations et signaler tout blocage de couverture.
-- [ ] Vérifier tests et affichage PC/mobile ; rapport, limites et commit.
+- [x] Onglet admin/confirmation exacte en aperçu, enregistrement toujours désactivé, aucun reset réel.
+- [x] Candidat séparé append-only + trois projections préparé, 28 contrats jetables PASS et 17 Vitest PASS ; non installé.
+- [x] SELECT HADDOU EB3 : 7 copies/7 notes définitives/0 démarrage après reset, grant intact ; EB4 : grant consommé et 5 nouveaux démarrages, refus obligatoire. Autres resets intacts.
+- [x] PC/mobile fixture vérifiés, compilation OK ; rapport docs/examens-archives-annulation-reset-2026-11-11.md.
+- [ ] Activation BLOQUÉE : lecteurs bruts cutoff/neutralisations et chemins serveur/legacy/consommation ne couvrent pas encore les projections et verrou commun. Gate SQL false, bouton confirmation désactivé. UI réelle et cohérence élève/CRM/QRC bout-en-bout NON PROUVÉES ; aucune migration/publication.
 
 ## 11/11 13:29 — Précédent essai Chemoun et sélection simulée
 - [x] Score précédent officiel par identité 13/20 et libellé T3P seule, carte PC/mobile fixture vérifiée.
