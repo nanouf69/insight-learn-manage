@@ -22,6 +22,7 @@ class Integrated(unittest.TestCase):
   cls.sql("ALTER TABLE exam_retake_authorizations ADD COLUMN IF NOT EXISTS reset_id uuid;")
   cls.sql(Path('docs/sql-revue/2026-11-11-exam-reset-cancellation.sql').read_text())
   cls.sql("CREATE OR REPLACE FUNCTION exam_reset_cancellation_coverage_ready() RETURNS boolean LANGUAGE sql AS $$SELECT true$$")
+  cls.sql("INSERT INTO core_bridge_flags(cle,actif) VALUES('passage_v2_apprenants_reels',true) ON CONFLICT(cle) DO UPDATE SET actif=true;")
 
  def scalar(self,q):return self.sql(q).stdout.strip().splitlines()[-1]
  def test_integrated_visibility_rights_legacy_and_v2_starts(self):
