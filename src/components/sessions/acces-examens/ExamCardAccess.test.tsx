@@ -1,5 +1,6 @@
 import {vi,it,expect,beforeEach} from 'vitest';
 import {render,screen,fireEvent,waitFor} from '@testing-library/react';
+Element.prototype.scrollIntoView=vi.fn();
 const mock=vi.hoisted(()=>({role:true,user:true,rpc:vi.fn(),reads:vi.fn()}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{auth:{getUser:async()=>({data:{user:mock.user?{id:'admin-fictif'}:null}})},rpc:async(name:string,args:unknown)=>name==='has_role'?{data:mock.role}:mock.rpc(name,args),from:(table:string)=>({select(){return this;},in(){return this;},order(){return this;},range:mock.reads,then(resolve:any){return Promise.resolve({data:table==='examens_blancs_parcours'?[{exam_id:'EB3',module_id:35}]:[]}).then(resolve);}})}}));
 vi.mock('@/hooks/useCoreChangeTick',()=>({useCoreChangeTick:()=>0}));
