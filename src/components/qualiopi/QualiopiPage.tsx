@@ -11,6 +11,8 @@ import { CRITERES, INDICATEURS, STATUT_LABELS, type QualiopiStatut } from "@/lib
 import { ALERTE_LABELS, alertesPourIndicateur, loadQualiopi, type QualiopiEtat, type QualiopiPreuve } from "@/lib/qualiopi/data";
 import { buildExportRows, exportQualiopiCsv, exportQualiopiPdf } from "@/lib/qualiopi/export";
 import { IndicateurDialog } from "./IndicateurDialog";
+import {Tabs,TabsList,TabsTrigger,TabsContent} from '@/components/ui/tabs';
+import {LiensCpf} from './LiensCpf';
 
 const statutVariant: Record<QualiopiStatut, string> = {
   documente: "bg-blue-100 text-blue-800 border-blue-200",
@@ -87,7 +89,10 @@ export function QualiopiPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="indicateurs" className="space-y-6">
+      <TabsList><TabsTrigger value="indicateurs">Indicateurs et preuves</TabsTrigger><TabsTrigger value="cpf">Liens CPF</TabsTrigger></TabsList>
+      <TabsContent value="cpf"><LiensCpf/></TabsContent>
+      <TabsContent value="indicateurs" className="space-y-6">
       {/* Tableau de bord */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
@@ -270,7 +275,8 @@ export function QualiopiPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 

@@ -1,0 +1,19 @@
+import {useEffect,useState} from 'react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Dialog,DialogContent,DialogHeader,DialogTitle} from '@/components/ui/dialog';
+import {Copy,ExternalLink,Pencil,Loader2,RefreshCw,Save} from 'lucide-react';
+import {toast} from 'sonner';
+import {lireLiensCpf,enregistrerLienCpf,type LienCpf} from '@/lib/qualiopi/liensCpf';
+export function LiensCpf(){
+ const [liens,setLiens]=useState<LienCpf[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[edit,setEdit]=useState<LienCpf|null>(null),[saving,setSaving]=useState(false);
+ async function refresh(){setLoading(true);setError('');try{setLiens(await lireLiensCpf());}catch{setError('Les liens CPF ne peuvent pas être chargés.');}finally{setLoading(false);}}
+ useEffect(()=>{void refresh();},[]);
+ async function save(){if(!edit||saving)return;setSaving(true);try{const saved=await enregistrerLienCpf(edit);setLiens(l=>l.map(x=>x.id===saved.id?saved:x));setEdit(null);toast.success('Lien CPF enregistré.');}catch(e){toast.error(e instanceof Error?e.message:'Enregistrement impossible.');}finally{setSaving(false);}}
+ return <section className="space-y-4">
+ <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">Liens CPF</h2><Button variant="ghost" size="icon" aria-label="Actualiser les liens CPF" title="Actualiser" onClick={refresh} disabled={loading}><RefreshCw className="h-4 w-4"/></Button></div>
+ {loading?<Loader2 className="h-5 w-5 animate-spin text-primary"/>:error?<p role="alert" className="text-destructive">{error}</p>:<div className="divide-y border-y border-border">{liens.map(l=><div key={l.id} className="flex flex-wrap items-start justify-between gap-3 py-4"><div className="min-w-0 flex-1"><h3 className="font-medium">{l.intitule}</h3><a className="mt-1 block break-all text-sm text-primary underline" href={l.url} target="_blank" rel="noopener noreferrer">{l.url}</a></div><div className="flex shrink-0 gap-1"><Button variant="ghost" size="icon" title="Ouvrir" aria-label={`Ouvrir ${l.intitule}`} asChild><a href={l.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4"/></a></Button><Button variant="ghost" size="icon" title="Copier" aria-label={`Copier ${l.intitule}`} onClick={()=>navigator.clipboard.writeText(l.url).then(()=>toast.success('Lien copié.')).catch(()=>toast.error('Copie impossible.'))}><Copy className="h-4 w-4"/></Button><Button variant="ghost" size="icon" title="Modifier" aria-label={`Modifier ${l.intitule}`} onClick={()=>setEdit({...l})}><Pencil className="h-4 w-4"/></Button></div></div>)}</div>}
+ <Dialog open={!!edit} onOpenChange={v=>{if(!v&&!saving)setEdit(null);}}><DialogContent className="max-w-xl"><DialogHeader><DialogTitle>Modifier le lien CPF</DialogTitle></DialogHeader>{edit&&<form className="space-y-4" onSubmit={e=>{e.preventDefault();void save();}}><div className="space-y-2"><Label htmlFor="cpf-intitule">Intitulé</Label><Input id="cpf-intitule" value={edit.intitule} disabled={saving} onChange={e=>setEdit({...edit,intitule:e.target.value})} required/></div><div className="space-y-2"><Label htmlFor="cpf-url">Lien CPF</Label><Input id="cpf-url" type="url" value={edit.url} disabled={saving} onChange={e=>setEdit({...edit,url:e.target.value})} required/></div><div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={saving} onClick={()=>setEdit(null)}>Annuler</Button><Button type="submit" disabled={saving}>{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Save className="mr-2 h-4 w-4"/>}Enregistrer</Button></div></form>}</DialogContent></Dialog>
+ </section>;
+}
