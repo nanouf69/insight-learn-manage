@@ -708,7 +708,8 @@ export default function AdminCorrectionQrcV2Reel() {
             })()
           : await recharger();
       if (import.meta.env.DEV) console.info(`[qrc-v2] note enregistrée et relue en ${Math.round(performance.now() - t0)} ms`);
-      const decision = decisionApresCorrection(sessionRelue, qrcSel.qrc_instance_id, n);
+      const sessionNavigation = passageFiltre ? { ...sessionRelue, tentatives: sessionRelue.tentatives.filter(t=>t.attempt_id===passageFiltre), qrc: sessionRelue.qrc.filter(q=>q.attempt_id===passageFiltre) } : sessionRelue;
+      const decision = decisionApresCorrection(sessionNavigation, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
         setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
@@ -817,11 +818,12 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   };
 
-  const copiePrecedente = copieVoisine(session, selection, -1);
-  const copieSuivante = copieVoisine(session, selection, 1);
+  const sessionNavigation = passageFiltre && session ? {...session,tentatives:session.tentatives.filter(t=>t.attempt_id===passageFiltre),qrc:session.qrc.filter(q=>q.attempt_id===passageFiltre)} : session;
+  const copiePrecedente = copieVoisine(sessionNavigation, selection, -1);
+  const copieSuivante = copieVoisine(sessionNavigation, selection, 1);
   const naviguerCopie = (direction: DirectionCopie) => {
     if (etatEnvoi === "encours") return;
-    const cible = copieVoisine(session, selection, direction);
+    const cible = copieVoisine(sessionNavigation, selection, direction);
     if (!cible) return;
     if (commentaireModifie && commentaire !== commentaireSauve && !window.confirm(
       "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
@@ -1052,7 +1054,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <option value="">Tous les passages — toutes les tentatives du filtre</option>
             {ancienCircuit ? copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
               {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id}
-            </option>) : (session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
+            </option>) : ordonnerCandidatsParFin(session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
           </select>
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
