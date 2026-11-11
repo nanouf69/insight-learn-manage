@@ -136,7 +136,7 @@ class Live(base.Contract):
  def test_07_resume_returns_same_open_copy_without_write(self):
   # Arezki-like: V2 copy open, no answer, timer elapsed. "Reprendre" = core_start_attempt -> same attempt id.
   self.seed('EB2-TAXI','gestion');att=self.v2('EB2-TAXI','gestion',{},etat='en_cours')
-  self.sql("INSERT INTO core_bridge_flags(cle,actif) VALUES('pont_v2_test',true),('pont_v2',true) ON CONFLICT DO NOTHING",False)
+  self.sql("INSERT INTO core_bridge_flags(cle,actif) VALUES('passage_v2_comptes_test',true),('passage_v2_apprenants_reels',true)")
   before=self.sql(f"SELECT md5(json_agg(to_jsonb(a) ORDER BY attempt_id)::text) FROM exam_attempts_v2 a").stdout
   out=self.api(f"SELECT (core_start_attempt(gen_random_uuid(),'{A}','EB2-TAXI','gestion')).attempt_id",U,False)
   if out.returncode:self.skipTest('bridge flags schema differs: '+out.stderr[:200])
