@@ -38,6 +38,7 @@ export default function ExamensArchivesTab({ account, nom }: { account: string; 
   }});
   const archives = useQuery({ queryKey: ['exam-reset-archives', account], enabled: role.data === true,
     queryFn: () => readArchivedExamResets(account), retry: false });
+  if (role.isLoading) return <p role="status" className="py-4 text-sm text-muted-foreground">Vérification du profil administrateur…</p>;
   if (role.data !== true) return <p className="py-4 text-sm text-muted-foreground">Consultation réservée à un administrateur authentifié.</p>;
   return <div className="min-w-0" aria-label="Examens archivés">
     {archives.isLoading && <p role="status">Lecture des examens archivés…</p>}
