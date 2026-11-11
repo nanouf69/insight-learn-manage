@@ -189,7 +189,8 @@ BEGIN
   END IF;
   SELECT * INTO receipt FROM public.exam_subject_retakes
     WHERE apprenant_id=p_apprenant_id AND exam_id=p_exam_id AND matiere_id=p_matiere_id
-      AND source_exercice_id=p_source_exercice_id;
+      AND source_exercice_id=p_source_exercice_id
+      AND exercice_id<>source_exercice_id;
   IF FOUND THEN
     IF receipt.source_attempt_id IS DISTINCT FROM p_source_attempt_id THEN
       RAISE EXCEPTION 'Identité du passage différente.' USING ERRCODE='P0482';
