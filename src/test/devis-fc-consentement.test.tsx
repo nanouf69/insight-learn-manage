@@ -29,7 +29,7 @@ describe('Devis FC — périmètre et règle serveur', () => {
     expect(CONSENTEMENT_FC_ANNULATION).toContain('lettre recommandée avec accusé de réception');
     expect(CONSENTEMENT_FC_ANNULATION).toContain('86 route de Genas, 69003 Lyon');
     expect(CONSENTEMENT_FC_ANNULATION).toContain('ne vaut pas renonciation');
-    expect(CONSENTEMENT_FC_ANNULATION).toContain('droits impératifs');
+    expect(CONSENTEMENT_FC_ANNULATION).toContain('droit impératif');
     expect(CONSENTEMENT_FC_ANNULATION).not.toMatch(/\b(?:7|10|14) jours\b/);
   });
 
