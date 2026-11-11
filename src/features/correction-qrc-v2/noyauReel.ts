@@ -244,7 +244,17 @@ const lectureEnCours = new Map<string, Promise<GroupeSessionCrm[]>>();
 export function listeGroupesEnMemoire(mode: "test" | "migre" = "migre"): GroupeSessionCrm[] | null {
   return derniereListe.get(mode) ?? null;
 }
-export function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<GroupeSessionCrm[]> {
+export async function listerChoixSessionsCrm():Promise<GroupeSessionCrm[]> {
+  const {data}=await supabase.auth.getSession();const user=data.session?.user.id;
+  if(!user)throw new Error('Session administrateur requise');
+  const role=await supabase.rpc('has_role',{_user_id:user,_role:'admin'});
+  if(role.error||role.data!==true)throw new Error('Accès administrateur requis');
+  const rows=await lirePagesParalleles<any>(de=>supabase.from('sessions').select('id,nom,date_debut,date_fin').order('id').range(de,de+999) as any,1);
+  return rows.map(r=>({cle:`crm:${r.id}`,type:'crm' as const,libelle:r.nom??'Session sans nom',periode:`${jourFr(r.date_debut)} → ${jourFr(r.date_fin)}`,debut:r.date_debut,fin:r.date_fin,tri:r.date_debut,nbCandidats:0,examens:[]})).sort((a,b)=>b.tri.localeCompare(a.tri));
+}
+
+export function listerGroupesCrm(mode: "test" | "migre" = "migre",sessionCle?:string): Promise<GroupeSessionCrm[]> {
+  if(sessionCle?.startsWith('crm:'))return listerGroupesCrmServeur(mode,sessionCle);
   const enCours = lectureEnCours.get(mode);
   if (enCours) return enCours;
   const p = listerGroupesCrmServeur(mode)
@@ -254,25 +264,37 @@ export function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<Grou
   return p;
 }
 
-async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSessionCrm[]> {
+async function listerGroupesCrmServeur(mode: "test" | "migre",sessionCle?:string): Promise<GroupeSessionCrm[]> {
   const db = supabase as any;
+  let scopeIds:string[]|null=null;
+  if(sessionCle){
+    const links=await lirePagesParalleles<any>(de=>db.from('session_apprenants').select('apprenant_id').eq('session_id',sessionCle.slice(4)).order('id').range(de,de+999),1);
+    scopeIds=[...new Set(links.map((l:any)=>String(l.apprenant_id)))];
+    if(!scopeIds.length)return [];
+  }
+  const scopes=scopeIds?Array.from({length:Math.ceil(scopeIds.length/100)},(_,i)=>scopeIds?.slice(i*100,i*100+100)??[]):[null];
+  const attempts:any[]=[];const brutsLus:any[]=[];
+  for(const scope of scopes){
   // Heavy immutable copies: primary-key cursor, bounded payload, no deep OFFSET
   // or full-table date sort. All pages are read; the catalogue is never capped.
-  const attempts = await lireCopiesParCurseur<any>('attempt_id', cursor => {
+  attempts.push(...await lireCopiesParCurseur<any>('attempt_id', cursor => {
     let q=db.from('exam_attempts_v2')
       .select('attempt_id, apprenant_id, exam_id, snapshot, started_at, finished_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id')
       .eq('is_test',mode==='test').eq('etat','terminee').order('attempt_id').limit(100);
+    if(scope)q=q.in('apprenant_id',scope);
     if(cursor)q=q.gt('attempt_id',cursor);
     return q;
-  });
-  const brutsLus = mode==='migre' ? await lireCopiesParCurseur<any>('id',cursor=>{
+  }));
+  if(mode==='migre')brutsLus.push(...await lireCopiesParCurseur<any>('id',cursor=>{
     let q=db.from('apprenant_quiz_results')
       .select('id, apprenant_id, quiz_id, matiere_id, tentative, details, completed_at, rep:details->reponses')
       .eq('quiz_type','examen_blanc').ilike('quiz_id','eb%').not('completed_at','is',null)
       .order('id').limit(100);
+    if(scope)q=q.in('apprenant_id',scope);
     if(cursor)q=q.gt('id',cursor);
     return q;
-  }) : [];
+  }));
+  }
   const consultationLue:any[]=[];
   const neutralisesLus=await idsNeutralises();
   const nativeAnswers:any[]=[];
@@ -488,7 +510,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   }
 
   const rang = { crm: 0, elearning: 1, indetermine: 2, conflit: 3 } as const;
-  return Array.from(groupes.values())
+  return Array.from(groupes.values()).filter(g=>!sessionCle||g.cle===sessionCle)
     .map((g) => {
       g.nbCandidats = g.candidats.size;
       // EB1 → EB2 → … puis, à type d'examen égal, ordre alphabétique de la filière (VTC, TAXI, TA, VA).

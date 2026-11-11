@@ -31,6 +31,7 @@ import {
   corrigerQrc,
   lireHistoriqueQrc,
   listerGroupesCrm,
+  listerChoixSessionsCrm,
   origineCorrection,
   reviserQrc,
   souscrireSignal,
@@ -74,6 +75,9 @@ export default function AdminCorrectionQrcV2Reel() {
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
+  const [choixSessions,setChoixSessions]=useState<GroupeSessionCrm[]>([]);
+  const [choixLus,setChoixLus]=useState(false);
+  const [erreurGlobale,setErreurGlobale]=useState<string|null>(null);
   const [groupes, setGroupes] = useState<GroupeSessionCrm[]>([]);
   // Liste affichée depuis la mémoire de l'onglet, en attente de la relecture serveur.
   // Nouveaux passages signalés par le temps réel : la liste complète n'est relue que sur demande.
@@ -122,6 +126,7 @@ export default function AdminCorrectionQrcV2Reel() {
     generationRef.current++;
     setSession(null);
     setGroupeCleState(cle);
+    setCatalogueLu(false);setErreurLecture(null);
     const first = cle === TOUS_GROUPES ? groupeTousPassages(groupes).examens[0]?.cle : groupes.find(g=>g.cle===cle)?.examens[0]?.cle;
     setEbCleState(first ?? null);
     setJourFiltreState(null);
@@ -179,27 +184,19 @@ export default function AdminCorrectionQrcV2Reel() {
     modifierCommentaire(ajouterCommentaireQrc(commentaireCourant, texte));
   };
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        setErreurLecture(null);
-        const liste = await listerGroupesCrm(mode);
-        setCatalogueLu(true);
-        setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
-        if (!param("qrc_groupe")) {
-          setGroupeCleState(liste[0]?.cle ?? null);
-          setEbCleState(liste[0]?.examens[0]?.cle ?? null);
-          majUrl({ qrc_groupe: liste[0]?.cle ?? null, qrc_eb: liste[0]?.examens[0]?.cle ?? null });
-        } else if (!param("qrc_eb")) {
-          const g = liste.find((x) => x.cle === param("qrc_groupe"));
-          setEbCleState(g?.examens[0]?.cle ?? null);
-          majUrl({ qrc_eb: g?.examens[0]?.cle ?? null });
-        }
-      } catch (e) {
-        setErreurLecture((e as Error).message);
-      }
-    })();
-  }, [mode]);
+  useEffect(()=>{let alive=true;void listerChoixSessionsCrm().then(rows=>{if(!alive)return;setChoixSessions(rows);setChoixLus(true);if(!param('qrc_groupe')&&rows.length){const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Paris'});const g=rows.find(g=>g.debut&&g.fin&&g.debut<=today&&g.fin>=today)??rows[0];setGroupeCleState(g.cle);majUrl({qrc_groupe:g.cle});}}).catch(e=>{if(alive){setErreurLecture(e.message);setChoixLus(true);}});return()=>{alive=false};},[mode]);
+  useEffect(()=>{
+    if(!choixLus)return;
+    let alive=true;setCatalogueLu(false);setErreurLecture(null);
+    void listerGroupesCrm(mode,groupeCle??undefined).then(liste=>{
+      if(!alive)return;setCatalogueLu(true);setGroupes(liste);
+      const g=groupeCle===TOUS_GROUPES?groupeTousPassages(liste):liste.find(g=>g.cle===groupeCle)??liste[0];
+      if(!groupeCle&&g){setGroupeCleState(g.cle);}
+      if(!g?.examens.some(e=>e.cle===ebCle)){setEbCleState(g?.examens[0]?.cle??null);majUrl({qrc_eb:g?.examens[0]?.cle??null});}
+    }).catch(e=>{if(alive){setErreurLecture(e.message);if(groupeCle===TOUS_GROUPES)setErreurGlobale(e.message);}});
+    return()=>{alive=false};
+  },[mode,groupeCle,choixLus]);
+  const optionsSessions=useMemo(()=>{const m=new Map(choixSessions.map(g=>[g.cle,g]));for(const g of groupes)m.set(g.cle,g);for(const [cle,type,libelle] of [['elearning','elearning','E-learning — toutes sessions confondues'],['indetermine','indetermine','Session CRM non déterminée'],['conflit','conflit','Conflit de sessions CRM']] as const){if(!m.has(cle))m.set(cle,{cle,type,libelle,periode:null,debut:null,fin:null,tri:'0000-00-00',nbCandidats:0,examens:[]});}return [...m.values()];},[choixSessions,groupes]);
 
   const tousGroupes = useMemo(() => groupeTousPassages(groupes), [groupes]);
   const groupeChoisi = groupeCle === TOUS_GROUPES ? tousGroupes : groupes.find((g) => g.cle === groupeCle) ?? null;
@@ -394,7 +391,7 @@ export default function AdminCorrectionQrcV2Reel() {
     actualisationEnCoursRef.current = true;
     setRelectureListe(true);
     try {
-      const liste = await listerGroupesCrm(mode);
+      const liste = await listerGroupesCrm(mode,groupeCle??undefined);
       setCatalogueLu(true);
       setErreurLecture(null);
       setGroupes((prev) => (JSON.stringify(prev) === JSON.stringify(liste) ? prev : liste));
@@ -970,7 +967,7 @@ export default function AdminCorrectionQrcV2Reel() {
               onChange={(e) => setGroupeCle(e.target.value)}
             >
               <option value={TOUS_GROUPES}>Toutes les sessions — tous les passages remis</option>
-              {groupes.map((g) => (
+              {optionsSessions.map((g) => (
                 <option key={g.cle} value={g.cle} className={estEnCours(g) ? "text-red-600 font-semibold" : "text-foreground font-normal"}>
                   {libelleGroupe(g)}
                 </option>
@@ -1167,6 +1164,7 @@ export default function AdminCorrectionQrcV2Reel() {
           {auditVisible&&mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
+        {erreurGlobale&&groupeCle!==TOUS_GROUPES&&<p className="text-xs text-muted-foreground">Inventaire global interrompu ; cette session est chargée séparément.</p>}
         {erreurLecture&&<section role="alert" className="space-y-2 py-4"><p className="text-destructive">Chargement des notes interrompu — Réessayer</p><p className="text-xs text-muted-foreground">{erreurLecture}</p>{session&&filtreConfirme===filtreLecture&&<p>Dernière grille confirmée pour ce filtre — actualisation non confirmée.</p>}<Button variant="outline" disabled={lectureCopies||relectureListe} onClick={()=>void (catalogueLu?recharger():actualiserListe())}>Réessayer</Button></section>}
         {!erreurLecture&&(!catalogueLu||lectureCopies)&&<p role="status" className="py-4 text-muted-foreground">Chargement des notes…</p>}
         {(vueTravail==='historique'||vueTravail==='verifier')&&archiveOuverte ? (

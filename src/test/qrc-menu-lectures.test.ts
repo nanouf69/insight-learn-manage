@@ -32,3 +32,12 @@ it('vrai chargeur : 1200 QRC pour 2 copies, aucune dernière fiche substituée, 
  expect(fixture.calls.some(c=>c.table==='reponses_apprenants')).toBe(false);expect(session.resultats[0].attempt_id).toBe('full');
 });
 it('filtre explicitement vide ne lit jamais toutes les copies',async()=>{const r=await chargerSessionTest('migre',[]);expect(r.qrc).toHaveLength(0);expect(fixture.calls).toHaveLength(0);});
+
+it('session ciblée : filtres apprenants serveur et aucun mélange de sessions',async()=>{
+ fixture.tables.sessions=[{id:'s1',nom:'Session 1',date_debut:'2026-11-01',date_fin:'2026-11-30'},{id:'s2',nom:'Session 2',date_debut:'2026-11-01',date_fin:'2026-11-30'}];
+ fixture.tables.session_apprenants=[{id:'l1',session_id:'s1',apprenant_id:'a'},{id:'l2',session_id:'s2',apprenant_id:'b'}];
+ fixture.tables.apprenants=[{id:'a',type_apprenant:'vtc'},{id:'b',type_apprenant:'vtc'}];
+ fixture.tables.exam_attempts_v2=['a','b'].map(id=>({attempt_id:id,apprenant_id:id,exam_id:'EB1',is_test:false,etat:'terminee',started_at:'2026-11-10T10:00:00Z',finished_at:'2026-11-10T10:30:00Z'}));
+ const g=await listerGroupesCrm('migre','crm:s1');expect(g.map(g=>g.cle)).toEqual(['crm:s1']);expect(g[0].examens[0].attemptIds).toEqual(['a']);
+ expect(fixture.calls.filter(c=>['exam_attempts_v2','apprenant_quiz_results'].includes(c.table)).every(c=>(c.filters as string[][]).some(f=>f[0]==='in'&&f[1]==='apprenant_id'))).toBe(true);
+});
