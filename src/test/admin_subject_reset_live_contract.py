@@ -24,6 +24,7 @@ class Live(base.Contract):
   CREATE SCHEMA cron;CREATE FUNCTION cron.schedule(a text,b text,c text) RETURNS bigint LANGUAGE sql SECURITY DEFINER AS $$INSERT INTO public._effets_externes(kind,payload) VALUES('cron',a) RETURNING id::bigint$$;
   GRANT USAGE ON SCHEMA net,cron TO authenticated;""")
   cat=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text())
+  c.sql("CREATE ROLE authenticator LOGIN;GRANT authenticated TO authenticator;")
   c.sql(cat['schema'])
   for f in cat['functions']:c.sql(f)
   c.sql(cat['rls'])
@@ -39,6 +40,12 @@ class Live(base.Contract):
  def call(self,q,uid=ADMIN,check=True):
   claims=json.dumps({'sub':uid,'role':'authenticated'})
   return self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{uid}';SET request.jwt.claims='{claims}';"+q,check)
+ def api(self,q,uid=U,check=True):
+  import subprocess
+  claims=json.dumps({'sub':uid,'role':'authenticated'})
+  r=subprocess.run(['psql','-X','-At','-h',self.d,'-p','55487','-U','authenticator','-d','postgres','-v','ON_ERROR_STOP=1'],input=f"SET ROLE authenticated;SET request.jwt.claim.sub='{uid}';SET request.jwt.claims='{claims}';"+q,env=self.env,text=True,capture_output=True)
+  if check and r.returncode:raise RuntimeError(r.stderr)
+  return r
  def j(self,q):return json.loads(self.sql(q).stdout.splitlines()[-1])
  def snap(self,where):return self.sql(f"SELECT md5(coalesce(json_agg(x ORDER BY x::text)::text,'')) FROM (SELECT to_jsonb(r)::text x FROM reponses_apprenants r WHERE {where} UNION ALL SELECT to_jsonb(q)::text FROM apprenant_quiz_results q WHERE {where.replace('exercice_id','quiz_id||\'__\'||matiere_id')} UNION ALL SELECT to_jsonb(a)::text FROM exam_attempts_v2 a WHERE apprenant_id='{A}') s").stdout.strip()
  def learner_submit_legacy(self,key,tentative,mid,exam,score):
@@ -56,6 +63,7 @@ class Live(base.Contract):
   self.learner_submit_legacy('EB3__t3p',1,'t3p','EB3',17)
   rows=self.j(f"SELECT json_agg(json_build_object('t',tentative,'s',score_obtenu,'src',details->>'source_exercice_id','st',details->>'source_tentative')) FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND quiz_id='EB3' AND matiere_id='t3p'")
   self.assertEqual(rows,[{'t':1,'s':17,'src':None,'st':None}])  # answers arrive first: alert then regularised by this exact result
+  print(self.sql("SELECT json_agg(a) FROM alertes_systeme a").stdout)
   self.assertEqual(self.sql("SELECT count(*) FROM alertes_systeme WHERE type='exam_result_missing' AND NOT lu").stdout.strip(),'0')
   self.assertEqual(self.sql("SELECT count(*) FROM alertes_systeme WHERE type='exam_result_missing' AND lu AND details::jsonb->>'regularisee_tentative'='1'").stdout.strip(),'1')
   self.assertEqual(other,self.snap("exercice_id LIKE 'EB3__anglais%'"))
@@ -93,8 +101,8 @@ class Live(base.Contract):
   self.authorize(c,str(uuid.uuid4()));r=json.loads(self.start(c,str(uuid.uuid4())).stdout.splitlines()[-1])
   self.assertEqual((r['moteur'],r['tentative']),('v2',2));self.assertNotEqual(r['attempt_id'],att)
   na=r['attempt_id'];rev=self.sql(f"SELECT coalesce(max(revision),0) FROM answer_state WHERE attempt_id='{na}'").stdout.strip() or '0'
-  self.call(f"SELECT core_save_answer(gen_random_uuid(),'{na}','t3p:1','[\"A\"]'::jsonb,{rev})",U)
-  self.call(f"SELECT core_finalize_attempt(gen_random_uuid(),'{na}','{{}}'::text[],'{{}}'::jsonb);SELECT core_recalc_result('{na}')",U)
+  self.api(f"SELECT core_save_answer(gen_random_uuid(),'{na}','t3p:1','[\"A\"]'::jsonb,{rev})",U)
+  self.api(f"SELECT core_finalize_attempt(gen_random_uuid(),'{na}','{{}}'::text[],'{{}}'::jsonb);SELECT core_recalc_result('{na}')",U)
   self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{na}'").stdout.strip(),'terminee')
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{na}'").stdout.strip(),'1')
   self.assertEqual(before,self.sql(f"SELECT md5(json_agg(x)::text) FROM (SELECT to_jsonb(a) x FROM exam_attempts_v2 a WHERE attempt_id='{att}' UNION ALL SELECT to_jsonb(q) FROM apprenant_quiz_results q WHERE id='{rid}' UNION ALL SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB5__t3p') s").stdout)
