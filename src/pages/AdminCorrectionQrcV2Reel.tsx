@@ -3,6 +3,7 @@
 // Le regroupement des passages suit les sessions réelles du CRM (lecture seule),
 // jamais une session reconstruite à partir de la date ou de l'heure d'un passage.
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
+import {libelleExamen} from '@/features/correction-qrc-v2/libelleExamen';
 import { PanneauRapprochement } from "@/features/correction-qrc-v2/PanneauRapprochement";
 import { proposerPrenote, tracePrenote } from "@/features/correction-qrc-v2/prenote";
 import {qrcDansVue,statutFile,voisineFile,type VueQrc} from '@/features/correction-qrc-v2/fileTravail';
@@ -971,7 +972,7 @@ export default function AdminCorrectionQrcV2Reel() {
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
-                  {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                  {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{libelleExamen(e.exam_id)} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date} (${d.attemptIds.length})`).join(" • ")}
                   {Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length > 0
@@ -1046,7 +1047,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       title={e.groupeLibelle}
                       onClick={() => { if (e.groupeCle !== groupeCle) setGroupeCle(e.groupeCle); setTimeout(() => setEbCle(e.cle), 0); }}
                     >
-                      {e.exam_id}{e.groupeCle !== groupeCle ? ` · ${e.groupeLibelle}` : ""}
+                      {libelleExamen(e.exam_id)}{e.groupeCle !== groupeCle ? ` · ${e.groupeLibelle}` : ""}
                     </Button>
                   ))}
                 </div>
