@@ -39,7 +39,7 @@ export function resultatsAncienCircuit<T extends ResultatHistoriqueMin>(resultat
   return resultats.filter((r) => {
     if (vus.has(r.id)) return false;
     vus.add(r.id);
-    return !!r.completed_at && estExamenBlancReel(r.quiz_id) && !estEb2Vtc(r.quiz_id) && !migres.has(r.id);
+    return !!r.completed_at && estExamenBlancReel(r.quiz_id) && !migres.has(r.id);
   });
 }
 
@@ -94,7 +94,7 @@ export function inventaireAttendu(params: {
   }
   for (const r of params.resultats) {
     if (params.exclus.has(r.apprenant_id) || !r.completed_at || !estExamenBlancReel(r.quiz_id) || migres.has(r.id)) continue;
-    const circuit = estEb2Vtc(r.quiz_id) ? "consultation" : "ancien";
+    const circuit = "ancien";
     out.push({ cle: cleAffichage(circuit, r.id), apprenant_id: r.apprenant_id, exam_id: r.quiz_id, circuit, qrc: r.qrc, date: r.completed_at });
   }
   return out;

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/synchronisationNotes";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
-import { resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { estExamenBlancReel,resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 import { texteSourceExact } from "./menuPassages";
 import {proveNativeMirrors} from './preuveMiroir';
 
@@ -267,7 +267,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
         .order("completed_at", { ascending: false })
         .order("id", { ascending: true })
         .range(de, de + 999), 1) : Promise.resolve([] as any[]);
-  const pConsultation = mode === "migre" ? lirePassagesEb2Consultation() : Promise.resolve([] as any[]);
+  const pConsultation = Promise.resolve([] as any[]);
   const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
   const nativeAnswers:any[]=[];
   const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee');
@@ -311,11 +311,14 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   }
 
   const neutralises = neutralisesLus;
+  const {data:comptesTests,error:erreurTests}=await db.from('comptes_test_techniques').select('apprenant_id');
+  if(erreurTests)throw erreurTests;
+  const exclus=new Set((comptesTests??[]).map((r:any)=>r.apprenant_id));
   const passages = [
     ...submittedAttempts.map((a) => ({ ...a, consultationSeule:neutralises.has(a.attempt_id as string), started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
     ...consultationEb2,
     ...legacyResults,
-  ];
+  ].filter(a=>estExamenBlancReel(a.exam_id)&&(mode==='test'||!exclus.has(a.apprenant_id)));
 
   const apprenantIds = Array.from(new Set(passages.map((a) => a.apprenant_id as string)));
   // Lectures par lots de 150 : une liste d'identifiants trop longue dans l'URL échouerait
