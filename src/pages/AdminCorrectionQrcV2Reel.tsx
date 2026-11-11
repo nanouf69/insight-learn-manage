@@ -5,6 +5,7 @@
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
 import { PanneauRapprochement } from "@/features/correction-qrc-v2/PanneauRapprochement";
 import { proposerPrenote, tracePrenote } from "@/features/correction-qrc-v2/prenote";
+import {qrcDansVue,statutFile,type VueQrc} from '@/features/correction-qrc-v2/fileTravail';
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
@@ -82,6 +83,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
   const [passageFiltre, setPassageFiltre] = useState<string | null>(() => param("qrc_passage"));
   const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
+  const [vueTravail,setVueTravail]=useState<VueQrc>('corriger');
+  const [auditVisible,setAuditVisible]=useState(false);
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [lectureCopies, setLectureCopies] = useState(false);
   const generationRef = useRef(0);
@@ -710,7 +713,8 @@ export default function AdminCorrectionQrcV2Reel() {
           : await recharger();
       if (import.meta.env.DEV) console.info(`[qrc-v2] note enregistrée et relue en ${Math.round(performance.now() - t0)} ms`);
       const sessionNavigation = passageFiltre ? { ...sessionRelue, tentatives: sessionRelue.tentatives.filter(t=>t.attempt_id===passageFiltre), qrc: sessionRelue.qrc.filter(q=>q.attempt_id===passageFiltre) } : sessionRelue;
-      const decision = decisionApresCorrection(sessionNavigation, qrcSel.qrc_instance_id, n);
+      const navigationRestante={...sessionNavigation,qrc:sessionNavigation.qrc.filter(q=>q.qrc_instance_id===qrcSel.qrc_instance_id||statutFile(q,sessionNavigation)===vueTravail)};
+      const decision = decisionApresCorrection(navigationRestante, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
         setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
@@ -740,6 +744,7 @@ export default function AdminCorrectionQrcV2Reel() {
       } else {
         setEtatEnvoi("ok");
         setMessageNavigation("Correction enregistrée — dernière copie de la liste.");
+        if(vueTravail!=='historique')setSelection(null);
       }
     } catch (e) {
       setEtatEnvoi("echec");
@@ -819,7 +824,8 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   };
 
-  const sessionNavigation = passageFiltre && session ? {...session,tentatives:session.tentatives.filter(t=>t.attempt_id===passageFiltre),qrc:session.qrc.filter(q=>q.attempt_id===passageFiltre)} : session;
+  const sessionNavigation = session?{...session,qrc:qrcDansVue(session,vueTravail,passageFiltre)}:null;
+  const fileVisible=qrcDansVue(session,vueTravail,passageFiltre);
   const copiePrecedente = copieVoisine(sessionNavigation, selection, -1);
   const copieSuivante = copieVoisine(sessionNavigation, selection, 1);
   const naviguerCopie = (direction: DirectionCopie) => {
@@ -890,7 +896,7 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const ebsRecents = ebsLesPlusRecents(groupeChoisi, groupeChoisi?.examens ?? [], jourActuel);
   // Panneau tenu ouvert tant qu'une copie est sélectionnée (même pendant une relecture) : largeur stable.
-  const panneauOuvert = !ancienCircuit && !!selection;
+  const panneauOuvert = !ancienCircuit && !!selection&&!!qrcSel&&(vueTravail==='historique'||fileVisible.some(q=>q.qrc_instance_id===selection));
   return (
     <div ref={conteneurRef} className="flex min-h-screen w-full bg-background">
       <div
@@ -984,7 +990,7 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
-          {rechercheNorm && archivesTrouvees.length > 0 && (
+          {vueTravail==='historique'&&rechercheNorm && archivesTrouvees.length > 0 && (
             <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-archives">
               <p className="font-semibold text-muted-foreground">Copies archivées — consultation seule :</p>
               {archivesTrouvees.map((a) => (
@@ -1053,11 +1059,11 @@ export default function AdminCorrectionQrcV2Reel() {
               majUrl({qrc_passage:id,qrc:null});
             }}>
             <option value="">Tous les passages — toutes les tentatives du filtre</option>
-            {copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
+            {(vueTravail==='historique'||vueTravail==='verifier')&&copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
               {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id} · Archive — lecture seule{ebChoisi?.aVerifierParAttempt?.[`ancien:${r.id}`]?' · À vérifier — rapprochement V2 non prouvé':''}
-            </option>)}{ordonnerCandidatsParFin(session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
+            </option>)}{ordonnerCandidatsParFin((session?.tentatives ?? []).filter(t=>vueTravail==='historique'||qrcDansVue(session,vueTravail).some(q=>q.attempt_id===t.attempt_id))).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
           </select>
-          {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
+          {vueTravail==='historique'&&!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
             {qrcSel && (
               <span className="block font-medium text-foreground" data-testid="compteur-candidat">
@@ -1070,7 +1076,7 @@ export default function AdminCorrectionQrcV2Reel() {
               </span>
             )}
           </p>}
-          <p className="text-xs text-muted-foreground" data-testid="legende-origine">
+          {vueTravail==='historique'&&<p className="text-xs text-muted-foreground" data-testid="legende-origine">
             <span className="text-destructive font-semibold">rouge = à corriger (∅ copie vide)</span>
             {" · "}
             <span className="text-ia font-semibold">🤖 violet = corrigée par IA, non vérifiée</span>
@@ -1080,7 +1086,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <span className="text-warning">≈ orange = correction automatique historique</span>
             {" · "}
             <span>? gris = origine à vérifier</span>
-          </p>
+          </p>}
           <div className="flex flex-wrap items-center gap-2 text-xs" data-testid="interrupteur-ia">
             <span className="font-medium">Correction IA automatique des QRC e-learning :</span>
             <span className={`rounded px-2 py-0.5 font-semibold ${configIa?.actif ? "bg-ia/15 text-ia" : "bg-muted text-muted-foreground"}`} data-testid="etat-interrupteur-ia">
@@ -1116,10 +1122,11 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           )}
-          {mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
+          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={vueTravail===v?'default':'ghost'} onClick={()=>{setVueTravail(v);setSelection(null);setArchiveOuverte(null);setPassageFiltre(null);majUrl({qrc:null,qrc_passage:null});}}>{label}</Button>)}<Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
+          {auditVisible&&mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
-        {archiveOuverte ? (
+        {(vueTravail==='historique'||vueTravail==='verifier')&&archiveOuverte ? (
           <div style={{ zoom: `${zoom}%` }} data-testid="archive-ouverte">
             <div className="mb-2 flex items-center gap-2 text-sm">
               <span className="font-semibold">Archive : {archiveOuverte.nom} — {archiveOuverte.libelle}</span>
@@ -1127,14 +1134,15 @@ export default function AdminCorrectionQrcV2Reel() {
             </div>
             <CopiesHistoriquesLecture key={archiveOuverte.cle} resultIds={archiveOuverte.resultIds} />
           </div>
-        ) : ancienCircuit ? (
+        ) : (vueTravail==='historique'||vueTravail==='verifier')&&ancienCircuit ? (
           <div style={{ zoom: `${zoom}%` }}>
             <CopiesHistoriquesLecture resultIds={legacyResultIds ?? []} />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
-        {(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
-        {!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
-        {matieres.map((m) => {
+        {(vueTravail==='historique'||vueTravail==='verifier')&&(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
+        {(vueTravail==='historique'||vueTravail==='verifier')&&!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
+        {vueTravail!=='historique'&&<section aria-label="File des questions" className="divide-y divide-border">{!lectureCopies&&fileVisible.length===0&&<p className="py-6 text-muted-foreground">{vueTravail==='corriger'?'Aucune question à corriger':vueTravail==='valider'?'Aucune question à valider':'Aucune QRC à vérifier'}</p>}{fileVisible.map(q=>{const t=parTentative.get(q.attempt_id);const question=t?.snapshot.questions.find(x=>x.id===q.question_id);const bareme=question?.points??baremeRestaureDe.get(q.qrc_instance_id)?.bareme;return <article key={q.qrc_instance_id} className="space-y-2 py-4"><p className="text-sm font-semibold">{t?.candidat} · {t?.exam_id} · {t?.snapshot.matieres.map(m=>m.titre).join(' / ')} · Tentative {t?numeroTentative(t):'non prouvée'}</p><h2 className="font-medium">{question?.enonce??'Question non prouvée'}</h2><p className="whitespace-pre-wrap break-words">{texte(q.reponseComplete??q.reponse)||'Sans réponse'}</p><p className="text-sm text-muted-foreground">Barème : {bareme??'non prouvé'}{bareme!=null?' points':''}</p>{vueTravail==='verifier'?<p className="text-warning text-sm">À vérifier — consultation seule, notation indisponible.</p>:<Button size="sm" data-testid={`cellule-${q.qrc_instance_id}`} onClick={()=>{setSelection(q.qrc_instance_id);setNote(null);setEtatEnvoi('vide');}}>{vueTravail==='valider'?'Examiner la proposition IA':'Noter cette réponse'}</Button>}</article>;})}</section>}
+        {vueTravail==='historique'&&matieres.map((m) => {
           const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => !t.consultationSeule&&(!passageFiltre || t.attempt_id === passageFiltre) &&
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           ));
