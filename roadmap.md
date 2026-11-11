@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 12:19 — Liens et vidéos dans les cours
+- [ ] Ajouter deux actions à l’éditeur de description et un rendu cours dédié sécurisé, sans modifier RichText/examens.
+- [ ] Vérifier formats, sauvegarde/réouverture et rendu PC/mobile sur fixtures uniquement.
+- [ ] Livrer en aperçu ; publier seulement si le lot est isolable des autres chantiers.
+
 ## 11/11 12:03 — EB4–6 : remise ancienne vers correction manuelle V2
 - [x] SELECT retrouve 99 lignes indicatives (40/31/28) : 98 lignes de réponses non remises, une remise EB6 avec instant divergent. Aucune de ces 99 n'a une preuve de remise suffisante. Douze versions publiées confirmées ; compteurs V2 séparés, sans assimilation d'autres tentatives.
 - [x] Candidat SQL séparé, neuf contrats PostgreSQL jetables PASS avec déclencheurs réels : douze variantes, conservation contenu/images/taille/notes, refus compteur/réponses/instant/droits, rejeu concurrent et correction manuelle fictive → résultat 20/20. Aucun flux apprenant complet ni production validés.
