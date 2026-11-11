@@ -10,6 +10,7 @@ class Integration(base.Integrated):
   super().setUpClass()
   c.sql(Path('docs/sql-revue/2026-11-11-exam-reset-cancellation-integration.sql').read_text())
   base.base.Live.env['PGCLIENTENCODING']='UTF8'
+  c.sql(Path('src/test/fixtures/core_correct_qrc_live_20261107.sql').read_text())
  def setup_exam(self,exam):
   mids=['t3p','gestion','securite','francais','anglais','reglementation_taxi','reglementation_taxi2']
   version=str(uuid.uuid4());reset=str(uuid.uuid4());ats=[];rs=[];ls=[]
@@ -19,6 +20,9 @@ class Integration(base.Integrated):
    att=str(uuid.uuid4());result=str(uuid.uuid4());legacy=str(uuid.uuid4());ats.append(att);rs.append(result);ls.append(legacy)
    snap={**content,'matiere':m,'tentative':1,'questions':[content['questions'][i]],'matieres':[content['matieres'][i]]}
    self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,started_at,finished_at,is_test) VALUES('{att}','{A}','{exam}','{version}',{J(snap)},'f','en_cours',now()-interval '3 days',NULL,true);INSERT INTO core_exam_results(result_id,attempt_id,apprenant_id,score,total,status,qrc_restantes,result_revision) VALUES('{result}','{att}','{A}',17,20,'definitif',0,1);INSERT INTO qrc_instances_v2(qrc_instance_id,attempt_id,apprenant_id,question_id,reponse,etat,note) VALUES(gen_random_uuid(),'{att}','{A}','{m}:1',{J('FICTIF answer')},'en_attente',NULL);UPDATE exam_attempts_v2 SET etat='terminee',finished_at=now()-interval '3 days' WHERE attempt_id='{att}';INSERT INTO apprenant_quiz_results(id,apprenant_id,user_id,quiz_id,quiz_type,quiz_titre,matiere_id,matiere_nom,score_obtenu,score_max,note_sur_20,tentative,created_at,completed_at) VALUES('{legacy}','{A}','{U}','{exam}','examen_blanc','FICTIF','{m}','{m}',17,20,17,1,now()-interval '3 days',now()-interval '3 days');")
+  for att in ats:
+   qid=self.scalar(f"SELECT qrc_instance_id FROM qrc_instances_v2 WHERE attempt_id='{att}'")
+   self.call(f"SELECT core_correct_qrc('{uuid.uuid4()}','{qid}',4,'FICTIF human','admin@example.invalid')")
   before=self.fingerprint(exam)
   self.sql(f"INSERT INTO core_exam_resets(reset_id,operation_id,apprenant_id,exam_id,archived_attempt_ids,archived_core_result_ids,archived_legacy_result_ids,motif) VALUES('{reset}',gen_random_uuid(),'{A}','{exam}',{J(ats)},{J(rs)},{J(ls)},'fixture');INSERT INTO core_tentatives_neutralisees(attempt_id,apprenant_id,exam_id,motif) SELECT attempt_id,apprenant_id,exam_id,'Archive par remise a zero administrative {reset}' FROM exam_attempts_v2 WHERE exam_id='{exam}';INSERT INTO exam_retake_authorizations(apprenant_id,exam_id,reset_id,motif) VALUES('{A}','{exam}','{reset}','fixture')")
   return reset,before

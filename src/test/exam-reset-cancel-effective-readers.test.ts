@@ -22,7 +22,7 @@ it('real SQL fixture: same seven official notes appear in shared learner/CRM and
  expect(state.tables.exam_retake_authorizations_effective).toHaveLength(0);
 });
 it('prepared adapter maps reads but rejects writes',()=>{
- const from=vi.fn(()=>({insert:vi.fn(),select:vi.fn(()=>42)}));const c=effectiveExamReadClient({from});
+ const from=vi.fn((_table:string)=>({insert:vi.fn(),select:vi.fn(()=>42)}));const c=effectiveExamReadClient({from});
  expect(c.from('core_exam_resets').select()).toBe(42);expect(from).toHaveBeenCalledWith('core_exam_resets_effective');
  expect(()=>c.from('core_exam_resets').insert()).toThrow('Lecture seule');
 });
