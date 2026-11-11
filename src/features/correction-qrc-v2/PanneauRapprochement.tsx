@@ -35,7 +35,7 @@ export function PanneauRapprochement({ groupes, pret: copiesPretes = true }: { g
   return (
     <div className={ok ? "text-xs text-muted-foreground" : "rounded border border-destructive p-2 text-xs text-destructive"} data-testid="rapprochement">
       <p className="font-semibold">
-        {ok ? "✓ " : "⚠️ "}Copies terminées avec QRC : {r.attendues} attendues · {r.visibles} visibles · {r.manquantes.length} manquante(s)
+        {ok ? "✓ " : "⚠️ "}Copies remises, QCM et QRC : {r.attendues} attendues · {r.visibles} visibles · {r.manquantes.length} manquante(s)
         <span className="font-normal"> · lu à {new Date(r.luLe).toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris" })}</span>{bouton}
       </p>
       {!ok && (

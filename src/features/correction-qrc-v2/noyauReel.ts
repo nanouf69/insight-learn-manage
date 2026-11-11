@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/synchronisationNotes";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
-import { resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { estExamenBlancReel,resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 import { texteSourceExact } from "./menuPassages";
 import {proveNativeMirrors} from './preuveMiroir';
 
@@ -40,6 +40,7 @@ export type TentativeReelle = {
   started_at?: string | null;
   /** Fin enregistrée par le serveur (exam_attempts_v2.finished_at) ; ordre d'affichage seulement. */
   finished_at?: string | null;
+  consultationSeule?:boolean;
 };
 
 export type QrcReelle = {
@@ -266,7 +267,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
         .order("completed_at", { ascending: false })
         .order("id", { ascending: true })
         .range(de, de + 999), 1) : Promise.resolve([] as any[]);
-  const pConsultation = mode === "migre" ? lirePassagesEb2Consultation() : Promise.resolve([] as any[]);
+  const pConsultation = Promise.resolve([] as any[]);
   const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
   const nativeAnswers:any[]=[];
   const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee');
@@ -310,11 +311,14 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   }
 
   const neutralises = neutralisesLus;
+  const {data:comptesTests,error:erreurTests}=await db.from('comptes_test_techniques').select('apprenant_id');
+  if(erreurTests)throw erreurTests;
+  const exclus=new Set((comptesTests??[]).map((r:any)=>r.apprenant_id));
   const passages = [
-    ...submittedAttempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
+    ...submittedAttempts.map((a) => ({ ...a, consultationSeule:neutralises.has(a.attempt_id as string), started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
     ...consultationEb2,
     ...legacyResults,
-  ];
+  ].filter(a=>estExamenBlancReel(a.exam_id)&&(mode==='test'||!exclus.has(a.apprenant_id)));
 
   const apprenantIds = Array.from(new Set(passages.map((a) => a.apprenant_id as string)));
   // Lectures par lots de 150 : une liste d'identifiants trop longue dans l'URL échouerait
@@ -380,7 +384,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
     // Un seul bloc par numéro d'Examen Blanc dans la session CRM ; les dates réelles
     // de passage sont conservées à l'intérieur (jamais de fusion entre EB différents).
     const ancien = a.circuit === "ancien";
-    const cleEb = `${cle}::${a.exam_id}${ancien ? "::ancien" : ""}`;
+    const cleEb = `${cle}::${a.exam_id}`;
     let eb = g.examens.find((e) => e.cle === cleEb);
     if (!eb) {
       eb = {
@@ -391,8 +395,8 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
         heureMin: heure,
         heureMax: heure,
         attemptIds: [],
-        circuit: ancien ? "ancien" : "v2",
-        legacyResultIds: ancien ? [] : undefined,
+        circuit: "v2",
+        legacyResultIds: [],
         dates: [],
       };
       g.examens.push(eb);
@@ -543,7 +547,7 @@ export async function chargerSessionTest(
   }
 
   const neutralises = await idsNeutralises();
-  attempts = attempts.filter((a) => !neutralises.has(a.attempt_id as string));
+  attempts = attempts.map(a=>({...a,consultationSeule:neutralises.has(a.attempt_id as string)}));
 
 
 
@@ -555,7 +559,7 @@ export async function chargerSessionTest(
   });
   const nomDe = new Map(apprenants.map((a) => [a.id, `${a.nom} ${a.prenom}`]));
 
-  const attemptIds = attempts.map((a) => a.attempt_id as string);
+  const attemptIds = attempts.filter(a=>!a.consultationSeule).map((a) => a.attempt_id as string);
   const qrc = await parLots(attemptIds, async (lot) => {
     return lirePagesParalleles<QrcReelle>(async (de) => {
       const {data,error} = await supabase

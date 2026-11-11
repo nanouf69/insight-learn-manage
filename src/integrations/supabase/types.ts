@@ -8268,6 +8268,30 @@ export type Database = {
         }
         Relationships: []
       }
+      qualiopi_liens_cpf: {
+        Row: {
+          id: string
+          intitule: string
+          revision: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          id: string
+          intitule: string
+          revision?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          id?: string
+          intitule?: string
+          revision?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       qualiopi_preuve_liens: {
         Row: {
           created_at: string

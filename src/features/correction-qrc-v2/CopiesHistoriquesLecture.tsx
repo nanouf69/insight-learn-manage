@@ -35,11 +35,11 @@ export function CopiesHistoriquesLecture({resultIds}: {resultIds:string[]}) {
     {state.rows.map(r=><article key={r.id} className="border-b pb-4 space-y-2 break-words">
       <h3 className="font-semibold"><a className="text-primary underline" href={`/?section=crm&apprenant=${encodeURIComponent(r.apprenant_id)}`} target="_blank" rel="noopener noreferrer">{state.names[r.apprenant_id]??"Nom non disponible"}</a> · {r.quiz_id} · {r.matiere_nom} · Tentative {r.tentative??"À VÉRIFIER"}</h3>
       <p className="text-sm text-muted-foreground">Fin enregistrée : {new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"})}</p>
-      {Object.entries(r.details?.reponses??{}).filter(([,v])=>typeof v==="string"&&v.trim()).map(([id,answer])=>{
+      {Object.entries(r.details?.reponses??{}).map(([id,answer])=>{
         const questions=r.details?.snapshot?.questions;
         const candidates=Array.isArray(questions)?questions.filter((q:any)=>String(q.id)===id):[];
         const q=candidates.length===1?candidates[0]:null;
-        return <div key={id} className="space-y-1"><p className="font-medium">Q{id} — {q?.enonce??"Énoncé figé non prouvé"}</p><p className="whitespace-pre-wrap">{String(answer)}</p>{(()=>{const c=r.details?.correctionsIA?.[id];const pts=Number(c?.pointsObtenus);const bareme=Number(q?.points??c?.bareme);
+        return <div key={id} className="space-y-1"><p className="font-medium">Q{id} — {q?.enonce??"Énoncé figé non prouvé"}</p><p className="whitespace-pre-wrap">{Array.isArray(answer)?answer.join(' + '):String(answer??'Sans réponse')}</p>{q?.type==='QCM'&&Array.isArray(q.choix)&&<ul className="text-sm text-muted-foreground">{q.choix.map((c:any,i:number)=><li key={i}>{c.lettre} — {c.texte}</li>)}</ul>}{q?.type!=='QCM'&&(()=>{const c=r.details?.correctionsIA?.[id];const pts=Number(c?.pointsObtenus);const bareme=Number(q?.points??c?.bareme);
           const fiable=c&&Number.isFinite(pts)&&Number.isFinite(bareme)&&pts>=0&&pts<=bareme&&Math.abs(pts*2-Math.round(pts*2))<1e-9;
           const fr=(v:number)=>String(v).replace(".",",");
           if(c?.validatedByAdmin===true&&fiable) return <p className="text-success text-sm font-semibold" data-testid="note-historique-validee">✓ Note validée par un formateur : {fr(pts)}/{fr(bareme)}</p>;

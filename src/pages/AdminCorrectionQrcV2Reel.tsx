@@ -19,6 +19,7 @@ import { CommentairesPredefinis } from "@/features/correction-qrc-v2/Commentaire
 import { ajouterCommentaireQrc } from "@/features/correction-qrc-v2/commentairesPredefinis";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { CopiesHistoriquesLecture } from "@/features/correction-qrc-v2/CopiesHistoriquesLecture";
+import {CopieNativeLecture} from '@/features/correction-qrc-v2/CopieNativeLecture';
 import { commentaireConfirme, cleOperationCommentaire, versionCommentaire } from "@/features/correction-qrc-v2/commentaireSeul";
 import { chargerConsultationEb2, commenterQrcHistorique, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
@@ -184,7 +185,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
-  const ancienCircuit = ebChoisi?.circuit === "ancien";
+  // A selected archive opens its read-only source, never the grading engine.
+  const ancienCircuit = !!passageFiltre?.startsWith('ancien:');
 
   // Recherche de candidat (filtrage d'affichage uniquement, aucune écriture).
   const [recherche, setRecherche] = useState("");
@@ -265,24 +267,21 @@ export default function AdminCorrectionQrcV2Reel() {
     return () => { annule = true; clearTimeout(t); };
   }, [rechercheNorm]);
 
-  const attemptsBase = ancienCircuit ? null : (dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null);
+  const catalogueAttempts = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null;
+  const attemptsBase = catalogueAttempts?.filter(id=>!id.startsWith('ancien:'))??null;
   const cleAttempts = idsTrouves
     ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
     : (attemptsBase ?? []).join(",");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null, groupeCle, ebCle]);
   const nbPassagesCroises = nombrePassagesCroises(attemptsAffiches ?? [], ebChoisi?.inscriptionCroiseeParAttempt);
-  const legacyResultIdsBase = ancienCircuit
-    ? (jourFiltre
-        ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
-        : ebChoisi?.legacyResultIds)
-    : undefined;
+  const legacyResultIdsBase = ebChoisi?.legacyResultIds?.filter(id=>catalogueAttempts?.includes(`ancien:${id}`)&&(!idsTrouves||idsTrouves.has(ebChoisi?.apprenantParAttempt?.[`ancien:${id}`]??'')));
   const legacyResultIds = passageFiltre ? legacyResultIdsBase?.filter(id => `ancien:${id}` === passageFiltre) : legacyResultIdsBase;
   const passageLegacyKey = (legacyResultIdsBase ?? []).join(",");
   useEffect(() => {
     let cancelled = false;
     setCopiesAnciennes([]);
-    if (!ancienCircuit || !passageLegacyKey) return;
+    if (!passageLegacyKey) return;
     void (async () => {
       try {
         const rows: typeof copiesAnciennes = [];
@@ -296,7 +295,7 @@ export default function AdminCorrectionQrcV2Reel() {
       } catch { if (!cancelled) setErreur("Lecture de l’historique des passages impossible."); }
     })();
     return () => { cancelled = true; };
-  }, [ancienCircuit, passageLegacyKey]);
+  }, [passageLegacyKey]);
 
   // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
@@ -939,7 +938,7 @@ export default function AdminCorrectionQrcV2Reel() {
             >
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
-                  {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
+                  {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date} (${d.attemptIds.length})`).join(" • ")}
                   {Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length > 0
@@ -987,12 +986,12 @@ export default function AdminCorrectionQrcV2Reel() {
           </div>
           {rechercheNorm && archivesTrouvees.length > 0 && (
             <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-archives">
-              <p className="font-semibold text-muted-foreground">Archives de l'ancien circuit (lecture de l'existant, aucune migration) :</p>
+              <p className="font-semibold text-muted-foreground">Copies archivées — consultation seule :</p>
               {archivesTrouvees.map((a) => (
                 <div key={a.cle} className="flex flex-wrap items-center gap-1" data-testid="archive-trouvee">
                   <span className="font-semibold">{a.nom}</span><span className="text-muted-foreground">—</span>
                   <Button size="sm" variant={archiveOuverte?.cle === a.cle ? "default" : "outline"} className="h-6 px-2 text-xs"
-                    onClick={() => setArchiveOuverte(a)}>{a.libelle} — ancien circuit</Button>
+                    onClick={() => setArchiveOuverte(a)}>{a.libelle} — archive, lecture seule</Button>
                 </div>
               ))}
             </div>
@@ -1014,7 +1013,7 @@ export default function AdminCorrectionQrcV2Reel() {
                       title={e.groupeLibelle}
                       onClick={() => { if (e.groupeCle !== groupeCle) setGroupeCle(e.groupeCle); setTimeout(() => setEbCle(e.cle), 0); }}
                     >
-                      {e.exam_id}{e.circuit === "ancien" ? " (ancien circuit)" : ""}{e.groupeCle !== groupeCle ? ` · ${e.groupeLibelle}` : ""}
+                      {e.exam_id}{e.groupeCle !== groupeCle ? ` · ${e.groupeLibelle}` : ""}
                     </Button>
                   ))}
                 </div>
@@ -1054,9 +1053,9 @@ export default function AdminCorrectionQrcV2Reel() {
               majUrl({qrc_passage:id,qrc:null});
             }}>
             <option value="">Tous les passages — toutes les tentatives du filtre</option>
-            {ancienCircuit ? copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
-              {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id}{ebChoisi?.aVerifierParAttempt?.[`ancien:${r.id}`]?' · À vérifier — rapprochement V2 non prouvé':''}
-            </option>) : ordonnerCandidatsParFin(session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
+            {copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
+              {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id} · Archive — lecture seule{ebChoisi?.aVerifierParAttempt?.[`ancien:${r.id}`]?' · À vérifier — rapprochement V2 non prouvé':''}
+            </option>)}{ordonnerCandidatsParFin(session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
           </select>
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
@@ -1133,8 +1132,10 @@ export default function AdminCorrectionQrcV2Reel() {
             <CopiesHistoriquesLecture resultIds={legacyResultIds ?? []} />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
+        {(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
+        {!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
         {matieres.map((m) => {
-          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => (!passageFiltre || t.attempt_id === passageFiltre) &&
+          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => !t.consultationSeule&&(!passageFiltre || t.attempt_id === passageFiltre) &&
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           ));
           // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC

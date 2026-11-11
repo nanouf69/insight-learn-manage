@@ -39,7 +39,7 @@ export function resultatsAncienCircuit<T extends ResultatHistoriqueMin>(resultat
   return resultats.filter((r) => {
     if (vus.has(r.id)) return false;
     vus.add(r.id);
-    return !!r.completed_at && estExamenBlancReel(r.quiz_id) && !estEb2Vtc(r.quiz_id) && !migres.has(r.id);
+    return !!r.completed_at && estExamenBlancReel(r.quiz_id) && !migres.has(r.id);
   });
 }
 
@@ -87,14 +87,14 @@ export function inventaireAttendu(params: {
   for (const m of params.miroirs ?? []) migres.add(m);
   const out: CopieAttendue[] = [];
   for (const t of params.tentatives) {
-    if (params.exclus.has(t.apprenant_id) || t.etat !== "terminee" || params.neutralises.has(t.attempt_id)) continue;
+    if (params.exclus.has(t.apprenant_id) || t.etat !== "terminee") continue;
     if (!estExamenBlancReel(t.exam_id)) continue;
     const n = params.qrcParTentative.get(t.attempt_id) ?? 0;
     out.push({ cle: t.attempt_id, apprenant_id: t.apprenant_id, exam_id: t.exam_id, circuit: "v2", qrc: n, date: null });
   }
   for (const r of params.resultats) {
     if (params.exclus.has(r.apprenant_id) || !r.completed_at || !estExamenBlancReel(r.quiz_id) || migres.has(r.id)) continue;
-    const circuit = estEb2Vtc(r.quiz_id) ? "consultation" : "ancien";
+    const circuit = "ancien";
     out.push({ cle: cleAffichage(circuit, r.id), apprenant_id: r.apprenant_id, exam_id: r.quiz_id, circuit, qrc: r.qrc, date: r.completed_at });
   }
   return out;
