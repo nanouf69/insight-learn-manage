@@ -24,9 +24,9 @@ it('signal de validation : retire le premier cadre, conserve l’autre et le fil
   act(() => signal());
   await waitFor(() => expect(screen.getAllByText('Note définitive manquante')).toHaveLength(1));
   expect(screen.getByRole('combobox', { name: 'Examen blanc' })).toHaveValue('EB1');
-  const a = screen.getByRole('rowheader', { name: 'A Test' });
+  const a = screen.getByRole('columnheader', { name: 'A Test' });
   expect(within(a).queryByText('Note définitive manquante')).toBeNull();
-  expect(screen.getByRole('rowheader', { name: 'B Test Note définitive manquante' })).toBeInTheDocument();
+  expect(screen.getByRole('columnheader', { name: 'B Test Note définitive manquante' })).toBeInTheDocument();
   expect(screen.getByRole('table')).toHaveTextContent('0 /20');
   expect(charger.mock.calls).toEqual([['s1'], ['s1']]);
 });
@@ -57,6 +57,6 @@ it('sérialise les relectures et ignore une réponse de l’ancienne session', a
   expect(charger).toHaveBeenCalledTimes(2);
   await act(async () => terminer(relevé(true)));
   await screen.findByText('Aucun inscrit — Aucune note définitive (0/0).');
-  expect(screen.queryByRole('rowheader', { name: 'A Test' })).toBeNull();
+  expect(screen.queryByRole('columnheader', { name: 'A Test' })).toBeNull();
   expect(charger.mock.calls).toEqual([['s1'], ['s1'], ['s2']]);
 });
