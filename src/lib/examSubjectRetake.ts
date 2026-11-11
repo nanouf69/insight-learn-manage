@@ -36,7 +36,14 @@ export async function startSubjectRetake(p: {
   owner: string; account: string; exam: string; subject: string; sourceExercise: string; sourceAttempt?: string | null;
 }): Promise<SubjectRetakeReceipt> {
   const current = await readSubjectResetContext(p.account,p.exam,p.subject);
-  if (['ambigu','en_cours'].includes(current.status)) throw new Error(current.reason ?? 'Reprenez la copie existante.');
+  if (current.status === 'en_cours') {
+    const {data,error}=await supabase.from('exam_subject_retakes' as never).select('*')
+      .eq('apprenant_id',p.account).eq('exam_id',p.exam).eq('matiere_id',p.subject).eq('exercice_id',current.source_exercice_id).maybeSingle();
+    if(error)throw new Error(error.message);
+    if(data)return validateSubjectRetakeReceipt(data,p.account,p.exam,p.subject);
+    throw new Error(current.reason ?? 'Reprenez la copie existante.');
+  }
+  if(current.status==='ambigu')throw new Error(current.reason ?? 'Identité non prouvée.');
   // The displayed result may belong to an earlier attempt. Server identity wins, never a guessed suffix.
   p = {...p,sourceExercise:current.source_exercice_id,sourceAttempt:current.source_attempt_id};
   const op = await operationId(`subject-retake:${p.owner}:${p.account}:${p.exam}:${p.subject}:${p.sourceExercise}:${p.sourceAttempt ?? 'legacy'}`);
