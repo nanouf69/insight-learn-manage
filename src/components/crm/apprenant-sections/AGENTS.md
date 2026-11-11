@@ -1,0 +1,2 @@
+# Subject-reset boundary
+- The per-subject admin reset button is a blocked preview with no mutation transport until a deferred-start admin-only operation and learner readback are proven; why: owner retakes start timers immediately and global reset fallbacks affect other subjects.
