@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 16:33 — Détail des erreurs au premier essai
+- [ ] Audit SELECT des sources/sessions et identification sans deviner la question.
+- [ ] Détail exact issu du calcul, exclusions et droits conservés, tests et aperçu PC/mobile.
+- [ ] Rapport des chiffres, limites et révision exacte ; aucune écriture réelle/publication.
+
 ## 11/11 14:58 — Confirmation interne plein écran
 - [x] Confirmations révision/navigation internes au conteneur fullscreen, focus/Échap, intention périmée refusée et double envoi bloqué.
 - [x] 39 tests fictifs PASS ; Chromium iframe + fullscreen natif avant/pendant/après, annuler/Échap/confirmer puis relecture 0,5/2, un seul envoi simulé ; navigation avec commentaire vérifiée ; aucune note réelle ni publication.
