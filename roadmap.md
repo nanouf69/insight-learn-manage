@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 17:45 — Provenance des QRC en attente
-- [ ] Liens issus des passages officiels réellement retenus : session CRM de la date, date, passage, examen et apprenant ; plusieurs sources affichées séparément.
-- [ ] MEMDOUH EB4 TAXI 30/10 : six QRC visibles/corrigeables en lecture seule, test croisé deux sessions ; aucune donnée ni publication.
+- [x] Liens issus des passages officiels réellement retenus : session CRM de la date, date, passage, examen et apprenant ; plusieurs sources affichées séparément, classification exacte lue sur ces seules copies.
+- [x] MEMDOUH EB4 TAXI 30/10 : six QRC visibles/corrigeables en lecture admin réelle (4 nationale, 2 locale), test croisé deux sessions et navigateur ; aucune donnée ni publication.
 
 ## 11/11 17:41 — Absence du jour dans Notes par session
 - [x] Lecture admin en lots session/jour, créneaux des inscriptions retenues tous terminés et cours prouvé par signatures des inscrits ; papier/heures/signature partielle inhibent Absent, erreur = aucun indicateur.

@@ -38,6 +38,7 @@ const jourFr=(j:string)=>j.split('-').reverse().join('/');
 export function sourceAttenteMatiere(row:any,liens:any[],sessionAffichee:string,typeApprenant:string):SourceAttente{
   const core=row?.__core;
   if(!core?.attemptId||!core.finishedAt)return {destinations:[],motif:'non_rattachee'};
+  if(core.resultId!==row.id&&!core.provenResultIds?.includes(String(row.id)))return {destinations:[],motif:'non_rattachee'};
   if(/-e$/i.test(typeApprenant))return {destinations:[],motif:'non_rattachee'};
   if(Number(core.qrcRestantes)<=0)return {destinations:[],motif:'publication'};
   const jour=jourParisIso(core.finishedAt);
