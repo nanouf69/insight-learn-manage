@@ -55,7 +55,7 @@ export function ExamCardAccess({examId,access}:{examId:string;access:ReturnType<
     <SelectValue placeholder="Choisir explicitement une session" />
    </SelectTrigger>
    <SelectContent className="max-w-[calc(100vw-2rem)]">
-    {choices.map(s=><SelectItem key={s.id} value={s.id} className={`[&>span:last-child]:whitespace-normal ${s.current?'text-destructive font-semibold focus:text-destructive data-[highlighted]:text-destructive':''}`}>
+    {choices.map(s=><SelectItem key={s.id} value={s.id} className={`[&>span:last-child]:whitespace-normal ${s.current?'text-destructive font-semibold focus:bg-muted focus:text-destructive data-[highlighted]:bg-muted data-[highlighted]:text-destructive':''}`}>
      {sessionChoiceLabel(s)}
     </SelectItem>)}
    </SelectContent>
