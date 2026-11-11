@@ -96,10 +96,10 @@ BEGIN
  OR (r.details ? 'source_tentative' AND r.details->>'source_tentative' IS DISTINCT FROM r.tentative::text) THEN
   RETURN jsonb_build_object('statut','revue','raison','identite_ou_reponses_divergentes'); END IF;
  -- Require an immutable source link or the SAME recorded submission instant, not a time window.
- IF s.submitted_at IS DISTINCT FROM r.completed_at AND NOT (
+ IF s.submitted_at IS DISTINCT FROM r.completed_at AND NOT coalesce((
   r.details->>'source_submission_id'=s.id::text
   AND r.details->>'source_submission_write_seq'=s.write_seq::text
-  AND r.details->>'source_submission_at'=s.submitted_at::text) THEN
+  AND r.details->>'source_submission_at'=s.submitted_at::text),false) THEN
   RETURN jsonb_build_object('statut','revue','raison','identite_remise_non_figee'); END IF;
  -- Another native copy is not a substitute for this source. No time-window matching.
  IF EXISTS(SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=r.apprenant_id AND a.exam_id=r.quiz_id

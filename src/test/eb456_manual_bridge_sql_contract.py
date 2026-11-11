@@ -20,7 +20,7 @@ class Bridge(unittest.TestCase):
         Live.sql("CREATE TABLE public.qrc_historique_corrections(result_id uuid)")
         # Candidate exclusion must happen in the eligibility function, not by changing global config.
         eligibility = json.loads(Path('src/test/fixtures/subject-reset-live-triggers-20261111.json').read_text())['functions']['qrc_ia_raison_file']
-        eligibility = eligibility.replace('BEGIN\n', "BEGIN\n IF EXISTS(SELECT 1 FROM public.exam_attempts_v2 a WHERE a.attempt_id=p_attempt AND a.snapshot->>'correction_manuelle_exclusivement'='true') THEN RETURN 'correction_manuelle_exclusivement'; END IF;\n", 1)
+        eligibility = eligibility.replace('BEGIN\n', "BEGIN\n IF EXISTS(SELECT 1 FROM public.exam_attempts_v2 manual_copy WHERE manual_copy.attempt_id=p_attempt AND manual_copy.snapshot->>'correction_manuelle_exclusivement'='true') THEN RETURN 'correction_manuelle_exclusivement'; END IF;\n", 1)
         Live.sql(eligibility)
         Live.sql(Path('docs/sql-revue/2026-11-11-eb456-manual-bridge.sql').read_text())
 
