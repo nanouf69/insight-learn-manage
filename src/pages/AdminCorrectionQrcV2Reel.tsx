@@ -1272,10 +1272,14 @@ function CorrectionQrcReelle() {
                     </tr>
                   </thead>
                   <tbody>
-                    {tentatives.map((t) => (
+                    {tentatives.map((t, index) => (
                       <tr key={t.attempt_id}>
+                        <td data-testid={`numero-${t.attempt_id}`} className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-center tabular-nums text-muted-foreground`}>
+                          {index + 1}
+                        </td>
                         <td
-                          className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 font-medium`}
+                          style={{ left: `${LARGEURS_MATRICE.numero}rem` }}
+                          className={`${panneauOuvert ? "" : "md:sticky md:z-[1]"} bg-background px-1 py-0.5 font-medium`}
                           title={`${t.candidat}${ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? ` — Inscription croisée, également visible dans ${ebChoisi.inscriptionCroiseeParAttempt[t.attempt_id].join(" et ")}` : ""}`}
                         >
                           <a
