@@ -122,16 +122,95 @@ class Live(base.Contract):
   self.assertNotEqual(self.authorize(c,str(uuid.uuid4()),check=False).returncode,0)
   self.assertNotEqual(self.call(f"SELECT start_exam_subject_retake(gen_random_uuid(),'{A}','EB6-TAXI','t3p','{c['source_exercice_id']}',NULL)",U,False).returncode,0)
   self.assertEqual(counts,self.sql("SELECT (SELECT count(*) FROM exam_subject_reset_authorizations),(SELECT count(*) FROM exam_subject_retakes),(SELECT count(*) FROM exam_attempts_v2),(SELECT count(*) FROM reponses_apprenants),(SELECT count(*) FROM apprenant_examen_timers)").stdout)
- def test_05_open_v2_copy_like_arezki_is_never_replaced(self):
+ def test_05_active_empty_v2_copy_remains_locked(self):
   self.seed('EB1','t3p')
   att=self.v2('EB1','t3p',{},etat='en_cours')
-  self.sql(f"INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,tentative,started_at) VALUES('{A}','{U}','EB1__t3p',2700,1,now()-interval '1 day')")
+  self.sql(f"INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,tentative,started_at) VALUES('{A}','{U}','EB1__t3p',2700,1,now())")
   before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout
-  c=self.context('EB1','t3p');self.assertEqual((c['status'],c['source_attempt_id']),('en_cours',att))
+  c=self.context('EB1','t3p');self.assertEqual((c['status'],c['source_attempt_id'],c['expired_empty']),('en_cours',att,False))
   self.assertNotEqual(self.authorize(c,str(uuid.uuid4()),check=False).returncode,0)
   self.assertNotEqual(self.call(f"SELECT start_exam_subject_retake(gen_random_uuid(),'{A}','EB1','t3p','EB1__t3p','{att}')",U,False).returncode,0)
   self.assertEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout)
   self.assertEqual(self.sql(f"SELECT count(*) FROM exam_attempts_v2 WHERE exam_id='EB1'").stdout.strip(),'1')
+  self.assertNotEqual(self.api(f"SELECT exam_subject_reset_expired_empty('{att}','EB1__t3p')",ADMIN,False).returncode,0)
+ def test_05b_expired_empty_neutralised_then_learner_starts_and_submits(self):
+  self.seed('EB2','t3p')
+  att=self.v2('EB2','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
+  other=self.v2('EB2','anglais',{},etat='terminee')
+  self.sql(f"INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,tentative,started_at) VALUES('{A}','{U}','EB2__t3p',2700,1,'2026-11-09 08:00:00+00')")
+  fixed="attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,is_test"
+  before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout
+  other_before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{other}'").stdout
+  c=self.context('EB2','t3p');self.assertEqual((c['status'],c['source_attempt_id'],c['expired_empty']),('en_attente',att,True))
+  op=str(uuid.uuid4());self.authorize(c,op)
+  # Admin confirmation only neutralises the empty original. It creates no new copy, timer or grade.
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout.strip(),'abandonnee')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}' AND motif='subject-reset-expired-empty:{op}'").stdout.strip(),'1')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM exam_attempts_v2 WHERE exam_id='EB2' AND snapshot->>'matiere'='t3p'").stdout.strip(),'1')
+  self.assertEqual(self.sql("SELECT count(*) FROM apprenant_examen_timers WHERE exercice_id='EB2__t3p__t2'").stdout.strip(),'0')
+  self.assertEqual(self.sql("SELECT count(*) FROM core_exam_results").stdout.strip(),'0')
+  current=self.context('EB2','t3p');self.assertEqual(current['authorization_id'],op)
+  self.authorize(current,op)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'1')
+  # Late answer/finalisation on the neutralised original is rejected atomically.
+  self.assertNotEqual(self.api(f"SELECT core_save_answer(gen_random_uuid(),'{att}','t3p:1','[\"A\"]'::jsonb,0)",U,False).returncode,0)
+  self.assertNotEqual(self.api(f"SELECT core_finalize_attempt(gen_random_uuid(),'{att}','{{}}'::text[],'{{}}'::jsonb)",U,False).returncode,0)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM answer_state WHERE attempt_id='{att}'").stdout.strip(),'0')
+  r=json.loads(self.start(current,str(uuid.uuid4())).stdout.splitlines()[-1]);na=r['attempt_id']
+  self.assertEqual((r['moteur'],r['tentative'],r['exercice_id']),('v2',2,'EB2__t3p__t2'));self.assertNotEqual(na,att)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{na}'").stdout.strip(),'0')
+  self.api(f"SELECT core_save_answer(gen_random_uuid(),'{na}','t3p:1','[\"A\"]'::jsonb,0)",U)
+  self.api(f"SELECT core_finalize_attempt(gen_random_uuid(),'{na}','{{}}'::text[],'{{}}'::jsonb);SELECT core_recalc_result('{na}')",U)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{na}'").stdout.strip(),'1')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{att}'").stdout.strip(),'0')
+  immutable=self.sql(f"SELECT jsonb_build_object('attempt_id',attempt_id,'apprenant_id',apprenant_id,'exam_id',exam_id,'exam_version_id',exam_version_id,'snapshot',snapshot,'snapshot_fingerprint',snapshot_fingerprint,'started_at',started_at,'is_test',is_test) FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout
+  expected=self.sql(f"SELECT jsonb_build_object('attempt_id',attempt_id,'apprenant_id',apprenant_id,'exam_id',exam_id,'exam_version_id',exam_version_id,'snapshot',snapshot,'snapshot_fingerprint',snapshot_fingerprint,'started_at',started_at,'is_test',is_test) FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout
+  self.assertEqual(immutable,expected)
+  self.assertEqual(other_before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{other}'").stdout)
+  self.assertNotEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout)
+  self.assertEqual(self.sql("SELECT count(*) FROM qrc_ia_corrections").stdout.strip(),'0')
+  self.assertEqual(self.sql("SELECT count(*) FROM _effets_externes WHERE kind='http'").stdout.strip(),'0')
+ def test_05c_expired_with_answer_and_event_stays_locked(self):
+  self.seed('EB4-TAXI','t3p');att=self.v2('EB4-TAXI','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
+  self.api(f"SELECT core_save_answer(gen_random_uuid(),'{att}','t3p:1','[\"A\"]'::jsonb,0)",U)
+  before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout
+  c=self.context('EB4-TAXI','t3p');self.assertEqual((c['status'],c['expired_empty']),('en_cours',False))
+  self.assertNotEqual(self.authorize(c,str(uuid.uuid4()),check=False).returncode,0)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'0')
+  self.assertEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM answer_state WHERE attempt_id='{att}'").stdout.strip(),'1')
+  self.assertGreaterEqual(int(self.sql(f"SELECT count(*) FROM answer_events WHERE attempt_id='{att}'").stdout.strip()),1)
+ def test_05d_expired_with_result_stays_locked(self):
+  self.seed('EB1-TAXI','t3p');att=self.v2('EB1-TAXI','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
+  self.sql(f"INSERT INTO core_exam_results(attempt_id,apprenant_id,score,total) VALUES('{att}','{A}',10,20)")
+  c=self.context('EB1-TAXI','t3p');self.assertEqual((c['status'],c['expired_empty']),('en_cours',False))
+  self.assertNotEqual(self.authorize(c,str(uuid.uuid4()),check=False).returncode,0)
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout.strip(),'en_cours')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'0')
+ def test_05e_expired_but_ambiguous_provenance_stays_locked(self):
+  self.seed('eb6-ta','t3p')
+  first=self.v2('eb6-ta','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
+  self.v2('eb6-ta','t3p',{},etat='en_cours',started_at="2026-11-09 09:00:00+00")
+  c=self.context('eb6-ta','t3p');self.assertEqual((c['status'],c['source_attempt_id'],c['expired_empty']),('ambigu',None,False))
+  self.assertNotEqual(self.authorize(c,str(uuid.uuid4()),check=False).returncode,0)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{first}'").stdout.strip(),'0')
+ def test_05f_concurrent_late_answer_and_admin_are_atomic(self):
+  from concurrent.futures import ThreadPoolExecutor
+  self.seed('EB6','t3p');att=self.v2('EB6','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
+  c=self.context('EB6','t3p');self.assertTrue(c['expired_empty']);op=str(uuid.uuid4())
+  with ThreadPoolExecutor(max_workers=2) as pool:
+   admin=pool.submit(lambda:self.authorize(c,op,check=False).returncode)
+   late=pool.submit(lambda:self.api(f"SELECT core_save_answer(gen_random_uuid(),'{att}','t3p:1','[\"A\"]'::jsonb,0)",U,False).returncode)
+   admin_code=admin.result();late_code=late.result()
+  self.assertEqual(sorted([admin_code==0,late_code==0]),[False,True])
+  if admin_code==0:
+   self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout.strip(),'abandonnee')
+   self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'1')
+   self.assertEqual(self.sql(f"SELECT count(*) FROM answer_state WHERE attempt_id='{att}'").stdout.strip(),'0')
+  else:
+   self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout.strip(),'en_cours')
+   self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'0')
+   self.assertEqual(self.sql(f"SELECT count(*) FROM answer_state WHERE attempt_id='{att}'").stdout.strip(),'1')
  def test_06_admin_actions_never_touch_learner_tables(self):
   self.seed('EB2-TAXI','t3p');t=lambda:self.sql("SELECT (SELECT count(*) FROM reponses_apprenants),(SELECT count(*) FROM apprenant_examen_timers),(SELECT count(*) FROM apprenant_quiz_results),(SELECT count(*) FROM exam_attempts_v2),(SELECT count(*) FROM apprenant_module_completion),(SELECT count(*) FROM _effets_externes)").stdout
   b=t();c=self.context('EB2-TAXI','t3p');self.authorize(c,str(uuid.uuid4()));self.assertEqual(b,t())
