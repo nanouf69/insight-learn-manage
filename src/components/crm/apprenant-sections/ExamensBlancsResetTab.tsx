@@ -35,13 +35,17 @@ import {
   normalizeNoteSur20,
   toFiniteNumber,
 } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
+import { mergePassageSiblingRows, isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/examResetAdmin";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { composeSubjectPanel } from '@/lib/examSubjectPanel';
 import { ResetMatiereAdminButton } from "./ResetMatiereAdminButton";
 import HistoriqueCopiesMatiere from "./HistoriqueCopiesMatiere";
+import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
+import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
+import { attacherSourceUnique } from "@/lib/noteExamenAffichee";
+import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
 const STATIC_EXAMENS_BLANCS = [
@@ -77,6 +81,7 @@ interface ExamenResult {
   correctionsIA?: any;
   /** Contenu brut `details` (contient le snapshot figé de la tentative). */
   details?: any;
+  __core?: any;
 }
 
 interface ExamenGroup {
@@ -119,9 +124,10 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
   // Définitions ACTUELLES enregistrées (identiques à l'espace apprenant).
   const { examens: examensActuels } = useLiveExamens();
+  const coreTick = useCoreChangeTick(apprenant.id);
 
   const { data: examGroups = [], isLoading } = useQuery({
-    queryKey: ["examen-blanc-results-admin", apprenant.id],
+    queryKey: ["examen-blanc-results-admin", apprenant.id, coreTick],
     queryFn: async () => {
       const examensDefs = await fetchLiveExamens().catch(() => STATIC_EXAMENS_BLANCS);
       // 1. Load completed quiz results
@@ -140,6 +146,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       if (resetError) throw resetError;
       const archivedLegacyIds = idsResultatsLegacyArchives(resetRows);
       const resetCutoffs = latestExamResetCutoffs(resetRows);
+      const coreStates = await fetchCoreMatiereStates(apprenant.id);
+      const nonFiables = coreStates === null ? null
+        : await fetchPassagesV2NonFiables(new Map([[apprenant.id, coreStates]]));
 
       // Group rows by quiz_id, then dedupe per matière via selectLatestAttemptRows
       // (same logic as ExamenBlancsListe.tsx côté élève) so admin & student agree.
@@ -173,6 +182,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             reponses: (row as any).details?.reponses ?? null,
             correctionsIA: (row as any).details?.correctionsIA ?? null,
             details: (row as any).details ?? null,
+            __core: attacherSourceUnique(row, coreStates, nonFiables).__core,
           };
 
           const existing = grouped.get(key);
@@ -362,6 +372,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 reponses: r.reponses ?? null,
                 correctionsIA: r.correctionsIA ?? null,
                 details: (r as any).details ?? null,
+                __core: r.__core,
               }));
               const bilanExamen = examenDef
                 ? computeMoyenneExamen(examenDef, (m) => {
@@ -372,6 +383,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                       score_obtenu: row.score_obtenu,
                       score_max: row.score_max,
                       note_sur_20: (row as any).note_sur_20,
+                      __core: row.__core,
                     });
                   })
                 : null;
@@ -380,6 +392,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 : group.totalMax > 0
                   ? ((group.totalScore / group.totalMax) * 20).toFixed(1)
                   : "0";
+              const publicationPending = isExamAttemptPublicationPending(group.results, examenDef);
 
               return (
                 <div key={key} className="border rounded-lg overflow-hidden">
@@ -408,7 +421,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                             <>
                               <span className="flex items-center gap-1">
                                 <Trophy className="w-3 h-3" />
-                                Note : {noteGlobale}/20
+                                {publicationPending ? "Note en attente de correction ou de vérification" : `Note : ${noteGlobale}/20`}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Hash className="w-3 h-3" />
