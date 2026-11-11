@@ -18,10 +18,10 @@ CREATE TRIGGER subject_reset_immutable BEFORE UPDATE OR DELETE ON public.exam_su
 CREATE FUNCTION public.exam_subject_reset_context(p_apprenant_id uuid,p_exam_id text,p_matiere_id text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE
- subject jsonb; whole jsonb; version_token text; track text; learner public.apprenants;
+ subject jsonb; whole jsonb; v_version_token text; track text; learner public.apprenants;
  result public.apprenant_quiz_results; answer public.reponses_apprenants; timer public.apprenant_examen_timers;
  attempt public.exam_attempts_v2; source_key text; source_attempt uuid;
- n integer; status text; reason text; source_token text; grant_id uuid;
+ n integer; status text; reason text; v_source_token text; grant_id uuid;
 BEGIN
  IF auth.uid() IS NULL OR NOT (public.core_est_proprietaire(p_apprenant_id) OR public.has_role(auth.uid(),'admin')) THEN
   RAISE EXCEPTION 'Droits insuffisants.' USING ERRCODE='42501'; END IF;
@@ -34,7 +34,7 @@ BEGIN
  SELECT count(*),jsonb_agg(m)->0 INTO n,subject FROM jsonb_array_elements(whole->'matieres') m WHERE m->>'id'=p_matiere_id;
  IF n<>1 OR coalesce(jsonb_array_length(subject->'questions'),0)=0 OR (subject->>'duree')::integer<=0 THEN
   RAISE EXCEPTION 'Matière officielle absente ou incomplète.' USING ERRCODE='P0487'; END IF;
- version_token:=md5(whole::text);
+ v_version_token:=md5(whole::text);
  SELECT * INTO result FROM public.apprenant_quiz_results WHERE apprenant_id=p_apprenant_id AND quiz_id=p_exam_id
   AND matiere_id=p_matiere_id AND quiz_type='examen_blanc' ORDER BY tentative DESC,completed_at DESC,id LIMIT 1;
  SELECT * INTO answer FROM public.reponses_apprenants WHERE apprenant_id=p_apprenant_id AND exercice_type='examen_blanc'
@@ -74,16 +74,16 @@ BEGIN
   WHEN 'en_cours' THEN 'Une copie est en cours ; reprenez-la sans la remplacer.' ELSE NULL END;
  IF result.id IS NOT NULL AND answer.id IS NULL AND timer.id IS NULL AND source_attempt IS NULL THEN
   status:='ambigu';reason:='Résultat sans preuve de remise ni chronomètre ; revue manuelle requise.'; END IF;
- source_token:=md5(jsonb_build_object('source',source_key,'attempt',source_attempt,'result',result.id,
+ v_source_token:=md5(jsonb_build_object('source',source_key,'attempt',source_attempt,'result',result.id,
   'answer_id',answer.id,'timer_id',timer.id)::text);
  SELECT a.operation_id INTO grant_id FROM public.exam_subject_reset_authorizations a
   WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id AND a.matiere_id=p_matiere_id
-   AND a.source_token=exam_subject_reset_context.source_token AND a.version_token=exam_subject_reset_context.version_token
+   AND a.source_token=v_source_token AND a.version_token=v_version_token
    AND NOT EXISTS(SELECT 1 FROM public.exam_subject_retakes r WHERE r.authorization_id=a.operation_id);
  RETURN jsonb_build_object('apprenant_id',p_apprenant_id,'exam_id',p_exam_id,'filiere',track,'matiere_id',p_matiere_id,
   'learner_name',trim(learner.prenom||' '||learner.nom),'subject_name',subject->>'nom','status',status,'reason',reason,
   'source_exercice_id',source_key,'source_attempt_id',source_attempt,'source_result_id',result.id,
-  'source_token',source_token,'version_token',version_token,'authorization_id',grant_id);
+  'source_token',v_source_token,'version_token',v_version_token,'authorization_id',grant_id);
 END $$;
 REVOKE ALL ON FUNCTION public.exam_subject_reset_context(uuid,text,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.exam_subject_reset_context(uuid,text,text) TO authenticated;
