@@ -167,6 +167,19 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it('timeout initial : pas de faux vide, retry retrouve grille et toutes notes',async()=>{
+    mocks.charger.mockRejectedValueOnce(new Error('canceling statement due to statement timeout'));
+    render(ecran());await screen.findByText('Chargement des notes interrompu — Réessayer');
+    expect(screen.queryByText('Aucune question à corriger')).toBeNull();expect(screen.queryByTestId('matrice-A')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Réessayer',exact:true}));await screen.findByTestId('matrice-A');
+    fireEvent.click(screen.getByRole('button',{name:'Toutes les notes',exact:true}));expect(screen.getByTestId('cellule-a1-q1')).toBeInTheDocument();expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it('lecture permissions refusée ne devient jamais file vide',async()=>{
+    mocks.charger.mockRejectedValueOnce(new Error('permission denied'));render(ecran());await screen.findByRole('alert');
+    expect(screen.queryByText('Aucune question à corriger')).toBeNull();expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it('vide uniquement après lecture réussie',async()=>{mocks.charger.mockResolvedValueOnce({tentatives:[],qrc:[],resultats:[],baremesRestaures:[]});render(ecran());await screen.findByText('Aucune question à corriger');expect(screen.queryByRole('alert')).toBeNull();});
+
   it('grille première vue, Toutes les notes retrouve zéro validé et conserve le passage',async()=>{
     appliquerNote('a2-q1',0);
     render(ecran());
@@ -266,7 +279,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     expect(mocks.catalogue).toHaveBeenCalledTimes(2);
     mocks.charger.mockRejectedValue(new Error("Réseau fictif coupé"));
     mocks.signaux.get("qrc_instances_v2")?.();
-    await waitFor(() => expect(screen.getByTestId("erreur-admin")).toHaveTextContent("Réseau fictif coupé"), { timeout: 3000 });
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Réseau fictif coupé"), { timeout: 3000 });
     expect(screen.getByTestId("reponse-eleve")).toHaveTextContent("Réponse a1");
     expect(mocks.catalogue).toHaveBeenCalledTimes(2);
     expect(mocks.corriger).not.toHaveBeenCalled();

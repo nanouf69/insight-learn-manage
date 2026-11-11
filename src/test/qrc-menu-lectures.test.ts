@@ -31,3 +31,4 @@ it('vrai chargeur : 1200 QRC pour 2 copies, aucune dernière fiche substituée, 
  expect(session.qrc[0].reponseComplete).toBe('réponse longue originale');expect(session.qrc[600].reponseComplete).toBe('3.5 t');
  expect(fixture.calls.some(c=>c.table==='reponses_apprenants')).toBe(false);expect(session.resultats[0].attempt_id).toBe('full');
 });
+it('filtre explicitement vide ne lit jamais toutes les copies',async()=>{const r=await chargerSessionTest('migre',[]);expect(r.qrc).toHaveLength(0);expect(fixture.calls).toHaveLength(0);});
