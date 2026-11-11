@@ -29,7 +29,7 @@ export default function SelectionCopieMoyennePreview({account,nom,exam}:{account
   let result:ReturnType<typeof simulateCopySelection>|null=null, error='';
   if(id && read.data) try {result=simulateCopySelection(account,exam,read.data.rows,read.data.resets,read.data.core,read.data.nonFiables,id);} catch(e) {error=e instanceof Error?e.message:'Simulation refusée.';}
   return <>
-    <Button variant="outline" size="sm" onClick={()=>{setOpen(true);setSubject('');setId('');void read.refetch();}}>Simuler une copie retenue pour la moyenne</Button>
+    <Button variant="outline" size="sm" className="h-auto whitespace-normal" onClick={()=>{setOpen(true);setSubject('');setId('');}}>Simuler une copie retenue pour la moyenne</Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{nom} · {exam.titre ?? exam.id}</DialogTitle><DialogDescription>Préparation uniquement — aucun changement enregistré. La dernière tentative reste retenue.</DialogDescription></DialogHeader>
       {read.isLoading && <p role="status">Lecture des copies officielles…</p>}{read.isError && <p role="alert">Lecture indisponible : aucune sélection possible.</p>}
       <Label htmlFor="selection-moyenne-matiere">Matière</Label><select id="selection-moyenne-matiere" className="w-full border border-input rounded-md bg-background p-3" value={subject} onChange={e=>{setSubject(e.target.value);setId('');}}><option value="">Choisir une matière</option>{exam.matieres.map(m=><option key={m.id} value={m.id}>{m.nom}</option>)}</select>
