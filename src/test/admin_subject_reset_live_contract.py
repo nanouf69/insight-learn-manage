@@ -28,7 +28,7 @@ class Live(base.Contract):
   c.sql(cat['schema'])
   for f in cat['functions']:c.sql(f)
   c.sql(cat['rls'])
-  c.sql("CREATE TABLE IF NOT EXISTS public.bilan_reponse_statuts(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,uid text,statut text,reponse jsonb,created_at timestamptz);CREATE TABLE IF NOT EXISTS public.bilan_reponse_reclassements(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,nouveau_statut text);CREATE TABLE IF NOT EXISTS public.core_tentatives_neutralisees(attempt_id uuid);")
+  c.sql("CREATE TABLE IF NOT EXISTS public.bilan_reponse_statuts(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,uid text,statut text,reponse jsonb,created_at timestamptz);CREATE TABLE IF NOT EXISTS public.bilan_reponse_reclassements(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,nouveau_statut text);CREATE TABLE IF NOT EXISTS public.core_tentatives_neutralisees(attempt_id uuid PRIMARY KEY);")
   c.sql(LIVE['tables'])
   import re
   for block in LIVE['tables'].split('CREATE TABLE IF NOT EXISTS ')[1:]:
@@ -178,7 +178,13 @@ class Live(base.Contract):
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'0')
   self.assertEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout)
   self.assertEqual(self.sql(f"SELECT count(*) FROM answer_state WHERE attempt_id='{att}'").stdout.strip(),'1')
-  self.assertGreaterEqual(int(self.sql(f"SELECT count(*) FROM answer_events WHERE attempt_id='{att}'").stdout.strip()),1)
+ def test_05c2_expired_with_received_event_stays_locked(self):
+  self.seed('EB5-TAXI','t3p');att=self.v2('EB5-TAXI','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
+  self.sql(f"INSERT INTO answer_events(response_id,attempt_id,apprenant_id,question_id,valeur_nouvelle,revision_nouvelle) VALUES(gen_random_uuid(),'{att}','{A}','t3p:1','[\"A\"]',1)")
+  c=self.context('EB5-TAXI','t3p');self.assertEqual((c['status'],c['expired_empty']),('en_cours',False))
+  self.assertNotEqual(self.authorize(c,str(uuid.uuid4()),check=False).returncode,0)
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout.strip(),'en_cours')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'0')
  def test_05d_expired_with_result_stays_locked(self):
   self.seed('EB1-TAXI','t3p');att=self.v2('EB1-TAXI','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
   self.sql(f"INSERT INTO core_exam_results(attempt_id,apprenant_id,score,total) VALUES('{att}','{A}',10,20)")
