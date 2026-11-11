@@ -233,17 +233,19 @@ export default function AdminCorrectionQrcV2Reel() {
     if (!mots.length) { setArchivesTrouvees([]); return; }
     let annule = false;
     const t = setTimeout(async () => {
-      const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom")
-        .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).limit(50);
-      const retenus = (apps ?? []).filter((a) => {
+      try {
+      const apps = await lirePagesParalleles<{id:string;nom:string;prenom:string}>(de => supabase.from("apprenants").select("id, nom, prenom")
+        .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).order("id").range(de,de+999),1);
+      const retenus = apps.filter((a) => {
         const n = normaliser(`${a.nom ?? ""} ${a.prenom ?? ""}`);
         return mots.every((m) => n.includes(m));
       });
       if (!retenus.length) { if (!annule) setArchivesTrouvees([]); return; }
-      const { data: res } = await supabase.from("apprenant_quiz_results")
+      const res: Array<{id:string;apprenant_id:string;quiz_id:string;quiz_titre:string;completed_at:string}> = [];
+      for(let i=0;i<retenus.length;i+=150) res.push(...await lirePagesParalleles<typeof res[number]>(de => supabase.from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, quiz_titre, completed_at")
-        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a) => a.id))
-        .order("completed_at", { ascending: false }).limit(500);
+        .eq("quiz_type", "examen_blanc").ilike("quiz_id","eb%").not("completed_at","is",null).in("apprenant_id", retenus.slice(i,i+150).map(a=>a.id))
+        .order("id").range(de,de+999),1));
       const groupesArch = new Map<string, ArchivePassage>();
       for (const r of res ?? []) {
         const jour = (r.completed_at ?? "").slice(0, 10);
@@ -256,6 +258,7 @@ export default function AdminCorrectionQrcV2Reel() {
         groupesArch.get(cle)?.resultIds.push(r.id);
       }
       if (!annule) setArchivesTrouvees(Array.from(groupesArch.values()));
+      } catch { if(!annule) setErreur("Lecture complète des archives impossible : réessayez."); }
     }, 300);
     return () => { annule = true; clearTimeout(t); };
   }, [rechercheNorm]);
