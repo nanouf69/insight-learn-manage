@@ -971,7 +971,7 @@ function CorrectionQrcReelle() {
             <div className="p-2"><CouvertureCorrigesAdmin /></div>
           </details>
         )}
-        <div aria-label="Sessions de formation en cours" className="flex flex-wrap gap-2">{choixSessions.filter(g=>sessionFormationActuelle(g)).map(g=><Button key={g.cle} size="sm" variant={groupeCle===g.cle&&!notesParSession?'default':'outline'} className="h-auto py-2 whitespace-normal text-left" onClick={()=>{setNotesParSession(false);majUrl({qrc_vue:null});setGroupeCle(g.cle);}}>{g.libelle}</Button>)}</div>
+        <div aria-label="Sessions de formation en cours" className="flex flex-wrap gap-2">{choixSessions.filter(g=>sessionFormationActuelle(g)).map(g=><Button key={g.cle} size="sm" variant={groupeCle===g.cle&&!notesParSession?'default':'outline'} className="h-auto py-2 whitespace-normal text-left" onClick={()=>{majUrl({qrc_vue:null});setGroupeCle(g.cle);}}>{g.libelle}</Button>)}</div>
         <header className="sticky top-0 z-10 bg-background/95 py-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold">Correction QRC V2</h1>
@@ -1177,11 +1177,10 @@ function CorrectionQrcReelle() {
               </Button>
             </div>
           )}
-          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['toutes','Toutes les notes'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={!notesParSession&&vueTravail===v?'default':'ghost'} onClick={()=>{setNotesParSession(false);majUrl({qrc_vue:null});setVueTravail(v);setSelection(null);setArchiveOuverte(null);majUrl({qrc:null});}}>{label}</Button>)}<Button size="sm" variant={notesParSession?"default":"ghost"} onClick={()=>{setNotesParSession(true);setSelection(null);majUrl({qrc_vue:"notes-session",qrc:null});}}>Notes par session</Button><Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
+          <nav aria-label="Vues de correction" className="flex flex-wrap gap-2">{([['corriger','À corriger'],['toutes','Toutes les notes'],['valider','À valider'],['verifier','À vérifier'],['historique','Archives et historique']] as const).map(([v,label])=><Button key={v} size="sm" variant={!notesParSession&&vueTravail===v?'default':'ghost'} onClick={()=>{majUrl({qrc_vue:null});setVueTravail(v);setSelection(null);setArchiveOuverte(null);majUrl({qrc:null});}}>{label}</Button>)}<Button size="sm" variant="ghost" onClick={()=>setAuditVisible(v=>!v)}>Contrôle des copies</Button></nav>
           {auditVisible&&mode === "migre" && <PanneauRapprochement groupes={groupes} pret={!lectureCopies && session !== null} />}
         </header>
 
-        {notesParSession&&<NotesParSession sessions={choixSessions}/> }
         <div hidden={notesParSession}>
         {erreurGlobale&&groupeCle!==TOUS_GROUPES&&<p className="text-xs text-muted-foreground">Inventaire global interrompu ; cette session est chargée séparément.</p>}
         {erreurLecture&&<section role="alert" className="space-y-2 py-4"><p className="text-destructive">Chargement des notes interrompu — Réessayer</p><p className="text-xs text-muted-foreground">{erreurLecture}</p>{session&&filtreConfirme===filtreLecture&&<p>Dernière grille confirmée pour ce filtre — actualisation non confirmée.</p>}<Button variant="outline" disabled={lectureCopies||relectureListe} onClick={()=>void (catalogueLu?recharger():actualiserListe())}>Réessayer</Button></section>}
