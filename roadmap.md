@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 13:55 — Accès EB multi-session
-- [ ] Cases multi-sessions + états réels explicites + confirmation scoped désactivée pour écriture en aperçu.
-- [ ] Candidat atomique séparé sur journal existant, tests invalidité/CAS/droits/démarrages/reprises/croisées et mobile.
-- [ ] Rapport RPC/limites et commit ; aucune installation ni accès réel modifié.
+- [x] Cases multi-sessions + états réels explicites + confirmation scoped désactivée pour écriture en aperçu.
+- [x] Candidat atomique séparé sur journal existant, tests invalidité/CAS/droits/frontières démarrages/reprises/croisées et mobile ; chemins RPC complets anciens/TA/VA restent NON PROUVÉS avant activation.
+- [x] Rapport RPC/limites préparé ; aucune installation ni accès réel modifié.
 
 ## 11/11 13:48 — Reprise archives : vrai admin et contrôles intégrés
 - [x] Vrai profil admin en aperçu : fiche HADDOU → Examens blancs → Examens archivés ; reset EB3 exact, 7 copies/7 résultats visibles, bouton désactivé. Aucun POST mutateur autorisé.
