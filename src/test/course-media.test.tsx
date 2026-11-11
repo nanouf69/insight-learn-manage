@@ -5,8 +5,35 @@ import { afterEach } from 'vitest';
 import { courseHttpUrl, courseVideoUrl, courseMediaMarkup } from '@/components/cours-en-ligne/courseMediaRules';
 import { CourseDescription } from '@/components/cours-en-ligne/CourseDescription';
 import { CourseMediaActions } from '@/components/cours-en-ligne/CourseMediaActions';
+import { CoursEditor } from '@/components/cours-en-ligne/ModuleDetailView';
 afterEach(cleanup);
 describe('course-only safe media', () => {
+  it('actual course editor saves and reopens both media through its existing onSave contract', () => {
+    const original = '<p><strong>Cours existant</strong></p>';
+    const fixture = { id: 999001, titre: 'Cours fictif', actif: true, description: original };
+    let saved = fixture;
+    const editor = render(<CoursEditor item={fixture} onCancel={() => {}} onSave={item => { saved = JSON.parse(JSON.stringify(item)); }} />);
+    for (const [action, url, label] of [
+      ['Ajouter un lien', 'https://auto-grade-quiz.lovable.app', 'Ouvrir le quiz'],
+      ['Ajouter une vidéo', 'https://vimeo.com/123456', 'Vidéo test'],
+    ]) {
+      fireEvent.click(screen.getByRole('button', { name: action }));
+      fireEvent.change(screen.getByLabelText('URL'), { target: { value: url } });
+      fireEvent.change(screen.getByLabelText('Libellé'), { target: { value: label } });
+      fireEvent.click(screen.getByRole('button', { name: /^Ajouter$/ }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer/ }));
+    expect(saved.description.startsWith(original)).toBe(true);
+    expect(saved.description).toContain('data-course-video="1"');
+    editor.unmount();
+    const reopened = render(<CoursEditor item={saved} onSave={() => {}} onCancel={() => {}} />);
+    expect(screen.getByRole('textbox', { name: 'Description / Contenu détaillé' }).innerHTML).toBe(saved.description);
+    reopened.unmount();
+    render(<CourseDescription value={saved.description} />);
+    expect(screen.getByRole('link', { name: 'Ouvrir le quiz' }).getAttribute('href')).toBe('https://auto-grade-quiz.lovable.app/');
+    expect(screen.getByRole('button', { name: 'Vidéo test' })).toBeTruthy();
+    expect(fixture.description).toBe(original);
+  });
   it('accepts HTTP/HTTPS links including the quiz example', () => {
     expect(courseHttpUrl('https://auto-grade-quiz.lovable.app')).toBe('https://auto-grade-quiz.lovable.app/');
     expect(courseHttpUrl('http://example.org/quiz')).toBe('http://example.org/quiz');

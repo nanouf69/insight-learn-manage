@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 12:19 — Liens et vidéos dans les cours
-- [ ] Ajouter deux actions à l’éditeur de description et un rendu cours dédié sécurisé, sans modifier RichText/examens.
-- [ ] Vérifier formats, sauvegarde/réouverture et rendu PC/mobile sur fixtures uniquement.
-- [ ] Livrer en aperçu ; publier seulement si le lot est isolable des autres chantiers.
+- [x] Deux actions dans l’éditeur de description et rendu cours dédié sécurisé ; RichText/examens inchangés.
+- [x] Formats, sauvegarde/réouverture via callback réel du CoursEditor et rendu PC/mobile sur fixtures uniquement ; aucune écriture Cloud. Tests et vérification navigateur réalisés, vidéos externes simulées.
+- [x] Livré en aperçu sans publication : aucun socle de publication isolée prouvé pour les chantiers concurrents ; voir docs/cours-liens-videos-2026-11-11.md.
 
 ## 11/11 12:03 — EB4–6 : remise ancienne vers correction manuelle V2
 - [x] SELECT retrouve 99 lignes indicatives (40/31/28) : 98 lignes de réponses non remises, une remise EB6 avec instant divergent. Aucune de ces 99 n'a une preuve de remise suffisante. Douze versions publiées confirmées ; compteurs V2 séparés, sans assimilation d'autres tentatives.
