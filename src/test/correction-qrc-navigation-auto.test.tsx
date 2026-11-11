@@ -145,6 +145,8 @@ const ouvrirCopie = async (qrcInstanceId: string) => {
 };
 
 beforeEach(() => {
+  HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};
+  HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};
   etat.session = sessionFictive();
   mocks.catalogue.mockReset();
   mocks.signaux.clear();
@@ -501,6 +503,8 @@ describe("Correction QRC — passage automatique après confirmation de persista
     fireEvent.click(screen.getByTestId('modifier-note'));
     expect(mocks.reviser).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('revision-note-2'));
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button',{name:'Confirmer',exact:false}));
     await waitFor(() => expect(mocks.reviser).toHaveBeenCalledOnce());
     expect(mocks.reviser.mock.calls[0][0]).toMatchObject({ note: 2, noteAttendue: 1.5 });
     expect(mocks.corriger).not.toHaveBeenCalled();
