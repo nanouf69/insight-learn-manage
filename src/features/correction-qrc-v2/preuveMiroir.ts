@@ -18,7 +18,7 @@ export function sameMirrorContent(r:MirrorResult,t:MirrorAttempt,answers:Map<str
  return qs.every((q:any,i:number)=>{
   const l=lqs[i],id=String(q.id).slice(prefix.length);
   if(String(l?.id)!==id||l.type!==q.type||l.enonce!==q.enonce||Number(l.points)!==Number(q.points)||(l.image??null)!==(q.image??null))return false;
-  if(!Object.hasOwn(rep,id)||!answers.has(q.id))return false;
+  if(!Object.prototype.hasOwnProperty.call(rep,id)||!answers.has(q.id))return false;
   if(q.type==='QRC')return (l.reponseQRC??null)===(q.reponseQRC??null)&&typeof rep[id]==='string'&&rep[id]===answers.get(q.id);
   if(q.type!=='QCM'||!Array.isArray(q.choix)||!Array.isArray(l.choix)||l.choix.length!==q.choix.length)return false;
   if(!q.choix.every((c:any,j:number)=>c.lettre===l.choix[j].lettre&&c.texte===l.choix[j].texte&&Boolean(c.correct)===Boolean(l.choix[j].correct)))return false;

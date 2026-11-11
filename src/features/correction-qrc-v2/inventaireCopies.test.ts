@@ -40,13 +40,14 @@ describe("inventaire des copies EB", () => {
         { ...r("t", "EB1"), apprenant_id: "test", qrc: 3 },
       ],
     });
-    expect(attendues.map((a) => a.cle).sort()).toEqual(["ancien:e1", "consultation:e2", "v-jour", "v-mig", "v-soir"]);
+    expect(attendues.map((a) => a.cle).sort()).toEqual(["ancien:e1", "ancien:q", "consultation:e2", "v-jour", "v-mig", "v-soir"]);
     const res = rapprocher(attendues, new Set(["v-jour", "v-mig", cleAffichage("consultation", "e2")]));
-    expect(res.attendues).toBe(5);
+    expect(res.attendues).toBe(6);
     expect(res.visibles).toBe(3);
     expect(res.manquantes.map((m) => [m.cle, m.cause])).toEqual([
       ["v-soir", "Passage V2 terminé absent de la grille"],
       ["ancien:e1", "Copie historique non migrée absente de l'ancien circuit"],
+      ["ancien:q", "Copie historique non migrée absente de l'ancien circuit"],
     ]);
   });
 
@@ -68,6 +69,6 @@ describe("inventaire des copies EB", () => {
       { attempt_id: "y2", apprenant_id: "y", exam_id: "EB3", etat: "terminee", matiere: "gestion" },
     ];
     const qrc = [{ attempt_id: "v1", reponse: "Cotisation" }, { attempt_id: "v1", reponse: "TNS" }, { attempt_id: "y1", reponse: "A" }, { attempt_id: "y2", reponse: "A" }];
-    expect([...miroirsV2Prouves(res, tent, qrc)]).toEqual(["m"]);
+    expect([...miroirsV2Prouves(res, tent, qrc)]).toEqual([]);
   });
 });

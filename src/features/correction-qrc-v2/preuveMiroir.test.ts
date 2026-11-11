@@ -1,0 +1,20 @@
+import {describe,it,expect} from 'vitest';
+import {proveNativeMirrors} from './preuveMiroir';
+import {inventaireAttendu,rapprocher,resultatsAncienCircuit} from './inventaireCopies';
+function fixture(type='QCM'){
+ const q={id:'1',type,enonce:'Exact',points:1,choix:type==='QCM'?[{lettre:'A',texte:'a',correct:true},{lettre:'B',texte:'b',correct:false}]:undefined,reponseQRC:type==='QRC'?'officiel':undefined};
+ const r={id:'r',apprenant_id:'u',quiz_id:'EB4',matiere_id:'anglais',tentative:1,completed_at:'2026-11-11',details:{snapshot:{examenId:'EB4',matiereId:'anglais',questions:[q]},reponses:{'1':type==='QCM'?['A','B']:'texte exact '}}};
+ const t={attempt_id:'v',apprenant_id:'u',exam_id:'EB4',etat:'terminee',matiere:'anglais',snapshot:{matiere:'anglais',questions:[{...q,id:'anglais:1'}]}};
+ const states=[{attempt_id:'v',question_id:'anglais:1',valeur:type==='QCM'?['B','A']:'texte exact '}];return {r,t,states};
+}
+describe('preuve native catalogue',()=>{
+ it('QCM seul mêmes lettres sans ordre, aucun texte QCM compté comme QRC',()=>{const {r,t,states}=fixture();states[0].valeur='["B","A"]';expect([...proveNativeMirrors([r],[t],states).mirrors]).toEqual(['r']);});
+ it('QRC exacte et contenu frozen identique',()=>{const {r,t,states}=fixture('QRC');expect(proveNativeMirrors([r],[t],states).mirrors.has('r')).toBe(true);states[0].valeur='texte exact';expect(proveNativeMirrors([r],[t],states).mirrors.size).toBe(0);});
+ it('deux copies identiques ne fusionnent pas',()=>{const {r,t,states}=fixture();expect(proveNativeMirrors([r,{...r,id:'distinct'}],[t],states).mirrors.size).toBe(0);});
+ it('collision de tentatives natives identiques reste séparée',()=>{const {r,t,states}=fixture();const b={...t,attempt_id:'v2'};expect(proveNativeMirrors([r],[t,b],[...states,{...states[0],attempt_id:'v2'}]).mirrors.size).toBe(0);});
+ it('lien explicite préféré mais ne contourne pas la preuve de contenu',()=>{const {r,t,states}=fixture();r.details= {...r.details,attempt_id:'v'} as any;t.snapshot={...t.snapshot,tentative:1} as any;const b={...t,attempt_id:'v2',snapshot:{...t.snapshot,tentative:2}};expect(proveNativeMirrors([r],[t,b],states).mirrors.has('r')).toBe(true);r.details.snapshot.questions[0].enonce='autre';expect(proveNativeMirrors([r],[t,b],states).mirrors.size).toBe(0);});
+ it('autre matière/élève/examen et réponse manquante refusés',()=>{const {r,t,states}=fixture();for(const wrong of [{...t,exam_id:'EB3'},{...t,apprenant_id:'other'},{...t,matiere:'gestion'}])expect(proveNativeMirrors([r],[wrong],states).mirrors.size).toBe(0);expect(proveNativeMirrors([r],[t],[]).mirrors.size).toBe(0);});
+ it('doublon lettres et question IDs refusés',()=>{const {r,t,states}=fixture();states[0].valeur=['A','A'];expect(proveNativeMirrors([r],[t],states).mirrors.size).toBe(0);});
+ it('in-progress concurrent blocks inference first; never displayed as submitted',()=>{const {r,t,states}=fixture();expect(proveNativeMirrors([r],[t,{...t,attempt_id:'open',etat:'en_cours'}],states).mirrors.size).toBe(0);});
+ it('catalogue et compteur QCM seul passent de 2 à 1, unique historique reste',()=>{const {r,t,states}=fixture();const mirrors=proveNativeMirrors([r],[t],states).mirrors;expect(resultatsAncienCircuit([r],mirrors)).toEqual([]);const expected=inventaireAttendu({tentatives:[t],qrcParTentative:new Map(),neutralises:new Set(),exclus:new Set(),resultats:[{...r,qrc:0}],miroirs:mirrors});expect(rapprocher(expected,new Set(['v']))).toEqual({attendues:1,visibles:1,manquantes:[]});const alone=inventaireAttendu({tentatives:[],qrcParTentative:new Map(),neutralises:new Set(),exclus:new Set(),resultats:[{...r,qrc:0}]});expect(alone.map(x=>x.cle)).toEqual(['ancien:r']);});
+});

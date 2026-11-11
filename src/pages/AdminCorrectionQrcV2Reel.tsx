@@ -1055,7 +1055,7 @@ export default function AdminCorrectionQrcV2Reel() {
             }}>
             <option value="">Tous les passages — toutes les tentatives du filtre</option>
             {ancienCircuit ? copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
-              {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id}
+              {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id}{ebChoisi?.aVerifierParAttempt?.[`ancien:${r.id}`]?' · À vérifier — rapprochement V2 non prouvé':''}
             </option>) : ordonnerCandidatsParFin(session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
           </select>
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">

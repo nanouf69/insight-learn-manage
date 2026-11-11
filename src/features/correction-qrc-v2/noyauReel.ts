@@ -104,6 +104,7 @@ export type SessionListee = {
   apprenantParAttempt?: Record<string, string>;
   /** Autres sessions affichant le même passage EB1-TAXI, sans nouvelle copie ni écriture. */
   inscriptionCroiseeParAttempt?: Record<string, string[]>;
+  aVerifierParAttempt?:Record<string,boolean>;
 };
 
 export type ResultatReel = {
@@ -303,14 +304,14 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   // EB2 VTC : copies enregistrées sans fiche V2, affichées dans la même grille V2 en consultation.
   const consultationEb2: any[] = [];
   if (mode === "migre") {
-    for (const r of consultationLue) {
+    for (const r of consultationLue.filter(r=>!proof.mirrors.has(r.id)&&!resultatsMigres(attempts).has(r.id))) {
       consultationEb2.push({ ...r, attempt_id: `consultation:${r.id}`, exam_id: "EB2", started_at: r.completed_at, circuit: "v2" as const });
     }
   }
 
   const neutralises = neutralisesLus;
   const passages = [
-    ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
+    ...submittedAttempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
     ...consultationEb2,
     ...legacyResults,
   ];
@@ -398,6 +399,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
     }
     eb.attemptIds.push(a.attempt_id as string);
     (eb.apprenantParAttempt ??= {})[a.attempt_id as string] = a.apprenant_id as string;
+    if(a.aVerifier)(eb.aVerifierParAttempt??={})[a.attempt_id]=true;
     if (autresSessionsCroisees?.length) {
       (eb.inscriptionCroiseeParAttempt ??= {})[a.attempt_id as string] = autresSessionsCroisees;
     }
