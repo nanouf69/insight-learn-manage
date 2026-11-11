@@ -9,6 +9,8 @@ import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/fea
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { nombrePassagesCroises } from "@/features/correction-qrc-v2/rattachementCrm";
+import { groupeTousPassages, libellePassage, numeroTentative, TOUS_GROUPES } from "@/features/correction-qrc-v2/menuPassages";
+import { lirePagesParalleles } from "@/features/correction-qrc-v2/noyauReel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -77,6 +79,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
+  const [passageFiltre, setPassageFiltre] = useState<string | null>(() => param("qrc_passage"));
+  const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [lectureCopies, setLectureCopies] = useState(false);
   const generationRef = useRef(0);
@@ -94,28 +98,31 @@ export default function AdminCorrectionQrcV2Reel() {
   const conteneurRef = useRef<HTMLDivElement>(null);
 
   const setGroupeCle = (cle: string | null) => {
+    setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
     setGroupeCleState(cle);
     setEbCleState(null);
     setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
+    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null, qrc_passage: null });
   };
   const setEbCle = (cle: string | null) => {
+    setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
     setEbCleState(cle);
     setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_eb: cle, qrc_date: null, qrc: null });
+    majUrl({ qrc_eb: cle, qrc_date: null, qrc: null, qrc_passage: null });
   };
   const setJourFiltre = (jour: string | null) => {
+    setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
     setJourFiltreState(jour);
     setSelectionState(null);
-    majUrl({ qrc_date: jour, qrc: null });
+    majUrl({ qrc_date: jour, qrc: null, qrc_passage: null });
   };
   const setSelection = (qrc: string | null) => {
     setSelectionState(qrc);
@@ -170,7 +177,8 @@ export default function AdminCorrectionQrcV2Reel() {
     })();
   }, [mode]);
 
-  const groupeChoisi = groupes.find((g) => g.cle === groupeCle) ?? null;
+  const tousGroupes = useMemo(() => groupeTousPassages(groupes), [groupes]);
+  const groupeChoisi = groupeCle === TOUS_GROUPES ? tousGroupes : groupes.find((g) => g.cle === groupeCle) ?? null;
   const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;

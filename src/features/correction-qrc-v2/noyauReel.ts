@@ -5,6 +5,7 @@ import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/s
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
 import { miroirsV2Prouves, nbQrcEcrites, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { texteSourceExact } from "./menuPassages";
 
 export type QuestionSnapshot = {
   id: string;
@@ -247,8 +248,9 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   const db = supabase as any;
   const pAttempts = lirePagesParalleles<any>((de) => db
       .from("exam_attempts_v2")
-      .select("attempt_id, apprenant_id, exam_id, started_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
+      .select("attempt_id, apprenant_id, exam_id, started_at, finished_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
       .eq("is_test", mode === "test")
+      .eq("etat", "terminee")
       .order("started_at", { ascending: false })
       .order("attempt_id", { ascending: true })
       .range(de, de + 999));
@@ -277,8 +279,8 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
     // Miroirs prouvés d'un passage V2 natif (mêmes réponses QRC exactes) : affichés une seule fois, côté V2.
     for (const m of miroirsV2Prouves(bruts, attempts as any, qrcV2)) migres.add(m);
     {
-      // Seules les copies contenant au moins une QRC écrite relèvent du correcteur.
-      const anciens = resultatsAncienCircuit(bruts, migres).filter((r: any) => nbQrcEcrites(r.rep) > 0)
+      // Toutes les copies remises restent consultables, même sans QRC écrite.
+      const anciens = resultatsAncienCircuit(bruts, migres)
         .map(({ rep: _rep, ...r }: any) => r);
       legacyResults.push(...anciens.map((r: any) => ({
         ...r,
@@ -300,7 +302,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
 
   const neutralises = neutralisesLus;
   const passages = [
-    ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, circuit: "v2" as const })),
+    ...attempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
     ...consultationEb2,
     ...legacyResults,
   ];
@@ -537,68 +539,45 @@ export async function chargerSessionTest(
 
   const ids = Array.from(new Set(attempts.map((a) => a.apprenant_id as string)));
   const apprenants = await parLots(ids, async (lot) => {
-    const { data } = await supabase.from("apprenants").select("id, nom, prenom").in("id", lot);
+      const { data, error } = await supabase.from("apprenants").select("id, nom, prenom").in("id", lot);
+      if (error) throw error;
     return (data ?? []) as { id: string; nom: string; prenom: string }[];
   });
   const nomDe = new Map(apprenants.map((a) => [a.id, `${a.nom} ${a.prenom}`]));
 
   const attemptIds = attempts.map((a) => a.attempt_id as string);
   const qrc = await parLots(attemptIds, async (lot) => {
-    const { data } = await supabase
+    return lirePagesParalleles<QrcReelle>((de) => supabase
       .from("qrc_instances_v2")
       .select("qrc_instance_id, attempt_id, question_id, apprenant_id, reponse, etat, note, corrige_email, corrige_at")
       .in("attempt_id", lot)
-      .range(0, 4999);
-    return (data ?? []) as QrcReelle[];
+      .order("qrc_instance_id", { ascending: true })
+      .range(de, de + 999), 1);
   });
 
-  // Texte complet (fiche élève) : lecture seule, affiché quand le moteur diffère.
-  try {
-    const parAttempt = new Map(attempts.map((a) => [a.attempt_id as string, a]));
-    const exoIds = Array.from(new Set(attempts.map((a) => `${a.exam_id}__${a.snapshot?.matiere ?? a.snapshot?.matieres?.[0]?.subject_id ?? ""}`)));
-    const fiches = await parLots(ids, async (lot) => {
-      const { data } = await supabase
-        .from("reponses_apprenants")
-        .select("apprenant_id, exercice_id, reponses, updated_at")
-        .in("apprenant_id", lot)
-        .in("exercice_id", exoIds);
-      return (data ?? []) as any[];
-    });
-    const derniere = new Map<string, any>();
-    fiches.forEach((f) => {
-      const k = `${f.apprenant_id}|${f.exercice_id}`;
-      const p = derniere.get(k);
-      if (!p || String(f.updated_at) > String(p.updated_at)) derniere.set(k, f);
-    });
-    qrc.forEach((q) => {
-      const a = parAttempt.get(q.attempt_id);
-      if (!a) return;
-      const mat = a.snapshot?.matiere ?? a.snapshot?.matieres?.[0]?.subject_id ?? "";
-      const f = derniere.get(`${a.apprenant_id}|${a.exam_id}__${mat}`);
-      const cle = String(q.question_id).includes(":") ? String(q.question_id).split(":").pop()! : String(q.question_id);
-      const complet = f?.reponses?.[cle];
-      const txt = typeof complet === "string" ? complet.trim() : "";
-      const moteur = typeof q.reponse === "string" ? q.reponse.trim() : String(q.reponse ?? "").trim();
-      if (txt && txt !== moteur) q.reponseComplete = txt;
-    });
-  } catch (e) {
-    console.warn("[noyauReel] texte complet non lu:", e);
+  // Aucune dernière fiche d'une autre tentative ne remplace la copie sélectionnée.
+  const parAttempt = new Map(attempts.map(a => [a.attempt_id, a]));
+  for (const q of qrc) {
+    const exact = texteSourceExact(parAttempt.get(q.attempt_id)?.snapshot, q.question_id);
+    if (exact && exact !== q.reponse) q.reponseComplete = exact;
   }
 
   const resultats = await parLots(attemptIds, async (lot) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("core_exam_results")
       .select("result_id, attempt_id, result_revision, status, score, total, qrc_restantes, published_at")
       .in("attempt_id", lot);
+    if (error) throw error;
     return (data ?? []) as ResultatReel[];
   });
 
   const qrcIds = qrc.map((q) => q.qrc_instance_id);
   const baremes = await parLots(qrcIds, async (lot) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("qrc_bareme_restaure")
       .select("qrc_instance_id, bareme, mention, nb_preuves")
       .in("qrc_instance_id", lot);
+    if (error) throw error;
     return (data ?? []) as BaremeRestaure[];
   });
 
