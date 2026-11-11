@@ -164,6 +164,46 @@ class EB3(unittest.TestCase):
     def test_vtc_gestion_note_remonte(self):
         self.parcours_complet('snap_eb3_vtc_gestion.json')
 
+    def test_import_historique_ids_locaux_sans_resultat_initial(self):
+        """Import-shaped A t2/B t2/A t1: local string IDs, no initial result.
+        Missing answers are NOT filled: the A t2 shape keeps exactly one received QRC.
+        All writes below run only in this disposable PostgreSQL cluster.
+        """
+        untouched, *_ = self.preparer('snap_eb3_taxi.json', apprenant=APP2)
+        before_other = self.pg.sql(f"SELECT md5(snapshot::text) FROM exam_attempts_v2 WHERE attempt_id='{untouched}'")[1]
+        for subject, tentative, received in [('t3p', 2, 1), ('gestion', 2, 2), ('t3p', 1, 5)]:
+            snap = {'exam_id': 'EB3-TAXI', 'matieres': [{'subject_id': subject}],
+                    'source_historique': {'result_id': str(uuid.uuid4()), 'tentative': tentative,
+                                         'details': {'reponses': {'1': 'fictive'}, 'immutable': True}},
+                    'questions': [{'id': str(i), 'matiere': subject, 'type': 'QRC', 'points': 2,
+                                   'enonce': f'Question fictive {i}', 'reponseQRC': 'attendu'} for i in range(1, 6)]}
+            att = str(uuid.uuid4())
+            code, out = self.pg.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,snapshot,etat) VALUES('{att}','{APP}','EB3-TAXI',{lit(json.dumps(snap))}::jsonb,'en_cours')")
+            self.assertEqual(code, 0, out)
+            qids = []
+            for i in range(1, received + 1):
+                qi = str(uuid.uuid4()); qids.append(qi)
+                code, out = self.pg.sql(f"INSERT INTO qrc_instances_v2(qrc_instance_id,attempt_id,apprenant_id,question_id,reponse) VALUES('{qi}','{att}','{APP}','{i}','\"réponse fictive\"'::jsonb)")
+                self.assertEqual(code, 0, out)
+            self.pg.sql(f"UPDATE exam_attempts_v2 SET etat='terminee',finished_at=now() WHERE attempt_id='{att}'")
+            self.assertIsNone(self.resultat(att))
+            frozen = self.pg.sql(f"SELECT md5(snapshot::text) FROM exam_attempts_v2 WHERE attempt_id='{att}'")[1]
+            answers = self.pg.sql(f"SELECT md5(string_agg(reponse::text,',' ORDER BY question_id)) FROM qrc_instances_v2 WHERE attempt_id='{att}'")[1]
+            for i, qi in enumerate(qids):
+                (code, out), op = self.corriger(qi, 1)
+                self.assertEqual(code, 0, out)
+                status, _, rest, _, revision = self.resultat(att)
+                self.assertEqual(rest, str(received-i-1))
+                self.assertEqual(status, 'definitif' if i == received-1 else 'provisoire')
+                (code, out), _ = self.corriger(qi, 1, op=op)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self.resultat(att)[4], revision)
+            self.assertEqual(self.pg.sql(f"SELECT md5(snapshot::text) FROM exam_attempts_v2 WHERE attempt_id='{att}'")[1], frozen)
+            self.assertEqual(self.pg.sql(f"SELECT md5(string_agg(reponse::text,',' ORDER BY question_id)) FROM qrc_instances_v2 WHERE attempt_id='{att}'")[1], answers)
+            self.assertEqual(self.pg.sql(f"SELECT count(*) FROM qrc_correction_events WHERE attempt_id='{att}'")[1], str(received))
+        self.assertEqual(self.pg.sql(f"SELECT md5(snapshot::text) FROM exam_attempts_v2 WHERE attempt_id='{untouched}'")[1], before_other)
+        self.assertIsNone(self.resultat(untouched))
+
     def test_revision_meme_note_ne_journalise_pas_commentaire(self):
         # La révision de note reste inchangée : le commentaire seul passe exclusivement par core_commenter_qrc.
         att, qrcs, *_ = self.preparer('snap_eb3_vtc_gestion.json')
