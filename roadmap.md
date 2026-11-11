@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 12:58 — Menu Correction QRC : tous les passages remis
+- [x] Audit : plafonds API/recherche, brouillons V2, filtre QRC ancien et superposition dernière fiche corrigés ; toutes sessions/dates et copie individuelle par ID, archives en lecture seule.
+- [x] 48 tests PASS dont 1002 passages/1200 QRC, vrai menu/chargeur fictif PC/mobile, deux copies Chemoun séparées ; rapport docs/qrc-menu-tous-passages-2026-11-11.md, aucune écriture/publication. UI réelle authentifiée non prouvée.
+
 ## 11/11 12:52 — Accès CRM aux deux passages Chemoun EB3 TAXI T3P
 - [x] SELECT : complète t1 15 réponses et partielle t2 1 réponse, liens V2/détails strictement identiques ; historique CRM indépendant ajouté, aucun remplacement de la sélection courante.
 - [x] 44 tests et navigateur fictif PC/mobile PASS, rapport docs/chemoun-crm-historique-copies-2026-11-11.md ; aucune écriture de données ni publication, diagnostic précédent intact. UI réelle authentifiée et lien réel correcteur non prouvés, faute de session admin autorisée.

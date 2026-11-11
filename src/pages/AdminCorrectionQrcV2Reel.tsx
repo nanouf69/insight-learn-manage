@@ -9,6 +9,8 @@ import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/fea
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
 import { nombrePassagesCroises } from "@/features/correction-qrc-v2/rattachementCrm";
+import { groupeTousPassages, libellePassage, numeroTentative, TOUS_GROUPES } from "@/features/correction-qrc-v2/menuPassages";
+import { lirePagesParalleles } from "@/features/correction-qrc-v2/noyauReel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -77,6 +79,8 @@ export default function AdminCorrectionQrcV2Reel() {
   const [ebCle, setEbCleState] = useState<string | null>(() => param("qrc_eb"));
   // Filtre facultatif sur une seule date de passage à l'intérieur de l'EB choisi.
   const [jourFiltre, setJourFiltreState] = useState<string | null>(() => param("qrc_date"));
+  const [passageFiltre, setPassageFiltre] = useState<string | null>(() => param("qrc_passage"));
+  const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [lectureCopies, setLectureCopies] = useState(false);
   const generationRef = useRef(0);
@@ -94,28 +98,33 @@ export default function AdminCorrectionQrcV2Reel() {
   const conteneurRef = useRef<HTMLDivElement>(null);
 
   const setGroupeCle = (cle: string | null) => {
+    setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
     setGroupeCleState(cle);
-    setEbCleState(null);
+    const first = cle === TOUS_GROUPES ? groupeTousPassages(groupes).examens[0]?.cle : groupes.find(g=>g.cle===cle)?.examens[0]?.cle;
+    setEbCleState(first ?? null);
     setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null });
+    majUrl({ qrc_groupe: cle, qrc_eb: first ?? null, qrc_date: null, qrc: null, qrc_passage: null });
   };
   const setEbCle = (cle: string | null) => {
+    if (cle === ebCle) return;
+    setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
     setEbCleState(cle);
     setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_eb: cle, qrc_date: null, qrc: null });
+    majUrl({ qrc_eb: cle, qrc_date: null, qrc: null, qrc_passage: null });
   };
   const setJourFiltre = (jour: string | null) => {
+    setPassageFiltre(null);
     generationRef.current++;
     setSession(null);
     setJourFiltreState(jour);
     setSelectionState(null);
-    majUrl({ qrc_date: jour, qrc: null });
+    majUrl({ qrc_date: jour, qrc: null, qrc_passage: null });
   };
   const setSelection = (qrc: string | null) => {
     setSelectionState(qrc);
@@ -170,7 +179,8 @@ export default function AdminCorrectionQrcV2Reel() {
     })();
   }, [mode]);
 
-  const groupeChoisi = groupes.find((g) => g.cle === groupeCle) ?? null;
+  const tousGroupes = useMemo(() => groupeTousPassages(groupes), [groupes]);
+  const groupeChoisi = groupeCle === TOUS_GROUPES ? tousGroupes : groupes.find((g) => g.cle === groupeCle) ?? null;
   const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
@@ -225,21 +235,23 @@ export default function AdminCorrectionQrcV2Reel() {
     if (!mots.length) { setArchivesTrouvees([]); return; }
     let annule = false;
     const t = setTimeout(async () => {
-      const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom")
-        .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).limit(50);
-      const retenus = (apps ?? []).filter((a) => {
+      try {
+      const apps = await lirePagesParalleles<{id:string;nom:string;prenom:string}>(de => supabase.from("apprenants").select("id, nom, prenom")
+        .or(`nom.ilike.%${mots[0]}%,prenom.ilike.%${mots[0]}%`).order("id").range(de,de+999),1);
+      const retenus = apps.filter((a) => {
         const n = normaliser(`${a.nom ?? ""} ${a.prenom ?? ""}`);
         return mots.every((m) => n.includes(m));
       });
       if (!retenus.length) { if (!annule) setArchivesTrouvees([]); return; }
-      const { data: res } = await supabase.from("apprenant_quiz_results")
+      const res: Array<{id:string;apprenant_id:string;quiz_id:string;quiz_titre:string;completed_at:string}> = [];
+      for(let i=0;i<retenus.length;i+=150) res.push(...await lirePagesParalleles<typeof res[number]>(de => supabase.from("apprenant_quiz_results")
         .select("id, apprenant_id, quiz_id, quiz_titre, completed_at")
-        .eq("quiz_type", "examen_blanc").in("apprenant_id", retenus.map((a) => a.id))
-        .order("completed_at", { ascending: false }).limit(500);
+        .eq("quiz_type", "examen_blanc").ilike("quiz_id","eb%").not("completed_at","is",null).in("apprenant_id", retenus.slice(i,i+150).map(a=>a.id))
+        .order("id").range(de,de+999),1));
       const groupesArch = new Map<string, ArchivePassage>();
       for (const r of res ?? []) {
         const jour = (r.completed_at ?? "").slice(0, 10);
-        const cle = `${r.apprenant_id}|${r.quiz_id}|${jour}`;
+        const cle = r.id;
         const a = retenus.find((x) => x.id === r.apprenant_id);
         if (!groupesArch.has(cle)) {
           const d = jour ? jour.split("-").reverse().join("/") : "date inconnue";
@@ -248,6 +260,7 @@ export default function AdminCorrectionQrcV2Reel() {
         groupesArch.get(cle)?.resultIds.push(r.id);
       }
       if (!annule) setArchivesTrouvees(Array.from(groupesArch.values()));
+      } catch { if(!annule) setErreur("Lecture complète des archives impossible : réessayez."); }
     }, 300);
     return () => { annule = true; clearTimeout(t); };
   }, [rechercheNorm]);
@@ -257,13 +270,33 @@ export default function AdminCorrectionQrcV2Reel() {
     ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
     : (attemptsBase ?? []).join(",");
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null]);
+  const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null, groupeCle, ebCle]);
   const nbPassagesCroises = nombrePassagesCroises(attemptsAffiches ?? [], ebChoisi?.inscriptionCroiseeParAttempt);
-  const legacyResultIds = ancienCircuit
+  const legacyResultIdsBase = ancienCircuit
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
         : ebChoisi?.legacyResultIds)
     : undefined;
+  const legacyResultIds = passageFiltre ? legacyResultIdsBase?.filter(id => `ancien:${id}` === passageFiltre) : legacyResultIdsBase;
+  const passageLegacyKey = (legacyResultIdsBase ?? []).join(",");
+  useEffect(() => {
+    let cancelled = false;
+    setCopiesAnciennes([]);
+    if (!ancienCircuit || !passageLegacyKey) return;
+    void (async () => {
+      try {
+        const rows: typeof copiesAnciennes = [];
+        const ids = passageLegacyKey.split(",");
+        for (let i = 0; i < ids.length; i += 150) {
+          const { data, error } = await supabase.from("apprenant_quiz_results").select("id,apprenant_id,matiere_nom,tentative,completed_at").in("id", ids.slice(i,i+150)).order("id");
+          if (error) throw error;
+          rows.push(...(data ?? []));
+        }
+        if (!cancelled) setCopiesAnciennes(rows);
+      } catch { if (!cancelled) setErreur("Lecture de l’historique des passages impossible."); }
+    })();
+    return () => { cancelled = true; };
+  }, [ancienCircuit, passageLegacyKey]);
 
   // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
@@ -677,7 +710,8 @@ export default function AdminCorrectionQrcV2Reel() {
             })()
           : await recharger();
       if (import.meta.env.DEV) console.info(`[qrc-v2] note enregistrée et relue en ${Math.round(performance.now() - t0)} ms`);
-      const decision = decisionApresCorrection(sessionRelue, qrcSel.qrc_instance_id, n);
+      const sessionNavigation = passageFiltre ? { ...sessionRelue, tentatives: sessionRelue.tentatives.filter(t=>t.attempt_id===passageFiltre), qrc: sessionRelue.qrc.filter(q=>q.attempt_id===passageFiltre) } : sessionRelue;
+      const decision = decisionApresCorrection(sessionNavigation, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
         setErreur("La sauvegarde n'a pas pu être confirmée par relecture. La copie reste affichée ; aucune navigation automatique n'a été effectuée.");
@@ -786,11 +820,12 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   };
 
-  const copiePrecedente = copieVoisine(session, selection, -1);
-  const copieSuivante = copieVoisine(session, selection, 1);
+  const sessionNavigation = passageFiltre && session ? {...session,tentatives:session.tentatives.filter(t=>t.attempt_id===passageFiltre),qrc:session.qrc.filter(q=>q.attempt_id===passageFiltre)} : session;
+  const copiePrecedente = copieVoisine(sessionNavigation, selection, -1);
+  const copieSuivante = copieVoisine(sessionNavigation, selection, 1);
   const naviguerCopie = (direction: DirectionCopie) => {
     if (etatEnvoi === "encours") return;
-    const cible = copieVoisine(session, selection, direction);
+    const cible = copieVoisine(sessionNavigation, selection, direction);
     if (!cible) return;
     if (commentaireModifie && commentaire !== commentaireSauve && !window.confirm(
       "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
@@ -888,6 +923,7 @@ export default function AdminCorrectionQrcV2Reel() {
               value={groupeCle ?? ""}
               onChange={(e) => setGroupeCle(e.target.value)}
             >
+              <option value={TOUS_GROUPES}>Toutes les sessions — tous les passages remis</option>
               {groupes.map((g) => (
                 <option key={g.cle} value={g.cle} className={estEnCours(g) ? "text-red-600 font-semibold" : "text-foreground font-normal"}>
                   {libelleGroupe(g)}
@@ -905,7 +941,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
                   {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
-                  {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
+                  {e.dates.map((d) => `${d.date} (${d.attemptIds.length})`).join(" • ")}
                   {Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length > 0
                     ? ` · Inscription croisée : ${Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length}`
                     : ""}
@@ -995,7 +1031,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 onClick={() => setJourFiltre(null)}
                 data-testid="date-toutes"
               >
-                Toutes ({ebChoisi?.attemptIds.length})
+                Toutes les dates ({ebChoisi?.attemptIds.length})
               </Button>
               {(ebChoisi?.dates ?? []).map((d) => (
                 <Button
@@ -1011,6 +1047,17 @@ export default function AdminCorrectionQrcV2Reel() {
               ))}
             </div>
           )}
+          <select aria-label="Choisir un passage remis" data-testid="choix-passage" className="w-full max-w-full rounded border border-input bg-background px-2 py-2 text-sm"
+            value={passageFiltre ?? ""} onChange={e => {
+              const id = e.target.value || null;
+              setPassageFiltre(id); setSelectionState(null); setArchiveOuverte(null);
+              majUrl({qrc_passage:id,qrc:null});
+            }}>
+            <option value="">Tous les passages — toutes les tentatives du filtre</option>
+            {ancienCircuit ? copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
+              {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id}
+            </option>) : ordonnerCandidatsParFin(session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
+          </select>
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
             {qrcSel && (
@@ -1087,7 +1134,7 @@ export default function AdminCorrectionQrcV2Reel() {
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {matieres.map((m) => {
-          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) =>
+          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => (!passageFiltre || t.attempt_id === passageFiltre) &&
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           ));
           // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
@@ -1161,15 +1208,16 @@ export default function AdminCorrectionQrcV2Reel() {
                         </td>
                         <td
                           className="px-1 py-0.5 whitespace-nowrap text-muted-foreground truncate"
-                          title={`${t.started_at ? new Date(t.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "date inconnue"} · tentative ${t.attempt_id.slice(0, 8)}`}
+                          title={libellePassage(t)}
                         >
-                          {t.started_at
-                            ? new Date(t.started_at).toLocaleString("fr-FR", {
+                          {(t.finished_at ?? t.started_at)
+                            ? new Date((t.finished_at ?? t.started_at) as string).toLocaleString("fr-FR", {
                                 timeZone: "Europe/Paris",
-                                day: "2-digit", month: "2-digit",
+                                day: "2-digit", month: "2-digit", year: "numeric",
                                 hour: "2-digit", minute: "2-digit",
                               })
                             : "date inconnue"}
+                          <span className="block text-xs">Tentative {numeroTentative(t)}</span>
                         </td>
                         {(() => {
                           // Note /20 : résultat serveur de CETTE tentative (QCM du snapshot + dernière
@@ -1291,7 +1339,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 {tentativeSel.started_at
                   ? new Date(tentativeSel.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
                   : "date inconnue"}{" "}
-                · tentative {tentativeSel.attempt_id.slice(0, 8)}
+                · tentative {numeroTentative(tentativeSel)} · copie {tentativeSel.attempt_id.slice(0, 8)}
               </span>
               {(() => {
                 const mat = (tentativeSel.snapshot.matieres ?? []).find((m) => m.subject_id === questionSel?.matiere);

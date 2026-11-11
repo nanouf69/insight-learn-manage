@@ -1,0 +1,32 @@
+import { beforeEach, expect, it, vi } from "vitest";
+const fixture=vi.hoisted(()=>({tables:{} as Record<string,Record<string,unknown>[]>,calls:[] as {table:string;filters:unknown[]}[]}));
+vi.mock('@/integrations/supabase/client',()=>({supabase:{from:(table:string)=>{
+ let start=0,end=999;const filters:Array<[string,string,unknown]>=[];
+ const q={select:()=>q,order:()=>q,eq:(k:string,v:unknown)=>{filters.push(['eq',k,v]);return q;},in:(k:string,v:unknown[])=>{filters.push(['in',k,v]);return q;},ilike:()=>q,not:(k:string,_op:string,_v:unknown)=>{filters.push(['not',k,null]);return q;},range:(a:number,b:number)=>{start=a;end=b;return q;},then:(done:(v:unknown)=>unknown)=>{
+ fixture.calls.push({table,filters});
+ const rows=(fixture.tables[table]??[]).filter(r=>filters.every(([op,k,v])=>op==='eq'?r[k]===v:op==='in'?(v as unknown[]).includes(r[k]):r[k]!=null));
+ return Promise.resolve({data:rows.slice(start,Math.min(end+1,start+1000)),error:null}).then(done);
+ }};return q;
+}}}));
+vi.mock('@/features/correction-qrc-v2/eb2Consultation',()=>({lirePassagesEb2Consultation:async()=>[],estConsultation:(id:string)=>id.startsWith('consultation:'),chargerConsultationEb2:async()=>null}));
+import { chargerSessionTest,listerGroupesCrm } from '@/features/correction-qrc-v2/noyauReel';
+beforeEach(()=>{fixture.tables={};fixture.calls=[];});
+it('vrai lecteur menu : 1002 remises VTC/TAXI/TA/VA, brouillon exclu, toutes pages et anciennes tentatives',async()=>{
+ fixture.tables.exam_attempts_v2=Array.from({length:1002},(_,i)=>({attempt_id:`t${i}`,apprenant_id:'a',exam_id:['EB3','EB3-TAXI','EB3-ta','EB3-va'][i%4],is_test:false,etat:'terminee',started_at:'2026-11-01T10:00:00Z',finished_at:'2026-11-01T10:30:00Z'}));
+ fixture.tables.exam_attempts_v2.push({attempt_id:'draft',apprenant_id:'a',exam_id:'EB3',is_test:false,etat:'en_cours',started_at:'2026-11-09T10:00:00Z'});
+ fixture.tables.apprenants=[{id:'a',type_apprenant:'taxi-e'}];
+ const g=await listerGroupesCrm();const ids=g.flatMap(x=>x.examens.flatMap(e=>e.attemptIds));
+ expect(ids).toHaveLength(1002);expect(ids).not.toContain('draft');expect(ids).toContain('t1001');
+ expect(g[0].examens).toHaveLength(4);
+ expect(fixture.calls.filter(c=>c.table==='exam_attempts_v2').length).toBeGreaterThan(1);
+});
+it('vrai chargeur : 1200 QRC pour 2 copies, aucune dernière fiche substituée, notes par ID',async()=>{
+ fixture.tables.exam_attempts_v2=['full','partial'].map((id,i)=>({attempt_id:id,apprenant_id:'a',exam_id:'EB3-TAXI',is_test:false,etat:'terminee',started_at:`2026-11-0${i+1}T10:00:00Z`,snapshot:{source_historique:{result_id:id,details:{reponses:{'1':id==='full'?'réponse longue originale':'3.5 t'}}},questions:[],matieres:[]}}));
+ fixture.tables.qrc_instances_v2=Array.from({length:1200},(_,i)=>({qrc_instance_id:`q${String(i).padStart(4,'0')}`,attempt_id:i<600?'full':'partial',apprenant_id:'a',question_id:String(i%600+1),reponse:i%600===0?'court':`texte${i}`,etat:'en_attente',note:null}));
+ fixture.tables.apprenants=[{id:'a',nom:'FICTIF',prenom:'Élève'}];
+ fixture.tables.core_exam_results=[{attempt_id:'full',result_id:'r1',score:15}];
+ const session=await chargerSessionTest('migre',['full','partial']);
+ expect(session.qrc).toHaveLength(1200);expect(session.qrc.find(q=>q.qrc_instance_id==='q1199')).toBeTruthy();
+ expect(session.qrc[0].reponseComplete).toBe('réponse longue originale');expect(session.qrc[600].reponseComplete).toBe('3.5 t');
+ expect(fixture.calls.some(c=>c.table==='reponses_apprenants')).toBe(false);expect(session.resultats[0].attempt_id).toBe('full');
+});
