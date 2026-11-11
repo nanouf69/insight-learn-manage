@@ -264,7 +264,7 @@ BEGIN
         AND split_part(r.exercice_id,'__',1)=p_exam_id AND r.completed),
     (SELECT max(a.finished_at) FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id AND a.etat='terminee'))
     INTO last_closed;
-  IF scoped.operation_id IS NULL AND now()<last_closed+interval '48 hours' THEN
+  IF context->>'status'<>'non_commencee' AND scoped.operation_id IS NULL AND now()<last_closed+interval '48 hours' THEN
     SELECT id INTO v_authorization FROM public.exam_retake_authorizations a WHERE a.apprenant_id=p_apprenant_id
       AND a.exam_id=p_exam_id AND a.consumed_at IS NULL AND a.revoked_at IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE;
     IF v_authorization IS NULL THEN
@@ -290,6 +290,14 @@ BEGIN
        OR jsonb_array_length(coalesce(fresh_snapshot->'matieres','[]'))<>1 THEN
       RAISE EXCEPTION 'Version publiée incomplète pour cette matière.' USING ERRCODE='P0487';
     END IF;
+    SELECT jsonb_build_object('id',p_matiere_id,'nom',m->>'titre','duree',(m->>'duree')::int,
+      'coefficient',(m->>'coefficient')::numeric,'noteSur',(m->>'note_sur')::numeric,
+      'noteEliminatoire',(m->>'note_eliminatoire')::numeric,'ptsQCM',m->'pts_qcm','ptsQRC',m->'pts_qrc',
+      'questions',(SELECT jsonb_agg((q-'matiere'-'ordre')||jsonb_build_object('id',substring(q->>'id' FROM length(p_matiere_id)+2)::int) ORDER BY (q->>'ordre')::int)
+        FROM jsonb_array_elements(fresh_snapshot->'questions')q)) INTO subject
+     FROM jsonb_array_elements(fresh_snapshot->'matieres')m;
+    duration_seconds:=(subject->>'duree')::int*60;
+    IF duration_seconds IS NULL OR duration_seconds<=0 THEN RAISE EXCEPTION 'Durée publiée absente.' USING ERRCODE='P0487'; END IF;
     engine:='v2';
     INSERT INTO public.exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,is_test)
       VALUES(p_apprenant_id,p_exam_id,published.id,fresh_snapshot,md5(fresh_snapshot::text),'en_cours',published.is_test)
