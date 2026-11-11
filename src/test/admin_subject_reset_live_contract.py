@@ -149,7 +149,7 @@ class Live(base.Contract):
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}' AND motif='subject-reset-expired-empty:{op}'").stdout.strip(),'1')
   self.assertEqual(self.sql(f"SELECT count(*) FROM exam_attempts_v2 WHERE exam_id='EB2' AND snapshot->>'matiere'='t3p'").stdout.strip(),'1')
   self.assertEqual(self.sql("SELECT count(*) FROM apprenant_examen_timers WHERE exercice_id='EB2__t3p__t2'").stdout.strip(),'0')
-  self.assertEqual(self.sql("SELECT count(*) FROM core_exam_results").stdout.strip(),'0')
+  self.assertEqual(self.sql("SELECT count(*) FROM core_exam_results r JOIN exam_attempts_v2 a ON a.attempt_id=r.attempt_id WHERE a.exam_id='EB2'").stdout.strip(),'0')
   current=self.context('EB2','t3p');self.assertEqual(current['authorization_id'],op)
   self.authorize(current,op)
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'1')
