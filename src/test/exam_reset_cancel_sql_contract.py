@@ -78,6 +78,23 @@ class CancellationContract(ExamResetV2Contract):
         self.sql('UPDATE exam_retake_authorizations SET consumed_at=now()')
         self.assertFalse(self.context(reset)['eligible'])
 
+    def test_wrong_account_reset_identity_refused(self):
+        reset = self.prepared(); self.enable_fixture()
+        wrong = self.sql(f"SET test.uid='{ADMIN}'; SELECT admin_exam_reset_cancel_context('99999999-9999-4999-8999-999999999999','{reset}')",False)
+        self.assertIn('RESET_IDENTITY_MISMATCH',wrong.stderr)
+
+    def test_same_timestamp_reset_ambiguous(self):
+        reset=self.prepared()
+        self.sql(f"INSERT INTO core_exam_resets(operation_id,apprenant_id,exam_id,cutoff_at,motif) SELECT gen_random_uuid(),apprenant_id,exam_id,cutoff_at,'ambiguous' FROM core_exam_resets WHERE reset_id='{reset}'")
+        self.assertFalse(self.context(reset)['eligible'])
+
+    def test_concurrent_cancel_single_event(self):
+        reset=self.prepared();self.enable_fixture()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(lambda op:self.cancel(reset,op=op),['aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb']))
+        self.assertEqual(results[0].stdout,results[1].stdout)
+        self.assertEqual(self.sql('SELECT count(*) FROM core_exam_reset_cancellations').stdout.strip(),'1')
+
     def test_newer_reset_blocks_same_exam_only(self):
         reset = self.prepared()
         self.sql(f"INSERT INTO core_exam_resets(operation_id,apprenant_id,exam_id,cutoff_at,motif) VALUES(gen_random_uuid(),'{APPRENANT}','EB4-FICTIF',clock_timestamp(),'other exam')")
