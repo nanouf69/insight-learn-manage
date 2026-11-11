@@ -62,10 +62,10 @@ class Integrated(unittest.TestCase):
   self.assertNotEqual(v2.returncode,0);self.assertIn('CANCELLED_RESET_GRANT',v2.stderr)
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_attempts_v2 WHERE apprenant_id='{A}' AND exam_id='{exam}'"),'1')
   # Real old first-start path: scoped receipt creates a timer without V2 copy.
-  live=base.Live();live.seed('EB6','anglais');context=live.context('EB6','anglais');live.authorize(context,str(uuid.uuid4()))
+  live=base.Live();live.seed('EB6','t3p');context=live.context('EB6','t3p');live.authorize(context,str(uuid.uuid4()))
   old=json.loads(live.start(context,str(uuid.uuid4())).stdout.strip().splitlines()[-1])
   self.assertEqual(old['moteur'],'legacy');self.assertEqual(old['tentative'],1)
-  self.assertEqual(self.scalar(f"SELECT count(*) FROM apprenant_examen_timers WHERE apprenant_id='{A}' AND exercice_id='EB6__anglais'"),'1')
+  self.assertEqual(self.scalar(f"SELECT count(*) FROM apprenant_examen_timers WHERE apprenant_id='{A}' AND exercice_id='EB6__t3p'"),'1')
   self.assertEqual(self.scalar('SELECT count(*) FROM _effets_externes'),'0')
 
 if __name__=='__main__':unittest.main(verbosity=2)
