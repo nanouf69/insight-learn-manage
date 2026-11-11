@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 09:27 — Bouton matière Arezki : dépendances absentes
+- [ ] SELECT Arezki EB3 A et catalogue ; aucune autorisation/tentative réelle.
+- [ ] Contrôle PassageMatiere complet isolé ancien/V2, chrono/reload/soumission ; installation uniquement si validé.
+- [ ] Relecture RPC/PostgREST non mutante, compatibilité front et verdict opérationnel ; aucun repli global ni publication groupée.
+
 ## 11/11 09:18 — Sécurité routière Bilan examen VTC → TAXI seulement
 - [x] Source 255/cible historique 252, 190 écarts ; 9 réponses TAXI dont 5 sans snapshot, banque ancienne conservée. 62 modules/161 exercices empreintes identiques.
 - [x] Migration 0266 + publication active nouveaux reçus TAXI 11/602 seulement : 255 positions, 0 divergence canonique/images/tailles, 210 IDs exacts conservés/45 nouveaux ; aucune modification autres matières.
