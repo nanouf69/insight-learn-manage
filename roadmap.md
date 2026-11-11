@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 13:42 — Sélecteur sessions accès EB
+- [ ] Filtrer uniquement les sessions présentielles compatibles en cours/futures, tri Paris inclusif, Select accessible et rouge en cours.
+- [ ] Tester dates/e-learning/compatibilité/ancien choix et PC/mobile ; aucune mutation des accès ou publication.
+
 ## 11/11 13:37 — Annulation ciblée d’un reset / Examens archivés
 - [x] Onglet admin/confirmation exacte en aperçu, enregistrement toujours désactivé, aucun reset réel.
 - [x] Candidat séparé append-only + trois projections préparé, 28 contrats jetables PASS et 17 Vitest PASS ; non installé.
