@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 13:10 — Accès examens blancs par session présentielle
-- [ ] Extension de la fiche session CRM, confirmation et états fiables ; candidat serveur séparé non appliqué en production, sans modification des droits par défaut.
-- [ ] Tests PostgreSQL jetables et interface PC/mobile : ouvert/fermé, épreuve commencée, droits, e-learning, inscriptions croisées, concurrence, journal ; rapport et commit.
+- [x] Zone Accès examens blancs dans la fiche session CRM ; confirmation scoped/readback, absence serveur explicite, candidat SQL séparé non installé. Droits par défaut inchangés, zéro action réelle/publication.
+- [x] 15 contrats PostgreSQL jetables + 29 tests Vitest PASS, confirmation PC/mobile fictive vérifiée ; rapport docs/session-exam-access-2026-11-11.md. UI réelle complète et ensemble des triggers actuels NON PROUVÉS ; installation hors périmètre autorisé.
 
 ## 11/11 12:58 — Menu Correction QRC : tous les passages remis
 - [x] Audit : plafonds API/recherche, brouillons V2, filtre QRC ancien et superposition dernière fiche corrigés ; toutes sessions/dates et copie individuelle par ID, archives en lecture seule.
