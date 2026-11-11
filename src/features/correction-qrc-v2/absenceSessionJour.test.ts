@@ -17,3 +17,24 @@ it('signatures masquées/absence, papier refusé : ne prouvent ni présence ni c
 it('attente, exclusions, distanciel et dates personnalisées sont respectés',()=>{
  for(const patch of [{liste_attente:true},{emargements_exclus:true},{date_fin_personnalisee:'2026-11-10'},{statut_suivi:'annulée'},{apprenants:{type_apprenant:'taxi-e'}}]){const p=fixture();p.inscriptions[0]={...p.inscriptions[0],...patch};expect(absentsSessionJour(p).has('hamdi')).toBe(false);}
 });
+it('date passée différente du jour serveur : tous les créneaux historiques sont écoulés même avant midi aujourd’hui',()=>{
+ const p=fixture();p.jour='2026-11-10';p.minuteParis=8*60;expect(absentsSessionJour(p).get('hamdi')).toBe('non_emarge');
+});
+it('date future : aucune absence ni non-émargement même avec absence déclarée',()=>{
+ const p=fixture();p.jour='2026-11-12';p.signatures.push({...sig('hamdi','matin'),absent:true});expect(absentsSessionJour(p).size).toBe(0);
+});
+it('sans date serveur fiable : aucun badge',()=>{
+ const p=fixture();delete p.jourServeur;expect(absentsSessionJour(p).size).toBe(0);
+});
+it('ligne technique avec signed_at mais sans image : non émargé, jamais absence inventée',()=>{
+ const p=fixture();p.signatures.push({...sig('hamdi','apres_midi'),signature_data_url:null});expect(absentsSessionJour(p).get('hamdi')).toBe('non_emarge');
+});
+it('absence explicitement déclarée : Absent après fin du créneau attendu',()=>{
+ const p=fixture();p.signatures=[{...sig('hamdi','matin'),signature_data_url:null,absent:true}];expect(absentsSessionJour(p).get('hamdi')).toBe('absent');
+});
+it('Alpha Barry signé le 11/11 à 08:56, ligne après-midi technique : jamais absent sur la journée',()=>{
+ const p=fixture();p.signatures.push({...sig('hamdi','matin'),signed_at:'2026-11-11T07:56:41.379025Z'},{...sig('hamdi','apres_midi'),signature_data_url:null,signed_at:'2026-11-01T16:15:04Z'});expect(absentsSessionJour(p).has('hamdi')).toBe(false);
+});
+it('créneau distinct documenté : signature matin et créneau après-midi sans preuve = Non émargé, pas Absent',()=>{
+ const p=fixture();p.creneau='apres_midi';p.signatures.push(sig('hamdi','matin'));expect(absentsSessionJour(p).get('hamdi')).toBe('non_emarge');
+});
