@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 08:52 — Rattachement nominatif QRC des cinq dossiers
+- [x] Périmètre fermé : CHEMOUN 2be4ac7b-32a6-4a0f-9a12-267381c6779b ; BENKHELIL b9058e7e-a81e-4741-adba-6da88238cc84 ; MEMDOUH 7dac2ec5-46f4-46f9-9573-2bf245041601 ; HADDOU c41a5034-8fa2-4fe5-a5d0-ad3f590d7fbe ; SARKISIAN 144ca7f4-6623-4063-861b-e139a4a0108b. Lecture du code et incident uniquement, aucune mutation ni interaction avec le bouton reset.
+- [ ] Inventaire et catalogue actuel BLOQUÉS : lectures Cloud échouent (pooler indisponible), sonde auth/base expirée, métriques indisponibles ; identités fournies non revalidées, compteurs actuels inconnus.
+- [ ] Tests fictifs puis rattachements additifs et contrôle hors périmètre AVANT/APRÈS : attendent le retour des lectures et preuve complète des remises/snapshots/barèmes/notes validées. Aucun import, liaison, IA, note, email, migration ou publication exécuté.
+
 ## 11/11 08:42 — Remise à zéro admin d’une seule matière
 - [x] Catalogue lu seulement : start_exam_subject_retake exige le propriétaire et ouvre immédiatement tentative/chronomètre ; aucune voie admin par matière trouvée. Aucun repli global ni appel de mutation.
 - [x] Bouton ciblé et confirmation nominative préparés ; confirmation bloquée, aucune modification du bouton global, des notes ou des copies.
