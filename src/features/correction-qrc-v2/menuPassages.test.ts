@@ -8,10 +8,10 @@ describe("menu tous passages",()=>{
   expect(all.examens[0].attemptIds).toEqual(["t1","t2"]);
   expect(all.examens[0].dates.map(d=>d.attemptIds)).toEqual([["t1"],["t2"]]);
  });
- it("toutes filières et anciens circuits restent séparés par EB/circuit",()=>{
+ it("toutes filières restent séparées, archives intégrées au même examen V2",()=>{
   const g=group("session",["t1"]);
   g.examens=["EB1","EB1-TAXI","EB1-ta","EB1-va"].flatMap(exam_id=>["v2","ancien"].map(circuit=>({...g.examens[0],exam_id,circuit:circuit as "v2"|"ancien",attemptIds:[`${exam_id}:${circuit}`]})));
-  expect(groupeTousPassages([g]).examens).toHaveLength(8);
+  const all=groupeTousPassages([g]);expect(all.examens).toHaveLength(4);expect(all.examens.every(e=>e.circuit==='v2'&&!e.cle.endsWith('::ancien'))).toBe(true);expect(all.examens.flatMap(e=>e.attemptIds)).toHaveLength(8);
  });
  it("lecture de 2507 éléments au-delà d’une page, erreur jamais silencieuse",async()=>{
   const rows=Array.from({length:2507},(_,i)=>i);const calls:number[]=[];

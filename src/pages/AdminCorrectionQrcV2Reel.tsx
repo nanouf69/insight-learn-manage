@@ -19,6 +19,7 @@ import { CommentairesPredefinis } from "@/features/correction-qrc-v2/Commentaire
 import { ajouterCommentaireQrc } from "@/features/correction-qrc-v2/commentairesPredefinis";
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { CopiesHistoriquesLecture } from "@/features/correction-qrc-v2/CopiesHistoriquesLecture";
+import {CopieNativeLecture} from '@/features/correction-qrc-v2/CopieNativeLecture';
 import { commentaireConfirme, cleOperationCommentaire, versionCommentaire } from "@/features/correction-qrc-v2/commentaireSeul";
 import { chargerConsultationEb2, commenterQrcHistorique, estConsultation, lireHistoriqueQrcHistorique, noterQrcHistorique, reconnaissanceRemise, reviserQrcHistorique, verifierLiaisonHistoriqueServeur, type InfosHistorique } from "@/features/correction-qrc-v2/eb2Consultation";
 import {
@@ -1131,6 +1132,7 @@ export default function AdminCorrectionQrcV2Reel() {
             <CopiesHistoriquesLecture resultIds={legacyResultIds ?? []} />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
+        {(session?.tentatives??[]).filter(t=>t.attempt_id===passageFiltre&&!t.snapshot.questions.some(q=>q.type==='QRC')).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
         {!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
         {matieres.map((m) => {
           const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => (!passageFiltre || t.attempt_id === passageFiltre) &&
