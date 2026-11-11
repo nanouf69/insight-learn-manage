@@ -29,6 +29,7 @@ import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
+import { ExamCardAccess, useExamAccessSessions } from '@/components/sessions/acces-examens/ExamCardAccess';
 
 /**
  * Retrouve la version ORIGINALE (source statique) d'une matière pour un examen
@@ -47,6 +48,7 @@ function findStaticFallbackMatiere(examId: string, matiereId: string, matiereNom
 
 function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onStartPartial?: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   const [retakeExamen, setRetakeExamen] = useState<ExamenBlanc | null>(null);
+  const sessionExamAccess = useExamAccessSessions(isAdmin === true);
   // Examens branchés sur le nouveau moteur QRC : le blocage de la note vient
   // exactement des mêmes identifiants que la file de correction du formateur.
   // Pour tous les autres examens, la règle historique est conservée telle quelle.
@@ -880,6 +882,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         )}
                       </Button>
                     )}
+                    <ExamCardAccess examId={examen.id} access={sessionExamAccess}/>
                   </CardContent>
                 </Card>
               );

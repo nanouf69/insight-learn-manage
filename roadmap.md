@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 13:20 — Placement accès au bas des cartes EB
+- [x] Contrôle partagé compact au bas de chaque carte après pause/dernière action ; utilisateur+ rôle serveur vérifiés, sélection explicite de session, aucune deuxième mécanique.
+- [x] 13 tests PASS et navigateur vraie liste fictive PC/mobile, placement/cancel/apprenant exclu, zéro mutation/migration/publication. Rapport docs/session-exam-access-cartes-2026-11-11.md ; session admin réelle NON PROUVÉE, serveur toujours non installé.
+
 ## 11/11 13:10 — Accès examens blancs par session présentielle
 - [x] Zone Accès examens blancs dans la fiche session CRM ; confirmation scoped/readback, absence serveur explicite, candidat SQL séparé non installé. Droits par défaut inchangés, zéro action réelle/publication.
 - [x] 15 contrats PostgreSQL jetables + 29 tests Vitest PASS, confirmation PC/mobile fictive vérifiée ; rapport docs/session-exam-access-2026-11-11.md. UI réelle complète et ensemble des triggers actuels NON PROUVÉS ; installation hors périmètre autorisé.
