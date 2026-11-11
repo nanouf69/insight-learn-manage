@@ -39,6 +39,7 @@ import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helper
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/examResetAdmin";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
+import { composeSubjectPanel } from '@/lib/examSubjectPanel';
 import { ResetMatiereAdminButton } from "./ResetMatiereAdminButton";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
@@ -49,6 +50,12 @@ const STATIC_EXAMENS_BLANCS = [
   ...EXAMENS_BLANCS_VA,
 ];
 
+import { readSubjectResetContext } from '@/lib/adminSubjectReset';
+function SubjectPanelStatus({account,exam,subject}:{account:string;exam:string;subject:string}) {
+ const {data,error}=useQuery({queryKey:['subject-reset-context',account,exam,subject],queryFn:()=>readSubjectResetContext(account,exam,subject),retry:false});
+ const labels={non_commencee:'Non commencée',en_cours:'En cours',en_attente:'En attente',notee:'Résultat conservé',ambigu:'À vérifier'};
+ return <span className="text-xs text-muted-foreground" title={data?.reason ?? undefined}>{error?'Lecture indisponible':data?.authorization_id?'À refaire':data?labels[data.status]:'Vérification…'}</span>;
+}
 interface ExamensBlancsResetTabProps {
   apprenant: {
     id: string;
@@ -342,6 +349,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
               // des questions — même mécanisme que ExamenBlancsListe.tsx. Ne jamais
               // se fier à note_sur_20 / (score_obtenu / score_max) figés en base.
               const examenDef = examensActuels.find((e) => e.id === group.quizId);
+              const panelRows = composeSubjectPanel(examenDef?.matieres ?? [],group.results);
               const scoresWithLookup = group.results.map((r) => ({
                 matiere_id: r.matiere_id,
                 matiere_nom: r.matiere_nom,
@@ -403,7 +411,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                               </span>
                               <span className="flex items-center gap-1">
                                 <Hash className="w-3 h-3" />
-                                {group.results.length} matière{group.results.length > 1 ? "s" : ""}
+                                {panelRows.length} matières · {group.results.length} avec résultat
                               </span>
                             </>
                           )}
@@ -429,56 +437,25 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                     </Button>
                   </div>
 
-                  {expanded && group.results.length > 0 && (
+                  {expanded && (
                     <div className="border-t divide-y">
-                      {group.results
-                        .sort((a, b) => a.matiere_nom.localeCompare(b.matiere_nom))
-                        .map((r, i) => {
-                          const matiereDef = examenDef?.matieres.find(
-                            (md) => md.id === r.matiere_id || md.nom === r.matiere_nom,
-                          );
-                          const recomputed = matiereDef
-                            ? computeMatiereScoreForAttempt(matiereDef, {
-                                details: (r as any).details ?? { reponses: r.reponses ?? null, correctionsIA: r.correctionsIA ?? null },
-                                score_obtenu: r.score_obtenu,
-                                score_max: r.score_max,
-                                note_sur_20: (r as any).note_sur_20,
-                              })
-                            : null;
-                          const note = recomputed
-                            ? recomputed.noteSur20.toFixed(1)
-                            : r.score_max > 0
-                              ? ((r.score_obtenu / r.score_max) * 20).toFixed(1)
-                              : "0";
-                          return (
-                            <div key={i} className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-                              <span className="text-muted-foreground">{r.matiere_nom}</span>
-                              <div className="flex flex-wrap items-center gap-3">
-                                <span className="font-mono text-xs">{note}/20</span>
-                                <ResetMatiereAdminButton key={`${apprenant.id}:${r.quiz_id}:${r.matiere_id}:${r.result_id}`} target={{
-                                  apprenantId: apprenant.id, prenom: apprenant.prenom, nom: apprenant.nom,
-                                  examId: r.quiz_id, examLabel: group.examenLabel, filiere: group.type,
-                                  matiereId: r.matiere_id, matiereNom: r.matiere_nom, resultId: r.result_id,
-                                }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-
-                  {expanded && group.inProgressOnly && group.inProgressExerciceIds && (
-                    <div className="border-t divide-y">
-                      {group.inProgressExerciceIds.map((eid, i) => {
-                        const matId = eid.split("_").slice(1).join("_");
-                        return (
-                          <div key={i} className="px-4 py-2 flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground flex items-center gap-2">
-                              {matId}
-                              <span className="text-xs text-amber-600">(en cours)</span>
-                            </span>
+                      {!examenDef && <p role="alert" className="p-4 text-sm text-destructive">Composition officielle indisponible. Relisez avant toute action.</p>}
+                      {panelRows.map(({subject: matiereDef,result:r})=>{
+                        const recomputed=r ? computeMatiereScoreForAttempt(matiereDef,{
+                          details:r.details ?? {reponses:r.reponses ?? null,correctionsIA:r.correctionsIA ?? null},
+                          score_obtenu:r.score_obtenu,score_max:r.score_max,
+                        }):null;
+                        const note=r ? (recomputed ? recomputed.noteSur20.toFixed(1) : r.score_max>0 ? ((r.score_obtenu/r.score_max)*20).toFixed(1):"0"):null;
+                        return <div key={matiereDef.id} className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                          <span className="text-muted-foreground">{matiereDef.nom}</span>
+                          <div className="flex flex-wrap items-center gap-3">
+                            {note!==null && <span className="font-mono text-xs">{note}/20</span>}
+                            <SubjectPanelStatus account={apprenant.id} exam={group.quizId} subject={matiereDef.id} />
+                            <ResetMatiereAdminButton target={{apprenantId:apprenant.id,prenom:apprenant.prenom,nom:apprenant.nom,
+                              examId:group.quizId,examLabel:group.examenLabel,filiere:group.type,matiereId:matiereDef.id,matiereNom:matiereDef.nom,resultId:r?.result_id}}
+                              onAuthorized={()=>void queryClient.invalidateQueries({queryKey:['subject-reset-context',apprenant.id,group.quizId,matiereDef.id]})} />
                           </div>
-                        );
+                        </div>;
                       })}
                     </div>
                   )}
