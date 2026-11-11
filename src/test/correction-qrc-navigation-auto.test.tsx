@@ -164,6 +164,19 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it('menu individuel : complète ancienne puis partielle récente restent accessibles séparément sans note',async()=>{
+    const a1={...tentative('a1'),finished_at:'2026-11-01T17:15:42Z',snapshot:{...tentative('a1').snapshot,source_historique:{tentative:1}}} as TentativeReelle;
+    const a2={...tentative('a2'),finished_at:'2026-11-09T20:21:19Z',snapshot:{...tentative('a2').snapshot,source_historique:{tentative:2}}} as TentativeReelle;
+    etat.session={...sessionFictive(),tentatives:[a1,a2],qrc:[{...qrc('a1'),reponse:'Q2/Q3 présentes dans copie complète'},{...qrc('a2'),reponse:'3.5 t'}]};
+    render(ecran());await screen.findByTestId('cellule-a1-q1');
+    fireEvent.change(screen.getByTestId('choix-passage'),{target:{value:'a1'}});
+    expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();fireEvent.click(screen.getByTestId('cellule-a1-q1'));
+    expect(await screen.findByTestId('reponse-eleve')).toHaveTextContent('Q2/Q3 présentes');
+    fireEvent.change(screen.getByTestId('choix-passage'),{target:{value:'a2'}});
+    expect(screen.queryByTestId('cellule-a1-q1')).toBeNull();fireEvent.click(screen.getByTestId('cellule-a2-q1'));
+    expect(await screen.findByTestId('reponse-eleve')).toHaveTextContent('3.5 t');expect(mocks.corriger).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByTestId('choix-passage'),{target:{value:''}});expect(screen.getByTestId('cellule-a1-q1')).toBeTruthy();
+  });
   it('import V2 historique avec IDs locaux et sans résultat : clic envoyé à la bonne copie puis relu', async () => {
     const base = tentative('a1');
     etat.session = {

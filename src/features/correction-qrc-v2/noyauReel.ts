@@ -138,8 +138,8 @@ const asSnapshot = (v: unknown) => v as SnapshotExamen;
  * Elles restent en base, intactes, mais ne sont plus affichées ni à corriger.
  */
 async function idsNeutralises(): Promise<Set<string>> {
-  const { data } = await supabase.from("core_tentatives_neutralisees").select("attempt_id").range(0, 4999);
-  return new Set((data ?? []).map((r: any) => r.attempt_id as string));
+  const data = await lirePagesParalleles<{attempt_id:string}>(de => supabase.from("core_tentatives_neutralisees").select("attempt_id").order("attempt_id").range(de,de+999),1);
+  return new Set(data.map(r => r.attempt_id));
 }
 
 
@@ -547,12 +547,15 @@ export async function chargerSessionTest(
 
   const attemptIds = attempts.map((a) => a.attempt_id as string);
   const qrc = await parLots(attemptIds, async (lot) => {
-    return lirePagesParalleles<QrcReelle>((de) => supabase
+    return lirePagesParalleles<QrcReelle>(async (de) => {
+      const {data,error} = await supabase
       .from("qrc_instances_v2")
       .select("qrc_instance_id, attempt_id, question_id, apprenant_id, reponse, etat, note, corrige_email, corrige_at")
       .in("attempt_id", lot)
       .order("qrc_instance_id", { ascending: true })
-      .range(de, de + 999), 1);
+      .range(de, de + 999);
+      return {data:data as QrcReelle[] | null,error};
+    }, 1);
   });
 
   // Aucune dernière fiche d'une autre tentative ne remplace la copie sélectionnée.
