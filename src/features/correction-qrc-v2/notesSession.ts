@@ -48,7 +48,7 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
     if(core===null||preuves===null)throw new Error('Lecture des publications officielles indisponible');
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
       const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>attacherSourceUnique(r,core.get(a.id)??[],preuves));
-      notes[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);notes[a.id][n]=noteGeneraleSession(def,selected.filter(r=>r.quiz_id===def?.id));}
+      notes[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);}
     }
     return {inscrits,notes,erreur:null};
   }catch(e){for(const a of inscrits){notes[a.id]={};for(let n=1;n<=6;n++)notes[a.id][n]={etat:'indisponible',note:null};}return {inscrits,notes,erreur:e instanceof Error?e.message:'Lecture indisponible'};}

@@ -321,6 +321,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const filtreLecture=JSON.stringify([mode,groupeCle,ebCle,jourFiltre,cleAttempts]);
   // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
+    if(notesParSession)return null;
     const generation = ++generationRef.current;
     if (!attemptsAffiches) { setSession(null); setLectureCopies(false); return null; }
     // Recherche sans passage dans cet EB : session vide (jamais de chargement global).
@@ -346,7 +347,7 @@ export default function AdminCorrectionQrcV2Reel() {
     } finally {
       if (generation === generationRef.current) setLectureCopies(false);
     }
-  }, [mode, attemptsAffiches,filtreLecture]);
+  }, [mode, attemptsAffiches,filtreLecture,notesParSession]);
 
   useEffect(() => {
     const lectures = generationRef;
@@ -390,6 +391,7 @@ export default function AdminCorrectionQrcV2Reel() {
   }, [mode]);
   const actualisationEnCoursRef = useRef(false);
   const actualiserListe = async () => {
+    if(!groupeCle||notesParSession)return;
     if (actualisationEnCoursRef.current) return;
     actualisationEnCoursRef.current = true;
     setRelectureListe(true);
