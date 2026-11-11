@@ -876,6 +876,16 @@ function CorrectionQrcReelle() {
   const sessionNavigation = session?{...session,qrc:(vueTravail==='historique'||vueTravail==='toutes')?session.qrc.filter(q=>!passageFiltre||q.attempt_id===passageFiltre):qrcDansVue(session,vueTravail,passageFiltre)}:null;
   const ordreFile=ordonnerCandidatsParFin(session?.tentatives??[]).map(t=>t.attempt_id);
   const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
+  // Décompte d'affichage local : un apprenant avec plusieurs passages ne compte qu'une fois.
+  // Le total de la session reste celui du catalogue ; aucune requête ni addition entre matières.
+  const candidatsAffiches = new Set<string>();
+  if(session && filtreConfirme===filtreLecture) for(const t of session.tentatives) {
+    if(t.consultationSeule || (passageFiltre && t.attempt_id!==passageFiltre)) continue;
+    const visible = vueTravail==='historique'||vueTravail==='toutes'
+      ? session.qrc.some(q=>q.attempt_id===t.attempt_id)
+      : fileVisible.some(q=>q.attempt_id===t.attempt_id&&t.snapshot.questions.some(x=>x.id===q.question_id&&x.type==='QRC'));
+    if(visible) candidatsAffiches.add(t.apprenant_id);
+  }
   const copiePrecedente = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, -1):voisineFile(session,vueTravail,selection,-1,passageFiltre);
   const copieSuivante = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, 1):voisineFile(session,vueTravail,selection,1,passageFiltre);
   const naviguerCopie = async (direction: DirectionCopie) => {
@@ -1198,6 +1208,12 @@ function CorrectionQrcReelle() {
             <CopiesHistoriquesLecture resultIds={legacyResultIds ?? []} />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
+        <p data-testid="compteur-candidats-grille" aria-live="polite" className="rounded border bg-muted/30 px-3 py-2 text-sm">
+          {!catalogueLu ? "Décompte des candidats en cours…" : !groupeChoisi ? "Aucune session sélectionnée" : <>
+            <strong>{groupeChoisi.nbCandidats}</strong> candidat{groupeChoisi.nbCandidats>1?"s":""} {groupeCle===TOUS_GROUPES?"dans toutes les sessions":groupeChoisi.type==='crm'?"dans la session":"dans ce groupe"}
+            {session&&filtreConfirme===filtreLecture&&<> · <strong>{candidatsAffiches.size}</strong> affiché{candidatsAffiches.size>1?"s":""}</>}
+          </>}
+        </p>
         {(vueTravail==='historique'||vueTravail==='verifier')&&(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
         {(vueTravail==='historique'||vueTravail==='verifier')&&!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
         {vueTravail==='verifier'&&<section aria-label="File des questions" className="divide-y divide-border">{catalogueLu&&session!==null&&filtreConfirme===filtreLecture&&!erreurLecture&&!lectureCopies&&fileVisible.length===0&&<p className="py-6 text-muted-foreground">Aucune QRC à vérifier</p>}{fileVisible.map(q=>{const t=parTentative.get(q.attempt_id);const question=t?.snapshot.questions.find(x=>x.id===q.question_id);const bareme=question?.points??baremeRestaureDe.get(q.qrc_instance_id)?.bareme;return <article key={q.qrc_instance_id} className="space-y-2 py-4"><p className="text-sm font-semibold">{t?.candidat} · {t?.exam_id} · {t?.snapshot.matieres.map(m=>m.titre).join(' / ')} · Tentative {t?numeroTentative(t):'non prouvée'}</p><h2 className="font-medium">{question?.enonce??'Question non prouvée'}</h2><p className="whitespace-pre-wrap break-words">{texte(q.reponseComplete??q.reponse)||'Sans réponse'}</p><p className="text-sm text-muted-foreground">Barème : {bareme??'non prouvé'}{bareme!=null?' points':''}</p><p className="text-warning text-sm">À vérifier — consultation seule, notation indisponible.</p></article>;})}</section>}
@@ -1240,6 +1256,7 @@ function CorrectionQrcReelle() {
                   style={{ minWidth: `${largeurMinimaleMatrice(questions.length)}rem` }}
                 >
                   <colgroup>
+                    <col style={{ width: `${LARGEURS_MATRICE.numero}rem` }} />
                     <col style={{ width: `${LARGEURS_MATRICE.candidat}rem` }} />
                     <col style={{ width: `${LARGEURS_MATRICE.passage}rem` }} />
                     <col style={{ width: `${LARGEURS_MATRICE.note}rem` }} />
@@ -1247,17 +1264,22 @@ function CorrectionQrcReelle() {
                   </colgroup>
                   <thead>
                     <tr className="border-b">
-                      <th className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-left`}>Candidat</th>
+                      <th className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-center`}>N°</th>
+                      <th style={{ left: `${LARGEURS_MATRICE.numero}rem` }} className={`${panneauOuvert ? "" : "md:sticky md:z-[1]"} bg-background px-1 py-0.5 text-left`}>Candidat</th>
                       <th className="px-1 py-0.5 text-left">Passage</th>
                       <th className="px-1 py-0.5 text-left whitespace-nowrap">Note /20</th>
                       {questions.map((q, i) => <th key={q.id} className="px-0.5 py-0.5 text-center" title={`QRC ${i + 1}`}>Q{i + 1}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {tentatives.map((t) => (
+                    {tentatives.map((t, index) => (
                       <tr key={t.attempt_id}>
+                        <td data-testid={`numero-${t.attempt_id}`} className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 text-center tabular-nums text-muted-foreground`}>
+                          {index + 1}
+                        </td>
                         <td
-                          className={`${panneauOuvert ? "" : "md:sticky md:left-0 md:z-[1]"} bg-background px-1 py-0.5 font-medium`}
+                          style={{ left: `${LARGEURS_MATRICE.numero}rem` }}
+                          className={`${panneauOuvert ? "" : "md:sticky md:z-[1]"} bg-background px-1 py-0.5 font-medium`}
                           title={`${t.candidat}${ebChoisi?.inscriptionCroiseeParAttempt?.[t.attempt_id]?.length ? ` — Inscription croisée, également visible dans ${ebChoisi.inscriptionCroiseeParAttempt[t.attempt_id].join(" et ")}` : ""}`}
                         >
                           <a

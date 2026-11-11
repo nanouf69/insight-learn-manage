@@ -40,6 +40,6 @@ export function celluleCompacte(c: CelluleEntree): CelluleSortie {
 }
 
 /** Largeurs de la matrice : colonnes fixes compactes + QRC réparties sur la largeur restante. */
-export const LARGEURS_MATRICE = { candidat: 10, passage: 5.5, note: 6.5, qrcMin: 4.25 } as const;
+export const LARGEURS_MATRICE = { numero: 2.25, candidat: 10, passage: 5.5, note: 6.5, qrcMin: 4.25 } as const;
 export const largeurMinimaleMatrice = (nbQrc: number) =>
-  LARGEURS_MATRICE.candidat + LARGEURS_MATRICE.passage + LARGEURS_MATRICE.note + nbQrc * LARGEURS_MATRICE.qrcMin;
+  LARGEURS_MATRICE.numero + LARGEURS_MATRICE.candidat + LARGEURS_MATRICE.passage + LARGEURS_MATRICE.note + nbQrc * LARGEURS_MATRICE.qrcMin;
