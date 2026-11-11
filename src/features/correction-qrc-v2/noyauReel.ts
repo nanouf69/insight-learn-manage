@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/synchronisationNotes";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
-import { miroirsV2Prouves, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 import { texteSourceExact } from "./menuPassages";
 import {proveNativeMirrors} from './preuveMiroir';
 
@@ -269,8 +269,9 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   const pConsultation = mode === "migre" ? lirePassagesEb2Consultation() : Promise.resolve([] as any[]);
   const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
   const nativeAnswers:any[]=[];
-  if(mode==='migre')for(let i=0;i<attempts.length;i+=150){
-    const ids=attempts.slice(i,i+150).map((a:any)=>a.attempt_id);
+  const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee');
+  if(mode==='migre')for(let i=0;i<nativeCandidates.length;i+=150){
+    const ids=nativeCandidates.slice(i,i+150).map((a:any)=>a.attempt_id);
     nativeAnswers.push(...await lirePagesParalleles<any>(de=>db.from('answer_state').select('attempt_id, question_id, valeur').in('attempt_id',ids).order('response_id').range(de,de+999),1));
   }
   const proof=proveNativeMirrors(brutsLus,attempts,nativeAnswers);
@@ -282,9 +283,8 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
   const legacyResults: any[] = [];
   if (mode === "migre") {
     const migres = resultatsMigres(attempts as any);
-    const qrcV2 = qrcV2Lu;
     const bruts = brutsLus;
-    // Miroirs prouvés d'un passage V2 natif (mêmes réponses QRC exactes) : affichés une seule fois, côté V2.
+    // Preuve complète QCM/QRC et contenu figé : affichage V2 unique, jamais fusion en base.
     for (const m of proof.mirrors) migres.add(m);
     {
       // Toutes les copies remises restent consultables, même sans QRC écrite.

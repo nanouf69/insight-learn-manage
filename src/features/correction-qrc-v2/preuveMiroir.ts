@@ -27,10 +27,13 @@ export function sameMirrorContent(r:MirrorResult,t:MirrorAttempt,answers:Map<str
 }
 export function proveNativeMirrors(results:MirrorResult[],attempts:MirrorAttempt[],states:{attempt_id:string;question_id:string;valeur:unknown}[]):{mirrors:Set<string>;ambiguous:Set<string>} {
  const mirrors=new Set<string>(),ambiguous=new Set<string>(),links=new Map<string,string[]>();
+ const key=(owner:string,exam:string,subject:unknown)=>JSON.stringify([owner,exam,subject]);
+ const byScope=new Map<string,MirrorAttempt[]>();
+ for(const t of attempts){if(t.rid)continue;const k=key(t.apprenant_id,t.exam_id,t.matiere??t.snapshot?.matiere);const group=byScope.get(k)??[];group.push(t);byScope.set(k,group);}
  const answerMaps=new Map<string,Map<string,unknown>>(),duplicateAnswers=new Set<string>();
  for(const s of states){const map=answerMaps.get(s.attempt_id)??new Map();if(map.has(s.question_id))duplicateAnswers.add(s.attempt_id);map.set(s.question_id,s.valeur);answerMaps.set(s.attempt_id,map);}
  for(const r of results){
-  const scoped=attempts.filter(t=>!t.rid&&t.apprenant_id===r.apprenant_id&&t.exam_id===r.quiz_id&&(t.matiere??t.snapshot?.matiere)===r.matiere_id);
+  const scoped=byScope.get(key(r.apprenant_id,r.quiz_id,r.matiere_id))??[];
   if(!scoped.length)continue;
   const explicit=r.details?.attempt_id;
   const possible=scoped.filter(t=>{

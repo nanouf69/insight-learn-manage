@@ -31,7 +31,8 @@ export async function lireRapprochement(visibles: Set<string>): Promise<Rapproch
     toutLire<any>(() => db.from("apprenant_quiz_results").select("id, apprenant_id, quiz_id, matiere_id, tentative, details, completed_at, rep:details->reponses").eq("quiz_type", "examen_blanc").ilike("quiz_id", "eb%"), "id"),
   ]);
   const answers:any[]=[];
-  for(let i=0;i<tentatives.length;i+=150){const ids=tentatives.slice(i,i+150).map(t=>t.attempt_id);answers.push(...await toutLire<any>(()=>db.from('answer_state').select('attempt_id,question_id,valeur').in('attempt_id',ids),'response_id'));}
+  const natives=tentatives.filter(t=>!t.rid&&t.etat==='terminee');
+  for(let i=0;i<natives.length;i+=150){const ids=natives.slice(i,i+150).map(t=>t.attempt_id);answers.push(...await toutLire<any>(()=>db.from('answer_state').select('attempt_id,question_id,valeur').in('attempt_id',ids),'response_id'));}
   const qrcParTentative = new Map<string, number>();
   for (const q of qrc) qrcParTentative.set(q.attempt_id, (qrcParTentative.get(q.attempt_id) ?? 0) + 1);
   const attendues = inventaireAttendu({
