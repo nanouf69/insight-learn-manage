@@ -165,6 +165,31 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it('file par défaut : zéro validé exclu, sauvegarde relue retirée sans perdre le filtre',async()=>{
+    appliquerNote('a2-q1',0);
+    render(ecran());
+    fireEvent.click(await screen.findByTestId('cellule-a1-q1'));
+    expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();
+    fireEvent.click(screen.getByTestId('note-1'));
+    await screen.findByText('Aucune question à corriger');
+    expect(screen.queryByTestId('cellule-a1-q1')).toBeNull();
+    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({qrcInstanceId:'a1-q1',note:1});
+    expect(window.location.search).toContain('qrc_eb=eb-test');
+  });
+  it('IA et barème absent séparés sans action de notation dans À vérifier',async()=>{
+    if(!etat.session)throw new Error('fixture');
+    etat.session.qrc[0]={...etat.session.qrc[0],etat:'corrigee',note:1,corrige_email:'ia:fixture'};
+    etat.session.tentatives[1].consultationSeule=true;
+    render(ecran());
+    await screen.findByText('Aucune question à corriger');
+    fireEvent.click(screen.getByRole('button',{name:'À valider',exact:true}));
+    expect(await screen.findByTestId('cellule-a1-q1')).toBeTruthy();
+    expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'À vérifier',exact:true}));
+    await screen.findByText('À vérifier — consultation seule, notation indisponible.');
+    expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();
+    expect(mocks.corriger).not.toHaveBeenCalled();
+  });
   it('menu individuel : complète ancienne puis partielle récente restent accessibles séparément sans note',async()=>{
     const a1={...tentative('a1'),finished_at:'2026-11-01T17:15:42Z',snapshot:{...tentative('a1').snapshot,source_historique:{tentative:1}}} as TentativeReelle;
     const a2={...tentative('a2'),finished_at:'2026-11-09T20:21:19Z',snapshot:{...tentative('a2').snapshot,source_historique:{tentative:2}}} as TentativeReelle;

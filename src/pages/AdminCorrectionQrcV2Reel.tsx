@@ -5,7 +5,7 @@
 import { ebsLesPlusRecents, PREFIXE_EN_COURS } from "@/features/correction-qrc-v2/marquageEbEnCours";
 import { PanneauRapprochement } from "@/features/correction-qrc-v2/PanneauRapprochement";
 import { proposerPrenote, tracePrenote } from "@/features/correction-qrc-v2/prenote";
-import {qrcDansVue,statutFile,type VueQrc} from '@/features/correction-qrc-v2/fileTravail';
+import {qrcDansVue,statutFile,voisineFile,type VueQrc} from '@/features/correction-qrc-v2/fileTravail';
 import { celluleCompacte, LARGEURS_MATRICE, largeurMinimaleMatrice } from "@/features/correction-qrc-v2/celluleCompacte";
 import { ordonnerCandidatsParFin } from "@/features/correction-qrc-v2/ordreCandidats";
 import { copieVoisine, decisionApresCorrection, type DirectionCopie } from "@/features/correction-qrc-v2/navigationCopies";
@@ -828,11 +828,11 @@ export default function AdminCorrectionQrcV2Reel() {
   const sessionNavigation = session?{...session,qrc:vueTravail==='historique'?session.qrc.filter(q=>!passageFiltre||q.attempt_id===passageFiltre):qrcDansVue(session,vueTravail,passageFiltre)}:null;
   const ordreFile=ordonnerCandidatsParFin(session?.tentatives??[]).map(t=>t.attempt_id);
   const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
-  const copiePrecedente = copieVoisine(sessionNavigation, selection, -1);
-  const copieSuivante = copieVoisine(sessionNavigation, selection, 1);
+  const copiePrecedente = vueTravail==='historique'?copieVoisine(sessionNavigation, selection, -1):voisineFile(session,vueTravail,selection,-1,passageFiltre);
+  const copieSuivante = vueTravail==='historique'?copieVoisine(sessionNavigation, selection, 1):voisineFile(session,vueTravail,selection,1,passageFiltre);
   const naviguerCopie = (direction: DirectionCopie) => {
     if (etatEnvoi === "encours") return;
-    const cible = copieVoisine(sessionNavigation, selection, direction);
+    const cible = vueTravail==='historique'?copieVoisine(sessionNavigation, selection, direction):voisineFile(session,vueTravail,selection,direction,passageFiltre);
     if (!cible) return;
     if (commentaireModifie && commentaire !== commentaireSauve && !window.confirm(
       "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
