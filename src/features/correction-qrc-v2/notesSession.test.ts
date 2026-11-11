@@ -1,0 +1,11 @@
+import { expect, it } from 'vitest';
+import { filiereInscrit, noteGeneraleSession } from './notesSession';
+import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-data';
+const def={id:'EB1',numero:1,type:'VTC',titre:'EB1',matieres:[{id:'a',nom:'A',coefficient:3,noteEliminatoire:6,noteSur:20,questions:[]},{id:'b',nom:'B',coefficient:1,noteEliminatoire:6,noteSur:20,questions:[]}]} as unknown as ExamenBlanc;
+const row=(id:string,n:number)=>({matiere_id:id,matiere_nom:id.toUpperCase(),quiz_type:'examen_blanc',score_obtenu:n,score_max:20,details:{},__core:{note20:n,pending:false,noteEliminatoire:6,noteSur:20}});
+it('aucun résultat : non passé sans zéro',()=>expect(noteGeneraleSession(def,[])).toEqual({etat:'non_passe',note:null}));
+it('une seule matière même éliminatoire ne devient jamais une moyenne définitive',()=>expect(noteGeneraleSession(def,[row('a',2)])).toMatchObject({etat:'incomplet',note:null,couverture:'1/2'}));
+it('note générale officielle pondérée /20, pas moyenne simple ni note matière',()=>expect(noteGeneraleSession(def,[row('a',12),row('b',20)])).toEqual({etat:'definitif',note:14,verdict:'reussi'}));
+it('publication en attente ne produit aucune note définitive',()=>expect(noteGeneraleSession(def,[{...row('a',12),__core:{pending:true,note20:12}},row('b',20)])).toMatchObject({etat:'attente',note:null}));
+it('lecture refusée reste indisponible même sans résultat',()=>expect(noteGeneraleSession(def,[],true)).toEqual({etat:'indisponible',note:null}));
+it('filières explicites, aucune conversion TAXI vers VTC ni invention',()=>{expect(filiereInscrit('taxi-e')).toBe('TAXI');expect(filiereInscrit('ta')).toBe('TA');expect(filiereInscrit('vtc')).toBe('VTC');expect(filiereInscrit('inconnu')).toBeNull();});
