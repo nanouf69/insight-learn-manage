@@ -1,13 +1,14 @@
 # Feuille de route
 
 ## 11/11 14:29 — Catalogue QRC unique
-- [ ] Intégrer archives et ambiguïtés au menu normal session/examen, lecture seule et provenance explicite, zéro entrée Ancien circuit.
-- [ ] Inventaire exhaustif par examen/filière, miroirs/archives/manquantes et nouveaux passages V2, preuves Mamadou/Chemoun/7 cas récents.
-- [ ] Tests pagination, ambiguïtés, consultation sans notation ; aucune mutation métier/migration/publication.
+- [x] Archives/ambiguïtés intégrées au menu normal session/examen, consultation seule ; zéro entrée Ancien circuit, sources conservées.
+- [x] Vrais lecteurs admin : 7304 attendues/7304 visibles/0 manquante ; 4323 archives, 2981 V2 ; 24 examens/filières. Rapport docs/qrc-catalogue-unifie-2026-11-11.md.
+- [x] Tests menu/pagination/ambiguïtés et PC/mobile fictifs PASS ; 5 remises EB2 sans native signalées ; aucune mutation QRC/migration/publication.
+- [ ] Navigation réelle correcteur non prouvée : sélecteurs non apparus malgré session admin valide ; vrais lecteurs exécutés et UI fixtures vérifiée.
 
 ## 11/11 14:25 — Liens CPF Qualiopi (plan approuvé)
-- [ ] Catalogue administrateur partagé, sept adresses existantes, modification explicite avec relecture.
-- [ ] Onglet séparé, copier/ouvrir/modifier ; tests et aperçu PC/mobile, aucun mail ni publication.
+- [x] Catalogue admin partagé installé (0271), sept adresses initiales existantes ; CAS/relecture, aucune ligne réelle modifiée.
+- [x] Onglet séparé copier/ouvrir/modifier, lecture admin réelle PC/mobile et modification fictive/readback PASS ; tests URL/modèles PASS ; aucun mail/publication.
 
 ## 11/11 14:17 — Miroirs QCM/QRC catalogue
 - [x] Provenance double écriture et rapprochement strict copie/contenu/réponses ; ambigu conservé.
