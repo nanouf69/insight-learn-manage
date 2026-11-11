@@ -2075,6 +2075,8 @@ const LancerAuMontage = ({ run }: { run: () => void }) => {
 };
 function LibelleFin({ moduleId }: { moduleId: number }) { return <>{libelleFinQuiz(useActivitesModule(), activitesDuModule(moduleId).length > 0).bouton}</>; }
 const JeuxCartesLyon = lazy(() => import("./jeux-lyon/JeuxCartesLyon"));
+const JeuClassementComptable = lazy(() => import("./gestion-classement/JeuClassementComptable"));
+import { afficherJeuGestion } from "./gestion-classement/donnees";
 const ExercicesTaxi2026 = lazy(() => import("./pratique-taxi-2026/ExercicesTaxi2026"));
 const CoursQuizCommunes = lazy(() => import("./equipements-taxi-locale/CoursQuizCommunes"));
 const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/CoursQuizEquipementsTaxi"));
@@ -9932,6 +9934,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           </div>
 
           {Number(module.id) === 12 && <Suspense fallback={<p role="status">Chargement du quiz des jours fériés…</p>}><QuizJoursFeries key={apprenantId ?? "apercu"} compteId={apprenantId ?? null} /></Suspense>}
+          {afficherJeuGestion(Number(module.id), currentPageData?.type === "cours" ? currentPageData.cours.titre : undefined) && (
+            <Suspense fallback={<p role="status">Chargement du jeu comptable…</p>}>
+              <JeuClassementComptable key={apprenantId ?? "apercu"} compteId={apprenantId ?? null} />
+            </Suspense>
+          )}
           {!quizIntegresBilan(Number(module.id)).length && <QuizExterneBilan moduleId={Number(module.id)} />}
           {/* Jeux du registre : statut serveur très visible en haut, puis accès aux jeux */}
           {/* Module 6 : la section TAXI ci-dessous porte déjà statuts + compteur (même source). */}
