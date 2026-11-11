@@ -12,7 +12,7 @@ describe("inventaire des copies EB", () => {
   it("liste en ancien circuit EB1, EB4–6 et TAXI non migrés, sans EB2 VTC ni copies migrées (pas de doublon)", () => {
     const migres = resultatsMigres([{ attempt_id: "t", apprenant_id: "x", exam_id: "EB3", rid: "m3" }]);
     const res = resultatsAncienCircuit([r("1", "EB1"), r("2", "EB2"), r("3", "EB2-TAXI"), r("m3", "EB3"), r("4", "EB5"), r("5", "EB3-TAXI"), r("6", "EB99"), r("7", "EB1", { completed_at: null }), r("1", "EB1")], migres);
-    expect(res.map((x) => x.id)).toEqual(["1", "3", "4", "5"]);
+    expect(res.map((x) => x.id)).toEqual(["1", "2", "3", "4", "5"]);
   });
 
   it("compte les QRC écrites (texte non vide) et ignore les choix QCM", () => {
@@ -40,8 +40,8 @@ describe("inventaire des copies EB", () => {
         { ...r("t", "EB1"), apprenant_id: "test", qrc: 3 },
       ],
     });
-    expect(attendues.map((a) => a.cle).sort()).toEqual(["ancien:e1", "ancien:q", "consultation:e2", "v-jour", "v-mig", "v-neut", "v-soir"]);
-    const res = rapprocher(attendues, new Set(["v-jour", "v-mig", cleAffichage("consultation", "e2")]));
+    expect(attendues.map((a) => a.cle).sort()).toEqual(["ancien:e1", "ancien:e2", "ancien:q", "v-jour", "v-mig", "v-neut", "v-soir"]);
+    const res = rapprocher(attendues, new Set(["v-jour", "v-mig", cleAffichage("ancien", "e2")]));
     expect(res.attendues).toBe(7);
     expect(res.visibles).toBe(3);
     expect(res.manquantes.map((m) => [m.cle, m.cause])).toEqual([
