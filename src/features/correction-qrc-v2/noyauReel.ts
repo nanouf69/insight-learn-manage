@@ -220,6 +220,14 @@ export async function lirePagesParalleles<T>(lirePage: (de: number) => PromiseLi
   }
 }
 
+/** Complete heavy-copy reads, sequential bounded cursor pages. */
+export async function lireCopiesParCurseur<T extends Record<string,unknown>>(key:string,read:(cursor:string|null)=>PromiseLike<{data:T[]|null;error:unknown}>):Promise<T[]> {
+  const out:T[]=[];let cursor:string|null=null;
+  for(;;){const {data,error}=await read(cursor);if(error)throw error;const rows=data??[];out.push(...rows);if(rows.length<100)return out;
+    const next=String(rows.at(-1)?.[key]??'');if(!next||next===cursor)throw new Error('Pagination des copies non confirmée');cursor=next;
+  }
+}
+
 /** Lots d'identifiants traités 4 par 4 en parallèle, ordre des résultats conservé. */
 async function parLotsParalleles<T>(ids: string[], taille: number, lire: (lot: string[]) => Promise<T[]>): Promise<T[]> {
   const lots: string[][] = [];
@@ -247,30 +255,29 @@ export function listerGroupesCrm(mode: "test" | "migre" = "migre"): Promise<Grou
 }
 
 async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSessionCrm[]> {
-  // Lectures indépendantes lancées en parallèle (auparavant ~30 pages lues l'une après l'autre).
   const db = supabase as any;
-  const pAttempts = lirePagesParalleles<any>((de) => db
-      .from("exam_attempts_v2")
-      .select("attempt_id, apprenant_id, exam_id, snapshot, started_at, finished_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id")
-      .eq("is_test", mode === "test")
-      .order("started_at", { ascending: false })
-      .order("attempt_id", { ascending: true })
-      .range(de, de + 999));
-  const pQrcV2 = mode === "migre" ? lirePagesParalleles<any>((de) => db.from("qrc_instances_v2")
-      .select("qrc_instance_id, attempt_id, reponse").order("qrc_instance_id", { ascending: true }).range(de, de + 999)) : Promise.resolve([] as any[]);
-  const pBruts = mode === "migre" ? lirePagesParalleles<any>((de) => db
-        .from("apprenant_quiz_results")
-        .select("id, apprenant_id, quiz_id, matiere_id, tentative, details, completed_at, rep:details->reponses")
-        .eq("quiz_type", "examen_blanc")
-        .ilike("quiz_id", "eb%")
-        .not("completed_at", "is", null)
-        .order("completed_at", { ascending: false })
-        .order("id", { ascending: true })
-        .range(de, de + 999), 1) : Promise.resolve([] as any[]);
-  const pConsultation = Promise.resolve([] as any[]);
-  const [attempts, qrcV2Lu, brutsLus, consultationLue, neutralisesLus] = await Promise.all([pAttempts, pQrcV2, pBruts, pConsultation, idsNeutralises()]);
+  // Heavy immutable copies: primary-key cursor, bounded payload, no deep OFFSET
+  // or full-table date sort. All pages are read; the catalogue is never capped.
+  const attempts = await lireCopiesParCurseur<any>('attempt_id', cursor => {
+    let q=db.from('exam_attempts_v2')
+      .select('attempt_id, apprenant_id, exam_id, snapshot, started_at, finished_at, etat, matiere:snapshot->>matiere, rid:snapshot->source_historique->>result_id')
+      .eq('is_test',mode==='test').eq('etat','terminee').order('attempt_id').limit(100);
+    if(cursor)q=q.gt('attempt_id',cursor);
+    return q;
+  });
+  const brutsLus = mode==='migre' ? await lireCopiesParCurseur<any>('id',cursor=>{
+    let q=db.from('apprenant_quiz_results')
+      .select('id, apprenant_id, quiz_id, matiere_id, tentative, details, completed_at, rep:details->reponses')
+      .eq('quiz_type','examen_blanc').ilike('quiz_id','eb%').not('completed_at','is',null)
+      .order('id').limit(100);
+    if(cursor)q=q.gt('id',cursor);
+    return q;
+  }) : [];
+  const consultationLue:any[]=[];
+  const neutralisesLus=await idsNeutralises();
   const nativeAnswers:any[]=[];
-  const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee');
+  const proofScopes=new Set(brutsLus.map((r:any)=>JSON.stringify([r.apprenant_id,r.quiz_id,r.matiere_id])));
+  const nativeCandidates=attempts.filter((a:any)=>!a.rid&&a.etat==='terminee'&&proofScopes.has(JSON.stringify([a.apprenant_id,a.exam_id,a.matiere??a.snapshot?.matiere])));
   if(mode==='migre')for(let i=0;i<nativeCandidates.length;i+=150){
     const ids=nativeCandidates.slice(i,i+150).map((a:any)=>a.attempt_id);
     nativeAnswers.push(...await lirePagesParalleles<any>(de=>db.from('answer_state').select('attempt_id, question_id, valeur').in('attempt_id',ids).order('response_id').range(de,de+999),1));
@@ -504,6 +511,7 @@ export async function chargerSessionTest(
   mode: "test" | "migre" = "test",
   attemptIdsFiltre?: string[],
 ): Promise<SessionReelle> {
+  if(attemptIdsFiltre?.length===0)return {tentatives:[],qrc:[],resultats:[],baremesRestaures:[]};
   // Un EB peut regrouper plusieurs dates : les listes d'identifiants sont lues par lots.
   const parLots = async <T,>(ids: string[], lire: (lot: string[]) => Promise<T[]>): Promise<T[]> => {
     const out: T[] = [];

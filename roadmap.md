@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 16:44 — Timeout catalogue QRC
+- [x] Reproduction admin : catalogue apprenant_quiz_results 1000 fiches/date-sort, timeout 8170 ms.
+- [x] Curseur PK 100 copies, remises seules, scan QRC supprimé ; erreur/retry et grille même filtre, archives recherche secondaire.
+- [x] 7316 copies distinctes, EB1 large 664 passages/1548 QRC, novembre 68/157 ; 63 tests PASS et Chromium PC/mobile retry. Rapport avec délais variables, pas de publication.
+
 ## 11/11 16:33 — Détail des erreurs au premier essai
 - [x] Audit SELECT des sources/sessions ; capture insuffisante pour identifier la question, contrôle réel EB1 Gestion id8.
 - [x] Détail exact issu du calcul, exclusions/droits conservés ; 87 tests PASS, Chromium PC/mobile fullscreen, détail réel 14 comptées + 2 exclues.
