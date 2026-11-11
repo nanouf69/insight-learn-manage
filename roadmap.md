@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 13:55 — Accès EB multi-session
+- [ ] Cases multi-sessions + états réels explicites + confirmation scoped désactivée pour écriture en aperçu.
+- [ ] Candidat atomique séparé sur journal existant, tests invalidité/CAS/droits/démarrages/reprises/croisées et mobile.
+- [ ] Rapport RPC/limites et commit ; aucune installation ni accès réel modifié.
+
 ## 11/11 13:48 — Reprise archives : vrai admin et contrôles intégrés
 - [x] Vrai profil admin en aperçu : fiche HADDOU → Examens blancs → Examens archivés ; reset EB3 exact, 7 copies/7 résultats visibles, bouton désactivé. Aucun POST mutateur autorisé.
 - [x] 31 contrats SQL PASS + 1 scénario intégré schéma/triggers réels PASS + 17 Vitest PASS : RLS inter-apprenant, rejeux/conflits, résultats ancien/V2 réexposés via vues sans mutation des sources ; démarrage V2 reproduit le refus CANCELLED_RESET_GRANT, ancien reçu/timer prouvé sur examen distinct.
