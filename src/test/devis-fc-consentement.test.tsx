@@ -53,6 +53,9 @@ describe('Devis FC — périmètre et règle serveur', () => {
     expect(edge.indexOf('const refusFc = refusConsentementFormationContinue')).toBeLessThan(edge.indexOf('// Upload signed file'));
     expect(edge).toContain('construirePreuveConsentementFormationContinue');
     expect(edge).toContain('annulation_remboursement_fc');
+    expect(edge).toContain('Identité du stagiaire introuvable');
+    const lecture = readFileSync('supabase/functions/get-devis-public/index.ts', 'utf8');
+    expect(lecture).toContain('signature_consentement_fc_version: CONSENTEMENT_FC_VERSION');
     expect(edge).toMatch(/\.is\("signed_at", null\)/);
   });
 });
