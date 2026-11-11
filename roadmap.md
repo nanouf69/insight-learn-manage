@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 11:18 — Devis formation continue : information écrite annulation/remboursement
+- [ ] Vérifier CGV, mentions et délais existants ; ajouter une case non précochée obligatoire, sans renonciation aux droits impératifs, seulement à la signature des devis FC VTC/TAXI.
+- [ ] Enregistrer texte/version, date/heure serveur, identité et devis avec preuve admin ; bloquer la signature tant que la case est absente, sans toucher aux devis signés/historiques/paiements.
+- [ ] Tester le parcours sur devis fictif, contrats serveur, interface et régressions ciblées ; livrer en aperçu sans publication.
+
 ## 11/11 11:06 — EB3 TAXI Haddou/Memdouh : corrections et visibilité V2
 - [x] Dix QRC relues sur leurs trois copies exactes : aucune note/correcteur V2, aucun événement humain, ancien journal, audit ou validation ; seules les propositions déterministes et l’import sont tracés. Anciens totaux = QCM + propositions, toujours pending.
 - [x] Production gestion.ftransport.fr vérifiée avec mutations bloquées : session TAXI/TA 26/10–16/11, EB3-TAXI, date 30/10 ; trois lignes présentes, 4+4+2 boutons « À corriger », barèmes et boutons de note ouverts. Lien direct revérifié, aucune écriture.
