@@ -41,6 +41,7 @@ import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/exam
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { composeSubjectPanel } from '@/lib/examSubjectPanel';
 import { ResetMatiereAdminButton } from "./ResetMatiereAdminButton";
+import HistoriqueCopiesMatiere from "./HistoriqueCopiesMatiere";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
 const STATIC_EXAMENS_BLANCS = [
@@ -451,6 +452,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                           <div className="flex flex-wrap items-center gap-3">
                             {note!==null && <span className="font-mono text-xs">{note}/20</span>}
                             <SubjectPanelStatus account={apprenant.id} exam={group.quizId} subject={matiereDef.id} />
+                            <HistoriqueCopiesMatiere key={`${apprenant.id}-${group.quizId}-${matiereDef.id}`} account={apprenant.id} exam={group.quizId} subject={matiereDef.id} nom={matiereDef.nom} />
                             <ResetMatiereAdminButton target={{apprenantId:apprenant.id,prenom:apprenant.prenom,nom:apprenant.nom,
                               examId:group.quizId,examLabel:group.examenLabel,filiere:group.type,matiereId:matiereDef.id,matiereNom:matiereDef.nom,resultId:r?.result_id}}
                               onAuthorized={()=>void queryClient.invalidateQueries({queryKey:['subject-reset-context',apprenant.id,group.quizId,matiereDef.id]})} />

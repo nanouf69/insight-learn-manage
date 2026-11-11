@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 12:52 — Accès CRM aux deux passages Chemoun EB3 TAXI T3P
+- [x] SELECT : complète t1 15 réponses et partielle t2 1 réponse, liens V2/détails strictement identiques ; historique CRM indépendant ajouté, aucun remplacement de la sélection courante.
+- [x] 44 tests et navigateur fictif PC/mobile PASS, rapport docs/chemoun-crm-historique-copies-2026-11-11.md ; aucune écriture de données ni publication, diagnostic précédent intact. UI réelle authentifiée et lien réel correcteur non prouvés, faute de session admin autorisée.
+
 ## 11/11 12:45 — Jeu de classement comptable GESTION
 - [x] Classement glissé/tactile de 19 cartes, hypothèses explicites, feedback/score/rejeu et calcul amortissement ; exemples indépendants et bilan net 40 000 € équilibré.
 - [x] Suivi facultatif versionné via file existante, module/score null sans registre obligatoire ; tests fictifs PC/mobile et compte rendu docs/jeu-gestion-classement-2026-11-11.md, aucun déploiement ni écriture réelle.
