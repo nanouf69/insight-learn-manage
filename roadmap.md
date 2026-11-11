@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 12:32 — Arezki autorisation EB3 A déjà accordée
+- [x] SELECT : autorisation inutilisée, tokens source/version concordants, copie abandonnée sans réponse/résultat/reçu ; état inchangé après tests.
+- [x] Dialogue CRM clarifié : confirmation déjà enregistrée + Fermer, sans bouton mort ; 22 tests UI, 14+9 contrats PostgreSQL et vrai PassageMatiere fictif PC/mobile exécutés. Aperçu seulement, aucun déploiement.
+- [ ] Vue réelle apprenant Arezki NON PROUVÉE : session dédiée refusée faute d’approbation disponible ; CTA prouvé par code/fixtures uniquement. Rapport docs/arezki-autorisation-deja-enregistree-2026-11-11.md.
+
 ## 11/11 12:26 — Chemoun EB3 TAXI A/B en attente
 - [x] SELECT exacts : A t2 1, B t2 2, A t1 5 QRC en attente, aucun résultat/correction ; A/B 16/16 retrouvés sur EB2 seulement. 15 contrats PostgreSQL jetables et 46 tests interface/lecture PASS.
 - [x] Aucun défaut métier reproduit : pas de correctif inventé, aucun point ni écriture réelle ; empreintes ciblées inchangées. Rapport docs/chemoun-eb3-ab-diagnostic-2026-11-11.md.

@@ -67,10 +67,10 @@ export function ResetMatiereAdminButton({ target, onAuthorized }: { target: Rese
           </AlertDialogHeader>
           {busy && <p className="text-sm text-muted-foreground">Vérification en cours…</p>}
           {(error || context?.reason) && <p role="alert" className="text-sm text-destructive">{error || context?.reason}</p>}
-          {context?.authorization_id && <p role="status" className="text-sm">À refaire — démarrage par l’élève, sans note ni chronomètre avant son choix.</p>}
+          {context?.authorization_id && <p role="status" className="text-sm">Autorisation déjà enregistrée pour cette matière. L’élève peut choisir « Refaire la matière » dans son espace. Aucune nouvelle note ni chronomètre avant son choix.</p>}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel>
-            <Button variant="destructive" disabled={busy || !context || !sameIdentity || Boolean(context.authorization_id) || ['en_cours','ambigu'].includes(context.status)}
+            <AlertDialogCancel disabled={busy}>{context?.authorization_id ? 'Fermer' : 'Annuler'}</AlertDialogCancel>
+            {!context?.authorization_id && <Button variant="destructive" disabled={busy || !context || !sameIdentity || ['en_cours','ambigu'].includes(context.status)}
               onClick={async()=>{
                 if(lock.current || !context || !operation.current || !sameIdentity)return;
                 lock.current=true;setBusy(true);setError(null);
@@ -79,7 +79,7 @@ export function ResetMatiereAdminButton({ target, onAuthorized }: { target: Rese
                 finally{lock.current=false;setBusy(false);}
               }}>
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}Confirmer cette matière
-            </Button>
+            </Button>}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
