@@ -14,6 +14,7 @@ import { groupeTousPassages, libellePassage, numeroTentative, TOUS_GROUPES } fro
 import { lirePagesParalleles } from "@/features/correction-qrc-v2/noyauReel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {ConfirmationInterne} from '@/features/correction-qrc-v2/ConfirmationInterne';
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentairesPredefinis } from "@/features/correction-qrc-v2/CommentairesPredefinis";
@@ -100,6 +101,17 @@ export default function AdminCorrectionQrcV2Reel() {
   });
   const [pleinEcran, setPleinEcran] = useState(false);
   const conteneurRef = useRef<HTMLDivElement>(null);
+  const [confirmationInterne,setConfirmationInterne]=useState<{message:string;resolve:(ok:boolean)=>void}|null>(null);
+  const confirmationRef=useRef<{message:string;resolve:(ok:boolean)=>void}|null>(null);
+  const demanderConfirmation=(message:string):Promise<boolean>=>{
+    if(confirmationRef.current)return Promise.resolve(false);
+    return new Promise(resolve=>{const demande={message,resolve};confirmationRef.current=demande;setConfirmationInterne(demande);});
+  };
+  const terminerConfirmation=(ok:boolean)=>{
+    const demande=confirmationRef.current;
+    confirmationRef.current=null;setConfirmationInterne(null);demande?.resolve(ok);
+  };
+  useEffect(()=>()=>{confirmationRef.current?.resolve(false);confirmationRef.current=null;},[]);
 
   const setGroupeCle = (cle: string | null) => {
     setPassageFiltre(null);
@@ -555,6 +567,13 @@ export default function AdminCorrectionQrcV2Reel() {
   const histoSel = qrcSel && estConsultation(qrcSel.qrc_instance_id)
     ? ((tentativeSel as unknown as { historique?: InfosHistorique } | undefined)?.historique ?? null)
     : null;
+  // Revisions can change during the dialog (Realtime, filters or another corrector).
+  const contexteConfirmation=JSON.stringify([selection,groupeCle,ebCle,jourFiltre,passageFiltre,vueTravail,qrcSel,tentativeSel?.exam_version_id,questionSel,baremeSel,historique,commentaireCourant,note]);
+  const contexteConfirmationRef=useRef(contexteConfirmation);
+  contexteConfirmationRef.current=contexteConfirmation;
+  useEffect(()=>{
+    if(confirmationRef.current)terminerConfirmation(false);
+  },[contexteConfirmation]);
   const valider = async (valeur?: number, confirmationIa = false) => {
     const n = valeur ?? note;
     if (!qrcSel || n === null || n === undefined) return;
@@ -593,7 +612,11 @@ export default function AdminCorrectionQrcV2Reel() {
         ? `Confirmer la note IA ${fmt(n)} ? Elle deviendra une correction humaine vérifiée.`
         : `Modifier la correction de ${fmt(ancienne)} à ${fmt(n)} ?`;
       // Remplacement d'une proposition IA : enregistrement immédiat au clic (aucune note humaine écrasée).
-      if (!surIa && !window.confirm(msg)) return;
+      if (!surIa) {
+        const contexte=contexteConfirmationRef.current;
+        if(!await demanderConfirmation(msg))return;
+        if(contexte!==contexteConfirmationRef.current||envoiEnCoursRef.current)return;
+      }
     }
     setNote(n);
     envoiEnCoursRef.current = true;
@@ -830,13 +853,15 @@ export default function AdminCorrectionQrcV2Reel() {
   const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
   const copiePrecedente = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, -1):voisineFile(session,vueTravail,selection,-1,passageFiltre);
   const copieSuivante = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, 1):voisineFile(session,vueTravail,selection,1,passageFiltre);
-  const naviguerCopie = (direction: DirectionCopie) => {
+  const naviguerCopie = async (direction: DirectionCopie) => {
     if (etatEnvoi === "encours") return;
     const cible = (vueTravail==='historique'||vueTravail==='toutes')?copieVoisine(sessionNavigation, selection, direction):voisineFile(session,vueTravail,selection,direction,passageFiltre);
     if (!cible) return;
-    if (commentaireModifie && commentaire !== commentaireSauve && !window.confirm(
-      "Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?",
-    )) return;
+    if (commentaireModifie && commentaire !== commentaireSauve) {
+      const contexte=contexteConfirmationRef.current;
+      if(!await demanderConfirmation("Le commentaire de cette copie n'est pas enregistré. Changer de copie le fera perdre. Continuer ?"))return;
+      if(contexte!==contexteConfirmationRef.current||envoiEnCoursRef.current)return;
+    }
     setSelection(cible.qrc_instance_id);
     setNote(null);
     setCommentaire("");
@@ -1663,6 +1688,7 @@ export default function AdminCorrectionQrcV2Reel() {
           </>
         )}
       </aside>}
+      {confirmationInterne&&<ConfirmationInterne message={confirmationInterne.message} onDecision={terminerConfirmation}/>}
     </div>
   );
 }
