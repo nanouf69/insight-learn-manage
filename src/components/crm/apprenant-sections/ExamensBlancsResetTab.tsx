@@ -39,6 +39,7 @@ import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helper
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/examResetAdmin";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
+import { ResetMatiereAdminButton } from "./ResetMatiereAdminButton";
 
 // Repli statique uniquement (si le chargement de la version enregistrée échoue).
 const STATIC_EXAMENS_BLANCS = [
@@ -57,6 +58,7 @@ interface ExamensBlancsResetTabProps {
 }
 
 interface ExamenResult {
+  result_id: string;
   quiz_id: string;
   matiere_id: string;
   matiere_nom: string;
@@ -153,6 +155,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             : row;
 
           const result: ExamenResult = {
+            result_id: row.id,
             quiz_id: row.quiz_id,
             matiere_id: scoreSource.matiere_id ?? "unknown",
             matiere_nom: scoreSource.matiere_nom ?? "Matière inconnue",
@@ -448,13 +451,15 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                               ? ((r.score_obtenu / r.score_max) * 20).toFixed(1)
                               : "0";
                           return (
-                            <div key={i} className="px-4 py-2 flex items-center justify-between text-sm">
+                            <div key={i} className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
                               <span className="text-muted-foreground">{r.matiere_nom}</span>
-                              <div className="flex items-center gap-3">
+                              <div className="flex flex-wrap items-center gap-3">
                                 <span className="font-mono text-xs">{note}/20</span>
-                                <span className="text-xs text-muted-foreground" title="Le reset destructif est désactivé ; le repassage sécurisé conserve l’ancienne copie.">
-                                  Repassage sécurisé élève
-                                </span>
+                                <ResetMatiereAdminButton key={`${apprenant.id}:${r.quiz_id}:${r.matiere_id}:${r.result_id}`} target={{
+                                  apprenantId: apprenant.id, prenom: apprenant.prenom, nom: apprenant.nom,
+                                  examId: r.quiz_id, examLabel: group.examenLabel, filiere: group.type,
+                                  matiereId: r.matiere_id, matiereNom: r.matiere_nom, resultId: r.result_id,
+                                }} />
                               </div>
                             </div>
                           );

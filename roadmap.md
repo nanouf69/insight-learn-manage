@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 08:42 — Remise à zéro admin d’une seule matière
+- [x] Catalogue lu seulement : start_exam_subject_retake exige le propriétaire et ouvre immédiatement tentative/chronomètre ; aucune voie admin par matière trouvée. Aucun repli global ni appel de mutation.
+- [x] Bouton ciblé et confirmation nominative préparés ; confirmation bloquée, aucune modification du bouton global, des notes ou des copies.
+- [x] 23 tests applicatifs PASS ; aperçu du vrai panneau CRM sur fixtures VTC ordinateur/TAXI mobile PASS : confirmation nominative, annulation/reprise, envoi bloqué, autre note intacte, aucun appel de mutation après clic. Build observé OK, lint des nouveaux fichiers OK ; trois sections globales identiques à HEAD.
+- [ ] Action effective BLOQUÉE : opération admin additive à démarrage différé + intégration de lecture du parcours actif et contrats serveur manquants ; aucune migration proposée/appliquée ni publication.
+
 ## 10/11 20:24 — Correctifs performance QRC autorisés
 - [x] Mobile sans interception sticky et commentaire tenant dans panneau ; Actualiser avec notes même catalogue inchangé, signal historique sans scan automatique, lectures périmées écartées.
 - [x] Inventaire différé après première grille ; profiling réel aperçu 17,765 s/57 requêtes, site 13,792 s/56 ; pas de gain statistique revendiqué ; règles et transport de notation inchangés.
