@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 14:06 — Annulation reset : intégration isolée
+- [ ] Sélection V2 sans grant annulé et sérialisation chemins anciens sur candidat SQL séparé.
+- [ ] Parcours fictif archivage/restauration/relecture admin/élève/QRC + refus nouveau démarrage/concurrence.
+- [ ] Prévol HADDOU EB3 lecture seule, GO/NO-GO et lot isolé validable ; aucune activation réelle.
+
 ## 11/11 13:55 — Accès EB multi-session
 - [x] Cases multi-sessions + états réels explicites + confirmation scoped désactivée pour écriture en aperçu.
 - [x] Candidat atomique séparé sur journal existant, tests invalidité/CAS/droits/frontières démarrages/reprises/croisées et mobile ; chemins RPC complets anciens/TA/VA restent NON PROUVÉS avant activation.
