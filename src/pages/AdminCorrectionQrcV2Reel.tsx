@@ -738,9 +738,10 @@ export default function AdminCorrectionQrcV2Reel() {
       setCommentaireModifie(false);
       setModeRevision(false);
       setJeton(Math.random().toString(36).slice(2, 10));
-      if (decision.suivante) {
+      const suivante=decision.suivante??(vueTravail!=='historique'?qrcDansVue(sessionNavigation,vueTravail).find(q=>q.qrc_instance_id!==qrcSel.qrc_instance_id):null);
+      if (suivante) {
         setEtatEnvoi("vide");
-        setSelection(decision.suivante.qrc_instance_id);
+        setSelection(suivante.qrc_instance_id);
       } else {
         setEtatEnvoi("ok");
         setMessageNavigation("Correction enregistrée — dernière copie de la liste.");
@@ -825,7 +826,8 @@ export default function AdminCorrectionQrcV2Reel() {
   };
 
   const sessionNavigation = session?{...session,qrc:qrcDansVue(session,vueTravail,passageFiltre)}:null;
-  const fileVisible=qrcDansVue(session,vueTravail,passageFiltre);
+  const ordreFile=ordonnerCandidatsParFin(session?.tentatives??[]).map(t=>t.attempt_id);
+  const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
   const copiePrecedente = copieVoisine(sessionNavigation, selection, -1);
   const copieSuivante = copieVoisine(sessionNavigation, selection, 1);
   const naviguerCopie = (direction: DirectionCopie) => {

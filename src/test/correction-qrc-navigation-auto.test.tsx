@@ -99,7 +99,7 @@ const tentative = (id: string): TentativeReelle => ({
   apprenant_id: `apprenant-${id}`,
   exam_id: "EB-TEST",
   exam_version_id: "version-test",
-  etat: "remis",
+  etat: "terminee",
   snapshot_fingerprint: `empreinte-${id}`,
   candidat: `Candidat ${id}`,
   started_at: "2026-01-01T09:00:00Z",
@@ -139,6 +139,7 @@ const appliquerNote = (qrcInstanceId: string, note: number) => {
 
 const ouvrirCopie = async (qrcInstanceId: string) => {
   render(ecran());
+  fireEvent.click(await screen.findByRole("button", {name:"Archives et historique"}));
   fireEvent.click(await screen.findByTestId(`cellule-${qrcInstanceId}`));
   await screen.findByTestId("panneau-correction");
 };
@@ -168,7 +169,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     const a1={...tentative('a1'),finished_at:'2026-11-01T17:15:42Z',snapshot:{...tentative('a1').snapshot,source_historique:{tentative:1}}} as TentativeReelle;
     const a2={...tentative('a2'),finished_at:'2026-11-09T20:21:19Z',snapshot:{...tentative('a2').snapshot,source_historique:{tentative:2}}} as TentativeReelle;
     etat.session={...sessionFictive(),tentatives:[a1,a2],qrc:[{...qrc('a1'),reponse:'Q2/Q3 présentes dans copie complète'},{...qrc('a2'),reponse:'3.5 t'}]};
-    render(ecran());await screen.findByTestId('cellule-a1-q1');
+    render(ecran());fireEvent.click(await screen.findByRole("button",{name:"Archives et historique"}));await screen.findByTestId('cellule-a1-q1');
     fireEvent.change(screen.getByTestId('choix-passage'),{target:{value:'a1'}});
     expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();fireEvent.click(screen.getByTestId('cellule-a1-q1'));
     expect(await screen.findByTestId('reponse-eleve')).toHaveTextContent('Q2/Q3 présentes');
@@ -390,6 +391,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     etat.session.tentatives[0] = { ...etat.session.tentatives[0], etat: "terminee", finished_at: "2026-11-09T19:27:00Z" };
     etat.session.tentatives[1] = { ...etat.session.tentatives[1], etat: "terminee", finished_at: "2026-11-09T19:59:00Z" };
     render(ecran());
+    fireEvent.click(await screen.findByRole("button",{name:"Archives et historique"}));
     await screen.findByTestId("cellule-a2-q1");
     const lignes = () => Array.from(screen.getByTestId("matrice-A").querySelectorAll("tbody tr")).map(r => r.querySelector("a")?.getAttribute("data-testid"));
     expect(lignes()).toEqual(["lien-crm-a2", "lien-crm-a1"]);
@@ -478,7 +480,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     terminer?.();
     await waitFor(() => expect(window.location.search).toContain("qrc=a2-q1"));
     expect(screen.getByTestId("reponse-eleve")).toHaveTextContent("Réponse a2");
-    expect(screen.getByText("Question fictive")).toBeInTheDocument();
+    expect(screen.getAllByText("Question fictive").length).toBeGreaterThan(0);
   });
 
   it("reste sur la copie et affiche l'erreur si le serveur refuse", async () => {
