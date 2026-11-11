@@ -15,7 +15,9 @@ class Contract(unittest.TestCase):
     CREATE TABLE module_editor_state(module_id int primary key,module_data jsonb);
     CREATE TABLE bilan_question_identites(module_id int,exercice_id int,numero_technique text,uid uuid,litigieux bool);
    """)
-   p.sql((ROOT/'src/test/fixtures/bilan-future-isolated-prototype.sql').read_text())
+   prototype=(ROOT/'src/test/fixtures/bilan-future-isolated-prototype.sql').read_text()
+   # Only the tested receipt/version transport; unrelated grant/legacy helpers are not installed.
+   p.sql(prototype[:prototype.index('-- Proof that a learner has NO legacy trace')])
    p.sql("CREATE TABLE bilan_future_common_releases(subject int,version_id uuid,activated_at timestamptz,id uuid); CREATE TABLE bilan_future_french_releases(version_id uuid,activated_at timestamptz);")
    for k in ['bilan_alignment_canonical','bilan_alignment_future','bilan_future_open','bilan_future_questions','bilan_future_resume','bilan_future_correction']: p.sql(F[k]+';')
    source=[{'id':i,'type':'QCM','enonce':f'Fiction {i}','image':'/cours/exercices/securite/image1.png' if i%2 else None,'imageSize':'sm','choix':[{'lettre':'A','texte':'Oui','correct':True},{'lettre':'B','texte':'Non'}]} for i in range(1,256)]
