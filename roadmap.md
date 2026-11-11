@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 10:10 — Bouton « Réinitialiser la matière » installé
+- [x] Contrats avec tous les déclencheurs réels (ancien, V2 natif/importé, refus ambigu, copie ouverte, reprise même copie) + 9 contrats + PassageMatiere réel + 25 Vitest PASS.
+- [x] Migrations 0268/0269 appliquées ; catalogue, droits (anon refusé), appel API admin lecture et aperçu CRM Arezki vérifiés ; 0 autorisation/tentative réelle créée ; bundle publié déjà compatible, aucune publication.
+- [ ] Arezki EB3 A : copie V2 ouverte, temps écoulé, sans réponse → ni reprise utile ni réinitialisation ; attend une décision sur une clôture admin sans note de cette copie.
+- [ ] Message clair « fonction absente » : dans l'aperçu seulement (publication groupée impossible à isoler).
+
 ## 11/11 09:43 — Nouvelle version future SR TAXI
 - [x] Écarts choix 71/78 seuls, source c5c4b4b3313ab958c92275923e0c5eea ; aucune transaction pertinente active observée, source verrouillée/revérifiée à l'activation.
 - [x] Migration additive 0267 + test PostgreSQL jetable PASS : 255 IDs conservés, anciens reçus/versions intacts, droits et refus périmé.
@@ -8,7 +14,7 @@
 ## 11/11 09:27 — Bouton matière Arezki : dépendances absentes
 - [x] SELECT Arezki EB3 A : V2 en_cours, sans résultat, à reprendre ; RPC admin absentes, aucune autorisation/tentative réelle.
 - [x] PassageMatiere réel ancien VTC/V2 TAXI sur PostgreSQL jetable : réponse, reload du chrono et soumission ; 9 contrats SQL et 23 tests applicatifs PASS. Rejeu initial corrigé dans le candidat.
-- [ ] Installation BLOQUÉE : scénario V2 importé complet et ensemble des triggers live non rejoués ; égalité des résultats et absence d'effets indirects pas complètement prouvées. RPC restent absentes, aucun frontend publié.
+- [x] Installé 11/11 10:05 (voir section 10:10).
 
 ## 11/11 09:18 — Sécurité routière Bilan examen VTC → TAXI seulement
 - [x] Source 255/cible historique 252, 190 écarts ; 9 réponses TAXI dont 5 sans snapshot, banque ancienne conservée. 62 modules/161 exercices empreintes identiques.
