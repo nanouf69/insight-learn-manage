@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 09:18 — Sécurité routière Bilan examen VTC → TAXI seulement
+- [ ] Inventaire source 5/502 immuable, cible 11/602, versions et copies anciennes ; effets indirects et empreintes hors cible.
+- [ ] Alignement versionné ciblé après contrats PostgreSQL fictifs ; aucun changement T3P/Gestion, cours, EB, reset ou QRC.
+- [ ] SELECT position par position, images exactes, historique avant/après et vérification écran futur ; verdict actif/préparé et limites explicites.
+
 ## 11/11 08:58 — Réinitialisation ciblée admin et démarrage élève
 - [x] Composition enregistrée complète, EB3 VTC sept matières/A sans note, ordre officiel/ID exacts et nombres distincts ; calculs/global inchangés. Sélection historique par version encore non prouvée.
 - [x] Candidat admin différé append-only et démarrage propriétaire avec reçu/durée publiés ; rôle, concurrence/rejeu, filières et refus en cours testés jetables. SQL non installé.
