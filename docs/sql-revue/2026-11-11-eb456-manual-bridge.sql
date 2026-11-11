@@ -29,8 +29,8 @@ DECLARE r public.apprenant_quiz_results; s public.reponses_apprenants; qs jsonb;
 BEGIN
  SELECT * INTO r FROM public.apprenant_quiz_results WHERE id=p_result_id;
  IF NOT FOUND THEN RETURN jsonb_build_object('statut','revue','raison','source_absente'); END IF;
- IF uid IS NOT NULL AND NOT public.has_role(uid,'admin') AND NOT EXISTS(
-  SELECT 1 FROM public.apprenants a WHERE a.id=r.apprenant_id AND a.auth_user_id=uid) THEN
+ IF NOT public.core_contexte_tentative_autorise(r.apprenant_id)
+  AND NOT (uid IS NULL AND session_user IN ('postgres','supabase_admin','service_role')) THEN
   RAISE EXCEPTION 'Accès refusé' USING ERRCODE='42501'; END IF;
  IF r.quiz_type<>'examen_blanc' OR r.quiz_id !~* '^EB[456](-TAXI|-TA|-VA)?$' THEN
   RETURN jsonb_build_object('statut','hors_perimetre'); END IF;
@@ -95,6 +95,12 @@ BEGIN
  OR (r.details ? 'source_exercice_id' AND r.details->>'source_exercice_id' IS DISTINCT FROM k)
  OR (r.details ? 'source_tentative' AND r.details->>'source_tentative' IS DISTINCT FROM r.tentative::text) THEN
   RETURN jsonb_build_object('statut','revue','raison','identite_ou_reponses_divergentes'); END IF;
+ -- Require an immutable source link or the SAME recorded submission instant, not a time window.
+ IF s.submitted_at IS DISTINCT FROM r.completed_at AND NOT (
+  r.details->>'source_submission_id'=s.id::text
+  AND r.details->>'source_submission_write_seq'=s.write_seq::text
+  AND r.details->>'source_submission_at'=s.submitted_at::text) THEN
+  RETURN jsonb_build_object('statut','revue','raison','identite_remise_non_figee'); END IF;
  -- Another native copy is not a substitute for this source. No time-window matching.
  IF EXISTS(SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=r.apprenant_id AND a.exam_id=r.quiz_id
   AND coalesce(a.snapshot->>'matiere',a.snapshot->'matieres'->0->>'subject_id')=r.matiere_id
@@ -114,9 +120,11 @@ BEGIN
  PERFORM pg_advisory_xact_lock(hashtextextended('eb456-manuel:'||p_result_id::text,0));
  SELECT * INTO r FROM public.apprenant_quiz_results WHERE id=p_result_id FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('statut','revue','raison','source_absente'); END IF;
- -- Lock received submission before re-reading proof. Neither source is rewritten.
- PERFORM 1 FROM public.reponses_apprenants s WHERE s.apprenant_id=r.apprenant_id
-  AND s.exercice_id=r.quiz_id||'__'||r.matiere_id||CASE WHEN r.tentative>1 THEN '__t'||r.tentative ELSE '' END FOR UPDATE;
+ -- Never wait on a submission locked by the opposite write order: retry after ACK/reload.
+ BEGIN
+  PERFORM 1 FROM public.reponses_apprenants s WHERE s.apprenant_id=r.apprenant_id
+   AND s.exercice_id=r.quiz_id||'__'||r.matiere_id||CASE WHEN r.tentative>1 THEN '__t'||r.tentative ELSE '' END FOR UPDATE NOWAIT;
+ EXCEPTION WHEN lock_not_available THEN RETURN jsonb_build_object('statut','revue','raison','remise_concurrente_reessayer'); END;
  preuve:=public.eb456_preuve_remise(r.id);
  IF preuve->>'statut'='revue' THEN
   INSERT INTO public.eb456_raccordements_revue(result_id,apprenant_id,exam_id,matiere_id,tentative,fingerprint,raison)
@@ -158,7 +166,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.eb456_raccorder_manuellement(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.eb456_raccorder_manuellement(uuid) TO authenticated,service_role;
 
--- Durable hooks cover either write order and ACK loss. Errors never undo the learner's submission.
+-- Durable hooks cover either write order. Errors remain explicit and cannot create partial imports.
 CREATE FUNCTION public.eb456_raccordement_apres_remise() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE r record;
@@ -177,6 +185,12 @@ BEGIN
    END LOOP;
   END IF;
  END IF;
+ RETURN NEW;
+EXCEPTION WHEN others THEN
+ INSERT INTO public.alertes_systeme(type,titre,message,details)
+ VALUES('eb456_raccordement_revue','Copie ancienne à vérifier',
+  'La remise est conservée. Le raccordement manuel V2 nécessite une revue.',
+  jsonb_build_object('source',TG_TABLE_NAME,'id',NEW.id,'code',SQLSTATE)::text);
  RETURN NEW;
 END $$;
 REVOKE ALL ON FUNCTION public.eb456_raccordement_apres_remise() FROM PUBLIC,anon,authenticated;
