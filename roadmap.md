@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 09:43 — Nouvelle version future SR TAXI
+- [ ] Prouver les écarts 71/78, identité et empreinte source fraîche ; contrôler transactions pertinentes.
+- [ ] Extension additive de 0266 et test PostgreSQL jetable : IDs conservés, reçus/anciennes versions intacts.
+- [ ] Activer uniquement TAXI 11/602 puis SELECT 255 positions/65 images/tailles ; aucune autre écriture métier.
+
 ## 11/11 09:27 — Bouton matière Arezki : dépendances absentes
 - [x] SELECT Arezki EB3 A : V2 en_cours, sans résultat, à reprendre ; RPC admin absentes, aucune autorisation/tentative réelle.
 - [x] PassageMatiere réel ancien VTC/V2 TAXI sur PostgreSQL jetable : réponse, reload du chrono et soumission ; 9 contrats SQL et 23 tests applicatifs PASS. Rejeu initial corrigé dans le candidat.
