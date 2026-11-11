@@ -95,6 +95,7 @@ export default function AdminCorrectionQrcV2Reel() {
   const [copiesAnciennes, setCopiesAnciennes] = useState<Array<{id:string;apprenant_id:string;matiere_nom:string;tentative:number|null;completed_at:string}>>([]);
   const [notesParSession,setNotesParSession]=useState(()=>param('qrc_vue')==='notes-session');
   const [vueTravail,setVueTravail]=useState<VueQrc>('corriger');
+  const [apprenantFiltre,setApprenantFiltre]=useState<string|null>(()=>param('qrc_apprenant'));
   const [auditVisible,setAuditVisible]=useState(false);
   const [session, setSession] = useState<SessionReelle | null>(null);
   const [lectureCopies, setLectureCopies] = useState(false);
@@ -195,7 +196,7 @@ export default function AdminCorrectionQrcV2Reel() {
       if(!alive)return;setCatalogueLu(true);setGroupes(liste);
       const g=groupeCle===TOUS_GROUPES?groupeTousPassages(liste):liste.find(g=>g.cle===groupeCle)??liste[0];
       if(!groupeCle&&g){setGroupeCleState(g.cle);}
-      if(!g?.examens.some(e=>e.cle===ebCle)){setEbCleState(g?.examens[0]?.cle??null);majUrl({qrc_eb:g?.examens[0]?.cle??null});}
+      if(!ebCle){setEbCleState(g?.examens[0]?.cle??null);majUrl({qrc_eb:g?.examens[0]?.cle??null});}
     }).catch(e=>{if(alive){setErreurLecture(e.message);if(groupeCle===TOUS_GROUPES)setErreurGlobale(e.message);}});
     return()=>{alive=false};
   },[mode,groupeCle,choixLus,notesParSession]);
@@ -203,7 +204,7 @@ export default function AdminCorrectionQrcV2Reel() {
 
   const tousGroupes = useMemo(() => groupeTousPassages(groupes), [groupes]);
   const groupeChoisi = groupeCle === TOUS_GROUPES ? tousGroupes : groupes.find((g) => g.cle === groupeCle) ?? null;
-  const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? groupeChoisi?.examens[0] ?? null;
+  const ebChoisi = groupeChoisi?.examens.find((e) => e.cle === ebCle) ?? (!ebCle?groupeChoisi?.examens[0]:null) ?? null;
 
   const dateChoisie = ebChoisi?.dates.find((d) => d.jour === jourFiltre) ?? null;
   // A selected archive opens its read-only source, never the grading engine.
@@ -247,7 +248,7 @@ export default function AdminCorrectionQrcV2Reel() {
       }))
       .sort((a, b) => a.nom.localeCompare(b.nom));
   }, [rechercheNorm, idsGroupe, nomsCandidats, groupes]);
-  const idsTrouves = useMemo(() => candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [candidatsTrouves]);
+  const idsTrouves = useMemo(() => apprenantFiltre ? new Set([apprenantFiltre]) : candidatsTrouves ? new Set(candidatsTrouves.map((c) => c.id)) : null, [apprenantFiltre,candidatsTrouves]);
 
   // Recherche dans les archives de l'ancien circuit (lecture seule, aucune copie ni migration).
   type ArchivePassage = { cle: string; apprenantId: string; nom: string; libelle: string; resultIds: string[] };
@@ -288,7 +289,7 @@ export default function AdminCorrectionQrcV2Reel() {
     return () => { annule = true; clearTimeout(t); };
   }, [rechercheNorm,vueTravail]);
 
-  const catalogueAttempts = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? null;
+  const catalogueAttempts = dateChoisie?.attemptIds ?? ebChoisi?.attemptIds ?? (catalogueLu?[]:null);
   const attemptsBase = catalogueAttempts?.filter(id=>!id.startsWith('ancien:'))??null;
   const cleAttempts = idsTrouves
     ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
@@ -983,9 +984,10 @@ export default function AdminCorrectionQrcV2Reel() {
               data-testid="choix-eb"
               className={`min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm ${ebChoisi && ebsRecents.has(ebChoisi.cle) ? "text-red-600 font-semibold" : ""}`}
               title={ebChoisi && ebsRecents.has(ebChoisi.cle) ? "Dernier examen blanc réalisé par la session CRM en cours sélectionnée" : undefined}
-              value={ebChoisi?.cle ?? ""}
+              value={ebCle ?? ""}
               onChange={(e) => setEbCle(e.target.value)}
             >
+              {ebCle&&!ebChoisi&&<option value={ebCle}>{libelleExamen(ebCle.split('::').at(-1)??ebCle)} — Aucun passage remis dans cette session</option>}
               {(groupeChoisi?.examens ?? []).map((e) => (
                 <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
                   {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{libelleExamen(e.exam_id)} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
@@ -1034,6 +1036,7 @@ export default function AdminCorrectionQrcV2Reel() {
               </Button>
             </div>
           </div>
+          {apprenantFiltre&&<div className="flex flex-wrap items-center gap-2 text-sm" aria-label="Apprenant filtré"><span>Apprenant : {nomsCandidats[apprenantFiltre]??apprenantFiltre}</span><Button size="sm" variant="ghost" onClick={()=>{setApprenantFiltre(null);setSelection(null);majUrl({qrc_apprenant:null});}}>Tous les apprenants</Button></div>}
           {vueTravail==='historique'&&rechercheNorm && archivesTrouvees.length > 0 && (
             <div className="rounded border bg-muted/40 px-2 py-1 text-xs space-y-1" data-testid="resultats-archives">
               <p className="font-semibold text-muted-foreground">Copies archivées — consultation seule :</p>

@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 17:30 — Liens des notes en attente
+- [x] Lien accessible nouvel onglet session/examen exact/apprenant stable vers À corriger, contexte vide conservé, aucun passage arbitraire ; pas de filtre matière existant, aucun identifiant déduit.
+- [x] 5 tests PASS et clics navigateur fictifs Tous VTC/TAXI + cellule matière vers vrai écran simulé ; actualisation des cadres conservée, aucune mutation ni publication.
+
 ## 11/11 17:14 — Filtre EB et moyennes de session
 - [x] Filtre EB/filière, tous inscrits conservés, notes matières et moyennes définitives avec n/N, aucun nouvel appel au changement de filtre.
 - [x] Tests zéro réel/attente/absence/filières/session vide, fixture PC et admin réel 16 inscrits : EB1 VTC 11,3/20 (9/10) ; aucun scan global ni publication.
