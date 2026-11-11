@@ -1702,7 +1702,7 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [ ] Installation réelle bloquée par absence d’accord séparé et prévol de compatibilité serveur ; aucune migration/publication dans ce tour.
 
 ## 11/11 — Noms du relevé vers CRM
-- [ ] Lien immuable identique à Correction QRC V2, nouvel onglet ; conserver filtres/cadres/badges, vérifier aperçu sans écriture ni publication.
+- [x] Lien immuable identique à Correction QRC V2, nouvel onglet ; 6 tests réussis, fiche Ilies MEMDOUH ouverte en aperçu admin réel, relevé/filtre EB4 TAXI préservés, sans écriture ni publication.
 
 ## 10/11 — Notes historiques EB2 VTC dans le correcteur (accord explicite)
 - [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
