@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 11:06 — EB3 TAXI Haddou/Memdouh : corrections et visibilité V2
+- [x] Dix QRC relues sur leurs trois copies exactes : aucune note/correcteur V2, aucun événement humain, ancien journal, audit ou validation ; seules les propositions déterministes et l’import sont tracés. Anciens totaux = QCM + propositions, toujours pending.
+- [x] Production gestion.ftransport.fr vérifiée avec mutations bloquées : session TAXI/TA 26/10–16/11, EB3-TAXI, date 30/10 ; trois lignes présentes, 4+4+2 boutons « À corriger », barèmes et boutons de note ouverts. Lien direct revérifié, aucune écriture.
+- [x] Aucun filtre fautif : aucun correctif ni déploiement. Parcours exact et état des notes consignés dans docs/eb3-taxi-haddou-memdouh-suivi-2026-11-11.md.
+
 ## 11/11 10:56 — Copies V2 expirées et vides : déblocage ciblé
 - [x] Expiration calculée depuis le snapshot serveur ; réponse, événement, résultat, neutralisation ou provenance ambiguë conservent le verrou. 9 contrats + 14 scénarios PostgreSQL avec déclencheurs réels PASS, dont concurrence, envoi tardif, reprise et résultat nouvelle tentative.
 - [x] Migration 0270 appliquée : confirmation admin atomique, neutralisation append-only et abandon technique sans note ; nouvelle tentative et chrono différés côté élève. Catalogue/droits relus, aucun frontend ajouté ni publié.
