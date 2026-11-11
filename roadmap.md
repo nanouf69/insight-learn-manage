@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 12:03 — EB4–6 : remise ancienne vers correction manuelle V2
+- [ ] Inventorier les copies par identité exacte, remise, réponses et snapshot ; distinguer V2 prouvé, correction validée et revue.
+- [ ] Vérifier puis tester un raccordement durable atomique/idempotent à la remise et à la reprise, sans IA, note ni modification des originaux.
+- [ ] Activer seulement après parcours isolés complets et contrôle des déclencheurs ; rattraper uniquement les copies univoques, vérifier avant/après et production.
+
 ## 11/11 11:18 — Devis formation continue : information écrite annulation/remboursement
 - [x] CGV/délais existants relus sans modification ; case FC non précochée et obligatoire, texte complet identité/session/motif, email/LRAR/adresse officielle, aucune renonciation ni nouveau délai. Formations initiales et historiques signés exclus.
 - [x] Preuve versionnée serveur avec date/heure, identité et devis dans le consentement protégé existant ; blocage client+serveur et affichage admin CRM/organisme. Verrou supplémentaire empêchant tout envoi réel avant activation des fonctions.
