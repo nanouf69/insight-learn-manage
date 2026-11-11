@@ -247,7 +247,7 @@ export default function AdminCorrectionQrcV2Reel() {
       const groupesArch = new Map<string, ArchivePassage>();
       for (const r of res ?? []) {
         const jour = (r.completed_at ?? "").slice(0, 10);
-        const cle = `${r.apprenant_id}|${r.quiz_id}|${jour}`;
+        const cle = r.id;
         const a = retenus.find((x) => x.id === r.apprenant_id);
         if (!groupesArch.has(cle)) {
           const d = jour ? jour.split("-").reverse().join("/") : "date inconnue";
@@ -267,11 +267,31 @@ export default function AdminCorrectionQrcV2Reel() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null]);
   const nbPassagesCroises = nombrePassagesCroises(attemptsAffiches ?? [], ebChoisi?.inscriptionCroiseeParAttempt);
-  const legacyResultIds = ancienCircuit
+  const legacyResultIdsBase = ancienCircuit
     ? (jourFiltre
         ? ebChoisi?.legacyResultIds?.filter((id) => dateChoisie?.attemptIds.includes(`ancien:${id}`))
         : ebChoisi?.legacyResultIds)
     : undefined;
+  const legacyResultIds = passageFiltre ? legacyResultIdsBase?.filter(id => `ancien:${id}` === passageFiltre) : legacyResultIdsBase;
+  const passageLegacyKey = (legacyResultIdsBase ?? []).join(",");
+  useEffect(() => {
+    let cancelled = false;
+    setCopiesAnciennes([]);
+    if (!ancienCircuit || !passageLegacyKey) return;
+    void (async () => {
+      try {
+        const rows: typeof copiesAnciennes = [];
+        const ids = passageLegacyKey.split(",");
+        for (let i = 0; i < ids.length; i += 150) {
+          const { data, error } = await supabase.from("apprenant_quiz_results").select("id,apprenant_id,matiere_nom,tentative,completed_at").in("id", ids.slice(i,i+150)).order("id");
+          if (error) throw error;
+          rows.push(...(data ?? []));
+        }
+        if (!cancelled) setCopiesAnciennes(rows);
+      } catch { if (!cancelled) setErreur("Lecture de l’historique des passages impossible."); }
+    })();
+    return () => { cancelled = true; };
+  }, [ancienCircuit, passageLegacyKey]);
 
   // Génération de lecture : une réponse tardive d'une ancienne session/EB n'est jamais affichée.
   const recharger = useCallback(async (): Promise<SessionReelle | null> => {
@@ -896,6 +916,7 @@ export default function AdminCorrectionQrcV2Reel() {
               value={groupeCle ?? ""}
               onChange={(e) => setGroupeCle(e.target.value)}
             >
+              <option value={TOUS_GROUPES}>Toutes les sessions — tous les passages remis</option>
               {groupes.map((g) => (
                 <option key={g.cle} value={g.cle} className={estEnCours(g) ? "text-red-600 font-semibold" : "text-foreground font-normal"}>
                   {libelleGroupe(g)}
@@ -913,7 +934,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
                   {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{e.exam_id}{e.circuit === "ancien" ? " — ANCIEN CIRCUIT" : ""} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
-                  {e.dates.map((d) => `${d.date.slice(0, 5)} (${d.attemptIds.length})`).join(" • ")}
+                  {e.dates.map((d) => `${d.date} (${d.attemptIds.length})`).join(" • ")}
                   {Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length > 0
                     ? ` · Inscription croisée : ${Object.keys(e.inscriptionCroiseeParAttempt ?? {}).length}`
                     : ""}
@@ -1003,7 +1024,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 onClick={() => setJourFiltre(null)}
                 data-testid="date-toutes"
               >
-                Toutes ({ebChoisi?.attemptIds.length})
+                Toutes les dates ({ebChoisi?.attemptIds.length})
               </Button>
               {(ebChoisi?.dates ?? []).map((d) => (
                 <Button
@@ -1019,6 +1040,17 @@ export default function AdminCorrectionQrcV2Reel() {
               ))}
             </div>
           )}
+          <select aria-label="Choisir un passage remis" data-testid="choix-passage" className="w-full max-w-full rounded border border-input bg-background px-2 py-2 text-sm"
+            value={passageFiltre ?? ""} onChange={e => {
+              const id = e.target.value || null;
+              setPassageFiltre(id); setSelectionState(null); setArchiveOuverte(null);
+              majUrl({qrc_passage:id,qrc:null});
+            }}>
+            <option value="">Tous les passages — toutes les tentatives du filtre</option>
+            {ancienCircuit ? copiesAnciennes.filter(r => !idsTrouves || idsTrouves.has(r.apprenant_id)).map(r => <option key={r.id} value={`ancien:${r.id}`}>
+              {nomsCandidats[r.apprenant_id] ?? r.apprenant_id} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR",{timeZone:"Europe/Paris"}) : "Date inconnue"} · tentative {r.tentative ?? "non enregistrée"} · {r.matiere_nom} · {r.id}
+            </option>) : (session?.tentatives ?? []).map(t => <option key={t.attempt_id} value={t.attempt_id}>{libellePassage(t)}</option>)}
+          </select>
           {!ancienCircuit && <p className="text-xs text-muted-foreground" data-testid="compteur-session">
             {session ? <>Session affichée (tous les candidats) : {corrigees}/{total} QRC corrigées — {total - corrigees} restantes</> : "Lecture des copies…"}
             {qrcSel && (
@@ -1095,7 +1127,7 @@ export default function AdminCorrectionQrcV2Reel() {
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
         {matieres.map((m) => {
-          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) =>
+          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => (!passageFiltre || t.attempt_id === passageFiltre) &&
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           ));
           // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
@@ -1169,15 +1201,16 @@ export default function AdminCorrectionQrcV2Reel() {
                         </td>
                         <td
                           className="px-1 py-0.5 whitespace-nowrap text-muted-foreground truncate"
-                          title={`${t.started_at ? new Date(t.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "date inconnue"} · tentative ${t.attempt_id.slice(0, 8)}`}
+                          title={libellePassage(t)}
                         >
-                          {t.started_at
-                            ? new Date(t.started_at).toLocaleString("fr-FR", {
+                          {(t.finished_at ?? t.started_at)
+                            ? new Date((t.finished_at ?? t.started_at) as string).toLocaleString("fr-FR", {
                                 timeZone: "Europe/Paris",
-                                day: "2-digit", month: "2-digit",
+                                day: "2-digit", month: "2-digit", year: "numeric",
                                 hour: "2-digit", minute: "2-digit",
                               })
                             : "date inconnue"}
+                          <span className="block text-xs">Tentative {numeroTentative(t)}</span>
                         </td>
                         {(() => {
                           // Note /20 : résultat serveur de CETTE tentative (QCM du snapshot + dernière
