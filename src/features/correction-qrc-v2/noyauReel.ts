@@ -40,6 +40,7 @@ export type TentativeReelle = {
   started_at?: string | null;
   /** Fin enregistrée par le serveur (exam_attempts_v2.finished_at) ; ordre d'affichage seulement. */
   finished_at?: string | null;
+  consultationSeule?:boolean;
 };
 
 export type QrcReelle = {
@@ -311,7 +312,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
 
   const neutralises = neutralisesLus;
   const passages = [
-    ...submittedAttempts.filter((a) => !neutralises.has(a.attempt_id as string)).map((a) => ({ ...a, started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
+    ...submittedAttempts.map((a) => ({ ...a, consultationSeule:neutralises.has(a.attempt_id as string), started_at: a.finished_at ?? a.started_at, circuit: "v2" as const })),
     ...consultationEb2,
     ...legacyResults,
   ];
@@ -543,7 +544,7 @@ export async function chargerSessionTest(
   }
 
   const neutralises = await idsNeutralises();
-  attempts = attempts.filter((a) => !neutralises.has(a.attempt_id as string));
+  attempts = attempts.map(a=>({...a,consultationSeule:neutralises.has(a.attempt_id as string)}));
 
 
 
@@ -555,7 +556,7 @@ export async function chargerSessionTest(
   });
   const nomDe = new Map(apprenants.map((a) => [a.id, `${a.nom} ${a.prenom}`]));
 
-  const attemptIds = attempts.map((a) => a.attempt_id as string);
+  const attemptIds = attempts.filter(a=>!a.consultationSeule).map((a) => a.attempt_id as string);
   const qrc = await parLots(attemptIds, async (lot) => {
     return lirePagesParalleles<QrcReelle>(async (de) => {
       const {data,error} = await supabase

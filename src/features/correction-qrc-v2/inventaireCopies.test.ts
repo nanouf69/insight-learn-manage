@@ -40,12 +40,13 @@ describe("inventaire des copies EB", () => {
         { ...r("t", "EB1"), apprenant_id: "test", qrc: 3 },
       ],
     });
-    expect(attendues.map((a) => a.cle).sort()).toEqual(["ancien:e1", "ancien:q", "consultation:e2", "v-jour", "v-mig", "v-soir"]);
+    expect(attendues.map((a) => a.cle).sort()).toEqual(["ancien:e1", "ancien:q", "consultation:e2", "v-jour", "v-mig", "v-neut", "v-soir"]);
     const res = rapprocher(attendues, new Set(["v-jour", "v-mig", cleAffichage("consultation", "e2")]));
-    expect(res.attendues).toBe(6);
+    expect(res.attendues).toBe(7);
     expect(res.visibles).toBe(3);
     expect(res.manquantes.map((m) => [m.cle, m.cause])).toEqual([
       ["v-soir", "Passage V2 terminé absent de la grille"],
+      ["v-neut", "Passage V2 terminé absent de la grille"],
       ["ancien:e1", "Copie historique non migrée absente de l'ancien circuit"],
       ["ancien:q", "Copie historique non migrée absente de l'ancien circuit"],
     ]);

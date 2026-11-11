@@ -87,7 +87,7 @@ export function inventaireAttendu(params: {
   for (const m of params.miroirs ?? []) migres.add(m);
   const out: CopieAttendue[] = [];
   for (const t of params.tentatives) {
-    if (params.exclus.has(t.apprenant_id) || t.etat !== "terminee" || params.neutralises.has(t.attempt_id)) continue;
+    if (params.exclus.has(t.apprenant_id) || t.etat !== "terminee") continue;
     if (!estExamenBlancReel(t.exam_id)) continue;
     const n = params.qrcParTentative.get(t.attempt_id) ?? 0;
     out.push({ cle: t.attempt_id, apprenant_id: t.apprenant_id, exam_id: t.exam_id, circuit: "v2", qrc: n, date: null });

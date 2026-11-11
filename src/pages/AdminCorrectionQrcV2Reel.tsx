@@ -1132,10 +1132,10 @@ export default function AdminCorrectionQrcV2Reel() {
             <CopiesHistoriquesLecture resultIds={legacyResultIds ?? []} />
           </div>
         ) : <div style={{ zoom: `${zoom}%` }} className="space-y-6">
-        {(session?.tentatives??[]).filter(t=>t.attempt_id===passageFiltre&&!t.snapshot.questions.some(q=>q.type==='QRC')).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
+        {(session?.tentatives??[]).filter(t=>(t.attempt_id===passageFiltre||(!passageFiltre&&t.consultationSeule))&&(t.consultationSeule||!t.snapshot.questions.some(q=>q.type==='QRC'))).map(t=><CopieNativeLecture key={t.attempt_id} tentative={t}/>)}
         {!passageFiltre&&!!legacyResultIds?.length&&<section aria-label="Archives du catalogue"><h2 className="font-semibold">Copies archivées — consultation seule</h2><p className="text-sm text-muted-foreground">Provenance historique conservée. Identité ou barème non prouvé : aucune notation possible.</p><CopiesHistoriquesLecture resultIds={legacyResultIds}/></section>}
         {matieres.map((m) => {
-          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => (!passageFiltre || t.attempt_id === passageFiltre) &&
+          const tentatives = ordonnerCandidatsParFin((session?.tentatives ?? []).filter((t) => !t.consultationSeule&&(!passageFiltre || t.attempt_id === passageFiltre) &&
             (t.snapshot.matieres ?? []).some((x) => x.subject_id === m.subject_id),
           ));
           // Plusieurs dates peuvent coexister sous le même EB : on réunit les questions QRC
