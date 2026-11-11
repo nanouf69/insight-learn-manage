@@ -26,10 +26,10 @@ class Access(unittest.TestCase):
  def cleanup(c):
   subprocess.run(AS+['pg_ctl','-D',c.d+'/db','-m','immediate','stop'],env=c.env,capture_output=True);shutil.rmtree(c.d,ignore_errors=True)
  def call(self,q,uid=ADMIN,check=True):return self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{uid}';"+q,check)
- def setUp(self):self.sql('BEGIN') if False else None
  def set_access(self,opened,session=S,expected=None,op=None,check=True,uid=ADMIN):
   op=op or str(uuid.uuid4());name='VTC SOIR' if session==S else 'TAXI JOUR'
-  r=self.call(f"SELECT admin_set_session_exam_access('{op}','{session}','EB3',{str(opened).lower()},{J(expected) if expected else 'NULL'},'{name}')",uid,check)
+  expected_sql="'"+expected+"'" if expected else 'NULL'
+  r=self.call(f"SELECT admin_set_session_exam_access('{op}','{session}','EB3',{str(opened).lower()},{expected_sql},'{name}')",uid,check)
   return op,r
  def current(self,session=S):return self.sql(f"SELECT operation_id FROM session_exam_access_events WHERE session_id='{session}' AND exam_id='EB3' ORDER BY revision DESC LIMIT 1").stdout.strip() or None
  def gate(self,exam='EB3',check=True):return self.sql(f"SELECT assert_session_exam_start('{A}','{exam}')",check)
