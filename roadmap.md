@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 18:49 — Présence à la date de l’examen choisi
+- [ ] Vérifier les sources de planning et Alpha Barry en lecture seule, sans attribuer un EB inconnu.
+- [ ] Remplacer le jour automatique par une date explicite sans présélection ; distinguer absence déclarée et non-émargement, préserver les preuves valables.
+- [ ] Tester dates historiques/futures/ambiguës, signatures techniques et aperçu sans mutation ni publication.
+
 ## 11/11 17:52 — Notes par session autonome
 - [x] Onglet principal après l'archive QRC, référentiel CRM seul (sessions sans copies incluses), anciens liens redirigés avant les hooks de correction.
 - [x] Admin réel Chromium : onglet actif, accès direct, retour navigateur, ancien lien avec session conservée et clic MEMDOUH vers copie nationale exacte (4 cellules) ; aucune requête de copie avant sélection, 5 tests PASS, aucune publication ni donnée modifiée.
