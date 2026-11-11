@@ -1,5 +1,15 @@
 # Sécurité routière Bilan examen — 11/11/2026 09:18 UTC
 
+## Actualisation ciblée 09:49:39 UTC — ACTIF pour les nouveaux reçus TAXI 11/602
+- Après modification externe de la source à 09:40:53, les seules divergences canoniques étaient les choix des positions 71 et 78 (IDs VTC 71/78, IDs TAXI 262/269).
+- Migration additive 0267 : journal `bilan_sr_taxi_release_revisions` immuable ; contraintes et publication 0266 intactes ; `bilan_future_open` sélectionne le dernier release TAXI seulement après avoir rendu tout reçu déjà existant.
+- Nouvelle version : `cd3413ee-12d4-4beb-9117-5dddea70d63c`, publication `576b8f4e-4331-4867-a647-09069622435d`, activée 09:49:39.550785 UTC. Source MD5 `c5c4b4b3313ab958c92275923e0c5eea`, verrouillée et contrôlée dans la même transaction que les deux INSERT.
+- SELECT après activation : 255 positions, 255 IDs du release précédent conservés, 65 images source/65 cible, zéro divergence canonique et zéro différence de référence/absence/taille normalisée. Seules les positions 71/78 diffèrent de la version précédente ; zéro différence hors choix.
+- Avant/après : 88/88 reçus identiques par empreinte, 9/9 versions préexistantes identiques ; une version et une publication ajoutées. Empreinte globale module_editor_state `40e2e02bd1d78e7de5dcc55736421132` inchangée ; source VTC et historique TAXI 252 intacts, release 0266 `cbf12902a40faad2a78b167ad215bb69` intact. Aucun autre INSERT/UPDATE/DELETE métier demandé ou exécuté par ce chantier.
+- Test PostgreSQL jetable rejoué PASS : première et deuxième publication, ancien brouillon/reçu inchangé, VTC et autre matière inchangés, ID/order/images, droits, refus source périmée et journal immuable. Aucun compte réel utilisé en écriture pour tester le passage.
+- Scan sécurité complet : aucune finding sur le nouveau journal ; huit findings préexistantes hors périmètre non modifiées. Build automatique observé OK ; aucun frontend modifié/publié ni effet sur le chantier reset, aucun mail ou appel IA.
+- Les limites historiques ci-dessous restent applicables : anciens passages et futur VTC non basculés. Ce chantier ne rend pas toutes les anciennes copies VTC/TAXI identiques.
+
 ## Verdict : ACTIF pour les nouveaux reçus du circuit futur TAXI 11/602 ; pas un alignement global des anciennes banques
 Migration 0266 installée ; publication ajoutée le 11/11/2026 à 09:24:08.799388 UTC.
 Version : `c0c912d9-9937-48ed-84fa-7dbe159b606c`.

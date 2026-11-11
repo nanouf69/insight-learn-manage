@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 09:43 — Nouvelle version future SR TAXI
-- [ ] Prouver les écarts 71/78, identité et empreinte source fraîche ; contrôler transactions pertinentes.
-- [ ] Extension additive de 0266 et test PostgreSQL jetable : IDs conservés, reçus/anciennes versions intacts.
-- [ ] Activer uniquement TAXI 11/602 puis SELECT 255 positions/65 images/tailles ; aucune autre écriture métier.
+- [x] Écarts choix 71/78 seuls, source c5c4b4b3313ab958c92275923e0c5eea ; aucune transaction pertinente active observée, source verrouillée/revérifiée à l'activation.
+- [x] Migration additive 0267 + test PostgreSQL jetable PASS : 255 IDs conservés, anciens reçus/versions intacts, droits et refus périmé.
+- [x] Version cd3413ee-12d4-4beb-9117-5dddea70d63c active 09:49:39 UTC, SELECT 255 positions/65 images/0 divergence ; 88 reçus et 9 versions précédentes identiques, modules/source/release 0266 identiques. Aucun frontend, reset, mail ou IA.
 
 ## 11/11 09:27 — Bouton matière Arezki : dépendances absentes
 - [x] SELECT Arezki EB3 A : V2 en_cours, sans résultat, à reprendre ; RPC admin absentes, aucune autorisation/tentative réelle.
