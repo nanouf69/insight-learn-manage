@@ -9,6 +9,7 @@ class Integration(base.Integrated):
  def setUpClass(c):
   super().setUpClass()
   c.sql(Path('docs/sql-revue/2026-11-11-exam-reset-cancellation-integration.sql').read_text())
+  c.env['PGCLIENTENCODING']='UTF8'
  def test_integrated_visibility_rights_legacy_and_v2_starts(self):
   # Superseded acquired test is not repeated.
   pass
