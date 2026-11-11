@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { fichesIdentiques } from "@/lib/noteExamenAffichee";
 import { listerGroupesCrm, type GroupeSessionCrm } from "@/features/correction-qrc-v2/noyauReel";
 
-export type CopieHistorique = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string | null; details: any };
-type Passage = { attempt_id: string; apprenant_id: string; exam_id: string; snapshot: any };
+type QuestionConservee = { id?: string | number; questionId?: string | number; enonce?: string };
+type DetailsConserves = { reponses?: Record<string, unknown>; snapshot?: { questions?: QuestionConservee[] }; questions?: QuestionConservee[] };
+export type CopieHistorique = { id: string; apprenant_id: string; quiz_id: string; matiere_id: string; tentative: number | null; completed_at: string | null; details: DetailsConserves };
+type Passage = { attempt_id: string; apprenant_id: string; exam_id: string; snapshot: { source_historique?: { result_id?: string; tentative?: number; details?: DetailsConserves } } };
 export function passageExact(row: CopieHistorique, passages: Passage[]): Passage | null {
   const candidats = passages.filter(p => p.apprenant_id === row.apprenant_id && p.exam_id === row.quiz_id && p.snapshot?.source_historique?.result_id === row.id
     && Number(p.snapshot.source_historique.tentative) === row.tentative && fichesIdentiques(p.snapshot.source_historique.details, row.details));
@@ -28,7 +30,7 @@ export function LectureCopieSelectionnee({ row }: { row: CopieHistorique }) {
     <p className="text-sm">Tentative {row.tentative ?? "inconnue"} · {row.completed_at ? new Date(row.completed_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "Date non enregistrée"}</p>
     <p className="text-xs text-muted-foreground">Identifiant de copie : {row.id}</p>
     <p className="text-sm font-semibold">{Object.values(reponses).filter(v => v != null && String(v).trim()).length} réponses enregistrées</p>
-    {Array.isArray(questions) ? questions.map((q: any, i: number) => {
+    {Array.isArray(questions) ? questions.map((q: QuestionConservee, i: number) => {
       const id = String(q.id ?? q.questionId ?? "");
       const answer = reponses[id];
       return <div key={`${id}-${i}`} className="border-t pt-3"><p className="font-medium">Q{id} — {q.enonce ?? "Énoncé non conservé"}</p><p className="whitespace-pre-wrap mt-1">{answer == null || String(answer).trim() === "" ? "Sans réponse enregistrée" : Array.isArray(answer) ? answer.join(" + ") : String(answer)}</p></div>;
