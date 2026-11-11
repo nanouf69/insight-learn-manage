@@ -1,7 +1,7 @@
 import type {InfosHistorique} from './eb2Consultation';
 import {ordonnerCandidatsParFin} from './ordreCandidats';
 import {origineCorrection,type QrcReelle,type SessionReelle} from './noyauReel';
-export type VueQrc='corriger'|'valider'|'verifier'|'historique';
+export type VueQrc='corriger'|'valider'|'verifier'|'historique'|'toutes';
 /** Display only. Never authorizes a write or changes persisted grading state. */
 export function statutFile(q:QrcReelle,s:SessionReelle):VueQrc {
  const t=s.tentatives.find(t=>t.attempt_id===q.attempt_id);
@@ -13,7 +13,7 @@ export function statutFile(q:QrcReelle,s:SessionReelle):VueQrc {
  if(q.etat==='corrigee')return origineCorrection(q)==='ia'?(notable?'valider':'verifier'):'historique';
  return notable?'corriger':'verifier';
 }
-export function qrcDansVue(s:SessionReelle|null,vue:VueQrc,passage:string|null=null){return s?.qrc.filter(q=>(!passage||q.attempt_id===passage)&&statutFile(q,s)===vue)??[];}
+export function qrcDansVue(s:SessionReelle|null,vue:VueQrc,passage:string|null=null){return s?.qrc.filter(q=>(!passage||q.attempt_id===passage)&&(vue==='toutes'||statutFile(q,s)===vue))??[];}
 export function voisineFile(s:SessionReelle|null,vue:VueQrc,selection:string|null,direction:-1|1,passage:string|null=null){
  const ordre=ordonnerCandidatsParFin(s?.tentatives??[]).map(t=>t.attempt_id);
  const file=qrcDansVue(s,vue,passage).sort((a,b)=>ordre.indexOf(a.attempt_id)-ordre.indexOf(b.attempt_id));
