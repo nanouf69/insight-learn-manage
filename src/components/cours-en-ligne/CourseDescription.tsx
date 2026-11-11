@@ -58,7 +58,8 @@ export function CourseDescription({ value }: { value?: string | null }) {
       if (['bold', 'normal', '400', '700'].includes(source.fontWeight)) style.fontWeight = source.fontWeight;
       if (['italic', 'normal'].includes(source.fontStyle)) style.fontStyle = source.fontStyle;
       if (['underline', 'line-through', 'none'].includes(source.textDecoration)) style.textDecoration = source.textDecoration;
-      return React.createElement(tag === 'font' ? 'span' : tag, { key, style }, tag === 'br' ? undefined : children);
+      const renderedTag = tag === 'font' ? 'span' : tag === 'p' && node.querySelector('a[data-course-video="1"]') ? 'div' : tag;
+      return React.createElement(renderedTag, { key, style }, tag === 'br' ? undefined : children);
     };
     return Array.from(doc.body.childNodes).map((n, i) => render(n, String(i)));
   }, [value]);

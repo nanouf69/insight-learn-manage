@@ -3946,6 +3946,12 @@ function RichDescriptionEditor({ value, onChange }: { value: string; onChange: (
         }} />
       </div>
       <div ref={ref} contentEditable suppressContentEditableWarning
+        role="textbox" aria-label="Description / Contenu détaillé" aria-multiline="true"
+        onPaste={e => {
+          e.preventDefault();
+          document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+          emit();
+        }}
         onInput={emit}
         className="min-h-[200px] p-3 text-sm outline-none whitespace-pre-wrap" />
     </div>
@@ -4230,7 +4236,7 @@ const ContentCard = ({
           )}
 
           {item.description && (
-            <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto" dangerouslySetInnerHTML={{ __html: item.description }} />
+            <div className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap max-h-32 overflow-y-auto"><CourseDescription value={item.description} /></div>
           )}
         </div>
         {/* Photos du cours */}

@@ -64,7 +64,7 @@ describe('course-only safe media', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter un lien' }));
     fireEvent.change(screen.getByLabelText('URL'), { target: { value: 'javascript:alert(1)' } });
     fireEvent.change(screen.getByLabelText('Libellé'), { target: { value: 'Quiz' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ajouter', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ajouter$/ }));
     expect(calls).toEqual([]);
     expect(screen.getByRole('alert')).toBeTruthy();
   });
