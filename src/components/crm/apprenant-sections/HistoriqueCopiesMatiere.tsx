@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { fichesIdentiques } from "@/lib/noteExamenAffichee";
 import { listerGroupesCrm, type GroupeSessionCrm } from "@/features/correction-qrc-v2/noyauReel";
@@ -29,7 +29,7 @@ export function LectureCopieSelectionnee({ row }: { row: CopieHistorique }) {
   return <article className="space-y-3 break-words" aria-label="Copie sélectionnée">
     <p className="text-sm">Tentative {row.tentative ?? "inconnue"} · {row.completed_at ? new Date(row.completed_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "Date non enregistrée"}</p>
     <p className="text-xs text-muted-foreground">Identifiant de copie : {row.id}</p>
-    <p className="text-sm font-semibold">{Object.values(reponses).filter(v => v != null && String(v).trim()).length} réponses enregistrées</p>
+    <p className="text-sm font-semibold">{Object.values(reponses).filter(v => v != null && String(v).trim()).length} réponse(s) enregistrée(s)</p>
     {Array.isArray(questions) ? questions.map((q: QuestionConservee, i: number) => {
       const id = String(q.id ?? q.questionId ?? "");
       const answer = reponses[id];
@@ -78,7 +78,7 @@ export default function HistoriqueCopiesMatiere({ account, exam, subject, nom }:
   };
   return <>
     <Button size="sm" variant="outline" onClick={() => { setOuvert(true); setSelected(""); setLien(null); setMessage(""); }}>Historique des copies : {nom}</Button>
-    <Dialog open={ouvert} onOpenChange={v => { generation.current++; setLectureLien(false); setOuvert(v); }}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{exam} · {nom} — Historique des copies</DialogTitle></DialogHeader>
+    <Dialog open={ouvert} onOpenChange={v => { generation.current++; setLectureLien(false); setOuvert(v); }}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{exam} · {nom} — Historique des copies</DialogTitle><DialogDescription>Consultation des réponses conservées pour chaque passage, sans modification.</DialogDescription></DialogHeader>
       {query.isLoading && <p role="status">Lecture des copies…</p>}{query.isError && <p role="alert">Lecture impossible : aucune copie remplacée.</p>}
       {query.data && <><Label htmlFor={`copie-${subject}`}>Choisir explicitement un passage</Label><select id={`copie-${subject}`} className="w-full rounded-md border border-input bg-background p-3 text-sm" value={selected} onChange={e => { generation.current++; setLectureLien(false); setSelected(e.target.value); setLien(null); setMessage(""); }}><option value="">Sélectionner une copie</option>{query.data.map(r => <option key={r.id} value={r.id}>Tentative {r.tentative ?? "?"} · {r.completed_at ? new Date(r.completed_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "Date inconnue"} · {r.id}</option>)}</select>{!query.data.length && <p>Aucune copie enregistrée pour cette matière.</p>}</>}
       {row && <div key={row.id} className="space-y-3"><LectureCopieSelectionnee row={row} /><Button variant="outline" disabled={lectureLien} onClick={() => void rechercherLien()}>Retrouver cette copie dans Correction QRC V2</Button>{message && <p role="status" className="text-xs break-all">{message}</p>}{lien && <Button asChild><a href={lien} target="_blank" rel="noopener noreferrer">Ouvrir cette copie exacte dans le correcteur</a></Button>}</div>}
