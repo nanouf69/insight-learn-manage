@@ -15,8 +15,10 @@ class Contract(unittest.TestCase):
   CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql AS $$SELECT 'authenticated'::text$$;
   CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('sub',auth.uid(),'role',auth.role())$$;
   GRANT USAGE ON SCHEMA auth TO authenticated,anon;GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth TO authenticated,anon;""")
-  schema=subprocess.check_output(['pg_dump','--schema-only','--schema=public','--no-owner'],text=True).replace('CREATE SCHEMA public;','')
-  r=c.sql(schema,False);Path(c.d+'/restore.log').write_text(r.stderr)
+  catalog=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text())
+  c.sql(catalog['schema'])
+  for definition in catalog['functions']:c.sql(definition)
+  c.sql(catalog['rls']);c.sql(catalog['triggers'])
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
   c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');UPDATE apprenants SET modules_autorises=ARRAY[35,36,37,38];INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');")
  @classmethod
