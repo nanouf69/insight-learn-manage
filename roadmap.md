@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 10:56 — Copies V2 expirées et vides : déblocage ciblé
-- [ ] Distinguer une copie active/répondue d'une copie dont l'échéance serveur est dépassée, sans réponse, événement ni résultat ; conserver tous les autres verrous.
-- [ ] Confirmation admin atomique avec neutralisation append-only, ancienne copie consultable, aucune note et démarrage différé côté élève ; tester rejeu, concurrence et données intactes sur base jetable.
-- [ ] Installer uniquement la dépendance serveur si les tests passent, relire le contexte Arezki sans mutation et ne créer aucune autorisation/tentative réelle. Aucun frontend si la version actuelle est compatible.
+- [x] Expiration calculée depuis le snapshot serveur ; réponse, événement, résultat, neutralisation ou provenance ambiguë conservent le verrou. 9 contrats + 14 scénarios PostgreSQL avec déclencheurs réels PASS, dont concurrence, envoi tardif, reprise et résultat nouvelle tentative.
+- [x] Migration 0270 appliquée : confirmation admin atomique, neutralisation append-only et abandon technique sans note ; nouvelle tentative et chrono différés côté élève. Catalogue/droits relus, aucun frontend ajouté ni publié.
+- [x] Aperçu admin Arezki EB3 VTC A : bouton de confirmation actif, dialogue annulé et mutations interceptées. Empreintes copies/réponses/notes identiques ; 0 autorisation, reçu ou neutralisation réelle. Rapport docs/sql-revue/2026-11-11-subject-reset-expired-empty-report.md.
 
 ## 11/11 10:10 — Bouton « Réinitialiser la matière » installé
 - [x] Contrats avec tous les déclencheurs réels (ancien, V2 natif/importé, refus ambigu, copie ouverte, reprise même copie) + 9 contrats + PassageMatiere réel + 25 Vitest PASS.
