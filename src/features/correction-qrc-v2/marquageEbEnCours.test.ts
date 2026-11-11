@@ -38,10 +38,25 @@ describe("ebsLesPlusRecents", () => {
     expect([...ebsLesPlusRecents(g, e, "2026-11-06")]).toEqual(["eb1"]);
   });
   it("égalité exacte : les deux", () => {
-    const e = [{ cle: "a", dates: [{ jour: "2026-11-03", heureMax: "10:00" }] }, { cle: "b", dates: [{ jour: "2026-11-03", heureMax: "10:00" }] }];
+    const e = [{ cle: "EB1", dates: [{ jour: "2026-11-03", heureMax: "10:00" }] }, { cle: "EB2", dates: [{ jour: "2026-11-03", heureMax: "10:00" }] }];
     expect(ebsLesPlusRecents(g, e, "2026-11-06").size).toBe(2);
   });
   it("session non en cours : rien", () => {
     expect(ebsLesPlusRecents({ ...g, fin: "2026-11-05" }, ex, "2026-11-06").size).toBe(0);
+  });
+  it('session mixte 2–13 novembre : EB4 VTC et TAXI courants, EB3 TAXI et EB5 VTC historiques neutres',()=>{
+    const examens=[
+      {cle:'session::EB4',exam_id:'EB4',dates:[{jour:'2026-11-11',heureMax:'15:00'}]},
+      {cle:'session::EB4-TAXI',exam_id:'EB4-TAXI',dates:[{jour:'2026-11-11',heureMax:'11:00'}]},
+      {cle:'session::EB3-TAXI',exam_id:'EB3-TAXI',dates:[{jour:'2026-11-10',heureMax:'16:00'}]},
+      {cle:'session::EB5',exam_id:'EB5',dates:[{jour:'2026-11-07',heureMax:'16:00'}]},
+    ];
+    const avant=structuredClone(examens);
+    expect([...ebsLesPlusRecents({type:'crm',debut:'2026-11-02',fin:'2026-11-13'},examens,'2026-11-11')]).toEqual(['session::EB4','session::EB4-TAXI']);
+    expect(examens).toEqual(avant);
+  });
+  it('identité inconnue, jours futurs ou hors session ne gagnent pas',()=>{
+    const examens=[{cle:'EB1',dates:[{jour:'2026-11-03',heureMax:'10:00'}]},{cle:'EB2',dates:[{jour:'2026-11-12',heureMax:'10:00'}]},{cle:'EB3',dates:[{jour:'2026-10-31',heureMax:'10:00'}]},{cle:'inconnu',dates:[{jour:'2026-11-11',heureMax:'20:00'}]}];
+    expect([...ebsLesPlusRecents(g,examens,'2026-11-11')]).toEqual(['EB1']);
   });
 });

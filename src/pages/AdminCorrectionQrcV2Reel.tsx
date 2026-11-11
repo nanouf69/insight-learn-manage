@@ -990,14 +990,14 @@ function CorrectionQrcReelle() {
             </select>
             <select
               data-testid="choix-eb"
-              className={`min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm ${ebChoisi && ebsRecents.has(ebChoisi.cle) ? "text-red-600 font-semibold" : ""}`}
-              title={ebChoisi && ebsRecents.has(ebChoisi.cle) ? "Dernier examen blanc réalisé par la session CRM en cours sélectionnée" : undefined}
+              className={`min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm ${ebChoisi && ebsRecents.has(ebChoisi.cle) ? "text-destructive font-semibold" : "text-foreground"}`}
+              title={ebChoisi && ebsRecents.has(ebChoisi.cle) ? "Dernier examen blanc réalisé pour cette filière dans la session CRM en cours sélectionnée" : undefined}
               value={ebCle ?? ""}
               onChange={(e) => setEbCle(e.target.value)}
             >
               {ebCle&&!ebChoisi&&<option value={ebCle}>{libelleExamen(ebCle.split('::').at(-1)??ebCle)} — Aucun passage remis dans cette session</option>}
               {(groupeChoisi?.examens ?? []).map((e) => (
-                <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-red-600 font-semibold" : undefined}>
+                <option key={e.cle} value={e.cle} className={ebsRecents.has(e.cle) ? "text-destructive font-semibold" : "text-foreground font-normal"}>
                   {ebsRecents.has(e.cle) ? PREFIXE_EN_COURS : ""}{libelleExamen(e.exam_id)} — {e.attemptIds.length} passage{e.attemptIds.length > 1 ? "s" : ""}
                   {" · "}
                   {e.dates.map((d) => `${d.date} (${d.attemptIds.length})`).join(" • ")}
