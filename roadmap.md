@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 12:03 — EB4–6 : remise ancienne vers correction manuelle V2
-- [ ] Inventorier les copies par identité exacte, remise, réponses et snapshot ; distinguer V2 prouvé, correction validée et revue.
-- [ ] Vérifier puis tester un raccordement durable atomique/idempotent à la remise et à la reprise, sans IA, note ni modification des originaux.
-- [ ] Activer seulement après parcours isolés complets et contrôle des déclencheurs ; rattraper uniquement les copies univoques, vérifier avant/après et production.
+- [x] SELECT retrouve 99 lignes indicatives (40/31/28) : 98 lignes de réponses non remises, une remise EB6 avec instant divergent. Aucune de ces 99 n'a une preuve de remise suffisante. Douze versions publiées confirmées ; compteurs V2 séparés, sans assimilation d'autres tentatives.
+- [x] Candidat SQL séparé, neuf contrats PostgreSQL jetables PASS avec déclencheurs réels : douze variantes, conservation contenu/images/taille/notes, refus compteur/réponses/instant/droits, rejeu concurrent et correction manuelle fictive → résultat 20/20. Aucun flux apprenant complet ni production validés.
+- [ ] Activation/rattrapage BLOQUÉS : snapshot ancien modifiable via droits élève ; preuve serveur de version figée absente, reprise ancienne restaure le sujet courant, remise classique restée in_progress. Exclusion IA par copie obligatoire non installée ; reprise après ACK/UI revue non intégrées. Aucun SQL installé, rattachement réel, note, IA ni publication. Voir docs/eb456-raccordement-manuel-2026-11-11.md.
 
 ## 11/11 11:18 — Devis formation continue : information écrite annulation/remboursement
 - [x] CGV/délais existants relus sans modification ; case FC non précochée et obligatoire, texte complet identité/session/motif, email/LRAR/adresse officielle, aucune renonciation ni nouveau délai. Formations initiales et historiques signés exclus.

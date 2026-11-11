@@ -1,3 +1,7 @@
+-- CANDIDATE ONLY — NOT APPROVED FOR DEPLOYMENT.
+-- BLOCKERS: server-owned frozen source proof, legacy resume/submit E2E,
+-- durable ACK-loss resume, UI review exposure and mandatory AI eligibility exclusion.
+-- The local contracts prove transport, not the authenticity of learner-writable snapshots.
 -- EB4–6 only. Original rows and grades remain unchanged. No AI authorization.
 CREATE TABLE public.eb456_raccordements_revue (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
