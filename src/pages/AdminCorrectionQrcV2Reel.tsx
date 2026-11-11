@@ -713,7 +713,7 @@ export default function AdminCorrectionQrcV2Reel() {
           : await recharger();
       if (import.meta.env.DEV) console.info(`[qrc-v2] note enregistrée et relue en ${Math.round(performance.now() - t0)} ms`);
       const sessionNavigation = passageFiltre ? { ...sessionRelue, tentatives: sessionRelue.tentatives.filter(t=>t.attempt_id===passageFiltre), qrc: sessionRelue.qrc.filter(q=>q.attempt_id===passageFiltre) } : sessionRelue;
-      const navigationRestante={...sessionNavigation,qrc:sessionNavigation.qrc.filter(q=>q.qrc_instance_id===qrcSel.qrc_instance_id||statutFile(q,sessionNavigation)===vueTravail)};
+      const navigationRestante={...sessionNavigation,qrc:sessionNavigation.qrc.filter(q=>vueTravail==='historique'||q.qrc_instance_id===qrcSel.qrc_instance_id||statutFile(q,sessionNavigation)===vueTravail)};
       const decision = decisionApresCorrection(navigationRestante, qrcSel.qrc_instance_id, n);
       if (decision.statut === "non_confirmee") {
         setEtatEnvoi("echec");
@@ -825,7 +825,7 @@ export default function AdminCorrectionQrcV2Reel() {
     }
   };
 
-  const sessionNavigation = session?{...session,qrc:qrcDansVue(session,vueTravail,passageFiltre)}:null;
+  const sessionNavigation = session?{...session,qrc:vueTravail==='historique'?session.qrc.filter(q=>!passageFiltre||q.attempt_id===passageFiltre):qrcDansVue(session,vueTravail,passageFiltre)}:null;
   const ordreFile=ordonnerCandidatsParFin(session?.tentatives??[]).map(t=>t.attempt_id);
   const fileVisible=qrcDansVue(session,vueTravail,passageFiltre).sort((a,b)=>ordreFile.indexOf(a.attempt_id)-ordreFile.indexOf(b.attempt_id));
   const copiePrecedente = copieVoisine(sessionNavigation, selection, -1);
