@@ -10507,6 +10507,10 @@ export type Database = {
         }
         Returns: Json
       }
+      exam_subject_reset_expired_empty: {
+        Args: { p_attempt_id: string; p_source_exercice_id: string }
+        Returns: boolean
+      }
       examens_blancs_controle: {
         Args: { _apprenant_id: string; _module_id: number }
         Returns: Json
