@@ -1,0 +1,13 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ExamensBlancsResetTab from '@/components/crm/apprenant-sections/ExamensBlancsResetTab';
+import { EXAMENS_BLANCS_TAXI } from '@/components/cours-en-ligne/examens-blancs-data';
+import '@/index.css';
+const client = new QueryClient({defaultOptions: {queries: {retry: false, staleTime: Infinity}}});
+client.setQueryData(['examens-blancs-live'], EXAMENS_BLANCS_TAXI);
+const notes = [['t3p', 2], ['gestion', 13], ['securite', 14], ['francais', 9.5], ['anglais', 9], ['reglementation_taxi', 14], ['reglementation_taxi2', 18]] as const;
+const group = {examenNum: 3, examenLabel: 'Examen Blanc 3 — TAXI', type:'taxi', quizId: 'EB3-TAXI', totalScore: 0, totalMax: 140, lastDate:'2026-11-09T20:21:19Z', results: notes.map(([id, note]) => ({result_id:id, quiz_id:'EB3-TAXI', matiere_id:id, matiere_nom:id, score_obtenu:id==='t3p'?0:note, score_max:20, completed_at:'2026-11-09T20:21:19Z', details:{}, __core: {note20:note,pending:false,noteEliminatoire:id==='anglais'?4:6,noteSur:20}}))};
+for(let tick=0;tick<5;tick++) client.setQueryData(['examen-blanc-results-admin','fiction-only',tick],[group]);
+const root = document.getElementById('root');
+if (root) createRoot(root).render(<QueryClientProvider client={client}><main className="p-4"><ExamensBlancsResetTab apprenant={{id:'fiction-only',prenom:'Test',nom:'FICTIF'}}/></main></QueryClientProvider>);
