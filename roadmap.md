@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 17:41 — Absence du jour dans Notes par session
+- [x] Lecture admin en lots session/jour, créneaux des inscriptions retenues tous terminés et cours prouvé par signatures des inscrits ; papier/heures/signature partielle inhibent Absent, erreur = aucun indicateur.
+- [x] HAMDI confirmé absent en lecture réelle dans ses deux sessions ; 13 tests PASS et six cas navigateur fictifs PC/mobile, encadré indépendant, aucune écriture ni publication.
+
 ## 11/11 17:30 — Liens des notes en attente
 - [x] Lien accessible nouvel onglet session/examen exact/apprenant stable vers À corriger, contexte vide conservé, aucun passage arbitraire ; pas de filtre matière existant, aucun identifiant déduit.
 - [x] 5 tests PASS et clics navigateur fictifs Tous VTC/TAXI + cellule matière vers vrai écran simulé ; actualisation des cadres conservée, aucune mutation ni publication.
