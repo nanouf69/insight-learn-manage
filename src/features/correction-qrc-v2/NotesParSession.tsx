@@ -13,7 +13,7 @@ const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='d
 const motifs={publication:'Publication en attente — aucune QRC à corriger',non_rattachee:'Copie non rattachée au circuit de correction',ambigue:'Session de la copie à vérifier'} as const;
 export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=souscrireNotesSession,chargerAbsences=chargerAbsentsSessionJour}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession;souscrire?:typeof souscrireNotesSession;chargerAbsences?:typeof chargerAbsentsSessionJour}){
   const [examenId,setExamenId]=useState('tous');
-  const [cle,setCle]=useState<string|null>(null);const [releve,setReleve]=useState<ReleveSession|null>(null);const [erreur,setErreur]=useState<string|null>(null);const [loading,setLoading]=useState(false);const [retry,setRetry]=useState(0);
+  const [cle,setCle]=useState<string|null>(()=>new URLSearchParams(window.location.search).get('notes_session'));const [releve,setReleve]=useState<ReleveSession|null>(null);const [erreur,setErreur]=useState<string|null>(null);const [loading,setLoading]=useState(false);const [retry,setRetry]=useState(0);
   const lecture=useRef<Promise<void>|null>(null);
   const absents=useAbsentsSessionJour(cle,chargerAbsences);
   const actualiser=useRef<()=>void>(()=>{});
