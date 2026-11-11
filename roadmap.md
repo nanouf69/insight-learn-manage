@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 14:45 — File QRC de travail prioritaire
-- [ ] Vue par défaut QRC notables restantes uniquement ; archives/inventaire secondaires, IA À valider et non notables À vérifier séparés.
-- [ ] Navigation après relecture, zéro validé exclu, contexte conservé ; tests ciblés et aperçu sans mutation/publication.
+- [x] Vue par défaut QRC notables restantes uniquement ; archives/inventaire secondaires, IA À valider et non notables À vérifier séparés.
+- [x] Navigation après relecture, zéro validé exclu, contexte conservé ; 53 tests PASS, aperçu PC/mobile fictif sans mutation/publication.
 
 ## 11/11 14:29 — Catalogue QRC unique
 - [x] Archives/ambiguïtés intégrées au menu normal session/examen, consultation seule ; zéro entrée Ancien circuit, sources conservées.

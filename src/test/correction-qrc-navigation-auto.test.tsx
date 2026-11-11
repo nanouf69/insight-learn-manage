@@ -182,10 +182,10 @@ describe("Correction QRC — passage automatique après confirmation de persista
     etat.session.tentatives[1].consultationSeule=true;
     render(ecran());
     await screen.findByText('Aucune question à corriger');
-    fireEvent.click(screen.getByRole('button',{name:'À valider',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'À valider'}));
     expect(await screen.findByTestId('cellule-a1-q1')).toBeTruthy();
     expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();
-    fireEvent.click(screen.getByRole('button',{name:'À vérifier',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'À vérifier'}));
     await screen.findByText('À vérifier — consultation seule, notation indisponible.');
     expect(screen.queryByTestId('cellule-a2-q1')).toBeNull();
     expect(mocks.corriger).not.toHaveBeenCalled();
