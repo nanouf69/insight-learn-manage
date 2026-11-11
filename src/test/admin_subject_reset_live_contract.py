@@ -51,7 +51,7 @@ class Live(base.Contract):
  def learner_submit_legacy(self,key,tentative,mid,exam,score):
   # Same writes as the learner path: edge upsert of answers, then client upsert of the result with the receipt tentative.
   self.sql(f"SET request.jwt.claim.sub='{U}';UPDATE reponses_apprenants SET reponses='{{\"1\":[\"A\"]}}',completed=true,status='submitted',submitted_at=now() WHERE apprenant_id='{A}' AND exercice_id='{key}'")
-  self.call(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,score_obtenu,score_max,note_sur_20,tentative,details) VALUES('{A}','{U}','examen_blanc','{exam}','Fictif','{mid}','Fictif',{score},20,{score},{tentative},'{{}}') ON CONFLICT (apprenant_id,quiz_id,matiere_id,tentative) DO UPDATE SET score_obtenu=EXCLUDED.score_obtenu",U)
+  out=self.call(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,score_obtenu,score_max,note_sur_20,tentative,details) VALUES('{A}','{U}','examen_blanc','{exam}','Fictif','{mid}','Fictif',{score},20,{score},{tentative},'{{}}') ON CONFLICT (apprenant_id,quiz_id,matiere_id,tentative) DO UPDATE SET score_obtenu=EXCLUDED.score_obtenu",U);print('STDERR',out.stderr)
  def test_00_all_live_triggers_installed(self):
   self.assertGreaterEqual(len(self.installed),30)
   for t in ['trg_qrc_ia_enfiler_passage@public.exam_attempts_v2','trg_zz_examens_blancs_6_sur_6@public.apprenant_quiz_results','trg_ensure_quiz_result_on_matiere_completion@public.reponses_apprenants','trg_auto_send_pratique_booking@public.apprenant_module_completion','trg_set_next_quiz_tentative@public.apprenant_quiz_results']:
