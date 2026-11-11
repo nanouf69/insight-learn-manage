@@ -55,6 +55,30 @@ class Contract(unittest.TestCase):
    self.assertEqual(p.sql(f"SET test.uid='{owners[0]}'; SELECT bilan_future_resume('{rid}')->'answers'->'1'->'answer'"),'["A"]')
    self.assertEqual(p.sql(f"SET test.uid='{owners[1]}'; SELECT bilan_future_open(11,602)->>'id'"),nr)
    self.assertEqual(p.sql("SELECT count(*) FROM bilan_sr_taxi_releases"),'1')
+   # Successor is additive; only choices at 71/78 change, same IDs and frozen receipts.
+   p.sql((ROOT/'docs/sql-revue/2026-11-11-bilan-sr-taxi-revision.sql').read_text())
+   frozen=p.sql("SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM bilan_future_receipts r")
+   changed=json.loads(json.dumps(source)); revised=json.loads(json.dumps(target))
+   for pos in [71,78]:
+    choices=[{'lettre':'A','texte':'Oui','correct':False},{'lettre':'B','texte':'Non','correct':True}]
+    changed[pos-1]['choix']=choices;revised[pos-1]['choix']=choices
+   current={'id':502,'questions':changed}
+   p.sql(f"UPDATE module_editor_state SET module_data={L({'exercices':[current]})} WHERE module_id=5")
+   nextid=p.sql(f"INSERT INTO bilan_future_versions(subject,questions,fingerprint) VALUES(2,{L(revised)},md5({L(revised)}::text)) RETURNING id")
+   revision=f"INSERT INTO bilan_sr_taxi_release_revisions(operation,previous_version_id,version_id,source_fingerprint,mapping) VALUES('bilan_sr_taxi_20261111_094053','{newid}','{nextid}',md5({L(current)}::text),{L(mapping)})"
+   self.assertIn('stale_sr_source_or_predecessor',p.sql(revision.replace('md5('+L(current)+'::text)',"'stale'"),False))
+   p.sql(revision)
+   self.assertEqual(frozen,p.sql("SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM bilan_future_receipts r"))
+   self.assertEqual(p.sql(f"SET test.uid='{owners[1]}'; SELECT bilan_future_open(11,602)->>'version_id'"),newid)
+   self.assertEqual(p.sql(f"SET test.uid='{owners[3]}'; SELECT bilan_future_open(11,602)->>'version_id'"),nextid)
+   self.assertEqual(p.sql(f"SET test.uid='{owners[4]}'; SELECT bilan_future_open(5,502)->>'version_id'"),oldid)
+   stored=json.loads(p.sql(f"SELECT questions FROM bilan_future_versions WHERE id='{nextid}'"))
+   self.assertEqual([x['id'] for x in stored],[x['id'] for x in target])
+   self.assertEqual([i+1 for i,(a,b) in enumerate(zip(target,stored)) if a!=b],[71,78])
+   self.assertEqual(sum(bool(x.get('image')) for x in stored),sum(bool(x.get('image')) for x in target))
+   self.assertIn('immutable',p.sql("UPDATE bilan_sr_taxi_release_revisions SET source_fingerprint='x'",False))
+   self.assertIn('permission denied',p.sql("SET ROLE authenticated; INSERT INTO bilan_sr_taxi_release_revisions(operation) VALUES('x')",False))
+   self.assertEqual(p.sql(f"SELECT questions={L(target)} FROM bilan_future_versions WHERE id='{newid}'"),'t')
    print('PASS: 255 ordered positions/images, no keys leaked, source/legacy unchanged, old draft/readback unchanged, scoped TAXI release, rights, stale refusal, immutable history, replay')
   finally: p.stop()
 if __name__=='__main__': unittest.main()

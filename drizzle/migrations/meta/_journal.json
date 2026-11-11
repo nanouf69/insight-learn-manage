@@ -1870,6 +1870,13 @@
       "when": 1794389028168,
       "tag": "0266_bilan_sr_taxi_future_only",
       "breakpoints": true
+    },
+    {
+      "idx": 267,
+      "version": "7",
+      "when": 1794390561486,
+      "tag": "0267_bilan_sr_taxi_two_choice_revision",
+      "breakpoints": true
     }
   ]
 }

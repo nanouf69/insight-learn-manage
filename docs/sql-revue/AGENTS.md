@@ -1,2 +1,3 @@
 # Targeted Bilan releases
 - Road-safety alignment uses an immutable release scoped to module 11/exercise 602 for new future receipts only; never mutate editor banks or existing receipts to publish it, because unversioned legacy responses still depend on the old bank.
+- Road-safety release successors use a separate immutable revision journal and preserve predecessor IDs with exact source/order proof; why: the original one-shot release constraint remains intact and started receipts never switch versions.
