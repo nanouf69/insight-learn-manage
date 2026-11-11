@@ -2126,6 +2126,53 @@ export type Database = {
         }
         Relationships: []
       }
+      bilan_sr_taxi_releases: {
+        Row: {
+          activated_at: string
+          exercise_id: number
+          id: string
+          mapping: Json
+          module_id: number
+          operation: string
+          previous_value: Json
+          source_fingerprint: string
+          target_fingerprint: string
+          version_id: string
+        }
+        Insert: {
+          activated_at?: string
+          exercise_id?: number
+          id?: string
+          mapping: Json
+          module_id?: number
+          operation: string
+          previous_value: Json
+          source_fingerprint: string
+          target_fingerprint: string
+          version_id: string
+        }
+        Update: {
+          activated_at?: string
+          exercise_id?: number
+          id?: string
+          mapping?: Json
+          module_id?: number
+          operation?: string
+          previous_value?: Json
+          source_fingerprint?: string
+          target_fingerprint?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilan_sr_taxi_releases_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "bilan_future_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bilan_sync_backups: {
         Row: {
           created_at: string
