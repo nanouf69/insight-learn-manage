@@ -14,20 +14,23 @@ export function prefixeEb(g: GroupeMarquable | null | undefined, jourParis: stri
   return groupeEnCours(g, jourParis) ? PREFIXE_EN_COURS : "";
 }
 
-// Critère « dernier EB réalisé » : dans la session CRM en cours sélectionnée,
-// seul(s) l'EB (ou les EB à égalité exacte) dont le passage le plus récent
-// (jour + heure réels du passage) est le plus tardif est marqué. Jamais le numéro d'EB.
+// Latest recorded EB per proven track in the current CRM session, not one global winner.
+// Unknown exam identities never supply an inferred track; future/out-of-session days are excluded.
 export interface EbDate { jour: string; heureMax: string }
-export interface EbMarquable { cle: string; dates: EbDate[] }
+export interface EbMarquable { cle: string; exam_id?: string; dates: EbDate[] }
 
-const instantMax = (e: EbMarquable) =>
-  e.dates.reduce((m, d) => { const k = `${d.jour}T${d.heureMax}`; return k > m ? k : m; }, "");
+const filiere = (e: EbMarquable) => {
+  const id=e.exam_id??e.cle.split('::').at(-1)??'';
+  const match=/^eb[1-6](?:-(taxi|ta|va))?$/i.exec(id);
+  return match?(match[1]??'VTC').toUpperCase():null;
+};
 
 export function ebsLesPlusRecents(
   g: GroupeMarquable | null | undefined, examens: EbMarquable[], jourParis: string,
 ): Set<string> {
   if (!groupeEnCours(g, jourParis) || examens.length === 0) return new Set();
-  const max = examens.reduce((m, e) => { const k = instantMax(e); return k > m ? k : m; }, "");
-  if (!max) return new Set();
-  return new Set(examens.filter((e) => instantMax(e) === max).map((e) => e.cle));
+  const candidats=examens.map(e=>({e,filiere:filiere(e),instant:e.dates.filter(d=>d.jour>=(g?.debut??'')&&d.jour<=(g?.fin??'')&&d.jour<=jourParis).reduce((m,d)=>{const k=`${d.jour}T${d.heureMax}`;return k>m?k:m;},'')}));
+  const maxima=new Map<string,string>();
+  for(const c of candidats)if(c.filiere&&c.instant&&c.instant>(maxima.get(c.filiere)??''))maxima.set(c.filiere,c.instant);
+  return new Set(candidats.filter(c=>c.filiere&&c.instant&&c.instant===maxima.get(c.filiere)).map(c=>c.e.cle));
 }
