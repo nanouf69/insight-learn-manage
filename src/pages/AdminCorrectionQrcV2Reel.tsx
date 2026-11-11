@@ -269,7 +269,7 @@ export default function AdminCorrectionQrcV2Reel() {
     ? (attemptsBase ?? []).filter((a) => idsTrouves.has(ebChoisi?.apprenantParAttempt?.[a] ?? "")).join(",")
     : (attemptsBase ?? []).join(",");
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null]);
+  const attemptsAffiches = useMemo(() => (attemptsBase ? (cleAttempts ? cleAttempts.split(",") : []) : null), [cleAttempts, attemptsBase == null, groupeCle, ebCle]);
   const nbPassagesCroises = nombrePassagesCroises(attemptsAffiches ?? [], ebChoisi?.inscriptionCroiseeParAttempt);
   const legacyResultIdsBase = ancienCircuit
     ? (jourFiltre
