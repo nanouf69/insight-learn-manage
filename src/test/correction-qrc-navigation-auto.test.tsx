@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminCorrectionQrcV2Reel from "@/pages/AdminCorrectionQrcV2Reel";
 import type { QrcReelle, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
@@ -145,6 +145,8 @@ const ouvrirCopie = async (qrcInstanceId: string) => {
 };
 
 beforeEach(() => {
+  HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};
+  HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};
   etat.session = sessionFictive();
   mocks.catalogue.mockReset();
   mocks.signaux.clear();
@@ -501,9 +503,52 @@ describe("Correction QRC — passage automatique après confirmation de persista
     fireEvent.click(screen.getByTestId('modifier-note'));
     expect(mocks.reviser).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('revision-note-2'));
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button',{name:'Confirmer'}));
     await waitFor(() => expect(mocks.reviser).toHaveBeenCalledOnce());
     expect(mocks.reviser.mock.calls[0][0]).toMatchObject({ note: 2, noteAttendue: 1.5 });
     expect(mocks.corriger).not.toHaveBeenCalled();
+  });
+  it('confirmation interne : annuler ne révise rien et sélection périmée invalide la demande',async()=>{
+    appliquerNote('a1-q1',1);
+    await ouvrirCopie('a1-q1');
+    fireEvent.click(screen.getByTestId('modifier-note'));
+    fireEvent.click(screen.getByTestId('revision-note-0.5'));
+    expect(await screen.findByText('Modifier la correction de 1/2 à 0,5/2 ?')).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Annuler'}));
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    expect(screen.getByTestId('reponse-eleve')).toHaveTextContent('Réponse a1');
+    fireEvent.click(screen.getByTestId('revision-note-0.5'));
+    await screen.findByRole('dialog');
+    fireEvent.click(screen.getByTestId('cellule-a2-q1'));
+    await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
+    expect(mocks.reviser).not.toHaveBeenCalled();
+    expect(window.confirm).not.toHaveBeenCalled();
+  });
+  it('confirmation interne : changement serveur de note invalide la révision proposée',async()=>{
+    appliquerNote('a1-q1',1);
+    await ouvrirCopie('a1-q1');
+    fireEvent.click(screen.getByTestId('modifier-note'));
+    fireEvent.click(screen.getByTestId('revision-note-0.5'));
+    await screen.findByRole('dialog');
+    appliquerNote('a1-q1',1.5);
+    mocks.charger.mockImplementation(async()=>structuredClone(etat.session));
+    mocks.signaux.get('qrc_instances_v2')?.();
+    await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull(),{timeout:3000});
+    expect(mocks.reviser).not.toHaveBeenCalled();
+  });
+  it('navigation avec commentaire : annuler conserve le texte, confirmer change seulement de copie',async()=>{
+    await ouvrirCopie('a1-q1');
+    fireEvent.change(screen.getByPlaceholderText('Commentaire (facultatif)'),{target:{value:'Texte non enregistré'}});
+    fireEvent.click(screen.getByTestId('copie-suivante'));
+    await screen.findByRole('dialog');
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Annuler'}));
+    expect(screen.getByPlaceholderText('Commentaire (facultatif)')).toHaveValue('Texte non enregistré');
+    fireEvent.click(screen.getByTestId('copie-suivante'));
+    fireEvent.click(await screen.findByRole('button',{name:'Confirmer'}));
+    await waitFor(()=>expect(window.location.search).toContain('qrc=a2-q1'));
+    expect(mocks.corriger).not.toHaveBeenCalled();
+    expect(window.confirm).not.toHaveBeenCalled();
   });
   it("n'affiche pas de pré-note sur une note déjà corrigée", async () => {
     appliquerNote('a1-q1', 1.5);

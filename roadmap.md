@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 14:58 — Confirmation interne plein écran
+- [x] Confirmations révision/navigation internes au conteneur fullscreen, focus/Échap, intention périmée refusée et double envoi bloqué.
+- [x] 39 tests fictifs PASS ; Chromium iframe + fullscreen natif avant/pendant/après, annuler/Échap/confirmer puis relecture 0,5/2, un seul envoi simulé ; navigation avec commentaire vérifiée ; aucune note réelle ni publication.
+
 ## 11/11 14:45 — File QRC de travail prioritaire
 - [x] Précision 14:51 : grille interactive existante en premier, restantes par défaut et Toutes les notes ; filtres conservés, 53 tests PASS et grille/clic PC/mobile fictifs vérifiés ; aucune donnée/publication.
 - [x] Vue par défaut QRC notables restantes uniquement ; archives/inventaire secondaires, IA À valider et non notables À vérifier séparés.
