@@ -4,7 +4,7 @@ import {inventaireAttendu,rapprocher,resultatsAncienCircuit} from './inventaireC
 function fixture(type='QCM'){
  const q={id:'1',type,enonce:'Exact',points:1,choix:type==='QCM'?[{lettre:'A',texte:'a',correct:true},{lettre:'B',texte:'b',correct:false}]:undefined,reponseQRC:type==='QRC'?'officiel':undefined};
  const r={id:'r',apprenant_id:'u',quiz_id:'EB4',matiere_id:'anglais',tentative:1,completed_at:'2026-11-11',details:{snapshot:{examenId:'EB4',matiereId:'anglais',questions:[q]},reponses:{'1':type==='QCM'?['A','B']:'texte exact '}}};
- const t={attempt_id:'v',apprenant_id:'u',exam_id:'EB4',etat:'terminee',matiere:'anglais',snapshot:{matiere:'anglais',questions:[{...q,id:'anglais:1'}]}};
+ const t={attempt_id:'v',apprenant_id:'u',exam_id:'EB4',etat:'terminee',matiere:'anglais',snapshot:{matiere:'anglais',questions:[{...structuredClone(q),id:'anglais:1'}]}};
  const states=[{attempt_id:'v',question_id:'anglais:1',valeur:type==='QCM'?['B','A']:'texte exact '}];return {r,t,states};
 }
 describe('preuve native catalogue',()=>{

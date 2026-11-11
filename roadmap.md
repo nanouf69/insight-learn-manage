@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 11/11 14:17 — Miroirs QCM/QRC catalogue
-- [ ] Provenance double écriture et rapprochement strict copie/contenu/réponses ; ambigu conservé.
-- [ ] Catalogue/compteur même preuve + régressions QCM/QRC/tentatives collisions.
-- [ ] SELECT avant/après Mamadou EB4 et copies récentes ; aucune donnée modifiée/publication.
+- [x] Provenance double écriture et rapprochement strict copie/contenu/réponses ; ambigu conservé.
+- [x] Catalogue/compteur même preuve + régressions QCM/QRC/tentatives collisions, 1002 passages.
+- [x] SELECT et projection avant/après Mamadou EB4 (6 miroirs/1 divergent), lot récent 30 (23/7) ; aucune donnée modifiée/publication.
+- [ ] Affichage admin réel NON PROUVÉ : session injectée redirige vers cours-public ; tests UI fictifs uniquement.
 
 ## 11/11 14:06 — Annulation reset : intégration isolée
 - [x] Sélection V2 sans grant annulé et sérialisation timer/INSERT anciens préparées/testées ; matière ancien complet + UPDATE concurrents restent NON PROUVÉS.

@@ -44,7 +44,7 @@ Ce lot chevauche trois matières de Mamadou ; ne pas additionner ses nombres aux
 ## Validation
 - PASS : comparaison locale de la preuve réelle complète récupérée par SELECT, sept matières Mamadou + lot récent de 30.
 - PASS : 20 tests initiaux (preuve/inventaire/menu) ; 32 tests correction-navigation réels sur fixtures, aucune correction réelle.
-- Tests ajoutés ensuite : 1002 copies QCM catalogue/compteur, collision tentative 1, corrigé divergent (voir résultat final d'exécution).
+- Tests ajoutés ensuite : 1002 copies QCM catalogue/compteur, collision tentative 1, corrigé divergent ; fixture corrigée pour ne pas partager le même tableau de choix entre ses deux snapshots (première exécution 1 échec).
 - Compilation automatique : `build OK` le 11/11 à 14:20:23 UTC ; contrôle final dans les journaux après derniers edits.
 - **NON PROUVÉ : affichage navigateur sous compte administrateur réel.** La session injectée redirige vers `/cours-public` ; aucune action de notation tentée. Les preuves réelles ci-dessus passent par SELECT + lecteur pur, pas par une session admin UI.
 
