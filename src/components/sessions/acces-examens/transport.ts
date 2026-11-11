@@ -26,3 +26,30 @@ export async function setSessionAccess(c:SessionAccess,e:ExamAccess,opened:boole
   throw new Error('Confirmation non retrouvée après envoi. Relisez les accès avant de réessayer.');
  return current;
 }
+
+/** Prepared only. No UI invokes this until the complete server gate is approved. */
+export async function setSessionsAccess(contexts:SessionAccess[],examId:string,opened:boolean,op:string):Promise<SessionAccess[]> {
+ if(!contexts.length||new Set(contexts.map(c=>c.session_id)).size!==contexts.length)throw new Error('Sélection vide ou ambiguë.');
+ const selections=contexts.map(c=>{
+  const exams=c.exams.filter(e=>e.exam_id===examId);
+  if(exams.length!==1)throw new Error('Examen non vérifiable dans une session.');
+  return {session_id:c.session_id,session_name:c.session_name,expected_operation_id:exams[0].operation_id};
+ }).sort((a,b)=>a.session_id.localeCompare(b.session_id));
+ const {data,error}=await supabase.rpc('admin_set_sessions_exam_access' as never,{
+  p_operation_id:op,p_exam_id:examId,p_opened:opened,p_selections:selections,
+ } as never);
+ if(error)throw accessError(error);
+ const receipt=data as unknown as {operation_id:string;exam_id:string;opened:boolean;events:{session_id:string;exam_id:string;opened:boolean;operation_id:string}[]};
+ if(!receipt||receipt.operation_id!==op||receipt.exam_id!==examId||receipt.opened!==opened||!Array.isArray(receipt.events)
+  ||receipt.events.length!==contexts.length||new Set(receipt.events.map(e=>e.session_id)).size!==contexts.length)
+  throw new Error('Confirmation groupée non concordante.');
+ const current=await Promise.all(contexts.map(async c=>{
+  const event=receipt.events.find(e=>e.session_id===c.session_id);
+  if(!event||event.exam_id!==examId||event.opened!==opened||!event.operation_id)throw new Error('Session absente de la confirmation.');
+  const fresh=await readSessionAccess(c.session_id);
+  if(!fresh.exams.some(e=>e.exam_id===examId&&e.opened===opened&&e.operation_id===event.operation_id))
+   throw new Error('État groupé non confirmé après relecture. Aucun succès confirmé ; relisez les états.');
+  return fresh;
+ }));
+ return current;
+}

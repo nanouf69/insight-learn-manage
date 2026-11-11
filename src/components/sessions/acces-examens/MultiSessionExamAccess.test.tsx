@@ -4,7 +4,7 @@ const read=vi.hoisted(()=>vi.fn());
 vi.mock('./transport',()=>({readSessionAccess:read,ACCESS_NOT_INSTALLED:'not installed'}));
 import Control,{sessionAccessState} from './MultiSessionExamAccess';
 const choices=['A','B'].map(id=>({id,nom:`Session ${id}`,date_debut:'2026-11-01',date_fin:'2099-11-30',type_session:'theorique',types_apprenant:['VTC'],current:true}));
-beforeEach(()=>read.mockReset());
+beforeEach(()=>{read.mockReset();});
 it('distingue état habituel, ouvert explicite et fermé sans inférence de date',()=>{
  const c=(opened:boolean|null,operation_id:string|null)=>({session_id:'A',session_name:'A',exams:[{exam_id:'EB6',opened,operation_id,changed_at:null}]});
  expect(sessionAccessState(c(null,null),'EB6').label).toBe('Accès habituel (aucune restriction manuelle)');
