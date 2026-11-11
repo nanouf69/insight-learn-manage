@@ -9,7 +9,7 @@ import { formatDevisDate } from "@/lib/devisDatesSignature";
 import { dureeDevisEnregistre } from "@/lib/devisDureesElearning";
 import { parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
 import { contractSections } from "@/lib/contratFormation/text";
-import { CONSENTEMENTS_SIGNATURE } from "@/lib/contratFormation/consentements";
+import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENTS_SIGNATURE, estDevisFormationContinue } from "@/lib/contratFormation/consentements";
 
 /* ─── DEVIS TYPE CONFIG ─── */
 interface DevisTypeConfig {
@@ -248,6 +248,7 @@ export default function DevisPublic() {
   const [mentionAccord, setMentionAccord] = useState("");
   const [acceptEarlyStart, setAcceptEarlyStart] = useState(false);
   const [acceptCGV, setAcceptCGV] = useState(false);
+  const [consentAnnulationFc, setConsentAnnulationFc] = useState(false);
   // Devis valant contrat : cases facultatives, indépendantes, jamais précochées.
   const [consentDemarrage, setConsentDemarrage] = useState(false);
   const [consentPerte, setConsentPerte] = useState(false);
@@ -354,6 +355,7 @@ export default function DevisPublic() {
     const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);
     if (!acceptCGV) { toast.error(contrat ? "Veuillez accepter le contrat de formation" : "Veuillez accepter les CGV"); return; }
     if (!contrat && !acceptEarlyStart) { toast.error("Veuillez cocher la clause de renonciation au délai de rétractation"); return; }
+    if (estDevisFormationContinue(devis) && !consentAnnulationFc) { toast.error("Veuillez confirmer avoir pris connaissance de la procédure écrite de demande d’annulation et de remboursement"); return; }
     if (!hasSigned) { toast.error("Veuillez signer le devis"); return; }
     if (!mentionAccord.toLowerCase().includes("lu et approuvé")) { toast.error("Veuillez écrire « Lu et approuvé, Bon pour accord »"); return; }
 
@@ -373,6 +375,9 @@ export default function DevisPublic() {
       const formData = new FormData();
       formData.append("token", token!);
       formData.append("file", signatureBlob, `${devis.id}_signature_${Date.now()}.png`);
+      if (estDevisFormationContinue(devis)) {
+        formData.append("consentement_annulation_remboursement_fc", String(consentAnnulationFc));
+      }
       if (contrat) {
         formData.append("consentement_demarrage_anticipe", String(consentDemarrage));
         formData.append("consentement_perte_apres_execution", String(consentPerte));
@@ -439,6 +444,7 @@ export default function DevisPublic() {
 
   const today = new Date().toLocaleDateString("fr-FR");
   const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);
+  const fcRequis = estDevisFormationContinue(devis ?? {});
   const dejaSigne = uploaded || !!devis?.signed_at;
   const nom = `${apprenant?.civilite || ""} ${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim();
   const formationLabel = devis?.formation || devis?.modele || "";
@@ -756,6 +762,23 @@ export default function DevisPublic() {
 
             <p className="text-sm"><strong>Fait à Lyon, le</strong> {today}</p>
 
+            {fcRequis && !dejaSigne && (
+              <div className="border rounded-lg p-4 bg-muted/30 space-y-3" data-testid="consentement-fc">
+                <p className="text-sm font-semibold">Information obligatoire — annulation et remboursement</p>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={consentAnnulationFc}
+                    onChange={(e) => setConsentAnnulationFc(e.target.checked)}
+                    className="w-5 h-5 mt-0.5 accent-blue-600"
+                    aria-label="Confirmer la procédure écrite d’annulation et de remboursement"
+                  />
+                  <span className="text-sm leading-relaxed">{CONSENTEMENT_FC_ANNULATION}</span>
+                </label>
+                <p className="text-xs text-muted-foreground">Version {`fc-annulation-remboursement-2026-11-11-v1`} — cette confirmation et son horodatage serveur sont conservés avec le devis.</p>
+              </div>
+            )}
+
             {contrat ? (<>
               <div className="border rounded p-3 space-y-3 bg-gray-50">
                 <p className="text-sm font-semibold text-gray-900">Cases facultatives — vous pouvez signer sans les cocher</p>
@@ -855,7 +878,7 @@ export default function DevisPublic() {
               <p className="font-medium text-blue-900">📋 Comment procéder :</p>
               <ol className="list-decimal ml-5 space-y-1 text-blue-800">
                 <li>Remplissez toutes les informations ci-dessus (cases à cocher, date du permis, etc.)</li>
-                <li>Cochez les deux cases (renonciation et CGV)</li>
+                <li>Cochez {contrat ? "l’acceptation du contrat" : "la clause de démarrage et les CGV"}{fcRequis ? ", ainsi que l’information annulation/remboursement" : ""}</li>
                 <li>Écrivez « Lu et approuvé, Bon pour accord » et signez</li>
                 <li>Cliquez sur <strong>« Envoyer le devis signé »</strong></li>
               </ol>
@@ -900,7 +923,7 @@ export default function DevisPublic() {
               <div className="flex items-center gap-3 flex-wrap">
                 <Button
                   onClick={handleSendDevis}
-                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || !hasSigned}
+                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || (fcRequis && !consentAnnulationFc) || !hasSigned}
                   className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base"
                 >
                   {uploading ? (
