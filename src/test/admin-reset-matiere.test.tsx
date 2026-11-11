@@ -13,7 +13,8 @@ const open = () => fireEvent.click(screen.getByRole('button', { name: 'Remettre 
 describe('Admin subject-only reset blocked preview', () => {
   it('confirmation cannot call a global, owner or subject mutation, even on double click', () => {
     render(<ResetMatiereAdminButton target={target} />);
-    open(); open();
+    const trigger = screen.getByRole('button', { name: 'Remettre cette matière à zéro : B Gestion' });
+    fireEvent.click(trigger); fireEvent.click(trigger);
     const confirm = screen.getByRole('button', { name: 'Confirmer cette matière' });
     expect(confirm).toBeDisabled();
     fireEvent.click(confirm); fireEvent.click(confirm);
