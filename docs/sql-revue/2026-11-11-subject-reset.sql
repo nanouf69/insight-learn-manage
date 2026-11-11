@@ -68,7 +68,7 @@ BEGIN
       AND result.tentative=coalesce(substring(source_key FROM '__t([0-9]+)$')::integer,1))
     OR (n=1 AND source_key=p_exam_id||'__'||p_matiere_id AND a.snapshot->>'matiere'=p_matiere_id
         AND NOT a.snapshot ? 'source_historique' AND NOT a.snapshot ? 'subject_retake_source'));
-  SELECT count(*) INTO matched FROM public.exam_attempts_v2 aWHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id
+  SELECT count(*) INTO matched FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id
    AND (a.snapshot->>'matiere'=p_matiere_id OR EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(a.snapshot->'questions','[]')) q WHERE q->>'matiere'=p_matiere_id))
    AND (EXISTS(SELECT 1 FROM public.exam_subject_retakes r WHERE r.apprenant_id=p_apprenant_id AND r.exercice_id=source_key AND r.attempt_id=a.attempt_id)
     OR (result.id IS NOT NULL AND a.snapshot->'source_historique'->>'result_id'=result.id::text
