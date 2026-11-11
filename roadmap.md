@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 11/11 12:26 — Chemoun EB3 TAXI A/B en attente
+- [ ] Rechercher traces exactes et reproduire correction des historiques importés sur PostgreSQL jetable.
+- [ ] Réparer seulement un défaut reproduit, contrôler statuts et intégrité, sans note réelle ni publication générale.
+
 ## 11/11 12:19 — Liens et vidéos dans les cours
 - [x] Deux actions dans l’éditeur de description et rendu cours dédié sécurisé ; RichText/examens inchangés.
 - [x] Formats, sauvegarde/réouverture via callback réel du CoursEditor et rendu PC/mobile sur fixtures uniquement ; aucune écriture Cloud. Tests et vérification navigateur réalisés, vidéos externes simulées.
