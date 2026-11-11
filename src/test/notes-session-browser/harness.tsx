@@ -26,10 +26,10 @@ const souscrireFictif=(_ids:string[],signal:()=>void)=>{
   window.addEventListener('fixture-validation',valider);
   return()=>window.removeEventListener('fixture-validation',valider);
 };
-const chargerAbsences=async()=>{
+const chargerAbsences=async(_session:string,jour:string)=>{
   const cas=new URLSearchParams(location.search).get('absence');
   const row=(id:string)=>({apprenant_id:id,apprenants:{type_apprenant:'vtc'},sessions:{type_session:'theorique',nom:'VTC',date_debut:'2026-11-02',date_fin:'2026-11-13'}});
   const sig=(id:string,slot:string)=>({apprenant_id:id,demi_journee:slot,signed_at:'2026-11-11T08:00:00Z',signature_data_url:'data:image/png;base64,YWJj'});
-  return absentsSessionJour({jour:'2026-11-11',minuteParis:cas==='partiel'?14*60:18*60,inscriptions:[row('b'),row('a')],signatures:cas==='sans-cours'?[]:[sig('a','matin'),sig('a','apres_midi'),...(cas==='signe'?[sig('b','matin')]:[])],papier:cas==='papier'?[{apprenant_id:'b',heures:3,documents_inscription:{url:'preuve.pdf',statut:'valide'}}]:[],heures:[],erreur:cas==='erreur'||!cas});
+  return absentsSessionJour({jour,jourServeur:'2026-11-11',minuteParis:cas==='partiel'?14*60:18*60,inscriptions:[row('b'),row('a')],signatures:cas==='sans-cours'?[]:[sig('a','matin'),sig('a','apres_midi'),...(cas==='signe'?[sig('b','matin')]:[])],papier:cas==='papier'?[{apprenant_id:'b',heures:3,documents_inscription:{url:'preuve.pdf',statut:'valide'}}]:[],heures:[],erreur:cas==='erreur'||!cas});
 };
 const root=document.getElementById('root');if(root)createRoot(root).render(<NotesParSession sessions={sessions} charger={charger} souscrire={actualisation?souscrireFictif:()=>()=>{}} chargerAbsences={chargerAbsences}/>);

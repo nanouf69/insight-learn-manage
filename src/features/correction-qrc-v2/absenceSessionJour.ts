@@ -4,19 +4,20 @@ import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 import { jourParis } from './sessionsActuelles';
 import { lirePagesParalleles } from './noyauReel';
 
-export type PreuvesJour = { inscriptions: any[]; signatures: any[]; papier: any[]; heures: any[]; jour: string; minuteParis: number; erreur?: boolean };
+export type PreuvesJour = { inscriptions: any[]; signatures: any[]; papier: any[]; heures: any[]; jour: string; jourServeur?: string; minuteParis: number; creneau?: string; erreur?: boolean };
+export type StatutPresenceExamen = 'absent' | 'non_emarge';
 const signature = (r: any) => !!r.signed_at && aPreuveSignatureEmargement(r);
 const papierValide = (r: any) => Number(r.heures)>0 && !!r.documents_inscription?.url && !/refus|annul/i.test(r.documents_inscription?.statut??'');
 const minutes = (clock: string) => Number(clock.slice(0,2))*60+Number(clock.slice(3,5));
 /** Conservative day absence: every expected slot finished and independently proven dispensed. */
-export function absentsSessionJour(p: PreuvesJour): Set<string> {
-  const out=new Set<string>();
-  if(p.erreur)return out;
+export function absentsSessionJour(p: PreuvesJour): Map<string,StatutPresenceExamen> {
+  const out=new Map<string,StatutPresenceExamen>();
+  if(p.erreur||!p.jourServeur||p.jour>p.jourServeur)return out;
   const slots=new Map<string,ReturnType<typeof creneauxSessionInscrite>>();
   for(const row of p.inscriptions){
     const a=row.apprenants;
     if(!a||a.deleted_at||a.abandonnee||/annul|abandon|exclu|attente/i.test(a.statut??'')||/en[- ]?ligne|e[- ]?learning|online|distanciel/i.test(a.creneau_horaire??'')||/-e$/i.test(a.type_apprenant??''))continue;
-    const s=creneauxSessionInscrite(row,String(a.type_apprenant??'').toUpperCase()).filter(s=>s.date===p.jour);
+    const s=creneauxSessionInscrite(row,String(a.type_apprenant??'').toUpperCase()).filter(s=>s.date===p.jour&&(!p.creneau||s.creneau===p.creneau));
     if(s.length)slots.set(row.apprenant_id,s);
   }
   const avecPresence=new Set([
@@ -25,22 +26,32 @@ export function absentsSessionJour(p: PreuvesJour): Set<string> {
     ...p.heures.filter(r=>Number(r.heures)>0).map(r=>r.apprenant_id),
   ]);
   for(const [id,attendus] of slots){
-    if(avecPresence.has(id)||attendus.some(s=>!Number.isFinite(minutes(s.fin))||minutes(s.fin)>=p.minuteParis))continue;
+    if(attendus.some(s=>!Number.isFinite(minutes(s.fin))||(p.jour===p.jourServeur&&minutes(s.fin)>=p.minuteParis)))continue;
+    const presenceCreneau=p.signatures.some(r=>r.apprenant_id===id&&signature(r)&&r.demi_journee===p.creneau)||p.papier.some(r=>r.apprenant_id===id&&papierValide(r)&&r.creneau===p.creneau);
+    if(avecPresence.has(id)&&(!p.creneau||presenceCreneau||p.heures.some(r=>r.apprenant_id===id&&Number(r.heures)>0)))continue;
+    const declaree=p.signatures.some(r=>r.apprenant_id===id&&r.absent===true&&r.masque!==true&&attendus.some(s=>s.creneau===r.demi_journee));
+    if(declaree&&!avecPresence.has(id)){out.set(id,'absent');continue;}
     const dispenses=attendus.every(s=>p.signatures.some(r=>r.apprenant_id!==id&&signature(r)&&r.demi_journee===s.creneau&&slots.get(r.apprenant_id)?.some(peer=>peer.creneau===s.creneau&&peer.debut<=s.debut&&peer.fin>=s.fin))||p.papier.some(r=>r.apprenant_id!==id&&papierValide(r)&&r.creneau===s.creneau&&slots.get(r.apprenant_id)?.some(peer=>peer.creneau===s.creneau&&peer.debut<=s.debut&&peer.fin>=s.fin)));
-    if(dispenses)out.add(id);
+    if(dispenses)out.set(id,'non_emarge');
   }
   return out;
 }
 
-export async function chargerAbsentsSessionJour(sessionId:string,now=new Date()):Promise<Set<string>>{
-  const jour=jourParis(now);
+export async function chargerAbsentsSessionJour(sessionId:string,jour:string):Promise<Map<string,StatutPresenceExamen>>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(jour))return new Map();
   const auth=await supabase.auth.getSession();const user=auth.data.session?.user.id;
-  if(!user)return new Set();
+  if(!user)return new Map();
   const role=await supabase.rpc('has_role',{_user_id:user,_role:'admin'});
-  if(role.error||role.data!==true)return new Set();
+  if(role.error||role.data!==true)return new Map();
   try{
     const inscriptions=await lirePagesParalleles<any>(de=>supabase.from('session_apprenants').select('*,sessions:session_id(*),apprenants:apprenant_id(id,type_apprenant,statut,abandonnee,deleted_at,creneau_horaire)').eq('session_id',sessionId).order('id').range(de,de+999) as any,1);
     const ids=[...new Set(inscriptions.map(r=>r.apprenant_id))];
+    if(!ids.length)return new Map();
+    const horloge=await (supabase.rpc as any)('emargement_fenetres_eleve',{p_apprenant_id:ids[0]});
+    const instant=horloge.data?.find((r:any)=>r.serveur_le)?.serveur_le;
+    if(horloge.error||!instant)return new Map();
+    const now=new Date(instant);
+    if(!Number.isFinite(now.getTime())||jour>jourParis(now))return new Map();
     const signatures:any[]=[],papier:any[]=[],heures:any[]=[];
     for(let i=0;i<ids.length;i+=100){
       const lot=ids.slice(i,i+100);
@@ -51,6 +62,6 @@ export async function chargerAbsentsSessionJour(sessionId:string,now=new Date())
       ]);signatures.push(...s);papier.push(...p);heures.push(...h);
     }
     const clock=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(now);
-    return absentsSessionJour({inscriptions,signatures,papier,heures,jour,minuteParis:minutes(clock)});
-  }catch{return new Set();}
+    return absentsSessionJour({inscriptions,signatures,papier,heures,jour,jourServeur:jourParis(now),minuteParis:minutes(clock)});
+  }catch{return new Map();}
 }
