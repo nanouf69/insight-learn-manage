@@ -7,6 +7,12 @@ from exam_reset_v2_sql_contract import ExamResetV2Contract, ADMIN, OWNER, APPREN
 
 class CancellationContract(ExamResetV2Contract):
     @classmethod
+    def sql(cls, query, check=True):
+        if query.startswith('TRUNCATE apprenants,'):
+            query = query.replace('TRUNCATE apprenants,', 'TRUNCATE core_exam_reset_cancellations,apprenants,', 1)
+        return super().sql(query, check)
+
+    @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.sql(Path('docs/sql-revue/2026-11-11-exam-reset-cancellation.sql').read_text())
