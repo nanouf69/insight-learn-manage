@@ -22,7 +22,7 @@ export function sameMirrorContent(r:MirrorResult,t:MirrorAttempt,answers:Map<str
   if(q.type==='QRC')return (l.reponseQRC??null)===(q.reponseQRC??null)&&typeof rep[id]==='string'&&rep[id]===answers.get(q.id);
   if(q.type!=='QCM'||!Array.isArray(q.choix)||!Array.isArray(l.choix)||l.choix.length!==q.choix.length)return false;
   if(!q.choix.every((c:any,j:number)=>c.lettre===l.choix[j].lettre&&c.texte===l.choix[j].texte&&Boolean(c.correct)===Boolean(l.choix[j].correct)))return false;
-  const a=letters(rep[id]),b=letters(answers.get(q.id));return !!a&&!!b&&JSON.stringify(a)===JSON.stringify(b);
+  const a=letters(rep[id]),b=letters(answers.get(q.id));return !!a&&!!b&&a.every(x=>q.choix.some((c:any)=>c.lettre===x))&&b.every(x=>q.choix.some((c:any)=>c.lettre===x))&&JSON.stringify(a)===JSON.stringify(b);
  });
 }
 export function proveNativeMirrors(results:MirrorResult[],attempts:MirrorAttempt[],states:{attempt_id:string;question_id:string;valeur:unknown}[]):{mirrors:Set<string>;ambiguous:Set<string>} {

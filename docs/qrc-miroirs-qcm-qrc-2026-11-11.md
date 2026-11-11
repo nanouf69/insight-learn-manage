@@ -48,4 +48,4 @@ Ce lot chevauche trois matières de Mamadou ; ne pas additionner ses nombres aux
 - Compilation automatique : `build OK` le 11/11 à 14:20:23 UTC ; contrôle final dans les journaux après derniers edits.
 - **NON PROUVÉ : affichage navigateur sous compte administrateur réel.** La session injectée redirige vers `/cours-public` ; aucune action de notation tentée. Les preuves réelles ci-dessus passent par SELECT + lecteur pur, pas par une session admin UI.
 
-Commit exact : fourni dans le retour après enregistrement automatique ; aucun commit manuel, aucune publication.
+Validation finale : 24/24 tests preuve/inventaire/menu/panneau PASS le 11/11 à 14:25 UTC, puis ajout d'un test de lettre hors choix figés ; 32/32 tests navigation PASS. Compilation automatique finale `build OK`. Sept tentatives terminées Mamadou toujours présentes au SELECT final. Aucun commit manuel, aucune publication ; commit exact fourni dans le retour après enregistrement automatique.
