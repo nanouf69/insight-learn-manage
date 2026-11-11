@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signalerCorrectionEnregistree } from "@/features/surveillance-examens/synchronisationNotes";
 import { deciderRattachementCrm } from "@/features/correction-qrc-v2/rattachementCrm";
 import { chargerConsultationEb2, estConsultation, lirePassagesEb2Consultation } from "@/features/correction-qrc-v2/eb2Consultation";
-import { miroirsV2Prouves, nbQrcEcrites, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
+import { miroirsV2Prouves, resultatsAncienCircuit, resultatsMigres } from "@/features/correction-qrc-v2/inventaireCopies";
 import { texteSourceExact } from "./menuPassages";
 
 export type QuestionSnapshot = {

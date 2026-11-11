@@ -1339,7 +1339,7 @@ export default function AdminCorrectionQrcV2Reel() {
                 {tentativeSel.started_at
                   ? new Date(tentativeSel.started_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
                   : "date inconnue"}{" "}
-                · tentative {tentativeSel.attempt_id.slice(0, 8)}
+                · tentative {numeroTentative(tentativeSel)} · copie {tentativeSel.attempt_id.slice(0, 8)}
               </span>
               {(() => {
                 const mat = (tentativeSel.snapshot.matieres ?? []).find((m) => m.subject_id === questionSel?.matiere);
