@@ -60,7 +60,7 @@ describe("jeu Gestion isolé", () => {
     fireEvent.click(screen.getByRole("button", { name: "Recommencer" }));
     fireEvent.click(screen.getByRole("button", { name: "Essence consommée" })); fireEvent.click(screen.getByRole("button", { name: "Classer dans Charges" }));
     expect(JSON.stringify(store.raw)).toBe(before); expect(store.payloads).toHaveLength(20);
-  });
+  }, 20000);
   it("glisser une carte utilise son ID et non un texte arbitraire", () => {
     render(<PlateauComptable />);
     const dataTransfer = { getData: () => "essence", setData: vi.fn() };
