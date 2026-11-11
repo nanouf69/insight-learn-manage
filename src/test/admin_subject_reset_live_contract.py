@@ -86,14 +86,15 @@ class Live(base.Contract):
   self.assertEqual(orig,self.sql("SELECT json_agg(to_jsonb(x) ORDER BY id) FROM (SELECT * FROM apprenant_quiz_results WHERE quiz_id='EB4' AND tentative=1) x").stdout)
   self.assertEqual(orig_ans,self.sql("SELECT json_agg(to_jsonb(r) ORDER BY id) FROM reponses_apprenants r WHERE exercice_id IN ('EB4__anglais','EB4__t3p')").stdout)
   self.assertEqual(self.sql("SELECT count(*) FROM _effets_externes").stdout.strip(),'0')
- def v2(self,exam,mid,snapshot_extra,etat='terminee',version=None):
+ def v2(self,exam,mid,snapshot_extra,etat='terminee',version=None,started_at=None):
   content={'exam_id':exam,'exam_libelle':'Fictif','matieres':[{'subject_id':mid,'titre':'A','ordre':1,'duree':45,'coefficient':3,'note_sur':20,'note_eliminatoire':6,'pts_qcm':1}],'questions':[{'id':f'{mid}:1','matiere':mid,'ordre':1,'type':'QCM','enonce':'Fictif','points':1,'choix':[{'id':'A','texte':'Oui','correct':True}]}]}
   version=version or str(uuid.uuid4());attempt=str(uuid.uuid4())
   if not self.sql(f"SELECT 1 FROM exam_content_versions WHERE exam_id='{exam}'").stdout.strip():
    self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{version}','VTC','5','{exam}',1,'publiee',{J(content)},'f','isolated',true)")
   else: version=self.sql(f"SELECT id FROM exam_content_versions WHERE exam_id='{exam}'").stdout.strip()
   snap={**content,'matiere':mid,'tentative':1,**snapshot_extra}
-  self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at,is_test) VALUES('{attempt}','{A}','{exam}','{version}',{J(snap)},'old','{etat}',{'now()' if etat=='terminee' else 'NULL'},true)")
+  started="now()" if started_at is None else f"'{started_at}'"
+  self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,started_at,finished_at,is_test) VALUES('{attempt}','{A}','{exam}','{version}',{J(snap)},'old','{etat}',{started},{'now()' if etat=='terminee' else 'NULL'},true)")
   return attempt
  def test_03_imported_v2_with_exact_result_proof_then_v2_submission(self):
   self.seed('EB5','t3p')
