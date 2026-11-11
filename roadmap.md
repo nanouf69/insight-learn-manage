@@ -1,6 +1,7 @@
 # Feuille de route
 
 ## 11/11 14:45 — File QRC de travail prioritaire
+- [ ] Précision 14:51 : grille interactive existante en premier, restantes par défaut et Toutes les notes ; filtres conservés, tests PC/mobile.
 - [x] Vue par défaut QRC notables restantes uniquement ; archives/inventaire secondaires, IA À valider et non notables À vérifier séparés.
 - [x] Navigation après relecture, zéro validé exclu, contexte conservé ; 53 tests PASS, aperçu PC/mobile fictif sans mutation/publication.
 
