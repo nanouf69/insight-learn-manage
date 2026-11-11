@@ -2,9 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FirstPassageProvider, QuestionFirstPassageRate } from '@/components/cours-en-ligne/QuestionFirstPassageRate';
 import { readExamFirstPassage } from '@/lib/premierPassageExamStatsRead';
+import { readFirstPassage } from '@/lib/premierPassageStatsRead';
 import type { QuestionRate, SessionFirstPassage } from '@/lib/premierPassageStats';
 
 vi.mock('@/lib/premierPassageExamStatsRead', () => ({ readExamFirstPassage: vi.fn() }));
+vi.mock('@/lib/premierPassageStatsRead', () => ({ readFirstPassage: vi.fn() }));
 const mockedRead = vi.mocked(readExamFirstPassage);
 const rate = (incorrect: number, total: number, unknown = 0): QuestionRate => ({ incorrect, total, unknown, jour: { incorrect, total }, soir: { incorrect: 0, total: 0 }, mixte: 0 });
 const question = { id: 1, enonce: 'Question', type: 'QCM', choix: [{ lettre: 'A', texte: 'Oui', correct: true }, { lettre: 'B', texte: 'Non' }] };
@@ -19,6 +21,22 @@ function renderRate() {
 }
 
 describe('Couleur du taux d’échec au premier passage', () => {
+  it('exercice : des réponses non évaluables ne sont pas une absence de réponse et restent consultables', async () => {
+    const r=rate(0,0,1);
+    r.details=[{learnerId:'q186',answer:['C'],verdict:'unknown',reason:'Corrigé figé non prouvé'}];
+    vi.mocked(readFirstPassage).mockResolvedValue(data(r));
+    render(<FirstPassageProvider moduleId={11} exerciseId={601} questions={[question]} enabled><QuestionFirstPassageRate questionId={1} presentation="panel" /></FirstPassageProvider>);
+    fireEvent.click(await screen.findByRole('button',{name:/données insuffisantes/}));
+    expect(screen.getByText('Corrigé figé non prouvé')).toBeInTheDocument();
+    expect(screen.getByText(/0 première\(s\) réponse\(s\) évaluée\(s\).*1 non évaluée/)).toBeInTheDocument();
+    expect(screen.queryByText(/aucune réponse/)).not.toBeInTheDocument();
+  });
+
+  it('exercice sans réponse conserve un dénominateur nul sans taux fabriqué', async () => {
+    vi.mocked(readFirstPassage).mockResolvedValue(data(rate(0,0)));
+    render(<FirstPassageProvider moduleId={11} exerciseId={601} questions={[question]} enabled><QuestionFirstPassageRate questionId={1} /></FirstPassageProvider>);
+    expect(await screen.findByRole('button',{name:/aucune réponse/})).not.toHaveTextContent('%');
+  });
   it('détail exact : toutes réponses du dénominateur, filtre erreurs et QRC en attente séparée', async()=>{
     const r=rate(1,2,1);r.details=[{learnerId:'a',candidate:'Candidat A',answer:['B'],expected:['A'],passage:'p1',version:'v1',verdict:'incorrect'},{learnerId:'b',candidate:'Candidat B',answer:['A'],expected:['A'],passage:'p2',verdict:'correct'},{learnerId:'c',candidate:'Candidat C',answer:'Réponse en attente',passage:'p3',verdict:'unknown',reason:'QRC non notée'}];
     mockedRead.mockResolvedValue(data(r));renderRate();fireEvent.click(await screen.findByRole('button',{name:/50 %/}));
