@@ -42,7 +42,7 @@ class Contract(unittest.TestCase):
  def test_01_unstarted_admin_then_learner_no_zero_timer_deferred_replay(self):
   self.seed('EB3','t3p');c=self.context('EB3','t3p');self.assertEqual(c['status'],'non_commencee')
   self.authorize(c);self.assertEqual(self.sql('SELECT count(*) FROM apprenant_examen_timers').stdout.strip(),'0');self.assertEqual(self.sql('SELECT count(*) FROM apprenant_quiz_results').stdout.strip(),'0')
-  r=json.loads(self.start(c).stdout.splitlines()[-1]);self.assertEqual(r['tentative'],1);self.assertEqual(r['exercice_id'],'EB3__t3p');self.assertEqual(self.start(c).stdout.splitlines()[-1],json.dumps(r,separators=(',',':')) if False else self.start(c).stdout.splitlines()[-1]);self.assertEqual(self.sql('SELECT count(*) FROM apprenant_examen_timers').stdout.strip(),'1')
+  r=json.loads(self.start(c).stdout.splitlines()[-1]);self.assertEqual(r['tentative'],1);self.assertEqual(r['exercice_id'],'EB3__t3p');self.assertEqual(json.loads(self.start(c).stdout.splitlines()[-1]),r);self.assertEqual(self.sql('SELECT count(*) FROM apprenant_examen_timers').stdout.strip(),'1')
   self.assertEqual(self.sql('SELECT count(*) FROM apprenant_quiz_results').stdout.strip(),'0')
  def test_02_rights_and_identity(self):
   c=self.context('EB3','anglais');self.assertNotEqual(self.authorize(c,uid=U,check=False).returncode,0)
@@ -64,4 +64,22 @@ class Contract(unittest.TestCase):
  def test_06_append_only_direct_write_and_replay(self):
   self.assertNotEqual(self.call("INSERT INTO exam_subject_reset_authorizations(operation_id) VALUES(gen_random_uuid())",U,False).returncode,0)
   self.assertNotEqual(self.sql("UPDATE exam_subject_reset_authorizations SET learner_name='bad'",False).returncode,0)
+ def test_07_v2_native_published_snapshot_preserved_and_no_ai(self):
+  self.seed('EB2','gestion')
+  content={'exam_id':'EB2','exam_libelle':'Fictif EB2','matieres':[{'subject_id':'gestion','titre':'B Gestion','ordre':1,'duree':30,'coefficient':2,'note_sur':20,'note_eliminatoire':6}], 'questions':[{'id':'gestion:1','matiere':'gestion','ordre':1,'type':'QCM','enonce':'Fictif','points':1,'choix':[{'id':'A','texte':'Oui','correct':True}]}]}
+  version='cccccccc-1111-1111-1111-111111111111';attempt='dddddddd-1111-1111-1111-111111111111'
+  snap={**content,'matiere':'gestion','tentative':1}
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{version}','VTC','2','EB2',1,'publiee','{json.dumps(content)}','test','isolated',true);INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,finished_at,is_test) VALUES('{attempt}','{A}','EB2','{version}','{json.dumps(snap)}','old','terminee',now(),true)")
+  before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{attempt}'").stdout
+  c=self.context('EB2','gestion');self.assertEqual(c['source_attempt_id'],attempt);self.authorize(c,'aaaaaaaa-5555-1111-1111-111111111111')
+  r=json.loads(self.start(c,'bbbbbbbb-5555-1111-1111-111111111111').stdout.splitlines()[-1]);self.assertEqual(r['moteur'],'v2');self.assertNotEqual(r['attempt_id'],attempt)
+  self.assertEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{attempt}'").stdout)
+  self.assertEqual(self.sql("SELECT count(*) FROM qrc_ia_corrections").stdout.strip(),'0')
+ def test_08_concurrency_single_authorization(self):
+  from concurrent.futures import ThreadPoolExecutor
+  c=self.context('EB3','anglais')
+  with ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(lambda op:json.loads(self.authorize(c,op).stdout.splitlines()[-1]),['aaaaaaaa-6666-1111-1111-111111111111','aaaaaaaa-7777-1111-1111-111111111111']))
+  self.assertEqual(results[0]['operation_id'],results[1]['operation_id'])
+  self.assertEqual(self.sql(f"SELECT count(*) FROM exam_subject_reset_authorizations WHERE apprenant_id='{A}' AND exam_id='EB3' AND matiere_id='anglais'").stdout.strip(),'1')
 if __name__=='__main__':unittest.main(verbosity=2)
