@@ -36,6 +36,7 @@ class Live(base.Contract):
    for col in re.findall(r'^ ("[a-z_0-9]+" [^\n]*?),?$',block,re.M):c.sql(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col}")
   for f in LIVE['functions'].values():c.sql(f)
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
+  c.sql(Path('docs/sql-revue/2026-11-11-subject-reset-expired-empty.sql').read_text())
   c.installed=[]
   for t in LIVE['triggers']:
    name=t.split(' ')[2];table=t.split(' ON ')[1].split(' ')[0]

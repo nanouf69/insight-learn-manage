@@ -20,6 +20,7 @@ class Contract(unittest.TestCase):
   for definition in catalog['functions']:c.sql(definition)
   c.sql(catalog['rls']);c.sql(catalog['triggers'])
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
+  c.sql(Path('docs/sql-revue/2026-11-11-subject-reset-expired-empty.sql').read_text())
   c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');UPDATE apprenants SET modules_autorises=ARRAY[35,36,37,38];INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');")
  @classmethod
  def sql(c,q,check=True):
