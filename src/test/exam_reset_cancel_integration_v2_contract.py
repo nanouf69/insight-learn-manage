@@ -10,9 +10,6 @@ class Integration(base.Integrated):
   super().setUpClass()
   c.sql(Path('docs/sql-revue/2026-11-11-exam-reset-cancellation-integration.sql').read_text())
   base.base.Live.env['PGCLIENTENCODING']='UTF8'
- def test_integrated_visibility_rights_legacy_and_v2_starts(self):
-  # Superseded acquired test is not repeated.
-  pass
  def setup_exam(self,exam):
   mids=['t3p','gestion','securite','francais','anglais','reglementation_taxi','reglementation_taxi2']
   version=str(uuid.uuid4());reset=str(uuid.uuid4());ats=[];rs=[];ls=[]
@@ -44,6 +41,7 @@ class Integration(base.Integrated):
   self.assertEqual(out.returncode,0,out.stderr)
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_retake_authorizations WHERE reset_id='{reset}' AND consumed_at IS NULL"),'1')
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_attempts_v2 WHERE snapshot->>'reset_authorization_id'=(SELECT id::text FROM exam_retake_authorizations WHERE reset_id='{reset}')"),'0')
+  self.assertEqual(self.scalar("SELECT count(*) FROM _effets_externes"),'0')
  def test_02_legacy_timer_new_start_refuses_restoration(self):
   exam='EB4-TAXI';reset,before=self.setup_exam(exam)
   out=self.api(f"SELECT start_or_get_exam_timer('{A}','{exam}__t3p__t2',1800,2)",U,False)
@@ -65,8 +63,15 @@ class Integration(base.Integrated):
    self.assertNotEqual(future.result(timeout=5).returncode,0)
   self.assertEqual(self.scalar(f"SELECT count(*) FROM core_exam_reset_cancellations WHERE reset_id='{reset}'"),'0')
   child.stdin.close();child.stdout.close();child.stderr.close()
+ def test_04_restoration_wins_legacy_start_does_not_consume_cancelled_grant(self):
+  exam='EB6-TAXI';reset,_=self.setup_exam(exam)
+  self.cancel_it(exam,reset)
+  out=self.api(f"SELECT start_or_get_exam_timer('{A}','{exam}__t3p__t2',1800,2)",U,False)
+  self.assertEqual(out.returncode,0,out.stderr)
+  self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_retake_authorizations WHERE reset_id='{reset}' AND consumed_at IS NULL"),'1')
+  self.assertEqual(self.scalar("SELECT count(*) FROM _effets_externes"),'0')
 if __name__=='__main__':
  # Load only new scenarios; no inherited acquired tests.
- suite=unittest.TestSuite(Integration(n) for n in ['test_01_seven_copies_restored_reads_and_v2_no_cancelled_grant','test_02_legacy_timer_new_start_refuses_restoration','test_03_legacy_start_wins_concurrent_cancel'])
+ suite=unittest.TestSuite(Integration(n) for n in ['test_01_seven_copies_restored_reads_and_v2_no_cancelled_grant','test_02_legacy_timer_new_start_refuses_restoration','test_03_legacy_start_wins_concurrent_cancel','test_04_restoration_wins_legacy_start_does_not_consume_cancelled_grant'])
  result=unittest.TextTestRunner(verbosity=2).run(suite)
  raise SystemExit(not result.wasSuccessful())

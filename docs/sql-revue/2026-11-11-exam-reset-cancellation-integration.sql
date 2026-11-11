@@ -7,7 +7,7 @@ BEGIN
  WHERE n.nspname='public' AND p.proname IN
  ('core_start_attempt','start_exam_subject_retake','core_restart_matiere','core_finalize_attempt',
  'admin_authorize_exam_subject_reset','exam_subject_reset_expired_empty','enforce_exam_retake_delay',
- 'qrc_ia_raison_file','qrc_ia_reconcilier','start_or_get_exam_timer') AND p.prokind='f' LOOP
+ 'start_or_get_exam_timer') AND p.prokind='f' LOOP
  definition:=pg_get_functiondef(f.oid);
  -- Replace READ sources only; writes and rowtype contracts remain original.
  definition:=regexp_replace(definition,'((FROM|JOIN)[[:space:]]+)(public\.)?core_tentatives_neutralisees\y','\1public.core_exam_neutralisations_effective','gi');
@@ -22,6 +22,8 @@ BEGIN
  EXECUTE definition;
  END LOOP;
 END $integration$;
+
+-- Paid AI eligibility retains raw archive exclusions: cancellation never requeues a historical copy.
 
 -- Legacy direct inserts share the lock even when not called through timer RPC.
 CREATE FUNCTION public.exam_reset_cancel_legacy_lock() RETURNS trigger
