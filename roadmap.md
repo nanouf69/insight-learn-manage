@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 13:20 — Placement accès au bas des cartes EB
-- [ ] Réutiliser le contrôle session/examen en mode carte, sous pause/dernière action, admin authentifié vérifié, session explicitement choisie.
-- [ ] Tests placement/droits/mobile et confirmations fictives ; aucune mutation/migration/publication réelle, rapport et commit.
+- [x] Contrôle partagé compact au bas de chaque carte après pause/dernière action ; utilisateur+ rôle serveur vérifiés, sélection explicite de session, aucune deuxième mécanique.
+- [x] 13 tests PASS et navigateur vraie liste fictive PC/mobile, placement/cancel/apprenant exclu, zéro mutation/migration/publication. Rapport docs/session-exam-access-cartes-2026-11-11.md ; session admin réelle NON PROUVÉE, serveur toujours non installé.
 
 ## 11/11 13:10 — Accès examens blancs par session présentielle
 - [x] Zone Accès examens blancs dans la fiche session CRM ; confirmation scoped/readback, absence serveur explicite, candidat SQL séparé non installé. Droits par défaut inchangés, zéro action réelle/publication.
