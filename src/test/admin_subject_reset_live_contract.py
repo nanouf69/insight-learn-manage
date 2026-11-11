@@ -154,7 +154,8 @@ class Live(base.Contract):
   self.authorize(current,op)
   self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{att}'").stdout.strip(),'1')
   # Late answer/finalisation on the neutralised original is rejected atomically.
-  self.assertNotEqual(self.api(f"SELECT core_save_answer(gen_random_uuid(),'{att}','t3p:1','[\"A\"]'::jsonb,0)",U,False).returncode,0)
+  late=self.api(f"SELECT core_save_answer(gen_random_uuid(),'{att}','t3p:1','[\"A\"]'::jsonb,0)",U,False)
+  self.assertNotEqual(late.returncode,0,late.stdout+late.stderr+self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout)
   self.assertNotEqual(self.api(f"SELECT core_finalize_attempt(gen_random_uuid(),'{att}','{{}}'::text[],'{{}}'::jsonb)",U,False).returncode,0)
   self.assertEqual(self.sql(f"SELECT count(*) FROM answer_state WHERE attempt_id='{att}'").stdout.strip(),'0')
   r=json.loads(self.start(current,str(uuid.uuid4())).stdout.splitlines()[-1]);na=r['attempt_id']
