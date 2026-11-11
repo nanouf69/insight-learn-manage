@@ -35,7 +35,7 @@ import {
   normalizeNoteSur20,
   toFiniteNumber,
 } from "@/components/cours-en-ligne/examens-blancs-utils";
-import { mergePassageSiblingRows } from "@/components/cours-en-ligne/exam-helpers";
+import { mergePassageSiblingRows, isExamAttemptPublicationPending } from "@/components/cours-en-ligne/exam-helpers";
 import { useLiveExamens, fetchLiveExamens } from "@/components/cours-en-ligne/useLiveExamens";
 import { archiverExamenBlancAdmin, idsResultatsLegacyArchives } from "@/lib/examResetAdmin";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
@@ -392,6 +392,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                 : group.totalMax > 0
                   ? ((group.totalScore / group.totalMax) * 20).toFixed(1)
                   : "0";
+              const publicationPending = isExamAttemptPublicationPending(group.results, examenDef);
 
               return (
                 <div key={key} className="border rounded-lg overflow-hidden">
@@ -420,7 +421,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                             <>
                               <span className="flex items-center gap-1">
                                 <Trophy className="w-3 h-3" />
-                                Note : {noteGlobale}/20
+                                {publicationPending ? "Note en attente de correction ou de vérification" : `Note : ${noteGlobale}/20`}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Hash className="w-3 h-3" />
