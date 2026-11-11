@@ -1898,6 +1898,13 @@
       "when": 1794395054802,
       "tag": "0270_subject_reset_expired_empty_v2",
       "breakpoints": true
+    },
+    {
+      "idx": 271,
+      "version": "7",
+      "when": 1794407406859,
+      "tag": "0271_qualiopi_liens_cpf",
+      "breakpoints": true
     }
   ]
 }
