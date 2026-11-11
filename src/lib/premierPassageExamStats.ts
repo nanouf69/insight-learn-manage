@@ -18,7 +18,7 @@ export type ExamStatsAccount = {id:string;auth_user_id:string|null;nom?:string;p
 export type ExamStatsQrc = { qrc_instance_id:string; attempt_id:string; apprenant_id:string; question_id:string; reponse:unknown; etat:string; note:number|string|null; corrige_email:string|null };
 export type ExamStatsQrcIa = { qrc_instance_id:string; statut:string; note:number|string|null; bareme:number|string|null };
 export type ExamStatsEvidence = { attempts: ExamStatsAttempt[]; events: ExamStatsEvent[]; states?:ExamStatsState[]; legacy: AttemptStats[]; journal: FirstAnswerEvent[]; results: ExamStatsResult[]; retakes: ExamStatsRetake[]; accounts:ExamStatsAccount[]; qrc?:ExamStatsQrc[]; qrcIa?:ExamStatsQrcIa[] };
-const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) ? [...v].sort() : null;
+const values = (v: unknown): string[] | null => Array.isArray(v) && v.length > 0 && v.every(x => typeof x === 'string' && x.trim()) && new Set(v).size===v.length ? [...v].sort() : null;
 const hasAnswer = (v: unknown) => typeof v === 'string' ? !!v.trim() : Array.isArray(v) && v.length > 0;
 const same = (a: unknown, b: unknown) => typeof a==='string' || typeof b==='string' ? a===b : values(a) !== null && JSON.stringify(values(a)) === JSON.stringify(values(b));
 const blankRate = (): QuestionRate => ({incorrect:0,total:0,unknown:0,jour:{incorrect:0,total:0},soir:{incorrect:0,total:0},mixte:0,details:[]});
@@ -83,7 +83,7 @@ export function computeExamFirstPassage(questions: QuestionStatsTarget[], examId
         const retake=evidence.retakes.some(r=>r.apprenant_id===learner && r.attempt_id===a.attempt_id);
         const authUserId=evidence.accounts.find(account=>account.id===learner)?.auth_user_id;
         // Le trigger enregistre INSERT avec revision_precedente NULL et l'auteur avec auth.uid().
-        const proven=a.etat==='terminee' && !!a.finished_at && first.created_at<=a.finished_at && !retake && frozen.length===1 && !!authUserId && first.auteur===authUserId && first.revision_precedente==null && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
+        const proven=a.etat==='terminee' && !!a.finished_at && Number.isFinite(Date.parse(a.finished_at)) && first.created_at<=a.finished_at && !retake && frozen.length===1 && !!authUserId && first.auteur===authUserId && first.revision_precedente==null && first.revision_nouvelle===1 && !hasAnswer(first.valeur_precedente) && first.created_at>=a.started_at && Number.isFinite(Date.parse(first.created_at));
         observations.push({at:first.created_at,correct:proven?grade(q,frozen[0],first.valeur_nouvelle):null,answer:first.valeur_nouvelle,detail:{passage:a.attempt_id,exam:a.exam_id,subject,version:a.exam_version_id,tentative:a.snapshot.tentative??null,expected:frozen[0]?.choix?.filter(c=>c.correct===true).map(c=>c.lettre),points:frozen[0]?.points,reason:a.etat!=="terminee"?"Passage non remis":"Première révision, identité ou contenu figé non prouvé"}});
       }
       for (const exam of examIds) {

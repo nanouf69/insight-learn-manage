@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FirstPassageProvider, QuestionFirstPassageRate } from '@/components/cours-en-ligne/QuestionFirstPassageRate';
 import { readExamFirstPassage } from '@/lib/premierPassageExamStatsRead';
@@ -19,6 +19,14 @@ function renderRate() {
 }
 
 describe('Couleur du taux d’échec au premier passage', () => {
+  it('détail exact : toutes réponses du dénominateur, filtre erreurs et QRC en attente séparée', async()=>{
+    const r=rate(1,2,1);r.details=[{learnerId:'a',candidate:'Candidat A',answer:['B'],expected:['A'],passage:'p1',version:'v1',verdict:'incorrect'},{learnerId:'b',candidate:'Candidat B',answer:['A'],expected:['A'],passage:'p2',verdict:'correct'},{learnerId:'c',candidate:'Candidat C',answer:'Réponse en attente',passage:'p3',verdict:'unknown',reason:'QRC non notée'}];
+    mockedRead.mockResolvedValue(data(r));renderRate();fireEvent.click(await screen.findByRole('button',{name:/50 %/}));
+    expect(screen.getByText(/2 première\(s\) réponse/)).toBeInTheDocument();expect(screen.getByText(/Candidat A/)).toBeInTheDocument();expect(screen.getByText(/Candidat B/)).toBeInTheDocument();expect(screen.getByText('QRC non notée')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox',{name:'Erreurs seulement'}));expect(screen.queryByText(/Candidat B/)).not.toBeInTheDocument();expect(screen.getByText(/Candidat A/)).toBeInTheDocument();expect(screen.getByText(/Candidat C/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'Fermer le détail des premières réponses'}));expect(screen.queryByText('QRC non notée')).not.toBeInTheDocument();
+  });
+
   beforeEach(() => mockedRead.mockReset());
 
   it('1 erreur sur 2 réponses = 50 % affiché en rouge', async () => {
