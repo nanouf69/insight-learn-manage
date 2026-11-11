@@ -27,7 +27,7 @@ export async function readExamFirstPassage(examId:string,subject:string,question
   for(let offset=0;offset<ids.length;offset+=50){
     const batch=ids.slice(offset,offset+50);
     const [attempts,events,states,legacy,archived,journal,results,retakes,accounts,qrc]=await Promise.all([
-      pages<ExamStatsAttempt>((a,b)=>supabase.from('exam_attempts_v2').select('attempt_id,apprenant_id,exam_id,started_at,finished_at,etat,is_test,snapshot').in('apprenant_id',batch).in('exam_id',examIds).order('attempt_id').range(a,b)),
+      pages<ExamStatsAttempt>((a,b)=>supabase.from('exam_attempts_v2').select('attempt_id,apprenant_id,exam_id,exam_version_id,started_at,finished_at,etat,is_test,snapshot').in('apprenant_id',batch).in('exam_id',examIds).order('attempt_id').range(a,b)),
       pages<ExamStatsEvent>((a,b)=>supabase.from('answer_events').select('event_id,attempt_id,apprenant_id,question_id,valeur_nouvelle,valeur_precedente,revision_precedente,revision_nouvelle,auteur,created_at').in('apprenant_id',batch).in('question_id',questions.map(q=>`${subject}:${q.id}`)).order('event_id').range(a,b)),
       pages<ExamStatsState>((a,b)=>supabase.from('answer_state').select('attempt_id,apprenant_id,question_id,valeur').in('apprenant_id',batch).in('question_id',questions.flatMap(q=>[`${subject}:${q.id}`,String(q.id)])).order('response_id').range(a,b)),
       pages<AttemptStats>((a,b)=>supabase.from('reponses_apprenants').select('apprenant_id,exercice_id,tentative,status,submitted_at,reponses').in('apprenant_id',batch).eq('exercice_type','examen_blanc').order('id').range(a,b)),
@@ -35,7 +35,7 @@ export async function readExamFirstPassage(examId:string,subject:string,question
       pages<FirstAnswerEvent>((a,b)=>supabase.from('reponses_apprenants_journal').select('apprenant_id,exercice_id,question_id,tentative,valeur,created_at').in('apprenant_id',batch).in('exercice_id',examIds.map(e=>`${e}__${subject}`)).order('created_at').order('id').range(a,b)),
       pages<ExamStatsResult>((a,b)=>supabase.from('apprenant_quiz_results').select('id,apprenant_id,quiz_id,matiere_id,tentative,completed_at,details').in('apprenant_id',batch).in('quiz_id',examIds).eq('matiere_id',subject).order('id').range(a,b)),
       pages<ExamStatsRetake>((a,b)=>supabase.from('exam_subject_retakes').select('apprenant_id,exam_id,matiere_id,attempt_id,exercice_id,created_at').in('apprenant_id',batch).in('exam_id',examIds).eq('matiere_id',subject).order('operation_id').range(a,b)),
-      pages<{id:string;auth_user_id:string|null}>((a,b)=>supabase.from('apprenants').select('id,auth_user_id').in('id',batch).order('id').range(a,b)),
+      pages<{id:string;auth_user_id:string|null;nom:string;prenom:string}>((a,b)=>supabase.from('apprenants').select('id,auth_user_id,nom,prenom').in('id',batch).order('id').range(a,b)),
       questions.some(q=>q.type==='QRC') ? pages<ExamStatsQrc>((a,b)=>supabase.from('qrc_instances_v2').select('qrc_instance_id,attempt_id,apprenant_id,question_id,reponse,etat,note,corrige_email').in('apprenant_id',batch).in('question_id',questions.filter(q=>q.type==='QRC').map(q=>`${subject}:${q.id}`)).order('qrc_instance_id').range(a,b)) : Promise.resolve([]),
     ]);
     evidence.attempts.push(...attempts);evidence.events.push(...events);evidence.states?.push(...states);evidence.legacy.push(...legacy,...archived);evidence.journal.push(...journal);evidence.results.push(...results);evidence.retakes.push(...retakes);evidence.accounts.push(...accounts);evidence.qrc?.push(...qrc);

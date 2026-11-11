@@ -5,7 +5,8 @@ export type SourceStats = { module: number; exercise: number };
 export type AttemptStats = { apprenant_id: string; exercice_id: string; tentative: number | null; status: string | null; submitted_at: string | null; reponses: Record<string, unknown> | null };
 export type CompletionStats = { apprenant_id: string; module_id: number; status: string; completed_at: string | null; details: unknown };
 export type FirstAnswerEvent = { apprenant_id:string; exercice_id:string; question_id:string; tentative:number; valeur:unknown; created_at:string };
-export type QuestionRate = { incorrect: number; total: number; unknown: number; jour: { incorrect: number; total: number }; soir: { incorrect: number; total: number }; mixte: number };
+export type FirstPassageDetail = { learnerId: string; candidate?: string; answer: unknown; expected?: unknown; at?: string; passage?: string; exam?: string; subject?: string; version?: string; tentative?: number | null; points?: number | string; verdict: 'correct' | 'incorrect' | 'unknown'; reason?: string };
+export type QuestionRate = { details?: FirstPassageDetail[]; incorrect: number; total: number; unknown: number; jour: { incorrect: number; total: number }; soir: { incorrect: number; total: number }; mixte: number };
 const answered = (value: unknown): boolean => Array.isArray(value) ? value.length > 0 && value.every(v => typeof v === 'string' && v.trim().length > 0) : typeof value === 'string' && value.trim().length > 0;
 const letters = (value: unknown): string[] => (Array.isArray(value) ? value : typeof value === 'string' ? [value] : []).filter((v): v is string => typeof v === 'string').sort();
 const equal = (a: unknown,b: unknown) => JSON.stringify(letters(a)) === JSON.stringify(letters(b));
@@ -29,9 +30,9 @@ export function activeLearners(sessions: SessionStats[], enrollments: Inscriptio
  * Current answer keys and scores are NEVER used for historical grading. */
 export function computeFirstPassage(targets: QuestionStatsTarget[], sources: SourceStats[], learners: Map<string,Set<'jour'|'soir'>>, attempts: AttemptStats[], completions: CompletionStats[], events:FirstAnswerEvent[] = []) {
   return Object.fromEntries(targets.map(q => {
-    const rate: QuestionRate = { incorrect:0,total:0,unknown:0,jour:{incorrect:0,total:0},soir:{incorrect:0,total:0},mixte:0 };
+    const rate: QuestionRate = { incorrect:0,total:0,unknown:0,jour:{incorrect:0,total:0},soir:{incorrect:0,total:0},mixte:0,details:[] };
     for (const [learner,modes] of learners) {
-      const observations: { at: string; correct: boolean | null; value: unknown }[]=[];
+      const observations: { at: string; correct: boolean | null; value: unknown; detail: Partial<FirstPassageDetail> }[]=[];
       let uncertain=false;
       for(const source of sources) {
         const id=`module_${source.module}_exo_${source.exercise}`;
@@ -53,14 +54,15 @@ export function computeFirstPassage(targets: QuestionStatsTarget[], sources: Sou
           const retaken=rows.some(r=>(r.tentative ?? 0)>1 && r.submitted_at && proofs.some(c=>c.completed_at && r.submitted_at && r.submitted_at<=c.completed_at));
           const results=keys.map(d=>equal(answer,d.reponseCorrecte));
           const correct=firstAnswerProven && !retaken && results.length>0 && results.every(r=>r===results[0]) ? results[0] : null;
-          observations.push({at:firstEvent?.created_at ?? row.submitted_at,correct,value:answer});
+          observations.push({at:firstEvent?.created_at ?? row.submitted_at,correct,value:answer,detail:{passage:id,tentative:row.tentative,expected:keys[0]?.reponseCorrecte,version:`Module ${source.module} — preuve ${proofs[0]?.completed_at ?? "absente"}`}});
         }
       }
       observations.sort((a,b)=>a.at.localeCompare(b.at));
       const first=observations[0];
-      if(!first){if(uncertain)rate.unknown++;continue;}
+      if(!first){if(uncertain){rate.unknown++;rate.details?.push({learnerId:learner,answer:null,verdict:"unknown",reason:"Réponse présente mais première réponse, remise ou corrigé figé non prouvé"});}continue;}
       const ties=observations.filter(o=>o.at===first.at);
-      if(first.correct===null || uncertain || ties.some(o=>o.correct!==first.correct || !equal(o.value,first.value))){rate.unknown++;continue;}
+      if(first.correct===null || uncertain || ties.some(o=>o.correct!==first.correct || !equal(o.value,first.value))){rate.unknown++;rate.details?.push({learnerId:learner,answer:first.value,at:first.at,...first.detail,verdict:"unknown",reason:"Première réponse, remise ou corrigé figé non prouvé / preuves contradictoires"});continue;}
+      rate.details?.push({learnerId:learner,answer:first.value,at:first.at,...first.detail,verdict:first.correct?"correct":"incorrect"});
       rate.total++;if(!first.correct)rate.incorrect++;
       if(modes.size>1)rate.mixte++;
       for (const mode of modes) {const group=rate[mode];group.total++;if(!first.correct)group.incorrect++;}

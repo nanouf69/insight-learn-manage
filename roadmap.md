@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 16:33 — Détail des erreurs au premier essai
+- [x] Audit SELECT des sources/sessions ; capture insuffisante pour identifier la question, contrôle réel EB1 Gestion id8.
+- [x] Détail exact issu du calcul, exclusions/droits conservés ; 87 tests PASS, Chromium PC/mobile fullscreen, détail réel 14 comptées + 2 exclues.
+- [x] Rapport docs/premier-essai-detail-2026-11-11.md ; aucune écriture réelle/publication.
+
 ## 11/11 14:58 — Confirmation interne plein écran
 - [x] Confirmations révision/navigation internes au conteneur fullscreen, focus/Échap, intention périmée refusée et double envoi bloqué.
 - [x] 39 tests fictifs PASS ; Chromium iframe + fullscreen natif avant/pendant/après, annuler/Échap/confirmer puis relecture 0,5/2, un seul envoi simulé ; navigation avec commentaire vérifiée ; aucune note réelle ni publication.
