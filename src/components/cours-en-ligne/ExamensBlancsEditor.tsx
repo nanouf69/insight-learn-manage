@@ -375,6 +375,7 @@ export function tracerChargementExamens(t: TraceChargement): void {
 }
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
+const tracerLectureAvecJournal = tracerChargementExamens;
 export async function loadSavedExamens(
   notifyRepairs: boolean = false,
   /** Relevé figé : lignes lues dans le contenu figé à la fin des accès (jamais le contenu actuel). */
