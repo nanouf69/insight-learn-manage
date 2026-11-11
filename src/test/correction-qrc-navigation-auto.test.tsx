@@ -27,6 +27,7 @@ vi.mock("@/features/correction-qrc-v2/noyauReel", async (importOriginal) => {
   const reel = await importOriginal<typeof import("@/features/correction-qrc-v2/noyauReel")>();
   return {
     ...reel,
+    listerChoixSessionsCrm:async()=>[{cle:'groupe-test',type:'crm',libelle:'Session fictive',periode:null,debut:null,fin:null,tri:'2026-01-01',nbCandidats:0,examens:[]}],
     listerGroupesCrm: async () => { mocks.catalogue(); return [{
       cle: "groupe-test",
       type: "crm",
