@@ -375,13 +375,15 @@ export function tracerChargementExamens(t: TraceChargement): void {
 }
 
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
+const tracerLectureAvecJournal = tracerChargementExamens;
 export async function loadSavedExamens(
   notifyRepairs: boolean = false,
   /** Relevé figé : lignes lues dans le contenu figé à la fin des accès (jamais le contenu actuel). */
   lireLignesFigees?: (moduleIds: number[]) => Promise<Array<{ module_id: number; module_data: any; updated_at: string | null }>>,
+  lectureSeuleSansJournal = false,
 ): Promise<ExamenBlanc[]> {
   if (lireLignesFigees) return fusionnerExamensFiges(await lireLignesFigees(cloneExamens(tousLesExamens).map((ex) => getModuleIdForExamId(ex.id))));
-  return loadSavedExamensActuels(notifyRepairs);
+  return loadSavedExamensActuels(notifyRepairs, undefined, lectureSeuleSansJournal);
 }
 
 /** Même fusion que la version active, à partir de lignes figées : aucune lecture de la base. */
@@ -390,7 +392,8 @@ async function fusionnerExamensFiges(rows: Array<{ module_id: number; module_dat
   return loadSavedExamensActuels(false, rows);
 }
 
-async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Array<{ module_id: number; module_data: any; updated_at: string | null }>): Promise<ExamenBlanc[]> {
+async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Array<{ module_id: number; module_data: any; updated_at: string | null }>, sansJournal = false): Promise<ExamenBlanc[]> {
+  const tracerChargementExamens = (t: TraceChargement) => { if (!sansJournal) tracerLectureAvecJournal(t); };
   const examens = cloneExamens(tousLesExamens);
   // Date réelle de dernière écriture Admin enregistrée par la base : sert de
   // référence de comparaison quand une question ne porte pas de marqueur de date.

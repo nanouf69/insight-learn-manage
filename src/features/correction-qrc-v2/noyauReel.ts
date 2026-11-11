@@ -175,6 +175,7 @@ export async function listerSessions(mode: "test" | "migre" = "migre"): Promise<
 }
 
 export type GroupeSessionCrm = {
+  typeSession?: string | null;
   cle: string;
   type: "crm" | "elearning" | "indetermine" | "conflit";
   libelle: string;
@@ -249,8 +250,8 @@ export async function listerChoixSessionsCrm():Promise<GroupeSessionCrm[]> {
   if(!user)throw new Error('Session administrateur requise');
   const role=await supabase.rpc('has_role',{_user_id:user,_role:'admin'});
   if(role.error||role.data!==true)throw new Error('Accès administrateur requis');
-  const rows=await lirePagesParalleles<any>(de=>supabase.from('sessions').select('id,nom,date_debut,date_fin').order('id').range(de,de+999) as any,1);
-  return rows.map(r=>({cle:`crm:${r.id}`,type:'crm' as const,libelle:r.nom??'Session sans nom',periode:`${jourFr(r.date_debut)} → ${jourFr(r.date_fin)}`,debut:r.date_debut,fin:r.date_fin,tri:r.date_debut,nbCandidats:0,examens:[]})).sort((a,b)=>b.tri.localeCompare(a.tri));
+  const rows=await lirePagesParalleles<any>(de=>supabase.from('sessions').select('id,nom,date_debut,date_fin,type_session').order('id').range(de,de+999) as any,1);
+  return rows.map(r=>({cle:`crm:${r.id}`,type:'crm' as const,typeSession:r.type_session,libelle:r.nom??'Session sans nom',periode:`${jourFr(r.date_debut)} → ${jourFr(r.date_fin)}`,debut:r.date_debut,fin:r.date_fin,tri:r.date_debut,nbCandidats:0,examens:[]})).sort((a,b)=>b.tri.localeCompare(a.tri));
 }
 
 export function listerGroupesCrm(mode: "test" | "migre" = "migre",sessionCle?:string): Promise<GroupeSessionCrm[]> {
@@ -547,6 +548,7 @@ export async function chargerSessionTest(
     : null;
   if (attemptIdsFiltre) attemptIdsFiltre = attemptIdsFiltre.filter((a) => !estConsultation(a));
   if (consultation && attemptIdsFiltre && attemptIdsFiltre.length === 0) return consultation;
+  if (attemptIdsFiltre?.length === 0) return {tentatives:[],qrc:[],resultats:[],baremesRestaures:[]};
 
   const colonnes = "attempt_id, apprenant_id, exam_id, exam_version_id, etat, snapshot, snapshot_fingerprint, started_at, finished_at";
   let attempts: any[] = [];
