@@ -22,3 +22,10 @@ Une opération additive spécifique doit permettre une autorisation nominative e
 
 ## Vérification attendue de ce lot
 Les tests couvrent le blocage, l’annulation, les identités et l’absence de mutation. Le succès d’un reset, ses droits serveur et sa concurrence restent **NON PROUVÉS**, puisque l’opération admin n’existe pas. Ne pas assimiler un test d’interface à un contrat serveur positif.
+
+## Résultats exécutés
+- Vitest : **23/23 PASS**, dont 11 tests du bouton admin, 8 tests du repassage élève existant et 4 tests du reset global existant. Aucun test positif serveur admin n’est revendiqué.
+- Chromium, vrai panneau CRM sur fixtures uniquement : VTC 1280×1800 et TAXI 390×844, confirmation élève/examen/matière, annulation/réouverture, confirmation désactivée, note Anglais inchangée, aucun débordement ni erreur de page. Captures finales vues après animation.
+- Toutes les requêtes externes ont été interceptées : un `log_error` de démarrage lié au chargement des définitions fictives a également été bloqué. **Zéro requête de mutation déclenchée par les clics**, zéro écriture Cloud.
+- Compilation automatique observée : `build OK` ; lint des nouveaux fichiers : zéro erreur. Comparaison des trois sections globales (gestionnaire, bouton et dialogue) à HEAD : identiques. Aucun changement des calculs de notes.
+- Session admin réelle et parcours élève réel positif : **NON PROUVÉS** ; volontairement aucune remise à zéro réelle, aucun email, IA ou publication.
