@@ -1,5 +1,14 @@
 # Feuille de route
 
+## 11/11 14:29 — Catalogue QRC unique
+- [ ] Intégrer archives et ambiguïtés au menu normal session/examen, lecture seule et provenance explicite, zéro entrée Ancien circuit.
+- [ ] Inventaire exhaustif par examen/filière, miroirs/archives/manquantes et nouveaux passages V2, preuves Mamadou/Chemoun/7 cas récents.
+- [ ] Tests pagination, ambiguïtés, consultation sans notation ; aucune mutation métier/migration/publication.
+
+## 11/11 14:25 — Liens CPF Qualiopi (plan approuvé)
+- [ ] Catalogue administrateur partagé, sept adresses existantes, modification explicite avec relecture.
+- [ ] Onglet séparé, copier/ouvrir/modifier ; tests et aperçu PC/mobile, aucun mail ni publication.
+
 ## 11/11 14:17 — Miroirs QCM/QRC catalogue
 - [x] Provenance double écriture et rapprochement strict copie/contenu/réponses ; ambigu conservé.
 - [x] Catalogue/compteur même preuve + régressions QCM/QRC/tentatives collisions, 1002 passages.
