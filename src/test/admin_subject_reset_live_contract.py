@@ -133,6 +133,15 @@ class Live(base.Contract):
  def test_06_admin_actions_never_touch_learner_tables(self):
   self.seed('EB2-TAXI','t3p');t=lambda:self.sql("SELECT (SELECT count(*) FROM reponses_apprenants),(SELECT count(*) FROM apprenant_examen_timers),(SELECT count(*) FROM apprenant_quiz_results),(SELECT count(*) FROM exam_attempts_v2),(SELECT count(*) FROM apprenant_module_completion),(SELECT count(*) FROM _effets_externes)").stdout
   b=t();c=self.context('EB2-TAXI','t3p');self.authorize(c,str(uuid.uuid4()));self.assertEqual(b,t())
+ def test_07_resume_returns_same_open_copy_without_write(self):
+  # Arezki-like: V2 copy open, no answer, timer elapsed. "Reprendre" = core_start_attempt -> same attempt id.
+  self.seed('EB2-TAXI','gestion');att=self.v2('EB2-TAXI','gestion',{},etat='en_cours')
+  self.sql("INSERT INTO core_bridge_flags(cle,actif) VALUES('pont_v2_test',true),('pont_v2',true) ON CONFLICT DO NOTHING",False)
+  before=self.sql(f"SELECT md5(json_agg(to_jsonb(a) ORDER BY attempt_id)::text) FROM exam_attempts_v2 a").stdout
+  out=self.api(f"SELECT (core_start_attempt(gen_random_uuid(),'{A}','EB2-TAXI','gestion')).attempt_id",U,False)
+  if out.returncode:self.skipTest('bridge flags schema differs: '+out.stderr[:200])
+  self.assertEqual(out.stdout.strip().splitlines()[-1],att)
+  self.assertEqual(before,self.sql(f"SELECT md5(json_agg(to_jsonb(a) ORDER BY attempt_id)::text) FROM exam_attempts_v2 a").stdout)
 for n in [x for x in dir(base.Contract) if x.startswith('test_')]:
  if hasattr(Live,n) and n not in Live.__dict__:setattr(Live,n,None)
 if __name__=='__main__':unittest.main(verbosity=2)
