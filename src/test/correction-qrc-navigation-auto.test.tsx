@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminCorrectionQrcV2Reel from "@/pages/AdminCorrectionQrcV2Reel";
 import type { QrcReelle, SessionReelle, TentativeReelle } from "@/features/correction-qrc-v2/noyauReel";
@@ -515,7 +515,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     fireEvent.click(screen.getByTestId('modifier-note'));
     fireEvent.click(screen.getByTestId('revision-note-0.5'));
     expect(await screen.findByText('Modifier la correction de 1/2 à 0,5/2 ?')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button',{name:'Annuler'}));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Annuler'}));
     expect(mocks.reviser).not.toHaveBeenCalled();
     expect(screen.getByTestId('reponse-eleve')).toHaveTextContent('Réponse a1');
     fireEvent.click(screen.getByTestId('revision-note-0.5'));
@@ -542,7 +542,7 @@ describe("Correction QRC — passage automatique après confirmation de persista
     fireEvent.change(screen.getByPlaceholderText('Commentaire (facultatif)'),{target:{value:'Texte non enregistré'}});
     fireEvent.click(screen.getByTestId('copie-suivante'));
     await screen.findByRole('dialog');
-    fireEvent.click(screen.getByRole('button',{name:'Annuler'}));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Annuler'}));
     expect(screen.getByPlaceholderText('Commentaire (facultatif)')).toHaveValue('Texte non enregistré');
     fireEvent.click(screen.getByTestId('copie-suivante'));
     fireEvent.click(await screen.findByRole('button',{name:'Confirmer'}));
