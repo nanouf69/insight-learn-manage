@@ -6,10 +6,10 @@ export function groupeTousPassages(groupes: GroupeSessionCrm[]): GroupeSessionCr
   const examens = new Map<string, SessionListee>();
   const candidats = new Set<string>();
   for (const g of groupes) for (const e of g.examens) {
-    const key = `${TOUS_GROUPES}::${e.exam_id}${e.circuit === "ancien" ? "::ancien" : ""}`;
+    const key = `${TOUS_GROUPES}::${e.exam_id}`;
     let dest = examens.get(key);
     if (!dest) {
-      dest = { ...e, cle: key, attemptIds: [], dates: [], legacyResultIds: [], apprenantParAttempt: {}, inscriptionCroiseeParAttempt: {} };
+      dest = { ...e, circuit:'v2', cle: key, attemptIds: [], dates: [], legacyResultIds: [], apprenantParAttempt: {}, inscriptionCroiseeParAttempt: {} };
       examens.set(key, dest);
     }
     for (const id of e.attemptIds) if (!dest.attemptIds.includes(id)) dest.attemptIds.push(id);

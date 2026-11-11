@@ -380,7 +380,7 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
     // Un seul bloc par numéro d'Examen Blanc dans la session CRM ; les dates réelles
     // de passage sont conservées à l'intérieur (jamais de fusion entre EB différents).
     const ancien = a.circuit === "ancien";
-    const cleEb = `${cle}::${a.exam_id}${ancien ? "::ancien" : ""}`;
+    const cleEb = `${cle}::${a.exam_id}`;
     let eb = g.examens.find((e) => e.cle === cleEb);
     if (!eb) {
       eb = {
@@ -391,8 +391,8 @@ async function listerGroupesCrmServeur(mode: "test" | "migre"): Promise<GroupeSe
         heureMin: heure,
         heureMax: heure,
         attemptIds: [],
-        circuit: ancien ? "ancien" : "v2",
-        legacyResultIds: ancien ? [] : undefined,
+        circuit: "v2",
+        legacyResultIds: [],
         dates: [],
       };
       g.examens.push(eb);
