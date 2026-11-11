@@ -1,5 +1,13 @@
 # Remise à zéro admin d’une matière — aperçu bloqué
 
+## Reprise 11/11 — état le plus récent, prioritaire sur les comptes rendus ci-dessous
+- Catalogue Cloud : `exam_subject_reset_context` et `admin_authorize_exam_subject_reset` toujours absentes ; **aucune migration appliquée**, aucune autorisation ou tentative réelle, aucun frontend publié.
+- Arezki HADJ ALI, EB3/T3P : tentative V2 `5b7ca25e-ed8b-45b7-8bc4-690385e21c50` en cours, fin NULL, aucun résultat ; chrono initial du 10/11 à 08:23:59 UTC, durée 2700 secondes. Ne pas remplacer cette copie, même si son délai est écoulé : état serveur encore ouvert.
+- Nouveau test reproductible `src/test/subject-reset-passage-browser/check_flow.py` : véritable PassageMatiere, transport réseau intercepté vers PostgreSQL jetable exclusivement, ancien EB3 VTC sur ordinateur et V2 EB4 TAXI sur mobile ; réponse sélectionnée relue, chrono repris à 44:56/44:55 après reload, soumission observée. Captures vues. Aucun réseau réel IA/email/Cloud autorisé.
+- Défaut reproduit et corrigé dans le candidat : le premier reçu avait source=destination et empêchait une nouvelle tentative ultérieure (rejeu de la copie initiale). Le candidat remplace l'unicité source par un index partiel des véritables repassages sans supprimer de reçu ; le client distingue les opérations par preuve source et autorisation. Neuf contrats PostgreSQL PASS, dont première remise puis tentative 2 et original inchangé ; 23 tests applicatifs ciblés PASS ; dernier build observé OK.
+- **Installation encore suspendue** : scénario de soumission V2 historique importée complet non exécuté ; le cluster contient les guards ciblés mais pas tous les triggers live (dont enfilage IA et completion de module). Résultat serveur après soumission non asserté par le navigateur et preuve d'absence d'effet indirect global incomplète. Ne pas revendiquer une compatibilité exhaustive ni un bouton opérationnel.
+- La modification cliente exige une publication ciblée ultérieure ; la dépendance serveur seule ne suffirait pas à corriger le rejeu du premier reçu avec l'ancien bundle. Aucun lot frontend groupé n'a été publié.
+
 ## État
 Bouton et confirmation uniquement. **Pas d’action effective, pas de publication, pas de migration préparée ou appliquée.** Le bouton de confirmation est toujours désactivé ; aucun transport de mutation n’est importé dans ce composant.
 

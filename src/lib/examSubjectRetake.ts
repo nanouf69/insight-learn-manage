@@ -46,7 +46,7 @@ export async function startSubjectRetake(p: {
   if(current.status==='ambigu')throw new Error(current.reason ?? 'Identité non prouvée.');
   // The displayed result may belong to an earlier attempt. Server identity wins, never a guessed suffix.
   p = {...p,sourceExercise:current.source_exercice_id,sourceAttempt:current.source_attempt_id};
-  const op = await operationId(`subject-retake:${p.owner}:${p.account}:${p.exam}:${p.subject}:${p.sourceExercise}:${p.sourceAttempt ?? 'legacy'}`);
+  const op = await operationId(`subject-retake:${p.owner}:${p.account}:${p.exam}:${p.subject}:${p.sourceExercise}:${p.sourceAttempt ?? 'legacy'}:${current.source_token}:${current.authorization_id ?? 'normal'}`);
   const { data, error } = await freshSessionCall(() => supabase.rpc('start_exam_subject_retake' as never, {
     p_operation_id: op, p_apprenant_id: p.account, p_exam_id: p.exam, p_matiere_id: p.subject,
     p_source_exercice_id: p.sourceExercise, p_source_attempt_id: p.sourceAttempt ?? null,

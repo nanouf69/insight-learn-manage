@@ -15,8 +15,10 @@ class Contract(unittest.TestCase):
   CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql AS $$SELECT 'authenticated'::text$$;
   CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('sub',auth.uid(),'role',auth.role())$$;
   GRANT USAGE ON SCHEMA auth TO authenticated,anon;GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth TO authenticated,anon;""")
-  schema=subprocess.check_output(['pg_dump','--schema-only','--schema=public','--no-owner'],text=True).replace('CREATE SCHEMA public;','')
-  r=c.sql(schema,False);Path(c.d+'/restore.log').write_text(r.stderr)
+  catalog=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text())
+  c.sql(catalog['schema'])
+  for definition in catalog['functions']:c.sql(definition)
+  c.sql(catalog['rls']);c.sql(catalog['triggers'])
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
   c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');UPDATE apprenants SET modules_autorises=ARRAY[35,36,37,38];INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');")
  @classmethod
@@ -32,7 +34,7 @@ class Contract(unittest.TestCase):
  def seed(self,exam,mid):
   s={'id':exam,'matieres':[{'id':mid,'nom':'A T3P','duree':45,'questions':[{'id':1,'enonce':'Fictif','type':'QCM','choix':[{'id':'A','texte':'Oui','correct':True}]}]},{'id':'anglais','nom':'E Anglais','duree':30,'questions':[{'id':1,'enonce':'Other','type':'QCM'}]}]}
   self.sql(f"INSERT INTO examens_blancs_parcours(module_id,exam_id) VALUES({36 if '-TAXI' in exam else 37 if '-ta' in exam else 38 if '-va' in exam else 35},'{exam}') ON CONFLICT DO NOTHING")
-  self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES({len(exam)*100+len(mid)},'{json.dumps(s)}')")
+  self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES((SELECT coalesce(max(module_id),0)+1 FROM module_editor_state),'{json.dumps(s)}')")
  def context(self,exam,mid,uid=ADMIN):return json.loads(self.call(f"SELECT exam_subject_reset_context('{A}','{exam}','{mid}')",uid).stdout.splitlines()[-1])
  def authorize(self,c,op=None,uid=ADMIN,check=True):
   op=op or 'aaaaaaaa-1111-1111-1111-111111111111'
@@ -83,4 +85,15 @@ class Contract(unittest.TestCase):
    results=list(pool.map(lambda op:json.loads(self.authorize(c,op).stdout.splitlines()[-1]),['aaaaaaaa-6666-1111-1111-111111111111','aaaaaaaa-7777-1111-1111-111111111111']))
   self.assertEqual(results[0]['operation_id'],results[1]['operation_id'])
   self.assertEqual(self.sql(f"SELECT count(*) FROM exam_subject_reset_authorizations WHERE apprenant_id='{A}' AND exam_id='EB3' AND matiere_id='anglais'").stdout.strip(),'1')
+ def test_09_first_start_then_real_retake_does_not_replay_initial_copy(self):
+  self.seed('EB6','t3p');c=self.context('EB6','t3p');self.authorize(c,'aaaaaaaa-8888-1111-1111-111111111111')
+  first=json.loads(self.start(c,'bbbbbbbb-8888-1111-1111-111111111111').stdout.splitlines()[-1])
+  self.sql(f"UPDATE reponses_apprenants SET completed=true,status='submitted',submitted_at=now(),reponses='{{\"1\":[\"A\"]}}' WHERE apprenant_id='{A}' AND exercice_id='EB6__t3p';INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,score_obtenu) VALUES('{A}','{U}','EB6','Fictif','t3p','T3P',1,20)")
+  before=self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB6__t3p'").stdout
+  c=self.context('EB6','t3p');self.authorize(c,'aaaaaaaa-9999-1111-1111-111111111111')
+  second=json.loads(self.start(c,'bbbbbbbb-9999-1111-1111-111111111111').stdout.splitlines()[-1])
+  self.assertEqual(second['tentative'],2);self.assertEqual(second['exercice_id'],'EB6__t3p__t2');self.assertNotEqual(second['operation_id'],first['operation_id'])
+  self.assertEqual(before,self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB6__t3p'").stdout)
+  self.assertEqual(json.loads(self.start(c,'bbbbbbbb-9999-1111-1111-111111111111').stdout.splitlines()[-1]),second)
+  self.assertEqual(self.sql("SELECT count(*) FROM apprenant_quiz_results WHERE quiz_id='EB6'").stdout.strip(),'1')
 if __name__=='__main__':unittest.main(verbosity=2)

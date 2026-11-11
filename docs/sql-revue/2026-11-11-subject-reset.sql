@@ -1,4 +1,11 @@
 -- Scoped deferred admin authorization; no learner data backfill or reset.
+-- A first start is not a retake of its own source. Preserve every receipt and
+-- enforce source uniqueness only for actual retakes (destination differs).
+CREATE UNIQUE INDEX exam_subject_retakes_actual_source_key
+ ON public.exam_subject_retakes(apprenant_id,exam_id,matiere_id,source_exercice_id)
+ WHERE exercice_id<>source_exercice_id;
+ALTER TABLE public.exam_subject_retakes
+ DROP CONSTRAINT exam_subject_retakes_apprenant_id_exam_id_matiere_id_source_key;
 CREATE TABLE public.exam_subject_reset_authorizations (
  operation_id uuid PRIMARY KEY, apprenant_id uuid NOT NULL, exam_id text NOT NULL,
  filiere text NOT NULL, matiere_id text NOT NULL, source_exercice_id text NOT NULL,
@@ -189,7 +196,8 @@ BEGIN
   END IF;
   SELECT * INTO receipt FROM public.exam_subject_retakes
     WHERE apprenant_id=p_apprenant_id AND exam_id=p_exam_id AND matiere_id=p_matiere_id
-      AND source_exercice_id=p_source_exercice_id;
+      AND source_exercice_id=p_source_exercice_id
+      AND exercice_id<>source_exercice_id;
   IF FOUND THEN
     IF receipt.source_attempt_id IS DISTINCT FROM p_source_attempt_id THEN
       RAISE EXCEPTION 'Identité du passage différente.' USING ERRCODE='P0482';
