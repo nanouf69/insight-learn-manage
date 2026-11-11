@@ -1082,6 +1082,10 @@ function PassageMatiere({
         } as any);
 
         if (cancelled) return;
+        if (error?.code === 'P0551') {
+          setBlocageV2(error.message);
+          return;
+        }
         const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
         const remaining = Number(row?.remaining_seconds);
         if (error || !Number.isFinite(remaining)) {

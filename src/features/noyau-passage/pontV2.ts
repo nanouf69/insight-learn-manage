@@ -208,7 +208,11 @@ export async function routerPassage(params: {
   if (reprise === null) return { moteur: "bloque", message: "L'historique de vos tentatives est illisible. Aucun changement de circuit n'a été effectué." };
   if (!reprise && params.passageDejaEngage) return { moteur: "ancien", motif: "passage_deja_engage" };
 
-  const attemptId = await demarrerTentative(params);
+  let attemptId: string | null;
+  try { attemptId = await demarrerTentative(params); }
+  catch (error) {
+    return { moteur: 'bloque', message: error instanceof Error ? error.message : 'Démarrage refusé par le serveur.' };
+  }
   if (attemptId) return { moteur: "v2", attemptId };
   return {
     moteur: "bloque",
@@ -234,6 +238,7 @@ export async function demarrerTentative(params: {
   });
   const { data, error } = await demarrer(op);
   if (error) {
+    if (error.code === 'P0551') throw new Error(error.message);
     console.warn("[PontV2] démarrage refusé:", error.message);
     return null;
   }
@@ -285,6 +290,7 @@ export async function demarrerTentative(params: {
     const opFraiche = await operationId(`start-after-closed:${attemptId}:${Date.now()}`);
     const { data: recree, error: erreurRecree } = await demarrer(opFraiche);
     if (erreurRecree) {
+      if (erreurRecree.code === 'P0551') throw new Error(erreurRecree.message);
       console.warn("[PontV2] ouverture après tentative clôturée refusée:", erreurRecree.message);
       return null;
     }
@@ -294,6 +300,7 @@ export async function demarrerTentative(params: {
     const reopenOp = await operationId(`reopen:${attemptId}`);
     const { data: reopened, error: reopenError } = await demarrer(reopenOp);
     if (reopenError) {
+      if (reopenError.code === 'P0551') throw new Error(reopenError.message);
       console.warn("[PontV2] réouverture administrative refusée:", reopenError.message);
       return null;
     }
