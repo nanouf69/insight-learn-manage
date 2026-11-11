@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 11/11 14:06 — Annulation reset : intégration isolée
+- [x] Sélection V2 sans grant annulé et sérialisation timer/INSERT anciens préparées/testées ; matière ancien complet + UPDATE concurrents restent NON PROUVÉS.
+- [x] 5 scénarios fictifs SQL + 2 vrais lecteurs TS PASS : archivage/restauration/sept notes/QRC/admin/élève/isolation ; aucune répétition des tests acquis.
+- [x] Prévol HADDOU EB3 : 7 copies/7 notes, zéro V2/timer/reçu nouveau ; rapport NO-GO production et candidat isolé revuable.
+- [ ] Activation bloquée : lecteurs frontend effectifs non branchés/rafraîchissement absent ; E2E 3 écrans et concurrence matière ancien/UPDATE non prouvés ; gate FALSE, aucune installation.
+
 ## 11/11 13:55 — Accès EB multi-session
 - [x] Cases multi-sessions + états réels explicites + confirmation scoped désactivée pour écriture en aperçu.
 - [x] Candidat atomique séparé sur journal existant, tests invalidité/CAS/droits/frontières démarrages/reprises/croisées et mobile ; chemins RPC complets anciens/TA/VA restent NON PROUVÉS avant activation.
