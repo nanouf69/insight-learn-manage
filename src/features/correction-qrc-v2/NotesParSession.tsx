@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { GroupeSessionCrm } from './noyauReel';
 import { sessionFormationActuelle } from './sessionsActuelles';
+import { extremesNotesSession, rangNoteSession } from './extremesNotesSession';
 import { chargerNotesSession, filiereInscrit, moyenneSessionExamen, type NoteSession, type ReleveSession } from './notesSession';
 const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='definitif'?`${n.note?.toLocaleString('fr-FR')} /20`:n.etat==='non_passe'?'Non passé':n.etat==='attente'?'À corriger / en attente':n.etat==='incomplet'?`Incomplet (${n.couverture})`:'Lecture indisponible';
 export function NotesParSession({sessions,charger=chargerNotesSession}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession}){
@@ -10,6 +11,7 @@ export function NotesParSession({sessions,charger=chargerNotesSession}:{sessions
   useEffect(()=>{if(!cle)return;let alive=true;setLoading(true);setReleve(null);setExamenId('tous');setErreur(null);void charger(cle.slice(4)).then(r=>{if(alive){setReleve(r);setErreur(r.erreur);}}).catch(e=>{if(alive)setErreur(e.message);}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false};},[cle,retry,charger]);
   const examens=releve?.examens??[];
   const choisi=examens.find(e=>e.id===examenId);
+  const extremes= new Map(examens.map(e=>[e.id,releve?extremesNotesSession(releve,e):null]));
   const colonnes=choisi?[{id:'general',nom:`EB${choisi.numero} ${choisi.filiere} — général /20`},...choisi.matieres]:examens.map(e=>({id:e.id,nom:`EB${e.numero} ${e.filiere} — général /20`}));
   const moyenne=(id:string)=>{
     if(!releve)return null;const exam=choisi??examens.find(e=>e.id===id);if(!exam)return null;
@@ -24,11 +26,12 @@ export function NotesParSession({sessions,charger=chargerNotesSession}:{sessions
     {releve&&<>
       <label className="block space-y-1 text-sm"><span>Examen blanc</span><select aria-label="Examen blanc" className="block max-w-full rounded border bg-background px-2 py-1" value={examenId} onChange={e=>setExamenId(e.target.value)}><option value="tous">Tous les examens</option>{examens.map(e=><option key={e.id} value={e.id}>EB{e.numero} {e.filiere}</option>)}</select></label>
       <div className="overflow-x-auto"><p className="text-sm text-muted-foreground">{releve.inscrits.length} inscrits</p><table className="w-full text-sm"><thead><tr className="border-b"><th className="p-2 text-left">Apprenant</th><th className="p-2 text-left">Filière</th>{colonnes.map(c=><th key={c.id} className="p-2 text-left">{c.nom}</th>)}</tr></thead><tbody>
-        <tr className="border-b bg-muted/50 font-semibold"><th className="p-2 text-left">Moyenne de la session</th><td className="p-2">—</td>{colonnes.map(c=>{const m=moyenne(c.id);return <td key={c.id} className="p-2 align-top min-w-32">{!choisi?<Button variant="ghost" className="h-auto p-0 whitespace-normal text-left" onClick={()=>setExamenId(c.id)}>{m?.note!=null?`${m.note.toLocaleString('fr-FR')} /20`:'Aucune note définitive'}</Button>:<span>{m?.note!=null?`${m.note.toLocaleString('fr-FR')} /20`:'Aucune note définitive'}</span>}<span className="block text-xs text-muted-foreground">{m?.n??0}/{m?.inscrits??0} notes définitives</span></td>;})}</tr>
+        <tr className="border-b bg-muted/50 font-semibold"><th className="p-2 text-left">Moyenne de la session</th><td className="p-2">—</td>{colonnes.map(c=>{const m=moyenne(c.id);const general=!choisi||c.id==='general';const valeur=m?.note!=null?<><span className={general?'text-destructive':undefined}>{m.note.toLocaleString('fr-FR')}</span> /20</>:'Aucune note définitive';return <td key={c.id} className="p-2 align-top min-w-32">{!choisi?<Button variant="ghost" className="h-auto p-0 whitespace-normal text-left" onClick={()=>setExamenId(c.id)}>{valeur}</Button>:<span>{valeur}</span>}<span className="block text-xs text-muted-foreground">{m?.n??0}/{m?.inscrits??0} notes définitives</span></td>;})}</tr>
         {releve.inscrits.map(a=><tr key={a.id} className="border-b"><th className="p-2 text-left font-medium">{a.nom} {a.prenom}</th><td className="p-2">{filiereInscrit(a.type_apprenant)??'À vérifier'}</td>{colonnes.map(c=>{
           const exam=choisi??examens.find(e=>e.id===c.id);const applicable=!!exam&&filiereInscrit(a.type_apprenant)===exam.filiere;
           const n=exam?(choisi&&c.id!=='general'?releve.matieres?.[a.id]?.[exam.id]?.[c.id]:releve.notes[a.id]?.[exam.numero]):undefined;
-          return <td key={c.id} className="p-2 align-top min-w-32"><span>{applicable?texteNote(n):'Non concerné'}</span>{applicable&&n?.etat==='definitif'&&<span className="block text-xs text-muted-foreground">Définitive{n.verdict?` · ${n.verdict==='reussi'?'Réussi':n.verdict==='echoue'?'Échoué':'Verdict indéterminé'}`:''}</span>}</td>;
+          const rang=applicable&&exam&&(!choisi||c.id==='general')?rangNoteSession(n,extremes.get(exam.id)??null):null;
+          return <td key={c.id} className="p-2 align-top min-w-32"><span className={rang==='meilleure'?'text-success':rang==='basse'?'text-destructive':undefined}>{applicable?texteNote(n):'Non concerné'}</span>{rang&&<span className="block text-xs text-muted-foreground">{rang==='meilleure'?'↑ Meilleure note de la session':'↓ Plus basse note de la session'}</span>}{applicable&&n?.etat==='definitif'&&<span className="block text-xs text-muted-foreground">Définitive{n.verdict?` · ${n.verdict==='reussi'?'Réussi':n.verdict==='echoue'?'Échoué':'Verdict indéterminé'}`:''}</span>}</td>;
         })}</tr>)}
       </tbody></table>{releve.inscrits.length===0&&<p className="py-4 text-muted-foreground">Aucun inscrit — Aucune note définitive (0/0).</p>}</div>
     </>}
