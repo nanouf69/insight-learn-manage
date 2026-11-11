@@ -109,4 +109,10 @@ class Access(unittest.TestCase):
    child.stdin.write('COMMIT;\\q\n');child.stdin.flush();child.wait(timeout=5)
    self.assertEqual(future.result(timeout=5)[1].returncode,0)
   self.assertNotEqual(self.gate(check=False).returncode,0)
+  child.stdin.close();child.stdout.close();child.stderr.close()
+ def test_15_unknown_and_distanciel_preserve_access(self):
+  for kind,slot in [('vtc','en ligne'),('',''),('vtc-e-presentiel','')]:
+   self.sql(f"UPDATE apprenants SET type_apprenant='{kind}',creneau_horaire='{slot}' WHERE id='{A}'")
+   self.gate()
+  self.sql(f"UPDATE apprenants SET type_apprenant='vtc',creneau_horaire=NULL WHERE id='{A}'")
 if __name__=='__main__':unittest.main(verbosity=2)

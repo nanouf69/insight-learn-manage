@@ -1,7 +1,7 @@
 import {vi,it,expect,beforeEach} from 'vitest';
 const state=vi.hoisted(()=>({opened: [] as unknown[],rpc:vi.fn()}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{
- from:()=>({select(){return this;},eq(){return this;},order(){return Promise.resolve({data:state.opened,error:null});}}),
+ from:()=>({select(){return this;},eq(){return this;},limit(){return Promise.resolve({data:[],error:null});},order(){return Promise.resolve({data:state.opened,error:null});}}),
  rpc:(name:string,args:unknown)=>name==='core_bridge_actif_pour'||name==='core_sujet_publie'?Promise.resolve({data:true,error:null}):state.rpc(name,args),
 }}));
 import {routerPassage} from '@/features/noyau-passage/pontV2';

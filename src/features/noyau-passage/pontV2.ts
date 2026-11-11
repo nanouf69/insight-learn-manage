@@ -290,6 +290,7 @@ export async function demarrerTentative(params: {
     const opFraiche = await operationId(`start-after-closed:${attemptId}:${Date.now()}`);
     const { data: recree, error: erreurRecree } = await demarrer(opFraiche);
     if (erreurRecree) {
+      if (erreurRecree.code === 'P0551') throw new Error(erreurRecree.message);
       console.warn("[PontV2] ouverture après tentative clôturée refusée:", erreurRecree.message);
       return null;
     }
