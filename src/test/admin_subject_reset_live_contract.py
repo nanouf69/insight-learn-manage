@@ -138,8 +138,8 @@ class Live(base.Contract):
   att=self.v2('EB2','t3p',{},etat='en_cours',started_at="2026-11-09 08:00:00+00")
   other=self.v2('EB2','anglais',{},etat='terminee')
   self.sql(f"INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,tentative,started_at) VALUES('{A}','{U}','EB2__t3p',2700,1,'2026-11-09 08:00:00+00')")
-  fixed="attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,is_test"
   before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{att}'").stdout
+  immutable_before=self.sql(f"SELECT jsonb_build_object('attempt_id',attempt_id,'apprenant_id',apprenant_id,'exam_id',exam_id,'exam_version_id',exam_version_id,'snapshot',snapshot,'snapshot_fingerprint',snapshot_fingerprint,'started_at',started_at,'is_test',is_test) FROM exam_attempts_v2 WHERE attempt_id='{att}'").stdout
   other_before=self.sql(f"SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{other}'").stdout
   c=self.context('EB2','t3p');self.assertEqual((c['status'],c['source_attempt_id'],c['expired_empty']),('en_attente',att,True))
   op=str(uuid.uuid4());self.authorize(c,op)
