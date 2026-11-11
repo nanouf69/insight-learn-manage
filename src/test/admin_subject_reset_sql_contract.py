@@ -17,6 +17,7 @@ class Contract(unittest.TestCase):
   GRANT USAGE ON SCHEMA auth TO authenticated,anon;GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth TO authenticated,anon;""")
   catalog=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text())
   c.sql(catalog['schema'])
+  c.sql("ALTER TABLE exam_subject_retakes RENAME CONSTRAINT exam_subject_retakes_apprenant_id_exam_id_matiere_id_sourc_key TO exam_subject_retakes_apprenant_id_exam_id_matiere_id_source_key;")
   for definition in catalog['functions']:c.sql(definition)
   c.sql(catalog['rls']);c.sql(catalog['triggers'])
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
@@ -85,4 +86,15 @@ class Contract(unittest.TestCase):
    results=list(pool.map(lambda op:json.loads(self.authorize(c,op).stdout.splitlines()[-1]),['aaaaaaaa-6666-1111-1111-111111111111','aaaaaaaa-7777-1111-1111-111111111111']))
   self.assertEqual(results[0]['operation_id'],results[1]['operation_id'])
   self.assertEqual(self.sql(f"SELECT count(*) FROM exam_subject_reset_authorizations WHERE apprenant_id='{A}' AND exam_id='EB3' AND matiere_id='anglais'").stdout.strip(),'1')
+ def test_09_first_start_then_real_retake_does_not_replay_initial_copy(self):
+  self.seed('EB6','t3p');c=self.context('EB6','t3p');self.authorize(c,'aaaaaaaa-8888-1111-1111-111111111111')
+  first=json.loads(self.start(c,'bbbbbbbb-8888-1111-1111-111111111111').stdout.splitlines()[-1])
+  self.sql(f"UPDATE reponses_apprenants SET completed=true,status='submitted',submitted_at=now(),reponses='{{\"1\":[\"A\"]}}' WHERE apprenant_id='{A}' AND exercice_id='EB6__t3p';INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,score_obtenu) VALUES('{A}','{U}','EB6','Fictif','t3p','T3P',1,20)")
+  before=self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB6__t3p'").stdout
+  c=self.context('EB6','t3p');self.authorize(c,'aaaaaaaa-9999-1111-1111-111111111111')
+  second=json.loads(self.start(c,'bbbbbbbb-9999-1111-1111-111111111111').stdout.splitlines()[-1])
+  self.assertEqual(second['tentative'],2);self.assertEqual(second['exercice_id'],'EB6__t3p__t2');self.assertNotEqual(second['operation_id'],first['operation_id'])
+  self.assertEqual(before,self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB6__t3p'").stdout)
+  self.assertEqual(json.loads(self.start(c,'bbbbbbbb-9999-1111-1111-111111111111').stdout.splitlines()[-1]),second)
+  self.assertEqual(self.sql("SELECT count(*) FROM apprenant_quiz_results WHERE quiz_id='EB6'").stdout.strip(),'1')
 if __name__=='__main__':unittest.main(verbosity=2)
