@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 09:27 — Bouton matière Arezki : dépendances absentes
-- [ ] SELECT Arezki EB3 A et catalogue ; aucune autorisation/tentative réelle.
-- [ ] Contrôle PassageMatiere complet isolé ancien/V2, chrono/reload/soumission ; installation uniquement si validé.
-- [ ] Relecture RPC/PostgREST non mutante, compatibilité front et verdict opérationnel ; aucun repli global ni publication groupée.
+- [x] SELECT Arezki EB3 A : V2 en_cours, sans résultat, à reprendre ; RPC admin absentes, aucune autorisation/tentative réelle.
+- [x] PassageMatiere réel ancien VTC/V2 TAXI sur PostgreSQL jetable : réponse, reload du chrono et soumission ; 9 contrats SQL et 23 tests applicatifs PASS. Rejeu initial corrigé dans le candidat.
+- [ ] Installation BLOQUÉE : scénario V2 importé complet et ensemble des triggers live non rejoués ; égalité des résultats et absence d'effets indirects pas complètement prouvées. RPC restent absentes, aucun frontend publié.
 
 ## 11/11 09:18 — Sécurité routière Bilan examen VTC → TAXI seulement
 - [x] Source 255/cible historique 252, 190 écarts ; 9 réponses TAXI dont 5 sans snapshot, banque ancienne conservée. 62 modules/161 exercices empreintes identiques.
