@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), session: vi.fn(async (call: () => unknown) => call()) }));
+const mocks = vi.hoisted(() => ({ context: vi.fn(), rpc: vi.fn(), session: vi.fn(async (call: () => unknown) => call()) }));
+vi.mock('@/lib/adminSubjectReset',()=>({readSubjectResetContext:mocks.context}));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock('@/lib/sessionRpc', () => ({ freshSessionCall: mocks.session }));
 vi.mock('@/features/noyau-passage/pontV2', () => ({ operationId: async (value: string) => value }));
@@ -12,7 +13,7 @@ const receipt = { operation_id: 'op', apprenant_id: 'learner', exam_id: 'EB1', m
   source_exercice_id: 'EB1__gestion', source_attempt_id: null, attempt_id: null, exercice_id: 'EB1__gestion__t2',
   tentative: 2, moteur: 'ancien', matiere: { id: 'gestion', questions: [{ id: 1 }] } };
 const args = { owner: 'owner', account: 'learner', exam: 'EB1', subject: 'gestion', sourceExercise: 'EB1__gestion' };
-beforeEach(() => { cleanup(); vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); });
+beforeEach(() => { cleanup(); vi.clearAllMocks(); mocks.context.mockResolvedValue({status:'notee',source_exercice_id:'EB1__gestion',source_attempt_id:null}); sessionStorage.clear(); localStorage.clear(); });
 describe('Subject-only retake receipts and button', () => {
   it('reload keeps original multi-subject filter and never overwrites return navigation with the new passage', () => {
     const original = {examId:'EB1',phase:'transition' as const,index:1,filter:['gestion','anglais'],resultIds:['old'],exerciseIds:{gestion:'EB1__gestion'},tentative:1};

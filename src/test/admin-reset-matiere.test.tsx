@@ -1,48 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-const transport = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn() }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: transport }));
-import { ResetMatiereAdminButton, type ResetMatiereAdminTarget } from '@/components/crm/apprenant-sections/ResetMatiereAdminButton';
-
-const target: ResetMatiereAdminTarget = {
-  apprenantId: 'fictif-a', prenom: 'Élève', nom: 'FICTIF A', examId: 'EB3', examLabel: 'Examen Blanc 3 — VTC',
-  filiere: 'vtc', matiereId: 'gestion', matiereNom: 'B Gestion', resultId: 'result-fictif-a',
-};
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
-const open = () => fireEvent.click(screen.getByRole('button', { name: 'Remettre cette matière à zéro : B Gestion' }));
-describe('Admin subject-only reset blocked preview', () => {
-  it('confirmation cannot call a global, owner or subject mutation, even on double click', () => {
-    render(<ResetMatiereAdminButton target={target} />);
-    const trigger = screen.getByRole('button', { name: 'Remettre cette matière à zéro : B Gestion' });
-    fireEvent.click(trigger); fireEvent.click(trigger);
-    const confirm = screen.getByRole('button', { name: 'Confirmer cette matière' });
-    expect(confirm).toBeDisabled();
-    fireEvent.click(confirm); fireEvent.click(confirm);
-    expect(transport.rpc).not.toHaveBeenCalled(); expect(transport.from).not.toHaveBeenCalled();
-  });
-  it('cancel and reopen never request a retake or modify the source identity', () => {
-    const before = structuredClone(target);
-    render(<ResetMatiereAdminButton target={target} />); open();
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
-    expect(screen.queryByRole('alertdialog')).toBeNull(); open();
-    expect(target).toEqual(before); expect(transport.rpc).not.toHaveBeenCalled();
-  });
-  it.each(['apprenantId', 'examId', 'filiere', 'matiereId', 'resultId', 'prenom', 'nom'] as const)(
-    'a changed %s cannot reuse another confirmation', (field) => {
-      const { rerender } = render(<ResetMatiereAdminButton target={target} />); open();
-      rerender(<ResetMatiereAdminButton target={{ ...target, [field]: 'different' }} />);
-      expect(screen.queryByRole('alertdialog')).toBeNull();
-      expect(transport.rpc).not.toHaveBeenCalled();
-    },
-  );
-  it('missing identity cannot open a confirmation', () => {
-    render(<ResetMatiereAdminButton target={{ ...target, resultId: '' }} />);
-    expect(screen.getByRole('button')).toBeDisabled();
-  });
-  it('another subject and learner retain their target and result without any write', () => {
-    const other = { ...target, apprenantId: 'fictif-b', nom: 'FICTIF B', matiereId: 'anglais', matiereNom: 'E Anglais', resultId: 'result-fictif-b' };
-    const before = structuredClone(other);
-    render(<><ResetMatiereAdminButton target={target} /><ResetMatiereAdminButton target={other} /></>); open();
-    expect(other).toEqual(before); expect(transport.rpc).not.toHaveBeenCalled();
-  });
+import {afterEach,describe,expect,it,vi} from 'vitest';
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+const mocks=vi.hoisted(()=>({read:vi.fn(),authorize:vi.fn()}));
+vi.mock('@/lib/adminSubjectReset',()=>({readSubjectResetContext:mocks.read,authorizeSubjectReset:mocks.authorize}));
+import {ResetMatiereAdminButton,type ResetMatiereAdminTarget} from '@/components/crm/apprenant-sections/ResetMatiereAdminButton';
+const target:ResetMatiereAdminTarget={apprenantId:'fictif',prenom:'Élève',nom:'FICTIF',examId:'EB3',examLabel:'EB3 VTC',filiere:'vtc',matiereId:'t3p',matiereNom:'A T3P'};
+const context={apprenant_id:'fictif',exam_id:'EB3',filiere:'vtc',matiere_id:'t3p',learner_name:'Élève FICTIF',status:'non_commencee',source_token:'s',version_token:'v',authorization_id:null};
+afterEach(()=>{cleanup();vi.resetAllMocks()});
+async function open(){fireEvent.click(screen.getByRole('button',{name:'Réinitialiser la matière : A T3P'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeEnabled())}
+describe('Deferred admin authorization',()=>{
+ it('unstarted A has no fabricated result; cancel never authorizes',async()=>{mocks.read.mockResolvedValue(context);render(<ResetMatiereAdminButton target={target}/>);await open();fireEvent.click(screen.getByRole('button',{name:'Annuler'}));expect(mocks.authorize).not.toHaveBeenCalled()});
+ it('one authorization on double click and server receipt before success',async()=>{mocks.read.mockResolvedValue(context);let done:(v:unknown)=>void=()=>{};mocks.authorize.mockReturnValue(new Promise(r=>done=r));const saved=vi.fn();render(<ResetMatiereAdminButton target={target} onAuthorized={saved}/>);await open();const b=screen.getByRole('button',{name:'Confirmer cette matière'});fireEvent.click(b);fireEvent.click(b);expect(mocks.authorize).toHaveBeenCalledTimes(1);expect(saved).not.toHaveBeenCalled();done({...context,authorization_id:'grant'});await waitFor(()=>expect(saved).toHaveBeenCalledTimes(1))});
+ it('running copy cannot be replaced',async()=>{mocks.read.mockResolvedValue({...context,status:'en_cours',reason:'Copie en cours'});render(<ResetMatiereAdminButton target={target}/>);fireEvent.click(screen.getByRole('button'));await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('Copie en cours'));expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeDisabled();expect(mocks.authorize).not.toHaveBeenCalled()});
+ it('wrong learner name refuses authorization',async()=>{mocks.read.mockResolvedValue({...context,learner_name:'Autre'});render(<ResetMatiereAdminButton target={target}/>);fireEvent.click(screen.getByRole('button'));await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('non concordants'));expect(mocks.authorize).not.toHaveBeenCalled()});
+ it.each(['apprenantId','examId','matiereId','nom','filiere'] as const)('changed %s cannot use previous confirmation',async field=>{mocks.read.mockResolvedValue(context);const {rerender}=render(<ResetMatiereAdminButton target={target}/>);await open();rerender(<ResetMatiereAdminButton target={{...target,[field]:'different'}}/>);expect(screen.queryByRole('alertdialog')).toBeNull();expect(mocks.authorize).not.toHaveBeenCalled()});
 });
