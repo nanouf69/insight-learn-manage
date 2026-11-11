@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 11/11 18:49 — Présence à la date de l’examen choisi
-- [ ] Vérifier les sources de planning et Alpha Barry en lecture seule, sans attribuer un EB inconnu.
-- [ ] Remplacer le jour automatique par une date explicite sans présélection ; distinguer absence déclarée et non-émargement, préserver les preuves valables.
-- [ ] Tester dates historiques/futures/ambiguës, signatures techniques et aperçu sans mutation ni publication.
+- [x] Aucun planning liant session/EB/date identifié ; contrôle d’accès non installé et agenda sans identité session/EB probante. Alpha Barry : 11/11 matin signé 08:56:41 Paris, après-midi technique sans image, zéro papier/validation ; EB de la capture inconnu.
+- [x] Date explicite sans présélection par session/examen, vue Tous sans badge ; lecture exacte par lots, horloge serveur existante, présence journalière valable prioritaire, Absent déclaré distinct de Non émargé.
+- [x] 21 tests exécutés ; aperçu fixtures historique/futur/technique/signé/absence/changement EB et admin réel Alpha sans badge le 11/11. Aucune note, registre, migration ou publication modifiée.
 
 ## 11/11 17:52 — Notes par session autonome
 - [x] Onglet principal après l'archive QRC, référentiel CRM seul (sessions sans copies incluses), anciens liens redirigés avant les hooks de correction.
