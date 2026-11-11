@@ -164,6 +164,24 @@ beforeEach(() => {
 });
 
 describe("Correction QRC — passage automatique après confirmation de persistance", () => {
+  it('import V2 historique avec IDs locaux et sans résultat : clic envoyé à la bonne copie puis relu', async () => {
+    const base = tentative('a1');
+    etat.session = {
+      tentatives: [{ ...base, exam_id: 'EB3-TAXI', etat: 'terminee', snapshot: {
+        exam_id: 'EB3-TAXI', matieres: [{ subject_id: 't3p', lettre: 'A', titre: 'T3P', ordre: 1 }],
+        questions: [{ id: '1', matiere: 't3p', type: 'QRC', enonce: 'Question fictive', reponseQRC: 'Attendu', points: 2 }],
+        source_historique: { result_id: 'original-fictif', tentative: 2 },
+      } as TentativeReelle['snapshot'] }],
+      qrc: [{ ...qrc('a1'), question_id: '1' }], resultats: [], baremesRestaures: [],
+    };
+    await ouvrirCopie('a1-q1');
+    expect(screen.getByTestId('note-1')).toBeEnabled();
+    fireEvent.click(screen.getByTestId('note-1'));
+    await waitFor(() => expect(mocks.corriger).toHaveBeenCalledOnce());
+    expect(mocks.corriger.mock.calls[0][0]).toMatchObject({ attemptId: 'a1', qrcInstanceId: 'a1-q1', note: 1 });
+    expect(mocks.noterHistorique).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByTestId('points-attribues')).toHaveTextContent('1'));
+  });
   it("survol, zoom et retour onglet ne relisent ni catalogue ni copies", async () => {
     await ouvrirCopie("a1-q1");
     const lectures = mocks.charger.mock.calls.length;
