@@ -102,10 +102,11 @@ export default function AdminCorrectionQrcV2Reel() {
     generationRef.current++;
     setSession(null);
     setGroupeCleState(cle);
-    setEbCleState(null);
+    const first = cle === TOUS_GROUPES ? groupeTousPassages(groupes).examens[0]?.cle : groupes.find(g=>g.cle===cle)?.examens[0]?.cle;
+    setEbCleState(first ?? null);
     setJourFiltreState(null);
     setSelectionState(null);
-    majUrl({ qrc_groupe: cle, qrc_eb: null, qrc_date: null, qrc: null, qrc_passage: null });
+    majUrl({ qrc_groupe: cle, qrc_eb: first ?? null, qrc_date: null, qrc: null, qrc_passage: null });
   };
   const setEbCle = (cle: string | null) => {
     setPassageFiltre(null);
