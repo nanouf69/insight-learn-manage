@@ -12,10 +12,10 @@
 Identité dédiée `jeu_gestion_classement_comptable_v1`, file et lecture serveur existantes `useSuiviJeu` ; `module_id: null`, `score: null`, sans registre d’activités ni callback de validation : aucun impact sur les jalons, notes ou exercices précédents. La lecture doit réussir avant tout envoi. La partie est restaurée à la réouverture. Recommencer lance un entraînement local sans écraser les acquis enregistrés. Aucun compte élève réel testé en écriture.
 
 ## Vérifications
-- 39 tests exécutés PASS : 27 classement/calcul/fixtures et 12 régressions jeux Lyon/jours fériés.
+- 41 tests exécutés PASS : 27 classement/calcul/fixtures, 2 tests du vrai suivi (score/module null, confirmation et réouverture) et 12 régressions jeux Lyon/jours fériés.
 - Navigateur Chromium 1280×1800 et 390×844 : erreur puis correction, score 18/19, glisser-déposer ordinateur, choix tactile, clavier, calcul erroné puis exact, recommencer, aucun débordement horizontal, aucune erreur JS, écritures Cloud interceptées et aucune déclenchée.
 - Captures `/tmp/browser/gestion-comptable/` inspectées ; pas de copie user-facing demandée.
-- Compilation observée : build OK. Tests de persistance additionnels exécutés séparément (voir résultat final).
+- Compilation observée : build OK ; contrôle ESLint des nouveaux fichiers de jeu sans erreur.
 - Limite : persistance démontrée avec le vrai hook et transport fictif, pas d’envoi réseau réel ni test d’un compte réel. Captures originales non relues depuis le montage d’uploads indisponible ; bilan vérifié sur le texte du support existant, sans modifier celui-ci.
 - Aucun correctif des rafraîchissements périodiques préexistants dans le cours : conflit avec règle zéro polling signalé, hors périmètre de ce jeu.
 
