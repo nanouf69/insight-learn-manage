@@ -26,7 +26,25 @@ export function noteGeneraleSession(def:ExamenBlanc|undefined,rows:any[],indispo
   if(!bilan.hasScores||bilan.matieresPassees!==bilan.matieresTotal)return {etat:'incomplet',note:null,couverture:`${bilan.matieresPassees}/${bilan.matieresTotal}`};
   return {etat:'definitif',note:bilan.moyenne,verdict:bilan.verdict};
 }
-export type ReleveSession={inscrits:InscritNotes[];notes:Record<string,Record<number,NoteSession>>;erreur:string|null};
+export type ExamenNotesSession={id:string;numero:number;filiere:ExamenBlanc['type'];matieres:Array<{id:string;nom:string}>};
+export type ReleveSession={inscrits:InscritNotes[];notes:Record<string,Record<number,NoteSession>>;examens?:ExamenNotesSession[];matieres?:Record<string,Record<string,Record<string,NoteSession>>>;erreur:string|null};
+/** Per-subject official display note; other pending subjects cannot hide it. */
+export function notesMatieresSession(def:ExamenBlanc,rows:any[],indisponible=false):Record<string,NoteSession>{
+  const scores=rows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
+  return Object.fromEntries(def.matieres.map(m=>{
+    const row=findScoreForMatiere(scores,m);const note=row?noteExamenAffichee(row):null;
+    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
+    return [m.id,value];
+  }));
+}
+export function moyenneNotesDefinitives(notes:Array<NoteSession|undefined>,inscrits:number){
+  const values=notes.filter((n):n is NoteSession & {note:number}=>n?.etat==='definitif'&&typeof n.note==='number'&&Number.isFinite(n.note));
+  return {note:values.length?Math.round(values.reduce((s,n)=>s+n.note,0)/values.length*10)/10:null,n:values.length,inscrits};
+}
+export function moyenneSessionExamen(releve:ReleveSession,exam:ExamenNotesSession,matiere?:string){
+  const concerns=releve.inscrits.filter(a=>filiereInscrit(a.type_apprenant)===exam.filiere);
+  return moyenneNotesDefinitives(concerns.map(a=>matiere?releve.matieres?.[a.id]?.[exam.id]?.[matiere]:releve.notes[a.id]?.[exam.numero]),concerns.length);
+}
 export async function lireInscritsSession(sessionId:string):Promise<InscritNotes[]> {
   const links=await lirePagesParalleles<any>(de=>supabase.from('session_apprenants').select('id,apprenant_id,apprenants(id,nom,prenom,type_apprenant,abandonnee)').eq('session_id',sessionId).order('id').range(de,de+999) as any,1);
   const unique=new Map<string,InscritNotes>();
@@ -37,8 +55,11 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
   const {data}=await supabase.auth.getSession();if(!data.session)throw new Error('Session administrateur requise');
   const role=await supabase.rpc('has_role',{_user_id:data.session.user.id,_role:'admin'});if(role.error||role.data!==true)throw new Error('Accès administrateur requis');
   const inscrits=await lireInscritsSession(sessionId);const notes:ReleveSession['notes']={};
+  let examens:ExamenNotesSession[]=[];const matieres:NonNullable<ReleveSession['matieres']>={};
   try {
     const ids=inscrits.map(a=>a.id);const definitions=await loadSavedExamens(false,undefined,true);
+    const tracks=new Set(inscrits.map(a=>filiereInscrit(a.type_apprenant)));
+    examens=definitions.filter(d=>d.numero>=1&&d.numero<=6&&tracks.has(d.type)).map(d=>({id:d.id,numero:d.numero,filiere:d.type,matieres:d.matieres.map(m=>({id:m.id,nom:m.nom}))})).sort((a,b)=>a.numero-b.numero||a.filiere.localeCompare(b.filiere));
     const rows:any[]=[];const resets:any[]=[];
     for(let i=0;i<ids.length;i+=100){const lot=ids.slice(i,i+100);
       rows.push(...await lireCopiesParCurseur<any>('id',cursor=>{let q=supabase.from('apprenant_quiz_results').select('*').in('apprenant_id',lot).in('quiz_type',['examen_blanc','examen_blanc_taxi']).order('id').limit(100);if(cursor)q=q.gt('id',cursor);return q as any;}));
@@ -48,8 +69,8 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
     if(core===null||preuves===null)throw new Error('Lecture des publications officielles indisponible');
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
       const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>attacherSourceUnique(r,core.get(a.id)??[],preuves));
-      notes[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);}
+      notes[a.id]={};matieres[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def)matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);}
     }
-    return {inscrits,notes,erreur:null};
-  }catch(e){for(const a of inscrits){notes[a.id]={};for(let n=1;n<=6;n++)notes[a.id][n]={etat:'indisponible',note:null};}return {inscrits,notes,erreur:e instanceof Error?e.message:'Lecture indisponible'};}
+    return {inscrits,notes,examens,matieres,erreur:null};
+  }catch(e){for(const a of inscrits){notes[a.id]={};matieres[a.id]={};for(let n=1;n<=6;n++)notes[a.id][n]={etat:'indisponible',note:null};for(const exam of examens)matieres[a.id][exam.id]=Object.fromEntries(exam.matieres.map(m=>[m.id,{etat:'indisponible',note:null}]));}return {inscrits,notes,examens,matieres,erreur:e instanceof Error?e.message:'Lecture indisponible'};}
 }
