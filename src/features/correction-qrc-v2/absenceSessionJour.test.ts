@@ -3,8 +3,8 @@ import { absentsSessionJour,type PreuvesJour } from './absenceSessionJour';
 const image='data:image/png;base64,YWJj';
 const row=(id:string)=>({apprenant_id:id,session_id:'s',apprenants:{type_apprenant:'taxi',statut:'inscrit'},sessions:{id:'s',type_session:'theorique',nom:'TAXI',statut:'Planifiée',date_debut:'2026-10-26',date_fin:'2026-11-16',heure_debut:'09:00',heure_fin:'16:00'}});
 const sig=(id:string,slot:string)=>({apprenant_id:id,demi_journee:slot,signed_at:'2026-11-11T08:00:00Z',signature_data_url:image,masque:false,absent:false});
-function fixture():PreuvesJour{return {jour:'2026-11-11',minuteParis:18*60,inscriptions:[row('hamdi'),row('present')],signatures:[sig('present','matin'),sig('present','apres_midi')],papier:[],heures:[]};}
-it('jour férié réellement dispensé : absence si tous les créneaux terminés et aucune preuve',()=>expect([...absentsSessionJour(fixture())]).toEqual(['hamdi']));
+function fixture():PreuvesJour{return {jour:'2026-11-11',jourServeur:'2026-11-11',minuteParis:18*60,inscriptions:[row('hamdi'),row('present')],signatures:[sig('present','matin'),sig('present','apres_midi')],papier:[],heures:[]};}
+it('jour férié réellement dispensé : absence si tous les créneaux terminés et aucune preuve',()=>expect([...absentsSessionJour(fixture())]).toEqual([['hamdi','non_emarge']]));
 it('une seule signature du jour empêche une absence certaine de journée',()=>{const p=fixture();p.signatures.push(sig('hamdi','matin'));expect(absentsSessionJour(p).has('hamdi')).toBe(false);});
 it('papier documenté et heures validées même partielles empêchent absence',()=>{
  const p=fixture();p.papier.push({apprenant_id:'hamdi',heures:1,documents_inscription:{url:'preuve.pdf',statut:'valide'}});expect(absentsSessionJour(p).has('hamdi')).toBe(false);
@@ -16,4 +16,25 @@ it('lecture échouée : aucun indicateur',()=>expect(absentsSessionJour({...fixt
 it('signatures masquées/absence, papier refusé : ne prouvent ni présence ni cours',()=>{const p=fixture();p.signatures[0].masque=true;expect(absentsSessionJour(p).size).toBe(0);p.signatures=fixture().signatures;p.papier=[{apprenant_id:'hamdi',heures:3,documents_inscription:{url:'preuve.pdf',statut:'refuse'}}];expect(absentsSessionJour(p).has('hamdi')).toBe(true);});
 it('attente, exclusions, distanciel et dates personnalisées sont respectés',()=>{
  for(const patch of [{liste_attente:true},{emargements_exclus:true},{date_fin_personnalisee:'2026-11-10'},{statut_suivi:'annulée'},{apprenants:{type_apprenant:'taxi-e'}}]){const p=fixture();p.inscriptions[0]={...p.inscriptions[0],...patch};expect(absentsSessionJour(p).has('hamdi')).toBe(false);}
+});
+it('date passée différente du jour serveur : tous les créneaux historiques sont écoulés même avant midi aujourd’hui',()=>{
+ const p=fixture();p.jour='2026-11-10';p.minuteParis=8*60;expect(absentsSessionJour(p).get('hamdi')).toBe('non_emarge');
+});
+it('date future : aucune absence ni non-émargement même avec absence déclarée',()=>{
+ const p=fixture();p.jour='2026-11-12';p.signatures.push({...sig('hamdi','matin'),absent:true});expect(absentsSessionJour(p).size).toBe(0);
+});
+it('sans date serveur fiable : aucun badge',()=>{
+ const p=fixture();delete p.jourServeur;expect(absentsSessionJour(p).size).toBe(0);
+});
+it('ligne technique avec signed_at mais sans image : non émargé, jamais absence inventée',()=>{
+ const p=fixture();p.signatures.push({...sig('hamdi','apres_midi'),signature_data_url:null});expect(absentsSessionJour(p).get('hamdi')).toBe('non_emarge');
+});
+it('absence explicitement déclarée : Absent après fin du créneau attendu',()=>{
+ const p=fixture();p.signatures=[{...sig('hamdi','matin'),signature_data_url:null,absent:true}];expect(absentsSessionJour(p).get('hamdi')).toBe('absent');
+});
+it('Alpha Barry signé le 11/11 à 08:56, ligne après-midi technique : jamais absent sur la journée',()=>{
+ const p=fixture();p.signatures.push({...sig('hamdi','matin'),signed_at:'2026-11-11T07:56:41.379025Z'},{...sig('hamdi','apres_midi'),signature_data_url:null,signed_at:'2026-11-01T16:15:04Z'});expect(absentsSessionJour(p).has('hamdi')).toBe(false);
+});
+it('créneau distinct documenté : signature matin et créneau après-midi sans preuve = Non émargé, pas Absent',()=>{
+ const p=fixture();p.creneau='apres_midi';p.signatures.push(sig('hamdi','matin'));expect(absentsSessionJour(p).get('hamdi')).toBe('non_emarge');
 });

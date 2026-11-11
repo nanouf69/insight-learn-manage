@@ -8,7 +8,7 @@ const sessions=[{cle:'crm:mixte',libelle:'Mixte',debut:'2026-01-01',fin:'2027-12
 const releve:ReleveSession={inscrits:[{id:'v',nom:'VTC',prenom:'Test',type_apprenant:'VTC-e'},{id:'t',nom:'TAXI',prenom:'Sans copie',type_apprenant:'taxi'},{id:'p',nom:'TAXI',prenom:'Attente',type_apprenant:'TAXI'}],notes:{v:{4:{etat:'definitif',note:0}},t:{4:{etat:'non_passe',note:null}},p:{4:{etat:'attente',note:null}}},examens:[{id:'EB4',numero:4,filiere:'VTC',matieres:[]},{id:'EB4-TAXI',numero:4,filiere:'TAXI',matieres:[]},{id:'EB4-TA',numero:4,filiere:'TA',matieres:[]}],erreur:null};
 it('EB4 TAXI garde tous les TAXI, EB4 VTC seulement VTC, Tous restaure le roster sans relecture',async()=>{
  const charger=vi.fn(async()=>releve);
- render(<NotesParSession sessions={sessions} charger={charger} souscrire={()=>()=>{}} chargerAbsences={async()=>new Set(['t'])}/>);
+ render(<NotesParSession sessions={sessions} charger={charger} souscrire={()=>()=>{}} chargerAbsences={async()=>new Map([['t','absent']])}/>);
  fireEvent.change(screen.getByRole('combobox',{name:'Session du relevé'}),{target:{value:'crm:mixte'}});
  const filtre=await screen.findByRole('combobox',{name:'Examen blanc'});
  const noms=()=>within(screen.getByRole('table')).getAllByRole('row').slice(2).map(r=>r.textContent);

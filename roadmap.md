@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 11/11 18:49 — Présence à la date de l’examen choisi
+- [x] Aucun planning liant session/EB/date identifié ; contrôle d’accès non installé et agenda sans identité session/EB probante. Alpha Barry : 11/11 matin signé 08:56:41 Paris, après-midi technique sans image, zéro papier/validation ; EB de la capture inconnu.
+- [x] Date explicite sans présélection par session/examen, vue Tous sans badge ; lecture exacte par lots, horloge serveur existante, présence journalière valable prioritaire, Absent déclaré distinct de Non émargé.
+- [x] 21 tests exécutés ; aperçu fixtures historique/futur/technique/signé/absence/changement EB et admin réel Alpha sans badge le 11/11. Aucune note, registre, migration ou publication modifiée.
+
 ## 11/11 17:52 — Notes par session autonome
 - [x] Onglet principal après l'archive QRC, référentiel CRM seul (sessions sans copies incluses), anciens liens redirigés avant les hooks de correction.
 - [x] Admin réel Chromium : onglet actif, accès direct, retour navigateur, ancien lien avec session conservée et clic MEMDOUH vers copie nationale exacte (4 cellules) ; aucune requête de copie avant sélection, 5 tests PASS, aucune publication ni donnée modifiée.
