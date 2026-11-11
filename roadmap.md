@@ -1701,6 +1701,9 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] 43 tests UI/transport, 16 contrats SQL jetables et aperçu PC/mobile fictif ; admin réel lecture seule confirme le blocage serveur.
 - [ ] Installation réelle bloquée par absence d’accord séparé et prévol de compatibilité serveur ; aucune migration/publication dans ce tour.
 
+## 11/11 — Noms du relevé vers CRM
+- [x] Lien immuable identique à Correction QRC V2, nouvel onglet ; 6 tests réussis, fiche Ilies MEMDOUH ouverte en aperçu admin réel, relevé/filtre EB4 TAXI préservés, sans écriture ni publication.
+
 ## 10/11 — Notes historiques EB2 VTC dans le correcteur (accord explicite)
 - [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
 - [x] 77 tests PASS ; journée 49/49 et soir 54/54 notes définitives concordantes ; 34 copies soir en attente gardées sans note ; rechargement PC/mobile identique, 42 notes TAXI conservées.

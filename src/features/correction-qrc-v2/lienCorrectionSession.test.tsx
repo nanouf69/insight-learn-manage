@@ -20,10 +20,14 @@ it('liens seulement sur attente concernée dans Tous et dans les matières de l�
   render(<NotesParSession sessions={sessions} charger={async () => releve} souscrire={() => () => {}} />);
   fireEvent.change(screen.getByRole('combobox', { name: 'Session du relevé' }), { target: { value: 'crm:s' } });
   await screen.findByRole('combobox', { name: 'Examen blanc' });
-  expect(screen.getAllByRole('link')).toHaveLength(2);
-  expect(screen.getAllByRole('link').map(a => a.getAttribute('href'))).toEqual([lienCorrectionSession('crm:ancien', 'EB1', 'v', source), lienCorrectionSession('crm:ancien', 'EB1-TAXI', 't', source)]);
+  const liensCorrection=()=>screen.getAllByRole('link',{name:/^Corriger ici/});
+  expect(liensCorrection()).toHaveLength(2);
+  expect(liensCorrection().map(a => a.getAttribute('href'))).toEqual([lienCorrectionSession('crm:ancien', 'EB1', 'v', source), lienCorrectionSession('crm:ancien', 'EB1-TAXI', 't', source)]);
+  const liensCrm=screen.getAllByRole('link',{name:/^Ouvrir la fiche CRM/});
+  expect(liensCrm.map(a=>a.getAttribute('href'))).toEqual(['/?section=crm&apprenant=v','/?section=crm&apprenant=t']);
+  liensCrm.forEach(a=>{expect(a).toHaveAttribute('target','_blank');expect(a).toHaveAttribute('rel','noopener noreferrer');});
   fireEvent.change(screen.getByRole('combobox', { name: 'Examen blanc' }), { target: { value: 'EB1' } });
-  expect(screen.getAllByRole('link')).toHaveLength(2);
+  expect(liensCorrection()).toHaveLength(2);
   expect(screen.getByRole('link', { name: /Gestion.*nouvel onglet/ })).toHaveAttribute('href', lienCorrectionSession('crm:ancien', 'EB1', 'v', source));
   expect(screen.getByRole('link', { name: /Gestion.*nouvel onglet/ })).toHaveAttribute('target', '_blank');
 });
