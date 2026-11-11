@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 11/11 12:45 — Jeu de classement comptable GESTION
-- [ ] Ajouter classement glissé/tactile, hypothèses explicites, feedback/score/rejeu et calcul amortissement ; exemples indépendants et bilan net équilibré.
-- [ ] Suivi facultatif versionné via file existante, sans notes/jalons ni modification des exercices ; tests fictifs PC/mobile et compte rendu, aucun déploiement.
+- [x] Classement glissé/tactile de 19 cartes, hypothèses explicites, feedback/score/rejeu et calcul amortissement ; exemples indépendants et bilan net 40 000 € équilibré.
+- [x] Suivi facultatif versionné via file existante, module/score null sans registre obligatoire ; tests fictifs PC/mobile et compte rendu docs/jeu-gestion-classement-2026-11-11.md, aucun déploiement ni écriture réelle.
 
 ## 11/11 12:32 — Arezki autorisation EB3 A déjà accordée
 - [x] SELECT : autorisation inutilisée, tokens source/version concordants, copie abandonnée sans réponse/résultat/reçu ; état inchangé après tests.
