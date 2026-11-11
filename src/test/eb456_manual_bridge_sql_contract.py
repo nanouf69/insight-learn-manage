@@ -23,6 +23,11 @@ class Bridge(unittest.TestCase):
         eligibility = eligibility.replace('BEGIN\n', "BEGIN\n IF EXISTS(SELECT 1 FROM public.exam_attempts_v2 manual_copy WHERE manual_copy.attempt_id=p_attempt AND manual_copy.snapshot->>'correction_manuelle_exclusivement'='true') THEN RETURN 'correction_manuelle_exclusivement'; END IF;\n", 1)
         Live.sql(eligibility)
         Live.sql(Path('docs/sql-revue/2026-11-11-eb456-manual-bridge.sql').read_text())
+        correction = Path('src/test/fixtures/core_correct_qrc_live_20261107.sql').read_text()
+        correction = correction.replace('  rejeu :=', "  IF NOT public.core_contexte_correction_autorise() THEN RAISE EXCEPTION 'admin required' USING ERRCODE='42501'; END IF;\n  rejeu :=", 1)
+        Live.sql(correction)
+        publish = Path('src/test/fixtures/core_correct_qrc_publish_live_20261107.sql').read_text()
+        Live.sql(publish)
 
     def j(self, query):
         return json.loads(Live.sql("SELECT to_jsonb(x) FROM (" + query.replace('SELECT ', 'SELECT ', 1) + ") AS t(x)").stdout.splitlines()[-1])
@@ -108,6 +113,32 @@ class Bridge(unittest.TestCase):
         rid, key, _ = self.fixture('EB6-TAXI', 'instant_bridge', submitted=False)
         Live.sql(f"UPDATE reponses_apprenants SET completed=true,status='submitted',submitted_at='2026-11-02 10:00:00+00' WHERE apprenant_id='{A}' AND exercice_id='{key}'")
         self.assertEqual(self.proof(rid)['raison'], 'identite_remise_non_figee')
+
+    def test_08_manual_correction_creates_only_new_exact_result(self):
+        for exam in ['EB4', 'EB5-TAXI', 'eb6-ta']:
+            rid, key, details = self.fixture(exam, 'manual_result_bridge')
+            original = self.j(f"SELECT to_jsonb(r) FROM apprenant_quiz_results r WHERE id='{rid}'")
+            others = self.j(f"SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY result_id),'[]') FROM core_exam_results r")
+            aid = self.proof(rid)['attempt_id']
+            qid = Live.sql(f"SELECT qrc_instance_id FROM qrc_instances_v2 WHERE attempt_id='{aid}'").stdout.strip()
+            # The real manual RPC, authenticated as the fixture admin. Never on live data.
+            out = Live().api(f"SELECT core_correct_qrc_publish('{uuid.uuid4()}','{qid}',2,'Fictif','admin@example.invalid')", ADMIN)
+            self.assertEqual(out.returncode, 0)
+            result = self.j(f"SELECT to_jsonb(r) FROM core_exam_results r WHERE attempt_id='{aid}'")
+            self.assertEqual(result['status'], 'definitif')
+            self.assertEqual(result['score'], 20)
+            self.assertEqual(result['qrc_restantes'], 0)
+            self.assertEqual(original, self.j(f"SELECT to_jsonb(r) FROM apprenant_quiz_results r WHERE id='{rid}'"))
+            self.assertEqual(others, self.j(f"SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY result_id),'[]') FROM core_exam_results r WHERE attempt_id<>'{aid}'"))
+
+    def test_09_concurrent_replays_keep_one_projection(self):
+        import concurrent.futures
+        rid, _, _ = self.fixture('EB6', 'concurrent_bridge')
+        aid = self.proof(rid)['attempt_id']
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+            result = list(pool.map(lambda _: self.j(f"SELECT eb456_raccorder_manuellement('{rid}')"), range(6)))
+        self.assertEqual({v['attempt_id'] for v in result}, {aid})
+        self.assertEqual(self.j(f"SELECT count(*) FROM exam_attempts_v2 WHERE snapshot->'source_historique'->>'result_id'='{rid}'"), 1)
 
 
 if __name__ == '__main__':
