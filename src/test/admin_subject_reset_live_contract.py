@@ -30,6 +30,10 @@ class Live(base.Contract):
   c.sql(cat['rls'])
   c.sql("CREATE TABLE IF NOT EXISTS public.bilan_reponse_statuts(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,uid text,statut text,reponse jsonb,created_at timestamptz);CREATE TABLE IF NOT EXISTS public.bilan_reponse_reclassements(id uuid,apprenant_id uuid,module_id int,exercice_id text,tentative int,cle text,nouveau_statut text);CREATE TABLE IF NOT EXISTS public.core_tentatives_neutralisees(attempt_id uuid);")
   c.sql(LIVE['tables'])
+  import re
+  for block in LIVE['tables'].split('CREATE TABLE IF NOT EXISTS ')[1:]:
+   table=block.split('(')[0]
+   for col in re.findall(r'^ ("[a-z_0-9]+" [^\n]*?),?$',block,re.M):c.sql(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col}")
   for f in LIVE['functions'].values():c.sql(f)
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
   c.installed=[]
@@ -51,7 +55,7 @@ class Live(base.Contract):
  def learner_submit_legacy(self,key,tentative,mid,exam,score):
   # Same writes as the learner path: edge upsert of answers, then client upsert of the result with the receipt tentative.
   self.sql(f"SET request.jwt.claim.sub='{U}';UPDATE reponses_apprenants SET reponses='{{\"1\":[\"A\"]}}',completed=true,status='submitted',submitted_at=now() WHERE apprenant_id='{A}' AND exercice_id='{key}'")
-  out=self.call(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,score_obtenu,score_max,note_sur_20,tentative,details) VALUES('{A}','{U}','examen_blanc','{exam}','Fictif','{mid}','Fictif',{score},20,{score},{tentative},'{{}}') ON CONFLICT (apprenant_id,quiz_id,matiere_id,tentative) DO UPDATE SET score_obtenu=EXCLUDED.score_obtenu",U);print('STDERR',out.stderr)
+  out=self.call(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,score_obtenu,score_max,note_sur_20,tentative,details) VALUES('{A}','{U}','examen_blanc','{exam}','Fictif','{mid}','Fictif',{score},20,{score},{tentative},'{{}}') ON CONFLICT (apprenant_id,quiz_id,matiere_id,tentative) DO UPDATE SET score_obtenu=EXCLUDED.score_obtenu",U);self.assertNotIn('WARNING',out.stderr)
  def test_00_all_live_triggers_installed(self):
   self.assertGreaterEqual(len(self.installed),30)
   for t in ['trg_qrc_ia_enfiler_passage@public.exam_attempts_v2','trg_zz_examens_blancs_6_sur_6@public.apprenant_quiz_results','trg_ensure_quiz_result_on_matiere_completion@public.reponses_apprenants','trg_auto_send_pratique_booking@public.apprenant_module_completion','trg_set_next_quiz_tentative@public.apprenant_quiz_results']:
@@ -63,7 +67,6 @@ class Live(base.Contract):
   self.learner_submit_legacy('EB3__t3p',1,'t3p','EB3',17)
   rows=self.j(f"SELECT json_agg(json_build_object('t',tentative,'s',score_obtenu,'src',details->>'source_exercice_id','st',details->>'source_tentative')) FROM apprenant_quiz_results WHERE apprenant_id='{A}' AND quiz_id='EB3' AND matiere_id='t3p'")
   self.assertEqual(rows,[{'t':1,'s':17,'src':None,'st':None}])  # answers arrive first: alert then regularised by this exact result
-  print(self.sql("SELECT json_agg(a) FROM alertes_systeme a").stdout)
   self.assertEqual(self.sql("SELECT count(*) FROM alertes_systeme WHERE type='exam_result_missing' AND NOT lu").stdout.strip(),'0')
   self.assertEqual(self.sql("SELECT count(*) FROM alertes_systeme WHERE type='exam_result_missing' AND lu AND details::jsonb->>'regularisee_tentative'='1'").stdout.strip(),'1')
   self.assertEqual(other,self.snap("exercice_id LIKE 'EB3__anglais%'"))
