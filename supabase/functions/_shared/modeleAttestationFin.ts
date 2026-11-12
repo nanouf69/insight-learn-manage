@@ -3,7 +3,7 @@
  * Aucun champ manquant n'est inventé ; aucun pourcentage affiché n'est utilisé comme preuve.
  */
 export const ORGANISME = { raisonSociale: "Ftransport", adresse: "86 Route de Genas 69003 Lyon", nda: "11770762377", ville: "Lyon" } as const;
-export const VERSION_MODELE = "attestation-fin-v3-sans-seuil-elearning";
+export const VERSION_MODELE = "attestation-fin-v4-fin-limitee-crm";
 export const MODELE_CODE_ATTESTATION = "attestation_fin_formation";
 export const CLE_ENVOI_ATTESTATION = "fin-formation";
 export const FICHIER_MODELE_ATTESTATION = "modeles/attestation_fin_formation";
@@ -72,22 +72,29 @@ export function libelleMotif(m: MotifBlocage): string {
 // ---------------------------------------------------------------- date de fin
 export interface ConnexionLite { id: string; started_at: string | null; last_seen_at?: string | null }
 export type DateFin =
-  | { etat: "ok"; date: string; connexionId: string; startedAt: string; source: string }
+  | { etat: "ok"; date: string; connexionId: string; startedAt: string; source: string; dateLimiteCrm?: string }
   | { etat: "bloquee"; raison: string };
 export const dateParis = (ms: number) => new Date(ms).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
 
 /** Date de fin = dernière connexion e-learning réelle, jamais inventée ; incohérence = contrôle humain. */
-export function dateFinDepuisConnexions(args: { connexions: ConnexionLite[] | null; dateDebut: string | null; derniereValidation?: string | null }): DateFin {
-  const { connexions, dateDebut } = args;
+export function dateFinDepuisConnexions(args: { connexions: ConnexionLite[] | null; dateDebut: string | null; dateLimiteCrm: string | null; derniereValidation?: string | null }): DateFin {
+  const { connexions, dateDebut, dateLimiteCrm } = args;
+  const limite = dateLimiteCrm?.slice(0, 10);
+  if (!limite || !/^\d{4}-\d{2}-\d{2}$/.test(limite) || !Number.isFinite(Date.parse(limite)) || new Date(limite).toISOString().slice(0, 10) !== limite)
+    return { etat: "bloquee", raison: "Date de fin CRM absente ou invalide : date de l'attestation indisponible" };
   if (!connexions) return { etat: "bloquee", raison: "Historique des connexions illisible" };
   const valides = connexions.filter(c => c.started_at && Number.isFinite(Date.parse(c.started_at)));
   if (!valides.length) return { etat: "bloquee", raison: "Aucune connexion enregistrée : date de fin indisponible" };
-  const der = valides.reduce((a, b) => (Date.parse(b.started_at!) > Date.parse(a.started_at!) ? b : a));
-  const startedAt = der.started_at!;
+  const der = valides.reduce((a, b) => (Date.parse(b.started_at ?? "") > Date.parse(a.started_at ?? "") ? b : a));
+  const startedAt = der.started_at;
+  if (!startedAt) return { etat: "bloquee", raison: "Connexion enregistrée illisible" };
   const ms = Date.parse(startedAt);
-  const date = dateParis(ms);
+  const dateConnexion = dateParis(ms);
+  const date = dateConnexion > limite ? limite : dateConnexion;
   if (dateDebut && date < dateDebut.slice(0, 10)) return { etat: "bloquee", raison: `Dernière connexion (${date}) antérieure au début de formation : contrôle humain requis` };
-  return { etat: "ok", date, connexionId: der.id, startedAt, source: "Dernière connexion e-learning enregistrée" };
+  return { etat: "ok", date, connexionId: der.id, startedAt,
+    source: dateConnexion > limite ? "Dernière connexion e-learning enregistrée, date plafonnée à la fin CRM" : "Dernière connexion e-learning enregistrée",
+    dateLimiteCrm: limite };
 }
 
 /** Plus tardive date de validation des modules attribués ; null si une seule manque. */
@@ -138,7 +145,7 @@ export interface ModuleFige { id: number; statut: string | null; preuve_complete
 export interface TexteFigeAttestation {
   version: string; lignes: string[]; modules: ModuleFige[];
   sources: {
-    date_fin: { connexion_id: string; started_at: string; source: string };
+    date_fin: { connexion_id: string; started_at: string; source: string; date_limite_crm?: string };
     derniere_validation: string | null;
     heures: { faites: number; minimum: number; source: string } | null;
     signatures_presentiel: { signees: number; attendues: number; source: string } | null;

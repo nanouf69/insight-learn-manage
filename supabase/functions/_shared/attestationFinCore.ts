@@ -17,6 +17,7 @@ export interface ApprenantAtt {
   formation_choisie: string | null; modules_autorises: number[] | null; date_debut_formation: string | null;
   heures_totales: number | null; emails_bloques: boolean | null;
   date_debut_cours_en_ligne?: string | null; heures_elearning?: number | null;
+  date_fin_cours_en_ligne?: string | null; date_fin_formation?: string | null;
 }
 export interface EtatModuleSrv { module_id: number; status_effectif: string | null; preuve_complete: boolean | null; completed_at: string | null }
 export interface DocAtt {
@@ -54,6 +55,8 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 
 /** Champs du dossier uniquement : début de formation, sinon début d'accès e-learning ; durée totale, sinon durée e-learning. */
 export const debutFormation = (a: ApprenantAtt, elearning: boolean) => a.date_debut_formation || (elearning ? a.date_debut_cours_en_ligne ?? null : null);
+export const finFormationCrm = (a: ApprenantAtt, elearning: boolean) =>
+  elearning ? a.date_fin_cours_en_ligne || a.date_fin_formation || null : a.date_fin_formation || null;
 export const dureeFormation = (a: ApprenantAtt, elearning: boolean) => {
   const t = Number(a.heures_totales); if (a.heures_totales != null && Number.isFinite(t) && t > 0) return t;
   const e = Number(a.heures_elearning); return elearning && a.heures_elearning != null && Number.isFinite(e) && e > 0 ? e : null;
@@ -87,7 +90,7 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
   const elig = eligibiliteAttestation({ elearning: heures, presentiel: pres });
   const derniereValidation = derniereValidationModules(ids, (id) => parId.get(id)?.completed_at);
   const dateDebut = debutFormation(a, elearning);
-  const fin = dateFinDepuisConnexions({ connexions: cnx, dateDebut, derniereValidation });
+  const fin = dateFinDepuisConnexions({ connexions: cnx, dateDebut, dateLimiteCrm: finFormationCrm(a, elearning), derniereValidation });
   const raisons = elig.motifs.map(libelleMotif);
   if (fin.etat !== "ok") raisons.push(fin.raison);
   if (raisons.length) return bloque(raisons);
@@ -109,7 +112,7 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
     version: VERSION_MODELE, lignes: texteAttestation(champs)!,
     modules: ids.map((id) => { const m = parId.get(id); return { id, statut: m?.status_effectif ?? null, preuve_complete: m?.preuve_complete ?? null, completed_at: m?.completed_at ?? null }; }),
     sources: {
-      date_fin: { connexion_id: fin.connexionId, started_at: fin.startedAt, source: fin.source },
+      date_fin: { connexion_id: fin.connexionId, started_at: fin.startedAt, source: fin.source, date_limite_crm: fin.dateLimiteCrm },
       derniere_validation: derniereValidation,
       heures: heures && heures.faites !== null && heures.minimum !== null
         ? { faites: heures.faites, minimum: heures.minimum, source: "Heures e-learning enregistrées (calcul CRM), non bloquantes" } : null,
@@ -154,6 +157,14 @@ export async function envoyer(deps: DepsAtt, docId: string, adminId: string) {
   const a = await deps.getApprenant(d.apprenant_id);
   if (!a) return { etat: "bloque" as const, raison: "Dossier introuvable." };
   if (a.emails_bloques) return { etat: "bloque" as const, raison: "Les e-mails sont bloqués pour ce dossier." };
+  const limite = finFormationCrm(a, estElearning(a.type_apprenant) || estElearning(a.formation_choisie));
+  let contenu: TexteFigeAttestation | null = null;
+  try { contenu = JSON.parse(d.texte_fige); } catch { /* Refus ci-dessous. */ }
+  const dateSource = contenu?.sources?.date_fin;
+  const dateDocument = dateSource?.started_at ? dateParis(Date.parse(dateSource.started_at)) : null;
+  const dateFigee = dateDocument && dateSource?.date_limite_crm && dateSource.date_limite_crm < dateDocument ? dateSource.date_limite_crm : dateDocument;
+  if (!limite || !/^\d{4}-\d{2}-\d{2}$/.test(limite.slice(0, 10)) || !dateFigee || dateFigee > limite.slice(0, 10))
+    return { etat: "bloque" as const, raison: "La date figée de l'attestation dépasse la fin CRM ou ne peut pas être vérifiée : envoi refusé, document conservé." };
   if ((a.email || "").trim().toLowerCase() !== String(d.identite_figee.email).toLowerCase()) return { etat: "bloque" as const, raison: "L'adresse e-mail du dossier a changé depuis la préparation." };
   const claim = await deps.updateIf(d.id, { envoi_etat: "envoi_en_cours", envoi_tente_le: deps.now().toISOString(), envoi_erreur: null }, { envoi_etat: "prepare" });
   if (claim.error || claim.rows.length !== 1) return { etat: "non_disponible" as const, raison: "Envoi déjà en cours ailleurs." };

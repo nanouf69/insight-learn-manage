@@ -13,7 +13,7 @@ function png(trace: boolean) {
   return "data:image/png;base64," + Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]).toString("base64");
 }
 
-const LEA: ApprenantAtt = { id: "lea", nom: "Catania", prenom: "Léa", email: "lea@example.test", type_apprenant: "vtc-e", formation_choisie: "VTC E-Learning", modules_autorises: [26, 2, 3, 4, 35, 5, 8], date_debut_formation: "2026-09-14", heures_totales: 60, emails_bloques: false };
+const LEA: ApprenantAtt = { id: "lea", nom: "Catania", prenom: "Léa", email: "lea@example.test", type_apprenant: "vtc-e", formation_choisie: "VTC E-Learning", modules_autorises: [26, 2, 3, 4, 35, 5, 8], date_debut_formation: "2026-09-14", date_fin_cours_en_ligne: "2026-10-31", date_fin_formation: "2026-10-31", heures_totales: 60, emails_bloques: false };
 const OK: ApprenantAtt = { ...LEA, id: "ok", nom: "Fictif", prenom: "Alice", modules_autorises: [5, 8] };
 const done = (id: number, at = "2026-10-10T10:00:00Z"): EtatModuleSrv => ({ module_id: id, status_effectif: "completed", preuve_complete: true, completed_at: at });
 
@@ -48,6 +48,26 @@ function fake(over: { apprenant?: ApprenantAtt; etats?: EtatModuleSrv[]; cnx?: {
 const entree = (id = "ok", extra: any = {}) => ({ apprenantId: id, adminId: "admin-1", representant: "Responsable Fictif", autoriseSignatureCentre: true, heures: { faites: 61, minimum: 60 }, signaturesPresentiel: null, ...extra });
 
 describe("Attestation de fin de formation — circuit serveur", () => {
+  it("connexion après la fin CRM : fin plafonnée et preuve originale conservée", async () => {
+    const x = fake({ cnx: [{ id: "apres-fin", started_at: "2026-11-12T17:00:00Z" }] });
+    const r: any = await preparer(x.d, entree());
+    expect(r.etat).toBe("prepare");
+    const f = JSON.parse(r.doc.texte_fige);
+    expect(f.lignes[2]).toContain("au 31/10/2026");
+    expect(f.sources.date_fin.started_at).toBe("2026-11-12T17:00:00Z");
+    expect(f.sources.date_fin.date_limite_crm).toBe("2026-10-31");
+    expect(x.mails).toHaveLength(0);
+  });
+  it("fin CRM avancée après préparation : envoi refusé sans altérer le document", async () => {
+    const x = fake();
+    const p: any = await preparer(x.d, entree());
+    const texteAvant = p.doc.texte_fige;
+    x.d.getApprenant = async () => ({ ...OK, date_fin_cours_en_ligne: "2026-10-15" });
+    expect((await envoyer(x.d, p.doc.id, "admin-1")).etat).toBe("bloque");
+    expect(x.mails).toHaveLength(0);
+    expect(p.doc.texte_fige).toBe(texteAvant);
+    expect(p.doc.envoi_etat).toBe("prepare");
+  });
   it("Léa (3/7 modules, 38h11/60h) : préparation sans seuil, heures originales conservées, aucun envoi", async () => {
     const x = fake({ apprenant: LEA, etats: [done(35), done(5), done(8), { module_id: 2, status_effectif: "in_progress", preuve_complete: false, completed_at: null }] });
     const r: any = await preparer(x.d, entree("lea", { heures: { faites: 38 + 11 / 60, minimum: 60 } }));
