@@ -14,3 +14,12 @@ La refonte est préparée en aperçu uniquement. Les règles actuelles ne bloque
 - Branchement sur le bouton de prévisualisation du brouillon CRM ; aucune écriture métier, migration, fonction déployée ou publication.
 - Tests fictifs complet/incomplet, absence de preuve et signatures non autorisées ; export réel et inspection visuelle de toutes les pages PDF, vérification de l’aperçu PC/mobile.
 - Communiquer les résultats et les limites avant toute publication.
+
+## Urgence ajoutée : questions fausses déjà effectuées
+- Coordonner avec le correctif de sauvegarde durable déjà préparé, sans nouveau système parallèle.
+- Auditer en lecture seule les reprises : questions attendues, réponses sauvegardées, résultat final confirmé et état affiché. Aucun dossier n’étant nommé dans cette demande, signaler les cas identifiables sans supposer de candidat.
+- Faire dériver le bandeau d’une preuve serveur d’achèvement ; une réponse manquante ou une lecture impossible interdit tout faux « terminé ».
+- Préparer une réconciliation idempotente contrôlée des reprises complètes, sans rattrapage massif ni installation serveur réelle. Garder toute activation bloquée si la garantie serveur manque.
+- Agrandir le bandeau avec le texte exact **QUESTIONS FAUSSES DÉJÀ EFFECTUÉES ✅**, sans masquer la reprise, sur ordinateur et téléphone.
+- Tester sur données fictives : complétion, réouverture, rafraîchissement, réseau coupé, double clic, réponses partielles, deux onglets et anciennes révisions ; préserver notes, réponses initiales et copies.
+- Ne publier aucun des deux chantiers avant votre validation ; préciser ce qui est testé, préparé ou encore bloqué.
