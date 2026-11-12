@@ -96,6 +96,7 @@ function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, 
               <img src={row.signature} alt={`Signature du ${row.date} — ${row.creneau}`} className="h-24 w-full object-contain" />
             </figure>)}
         </div>
+        {compte && <p data-testid="signatures-voir-total" className="border-t border-border pt-3 text-base font-semibold">Total : {compte.texte}</p>}
       </DialogContent>
     </Dialog>
     {query.isError && <p role="alert" className="text-xs text-destructive">Signatures indisponibles : aucun PDF incomplet n’a été produit.</p>}
