@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { lienActif, vuePublique, soumettre, reviser } from "../_shared/echecChoixPratiqueCore.ts";
 import { depsSupabase } from "../_shared/echecChoixPratiqueDeps.ts";
+import { lienActifAttestation, vuePubliqueAttestation, signerApprenant } from "../_shared/attestationFinCore.ts";
+import { depsAttestation, imageSignatureCentre } from "../_shared/attestationFinDeps.ts";
+import { MODELE_CODE_ATTESTATION } from "../_shared/modeleAttestationFin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +21,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, token, reponses, choix, signature, reinscription } = await req.json();
+    const { action, token, reponses, choix, signature, reinscription, consentement, empreinte_vue } = await req.json();
     if (!token || typeof token !== "string" || token.length < 10 || token.length > 200) {
       return json({ error: "Lien invalide" }, 400);
     }
@@ -36,6 +39,19 @@ serve(async (req) => {
 
     if (error) throw error;
     if (!doc) return json({ error: "Document introuvable ou lien expiré" }, 404);
+
+    // ---------- Attestation de fin de formation (texte figé + double signature) ----------
+    if (doc.modele_code === MODELE_CODE_ATTESTATION) {
+      const deps = depsAttestation(supabase);
+      const full = await deps.getDocByToken(token);
+      if (!full || !lienActifAttestation(full)) return json({ error: "Document introuvable ou lien expiré" }, 404);
+      if (action === "get") return json({ document: vuePubliqueAttestation(full, full.statut === "signe" ? await imageSignatureCentre(supabase) : null) });
+      if (action === "submit") {
+        const r = await signerApprenant(deps, token, { signature, consentement, empreinteVue: empreinte_vue, userAgent: req.headers.get("user-agent") || "" });
+        return json(r.body, r.status);
+      }
+      return json({ error: "Action inconnue" }, 400);
+    }
 
     // ---------- Modèle à choix unique (aucun PDF source) ----------
     // Identité, texte et version lus UNIQUEMENT depuis l'instantané figé du document.
