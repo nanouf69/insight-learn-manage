@@ -3,6 +3,7 @@ import { Car, FileDown, Eye, RefreshCw, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicule, pointsVehicule, type VehiculeLocation } from "@/lib/contratLocation";
 import { A_RENSEIGNER, LIB_GARANTIE, VERSION_CONTRAT_LOCATION, annexeAssurance, annexePieces, articleDepot, articleDommages, articleLitiges, articleRestitution, articleVol, assuranceVide, blocagesSignature, type AssuranceLocation, type Regime, type Tri } from "@/lib/contratLocationClauses";
+import { STATUT_LOCATION_NON_AUTORISEE, assuranceDepuisPolice, blocagesPolice, lignesAnnexePolice, perimetreVide, policePourVehicule, type PerimetreValide } from "@/lib/assurancesVehicules";
 import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.md?raw";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -85,11 +86,15 @@ function ContratLocationForm({ apprenant }: Props) {
   const [regime, setRegime] = useState<Regime>("non_determine");
   const [assurance, setAssurance] = useState<AssuranceLocation>(assuranceVide);
   const majAssurance = (patch: Partial<AssuranceLocation>) => setAssurance(a => ({ ...a, ...patch }));
-  const blocages = blocagesSignature({
+  const [perimetre, setPerimetre] = useState<PerimetreValide>(perimetreVide);
+  const police = vehiculeId ? policePourVehicule(immatriculation) : null;
+  const blocagesVehicule = vehiculeId ? blocagesPolice(police, perimetre) : [];
+  const blocagesBase = blocagesSignature({
     locataire: { nomComplet, email, telephone, adresse, numPermis, dateDelivrancePermis, prefecturePermis },
     vehiculeChoisi: !!vehiculeId, immatriculation, dateDebut, dateFin, prixLocation, tarifJournalier, regime, assurance,
     edlDepartSigne: false, consentementSpecifique: false, texteValideJuridiquement: false,
   });
+  const blocages = [...blocagesVehicule, ...blocagesBase];
   const ctxClauses = { avecCaution: cautionRequise, regime, tarifJournalier, assurance };
 
   // Signature
@@ -155,6 +160,10 @@ function ContratLocationForm({ apprenant }: Props) {
     setAnnee(details.premiereImmatriculation.slice(0, 4)); setVin(details.vin);
     setPremiereImmatriculation(details.premiereImmatriculation); setControleAvant(details.controleAvant);
     setCouleur(""); setKmDepart("");
+    // Police propre au véhicule (jamais réutilisée pour un autre) ; périmètre à revalider à chaque changement.
+    const p = policePourVehicule(details.immatriculation);
+    setAssurance(p ? assuranceDepuisPolice(p) : assuranceVide());
+    setPerimetre(perimetreVide());
   };
 
   const fmtDate = (v: string) => {
@@ -489,6 +498,8 @@ function ContratLocationForm({ apprenant }: Props) {
 
       addFooter();
       doc.addPage(); y = margin;
+      if (police) article({ titre: `ANNEXE 1 bis – POLICE ${police.assureur} N° ${police.numeroPolice} (${police.immatriculation})`, paragraphes: lignesAnnexePolice(police) });
+      else if (vehiculeId) para("Aucune police enregistrée pour ce véhicule : annexe assurance à compléter avec sa propre police.");
       article(annexeAssurance(assurance));
       article(annexePieces(cautionRequise));
       addFooter();
@@ -672,6 +683,24 @@ function ContratLocationForm({ apprenant }: Props) {
         </div>
 
         <Separator />
+
+        {vehiculeId && (
+          <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm space-y-2">
+            {police ? <>
+              <p className="font-semibold text-destructive">{STATUT_LOCATION_NON_AUTORISEE}</p>
+              <p>Police {police.assureur} n° {police.numeroPolice}, valable du {police.validiteDebut.split("-").reverse().join("/")} au {police.validiteFin.split("-").reverse().join("/")}. Usage déclaré : {police.usageDeclare}.</p>
+              <p className="text-muted-foreground">Brouillon et aperçu possibles ; contrat non signable et non envoyable. PDF originaux non encore téléversés.</p>
+              <div className="space-y-2">
+                <Label htmlFor="ref-axa">Référence de la confirmation écrite de l'assureur (courrier/mail)</Label>
+                <Input id="ref-axa" value={perimetre.referenceConfirmation} onChange={e => setPerimetre(x => ({ ...x, referenceConfirmation: e.target.value }))} />
+                <label className="flex items-start gap-2 min-h-11 cursor-pointer"><Checkbox checked={perimetre.confirmationAssureurRecue} onCheckedChange={c => setPerimetre(x => ({ ...x, confirmationAssureurRecue: c === true }))} className="mt-1" /><span>Confirmation écrite reçue et vérifiée</span></label>
+              </div>
+              {([["avecMoniteur", "Conduite avec moniteur seulement"], ["formation", "Usage formation couvert"], ["usageProfessionnel", "Usage professionnel couvert"], ["locationPayante", "Location payante couverte"]] as const).map(([k, l]) => (
+                <TriChoix key={k} label={`${l} (selon la confirmation AXA)`} value={perimetre[k]} onChange={t => setPerimetre(x => ({ ...x, [k]: t }))} />
+              ))}
+            </> : <p className="font-semibold text-destructive">Aucune police enregistrée pour ce véhicule. La police du KIA HK-870-BF n'est pas réutilisée.</p>}
+          </div>
+        )}
 
         {/* Annexe assurance */}
         <div className="space-y-3">
