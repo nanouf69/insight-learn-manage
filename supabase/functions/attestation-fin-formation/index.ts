@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { preparer, envoyer } from "../_shared/attestationFinCore.ts";
+import { preparer, envoyer, renvoyer } from "../_shared/attestationFinCore.ts";
 import { depsAttestation } from "../_shared/attestationFinDeps.ts";
 import { fermerCompteApresAttestation } from "../_shared/attestationCompteFermeture.ts";
 import { depsFermeture } from "../_shared/attestationCompteFermetureDeps.ts";
