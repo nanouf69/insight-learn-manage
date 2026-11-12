@@ -60,7 +60,9 @@ export async function confirmerBilanRevision(revision: BilanRevision, completed 
     .eq('apprenant_id', revision.source.owner).eq('exercice_id', revision.id).maybeSingle();
   if (error || !data) throw new Error('Enregistrement non relu : réessayez');
   if (!data.reponses || typeof data.reponses !== 'object' || Array.isArray(data.reponses)) throw new Error('Réponses serveur illisibles');
-  const exact = lireReponsesExactes(data.reponses as Record<string, unknown>, data.originaux_exacts, data.reponses_meta);
+  const meta = data.reponses_meta && typeof data.reponses_meta === 'object' && !Array.isArray(data.reponses_meta) ? data.reponses_meta as Record<string, unknown> : undefined;
+  const originals = data.originaux_exacts && typeof data.originaux_exacts === 'object' && !Array.isArray(data.originaux_exacts) ? data.originaux_exacts as Record<string, unknown> : undefined;
+  const exact = lireReponsesExactes(data.reponses as Record<string, unknown>, originals, meta);
   if (Object.keys(exact.anomalies).length || !answersAreEqual(exact.reponses, { __source: revision.source, ...revision.answers })) throw new Error('Autre réponse enregistrée : votre saisie reste conservée, vérifiez la reprise');
   primeKnownWriteSeq(revision.source.owner, revision.id, data.write_seq);
   const submitted = data.status === 'submitted' && !!data.submitted_at;
