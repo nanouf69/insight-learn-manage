@@ -1,14 +1,14 @@
 # Feuille de route
 
 ## 12/11 17:03 — Bandeau questions fausses et preuve durable
-- [ ] Audit lecture seule des reprises complètes sans bannière, preuve serveur attendue/réponses/finalisation et coordination avec sauvegarde durable 16:49.
-- [ ] Correctif aperçu : preuve durable, réconciliation contrôlée idempotente sans rattrapage massif, grand bandeau exact PC/mobile ; tests fictifs réseau/double clic/partiel/deux onglets/historique.
-- [ ] Publication interdite avant validation ; dossiers concernés non nommés, aucun état réel modifié.
+- [x] Audit SELECT : 221 clôtures, 109 sans reçu (2 couverture complète/sources seulement), 36 reçus sans sources avec sources dans leur propre reprise ; aucun rattrapage.
+- [x] Correctif aperçu : lecteur exact paginé couverture/résultat/sources, références terminales conservées, grand bandeau partagé, erreur/retry, contrôle submitted complet ; tests réseau/double clic/partiel/concurrence/historique et PC/mobile fictifs PASS.
+- [ ] Activation/publication : finalisation Bilan non installée, matrice authentifiée toutes filières/EB/jour/soir et deux onglets navigateur non prouvée ; dossiers non nommés, autorisation nominative nécessaire pour les 2 rattrapages. Aucun état réel modifié.
 
 ## 12/11 17:01 — Refonte visuelle attestation
 - [x] Logo officiel exact retrouvé ; modèle et circuit existants lus, plan préparé.
-- [ ] PDF A4 bleu/noir/blanc sans durée, brouillon incomplet non valable, signatures/tampon authentiques et documents signés préservés ; tests PDF/PC/mobile.
-- [ ] Publication en attente de validation, aucun envoi réel.
+- [x] PDF A4 logo officiel/sans durée, aperçu tactile/téléchargement, brouillon non valable sans affirmation totale, exports signés historiques inchangés ; export et inspection indépendante des deux PDF, PC/mobile fictifs PASS, aucun chevauchement.
+- [ ] Modèle final : preuve globale serveur figée et autorisation tampon absentes, circuit final non branché ; réel Léa non atteint par session de contrôle. Publication en attente de validation, aucun envoi réel. Rapport commun docs/attestation-et-bandeau-revision-2026-11-12.md (120 Vitest distincts + 4 SQL PASS).
 
 ## 12/11 16:49 — Sauvegarde durable des questions fausses
 - [x] Audit Bilan futur uniquement en mémoire + archive historique recouvrant la reprise ; modules/EB utilisent déjà la file partagée. Pilotes/corrigés courants OFF conservés, zéro mutation réelle.
