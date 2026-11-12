@@ -61,6 +61,15 @@ describe("Attestation de fin de formation — circuit serveur", () => {
     expect(signe.body).toMatchObject({ success: true });
     expect(r.doc.statut).toBe("signe");
   });
+  it("sans nom de responsable : préparée au nom de l'organisme, aucun nom inventé, envoi possible", async () => {
+    const x = fake();
+    const r: any = await preparer(x.d, entree("ok", { representant: undefined }));
+    expect(r.etat).toBe("prepare");
+    const f = JSON.parse(r.doc.texte_fige);
+    expect(f.lignes[2]).toContain("Je soussigné(e), représentant(e) de l'organisme Ftransport, atteste");
+    expect(f.signature_centre.representant).toBe("Pour l'organisme Ftransport");
+    expect((await envoyer(x.d, r.doc.id, "admin-1")).etat).toBe("envoye");
+  });
   it("connexion après la fin CRM : fin plafonnée et preuve originale conservée", async () => {
     const x = fake({ cnx: [{ id: "apres-fin", started_at: "2026-11-12T17:00:00Z" }] });
     const r: any = await preparer(x.d, entree());

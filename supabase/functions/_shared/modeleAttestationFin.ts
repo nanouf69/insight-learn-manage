@@ -3,7 +3,7 @@
  * Aucun champ manquant n'est inventé ; aucun pourcentage affiché n'est utilisé comme preuve.
  */
 export const ORGANISME = { raisonSociale: "Ftransport", adresse: "86 Route de Genas 69003 Lyon", nda: "11770762377", ville: "Lyon" } as const;
-export const VERSION_MODELE = "attestation-fin-v5-elearning-sans-duree";
+export const VERSION_MODELE = "attestation-fin-v6-sans-nom-signataire";
 export const MODELE_CODE_ATTESTATION = "attestation_fin_formation";
 export const CLE_ENVOI_ATTESTATION = "fin-formation";
 export const FICHIER_MODELE_ATTESTATION = "modeles/attestation_fin_formation";
@@ -113,10 +113,11 @@ export interface ChampsAttestation {
   representant: string | null; nom: string | null; prenom: string | null; formation: string | null;
   modalite: string | null; dateDebut: string | null; dateFin: string | null; dureeHeures: number | null; dateEmission: string;
 }
+/** Libellé du signataire lorsque aucun nom de responsable n'est saisi (le centre signe avec son image enregistrée). */
+export const SIGNATAIRE_CENTRE_PAR_DEFAUT = `Pour l'organisme ${ORGANISME.raisonSociale}`;
 export const dateFr = (d: string) => d.slice(0, 10).split("-").reverse().join("/");
 export function champsManquants(c: ChampsAttestation): string[] {
   const m: string[] = [];
-  if (!c.representant?.trim()) m.push("représentant du centre");
   if (!c.nom?.trim() || !c.prenom?.trim()) m.push("nom et prénom");
   if (!c.formation?.trim()) m.push("intitulé de formation");
   if (!c.modalite?.trim()) m.push("modalité");
@@ -128,12 +129,12 @@ export function champsManquants(c: ChampsAttestation): string[] {
 /** Texte de l'attestation : ne mentionne pas les modules (ils ne sont plus contrôlés). */
 export function texteAttestation(c: ChampsAttestation): string[] | null {
   if (champsManquants(c).length) return null;
-  if (!c.representant || !c.prenom || !c.nom || !c.formation || !c.dateDebut || !c.dateFin) return null;
+  if (!c.prenom || !c.nom || !c.formation || !c.dateDebut || !c.dateFin) return null;
   const duree = c.modalite === "e-learning" ? "" : `, d'une durée de ${c.dureeHeures} heures`;
   return [
     "ATTESTATION DE FIN DE FORMATION",
     `Organisme : ${ORGANISME.raisonSociale} — ${ORGANISME.adresse} — N° de déclaration d'activité : ${ORGANISME.nda}`,
-    `Je soussigné(e) ${c.representant.trim()}, atteste que ${c.prenom.trim()} ${c.nom.trim().toUpperCase()}, inscrit(e) à la formation ${c.formation.trim()}, en modalité ${c.modalite}, du ${dateFr(c.dateDebut)} au ${dateFr(c.dateFin)}${duree}, a suivi cette formation.`,
+    `Je soussigné(e)${c.representant?.trim() ? ` ${c.representant.trim()}` : `, représentant(e) de l'organisme ${ORGANISME.raisonSociale}`}, atteste que ${c.prenom.trim()} ${c.nom.trim().toUpperCase()}, inscrit(e) à la formation ${c.formation.trim()}, en modalité ${c.modalite}, du ${dateFr(c.dateDebut)} au ${dateFr(c.dateFin)}${duree}, a suivi cette formation.`,
     "Statut : FORMATION TERMINÉE.",
     "Cette attestation ne vaut pas réussite à l'examen professionnel.",
     `Fait à ${ORGANISME.ville}, le ${dateFr(c.dateEmission)}.`,

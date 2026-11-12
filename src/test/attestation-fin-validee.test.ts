@@ -66,7 +66,7 @@ describe("modèle", () => {
   const c = { representant: "R", nom: "Dupont", prenom: "Jean", formation: "VTC", modalite: "E-learning", dateDebut: "2026-09-14", dateFin: "2026-10-31", dureeHeures: 60, dateEmission: "2026-11-12" };
   it("champ manquant => aucun texte", () => {
     expect(texteAttestation({ ...c, dureeHeures: null })).toBeNull();
-    expect(champsManquants({ ...c, representant: "" })).toContain("représentant du centre");
+    expect(champsManquants({ ...c, representant: "" })).not.toContain("représentant du centre");
   });
   it("empreinte change si le texte change", async () => {
     const a = await empreinteAttestation(texteAttestation(c)!, "d1");

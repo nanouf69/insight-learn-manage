@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Download, Eye, Loader2, Lock, RefreshCw, Save, Send, ShieldCheck } from "lucide-react";
+import { Copy, Download, Eye, Loader2, Lock, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -26,7 +25,6 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [filtre, setFiltre] = useState<FiltreAttestation>("a_envoyer");
-  const [representant, setRepresentant] = useState("");
   const [autorise, setAutorise] = useState(false);
   const [occupe, setOccupe] = useState<string | null>(null);
   const [aEnvoyer, setAEnvoyer] = useState<AttestationEnregistree | null>(null);
@@ -39,13 +37,13 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
   const rafraichir = () => { qc.invalidateQueries({ queryKey: ["attestations-fin", apprenant.id] }); ap.q.refetch(); };
 
   const champs = {
-    representant: representant || null, nom: apprenant.nom ?? null, prenom: apprenant.prenom ?? null,
+    representant: null, nom: apprenant.nom ?? null, prenom: apprenant.prenom ?? null,
     formation: apprenant.formation_choisie ?? apprenant.type_apprenant ?? null, modalite: ap.elearning ? "e-learning" : "présentiel",
     dateDebut: debutFormation(apprenant, ap.elearning), dateFin: ap.fin.etat === "ok" ? ap.fin.date : null,
     dureeHeures: dureeFormation(apprenant, ap.elearning),
     dateEmission: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }),
   };
-  const manquants = champsManquants(champs).filter(m => m !== "représentant du centre");
+  const manquants = champsManquants(champs);
 
   const apercuBrouillon = async () => {
     setOccupe("apercu");
@@ -89,8 +87,13 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
   const enregistrer = async () => {
     setOccupe("preparer");
     try {
-      const r = await appelAttestation({ action: "preparer", apprenantId: apprenant.id, representant, autoriseSignatureCentre: autorise, heures: ap.heures, signaturesPresentiel: ap.signatures });
-      if (r?.etat === "prepare" || r?.etat === "existant") { toast({ title: r.etat === "prepare" ? "Attestation enregistrée" : "Une attestation existe déjà", description: "Elle figure dans « À envoyer »." }); setFiltre("a_envoyer"); }
+      const r = await appelAttestation({ action: "preparer", apprenantId: apprenant.id, autoriseSignatureCentre: autorise, heures: ap.heures, signaturesPresentiel: ap.signatures });
+      if (r?.etat === "prepare" || r?.etat === "existant") {
+        setFiltre("a_envoyer");
+        // Enregistrement confirmé par le serveur : on propose directement l'envoi (confirmation explicite, aucun envoi implicite).
+        if (r.doc && !r.doc.envoye_le && r.doc.statut !== "signe") setAEnvoyer(r.doc);
+        else toast({ title: "Une attestation existe déjà", description: "Elle figure dans la liste ci-dessus." });
+      }
       else toast({ title: "Enregistrement refusé", description: (r?.raisons ?? ["Contrôle serveur négatif"]).join(" — "), variant: "destructive" });
     } catch (e: any) {
       toast({ title: "Service momentanément indisponible", description: e?.message ?? "Réessayez dans un instant.", variant: "destructive" });
@@ -179,26 +182,20 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             )}
             {ap.heures && ap.heures.faites != null && ap.heures.minimum != null && <p className="text-muted-foreground">Heures e-learning prouvées : {h(ap.heures.faites)} / {h(ap.heures.minimum)}</p>}
             {manquants.length > 0 && <p className="text-destructive">Champs du dossier à compléter : {manquants.join(", ")}</p>}
+            <label className="flex items-start gap-3 min-h-11 cursor-pointer rounded-md border p-3">
+              <Checkbox checked={autorise} onCheckedChange={v => setAutorise(v === true)} className="mt-1" aria-label="Autoriser la signature du centre" />
+              <span>J'autorise l'apposition de la signature du centre déjà enregistrée dans Documents sur cette attestation.</span>
+            </label>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" className="min-h-11 h-auto whitespace-normal" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1 shrink-0" />Prévisualiser le brouillon (PDF)</Button>
-              <Button className="min-h-11" disabled aria-describedby="envoi-brouillon-bloque" title="Le brouillon doit être validé et enregistré avant envoi"><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
+              <Button className="min-h-11" disabled={!ap.pret || manquants.length > 0 || !autorise || occupe === "preparer"} onClick={enregistrer}>
+                {occupe === "preparer" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}Envoyer par mail
+              </Button>
             </div>
-            <p id="envoi-brouillon-bloque" className="text-sm text-muted-foreground">Enregistrez l’attestation avec la signature autorisée du centre avant d’envoyer le lien de signature à l’apprenant.</p>
-
-            {ap.pret && !manquants.length && (
-              <div className="space-y-3 rounded-md border p-3">
-                <label className="block space-y-1"><span className="font-medium">Représentant du centre (signataire)</span>
-                  <Input value={representant} onChange={e => setRepresentant(e.target.value)} placeholder="Nom et prénom du responsable" maxLength={120} /></label>
-                <label className="flex items-start gap-3 min-h-11 cursor-pointer">
-                  <Checkbox checked={autorise} onCheckedChange={v => setAutorise(v === true)} className="mt-1" />
-                  <span>J'autorise l'apposition de la signature du centre déjà enregistrée dans Documents sur cette attestation.</span>
-                </label>
-                <Button className="min-h-11" disabled={representant.trim().length < 3 || !autorise || occupe === "preparer"} onClick={enregistrer}>
-                  {occupe === "preparer" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}Enregistrer l'attestation
-                </Button>
-                <p className="text-xs text-muted-foreground">La date et les informations du dossier sont vérifiées avant enregistrement. Aucun mail n'est envoyé à cette étape.</p>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground">
+              {!autorise ? "Cochez l'autorisation de signature du centre pour pouvoir envoyer."
+                : "L'attestation est d'abord enregistrée, puis une confirmation vous est demandée avant l'envoi du lien de signature."}
+            </p>
           </CardContent>
         </Card>
       )}
