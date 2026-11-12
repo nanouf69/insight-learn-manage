@@ -2,8 +2,8 @@
  * Learner screen for the versioned future Bilan examen (modules 5 VTC / 11 TAXI).
  * Only rendered when the server route says 'future'. Reads a key-free projection,
  * writes only through receipt+version scoped RPCs; never touches legacy module_X_exo_Y data.
- * After submission: read-only correction (bilan_future_correction) and a local-only
- * review of the wrong questions of this passage (never saved, never changes the submission).
+ * After submission: read-only correction and a separate revision using the shared
+ * module answer queue; original answers, submission and grades never change.
  * Presentation = the shared classic quiz components (learnerQuizUi), same as every other module.
  */
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
@@ -29,6 +29,7 @@ import { BilanSrTraining } from "./BilanSrTraining";
 import { BILAN_SR_TRAINING_ACTIF } from "@/lib/bilanSrTraining";
 import { BILAN_CORRIGE_ACTUEL_ACTIF } from "@/lib/bilanCorrigeActuel";
 import { BilanCorrigeActuel } from "./BilanCorrigeActuel";
+import { useBilanRevision } from '@/hooks/useBilanRevision';
 
 import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, BilanRemisesRecap, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
 export const FUTURE_SUBJECT_NAMES = NOMS_MATIERES_BILAN;
@@ -106,7 +107,16 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
   const [ouvert, setOuvert] = useState<number | null>(null);
   const [passage, setPassage] = useState<Passage | null>(null);
   const [correction, setCorrection] = useState<Correction | null>(null);
-  const [revision, setRevision] = useState<Revision | null>(null);
+  const [revisionMode, setRevisionMode] = useState(false);
+  const reprise = useBilanRevision(passage && correction && apprenantId ? {
+    owner: apprenantId, module: moduleId, exercise: passage.receipt.exerciseId,
+    receipt: passage.receipt.passageId, version: passage.receipt.versionId,
+    questions: questionsFausses(correction).map(String),
+  } : null);
+  const revision: Revision | null = revisionMode && reprise.revision ? {
+    ids: reprise.revision.source.questions.map(Number), answers: reprise.revision.answers as Record<string,string[]>, validee: reprise.revision.submitted,
+  } : null;
+  useEffect(() => { if (reprise.revision) setRevisionMode(true); }, [reprise.revision?.id]);
   const [relecture, setRelecture] = useState(false);
   const [nonRepondues, setNonRepondues] = useState<Set<number>>(new Set());
   const [erreur, setErreur] = useState<string | null>(null);
@@ -154,7 +164,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
   const ouvrir = useCallback(async (exo: number) => {
     const tok = ++ouvertureCourante.current;
     const actuel = () => tok === ouvertureCourante.current;
-    setErreur(null); setPassage(null); setCorrection(null); setRevision(null); setRelecture(false); setNonRepondues(new Set()); setOuvert(exo);
+    setErreur(null); setPassage(null); setCorrection(null); setRevisionMode(false); setRelecture(false); setNonRepondues(new Set()); setOuvert(exo);
     window.scrollTo?.({ top: 0, behavior: "smooth" });
     const o = await rpc("bilan_future_open", { p_module: moduleId, p_exercise: exo });
     if (!actuel()) return;
@@ -285,7 +295,9 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
   const idsARelire = enRevision ? faussesRevision : fausses;
   const demarrerRevision = () => {
     setRelecture(false);
-    setRevision({ ids: idsARelire, answers: {}, validee: false });
+    if (!apprenantId) { setErreur('Identité du candidat non confirmée : reprise non ouverte.'); return; }
+    if (!reprise.start()) { setErreur('Lecture de la reprise non confirmée : réessayez.'); return; }
+    setRevisionMode(true);
     window.scrollTo?.({ top: 0, behavior: "smooth" });
   };
 
@@ -389,8 +401,10 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
                   {enRevision && (
                     <div data-testid="bilan-future-revision" className="space-y-2">
-                      <RevisionModeBanner count={revision!.ids.length} onShowAll={() => setRevision(null)} />
+                      <RevisionModeBanner count={revision!.ids.length} onShowAll={() => setRevisionMode(false)} />
                       <p className="text-xs text-muted-foreground">Entraînement : votre note et votre copie remise ne changent pas.</p>
+                      <p role="status" className="text-sm text-muted-foreground">{revision?.validee ? 'Déjà effectué — reprise confirmée' : reprise.statut === 'saved' ? 'Réponse enregistrée et relue' : reprise.statut === 'saving' ? 'Enregistrement en cours…' : 'Reprise en cours'}</p>
+                      {reprise.erreur && <div role="alert" className="text-destructive"><p>{reprise.erreur}</p><Button variant="outline" onClick={reprise.retry}>Réessayer l’enregistrement</Button></div>}
                     </div>
                   )}
                   {visibles.map(q => {
@@ -399,7 +413,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                     const fausse = estFausse(q);
                     const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
                     if (moduleId === 5) return <BilanQuestionCard key={q.id} question={q} index={qi} anchor={anchor(qi)} selected={reponseAffichee(q)} disabled={enRevision ? revision?.validee === true : soumis} showResults={resultatsVisibles} correct={c?.correct} wrong={fausse} missing={nonRepondues.has(q.id)} onSelect={l => {
-                      if (enRevision) setRevision(r => { if (!r || r.validee) return r; const cur = r.answers[q.id] ?? []; return { ...r, answers: { ...r.answers, [q.id]: (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort() } }; });
+                      if (enRevision) reprise.toggle(String(q.id), l);
                       else cocher(q, l);
                     }} />;
                     return (
@@ -419,11 +433,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                           disabled={enRevision ? revision!.validee : soumis}
                           onSelect={(l) => {
                             if (enRevision) {
-                              setRevision(r => {
-                                if (!r || r.validee) return r;
-                                const cur = r.answers[q.id] ?? [];
-                                return { ...r, answers: { ...r.answers, [q.id]: (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort() } };
-                              });
+                              reprise.toggle(String(q.id), l);
                             } else cocher(q, l);
                           }}
                         />
@@ -444,7 +454,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                               return;
                             }
                             setNonRepondues(new Set()); setErreur(null);
-                            setRevision({ ...revision!, validee: true });
+                            void reprise.finish();
                           }}>
                             <CheckCircle2 className="w-5 h-5" />
                             {envoi ? "Enregistrement en cours…" : "Valider les QCM"}

@@ -9,6 +9,7 @@ import { BILAN_SOMME_COURS_SOURCES, projectionSommeCoursActive, projeterBilanDep
 import { resoudreExercicesSourcesBilan } from "./bilanCoursSources";
 import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
+import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
@@ -6918,15 +6919,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [passagesFiges, setPassagesFiges] = useState<Record<number, PassageFige>>({});
     const [historicalQuizProof, setHistoricalQuizProof] = useState<ReturnType<typeof compterQuizModule> | null>(null);
-    // Les réponses archivées priment toujours sur toute restauration ultérieure.
-    useEffect(() => {
-      const figees: Record<string, string | string[]> = {};
-      Object.values(passagesFiges).forEach((p) => Object.assign(figees, p.reponses || {}));
-      const cles = Object.keys(figees);
-      if (cles.length === 0) return;
-      const differe = cles.some((k) => JSON.stringify(selectedAnswers[k]) !== JSON.stringify(figees[k]));
-      if (differe) setSelectedAnswers((prev) => ({ ...prev, ...figees }));
-    }, [passagesFiges, selectedAnswers]);
     const [showCalculator, setShowCalculator] = useState(false);
     // Revision mode: per exo, set of question IDs to display (only the wrong ones)
     const [revisionQuestionsFor, setRevisionQuestionsFor] = useState<Record<number, Set<number | string>>>({});
@@ -6949,6 +6941,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
+    // Original archive is immutable evidence, not the current revision answer state.
+    useEffect(() => {
+      const active = new Set([...revisionActiveRef.current, ...Object.keys(revisionQuestionsFor).map(Number)]);
+      const figees = reponsesArchiveHorsRevision<string | string[]>(passagesFiges, active);
+      if (Object.keys(figees).some(k => JSON.stringify(selectedAnswers[k]) !== JSON.stringify(figees[k]))) {
+        setSelectedAnswers(prev => ({ ...prev, ...figees }));
+      }
+    }, [passagesFiges, selectedAnswers, revisionQuestionsFor]);
     // Quiz déjà validé côté serveur : toute nouvelle réponse part sous l'identifiant
     // de révision (la ligne validée est figée par le serveur et ne l'appliquerait pas).
     const exerciceIdPourSauvegarde = (exoId: number) =>
@@ -7099,7 +7099,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
       // Quiz déjà validé : la révision part sous son propre identifiant,
       // la tentative validée reste intacte (« Refaire les fausses » toujours cliquable).
-      if (submittedExoIdsRef.current.has(pending.exoId)) revisionActiveRef.current.add(pending.exoId);
+      if (submittedExoIdsRef.current.has(pending.exoId) || passagesFiges[pending.exoId]) revisionActiveRef.current.add(pending.exoId);
       // Persist the wiped selections after state has settled.
       autoSaveAnswers(clearedSelected, [pending.exoId], selectedAnswers);
 
@@ -7629,8 +7629,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         const m = /^module_\d+_exo_(\d+)$/.exec(row.exercice_id);
         if (m) soumis.push(Number(m[1]));
       });
-      if (soumis.length === 0) return;
-      const revisions = await fetchQuizAttempts(apprenantId, soumis.map((id) => buildRevisionExerciceId(module.id, id)));
+      // Discover only explicit revision identities for displayed exercises, also
+      // when the original proof is an archive rather than a submitted legacy row.
+      const revisionIds = [...new Set([...soumis, ...activeExercicesRef.current.map(e => Number(e.id))])];
+      if (revisionIds.length === 0) return;
+      const revisions = await fetchQuizAttempts(apprenantId, revisionIds.map((id) => buildRevisionExerciceId(module.id, id)));
       revisions.forEach((row) => {
         const exoId = exoIdDepuisRevision(row.exercice_id);
         if (exoId == null) return;
@@ -7681,10 +7684,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         moduleAlreadyValidatedRef.current = true;
         completionPersistedRef.current = true;
         setPassagesFiges(parExo);
-        setSelectedAnswers((prev) => ({ ...prev, ...reponsesFigees }));
+        setSelectedAnswers((prev) => ({ ...prev, ...reponsesArchiveHorsRevision<string | string[]>(parExo, revisionActiveRef.current) }));
         setShowResultsFor((prev) => {
           const next = new Set(prev);
-          Object.keys(parExo).forEach((id) => next.add(Number(id)));
+          Object.keys(parExo).forEach((id) => { if (!revisionActiveRef.current.has(Number(id))) next.add(Number(id)); });
           return next;
         });
       })();

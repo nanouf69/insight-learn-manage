@@ -9,6 +9,7 @@ import { sourcePour } from "@/lib/corrigesSources";
 import { CorrigeSourceNotice } from "@/components/cours-en-ligne/CorrigeSourceNotice";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { RevisionsVersionneesAdmin } from "./RevisionsVersionneesAdmin";
+import { lireRevisionsBilanAdmin } from './lectureRevisionsBilanAdmin';
 
 const valeur = (v: unknown) => v === undefined ? "Non prouvée" : Array.isArray(v) ? v.join(" + ") || "Sans réponse" : typeof v === "string" ? v || "Sans réponse" : JSON.stringify(v);
 const heure = (v: string) => new Date(v).toLocaleString("fr-FR",{timeZone:"Europe/Paris"});
@@ -18,7 +19,7 @@ export function RevisionsAdmin({apprenantId}: {apprenantId:string}) {
   const charger = useCallback(async () => {
     const g = ++generation.current;
     setState(s => ({owner:apprenantId,rows:s.owner === apprenantId ? s.rows:[],error:null,loading:true}));
-    try { const rows = await lireRevisionsAdmin(apprenantId); if (g === generation.current) setState({owner:apprenantId,rows,error:null,loading:false}); }
+    try { const [eb,bilan] = await Promise.all([lireRevisionsAdmin(apprenantId),lireRevisionsBilanAdmin(apprenantId)]); const rows=[...eb,...bilan]; if (g === generation.current) setState({owner:apprenantId,rows,error:null,loading:false}); }
     catch { if (g === generation.current) setState({owner:apprenantId,rows:[],error:"Lecture des révisions impossible : aucune réponse ne peut être confirmée.",loading:false}); }
   },[apprenantId]);
   useEffect(() => {

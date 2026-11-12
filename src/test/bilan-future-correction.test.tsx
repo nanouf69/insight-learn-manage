@@ -2,6 +2,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { reponseExacte, questionsFausses, lireCorrection } from "@/lib/bilanFutureCorrection";
+import { setAnswerSaveAuthToken, setAnswerSaveOwnership, __testResetMemorySeq } from '@/lib/answerPersistence';
+vi.mock('@/lib/bilanRevisionActivation',()=>({BILAN_REVISION_FINALISATION_ACTIVE:true}));
 
 const calls: { name: string; args: any }[] = [];
 const QUESTIONS = [
@@ -13,6 +15,7 @@ const SUBMITTED = { "1": ["B"], "2": ["A"], "3": ["A"] };
 const KEYS: Record<string, string[]> = { "1": ["A"], "2": ["A", "B"], "3": ["A"] };
 function rpc(name: string, args: any) {
   calls.push({ name, args });
+  if(name==='bilan_revision_finaliser'){const row=revisions.find(r=>r.exercice_id===args.p_exercice);if(!row||row.write_seq!==args.p_seq)return Promise.resolve({error:new Error('Conflit')});row.status='submitted';row.submitted_at='2026-11-12T16:49:00Z';return Promise.resolve({data:row,error:null});}
   if (name === "bilan_future_open") return Promise.resolve({ data: { id: "r1", version_id: "v1" }, error: null });
   if (name === "bilan_future_questions") return Promise.resolve({ data: { version_id: "v1", questions: QUESTIONS }, error: null });
   if (name === "bilan_future_resume") return Promise.resolve({ data: { version_id: "v1", answers: {}, submitted: true }, error: null });
@@ -20,10 +23,13 @@ function rpc(name: string, args: any) {
     questions: QUESTIONS.map(q => ({ id: q.id, answer: (SUBMITTED as any)[q.id], correct: KEYS[q.id] })) }, error: null });
   return Promise.resolve({ data: null, error: { code: "42883" } });
 }
-function from() { const q: any = { select: () => q, eq: () => q, maybeSingle: () => Promise.resolve({ data: { correct_count: 1, question_count: 3 }, error: null }), then: (r: any) => r({ data: [], error: null }) }; return q; }
-vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (n: string, a: any) => rpc(n, a), from: () => from() } }));
+const revisions: any[] = [];
+function from(table: string) { let id = ''; const q: any = { select: () => q, eq: (k: string,v: string) => {if(k==='exercice_id')id=v;return q;}, like: () => q, order: () => q, range: async () => ({data:revisions,error:null}), maybeSingle: () => Promise.resolve({ data: table==='reponses_apprenants'?revisions.find(r=>r.exercice_id===id)??null:{ correct_count: 1, question_count: 3 }, error: null }), then: (r: any) => r({ data: [], error: null }) }; return q; }
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (n: string, a: any) => rpc(n, a), from: (t: string) => from(t) } }));
 import { BilanFutureExam } from "@/components/cours-en-ligne/BilanFutureExam";
-beforeEach(() => { calls.length = 0; localStorage.clear(); });
+beforeEach(() => { calls.length = 0; localStorage.clear(); revisions.length=0; __testResetMemorySeq(); setAnswerSaveAuthToken('fixture','u1');setAnswerSaveOwnership({apprenantId:'a1'});
+  vi.stubGlobal('fetch',vi.fn(async (_:unknown,init:RequestInit)=>{const b=JSON.parse(String(init.body));let row=revisions.find(r=>r.exercice_id===b.exercice_id);if(!row){row={id:'rev',exercice_id:b.exercice_id,reponses:{},write_seq:0};revisions.push(row);}row.reponses=b.reponses;row.write_seq++;if(b.completed){row.status='submitted';row.submitted_at='2026-11-12T16:49:00Z';}return {ok:true,json:async()=>({success:true,confirmed:true,write_seq:row.write_seq,accepted_event_ids:b.events.map((e:any)=>e.event_id)}),text:async()=>''};}));
+});
 
 describe("Correction Bilan examen (règles)", () => {
   it("QCM exact seulement : toutes les bonnes, aucune mauvaise", () => {
@@ -41,9 +47,9 @@ describe("Correction Bilan examen (règles)", () => {
 });
 
 describe("Correction Bilan examen (écran)", () => {
-  it("après remise : même écran que les modules, réponse élève + bonnes réponses, bouton 2 fausses, révision locale sans écriture", async () => {
+  it("après remise : reprise persistée séparée, original et note inchangés", async () => {
     const choix = (qid: number, l: string) => document.querySelector(`[data-question-id="${qid}"] [data-choix="${l}"]`) as HTMLElement;
-    render(<BilanFutureExam moduleId={5} ownerId="u1" />);
+    render(<BilanFutureExam moduleId={5} ownerId="u1" apprenantId="a1" />);
     await screen.findAllByText("📝 Quiz — Gestion");
     fireEvent.click(screen.getAllByText("📝 Quiz — Gestion")[0]);
     const btn = await screen.findByTestId("refaire-fausses");
@@ -72,6 +78,7 @@ describe("Correction Bilan examen (écran)", () => {
     fireEvent.click(choix(2, "A"));
     fireEvent.click(screen.getByText("Valider les QCM"));
     expect((await screen.findByTestId("revision-score")).textContent).toContain("1/2");
+    expect(revisions).toHaveLength(1);expect(revisions[0].reponses['1']).toEqual(['A']);expect(revisions[0].status).toBe('submitted');
     const writes = calls.filter(c => /save_draft|submit/.test(c.name));
     expect(writes).toEqual([]);
     fireEvent.click(screen.getByText("Voir toutes les questions"));
