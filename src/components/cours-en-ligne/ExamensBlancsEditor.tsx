@@ -1537,7 +1537,6 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
 
-      const now = new Date().toISOString();
       const writeOrigin = showSuccessToast ? "manuel" : "autosave";
       const changedModuleFingerprints: Record<number, string> = {};
       const rows = synced
