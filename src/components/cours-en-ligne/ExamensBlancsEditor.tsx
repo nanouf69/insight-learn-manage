@@ -1367,6 +1367,12 @@ function MatiereEditor({
                   examTitre={examTitre}
                   statsEnabled={statsEnabled}
                   onEdit={() => setEditingQId(q.id)}
+                  onEnonceSave={attendreSauvegarde ? (enonce) => {
+                    const attente = attendreSauvegarde();
+                    // Same question identity and pencil save pipeline; only the prompt changes.
+                    updateQuestion({ ...q, enonce }, false);
+                    return attente;
+                  } : undefined}
                   onChoixTexteSave={attendreSauvegarde ? (index, texte) => {
                     const attente = attendreSauvegarde();
                     updateQuestion(remplacerTexteProposition(q, index, texte), false);

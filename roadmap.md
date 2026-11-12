@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 12:22 — Énoncé cliquable éditeur EB
+- [ ] Carte identifiée : AdminExamQuestionCard dans MatiereEditor ; édition locale du seul énoncé via updateQuestion, sauvegarde CAS/relecture/publication existantes inchangées.
+- [ ] Valider QRC/QCM, erreurs, relecture, partage existant et copies figées sur simulations uniquement ; aucune publication ou donnée réelle.
+
 ## 12/11 10:49 — Révision Sécurité routière VTC
 - [x] Diagnostic SELECT : Q71 éditeur B, anciennes clés A ; Q226 D dans toutes les sources contrôlées, sélections C+D encore fausses. Cas individuel/cache inconnu ; aucun compte réel.
 - [x] Lecture propriétaire/remise préparée uniquement en SQL local ; entraînement sans écriture pour reçu futur ou snapshot 5/502. Identité+énoncé+options ordonnées exigés. Version future ancienne : seules les deux correspondances auditées, autres exclues.
