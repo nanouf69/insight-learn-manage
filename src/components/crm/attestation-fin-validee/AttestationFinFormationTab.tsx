@@ -146,7 +146,10 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
               {d.envoi_erreur && <p className="text-destructive">Dernier envoi : {d.envoi_erreur}</p>}
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, false)}><Eye className="h-4 w-4 mr-1" />Prévisualiser</Button>
-                {s.libelle === "À envoyer" && <Button className="min-h-11" disabled title="Certification pédagogique serveur complète requise"><Lock className="h-4 w-4 mr-1" />Certification requise avant envoi</Button>}
+                {s.libelle === "À envoyer" && <div className="space-y-1">
+                  <Button className="min-h-11" disabled title="Certification pédagogique serveur complète requise" aria-describedby={`envoi-bloque-${d.id}`}><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
+                  <p id={`envoi-bloque-${d.id}`} className="text-sm text-destructive">Envoi bloqué : certification pédagogique à confirmer et fermeture du compte à sécuriser.</p>
+                </div>}
                 {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" onClick={() => { navigator.clipboard.writeText(lienSignature(d.token)); toast({ title: "Lien copié" }); }}><Copy className="h-4 w-4 mr-1" />Copier le lien de signature</Button>}
                 {d.statut === "signe" && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, true)}><Download className="h-4 w-4 mr-1" />Télécharger le PDF signé</Button>}
               </div>
@@ -185,7 +188,11 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             )}
             {ap.heures && ap.heures.faites != null && ap.heures.minimum != null && <p className="text-muted-foreground">Heures e-learning prouvées : {h(ap.heures.faites)} / {h(ap.heures.minimum)}</p>}
             {manquants.length > 0 && <p className="text-destructive">Champs du dossier à compléter : {manquants.join(", ")}</p>}
-            <Button variant="outline" className="min-h-11" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1" />Prévisualiser le brouillon (PDF)</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" className="min-h-11 h-auto whitespace-normal" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1 shrink-0" />Prévisualiser le brouillon (PDF)</Button>
+              <Button className="min-h-11" disabled aria-describedby="envoi-brouillon-bloque" title="Le brouillon doit être validé et enregistré avant envoi"><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
+            </div>
+            <p id="envoi-brouillon-bloque" className="text-sm text-destructive">Envoi indisponible : ce brouillon n’est pas une attestation validée et enregistrée ; la fermeture du compte après envoi reste à sécuriser.</p>
 
             {certificationGlobaleConfirmee && ap.pret && !manquants.length && (
               <div className="space-y-3 rounded-md border p-3">
