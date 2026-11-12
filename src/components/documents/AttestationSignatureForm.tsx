@@ -59,7 +59,7 @@ export function AttestationSignatureForm({ doc, soumettre, recharger }: {
         </header>
         <article className="rounded-lg border bg-card p-6 space-y-3 text-base leading-relaxed">
           {doc.lignes.map((l, i) => <p key={i} className={i === 0 ? "text-center font-bold text-lg" : ""}>{l}</p>)}
-          {doc.representant && <p className="text-sm text-muted-foreground">Signée pour le centre par {doc.representant}.</p>}
+          {doc.representant && signe && <p className="text-sm text-muted-foreground">Signée pour le centre par {doc.representant}.</p>}
         </article>
         {signe ? (
           <div className="flex flex-col items-center gap-3 rounded-lg bg-success/10 p-4 text-success">
