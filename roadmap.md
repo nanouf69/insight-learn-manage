@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 12:30 — Prévol installation accès EB unitaire
+- [ ] Catalogue production SELECT uniquement : signatures, droits, session janvier et frontières de démarrage/reprise.
+- [ ] Comparaison candidat, tests PostgreSQL jetables et procédure transactionnelle ciblée avec retrait conservant le journal.
+- [ ] Verdict prêt à valider ou NO-GO précis ; aucune installation, compte réel, fermeture/ouverture ou publication.
+
 ## 12/11 12:22 — Énoncé cliquable éditeur EB
 - [x] Carte identifiée : AdminExamQuestionCard dans MatiereEditor ; édition locale du seul énoncé via updateQuestion, sauvegarde CAS/relecture/publication existantes inchangées.
 - [x] 25 tests PASS, deux parcours PC/mobile vrai éditeur avec transport simulé : QRC/QCM, rechargement, variante VA liée, EB2/identités distinctes, copie figée, réponses inchangées, refus/retry. Build OK. Rapport docs/eb-enonce-clic-2026-11-12.md.
