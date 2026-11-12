@@ -189,7 +189,19 @@ Deno.serve(async (req) => {
       const texte = await data.text();
       try { fichiers[nom] = JSON.parse(texte); } catch { fichiers[nom] = { message: texte }; }
     }
-    return json({ jour, fichiers });
+    // Bounded probes isolate count timeout from page/serialization failures.
+    const sondes: Record<string, unknown> = {};
+    if (body.sonder === true) {
+      for (const t of ["reponses_apprenants_journal", "answer_state_historique"]) {
+        const pk = pkDe(t);
+        const debut = Date.now();
+        const c = await sb.from(t).select(pk, { count: "exact", head: true });
+        const r = await sb.from(t).select("*").order(pk).limit(10);
+        const err = (e: any) => e ? { code: e.code ?? null, message: e.message || e.details || "erreur sans message", status: e.status ?? null } : null;
+        sondes[t] = { count: c.count, count_error: err(c.error), page_count: r.data?.length ?? null, page_error: err(r.error), duree_ms: Date.now() - debut };
+      }
+    }
+    return json({ jour, fichiers, sondes });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
