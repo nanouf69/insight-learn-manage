@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { LIBELLES_FILTRE, correspondFiltre, type FiltreAttestation } from "@/lib/attestationFinValidee/filtres";
 import { champsManquants, texteAttestation, type TexteFigeAttestation } from "@/lib/attestationFinValidee/modele";
 import { genererPdfAttestation, ouvrirBlob, telechargerBlob } from "@/lib/attestationFinValidee/pdf";
+import { genererPdfPresentation } from "@/lib/attestationFinValidee/pdfPresentation";
+import { ApercuPdfAttestation } from "./ApercuPdfAttestation";
 import { appelAttestation, chargerAttestations, lienSignature, statutAffiche, type AttestationEnregistree } from "@/lib/attestationFinValidee/serveur";
 import { chargerElementAdmin } from "@/lib/documentAdminElements";
 import { useApercuAttestation } from "./useApercuAttestation";
@@ -28,6 +30,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
   const [autorise, setAutorise] = useState(false);
   const [occupe, setOccupe] = useState<string | null>(null);
   const [aEnvoyer, setAEnvoyer] = useState<AttestationEnregistree | null>(null);
+  const [apercuPdf, setApercuPdf] = useState<Blob | null>(null);
   const docs = useQuery({ queryKey: ["attestations-fin", apprenant.id], queryFn: () => chargerAttestations(apprenant.id), staleTime: 0 });
   const ap = useApercuAttestation(apprenant);
   const liste = useMemo(() => (docs.data ?? []).filter(d => correspondFiltre(statutAffiche(d).cle, filtre)), [docs.data, filtre]);
@@ -44,20 +47,21 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
   };
   const manquants = champsManquants(champs).filter(m => m !== "représentant du centre");
 
-  const apercuBrouillon = () => {
-    const nom = `${apprenant.prenom ?? ""} ${String(apprenant.nom ?? "").toUpperCase()}`.trim();
-    const lignes = ap.pret && !manquants.length
-      ? texteAttestation({ ...champs, representant: representant.trim() || "(représentant à saisir)" })!
-      : ["PROJET D'ATTESTATION DE FIN DE FORMATION",
-         `Apprenant(e) : ${nom || "—"}`, `Formation : ${champs.formation ?? "—"} — modalité ${champs.modalite}`,
-         `Début de formation : ${champs.dateDebut ? champs.dateDebut.slice(0, 10).split("-").reverse().join("/") : "—"}`,
-         `Date de fin (dernière connexion e-learning) : ${ap.fin.etat === "ok" ? ap.fin.date.split("-").reverse().join("/") : ap.fin.raison}`,
-         `Durée prévue : ${champs.dureeHeures != null ? `${champs.dureeHeures} heures` : "—"}`];
-    const infos: string[] = [];
-    if (ap.heures && ap.heures.faites != null && ap.heures.minimum != null) infos.push(`Heures e-learning prouvées : ${h(ap.heures.faites)} / ${h(ap.heures.minimum)}`);
-    if (ap.signatures && ap.signatures.signees != null) infos.push(`Signatures de présence : ${ap.signatures.signees} / ${ap.signatures.attendues ?? "—"}`);
-    if (manquants.length) infos.push(`Champs du dossier à compléter : ${manquants.join(", ")}`);
-    ouvrirBlob(genererPdfAttestation({ mode: "brouillon", lignes, modules: [], motifs: ap.motifs, infos, signatureCentre: null, signatureApprenant: null }));
+  const apercuBrouillon = async () => {
+    setOccupe("apercu");
+    try {
+      const blob = await genererPdfPresentation({
+        apprenantId: apprenant.id, prenom: apprenant.prenom ?? "—", nom: apprenant.nom ?? "—",
+        formation: champs.formation ?? "Non renseignée", modalite: champs.modalite,
+        debut: champs.dateDebut, fin: ap.fin.etat === "ok" ? ap.fin.date : null, dateEmission: champs.dateEmission,
+        sourceFin: ap.fin.etat === "ok" ? `connexion vérifiée du ${dfr(ap.fin.startedAt)} · ${ap.fin.connexionId}` : undefined,
+        // No server-frozen attestation-wide milestone proof exists in this model.
+        // Never turn 98.9%, a module counter, or a client calculation into certification.
+        preuve: null, motifs: [...ap.motifs, ...manquants.filter(m => m !== "durée"), "Validation complète des jalons non certifiée"],
+      });
+      setApercuPdf(blob);
+    } catch (e) { toast({ title: "PDF impossible", description: e instanceof Error ? e.message : "Export interrompu", variant: "destructive" }); }
+    finally { setOccupe(null); }
   };
 
   const pdfOfficiel = async (d: AttestationEnregistree, telecharger: boolean) => {
@@ -173,7 +177,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             )}
             {ap.heures && ap.heures.faites != null && ap.heures.minimum != null && <p className="text-muted-foreground">Heures e-learning prouvées : {h(ap.heures.faites)} / {h(ap.heures.minimum)}</p>}
             {manquants.length > 0 && <p className="text-destructive">Champs du dossier à compléter : {manquants.join(", ")}</p>}
-            <Button variant="outline" className="min-h-11" disabled={!ap.q.data} onClick={apercuBrouillon}><Eye className="h-4 w-4 mr-1" />Prévisualiser le brouillon (PDF)</Button>
+            <Button variant="outline" className="min-h-11" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1" />Prévisualiser le brouillon (PDF)</Button>
 
             {ap.pret && !manquants.length && (
               <div className="space-y-3 rounded-md border p-3">
@@ -193,6 +197,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
         </Card>
       )}
 
+      <ApercuPdfAttestation blob={apercuPdf} onClose={() => setApercuPdf(null)} />
       <AlertDialog open={!!aEnvoyer} onOpenChange={o => !o && setAEnvoyer(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
