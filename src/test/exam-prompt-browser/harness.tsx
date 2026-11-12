@@ -18,7 +18,7 @@ let rows = JSON.parse(sessionStorage.getItem("exam-prompt-fixtures") ?? "null") 
 const calls: string[] = [];
 let fail = false;
 let clock = Date.now();
-const session = { user: { id: "simulated-only" }, access_token: "fictif", expires_at: Math.floor(Date.now() / 1000) + 3600 };
+const session = { user: { id: "simulated-only" }, access_token: "fictif", refresh_token: "fictif", expires_at: Math.floor(Date.now() / 1000) + 3600 };
 (supabase.auth as any).getSession = async () => ({ data: { session }, error: null });
 (supabase.auth as any).getUser = async () => ({ data: { user: session.user }, error: null });
 (supabase.auth as any).refreshSession = async () => ({ data: { session }, error: null });
