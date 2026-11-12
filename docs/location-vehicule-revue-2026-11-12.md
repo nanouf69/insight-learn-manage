@@ -75,3 +75,12 @@ Opérationnel en aperçu : lecture du dossier par identité, coordonnées autori
 Sans caution : aucun reçu ou échéancier de dépôt ni opération financière créé. Aucun circuit reçu/échéancier location n'existait : ne pas fabriquer ces opérations et ne pas toucher aux échéanciers/paiements formation voisins.
 
 À valider avant activation : statut client/contrat mixte ; police/avenant et franchises ; aptitudes et disponibilités véhicules ; montant/tarifs/frais/annulation ; médiateur réellement conventionné ; traitement RGPD/durées ; rôle du représentant ; règle contrôle véhicule école/examen ; version des certifications et clauses proposées. Archivage durable et signature location spécifiques non installés, bloqués tant que non autorisés. Aucun contrat existant, permis, signature, véhicule ou facture modifié ; aucun envoi, signature automatique ou publication.
+## Renforcements v2 (12/11/2026, aperçu, version `location-preview-2026-11-12-v2`)
+Texte intégral : `src/lib/contratLocationClauses.ts` (art. 5 dépôt, 6 états des lieux/dommages, 7 vol, 8 restitution/non-restitution, 11 litiges, annexe 1 assurance, annexe 3 pièces) ; PDF : `ContratLocationSection.tsx`.
+- Retard : forfait 20 € TTC/heure remplacé par ½ tarif journalier par demi-journée entamée après 30 min de tolérance, modérable (C. civ. 1231-5).
+- « Signalé volé après 24 h » remplacé par relance → mise en demeure 48 h → signalement seulement si sans effet ou détournement sérieux ; aucune voie de fait.
+- Consommateur : plus de clause attributive (R631-3), médiateur obligatoire (L612-1/L616-1) **à désigner**, exclusion de rétractation L221-28 12° mentionnée.
+- Professionnel : Tribunal de commerce de Lyon (CPC 48, mention très apparente).
+- Code de la route L121-6 (désignation du conducteur) ; C. civ. 2224 (prescription, durée RGPD) ; CNIL (réclamation).
+Sources complémentaires : https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032041571 (C. route L121-6), https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000019017112 (C. civ. 2224), https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032224816 (L616-1).
+À vérifier par un juriste : délais (15 j, 48 h, 30 min), base de l'indemnité de retard, présomption art. 6.1, durées de conservation, médiateur, qualification formation/location (prestation liée ou location autonome), autorisation de l'assureur.
