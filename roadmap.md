@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 10:23 — F/G après Anglais
+- [x] Raccourcis du haut retirés ; étapes partagées A–E puis F/G par contexte VTC, IDs 505/506 et retour inchangés ; H/QRC à leur emplacement existant. 25 tests PASS, quatre parcours simulés PC/mobile × admin/élève (ordre géométrique E<F<G, clics F/G et retour, zéro mutation admin). Build OK ; aucune publication ni compte réel. TAXI hors contexte inchangé ; cas réels non vérifiés.
+
 ## 12/11 10:14 — Accès directs F/G nouveau Bilan VTC
 - [x] Raccourcis 505/506 avant A–E ; ciblage après réhydratation prioritaire sur ancienne page/résultat, F→G→A–E et reload G→F, réponses B et H/QRC préservés. Quatre parcours Playwright PC/mobile × admin/élève simulés, ancien menu VTC présent, 34 tests PASS ; aucun compte réel ni publication. Diff versus production d7e00d6 limité au correctif et ses tests/journal ; cas réels et soumission complète non vérifiés.
 

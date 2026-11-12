@@ -2,13 +2,20 @@ import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseQuestionPrompt, QcmChoiceButtons, ProgressionStep, QUESTION_IMAGE_SIZES, QuizScoreSummary } from "./learnerQuizUi";
 import { ExamQuestionImage } from "./ExamQuestionImage";
+import { useAccesComplementVtc } from "./BilanVtcComplements";
 
 export const NOMS_MATIERES_BILAN = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
 export type QuestionBilanPresentation = { id: number; enonce: string; image?: string; imageSize?: string; support?: { numero: number; paragraphes: string[] }; choix?: { lettre: string; texte: string }[] };
 
 /** Presentation only: no reads, effects, receipts or persistence. */
 export function BilanMatiereSteps({ current, submitted, onSelect }: { current: number; submitted: boolean[]; onSelect: (index: number) => void }) {
-  return <div className="space-y-1.5">{NOMS_MATIERES_BILAN.map((nom, i) => <ProgressionStep key={nom} label={`📝 Quiz — ${nom}`} current={current === i} completed={submitted[i] === true} unlocked isLast={i === 4} badge="quiz" onClick={() => onSelect(i)} />)}</div>;
+  const ouvrirComplement = useAccesComplementVtc();
+  return <div className="space-y-1.5">{NOMS_MATIERES_BILAN.map((nom, i) => <ProgressionStep key={nom} label={`📝 Quiz — ${nom}`} current={current === i} completed={submitted[i] === true} unlocked isLast={i === 4 && !ouvrirComplement} badge="quiz" onClick={() => onSelect(i)} />)}
+    {ouvrirComplement && <>
+      <ProgressionStep label="F(V) — Développement commercial" current={false} completed={false} unlocked isLast={false} badge="quiz" onClick={() => ouvrirComplement(505)} />
+      <ProgressionStep label="G(V) — Réglementation spécifique" current={false} completed={false} unlocked isLast badge="quiz" onClick={() => ouvrirComplement(506)} />
+    </>}
+  </div>;
 }
 export function BilanMatiereCard({ nom, tools, children }: { nom: string; tools?: ReactNode; children: ReactNode }) {
   return <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;

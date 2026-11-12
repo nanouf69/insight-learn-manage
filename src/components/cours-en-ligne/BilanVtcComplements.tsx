@@ -1,7 +1,9 @@
-import { type ReactNode, useState } from "react";
+import { createContext, type ReactNode, useContext, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export type CibleComplementVtc = { exerciceId: 505 | 506; selection: number };
+const AccesComplementContext = createContext<((id: 505 | 506) => void) | null>(null);
+export const useAccesComplementVtc = () => useContext(AccesComplementContext);
 /** Keep the future passage mounted, then mount the existing legacy renderer on demand. */
 export function BilanVtcComplements({ future, legacy }: { future: ReactNode; legacy: (cible: CibleComplementVtc | null) => ReactNode }) {
   const [ouvert, setOuvert] = useState(false);
@@ -12,11 +14,7 @@ export function BilanVtcComplements({ future, legacy }: { future: ReactNode; leg
     setVisite(true);
     setOuvert(true);
   };
-  return <>
-    <nav className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Accès directs F et G">
-      <Button variant="outline" className="min-h-11 h-auto whitespace-normal py-3 text-left justify-start font-semibold" onClick={() => ouvrirExercice(505)}>F(V) — Développement commercial</Button>
-      <Button variant="outline" className="min-h-11 h-auto whitespace-normal py-3 text-left justify-start font-semibold" onClick={() => ouvrirExercice(506)}>G(V) — Réglementation spécifique</Button>
-    </nav>
+  return <AccesComplementContext.Provider value={ouvrirExercice}>
     {ouvert && <Button className="mb-4" variant="secondary" onClick={() => setOuvert(false)}>Retour au Bilan A–E</Button>}
     <div hidden={ouvert}>{future}</div>
     <section className="mt-6 space-y-4" aria-label="Matières complémentaires VTC">
@@ -25,5 +23,5 @@ export function BilanVtcComplements({ future, legacy }: { future: ReactNode; leg
       </Button>
       <div hidden={!ouvert}>{visite && legacy(cible)}</div>
     </section>
-  </>;
+  </AccesComplementContext.Provider>;
 }
