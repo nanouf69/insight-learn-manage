@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 16:49 — Sauvegarde durable des questions fausses
+- [ ] Audit comparatif Bilan futur/historique, modules et EB ; coordonner corrigé courant inactif, ne modifier aucune copie réelle.
+- [ ] Réutiliser la persistance partagée avec preuve de copie, accusé/relecture, reprise, concurrence et finalisation idempotente ; intégration fictive quatre filières et non-régression avant toute publication.
+
 ## 12/11 16:47 — Note Anis toujours masquée
 - [x] Confusion remise/reçu corrigée avec preuve des réponses figées ; 16 tests PASS et écran administrateur réel : Sécurité EB4 13/20, général 12,3/20 définitif (Français 4 éliminatoire). Aucune publication ni mutation des copies.
 
