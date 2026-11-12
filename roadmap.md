@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 12/11 12:57 — Corrigé courant entraînement F/G VTC
-- [ ] Identifier Q18/Q19 et lecteur installé ; préparer lecteur owner/remis ciblé et refresh à chaque entrée/recalcul sans écriture ni clé périmée.
-- [ ] Tester A→A+C, derniers choix, erreurs, identité/options et isolation historique sur fixtures ; installation serveur seulement préparée.
+- [x] Q18/Q19 identifiées module 5/505, corrigé A+C enregistré ; 32 snapshots 505 portent UID Q18. Lecteur installé réservé EB publiés, inutilisable pour ce Bilan ; candidat owner/remis F/G préparé, non installé.
+- [x] Relecture à chaque entrée/démarrage/vérification, dernier choix conservé seulement si identité/options concordent, erreurs sans repli figé ; 16 Vitest et 16 PostgreSQL jetables PASS, deux parcours PC/mobile PASS. Installation serveur reste nécessaire ; aucun compte réel, publication ou écriture production.
 
 ## 12/11 12:50 — Accès direct Questions QRC VTC
 - [x] Entrée après F/G vers carte historique 1794399472264, sélection après hydratation et retour ; notes F/G et SQL inchangés.
