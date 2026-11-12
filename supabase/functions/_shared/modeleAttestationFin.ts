@@ -3,7 +3,7 @@
  * Aucun champ manquant n'est inventé ; aucun pourcentage affiché n'est utilisé comme preuve.
  */
 export const ORGANISME = { raisonSociale: "Ftransport", adresse: "86 Route de Genas 69003 Lyon", nda: "11770762377", ville: "Lyon" } as const;
-export const VERSION_MODELE = "attestation-fin-v2-sans-modules";
+export const VERSION_MODELE = "attestation-fin-v3-sans-seuil-elearning";
 export const MODELE_CODE_ATTESTATION = "attestation_fin_formation";
 export const CLE_ENVOI_ATTESTATION = "fin-formation";
 export const FICHIER_MODELE_ATTESTATION = "modeles/attestation_fin_formation";
@@ -43,11 +43,8 @@ const fini = (n: unknown): n is number => typeof n === "number" && Number.isFini
 export function eligibiliteAttestation(e: EntreeEligibilite): Eligibilite {
   const motifs: MotifBlocage[] = [];
   if (e.lectureErreur) return { eligible: false, motifs: [{ code: "lecture", detail: e.lectureErreur }] };
-  if (e.elearning) {
-    const { faites, minimum } = e.elearning;
-    if (!fini(faites) || !fini(minimum) || minimum <= 0) motifs.push({ code: "heures_indisponibles", volet: "elearning" });
-    else if (faites < minimum) motifs.push({ code: "heures_insuffisantes", faites, minimum });
-  }
+  // Décision du 12/11/2026 : les heures e-learning restent des données d'audit,
+  // jamais une condition d'éligibilité. Les signatures présentiel restent contrôlées.
   if (e.presentiel) {
     const { signees, attendues } = e.presentiel;
     if (!fini(signees) || !fini(attendues) || attendues <= 0) motifs.push({ code: "heures_indisponibles", volet: "presentiel" });

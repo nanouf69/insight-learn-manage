@@ -48,14 +48,23 @@ function fake(over: { apprenant?: ApprenantAtt; etats?: EtatModuleSrv[]; cnx?: {
 const entree = (id = "ok", extra: any = {}) => ({ apprenantId: id, adminId: "admin-1", representant: "Responsable Fictif", autoriseSignatureCentre: true, heures: { faites: 61, minimum: 60 }, signaturesPresentiel: null, ...extra });
 
 describe("Attestation de fin de formation — circuit serveur", () => {
-  it("Léa (3/7 modules, 38h11/60h) : modules ignorés, refus seulement pour les heures", async () => {
+  it("Léa (3/7 modules, 38h11/60h) : préparation sans seuil, heures originales conservées, aucun envoi", async () => {
     const x = fake({ apprenant: LEA, etats: [done(35), done(5), done(8), { module_id: 2, status_effectif: "in_progress", preuve_complete: false, completed_at: null }] });
     const r: any = await preparer(x.d, entree("lea", { heures: { faites: 38 + 11 / 60, minimum: 60 } }));
-    expect(r.etat).toBe("bloque");
-    expect(r.raisons.join(" | ")).not.toContain("Module");
-    expect(r.raisons.join(" | ")).toContain("38h11 / 60h00");
-    expect(x.docs).toHaveLength(0);
-    expect(x.journal).toHaveLength(0);
+    expect(r.etat).toBe("prepare");
+    const f = JSON.parse(r.doc.texte_fige);
+    expect(f.sources.heures.faites).toBe(38 + 11 / 60);
+    expect(f.sources.heures.minimum).toBe(60);
+    expect(x.docs).toHaveLength(1);
+    expect(x.mails).toHaveLength(0);
+  });
+
+  it("heures effectuées inconnues : aucune valeur inventée dans l'audit", async () => {
+    const x = fake();
+    const r: any = await preparer(x.d, entree("ok", { heures: null }));
+    expect(r.etat).toBe("prepare");
+    expect(JSON.parse(r.doc.texte_fige).sources.heures).toBeNull();
+    expect(x.mails).toHaveLength(0);
   });
 
   it("parcours prouvé : enregistrée « prepare », date de fin = dernière connexion, texte figé + empreinte, journal", async () => {

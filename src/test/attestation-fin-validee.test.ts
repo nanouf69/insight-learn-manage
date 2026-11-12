@@ -6,14 +6,14 @@ import { texteAttestation, champsManquants, empreinteAttestation } from "@/lib/a
 const ok = (id: number) => ({ id, nom: `M${id}`, statutEffectif: "completed", preuveComplete: true });
 
 describe("éligibilité", () => {
-  it("modules ignorés : 3/7 modules ne bloquent plus, seules les heures 38h11/60h bloquent", () => {
+  it("3/7 modules et 38h11/60h ne bloquent plus l'attestation", () => {
     const r = eligibiliteAttestation({
       modulesAttribues: [26, 2, 3, 4, 35, 5, 8],
       modules: [ok(35), ok(5), ok(8), { id: 2, nom: "M2", statutEffectif: "in_progress", preuveComplete: false }, { id: 4, nom: "M4", statutEffectif: "completed", preuveComplete: false }],
       elearning: { faites: 38 + 11 / 60, minimum: 60 }, presentiel: null,
     });
-    expect(r.eligible).toBe(false);
-    expect(r.motifs.map(m => m.code)).toEqual(["heures_insuffisantes"]);
+    expect(r.eligible).toBe(true);
+    expect(r.motifs).toEqual([]);
   });
   it("modules non validés mais heures atteintes => éligible", () => {
     expect(eligibiliteAttestation({ modulesAttribues: [2], modules: [{ id: 2, nom: "M2", statutEffectif: "in_progress", preuveComplete: false }], elearning: { faites: 60, minimum: 60 }, presentiel: null }).eligible).toBe(true);
@@ -21,8 +21,8 @@ describe("éligibilité", () => {
   it("tout prouvé => éligible", () => {
     expect(eligibiliteAttestation({ modulesAttribues: [1, 2], modules: [ok(1), ok(2)], elearning: { faites: 60, minimum: 60 }, presentiel: { signees: 20, attendues: 20 } }).eligible).toBe(true);
   });
-  it("heures illisibles ou signatures manquantes => bloquée", () => {
-    expect(eligibiliteAttestation({ modulesAttribues: [1], modules: [ok(1)], elearning: { faites: null, minimum: 60 }, presentiel: null }).eligible).toBe(false);
+  it("heures e-learning indisponibles non bloquantes, signatures manquantes toujours bloquantes", () => {
+    expect(eligibiliteAttestation({ modulesAttribues: [1], modules: [ok(1)], elearning: { faites: null, minimum: 60 }, presentiel: null }).eligible).toBe(true);
     expect(eligibiliteAttestation({ modulesAttribues: [1], modules: [ok(1)], elearning: null, presentiel: { signees: 17, attendues: 20 } }).motifs[0].code).toBe("signatures_manquantes");
   });
   it("erreur de lecture => bloquée", () => {
