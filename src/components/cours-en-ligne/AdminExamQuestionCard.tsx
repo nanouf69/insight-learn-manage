@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, CheckCircle2, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ColoredTextField } from "./ColoredTextField";
 import { RichText } from "@/lib/richText";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import { getPointsParQuestion, type Matiere, type Question } from "./examens-blancs-data";
@@ -19,7 +20,38 @@ type AdminExamQuestionCardProps = {
   onMoveTo: (position: number) => void;
   /** Édition sur place du texte d'une proposition (bonne réponse et points inchangés). */
   onChoixTexteSave?: (index: number, texte: string) => Promise<boolean>;
+  onEnonceSave?: (texte: string) => Promise<boolean>;
 };
+
+function EnonceEditable({ texte, onSave }: { texte: string; onSave?: (texte: string) => Promise<boolean> }) {
+  const [edition, setEdition] = useState(false);
+  const [draft, setDraft] = useState(texte);
+  const [etat, setEtat] = useState<"repos" | "envoi" | "erreur">("repos");
+  const enregistrer = async () => {
+    if (!onSave || etat === "envoi") return;
+    if (draft === texte && etat !== "erreur") { setEdition(false); return; }
+    setEtat("envoi");
+    try {
+      if (await onSave(draft)) { setEdition(false); setEtat("repos"); }
+      else setEtat("erreur");
+    } catch { setEtat("erreur"); }
+  };
+  if (!edition) return onSave ? (
+    <Button variant="ghost" className="h-auto w-full justify-start whitespace-normal p-0 text-left text-[15px] font-medium leading-6 cursor-text" aria-label="Modifier le texte de l’énoncé" onClick={() => { setDraft(texte); setEtat("repos"); setEdition(true); }}>
+      <RichText value={texte} />
+    </Button>
+  ) : <div className="text-[15px] font-medium leading-6 text-foreground"><RichText value={texte} /></div>;
+  return <div className="space-y-2">
+    <fieldset disabled={etat === "envoi"}>
+      <ColoredTextField value={draft} onChange={setDraft} rows={3} className="text-sm" />
+    </fieldset>
+    <div className="flex flex-wrap gap-2">
+      <Button size="sm" disabled={etat === "envoi"} onClick={() => void enregistrer()}>{etat === "envoi" ? "Enregistrement…" : "Enregistrer l’énoncé"}</Button>
+      <Button size="sm" variant="ghost" disabled={etat === "envoi"} onClick={() => { setEdition(false); setEtat("repos"); }}>Annuler</Button>
+    </div>
+    {etat === "erreur" && <p role="alert" className="text-sm text-destructive">Énoncé non enregistré : la sauvegarde n’a pas été confirmée. Votre saisie est conservée.</p>}
+  </div>;
+}
 
 function PropositionEditable({ texte, lettre, onSave }: { texte: string; lettre: string; onSave?: (t: string) => Promise<boolean> }) {
   const [edition, setEdition] = useState(false);
@@ -80,6 +112,7 @@ export function AdminExamQuestionCard({
   onMove,
   onMoveTo,
   onChoixTexteSave,
+  onEnonceSave,
 }: AdminExamQuestionCardProps) {
   const points = getPointsParQuestion(matiere.id, q.type || "QCM", matiere);
 
@@ -123,7 +156,7 @@ export function AdminExamQuestionCard({
           </div>
 
           <div className="mt-3 min-w-0">
-            <div className="text-[15px] font-medium leading-6 text-foreground"><RichText value={q.enonce} /></div>
+            <EnonceEditable texte={q.enonce} onSave={onEnonceSave} />
             {q.image && (
               <ExamQuestionImage image={q.image} alt={`Question ${q.id}`} className="mt-3 max-h-40 rounded-md border" fallbackClassName="mt-2 text-xs text-muted-foreground italic" />
             )}
