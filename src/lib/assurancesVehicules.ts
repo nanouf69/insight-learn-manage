@@ -52,8 +52,10 @@ export const STATUT_LOCATION_NON_AUTORISEE = "Location non autorisée tant que l
 export interface PerimetreValide {
   confirmationAssureurRecue: boolean; referenceConfirmation: string;
   avecMoniteur: boolean | null; formation: boolean | null; usageProfessionnel: boolean | null; locationPayante: boolean | null;
+  /** Accord ORAL déclaré par le loueur (jamais assimilé à une confirmation écrite). */
+  accordOralDeclare: boolean; dateAccordOral: string; interlocuteurAccordOral: string;
 }
-export const perimetreVide = (): PerimetreValide => ({ confirmationAssureurRecue: false, referenceConfirmation: "", avecMoniteur: null, formation: null, usageProfessionnel: null, locationPayante: null });
+export const perimetreVide = (): PerimetreValide => ({ accordOralDeclare: false, dateAccordOral: "", interlocuteurAccordOral: "", confirmationAssureurRecue: false, referenceConfirmation: "", avecMoniteur: null, formation: null, usageProfessionnel: null, locationPayante: null });
 
 /** Blocages propres à la police du véhicule (en plus de l'annexe générale). */
 export function blocagesPolice(p: PoliceVehicule | null, perimetre: PerimetreValide): string[] {
@@ -88,13 +90,35 @@ export function assuranceDepuisPolice(p: PoliceVehicule): AssuranceLocation {
 }
 
 /** Lignes d'annexe spécifiques à la police (PDF). */
-export function lignesAnnexePolice(p: PoliceVehicule): string[] {
+export function lignesAnnexePolice(p: PoliceVehicule, perim?: PerimetreValide): string[] {
+  const statut = perim ? statutAssuranceLocation(perim) : null;
+  const tri = (v: boolean | null) => v === true ? "oui" : v === false ? "non" : "à renseigner";
   return [
     `Police propre au véhicule ${p.immatriculation} – ${p.vehicule}. Version : ${p.versionCp} ; attestation du ${p.attestationDu.split("-").reverse().join("/")}.`,
     `Usage déclaré à l'assureur : ${p.usageDeclare}.`,
-    `STATUT : usage location à confirmer par écrit par AXA. ${STATUT_LOCATION_NON_AUTORISEE}. Les garanties ci-dessous ne sont pas présumées applicables à une location.`,
+    `STATUT : ${statut ? statut.texte : `usage location à confirmer par écrit par AXA. ${STATUT_LOCATION_NON_AUTORISEE}.`} ${statut?.niveau === "ecrit" ? "Les garanties ci-dessous s'appliquent dans les conditions et exclusions de la police." : "Les garanties ci-dessous ne sont pas présumées applicables à une location tant que l'assureur ne l'a pas confirmé par écrit."}`,
+    ...(perim ? [`Périmètre indiqué : conduite avec moniteur seulement : ${tri(perim.avecMoniteur)} ; formation : ${tri(perim.formation)} ; usage professionnel : ${tri(perim.usageProfessionnel)} ; location payante : ${tri(perim.locationPayante)}.`] : []),
     ...p.garanties.map(x => `${x.libelle} : ${x.souscrite === false ? "NON souscrite" : x.souscrite === "legale" ? "régime légal" : "souscrite"}${x.souscrite === false ? "" : ` – franchise par sinistre : ${x.franchise}`}${x.plafond ? ` – plafond : ${x.plafond}` : ""}.`),
     `Documents référencés non fournis (exclusions non supposées) : ${p.documentsReferencesAbsents.join(", ")}.`,
     "Distinction : le dépôt de garantie contractuel (500 € ou 0 €) n'est pas la franchise AXA (par ex. 700 € ou 100 €). Seules les sommes imputables au locataire selon sa responsabilité établie, la police et la loi peuvent lui être demandées, sur justificatifs ; aucune franchise n'est facturée automatiquement.",
   ];
+}
+
+/** Statut d'assurance imprimé sur le contrat : distingue écrit / oral déclaré / rien. */
+export function statutAssuranceLocation(p: PerimetreValide): { niveau: "ecrit" | "oral" | "aucun"; texte: string } {
+  if (p.confirmationAssureurRecue && p.referenceConfirmation.trim())
+    return { niveau: "ecrit", texte: `Usage location confirmé par écrit par l'assureur (réf. ${p.referenceConfirmation.trim()}), dans le périmètre indiqué ci-dessous.` };
+  if (p.accordOralDeclare && p.dateAccordOral)
+    return { niveau: "oral", texte: `Accord ORAL de l'assureur déclaré par le loueur le ${p.dateAccordOral.split("-").reverse().join("/")}${p.interlocuteurAccordOral.trim() ? ` (interlocuteur : ${p.interlocuteurAccordOral.trim()})` : ""}. Aucune confirmation écrite n'est encore reçue : la couverture de la location n'est pas garantie par écrit et son périmètre exact reste à confirmer par l'assureur.` };
+  return { niveau: "aucun", texte: STATUT_LOCATION_NON_AUTORISEE };
+}
+
+/** Blocages de la version papier à signer : assurance écrite OU accord oral daté, et périmètre renseigné. */
+export function blocagesPoliceVersionASigner(p: PoliceVehicule | null, perimetre: PerimetreValide): string[] {
+  if (!p) return ["Aucune police enregistrée pour ce véhicule"];
+  const b: string[] = [];
+  if (statutAssuranceLocation(perimetre).niveau === "aucun") b.push("Accord de l'assureur : confirmation écrite (référence) ou accord oral déclaré avec sa date");
+  if (perimetre.avecMoniteur === null || perimetre.formation === null || perimetre.usageProfessionnel === null || perimetre.locationPayante === null)
+    b.push("Périmètre indiqué par l'assureur (avec/sans moniteur, formation, usage professionnel, location payante)");
+  return b;
 }
