@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 12:57 — Corrigé courant entraînement F/G VTC
+- [ ] Identifier Q18/Q19 et lecteur installé ; préparer lecteur owner/remis ciblé et refresh à chaque entrée/recalcul sans écriture ni clé périmée.
+- [ ] Tester A→A+C, derniers choix, erreurs, identité/options et isolation historique sur fixtures ; installation serveur seulement préparée.
+
 ## 12/11 12:50 — Accès direct Questions QRC VTC
 - [x] Entrée après F/G vers carte historique 1794399472264, sélection après hydratation et retour ; notes F/G et SQL inchangés.
 - [x] 10 tests PASS, quatre parcours PC/mobile élève/admin : ordre Anglais/F/G/QRC, carte et lien exact cliqué, retour/rechargement, zéro mutation. Aucune publication ; écran réel non vérifié. Diff isolé documenté dans docs/bilan-vtc-qrc-direct-2026-11-12.md.
