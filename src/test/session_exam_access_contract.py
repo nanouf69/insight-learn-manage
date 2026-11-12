@@ -15,6 +15,7 @@ class Access(unittest.TestCase):
   for f in cat['functions']:c.sql(f)
   c.sql(cat['rls']);c.sql(cat['triggers'])
   c.sql("CREATE TABLE sessions(id uuid PRIMARY KEY,nom text,type_session text,types_apprenant text[]);CREATE TABLE session_apprenants(session_id uuid,apprenant_id uuid,liste_attente boolean);")
+  c.sql("CREATE TABLE canonical_exam_attempts(attempt_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),quiz_id text,apprenant_ref text,tentative int,started_at timestamptz DEFAULT now(),snapshot jsonb,snapshot_versions jsonb,is_pilot boolean DEFAULT true,UNIQUE(quiz_id,apprenant_ref,tentative));")
   c.sql(Path('docs/sql-revue/2026-11-11-session-exam-access.sql').read_text())
   c.sql(f"INSERT INTO apprenants(id,auth_user_id,nom,prenom,type_apprenant,modules_autorises) VALUES('{A}','{U}','FICTIF','Élève','vtc',ARRAY[35]);INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');INSERT INTO sessions VALUES('{S}','VTC SOIR','theorique',ARRAY['VTC','TAXI']),('{S2}','TAXI JOUR','theorique',ARRAY['TAXI','TA']);INSERT INTO session_apprenants VALUES('{S}','{A}',false),('{S2}','{A}',false);INSERT INTO examens_blancs_parcours VALUES(35,'EB3'),(36,'EB3-TAXI'),(37,'EB3-ta'),(38,'EB3-va');")
  @classmethod
