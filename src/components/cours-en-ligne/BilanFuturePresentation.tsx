@@ -12,7 +12,7 @@ export function BilanMatiereSteps({ current, submitted, onSelect }: { current: n
   const ouvrirComplement = useAccesComplementVtc();
   return <div className="space-y-1.5">{NOMS_MATIERES_BILAN.map((nom, i) => <ProgressionStep key={nom} label={`📝 Quiz — ${nom}`} current={current === i} completed={submitted[i] === true} unlocked isLast={i === 4 && !ouvrirComplement} badge="quiz" onClick={() => onSelect(i)} />)}
     {ouvrirComplement && <>
-      <ProgressionStep label="F(V) — Développement commercial" current={false} completed={false} unlocked badge="quiz" onClick={() => ouvrirComplement(505)} />
+      <ProgressionStep label="F(V) — Développement commercial" current={false} completed={false} unlocked isLast={false} badge="quiz" onClick={() => ouvrirComplement(505)} />
       <ProgressionStep label="G(V) — Réglementation spécifique" current={false} completed={false} unlocked isLast badge="quiz" onClick={() => ouvrirComplement(506)} />
     </>}
   </div>;
