@@ -194,6 +194,7 @@ import { BilanFutureExam, lireRouteBilanFuture } from "./BilanFutureExam";
 import { BilanVtcComplements, type CibleComplementVtc } from "./BilanVtcComplements";
 import { estComplementBilanVtc } from "@/lib/bilanVtcComplements";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
+import { BilanSrTraining } from "./BilanSrTraining";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { BilanFutureApercuAdmin, lireApercuFutureAdmin, type ApercuFuture } from "./BilanFutureApercuAdmin";
 import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
@@ -9701,7 +9702,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             }}>
                               🔄 Recommencer tout
                             </Button>
-                            <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
+                            {module.id === 5 && Number(exo.id) === 502 && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[502] ? (
+                              <BilanSrTraining key={etatSnap.parExo[502].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[502].snapshotId} />
+                            ) : <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
                               const snapshot: Record<string, string | string[]> = {};
                               let snapCorrect = 0;
                               const wrongIds: (number | string)[] = [];
@@ -9741,7 +9744,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                                 });
                                 return count;
                               })()})
-                            </Button>
+                            </Button>}
                             {currentPage < totalPages - 1 && completedPages.has(currentPage) && (
                               <Button size="sm" className="gap-2" onClick={() => {
                                 goToPage(currentPage + 1);

@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 12/11 10:49 — Révision Sécurité routière VTC
+- [x] Diagnostic SELECT : Q71 éditeur B, anciennes clés A ; Q226 D dans toutes les sources contrôlées, sélections C+D encore fausses. Cas individuel/cache inconnu ; aucun compte réel.
+- [x] Lecture propriétaire/remise préparée uniquement en SQL local ; entraînement sans écriture pour reçu futur ou snapshot 5/502. Identité+énoncé+options ordonnées exigés. Version future ancienne : seules les deux correspondances auditées, autres exclues.
+- [x] 14 tests Vitest, 10 contrats PostgreSQL jetables, quatre simulations entraînement PC/mobile et quatre régressions F/G admin/élève PASS ; build OK. Rapport docs/bilan-vtc-sr-training-2026-11-12.md.
+- [ ] Mise en service : attend accord explicite pour installation ciblée du lecteur serveur puis livraison ; aucun lecteur installé, aucune publication. Historique legacy sans snapshot et cache réel non vérifiés.
+
 ## 12/11 10:23 — F/G après Anglais
 - [x] Raccourcis du haut retirés ; étapes partagées A–E puis F/G par contexte VTC, IDs 505/506 et retour inchangés ; H/QRC à leur emplacement existant. 25 tests PASS, quatre parcours simulés PC/mobile × admin/élève (ordre géométrique E<F<G, clics F/G et retour, zéro mutation admin). Build OK ; aucune publication ni compte réel. TAXI hors contexte inchangé ; cas réels non vérifiés.
 
