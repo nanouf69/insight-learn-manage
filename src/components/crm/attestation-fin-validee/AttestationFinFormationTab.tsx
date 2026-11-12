@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { LIBELLES_FILTRE, correspondFiltre, type FiltreAttestation } from "@/lib/attestationFinValidee/filtres";
-import { champsManquants, texteAttestation, type TexteFigeAttestation } from "@/lib/attestationFinValidee/modele";
+import { champsManquants, type TexteFigeAttestation } from "@/lib/attestationFinValidee/modele";
 import { genererPdfAttestation, ouvrirBlob, telechargerBlob } from "@/lib/attestationFinValidee/pdf";
 import { genererPdfPresentation } from "@/lib/attestationFinValidee/pdfPresentation";
 import { ApercuPdfAttestation } from "./ApercuPdfAttestation";
