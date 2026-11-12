@@ -86,9 +86,9 @@ function ExportPourCompte({ apprenant, userId, seulementPlanning, totalAttendu, 
           {query.isFetching ? <p role="status" className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Chargement des signatures…</p>
             : query.isError ? <div role="alert" className="space-y-2"><p className="text-destructive">Lecture des signatures indisponible.</p><Button variant="outline" onClick={() => void query.refetch()}>Réessayer</Button></div>
             : query.isSuccess && !query.data ? <p>Aucune signature enregistrée.</p>
-            : query.data?.rows.map(row => <figure key={row.id} className="rounded-md border border-border p-3 space-y-2">
+            : query.data?.rows.map((row, index) => <figure key={row.id} className="rounded-md border border-border p-3 space-y-2">
               <figcaption className="text-sm">
-                <p className="font-semibold">{row.date.split('-').reverse().join('/')} — {row.creneau}</p>
+                <p className="font-semibold"><span className="mr-2 inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary px-2 text-primary-foreground" aria-label={`Signature n° ${index + 1}`}>{index + 1}</span>{row.date.split('-').reverse().join('/')} — {row.creneau}</p>
                 <p>{row.activite} — {row.horaires}</p>
                 <p className="text-muted-foreground">{row.signedAt && Number.isFinite(Date.parse(row.signedAt)) ? `Signé le ${new Date(row.signedAt).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}` : 'Date de signature non renseignée'}</p>
                 {row.absent && <p className="text-destructive">Absence enregistrée</p>}
