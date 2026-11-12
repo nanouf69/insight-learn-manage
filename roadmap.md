@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 10:23 — F/G après Anglais
+- [ ] Retirer les raccourcis du haut, intégrer F puis G après E dans les étapes partagées VTC, préserver accès 505/506 et H/QRC ; vérifier PC/mobile/admin sans publication.
+
 ## 12/11 10:14 — Accès directs F/G nouveau Bilan VTC
 - [x] Raccourcis 505/506 avant A–E ; ciblage après réhydratation prioritaire sur ancienne page/résultat, F→G→A–E et reload G→F, réponses B et H/QRC préservés. Quatre parcours Playwright PC/mobile × admin/élève simulés, ancien menu VTC présent, 34 tests PASS ; aucun compte réel ni publication. Diff versus production d7e00d6 limité au correctif et ses tests/journal ; cas réels et soumission complète non vérifiés.
 
