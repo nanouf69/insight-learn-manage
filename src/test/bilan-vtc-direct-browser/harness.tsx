@@ -13,7 +13,7 @@ Object.assign(window, { fixtureCalls: calls });
 const questions = (id: number) => [{ id: 1, question: `Question fictive ${id}`, enonce: `Question fictive ${id}`, choix: [{ lettre: 'A', texte: 'Réponse A', correct: false }, { lettre: 'B', texte: 'Réponse B', correct: true }] }];
 const moduleData = { id: 5, nom: 'Bilan examen VTC', description: '', cours: [{ id: 1794399472264, titre: 'Questions QRC VTC', actif: true, description: 'https://quick-qna-engine.lovable.app', sousTitre: 'https://quick-qna-engine.lovable.app' }], exercices: [500,501,502,503,504,505,506,507].map(id => ({ id, titre: id === 505 ? 'F(V) — Développement commercial' : id === 506 ? 'G(V) — Réglementation spécifique' : id === 507 ? 'H — Complément' : `Matière ${id}`, actif: true, questions: questions(id) })) };
 const ap = { route: legacy ? 'legacy' : 'future', matieres: [500,501,502,503,504].map(exercise_id => ({ exercise_id, questions: questions(exercise_id), submitted: null })) };
-(supabase.auth as any).getSession = async () => ({ data: { session: { user: { id: 'fixture-owner' }, access_token: 'fixture-only' } }, error: null });
+(supabase.auth as any).getSession = async () => ({ data: { session: { user: { id: 'fixture-owner' }, access_token: 'fixture-only', refresh_token: 'fixture-only', expires_at: 4102444800 } }, error: null });
 (supabase.auth as any).getUser = async () => ({ data: { user: { id: 'fixture-owner' } }, error: null });
 (supabase as any).rpc = async (name: string, args: any) => {
   calls.push({ name, args });
