@@ -121,7 +121,7 @@ export function TauxPresenceSessionsCard({ apprenantId, filiere }: { apprenantId
             </div>
             {t && !erreur && t.prevues > 0 && (
               <div className="mt-0.5 text-xs text-muted-foreground">
-                Dernière signature : <strong className="text-foreground">{t.derniere ? t.derniere.split("-").reverse().join("/") : "aucune"}</strong>
+                Dernière signature : <strong className="text-foreground">{t.derniere ? `${new Date(`${t.derniere}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "long", timeZone: "Europe/Paris" })} ${t.derniere.split("-").reverse().join("/")}` : "aucune"}</strong>
               </div>
             )}
             {t && !erreur && label === "Taux présence pratique" && Boolean(t.datesEntrainement?.length) && (
