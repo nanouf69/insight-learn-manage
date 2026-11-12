@@ -64,6 +64,8 @@ import { RefaireMatiereButton } from './RefaireMatiereButton';
 import { buildExamMatiereExerciceId } from '@/lib/quizAttempts';
 import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
+import { lireBanniereRevision } from "@/lib/revisionBannierePreuve";
+import { QuestionsFaussesEffectuees } from "./QuestionsFaussesEffectuees";
 
 
 function EcranResultats({
@@ -335,41 +337,6 @@ function EcranResultats({
       else console.log("[BilanAuto] Saved for", examen.id);
     });
   }, [apprenantId, userId, examen?.id, generateBilanAuto]);
-
-  // Check if revision has already been done for this exam
-  useEffect(() => {
-    if (!apprenantId || !examen?.id) return;
-    let cancelled = false;
-    let generation = 0;
-    setRevisionDejaFaite(false);
-    const checkRevision = async () => {
-      const currentGeneration = ++generation;
-      const { data, error } = await supabase
-        .from("apprenant_quiz_results")
-        .select("id,details")
-        .eq("apprenant_id", apprenantId)
-        .eq("quiz_type", "revision_fausses")
-        .eq("quiz_id", examen.id);
-      if (error) {
-        console.error("Erreur vérification révision:", error.message);
-      }
-      const currentCopies = resultats.map(r => r.resultId).filter((id): id is string => typeof id === "string");
-      const matched = (data ?? []).some(row => {
-        const details = row.details as any;
-        const sourceIds = details?.sourceResultIds;
-        // No guessed attribution of an old revision to the passage currently shown.
-        return row.id && currentCopies.length > 0 && sourceIds && Object.values(sourceIds).length > 0
-          && Object.values(sourceIds).every(id => currentCopies.includes(String(id)));
-      });
-      if (!cancelled && currentGeneration === generation) setRevisionDejaFaite(!error && Boolean(matched));
-    };
-    checkRevision();
-    const onVisible = () => { if (document.visibilityState === "visible") void checkRevision(); };
-    window.addEventListener("focus", checkRevision);
-    window.addEventListener("online", checkRevision);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => { cancelled = true; window.removeEventListener("focus", checkRevision); window.removeEventListener("online", checkRevision); document.removeEventListener("visibilitychange", onVisible); };
-  }, [apprenantId, examen?.id, revisionFinTick, coreTick, resultats.map(r => r.resultId ?? "").join("|")]);
 
   const toggleMatiere = (mi: number) => {
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
@@ -656,6 +623,30 @@ function EcranResultats({
     });
     return out;
   }, [examenPourCalcul, resultats, sourcesOfficielles.map]);
+
+  const [revisionLectureErreur, setRevisionLectureErreur] = useState<string | null>(null);
+  const sourcesRevision = useMemo(() => Object.fromEntries(wrongQuestions
+    .filter(q => typeof q.sourceResultId === "string")
+    .map(q => [revisionQuestionKey(q), q.sourceResultId as string])), [wrongQuestions]);
+  const sourcesRevisionKey = JSON.stringify(sourcesRevision);
+  useEffect(() => {
+    let cancelled = false, generation = 0;
+    setRevisionDejaFaite(false); setRevisionLectureErreur(null);
+    if (!apprenantId || !examen.id || Object.keys(sourcesRevision).length !== wrongQuestions.length || !wrongQuestions.length) return;
+    const check = async () => {
+      const g = ++generation;
+      try {
+        const proof = await lireBanniereRevision(supabase, apprenantId, examen.id, sourcesRevision);
+        if (!cancelled && generation === g) { setRevisionDejaFaite(proof); setRevisionLectureErreur(null); }
+      } catch (e) {
+        if (!cancelled && generation === g) { setRevisionDejaFaite(false); setRevisionLectureErreur(e instanceof Error ? e.message : "Achèvement non relu"); }
+      }
+    };
+    void check();
+    const visible = () => { if (document.visibilityState === "visible") void check(); };
+    window.addEventListener("focus", check); window.addEventListener("online", check); document.addEventListener("visibilitychange", visible);
+    return () => { cancelled = true; window.removeEventListener("focus", check); window.removeEventListener("online", check); document.removeEventListener("visibilitychange", visible); };
+  }, [apprenantId, examen.id, sourcesRevisionKey, revisionFinTick, coreTick]);
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "resultats" | "revision")} className="space-y-6">
@@ -1216,14 +1207,8 @@ function EcranResultats({
         );
       })()}
 
-      {!hasQrcPendingValidation && revisionDejaFaite && (
-        <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
-          <p className="text-sm font-semibold text-green-700 flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Questions fausses déjà effectuées ✅
-          </p>
-        </div>
-      )}
+      {!hasQrcPendingValidation && <QuestionsFaussesEffectuees confirme={revisionDejaFaite} />}
+      {revisionLectureErreur && <p role="alert" className="text-destructive">{revisionLectureErreur} <Button variant="outline" onClick={() => setRevisionFinTick(t => t + 1)}>Réessayer</Button></p>}
 
 
       {/* Bilan automatique */}
@@ -1541,7 +1526,7 @@ function RevisionFausses({
       // ne peut dépasser une réponse encore en attente ou un autre appareil.
       if (!termineeRef.current) {
         const local = creerRevisionProgressState({ examenId, answers: reponses, currentIndex, correctedCount,
-          correctedQuestions: correctedQuestionsRef.current, showCorrection: true, questionOrder });
+          correctedQuestions: correctedQuestionsRef.current, showCorrection: true, questionOrder, sourceResultIds: sourceResultIdsRef.current });
         if (!revisionCouvertureConfirmee({ revisionState: local }, examenId, questionOrder)) {
           throw new Error("Toutes les questions doivent avoir une réponse validée avant de terminer.");
         }

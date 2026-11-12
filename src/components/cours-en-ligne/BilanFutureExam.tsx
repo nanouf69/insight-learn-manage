@@ -30,6 +30,7 @@ import { BILAN_SR_TRAINING_ACTIF } from "@/lib/bilanSrTraining";
 import { BILAN_CORRIGE_ACTUEL_ACTIF } from "@/lib/bilanCorrigeActuel";
 import { BilanCorrigeActuel } from "./BilanCorrigeActuel";
 import { useBilanRevision } from '@/hooks/useBilanRevision';
+import { QuestionsFaussesEffectuees } from './QuestionsFaussesEffectuees';
 
 import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, BilanRemisesRecap, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
 export const FUTURE_SUBJECT_NAMES = NOMS_MATIERES_BILAN;
@@ -399,6 +400,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
               <MatiereCard moduleId={moduleId} nom={nom} onCalculator={() => setShowCalculator(v => !v)}>
                   {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
+                  <QuestionsFaussesEffectuees confirme={reprise.revision?.submitted === true} />
                   {enRevision && (
                     <div data-testid="bilan-future-revision" className="space-y-2">
                       <RevisionModeBanner count={revision!.ids.length} onShowAll={() => setRevisionMode(false)} />
@@ -482,6 +484,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                           )}
                           {!correction && <p className="text-sm text-muted-foreground text-center">Chargement de la correction…</p>}
                           {BILAN_CORRIGE_ACTUEL_ACTIF && correction && <BilanCorrigeActuel key={passage.receipt.passageId} sourceType="future" snapshotId={passage.receipt.passageId} />}
+                          {enRevision && reprise.revision?.submitted && <Button variant="outline" onClick={() => reprise.start()}>Refaire les questions fausses</Button>}
                           <QuizResultPanels>
                             {BILAN_SR_TRAINING_ACTIF && correction && moduleId === 5 && exoId === 502 ? <BilanSrTraining key={passage.receipt.passageId} sourceType="future" sourceId={passage.receipt.passageId} /> : correction && (
                               <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" data-testid="refaire-fausses"
