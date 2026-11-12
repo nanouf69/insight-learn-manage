@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { attestationFinaleProuvee, jalonsIntegralementProuves, texteCertificationPresentation } from "@/lib/attestationFinValidee/presentation";
-import { elementsRestantAValider, motifSansDuree } from '@/lib/attestationFinValidee/redactionPresentation';
+import { elementsRestantAValider, motifSansDuree, intituleAttestation } from '@/lib/attestationFinValidee/redactionPresentation';
 const p = { apprenantId: "fixture", sourceId: "server-proof", verifieLe: "2026-11-12T17:01:00Z", jalonsObligatoires: 7, jalonsValides: 7, validationsRequisesConfirmees: true };
 const signature = { nom: "Fixture", image: "existing-image", le: p.verifieLe, autorisationId: "explicit-authorization", tampon: "existing-stamp" };
 describe("attestation presentation proof", () => {
+  it('VTC : intitulés demandés à distance et en présentiel',()=>{
+    expect(intituleAttestation('vtc-elearning','e-learning')).toBe('Formation VTC E-learning');
+    expect(intituleAttestation('vtc','présentiel')).toBe('Formation VTC');
+  });
   it('sans certification le texte modèle ne certifie jamais nominativement Léa',()=>{
     const e={certifie:false,prenom:'Léa',nom:'CATANIA',formation:'Formation VTC',debut:'14 septembre 2026',fin:'19 octobre 2026'};
     const texte=texteCertificationPresentation(e);
     expect(texte).toContain('atteste que [Prénom NOM]');expect(texte).not.toContain('Léa');
+    expect(texte).toContain('dispensée du 14 septembre 2026 au 19 octobre 2026');
+    expect(texte).toContain('formation « VTC »');
     expect(texteCertificationPresentation({...e,certifie:true})).toContain('atteste que Léa CATANIA');
   });
   it('le détail pédagogique vient du verdict serveur ; une lecture absente ne devient pas un module manquant',()=>{
