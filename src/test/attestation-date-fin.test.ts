@@ -10,12 +10,11 @@ describe("date de fin = dernière connexion", () => {
     expect(dateFinDepuisConnexions({ connexions: [], dateDebut: null, derniereValidation: "2026-10-01T00:00:00Z" }).etat).toBe("bloquee");
     expect(dateFinDepuisConnexions({ connexions: null, dateDebut: null, derniereValidation: "x" }).etat).toBe("bloquee");
   });
-  it("connexion avant la validation finale => contrôle humain", () => {
-    const r = dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z")], dateDebut: "2026-09-14", derniereValidation: "2026-10-05T00:00:00Z" });
-    expect(r.etat === "bloquee" && r.raison).toMatch(/contrôle humain/);
+  it("modules ignorés : validation inconnue ou postérieure ne bloque pas", () => {
+    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z")], dateDebut: "2026-09-14", derniereValidation: "2026-10-05T00:00:00Z" }).etat).toBe("ok");
+    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z")], dateDebut: null, derniereValidation: null }).etat).toBe("ok");
   });
-  it("connexion avant le début ou validation inconnue => bloquée", () => {
-    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-09-01T08:00:00Z")], dateDebut: "2026-09-14", derniereValidation: "2026-08-01T00:00:00Z" }).etat).toBe("bloquee");
-    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z")], dateDebut: null, derniereValidation: null }).etat).toBe("bloquee");
+  it("connexion avant le début => bloquée", () => {
+    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-09-01T08:00:00Z")], dateDebut: "2026-09-14" }).etat).toBe("bloquee");
   });
 });

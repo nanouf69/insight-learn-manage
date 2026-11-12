@@ -57,7 +57,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     if (ap.heures && ap.heures.faites != null && ap.heures.minimum != null) infos.push(`Heures e-learning prouvées : ${h(ap.heures.faites)} / ${h(ap.heures.minimum)}`);
     if (ap.signatures && ap.signatures.signees != null) infos.push(`Signatures de présence : ${ap.signatures.signees} / ${ap.signatures.attendues ?? "—"}`);
     if (manquants.length) infos.push(`Champs du dossier à compléter : ${manquants.join(", ")}`);
-    ouvrirBlob(genererPdfAttestation({ mode: "brouillon", lignes, modules: ap.modules, motifs: ap.motifs, infos, signatureCentre: null, signatureApprenant: null }));
+    ouvrirBlob(genererPdfAttestation({ mode: "brouillon", lignes, modules: [], motifs: ap.motifs, infos, signatureCentre: null, signatureApprenant: null }));
   };
 
   const pdfOfficiel = async (d: AttestationEnregistree, telecharger: boolean) => {
@@ -68,7 +68,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
       const image = await chargerElementAdmin("signature"); // échec de lecture = pas de PDF (aucune signature substituée)
       const signe = d.statut === "signe";
       const blob = genererPdfAttestation({
-        mode: "officiel", lignes: f.lignes, modules: f.modules, reference: d.identite_figee?.reference, empreinte: d.texte_empreinte,
+        mode: "officiel", lignes: f.lignes, modules: [], reference: d.identite_figee?.reference, empreinte: d.texte_empreinte,
         infos: [`Date de fin = dernière connexion e-learning du ${dfr(f.sources.date_fin.started_at)} (réf. ${f.sources.date_fin.connexion_id.slice(0, 8)})`,
           ...(f.sources.heures ? [`Heures e-learning prouvées : ${h(f.sources.heures.faites)} / ${h(f.sources.heures.minimum)}`] : []),
           ...(signe ? [] : ["En attente de la signature de l'apprenant(e)"])],
@@ -186,7 +186,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
                 <Button className="min-h-11" disabled={representant.trim().length < 3 || !autorise || occupe === "preparer"} onClick={enregistrer}>
                   {occupe === "preparer" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}Enregistrer l'attestation
                 </Button>
-                <p className="text-xs text-muted-foreground">Le serveur recontrôle modules et date de fin avant d'enregistrer. Aucun mail n'est envoyé à cette étape.</p>
+                <p className="text-xs text-muted-foreground">Le serveur recontrôle les heures et la date de fin avant d'enregistrer (les modules ne sont pas contrôlés). Aucun mail n'est envoyé à cette étape.</p>
               </div>
             )}
           </CardContent>

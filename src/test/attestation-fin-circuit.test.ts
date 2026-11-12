@@ -48,11 +48,11 @@ function fake(over: { apprenant?: ApprenantAtt; etats?: EtatModuleSrv[]; cnx?: {
 const entree = (id = "ok", extra: any = {}) => ({ apprenantId: id, adminId: "admin-1", representant: "Responsable Fictif", autoriseSignatureCentre: true, heures: { faites: 61, minimum: 60 }, signaturesPresentiel: null, ...extra });
 
 describe("Attestation de fin de formation — circuit serveur", () => {
-  it("Léa (3/7 modules, 38h11/60h) : refus, aucun document, aucune attestation 7/7", async () => {
+  it("Léa (3/7 modules, 38h11/60h) : modules ignorés, refus seulement pour les heures", async () => {
     const x = fake({ apprenant: LEA, etats: [done(35), done(5), done(8), { module_id: 2, status_effectif: "in_progress", preuve_complete: false, completed_at: null }] });
     const r: any = await preparer(x.d, entree("lea", { heures: { faites: 38 + 11 / 60, minimum: 60 } }));
     expect(r.etat).toBe("bloque");
-    expect(r.raisons.join(" | ")).toContain("Module 2");
+    expect(r.raisons.join(" | ")).not.toContain("Module");
     expect(r.raisons.join(" | ")).toContain("38h11 / 60h00");
     expect(x.docs).toHaveLength(0);
     expect(x.journal).toHaveLength(0);
@@ -85,10 +85,11 @@ describe("Attestation de fin de formation — circuit serveur", () => {
     expect(((await preparer(fake({ signatureCentre: false }).d, entree())) as any).raisons[0]).toContain("aucune signature n'est fabriquée");
   });
 
-  it("dernière connexion antérieure à la validation finale : contrôle humain", async () => {
-    const r: any = await preparer(fake({ cnx: [{ id: "c0", started_at: "2026-10-01T08:00:00Z" }] }).d, entree());
-    expect(r.etat).toBe("bloque");
-    expect(r.raisons.join()).toContain("antérieure à la validation finale");
+  it("modules non validés et heures atteintes : attestation préparée, texte sans mention des modules", async () => {
+    const x = fake({ apprenant: LEA, etats: [done(5)] });
+    const r: any = await preparer(x.d, entree("lea"));
+    expect(r.etat).toBe("prepare");
+    expect(JSON.parse(r.doc.texte_fige).lignes.join(" ")).not.toMatch(/module/i);
   });
 
   it("envoi : seulement sur action admin, réservation unique ; issue inconnue jamais réexpédiée", async () => {
@@ -99,13 +100,11 @@ describe("Attestation de fin de formation — circuit serveur", () => {
     expect(x.mails).toHaveLength(1);
   });
 
-  it("envoi refusé si un module n'est plus validé", async () => {
+  it("envoi non bloqué par un module devenu non validé", async () => {
     const x = fake();
     const p: any = await preparer(x.d, entree());
     (x.d as any).etatModules = async () => [done(5)];
-    const r: any = await envoyer(x.d, p.doc.id, "admin-1");
-    expect(r.etat).toBe("bloque");
-    expect(x.mails).toHaveLength(0);
+    expect(((await envoyer(x.d, p.doc.id, "admin-1")) as any).etat).toBe("envoye");
   });
 
   it("signature apprenant : refusée avant envoi, si vide, sans consentement ou empreinte différente ; acceptée sinon", async () => {
