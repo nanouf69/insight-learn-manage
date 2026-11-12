@@ -80,6 +80,11 @@ const promptDe = (q: Q) => q.support
   ? { question: q.enonce, passageTitle: `Texte ${q.support.numero}`, passageBody: q.support.paragraphes.join("\n\n") }
   : { question: q.enonce };
 
+function MatiereCard({ children, moduleId, nom, onCalculator }: { children: ReactNode; moduleId: number; nom: string; onCalculator: () => void }) {
+  const tools = <div className="flex items-center gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={onCalculator} className="gap-1"><Calculator className="w-4 h-4" />Calculatrice</Button></div>;
+  return moduleId === 5 ? <BilanMatiereCard nom={nom} tools={tools}>{children}</BilanMatiereCard> : <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;
+}
+
 export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, description, onBack }: {
   moduleId: 5 | 11; ownerId: string; apprenantId?: string; titre?: string; description?: string; onBack?: () => void;
 }) {
@@ -292,10 +297,6 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
     </Button>
   );
 
-  const MatiereCard = ({ children }: { children: ReactNode }) => {
-    const tools = <div className="flex items-center gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1"><Calculator className="w-4 h-4" />Calculatrice</Button></div>;
-    return moduleId === 5 ? <BilanMatiereCard nom={nom} tools={tools}>{children}</BilanMatiereCard> : <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;
-  };
   const notesBilan = bareme && bareme !== "erreur"
     ? FUTURE_SUBJECT_NAMES.map((_, k) => { const s = statuts[base + k]; return s?.submitted ? noteDe(k, s.correct, s.total) : null; })
     : null;
@@ -378,7 +379,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
         <div className="animate-fade-in">
           <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4" data-testid="bilan-future-passage">
             <div className="space-y-4 min-w-0">
-              <MatiereCard>
+              <MatiereCard moduleId={moduleId} nom={nom} onCalculator={() => setShowCalculator(v => !v)}>
                   {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
                   {enRevision && (
