@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, Download, FileSignature, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +21,7 @@ export function AttestationSignatureForm({ doc, soumettre, recharger }: {
   const [ok, setOk] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const envoiEnCours = useRef(false);
   const signe = doc.statut === "signe";
 
   const telecharger = () => telechargerBlob(genererPdfAttestation({
@@ -30,14 +31,22 @@ export function AttestationSignatureForm({ doc, soumettre, recharger }: {
   }), `Attestation_fin_formation_${doc.reference ?? ""}.pdf`);
 
   const valider = async () => {
+    if (envoiEnCours.current) return;
     setErreur(null);
     if (!ok) { setErreur("Merci de cocher la case de confirmation."); return; }
     if (!signature) { setErreur("Merci de signer dans le cadre prévu."); return; }
+    envoiEnCours.current = true;
     setEnvoi(true);
-    const r = await soumettre({ signature, consentement: true, empreinte_vue: doc.texte_empreinte });
-    setEnvoi(false);
-    if (r.error) { setErreur(r.error); return; }
-    await recharger();
+    try {
+      const r = await soumettre({ signature, consentement: true, empreinte_vue: doc.texte_empreinte });
+      if (r.error) { setErreur(r.error); return; }
+      await recharger();
+    } catch {
+      setErreur("La confirmation de signature est indisponible. Votre tracé est conservé sur cette page. Réessayez pour vérifier son enregistrement.");
+    } finally {
+      envoiEnCours.current = false;
+      setEnvoi(false);
+    }
   };
 
   return (
@@ -59,11 +68,11 @@ export function AttestationSignatureForm({ doc, soumettre, recharger }: {
           </div>
         ) : (
           <div className="space-y-4 rounded-lg border bg-card p-6">
-            <label className="flex items-start gap-3 min-h-11 cursor-pointer rounded-md border p-3">
-              <Checkbox checked={ok} onCheckedChange={v => setOk(v === true)} className="mt-1 h-6 w-6" />
+            <label className="flex items-start gap-3 min-h-14 cursor-pointer rounded-md border p-4">
+              <Checkbox disabled={envoi} checked={ok} onCheckedChange={v => setOk(v === true)} className="mt-1 h-6 w-6 shrink-0" />
               <span>{doc.consentement}</span>
             </label>
-            <div className="space-y-2"><p className="font-medium">Votre signature</p><SignaturePad value={signature} onChange={setSignature} /></div>
+            <div className="space-y-2"><p className="font-medium">Votre signature</p><SignaturePad disabled={envoi} value={signature} onChange={setSignature} /></div>
             {erreur && <p className="text-destructive" role="alert">{erreur}</p>}
             <Button className="w-full min-h-11" disabled={envoi} onClick={valider}>{envoi ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}Signer l'attestation</Button>
           </div>
