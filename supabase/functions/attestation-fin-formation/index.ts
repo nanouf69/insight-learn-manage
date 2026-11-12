@@ -45,6 +45,9 @@ Deno.serve(async (req) => {
       }
       return json(r);
     }
+    if (body?.action === "renvoyer" && typeof body.docId === "string" && UUID.test(body.docId)) {
+      return json(await renvoyer(deps, body.docId, adminId));
+    }
     if (body?.action === "fermer_compte" && typeof body.docId === "string" && UUID.test(body.docId)) {
       return json(await fermerCompteApresAttestation(depsFermeture(db, adminId), body.docId));
     }

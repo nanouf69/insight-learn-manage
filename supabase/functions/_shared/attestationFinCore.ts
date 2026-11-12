@@ -188,6 +188,32 @@ export async function envoyer(deps: DepsAtt, docId: string, adminId: string) {
   return { etat: "envoye" as const, envoye_le: envoye };
 }
 
+/** Renvoi manuel du MÊME mail figé (même lien), uniquement après un premier envoi confirmé et avant signature. */
+export async function renvoyer(deps: DepsAtt, docId: string, adminId: string) {
+  const d = await deps.getDocById(docId);
+  if (!d || d.modele_code !== MODELE_CODE_ATTESTATION || !d.apprenant_id) return { etat: "bloque" as const, raison: "Attestation introuvable." };
+  if (d.statut === "signe") return { etat: "bloque" as const, raison: "Attestation déjà signée : aucun renvoi." };
+  if (!d.envoye_le || d.envoi_etat !== "envoye") return { etat: "bloque" as const, raison: "Premier envoi non confirmé : utilisez « Envoyer par mail »." };
+  if (!d.texte_fige || (await deps.sha256(d.texte_fige)) !== d.texte_empreinte || !d.mail_html_fige || !d.mail_objet_fige || !d.identite_figee?.email)
+    return { etat: "bloque" as const, raison: "Attestation non conforme à son empreinte : renvoi refusé." };
+  const a = await deps.getApprenant(d.apprenant_id);
+  if (!a) return { etat: "bloque" as const, raison: "Dossier introuvable." };
+  if ((a.email || "").trim().toLowerCase() !== String(d.identite_figee.email).toLowerCase()) return { etat: "bloque" as const, raison: "L'adresse e-mail du dossier a changé depuis la préparation." };
+  // Anti double-clic : une seule réservation à la fois (envoye -> renvoi_en_cours -> envoye).
+  const claim = await deps.updateIf(d.id, { envoi_etat: "renvoi_en_cours" }, { envoi_etat: "envoye" });
+  if (claim.error || claim.rows.length !== 1) return { etat: "non_disponible" as const, raison: "Renvoi déjà en cours." };
+  let r: IssueEnvoi;
+  try { r = await deps.envoyerMail({ to: d.identite_figee.email, subject: d.mail_objet_fige, html: d.mail_html_fige, apprenantId: a.id }); }
+  catch (err) { r = { issue: "inconnue", erreur: err instanceof Error ? err.message : String(err) }; }
+  await deps.updateIf(d.id, { envoi_etat: "envoye" }, { envoi_etat: "renvoi_en_cours" });
+  const ok = r.issue !== "refuse" && r.issue !== "inconnue";
+  await deps.journal({ operation: ok ? "attestation_fin_formation.renvoyee" : "attestation_fin_formation.renvoi_echec", docId: d.id, apprenantId: a.id, auteur: adminId,
+    apres: { le: deps.now().toISOString(), ...(ok ? {} : { erreur: (r as { erreur: string }).erreur.slice(0, 500) }) } });
+  if (r.issue === "refuse") return { etat: "refuse" as const, raison: r.erreur };
+  if (r.issue === "inconnue") return { etat: "indetermine" as const, raison: r.erreur };
+  return { etat: "renvoye" as const };
+}
+
 export const lienActifAttestation = (d: DocAtt) => d.statut === "signe" || !!d.envoye_le || !!d.envoi_tente_le;
 
 export function vuePubliqueAttestation(d: DocAtt, signatureCentreImage: string | null) {
