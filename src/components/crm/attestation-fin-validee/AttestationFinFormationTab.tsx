@@ -56,7 +56,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
         apprenantId: apprenant.id, prenom: apprenant.prenom ?? "—", nom: apprenant.nom ?? "—",
         formation: champs.formation ?? "Non renseignée", modalite: champs.modalite,
         debut: champs.dateDebut, fin: ap.fin.etat === "ok" ? ap.fin.date : null, dateEmission: champs.dateEmission,
-        sourceFin: ap.fin.etat === "ok" ? `connexion vérifiée du ${dfr(ap.fin.startedAt)} · ${ap.fin.connexionId}` : undefined,
+        sourceFin: ap.fin.etat === "ok" ? `${ap.fin.source} du ${dfr(ap.fin.startedAt)} · ${ap.fin.connexionId}${ap.fin.dateLimiteCrm ? ` · fin CRM : ${ap.fin.dateLimiteCrm}` : ""}` : undefined,
         // No server-frozen attestation-wide milestone proof exists in this model.
         // Never turn 98.9%, a module counter, or a client calculation into certification.
         preuve: null, elementsPedagogiques: ap.elementsPedagogiques, motifs: [...ap.motifs, ...manquants.filter(m => m !== "durée"), "Validation complète des jalons non certifiée"],
