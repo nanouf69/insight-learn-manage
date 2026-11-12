@@ -22,6 +22,7 @@ import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
 import { toast } from "sonner";
 import EmargementsSignesViewer from "@/components/cours-en-ligne/EmargementsSignesViewer";
 import { ContratFormationSection } from './ContratFormationSection';
+import { AttestationFinValideePanel } from '@/components/crm/attestation-fin-validee/AttestationFinValideePanel';
 
 
 interface DocumentsFormationProps {
