@@ -1,3 +1,4 @@
+import { evaluerSignatureDataUrl } from "@/lib/emargement/qualiteSignature";
 import { useEffect, useRef, useState } from "react";
 import { uploadInscriptionDocument } from "@/lib/documentUpload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -184,6 +185,14 @@ export const EmargementFCModal = ({
         variant: "destructive",
       });
       return;
+    }
+    if (signature && signatureToSave === signature) {
+      const qualite = await evaluerSignatureDataUrl(signature);
+      if (!qualite.ok) {
+        toast({ title: "Signature à refaire", description: qualite.raison, variant: "destructive" });
+        setSignature("");
+        return;
+      }
     }
     if (!confirmPresenceLieu) {
       toast({
@@ -475,16 +484,16 @@ export const EmargementFCModal = ({
               <PenTool className="w-4 h-4" /> Votre signature
             </p>
             <SignaturePad value={signature} onChange={setSignature} disabled={saving} />
-            <label className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 cursor-pointer">
+            <label className="flex items-center gap-3 rounded-md border-2 border-amber-300 bg-amber-50 p-4 min-h-16 cursor-pointer select-none touch-manipulation">
               <input
                 type="checkbox"
                 checked={confirmPresenceLieu}
                 onChange={(e) => setConfirmPresenceLieu(e.target.checked)}
                 disabled={saving}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-amber-600"
+                className="h-7 w-7 shrink-0 accent-amber-600 cursor-pointer"
                 required
               />
-              <span className="text-sm text-amber-900">
+              <span className="text-base text-amber-900">
                 <strong>Je confirme que je suis bien au lieu de formation</strong>{" "}
                 {isMultiCreneau
                   ? "pour toute la journée (matin et après-midi)."
