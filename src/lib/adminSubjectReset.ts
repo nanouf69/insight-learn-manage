@@ -10,6 +10,7 @@ export interface SubjectResetContext {
  learner_name: string; subject_name: string; status: 'non_commencee'|'en_cours'|'en_attente'|'notee'|'ambigu';
  reason: string|null; source_exercice_id: string; source_attempt_id: string|null; source_result_id: string|null;
  source_token: string; version_token: string; authorization_id: string|null;
+ expired_empty?: boolean;
 }
 export async function readSubjectResetContext(account: string, exam: string, subject: string): Promise<SubjectResetContext> {
  const {data,error}=await supabase.rpc('exam_subject_reset_context' as never,{

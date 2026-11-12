@@ -1335,6 +1335,7 @@ export function resolveExamPassage({
   savedRows,
   forceRetake = false,
   minimumTentative = 1,
+  isolatedSubjectReceipts = [],
 }: {
   examId: string;
   matieres: Array<Pick<Matiere, "id" | "nom">>;
@@ -1342,14 +1343,21 @@ export function resolveExamPassage({
   savedRows: SavedExamAnswerRow[];
   forceRetake?: boolean;
   minimumTentative?: number;
+  isolatedSubjectReceipts?: Array<{ exam_id: string; matiere_id: string; exercice_id: string; tentative: number }>;
 }): ExamPassageResolution {
   const validMatieres = safeArray(matieres).filter(Boolean) as Array<Pick<Matiere, "id" | "nom">>;
-  const results = safeArray(resultRows).filter(Boolean);
-  const answers = (safeArray(savedRows) as SavedExamAnswerRow[]).filter(
+  const allResults = safeArray(resultRows).filter(Boolean);
+  const allAnswers = (safeArray(savedRows) as SavedExamAnswerRow[]).filter(
     (row) => Boolean(row) && Boolean(parseExamAnswerKey(safeStr(row?.exercice_id), examId)),
   );
+  const receipts = isolatedSubjectReceipts.filter(r => r.exam_id === examId
+    && r.exercice_id === buildExamMatiereExerciceId(examId, r.matiere_id, r.tentative));
+  const isolatedIds = new Set(receipts.map(r => r.exercice_id));
+  const answers = allAnswers.filter(r => !isolatedIds.has(safeStr(r.exercice_id)));
+  const results = allResults.filter(row => !receipts.some(r => row.matiere_id === r.matiere_id
+    && getAttemptNumber(row) === r.tentative));
 
-  const occupiedExerciceIds = new Set(answers.map((row) => safeStr(row.exercice_id)));
+  const occupiedExerciceIds = new Set(allAnswers.map((row) => safeStr(row.exercice_id)));
   const frozenExerciceIds = new Set(
     answers
       .filter((row: any) => row?.completed === true || row?.status === "submitted")
@@ -1434,8 +1442,9 @@ export function resolveExamPassage({
   }
 
   // Nouveau passage : numéro strictement libre pour TOUTES les matières.
-  const maxKnown = Array.from(knownAttempts).reduce((max, n) => Math.max(max, n), 1);
-  const usedResultAttempts = new Set(results.map((row: any) => getAttemptNumber(row)));
+  const maxKnown = Math.max(...Array.from(knownAttempts), ...receipts.map(r => r.tentative),
+    ...allResults.map(getAttemptNumber), ...allAnswers.map(r => getSavedAnswerRowAttempt(r, examId)));
+  const usedResultAttempts = new Set(allResults.map((row: any) => getAttemptNumber(row)));
   let tentative = forceRetake || attemptStates.some((s) => s.hasWork) || minimumTentative > 1 ? maxKnown + 1 : 1;
   for (let guard = 0; guard < 500; guard += 1) {
     const collides =

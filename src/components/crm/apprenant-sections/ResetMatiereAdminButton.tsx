@@ -63,9 +63,11 @@ export function ResetMatiereAdminButton({ target, onAuthorized }: { target: Rese
               Matière : <strong>{selection?.matiereNom}</strong><br /><br />
               Seule cette matière sera à repasser, sur une nouvelle tentative non notée.
               L’ancienne copie et son résultat restent consultables ; les autres matières restent inchangées.
+              Les autres examens, Bilans et révisions des questions fausses ne sont pas concernés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {busy && <p className="text-sm text-muted-foreground">Vérification en cours…</p>}
+          {context?.expired_empty && <p className="text-sm">La copie expirée sans réponse sera clôturée sans note et conservée. Le nouveau chronomètre ne démarrera qu’au choix de l’élève.</p>}
           {(error || context?.reason) && <p role="alert" className="text-sm text-destructive">{error || context?.reason}</p>}
           {context?.authorization_id && <p role="status" className="text-sm">Autorisation déjà enregistrée pour cette matière. L’élève peut choisir « Refaire la matière » dans son espace. Aucune nouvelle note ni chronomètre avant son choix.</p>}
           <AlertDialogFooter>

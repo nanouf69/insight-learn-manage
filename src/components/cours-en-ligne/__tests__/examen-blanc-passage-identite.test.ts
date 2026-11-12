@@ -39,6 +39,23 @@ const resolve = (over: Partial<Parameters<typeof resolveExamPassage>[0]> = {}) =
   resolveExamPassage({ examId: "EB1", matieres: MATIERES, resultRows: [], savedRows: [], ...over } as any);
 
 describe("Identité d'un passage d'examen blanc", () => {
+  it("repassage isolé A plus récent : reprend le passage général et conserve B–G", () => {
+    const resultRows = MATIERES.slice(0, 6).map(m => result(m.id, 1));
+    const savedRows = [answer('EB1__reglementation_vtc2'), answer('EB1__t3p__t2', { tentative: 2, updated_at: '2026-11-12T18:00:00Z' })];
+    const before = JSON.stringify({resultRows,savedRows});
+    const receipt = {exam_id:'EB1',matiere_id:'t3p',exercice_id:'EB1__t3p__t2',tentative:2};
+    const p = resolve({resultRows,savedRows,isolatedSubjectReceipts:[receipt]});
+    expect(p.tentative).toBe(1);
+    expect(p.completedMatiereIds).toEqual(MATIERES.slice(0,6).map(m=>m.id));
+    expect(p.exerciceIds.reglementation_vtc2).toBe('EB1__reglementation_vtc2');
+    expect(resolve({resultRows,savedRows,isolatedSubjectReceipts:[receipt],forceRetake:true}).tentative).toBe(3);
+    expect(JSON.stringify({resultRows,savedRows})).toBe(before);
+  });
+  it("un reçu d’un autre examen ne masque aucune matière", () => {
+    const p = resolve({savedRows:[answer('EB1__t3p__t2',{tentative:2})], isolatedSubjectReceipts:[{exam_id:'EB2',matiere_id:'t3p',exercice_id:'EB2__t3p__t2',tentative:2}]});
+    expect(p.tentative).toBe(2);
+    expect(p.mode).toBe('resume');
+  });
   it("premier passage : toutes les matières partagent la tentative 1", () => {
     const p = resolve();
     expect(p.mode).toBe("new");
