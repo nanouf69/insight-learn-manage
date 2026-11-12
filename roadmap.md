@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 18:19 — Fermer le compte après envoi attestation
+- [x] Orchestrateur isolé lié au document envoyé, garde compte unique/non admin, erreur explicite et rejeu sans transport de mail ; aucune écriture réelle branchée.
+- [x] Audit SELECT des trois contrôles serveur : archivage/ban seuls ne prouvent pas la fermeture d'un JWT déjà émis ; 20 tests PASS (8 fermeture + 12 circuit/signature publique), Deno check et build OK.
+- [ ] Activation bloquée : garde serveur des sessions déjà ouvertes et matrice lectures/RPC/écritures à sécuriser et tester sur compte fictif autorisé ; aucune désactivation, migration ou publication réelle. Rapport docs/attestation-fermeture-compte-2026-11-12.md.
+
 ## 12/11 18:16 — Date attestation limitée à la fin CRM
 - [x] Plafond partagé aperçu/préparation serveur : dernière connexion limitée à la fin des cours en ligne CRM (sinon fin de formation), horodatage original et plafond conservés dans le nouveau modèle ; date absente/invalide = refus. Envoi recontrôle la date figée sans modifier les anciens documents.
 - [x] 44 tests PASS : 31/10/2026, frontière Paris, connexion antérieure, limite absente/invalide, date CRM avancée avant envoi, circuit et PDF ; Deno check PASS, build OK. Aucune connexion, signature ou donnée réelle modifiée, aucun envoi.
