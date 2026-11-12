@@ -62,4 +62,30 @@ it('sérialise les relectures et ignore une réponse de l’ancienne session', a
   await screen.findByText('Aucun inscrit — Aucune note définitive (0/0).');
   expect(screen.queryByRole('link', { name: 'Ouvrir la fiche CRM de A Test (nouvel onglet)' })).toBeNull();
   expect(charger.mock.calls).toEqual([['s1'], ['s1'], ['s2']]);
+});it('bouton Actualiser : relit notes et émargement, garde examen et date, une seule lecture à la fois, dernier relevé conservé en erreur', async () => {
+  let finir: (r: ReleveSession) => void = () => {};
+  const charger = vi.fn().mockResolvedValueOnce(relevé())
+    .mockReturnValueOnce(new Promise<ReleveSession>(r => { finir = r; }))
+    .mockResolvedValue({ ...relevé(true), erreur: 'Erreur transitoire' });
+  const chargerAbsences = vi.fn().mockResolvedValue(new Map());
+  render(<NotesParSession sessions={sessions} charger={charger} souscrire={() => () => {}} chargerAbsences={chargerAbsences} />);
+  await choisir();
+  fireEvent.change(screen.getByLabelText("Date de l'examen"), { target: { value: '2026-11-11' } });
+  await waitFor(() => expect(chargerAbsences).toHaveBeenCalledTimes(1));
+  const bouton = screen.getByRole('button', { name: 'Actualiser' });
+  fireEvent.click(bouton);
+  const enCours = await screen.findByRole('button', { name: 'Actualisation…' });
+  expect(enCours).toBeDisabled();
+  fireEvent.click(enCours);
+  expect(charger).toHaveBeenCalledTimes(2);
+  await waitFor(() => expect(chargerAbsences).toHaveBeenCalledTimes(2));
+  expect(chargerAbsences).toHaveBeenLastCalledWith('s1', '2026-11-11');
+  await act(async () => finir(relevé(true)));
+  await screen.findByRole('button', { name: 'Actualiser' });
+  expect(screen.getAllByText('Note définitive manquante')).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Actualiser' }));
+  await screen.findByRole('alert');
+  expect(screen.getAllByText('Note définitive manquante')).toHaveLength(1);
+  expect(screen.getByRole('combobox', { name: 'Examen blanc' })).toHaveValue('EB1');
+  expect(screen.getByLabelText("Date de l'examen")).toHaveValue('2026-11-11');
 });
