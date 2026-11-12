@@ -58,3 +58,4 @@
 - TAXI/TA form defaults mirror FORMATION_MODULES (test modeles-taxi-ta-fin-formation); why: no missing modules.
 - CRM month extension: crm_reactiver_un_mois adds the month; send-prolongation-acces only emails per extension_id; why: resend never adds a month.
 - FC convocations use a separate evidence/outbox/journal workflow, with explicit bank-to-enrollment and contractual amount proofs, server revalidation and unknown-delivery quarantine; the accounting screen never auto-writes or sends; why: names and import duplicates cannot authorize a financial mutation or a duplicate convocation.
+- V2 exam answer queue (pontV2) keeps one pending value per attempt/subject/question (latest wins, in-flight never removed), sends one request at a time, and backs off per attempt (1 s→30 s, ±30 % jitter) except explicit finish/online; why: per-keystroke writes and per-keystroke retries overloaded the database on 12/11 (1 638 writes for 148 questions in 4 min).
