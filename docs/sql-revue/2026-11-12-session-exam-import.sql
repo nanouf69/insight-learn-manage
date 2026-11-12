@@ -23,7 +23,9 @@ DECLARE
   q             jsonb;
   v_val         jsonb;
 BEGIN
-  IF auth.uid() IS NOT NULL AND NOT public.has_role(auth.uid(), 'admin') THEN
+  IF NOT (coalesce(public.has_role(auth.uid(), 'admin'),false)
+    OR current_setting('role',true)='service_role'
+    OR (session_user='service_role' AND current_setting('role',true)='none')) THEN
     RAISE EXCEPTION 'IMPORT_NON_AUTORISE: seul un administrateur peut importer un passage finalise.'
       USING ERRCODE = 'P0484';
   END IF;
