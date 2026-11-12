@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 12:50 — Accès direct Questions QRC VTC
+- [ ] Entrée après F/G vers carte historique 1794399472264, sélection après hydratation et retour ; notes F/G et SQL inchangés.
+- [ ] Tests simulés PC/mobile élève/admin, lien exact et absence de mutation ; aucune publication.
+
 ## 12/11 12:44 — Remises F/G dans le nouveau Bilan VTC
 - [x] Remises originales 505/506 dans étapes et récapitulatif partagé, révisions exclues, bonnes/total explicités, 5/7 séparé du résultat A–E ; refus de lecture honnête.
 - [x] 13 tests PASS et quatre parcours PC/mobile élève/admin PASS, clics F/G/retour, zéro mutation admin ; menu F/G présent dans asset public. Aucun compte réel/publication ; rendu réel sans capture non vérifié. Rapport docs/bilan-vtc-remises-fg-2026-11-12.md.
