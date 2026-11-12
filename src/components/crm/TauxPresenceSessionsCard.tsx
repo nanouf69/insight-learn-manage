@@ -12,11 +12,17 @@ const d10 = (v: unknown) => String(v ?? "").slice(0, 10);
 const signatureValide = (e: any) =>
   e.masque !== true && e.absent !== true && /^data:image\/(png|jpe?g);base64,/i.test(String(e.signature_data_url ?? ""));
 
-export interface TauxHeures { faites: number; prevues: number; derniere?: string }
+export interface TauxHeures { faites: number; prevues: number; derniere?: string; datesEntrainement?: string[] }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
 export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = []) {
   const res: { session: TauxHeures; pratique: TauxHeures } = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
+  // Dates du planning nominatif uniquement ; une réservation ne prouve pas la présence.
+  const datesEntrainement = new Set<string>();
+  for (const reservation of reservations) {
+    const date = d10(reservation.date_choisie);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) datesEntrainement.add(date);
+  }
   if (String(filiere ?? "").toLowerCase() === "ta") inscriptions = marquerFiliereRows(inscriptions, "TA");
   res.session.prevues = heuresTheorieInscrites(inscriptions, filiere);
   const vus = new Set<string>();
@@ -35,6 +41,9 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     // session comptent : une signature sur un créneau non prévu est conservée
     // ailleurs (anomalie) mais jamais comptée ici.
     const sessionPlanning = planningCreneaux([row], reservations, configs).parDate;
+    if (pratique) {
+      for (const date of sessionPlanning.keys()) datesEntrainement.add(date);
+    }
     for (const e of emargements) {
       const date = d10(e.date_emargement);
       const creneau = String(e.demi_journee ?? "").trim().toLowerCase();
@@ -50,6 +59,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
   }
+  res.pratique.datesEntrainement = [...datesEntrainement].sort();
   return res;
 }
 
@@ -112,6 +122,11 @@ export function TauxPresenceSessionsCard({ apprenantId, filiere }: { apprenantId
             {t && !erreur && t.prevues > 0 && (
               <div className="mt-0.5 text-xs text-muted-foreground">
                 Dernière signature : <strong className="text-foreground">{t.derniere ? t.derniere.split("-").reverse().join("/") : "aucune"}</strong>
+              </div>
+            )}
+            {t && !erreur && label === "Taux présence pratique" && Boolean(t.datesEntrainement?.length) && (
+              <div className="mt-1 text-xs text-muted-foreground">
+                Entraînement pratique au planning : <strong className="text-foreground">{t.datesEntrainement?.map(date => date.split("-").reverse().join("/")).join(" · ")}</strong>
               </div>
             )}
           </div>
