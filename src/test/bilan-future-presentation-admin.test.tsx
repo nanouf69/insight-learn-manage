@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-const rpc = vi.fn();
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
 import { BilanFutureApercuAdmin } from "@/components/cours-en-ligne/BilanFutureApercuAdmin";
 describe("présentation admin VTC sans transport élève", () => {
