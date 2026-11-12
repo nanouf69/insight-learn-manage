@@ -128,3 +128,14 @@ describe("Attestation de fin de formation — circuit serveur", () => {
     expect((vue as any).email).toBeUndefined();
   });
 });
+
+import { statutAffiche } from "@/lib/attestationFinValidee/serveur";
+describe("Statut affiché dans la fiche", () => {
+  const base: any = { statut: "prepare", envoi_etat: "prepare", envoye_le: null, signed_at: null };
+  it("enregistrée jamais envoyée = À envoyer ; envoyée = En attente ; signée = Signée ; issue inconnue = Envoi à vérifier", () => {
+    expect(statutAffiche(base).libelle).toBe("À envoyer");
+    expect(statutAffiche({ ...base, statut: "envoye", envoi_etat: "envoye", envoye_le: "x" }).libelle).toBe("En attente de signature");
+    expect(statutAffiche({ ...base, statut: "signe", envoye_le: "x" }).libelle).toBe("Signée");
+    expect(statutAffiche({ ...base, envoi_etat: "indetermine" }).libelle).toBe("Envoi à vérifier");
+  });
+});
