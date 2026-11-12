@@ -111,7 +111,8 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
     sources: {
       date_fin: { connexion_id: fin.connexionId, started_at: fin.startedAt, source: fin.source },
       derniere_validation: derniereValidation,
-      heures: heures ? { faites: heures.faites!, minimum: heures.minimum!, source: "Heures e-learning prouvées (calcul CRM) au moment de la préparation" } : null,
+      heures: heures && heures.faites !== null && heures.minimum !== null
+        ? { faites: heures.faites, minimum: heures.minimum, source: "Heures e-learning enregistrées (calcul CRM), non bloquantes" } : null,
       signatures_presentiel: pres ? { signees: pres.signees!, attendues: pres.attendues!, source: "Émargements comptés au moment de la préparation" } : null,
     },
     signature_centre: { representant, autorise_par: e.adminId, autorise_le: now.toISOString(), image: SIGNATURE_CENTRE_CHEMIN },
