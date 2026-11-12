@@ -174,6 +174,23 @@ Deno.serve(async (req) => {
   const chaine = body.chaine === true;
   const reprise = body.reprise === true;
   const reparer = body.reparer === true;
+  // Read-only, fixed paths, admin verified: private manifests never become public.
+  if (body.diagnostic === true) {
+    const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+    if (!token) return new Response("Non autorisé", { status: 401, headers: corsHeaders });
+    const { data: auth, error: authError } = await sb.auth.getUser(token);
+    if (authError || !auth.user) return new Response("Non autorisé", { status: 401, headers: corsHeaders });
+    const { data: role, error: roleError } = await sb.from("user_roles").select("role").eq("user_id", auth.user.id).eq("role", "admin").maybeSingle();
+    if (roleError || !role || !/^2026-11-(11|12)$/.test(jour)) return new Response("Accès refusé", { status: 403, headers: corsHeaders });
+    const fichiers: Record<string, unknown> = {};
+    for (const nom of ["_etat.json", "_incomplet.json", "_erreurs/reponses_apprenants_journal-0.txt", "_erreurs/answer_state_historique-0.txt", "_reparation-1/_export_termine.json", "_reparation-1/_incomplet.json"]) {
+      const { data, error } = await sb.storage.from(BUCKET).download(`${jour}/${nom}`);
+      if (error || !data) { fichiers[nom] = { absent: true }; continue; }
+      const texte = await data.text();
+      try { fichiers[nom] = JSON.parse(texte); } catch { fichiers[nom] = { message: texte }; }
+    }
+    return json({ jour, fichiers });
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
   const up = async (path: string, content: unknown) => {
