@@ -581,6 +581,16 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               ] as const).map(([label, r]) => {
                 const v = String(r || "").toLowerCase();
                 const txt = v === "oui" ? "réussie" : v === "non" ? "non réussie" : v === "absent" ? "absent" : v === "deplace" ? "déplacé" : "en attente";
+                if (label === "Théorie") return (
+                  <Button
+                    key={label}
+                    size="sm"
+                    variant={v === "non" ? "destructive" : v === "oui" ? "default" : "outline"}
+                    className="h-auto rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                    title="Voir l’admissibilité dans Examens et Réussite"
+                    onClick={() => navigate(`/?section=examens&candidat_resultat=${encodeURIComponent(apprenant.id)}`)}
+                  >{label} : {txt}</Button>
+                );
                 return (
                   <Badge
                     key={label}

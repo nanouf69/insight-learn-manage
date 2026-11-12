@@ -4,6 +4,7 @@ import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCma
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
 import { datesExamenChoisissables } from '@/lib/examDatesChoix';
@@ -949,11 +950,19 @@ function AddCandidateToDayPicker({
 }
 
 export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToApprenant?: (id: string) => void } = {}) {
+  const location = useLocation();
+  const candidatResultat = new URLSearchParams(location.search).get("candidat_resultat");
+  const candidatResultatRef = useRef<HTMLTableRowElement>(null);
+  const [candidatCible, setCandidatCible] = useState<string | null>(candidatResultat);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterIdentifiants, setFilterIdentifiants] = useState<string>("all");
   const [filterModalite, setFilterModalite] = useState<string>("all");
-  const [showAllExamDates, setShowAllExamDates] = useState(false);
+  const [showAllExamDates, setShowAllExamDates] = useState(Boolean(candidatResultat));
+  useEffect(() => {
+    setCandidatCible(candidatResultat);
+    if (candidatResultat) setShowAllExamDates(true);
+  }, [candidatResultat]);
   const [fullscreen, setFullscreen] = useState(false);
   const [pratiqueFullscreen, setPratiqueFullscreen] = useState(false);
   const [activeFs, setActiveFs] = useState<string | null>(null);
@@ -1636,6 +1645,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   // Formations pratiques seules (PA) : retirées du tableau théorique uniquement ; le planning pratique les garde.
   const tableApprenants = (showAllExamDates ? apprenantsToutesDates : apprenants)
     ?.filter((a: any) => !['pa-vtc', 'pa-taxi'].includes((a.type_apprenant || '').toLowerCase()));
+  useEffect(() => {
+    if (!candidatCible || !tableApprenants?.some(a => a.id === candidatCible)) return;
+    const frame = requestAnimationFrame(() => candidatResultatRef.current?.scrollIntoView({ block: "center" }));
+    return () => cancelAnimationFrame(frame);
+  }, [candidatCible, tableApprenants]);
 
   // Statut de suivi provenant des sessions (source unique : session_apprenants)
   const apprenantIdsExamen = (tableApprenants || []).map((a: any) => a.id);
@@ -2163,6 +2177,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   });
 
   const filtered = tableApprenants?.filter(a => {
+    if (candidatCible && a.id !== candidatCible) return false;
     const term = search.toLowerCase().trim();
     if (term) {
       const hay = `${a.nom || ''} ${a.prenom || ''} ${a.email || ''} ${a.telephone || ''}`.toLowerCase();
@@ -2188,8 +2203,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     return true;
   });
 
-  const hasActiveFilters = filterStatut !== 'all' || filterIdentifiants !== 'all' || filterModalite !== 'all' || search.trim() !== '';
-  const resetFilters = () => { setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterModalite("all"); };
+  const hasActiveFilters = Boolean(candidatCible) || filterStatut !== 'all' || filterIdentifiants !== 'all' || filterModalite !== 'all' || search.trim() !== '';
+  const resetFilters = () => { setCandidatCible(null); setSearch(""); setFilterStatut("all"); setFilterIdentifiants("all"); setFilterModalite("all"); };
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
@@ -2512,8 +2527,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     const resultat = (apprenant as any).resultat_examen || '';
 
                     return (
-                      <TableRow key={apprenant.id} className="[&>td]:px-1.5 [&>td]:py-2">
-                        <TableCell className="font-medium" title={apprenant.nom || undefined}>
+                      <TableRow key={apprenant.id} ref={apprenant.id === candidatCible ? candidatResultatRef : undefined} className="[&>td]:px-1.5 [&>td]:py-2">
+                        <TableCell className={apprenant.id === candidatCible ? "font-medium ring-2 ring-inset ring-primary bg-primary/10 rounded-md" : "font-medium"} title={apprenant.nom || undefined}>
                           <div className="flex items-center gap-1 min-w-0">
                           {onNavigateToApprenant ? (
                             <button
