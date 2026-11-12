@@ -17,6 +17,14 @@ class Preflight(base.Access):
   # V2/retake/save/finalize catalog is archived. Timer definitions have matching
   # live pg_get_functiondef MD5s on 12/11; external effects are not exercised.
   c.sql("GRANT USAGE ON SCHEMA auth TO anon;GRANT EXECUTE ON FUNCTION auth.uid() TO anon;")
+  c.sql("CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql AS $$SELECT 'authenticated'::text$$;CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql AS $$SELECT jsonb_build_object('sub',auth.uid(),'role',auth.role())$$;")
+  live=json.loads(Path('src/test/fixtures/session-exam-access-preflight-20261112.json').read_text())
+  for definition in live['dependencies'].values():c.sql(definition)
+  c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
+  c.sql(Path('docs/sql-revue/2026-11-11-subject-reset-expired-empty.sql').read_text())
+  for name,definition in live['functions'].items():
+   if name.startswith(('core_start_attempt','start_exam_subject_retake')):c.sql(definition)
+  c.sql("INSERT INTO core_bridge_flags(cle,actif) VALUES('passage_v2_apprenants_reels',true);")
 
  def test_17_both_real_timer_overloads_block_new_start_keep_resume(self):
   self.set_access(False,expected=self.current())
@@ -59,6 +67,45 @@ class Preflight(base.Access):
    r=self.sql('SET ROLE anon;'+q,False)
    self.assertNotEqual(r.returncode,0)
    self.assertIn('permission denied',r.stderr)
+
+ def test_21_live_core_start_refuses_closed_then_resumes_exact_copy(self):
+  self.set_access(False,expected=self.current())
+  version=str(uuid.uuid4())
+  content={'matieres':[{'subject_id':'preflight_core','duree':30}],
+           'questions':[{'id':'preflight_core:1','matiere':'preflight_core','type':'QCM','points':1,'choix':[{'id':'A','texte':'Oui','correct':True}]}]}
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',1,'publiee',{base.J(content)},'f')")
+  # Prior fixtures already created versions: choose this one as the only active.
+  self.sql(f"UPDATE exam_content_versions SET retired_at=now() WHERE exam_id='EB3' AND id<>'{version}'")
+  op=str(uuid.uuid4())
+  q=f"SELECT row_to_json(a) FROM core_start_attempt('{op}','{base.A}','EB3','preflight_core',false) a"
+  r=self.call(q,base.U,False);self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_operations WHERE operation_id='{op}'").stdout.strip(),'0')
+  self.set_access(True,expected=self.current())
+  started=json.loads(self.call(q,base.U).stdout.splitlines()[-1])
+  self.set_access(False,expected=self.current())
+  self.assertEqual(json.loads(self.call(q,base.U).stdout.splitlines()[-1]),started)
+  resumed=json.loads(self.call(f"SELECT row_to_json(a) FROM core_start_attempt(gen_random_uuid(),'{base.A}','EB3','preflight_core',false) a",base.U).stdout.splitlines()[-1])
+  self.assertEqual(resumed['attempt_id'],started['attempt_id'])
+  self.assertEqual(resumed['snapshot'],started['snapshot'])
+
+ def test_22_live_scoped_retake_refused_without_consuming_authorization(self):
+  self.set_access(True,expected=self.current())
+  subject={'id':'EB3','matieres':[{'id':'preflight_retake','nom':'Fictif','duree':30,'questions':[{'id':1,'type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}]}]}]}
+  self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES(999,{base.J(subject)})")
+  context=json.loads(self.call(f"SELECT exam_subject_reset_context('{base.A}','EB3','preflight_retake')").stdout.splitlines()[-1])
+  authorization=str(uuid.uuid4())
+  self.call(f"SELECT admin_authorize_exam_subject_reset('{authorization}','{base.A}','EB3','vtc','preflight_retake','Élève FICTIF','{context['source_token']}','{context['version_token']}')")
+  self.set_access(False,expected=self.current())
+  before=self.sql(f"SELECT to_jsonb(a) FROM exam_subject_reset_authorizations a WHERE operation_id='{authorization}'").stdout
+  op=str(uuid.uuid4())
+  q=f"SELECT row_to_json(r) FROM start_exam_subject_retake('{op}','{base.A}','EB3','preflight_retake','EB3__preflight_retake',NULL) r"
+  r=self.call(q,base.U,False);self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM exam_subject_retakes WHERE operation_id='{op}'").stdout.strip(),'0')
+  self.assertEqual(before,self.sql(f"SELECT to_jsonb(a) FROM exam_subject_reset_authorizations a WHERE operation_id='{authorization}'").stdout)
+  self.set_access(True,expected=self.current())
+  receipt=json.loads(self.call(q,base.U).stdout.splitlines()[-1])
+  self.set_access(False,expected=self.current())
+  self.assertEqual(json.loads(self.call(q,base.U).stdout.splitlines()[-1]),receipt)
 
 
 if __name__=='__main__':
