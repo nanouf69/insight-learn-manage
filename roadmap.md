@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 09:59 — Présentation admin nouveau Bilan VTC
+- [ ] Partager les cartes et navigation avec l'élève, admin sans transport interactif ; conserver compléments/TAXI, vérifier fixtures PC/mobile et appels.
+
 ## 12/11 09:49 — Carte QRC VTC résiduelle
 - [x] Carte serveur 1794399472264 exposée au lieu de 9001 dans les compléments futurs ; lien exact unique cliqué en aperçu admin (aucun appel pédagogique mutateur) et route VTC simulée, TAXI exclu par test. 20 tests PASS, F/G/H préservés. A–E demande son ouverture habituelle dans la simulation élève, interceptée ; aucune écriture réelle ni publication. Complément isolé documenté.
 
