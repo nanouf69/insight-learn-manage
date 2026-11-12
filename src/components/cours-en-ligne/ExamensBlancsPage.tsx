@@ -81,6 +81,7 @@ import { freshSessionRead } from '@/lib/sessionRpc';
 import { rememberRetakeReturn, readRetakeReturn, retakeReturnKey } from '@/lib/subjectRetakeNavigation';
 import { SubjectCopyHistory } from './SubjectCopyHistory';
 import { AuthorizedSubjectRetakes } from './AuthorizedSubjectRetakes';
+import { SUBJECT_RETAKE_ISOLATION_ACTIVE } from '@/lib/subjectRetakeIsolation';
 import { RefaireMatiereButton } from './RefaireMatiereButton';
 import { lireDerogationsModules, matieresRestantesAvecDerogation } from '@/lib/moduleAccessDerogation';
 
@@ -723,7 +724,7 @@ export default function ExamensBlancsPage({
 
     let nextTentative = 1;
     if (apprenantId && !isAdmin) {
-      const [{ data: tRows, error: resultError }, { data: answerRows, error: answerError }, { data: resetRows, error: resetError }] = await Promise.all([
+      const [{ data: tRows, error: resultError }, { data: answerRows, error: answerError }, { data: resetRows, error: resetError }, {data: isolatedReceipts, error: isolatedError}] = await Promise.all([
         supabase
         .from("apprenant_quiz_results" as any)
         .select("id, matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, tentative, completed_at, created_at")
@@ -741,9 +742,12 @@ export default function ExamensBlancsPage({
           .select("exam_id, cutoff_at")
           .eq("apprenant_id", apprenantId)
           .eq("exam_id", latestExamen.id),
+        SUBJECT_RETAKE_ISOLATION_ACTIVE && quizType === 'examen_blanc'
+          ? supabase.from('exam_subject_retakes').select('exam_id,matiere_id,exercice_id,tentative').eq('apprenant_id',apprenantId).eq('exam_id',latestExamen.id)
+          : Promise.resolve({data:[],error:null}),
       ]);
 
-      if (resultError || answerError || resetError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
+      if (resultError || answerError || resetError || isolatedError) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
       const cutoff = latestExamResetCutoffs(resetRows)[latestExamen.id];
       const historicalMaximumAttempt = Math.max(
@@ -758,6 +762,9 @@ export default function ExamensBlancsPage({
         Boolean(extractMatiereKeyFromExerciceId(safeStr(row.exercice_id), latestExamen.id))
         && isAfterExamReset(row?.updated_at ?? row?.created_at, cutoff)
       );
+      const scopedPassage = SUBJECT_RETAKE_ISOLATION_ACTIVE ? resolveExamPassage({examId:latestExamen.id,matieres:latestExamen.matieres,
+        resultRows:allResultRows,savedRows,forceRetake,minimumTentative:cutoff?historicalMaximumAttempt:1,
+        isolatedSubjectReceipts:isolatedReceipts ?? []}) : null;
       const knownAttempts = new Set<number>([1]);
       allResultRows.forEach((row: any) => knownAttempts.add(getAttemptNumber(row)));
       savedRows.forEach((row) => knownAttempts.add(getSavedAnswerRowAttempt(row, latestExamen.id)));
@@ -784,7 +791,7 @@ export default function ExamensBlancsPage({
       const unfinishedAttempts = attemptStates
         .filter((state) => state.hasWork && state.completedCount < validMatieres.length)
         .sort((a, b) => b.lastActivity - a.lastActivity || b.attempt - a.attempt);
-      const activeAttempt = unfinishedAttempts[0]?.attempt
+      const activeAttempt = scopedPassage?.tentative ?? unfinishedAttempts[0]?.attempt
         ?? attemptStates.reduce((max, state) => Math.max(max, state.attempt), 1);
       const completedRows = allResultRows.filter((row: any) => getAttemptNumber(row) === activeAttempt);
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
@@ -818,7 +825,7 @@ export default function ExamensBlancsPage({
       // SOURCE UNIQUE D'IDENTITÉ DU PASSAGE : reprise du passage ouvert, ou
       // création d'un passage entièrement neuf. Jamais d'écriture dans une
       // tentative terminée (elle est immuable).
-      const passage = resolveExamPassage({
+      const passage = scopedPassage ?? resolveExamPassage({
         examId: latestExamen.id,
         matieres: validMatieres,
         resultRows: allResultRows,
