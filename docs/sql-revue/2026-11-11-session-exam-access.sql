@@ -168,7 +168,10 @@ CREATE FUNCTION public.session_exam_start_guard() RETURNS trigger
  ELSIF TG_TABLE_NAME='reponses_apprenants' THEN
   eid:=split_part(NEW.exercice_id,'__',1);mid:=split_part(NEW.exercice_id,'__',2);
   IF eid !~* '^EB[1-6](-(TAXI|ta|va))?$' THEN RETURN NEW; END IF;
-  IF NEW.exercice_id !~* '^EB[1-6](-(TAXI|ta|va))?__[a-z0-9_-]+(__t[1-9][0-9]*)?$' THEN
+  IF mid='' OR mid !~ '^[a-zA-Z0-9_-]+$'
+    OR array_length(string_to_array(NEW.exercice_id,'__'),1) NOT IN (2,3)
+    OR (array_length(string_to_array(NEW.exercice_id,'__'),1)=3
+      AND split_part(NEW.exercice_id,'__',3) !~ '^t[1-9][0-9]*$') THEN
    RAISE EXCEPTION 'Identité du passage non prouvée.' USING ERRCODE='P0482'; END IF;
   number:=coalesce(nullif(substring(NEW.exercice_id FROM '__t([0-9]+)$'),'')::integer,NEW.tentative);
   IF number<1 OR (NEW.tentative<>number AND NEW.tentative<>1) THEN
@@ -190,15 +193,13 @@ CREATE FUNCTION public.session_exam_start_guard() RETURNS trigger
   -- INSERT ON CONFLICT calls BEFORE INSERT, even for an existing legacy timer.
   IF EXISTS(SELECT 1 FROM public.apprenant_examen_timers t WHERE t.apprenant_id=NEW.apprenant_id
    AND t.exercice_id=NEW.exercice_id AND t.tentative=NEW.tentative) THEN RETURN NEW; END IF;
-  -- V2 creates its frozen attempt before its timer; permit only matching stored tentative.
-  SELECT attempt_id INTO open_attempt FROM public.exam_attempts_v2 a
-   WHERE a.apprenant_id=NEW.apprenant_id AND a.exam_id=eid AND a.etat='en_cours'
-   AND a.snapshot->>'matiere'=mid
-   AND (coalesce(nullif(a.snapshot->>'tentative','')::integer,1)=NEW.tentative OR
-    (NOT (a.snapshot ? 'tentative') AND NEW.tentative=(SELECT count(*) FROM public.exam_attempts_v2 x
-      WHERE x.apprenant_id=a.apprenant_id AND x.exam_id=a.exam_id AND x.snapshot->>'matiere'=mid
-      AND x.started_at<=a.started_at)));
-  IF open_attempt IS NOT NULL THEN RETURN NEW; END IF;
+  -- V2/retake creates its stored proof before its timer; never default a
+  -- later V2 attempt to tentative 1 just because its snapshot omits the field.
+  IF public.session_exam_continuation(NEW.apprenant_id,NEW.exercice_id,NEW.tentative)
+   OR EXISTS(SELECT 1 FROM public.reponses_apprenants r WHERE r.apprenant_id=NEW.apprenant_id
+    AND r.exercice_id=NEW.exercice_id
+    AND greatest(r.tentative,coalesce(substring(r.exercice_id FROM '__t([0-9]+)$')::integer,1))=NEW.tentative)
+   THEN RETURN NEW; END IF;
   PERFORM public.assert_session_exam_start(NEW.apprenant_id,eid);
  END IF;
  RETURN NEW;
