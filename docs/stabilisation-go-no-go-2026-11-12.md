@@ -37,7 +37,7 @@ Un patch des deux fichiers centraux de stabilisation a été extrait sous `/tmp/
 - Suite ciblée : 77/77 réussis dans 9 fichiers (file V2, panne, reprise/reset, bilan révision durable, signatures/taux, notes QCM/QRC, snapshots, exports).
 - Panne : 10/20/30 candidats fictifs, 3 QRC chacun, derniers textes relus dans le faux serveur ; six minutes accélérées, 90 réponses finales et 90 écritures effectives. Ce sont des simulations Vitest, pas 30 navigateurs autonomes ni un vrai serveur arrêté six minutes.
 - Rafraîchissement du simulateur après fin de l'appel en vol : réussi. Destruction du navigateur pendant un appel, stockage navigateur refusé/saturé, deux onglets indépendants et arrêt/redémarrage réel d'une cible intégrée : NON PROUVÉS dans cette passe.
-- Compilation : la consigne de l'environnement interdit le build manuel (exécuté par le système). Aucun journal `/tmp/observability/build-errors.log` présent dans ce sandbox lors de cette passe ; HTTP 200 du serveur Vite n'est pas une preuve de build de production. Dernière preuve historique 21:05:34 UTC seulement ; build courant NON PROUVÉ.
+- Compilation : aucun build manuel lancé (exécuté par le système). Le journal était absent au premier contrôle, puis le contrôle final a constaté `build OK` à 23:26:50 et 23:27:38 UTC. Compilation automatique actuelle réussie ; cela ne prouve pas les parcours E2E.
 - Scan de sécurité consulté : scans marqués périmés ; huit constats base (six avertissements, deux informations). Aucun scan frais effectué puisque publication déjà bloquée ; aucune certification de sécurité complète.
 
 ## Contrôle réel avant/après, SELECT uniquement
@@ -67,5 +67,5 @@ Mémoire 63 puis 65 %, disque 36 %, connexions 37 puis 36/90, base 2,03 Go, aucu
 
 1. Accès nécessaire à l'inventaire réel et à un export complet produit. Aucun nouvel audit SQL ne peut remplacer cet accès absent. Le chemin produit est More → Database → Manage → Settings → Export data ; seule la page Backups fournit les timestamps. Pas de demande à l'utilisateur de refaire les vérifications déjà faites.
 2. Export complet + copie séparée des fichiers privés, cible indépendante possédée par le projet, restauration hors production, paramètres de connexion restaurés séparément, connexion et empreintes vérifiées. Un remix seul ne copie pas les données.
-3. Qualification du stockage refusé, deux onglets, destruction en vol et E2E 10/20/30 sur cible indépendante ; traitement des deux tests restants et build/scan actuels.
+3. Qualification du stockage refusé, deux onglets, destruction en vol et E2E 10/20/30 sur cible indépendante ; traitement des deux tests restants et scan actuel. Compilation automatique déjà vérifiée.
 4. Confirmer le lot exact à publier. Jusqu'à satisfaction de toutes ces conditions : NO-GO, pas de publication ni migration réelle.
