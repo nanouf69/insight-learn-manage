@@ -1,3 +1,4 @@
+import { resoudreDoublonsConcordants } from "./doublonsConcordants";
 import { supabase } from '@/integrations/supabase/client';
 import { loadSavedExamens } from '@/components/cours-en-ligne/ExamensBlancsEditor';
 import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-data';
@@ -13,7 +14,7 @@ import { statutFile } from './fileTravail';
 import { deciderRattachementCrm } from './rattachementCrm';
 import type { DestinationCorrection } from './lienCorrectionSession';
 
-export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string };
+export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string; doublon?:boolean };
 export type InscritNotes = {id:string;nom:string;prenom:string;type_apprenant:string|null;abandonnee?:boolean};
 export function filiereInscrit(type:string|null):ExamenBlanc['type']|null {
   const t=(type??'').trim().toLowerCase().replace(/-e$/,'');
@@ -27,7 +28,7 @@ export function noteGeneraleSession(def:ExamenBlanc|undefined,rows:any[],indispo
   if(isExamAttemptPublicationPending(rows,def)||rows.some(r=>noteExamenAffichee(r).etat!=='note'))return {etat:'attente',note:null};
   const bilan=computeMoyenneExamen(def,m=>{const r=findScoreForMatiere(scores,m);return r?computeMatiereScoreForAttempt(m,r):null;});
   if(!bilan.hasScores||bilan.matieresPassees!==bilan.matieresTotal)return {etat:'incomplet',note:null,couverture:`${bilan.matieresPassees}/${bilan.matieresTotal}`};
-  return {etat:'definitif',note:bilan.moyenne,verdict:bilan.verdict};
+  return {etat:'definitif',note:bilan.moyenne,verdict:bilan.verdict,...(rows.some(r=>r.__doublonConcordant)?{doublon:true}:{})};
 }
 export type ExamenNotesSession={id:string;numero:number;filiere:ExamenBlanc['type'];matieres:Array<{id:string;nom:string}>};
 export type SourceAttente={destinations:DestinationCorrection[];motif?:'publication'|'non_rattachee'|'ambigue'};
@@ -52,7 +53,7 @@ export function notesMatieresSession(def:ExamenBlanc,rows:any[],indisponible=fal
   const scores=rows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
   return Object.fromEntries(def.matieres.map(m=>{
     const row=findScoreForMatiere(scores,m);const note=row?noteExamenAffichee(row):null;
-    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
+    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...(row.__doublonConcordant?{doublon:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
     return [m.id,value];
   }));
 }
@@ -88,7 +89,7 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
     const core=await fetchCoreMatiereStatesBulk(ids);const preuves=core===null?null:await fetchPassagesV2NonFiables(core);
     if(core===null||preuves===null)throw new Error('Lecture des publications officielles indisponible');
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
-      const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>attacherSourceUnique(r,core.get(a.id)??[],preuves));
+      const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>resoudreDoublonsConcordants(attacherSourceUnique(r,core.get(a.id)??[],preuves),core.get(a.id)??[],preuves));
       const liensApprenant=liens.filter(l=>l.apprenant_id===a.id&&l.sessions).map(l=>({session:l.sessions,debut:String(l.date_debut??l.sessions.date_debut).slice(0,10),fin:String(l.date_fin??l.sessions.date_fin).slice(0,10)}));
       notes[a.id]={};matieres[a.id]={};sourcesAttente[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def){matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);sourcesAttente[a.id][def.id]={};const scores=examRows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));for(const m of def.matieres){if(matieres[a.id][def.id][m.id]?.etat==='attente')sourcesAttente[a.id][def.id][m.id]=sourceAttenteMatiere(findScoreForMatiere(scores,m),liensApprenant,`crm:${sessionId}`,a.type_apprenant??'');}}}
     }
