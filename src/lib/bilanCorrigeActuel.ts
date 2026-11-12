@@ -17,6 +17,7 @@ export type QuestionActuelle = {
   uid: string | null; cle: string; statut: Statut;
   enonce: string; choix: { lettre: string; texte: string }[]; // current content, frozen letters
   correct: string[]; submitted: string[]; practice: string[];
+  signature: string; points: number | null; // points = proven frozen barème of the copy, else null
   submittedJuste: boolean | null; practiceJuste: boolean | null;
 };
 
@@ -38,7 +39,8 @@ export function mapperOptions(frozen: Choix[] = [], current: Choix[] = []): Map<
 
 export function projeterQuestion(l: LigneLue): QuestionActuelle {
   const submitted = arr(l.submitted), practice = l.practice === undefined || l.practice === null ? submitted : arr(l.practice);
-  const base = { uid: l.uid, cle: l.cle, enonce: canon(l.frozen.enonce), choix: (l.frozen.choix ?? []).map(c => ({ lettre: c.lettre, texte: c.texte })), correct: [] as string[], submitted, practice, submittedJuste: null, practiceJuste: null };
+  const pts = typeof l.frozen.bareme === "number" && Number.isFinite(l.frozen.bareme) && l.frozen.bareme > 0 ? l.frozen.bareme : null;
+  const base = { signature: "", points: pts, uid: l.uid, cle: l.cle, enonce: canon(l.frozen.enonce), choix: (l.frozen.choix ?? []).map(c => ({ lettre: c.lettre, texte: c.texte })), correct: [] as string[], submitted, practice, submittedJuste: null, practiceJuste: null };
   const no = (statut: Statut): QuestionActuelle => ({ ...base, statut });
   if (!l.uid) return no("sans_identite");
   if (l.matches === 0) return no("supprimee");
@@ -51,13 +53,22 @@ export function projeterQuestion(l: LigneLue): QuestionActuelle {
   const correct = (l.current.choix ?? []).filter(c => c.correct === true).map(c => inverse.get(c.lettre)!).sort();
   if (!correct.length) return no("sans_corrige");
   const textes = new Map((l.current.choix ?? []).map(c => [inverse.get(c.lettre)!, c.texte]));
-  return { ...base, statut: "ok", enonce: canon(l.current.enonce), choix: base.choix.map(c => ({ lettre: c.lettre, texte: textes.get(c.lettre) ?? c.texte })),
+  const choix = base.choix.map(c => ({ lettre: c.lettre, texte: textes.get(c.lettre) ?? c.texte }));
+  const enonce = canon(l.current.enonce);
+  return { ...base, statut: "ok", enonce, choix, signature: signatureQuestion(l.uid, enonce, choix),
     correct, submittedJuste: reponseExacte(submitted, correct), practiceJuste: reponseExacte(practice, correct) };
+}
+
+/** Local practice choices are bound to identity + exact displayed text/options. */
+export function signatureQuestion(uid: string, enonce: string, choix: { lettre: string; texte: string }[]) {
+  return JSON.stringify([uid, enonce, choix.map(c => [c.lettre, canon(c.texte)])]);
 }
 
 export type Projection = {
   questions: QuestionActuelle[];
-  noteRecalculee: { juste: number; total: number; sur20: number } | null; // null = incomplete, never 0
+  justes: number; rapprochees: number; // always shown
+  noteRecalculee: { sur20: number; points: number; pointsMax: number } | null; // only with proven barème on every question
+  motifNoteIndisponible: "incomplete" | "bareme_non_prouve" | null;
   aReverifier: number; nonRapprochees: number;
   fausses: QuestionActuelle[]; // training list (current key + latest practice)
 };
@@ -69,8 +80,12 @@ export function projeterCopie(lignes: LigneLue[]): Projection {
   const nonRapprochees = questions.length - ok.length - aReverifier;
   const juste = ok.filter(q => q.submittedJuste).length;
   const complet = ok.length > 0 && ok.length === questions.length;
-  return { questions, aReverifier, nonRapprochees,
-    noteRecalculee: complet ? { juste, total: ok.length, sur20: Math.round((juste / ok.length) * 200) / 10 } : null,
+  const bareme = complet && ok.every(q => q.points != null);
+  const pointsMax = bareme ? ok.reduce((t, q) => t + q.points!, 0) : 0;
+  const points = bareme ? ok.filter(q => q.submittedJuste).reduce((t, q) => t + q.points!, 0) : 0;
+  return { questions, aReverifier, nonRapprochees, justes: juste, rapprochees: ok.length,
+    noteRecalculee: bareme ? { points, pointsMax, sur20: Math.round((points / pointsMax) * 200) / 10 } : null,
+    motifNoteIndisponible: !complet ? "incomplete" : bareme ? null : "bareme_non_prouve",
     fausses: ok.filter(q => !q.practiceJuste) };
 }
 
@@ -79,4 +94,18 @@ export function lireCorrigeActuel(data: any, snapshotId: string): { lignes: Lign
   if (!data || data.snapshot_id !== snapshotId || !Array.isArray(data.questions) || !data.editor_at) return null;
   return { editorAt: String(data.editor_at), originalScore: data.original_score == null ? null : Number(data.original_score),
     lignes: data.questions.map((r: any) => ({ uid: r.uid ?? null, cle: String(r.cle), frozen: r.frozen ?? {}, current: r.current ?? null, matches: Number(r.matches ?? 0), submitted: r.submitted, practice: r.practice })) };
+}
+
+/** Keep only local choices whose identity+text signature still exists in the fresh read. */
+export function conserverChoixLocaux(local: Record<string, { signature: string; choix: string[] }>, p: Projection) {
+  const valides = new Set(p.questions.filter(q => q.statut === "ok").map(q => q.signature));
+  return Object.fromEntries(Object.entries(local).filter(([, v]) => valides.has(v.signature)));
+}
+
+/** Training list after a verification: current key, local choice if still bound, else recorded practice. */
+export function faussesApresVerification(p: Projection, local: Record<string, { signature: string; choix: string[] }>) {
+  return p.questions.filter(q => q.statut === "ok").filter(q => {
+    const l = local[q.cle]; const choix = l && l.signature === q.signature ? l.choix : q.practice;
+    return !reponseExacte(choix, q.correct);
+  });
 }

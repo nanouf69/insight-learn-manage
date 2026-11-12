@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { projeterCopie, projeterQuestion, mapperOptions, BILAN_CORRIGE_ACTUEL_ACTIF, type LigneLue } from "@/lib/bilanCorrigeActuel";
+import { conserverChoixLocaux, faussesApresVerification, projeterCopie, projeterQuestion, mapperOptions, BILAN_CORRIGE_ACTUEL_ACTIF, type LigneLue } from "@/lib/bilanCorrigeActuel";
 const ch = (k: string[], ...t: string[]) => t.map((texte, i) => ({ lettre: "ABCDE"[i], texte, correct: k.includes("ABCDE"[i]) }));
 const l = (p: Partial<LigneLue> & { frozen: any }): LigneLue => ({ uid: "u1", cle: "502-18", current: p.frozen, matches: 1, submitted: ["A"], ...p } as LigneLue);
 const Q18 = { uid: "u1", type: "QCM", enonce: "Q18", choix: ch(["A"], "x", "y", "z") };
@@ -9,7 +9,7 @@ describe("corrigé actuel générique", () => {
   it("Q18 A→A+C : réponse remise A devient fausse, note recalculée distincte", () => {
     const p = projeterCopie([l({ frozen: Q18, current: { ...Q18, choix: ch(["A", "C"], "x", "y", "z") } })]);
     expect(p.questions[0].correct).toEqual(["A", "C"]);
-    expect(p.noteRecalculee).toEqual({ juste: 0, total: 1, sur20: 0 });
+    expect(p.justes).toBe(0); expect(p.noteRecalculee).toBeNull(); expect(p.motifNoteIndisponible).toBe("bareme_non_prouve");
     expect(p.fausses).toHaveLength(1);
   });
   it("A+C remis devient juste après le passage du corrigé à A+C", () => {
@@ -44,7 +44,7 @@ describe("corrigé actuel générique", () => {
   });
   it("dernier choix d'entraînement : progression seulement, jamais la note", () => {
     const p = projeterCopie([l({ frozen: Q18, submitted: ["B"], practice: ["A"] })]);
-    expect(p.fausses).toHaveLength(0); expect(p.noteRecalculee?.juste).toBe(0);
+    expect(p.fausses).toHaveLength(0); expect(p.justes).toBe(0);
   });
   it("entraînement vide explicite reste faux", () => {
     expect(projeterCopie([l({ frozen: Q18, practice: [] })]).fausses).toHaveLength(1);
@@ -52,5 +52,20 @@ describe("corrigé actuel générique", () => {
   it("ne modifie pas les objets lus (historique intact)", () => {
     const row = l({ frozen: Q18, current: { ...Q18, choix: ch(["C"], "x", "y", "z") } }); const before = JSON.stringify(row);
     projeterCopie([row]); expect(JSON.stringify(row)).toBe(before);
+  });
+  it("note pondérée seulement avec barème réel sur chaque question", () => {
+    const a = { ...Q18, bareme: 2 }, b = { ...Q18, uid: "u2", bareme: 1 };
+    const p = projeterCopie([l({ frozen: a }), l({ uid: "u2", cle: "c2", frozen: b, submitted: ["B"] })]);
+    expect(p.noteRecalculee).toEqual({ points: 2, pointsMax: 3, sur20: 13.3 });
+    const q = projeterCopie([l({ frozen: a }), l({ uid: "u2", cle: "c2", frozen: { ...b, bareme: null } })]);
+    expect(q.noteRecalculee).toBeNull(); expect(q.justes).toBe(2);
+  });
+  it("choix locaux liés à l'identité + texte : invalidés si l'admin réécrit", () => {
+    const p1 = projeterCopie([l({ frozen: Q18 })]); const sig = p1.questions[0].signature;
+    const local = { "502-18": { signature: sig, choix: ["B"] } };
+    expect(faussesApresVerification(p1, local)).toHaveLength(1);
+    const p2 = projeterCopie([l({ frozen: Q18, current: { ...Q18, enonce: "réécrite" } })]);
+    expect(conserverChoixLocaux(local, p2)).toEqual({});
+    expect(faussesApresVerification(projeterCopie([l({ frozen: Q18, current: { ...Q18, choix: ch(["B"], "x", "y", "z") } })]), local)).toHaveLength(0);
   });
 });
