@@ -76,10 +76,9 @@ export function choisirMatieresModifiees(
     let gagnant: { examId: string; m: Matiere } | null = null;
     for (const c of liste) {
       const ts = horodatageMatiere(c.m);
-      // Contenu identique à une version déjà enregistrée ailleurs et plus ancien
-      // que la référence serveur : copie d'affichage en retard, jamais une saisie.
-      const dejaVue = (enregistrees.get(k) ?? []).some((e) => memeContenu(e, c.m));
-      if (ts < referenceServeur || (dejaVue && ts <= referenceServeur && liste.length > 1)) {
+      // Plus ancienne que la dernière version enregistrée de la matière partagée :
+      // copie d'affichage en retard, jamais une saisie (toute saisie est horodatée).
+      if (ts < referenceServeur) {
         perimees.push({ examId: c.examId, matiereId: c.m.id });
         continue;
       }
