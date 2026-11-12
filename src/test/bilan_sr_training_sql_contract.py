@@ -53,6 +53,20 @@ class Contract(unittest.TestCase):
   r=self.read(prefix=f"UPDATE module_editor_state SET module_data={j({'exercices':[{'id':502,'questions':changed}]})};")
   self.assertEqual([q['id'] for q in r['questions']],[71,226]);self.assertEqual(r['unavailable'],0)
   self.sql(f"UPDATE module_editor_state SET module_data={j({'exercices':[{'id':502,'questions':CURRENT}]})};")
+ def test_reused_number_different_uid_not_matched(self):
+  changed=[{**CURRENT[0],'uid':'another-identity'},CURRENT[1]]
+  r=self.read(prefix=f"UPDATE module_editor_state SET module_data={j({'exercices':[{'id':502,'questions':changed}]})};")
+  self.assertEqual(r['unavailable'],1);self.assertEqual([q['uid'] for q in r['questions']],[UIDS[1]])
+  self.sql(f"UPDATE module_editor_state SET module_data={j({'exercices':[{'id':502,'questions':CURRENT}]})};")
+ def test_unknown_future_version_not_matched(self):
+  unknown=str(uuid.uuid4())
+  r=self.read('future',FUTURE,prefix=f"INSERT INTO bilan_future_versions VALUES('{unknown}',{j(Q)});UPDATE bilan_future_receipts SET version_id='{unknown}';")
+  self.assertEqual(r['questions'],[]);self.assertEqual(r['unavailable'],2)
+  self.sql("UPDATE bilan_future_receipts SET version_id='b3ab1768-df8c-41ad-ab85-89af51927141';")
+ def test_revision_of_other_tentative_not_used(self):
+  r=self.read(prefix="UPDATE reponses_apprenants SET tentative=2 WHERE exercice_id='module_5_revision_exo_502';")
+  self.assertEqual(r['questions'][1]['answer'],['C','D'])
+  self.sql("UPDATE reponses_apprenants SET tentative=1 WHERE exercice_id='module_5_revision_exo_502';")
  def test_select_does_not_rewrite(self):
   query="SELECT md5(string_agg(x::text,'')) FROM (SELECT to_jsonb(t) x FROM bilan_passage_snapshots t UNION ALL SELECT to_jsonb(t) FROM reponses_apprenants t UNION ALL SELECT to_jsonb(t) FROM bilan_future_submissions t) z;"
   before=self.sql(query);self.read();self.read('future',FUTURE);self.assertEqual(self.sql(query),before)
