@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -209,6 +210,7 @@ Deno.serve(async (req) => {
         </div>`;
 
       try {
+        if (!(await relanceAutoriseeApresAttestation(supabase, a.id))) continue;
         const sendRes = await fetch(`${supabaseUrl}/functions/v1/sync-outlook-emails`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },

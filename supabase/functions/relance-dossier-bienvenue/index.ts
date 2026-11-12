@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -201,6 +202,7 @@ Deno.serve(async (req) => {
         .replace(/\{\{formation\}\}/g, apprenant.formation_choisie || '');
 
       try {
+        if (!(await relanceAutoriseeApresAttestation(supabase, apprenant.id))) continue;
         const sendRes = await fetch(`${supabaseUrl}/functions/v1/sync-outlook-emails`, {
           method: 'POST',
           headers: {

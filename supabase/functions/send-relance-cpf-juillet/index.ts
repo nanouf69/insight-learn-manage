@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
@@ -58,6 +59,7 @@ Deno.serve(async (req) => {
 
   for (const r of RECIPIENTS) {
     try {
+      if (!(await relanceAutoriseeApresAttestation(supabase, null, r.to))) continue;
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {

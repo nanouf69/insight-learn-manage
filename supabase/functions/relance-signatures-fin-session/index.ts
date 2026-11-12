@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
@@ -210,6 +211,7 @@ serve(async (req) => {
 </div>`;
 
       try {
+        if (!(await relanceAutoriseeApresAttestation(supabase, a.id))) continue;
         await sendBrandedEmail({ to: a.email, subject, html, replyTo: FROM });
         await supabase.from("emails").insert({
           apprenant_id: a.id,

@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 // Relance "50% mini 1 mois avant examen"
 // Envoie un email aux apprenants e-learning dont l'examen théorique est dans ~1 mois
 // et qui ont effectué moins de 50% des heures requises (basé sur tout l'historique
@@ -209,6 +210,7 @@ serve(async (req) => {
 </div>`;
 
         try {
+          if (!(await relanceAutoriseeApresAttestation(supabaseAdmin, a.id))) continue;
           await sendBrandedEmail({ to: a.email, subject, html, replyTo: senderEmail });
           await supabaseAdmin.from("emails").insert({
             apprenant_id: a.id,
