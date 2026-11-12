@@ -62,7 +62,7 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
   const central = complet
-    ? `Nous attestons que ${e.prenom} ${e.nom.toUpperCase()} a effectué l'ensemble des jalons pédagogiques obligatoires du parcours « ${intitule} ».`
+    ? `Nous attestons que ${e.prenom} ${e.nom.toUpperCase()} a effectué l'ensemble des jalons pédagogiques obligatoires de la formation désignée ci-dessus.`
     : "Document préparatoire établi à partir du dossier apprenant. Il ne constitue pas une attestation de formation validée et ne peut être utilisé comme justificatif définitif.";
   const height = texte(central, 20, 164, 10.5, complet, 170);
   if (height > 29) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");

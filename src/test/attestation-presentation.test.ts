@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { attestationFinaleProuvee, jalonsIntegralementProuves } from "@/lib/attestationFinValidee/presentation";
-import { elementsRestantAValider, intituleAttestation, motifSansDuree } from '@/lib/attestationFinValidee/redactionPresentation';
+import { elementsRestantAValider, motifSansDuree } from '@/lib/attestationFinValidee/redactionPresentation';
 const p = { apprenantId: "fixture", sourceId: "server-proof", verifieLe: "2026-11-12T17:01:00Z", jalonsObligatoires: 7, jalonsValides: 7, validationsRequisesConfirmees: true };
 const signature = { nom: "Fixture", image: "existing-image", le: p.verifieLe, autorisationId: "explicit-authorization", tampon: "existing-stamp" };
 describe("attestation presentation proof", () => {

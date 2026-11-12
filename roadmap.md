@@ -2,7 +2,7 @@
 
 ## 12/11 17:19 — Retouche attestation professionnelle
 - [x] Intitulé référentiel sans doublon, liste pédagogique issue des verdicts serveur (sinon détail à vérifier), aucun motif d’heures dans le nouveau PDF ; contrôles et documents historiques inchangés.
-- [ ] Tests Léa lecture seule, PDF fictifs PC/mobile, inspection indépendante ; aucune publication.
+- [x] 31 tests PASS, exports complet/incomplet et consultation PC/mobile fictifs ; inspection indépendante PDF : contradiction du cas complet corrigée, aucune durée ni chevauchement. Identité/modules Léa vérifiés par SELECT, mais verdict RPC refusé et session navigateur sans accès admin : PDF réel Léa NON PROUVÉ. Aucun état réel modifié, aucune publication.
 
 ## 12/11 17:16 — Contour dernier module apprenant
 - [x] Cadres rouges retirés des cartes ; contour bleu 3 px seulement sur dernière activité horodatée/ID attribué, sans repli connexion/nom/achèvement ; aucune mutation.
