@@ -41,7 +41,7 @@ export interface DepsAtt {
   getDocByToken(token: string): Promise<DocAtt | null>;
   insertDoc(row: Record<string, unknown>): Promise<DocAtt | null>;
   updateIf(id: string, patch: Record<string, unknown>, cond: { envoi_etat?: string; statutNot?: string }): Promise<{ rows: DocAtt[]; error?: { message: string } }>;
-  envoyerMail(p: { to: string; subject: string; html: string; apprenantId: string }): Promise<IssueEnvoi>;
+  envoyerMail(p: { to: string; subject: string; html: string; apprenantId: string; forceSend?: boolean }): Promise<IssueEnvoi>;
   journal(e: { operation: string; docId: string | null; apprenantId: string; auteur: string | null; apres: unknown }): Promise<boolean>;
   log(msg: string, extra?: unknown): void;
 }
@@ -203,7 +203,7 @@ export async function renvoyer(deps: DepsAtt, docId: string, adminId: string) {
   const claim = await deps.updateIf(d.id, { envoi_etat: "renvoi_en_cours" }, { envoi_etat: "envoye" });
   if (claim.error || claim.rows.length !== 1) return { etat: "non_disponible" as const, raison: "Renvoi déjà en cours." };
   let r: IssueEnvoi;
-  try { r = await deps.envoyerMail({ to: d.identite_figee.email, subject: d.mail_objet_fige, html: d.mail_html_fige, apprenantId: a.id }); }
+  try { r = await deps.envoyerMail({ to: d.identite_figee.email, subject: d.mail_objet_fige, html: d.mail_html_fige, apprenantId: a.id, forceSend: true }); }
   catch (err) { r = { issue: "inconnue", erreur: err instanceof Error ? err.message : String(err) }; }
   await deps.updateIf(d.id, { envoi_etat: "envoye" }, { envoi_etat: "renvoi_en_cours" });
   const ok = r.issue !== "refuse" && r.issue !== "inconnue";
