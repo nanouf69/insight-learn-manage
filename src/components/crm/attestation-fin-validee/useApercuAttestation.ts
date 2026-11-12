@@ -14,8 +14,8 @@ export function useApercuAttestation(apprenant: any) {
     queryKey: ["attestation-fin-validee", apprenant.id],
     queryFn: async () => {
       const [etats, taux, cnx] = await Promise.all([
-        chargerEtatCompletionServeur(apprenant.id),
-        chargerApprenantTauxRealisation(apprenant.id, apprenant),
+        chargerEtatCompletionServeur(apprenant.id).catch(() => new Map()),
+        chargerApprenantTauxRealisation(apprenant.id, apprenant).catch(() => null),
         supabase.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", apprenant.id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(1),
       ]);
       return { etats, taux, connexions: cnx.error ? null : (cnx.data ?? []) };
@@ -28,7 +28,7 @@ export function useApercuAttestation(apprenant: any) {
   const heures = elearning ? { faites: t ? t.doneElearning : null, minimum: t ? t.reqElearning : null } : null;
   const signatures = !elearning ? { signees: t?.signatures?.signees ?? null, attendues: t?.signatures?.attendues ?? null } : null;
   const elig = eligibiliteAttestation({
-    lectureErreur: q.isError ? "suivi pédagogique illisible" : q.isLoading ? "chargement en cours" : (q.data && !t ? "heures indisponibles" : null),
+    lectureErreur: q.isError ? "lecture du dossier impossible" : q.isLoading ? "chargement en cours" : null,
     elearning: heures, presentiel: signatures,
   });
   const derniereValidation = q.data ? derniereValidationModules(ids, id => q.data!.etats.get(id)?.completed_at ?? null) : null;

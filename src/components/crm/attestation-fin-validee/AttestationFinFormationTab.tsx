@@ -155,13 +155,13 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             <CardTitle className="text-base flex flex-wrap items-center gap-2">
               Brouillon — non enregistré
               {ap.q.isLoading ? <Badge variant="outline">Contrôle en cours…</Badge>
-                : <Badge variant={ap.pret && !manquants.length ? "default" : "destructive"}>{ap.pret && !manquants.length ? "Parcours validé : prêt à enregistrer" : "Brouillon / À vérifier"}</Badge>}
+                : <Badge variant={ap.pret && !manquants.length ? "default" : "destructive"}>{ap.pret && !manquants.length ? "Prêt à enregistrer" : "Brouillon / À vérifier"}</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {!ap.q.isLoading && ap.motifs.length > 0 && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
-                <p className="font-semibold text-destructive flex items-center gap-2"><Lock className="h-4 w-4" />Attestation non délivrable : parcours non terminé et validé</p>
+                <p className="font-semibold text-destructive flex items-center gap-2"><Lock className="h-4 w-4" />Attestation à vérifier</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1">{ap.motifs.map((m, i) => <li key={i}>{m}</li>)}</ul>
                 {ap.q.isError && <Button size="sm" variant="outline" className="mt-2 min-h-11" onClick={() => ap.q.refetch()}><RefreshCw className="h-4 w-4 mr-1" />Réessayer</Button>}
               </div>
