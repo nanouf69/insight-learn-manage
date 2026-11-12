@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 17:19 — Retouche attestation professionnelle
+- [x] Intitulé référentiel sans doublon, liste pédagogique issue des verdicts serveur (sinon détail à vérifier), aucun motif d’heures dans le nouveau PDF ; contrôles et documents historiques inchangés.
+- [ ] Tests Léa lecture seule, PDF fictifs PC/mobile, inspection indépendante ; aucune publication.
+
 ## 12/11 17:16 — Contour dernier module apprenant
 - [x] Cadres rouges retirés des cartes ; contour bleu 3 px seulement sur dernière activité horodatée/ID attribué, sans repli connexion/nom/achèvement ; aucune mutation.
 - [x] 5 tests PASS (identité, ordre, datation absente, égalité, hors parcours) ; aperçu administrateur Anis PC/mobile : un seul contour bleu, autres cartes grises, aucun débordement. Build OK ; aucune publication. Compte apprenant direct non testé.

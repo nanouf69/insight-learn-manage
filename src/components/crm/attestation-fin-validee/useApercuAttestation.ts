@@ -7,6 +7,8 @@ import { eligibiliteAttestation, libelleMotif } from "@/lib/attestationFinValide
 import { dateFinDepuisConnexions, derniereValidationModules } from "@/lib/attestationFinValidee/dateFin";
 import { debutFormation } from "../../../../supabase/functions/_shared/attestationFinCore";
 import type { ModulePdf } from "@/lib/attestationFinValidee/pdf";
+import { modulesAttribuesDashboard, modulesExigesDashboard, resolveFormationId } from '@/lib/parcoursModulesDashboard';
+import { elementsRestantAValider } from '@/lib/attestationFinValidee/redactionPresentation';
 
 /** Lecture seule des preuves du dossier pour le brouillon ; le serveur refait le même contrôle avant tout enregistrement. */
 export function useApercuAttestation(apprenant: any) {
@@ -14,7 +16,7 @@ export function useApercuAttestation(apprenant: any) {
     queryKey: ["attestation-fin-validee", apprenant.id],
     queryFn: async () => {
       const [etats, taux, cnx] = await Promise.all([
-        chargerEtatCompletionServeur(apprenant.id).catch(() => new Map()),
+        chargerEtatCompletionServeur(apprenant.id).catch(() => null),
         chargerApprenantTauxRealisation(apprenant.id, apprenant).catch(() => null),
         supabase.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", apprenant.id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(1),
       ]);
@@ -31,9 +33,13 @@ export function useApercuAttestation(apprenant: any) {
     lectureErreur: q.isError ? "lecture du dossier impossible" : q.isLoading ? "chargement en cours" : null,
     elearning: heures, presentiel: signatures,
   });
-  const derniereValidation = q.data ? derniereValidationModules(ids, id => q.data!.etats.get(id)?.completed_at ?? null) : null;
+  const derniereValidation = q.data ? derniereValidationModules(ids, id => q.data?.etats?.get(id)?.completed_at ?? null) : null;
   const fin = dateFinDepuisConnexions({ connexions: q.data?.connexions ?? null, dateDebut: debutFormation(apprenant, elearning), derniereValidation });
-  const modules: ModulePdf[] = q.data ? ids.map(id => { const e = q.data!.etats.get(id); return { id, statut: e?.status_effectif ?? null, preuve_complete: e?.preuve_complete ?? null, completed_at: e?.completed_at ?? null }; }) : [];
+  const modules: ModulePdf[] = q.data ? ids.map(id => { const e = q.data?.etats?.get(id); return { id, statut: e?.status_effectif ?? null, preuve_complete: e?.preuve_complete ?? null, completed_at: e?.completed_at ?? null }; }) : [];
+  const formation = resolveFormationId(apprenant.type_apprenant,apprenant.formation_choisie,apprenant.modules_autorises);
+  const requis = formation ? modulesExigesDashboard(formation,apprenant.modules_autorises,apprenant.id) : [];
+  const attribues = formation ? modulesAttribuesDashboard(formation,apprenant.modules_autorises,apprenant.id).filter(m=>requis.includes(m.id)) : [];
+  const elementsPedagogiques = attribues.length ? elementsRestantAValider(attribues,q.data?.etats ?? null) : null;
   const motifs = [...elig.motifs.map(libelleMotif), ...(q.data && fin.etat !== "ok" ? [fin.raison] : [])];
-  return { q, elearning, heures, signatures, elig, fin, modules, motifs, pret: !!q.data && elig.eligible && fin.etat === "ok" };
+  return { q, elearning, heures, signatures, elig, fin, modules, motifs, elementsPedagogiques, pret: !!q.data && elig.eligible && fin.etat === "ok" };
 }
