@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { LIBELLES_FILTRE, correspondFiltre, type FiltreAttestation } from "@/lib/attestationFinValidee/filtres";
 import { champsManquants, type TexteFigeAttestation } from "@/lib/attestationFinValidee/modele";
-import { genererPdfAttestation, ouvrirBlob, telechargerBlob } from "@/lib/attestationFinValidee/pdf";
+import { genererPdfAttestation, telechargerBlob } from "@/lib/attestationFinValidee/pdf";
 import { genererPdfPresentation } from "@/lib/attestationFinValidee/pdfPresentation";
 import { ApercuPdfAttestation } from "./ApercuPdfAttestation";
 import { appelAttestation, chargerAttestations, lienSignature, statutAffiche, type AttestationEnregistree } from "@/lib/attestationFinValidee/serveur";
@@ -78,7 +78,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
         signatureApprenant: signe ? { nom: `${d.identite_figee?.prenom ?? ""} ${d.identite_figee?.nom ?? ""}`.trim(), image: d.reponses?.signature ?? null, le: d.signe_le_paris } : null,
       });
       if (telecharger) telechargerBlob(blob, `Attestation_fin_formation_${d.identite_figee?.nom ?? ""}_${d.identite_figee?.reference ?? ""}.pdf`);
-      else ouvrirBlob(blob);
+      else setApercuPdf(blob); // visionneuse intégrée : window.open après un chargement asynchrone est bloqué
     } catch (e: any) {
       toast({ title: "PDF impossible", description: e?.message ?? "Lecture de la signature du centre impossible", variant: "destructive" });
     } finally { setOccupe(null); }
