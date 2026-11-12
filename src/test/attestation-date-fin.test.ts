@@ -1,0 +1,21 @@
+import { describe, it, expect } from "vitest";
+import { dateFinDepuisConnexions } from "@/lib/attestationFinValidee/dateFin";
+const c = (id: string, s: string) => ({ id, started_at: s });
+describe("date de fin = dernière connexion", () => {
+  it("prend la connexion la plus récente, date Paris, avec identité", () => {
+    const r = dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z"), c("b", "2026-10-19T22:30:00Z")], dateDebut: "2026-09-14", derniereValidation: "2026-10-10T10:00:00Z" });
+    expect(r).toEqual({ etat: "ok", date: "2026-10-20", connexionId: "b", startedAt: "2026-10-19T22:30:00Z", source: "Dernière connexion e-learning enregistrée" });
+  });
+  it("aucune connexion ou lecture impossible => bloquée", () => {
+    expect(dateFinDepuisConnexions({ connexions: [], dateDebut: null, derniereValidation: "2026-10-01T00:00:00Z" }).etat).toBe("bloquee");
+    expect(dateFinDepuisConnexions({ connexions: null, dateDebut: null, derniereValidation: "x" }).etat).toBe("bloquee");
+  });
+  it("connexion avant la validation finale => contrôle humain", () => {
+    const r = dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z")], dateDebut: "2026-09-14", derniereValidation: "2026-10-05T00:00:00Z" });
+    expect(r.etat === "bloquee" && r.raison).toMatch(/contrôle humain/);
+  });
+  it("connexion avant le début ou validation inconnue => bloquée", () => {
+    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-09-01T08:00:00Z")], dateDebut: "2026-09-14", derniereValidation: "2026-08-01T00:00:00Z" }).etat).toBe("bloquee");
+    expect(dateFinDepuisConnexions({ connexions: [c("a", "2026-10-01T08:00:00Z")], dateDebut: null, derniereValidation: null }).etat).toBe("bloquee");
+  });
+});
