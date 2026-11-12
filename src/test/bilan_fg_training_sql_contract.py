@@ -23,7 +23,7 @@ class Contract(unittest.TestCase):
  def test_uid_remap_and_option_reorder_supported_not_text_swaps(self):
   current=json.loads(json.dumps(Q));current[0]['id']=999;current[0]['choix'].reverse()
   r=self.read(f"UPDATE module_editor_state SET module_data={j({'exercices':[{'id':505,'questions':current}]})};")
-  self.assertEqual(r['unavailable'],0);self.assertEqual(r['questions'][0]['id'],'18')
+  self.assertEqual(r['unavailable'],0);self.assertEqual(r['questions'][0]['id'],18)
   current[0]['choix'][0]['texte']='different meaning'
   self.assertEqual(self.read(f"UPDATE module_editor_state SET module_data={j({'exercices':[{'id':505,'questions':current}]})};")['unavailable'],1)
  def test_other_uid_duplicate_unsupported_no_fallback(self):

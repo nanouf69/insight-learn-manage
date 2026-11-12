@@ -26,6 +26,7 @@ BEGIN
   a:=candidates->0;
   IF nullif(h->>'uid','') IS NULL OR jsonb_array_length(candidates) IS DISTINCT FROM 1
    OR (SELECT count(*) FROM jsonb_array_elements(snap.questions) q WHERE q->>'uid'=h->>'uid')<>1
+   OR coalesce(h->>'question_id','') !~ '^[0-9]{1,9}$'
    OR k IS DISTINCT FROM snap.exercice_id||'-'||(h->>'question_id')
    OR h->>'type' IS DISTINCT FROM 'QCM' OR a->>'type' IS DISTINCT FROM 'QCM'
    OR h->>'enonce' IS DISTINCT FROM a->>'enonce'
@@ -37,7 +38,7 @@ BEGIN
    OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(a->'choix') c WHERE c->>'correct'='true') THEN
    unavailable:=unavailable+1; CONTINUE;
   END IF;
-  out_rows:=out_rows||jsonb_build_array(jsonb_build_object('uid',h->>'uid','id',h->'question_id','enonce',h->'enonce',
+  out_rows:=out_rows||jsonb_build_array(jsonb_build_object('uid',h->>'uid','id',(h->>'question_id')::int,'enonce',h->'enonce',
    'choix',(SELECT jsonb_agg(jsonb_build_object('lettre',c->>'lettre','texte',c->>'texte') ORDER BY n) FROM jsonb_array_elements(h->'choix') WITH ORDINALITY x(c,n)),
    'correct',(SELECT jsonb_agg(c->>'lettre' ORDER BY c->>'lettre') FROM jsonb_array_elements(a->'choix') c WHERE c->>'correct'='true'),
    'answer',CASE WHEN latest ? k THEN latest->k ELSE coalesce(original.reponses->k,'[]') END));
