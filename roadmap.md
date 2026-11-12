@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 18:25 — Contrat location véhicule
+- [ ] Audit lecture seule dossier Mamadou SOW, parc/assurance/disponibilité et onze articles réels ; sources juridiques officielles et tableau de revue.
+- [ ] Aperçu préremplissage fiable sans signature CMA, choix véhicule explicite, Avec/Sans caution et PDF brouillon cohérent ; historiques et facturation intacts.
+- [ ] Tests fictifs et PC/mobile/PDF ; aucune publication juridique, envoi ou signature.
+
 ## 12/11 18:23 — Bouton Envoyer par mail visible
 - [x] Action visible sur le brouillon et les attestations à envoyer, motif du blocage explicite ; aucun contournement ni mail réel. 13 tests PASS dont rendu du vrai onglet avec dossier fictif complet/non certifié ; build OK.
 - [ ] Activation bloquée par certification/fermeture compte non actives ; rendu authentifié PC/mobile non vérifié, aucune publication.
