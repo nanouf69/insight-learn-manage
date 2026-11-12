@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 12/11 12:30 — Prévol installation accès EB unitaire
-- [ ] Catalogue production SELECT uniquement : signatures, droits, session janvier et frontières de démarrage/reprise.
-- [ ] Comparaison candidat, tests PostgreSQL jetables et procédure transactionnelle ciblée avec retrait conservant le journal.
-- [ ] Verdict prêt à valider ou NO-GO précis ; aucune installation, compte réel, fermeture/ouverture ou publication.
+- [x] Catalogue SELECT : RPC/journal/gardes absents ; session VTC/TAXI 11–24/01/2027 planifiée, future, 2 inscrits ; frontend public unitaire présent, EB cible inconnu.
+- [x] Candidat comparé ; 22 scénarios jetables = 20 PASS/2 blocages reproduits, 43 Vitest PASS ; procédures transaction/retrait conservant journal documentées.
+- [x] NO-GO précis : première réponse Edge sans timer non gardée, import historique en_cours refusé ; canal canonique inactif non couvert et effets complets non certifiés. Rapport docs/session-exam-access-prevol-2026-11-12.md ; aucune installation/compte/fermeture/publication.
 
 ## 12/11 12:22 — Énoncé cliquable éditeur EB
 - [x] Carte identifiée : AdminExamQuestionCard dans MatiereEditor ; édition locale du seul énoncé via updateQuestion, sauvegarde CAS/relecture/publication existantes inchangées.
