@@ -181,6 +181,35 @@ class Preflight(base.Access):
   self.assertNotEqual(r.returncode,0);self.assertIn('non concordante',r.stderr)
   self.assertEqual(self.sql(f"SELECT count(*) FROM session_exam_import_permits WHERE result_id='{result}'").stdout.strip(),'0')
 
+ def test_28_existing_answer_only_allows_exact_timer_recovery(self):
+  self.set_access(True,expected=self.current())
+  self.call(self.persist('EB3__answeronly'),base.U)
+  self.set_access(False,expected=self.current())
+  self.call(f"SELECT * FROM start_or_get_exam_timer('{base.A}','EB3__answeronly',1800,1)",base.U)
+  r=self.call(f"SELECT * FROM start_or_get_exam_timer('{base.A}','EB3__answeronly',1800,2)",base.U,False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+  r=self.call(self.persist('EB3__answeronly__t2'),base.U,False)
+  self.assertNotEqual(r.returncode,0)
+
+ def test_29_import_wrong_instant_and_reused_permit_refused(self):
+  result=self.sql("SELECT id FROM apprenant_quiz_results WHERE matiere_id='badimport'").stdout.strip()
+  # Match answers but not the persisted submission instant.
+  self.sql(f"SET request.jwt.claim.sub='{base.ADMIN}';UPDATE apprenant_quiz_results SET details=jsonb_set(details,'{{reponses}}','{{\"1\":[\"A\"]}}'),completed_at='2026-10-01 10:00:01+00' WHERE id='{result}'")
+  r=self.call(f"SELECT core_import_passage_finalise('{result}')",check=False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('non concordante',r.stderr)
+  permit=self.sql("SELECT attempt_id FROM session_exam_import_permits LIMIT 1").stdout.strip()
+  original=self.sql(f"SELECT row_to_json(a) FROM exam_attempts_v2 a WHERE attempt_id='{permit}'").stdout.strip()
+  a=json.loads(original)
+  a['snapshot']['source_historique']['result_id']=self.sql("SELECT result_id FROM session_exam_import_permits LIMIT 1").stdout.strip()
+  r=self.call(f"INSERT INTO exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint) VALUES('{base.A}','EB3','{a['exam_version_id']}',{base.J(a['snapshot'])},'f')",base.U,False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+
+ def test_30_guard_is_insert_only_and_non_eb_unchanged(self):
+  triggers=self.sql("SELECT tgname FROM pg_trigger WHERE tgfoid='session_exam_start_guard()'::regprocedure AND (tgtype & 16)<>0").stdout.strip()
+  self.assertEqual(triggers,'')
+  self.call(self.persist('module_2_exo_1'),base.U)
+  self.call("SELECT canonical_start_exam_attempt('PILOT_CANONICAL_TEST','fictif',1)",base.U)
+
 
 if __name__=='__main__':
  unittest.main(verbosity=2)
