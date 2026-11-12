@@ -6,6 +6,9 @@ CREATE TABLE public.attestations_fin_validee (
   apprenant_user_id uuid NOT NULL,
   version_modele text NOT NULL,
   contenu jsonb NOT NULL,            -- lignes exactes affichées
+  date_fin_connexion_id uuid NOT NULL,      -- connexion source de la date de fin (apprenant_connexions)
+  date_fin_connexion_at timestamptz NOT NULL, -- started_at exact, piste d audit
+  derniere_validation_at timestamptz NOT NULL, -- recontrôle serveur : connexion >= validation finale
   empreinte text NOT NULL,           -- SHA-256 du contenu + version
   reference text NOT NULL UNIQUE,
   cree_par uuid NOT NULL,
