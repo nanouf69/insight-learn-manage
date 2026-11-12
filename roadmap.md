@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 09:28 — Deux urgences isolées
+- [ ] Bilan VTC : rendre 505/506/507 et lien QRC accessibles via parcours existant, aperçu admin identique lecture seule ; A–E/TAXI/données inchangés, fixtures isolation/navigation/reprise.
+- [ ] Sauvegardes 11/12 : preuves manifestes/erreurs, correction pagination/reprise, tests échecs et rattrapage additif sûr si procédure existante suffisante ; aucun cron global/restauration/publication groupée.
+- [ ] Rapport des mises en service isolées, preuves et limites.
+
 ## 12/11 09:22 — Convocations FC et répétitions
 - [x] Présentation FC de la convocation formation : 9h–13h / 13h–17h, sans cours en ligne ni consignes d'examens initiaux ; récapitulatif, identité, date et ancienne signature non répétés. Classification par session FC même avec fiche VTC.
 - [x] 12 tests PASS ; aperçu admin réel Ali Reziki contrôlé sans confirmer l'envoi, générateur PC/mobile vérifié, build OK. Aucun modèle enregistré, droit, donnée ni publication modifié. Mail séparé de confirmation FC hors périmètre.
