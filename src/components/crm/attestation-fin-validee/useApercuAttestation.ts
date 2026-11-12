@@ -5,6 +5,7 @@ import { chargerApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisa
 import { isElearningType } from "@/lib/dossierFormation";
 import { eligibiliteAttestation, libelleMotif } from "@/lib/attestationFinValidee/eligibilite";
 import { dateFinDepuisConnexions, derniereValidationModules } from "@/lib/attestationFinValidee/dateFin";
+import { debutFormation } from "../../../../supabase/functions/_shared/attestationFinCore";
 import type { ModulePdf } from "@/lib/attestationFinValidee/pdf";
 
 /** Lecture seule des preuves du dossier pour le brouillon ; le serveur refait le même contrôle avant tout enregistrement. */
@@ -33,7 +34,7 @@ export function useApercuAttestation(apprenant: any) {
     elearning: heures, presentiel: signatures,
   });
   const derniereValidation = q.data ? derniereValidationModules(ids, id => q.data!.etats.get(id)?.completed_at ?? null) : null;
-  const fin = dateFinDepuisConnexions({ connexions: q.data?.connexions ?? null, dateDebut: apprenant.date_debut_formation ?? null, derniereValidation });
+  const fin = dateFinDepuisConnexions({ connexions: q.data?.connexions ?? null, dateDebut: debutFormation(apprenant, elearning), derniereValidation });
   const modules: ModulePdf[] = q.data ? ids.map(id => { const e = q.data!.etats.get(id); return { id, statut: e?.status_effectif ?? null, preuve_complete: e?.preuve_complete ?? null, completed_at: e?.completed_at ?? null }; }) : [];
   const motifs = [...elig.motifs.map(libelleMotif), ...(q.data && fin.etat !== "ok" ? [fin.raison] : [])];
   return { q, elearning, heures, signatures, elig, fin, modules, motifs, pret: !!q.data && elig.eligible && fin.etat === "ok" };

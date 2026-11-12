@@ -14,6 +14,7 @@ import { genererPdfAttestation, ouvrirBlob, telechargerBlob } from "@/lib/attest
 import { appelAttestation, chargerAttestations, lienSignature, statutAffiche, type AttestationEnregistree } from "@/lib/attestationFinValidee/serveur";
 import { chargerElementAdmin } from "@/lib/documentAdminElements";
 import { useApercuAttestation } from "./useApercuAttestation";
+import { debutFormation, dureeFormation } from "../../../../supabase/functions/_shared/attestationFinCore";
 
 const h = (n: number) => { const t = Math.round(n * 60); return `${Math.floor(t / 60)}h${String(t % 60).padStart(2, "0")}`; };
 const dfr = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "—");
@@ -37,8 +38,8 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
   const champs = {
     representant: representant || null, nom: apprenant.nom ?? null, prenom: apprenant.prenom ?? null,
     formation: apprenant.formation_choisie ?? apprenant.type_apprenant ?? null, modalite: ap.elearning ? "e-learning" : "présentiel",
-    dateDebut: apprenant.date_debut_formation ?? null, dateFin: ap.fin.etat === "ok" ? ap.fin.date : null,
-    dureeHeures: apprenant.heures_totales != null && Number.isFinite(Number(apprenant.heures_totales)) ? Number(apprenant.heures_totales) : null,
+    dateDebut: debutFormation(apprenant, ap.elearning), dateFin: ap.fin.etat === "ok" ? ap.fin.date : null,
+    dureeHeures: dureeFormation(apprenant, ap.elearning),
     dateEmission: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }),
   };
   const manquants = champsManquants(champs).filter(m => m !== "représentant du centre");

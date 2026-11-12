@@ -16,6 +16,7 @@ export interface ApprenantAtt {
   id: string; nom: string | null; prenom: string | null; email: string | null; type_apprenant: string | null;
   formation_choisie: string | null; modules_autorises: number[] | null; date_debut_formation: string | null;
   heures_totales: number | null; emails_bloques: boolean | null;
+  date_debut_cours_en_ligne?: string | null; heures_elearning?: number | null;
 }
 export interface EtatModuleSrv { module_id: number; status_effectif: string | null; preuve_complete: boolean | null; completed_at: string | null }
 export interface DocAtt {
@@ -51,6 +52,13 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : n
 const parisNow = (d: Date) => d.toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full", timeStyle: "medium" }) + " (heure de Paris)";
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
+/** Champs du dossier uniquement : début de formation, sinon début d'accès e-learning ; durée totale, sinon durée e-learning. */
+export const debutFormation = (a: ApprenantAtt, elearning: boolean) => a.date_debut_formation || (elearning ? a.date_debut_cours_en_ligne ?? null : null);
+export const dureeFormation = (a: ApprenantAtt, elearning: boolean) => {
+  const t = Number(a.heures_totales); if (a.heures_totales != null && Number.isFinite(t) && t > 0) return t;
+  const e = Number(a.heures_elearning); return elearning && a.heures_elearning != null && Number.isFinite(e) && e > 0 ? e : null;
+};
+
 /** Document actif = non révoqué ; un document existant n'est jamais remplacé (pas de doublon, pas de fusion). */
 const actif = (d: DocAtt) => d.statut !== "revoque";
 
@@ -81,7 +89,8 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
     elearning: heures, presentiel: pres,
   });
   const derniereValidation = derniereValidationModules(ids, (id) => parId.get(id)?.completed_at);
-  const fin = dateFinDepuisConnexions({ connexions: cnx, dateDebut: a.date_debut_formation, derniereValidation });
+  const dateDebut = debutFormation(a, elearning);
+  const fin = dateFinDepuisConnexions({ connexions: cnx, dateDebut, derniereValidation });
   const raisons = elig.motifs.map(libelleMotif);
   if (fin.etat !== "ok") raisons.push(fin.raison);
   if (raisons.length) return bloque(raisons);
@@ -91,8 +100,8 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
   const dateEmission = dateParis(now.getTime());
   const champs = {
     representant, nom: a.nom, prenom: a.prenom, formation: a.formation_choisie ?? a.type_apprenant,
-    modalite: elearning ? "e-learning" : "présentiel", dateDebut: a.date_debut_formation, dateFin: fin.date,
-    dureeHeures: num(a.heures_totales === null ? null : Number(a.heures_totales)), dateEmission,
+    modalite: elearning ? "e-learning" : "présentiel", dateDebut, dateFin: fin.date,
+    dureeHeures: dureeFormation(a, elearning), dateEmission,
   };
   const manquants = champsManquants(champs);
   if (manquants.length) return bloque([`Champs du dossier à compléter : ${manquants.join(", ")}`]);

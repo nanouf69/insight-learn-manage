@@ -20,7 +20,7 @@ export function depsAttestation(db: SupabaseClient, opts: { authHeader?: string;
     nouveauToken: () => Array.from(crypto.getRandomValues(new Uint8Array(24))).map((b) => b.toString(16).padStart(2, "0")).join(""),
     lienPublic: (t) => `https://gestion.ftransport.fr/document-a-signer/${t}`,
     async getApprenant(id) {
-      const { data, error } = await db.from("apprenants").select("id, nom, prenom, email, type_apprenant, formation_choisie, modules_autorises, date_debut_formation, heures_totales, emails_bloques").eq("id", id).maybeSingle();
+      const { data, error } = await db.from("apprenants").select("id, nom, prenom, email, type_apprenant, formation_choisie, modules_autorises, date_debut_formation, heures_totales, emails_bloques, date_debut_cours_en_ligne, heures_elearning").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
     },
