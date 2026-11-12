@@ -5,6 +5,7 @@ export function intituleAttestation(formation: string, modalite: string): string
   const cle = formation.trim().toLowerCase();
   const reference = FORMATIONS.find(f => f.id === cle)?.label ?? formation.trim();
   const distance = /e[ -]?learning|à distance/i.test(`${reference} ${modalite}`);
+  if (/^vtc(?:-elearning)?$/.test(cle) || /^Formation VTC\b/i.test(reference)) return distance ? 'Formation VTC E-learning' : 'Formation VTC';
   const base = reference.replace(/e[ -]?learning|à distance/gi, '').replace(/[·—-]\s*$/,'').trim();
   return `${base || 'Formation non renseignée'}${distance ? ' — à distance (e-learning)' : ' — présentiel'}`;
 }
