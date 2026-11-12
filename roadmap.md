@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 09:22 — Convocations FC et répétitions
+- [x] Présentation FC de la convocation formation : 9h–13h / 13h–17h, sans cours en ligne ni consignes d'examens initiaux ; récapitulatif, identité, date et ancienne signature non répétés. Classification par session FC même avec fiche VTC.
+- [x] 12 tests PASS ; aperçu admin réel Ali Reziki contrôlé sans confirmer l'envoi, générateur PC/mobile vérifié, build OK. Aucun modèle enregistré, droit, donnée ni publication modifié. Mail séparé de confirmation FC hors périmètre.
+
 ## 11/11 18:49 — Présence à la date de l’examen choisi
 - [x] Aucun planning liant session/EB/date identifié ; contrôle d’accès non installé et agenda sans identité session/EB probante. Alpha Barry : 11/11 matin signé 08:56:41 Paris, après-midi technique sans image, zéro papier/validation ; EB de la capture inconnu.
 - [x] Date explicite sans présélection par session/examen, vue Tous sans badge ; lecture exacte par lots, horloge serveur existante, présence journalière valable prioritaire, Absent déclaré distinct de Non émargé.

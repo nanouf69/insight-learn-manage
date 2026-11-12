@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Formation invitation HTML uses an explicit continuing-training projection and removes only identified legacy paragraphs locally; why: keep saved templates, access rights and sent mail history unchanged while avoiding duplicate summaries and initial-exam instructions in FC.
 - First-passage rates retain their exact counted/excluded observations in the same read model; drilldowns never reread approximate copies, QCM needs submitted native proof, and full-copy mirrors use shared strict provenance. Why: detail denominators and frozen answers must match the displayed statistic.
 - Effective reset read adapters remain disconnected until all readers and refresh paths are approved; why: a passing isolated projection cannot establish coherent production displays.
 - Previous EB summaries resolve each older result through its exact official publication evidence and label single/partial subject coverage; admin copy-selection previews never persist or override latest-tentative defaults. Why: legacy pending grades and correction dates must not masquerade as historical exam averages.

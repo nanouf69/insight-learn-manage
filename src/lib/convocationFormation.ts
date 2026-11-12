@@ -2,9 +2,34 @@
  * Mise en page professionnelle des convocations de formation (e-mail).
  * N'invente aucune information : chaque champ vient de la session, de la fiche élève
  * ou du modèle existant ; une donnée absente est signalée « à confirmer ».
- * Le contenu détaillé du modèle existant (examens, consignes…) est conservé tel quel.
+ * Les consignes sont conservées hors paragraphes redondants ou réservés au parcours initial en FC.
  */
 import type { ResultatAcces } from "./accesCoursFenetre";
+
+/** Projection du mail uniquement : ne modifie ni modèle enregistré ni droits. */
+export function presentationConvocation(formationContinue: boolean, horaires?: string | null) {
+  return {
+    horaires: formationContinue ? "9h–13h / 13h–17h" : horaires,
+    afficherAccesCours: !formationContinue,
+  };
+}
+
+export function informationsPratiquesConvocation(corps: string, formationContinue: boolean, identite = ""): string {
+  const doc = new DOMParser().parseFromString(corps, "text/html");
+  // Les modèles sont composés de paragraphes : ne jamais enlever un conteneur
+  // entier contenant aussi des consignes indépendantes.
+  for (const bloc of Array.from(doc.body.querySelectorAll("p, li"))) {
+    const texte = (bloc.textContent ?? "").replace(/\s+/g, " ").trim();
+    const recap = /^(?:Objet\s*:|Nous avons le plaisir de vous confirmer votre inscription|[📅\s]*Votre formation théorique se déroulera)/i.test(texte);
+    const horairesSimples = /^[🕐🕒⏰\s]*Horaires\s*:/u.test(texte);
+    const initialSeulement = formationContinue && /examen|entrainement|entraînement|formation pratique|cours en ligne|modules? en ligne|accès aux cours|compte.*créé/i.test(texte);
+    const identiteRepetee = !!identite && (texte.replace(/[,\s]+$/, "") === identite || (texte.startsWith(identite) && /\d{5}/.test(texte)));
+    const dateRepetee = /^📍\s*Lyon, le /u.test(texte);
+    const ancienneSignature = /^(?:Ftransport|Services pro Ftransport)\s*📍/i.test(texte) && /SIRET/i.test(texte);
+    if (recap || horairesSimples || initialSeulement || identiteRepetee || dateRepetee || ancienneSignature || (formationContinue && /horaires/i.test(texte))) bloc.remove();
+  }
+  return doc.body.innerHTML;
+}
 
 export const FTRANSPORT = {
   nom: "FTRANSPORT",
@@ -47,6 +72,7 @@ export interface ConvocationParams {
   referenceDossier?: string | null;
   intituleFormation: string;
   presentiel: boolean;
+  formationContinue?: boolean;
   dateDebut?: string | null; // déjà formatée
   dateFin?: string | null;
   horaires?: string | null;
@@ -57,9 +83,11 @@ export interface ConvocationParams {
 }
 
 export function construireConvocationHtml(p: ConvocationParams): string {
+  const presentation = presentationConvocation(p.formationContinue === true, p.horaires);
   const aConfirmer = '<em style="color:#b45309">à confirmer par l\'administration</em>';
   const v = (x?: string | null) => (x && x.trim() ? esc(x) : aConfirmer);
   const identite = [p.civilite, p.prenom, p.nom].filter(Boolean).join(" ");
+  const corps = informationsPratiquesConvocation(p.corpsModele, p.formationContinue === true, identite);
   const modalite = p.presentiel ? "Présentiel" : "E-learning (à distance)";
   const dates = p.dateDebut && p.dateFin ? `du ${esc(p.dateDebut)} au ${esc(p.dateFin)}` : aConfirmer;
   const lieu = p.presentiel ? v(p.lieu) : "À distance — plateforme de cours en ligne FTRANSPORT";
@@ -84,13 +112,13 @@ export function construireConvocationHtml(p: ConvocationParams): string {
 ${ligne("Formation", v(p.intituleFormation))}
 ${ligne("Modalité", modalite)}
 ${ligne("Dates", dates)}
-${ligne("Horaires", p.presentiel ? v(p.horaires) : "Libres, pendant votre période d'accès")}
+${ligne("Horaires", p.presentiel ? v(presentation.horaires) : "Libres, pendant votre période d'accès")}
 ${ligne("Lieu", lieu)}
 </table></div>
-<div style="border-left:4px solid #0f766e;background:#f0fdfa;padding:10px 14px;margin:16px 0;font-size:14px"><strong>Accès aux cours en ligne :</strong> ${esc(texteAccesCours(p.acces))}<br><span style="font-size:12px;color:#475569">Votre compte peut être créé avant cette période ; le contenu des cours n'est accessible qu'aux dates indiquées.</span></div>
+${presentation.afficherAccesCours ? `<div style="border-left:4px solid #0f766e;background:#f0fdfa;padding:10px 14px;margin:16px 0;font-size:14px"><strong>Accès aux cours en ligne :</strong> ${esc(texteAccesCours(p.acces))}<br><span style="font-size:12px;color:#475569">Votre compte peut être créé avant cette période ; le contenu des cours n'est accessible qu'aux dates indiquées.</span></div>` : ""}
 ${parking ? `<div style="border:2px solid #d97706;background:#fffbeb;border-radius:8px;padding:10px 14px;margin:16px 0;font-size:14px">🚗 <strong>${esc(TEXTE_STATIONNEMENT)}</strong></div>` : ""}
 <h2 style="font-size:15px;color:#1e3a8a;border-bottom:1px solid #cbd5e1;padding-bottom:4px;margin-top:22px">Informations pratiques</h2>
-<div style="font-size:14px;line-height:1.6">${p.corpsModele}</div>
+<div style="font-size:14px;line-height:1.6">${corps}</div>
 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;margin:18px 0;font-size:13px">♿ <strong>Besoin d'un aménagement (situation de handicap) ?</strong> Contactez-nous avant le début de la formation : ${FTRANSPORT.telephone} · ${FTRANSPORT.email}.</div>
 <p style="font-size:11px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:20px">${FTRANSPORT.raisonSociale} · ${FTRANSPORT.adresse} · SIRET ${FTRANSPORT.siret} · N° de déclaration d'activité ${FTRANSPORT.nda}</p>
 </div>`;
