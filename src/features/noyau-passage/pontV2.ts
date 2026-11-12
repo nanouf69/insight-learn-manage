@@ -448,8 +448,9 @@ let envoiEnCours = false;
 const cleElement = (e: { attemptId: string; matiereId: string; questionId: number | string }) =>
   `${e.attemptId}|${e.matiereId}|${String(e.questionId)}`;
 let elementEnVol: ElementFile | null = null;
-let echecsConsecutifs = 0;
-let prochainEssaiMs = 0;
+// Délai de nouvel essai PAR passage : la panne d'une ancienne tentative ne retarde jamais la tentative ouverte.
+const attentes = new Map<string, { echecs: number; prochainEssaiMs: number }>();
+const enAttenteReseau = (attemptId: string) => (attentes.get(attemptId)?.prochainEssaiMs ?? 0) > Date.now();
 let minuteurReessai: ReturnType<typeof setTimeout> | null = null;
 export const DELAI_REESSAI_MIN_MS = 1_000;
 export const DELAI_REESSAI_MAX_MS = 30_000;
@@ -462,7 +463,9 @@ export function delaiReessai(echecs: number, alea: number = Math.random()): numb
 
 function planifierReessai(): void {
   if (minuteurReessai) clearTimeout(minuteurReessai);
-  const attente = Math.max(0, prochainEssaiMs - Date.now());
+  const prochain = Math.min(...[...attentes.values()].map((a) => a.prochainEssaiMs));
+  if (!Number.isFinite(prochain)) return;
+  const attente = Math.max(0, prochain - Date.now());
   minuteurReessai = setTimeout(() => { minuteurReessai = null; void viderFileNoyau(); }, attente);
 }
 
@@ -657,7 +660,7 @@ async function chargerRevisionsServeur(attemptId: string): Promise<void> {
 
 /** Réservé aux tests : simule un rechargement de page. */
 export function __simulerRechargementPourTests(): void {
-  echecsConsecutifs = 0; prochainEssaiMs = 0; elementEnVol = null;
+  attentes.clear(); elementEnVol = null;
   if (minuteurReessai) { clearTimeout(minuteurReessai); minuteurReessai = null; }
   revisionsChargees.clear();
   valeursConfirmees.clear();
@@ -669,7 +672,7 @@ export async function viderFileNoyau(attemptId?: string | null, options?: { forc
   const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
   if (envoiEnCours) return { restantes: compter(fileMemoire ?? lireFile()) };
   // Pendant le délai de nouvel essai, seules les actions explicites (terminer, retour réseau) relancent.
-  if (!options?.forcer && Date.now() < prochainEssaiMs) return { restantes: compter(fileMemoire ?? lireFile()) };
+  if (!options?.forcer && attemptId && enAttenteReseau(attemptId)) return { restantes: compter(fileMemoire ?? lireFile()) };
   envoiEnCours = true;
   try {
     let file = fileMemoire ?? lireFile();
@@ -681,7 +684,7 @@ export async function viderFileNoyau(attemptId?: string | null, options?: { forc
     };
     for (;;) {
       // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un autre passage.
-      const element = file.find((e) => !attemptId || e.attemptId === attemptId);
+      const element = file.find((e) => (attemptId ? e.attemptId === attemptId : options?.forcer || !enAttenteReseau(e.attemptId)));
       if (!element) break;
       // Une valeur plus récente de la même question attend déjà : l'ancienne n'est jamais envoyée.
       const posElement = file.indexOf(element);
@@ -718,14 +721,14 @@ export async function viderFileNoyau(attemptId?: string | null, options?: { forc
           continue;
         }
         if (!refusDefinitif(res.message)) {
-          echecsConsecutifs += 1;
-          prochainEssaiMs = Date.now() + delaiReessai(echecsConsecutifs);
+          const echecs = (attentes.get(element.attemptId)?.echecs ?? 0) + 1;
+          attentes.set(element.attemptId, { echecs, prochainEssaiMs: Date.now() + delaiReessai(echecs) });
           planifierReessai();
           console.warn("[PontV2] réponse conservée pour nouvel essai", {
             attemptId: element.attemptId,
             questionId: idQuestionNoyau(element.matiereId, element.questionId),
             message: res.message,
-            essaiDans_ms: prochainEssaiMs - Date.now(),
+            essaiDans_ms: (attentes.get(element.attemptId)?.prochainEssaiMs ?? 0) - Date.now(),
           });
           break; // réseau/conflit : on garde l'ordre et on réessaiera
         }
@@ -733,8 +736,7 @@ export async function viderFileNoyau(attemptId?: string | null, options?: { forc
         ecarter(element);
         console.warn("[PontV2] réponse mise de côté (refus définitif):", res.message);
       } else {
-        echecsConsecutifs = 0;
-        prochainEssaiMs = 0;
+        attentes.delete(element.attemptId);
       }
       retirer(element);
     }
