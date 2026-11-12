@@ -70,7 +70,7 @@ it('sérialise les relectures et ignore une réponse de l’ancienne session', a
   const chargerAbsences = vi.fn().mockResolvedValue(new Map());
   render(<NotesParSession sessions={sessions} charger={charger} souscrire={() => () => {}} chargerAbsences={chargerAbsences} />);
   await choisir();
-  fireEvent.change(screen.getByLabelText("Date de l'examen"), { target: { value: '2026-11-11' } });
+  fireEvent.change(screen.getByLabelText('Date de l’examen'), { target: { value: '2026-11-11' } });
   await waitFor(() => expect(chargerAbsences).toHaveBeenCalledTimes(1));
   const bouton = screen.getByRole('button', { name: 'Actualiser' });
   fireEvent.click(bouton);
@@ -87,5 +87,5 @@ it('sérialise les relectures et ignore une réponse de l’ancienne session', a
   await screen.findByRole('alert');
   expect(screen.getAllByText('Note définitive manquante')).toHaveLength(1);
   expect(screen.getByRole('combobox', { name: 'Examen blanc' })).toHaveValue('EB1');
-  expect(screen.getByLabelText("Date de l'examen")).toHaveValue('2026-11-11');
+  expect(screen.getByLabelText('Date de l’examen')).toHaveValue('2026-11-11');
 });
