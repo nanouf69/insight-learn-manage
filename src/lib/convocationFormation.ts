@@ -2,7 +2,7 @@
  * Mise en page professionnelle des convocations de formation (e-mail).
  * N'invente aucune information : chaque champ vient de la session, de la fiche élève
  * ou du modèle existant ; une donnée absente est signalée « à confirmer ».
- * Le contenu détaillé du modèle existant (examens, consignes…) est conservé tel quel.
+ * Les consignes sont conservées hors paragraphes redondants ou réservés au parcours initial en FC.
  */
 import type { ResultatAcces } from "./accesCoursFenetre";
 
@@ -14,7 +14,7 @@ export function presentationConvocation(formationContinue: boolean, horaires?: s
   };
 }
 
-export function informationsPratiquesConvocation(corps: string, formationContinue: boolean): string {
+export function informationsPratiquesConvocation(corps: string, formationContinue: boolean, identite = ""): string {
   const doc = new DOMParser().parseFromString(corps, "text/html");
   // Les modèles sont composés de paragraphes : ne jamais enlever un conteneur
   // entier contenant aussi des consignes indépendantes.
@@ -23,7 +23,10 @@ export function informationsPratiquesConvocation(corps: string, formationContinu
     const recap = /^(?:Objet\s*:|Nous avons le plaisir de vous confirmer votre inscription|[📅\s]*Votre formation théorique se déroulera)/i.test(texte);
     const horairesSimples = /^[🕐🕒⏰\s]*Horaires\s*:/u.test(texte);
     const initialSeulement = formationContinue && /examen|entrainement|entraînement|formation pratique|cours en ligne|modules? en ligne|accès aux cours|compte.*créé/i.test(texte);
-    if (recap || horairesSimples || initialSeulement || (formationContinue && /horaires/i.test(texte))) bloc.remove();
+    const identiteRepetee = !!identite && (texte.replace(/[,\s]+$/, "") === identite || (texte.startsWith(identite) && /\d{5}/.test(texte)));
+    const dateRepetee = /^📍\s*Lyon, le /u.test(texte);
+    const ancienneSignature = /^(?:Ftransport|Services pro Ftransport)\s*📍/i.test(texte) && /SIRET/i.test(texte);
+    if (recap || horairesSimples || initialSeulement || identiteRepetee || dateRepetee || ancienneSignature || (formationContinue && /horaires/i.test(texte))) bloc.remove();
   }
   return doc.body.innerHTML;
 }
@@ -81,10 +84,10 @@ export interface ConvocationParams {
 
 export function construireConvocationHtml(p: ConvocationParams): string {
   const presentation = presentationConvocation(p.formationContinue === true, p.horaires);
-  const corps = informationsPratiquesConvocation(p.corpsModele, p.formationContinue === true);
   const aConfirmer = '<em style="color:#b45309">à confirmer par l\'administration</em>';
   const v = (x?: string | null) => (x && x.trim() ? esc(x) : aConfirmer);
   const identite = [p.civilite, p.prenom, p.nom].filter(Boolean).join(" ");
+  const corps = informationsPratiquesConvocation(p.corpsModele, p.formationContinue === true, identite);
   const modalite = p.presentiel ? "Présentiel" : "E-learning (à distance)";
   const dates = p.dateDebut && p.dateFin ? `du ${esc(p.dateDebut)} au ${esc(p.dateFin)}` : aConfirmer;
   const lieu = p.presentiel ? v(p.lieu) : "À distance — plateforme de cours en ligne FTRANSPORT";
