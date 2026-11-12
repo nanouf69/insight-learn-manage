@@ -1,7 +1,7 @@
 # Feuille de route
 
 ## 12/11 09:49 — Carte QRC VTC résiduelle
-- [ ] Exposer la carte serveur 1794399472264 et son lien exact via legacy, au lieu de 9001 dans les compléments futurs ; vérifier aperçu admin sans mutation et isolation TAXI, aucune publication/donnée modifiée.
+- [x] Carte serveur 1794399472264 exposée au lieu de 9001 dans les compléments futurs ; lien exact unique cliqué en aperçu admin (aucun appel pédagogique mutateur) et route VTC simulée, TAXI exclu par test. 20 tests PASS, F/G/H préservés. A–E demande son ouverture habituelle dans la simulation élève, interceptée ; aucune écriture réelle ni publication. Complément isolé documenté.
 
 ## 12/11 09:45 — Correction horaires convocation FC
 - [x] Remplacer uniquement les horaires affichés par 9h–12h / 13h–17h ; mémoriser la correction, conserver données et mails historiques, aucun envoi ni publication.
