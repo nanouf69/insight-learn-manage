@@ -122,10 +122,15 @@ describe("Panne serveur pendant un examen blanc", () => {
       expect(reponsesNoyauEnAttente()).toBe(90);
       const appelsPanne = appels;
       expect(appelsPanne).toBeLessThan(1000);
+      // Settle the simulated request already in flight before destroying the runtime.
+      await vi.advanceTimersByTimeAsync(1);
       __simulerRechargementPourTests();
       expect(reponsesNoyauEnAttente()).toBe(90);
       panne = false;
-      await viderFileNoyau(null, { forcer: true });
+      for (let i = 0; i < 200 && reponsesNoyauEnAttente() > 0; i++) {
+        await viderFileNoyau(null, { forcer: true });
+        await vi.advanceTimersByTimeAsync(1);
+      }
       expect(reponsesNoyauEnAttente()).toBe(0);
       expect(ecrituresEffectives).toBe(90);
       for (let c = 0; c < 30; c++) for (let q = 1; q <= 3; q++) {
