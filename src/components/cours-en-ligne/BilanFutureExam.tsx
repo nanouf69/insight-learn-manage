@@ -6,7 +6,7 @@
  * review of the wrong questions of this passage (never saved, never changes the submission).
  * Presentation = the shared classic quiz components (learnerQuizUi), same as every other module.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, Calculator, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -292,6 +292,10 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
     </Button>
   );
 
+  const MatiereCard = ({ children }: { children: ReactNode }) => {
+    const tools = <div className="flex items-center gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1"><Calculator className="w-4 h-4" />Calculatrice</Button></div>;
+    return moduleId === 5 ? <BilanMatiereCard nom={nom} tools={tools}>{children}</BilanMatiereCard> : <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;
+  };
   const notesBilan = bareme && bareme !== "erreur"
     ? FUTURE_SUBJECT_NAMES.map((_, k) => { const s = statuts[base + k]; return s?.submitted ? noteDe(k, s.correct, s.total) : null; })
     : null;
@@ -374,7 +378,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
         <div className="animate-fade-in">
           <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4" data-testid="bilan-future-passage">
             <div className="space-y-4 min-w-0">
-              <BilanMatiereCard nom={nom} tools={<div className="flex items-center gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1"><Calculator className="w-4 h-4" />Calculatrice</Button></div>}>
+              <MatiereCard>
                   {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
                   {enRevision && (
@@ -443,12 +447,12 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                         </div>
                       ) : (
                         <div className="w-full space-y-5" data-testid={enRevision ? undefined : "bilan-future-resultat"}>
-                          <QuizScoreSummary
+                          {moduleId === 5 && !enRevision ? <BilanRemiseSummary correct={passage.submitted!.correct_count} total={passage.submitted!.question_count} /> : <QuizScoreSummary
                             points={enRevision ? bonnesRevision : passage.submitted!.correct_count}
                             total={enRevision ? revision!.ids.length : passage.submitted!.question_count}
                             footnote={enRevision
                               ? <p className="text-xs text-muted-foreground" data-testid="revision-score">Révision : {bonnesRevision}/{revision!.ids.length} — copie remise inchangée</p>
-                              : <p className="text-xs text-muted-foreground">Matière remise : {passage.submitted!.correct_count}/{passage.submitted!.question_count} bonnes réponses</p>} />
+                              : <p className="text-xs text-muted-foreground">Matière remise : {passage.submitted!.correct_count}/{passage.submitted!.question_count} bonnes réponses</p>} />}
                           {!enRevision && (() => {
                             const n = noteDe(pageCourante, passage.submitted!.correct_count, passage.submitted!.question_count);
                             return n ? <CarteNoteMatiere n={n} index={pageCourante} total={total} nom={n.matiere.nom} />
@@ -495,7 +499,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                       )}
                     </div>
                   )}
-              </BilanMatiereCard>
+              </MatiereCard>
             </div>
             <QuizQuestionSidebar
               onJump={(qi) => document.getElementById(anchor(qi))?.scrollIntoView({ behavior: "smooth", block: "start" })}

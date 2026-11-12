@@ -39,7 +39,7 @@ export function BilanFutureApercuAdmin({ apercu, presentationVtc = false, titre,
               {selected?.questions?.map((q, i) => <BilanQuestionCard key={q.id} question={q} index={i} disabled anchor={`apercu-bilan-${q.id}`} />)}
               {selected?.submitted && <BilanRemiseSummary correct={selected.submitted.correct_count} total={selected.submitted.question_count} />}
             </BilanMatiereCard>
-            <QuizQuestionSidebar items={(selected?.questions ?? []).map(q => ({ key: q.id, answered: false, wrong: false }))} onJump={i => { const q = selected?.questions?.[i]; if (q) document.getElementById(`apercu-bilan-${q.id}`)?.scrollIntoView({ block: "start" }); }} />
+            <div className="space-y-2"><p className="text-xs text-muted-foreground">Questions</p>{selected?.questions?.map((q, i) => <Button key={q.id} size="icon" variant="outline" aria-label={`Question ${i + 1}`} onClick={() => document.getElementById(`apercu-bilan-${q.id}`)?.scrollIntoView({ block: "start" })}>{i + 1}</Button>)}</div>
           </div>
           <div className="flex items-center justify-between gap-2"><Button variant="outline" disabled={current === 0} onClick={() => setOuvert(500 + current - 1)}>Précédent</Button><span className="text-sm">{current + 1}/5</span><Button variant="outline" disabled={current === 4} onClick={() => setOuvert(500 + current + 1)}>Suivant</Button></div>
         </div>
