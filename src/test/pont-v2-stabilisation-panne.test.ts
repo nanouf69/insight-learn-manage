@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const store = new Map<string, string>();
 (globalThis as any).localStorage = {
-  getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+  getItem: (k: string) => store.get(k) ?? null,
   setItem: (k: string, v: string) => void store.set(k, v),
   removeItem: (k: string) => void store.delete(k),
   clear: () => store.clear(),
@@ -108,5 +108,32 @@ describe("Panne serveur pendant un examen blanc", () => {
     expect(delaiReessai(20, 0.5)).toBe(30000);
     expect(delaiReessai(20, 1)).toBeLessThanOrEqual(39000);
     expect(delaiReessai(1, 0)).toBe(700);
+  });
+
+  it("panne de six minutes, 30 candidats et rechargement : les 90 réponses finales sont conservées", async () => {
+    vi.useFakeTimers();
+    try {
+      panne = true;
+      for (let c = 0; c < 30; c++) for (let q = 1; q <= 3; q++) {
+        enfilerReponseNoyau({ attemptId: `six-${c}`, matiereId: "qrc", questionId: q, valeur: TEXTE });
+      }
+      await vi.advanceTimersByTimeAsync(360_000);
+      expect(ecrituresEffectives).toBe(0);
+      expect(reponsesNoyauEnAttente()).toBe(90);
+      const appelsPanne = appels;
+      expect(appelsPanne).toBeLessThan(1000);
+      __simulerRechargementPourTests();
+      expect(reponsesNoyauEnAttente()).toBe(90);
+      panne = false;
+      await viderFileNoyau(null, { forcer: true });
+      expect(reponsesNoyauEnAttente()).toBe(0);
+      expect(ecrituresEffectives).toBe(90);
+      for (let c = 0; c < 30; c++) for (let q = 1; q <= 3; q++) {
+        expect(serveur.get(k(`six-${c}`, `qrc:${q}`))).toEqual({ valeur: TEXTE, revision: 1 });
+      }
+    } finally {
+      __simulerRechargementPourTests();
+      vi.useRealTimers();
+    }
   });
 });

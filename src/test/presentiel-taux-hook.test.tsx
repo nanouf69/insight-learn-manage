@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
   rows: [] as Record<string, unknown>[],
   subscription: undefined as (() => void) | undefined,
   selects: [] as string[],
+  profileReads: 0,
   learner: { heures_elearning: 60, heures_presentiel: 0, heures_totales: 66, type_apprenant: "vtc-e" } as Record<string, unknown>,
   connections: [] as Record<string, unknown>[],
   activities: [] as Record<string, unknown>[],
@@ -25,6 +26,7 @@ vi.mock('@/lib/signaturesManquantes', async () => ({
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: (table: string) => {
+    if (table === "apprenants") state.profileReads += 1;
     const data = () => table === "apprenants" ? state.learner
       : table === "emargements_fc" ? state.rows
       : table === "apprenant_connexions" ? state.connections
@@ -82,7 +84,19 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
     view.unmount();client.clear();
   });
   beforeEach(() => {
+    state.profileReads = 0;
     state.channels.clear(); state.removed = []; state.subscription = undefined;
+  });
+  it("relit le dossier une seule fois sans changer les heures ni les modules", async () => {
+    state.learner = { type_apprenant: "vtc-e", heures_elearning: 60 };
+    state.rows = []; state.connections = []; state.activities = [];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view = renderHook(() => useApprenantTauxRealisation("lecture-fictive"), { wrapper });
+    await waitFor(() => expect(view.result.current.isSuccess).toBe(true));
+    expect(state.profileReads).toBe(1);
+    expect(view.result.current.data).toMatchObject({ reqElearning: 60, doneElearning: 0, modulesCompleted: 0 });
+    view.unmount(); client.clear();
   });
   it.each([['vtc',66],['taxi',96],['ta',36]])('total présentiel %s : seules les signatures, heures prévues %s', async (type, required) => {
     state.learner = { type_apprenant:type, date_debut_formation:'2026-07-01', heures_totales:69 };
