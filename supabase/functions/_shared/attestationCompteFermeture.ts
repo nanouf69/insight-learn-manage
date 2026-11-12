@@ -1,4 +1,4 @@
-/** Préparation isolée : non branchée tant que refus des sessions ouvertes non prouvé. */
+/** Fermeture après envoi confirmé : mails bloqués puis connexion désactivée (branchée le 12/11). */
 export interface DocumentFermeture {
   id: string; apprenant_id: string | null; modele_code: string | null;
   envoi_etat: string | null; envoye_le: string | null;

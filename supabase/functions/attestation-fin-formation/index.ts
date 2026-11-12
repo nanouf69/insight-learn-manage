@@ -1,6 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { preparer, envoyer } from "../_shared/attestationFinCore.ts";
 import { depsAttestation } from "../_shared/attestationFinDeps.ts";
+import { fermerCompteApresAttestation } from "../_shared/attestationCompteFermeture.ts";
+import { depsFermeture } from "../_shared/attestationCompteFermetureDeps.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,7 +35,18 @@ Deno.serve(async (req) => {
       }));
     }
     if (body?.action === "envoyer" && typeof body.docId === "string" && UUID.test(body.docId)) {
-      return json(await envoyer(deps, body.docId, adminId));
+      const r = await envoyer(deps, body.docId, adminId);
+      // Après envoi confirmé seulement : accès au compte cours fermé et plus aucun mail (données conservées).
+      if (r.etat === "envoye" || r.etat === "deja_envoye") {
+        let fermeture: unknown;
+        try { fermeture = await fermerCompteApresAttestation(depsFermeture(db, adminId), body.docId); }
+        catch (e) { fermeture = { etat: "a_verifier", raison: e instanceof Error ? e.message : "Erreur" }; }
+        return json({ ...r, fermeture });
+      }
+      return json(r);
+    }
+    if (body?.action === "fermer_compte" && typeof body.docId === "string" && UUID.test(body.docId)) {
+      return json(await fermerCompteApresAttestation(depsFermeture(db, adminId), body.docId));
     }
     return json({ error: "Requête invalide" }, 400);
   } catch (e) {

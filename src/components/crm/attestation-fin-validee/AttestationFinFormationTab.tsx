@@ -100,12 +100,23 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     } finally { setOccupe(null); rafraichir(); }
   };
 
+  const fermerCompte = async (d: AttestationEnregistree) => {
+    setOccupe(d.id);
+    try {
+      const r = await appelAttestation({ action: "fermer_compte", docId: d.id });
+      if (r?.etat === "ferme") toast({ title: "Compte fermé", description: "L'accès aux cours est fermé et plus aucun mail ne sera envoyé. Les données sont conservées." });
+      else toast({ title: "Fermeture non effectuée", description: r?.raison ?? "À vérifier.", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Service momentanément indisponible", description: e?.message ?? "Réessayez dans un instant.", variant: "destructive" });
+    } finally { setOccupe(null); }
+  };
+
   const envoyer = async (d: AttestationEnregistree) => {
     setOccupe(d.id);
     try {
       const r = await appelAttestation({ action: "envoyer", docId: d.id });
       const msg: Record<string, string> = { envoye: "Lien de signature envoyé à l'apprenant(e).", deja_envoye: "Cette attestation a déjà été envoyée." };
-      if (msg[r?.etat]) toast({ title: "Envoi", description: msg[r.etat] });
+      if (msg[r?.etat]) toast({ title: "Envoi", description: `${msg[r.etat]} ${r?.fermeture?.etat === "ferme" ? "Accès au compte fermé et mails arrêtés." : `Fermeture du compte non confirmée : ${r?.fermeture?.raison ?? "à vérifier"}.`}`, variant: r?.fermeture?.etat === "ferme" ? "default" : "destructive" });
       else toast({ title: r?.etat === "indetermine" ? "Envoi incertain" : "Envoi non effectué", description: r?.raison ?? "Aucun mail n'a été confirmé.", variant: "destructive" });
     } catch (e: any) {
       toast({ title: "Service momentanément indisponible", description: e?.message ?? "Réessayez dans un instant.", variant: "destructive" });
@@ -150,6 +161,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
                 {s.libelle === "À envoyer" && <div className="space-y-1">
                   <Button className="min-h-11" disabled={occupe === d.id} onClick={() => setAEnvoyer(d)}><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
                 </div>}
+                {d.envoye_le && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => fermerCompte(d)}><Lock className="h-4 w-4 mr-1" />Fermer l'accès et arrêter les mails</Button>}
                 {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" onClick={() => { navigator.clipboard.writeText(lienSignature(d.token)); toast({ title: "Lien copié" }); }}><Copy className="h-4 w-4 mr-1" />Copier le lien de signature</Button>}
                 {d.statut === "signe" && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, true)}><Download className="h-4 w-4 mr-1" />Télécharger le PDF signé</Button>}
               </div>
@@ -207,7 +219,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             <AlertDialogTitle>Envoyer l'attestation pour signature ?</AlertDialogTitle>
             <AlertDialogDescription>
               Un e-mail contenant le lien de signature sera envoyé à {aEnvoyer?.identite_figee?.email}. L'apprenant(e) signera elle-même ; aucune signature n'est apposée à sa place.
-              Le compte cours ne sera pas fermé automatiquement après cet envoi.
+              Après l'envoi, l'accès à son compte cours sera fermé et plus aucun mail ne lui sera envoyé ; ses données et le lien de signature restent disponibles.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
