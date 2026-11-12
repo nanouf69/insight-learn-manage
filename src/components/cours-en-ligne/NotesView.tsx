@@ -91,6 +91,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
   const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>(moduleCompletionsSeed);
   const definitions = useLiveExamens();
   const [readError,setReadError]=useState<string|null>(null);
+  const [bilanError,setBilanError]=useState<string|null>(null);
   const [bilansState,setBilansState]=useState<{owner:string;sources:SourcesBilansNotes}|null>(null);
   const [track,setTrack]=useState<{owner:string;value:string|null}|null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,9 +153,9 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
         if (!isCurrent()) return;
 
         if(identity.error)throw new Error("Lecture du dossier impossible");
-        const sources=await lireBilansNotes(apprenantId,identity.data.auth_user_id);
+        const sources=await lireBilansNotes(apprenantId,identity.data.auth_user_id).catch(e=>{if(isCurrent())setBilanError(e instanceof Error?e.message:'Lecture des Bilans impossible');return null;});
         if(!isCurrent())return;
-        setBilansState({owner:apprenantId,sources});
+        if(sources){setBilansState({owner:apprenantId,sources});setBilanError(null);}
         const type=(identity.data.type_apprenant??identity.data.formation_choisie??"").toLowerCase();
         setTrack({owner:apprenantId,value:/^ta(?:-|$)|taxi-pour-vtc/.test(type)?"TA":/^va(?:-|$)|vtc-pour-taxi/.test(type)?"VA":/^taxi/.test(type)?"TAXI":/^vtc/.test(type)?"VTC":null});
         if (quizRes.error) {
@@ -167,7 +168,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
             : await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStates]]));
           if (!isCurrent()) return;
           const archived = new Set((resetsRes.data ?? []).flatMap((r: any) => r.archived_legacy_result_ids ?? []).map(String));
-          const activeRows = excludeResultPlaceholders(quizRes.data || []).filter((r: any) => !archived.has(String(r.id)));
+          const activeRows = excludeResultPlaceholders(quizRes.data || []).filter((r: any) => !archived.has(String(r.id))&&!(resetsRes.data??[]).some(s=>s.exam_id===r.quiz_id&&Date.parse(r.completed_at)<=Date.parse(s.cutoff_at)));
           // EB rows carry immutable result IDs: never merge their identities before proof.
           const rows = [...activeRows.filter((r: any) => /^examen_blanc/.test(r.quiz_type)),
             ...mergePassageSiblingRows(activeRows.filter((r: any) => !/^examen_blanc/.test(r.quiz_type)))] as any[];
@@ -219,7 +220,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
   // Verrou commun conservé ligne par ligne : isExamAttemptPublicationPending([row]).
 
   const publishedQuizResults = useMemo(
-    () => quizResults.filter((row) => !pendingResultIds.has(row.id)),
+    () => quizResults.filter((row) => row.quiz_type!=='revision_fausses'&&!pendingResultIds.has(row.id)),
     [quizResults, pendingResultIds],
   );
 
@@ -626,8 +627,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
         </div>
       )}
 
-      {activeTab === "examens" && (definitions.isLoading ? <p role="status">Chargement du référentiel des examens…</p> : definitions.error ? <p role="alert">Référentiel indisponible. <Button onClick={definitions.refetch}>Réessayer</Button></p> : <NotesExamensOfficiels examens={examensOfficiels} titre="Examens blancs officiels" />)}
-      {activeTab === "bilans" && (readError ? <p className="text-muted-foreground">Les Bilans ne peuvent pas être confirmés tant que la lecture n’a pas réussi.</p> : <NotesExamensOfficiels examens={bilans} titre="Bilan examen" />)}
+      {activeTab === "examens" && (definitions.isLoading ? <p role="status">Chargement du référentiel des examens…</p> : definitions.error ? <p role="alert">Référentiel indisponible. <Button onClick={definitions.refetch}>Réessayer</Button></p> : readError&&!officielles.length ? <p className="text-muted-foreground">Résultats indisponibles — aucun statut « Non réalisé » ne peut être confirmé.</p> : <NotesExamensOfficiels examens={examensOfficiels} titre="Examens blancs officiels" />)}
+      {activeTab === "bilans" && <>{bilanError&&<p role="alert" className="text-destructive">{bilanError}<Button variant="outline" onClick={()=>void fetchAll()}>Réessayer</Button></p>}{bilanError&&!bilans.length ? <p className="text-muted-foreground">Les Bilans ne peuvent pas être confirmés tant que la lecture n’a pas réussi.</p> : <NotesExamensOfficiels examens={bilans} titre="Bilan examen" />}</>}
       {activeTab === "revisions" && <section className="space-y-3"><h3 className="font-bold">Révisions des questions fausses</h3>{quizResults.filter(r=>r.quiz_type==="revision_fausses").map(r=><div key={r.id} className="border border-border rounded-lg p-4"><strong>{r.quiz_titre}</strong><p className="text-sm text-muted-foreground">{Number.isFinite(Date.parse(r.completed_at))?new Date(r.completed_at).toLocaleString('fr-FR'):"Date non vérifiée"} · Révision uniquement</p><p>{normalizeQuizNoteSur20(r)==null?'Note en attente':`${normalizeQuizNoteSur20(r)} /20`}</p></div>)}</section>}
 
         {/* À revoir — matières échouées par examen blanc */}

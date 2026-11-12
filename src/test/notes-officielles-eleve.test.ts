@@ -25,3 +25,9 @@ it('Bilans historiques : uniquement remises réelles, aucune note globale invent
  const result=modelesBilansNotes({future:[],archives:[{id:'done',module_id:5,exercice_id:500,tentative:1,statut_passage:'submitted',score_bonnes:10,nb_questions:20,passage_updated_at:'2026-11-12'}]},[]);
  expect(result).toHaveLength(1);expect(result[0].note).toBeNull();
 });
+it('Bilan A–E : cinq vraies remises pondérées, une seule carte ; aucune révision incluse',()=>{
+ const base={...def,id:'EB1',matieres:['t3p','gestion','securite','francais','anglais'].map((id,i)=>({id,nom:id,coefficient:i===0?3:1,noteEliminatoire:4,noteSur:20,questions:[],ptsQCM:1}))} as unknown as ExamenBlanc;
+ const future=Array.from({length:5},(_,i)=>({id:String(i),module_id:5,exercise_id:500+i,bilan_future_submissions:[{correct_count:i===0?20:10,question_count:20,submitted_at:'2026-11-12'}]}));
+ const result=modelesBilansNotes({future,archives:[]},[base]);expect(result).toHaveLength(1);expect(result[0].note).toBe(14.3);
+ expect(modelesBilansNotes({future:future.slice(0,4),archives:[]},[base])[0].note).toBeNull();
+});
