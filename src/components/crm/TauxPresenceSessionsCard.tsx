@@ -1,3 +1,4 @@
+import { estSignatureVideConnue } from "@/lib/preuveSignatureEmargement";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
@@ -10,7 +11,7 @@ import { planningCreneaux, marquerFiliereRows } from "@/lib/signaturesManquantes
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
 const d10 = (v: unknown) => String(v ?? "").slice(0, 10);
 const signatureValide = (e: any) =>
-  e.masque !== true && e.absent !== true && /^data:image\/(png|jpe?g);base64,/i.test(String(e.signature_data_url ?? ""));
+  e.masque !== true && e.absent !== true && /^data:image\/(png|jpe?g);base64,/i.test(String(e.signature_data_url ?? "")) && !estSignatureVideConnue(e.signature_data_url);
 
 export interface TauxHeures { faites: number; prevues: number; derniere?: string; datesEntrainement?: string[] }
 

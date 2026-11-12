@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { traiterRegularisation } from "./regularisation.ts";
+import { signatureVide } from "./signatureVide.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,6 +88,8 @@ Deno.serve(async (req) => {
       return json({ error: "Données d'émargement invalides" }, 400);
     }
     if (!absent && !signature) return json({ error: "Signature requise" }, 400);
+    // Une signature vide (aucun trait) n'est jamais enregistrée comme signature.
+    if (!absent && signature && signatureVide(signature)) return json({ error: "Signature vide : merci de signer dans le cadre" }, 400);
     if (absent && !justificatifUrl) return json({ error: "Justificatif d'absence requis" }, 400);
 
     const { data: apprenant, error: apprenantError } = await supabase
