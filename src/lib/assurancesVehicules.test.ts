@@ -22,7 +22,7 @@ describe("police AXA par véhicule", () => {
     const b = blocagesPolice(p, perimetreVide());
     expect(b).toContain(STATUT_LOCATION_NON_AUTORISEE);
     expect(b.some(x => x.includes("460.002I"))).toBe(true);
-    const ok = blocagesPolice(p, { confirmationAssureurRecue: true, referenceConfirmation: "Mail AXA fictif", avecMoniteur: false, formation: true, usageProfessionnel: true, locationPayante: true });
+    const ok = blocagesPolice(p, { ...perimetreVide(), confirmationAssureurRecue: true, referenceConfirmation: "Mail AXA fictif", avecMoniteur: false, formation: true, usageProfessionnel: true, locationPayante: true });
     expect(ok).not.toContain(STATUT_LOCATION_NON_AUTORISEE);
     expect(ok.some(x => x.includes("PDF originaux"))).toBe(true); // reste bloqué tant que PDF non annexés
   });
