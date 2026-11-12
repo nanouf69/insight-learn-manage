@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Car, FileDown, Eye, RefreshCw, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicule, pointsVehicule, type VehiculeLocation } from "@/lib/contratLocation";
+import { A_RENSEIGNER, LIB_GARANTIE, VERSION_CONTRAT_LOCATION, annexeAssurance, annexePieces, articleDepot, articleDommages, articleLitiges, articleRestitution, articleVol, assuranceVide, blocagesSignature, type AssuranceLocation, type Regime, type Tri } from "@/lib/contratLocationClauses";
 import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.md?raw";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -78,6 +79,18 @@ function ContratLocationForm({ apprenant }: Props) {
   const [cautionRequise, setCautionRequise] = useState(true);
   const [numCheque, setNumCheque] = useState("");
   const [banque, setBanque] = useState("");
+
+  // Renforcements v2 (aperçu)
+  const [tarifJournalier, setTarifJournalier] = useState("");
+  const [regime, setRegime] = useState<Regime>("non_determine");
+  const [assurance, setAssurance] = useState<AssuranceLocation>(assuranceVide);
+  const majAssurance = (patch: Partial<AssuranceLocation>) => setAssurance(a => ({ ...a, ...patch }));
+  const blocages = blocagesSignature({
+    locataire: { nomComplet, email, telephone, adresse, numPermis, dateDelivrancePermis, prefecturePermis },
+    vehiculeChoisi: !!vehiculeId, immatriculation, dateDebut, dateFin, prixLocation, tarifJournalier, regime, assurance,
+    edlDepartSigne: false, consentementSpecifique: false, texteValideJuridiquement: false,
+  });
+  const ctxClauses = { avecCaution: cautionRequise, regime, tarifJournalier, assurance };
 
   // Signature
   const [lieuSignature, setLieuSignature] = useState("Lyon");
@@ -239,7 +252,8 @@ function ContratLocationForm({ apprenant }: Props) {
       y += 6;
 
       h1("CONTRAT DE LOCATION DE VÉHICULE");
-      para("BROUILLON NON SIGNABLE – Conditions en revue, assurance et disponibilité non vérifiées. Aucun envoi, paiement ni signature. Version location-preview-2026-11-12.", { bold: true });
+      para(`BROUILLON NON SIGNABLE – Conditions en revue, assurance et disponibilité non vérifiées. Aucun envoi, paiement ni signature. Version ${VERSION_CONTRAT_LOCATION}.`, { bold: true });
+      if (blocages.length) para(`Signature bloquée – éléments manquants : ${blocages.join(" ; ")}.`);
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.text(
@@ -306,7 +320,7 @@ function ContratLocationForm({ apprenant }: Props) {
       kv("Formation incluse :", formationIncluse ? "Oui" : "Non");
       kv("Forfait kilométrique inclus :", "100 km");
       kv("Kilomètre supplémentaire :", "0,30 € TTC / km");
-      kv("Retard de restitution :", "20,00 € TTC / heure entamée");
+      kv("Tarif journalier (base retard) :", tarifJournalier ? `${tarifJournalier} € TTC` : A_RENSEIGNER);
       y += 2;
       h2("4.2 – Modalités de paiement");
       para(
@@ -314,48 +328,15 @@ function ContratLocationForm({ apprenant }: Props) {
       );
       y += 4;
 
-      // ── Article 5 ──
-      h1("ARTICLE 5 – DÉPÔT DE CAUTION");
-      kv("Dépôt de garantie :", `${conditionsDepot(cautionRequise).depot} €`);
-      if (cautionRequise) {
-        para(
-          "Le locataire remet au loueur, préalablement à la prise en charge du véhicule, un chèque de caution d'un montant de 500 € (cinq cents euros)."
-        );
-        para("Ce chèque :");
-        para("• sera encaissé en cas d'accident responsable ou semi-responsable, de dégradation, de perte de document du véhicule, de contravention restant à la charge du locataire, ou de non-restitution du véhicule à l'échéance ;");
-        para("• sera restitué ou détruit dans un délai de 5 jours ouvrés suivant la restitution du véhicule en bon état et sans réserve.");
-        para("En cas de dommage supérieur au montant de la caution, le locataire reste redevable du solde.");
-        y += 1;
-        kv("N° du chèque de caution :", numCheque);
-        kv("Banque :", banque);
-      } else {
-        para(clauseSansCaution());
-      }
-      y += 4;
-
-      // ── Article 6 ──
-      h1("ARTICLE 6 – RESTITUTION DU VÉHICULE");
-      para("Le véhicule doit être restitué :");
-      para("• dans le même état que lors de la remise (propreté, carburant au même niveau) ;");
-      para("• aux date et heure prévues à l'article 3 ;");
-      para("• à l'adresse de FTRANSPORT SERVICES PRO.");
-      para("Tout retard de restitution sera facturé 20 € TTC par heure entamée, sauf accord écrit préalable du loueur.");
-      para("En cas de non-restitution dans les 24h suivant l'échéance, FTRANSPORT SERVICES PRO se réserve le droit de signaler le véhicule comme volé.");
-      y += 4;
-
-      // ── Article 7 ──
-      h1("ARTICLE 7 – ASSURANCE ET RESPONSABILITÉ");
-      para("7.1 Le véhicule est assuré par FTRANSPORT SERVICES PRO au titre de sa police d'assurance propre, couvrant la responsabilité civile obligatoire.");
-      para("7.2 En cas de sinistre, le locataire est tenu de :");
-      para("• prévenir immédiatement FTRANSPORT SERVICES PRO par téléphone ;");
-      para("• compléter un constat amiable avec la partie adverse si applicable ;");
-      para("• transmettre le constat rempli et signé dans les 24 heures.");
-      para("7.3 Le locataire est responsable des dommages non couverts par l'assurance, notamment en cas de conduite sous l'emprise d'alcool ou de stupéfiants, d'infraction grave au Code de la route ou d'utilisation du véhicule en dehors de l'objet défini à l'article 8.");
-      para("7.4 Les contraventions et amendes reliées à des infractions commises durant la période de location sont entièrement à la charge du locataire.");
-      y += 4;
+      const article = (art: { titre: string; paragraphes: string[] }) => { h1(art.titre); art.paragraphes.forEach(x => para(x)); y += 4; };
+      article(articleDepot(ctxClauses));
+      if (cautionRequise) { kv("N° du chèque de dépôt :", numCheque); kv("Banque :", banque); y += 2; }
+      article(articleDommages(ctxClauses));
+      article(articleVol(ctxClauses));
+      article(articleRestitution(ctxClauses));
 
       // ── Article 8 ──
-      h1("ARTICLE 8 – UTILISATION DU VÉHICULE");
+      h1("ARTICLE 9 – UTILISATION DU VÉHICULE");
       para("La location est strictement réservée à l'usage suivant : passage de l'examen pratique de chauffeur de taxi et/ou VTC. Toute autre utilisation est formellement interdite.");
       para("Il est interdit :");
       para("• de confier le véhicule à un tiers non mentionné au présent contrat ;");
@@ -366,23 +347,20 @@ function ContratLocationForm({ apprenant }: Props) {
       y += 4;
 
       // ── Article 9 ──
-      h1("ARTICLE 9 – CARBURANT");
+      h1("ARTICLE 10 – CARBURANT, CONTRAVENTIONS ET ASSURANCE");
       para(`Le véhicule est remis avec un niveau de carburant indiqué à l'état des lieux. Il doit être restitué avec le même niveau. En cas de restitution avec un niveau inférieur, le coût du carburant manquant, majoré de 10 € de frais de service, sera ${cautionRequise ? "déduit du dépôt sur justificatifs ou facturé séparément" : "facturé séparément sur justificatifs, sans prélèvement ni préautorisation de caution"}.`);
+      para("Les contraventions relatives à des infractions commises pendant la location sont à la charge du locataire ; le loueur peut le désigner comme conducteur auprès de l'autorité compétente (Code de la route, art. L121-6), sans frais de gestion forfaitaires.");
+      para("Le véhicule est couvert par l'assurance du loueur décrite en annexe 1, dont les garanties, plafonds, franchises et exclusions sont remis au locataire avant signature. Le contrat ne peut être signé si un élément essentiel de cette annexe reste à renseigner.");
       y += 4;
 
       // ── Article 10 ──
-      h1("ARTICLE 10 – PROTECTION DES DONNÉES PERSONNELLES (RGPD)");
+      h1("ARTICLE 12 – PROTECTION DES DONNÉES PERSONNELLES (RGPD)");
       para("Les informations collectées dans le cadre du présent contrat font l'objet d'un traitement informatique par FTRANSPORT SERVICES PRO, responsable de traitement.");
-      para("Ces données sont utilisées exclusivement dans le cadre de la gestion des contrats de location et de la relation pédagogique. Elles sont conservées pour une durée de 5 ans à compter de la fin du contrat.");
-      para("Conformément au Règlement (UE) 2016/679, le locataire dispose d'un droit d'accès, de rectification, de suppression et d'opposition en écrivant à contact@ftransport.fr.");
+      para("Ces données sont utilisées exclusivement dans le cadre de la gestion des contrats de location et de la relation pédagogique. Base légale : exécution du contrat et obligations légales (comptables et fiscales). Destinataires : services internes, assureur, autorités sur réquisition. Durée : 5 ans à compter de la fin du contrat (prescription civile, Code civil art. 2224), 10 ans pour les pièces comptables ; les copies de permis et pièces d'identité sont supprimées dès la fin de la vérification sauf litige en cours.");
+      para("Conformément au Règlement (UE) 2016/679, le locataire dispose d'un droit d'accès, de rectification, d'effacement, de limitation, de portabilité et d'opposition en écrivant à contact@ftransport.fr, ainsi que du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr).");
       y += 4;
 
-      // ── Article 11 ──
-      h1("ARTICLE 11 – CLAUSE DE COMPÉTENCE JURIDICTIONNELLE");
-      para("Tout litige relatif à l'interprétation ou à l'exécution du présent contrat fera l'objet d'une tentative de règlement amiable préalable.");
-      para("En cas d'échec, et dans la mesure où le locataire agit en qualité de particulier (non-professionnel), la compétence est attribuée au Tribunal judiciaire de Lyon.");
-      para("En cas de litige avec un locataire agissant en qualité de professionnel, compétence est attribuée au Tribunal de commerce de Lyon.");
-      y += 6;
+      article(articleLitiges(ctxClauses));
 
       // ── Signatures ──
       checkPage(60);
@@ -426,7 +404,9 @@ function ContratLocationForm({ apprenant }: Props) {
       doc.addPage();
       y = margin;
 
-      h1("ANNEXE – ÉTAT DES LIEUX DU VÉHICULE");
+      h1("ANNEXE 2 – ÉTATS DES LIEUX CONTRADICTOIRES (DÉPART ET RETOUR)");
+      para("Photographies horodatées à joindre (faces, intérieur, compteur, jauge). Chaque partie paraphe et signe le départ et le retour ; une réserve peut être formulée dans les observations.");
+      y += 2;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.text(
@@ -508,6 +488,10 @@ function ContratLocationForm({ apprenant }: Props) {
       doc.line(margin + colW + 10, y, pageW - margin, y);
 
       addFooter();
+      doc.addPage(); y = margin;
+      article(annexeAssurance(assurance));
+      article(annexePieces(cautionRequise));
+      addFooter();
 
       const fileName = `Brouillon_location_${apprenant.id}_${crypto.randomUUID()}.pdf`;
       if (preview) setPdfUrl(URL.createObjectURL(doc.output("blob")));
@@ -531,7 +515,7 @@ function ContratLocationForm({ apprenant }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         <p className="text-sm text-muted-foreground">Brouillon en revue juridique · aucun envoi ni signature · données existantes inchangées.</p>
-        <Button variant="outline" onClick={() => setRevueOpen(true)} className="gap-2"><Scale className="h-4 w-4" /> Revue juridique des 11 articles</Button>
+        <Button variant="outline" onClick={() => setRevueOpen(true)} className="gap-2"><Scale className="h-4 w-4" /> Revue juridique du contrat</Button>
         {loading && <p role="status">Lecture du dossier et du parc…</p>}
         {lectureErreur && <p role="alert" className="text-sm text-destructive">{lectureErreur}</p>}
         {sourceBienvenue && <p className="text-xs text-muted-foreground break-words">{sourceBienvenue}</p>}
@@ -657,7 +641,22 @@ function ContratLocationForm({ apprenant }: Props) {
           </Tabs>
           <p className="font-semibold">Dépôt de garantie : {conditionsDepot(cautionRequise).depot} €</p>
           {!cautionRequise && <p className="text-sm text-muted-foreground">{clauseSansCaution()}</p>}
-          <p className="text-sm text-muted-foreground">Franchise d'assurance : non renseignée, police à vérifier. Aucun reçu, échéancier ou paiement n'est créé.</p>
+          <p className="text-sm text-muted-foreground">Le dépôt n'est ni une franchise ni un plafond de responsabilité. Aucun reçu, échéancier ou paiement n'est créé.</p>
+          <div className="space-y-2">
+            <Label htmlFor="tarifJournalier">Tarif journalier TTC (€) – base de l'indemnité de retard</Label>
+            <Input id="tarifJournalier" value={tarifJournalier} onChange={(e) => setTarifJournalier(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Qualité du locataire</Label>
+            <Select value={regime} onValueChange={(x) => setRegime(x as Regime)}>
+              <SelectTrigger aria-label="Qualité du locataire"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="non_determine">À préciser</SelectItem>
+                <SelectItem value="consommateur">Particulier (consommateur)</SelectItem>
+                <SelectItem value="professionnel">Professionnel</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {cautionRequise && (
             <>
               <div className="space-y-2">
@@ -670,6 +669,38 @@ function ContratLocationForm({ apprenant }: Props) {
               </div>
             </>
           )}
+        </div>
+
+        <Separator />
+
+        {/* Annexe assurance */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Annexe 1 – Assurance (obligatoire avant signature)</h3>
+          <p className="text-sm text-muted-foreground">Recopiez uniquement l'attestation et les conditions de l'assureur. Rien n'est coché d'avance ; un champ vide reste « {A_RENSEIGNER} ».</p>
+          {([["assureur","Assureur"],["numeroPolice","N° de police"],["conducteursAutorises","Conducteurs autorisés"],["plafondRc","Plafond responsabilité civile"],["plafonds","Autres plafonds"],["contactSinistre","Contact sinistre"]] as const).map(([k, l]) => (
+            <div key={k} className="space-y-2"><Label htmlFor={`as-${k}`}>{l}</Label><Input id={`as-${k}`} value={assurance[k]} onChange={e => majAssurance({ [k]: e.target.value } as Partial<AssuranceLocation>)} /></div>
+          ))}
+          <div className="space-y-2"><Label htmlFor="as-debut">Validité – début</Label><Input id="as-debut" type="date" value={assurance.validiteDebut} onChange={e => majAssurance({ validiteDebut: e.target.value })} /></div>
+          <div className="space-y-2"><Label htmlFor="as-fin">Validité – fin</Label><Input id="as-fin" type="date" value={assurance.validiteFin} onChange={e => majAssurance({ validiteFin: e.target.value })} /></div>
+          {([["locationPayanteAutorisee","Location payante expressément autorisée par l'assureur"],["usageFormationExamenAutorise","Usage formation / examen autorisé par l'assureur"]] as const).map(([k, l]) => (
+            <TriChoix key={k} label={l} value={assurance[k]} onChange={t => majAssurance({ [k]: t } as Partial<AssuranceLocation>)} />
+          ))}
+          {(Object.keys(LIB_GARANTIE) as (keyof typeof LIB_GARANTIE)[]).map(k => (
+            <div key={k} className="space-y-2">
+              <TriChoix label={`Garantie ${LIB_GARANTIE[k]}`} value={assurance.garanties[k]} onChange={t => setAssurance(a => ({ ...a, garanties: { ...a.garanties, [k]: t } }))} />
+              {k !== "assistance" && assurance.garanties[k] === true && (
+                <div className="space-y-2"><Label htmlFor={`fr-${k}`}>Franchise {LIB_GARANTIE[k]} par sinistre</Label>
+                  <Input id={`fr-${k}`} value={assurance.franchises[k]} onChange={e => setAssurance(a => ({ ...a, franchises: { ...a.franchises, [k]: e.target.value } }))} /></div>
+              )}
+            </div>
+          ))}
+          <div className="space-y-2"><Label htmlFor="as-excl">Exclusions opposables au locataire</Label><Textarea id="as-excl" rows={3} value={assurance.exclusions} onChange={e => majAssurance({ exclusions: e.target.value })} /></div>
+          <div className="space-y-2"><Label htmlFor="as-dem">Démarches et délais de déclaration</Label><Textarea id="as-dem" rows={2} value={assurance.demarchesDelais} onChange={e => majAssurance({ demarchesDelais: e.target.value })} /></div>
+        </div>
+
+        <div role="status" aria-label="Contrôle avant signature" className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+          <p className="font-semibold text-destructive">Signature bloquée ({blocages.length} élément{blocages.length > 1 ? "s" : ""})</p>
+          <ul className="mt-2 list-disc pl-5 space-y-1">{blocages.map(b => <li key={b}>{b}</li>)}</ul>
         </div>
 
         <Separator />
@@ -704,5 +735,18 @@ function ContratLocationForm({ apprenant }: Props) {
         </Dialog>
       </CardContent>
     </Card>
+  );
+}
+
+function TriChoix({ label, value, onChange }: { label: string; value: Tri; onChange: (t: Tri) => void }) {
+  return (
+    <fieldset className="space-y-1">
+      <legend className="text-sm font-medium">{label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {([[true, "Oui"], [false, "Non"], [null, "À renseigner"]] as const).map(([t, l]) => (
+          <Button key={l} type="button" size="sm" variant={value === t ? "default" : "outline"} aria-pressed={value === t} className="min-h-11" onClick={() => onChange(t)}>{l}</Button>
+        ))}
+      </div>
+    </fieldset>
   );
 }
