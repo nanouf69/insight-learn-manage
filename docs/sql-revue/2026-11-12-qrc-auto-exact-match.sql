@@ -31,7 +31,7 @@ BEGIN
            WHERE attempt_id = p_attempt_id AND etat = 'en_attente' AND note IS NULL
            ORDER BY qrc_instance_id FOR UPDATE LOOP
     -- Même question, même version : uniquement le snapshot figé de CETTE tentative, une seule occurrence.
-    SELECT count(*), min(q) INTO v_nb, v_q
+    SELECT count(*), (array_agg(q))[1] INTO v_nb, v_q
       FROM jsonb_array_elements(coalesce(att.snapshot->'questions', '[]')) q
      WHERE q->>'id' = r.question_id;
     CONTINUE WHEN v_nb <> 1 OR coalesce(v_q->>'type', '') <> 'QRC';
