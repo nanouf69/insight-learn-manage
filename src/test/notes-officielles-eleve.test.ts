@@ -1,9 +1,14 @@
 import { expect,it } from 'vitest';
 import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-data';
 import { dernieresCopiesOfficielles,modeleExamenOfficiel } from '@/lib/notesOfficiellesEleve';
-import { modelesBilansNotes } from '@/lib/notesBilansEleve';
+import { modelesBilansNotes,matieresBilanARevoir } from '@/lib/notesBilansEleve';
 const def={id:'EB1',numero:1,type:'VTC',matieres:[{id:'t3p',nom:'T3P',coefficient:3,noteEliminatoire:6,noteSur:20,questions:[]},{id:'anglais',nom:'Anglais',coefficient:1,noteEliminatoire:4,noteSur:20,questions:[]}]} as unknown as ExamenBlanc;
 const row=(id:string,m:string,n:number,at='2026-11-12T12:00:00Z')=>({id,apprenant_id:'own',quiz_type:'examen_blanc',quiz_id:'EB1',matiere_id:m,note_sur_20:n,score_obtenu:n,score_max:20,reussi:true,completed_at:at,details:{}});
+it('Bilan à revoir : strictement moins de 80%, 80% exclu, aucune note absente inventée',()=>{
+ const b={id:'bilan',titre:'Bilan VTC',date:null,note:null,statut:'Note en attente',matieres:[15.9,16,20,null,0,NaN].map((note,i)=>({id:String(i),nom:`Matière ${i}`,coefficient:1,note,date:null,statut:'Définitive'}))};
+ expect(matieresBilanARevoir([b]).map(m=>[m.id,m.pourcentage])).toEqual([['0',79.5],['4',0]]);
+ expect(matieresBilanARevoir([])).toEqual([]);
+});
 it('la note officielle est pondérée 3/1 : 20 et 4 donnent 16, jamais 12',()=>{
  expect(modeleExamenOfficiel(def,[row('a','t3p',20),row('b','anglais',4)]).note).toBe(16);
 });

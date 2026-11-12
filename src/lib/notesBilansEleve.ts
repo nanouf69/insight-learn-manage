@@ -4,6 +4,10 @@ import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-dat
 import { baremeReference, moyenneBilan, noterMatiere } from './bilanFutureBareme';
 import type { ExamenNoteOfficielle } from './notesOfficiellesEleve';
 export type SourcesBilansNotes={future:any[];archives:any[]};
+/** Display threshold only: does not change official grades or passing verdicts. */
+export function matieresBilanARevoir(bilans:ExamenNoteOfficielle[]){
+ return bilans.flatMap(b=>b.matieres.filter(m=>typeof m.note==='number'&&Number.isFinite(m.note)&&m.note>=0&&m.note<16).map(m=>({bilanId:b.id,bilan:b.titre,...m,pourcentage:(m.note??0)*5})));
+}
 export async function lireBilansNotes(apprenantId:string,ownerId:string|null):Promise<SourcesBilansNotes>{
  const archives:any[]=[];const future:any[]=[];
  for(let start=0;;start+=100){

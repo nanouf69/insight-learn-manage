@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { NotesExamensOfficiels } from "./NotesExamensOfficiels";
+import { BilansARevoir } from "./BilansARevoir";
 import { useLiveExamens } from "./useLiveExamens";
 import { dernieresCopiesOfficielles, modeleExamenOfficiel } from "@/lib/notesOfficiellesEleve";
 import { copieRecenteSession } from "@/features/correction-qrc-v2/copieRecenteSession";
@@ -628,7 +629,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
       )}
 
       {activeTab === "examens" && (definitions.isLoading ? <p role="status">Chargement du référentiel des examens…</p> : definitions.error ? <p role="alert">Référentiel indisponible. <Button onClick={definitions.refetch}>Réessayer</Button></p> : readError&&!officielles.length ? <p className="text-muted-foreground">Résultats indisponibles — aucun statut « Non réalisé » ne peut être confirmé.</p> : <NotesExamensOfficiels examens={examensOfficiels} titre="Examens blancs officiels" />)}
-      {activeTab === "bilans" && <>{bilanError&&<p role="alert" className="text-destructive">{bilanError}<Button variant="outline" onClick={()=>void fetchAll()}>Réessayer</Button></p>}{bilanError&&!bilans.length ? <p className="text-muted-foreground">Les Bilans ne peuvent pas être confirmés tant que la lecture n’a pas réussi.</p> : <NotesExamensOfficiels examens={bilans} titre="Bilan examen" />}</>}
+      {activeTab === "bilans" && <>{bilanError&&<p role="alert" className="text-destructive">{bilanError}<Button variant="outline" onClick={()=>void fetchAll()}>Réessayer</Button></p>}{bilanError&&!bilans.length ? <p className="text-muted-foreground">Les Bilans ne peuvent pas être confirmés tant que la lecture n’a pas réussi.</p> : <><NotesExamensOfficiels examens={bilans} titre="Bilan examen" /><BilansARevoir bilans={bilans}/></>}</>}
       {activeTab === "revisions" && <section className="space-y-3"><h3 className="font-bold">Révisions des questions fausses</h3>{quizResults.filter(r=>r.quiz_type==="revision_fausses").map(r=><div key={r.id} className="border border-border rounded-lg p-4"><strong>{r.quiz_titre}</strong><p className="text-sm text-muted-foreground">{Number.isFinite(Date.parse(r.completed_at))?new Date(r.completed_at).toLocaleString('fr-FR'):"Date non vérifiée"} · Révision uniquement</p><p>{normalizeQuizNoteSur20(r)==null?'Note en attente':`${normalizeQuizNoteSur20(r)} /20`}</p></div>)}</section>}
 
         {/* À revoir — matières échouées par examen blanc */}
