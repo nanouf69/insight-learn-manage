@@ -45,7 +45,7 @@ describe("Présence selon la filière", () => {
   it("VTC : session 100 %, total 60/66 et pratique 0/6", () => {
     const d = calculerTauxPresenceHeures(signatures, inscriptions, "vtc");
     expect(d.session.faites/d.session.prevues*100).toBe(100);
-    expect(d.pratique).toEqual({ faites:0, prevues:6 });
+    expect(d.pratique).toEqual({ faites:0, prevues:6, datesEntrainement: ["2026-10-15"] });
     expect((d.session.faites+d.pratique.faites)/(d.session.prevues+d.pratique.prevues)*100).toBeCloseTo(90.909);
   });
   it.each([
