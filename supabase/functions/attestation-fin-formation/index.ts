@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { preparer, envoyer } from "../_shared/attestationFinCore.ts";
+import { preparer, envoyer, renvoyer } from "../_shared/attestationFinCore.ts";
 import { depsAttestation } from "../_shared/attestationFinDeps.ts";
 import { fermerCompteApresAttestation } from "../_shared/attestationCompteFermeture.ts";
 import { depsFermeture } from "../_shared/attestationCompteFermetureDeps.ts";
@@ -44,6 +44,9 @@ Deno.serve(async (req) => {
         return json({ ...r, fermeture });
       }
       return json(r);
+    }
+    if (body?.action === "renvoyer" && typeof body.docId === "string" && UUID.test(body.docId)) {
+      return json(await renvoyer(deps, body.docId, adminId));
     }
     if (body?.action === "fermer_compte" && typeof body.docId === "string" && UUID.test(body.docId)) {
       return json(await fermerCompteApresAttestation(depsFermeture(db, adminId), body.docId));

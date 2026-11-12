@@ -137,6 +137,18 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     } finally { setOccupe(null); rafraichir(); }
   };
 
+  const renvoyerMail = async (d: AttestationEnregistree) => {
+    if (!window.confirm(`Renvoyer le mail de signature à ${d.identite_figee?.email ?? "l'apprenant(e)"} ?`)) return;
+    setOccupe(d.id);
+    try {
+      const r = await appelAttestation({ action: "renvoyer", docId: d.id });
+      if (r?.etat === "renvoye") toast({ title: "Mail renvoyé", description: "Le même lien de signature a été renvoyé." });
+      else toast({ title: r?.etat === "indetermine" ? "Renvoi incertain" : "Renvoi non effectué", description: r?.raison ?? "Aucun mail confirmé.", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Service momentanément indisponible", description: e?.message ?? "Réessayez dans un instant.", variant: "destructive" });
+    } finally { setOccupe(null); rafraichir(); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -177,6 +189,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
                 </div>}
                 {d.envoye_le && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => fermerCompte(d)}><Lock className="h-4 w-4 mr-1" />Fermer l'accès et arrêter les mails</Button>}
                 {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" onClick={() => { navigator.clipboard.writeText(lienSignature(d.token)); toast({ title: "Lien copié" }); }}><Copy className="h-4 w-4 mr-1" />Copier le lien de signature</Button>}
+                {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" disabled={occupe !== null} onClick={() => void renvoyerMail(d)}><RefreshCw className="h-4 w-4 mr-1" />Renvoyer le mail</Button>}
                 {d.statut === "signe" && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, true)}><Download className="h-4 w-4 mr-1" />Télécharger le PDF signé</Button>}
               </div>
             </CardContent>

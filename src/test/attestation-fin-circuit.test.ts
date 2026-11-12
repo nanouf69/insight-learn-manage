@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { deflateSync } from "node:zlib";
 import { createHash } from "node:crypto";
-import { preparer, envoyer, signerApprenant, vuePubliqueAttestation, type DepsAtt, type DocAtt, type ApprenantAtt, type EtatModuleSrv } from "../../supabase/functions/_shared/attestationFinCore";
+import { preparer, envoyer, renvoyer, signerApprenant, vuePubliqueAttestation, type DepsAtt, type DocAtt, type ApprenantAtt, type EtatModuleSrv } from "../../supabase/functions/_shared/attestationFinCore";
 
 // --- PNG réel 40x20 (tracé noir ou vide)
 function crc32(buf: Buffer) { let c, crc = 0xffffffff; for (const b of buf) { c = (crc ^ b) & 0xff; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; crc = (crc >>> 8) ^ c; } return (crc ^ 0xffffffff) >>> 0; }
@@ -56,10 +56,15 @@ describe("Attestation de fin de formation — circuit serveur", () => {
     expect((await envoyer(x.d, r.doc.id, "admin-1")).etat).toBe("envoye");
     expect((await envoyer(x.d, r.doc.id, "admin-1")).etat).toBe("deja_envoye");
     expect(x.mails).toEqual(["lea@example.test"]);
+    // Renvoi manuel : même mail figé, même lien, puis refus une fois signée.
+    expect((await renvoyer(x.d, r.doc.id, "admin-1")).etat).toBe("renvoye");
+    expect(x.mails).toEqual(["lea@example.test", "lea@example.test"]);
+    expect(r.doc.envoi_etat).toBe("envoye");
     const signe = await signerApprenant(x.d, r.doc.token, { signature: png(true), consentement: true, empreinteVue: r.doc.texte_empreinte, userAgent: "fixture" });
     expect(signe.status).toBe(200);
     expect(signe.body).toMatchObject({ success: true });
     expect(r.doc.statut).toBe("signe");
+    expect((await renvoyer(x.d, r.doc.id, "admin-1")).etat).toBe("bloque");
   });
   it("sans nom de responsable : préparée au nom de l'organisme, aucun nom inventé, envoi possible", async () => {
     const x = fake();
