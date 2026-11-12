@@ -18,8 +18,9 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
   const [dateExamen,setDateExamen]=useState<{contexte:string;jour:string}|null>(null);
   const contexteExamen=`${cle}|${examenId}`;
   const jourExamen=examenId!=='tous'&&dateExamen?.contexte===contexteExamen?dateExamen.jour:null;
-  const absents=useAbsentsSessionJour(cle,jourExamen,chargerAbsences);
-  const actualiser=useRef<()=>void>(()=>{});
+  const [jetonPresence,setJetonPresence]=useState(0);const [actualisation,setActualisation]=useState(false);
+  const absents=useAbsentsSessionJour(cle,jourExamen,chargerAbsences,jetonPresence);
+  const actualiser=useRef<()=>Promise<void>>(async()=>{});
   useEffect(()=>{
     if(!cle)return;
     let alive=true,scheduled=false,dirty=false,initial=true;
@@ -43,18 +44,23 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
       scheduled=false;
       if(alive&&dirty){dirty=false;void lire();}
     };
-    actualiser.current=()=>{void lire();};
+    actualiser.current=()=>lire();
     void lire();
-    return()=>{alive=false;actualiser.current=()=>{};};
+    return()=>{alive=false;actualiser.current=async()=>{};};
   },[cle,charger]);
-  useEffect(()=>{if(retry)actualiser.current();},[retry]);
+  useEffect(()=>{if(retry)void actualiser.current();},[retry]);
+  const actualiserManuel=async()=>{
+    if(!cle||actualisation)return;
+    setActualisation(true);
+    try{setJetonPresence(n=>n+1);await actualiser.current();}finally{setActualisation(false);}
+  };
   const inscritsSignal=releve?.inscrits.map(a=>a.id).sort().join(',')??'';
   useEffect(()=>{
     if(!cle||!inscritsSignal)return;
     let timer:ReturnType<typeof setTimeout>|undefined;
     const signal=()=>{
       if(document.visibilityState==='hidden'||timer)return;
-      timer=setTimeout(()=>{timer=undefined;actualiser.current();},400);
+      timer=setTimeout(()=>{timer=undefined;void actualiser.current();},400);
     };
     const stop=souscrire(inscritsSignal.split(','),signal);
     document.addEventListener('visibilitychange',signal);
@@ -75,6 +81,7 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
     <h2 className="text-lg font-semibold">Notes par session</h2>
     <div className="flex flex-wrap gap-2">{sessions.filter(s=>sessionFormationActuelle(s)).map(s=><Button key={s.cle} variant={cle===s.cle?'default':'outline'} onClick={()=>setCle(s.cle)} className="h-auto whitespace-normal text-left py-2">{s.libelle}</Button>)}</div>
     <select aria-label="Session du relevé" className="max-w-full rounded border bg-background px-2 py-1 text-sm" value={cle??''} onChange={e=>setCle(e.target.value||null)}><option value="">Choisir une session</option>{sessions.map(s=><option key={s.cle} value={s.cle}>{s.libelle}</option>)}</select>
+    {cle&&<div><Button variant="outline" onClick={()=>void actualiserManuel()} disabled={actualisation||loading} aria-busy={actualisation}>{actualisation?'Actualisation…':'Actualiser'}</Button></div>}
     {loading&&<p role="status">Chargement des notes de cette session…</p>}
     {erreur&&<div role="alert" className="text-destructive"><p>Lecture indisponible — {erreur}</p><Button variant="outline" onClick={()=>setRetry(n=>n+1)}>Réessayer</Button></div>}
     {releve&&<>
