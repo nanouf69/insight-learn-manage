@@ -37,7 +37,7 @@ it('Anis : le reçu après remise ne masque pas la dernière Sécurité EB4 à 1
   const recent={...newer,finishedAt:'2026-11-12T16:04:10.956Z',answers:{'securite:1':['A']},questions};
   const receipt={...row,completed_at:'2026-11-12T16:04:12.822364Z',details:{reponses:{1:['A']}}};
   const result=copieRecenteSession(receipt,[{...older,answers:recent.answers,questions},recent],new Set());
-  expect(result.__copieSessionAttemptId).toBe('new');
+  expect('__copieSessionAttemptId' in result&&result.__copieSessionAttemptId).toBe('new');
   expect(noteExamenAffichee(result)).toMatchObject({etat:'note',note20:13});
 });
 it('un reçu ultérieur divergent conserve sa propre copie sans association devinée',()=>{
