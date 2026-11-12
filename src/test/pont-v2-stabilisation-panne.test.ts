@@ -89,6 +89,7 @@ describe("Panne serveur pendant un examen blanc", () => {
     panne = true;
     enfilerReponseNoyau({ attemptId: "a", matiereId: "m", questionId: 1, valeur: ["B"] });
     enfilerReponseNoyau({ attemptId: "a", matiereId: "m", questionId: 1, valeur: ["B", "C"] });
+    for (let i = 0; i < 20; i++) await attendre(); // l'envoi de ["B"] déjà en vol échoue pendant la panne
     panne = false; await vider();
     expect(serveur.get(k("a", "m:1"))).toEqual({ valeur: ["B", "C"], revision: 2 });
   });
