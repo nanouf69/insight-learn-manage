@@ -1,5 +1,15 @@
 # Feuille de route
 
+## 12/11 17:03 — Bandeau questions fausses et preuve durable
+- [ ] Audit lecture seule des reprises complètes sans bannière, preuve serveur attendue/réponses/finalisation et coordination avec sauvegarde durable 16:49.
+- [ ] Correctif aperçu : preuve durable, réconciliation contrôlée idempotente sans rattrapage massif, grand bandeau exact PC/mobile ; tests fictifs réseau/double clic/partiel/deux onglets/historique.
+- [ ] Publication interdite avant validation ; dossiers concernés non nommés, aucun état réel modifié.
+
+## 12/11 17:01 — Refonte visuelle attestation
+- [x] Logo officiel exact retrouvé ; modèle et circuit existants lus, plan préparé.
+- [ ] PDF A4 bleu/noir/blanc sans durée, brouillon incomplet non valable, signatures/tampon authentiques et documents signés préservés ; tests PDF/PC/mobile.
+- [ ] Publication en attente de validation, aucun envoi réel.
+
 ## 12/11 16:49 — Sauvegarde durable des questions fausses
 - [x] Audit Bilan futur uniquement en mémoire + archive historique recouvrant la reprise ; modules/EB utilisent déjà la file partagée. Pilotes/corrigés courants OFF conservés, zéro mutation réelle.
 - [x] Aperçu : file commune, identité reçu/version, accusé/relecture, reprise hors ligne, admin lecture ; priorité historique corrigée. 78 tests ciblés PASS, 4 contrats SQL et vrai handler HTTP jetables PASS, navigateur PC/mobile PASS ; rapport docs/bilan-revision-durable-2026-11-12.md.
