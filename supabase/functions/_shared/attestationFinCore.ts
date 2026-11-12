@@ -72,8 +72,8 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
   const existants = (await deps.findDocs(a.id)).filter(actif);
   if (existants.length) return { etat: "existant" as const, doc: existants[0] };
 
-  const representant = typeof e.representant === "string" ? e.representant.trim() : "";
-  if (representant.length < 3 || representant.length > 120) return bloque(["Nom du représentant du centre (signataire) obligatoire."]);
+  // Nom du responsable facultatif (demande 12/11) : sans nom, le texte cite l'organisme ; jamais de nom inventé.
+  const representantSaisi = typeof e.representant === "string" ? e.representant.trim().slice(0, 120) : "";
   if (e.autoriseSignatureCentre !== true) return bloque(["Autorisation explicite d'apposer la signature du centre requise."]);
   if (!(await deps.signatureCentreDisponible())) return bloque(["Signature du centre introuvable dans les documents privés : aucune signature n'est fabriquée."]);
 
@@ -99,7 +99,7 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
   const now = deps.now();
   const dateEmission = dateParis(now.getTime());
   const champs = {
-    representant, nom: a.nom, prenom: a.prenom, formation: a.formation_choisie ?? a.type_apprenant,
+    representant: representantSaisi || null, nom: a.nom, prenom: a.prenom, formation: a.formation_choisie ?? a.type_apprenant,
     modalite: elearning ? "e-learning" : "présentiel", dateDebut, dateFin: fin.date,
     dureeHeures: dureeFormation(a, elearning), dateEmission,
   };
@@ -118,7 +118,7 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
         ? { faites: heures.faites, minimum: heures.minimum, source: "Heures e-learning enregistrées (calcul CRM), non bloquantes" } : null,
       signatures_presentiel: pres ? { signees: pres.signees!, attendues: pres.attendues!, source: "Émargements comptés au moment de la préparation" } : null,
     },
-    signature_centre: { representant, autorise_par: e.adminId, autorise_le: now.toISOString(), image: SIGNATURE_CENTRE_CHEMIN },
+    signature_centre: { representant: representantSaisi || SIGNATAIRE_CENTRE_PAR_DEFAUT, autorise_par: e.adminId, autorise_le: now.toISOString(), image: SIGNATURE_CENTRE_CHEMIN },
     date_emission: dateEmission,
   };
   const texte = JSON.stringify(contenu);
@@ -134,7 +134,7 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
     destinataire_nom: `${prenom} ${nom}`.trim(), destinataire_email: email, statut: "prepare", envoi_etat: "prepare",
     modele_code: MODELE_CODE_ATTESTATION, modele_version: VERSION_MODELE, cle_envoi: CLE_ENVOI_ATTESTATION,
     texte_fige: texte, texte_empreinte: empreinte,
-    identite_figee: { nom, prenom, email, formation: champs.formation, reference, representant },
+    identite_figee: { nom, prenom, email, formation: champs.formation, reference, representant: representantSaisi || SIGNATAIRE_CENTRE_PAR_DEFAUT },
     mail_objet_fige: objet, mail_html_fige: html, apprenant_id: a.id, token, created_by: e.adminId,
   });
   if (!inserted) {
