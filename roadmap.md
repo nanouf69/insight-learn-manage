@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 16:38 — Copie récente dans Notes par session
+- [x] Dernière remise V2 par apprenant/examen/matière projetée avec ses propres réponses et note, après cutoff de remise à zéro ; notes différentes/attente/zéro/égalité de date/sources conservées : 18 tests PASS, build OK. Aucune publication ni mutation réelle ; écran authentifié réel non vérifié.
+
 ## 12/11 12:57 — Corrigé courant entraînement F/G VTC
 - [x] Q18/Q19 identifiées module 5/505, corrigé A+C enregistré ; 32 snapshots 505 portent UID Q18. Lecteur installé réservé EB publiés, inutilisable pour ce Bilan ; candidat owner/remis F/G préparé, non installé.
 - [x] Relecture à chaque entrée/démarrage/vérification, dernier choix conservé seulement si identité/options concordent, erreurs sans repli figé ; 16 Vitest et 16 PostgreSQL jetables PASS, deux parcours PC/mobile PASS. Installation serveur reste nécessaire ; aucun compte réel, publication ou écriture production.

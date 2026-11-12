@@ -1,4 +1,4 @@
-import { resoudreDoublonsConcordants } from "./doublonsConcordants";
+import { copieRecenteSession } from './copieRecenteSession';
 import { supabase } from '@/integrations/supabase/client';
 import { loadSavedExamens } from '@/components/cours-en-ligne/ExamensBlancsEditor';
 import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-data';
@@ -39,7 +39,7 @@ const jourFr=(j:string)=>j.split('-').reverse().join('/');
 export function sourceAttenteMatiere(row:any,liens:any[],sessionAffichee:string,typeApprenant:string):SourceAttente{
   const core=row?.__core;
   if(!core?.attemptId||!core.finishedAt)return {destinations:[],motif:'non_rattachee'};
-  if(core.resultId!==row.id&&!core.provenResultIds?.includes(String(row.id)))return {destinations:[],motif:'non_rattachee'};
+  if(row.__copieSessionAttemptId!==core.attemptId&&core.resultId!==row.id&&!core.provenResultIds?.includes(String(row.id)))return {destinations:[],motif:'non_rattachee'};
   if(/-e$/i.test(typeApprenant))return {destinations:[],motif:'non_rattachee'};
   if(Number(core.qrcRestantes)<=0)return {destinations:[],motif:'publication'};
   const jour=jourParisIso(core.finishedAt);
@@ -89,7 +89,8 @@ export async function chargerNotesSession(sessionId:string):Promise<ReleveSessio
     const core=await fetchCoreMatiereStatesBulk(ids);const preuves=core===null?null:await fetchPassagesV2NonFiables(core);
     if(core===null||preuves===null)throw new Error('Lecture des publications officielles indisponible');
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
-      const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>resoudreDoublonsConcordants(attacherSourceUnique(r,core.get(a.id)??[],preuves),core.get(a.id)??[],preuves));
+      const states=(core.get(a.id)??[]).filter(s=>!reset.some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
+      const selected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>copieRecenteSession(attacherSourceUnique(r,states,preuves),states,preuves));
       const liensApprenant=liens.filter(l=>l.apprenant_id===a.id&&l.sessions).map(l=>({session:l.sessions,debut:String(l.date_debut??l.sessions.date_debut).slice(0,10),fin:String(l.date_fin??l.sessions.date_fin).slice(0,10)}));
       notes[a.id]={};matieres[a.id]={};sourcesAttente[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def){matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);sourcesAttente[a.id][def.id]={};const scores=examRows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));for(const m of def.matieres){if(matieres[a.id][def.id][m.id]?.etat==='attente')sourcesAttente[a.id][def.id][m.id]=sourceAttenteMatiere(findScoreForMatiere(scores,m),liensApprenant,`crm:${sessionId}`,a.type_apprenant??'');}}}
     }
