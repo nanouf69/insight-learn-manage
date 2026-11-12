@@ -41,7 +41,7 @@ export interface DepsAtt {
   getDocByToken(token: string): Promise<DocAtt | null>;
   insertDoc(row: Record<string, unknown>): Promise<DocAtt | null>;
   updateIf(id: string, patch: Record<string, unknown>, cond: { envoi_etat?: string; statutNot?: string }): Promise<{ rows: DocAtt[]; error?: { message: string } }>;
-  envoyerMail(p: { to: string; subject: string; html: string; apprenantId: string }): Promise<IssueEnvoi>;
+  envoyerMail(p: { to: string; subject: string; html: string; apprenantId: string; forceSend?: boolean }): Promise<IssueEnvoi>;
   journal(e: { operation: string; docId: string | null; apprenantId: string; auteur: string | null; apres: unknown }): Promise<boolean>;
   log(msg: string, extra?: unknown): void;
 }
