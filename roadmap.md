@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 12/11 18:16 — Date attestation limitée à la fin CRM
-- [ ] Plafond partagé aperçu/serveur, source connexion conservée, anciennes attestations signées intactes.
-- [ ] Tests date limite 31/10, frontière Paris, dossier incomplet et envoi refusé si date figée dépasse la fin CRM ; aucune publication.
+- [x] Plafond partagé aperçu/préparation serveur : dernière connexion limitée à la fin des cours en ligne CRM (sinon fin de formation), horodatage original et plafond conservés dans le nouveau modèle ; date absente/invalide = refus. Envoi recontrôle la date figée sans modifier les anciens documents.
+- [x] 44 tests PASS : 31/10/2026, frontière Paris, connexion antérieure, limite absente/invalide, date CRM avancée avant envoi, circuit et PDF ; Deno check PASS, build OK. Aucune connexion, signature ou donnée réelle modifiée, aucun envoi.
+- [ ] Mise en service : aucun déploiement/publication ; attend validation explicite. Parcours réel envoi non exécuté pour préserver les données.
 
 ## 12/11 18:12 — Arrêter les relances après l’attestation
 - [x] Garde partagée avant transport dans les 11 relances, 2 envois nominatifs anciens et mode relance pratique ; lecture exacte non cachée et paginée des attestations, erreur = refus. Mails ordinaires/authentification/signature inchangés.
