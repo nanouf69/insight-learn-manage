@@ -3578,6 +3578,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       referenceDossier: a.id ? `FT-${String(a.id).slice(0, 8).toUpperCase()}` : null,
       intituleFormation: getFormationTypeLocal(a.type_apprenant),
       presentiel,
+      formationContinue: isFC,
       dateDebut: session?.dateDebut ? formatDateFr(session.dateDebut) : null,
       dateFin: session?.dateFin ? formatDateFr(sa?.date_fin_personnalisee || session.dateFin) : null,
       horaires: hDeb && hFin ? `${String(hDeb).slice(0, 5)} – ${String(hFin).slice(0, 5)}` : null,
@@ -3585,7 +3586,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       acces,
       corpsModele: corps,
     });
-    return { html, accesManquant: acces.statut === 'manquant' };
+    return { html, accesManquant: !isFC && acces.statut === 'manquant' };
   };
   const alerterAccesManquant = (noms: string[]) => {
     if (noms.length) toast({
