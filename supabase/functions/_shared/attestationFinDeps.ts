@@ -67,14 +67,14 @@ export function depsAttestation(db: SupabaseClient, opts: { authHeader?: string;
       const { data, error } = await q.select(COLS);
       return { rows: (data as DocAtt[]) || [], error: error ? { message: error.message } : undefined };
     },
-    async envoyerMail({ to, subject, html, apprenantId }) {
+    async envoyerMail({ to, subject, html, apprenantId, forceSend }) {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 45_000);
       try {
         const res = await fetch(`${opts.supabaseUrl}/functions/v1/sync-outlook-emails`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: opts.authHeader || "", apikey: Deno.env.get("SUPABASE_ANON_KEY") || "" },
-          body: JSON.stringify({ action: "send", userEmail: "contact@ftransport.fr", to, subject, body: html, apprenantId }),
+          body: JSON.stringify({ action: "send", userEmail: "contact@ftransport.fr", to, subject, body: html, apprenantId, ...(forceSend === true ? { forceSend: true } : {}) }),
           signal: ctrl.signal,
         });
         let j: any = null;
