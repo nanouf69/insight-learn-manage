@@ -515,7 +515,7 @@ function ContratLocationForm({ apprenant }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         <p className="text-sm text-muted-foreground">Brouillon en revue juridique · aucun envoi ni signature · données existantes inchangées.</p>
-        <Button variant="outline" onClick={() => setRevueOpen(true)} className="gap-2"><Scale className="h-4 w-4" /> Revue juridique des 11 articles</Button>
+        <Button variant="outline" onClick={() => setRevueOpen(true)} className="gap-2"><Scale className="h-4 w-4" /> Revue juridique du contrat</Button>
         {loading && <p role="status">Lecture du dossier et du parc…</p>}
         {lectureErreur && <p role="alert" className="text-sm text-destructive">{lectureErreur}</p>}
         {sourceBienvenue && <p className="text-xs text-muted-foreground break-words">{sourceBienvenue}</p>}
@@ -641,7 +641,22 @@ function ContratLocationForm({ apprenant }: Props) {
           </Tabs>
           <p className="font-semibold">Dépôt de garantie : {conditionsDepot(cautionRequise).depot} €</p>
           {!cautionRequise && <p className="text-sm text-muted-foreground">{clauseSansCaution()}</p>}
-          <p className="text-sm text-muted-foreground">Franchise d'assurance : non renseignée, police à vérifier. Aucun reçu, échéancier ou paiement n'est créé.</p>
+          <p className="text-sm text-muted-foreground">Le dépôt n'est ni une franchise ni un plafond de responsabilité. Aucun reçu, échéancier ou paiement n'est créé.</p>
+          <div className="space-y-2">
+            <Label htmlFor="tarifJournalier">Tarif journalier TTC (€) – base de l'indemnité de retard</Label>
+            <Input id="tarifJournalier" value={tarifJournalier} onChange={(e) => setTarifJournalier(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Qualité du locataire</Label>
+            <Select value={regime} onValueChange={(x) => setRegime(x as Regime)}>
+              <SelectTrigger aria-label="Qualité du locataire"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="non_determine">À préciser</SelectItem>
+                <SelectItem value="consommateur">Particulier (consommateur)</SelectItem>
+                <SelectItem value="professionnel">Professionnel</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {cautionRequise && (
             <>
               <div className="space-y-2">
@@ -654,6 +669,38 @@ function ContratLocationForm({ apprenant }: Props) {
               </div>
             </>
           )}
+        </div>
+
+        <Separator />
+
+        {/* Annexe assurance */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Annexe 1 – Assurance (obligatoire avant signature)</h3>
+          <p className="text-sm text-muted-foreground">Recopiez uniquement l'attestation et les conditions de l'assureur. Rien n'est coché d'avance ; un champ vide reste « {A_RENSEIGNER} ».</p>
+          {([["assureur","Assureur"],["numeroPolice","N° de police"],["conducteursAutorises","Conducteurs autorisés"],["plafondRc","Plafond responsabilité civile"],["plafonds","Autres plafonds"],["contactSinistre","Contact sinistre"]] as const).map(([k, l]) => (
+            <div key={k} className="space-y-2"><Label htmlFor={`as-${k}`}>{l}</Label><Input id={`as-${k}`} value={assurance[k]} onChange={e => majAssurance({ [k]: e.target.value } as Partial<AssuranceLocation>)} /></div>
+          ))}
+          <div className="space-y-2"><Label htmlFor="as-debut">Validité – début</Label><Input id="as-debut" type="date" value={assurance.validiteDebut} onChange={e => majAssurance({ validiteDebut: e.target.value })} /></div>
+          <div className="space-y-2"><Label htmlFor="as-fin">Validité – fin</Label><Input id="as-fin" type="date" value={assurance.validiteFin} onChange={e => majAssurance({ validiteFin: e.target.value })} /></div>
+          {([["locationPayanteAutorisee","Location payante expressément autorisée par l'assureur"],["usageFormationExamenAutorise","Usage formation / examen autorisé par l'assureur"]] as const).map(([k, l]) => (
+            <TriChoix key={k} label={l} value={assurance[k]} onChange={t => majAssurance({ [k]: t } as Partial<AssuranceLocation>)} />
+          ))}
+          {(Object.keys(LIB_GARANTIE) as (keyof typeof LIB_GARANTIE)[]).map(k => (
+            <div key={k} className="space-y-2">
+              <TriChoix label={`Garantie ${LIB_GARANTIE[k]}`} value={assurance.garanties[k]} onChange={t => setAssurance(a => ({ ...a, garanties: { ...a.garanties, [k]: t } }))} />
+              {k !== "assistance" && assurance.garanties[k] === true && (
+                <div className="space-y-2"><Label htmlFor={`fr-${k}`}>Franchise {LIB_GARANTIE[k]} par sinistre</Label>
+                  <Input id={`fr-${k}`} value={assurance.franchises[k]} onChange={e => setAssurance(a => ({ ...a, franchises: { ...a.franchises, [k]: e.target.value } }))} /></div>
+              )}
+            </div>
+          ))}
+          <div className="space-y-2"><Label htmlFor="as-excl">Exclusions opposables au locataire</Label><Textarea id="as-excl" rows={3} value={assurance.exclusions} onChange={e => majAssurance({ exclusions: e.target.value })} /></div>
+          <div className="space-y-2"><Label htmlFor="as-dem">Démarches et délais de déclaration</Label><Textarea id="as-dem" rows={2} value={assurance.demarchesDelais} onChange={e => majAssurance({ demarchesDelais: e.target.value })} /></div>
+        </div>
+
+        <div role="status" aria-label="Contrôle avant signature" className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+          <p className="font-semibold text-destructive">Signature bloquée ({blocages.length} élément{blocages.length > 1 ? "s" : ""})</p>
+          <ul className="mt-2 list-disc pl-5 space-y-1">{blocages.map(b => <li key={b}>{b}</li>)}</ul>
         </div>
 
         <Separator />
@@ -688,5 +735,18 @@ function ContratLocationForm({ apprenant }: Props) {
         </Dialog>
       </CardContent>
     </Card>
+  );
+}
+
+function TriChoix({ label, value, onChange }: { label: string; value: Tri; onChange: (t: Tri) => void }) {
+  return (
+    <fieldset className="space-y-1">
+      <legend className="text-sm font-medium">{label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {([[true, "Oui"], [false, "Non"], [null, "À renseigner"]] as const).map(([t, l]) => (
+          <Button key={l} type="button" size="sm" variant={value === t ? "default" : "outline"} aria-pressed={value === t} className="min-h-11" onClick={() => onChange(t)}>{l}</Button>
+        ))}
+      </div>
+    </fieldset>
   );
 }
