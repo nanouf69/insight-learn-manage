@@ -523,6 +523,11 @@ export function getPendingAnswers(
     : null;
 }
 
+/** Account-scoped identities only, to restore a first offline revision before its row exists. */
+export function getPendingAnswerExerciseIdsFor(apprenantId: string): string[] {
+  return [...new Set(readQueue().filter(item => item.payload.apprenant_id === apprenantId && isOwnedByCurrentUser(item)).map(item => item.payload.exercice_id))];
+}
+
 /** Une valeur est « réellement saisie » (≠ vide) ? */
 export function isMeaningfulAnswerValue(value: unknown): boolean {
   if (Array.isArray(value)) return value.length > 0;

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { answersAreEqual, canQueueAnswerSaveFor, enqueueAnswerSave, flushAnswerSavesAndWait, getPendingAnswers, primeKnownWriteSeq } from './answerPersistence';
+import { answersAreEqual, canQueueAnswerSaveFor, enqueueAnswerSave, flushAnswerSavesAndWait, getPendingAnswers, getPendingAnswerExerciseIdsFor, primeKnownWriteSeq } from './answerPersistence';
 import { lireReponsesExactes } from './originauxExacts';
 
 export type BilanRevisionSource = { owner: string; module: number; exercise: number; receipt: string; version: string; questions: string[] };
@@ -18,7 +18,11 @@ export async function lireBilanRevision(source: BilanRevisionSource): Promise<Bi
     rows.push(...(data ?? []));
     if (!data || data.length < 100) break;
   }
-  const scoped = rows.filter(r => r.exercice_id === base || new RegExp(`^${base}__r[0-9]+$`).test(r.exercice_id));
+  const validId = (id: string) => id === base || new RegExp(`^${base}__r[0-9]+$`).test(id);
+  for (const id of getPendingAnswerExerciseIdsFor(source.owner).filter(validId)) {
+    if (!rows.some(r => r.exercice_id === id)) rows.push({ exercice_id: id, reponses: getPendingAnswers(source.owner, id), write_seq: 0 });
+  }
+  const scoped = rows.filter(r => validId(r.exercice_id));
   scoped.sort((a,b) => Number(b.exercice_id.split('__r')[1] ?? 1) - Number(a.exercice_id.split('__r')[1] ?? 1));
   const row = scoped[0];
   if (!row) return null;

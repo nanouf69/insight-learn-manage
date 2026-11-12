@@ -413,7 +413,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                     const fausse = estFausse(q);
                     const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
                     if (moduleId === 5) return <BilanQuestionCard key={q.id} question={q} index={qi} anchor={anchor(qi)} selected={reponseAffichee(q)} disabled={enRevision ? revision?.validee === true : soumis} showResults={resultatsVisibles} correct={c?.correct} wrong={fausse} missing={nonRepondues.has(q.id)} onSelect={l => {
-                      if (enRevision) { const cur = revision?.answers[q.id] ?? []; reprise.answer(String(q.id), (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort()); }
+                      if (enRevision) reprise.toggle(String(q.id), l);
                       else cocher(q, l);
                     }} />;
                     return (
@@ -433,8 +433,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                           disabled={enRevision ? revision!.validee : soumis}
                           onSelect={(l) => {
                             if (enRevision) {
-                              const cur = revision?.answers[q.id] ?? [];
-                              reprise.answer(String(q.id), (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort());
+                              reprise.toggle(String(q.id), l);
                             } else cocher(q, l);
                           }}
                         />

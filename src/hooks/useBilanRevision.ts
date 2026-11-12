@@ -64,5 +64,9 @@ export function useBilanRevision(source: BilanRevisionSource | null) {
     } catch (e) { if (g === generation.current) { setStatut('error'); setErreur(e instanceof Error ? e.message : 'Reprise non terminée'); } return false; }
     finally { finalizing.current = false; }
   };
-  return { revision, statut, erreur, start, answer, finish, retry: () => { const r = latest.current; if (r) void confirmer(r); } };
+  const toggle = (question: string, letter: string) => {
+    const cur = latest.current?.answers[question]; const selected = Array.isArray(cur) ? cur.map(String) : [];
+    answer(question, (selected.includes(letter) ? selected.filter(x => x !== letter) : [...selected, letter]).sort());
+  };
+  return { revision, statut, erreur, start, answer, toggle, finish, retry: () => { const r = latest.current; if (r) void confirmer(r); } };
 }
