@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 18:23 — Bouton Envoyer par mail visible
+- [ ] Afficher l’action sur le brouillon et les attestations à envoyer, motif du blocage explicite ; ne contourner aucune condition ni envoyer réellement.
+- [ ] Vérifier visibilité PC/mobile et conserver blocage tant que certification/fermeture compte non actives.
+
 ## 12/11 18:19 — Fermer le compte après envoi attestation
 - [x] Orchestrateur isolé lié au document envoyé, garde compte unique/non admin, erreur explicite et rejeu sans transport de mail ; aucune écriture réelle branchée.
 - [x] Audit SELECT des trois contrôles serveur : archivage/ban seuls ne prouvent pas la fermeture d'un JWT déjà émis ; 20 tests PASS (8 fermeture + 12 circuit/signature publique), Deno check et build OK.
