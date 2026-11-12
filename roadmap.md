@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 09:45 — Correction horaires convocation FC
+- [x] Remplacer uniquement les horaires affichés par 9h–12h / 13h–17h ; mémoriser la correction, conserver données et mails historiques, aucun envoi ni publication.
+
 ## 12/11 09:28 — Deux urgences isolées
 - [x] Bilan VTC : 505/506/507 et cours 9001 rendus via legacy, filtre navigation seul ; 49/46/48 et réponse B fictive restaurée vérifiés PC/mobile sans mutation. A–E/TAXI inchangés.
 - [x] Sauvegardes : comptage bloquant prouvé, pages lisibles, divergences de concurrence distinctes ; correctif fonction seule déployé, comptes facultatifs, conflits de lots refusés, empreintes et tests reprise exécutés. Bucket privé, aucun cron global/restauration.
