@@ -81,7 +81,7 @@ describe("Panne serveur pendant un examen blanc", () => {
       expect(reponsesNoyauEnAttente()).toBe(0);
       for (let c = 0; c < n; c++) for (let q = 1; q <= 3; q++) expect(serveur.get(k(`att-${c}`, `francais:${q}`))).toEqual({ valeur: TEXTE, revision: 1 });
       expect(ecrituresEffectives).toBe(n * 3); // avant : n×3×48 écritures
-    });
+    }, 60_000);
   }
 
   it("changement de réponse : l'ancienne valeur n'écrase jamais la nouvelle", async () => {

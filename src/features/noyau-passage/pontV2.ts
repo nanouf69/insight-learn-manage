@@ -683,6 +683,9 @@ export async function viderFileNoyau(attemptId?: string | null, options?: { forc
       // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un autre passage.
       const element = file.find((e) => !attemptId || e.attemptId === attemptId);
       if (!element) break;
+      // Une valeur plus récente de la même question attend déjà : l'ancienne n'est jamais envoyée.
+      const posElement = file.indexOf(element);
+      if (file.some((e, i) => i > posElement && cleElement(e) === cleElement(element))) { retirer(element); continue; }
       elementEnVol = element;
       // Reprise (F5, autre tablette) : numéros de version de ce passage lus une
       // fois depuis le serveur avant le premier envoi.
