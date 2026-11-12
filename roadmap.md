@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 10:49 — Révision Sécurité routière VTC
+- [ ] Diagnostic SELECT : éditeur, versions/reçus, snapshots et dernières révisions Q71/Q226 ; aucun compte réel.
+- [ ] Préparer lecture serveur propriétaire/remise et entraînement local par identité prouvée, sans réécriture ; serveur non installé.
+- [ ] Tests SQL jetables, régressions simulées et rapport anonymisé/diff ; F/G conservés, aucune publication.
+
 ## 12/11 10:23 — F/G après Anglais
 - [x] Raccourcis du haut retirés ; étapes partagées A–E puis F/G par contexte VTC, IDs 505/506 et retour inchangés ; H/QRC à leur emplacement existant. 25 tests PASS, quatre parcours simulés PC/mobile × admin/élève (ordre géométrique E<F<G, clics F/G et retour, zéro mutation admin). Build OK ; aucune publication ni compte réel. TAXI hors contexte inchangé ; cas réels non vérifiés.
 
