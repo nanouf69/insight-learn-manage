@@ -3,6 +3,7 @@ import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSumm
 import { Button } from "@/components/ui/button";
 import { QuizQuestionSidebar } from "./learnerQuizUi";
 import { supabase } from "@/integrations/supabase/client";
+import { BILAN_CORRIGE_ACTUEL_ACTIF } from "@/lib/bilanCorrigeActuel";
 
 type Q = { id: number; enonce: string; image?: string; choix?: { lettre: string; texte: string }[] };
 type Matiere = { exercise_id: number; submitted: { correct_count: number; question_count: number } | null; questions: Q[] | null };
@@ -39,6 +40,7 @@ export function BilanFutureApercuAdmin({ apercu, presentationVtc = false, titre,
               <p className="text-sm text-muted-foreground">{selected?.questions ? `${selected.questions.length} questions` : "Questions indisponibles"} — {selected ? selected.submitted ? "Remis" : "Non remis" : "État de remise indisponible"}</p>
               {selected?.questions?.map((q, i) => <BilanQuestionCard key={q.id} question={q} index={i} disabled anchor={`apercu-bilan-${q.id}`} />)}
               {selected?.submitted && <BilanRemiseSummary correct={selected.submitted.correct_count} total={selected.submitted.question_count} />}
+              {BILAN_CORRIGE_ACTUEL_ACTIF && selected?.submitted && <p role="status" data-testid="admin-corrige-actuel-bloque" className="text-sm text-muted-foreground">Corrigé actuel indisponible ici : la lecture administrateur ne fournit pas l'identifiant de la copie remise. Note officielle inchangée.</p>}
             </BilanMatiereCard>
             <div className="space-y-2"><p className="text-xs text-muted-foreground">Questions</p>{selected?.questions?.map((q, i) => <Button key={q.id} size="icon" variant="outline" aria-label={`Question ${i + 1}`} onClick={() => document.getElementById(`apercu-bilan-${q.id}`)?.scrollIntoView({ block: "start" })}>{i + 1}</Button>)}</div>
           </div>

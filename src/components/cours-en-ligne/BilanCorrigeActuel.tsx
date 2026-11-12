@@ -5,14 +5,19 @@ import { BilanQuestionCard } from "./BilanFuturePresentation";
 import { conserverChoixLocaux, faussesApresVerification, lireCorrigeActuel, projeterCopie, type Projection, type QuestionActuelle } from "@/lib/bilanCorrigeActuel";
 import { reponseExacte } from "@/lib/bilanFutureCorrection";
 
-export type LecteurCorrige = (snapshotId: string) => Promise<{ data?: unknown; error?: unknown }>;
-const lecteurServeur: LecteurCorrige = (id) => (supabase as any).rpc("bilan_corrige_actuel_read", { p_snapshot: id });
+export type SourceCorrige = "snapshot" | "future";
+export type LecteurCorrige = (sourceId: string) => Promise<{ data?: unknown; error?: unknown }>;
+/** Legacy frozen snapshot or SUBMITTED A–E receipt; identifiers come from already-authorised reads, never inferred. */
+export const lecteurServeur = (type: SourceCorrige): LecteurCorrige => (id) => type === "future"
+  ? (supabase as any).rpc("bilan_future_corrige_actuel_read", { p_receipt: id })
+  : (supabase as any).rpc("bilan_corrige_actuel_read", { p_snapshot: id });
 export const INTERVALLE_RELECTURE_MS = 30_000;
 type Local = Record<string, { signature: string; choix: string[] }>;
 
 /** Read-only current-key view of a submitted legacy snapshot. Local practice only; admin = lectureSeule. */
-export function BilanCorrigeActuel({ snapshotId, lectureSeule = false, lecteur = lecteurServeur, intervalle = INTERVALLE_RELECTURE_MS }:
-  { snapshotId: string; lectureSeule?: boolean; lecteur?: LecteurCorrige; intervalle?: number }) {
+export function BilanCorrigeActuel({ snapshotId, sourceType = "snapshot", lectureSeule = false, lecteur: lecteurFourni, intervalle = INTERVALLE_RELECTURE_MS }:
+  { snapshotId: string; sourceType?: SourceCorrige; lectureSeule?: boolean; lecteur?: LecteurCorrige; intervalle?: number }) {
+  const lecteur = useRef(lecteurFourni ?? lecteurServeur(sourceType)).current;
   const [p, setP] = useState<Projection | null>(null);
   const [orig, setOrig] = useState<number | null>(null);
   const [error, setError] = useState(false);

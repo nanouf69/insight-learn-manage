@@ -27,6 +27,8 @@ import { fetchLiveExamens } from "./useLiveExamens";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 import { BilanSrTraining } from "./BilanSrTraining";
 import { BILAN_SR_TRAINING_ACTIF } from "@/lib/bilanSrTraining";
+import { BILAN_CORRIGE_ACTUEL_ACTIF } from "@/lib/bilanCorrigeActuel";
+import { BilanCorrigeActuel } from "./BilanCorrigeActuel";
 
 import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, BilanRemisesRecap, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
 export const FUTURE_SUBJECT_NAMES = NOMS_MATIERES_BILAN;
@@ -469,6 +471,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                             />
                           )}
                           {!correction && <p className="text-sm text-muted-foreground text-center">Chargement de la correction…</p>}
+                          {BILAN_CORRIGE_ACTUEL_ACTIF && correction && <BilanCorrigeActuel key={passage.receipt.passageId} sourceType="future" snapshotId={passage.receipt.passageId} />}
                           <QuizResultPanels>
                             {BILAN_SR_TRAINING_ACTIF && correction && moduleId === 5 && exoId === 502 ? <BilanSrTraining key={passage.receipt.passageId} sourceType="future" sourceId={passage.receipt.passageId} /> : correction && (
                               <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" data-testid="refaire-fausses"
