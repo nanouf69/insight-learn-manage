@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 18:51 — Réinitialisation d’une matière dans l’examen actif
+- [ ] Audit lecture seule admin/serveur/reprise élève, identité tentative active et risques sur les autres matières.
+- [ ] Correctif isolé avec confirmation nominative, conservation des copies et projection À refaire/notes provisoires ; sans réinitialisation réelle ni publication.
+- [ ] Tests fictifs sept matières, deux clics, reprise/soumission et PC/mobile ; garanties et limites documentées.
+
 ## 12/11 18:47 — Déblocage attestation autorisé
 - [x] Retrait du verrou pédagogique ; préparation avec représentant et autorisation signature centre, envoi après enregistrement et confirmation admin ; e-learning sans durée obligatoire ni inventée. Fermeture automatique différée avec accord explicite.
 - [x] 35 tests PASS : préparation sans modules/durée, envoi unique, vraie signature, dates CRM ; fiche Léa authentifiée vérifiée en lecture seule, prête à enregistrer ; fonctions ciblées déployées, build OK.
