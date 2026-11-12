@@ -1,7 +1,7 @@
 # Feuille de route
 
 ## 12/11 16:38 — Copie récente dans Notes par session
-- [ ] Retenir la dernière remise par apprenant/examen/matière en affichage seul ; tester notes différentes, attente, égalité de date et conservation des sources. Aucune publication ni mutation réelle.
+- [x] Dernière remise V2 par apprenant/examen/matière projetée avec ses propres réponses et note, après cutoff de remise à zéro ; notes différentes/attente/zéro/égalité de date/sources conservées : 18 tests PASS, build OK. Aucune publication ni mutation réelle ; écran authentifié réel non vérifié.
 
 ## 12/11 12:57 — Corrigé courant entraînement F/G VTC
 - [x] Q18/Q19 identifiées module 5/505, corrigé A+C enregistré ; 32 snapshots 505 portent UID Q18. Lecteur installé réservé EB publiés, inutilisable pour ce Bilan ; candidat owner/remis F/G préparé, non installé.

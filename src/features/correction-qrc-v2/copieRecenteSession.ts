@@ -17,6 +17,6 @@ export function copieRecenteSession<T extends Record<string, any>>(row:T,states:
     // Never attach old row answers, corrections or barème to the selected attempt.
     details:latest.historicalDetails??{reponses:latest.answers,snapshot:{questions:latest.questions}},
     __core:impossible?CORE_LECTURE_IMPOSSIBLE:latest,
-    __noteRecalculee:false,__doublonConcordant:undefined,
+    __noteRecalculee:false,__doublonConcordant:undefined,__copieSessionAttemptId:latest.attemptId,
   };
 }
