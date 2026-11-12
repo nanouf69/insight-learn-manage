@@ -1866,7 +1866,7 @@ export default function ExamensBlancsPage({
   return null;
 }
 
-function RevisionPhaseView({
+export function RevisionPhaseView({
   examenChoisi,
   tousResultats,
   apprenantId,
