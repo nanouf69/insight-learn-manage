@@ -51,6 +51,7 @@ type Job = {
   curseur?: string | number | null;
   preuves?: Record<string, Preuve>;
   derniere_erreur?: string;
+  lots?: Record<string, { lignes: number; premiere: unknown; derniere: unknown; sha256: string }>;
 };
 type Etat = Job & {
   jour: string; maj: string; termine?: boolean; version?: number;
@@ -114,8 +115,13 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
       if (data.length < page) { fini = true; break; }
     }
     if (buf.length) {
-      // Nom fixé par la position : un nouvel essai réécrit le même fichier (idempotent).
-      await up(`${prefixe}/${t}/part-${String(job.from).padStart(8, "0")}.json`, buf);
+      const chemin = `${prefixe}/${t}/part-${String(job.from).padStart(8, "0")}.json`;
+      const contenu = JSON.stringify(buf);
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(contenu));
+      const sha256 = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
+      await up(chemin, buf);
+      job.lots ??= {};
+      job.lots[chemin] = { lignes: buf.length, premiere: buf[0][pk], derniere: buf[buf.length - 1][pk], sha256 };
     }
     const total = (job.comptes[t] ?? 0) + buf.length;
     let finale: number | null = null;
@@ -202,7 +208,20 @@ Deno.serve(async (req) => {
         sondes[t] = { count: c.count, count_error: err(c.error), page_count: r.data?.length ?? null, page_error: err(r.error), duree_ms: Date.now() - debut };
       }
     }
-    return json({ jour, fichiers, sondes });
+    const verification: Record<string, unknown> = {};
+    if (body.verifier_lot === true) {
+      const chemin = `${jour}/_reparation-1/reponses_apprenants_journal/part-00000000.json`;
+      const { data, error } = await sb.storage.from(BUCKET).download(chemin);
+      if (error || !data) verification.erreur = "lot absent ou illisible";
+      else {
+        const texte = await data.text();
+        const rows = JSON.parse(texte);
+        const ids = rows.map((r: any) => r.id);
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texte));
+        verification.lot = { chemin, lignes: rows.length, ids_uniques: new Set(ids).size, ordre_croissant: ids.every((id: unknown, i: number) => i === 0 || cmpCle(id, ids[i - 1]) > 0), sha256: Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("") };
+      }
+    }
+    return json({ jour, fichiers, sondes, verification });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
@@ -273,6 +292,7 @@ Deno.serve(async (req) => {
         instantane_coherent: false, provenance: "reexport_independant_tables_selectionnees",
         reparation_debut: r.debut, observations: r.preuves ?? {},
         sources: Object.fromEntries(tables.map((t) => [t, `${REPARATION_DOSSIER}/${t}`])),
+        lots: r.lots ?? {},
       };
       await up(`${jour}/${REPARATION_DOSSIER}/${erreurs.length ? "_incomplet.json" : "_export_termine.json"}`, manifeste);
       r.erreurs = erreurs;
@@ -311,7 +331,7 @@ Deno.serve(async (req) => {
 
   if (etat.i >= TABLES.length) {
     etat.maj = new Date().toISOString();
-    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), observations: etat.preuves ?? {}, export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false, ancien_curseur: Object.values(etat.preuves ?? {}).some((p) => p.mode === "decalage") };
+    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), observations: etat.preuves ?? {}, lots: etat.lots ?? {}, export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false, ancien_curseur: Object.values(etat.preuves ?? {}).some((p) => p.mode === "decalage") };
     await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_export_termine.json`, manifeste);
     etat.erreurs = manifeste.erreurs;
     etat.termine = true;
