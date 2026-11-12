@@ -1,4 +1,13 @@
 -- PREPARATION ONLY. Not installed; no seed, activation, or change of existing access.
+-- Requires the companion 2026-11-12-session-exam-import.sql in the SAME transaction.
+-- Private append-only capability issued only by the controlled import function.
+CREATE TABLE public.session_exam_import_permits (
+ attempt_id uuid PRIMARY KEY, result_id uuid NOT NULL,
+ apprenant_id uuid NOT NULL, exam_id text NOT NULL,
+ transaction_id bigint NOT NULL, backend_pid integer NOT NULL
+);
+REVOKE ALL ON public.session_exam_import_permits FROM PUBLIC,anon,authenticated,service_role;
+ALTER TABLE public.session_exam_import_permits ENABLE ROW LEVEL SECURITY;
 CREATE TABLE public.session_exam_access_events (
  operation_id uuid PRIMARY KEY,
  session_id uuid NOT NULL REFERENCES public.sessions(id),
@@ -19,6 +28,8 @@ CREATE FUNCTION public.session_exam_access_immutable() RETURNS trigger
  LANGUAGE plpgsql SET search_path=pg_catalog,public AS $$
  BEGIN RAISE EXCEPTION 'Journal des accès immuable.' USING ERRCODE='42501'; END $$;
 CREATE TRIGGER session_exam_access_immutable BEFORE UPDATE OR DELETE ON public.session_exam_access_events
+ FOR EACH ROW EXECUTE FUNCTION public.session_exam_access_immutable();
+CREATE TRIGGER session_exam_import_permits_immutable BEFORE UPDATE OR DELETE ON public.session_exam_import_permits
  FOR EACH ROW EXECUTE FUNCTION public.session_exam_access_immutable();
 
 -- Conservative equivalent of modeExamenBlancStrict; unknown modes are not treated as presential.
@@ -116,14 +127,63 @@ CREATE FUNCTION public.assert_session_exam_start(p_apprenant_id uuid,p_exam_id t
    USING ERRCODE='P0551'; END IF;
  END $$;
 
+-- Only exact previously persisted identities can continue after closure.
+CREATE FUNCTION public.session_exam_continuation(p_owner uuid,p_key text,p_number integer) RETURNS boolean
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+ SELECT EXISTS(SELECT 1 FROM public.apprenant_examen_timers t
+  WHERE t.apprenant_id=p_owner AND t.exercice_id=p_key AND t.tentative=p_number)
+ OR EXISTS(SELECT 1 FROM public.exam_subject_retakes r WHERE r.apprenant_id=p_owner
+  AND r.exercice_id=p_key AND r.exam_id=split_part(p_key,'__',1)
+  AND r.matiere_id=split_part(p_key,'__',2) AND r.tentative=p_number)
+ OR EXISTS(SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_owner
+  AND a.exam_id=split_part(p_key,'__',1) AND a.etat='en_cours'
+  AND a.snapshot->>'matiere'=split_part(p_key,'__',2)
+  AND CASE WHEN a.snapshot ? 'tentative' THEN
+    a.snapshot->>'tentative'=p_number::text
+   ELSE p_number=(SELECT count(*) FROM public.exam_attempts_v2 x
+    WHERE x.apprenant_id=a.apprenant_id AND x.exam_id=a.exam_id
+    AND x.snapshot->>'matiere'=a.snapshot->>'matiere' AND x.started_at<=a.started_at)
+   END)
+$$;
+
 CREATE FUNCTION public.session_exam_start_guard() RETURNS trigger
  LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
- DECLARE eid text; mid text; open_attempt uuid;
+ DECLARE eid text; mid text; open_attempt uuid; number integer; old_number integer;
  BEGIN
  IF TG_TABLE_NAME='exam_attempts_v2' THEN
-  -- Explicit immutable historical imports are not new learner starts.
-  IF NEW.etat<>'en_cours' AND NEW.snapshot->'source_historique'->>'result_id' IS NOT NULL THEN RETURN NEW; END IF;
+  -- JSON supplied by a caller is NEVER an import capability.
+  IF EXISTS(SELECT 1 FROM public.session_exam_import_permits p
+    WHERE p.attempt_id=NEW.attempt_id AND p.apprenant_id=NEW.apprenant_id
+     AND p.exam_id=NEW.exam_id AND p.result_id::text=NEW.snapshot->'source_historique'->>'result_id'
+     AND p.transaction_id=txid_current() AND p.backend_pid=pg_backend_pid()) THEN RETURN NEW; END IF;
   PERFORM public.assert_session_exam_start(NEW.apprenant_id,NEW.exam_id);
+ ELSIF TG_TABLE_NAME='canonical_exam_attempts' THEN
+  eid:=split_part(NEW.quiz_id,'__',1);
+  IF eid !~* '^EB[1-6](-(TAXI|ta|va))?$' THEN RETURN NEW; END IF;
+  IF EXISTS(SELECT 1 FROM public.canonical_exam_attempts a WHERE a.quiz_id=NEW.quiz_id
+   AND a.apprenant_ref=NEW.apprenant_ref AND a.tentative=NEW.tentative) THEN RETURN NEW; END IF;
+  -- This inactive pilot is not an authorized EB channel. Do not guess an owner
+  -- from an arbitrary text reference or grant a usable new EB snapshot.
+  RAISE EXCEPTION 'Canal canonique EB inactif ; aucun nouveau passage autorisé.' USING ERRCODE='P0551';
+ ELSIF TG_TABLE_NAME='reponses_apprenants' THEN
+  eid:=split_part(NEW.exercice_id,'__',1);mid:=split_part(NEW.exercice_id,'__',2);
+  IF eid !~* '^EB[1-6](-(TAXI|ta|va))?$' THEN RETURN NEW; END IF;
+  IF mid='' OR mid !~ '^[a-zA-Z0-9_-]+$'
+    OR array_length(string_to_array(NEW.exercice_id,'__'),1) NOT IN (2,3)
+    OR (array_length(string_to_array(NEW.exercice_id,'__'),1)=3
+      AND split_part(NEW.exercice_id,'__',3) !~ '^t[1-9][0-9]*$') THEN
+   RAISE EXCEPTION 'Identité du passage non prouvée.' USING ERRCODE='P0482'; END IF;
+  number:=coalesce(nullif(substring(NEW.exercice_id FROM '__t([0-9]+)$'),'')::integer,NEW.tentative);
+  IF number<1 OR (NEW.tentative<>number AND NEW.tentative<>1) THEN
+   RAISE EXCEPTION 'Tentative non concordante.' USING ERRCODE='P0482'; END IF;
+  -- Legacy Edge omits tentative: the exact __tN suffix is authoritative, never
+  -- a nearby row, another subject, or a maximum across the learner's exam.
+  SELECT greatest(r.tentative,coalesce(substring(r.exercice_id FROM '__t([0-9]+)$')::integer,1))
+   INTO old_number FROM public.reponses_apprenants r
+   WHERE r.apprenant_id=NEW.apprenant_id AND r.exercice_id=NEW.exercice_id;
+  IF old_number=number THEN RETURN NEW; END IF;
+  IF public.session_exam_continuation(NEW.apprenant_id,NEW.exercice_id,number) THEN RETURN NEW; END IF;
+  PERFORM public.assert_session_exam_start(NEW.apprenant_id,eid);
  ELSIF TG_TABLE_NAME='exam_subject_retakes' THEN
   -- Existing receipt replay does not insert; every inserted receipt authorizes a NEW start.
   PERFORM public.assert_session_exam_start(NEW.apprenant_id,NEW.exam_id);
@@ -133,15 +193,13 @@ CREATE FUNCTION public.session_exam_start_guard() RETURNS trigger
   -- INSERT ON CONFLICT calls BEFORE INSERT, even for an existing legacy timer.
   IF EXISTS(SELECT 1 FROM public.apprenant_examen_timers t WHERE t.apprenant_id=NEW.apprenant_id
    AND t.exercice_id=NEW.exercice_id AND t.tentative=NEW.tentative) THEN RETURN NEW; END IF;
-  -- V2 creates its frozen attempt before its timer; permit only matching stored tentative.
-  SELECT attempt_id INTO open_attempt FROM public.exam_attempts_v2 a
-   WHERE a.apprenant_id=NEW.apprenant_id AND a.exam_id=eid AND a.etat='en_cours'
-   AND a.snapshot->>'matiere'=mid
-   AND (coalesce(nullif(a.snapshot->>'tentative','')::integer,1)=NEW.tentative OR
-    (NOT (a.snapshot ? 'tentative') AND NEW.tentative=(SELECT count(*) FROM public.exam_attempts_v2 x
-      WHERE x.apprenant_id=a.apprenant_id AND x.exam_id=a.exam_id AND x.snapshot->>'matiere'=mid
-      AND x.started_at<=a.started_at)));
-  IF open_attempt IS NOT NULL THEN RETURN NEW; END IF;
+  -- V2/retake creates its stored proof before its timer; never default a
+  -- later V2 attempt to tentative 1 just because its snapshot omits the field.
+  IF public.session_exam_continuation(NEW.apprenant_id,NEW.exercice_id,NEW.tentative)
+   OR EXISTS(SELECT 1 FROM public.reponses_apprenants r WHERE r.apprenant_id=NEW.apprenant_id
+    AND r.exercice_id=NEW.exercice_id
+    AND greatest(r.tentative,coalesce(substring(r.exercice_id FROM '__t([0-9]+)$')::integer,1))=NEW.tentative)
+   THEN RETURN NEW; END IF;
   PERFORM public.assert_session_exam_start(NEW.apprenant_id,eid);
  END IF;
  RETURN NEW;
@@ -152,9 +210,13 @@ CREATE TRIGGER session_exam_new_retake BEFORE INSERT ON public.exam_subject_reta
  FOR EACH ROW EXECUTE FUNCTION public.session_exam_start_guard();
 CREATE TRIGGER session_exam_new_timer BEFORE INSERT ON public.apprenant_examen_timers
  FOR EACH ROW EXECUTE FUNCTION public.session_exam_start_guard();
+CREATE TRIGGER session_exam_new_answer BEFORE INSERT ON public.reponses_apprenants
+ FOR EACH ROW EXECUTE FUNCTION public.session_exam_start_guard();
+CREATE TRIGGER session_exam_new_canonical BEFORE INSERT ON public.canonical_exam_attempts
+ FOR EACH ROW EXECUTE FUNCTION public.session_exam_start_guard();
 
 REVOKE ALL ON FUNCTION public.session_exam_access_immutable(),public.session_exam_mode(uuid),public.session_exam_catalog(uuid),
- public.assert_session_exam_start(uuid,text),public.session_exam_start_guard() FROM PUBLIC,anon,authenticated;
+ public.assert_session_exam_start(uuid,text),public.session_exam_continuation(uuid,text,integer),public.session_exam_start_guard() FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.admin_session_exam_access_context(uuid),
  public.admin_set_session_exam_access(uuid,uuid,text,boolean,uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.admin_session_exam_access_context(uuid),

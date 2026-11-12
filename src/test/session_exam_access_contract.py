@@ -9,12 +9,13 @@ class Access(unittest.TestCase):
  def setUpClass(c):
   c.d=tempfile.mkdtemp(prefix='session-exam-',dir='/tmp');os.chown(c.d,1000,1000)
   c.env={k:v for k,v in os.environ.items() if not k.startswith('PG')};c.addClassCleanup(c.cleanup)
-  for cmd in [AS+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale'],AS+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55489 -h ""','-w','start']]:subprocess.run(cmd,env=c.env,check=True,capture_output=True)
+  for cmd in [AS+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale','--encoding=UTF8'],AS+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55489 -h ""','-w','start']]:subprocess.run(cmd,env=c.env,check=True,capture_output=True)
   c.sql("CREATE ROLE authenticated;CREATE ROLE anon;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;GRANT USAGE ON SCHEMA auth TO authenticated;")
   cat=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text());c.sql(cat['schema'])
   for f in cat['functions']:c.sql(f)
   c.sql(cat['rls']);c.sql(cat['triggers'])
   c.sql("CREATE TABLE sessions(id uuid PRIMARY KEY,nom text,type_session text,types_apprenant text[]);CREATE TABLE session_apprenants(session_id uuid,apprenant_id uuid,liste_attente boolean);")
+  c.sql("CREATE TABLE canonical_exam_attempts(attempt_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),quiz_id text,apprenant_ref text,tentative int,started_at timestamptz DEFAULT now(),snapshot jsonb,snapshot_versions jsonb,is_pilot boolean DEFAULT true,UNIQUE(quiz_id,apprenant_ref,tentative));")
   c.sql(Path('docs/sql-revue/2026-11-11-session-exam-access.sql').read_text())
   c.sql(f"INSERT INTO apprenants(id,auth_user_id,nom,prenom,type_apprenant,modules_autorises) VALUES('{A}','{U}','FICTIF','Élève','vtc',ARRAY[35]);INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');INSERT INTO sessions VALUES('{S}','VTC SOIR','theorique',ARRAY['VTC','TAXI']),('{S2}','TAXI JOUR','theorique',ARRAY['TAXI','TA']);INSERT INTO session_apprenants VALUES('{S}','{A}',false),('{S2}','{A}',false);INSERT INTO examens_blancs_parcours VALUES(35,'EB3'),(36,'EB3-TAXI'),(37,'EB3-ta'),(38,'EB3-va');")
  @classmethod
