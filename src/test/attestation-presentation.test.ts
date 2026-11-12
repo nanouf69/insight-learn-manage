@@ -8,10 +8,10 @@ describe("attestation presentation proof", () => {
     expect(intituleAttestation('vtc-elearning','e-learning')).toBe('Formation VTC E-learning');
     expect(intituleAttestation('vtc','présentiel')).toBe('Formation VTC');
   });
-  it('sans certification le texte modèle ne certifie jamais nominativement Léa',()=>{
+  it('le brouillon reprend l’identité renseignée sans changer la validité du document',()=>{
     const e={certifie:false,prenom:'Léa',nom:'CATANIA',formation:'Formation VTC',debut:'14 septembre 2026',fin:'19 octobre 2026'};
     const texte=texteCertificationPresentation(e);
-    expect(texte).toContain('atteste que [Prénom NOM]');expect(texte).not.toContain('Léa');
+    expect(texte).toContain('atteste que Léa CATANIA');expect(texte).not.toContain('[Prénom NOM]');
     expect(texte).toContain('dispensée du 14 septembre 2026 au 19 octobre 2026');
     expect(texte).toContain('formation « VTC »');
     expect(texteCertificationPresentation({...e,certifie:true})).toContain('atteste que Léa CATANIA');
