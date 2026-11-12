@@ -746,7 +746,10 @@ function QuestionEditor({
     return updated;
   };
 
+  // Ouvrir l'éditeur n'est pas une modification : aucun brouillon au montage.
+  const draftMountedRef = useRef(false);
   useEffect(() => {
+    if (!draftMountedRef.current) { draftMountedRef.current = true; return; }
     onDraftChange(buildUpdatedQuestion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enonce, reponseQRC, motsCles, choix, qType, image]);
@@ -949,9 +952,12 @@ function MatiereEditor({
   examId,
   locked,
   anomalies,
+  attendreSauvegarde,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
+  /** Résout avec le résultat de la prochaine sauvegarde confirmée par relecture serveur. */
+  attendreSauvegarde?: () => Promise<boolean>;
   examTitre?: string;
   examId: string;
   locked?: boolean;
@@ -1330,6 +1336,11 @@ function MatiereEditor({
                   examTitre={examTitre}
                   statsEnabled={statsEnabled}
                   onEdit={() => setEditingQId(q.id)}
+                  onChoixTexteSave={attendreSauvegarde ? (index, texte) => {
+                    const attente = attendreSauvegarde();
+                    updateQuestion(remplacerTexteProposition(q, index, texte), false);
+                    return attente;
+                  } : undefined}
                   onMove={(direction) => moveQuestion(q.id, direction)}
                   onMoveTo={(position) => moveQuestionTo(q.id, position)}
                 />
@@ -1392,6 +1403,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   // its own last successful save). Used to detect "another tab/session saved more
   // recently than what this tab knows about" before blindly overwriting it.
   const lastKnownServerUpdatedAtRef = useRef<Record<number, string>>({});
+  const saveWaitersRef = useRef<Array<(ok: boolean) => void>>([]);
+  const attendreSauvegarde = () => new Promise<boolean>((resolve) => {
+    let fini = false;
+    const done = (ok: boolean) => { if (!fini) { fini = true; resolve(ok); } };
+    saveWaitersRef.current.push(done);
+    setTimeout(() => done(false), 30000);
+  });
+  const resoudreAttentes = (ok: boolean) => {
+    const w = saveWaitersRef.current.splice(0);
+    w.forEach((f) => f(ok));
+  };
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
@@ -1705,7 +1727,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaving(true);
+      const attentes = saveWaitersRef.current.splice(0);
       const ok = await persistExamens(examens, true);
+      attentes.forEach((f) => f(ok));
       pendingExamSaveRef.current = null;
       setAutoSaving(false);
       if (!ok) {
@@ -1740,7 +1764,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const handleSaveAll = async () => {
     setSaving(true);
-    await persistExamens(examens, true);
+    const ok = await persistExamens(examens, true);
+    resoudreAttentes(ok);
     setSaving(false);
   };
 
