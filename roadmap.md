@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 12/11 21:04 UTC — Vérification directe sauvegardes et poursuite aperçu
+- [x] Santé Cloud et inventaire stockage lus ; manifestes privés 11/12 relus avec session admin, deux lots de 10 000 clés vérifiés sans écriture.
+- [ ] Restauration complète isolée : bloquée par absence d'outil inventaire/export/restauration Cloud et d'export complet disponible ; exports applicatifs incomplets, fichiers de stockage non sauvegardés par ce circuit.
+- [x] 74/74 tests fictifs PASS dans 9 fichiers, dont panne six minutes accélérée/30 candidats/90 réponses ; une lecture répétée du profil supprimée en aperçu, deux fichiers privés lus HTTP 200 ; rapport docs/stabilisation-2026-11-12.md, build OK.
+- [ ] Optimisation complète cours/historique et E2E réel isolé : cible sans données réelles/export complet non disponibles ; arbitrage rafraîchissement périodique versus règle zéro polling demandé. Aucun gain de latence réel revendiqué, aucune publication/migration/écriture réelle.
+
 ## 12/11 18:51 — Réinitialisation d’une matière dans l’examen actif
 - [x] Audit lecture seule catalogue réel/admin/serveur/reprise élève : circuit ciblé sans reset global, copie ouverte refusée, confusion repassage isolé/passage général identifiée.
 - [x] Séparation des reçus isolés préparée flag OFF, confirmation périmètre/exception copie vide précisée ; 35 Vitest + 23 SQL jetables PASS, reload/remise QCM PC/mobile fictifs PASS, build OK. Rapport docs/reset-matiere-active-2026-11-12.md.

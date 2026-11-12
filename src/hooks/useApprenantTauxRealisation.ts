@@ -60,7 +60,7 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
         ? await chargerRatioSignatures(apprenantId, regle.filiere).catch(() => ({ signees: 0, attendues: 0, taux: null, raison: "Signatures / planning indisponibles : lecture échouée" }))
         : undefined;
 
-      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, apprenantTypeRow, classification] = await Promise.all([
+      const [acts, quizzes, exos, cnxAll, emargAll, pratiqueDetails, completions, heuresValideesRows, classification] = await Promise.all([
         fetchAllRows<any>((from, to) => supabase
           .from("apprenant_module_activites")
           .select("module_nom, action_type, occurred_at")
@@ -99,12 +99,6 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
           .select("id, heures, created_at")
           .eq("apprenant_id", apprenantId)
           .range(from, to)), // erreur propagée : taux indisponible, jamais un faux 0 h
-        supabase
-          .from("apprenants")
-          .select("type_apprenant, formation_choisie")
-          .eq("id", apprenantId)
-          .maybeSingle()
-          .then((r) => r.data, () => null),
         chargerClassificationSignatures(apprenantId),
       ]);
 
@@ -131,8 +125,8 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
       const donePresentiel = presence.done + heuresPresentielValidees;
 
       // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
-      const ta = String((apprenantTypeRow as any)?.type_apprenant || (apprenantProp as any)?.type_apprenant || "").toLowerCase().trim();
-      const fc = String((apprenantTypeRow as any)?.formation_choisie || (apprenantProp as any)?.formation_choisie || "").toLowerCase().trim();
+      const ta = String(apprenantRow.type_apprenant || "").toLowerCase().trim();
+      const fc = String(apprenantRow.formation_choisie || "").toLowerCase().trim();
       const pathModules = (FORMATION_MODULES[ta] || FORMATION_MODULES[fc])?.modules || [];
       const pathIds = new Set(pathModules.map((m) => m.id));
       const completedIds = new Set((completions as any[]).map((r: any) => Number(r.module_id)));
@@ -184,6 +178,6 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
-    queryFn: async () => chargerApprenantTauxRealisation(apprenantId!, apprenantProp)
+    queryFn: async () => apprenantId ? chargerApprenantTauxRealisation(apprenantId, apprenantProp) : null
   });
 }
