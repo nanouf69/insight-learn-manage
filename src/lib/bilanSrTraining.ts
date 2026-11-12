@@ -30,3 +30,5 @@ export function readSrTraining(data: unknown, sourceType: SrTrainingRead["source
 export function srTrainingWrong(read: SrTrainingRead, local: Record<string, string[]> = {}): SrTrainingQuestion[] {
   return read.questions.filter(q => !reponseExacte(Object.prototype.hasOwnProperty.call(local, q.uid) ? local[q.uid] : q.answer, q.correct));
 }
+/** Urgence 12/11 : lectures serveur bilan_vtc_sr/fg_training_read non installées ; garder l'entraînement historique. */
+export const BILAN_SR_TRAINING_ACTIF = false;
