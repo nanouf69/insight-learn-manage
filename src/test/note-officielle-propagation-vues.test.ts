@@ -35,5 +35,11 @@ for (const [exam, filiere] of [["EB4", "VTC"], ["EB4-TAXI", "TAXI"]] as const) {
         expect(v.generale).toMatchObject({ etat: "definitif", note: n });
       }
     });
+    it("ancienne tentative t1 (autre fiche) présente : jamais utilisée pour la fiche courante", () => {
+      const t1 = { ...core(4, false, "t1", "2026-11-01T10:00:00Z"), resultId: "r1" };
+      const v = vues([t1, core(15, false)]);
+      expect(v.matiere.note20).toBe(15);
+      expect(v.session).toEqual({ etat: "definitif", note: 15 });
+    });
   });
 }
