@@ -26,6 +26,7 @@ import {
   FOURNISSEUR_QUIZ_TO_EXAM,
 } from "./fournisseur-exam-overrides";
 import { getMatiereSyncKey, getExamIdentity } from "./examens-blancs-sync-scope";
+import { choisirMatieresModifiees, reconcilierApresSauvegarde, empreinteContenu, remplacerTexteProposition } from "./examens-blancs-persist";
 import { diffMatiereForAudit, recordExamAuditEntries, type ExamAuditEntry } from "./examens-blancs-audit";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -134,8 +135,23 @@ async function saveExamModuleWithCas({
   });
 
   if (error) throw error;
+  const ackUpdatedAt = (Array.isArray(data) ? data[0]?.updated_at : (data as any)?.updated_at) ?? null;
+  // Succès seulement après relecture serveur du contenu réellement enregistré.
+  const relu = await supabase
+    .from("module_editor_state")
+    .select("module_data, updated_at")
+    .eq("module_id", moduleId)
+    .maybeSingle();
+  if (relu.error || !relu.data) {
+    throw new Error("Relecture serveur impossible : l'enregistrement n'est pas confirmé.");
+  }
+  if (empreinteContenu((relu.data.module_data as any)?.matieres) !== empreinteContenu((moduleData as any)?.matieres)) {
+    const e = new Error("stale_module_editor_state_write: la relecture serveur ne correspond pas au contenu envoyé");
+    (e as any).code = "P0409";
+    throw e;
+  }
   signalerContenuModifie(moduleId);
-  return (Array.isArray(data) ? data[0]?.updated_at : (data as any)?.updated_at) ?? fallbackSavedAt;
+  return relu.data.updated_at ?? ackUpdatedAt ?? fallbackSavedAt;
 }
 
 function hashCode(s: string): number {
@@ -730,7 +746,10 @@ function QuestionEditor({
     return updated;
   };
 
+  // Ouvrir l'éditeur n'est pas une modification : aucun brouillon au montage.
+  const draftMountedRef = useRef(false);
   useEffect(() => {
+    if (!draftMountedRef.current) { draftMountedRef.current = true; return; }
     onDraftChange(buildUpdatedQuestion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enonce, reponseQRC, motsCles, choix, qType, image]);
@@ -933,9 +952,12 @@ function MatiereEditor({
   examId,
   locked,
   anomalies,
+  attendreSauvegarde,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
+  /** Résout avec le résultat de la prochaine sauvegarde confirmée par relecture serveur. */
+  attendreSauvegarde?: () => Promise<boolean>;
   examTitre?: string;
   examId: string;
   locked?: boolean;
@@ -1314,6 +1336,11 @@ function MatiereEditor({
                   examTitre={examTitre}
                   statsEnabled={statsEnabled}
                   onEdit={() => setEditingQId(q.id)}
+                  onChoixTexteSave={attendreSauvegarde ? (index, texte) => {
+                    const attente = attendreSauvegarde();
+                    updateQuestion(remplacerTexteProposition(q, index, texte), false);
+                    return attente;
+                  } : undefined}
                   onMove={(direction) => moveQuestion(q.id, direction)}
                   onMoveTo={(position) => moveQuestionTo(q.id, position)}
                 />
@@ -1376,6 +1403,17 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   // its own last successful save). Used to detect "another tab/session saved more
   // recently than what this tab knows about" before blindly overwriting it.
   const lastKnownServerUpdatedAtRef = useRef<Record<number, string>>({});
+  const saveWaitersRef = useRef<Array<(ok: boolean) => void>>([]);
+  const attendreSauvegarde = () => new Promise<boolean>((resolve) => {
+    let fini = false;
+    const done = (ok: boolean) => { if (!fini) { fini = true; resolve(ok); } };
+    saveWaitersRef.current.push(done);
+    setTimeout(() => done(false), 30000);
+  });
+  const resoudreAttentes = (ok: boolean) => {
+    const w = saveWaitersRef.current.splice(0);
+    w.forEach((f) => f(ok));
+  };
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
@@ -1415,29 +1453,34 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       // répercutée UNIQUEMENT sur les examens du MÊME NUMÉRO qui utilisent la
       // même matière (VTC N°x ↔ TAXI N°x, VTC N°x ↔ VA N°x, TAXI N°x ↔ TA N°x).
       // Jamais vers un autre numéro d'examen (N°1 ≠ N°2 ≠ … ≠ N°6).
-      const changedMatieresByKey = new Map<string, Matiere>();
       const auditEntries: ExamAuditEntry[] = [];
+      const choix = choisirMatieresModifiees(synced, lastSavedModuleFingerprintsRef.current, getModuleIdForExamId);
+      const changedMatieresByKey = choix.modifiees;
+      if (choix.perimees.length > 0) {
+        console.warn("[ExamensEditor] Copies périmées ignorées (jamais réécrites)", choix.perimees);
+      }
       synced.forEach((ex) => {
-        const moduleId = getModuleIdForExamId(ex.id);
-        const previousFingerprint = lastSavedModuleFingerprintsRef.current[moduleId];
+        const previousFingerprint = lastSavedModuleFingerprintsRef.current[getModuleIdForExamId(ex.id)];
         if (previousFingerprint === undefined) return;
-        const currentFingerprint = JSON.stringify(ex.matieres ?? []);
-        if (previousFingerprint === currentFingerprint) return;
         let previousMatieres: Matiere[] = [];
-        try {
-          previousMatieres = JSON.parse(previousFingerprint) as Matiere[];
-        } catch {
-          return;
-        }
+        try { previousMatieres = JSON.parse(previousFingerprint) as Matiere[]; } catch { return; }
         (ex.matieres ?? []).forEach((m) => {
-          if (!m?.id) return;
+          if (!m?.id || changedMatieresByKey.get(getMatiereSyncKey(ex.id, m.id)) !== m) return;
           const before = previousMatieres.find((pm) => pm?.id === m.id);
-          if (!before || !isSameMatiereContent(before, m)) {
-            changedMatieresByKey.set(getMatiereSyncKey(ex.id, m.id), m);
-            try {
-              auditEntries.push(...diffMatiereForAudit(ex.id, before, m));
-            } catch {}
-          }
+          try { auditEntries.push(...diffMatiereForAudit(ex.id, before, m)); } catch {}
+        });
+      });
+      // Une copie périmée non choisie reprend la version enregistrée de son module
+      // (ou la version choisie de la matière partagée) : elle n'est jamais écrite.
+      synced.forEach((ex) => {
+        const previousFingerprint = lastSavedModuleFingerprintsRef.current[getModuleIdForExamId(ex.id)];
+        if (previousFingerprint === undefined) return;
+        let previousMatieres: Matiere[] = [];
+        try { previousMatieres = JSON.parse(previousFingerprint) as Matiere[]; } catch { return; }
+        ex.matieres = (ex.matieres ?? []).map((m) => {
+          if (!m?.id || changedMatieresByKey.has(getMatiereSyncKey(ex.id, m.id))) return m;
+          if (!choix.perimees.some((p) => p.examId === ex.id && p.matiereId === m.id)) return m;
+          return (previousMatieres.find((pm) => pm?.id === m.id) as Matiere) ?? m;
         });
       });
 
@@ -1570,9 +1613,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       // fermer/rouvrir l'éditeur. Aucune écriture supplémentaire en base.
       // On ne touche pas à l'état si une édition plus récente est en attente
       // (elle sera enregistrée puis affichée par le prochain cycle).
-      if (!pendingExamSaveRef.current || JSON.stringify(pendingExamSaveRef.current) === JSON.stringify(sourceExamens)) {
-        setExamens(synced);
-      }
+      // Toujours appliqué, matière par matière : les examens frères reçoivent la
+      // version enregistrée ; une saisie faite pendant l'écriture est conservée.
+      setExamens((prev) => reconcilierApresSauvegarde(prev, snapshot, synced));
 
       if (showSuccessToast) {
         setSaved(true);
@@ -1598,7 +1641,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         return {
           ...ex,
           matieres: ex.matieres.map((m) =>
-            m.id === matiereId ? { ...m, ...updated } : m,
+            m.id === matiereId ? ({ ...m, ...updated, _editedAt: new Date().toISOString() } as Matiere) : m,
           ),
         };
       });
@@ -1684,7 +1727,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaving(true);
+      const attentes = saveWaitersRef.current.splice(0);
       const ok = await persistExamens(examens, true);
+      attentes.forEach((f) => f(ok));
       pendingExamSaveRef.current = null;
       setAutoSaving(false);
       if (!ok) {
@@ -1719,7 +1764,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const handleSaveAll = async () => {
     setSaving(true);
-    await persistExamens(examens, true);
+    const ok = await persistExamens(examens, true);
+    resoudreAttentes(ok);
     setSaving(false);
   };
 
@@ -1920,6 +1966,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   onChange={updated => handleMatiereChange(m.id, updated)}
                   locked={isLocked}
                   anomalies={anomaliesParExamen[examenSel.id]?.parMatiere?.[m.id]}
+                  attendreSauvegarde={attendreSauvegarde}
                 />
               ))}
             </div>
