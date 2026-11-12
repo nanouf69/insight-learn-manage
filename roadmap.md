@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 18:19 — Fermer le compte après envoi attestation
+- [ ] Préparer une désactivation liée au document envoyé, sans suppression ni modification des dates/preuves, avec erreur explicite et reprise sans nouvel envoi.
+- [ ] Vérifier sessions déjà ouvertes et refus serveur, compte partagé/admin, lien public et tests fictifs ; activation interdite avant preuve complète.
+
 ## 12/11 18:16 — Date attestation limitée à la fin CRM
 - [x] Plafond partagé aperçu/préparation serveur : dernière connexion limitée à la fin des cours en ligne CRM (sinon fin de formation), horodatage original et plafond conservés dans le nouveau modèle ; date absente/invalide = refus. Envoi recontrôle la date figée sans modifier les anciens documents.
 - [x] 44 tests PASS : 31/10/2026, frontière Paris, connexion antérieure, limite absente/invalide, date CRM avancée avant envoi, circuit et PDF ; Deno check PASS, build OK. Aucune connexion, signature ou donnée réelle modifiée, aucun envoi.
