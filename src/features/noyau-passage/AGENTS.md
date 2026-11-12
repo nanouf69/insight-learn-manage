@@ -1,0 +1,1 @@
+- V2 exam answer queue (pontV2) keeps one pending value per attempt/subject/question (latest wins, in-flight never removed), sends one request at a time, and backs off per attempt (1 s→30 s, ±30 % jitter) except explicit finish/online; why: per-keystroke writes and per-keystroke retries overloaded the database on 12/11 (1 638 writes for 148 questions in 4 min).
