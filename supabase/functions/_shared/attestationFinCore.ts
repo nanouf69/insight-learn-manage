@@ -8,7 +8,7 @@ import {
   MODELE_CODE_ATTESTATION, VERSION_MODELE, CLE_ENVOI_ATTESTATION, FICHIER_MODELE_ATTESTATION, SIGNATURE_CENTRE_CHEMIN,
   CONSENTEMENT_APPRENANT, estElearning, eligibiliteAttestation, libelleMotif, dateFinDepuisConnexions,
   derniereValidationModules, champsManquants, texteAttestation, referenceAttestation, dateParis,
-  type TexteFigeAttestation,
+  SIGNATAIRE_CENTRE_PAR_DEFAUT, type TexteFigeAttestation,
 } from "./modeleAttestationFin.ts";
 import { validerSignaturePng } from "./signaturePng.ts";
 
