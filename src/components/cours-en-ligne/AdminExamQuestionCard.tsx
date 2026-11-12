@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowDown, ArrowUp, CheckCircle2, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,56 @@ type AdminExamQuestionCardProps = {
   onEdit: () => void;
   onMove: (direction: "up" | "down") => void;
   onMoveTo: (position: number) => void;
+  /** Édition sur place du texte d'une proposition (bonne réponse et points inchangés). */
+  onChoixTexteSave?: (index: number, texte: string) => Promise<boolean>;
 };
+
+function PropositionEditable({ texte, lettre, onSave }: { texte: string; lettre: string; onSave?: (t: string) => Promise<boolean> }) {
+  const [edition, setEdition] = useState(false);
+  const [brouillon, setBrouillon] = useState(texte);
+  const [etat, setEtat] = useState<"repos" | "envoi" | "erreur">("repos");
+  if (!onSave) return <span className="min-w-0 flex-1 leading-6">{texte}</span>;
+  const ouvrir = () => { setBrouillon(texte); setEtat("repos"); setEdition(true); };
+  const annuler = () => { setEdition(false); setEtat("repos"); };
+  const enregistrer = async () => {
+    if (brouillon === texte) { setEdition(false); return; }
+    setEtat("envoi");
+    const ok = await onSave(brouillon);
+    if (ok) { setEdition(false); setEtat("repos"); } else setEtat("erreur");
+  };
+  if (!edition) {
+    return (
+      <button type="button" onClick={ouvrir} className="min-w-0 flex-1 cursor-text rounded text-left leading-6 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Modifier le texte de la proposition ${lettre}`}>
+        {texte}
+      </button>
+    );
+  }
+  return (
+    <div className="min-w-0 flex-1 space-y-1.5">
+      <input
+        autoFocus
+        value={brouillon}
+        disabled={etat === "envoi"}
+        onChange={(e) => { setBrouillon(e.target.value); if (etat === "erreur") setEtat("repos"); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { e.preventDefault(); void enregistrer(); }
+          if (e.key === "Escape") { e.preventDefault(); annuler(); }
+        }}
+        aria-label={`Texte de la proposition ${lettre}`}
+        className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" className="h-7 text-xs" onClick={() => void enregistrer()} disabled={etat === "envoi"}>
+          {etat === "envoi" ? "Enregistrement…" : "Enregistrer"}
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={annuler} disabled={etat === "envoi"}>Annuler</Button>
+        {etat === "erreur" && (
+          <span role="alert" className="text-xs text-destructive">Non enregistré : le serveur n'a pas confirmé. Votre texte est conservé, réessayez.</span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /** Présentation admin seule : les contenus et les statistiques restent fournis par leurs sources existantes. */
 export function AdminExamQuestionCard({
@@ -29,6 +79,7 @@ export function AdminExamQuestionCard({
   onEdit,
   onMove,
   onMoveTo,
+  onChoixTexteSave,
 }: AdminExamQuestionCardProps) {
   const points = getPointsParQuestion(matiere.id, q.type || "QCM", matiere);
 
@@ -94,7 +145,7 @@ export function AdminExamQuestionCard({
                     <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs font-semibold ${choice.correct ? "border-primary/30 bg-primary/10 text-primary" : "border-border/60 bg-background"}`}>
                       {choice.lettre}
                     </span>
-                    <span className="min-w-0 flex-1 leading-6">{choice.texte}</span>
+                    <PropositionEditable texte={choice.texte} lettre={choice.lettre} onSave={onChoixTexteSave ? (t) => onChoixTexteSave(index, t) : undefined} />
                     {choice.correct && <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-primary" aria-label="Bonne réponse" />}
                   </div>
                 ))}
