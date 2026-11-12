@@ -13,6 +13,7 @@ import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { ChampDocument } from "@/lib/documentsASigner";
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { ChoixPratiqueForm, type ChoixDocData } from "@/components/documents/ChoixPratiqueForm";
+import { AttestationSignatureForm, type AttestationDocData } from "@/components/documents/AttestationSignatureForm";
 import { DocumentZoneEditor, dateDuJourDocument } from "@/components/documents/DocumentZoneEditor";
 
 
@@ -44,6 +45,7 @@ export default function DocumentASignerPublic() {
   const [largeur, setLargeur] = useState(720);
   const [downloading, setDownloading] = useState(false);
   const [choixDoc, setChoixDoc] = useState<ChoixDocData | null>(null);
+  const [attestationDoc, setAttestationDoc] = useState<AttestationDocData | null>(null);
   const [zoneActive, setZoneActive] = useState<ChampDocument | null>(null);
 
   const telecharger = async () => {
@@ -80,7 +82,8 @@ export default function DocumentASignerPublic() {
 
   const rechargerChoix = async () => {
     const { ok, json } = await appel({ action: "get" });
-    if (ok && json.document?.modele_code) setChoixDoc(json.document);
+    if (ok && json.document?.modele_code === "attestation_fin_formation") setAttestationDoc(json.document);
+    else if (ok && json.document?.modele_code) setChoixDoc(json.document);
   };
 
   useEffect(() => {
@@ -93,6 +96,7 @@ export default function DocumentASignerPublic() {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Document indisponible");
+        if (json.document?.modele_code === "attestation_fin_formation") { setAttestationDoc(json.document); return; }
         if (json.document?.modele_code) { setChoixDoc(json.document); return; }
         setDoc(json.document);
         setReponses(json.document.reponses || {});
@@ -139,6 +143,19 @@ export default function DocumentASignerPublic() {
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
+    );
+  }
+
+  if (attestationDoc) {
+    return (
+      <AttestationSignatureForm
+        doc={attestationDoc}
+        recharger={rechargerChoix}
+        soumettre={async (p) => {
+          const { ok, json } = await appel({ action: "submit", ...p });
+          return ok ? json : { error: json.error || "Signature non enregistrée" };
+        }}
+      />
     );
   }
 
