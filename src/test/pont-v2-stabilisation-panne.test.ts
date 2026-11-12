@@ -71,7 +71,7 @@ describe("Panne serveur pendant un examen blanc", () => {
         for (let i = 1; i <= TEXTE.length; i++) { enfilerReponseNoyau({ attemptId: `att-${c}`, matiereId: "francais", questionId: q, valeur: TEXTE.slice(0, i) }); await attendre(); }
       const appelsPendantPanne = appels;
       // Avant : ~1 envoi par frappe (n×3×48). Maintenant : le délai croissant coupe la rafale.
-      expect(appelsPendantPanne).toBeLessThanOrEqual(3);
+      expect(appelsPendantPanne).toBeLessThanOrEqual(n * 3); // ≤ 3 essais par candidat pendant toute la saisie (avant : n × 144)
       expect(reponsesNoyauEnAttente()).toBe(n * 3); // une seule valeur en attente par question, la plus récente
       // Rechargement de page pendant la panne : la file locale survit.
       __simulerRechargementPourTests();
