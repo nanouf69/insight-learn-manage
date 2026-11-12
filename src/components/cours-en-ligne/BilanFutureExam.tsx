@@ -374,17 +374,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
         <div className="animate-fade-in">
           <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4" data-testid="bilan-future-passage">
             <div className="space-y-4 min-w-0">
-              <Card className="scroll-mt-4 transition-all">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <h3 className="text-lg font-bold">📝 {nom}</h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1">
-                        <Calculator className="w-4 h-4" />
-                        Calculatrice
-                      </Button>
-                    </div>
-                  </div>
+              <BilanMatiereCard nom={nom} tools={<div className="flex items-center gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1"><Calculator className="w-4 h-4" />Calculatrice</Button></div>}>
                   {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
                   {enRevision && (
@@ -505,8 +495,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                       )}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+              </BilanMatiereCard>
             </div>
             <QuizQuestionSidebar
               onJump={(qi) => document.getElementById(anchor(qi))?.scrollIntoView({ behavior: "smooth", block: "start" })}
