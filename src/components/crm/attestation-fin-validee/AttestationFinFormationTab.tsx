@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { LIBELLES_FILTRE, correspondFiltre, type FiltreAttestation } from "@/lib/attestationFinValidee/filtres";
 import { champsManquants, type TexteFigeAttestation } from "@/lib/attestationFinValidee/modele";
-import { genererPdfAttestation, telechargerBlob } from "@/lib/attestationFinValidee/pdf";
+import { telechargerBlob } from "@/lib/attestationFinValidee/pdf";
 import { genererPdfPresentation } from "@/lib/attestationFinValidee/pdfPresentation";
 import { ApercuPdfAttestation } from "./ApercuPdfAttestation";
 import { appelAttestation, chargerAttestations, lienSignature, statutAffiche, type AttestationEnregistree } from "@/lib/attestationFinValidee/serveur";
