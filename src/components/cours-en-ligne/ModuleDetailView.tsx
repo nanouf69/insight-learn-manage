@@ -196,6 +196,8 @@ import { estComplementBilanVtc } from "@/lib/bilanVtcComplements";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 import { BilanSrTraining } from "./BilanSrTraining";
 import { BILAN_SR_TRAINING_ACTIF } from "@/lib/bilanSrTraining";
+import { BILAN_CORRIGE_ACTUEL_ACTIF } from "@/lib/bilanCorrigeActuel";
+import { BilanCorrigeActuel } from "./BilanCorrigeActuel";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { BilanFutureApercuAdmin, lireApercuFutureAdmin, type ApercuFuture } from "./BilanFutureApercuAdmin";
 import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
@@ -9705,6 +9707,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             }}>
                               🔄 Recommencer tout
                             </Button>
+                            {BILAN_CORRIGE_ACTUEL_ACTIF && [5,11].includes(Number(module.id)) && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[exo.id] && <BilanCorrigeActuel key={etatSnap.parExo[exo.id].snapshotId} snapshotId={etatSnap.parExo[exo.id].snapshotId} />}
                             {BILAN_SR_TRAINING_ACTIF && module.id === 5 && [505,506].includes(Number(exo.id)) && !apercuAdmin ? (
                               etatSnap.statut === "pret" && etatSnap.parExo[exo.id] ? <BilanSrTraining key={etatSnap.parExo[exo.id].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[exo.id].snapshotId} exerciseId={Number(exo.id) === 505 ? 505 : 506} />
                                 : <p role="status" className="text-sm text-muted-foreground">Correction actuelle indisponible : aucun passage remis identifiable pour cet entraînement.</p>
