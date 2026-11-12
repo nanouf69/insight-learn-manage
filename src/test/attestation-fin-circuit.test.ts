@@ -48,6 +48,26 @@ function fake(over: { apprenant?: ApprenantAtt; etats?: EtatModuleSrv[]; cnx?: {
 const entree = (id = "ok", extra: any = {}) => ({ apprenantId: id, adminId: "admin-1", representant: "Responsable Fictif", autoriseSignatureCentre: true, heures: { faites: 61, minimum: 60 }, signaturesPresentiel: null, ...extra });
 
 describe("Attestation de fin de formation — circuit serveur", () => {
+  it("connexion après la fin CRM : fin plafonnée et preuve originale conservée", async () => {
+    const x = fake({ cnx: [{ id: "apres-fin", started_at: "2026-11-12T17:00:00Z" }] });
+    const r: any = await preparer(x.d, entree());
+    expect(r.etat).toBe("prepare");
+    const f = JSON.parse(r.doc.texte_fige);
+    expect(f.lignes[2]).toContain("au 31/10/2026");
+    expect(f.sources.date_fin.started_at).toBe("2026-11-12T17:00:00Z");
+    expect(f.sources.date_fin.date_limite_crm).toBe("2026-10-31");
+    expect(x.mails).toHaveLength(0);
+  });
+  it("fin CRM avancée après préparation : envoi refusé sans altérer le document", async () => {
+    const x = fake();
+    const p: any = await preparer(x.d, entree());
+    const texteAvant = p.doc.texte_fige;
+    x.d.getApprenant = async () => ({ ...OK, date_fin_cours_en_ligne: "2026-10-15" });
+    expect((await envoyer(x.d, p.doc.id, "admin-1")).etat).toBe("bloque");
+    expect(x.mails).toHaveLength(0);
+    expect(p.doc.texte_fige).toBe(texteAvant);
+    expect(p.doc.envoi_etat).toBe("prepare");
+  });
   it("Léa (3/7 modules, 38h11/60h) : préparation sans seuil, heures originales conservées, aucun envoi", async () => {
     const x = fake({ apprenant: LEA, etats: [done(35), done(5), done(8), { module_id: 2, status_effectif: "in_progress", preuve_complete: false, completed_at: null }] });
     const r: any = await preparer(x.d, entree("lea", { heures: { faites: 38 + 11 / 60, minimum: 60 } }));
