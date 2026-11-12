@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 12/11 18:51 — Réinitialisation d’une matière dans l’examen actif
-- [ ] Audit lecture seule admin/serveur/reprise élève, identité tentative active et risques sur les autres matières.
-- [ ] Correctif isolé avec confirmation nominative, conservation des copies et projection À refaire/notes provisoires ; sans réinitialisation réelle ni publication.
-- [ ] Tests fictifs sept matières, deux clics, reprise/soumission et PC/mobile ; garanties et limites documentées.
+- [x] Audit lecture seule catalogue réel/admin/serveur/reprise élève : circuit ciblé sans reset global, copie ouverte refusée, confusion repassage isolé/passage général identifiée.
+- [x] Séparation des reçus isolés préparée flag OFF, confirmation périmètre/exception copie vide précisée ; 35 Vitest + 23 SQL jetables PASS, reload/remise QCM PC/mobile fictifs PASS, build OK. Rapport docs/reset-matiere-active-2026-11-12.md.
+- [ ] Demande complète bloquée par l'identité explicite passage général/remplacement et la neutralisation serveur des copies ouvertes avec réponses ; projection À refaire/global provisoire et matrice 7 matières/QRC non livrées. Aucune mutation réelle ni publication.
 
 ## 12/11 18:47 — Déblocage attestation autorisé
 - [x] Retrait du verrou pédagogique ; préparation avec représentant et autorisation signature centre, envoi après enregistrement et confirmation admin ; e-learning sans durée obligatoire ni inventée. Fermeture automatique différée avec accord explicite.
