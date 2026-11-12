@@ -4,6 +4,12 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, GraduationCap, FileText, CheckCircle2, XCircle, ArrowLeft, Eye, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { NotesExamensOfficiels } from "./NotesExamensOfficiels";
+import { useLiveExamens } from "./useLiveExamens";
+import { dernieresCopiesOfficielles, modeleExamenOfficiel } from "@/lib/notesOfficiellesEleve";
+import { copieRecenteSession } from "@/features/correction-qrc-v2/copieRecenteSession";
+import { lireBilansNotes, modelesBilansNotes, type SourcesBilansNotes } from "@/lib/notesBilansEleve";
 import { MODULES_DATA } from "./formations-data";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
@@ -83,8 +89,12 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
   const quizResults = quizResultState.owner === apprenantId ? quizResultState.rows : [];
   const setQuizResults = useCallback((rows: QuizResult[]) => setQuizResultState({ owner: apprenantId, rows }), [apprenantId]);
   const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>(moduleCompletionsSeed);
+  const definitions = useLiveExamens();
+  const [readError,setReadError]=useState<string|null>(null);
+  const [bilansState,setBilansState]=useState<{owner:string;sources:SourcesBilansNotes}|null>(null);
+  const [track,setTrack]=useState<{owner:string;value:string|null}|null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
+  const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens" | "bilans" | "revisions">("examens");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedDetail, setSelectedDetail] = useState<{ title: string; date: string; score: number; max: number; details: any[] } | null>(null);
   // Un état de chargement par élève : une réponse tardive de l'élève précédent
@@ -128,7 +138,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
       do {
         state.pending = false;
 
-        const [quizRes, moduleRes, resetsRes] = await Promise.all([
+        const [quizRes, moduleRes, resetsRes, identity] = await Promise.all([
           lireResultatsQuizEleve(apprenantId).then(res => ({ ...res, data: res.data?.slice().reverse() ?? null })),
           supabase
             .from("apprenant_module_completion")
@@ -136,12 +146,19 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
             .eq("apprenant_id", apprenantId)
             .eq("status", "completed")
             .order("completed_at", { ascending: true }),
-          supabase.from('core_exam_resets').select('archived_legacy_result_ids').eq('apprenant_id', apprenantId),
+          supabase.from('core_exam_resets').select('exam_id,cutoff_at,archived_legacy_result_ids').eq('apprenant_id', apprenantId),
+          supabase.from('apprenants').select('id,auth_user_id,type_apprenant,formation_choisie').eq('id',apprenantId).single(),
         ]);
         if (!isCurrent()) return;
 
+        if(identity.error)throw new Error("Lecture du dossier impossible");
+        const sources=await lireBilansNotes(apprenantId,identity.data.auth_user_id);
+        if(!isCurrent())return;
+        setBilansState({owner:apprenantId,sources});
+        const type=(identity.data.type_apprenant??identity.data.formation_choisie??"").toLowerCase();
+        setTrack({owner:apprenantId,value:/^ta(?:-|$)|taxi-pour-vtc/.test(type)?"TA":/^va(?:-|$)|vtc-pour-taxi/.test(type)?"VA":/^taxi/.test(type)?"TAXI":/^vtc/.test(type)?"VTC":null});
         if (quizRes.error) {
-          console.error("NotesView: erreur chargement quiz", quizRes.error);
+          throw new Error("Lecture des résultats impossible");
         } else {
           // Source unique : même état serveur que l'écran admin (lecture seule).
           const coreStates = await fetchCoreMatiereStates(apprenantId);
@@ -154,7 +171,9 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
           // EB rows carry immutable result IDs: never merge their identities before proof.
           const rows = [...activeRows.filter((r: any) => /^examen_blanc/.test(r.quiz_type)),
             ...mergePassageSiblingRows(activeRows.filter((r: any) => !/^examen_blanc/.test(r.quiz_type)))] as any[];
-          setQuizResults(rows.map((r) => attacherSourceUnique(r, resetsRes.error ? null : coreStates, nonFiables)) as any);
+          const states=(coreStates??[]).filter(s=>!(resetsRes.data??[]).some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
+          setQuizResults(rows.map(r=>{const attached=attacherSourceUnique(r,resetsRes.error?null:states,nonFiables);return coreStates&&nonFiables&&/^examen_blanc/.test(r.quiz_type)?copieRecenteSession(attached,states,nonFiables):attached;}) as any);
+          setReadError(null);
         }
 
         if (moduleRes.error) {
@@ -165,6 +184,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
           setModuleCompletions([]);
         }
       } while (state.pending && isCurrent());
+    } catch(e) {if(isCurrent())setReadError(e instanceof Error?e.message:"Lecture des notes impossible");
     } finally {
       state.inFlight = false;
       if (isCurrent()) setLoading(false);
@@ -202,6 +222,10 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
     () => quizResults.filter((row) => !pendingResultIds.has(row.id)),
     [quizResults, pendingResultIds],
   );
+
+  const officielles=useMemo(()=>dernieresCopiesOfficielles(quizResults,apprenantId),[quizResults,apprenantId]);
+  const examensOfficiels=useMemo(()=>Array.from({length:6},(_,i)=>{const def=definitions.examens.find(d=>d.numero===i+1&&d.type===track?.value);return def?modeleExamenOfficiel(def,officielles.filter(r=>r.quiz_id===def.id)):{id:`EB${i+1}`,titre:`EB${i+1}`,note:null,date:null,statut:"Note en attente",matieres:[]};}),[definitions.examens,officielles,track]);
+  const bilans=useMemo(()=>modelesBilansNotes(bilansState?.owner===apprenantId?bilansState.sources:{future:[],archives:[]},definitions.examens),[bilansState,apprenantId,definitions.examens]);
 
   // Combined stats
   const stats = useMemo(() => {
@@ -369,15 +393,6 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
 
   const hasResults = quizResults.length > 0 || moduleCompletions.length > 0;
 
-  if (!hasResults) {
-    return (
-      <div className="text-center py-20">
-        <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-slate-700 mb-2">Aucun résultat pour le moment</h2>
-        <p className="text-slate-500">Tes notes apparaîtront ici après avoir complété des quiz, exercices ou examens blancs.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -413,7 +428,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
       )}
 
       {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {(activeTab === "matiere" || activeTab === "module") && <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="font-bold text-slate-800 mb-4">📈 Évolution des notes</h3>
           {evolutionData.length >= 2 ? (
@@ -465,14 +480,18 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
         </div>
       </div>
 
+      }
+      {readError && <div role="alert" className="border border-destructive rounded-lg p-4 text-destructive">{readError}<Button variant="outline" onClick={()=>void fetchAll()}>Réessayer</Button></div>}
       {/* Tab selector */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           { key: "matiere" as const, label: "📚 Par matière", count: Object.keys(byMatiere).length },
           { key: "module" as const, label: "📦 Par module", count: Object.keys(byModule).length },
-          { key: "examens" as const, label: "📝 Examens blancs", count: quizResults.length },
+          { key: "examens" as const, label: "Examens blancs", count: 6 },
+          { key: "bilans" as const, label: "Bilan examen", count: bilans.length },
+          { key: "revisions" as const, label: "Révisions des questions fausses", count: quizResults.filter(r=>r.quiz_type==="revision_fausses").length },
         ].map(tab => (
-          <button
+          <Button variant="outline"
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -482,7 +501,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
             }`}
           >
             {tab.label} ({tab.count})
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -608,85 +627,9 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
         </div>
       )}
 
-      {/* Examens blancs detail */}
-      {activeTab === "examens" && (
-        <>
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h3 className="font-bold text-slate-800">📝 Résultats des examens blancs</h3>
-          </div>
-          {quizResults.length === 0 ? (
-            <div className="text-center py-10 text-slate-400">Aucun examen blanc complété</div>
-          ) : (
-            <>
-              <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                <div className="col-span-3">Examen</div>
-                <div className="col-span-2">Matière</div>
-                <div className="col-span-2 text-center">Note</div>
-                <div className="col-span-2 text-center">Résultat</div>
-                <div className="col-span-1 text-center">Durée</div>
-                <div className="col-span-2 text-center">Date</div>
-              </div>
-              {quizResults.slice().reverse().map((r) => (
-                (() => {
-                  const noteSur20 = normalizeQuizNoteSur20(r);
-                  return (
-                    <div key={r.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-3 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center text-sm">
-                      <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
-                      <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
-                      <div className="md:col-span-2 text-center">
-                         {noteExamenAffichee(r).etat === "lecture_impossible" ? (
-                          <span className="text-xs font-semibold text-amber-600">Note en attente</span>
-                        ) : pendingResultIds.has(r.id) ? (
-                          <span className="text-xs font-semibold text-amber-600">⏳ En attente</span>
-                        ) : (
-                          <>
-                            <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
-                              {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
-                            </span>
-                            {noteExamenAffichee(r).mention && (
-                              <div className="text-[10px] text-muted-foreground">{noteExamenAffichee(r).mention}</div>
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      <div className="md:col-span-2 text-center">
-                        {r.quiz_type === "revision_fausses" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                            Révision
-                          </span>
-                         ) : pendingResultIds.has(r.id) ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                            ⏳ En attente de correction
-                          </span>
-                        ) : (
-                          (() => {
-                            // Statut calculé avec la MÊME règle que le résultat
-                            // définitif (barème + seuil éliminatoire), jamais le
-                            // champ brut enregistré.
-                            const admis = verdictMatiereAffiche(r) ?? false;
-                            return (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${admis ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                                {admis ? "✅ Réussi" : "❌ Échoué"}
-                              </span>
-                            );
-                          })()
-                        )}
-                      </div>
-                      <div className="md:col-span-1 text-center text-xs text-slate-500">
-                        {r.duree_secondes ? formatDuration(r.duree_secondes) : "—"}
-                      </div>
-                      <div className="md:col-span-2 text-center text-xs text-slate-500">
-                        {format(new Date(r.completed_at), "dd/MM/yyyy HH:mm", { locale: fr })}
-                      </div>
-                    </div>
-                  );
-                })()
-              ))}
-            </>
-          )}
-        </div>
+      {activeTab === "examens" && (definitions.isLoading ? <p role="status">Chargement du référentiel des examens…</p> : definitions.error ? <p role="alert">Référentiel indisponible. <Button onClick={definitions.refetch}>Réessayer</Button></p> : <NotesExamensOfficiels examens={examensOfficiels} titre="Examens blancs officiels" />)}
+      {activeTab === "bilans" && <NotesExamensOfficiels examens={bilans} titre="Bilan examen" />}
+      {activeTab === "revisions" && <section className="space-y-3"><h3 className="font-bold">Révisions des questions fausses</h3>{quizResults.filter(r=>r.quiz_type==="revision_fausses").map(r=><div key={r.id} className="border border-border rounded-lg p-4"><strong>{r.quiz_titre}</strong><p className="text-sm text-muted-foreground">{Number.isFinite(Date.parse(r.completed_at))?new Date(r.completed_at).toLocaleString('fr-FR'):"Date non vérifiée"} · Révision uniquement</p><p>{normalizeQuizNoteSur20(r)==null?'Note en attente':`${normalizeQuizNoteSur20(r)} /20`}</p></div>)}</section>}
 
         {/* À revoir — matières échouées par examen blanc */}
         {(() => {
@@ -719,7 +662,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
             <div className="mt-6 space-y-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
-                <h3 className="font-bold text-red-700 text-lg">À revoir</h3>
+                <h3 className="font-bold text-red-700 text-lg">Examens à revoir</h3>
               </div>
               {examsWithFailed.map(({ quizId, examTitle, failed }) => (
                 <div key={quizId} className="bg-red-50 border-2 border-red-200 rounded-xl overflow-hidden">
@@ -744,8 +687,6 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
             </div>
           );
         })()}
-        </>
-      )}
 
       {/* Detail panel overlay */}
       {selectedDetail && (
