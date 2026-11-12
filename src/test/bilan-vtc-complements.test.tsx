@@ -17,11 +17,25 @@ describe("compléments VTC isolés", () => {
   });
   it("navigation complémentaire conserve une réponse A–E en mémoire, aucune remise à zéro", () => {
     function Future() { const [answer, setAnswer] = useState('A'); return <input aria-label="réponse existante" value={answer} onChange={e => setAnswer(e.target.value)} />; }
-    render(<BilanVtcComplements future={<Future />} legacy={<p>Copie 505 existante</p>} />);
+    render(<BilanVtcComplements future={<Future />} legacy={() => <p>Copie 505 existante</p>} />);
     fireEvent.change(screen.getByLabelText('réponse existante'), { target: { value: 'B' } });
-    fireEvent.click(screen.getByRole('button', { name: 'F(V), G(V), H et Questions QRC VTC' }));
+    fireEvent.click(screen.getByRole('button', { name: 'F(V) — Développement commercial' }));
     expect(screen.getByText('Copie 505 existante')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Retour au Bilan A–E' }));
     expect((screen.getByLabelText('réponse existante') as HTMLInputElement).value).toBe('B');
+  });
+  it("cible 505 puis 506 et recible le même exercice sans remonter les réponses", () => {
+    const cibles: number[] = [];
+    function Legacy({ id }: { id?: number }) { const [answer] = useState('B'); return <p>{id}:{answer}</p>; }
+    render(<BilanVtcComplements future={<p>A–E</p>} legacy={c => { if (c) cibles.push(c.exerciceId); return <Legacy id={c?.exerciceId} />; }} />);
+    expect(cibles).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'F(V) — Développement commercial' }));
+    expect(screen.getByText('505:B')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'G(V) — Réglementation spécifique' }));
+    expect(screen.getByText('506:B')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Retour au Bilan A–E' }));
+    fireEvent.click(screen.getByRole('button', { name: 'F(V) — Développement commercial' }));
+    expect(cibles.at(-1)).toBe(505);
+    expect(screen.getByText('505:B')).toBeTruthy();
   });
 });
