@@ -5,11 +5,13 @@ import { BilanVtcComplements } from "@/components/cours-en-ligne/BilanVtcComplem
 import { estComplementBilanVtc } from "@/lib/bilanVtcComplements";
 
 describe("compléments VTC isolés", () => {
-  it("filtre exclusivement 505/506/507 et cours 9001 sans toucher les identités", () => {
+  it("filtre exclusivement 505/506/507 et la carte Questions QRC VTC sans toucher les identités", () => {
     const pages = [500, 501, 502, 503, 504, 505, 506, 507, 607].map(id => ({ type: "exercice-single", exercice: { id } }));
     expect(pages.filter(p => estComplementBilanVtc(5, p)).map(p => p.exercice.id)).toEqual([505, 506, 507]);
     expect(pages.filter(p => estComplementBilanVtc(11, p))).toEqual([]);
-    expect(estComplementBilanVtc(5, { type: "cours", cours: { id: 9001 } })).toBe(true);
+    expect(estComplementBilanVtc(5, { type: "cours", cours: { id: 1794399472264 } })).toBe(true);
+    expect(estComplementBilanVtc(5, { type: "cours", cours: { id: 9001 } })).toBe(false);
+    expect(estComplementBilanVtc(11, { type: "cours", cours: { id: 1794399472264 } })).toBe(false);
     expect(estComplementBilanVtc(5, { type: "cours", cours: { id: 9002 } })).toBe(false);
     expect(pages[0].exercice.id).toBe(500);
   });
