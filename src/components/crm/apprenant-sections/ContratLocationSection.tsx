@@ -5,6 +5,7 @@ import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicul
 import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.md?raw";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LocationPdfPreview } from "./LocationPdfPreview";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -699,7 +700,7 @@ function ContratLocationForm({ apprenant }: Props) {
           <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Revue juridique — non publiée</DialogTitle></DialogHeader><pre className="whitespace-pre-wrap break-words text-sm font-sans">{revueLocation}</pre></DialogContent>
         </Dialog>
         <Dialog open={!!pdfUrl} onOpenChange={open => { if (!open) setPdfUrl(null); }}>
-          <DialogContent className="max-w-5xl h-[90dvh] flex flex-col"><DialogHeader><DialogTitle>Brouillon de location — non signable</DialogTitle></DialogHeader>{pdfUrl && <iframe title="Aperçu du brouillon PDF de location" src={pdfUrl} className="w-full flex-1 min-h-0 border-0" />}</DialogContent>
+          <DialogContent className="max-w-5xl h-[90dvh] flex flex-col"><DialogHeader><DialogTitle>Brouillon de location — non signable</DialogTitle></DialogHeader>{pdfUrl && <LocationPdfPreview url={pdfUrl} />}</DialogContent>
         </Dialog>
       </CardContent>
     </Card>
