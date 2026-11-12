@@ -14,7 +14,7 @@ class Contract(unittest.TestCase):
   cls.sql((ROOT/'docs/sql-revue/2026-11-12-bilan-vtc-fg-training.sql').read_text())
  def read(self,prefix=''):
   out=self.sql('BEGIN;'+prefix+as_ctx('authenticated',{'sub':ELEVE_UID},f"SELECT bilan_vtc_fg_training_read('snapshot','{SOURCE}');")+'ROLLBACK;')
-  return json.loads(next(line for line in out.splitlines() if line.startswith('{')))
+  return json.loads(next(line for line in out.splitlines() if line.startswith('{') and '"source_id"' in line))
  def test_saved_editor_key_changes_without_publish(self):
   self.assertEqual(self.read()['questions'][0]['correct'],['A'])
   current=json.loads(json.dumps(Q));current[0]['choix'][2]['correct']=True
