@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 12:44 — Remises F/G dans le nouveau Bilan VTC
+- [ ] Afficher les remises originales 505/506, jamais leurs révisions, dans la liste partagée et le récapitulatif ; résultat A–E distinct.
+- [ ] Vérifier fixtures du profil PC/mobile élève/admin, clics, lectures indisponibles et menu public ; aucun compte réel ni publication.
+
 ## 12/11 12:30 — Prévol installation accès EB unitaire
 - [x] Catalogue SELECT : RPC/journal/gardes absents ; session VTC/TAXI 11–24/01/2027 planifiée, future, 2 inscrits ; frontend public unitaire présent, EB cible inconnu.
 - [x] Candidat comparé ; 22 scénarios jetables = 20 PASS/2 blocages reproduits, 43 Vitest PASS ; procédures transaction/retrait conservant journal documentées.
