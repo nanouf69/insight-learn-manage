@@ -58,15 +58,22 @@ class Preflight(base.Access):
   self.set_access(True,expected=self.current())
   version=str(uuid.uuid4())
   self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif) VALUES('{version}','VTC','3','EB3',(SELECT coalesce(max(version_number),0)+1 FROM exam_content_versions WHERE exam_id='EB3'),'brouillon','{{}}','f','IMPORT HISTORIQUE test')")
-  details={'snapshot':{'questions':[{'id':'1','type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}],'points':1}]},'reponses':{'1':['A']}}
+  details={'snapshot':{'questions':[{'id':'1','type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}],'points':1},{'id':'2','type':'QRC','enonce':'Fictif QRC','reponseQRC':'Texte officiel','points':2}]},'reponses':{'1':['A'],'2':'Réponse fictive'}}
   result=str(uuid.uuid4())
-  self.sql(f"SET request.jwt.claim.sub='{base.ADMIN}';INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at) VALUES('{base.A}','{base.U}','EB3__preflight_import','examen_blanc','{{\"1\":[\"A\"]}}',true,'submitted','2026-10-01 10:00:00+00');INSERT INTO apprenant_quiz_results(id,apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,details,completed_at) VALUES('{result}','{base.A}','{base.U}','EB3','Fictif','preflight_import','A - Fictif',{base.J(details)},'2026-10-01 10:00:00+00')")
+  self.sql(f"SET request.jwt.claim.sub='{base.ADMIN}';INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at) VALUES('{base.A}','{base.U}','EB3__preflight_import','examen_blanc',{base.J(details['reponses'])},true,'submitted','2026-10-01 10:00:00+00');INSERT INTO apprenant_quiz_results(id,apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,details,completed_at) VALUES('{result}','{base.A}','{base.U}','EB3','Fictif','preflight_import','A - Fictif',{base.J(details)},'2026-10-01 10:00:00+00')")
   before=self.sql(f"SELECT to_jsonb(r) FROM apprenant_quiz_results r WHERE id='{result}'").stdout
+  answers_before=self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB3__preflight_import'").stdout
+  copies_before=self.sql("SELECT json_agg(a ORDER BY attempt_id) FROM exam_attempts_v2 a").stdout
   self.set_access(False,expected=self.current())
   r=json.loads(self.call(f"SELECT core_import_passage_finalise('{result}')").stdout.splitlines()[-1])
   self.assertEqual(r['statut'],'importe')
   self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{r['attempt_id']}'").stdout.strip(),'terminee')
   self.assertEqual(before,self.sql(f"SELECT to_jsonb(r) FROM apprenant_quiz_results r WHERE id='{result}'").stdout)
+  self.assertEqual(answers_before,self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB3__preflight_import'").stdout)
+  self.assertEqual(copies_before,self.sql(f"SELECT json_agg(a ORDER BY attempt_id) FROM exam_attempts_v2 a WHERE attempt_id<>'{r['attempt_id']}'").stdout)
+  self.assertEqual(r['qrc'],1)
+  self.assertEqual(self.sql(f"SELECT reponse::text||'|'||etat FROM qrc_instances_v2 WHERE attempt_id='{r['attempt_id']}'").stdout.strip(),'"Réponse fictive"|en_attente')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{r['attempt_id']}'").stdout.strip(),'0')
   replay=json.loads(self.call(f"SELECT core_import_passage_finalise('{result}')").stdout.splitlines()[-1])
   self.assertEqual(replay['attempt_id'],r['attempt_id'])
   self.assertEqual(self.sql(f"SELECT count(*) FROM session_exam_import_permits WHERE result_id='{result}'").stdout.strip(),'1')
