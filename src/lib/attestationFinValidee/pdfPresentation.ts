@@ -1,8 +1,8 @@
 import jsPDF from "jspdf";
 import logoOfficiel from "@/assets/logo-ftransport.png";
 import { ORGANISME } from "./modele";
-import { attestationFinaleProuvee, jalonsIntegralementProuves, type PreuvePresentationAttestation, type SignaturePresentation } from "./presentation";
-import { intituleAttestation, motifSansDuree, type ElementPedagogique } from './redactionPresentation';
+import { attestationFinaleProuvee, jalonsIntegralementProuves, texteCertificationPresentation, type PreuvePresentationAttestation, type SignaturePresentation } from "./presentation";
+import { intituleAttestation, type ElementPedagogique } from './redactionPresentation';
 
 export interface AttestationPresentation {
   apprenantId: string; prenom: string; nom: string; formation: string; modalite: string;
@@ -45,10 +45,10 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   };
   fitImage(logo, 20, 15, 88, 28);
   doc.setTextColor(...gris);
-  texte("Ftransport\n86 Route de Genas\n69003 Lyon\nNDA 11770762377", 132, 21, 9, false, 58);
-  doc.setDrawColor(...bleu); doc.setLineWidth(0.8); doc.line(20, 50, 190, 50);
+  texte("Ftransport\n86 Route de Genas\n69003 Lyon\nNDA 11770762377", 132, 27, 9, false, 58);
+  doc.setDrawColor(...bleu); doc.setLineWidth(0.35); doc.line(20, 52, 190, 52);
   doc.setTextColor(...bleu); texte("ATTESTATION DE FIN", 20, 65, 21, true); texte("DE FORMATION", 20, 75, 21, true);
-  doc.setTextColor(...gris); texte(finale ? "DOCUMENT VALIDÉ ET SIGNÉ" : "BROUILLON — DOCUMENT NON VALABLE", 20, 86, 10, true);
+  doc.setTextColor(...gris); texte(finale ? "DOCUMENT VALIDÉ ET SIGNÉ" : "MODÈLE NON VALABLE — NON SIGNÉ", 20, 86, 10, true);
   doc.setFillColor(...pale); doc.setDrawColor(...bord); doc.roundedRect(20, 95, 170, 59, 2, 2, "FD");
   doc.setTextColor(...gris); texte("APPRENANT(E)", 26, 104, 8, true);
   doc.setTextColor(...noir); texte(`${e.prenom} ${e.nom.toUpperCase()}`, 26, 112, 15, true, 158);
@@ -61,32 +61,12 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   texte(`Fin : ${date(e.fin)}`, 110, 143, 9.5, false, 74);
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
-  const central = complet
-    ? `Nous attestons que ${e.prenom} ${e.nom.toUpperCase()} a effectué l'ensemble des jalons pédagogiques obligatoires de la formation désignée ci-dessus.`
-    : "Document préparatoire établi à partir du dossier apprenant. Il ne constitue pas une attestation de formation validée et ne peut être utilisé comme justificatif définitif.";
-  const height = texte(central, 20, 164, 10.5, complet, 170);
-  if (height > 29) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
-  doc.setTextColor(...gris);
-  let y = 164 + height + 5;
+  const central = texteCertificationPresentation({certifie:complet,prenom:e.prenom,nom:e.nom,formation:intitule,debut:date(e.debut),fin:date(e.fin)});
+  const height = texte(central, 20, 165, 11, false, 170);
+  if (height > 49) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
   if (!finale) {
-    if(!complet) {
-      doc.setTextColor(...bleu);y += texte('Éléments pédagogiques restant à valider',20,y,10,true)+2;
-      doc.setTextColor(...noir);
-      const lignes = e.elementsPedagogiques?.length
-        ? e.elementsPedagogiques.map(p=>`${p.nom} — ${p.statut}`).filter(motifSansDuree)
-        : ['Validation pédagogique incomplète — détail à vérifier dans le dossier apprenant'];
-      for(const ligne of lignes) {
-        const h = (doc.splitTextToSize(ligne,170) as string[]).length * 9 * 0.3528 * 1.4;
-        if(y+h>219) throw new Error('Liste pédagogique trop longue : contrôle de présentation requis');
-        y+=texte(ligne,20,y,9)+1;
-      }
-    } else {
-      doc.setTextColor(...gris);y+=texte('Validation pédagogique vérifiée. Document en attente des autorisations et signatures requises.',20,y,9)+2;
-    }
-    const motifs = e.motifs.filter(motifSansDuree).filter(m=>!/jalons|validation complète/i.test(m));
-    doc.setTextColor(...gris);
-    if(motifs.length && y<211) texte(motifs.join(' · '),20,y+2,8,false,170);
-    doc.setTextColor(...filigrane); texte('BROUILLON · NON VALABLE',20,226,8,true);
+    // Dedicated strip, away from the body and signature panels, legible in print.
+    doc.setTextColor(...filigrane); texte('MODÈLE NON VALABLE',43,226,18,true);
   }
   doc.setDrawColor(...bord); doc.setLineWidth(0.3);
   doc.rect(20, 230, 82, 39); doc.rect(108, 230, 82, 39);
@@ -101,7 +81,7 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
     texte("Signature électronique\nNon recueillie", 112, 245, 9, false, 74);
   }
   doc.setTextColor(...gris); texte(`Fait à Lyon, le ${date(e.dateEmission)}.`, 20, 278, 8.5);
-  if (e.sourceFin) texte(`Date de fin : ${e.sourceFin}`, 20, 284, 6.5, false, 170);
+  // Source timestamps remain in the CRM audit panel, not in the official body.
   texte(`NDA 11770762377 · Réf. ${e.reference ?? `APERÇU-${e.apprenantId.slice(0,8)}`} · Document ${finale ? 'validé' : 'préparatoire'}`,20,292,7,false,170);
   return doc.output("blob");
 }

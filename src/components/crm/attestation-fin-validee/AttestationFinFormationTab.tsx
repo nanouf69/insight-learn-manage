@@ -46,6 +46,8 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     dateEmission: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }),
   };
   const manquants = champsManquants(champs).filter(m => m !== "représentant du centre");
+  // No attestation-wide server certificate is returned by the existing read model.
+  const certificationGlobaleConfirmee: boolean = false;
 
   const apercuBrouillon = async () => {
     setOccupe("apercu");
@@ -144,7 +146,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
               {d.envoi_erreur && <p className="text-destructive">Dernier envoi : {d.envoi_erreur}</p>}
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, false)}><Eye className="h-4 w-4 mr-1" />Prévisualiser</Button>
-                {s.libelle === "À envoyer" && <Button className="min-h-11" disabled={occupe === d.id} onClick={() => setAEnvoyer(d)}>{occupe === d.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}Envoyer pour signature</Button>}
+                {s.libelle === "À envoyer" && <Button className="min-h-11" disabled title="Certification pédagogique serveur complète requise"><Lock className="h-4 w-4 mr-1" />Certification requise avant envoi</Button>}
                 {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" onClick={() => { navigator.clipboard.writeText(lienSignature(d.token)); toast({ title: "Lien copié" }); }}><Copy className="h-4 w-4 mr-1" />Copier le lien de signature</Button>}
                 {d.statut === "signe" && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, true)}><Download className="h-4 w-4 mr-1" />Télécharger le PDF signé</Button>}
               </div>
@@ -159,10 +161,16 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             <CardTitle className="text-base flex flex-wrap items-center gap-2">
               Brouillon — non enregistré
               {ap.q.isLoading ? <Badge variant="outline">Contrôle en cours…</Badge>
-                : <Badge variant={ap.pret && !manquants.length ? "default" : "destructive"}>{ap.pret && !manquants.length ? "Prêt à enregistrer" : "Brouillon / À vérifier"}</Badge>}
+                : <Badge variant="destructive">Modèle non valable — certification requise</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            <div className="border border-destructive/40 rounded-md p-3 bg-destructive/5">
+              <p className="font-semibold text-destructive">Certification pédagogique non établie — modèle non valable</p>
+              <p className="mt-1">Aucune attestation certifiant tous les jalons ne peut être enregistrée, envoyée ou signée sans preuve serveur complète.</p>
+              <p className="font-semibold mt-2">Éléments pédagogiques restant à valider</p>
+              {ap.elementsPedagogiques?.length ? <ul className="list-disc pl-5 mt-1">{ap.elementsPedagogiques.map((m,i)=><li key={i}>{m.nom} — {m.statut}</li>)}</ul> : <p className="mt-1">Validation pédagogique incomplète — détail à vérifier dans le dossier apprenant</p>}
+            </div>
             {!ap.q.isLoading && ap.motifs.length > 0 && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
                 <p className="font-semibold text-destructive flex items-center gap-2"><Lock className="h-4 w-4" />Attestation à vérifier</p>
@@ -179,7 +187,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             {manquants.length > 0 && <p className="text-destructive">Champs du dossier à compléter : {manquants.join(", ")}</p>}
             <Button variant="outline" className="min-h-11" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1" />Prévisualiser le brouillon (PDF)</Button>
 
-            {ap.pret && !manquants.length && (
+            {certificationGlobaleConfirmee && ap.pret && !manquants.length && (
               <div className="space-y-3 rounded-md border p-3">
                 <label className="block space-y-1"><span className="font-medium">Représentant du centre (signataire)</span>
                   <Input value={representant} onChange={e => setRepresentant(e.target.value)} placeholder="Nom et prénom du responsable" maxLength={120} /></label>

@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 17:37 — Modèle officiel attestation, non valable sans preuve
+- [x] Formulation officielle ; sans certification, champs génériques dans le texte et filigrane MODÈLE NON VALABLE, alertes hors PDF ; enregistrement du nouveau modèle bloqué sans preuve globale, historiques intacts.
+- [x] 32 tests PASS ; PDF Léa réel exporté en lecture seule, texte générique/non valable sans heure ni certification nominative ; complet fictif et A4 inspectés indépendamment, mobile réel rendu vérifié. Répétition « formation Formation »/e-learning corrigée ; aucune superposition. Aucun envoi/publication.
+- [ ] Certification officielle disponible pour dossiers complets : preuve globale serveur et autorisation tampon/double signature figée non branchées ; modèle final reste bloqué, sans migration ni écriture réelle.
+
 ## 12/11 17:27 — Notes apprenant : examens officiels / Bilans
 - [x] Six EB officiels avec détail pondéré et graphique ; Bilans réels et révisions séparés, À revoir conservé en bas ; lecture seule.
 - [x] Tests pondération/tentatives/attente/isolation, PC/mobile fictifs, Rodrigue réel CRM et panne/retry vérifiés ; rapport docs/notes-officielles-eleve-2026-11-12.md.
