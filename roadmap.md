@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 12/11 12:44 — Remises F/G dans le nouveau Bilan VTC
-- [ ] Afficher les remises originales 505/506, jamais leurs révisions, dans la liste partagée et le récapitulatif ; résultat A–E distinct.
-- [ ] Vérifier fixtures du profil PC/mobile élève/admin, clics, lectures indisponibles et menu public ; aucun compte réel ni publication.
+- [x] Remises originales 505/506 dans étapes et récapitulatif partagé, révisions exclues, bonnes/total explicités, 5/7 séparé du résultat A–E ; refus de lecture honnête.
+- [x] 13 tests PASS et quatre parcours PC/mobile élève/admin PASS, clics F/G/retour, zéro mutation admin ; menu F/G présent dans asset public. Aucun compte réel/publication ; rendu réel sans capture non vérifié. Rapport docs/bilan-vtc-remises-fg-2026-11-12.md.
 
 ## 12/11 12:30 — Prévol installation accès EB unitaire
 - [x] Catalogue SELECT : RPC/journal/gardes absents ; session VTC/TAXI 11–24/01/2027 planifiée, future, 2 inscrits ; frontend public unitaire présent, EB cible inconnu.
