@@ -55,13 +55,16 @@ export async function confirmerBilanRevision(revision: BilanRevision, completed 
   const { data, error } = await supabase.from('reponses_apprenants').select('reponses,status,submitted_at,write_seq,originaux_exacts,reponses_meta')
     .eq('apprenant_id', revision.source.owner).eq('exercice_id', revision.id).maybeSingle();
   if (error || !data) throw new Error('Enregistrement non relu : réessayez');
-  const exact = lireReponsesExactes(data.reponses ?? {}, data.originaux_exacts, data.reponses_meta);
+  if (!data.reponses || typeof data.reponses !== 'object' || Array.isArray(data.reponses)) throw new Error('Réponses serveur illisibles');
+  const exact = lireReponsesExactes(data.reponses as Record<string, unknown>, data.originaux_exacts, data.reponses_meta);
   if (Object.keys(exact.anomalies).length || !answersAreEqual(exact.reponses, { __source: revision.source, ...revision.answers })) throw new Error('Autre réponse enregistrée : votre saisie reste conservée, vérifiez la reprise');
   primeKnownWriteSeq(revision.source.owner, revision.id, data.write_seq);
   const submitted = data.status === 'submitted' && !!data.submitted_at;
   if (completed && !submitted) {
     enregistrerBilanRevision(revision, true);
-    return confirmerBilanRevision(revision, true);
+    const back = await confirmerBilanRevision(revision);
+    if (!back.submitted) throw new Error('Finalisation non confirmée : réessayez');
+    return back;
   }
   return { ...revision, submitted };
 }
