@@ -81,29 +81,33 @@ const normTexte = (s: unknown) => safeStr(s).normalize("NFC").replace(/\s+/g, " 
 const reponseVide = (rep: unknown) =>
   rep === undefined || rep === null || (Array.isArray(rep) && rep.length === 0) || (typeof rep === "string" && rep.trim() === "");
 
+/** Forme canonique : espaces normalisés ; « X X » (répétition exacte et complète) → « X ». */
+export function texteCanonique(v: unknown): string {
+  const t = normTexte(v);
+  const mots = t.split(" ");
+  if (mots.length >= 2 && mots.length % 2 === 0) {
+    const h = mots.length / 2;
+    if (mots.slice(0, h).join(" ") === mots.slice(h).join(" ")) return mots.slice(0, h).join(" ");
+  }
+  return t;
+}
+
 /** Rapprochement prouvé figé ↔ actuel ; null si impossible (jamais au hasard). */
 export function questionActuelleRapprochee(figee: Question, matiereActuelle: Matiere | null | undefined): Question | null {
   const candidats = (matiereActuelle?.questions ?? []).filter((q): q is Question => !!q && String(q.id) === String(figee.id));
   if (candidats.length !== 1) return null;
   const a = candidats[0];
   if (a.type !== figee.type) return null;
-  const memeEnonce = normTexte(a.enonce) === normTexte(figee.enonce);
+  // Aucune preuve officielle de continuité des propositions n'existe pour les EB :
+  // seules l'identité exacte et des variantes cosmétiques déterministes sont acceptées
+  // (espaces, répétition exacte d'un même texte comme Q13). Toute autre réécriture,
+  // tout échange de textes entre lettres → non rapproché, corrigé figé, signalé.
+  if (texteCanonique(a.enonce) !== texteCanonique(figee.enonce)) return null;
   if (figee.type === "QCM") {
-    // Identité stable : même ID unique, même type, mêmes lettres dans le même ordre,
-    // et UNE SEULE dimension modifiée à la fois (sinon non prouvé, jamais propagé) :
-    // - énoncé seul reformulé (propositions et corrigé identiques) ;
-    // - texte de propositions seul corrigé (énoncé et corrigé identiques) ;
-    // - corrigé seul changé (énoncé et propositions identiques).
-    const lettres = (q: Question) => JSON.stringify((q.choix ?? []).map((c) => c.lettre));
-    const textes = (q: Question) => JSON.stringify((q.choix ?? []).map((c) => [c.lettre, normTexte(c.texte)]).sort());
-    const corrige = (q: Question) => JSON.stringify((q.choix ?? []).filter((c) => c.correct).map((c) => c.lettre).sort());
-    if (!a.choix?.length || lettres(a) !== lettres(figee)) return null;
+    const sig = (q: Question) => JSON.stringify((q.choix ?? []).map((c) => [c.lettre, texteCanonique(c.texte)]));
+    if (!a.choix?.length || sig(a) !== sig(figee)) return null;
     if (!a.choix.some((c) => c.correct)) return null;
-    const changements = [!memeEnonce, textes(a) !== textes(figee), corrige(a) !== corrige(figee)].filter(Boolean).length;
-    if (changements > 1) return null;
-    return a;
   }
-  if (!memeEnonce) return null;
   return a;
 }
 

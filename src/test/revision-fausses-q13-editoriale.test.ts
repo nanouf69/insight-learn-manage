@@ -47,14 +47,25 @@ describe("Q13 — cohérence après édition", () => {
     expect(JSON.stringify(questionsFaussesDuPassage(actuelle, r))).toBe(JSON.stringify(questionsFaussesDuPassage(actuelle, r)));
   });
 });
-describe("Q13 — une seule dimension modifiée à la fois", () => {
-  it("texte de proposition ET corrigé changés ensemble : non prouvé", () => {
-    const f = figees[1] as any;
-    const a = { ...f, choix: f.choix.map((c: any) => c.lettre === "B" ? { ...c, texte: "corrigé", correct: false } : { ...c, correct: c.lettre === "A" }) };
+describe("Q13 — durcissement : pas de sens deviné", () => {
+  const f = figees[1] as any;
+  it("échange des textes A/B en gardant les lettres : non rapproché", () => {
+    const a = { ...f, choix: f.choix.map((c: any) => c.lettre === "A" ? { ...c, texte: DOUBLE } : c.lettre === "B" ? { ...c, texte: "prop A13" } : c) };
     expect(questionActuelleRapprochee(f, matiere([a]))).toBeNull();
   });
-  it("énoncé seul reformulé : rapproché", () => {
-    const f = figees[1] as any;
-    expect(questionActuelleRapprochee(f, matiere([{ ...f, enonce: "Le prix de vente d’une prestation est égal au" }]))?.id).toBe(13);
+  it("réécriture d'énoncé seule : non rapprochée", () => {
+    expect(questionActuelleRapprochee(f, matiere([{ ...f, enonce: "Le prix de vente d’une prestation est égal au" }]))).toBeNull();
+  });
+  it("texte de proposition réécrit (non cosmétique) : non rapproché", () => {
+    const a = { ...f, choix: f.choix.map((c: any) => c.lettre === "B" ? { ...c, texte: "coût de revient + marge" } : c) };
+    expect(questionActuelleRapprochee(f, matiere([a]))).toBeNull();
+  });
+  it("espaces seuls : rapproché ; texte identique et clé changée : rapprochée", () => {
+    const a = { ...f, enonce: `  ${f.enonce}  `, choix: f.choix.map((c: any) => ({ ...c, correct: c.lettre === "A" })) };
+    expect(questionActuelleRapprochee(f, matiere([a]))?.id).toBe(13);
+  });
+  it("répétition partielle (pas exacte) : non rapprochée", () => {
+    const g = { ...f, choix: f.choix.map((c: any) => c.lettre === "B" ? { ...c, texte: "coût de revient + marge + TVA coût de revient" } : c) };
+    expect(questionActuelleRapprochee(g, matiere([f]))).toBeNull();
   });
 });
