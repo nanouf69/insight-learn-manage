@@ -81,7 +81,7 @@ export async function chargerNotesSession(sessionId:string,suivi?:SuiviChargemen
   suivi?.partiel?.({inscrits,notes:{},erreur:null});
   let examens:ExamenNotesSession[]=[];const matieres:NonNullable<ReleveSession['matieres']>={};const sourcesAttente:NonNullable<ReleveSession['sourcesAttente']>={};
   try {
-    signalerLectureNotes(suivi,{etape:'Récupération des notes',charges:0,total:inscrits.length});
+    signalerLectureNotes(suivi,{etape:'Récupération des notes'});
     const ids=inscrits.map(a=>a.id);const definitions=await loadSavedExamens(false,undefined,true);
     const tracks=new Set(inscrits.map(a=>filiereInscrit(a.type_apprenant)));
     examens=definitions.filter(d=>d.numero>=1&&d.numero<=6&&tracks.has(d.type)).map(d=>({id:d.id,numero:d.numero,filiere:d.type,matieres:d.matieres.map(m=>({id:m.id,nom:m.nom}))})).sort((a,b)=>a.numero-b.numero||a.filiere.localeCompare(b.filiere));

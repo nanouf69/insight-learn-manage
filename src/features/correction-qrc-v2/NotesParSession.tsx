@@ -9,12 +9,16 @@ import { lienCorrectionSession, type DestinationCorrection } from './lienCorrect
 import { useAbsentsSessionJour } from './AbsenceSessionJour';
 import { chargerAbsentsSessionJour } from './absenceSessionJour';
 import { chargerNotesSession, filiereInscrit, moyenneSessionExamen, type NoteSession, type ReleveSession } from './notesSession';
+import { ChargementNotesSession } from './ChargementNotesSession';
+import { lectureNotesBornee, type ProgressionNotes, type SuiviChargementNotes } from './chargementNotesSession';
 const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='definitif'?`${n.note?.toLocaleString('fr-FR')} /20`:n.etat==='non_passe'?'Non passé':n.etat==='attente'?'À corriger / en attente':n.etat==='incomplet'?`Incomplet (${n.couverture})`:'Lecture indisponible';
 const motifs={publication:'Publication en attente — aucune QRC à corriger',non_rattachee:'Copie non rattachée au circuit de correction',ambigue:'Session de la copie à vérifier'} as const;
 export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=souscrireNotesSession,chargerAbsences=chargerAbsentsSessionJour}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession;souscrire?:typeof souscrireNotesSession;chargerAbsences?:typeof chargerAbsentsSessionJour}){
   const [examenId,setExamenId]=useState('tous');
   const [cle,setCle]=useState<string|null>(()=>new URLSearchParams(window.location.search).get('notes_session'));const [releve,setReleve]=useState<ReleveSession|null>(null);const [erreur,setErreur]=useState<string|null>(null);const [loading,setLoading]=useState(false);const [retry,setRetry]=useState(0);
   const lecture=useRef<Promise<void>|null>(null);
+  const [progression,setProgression]=useState<ProgressionNotes>({etape:'Chargement des candidats'});
+  const [debutChargement,setDebutChargement]=useState(0);
   const [dateExamen,setDateExamen]=useState<{contexte:string;jour:string}|null>(null);
   const contexteExamen=`${cle}|${examenId}`;
   const jourExamen=examenId!=='tous'&&dateExamen?.contexte===contexteExamen?dateExamen.jour:null;
@@ -22,8 +26,9 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
   const absents=useAbsentsSessionJour(cle,jourExamen,chargerAbsences,jetonPresence);
   const actualiser=useRef<()=>Promise<void>>(async()=>{});
   useEffect(()=>{
-    if(!cle)return;
+    if(!cle){setReleve(null);setLoading(false);setErreur(null);return;}
     let alive=true,scheduled=false,dirty=false,initial=true;
+    const controller=new AbortController();
     setLoading(true);setReleve(null);setExamenId('tous');setErreur(null);
     const lire=async()=>{
       if(!alive||(!initial&&document.visibilityState==='hidden'))return;
@@ -31,12 +36,16 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
       scheduled=true;
       if(lecture.current)await lecture.current;
       if(!alive){scheduled=false;return;}
+      setLoading(true);setErreur(null);setDebutChargement(performance.now());setProgression({etape:'Chargement des candidats'});
       const task=(async()=>{
+        const attempt=new AbortController();
+        const cancel=()=>attempt.abort();controller.signal.addEventListener('abort',cancel,{once:true});
         try{
-          const r=await charger(cle.slice(4));
+          const suivi:SuiviChargementNotes={signal:attempt.signal,progression:p=>{if(alive&&!attempt.signal.aborted)setProgression(p);},partiel:r=>{if(alive&&!attempt.signal.aborted)setReleve(prev=>prev?.examens?.length?prev:r);}};
+          const r=await lectureNotesBornee(charger(cle.slice(4),suivi),attempt.signal);
           if(alive){setReleve(prev=>r.erreur&&prev?prev:r);setErreur(r.erreur);}
         }catch(e){if(alive)setErreur(e instanceof Error?e.message:'Lecture indisponible');}
-        finally{if(alive){initial=false;setLoading(false);}}
+        finally{attempt.abort();controller.signal.removeEventListener('abort',cancel);if(alive){initial=false;setLoading(false);}}
       })();
       lecture.current=task;
       await task;
@@ -46,7 +55,7 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
     };
     actualiser.current=()=>lire();
     void lire();
-    return()=>{alive=false;actualiser.current=async()=>{};};
+    return()=>{alive=false;controller.abort();actualiser.current=async()=>{};};
   },[cle,charger]);
   useEffect(()=>{if(retry)void actualiser.current();},[retry]);
   const actualiserManuel=async()=>{
@@ -82,7 +91,7 @@ export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=
     <div className="flex flex-wrap gap-2">{sessions.filter(s=>sessionFormationActuelle(s)).map(s=><Button key={s.cle} variant={cle===s.cle?'default':'outline'} onClick={()=>setCle(s.cle)} className="h-auto whitespace-normal text-left py-2">{s.libelle}</Button>)}</div>
     <select aria-label="Session du relevé" className="max-w-full rounded border bg-background px-2 py-1 text-sm" value={cle??''} onChange={e=>setCle(e.target.value||null)}><option value="">Choisir une session</option>{sessions.map(s=><option key={s.cle} value={s.cle}>{s.libelle}</option>)}</select>
     {cle&&<div><Button variant="outline" onClick={()=>void actualiserManuel()} disabled={actualisation||loading} aria-busy={actualisation}>{actualisation?'Actualisation…':'Actualiser'}</Button></div>}
-    {loading&&<p role="status">Chargement des notes de cette session…</p>}
+    {loading&&<ChargementNotesSession progression={progression} debut={debutChargement}/>}
     {erreur&&<div role="alert" className="text-destructive"><p>Lecture indisponible — {erreur}</p><Button variant="outline" onClick={()=>setRetry(n=>n+1)}>Réessayer</Button></div>}
     {releve&&<>
       <label className="block space-y-1 text-sm"><span>Examen blanc</span><select aria-label="Examen blanc" className="block max-w-full rounded border bg-background px-2 py-1" value={examenId} onChange={e=>setExamenId(e.target.value)}><option value="tous">Tous les examens</option>{examens.map(e=><option key={e.id} value={e.id}>EB{e.numero} {e.filiere}</option>)}</select></label>
