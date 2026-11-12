@@ -195,6 +195,7 @@ import { BilanVtcComplements, type CibleComplementVtc } from "./BilanVtcCompleme
 import { estComplementBilanVtc } from "@/lib/bilanVtcComplements";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 import { BilanSrTraining } from "./BilanSrTraining";
+import { BILAN_SR_TRAINING_ACTIF } from "@/lib/bilanSrTraining";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { BilanFutureApercuAdmin, lireApercuFutureAdmin, type ApercuFuture } from "./BilanFutureApercuAdmin";
 import { useBilanSnapshotsEleve, questionsComptees, ouvrirPassageEleve, MODULES_BILAN_SNAPSHOT, type EtatSnapshotsEleve } from "./bilanSnapshotsEleve";
@@ -9704,10 +9705,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             }}>
                               🔄 Recommencer tout
                             </Button>
-                            {module.id === 5 && [505,506].includes(Number(exo.id)) && !apercuAdmin ? (
+                            {BILAN_SR_TRAINING_ACTIF && module.id === 5 && [505,506].includes(Number(exo.id)) && !apercuAdmin ? (
                               etatSnap.statut === "pret" && etatSnap.parExo[exo.id] ? <BilanSrTraining key={etatSnap.parExo[exo.id].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[exo.id].snapshotId} exerciseId={Number(exo.id) === 505 ? 505 : 506} />
                                 : <p role="status" className="text-sm text-muted-foreground">Correction actuelle indisponible : aucun passage remis identifiable pour cet entraînement.</p>
-                            ) : module.id === 5 && Number(exo.id) === 502 && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[502] ? (
+                            ) : BILAN_SR_TRAINING_ACTIF && module.id === 5 && Number(exo.id) === 502 && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[502] ? (
                               <BilanSrTraining key={etatSnap.parExo[502].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[502].snapshotId} />
                             ) : <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
                               const snapshot: Record<string, string | string[]> = {};
