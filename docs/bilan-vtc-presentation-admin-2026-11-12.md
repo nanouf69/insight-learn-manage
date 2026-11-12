@@ -1,0 +1,9 @@
+# Présentation commune VTC en lecture seule
+
+Partagé par le module 5 élève et son aperçu admin : `BilanMatiereSteps` (ordre/intitulés/état remis), `BilanMatiereCard`, `BilanQuestionCard` (support, Q, image, choix), `BilanRemiseSummary` (compte de bonnes réponses enregistré). Ces composants n'importent aucun client serveur et n'ont aucun effet ni transport. Leurs actions sont des callbacks fournis par chaque écran.
+
+L'admin conserve uniquement `bilan_future_admin_apercu`, lecture autorisée existante ; navigation locale, cases désactivées, pas de composant interactif élève monté. Questions de la projection serveur, pas d'hydratation avec une banque courante. Résultat affiché seulement si `submitted` fourni, zéro réel conservé. Aucune note /20, moyenne, réponse choisie ni corrigé inventé : ces preuves ne figurent pas dans la projection admin. Données absentes signalées indisponibles. Aucun changement de droit, RPC ou critère de validation.
+
+Le conteneur admin est indépendant : navigation visible sur mobile, disposition latérale sur PC. Les cartes sont communes ; les commandes élève (calculatrice, validation, révision) ne sont pas montées côté admin. Compléments F/G/H et carte externe 1794399472264 conservés. TAXI garde son chemin historique de présentation.
+
+Vérifications exécutées : 12 tests PASS (admin aucun RPC après navigation, vrai zéro ; écran élève ouverture/saisie/reprise/soumission sur serveur fictif ; correction et filtre compléments). Chromium PC 1280×1800 et mobile 390×844 : aperçu admin, cartes communes côté élève simulé, choix identiques, remise 0/1 et aucun appel mutateur admin. Premier contrôle du vrai ModuleDetailView avec fixtures : F/G/H 49/46/48 et lien externe unique cliqué, zéro mutation. Comparaison finale des cartes faite par composants de présentation seuls, pas par session réelle élève. Pas de publication globale. Build OK.

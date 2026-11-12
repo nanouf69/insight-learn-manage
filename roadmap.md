@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 09:59 — Présentation admin nouveau Bilan VTC
+- [x] Cartes matière/questions, noms/ordre/étapes et résumé remis partagés sans effets ; admin module 5 uniquement lecture autorisée, pas de composant élève monté. PC/mobile fixtures comparés, zéro appel mutateur admin, 12 tests PASS. Compléments/TAXI préservés, aucune publication. Limites/proofs docs/bilan-vtc-presentation-admin-2026-11-12.md.
+
 ## 12/11 09:49 — Carte QRC VTC résiduelle
 - [x] Carte serveur 1794399472264 exposée au lieu de 9001 dans les compléments futurs ; lien exact unique cliqué en aperçu admin (aucun appel pédagogique mutateur) et route VTC simulée, TAXI exclu par test. 20 tests PASS, F/G/H préservés. A–E demande son ouverture habituelle dans la simulation élève, interceptée ; aucune écriture réelle ni publication. Complément isolé documenté.
 

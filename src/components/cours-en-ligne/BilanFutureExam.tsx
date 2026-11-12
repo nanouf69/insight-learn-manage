@@ -6,7 +6,7 @@
  * review of the wrong questions of this passage (never saved, never changes the submission).
  * Presentation = the shared classic quiz components (learnerQuizUi), same as every other module.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, Calculator, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,8 @@ import { baremeReference, examenReferenceBilan, moyenneBilan, noterMatiere, type
 import { fetchLiveExamens } from "./useLiveExamens";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 
-export const FUTURE_SUBJECT_NAMES = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
+import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
+export const FUTURE_SUBJECT_NAMES = NOMS_MATIERES_BILAN;
 
 type Q = { id: number; enonce: string; image?: string; imageSize?: string; support?: { numero: number; paragraphes: string[] }; choix: { lettre: string; texte: string }[] };
 type Passage = { receipt: FutureReceipt; questions: Q[]; answers: Record<string, string[]>; revisions: Record<string, number>; submitted: { correct_count: number; question_count: number } | null };
@@ -78,6 +79,11 @@ type Statut = { submitted: boolean; score?: string; correct?: number; total?: nu
 const promptDe = (q: Q) => q.support
   ? { question: q.enonce, passageTitle: `Texte ${q.support.numero}`, passageBody: q.support.paragraphes.join("\n\n") }
   : { question: q.enonce };
+
+function MatiereCard({ children, moduleId, nom, onCalculator }: { children: ReactNode; moduleId: number; nom: string; onCalculator: () => void }) {
+  const tools = <div className="flex items-center gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={onCalculator} className="gap-1"><Calculator className="w-4 h-4" />Calculatrice</Button></div>;
+  return moduleId === 5 ? <BilanMatiereCard nom={nom} tools={tools}>{children}</BilanMatiereCard> : <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;
+}
 
 export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, description, onBack }: {
   moduleId: 5 | 11; ownerId: string; apprenantId?: string; titre?: string; description?: string; onBack?: () => void;
@@ -225,10 +231,8 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
 
   const renderProgressionSteps = (isMobileView = false) => (
     <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
-      {FUTURE_SUBJECT_NAMES.map((nom, i) => (
-        <ProgressionStep key={i} label={`📝 Quiz — ${nom}`} current={i === pageCourante} completed={!!statuts[base + i]?.submitted}
-          unlocked isLast={i >= total - 1} badge="quiz"
-          onClick={() => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} />
+      {moduleId === 5 ? <BilanMatiereSteps current={pageCourante} submitted={FUTURE_SUBJECT_NAMES.map((_, i) => !!statuts[base + i]?.submitted)} onSelect={i => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} /> : FUTURE_SUBJECT_NAMES.map((nom, i) => (
+        <ProgressionStep key={i} label={`📝 Quiz — ${nom}`} current={i === pageCourante} completed={!!statuts[base + i]?.submitted} unlocked isLast={i >= total - 1} badge="quiz" onClick={() => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} />
       ))}
     </div>
   );
@@ -375,17 +379,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
         <div className="animate-fade-in">
           <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4" data-testid="bilan-future-passage">
             <div className="space-y-4 min-w-0">
-              <Card className="scroll-mt-4 transition-all">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <h3 className="text-lg font-bold">📝 {nom}</h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button size="sm" variant="outline" onClick={() => setShowCalculator(v => !v)} className="gap-1">
-                        <Calculator className="w-4 h-4" />
-                        Calculatrice
-                      </Button>
-                    </div>
-                  </div>
+              <MatiereCard moduleId={moduleId} nom={nom} onCalculator={() => setShowCalculator(v => !v)}>
                   {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
                   {enRevision && (
@@ -399,6 +393,10 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                     const c = corr.get(q.id);
                     const fausse = estFausse(q);
                     const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
+                    if (moduleId === 5) return <BilanQuestionCard key={q.id} question={q} index={qi} anchor={anchor(qi)} selected={reponseAffichee(q)} disabled={enRevision ? revision?.validee === true : soumis} showResults={resultatsVisibles} correct={c?.correct} wrong={fausse} missing={nonRepondues.has(q.id)} onSelect={l => {
+                      if (enRevision) setRevision(r => { if (!r || r.validee) return r; const cur = r.answers[q.id] ?? []; return { ...r, answers: { ...r.answers, [q.id]: (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort() } }; });
+                      else cocher(q, l);
+                    }} />;
                     return (
                       <div key={q.id} id={anchor(qi)} data-learner-question data-answer-scroll-anchor data-question-id={q.id}
                         data-question-faute={fausse ? "1" : undefined}
@@ -450,12 +448,12 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                         </div>
                       ) : (
                         <div className="w-full space-y-5" data-testid={enRevision ? undefined : "bilan-future-resultat"}>
-                          <QuizScoreSummary
+                          {moduleId === 5 && !enRevision ? <BilanRemiseSummary correct={passage.submitted!.correct_count} total={passage.submitted!.question_count} /> : <QuizScoreSummary
                             points={enRevision ? bonnesRevision : passage.submitted!.correct_count}
                             total={enRevision ? revision!.ids.length : passage.submitted!.question_count}
                             footnote={enRevision
                               ? <p className="text-xs text-muted-foreground" data-testid="revision-score">Révision : {bonnesRevision}/{revision!.ids.length} — copie remise inchangée</p>
-                              : <p className="text-xs text-muted-foreground">Matière remise : {passage.submitted!.correct_count}/{passage.submitted!.question_count} bonnes réponses</p>} />
+                              : <p className="text-xs text-muted-foreground">Matière remise : {passage.submitted!.correct_count}/{passage.submitted!.question_count} bonnes réponses</p>} />}
                           {!enRevision && (() => {
                             const n = noteDe(pageCourante, passage.submitted!.correct_count, passage.submitted!.question_count);
                             return n ? <CarteNoteMatiere n={n} index={pageCourante} total={total} nom={n.matiere.nom} />
@@ -502,8 +500,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                       )}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+              </MatiereCard>
             </div>
             <QuizQuestionSidebar
               onJump={(qi) => document.getElementById(anchor(qi))?.scrollIntoView({ behavior: "smooth", block: "start" })}
