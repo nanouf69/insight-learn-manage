@@ -391,7 +391,6 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
     );
   }
 
-  const hasResults = quizResults.length > 0 || moduleCompletions.length > 0;
 
 
   return (
@@ -494,10 +493,10 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
           <Button variant="outline"
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`h-auto min-h-11 whitespace-normal px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-white text-slate-600 hover:bg-slate-100"
+                : "bg-card text-muted-foreground hover:bg-muted"
             }`}
           >
             {tab.label} ({tab.count})
@@ -628,7 +627,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
       )}
 
       {activeTab === "examens" && (definitions.isLoading ? <p role="status">Chargement du référentiel des examens…</p> : definitions.error ? <p role="alert">Référentiel indisponible. <Button onClick={definitions.refetch}>Réessayer</Button></p> : <NotesExamensOfficiels examens={examensOfficiels} titre="Examens blancs officiels" />)}
-      {activeTab === "bilans" && <NotesExamensOfficiels examens={bilans} titre="Bilan examen" />}
+      {activeTab === "bilans" && (readError ? <p className="text-muted-foreground">Les Bilans ne peuvent pas être confirmés tant que la lecture n’a pas réussi.</p> : <NotesExamensOfficiels examens={bilans} titre="Bilan examen" />)}
       {activeTab === "revisions" && <section className="space-y-3"><h3 className="font-bold">Révisions des questions fausses</h3>{quizResults.filter(r=>r.quiz_type==="revision_fausses").map(r=><div key={r.id} className="border border-border rounded-lg p-4"><strong>{r.quiz_titre}</strong><p className="text-sm text-muted-foreground">{Number.isFinite(Date.parse(r.completed_at))?new Date(r.completed_at).toLocaleString('fr-FR'):"Date non vérifiée"} · Révision uniquement</p><p>{normalizeQuizNoteSur20(r)==null?'Note en attente':`${normalizeQuizNoteSur20(r)} /20`}</p></div>)}</section>}
 
         {/* À revoir — matières échouées par examen blanc */}

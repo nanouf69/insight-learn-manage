@@ -29,10 +29,10 @@ export function modelesBilansNotes(s:SourcesBilansNotes,defs:ExamenBlanc[]):Exam
   out.push({id:`future-${module}`,titre:`Bilan ${module===5?'VTC':'TAXI'} · A–E`,note:total?.moyenne??null,date:dates[0]??null,statut:!total?'Note en attente':total.verdict==='reussi'?'Réussi':total.verdict==='echoue'?'À revoir':'Verdict à vérifier',matieres:bareme?.map((b,i)=>({id:b.matiere.id,nom:b.matiere.nom,coefficient:b.coefficient,note:notes?.[i]?.noteSur20??null,date:null,statut:notes?.[i]?'Remise enregistrée':'Non réalisé'}))??[]});
  }
  const groups=new Map<string,any[]>();
- for(const r of s.archives){if(!['termine','terminee','completed','fige','orange','vert'].includes(String(r.statut_passage).toLowerCase())&&r.score_bonnes==null)continue;const key=`${r.module_id}:${r.tentative}`;groups.set(key,[...groups.get(key)??[],r]);}
+ for(const r of s.archives){if(r.statut_passage!=='submitted')continue;const key=`${r.module_id}:${r.tentative}`;groups.set(key,[...groups.get(key)??[],r]);}
  for(const [key,rows] of groups){
   const module=rows[0].module_id;const dates=rows.map(r=>r.passage_updated_at).filter(d=>Number.isFinite(Date.parse(d))).sort((a,b)=>Date.parse(b)-Date.parse(a));
-  out.push({id:`archive-${key}`,titre:`${MODULES_DATA.find(m=>m.id===module)?.nom??'Bilan examen'} · tentative ${rows[0].tentative??'non précisée'}`,note:null,date:dates[0]??null,statut:'Note en attente',matieres:rows.map(r=>({id:String(r.exercice_id),nom:`Matière enregistrée ${r.exercice_id}`,coefficient:null,note:Number(r.nb_questions)>0&&r.score_bonnes!=null?Math.round(Number(r.score_bonnes)/Number(r.nb_questions)*200)/10:null,date:r.passage_updated_at,statut:'Barème global historique non vérifié'}))});
+  out.push({id:`archive-${key}`,titre:`${MODULES_DATA.find(m=>m.id===module)?.nom??'Bilan examen'} · tentative ${rows[0].tentative??'non précisée'}`,note:null,date:dates[0]??null,statut:'Note en attente',matieres:rows.map(r=>({id:String(r.exercice_id),nom:`Exercice enregistré ${r.exercice_id}`,coefficient:null,note:null,date:r.passage_updated_at,statut:'Barème historique non vérifié — copie conservée'}))});
  }
  return out.sort((a,b)=>Date.parse(a.date??'')-Date.parse(b.date??'')||a.id.localeCompare(b.id));
 }
