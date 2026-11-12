@@ -22,6 +22,9 @@ interface Props {
 }
 
 const NIVEAUX_CARBURANT = ["Vide", "1/4", "1/2", "3/4", "Plein"];
+// Widen the projection string to avoid recursive generated JSON path types.
+const CHAMPS_BIENVENUE: string = "id,apprenant_id,completed_at,nom:donnees->>nom,prenom:donnees->>prenom,email:donnees->>email,telephone:donnees->>telephone,adresse:donnees->>adresse,code_postal:donnees->>code_postal,ville:donnees->>ville,date_naissance:donnees->>date_naissance";
+type ContactRow = { id: string; apprenant_id: string; completed_at: string | null } & Record<string, unknown>;
 
 export function ContratLocationSection({ apprenant }: Props) {
   return <ContratLocationForm key={apprenant.id} apprenant={apprenant} />;
@@ -95,7 +98,7 @@ function ContratLocationForm({ apprenant }: Props) {
         if (authError || !owner) throw new Error("Session administrateur requise.");
         const [welcome, fleet] = await Promise.all([
           supabase.from("apprenant_documents_completes")
-            .select("id,apprenant_id,completed_at,nom:donnees->>nom,prenom:donnees->>prenom,email:donnees->>email,telephone:donnees->>telephone,adresse:donnees->>adresse,code_postal:donnees->>code_postal,ville:donnees->>ville,date_naissance:donnees->>date_naissance")
+            .select(CHAMPS_BIENVENUE)
             .eq("apprenant_id", apprenant.id).eq("type_document", "dossier-bienvenue")
             .not("completed_at", "is", null).order("completed_at", { ascending: false }).order("id").limit(1),
           supabase.from("renouvellements").select("id,libelle,reference,date_debut,date_echeance")
@@ -106,7 +109,7 @@ function ContratLocationForm({ apprenant }: Props) {
         const errors: string[] = [];
         if (welcome.error) errors.push("Dossier de bienvenue indisponible : aucun préremplissage effectué.");
         else {
-          const row = welcome.data?.[0];
+          const row = (welcome.data as unknown as ContactRow[] | null)?.[0];
           const contact = row ? coordonneesLocation({ ...row, donnees: row }, apprenant.id) : null;
           if (!contact) errors.push("Aucun dossier de bienvenue complété et identifiable : coordonnées à compléter.");
           else {
