@@ -1,3 +1,4 @@
+import { estSignatureVideConnue } from "@/lib/preuveSignatureEmargement";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 
 export interface EmargementRowLike {
@@ -9,7 +10,7 @@ export interface EmargementRowLike {
 }
 
 export function isSignedPresentielRow(row: EmargementRowLike): boolean {
-  return row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim());
+  return row.absent !== true && row.masque !== true && Boolean(row.signature_data_url?.trim()) && !estSignatureVideConnue(row.signature_data_url);
 }
 
 /** Missing contractual hours never erase proven presence. Planning supplies only a display target. */

@@ -23,3 +23,15 @@ describe('Preuve de signature, jamais la date automatique', () => {
     expect(JSON.stringify(rows)).toBe(avant);
   });
 });
+import { estSignatureVideConnue, aPreuveSignatureEmargement as preuve2 } from "@/lib/preuveSignatureEmargement";
+import { describe as d2, it as i2, expect as e2 } from "vitest";
+d2("signature vide", () => {
+  i2("image vierge connue = pas une preuve", () => {
+    const vide = "x".repeat(4642 - 47) + "/6n6jacAAAAGSURBVAMAsfYBgSFBzwQAAAAASUVORK5CYII=";
+    const url = "data:image/png;base64," + vide.slice(22);
+    e2(url.length).toBe(4642);
+    e2(estSignatureVideConnue(url)).toBe(true);
+    e2(preuve2({ signature_data_url: url })).toBe(false);
+    e2(preuve2({ signature_data_url: "data:image/png;base64,AAAA" })).toBe(true);
+  });
+});
