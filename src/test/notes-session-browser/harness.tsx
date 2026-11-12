@@ -3,6 +3,7 @@ import { NotesParSession } from '@/features/correction-qrc-v2/NotesParSession';
 import type { ReleveSession, ExamenNotesSession } from '@/features/correction-qrc-v2/notesSession';
 import type { GroupeSessionCrm } from '@/features/correction-qrc-v2/noyauReel';
 import { absentsSessionJour } from '@/features/correction-qrc-v2/absenceSessionJour';
+import type { SuiviChargementNotes } from '@/features/correction-qrc-v2/chargementNotesSession';
 import '@/index.css';
 const examens:ExamenNotesSession[]=['VTC','TAXI','TA','VA'].flatMap(f=>[1,2].map(numero=>({id:`EB${numero}${f==='VTC'?'':`-${f}`}`,numero,filiere:f as ExamenNotesSession['filiere'],matieres:[{id:'a',nom:'Gestion'},{id:'b',nom:'Français'}]})));
 const releve:ReleveSession={inscrits:[{id:'a',nom:'ZÉRO',prenom:'Test',type_apprenant:'vtc'},{id:'b',nom:'ATTENTE',prenom:'Test',type_apprenant:'vtc'},{id:'c',nom:'AUTRE',prenom:'Test',type_apprenant:'taxi'},{id:'d',nom:'ABSENT',prenom:'Test',type_apprenant:'ta'},{id:'e',nom:'VA',prenom:'Test',type_apprenant:'va'}],examens,notes:{a:{1:{etat:'definitif',note:0},2:{etat:'definitif',note:18}},b:{1:{etat:'attente',note:null},2:{etat:'non_passe',note:null}},c:{1:{etat:'definitif',note:20}},d:{1:{etat:'non_passe',note:null}},e:{1:{etat:'indisponible',note:null}}},matieres:{a:{EB1:{a:{etat:'definitif',note:0},b:{etat:'attente',note:null}}},b:{EB1:{a:{etat:'definitif',note:14},b:{etat:'definitif',note:10}}}},erreur:null};
@@ -12,8 +13,22 @@ if(new URLSearchParams(location.search).has('extremes')){
     releve.notes[id]={1:{etat:'definitif',note,verdict:'echoue'},2:{etat:'definitif',note:18}};
   }
 }
-const sessions:GroupeSessionCrm[]=['fictive','vide'].map(id=>({cle:`crm:${id}`,type:'crm',typeSession:'theorique',libelle:id==='vide'?'Session vide':'Session fictive',periode:null,debut:'2026-01-01',fin:'2027-12-31',tri:'2026-01-01',nbCandidats:0,examens:[]}));
-const charger=async(id:string)=>id==='vide'?{inscrits:[],notes:{},examens,matieres:{},erreur:null}:structuredClone(releve);
+const sessions:GroupeSessionCrm[]=['fictive','soir','vide'].map(id=>({cle:`crm:${id}`,type:'crm',typeSession:'theorique',libelle:id==='vide'?'Session vide':id==='soir'?'Session soirée':'Session journée',periode:null,debut:'2026-01-01',fin:'2027-12-31',tri:'2026-01-01',nbCandidats:0,examens:[]}));
+let lectureFictive=0;
+const charger=async(id:string,suivi?:SuiviChargementNotes)=>{
+ const lente=new URLSearchParams(location.search).has('chargement');
+ const pause=()=>new Promise(r=>setTimeout(r,1200));
+ lectureFictive++;
+ if(lente){
+  suivi?.progression?.({etape:'Chargement des candidats'});await pause();
+  if(suivi?.signal?.aborted)throw new DOMException('Annulé','AbortError');
+  suivi?.partiel?.({inscrits:id==='vide'?[]:releve.inscrits,notes:{},erreur:null});
+  suivi?.progression?.({etape:'Récupération des notes'});await pause();
+  if(new URLSearchParams(location.search).has('echec')&&lectureFictive===1)throw new Error('Réseau fictif indisponible');
+  suivi?.progression?.({etape:'Préparation du tableau',charges:2,total:5});await pause();
+ }
+ return id==='vide'?{inscrits:[],notes:{},examens,matieres:{},erreur:null}:structuredClone(releve);
+};
 const actualisation=new URLSearchParams(location.search).has('actualisation');
 if(new URLSearchParams(location.search).has('liens'))releve.notes.c[1]={etat:'attente',note:null};
 if(new URLSearchParams(location.search).has('provenance')){

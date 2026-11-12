@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 17:12 — Chargement visible Notes par session
+- [x] Étapes de lecture réelles, compteur seulement pour candidats/tableau mesurables, temps écoulé sans estimation inventée ; résultats partiels visibles, notes précédentes conservées en actualisation.
+- [ ] Tests journée/soirée/vide/lent/erreur/changement session/timeout et PC/mobile ; aucune donnée réelle modifiée, aucune publication.
+
 ## 12/11 17:03 — Bandeau questions fausses et preuve durable
 - [x] Audit SELECT : 221 clôtures, 109 sans reçu (2 couverture complète/sources seulement), 36 reçus sans sources avec sources dans leur propre reprise ; aucun rattrapage.
 - [x] Correctif aperçu : lecteur exact paginé couverture/résultat/sources, références terminales conservées, grand bandeau partagé, erreur/retry, contrôle submitted complet ; tests réseau/double clic/partiel/concurrence/historique et PC/mobile fictifs PASS.
