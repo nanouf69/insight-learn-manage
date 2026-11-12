@@ -144,7 +144,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
               {d.envoi_erreur && <p className="text-destructive">Dernier envoi : {d.envoi_erreur}</p>}
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, false)}><Eye className="h-4 w-4 mr-1" />Prévisualiser</Button>
-                {s.libelle === "À envoyer" && <Button className="min-h-11" disabled={occupe === d.id} onClick={() => setAEnvoyer(d)}>{occupe === d.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}Envoyer pour signature</Button>}
+                {s.libelle === "À envoyer" && <Button className="min-h-11" disabled title="Certification pédagogique serveur complète requise"><Lock className="h-4 w-4 mr-1" />Certification requise avant envoi</Button>}
                 {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" onClick={() => { navigator.clipboard.writeText(lienSignature(d.token)); toast({ title: "Lien copié" }); }}><Copy className="h-4 w-4 mr-1" />Copier le lien de signature</Button>}
                 {d.statut === "signe" && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, true)}><Download className="h-4 w-4 mr-1" />Télécharger le PDF signé</Button>}
               </div>
@@ -159,7 +159,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             <CardTitle className="text-base flex flex-wrap items-center gap-2">
               Brouillon — non enregistré
               {ap.q.isLoading ? <Badge variant="outline">Contrôle en cours…</Badge>
-                : <Badge variant={ap.pret && !manquants.length ? "default" : "destructive"}>{ap.pret && !manquants.length ? "Prêt à enregistrer" : "Brouillon / À vérifier"}</Badge>}
+                : <Badge variant="destructive">Modèle non valable — certification requise</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
