@@ -9294,6 +9294,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       selected={selectedArr}
                       multi={multi}
                       showResults={exoShowResults}
+                      disabled={apercuAdmin}
                       onSelect={(lettre, el) => handleAnswer(exo.id, q.id, lettre, multi, el)}
                     />
                   </div>
@@ -9573,7 +9574,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         afficherResultatValide();
                         toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
                       }}
-                      disabled={validatingExo === exo.id}
+                      disabled={apercuAdmin || validatingExo === exo.id}
                       className="gap-2"
                     >
                       <CheckCircle2 className="w-5 h-5" />
