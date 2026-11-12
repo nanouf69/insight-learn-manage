@@ -46,6 +46,8 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     dateEmission: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }),
   };
   const manquants = champsManquants(champs).filter(m => m !== "représentant du centre");
+  // No attestation-wide server certificate is returned by the existing read model.
+  const certificationGlobaleConfirmee: boolean = false;
 
   const apercuBrouillon = async () => {
     setOccupe("apercu");
@@ -185,7 +187,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             {manquants.length > 0 && <p className="text-destructive">Champs du dossier à compléter : {manquants.join(", ")}</p>}
             <Button variant="outline" className="min-h-11" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1" />Prévisualiser le brouillon (PDF)</Button>
 
-            {false && ap.pret && !manquants.length && (
+            {certificationGlobaleConfirmee && ap.pret && !manquants.length && (
               <div className="space-y-3 rounded-md border p-3">
                 <label className="block space-y-1"><span className="font-medium">Représentant du centre (signataire)</span>
                   <Input value={representant} onChange={e => setRepresentant(e.target.value)} placeholder="Nom et prénom du responsable" maxLength={120} /></label>

@@ -1,0 +1,8 @@
+# Modèle officiel — aperçu uniquement
+
+- Phrase officielle demandée, personnalisée uniquement si preuve globale complète. Sans preuve, prénom/formation/dates dans la phrase restent des champs génériques ; identité du dossier affichée à part, filigrane MODÈLE NON VALABLE et aucune image de signature/tampon.
+- Alertes et éléments manquants déplacés dans le panneau CRM, pas dans le PDF. Actions préparer/envoyer du nouveau modèle restent bloquées faute de certificat global serveur ; aucune donnée ni règle serveur modifiée.
+- Adresse abaissée dans l’en-tête, trait bleu fin, logo entier et proportionné, pied NDA/référence. Aucune heure/durée ; modalité e-learning imprimée une fois.
+- 32 tests exécutés PASS ; exports complet fictif/incomplet PC/mobile. Inspection Poppler indépendante : répétition formation/modalité corrigée, aucun chevauchement ni texte coupé après correction.
+- Léa CATANIA : vrai dossier atteint avec session admin et seules lectures autorisées, écritures interceptées. Brouillon téléchargé puis extrait : 1 page A4, atteste que [Prénom NOM] (jamais atteste que Léa), aucune heure, aucun ancien paragraphe préparatoire ou liste pédagogique dans le PDF. Mobile réel vérifié après attendre le rendu canvas.
+- Aucun document signé modifié, aucun envoi, signature fabriquée, déploiement ou publication. Le PDF final complet/doublement signé n’est pas activé faute de preuve globale autorisée ; aucun tampon fictif utilisé dans les tests.
