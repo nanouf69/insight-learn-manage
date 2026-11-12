@@ -1,7 +1,7 @@
 # Feuille de route
 
 ## 12/11 09:28 — Deux urgences isolées
-- [ ] Bilan VTC : rendre 505/506/507 et lien QRC accessibles via parcours existant, aperçu admin identique lecture seule ; A–E/TAXI/données inchangés, fixtures isolation/navigation/reprise.
+- [x] Bilan VTC : 505/506/507 et cours 9001 rendus via legacy, filtre navigation seul ; 49/46/48 et réponse B fictive restaurée vérifiés PC/mobile sans mutation. A–E/TAXI inchangés.
 - [ ] Sauvegardes 11/12 : preuves manifestes/erreurs, correction pagination/reprise, tests échecs et rattrapage additif sûr si procédure existante suffisante ; aucun cron global/restauration/publication groupée.
 - [ ] Rapport des mises en service isolées, preuves et limites.
 
