@@ -7995,7 +7995,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       }
 
       // apprenant_module_completion: frozen snapshot — do NOT overwrite once validated.
-      if (completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
+      if (complementsVtc || completionPersistedRef.current || moduleAlreadyValidatedRef.current) return;
 
       // Also save to apprenant_module_completion (existing behavior, debounced 3s)
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -8201,7 +8201,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
       // Persistance serveur immédiate : la progression étape par étape ne doit
       // jamais dépendre du sessionStorage (perdue à la reconnexion / autre appareil).
-      if (apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
+      if (!complementsVtc && !apercuAdmin && apprenantId && totalPages > 0 && !blockLearnerWrite("save_module_pages_progress")) {
         const progress = Math.min(100, Math.round((snapshot.filter(i => i < totalPagesProgression).length / totalPagesProgression) * 100));
         (async () => {
           const status = await queueModulePagesStatus(apprenantId, module.id, pagesForStorage(snapshot), progress);
@@ -9381,7 +9381,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
                         // Persist partiel en DB pour garder les réponses/scores intermédiaires
                         // sans marquer le module comme terminé.
-                        if (apprenantId) {
+                        if (apprenantId && !complementsVtc) {
                           try {
                             const questionDetails = exercicesCorriges.flatMap(e =>
                               (e.questions || []).map(q => {
