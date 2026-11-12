@@ -56,7 +56,7 @@ class Preflight(base.Access):
   # Candidate exemption currently requires NEW.etat <> en_cours, so it blocks.
   self.set_access(False,expected=self.current())
   version=str(uuid.uuid4())
-  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',1,'publiee','{{}}','f')")
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',(SELECT coalesce(max(version_number),0)+1 FROM exam_content_versions WHERE exam_id='EB3'),'publiee','{{}}','f')")
   snapshot=json.dumps({'matiere':'preflight_import','source_historique':{'origine':'import-historique','result_id':str(uuid.uuid4()),'tentative':1}})
   r=self.sql(f"INSERT INTO exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,etat,is_test) VALUES('{base.A}','EB3','{version}','{snapshot}','f',now()-interval '5 days','en_cours',false)",False)
   self.assertEqual(r.returncode,0,'Existing finalized-copy import is blocked by the candidate')
@@ -71,9 +71,10 @@ class Preflight(base.Access):
  def test_21_live_core_start_refuses_closed_then_resumes_exact_copy(self):
   self.set_access(False,expected=self.current())
   version=str(uuid.uuid4())
-  content={'matieres':[{'subject_id':'preflight_core','duree':30}],
+  content={'matieres':[{'subject_id':'preflight_core','duree':30},{'subject_id':'preflight_retake','duree':30}],
            'questions':[{'id':'preflight_core:1','matiere':'preflight_core','type':'QCM','points':1,'choix':[{'id':'A','texte':'Oui','correct':True}]}]}
-  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',1,'publiee',{base.J(content)},'f')")
+  content['questions'].append({'id':'preflight_retake:1','matiere':'preflight_retake','type':'QCM','points':1,'choix':[{'id':'A','texte':'Oui','correct':True}]})
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint) VALUES('{version}','VTC','3','EB3',(SELECT coalesce(max(version_number),0)+1 FROM exam_content_versions WHERE exam_id='EB3'),'publiee',{base.J(content)},'f')")
   # Prior fixtures already created versions: choose this one as the only active.
   self.sql(f"UPDATE exam_content_versions SET retired_at=now() WHERE exam_id='EB3' AND id<>'{version}'")
   op=str(uuid.uuid4())
