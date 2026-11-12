@@ -4,28 +4,28 @@ CREATE FUNCTION public.bilan_vtc_sr_training_read(p_type text,p_source uuid) RET
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
 DECLARE qs jsonb; answers jsonb; latest jsonb; ex jsonb; editor_at timestamptz;
         snap public.bilan_passage_snapshots; receipt public.bilan_future_receipts;
-        submitted_at timestamptz; out_rows jsonb:='[]'; unavailable integer:=0;
+        v_submitted_at timestamptz; out_rows jsonb:='[]'; unavailable integer:=0;
         h jsonb; a jsonb; candidates jsonb; identity text; answer_key text;
 BEGIN
  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED' USING ERRCODE='42501'; END IF;
  IF p_type='future' THEN
   SELECT * INTO receipt FROM public.bilan_future_receipts WHERE id=p_source AND owner_id=auth.uid() AND module_id=5 AND exercise_id=502;
   IF receipt.id IS NULL THEN RAISE EXCEPTION 'OWN_SUBMITTED_COPY_REQUIRED' USING ERRCODE='42501'; END IF;
-  SELECT s.answers,s.submitted_at INTO answers,submitted_at FROM public.bilan_future_submissions s WHERE s.receipt_id=receipt.id;
+  SELECT s.answers,s.submitted_at INTO answers,v_submitted_at FROM public.bilan_future_submissions s WHERE s.receipt_id=receipt.id;
   SELECT v.questions INTO qs FROM public.bilan_future_versions v WHERE v.id=receipt.version_id;
  ELSIF p_type='snapshot' THEN
   SELECT s.* INTO snap FROM public.bilan_passage_snapshots s JOIN public.apprenants a ON a.id=s.apprenant_id
    WHERE s.id=p_source AND a.auth_user_id=auth.uid() AND s.module_id=5 AND s.exercice_id=502;
   IF snap.id IS NULL THEN RAISE EXCEPTION 'OWN_SUBMITTED_COPY_REQUIRED' USING ERRCODE='42501'; END IF;
-  SELECT r.reponses,coalesce(r.submitted_at,r.updated_at) INTO answers,submitted_at FROM public.reponses_apprenants r
+  SELECT r.reponses,coalesce(r.submitted_at,r.updated_at) INTO answers,v_submitted_at FROM public.reponses_apprenants r
    WHERE r.apprenant_id=snap.apprenant_id AND r.exercice_id=snap.passage_cle AND r.tentative=snap.tentative AND (r.status='submitted' OR r.completed IS TRUE);
   qs:=snap.questions;
   -- A later revision of this same tentative is the last recorded practice choice.
   SELECT r.reponses INTO latest FROM public.reponses_apprenants r WHERE r.apprenant_id=snap.apprenant_id
    AND r.exercice_id='module_5_revision_exo_502' AND r.tentative=snap.tentative
-   AND r.created_at>=submitted_at AND r.updated_at>=submitted_at;
+   AND r.created_at>=v_submitted_at AND r.updated_at>=v_submitted_at;
  ELSE RAISE EXCEPTION 'INVALID_SOURCE' USING ERRCODE='22023'; END IF;
- IF submitted_at IS NULL OR answers IS NULL THEN RAISE EXCEPTION 'SUBMISSION_REQUIRED' USING ERRCODE='42501'; END IF;
+ IF v_submitted_at IS NULL OR answers IS NULL THEN RAISE EXCEPTION 'SUBMISSION_REQUIRED' USING ERRCODE='42501'; END IF;
  SELECT m.updated_at,(SELECT jsonb_agg(e) FROM jsonb_array_elements(m.module_data->'exercices') e WHERE e->>'id'='502')
   INTO editor_at,candidates FROM public.module_editor_state m WHERE m.module_id=5;
  IF editor_at IS NULL OR jsonb_array_length(candidates) IS DISTINCT FROM 1 THEN RAISE EXCEPTION 'EDITOR_UNVERIFIED'; END IF;
