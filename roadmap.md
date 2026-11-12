@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 18:16 — Date attestation limitée à la fin CRM
+- [ ] Plafond partagé aperçu/serveur, source connexion conservée, anciennes attestations signées intactes.
+- [ ] Tests date limite 31/10, frontière Paris, dossier incomplet et envoi refusé si date figée dépasse la fin CRM ; aucune publication.
+
 ## 12/11 18:12 — Arrêter les relances après l’attestation
 - [x] Garde partagée avant transport dans les 11 relances, 2 envois nominatifs anciens et mode relance pratique ; lecture exacte non cachée et paginée des attestations, erreur = refus. Mails ordinaires/authentification/signature inchangés.
 - [x] 30 tests PASS dont 12 garde attestation, vérification Deno des 15 fichiers PASS, build OK ; champs réels vérifiés par SELECT, aucun mail réel ni modification des preuves. Envoi réel bout-en-bout non testé.

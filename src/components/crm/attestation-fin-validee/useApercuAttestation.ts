@@ -5,7 +5,7 @@ import { chargerApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisa
 import { isElearningType } from "@/lib/dossierFormation";
 import { eligibiliteAttestation, libelleMotif } from "@/lib/attestationFinValidee/eligibilite";
 import { dateFinDepuisConnexions, derniereValidationModules } from "@/lib/attestationFinValidee/dateFin";
-import { debutFormation } from "../../../../supabase/functions/_shared/attestationFinCore";
+import { debutFormation, finFormationCrm } from "../../../../supabase/functions/_shared/attestationFinCore";
 import type { ModulePdf } from "@/lib/attestationFinValidee/pdf";
 import { modulesExigesDashboard, resolveFormationId } from '@/lib/parcoursModulesDashboard';
 import { elementsRestantAValider } from '@/lib/attestationFinValidee/redactionPresentation';
@@ -34,7 +34,7 @@ export function useApercuAttestation(apprenant: any) {
     elearning: heures, presentiel: signatures,
   });
   const derniereValidation = q.data ? derniereValidationModules(ids, id => q.data?.etats?.get(id)?.completed_at ?? null) : null;
-  const fin = dateFinDepuisConnexions({ connexions: q.data?.connexions ?? null, dateDebut: debutFormation(apprenant, elearning), derniereValidation });
+  const fin = dateFinDepuisConnexions({ connexions: q.data?.connexions ?? null, dateDebut: debutFormation(apprenant, elearning), dateLimiteCrm: finFormationCrm(apprenant, elearning), derniereValidation });
   const modules: ModulePdf[] = q.data ? ids.map(id => { const e = q.data?.etats?.get(id); return { id, statut: e?.status_effectif ?? null, preuve_complete: e?.preuve_complete ?? null, completed_at: e?.completed_at ?? null }; }) : [];
   const formation = resolveFormationId(apprenant.type_apprenant,apprenant.formation_choisie,apprenant.modules_autorises);
   const attribues = formation ? modulesExigesDashboard(formation,apprenant.modules_autorises,Array.from(q.data?.etats?.values() ?? []),apprenant.date_fin_cours_en_ligne) : [];
