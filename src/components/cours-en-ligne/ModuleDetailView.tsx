@@ -10224,7 +10224,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ) : routeFutureConcernee && apercuAdmin && apercuFuture === "erreur" ? (
           <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center">Lecture du Bilan impossible. Rechargez la page.</div>
         ) : routeFutureConcernee && apercuAdmin && apercuFuture && apercuFuture !== "erreur" && apercuFuture.route === "future" ? (
-          module.id === 5 ? <BilanVtcComplements future={<BilanFutureApercuAdmin apercu={apercuFuture} />} legacy={<ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc /></ActivitesModuleContext.Provider>} /> : <BilanFutureApercuAdmin apercu={apercuFuture} />
+          module.id === 5 ? <BilanVtcComplements future={<BilanFutureApercuAdmin apercu={apercuFuture} presentationVtc titre={moduleData.nom} description={moduleData.description} />} legacy={<ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc /></ActivitesModuleContext.Provider>} /> : <BilanFutureApercuAdmin apercu={apercuFuture} />
         ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (

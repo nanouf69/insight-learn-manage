@@ -26,7 +26,8 @@ import { baremeReference, examenReferenceBilan, moyenneBilan, noterMatiere, type
 import { fetchLiveExamens } from "./useLiveExamens";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 
-export const FUTURE_SUBJECT_NAMES = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
+import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
+export const FUTURE_SUBJECT_NAMES = NOMS_MATIERES_BILAN;
 
 type Q = { id: number; enonce: string; image?: string; imageSize?: string; support?: { numero: number; paragraphes: string[] }; choix: { lettre: string; texte: string }[] };
 type Passage = { receipt: FutureReceipt; questions: Q[]; answers: Record<string, string[]>; revisions: Record<string, number>; submitted: { correct_count: number; question_count: number } | null };
@@ -225,10 +226,8 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
 
   const renderProgressionSteps = (isMobileView = false) => (
     <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
-      {FUTURE_SUBJECT_NAMES.map((nom, i) => (
-        <ProgressionStep key={i} label={`📝 Quiz — ${nom}`} current={i === pageCourante} completed={!!statuts[base + i]?.submitted}
-          unlocked isLast={i >= total - 1} badge="quiz"
-          onClick={() => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} />
+      {moduleId === 5 ? <BilanMatiereSteps current={pageCourante} submitted={FUTURE_SUBJECT_NAMES.map((_, i) => !!statuts[base + i]?.submitted)} onSelect={i => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} /> : FUTURE_SUBJECT_NAMES.map((nom, i) => (
+        <ProgressionStep key={i} label={`📝 Quiz — ${nom}`} current={i === pageCourante} completed={!!statuts[base + i]?.submitted} unlocked isLast={i >= total - 1} badge="quiz" onClick={() => { allerA(i); if (isMobileView) setMobileProgressOpen(false); }} />
       ))}
     </div>
   );
@@ -399,6 +398,10 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                     const c = corr.get(q.id);
                     const fausse = estFausse(q);
                     const sizeClass = QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40";
+                    if (moduleId === 5) return <BilanQuestionCard key={q.id} question={q} index={qi} anchor={anchor(qi)} selected={reponseAffichee(q)} disabled={enRevision ? revision?.validee === true : soumis} showResults={resultatsVisibles} correct={c?.correct} wrong={fausse} missing={nonRepondues.has(q.id)} onSelect={l => {
+                      if (enRevision) setRevision(r => { if (!r || r.validee) return r; const cur = r.answers[q.id] ?? []; return { ...r, answers: { ...r.answers, [q.id]: (cur.includes(l) ? cur.filter(x => x !== l) : [...cur, l]).sort() } }; });
+                      else cocher(q, l);
+                    }} />;
                     return (
                       <div key={q.id} id={anchor(qi)} data-learner-question data-answer-scroll-anchor data-question-id={q.id}
                         data-question-faute={fausse ? "1" : undefined}
