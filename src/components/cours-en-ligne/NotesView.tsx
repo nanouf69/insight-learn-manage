@@ -397,7 +397,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      {stats && (
+      {stats && (activeTab === 'matiere' || activeTab === 'module') && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="bg-white rounded-xl shadow-sm p-4 text-center">
             <TrendingUp className="w-5 h-5 text-blue-500 mx-auto mb-1" />

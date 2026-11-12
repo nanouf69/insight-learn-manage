@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 12/11 17:27 — Notes apprenant : examens officiels / Bilans
-- [ ] Six EB officiels avec détail pondéré et graphique ; Bilans réels et révisions séparés, À revoir conservé en bas ; lecture seule.
-- [ ] Tests pondération/tentatives/attente/isolation et PC/mobile, contrôle Rodrigue ; aucun déploiement/publication.
+- [x] Six EB officiels avec détail pondéré et graphique ; Bilans réels et révisions séparés, À revoir conservé en bas ; lecture seule.
+- [x] Tests pondération/tentatives/attente/isolation, PC/mobile fictifs, Rodrigue réel CRM et panne/retry vérifiés ; rapport docs/notes-officielles-eleve-2026-11-12.md.
+- [ ] Publication : confirmation utilisateur et contrôle compte apprenant direct/mobile CRM (remontage parent)/barème historique global non disponibles ; aucun déploiement/publication.
 
 ## 12/11 17:19 — Retouche attestation professionnelle
 - [x] Intitulé référentiel sans doublon, liste pédagogique issue des verdicts serveur (sinon détail à vérifier), aucun motif d’heures dans le nouveau PDF ; contrôles et documents historiques inchangés.

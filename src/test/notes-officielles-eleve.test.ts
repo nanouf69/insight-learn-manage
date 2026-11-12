@@ -20,6 +20,12 @@ it('coefficient absent n’est pas remplacé par 1',()=>{
  const broken={...def,matieres:def.matieres.map(m=>({...m,coefficient:undefined}))} as unknown as ExamenBlanc;
  expect(modeleExamenOfficiel(broken,[row('a','t3p',20),row('b','anglais',4)]).note).toBeNull();
 });
+it('six numéros officiels de chaque filière, dates absentes non reliées par une note fictive',()=>{
+ for(const type of ['VTC','TAXI','TA','VA'] as const){
+  const results=Array.from({length:6},(_,i)=>modeleExamenOfficiel({...def,id:`EB${i+1}${type==='VTC'?'':`-${type}`}`,numero:i+1,type},[]));
+  expect(results.map(r=>r.titre)).toEqual(['EB1','EB2','EB3','EB4','EB5','EB6']);expect(results.every(r=>r.note===null&&r.date===null)).toBe(true);
+ }
+});
 it('Bilans historiques : uniquement remises réelles, aucune note globale inventée',()=>{
  expect(modelesBilansNotes({future:[],archives:[{id:'draft',module_id:5,statut_passage:'in_progress',score_bonnes:10}]},[])).toEqual([]);
  const result=modelesBilansNotes({future:[],archives:[{id:'done',module_id:5,exercice_id:500,tentative:1,statut_passage:'submitted',score_bonnes:10,nb_questions:20,passage_updated_at:'2026-11-12'}]},[]);
