@@ -8,7 +8,7 @@ UIDS=['79ef7a10-1eac-498f-b5b5-ddb8d90d4328','45e4fbf1-caf4-48ff-8e55-b16e2595a0
 Q=[{'id':71,'uid':UIDS[0],'type':'QCM','enonce':'route étroite','choix':[{'lettre':'A','texte':'Oui','correct':True},{'lettre':'B','texte':'Non'}]},
    {'id':226,'uid':UIDS[1],'type':'QCM','enonce':'0,29 mg','choix':[{'lettre':'C','texte':'délit'},{'lettre':'D','texte':'contravention et perte de 6 points','correct':True}]}]
 CURRENT=json.loads(json.dumps(Q));CURRENT[0]['choix'][0]['correct']=False;CURRENT[0]['choix'][1]['correct']=True
-def j(x):return "'"+json.dumps(x).replace("'","''")+"'::jsonb"
+def j(x):return "'"+json.dumps(x,ensure_ascii=False).replace("'","''")+"'::jsonb"
 class Contract(unittest.TestCase):
  @classmethod
  def sql(cls,q):
@@ -17,7 +17,7 @@ class Contract(unittest.TestCase):
   return o
  @classmethod
  def setUpClass(cls):
-  cls.pg=Pg();cls.sql(SCHEMA)
+  cls.pg=Pg();cls.addClassCleanup(cls.pg.stop);cls.sql(SCHEMA)
   cls.sql('''CREATE TABLE bilan_passage_snapshots(id uuid,apprenant_id uuid,module_id int,exercice_id int,tentative int,passage_cle text,questions jsonb);
   CREATE TABLE bilan_future_receipts(id uuid,owner_id uuid,module_id int,exercise_id int,version_id uuid);
   CREATE TABLE bilan_future_versions(id uuid,questions jsonb);
@@ -30,8 +30,6 @@ class Contract(unittest.TestCase):
   cls.sql(f"INSERT INTO reponses_apprenants VALUES('{APP}','module_5_exo_502',1,'submitted',true,{j({'502-71':['A'],'502-226':['C','D']})},'2026-11-09','2026-11-09','2026-11-09'),('{APP}','module_5_revision_exo_502',1,'in_progress',false,{j({'502-226':['D']})},NULL,'2026-11-12','2026-11-10');")
   cls.sql(f"INSERT INTO module_editor_state VALUES(5,{j({'exercices':[{'id':502,'questions':CURRENT}]})},'2026-11-12');INSERT INTO bilan_future_versions VALUES('b3ab1768-df8c-41ad-ab85-89af51927141',{j(Q)});INSERT INTO bilan_future_receipts VALUES('{FUTURE}','{ELEVE_UID}',5,502,'b3ab1768-df8c-41ad-ab85-89af51927141');INSERT INTO bilan_future_submissions VALUES('{FUTURE}',{j({'71':['B'],'226':['D']})},'2026-11-10');")
   cls.sql((ROOT/'docs/sql-revue/2026-11-12-bilan-vtc-sr-training.sql').read_text())
- @classmethod
- def tearDownClass(cls):cls.pg.stop()
  def read(self,t='snapshot',source=SOURCE,who=ELEVE_UID,prefix=''):
   out=self.sql(prefix+as_ctx('authenticated',{'sub':who},f"SELECT bilan_vtc_sr_training_read('{t}','{source}');"))
   return json.loads(out.splitlines()[-1])
