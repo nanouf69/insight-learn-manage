@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 18:12 — Arrêter les relances après l’attestation
+- [ ] Garde partagée avant tous les envois de relance, fondée sur l’attestation enregistrée ; erreur de lecture = aucun envoi.
+- [ ] Tests fictifs envoyé/préparé/issue inconnue/autre apprenant ; aucun mail réel ni modification des preuves.
+- [ ] Mise en service : déploiement ciblé après validation explicite, sans publication globale.
+
 ## 12/11 17:37 — Modèle officiel attestation, non valable sans preuve
 - [x] Formulation officielle ; sans certification, champs génériques dans le texte et filigrane MODÈLE NON VALABLE, alertes hors PDF ; enregistrement du nouveau modèle bloqué sans preuve globale, historiques intacts.
 - [x] 32 tests PASS ; PDF Léa réel exporté en lecture seule, texte générique/non valable sans heure ni certification nominative ; complet fictif et A4 inspectés indépendamment, mobile réel rendu vérifié. Répétition « formation Formation »/e-learning corrigée ; aucune superposition. Aucun envoi/publication.
