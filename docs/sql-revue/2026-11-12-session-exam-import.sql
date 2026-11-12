@@ -169,7 +169,7 @@ BEGIN
                             'exam_id',v_exam_id,'matiere_id',src.matiere_id,
                             'reponses',v_nb_rep,'qrc',v_nb_qrc);
 END;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION public.core_import_passage_finalise(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.core_import_passage_finalise(uuid) TO authenticated,service_role;
