@@ -32,6 +32,7 @@ const TAILLES: Record<string, [number, number]> = {
   bilan_passage_snapshots: [5, 20], apprenant_quiz_results: [100, 400], exam_attempts_v2: [50, 200],
   apprenant_question_temps: [500, 1500], answer_events: [250, 1000], apprenant_module_activites: [500, 1500],
   qrc_instances_v2: [100, 400], bilan_passages_figes: [25, 100], answer_state_historique: [250, 1000],
+  reponses_apprenants_journal: [250, 2000],
 };
 const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
@@ -41,7 +42,7 @@ const REPARATION_DOSSIER = "_reparation-1";
 // Réparation bornée du seul journal volumineux : moins d'appels, pages par clé inchangées.
 const PART_REPARATION: Record<string, number> = { reponses_apprenants_journal: 10_000 };
 
-type Preuve = { debut: number; fin?: number; mode: "cle" | "decalage"; dernier?: string | number | null };
+type Preuve = { debut: number; fin?: number; mode: "cle" | "decalage"; dernier?: string | number | null; comptage_indisponible?: boolean };
 /** Avancement d'un export (journée principale ou réparation). Champs historiques conservés. */
 type Job = {
   i: number; from: number; comptes: Record<string, number>; erreurs: string[];
@@ -80,9 +81,10 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
   try {
     if (!decalage && job.from === 0 && (job.curseur === undefined || job.curseur === null)) {
       const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
-      if (error) throw error;
-      if (typeof count !== "number") throw new Error("comptage indisponible");
-      job.preuves[t] = { debut: count, mode: "cle" };
+      // Counts are observations, not a prerequisite for key traversal. A timed-out
+      // exact count must never abandon a table whose bounded pages are readable.
+      const countDisponible = !error && typeof count === "number";
+      job.preuves[t] = { debut: countDisponible ? count : -1, mode: "cle", ...(!countDisponible ? { comptage_indisponible: true } : {}) };
       job.curseur = null;
       job.comptes[t] = 0;
     }
@@ -121,9 +123,8 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
       // Comptage final AVANT toute mise à jour de l'avancement : un échec ici
       // laisse la position intacte et le paquet sera simplement réécrit.
       const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
-      if (error) throw error;
-      if (typeof count !== "number") throw new Error("comptage final indisponible");
-      finale = count;
+      finale = !error && typeof count === "number" ? count : -1;
+      if (finale === -1) job.preuves[t].comptage_indisponible = true;
     }
     // Succès complet : l'avancement n'est modifié qu'ici.
     job.comptes[t] = total;
@@ -134,7 +135,7 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
         preuve.fin = finale; preuve.dernier = curseur;
         // Une variation détectée est signalée ; des comptes égaux n'excluent ni
         // une insertion derrière le curseur ni une mise à jour concomitante.
-        if (total !== preuve.debut || total !== finale) job.erreurs.push(`${t}: comptes divergents (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
+        if ((preuve.debut >= 0 && total !== preuve.debut) || (finale >= 0 && total !== finale)) job.erreurs.push(`${t}: comptes divergents (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
       } else if (decalage) {
         job.preuves[t] = { debut: -1, mode: "decalage" };
       }
@@ -145,7 +146,7 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
     job.essais = 0; job.derniere_erreur = undefined;
     return "avance";
   } catch (e) {
-    const msg = String((e as any)?.code ? `${(e as any).code} ${(e as any).message ?? ""}` : (e as Error)?.message ?? JSON.stringify(e)).slice(0, 500);
+    const msg = String((e as any)?.code ? `${(e as any).code} ${(e as any).message || (e as any).details || "erreur sans message"}` : (e as Error)?.message || JSON.stringify(e) || "erreur sans message").slice(0, 500);
     console.error(`[sauvegarde] ${t}@${job.from}`, msg);
     job.derniere_erreur = msg;
     await sb.storage.from(BUCKET).upload(`${prefixe}/_erreurs/${t}-${job.from}.txt`, new Blob([msg]), { upsert: true }).catch(() => {});
@@ -206,6 +207,16 @@ Deno.serve(async (req) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
   const up = async (path: string, content: unknown) => {
+    if (/\/part-\d+\.json$/.test(path)) {
+      const existant = await sb.storage.from(BUCKET).download(path);
+      if (existant.data) {
+        const texte = await existant.data.text();
+        if (texte === JSON.stringify(content)) return { error: null };
+        throw new Error("Lot existant différent : conservation des deux versions requise, reprise arrêtée");
+      }
+      // Do not turn a storage outage into permission to overwrite an existing part.
+      if (existant.error && !["404", "400"].includes(String(existant.error.statusCode))) throw existant.error;
+    }
     const result = await sb.storage.from(BUCKET).upload(path, new Blob([JSON.stringify(content)], { type: "application/json" }), { upsert: true });
     if (result.error) throw new Error('Écriture du point de reprise impossible');
     return result;

@@ -6846,6 +6846,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const ouverturesDemandeesRef = useRef<Set<number>>(new Set());
   const ouvrirMatiereBilanRef = useRef<(exoId: number) => void>(() => {});
   ouvrirMatiereBilanRef.current = (exoId: number) => {
+    if (apercuAdmin) return;
     if (!studentOnly || !apprenantId || !MODULES_BILAN_SNAPSHOT.has(module.id)) return;
     const etat = etatSnapshotsRef.current;
     if (etat.statut !== "pret" || etat.parExo[exoId]) return;
@@ -7928,7 +7929,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       forceExerciceIds: number[] = [],
       clearedFrom: Record<string, string | string[]> = {}
     ) => {
-      if (!apprenantId) return;
+      if (!apprenantId || apercuAdmin) return;
 
       // Mise en file immédiate : aucun clic ne doit attendre un debounce.
       // NOTE: we allow this even if the module is already validated so that
@@ -8054,6 +8055,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // beforeunload: flush pending saves immediately
     useEffect(() => {
       const flushSave = () => {
+        if (apercuAdmin) return;
         if (!apprenantId || !userIdForSaveRef.current) return;
         const answers = latestAnswersRef.current;
         if (Object.keys(answers).length === 0) return;
@@ -8109,6 +8111,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const { trackQuestion } = useQuestionTimeTracking(apprenantId);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
+      if (apercuAdmin) return;
       if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, `${exoId}-${qId}`)) return;
       if (showResultsFor.has(exoId)) return;
       onLearnerActivity?.();
@@ -8147,6 +8150,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     };
 
     const handleQrcAnswerChange = (key: string, value: string) => {
+      if (apercuAdmin) return;
       if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, key)) return;
       onLearnerActivity?.();
       captureAnswerScrollPosition(document.activeElement instanceof HTMLElement ? document.activeElement : null);
@@ -8959,6 +8963,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       // pendant la saisie). Une seule correction par question : verrou en mémoire +
       // résultat conservé pour la même réponse. Échec = « indisponible », jamais 0.
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
+        if (apercuAdmin) return;
         const reponse = reponseQrc(key, qrcAnswers, selectedAnswers);
         if (!reponse) return;
         if (qrcCorrectionsEnCoursRef.current.has(key)) return;
@@ -9309,6 +9314,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     <Button
                       size="lg"
                       onClick={async () => {
+                        if (apercuAdmin) return;
                         // Check all QCM questions are answered (skip QRC)
                         const unansweredQcmKeys: string[] = [];
                         let firstMissingIndex = -1;
@@ -9643,7 +9649,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
                       {/* Progress + Actions */}
                       <QuizResultPanels>
-                            <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                            <Button disabled={complementsVtc || apercuAdmin} variant="outline" size="sm" className="gap-2" onClick={() => {
               if (!window.confirm("Êtes-vous sûr de vouloir tout recommencer ? Vos réponses actuelles seront effacées.")) return;
               const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
                               // Save snapshot to history before clearing
