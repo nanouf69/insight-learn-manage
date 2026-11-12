@@ -46,8 +46,6 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     dateEmission: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }),
   };
   const manquants = champsManquants(champs).filter(m => m !== "représentant du centre");
-  // No attestation-wide server certificate is returned by the existing read model.
-  const certificationGlobaleConfirmee: boolean = false;
 
   const apercuBrouillon = async () => {
     setOccupe("apercu");
@@ -147,8 +145,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, false)}><Eye className="h-4 w-4 mr-1" />Prévisualiser</Button>
                 {s.libelle === "À envoyer" && <div className="space-y-1">
-                  <Button className="min-h-11" disabled title="Certification pédagogique serveur complète requise" aria-describedby={`envoi-bloque-${d.id}`}><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
-                  <p id={`envoi-bloque-${d.id}`} className="text-sm text-destructive">Envoi bloqué : certification pédagogique à confirmer et fermeture du compte à sécuriser.</p>
+                  <Button className="min-h-11" disabled={occupe === d.id} onClick={() => setAEnvoyer(d)}><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
                 </div>}
                 {d.envoye_le && d.statut !== "signe" && <Button variant="outline" className="min-h-11" onClick={() => { navigator.clipboard.writeText(lienSignature(d.token)); toast({ title: "Lien copié" }); }}><Copy className="h-4 w-4 mr-1" />Copier le lien de signature</Button>}
                 {d.statut === "signe" && <Button variant="outline" className="min-h-11" disabled={occupe === d.id} onClick={() => pdfOfficiel(d, true)}><Download className="h-4 w-4 mr-1" />Télécharger le PDF signé</Button>}
@@ -164,16 +161,10 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             <CardTitle className="text-base flex flex-wrap items-center gap-2">
               Brouillon — non enregistré
               {ap.q.isLoading ? <Badge variant="outline">Contrôle en cours…</Badge>
-                : <Badge variant="destructive">Modèle non valable — certification requise</Badge>}
+                : <Badge variant="outline">{ap.pret && !manquants.length ? "Prêt à enregistrer" : "Dossier à vérifier"}</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="border border-destructive/40 rounded-md p-3 bg-destructive/5">
-              <p className="font-semibold text-destructive">Certification pédagogique non établie — modèle non valable</p>
-              <p className="mt-1">Aucune attestation certifiant tous les jalons ne peut être enregistrée, envoyée ou signée sans preuve serveur complète.</p>
-              <p className="font-semibold mt-2">Éléments pédagogiques restant à valider</p>
-              {ap.elementsPedagogiques?.length ? <ul className="list-disc pl-5 mt-1">{ap.elementsPedagogiques.map((m,i)=><li key={i}>{m.nom} — {m.statut}</li>)}</ul> : <p className="mt-1">Validation pédagogique incomplète — détail à vérifier dans le dossier apprenant</p>}
-            </div>
             {!ap.q.isLoading && ap.motifs.length > 0 && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
                 <p className="font-semibold text-destructive flex items-center gap-2"><Lock className="h-4 w-4" />Attestation à vérifier</p>
@@ -192,9 +183,9 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
               <Button variant="outline" className="min-h-11 h-auto whitespace-normal" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1 shrink-0" />Prévisualiser le brouillon (PDF)</Button>
               <Button className="min-h-11" disabled aria-describedby="envoi-brouillon-bloque" title="Le brouillon doit être validé et enregistré avant envoi"><Send className="h-4 w-4 mr-2" />Envoyer par mail</Button>
             </div>
-            <p id="envoi-brouillon-bloque" className="text-sm text-destructive">Envoi indisponible : ce brouillon n’est pas une attestation validée et enregistrée ; la fermeture du compte après envoi reste à sécuriser.</p>
+            <p id="envoi-brouillon-bloque" className="text-sm text-muted-foreground">Enregistrez l’attestation avec la signature autorisée du centre avant d’envoyer le lien de signature à l’apprenant.</p>
 
-            {certificationGlobaleConfirmee && ap.pret && !manquants.length && (
+            {ap.pret && !manquants.length && (
               <div className="space-y-3 rounded-md border p-3">
                 <label className="block space-y-1"><span className="font-medium">Représentant du centre (signataire)</span>
                   <Input value={representant} onChange={e => setRepresentant(e.target.value)} placeholder="Nom et prénom du responsable" maxLength={120} /></label>
@@ -205,7 +196,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
                 <Button className="min-h-11" disabled={representant.trim().length < 3 || !autorise || occupe === "preparer"} onClick={enregistrer}>
                   {occupe === "preparer" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}Enregistrer l'attestation
                 </Button>
-                <p className="text-xs text-muted-foreground">Le serveur recontrôle les heures et la date de fin avant d'enregistrer (les modules ne sont pas contrôlés). Aucun mail n'est envoyé à cette étape.</p>
+                <p className="text-xs text-muted-foreground">La date et les informations du dossier sont vérifiées avant enregistrement. Aucun mail n'est envoyé à cette étape.</p>
               </div>
             )}
           </CardContent>
@@ -219,6 +210,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             <AlertDialogTitle>Envoyer l'attestation pour signature ?</AlertDialogTitle>
             <AlertDialogDescription>
               Un e-mail contenant le lien de signature sera envoyé à {aEnvoyer?.identite_figee?.email}. L'apprenant(e) signera elle-même ; aucune signature n'est apposée à sa place.
+              Le compte cours ne sera pas fermé automatiquement après cet envoi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 18:47 — Déblocage attestation autorisé
+- [x] Retrait du verrou pédagogique ; préparation avec représentant et autorisation signature centre, envoi après enregistrement et confirmation admin ; e-learning sans durée obligatoire ni inventée. Fermeture automatique différée avec accord explicite.
+- [x] 35 tests PASS : préparation sans modules/durée, envoi unique, vraie signature, dates CRM ; fiche Léa authentifiée vérifiée en lecture seule, prête à enregistrer ; fonctions ciblées déployées, build OK.
+- [ ] Envoi/signature réels non exécutés (aucun mail ni document réel créé) ; publication du frontend non effectuée.
+
 ## 12/11 18:25 — Contrat location véhicule
 - [x] Audit SELECT dossier Mamadou SOW et trois véhicules ; onze articles lus, tableau risques/fondements/propositions disponible dans le bouton Revue juridique.
 - [x] Aperçu préremplissage fiable sans signature CMA, choix véhicule explicite, Avec/Sans caution, PDF brouillon non signable ; aucune écriture/envoi/publication.

@@ -16,4 +16,6 @@ it("le brouillon non certifié ne peut pas déclencher l'envoi, même avec dates
   const envoi = await screen.findByRole("button", { name: "Envoyer par mail" });
   expect(envoi).toBeDisabled();
   expect(screen.getByRole("button", { name: "Prévisualiser le brouillon (PDF)" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Enregistrer l'attestation" })).toBeDisabled();
+  expect(screen.getByRole("textbox", { name: "Représentant du centre (signataire)" })).toBeEnabled();
 });
