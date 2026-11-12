@@ -62,22 +62,26 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
   const central = complet
-    ? `Nous attestons que ${e.prenom} ${e.nom.toUpperCase()} a effectué l'ensemble des jalons pédagogiques obligatoires de la formation ${intitule}.`
+    ? `Nous attestons que ${e.prenom} ${e.nom.toUpperCase()} a effectué l'ensemble des jalons pédagogiques obligatoires du parcours « ${intitule} ».`
     : "Document préparatoire établi à partir du dossier apprenant. Il ne constitue pas une attestation de formation validée et ne peut être utilisé comme justificatif définitif.";
   const height = texte(central, 20, 164, 10.5, complet, 170);
   if (height > 29) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
   doc.setTextColor(...gris);
   let y = 164 + height + 5;
   if (!finale) {
-    doc.setTextColor(...bleu);y += texte('Éléments pédagogiques restant à valider',20,y,10,true)+2;
-    doc.setTextColor(...noir);
-    const lignes = e.elementsPedagogiques?.length
-      ? e.elementsPedagogiques.map(p=>`${p.nom} — ${p.statut}`).filter(motifSansDuree)
-      : ['Validation pédagogique incomplète — détail à vérifier dans le dossier apprenant'];
-    for(const ligne of lignes) {
-      const h = (doc.splitTextToSize(ligne,170) as string[]).length * 9 * 0.3528 * 1.4;
-      if(y+h>219) throw new Error('Liste pédagogique trop longue : contrôle de présentation requis');
-      y+=texte(ligne,20,y,9)+1;
+    if(!complet) {
+      doc.setTextColor(...bleu);y += texte('Éléments pédagogiques restant à valider',20,y,10,true)+2;
+      doc.setTextColor(...noir);
+      const lignes = e.elementsPedagogiques?.length
+        ? e.elementsPedagogiques.map(p=>`${p.nom} — ${p.statut}`).filter(motifSansDuree)
+        : ['Validation pédagogique incomplète — détail à vérifier dans le dossier apprenant'];
+      for(const ligne of lignes) {
+        const h = (doc.splitTextToSize(ligne,170) as string[]).length * 9 * 0.3528 * 1.4;
+        if(y+h>219) throw new Error('Liste pédagogique trop longue : contrôle de présentation requis');
+        y+=texte(ligne,20,y,9)+1;
+      }
+    } else {
+      doc.setTextColor(...gris);y+=texte('Validation pédagogique vérifiée. Document en attente des autorisations et signatures requises.',20,y,9)+2;
     }
     const motifs = e.motifs.filter(motifSansDuree).filter(m=>!/jalons|validation complète/i.test(m));
     doc.setTextColor(...gris);
