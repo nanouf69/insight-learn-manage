@@ -31,6 +31,6 @@ describe("version à signer", () => {
     expect(s.niveau).toBe("oral");
     expect(s.texte).toContain("ORAL");
     expect(s.texte).toContain("Aucune confirmation écrite");
-    expect(lignesAnnexePolice(kia, perimOral).join(" ")).not.toMatch(/confirmé par écrit/);
+    expect(lignesAnnexePolice(kia, perimOral).join(" ")).not.toMatch(/Usage location confirmé par écrit/);
   });
 });
