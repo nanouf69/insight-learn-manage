@@ -28,5 +28,5 @@ export function readSrTraining(data: unknown, sourceType: SrTrainingRead["source
 
 /** Latest local practice selection wins, including an explicit empty selection. No persistence. */
 export function srTrainingWrong(read: SrTrainingRead, local: Record<string, string[]> = {}): SrTrainingQuestion[] {
-  return read.questions.filter(q => !reponseExacte(Object.hasOwn(local, q.uid) ? local[q.uid] : q.answer, q.correct));
+  return read.questions.filter(q => !reponseExacte(Object.prototype.hasOwnProperty.call(local, q.uid) ? local[q.uid] : q.answer, q.correct));
 }

@@ -40,8 +40,8 @@ export function BilanSrTraining({ sourceType, sourceId }: { sourceType: "future"
         {read.unavailable > 0 && <p role="status" className="text-muted-foreground">{read.unavailable} question(s) non rapprochée(s) : exclues de cet entraînement, sans correction supposée.</p>}
         <p data-testid="sr-wrong-count">{wrong.length} question(s) fausse(s) sur {read.questions.length} correction(s) confirmée(s).</p>
         {!round && <Button disabled={!wrong.length} onClick={start}>Commencer l’entraînement</Button>}
-        {round?.map((q, index) => <BilanQuestionCard key={q.uid} question={q} index={index} disabled={checked} selected={Object.hasOwn(answers, q.uid) ? answers[q.uid] : q.answer} showResults={checked} correct={q.correct} wrong={checked && !reponseExacte(Object.hasOwn(answers, q.uid) ? answers[q.uid] : q.answer, q.correct)} onSelect={l => setAnswers(prev => {
-          const old = Object.hasOwn(prev, q.uid) ? prev[q.uid] : q.answer;
+        {round?.map((q, index) => <BilanQuestionCard key={q.uid} question={q} index={index} disabled={checked} selected={Object.prototype.hasOwnProperty.call(answers, q.uid) ? answers[q.uid] : q.answer} showResults={checked} correct={q.correct} wrong={checked && !reponseExacte(Object.prototype.hasOwnProperty.call(answers, q.uid) ? answers[q.uid] : q.answer, q.correct)} onSelect={l => setAnswers(prev => {
+          const old = Object.prototype.hasOwnProperty.call(prev, q.uid) ? prev[q.uid] : q.answer;
           return { ...prev, [q.uid]: old.includes(l) ? old.filter(x => x !== l) : [...old, l] };
         })} />)}
         {round && !checked && <Button onClick={() => setChecked(true)}>Vérifier l’entraînement</Button>}
