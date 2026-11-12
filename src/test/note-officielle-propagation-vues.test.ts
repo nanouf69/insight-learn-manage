@@ -16,7 +16,7 @@ for (const [exam, filiere] of [["EB4", "VTC"], ["EB4-TAXI", "TAXI"]] as const) {
     // Fiche legacy : score en cache 18 (ancien) ; tentatives V2 : t1 ancienne (note 4) et t2 courante.
     const row = { id: "r2", quiz_type: "examen_blanc", quiz_id: exam, matiere_id: "gestion", matiere_nom: "Gestion", completed_at: "2026-11-11T10:00:30Z", score_obtenu: 18, score_max: 20, note_sur_20: 18, details: { reponses: { 1: "x" }, questions } };
     const core = (note20: number | null, pending: boolean, attemptId = "t2", finishedAt = "2026-11-11T10:00:00Z") =>
-      ({ attemptId, resultId: "r2", historicalDetails: row.details, examId: exam, matiereId: "gestion", finishedAt, qrcTotal: 1, qrcRestantes: pending ? 1 : 0, status: pending ? "attente" : "definitif", note20, pending, answers: { "gestion:1": "x" }, questions }) as any;
+      ({ attemptId, resultId: "r2", historicalDetails: row.details, examId: exam, matiereId: "gestion", finishedAt, qrcProofs: [{ questionId: "gestion:1", etat: pending ? "en_attente" : "corrigee", note: pending ? null : note20, reponse: "x" }], qrcTotal: 1, qrcRestantes: pending ? 1 : 0, status: pending ? "attente" : "definitif", note20, pending, answers: { "gestion:1": "x" }, questions }) as any;
     const vues = (cores: any[]) => {
       const r = attacherSourceUnique(row, cores, new Set());
       return { matiere: noteExamenAffichee(r), session: notesMatieresSession(def, [r]).gestion, generale: noteGeneraleSession(def, [r]) };
