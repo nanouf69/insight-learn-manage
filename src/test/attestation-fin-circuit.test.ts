@@ -13,7 +13,7 @@ function png(trace: boolean) {
   return "data:image/png;base64," + Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]).toString("base64");
 }
 
-const LEA: ApprenantAtt = { id: "lea", nom: "Catania", prenom: "Léa", email: "lea@example.test", type_apprenant: "vtc-e", formation_choisie: "VTC E-Learning", modules_autorises: [26, 2, 3, 4, 35, 5, 8], date_debut_formation: "2026-09-14", heures_totales: 60, emails_bloques: false };
+const LEA: ApprenantAtt = { id: "lea", nom: "Catania", prenom: "Léa", email: "lea@example.test", type_apprenant: "vtc-e", formation_choisie: "VTC E-Learning", modules_autorises: [26, 2, 3, 4, 35, 5, 8], date_debut_formation: "2026-09-14", date_fin_cours_en_ligne: "2026-10-31", date_fin_formation: "2026-10-31", heures_totales: 60, emails_bloques: false };
 const OK: ApprenantAtt = { ...LEA, id: "ok", nom: "Fictif", prenom: "Alice", modules_autorises: [5, 8] };
 const done = (id: number, at = "2026-10-10T10:00:00Z"): EtatModuleSrv => ({ module_id: id, status_effectif: "completed", preuve_complete: true, completed_at: at });
 
