@@ -32,6 +32,7 @@ const TAILLES: Record<string, [number, number]> = {
   bilan_passage_snapshots: [5, 20], apprenant_quiz_results: [100, 400], exam_attempts_v2: [50, 200],
   apprenant_question_temps: [500, 1500], answer_events: [250, 1000], apprenant_module_activites: [500, 1500],
   qrc_instances_v2: [100, 400], bilan_passages_figes: [25, 100], answer_state_historique: [250, 1000],
+  reponses_apprenants_journal: [250, 2000],
 };
 const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
@@ -41,7 +42,7 @@ const REPARATION_DOSSIER = "_reparation-1";
 // Réparation bornée du seul journal volumineux : moins d'appels, pages par clé inchangées.
 const PART_REPARATION: Record<string, number> = { reponses_apprenants_journal: 10_000 };
 
-type Preuve = { debut: number; fin?: number; mode: "cle" | "decalage"; dernier?: string | number | null };
+type Preuve = { debut: number; fin?: number; mode: "cle" | "decalage"; dernier?: string | number | null; comptage_indisponible?: boolean };
 /** Avancement d'un export (journée principale ou réparation). Champs historiques conservés. */
 type Job = {
   i: number; from: number; comptes: Record<string, number>; erreurs: string[];
@@ -50,6 +51,7 @@ type Job = {
   curseur?: string | number | null;
   preuves?: Record<string, Preuve>;
   derniere_erreur?: string;
+  lots?: Record<string, { lignes: number; premiere: unknown; derniere: unknown; sha256: string }>;
 };
 type Etat = Job & {
   jour: string; maj: string; termine?: boolean; version?: number;
@@ -80,9 +82,10 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
   try {
     if (!decalage && job.from === 0 && (job.curseur === undefined || job.curseur === null)) {
       const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
-      if (error) throw error;
-      if (typeof count !== "number") throw new Error("comptage indisponible");
-      job.preuves[t] = { debut: count, mode: "cle" };
+      // Counts are observations, not a prerequisite for key traversal. A timed-out
+      // exact count must never abandon a table whose bounded pages are readable.
+      const countDisponible = !error && typeof count === "number";
+      job.preuves[t] = { debut: countDisponible ? count : -1, mode: "cle", ...(!countDisponible ? { comptage_indisponible: true } : {}) };
       job.curseur = null;
       job.comptes[t] = 0;
     }
@@ -112,8 +115,13 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
       if (data.length < page) { fini = true; break; }
     }
     if (buf.length) {
-      // Nom fixé par la position : un nouvel essai réécrit le même fichier (idempotent).
-      await up(`${prefixe}/${t}/part-${String(job.from).padStart(8, "0")}.json`, buf);
+      const chemin = `${prefixe}/${t}/part-${String(job.from).padStart(8, "0")}.json`;
+      const contenu = JSON.stringify(buf);
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(contenu));
+      const sha256 = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
+      await up(chemin, buf);
+      job.lots ??= {};
+      job.lots[chemin] = { lignes: buf.length, premiere: buf[0][pk], derniere: buf[buf.length - 1][pk], sha256 };
     }
     const total = (job.comptes[t] ?? 0) + buf.length;
     let finale: number | null = null;
@@ -121,9 +129,8 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
       // Comptage final AVANT toute mise à jour de l'avancement : un échec ici
       // laisse la position intacte et le paquet sera simplement réécrit.
       const { count, error } = await sb.from(t).select(pk, { count: "exact", head: true });
-      if (error) throw error;
-      if (typeof count !== "number") throw new Error("comptage final indisponible");
-      finale = count;
+      finale = !error && typeof count === "number" ? count : -1;
+      if (finale === -1) job.preuves[t].comptage_indisponible = true;
     }
     // Succès complet : l'avancement n'est modifié qu'ici.
     job.comptes[t] = total;
@@ -134,7 +141,7 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
         preuve.fin = finale; preuve.dernier = curseur;
         // Une variation détectée est signalée ; des comptes égaux n'excluent ni
         // une insertion derrière le curseur ni une mise à jour concomitante.
-        if (total !== preuve.debut || total !== finale) job.erreurs.push(`${t}: comptes divergents (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
+        if ((preuve.debut >= 0 && total !== preuve.debut) || (finale >= 0 && total !== finale)) job.erreurs.push(`${t}: comptes divergents (${total} exportées, ${preuve.debut} au début, ${finale} à la fin)`);
       } else if (decalage) {
         job.preuves[t] = { debut: -1, mode: "decalage" };
       }
@@ -145,7 +152,7 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
     job.essais = 0; job.derniere_erreur = undefined;
     return "avance";
   } catch (e) {
-    const msg = String((e as any)?.code ? `${(e as any).code} ${(e as any).message ?? ""}` : (e as Error)?.message ?? JSON.stringify(e)).slice(0, 500);
+    const msg = String((e as any)?.code ? `${(e as any).code} ${(e as any).message || (e as any).details || "erreur sans message"}` : (e as Error)?.message || JSON.stringify(e) || "erreur sans message").slice(0, 500);
     console.error(`[sauvegarde] ${t}@${job.from}`, msg);
     job.derniere_erreur = msg;
     await sb.storage.from(BUCKET).upload(`${prefixe}/_erreurs/${t}-${job.from}.txt`, new Blob([msg]), { upsert: true }).catch(() => {});
@@ -174,9 +181,61 @@ Deno.serve(async (req) => {
   const chaine = body.chaine === true;
   const reprise = body.reprise === true;
   const reparer = body.reparer === true;
+  // Read-only, fixed paths, admin verified: private manifests never become public.
+  if (body.diagnostic === true) {
+    const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+    if (!token) return new Response("Non autorisé", { status: 401, headers: corsHeaders });
+    const { data: auth, error: authError } = await sb.auth.getUser(token);
+    if (authError || !auth.user) return new Response("Non autorisé", { status: 401, headers: corsHeaders });
+    const { data: role, error: roleError } = await sb.from("user_roles").select("role").eq("user_id", auth.user.id).eq("role", "admin").maybeSingle();
+    if (roleError || !role || !/^2026-11-(11|12)$/.test(jour)) return new Response("Accès refusé", { status: 403, headers: corsHeaders });
+    const fichiers: Record<string, unknown> = {};
+    for (const nom of ["_etat.json", "_incomplet.json", "_erreurs/reponses_apprenants_journal-0.txt", "_erreurs/answer_state_historique-0.txt", "_reparation-1/_export_termine.json", "_reparation-1/_incomplet.json"]) {
+      const { data, error } = await sb.storage.from(BUCKET).download(`${jour}/${nom}`);
+      if (error || !data) { fichiers[nom] = { absent: true }; continue; }
+      const texte = await data.text();
+      try { fichiers[nom] = JSON.parse(texte); } catch { fichiers[nom] = { message: texte }; }
+    }
+    // Bounded probes isolate count timeout from page/serialization failures.
+    const sondes: Record<string, unknown> = {};
+    if (body.sonder === true) {
+      for (const t of ["reponses_apprenants_journal", "answer_state_historique"]) {
+        const pk = pkDe(t);
+        const debut = Date.now();
+        const c = await sb.from(t).select(pk, { count: "exact", head: true });
+        const r = await sb.from(t).select("*").order(pk).limit(10);
+        const err = (e: any) => e ? { code: e.code ?? null, message: e.message || e.details || "erreur sans message", status: e.status ?? null } : null;
+        sondes[t] = { count: c.count, count_error: err(c.error), page_count: r.data?.length ?? null, page_error: err(r.error), duree_ms: Date.now() - debut };
+      }
+    }
+    const verification: Record<string, unknown> = {};
+    if (body.verifier_lot === true) {
+      const chemin = `${jour}/_reparation-1/reponses_apprenants_journal/part-00000000.json`;
+      const { data, error } = await sb.storage.from(BUCKET).download(chemin);
+      if (error || !data) verification.erreur = "lot absent ou illisible";
+      else {
+        const texte = await data.text();
+        const rows = JSON.parse(texte);
+        const ids = rows.map((r: any) => r.id);
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texte));
+        verification.lot = { chemin, lignes: rows.length, ids_uniques: new Set(ids).size, ordre_croissant: ids.every((id: unknown, i: number) => i === 0 || cmpCle(id, ids[i - 1]) > 0), sha256: Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("") };
+      }
+    }
+    return json({ jour, fichiers, sondes, verification });
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || !Number.isInteger(saut) || saut < 0 || saut > MAX_SAUTS) return new Response('Paramètres invalides', { status: 400, headers: corsHeaders });
 
   const up = async (path: string, content: unknown) => {
+    if (/\/part-\d+\.json$/.test(path)) {
+      const existant = await sb.storage.from(BUCKET).download(path);
+      if (existant.data) {
+        const texte = await existant.data.text();
+        if (texte === JSON.stringify(content)) return { error: null };
+        throw new Error("Lot existant différent : conservation des deux versions requise, reprise arrêtée");
+      }
+      // Do not turn a storage outage into permission to overwrite an existing part.
+      if (existant.error && !["404", "400"].includes(String(existant.error.statusCode))) throw existant.error;
+    }
     const result = await sb.storage.from(BUCKET).upload(path, new Blob([JSON.stringify(content)], { type: "application/json" }), { upsert: true });
     if (result.error) throw new Error('Écriture du point de reprise impossible');
     return result;
@@ -233,6 +292,7 @@ Deno.serve(async (req) => {
         instantane_coherent: false, provenance: "reexport_independant_tables_selectionnees",
         reparation_debut: r.debut, observations: r.preuves ?? {},
         sources: Object.fromEntries(tables.map((t) => [t, `${REPARATION_DOSSIER}/${t}`])),
+        lots: r.lots ?? {},
       };
       await up(`${jour}/${REPARATION_DOSSIER}/${erreurs.length ? "_incomplet.json" : "_export_termine.json"}`, manifeste);
       r.erreurs = erreurs;
@@ -271,7 +331,7 @@ Deno.serve(async (req) => {
 
   if (etat.i >= TABLES.length) {
     etat.maj = new Date().toISOString();
-    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), observations: etat.preuves ?? {}, export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false, ancien_curseur: Object.values(etat.preuves ?? {}).some((p) => p.mode === "decalage") };
+    const manifeste = { jour, fin: etat.maj, ...exportManifest(etat.comptes, etat.erreurs), observations: etat.preuves ?? {}, lots: etat.lots ?? {}, export_termine: true, integrite: "non_verifiee", restauration: "non_prouvee", instantane_coherent: false, ancien_curseur: Object.values(etat.preuves ?? {}).some((p) => p.mode === "decalage") };
     await up(manifeste.erreurs.length ? `${jour}/_incomplet.json` : `${jour}/_export_termine.json`, manifeste);
     etat.erreurs = manifeste.erreurs;
     etat.termine = true;

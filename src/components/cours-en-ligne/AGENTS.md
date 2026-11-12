@@ -1,4 +1,5 @@
 # Supports pédagogiques et protection T3P
+- Future module 5 exposes existing 505/506/507 and course 9001 through the legacy renderer with full persistence arrays/original page indices; A–E stays mounted, supplementary finish/reset is disabled and CRM writes are blocked; why: restore hidden content without changing future eligibility, versions or TAXI.
 - Admin EB question previews use AdminExamQuestionCard with the existing first-passage read model in an integrated panel; presentation only, never duplicate content or rate calculations; why: compact QCM/QRC cards must preserve exact questions, correct choices, sessions and denominators.
 - Practical questions attachments are projected only inside their module/course identity, with authenticated image blobs and no completion callbacks; why: preserve original PDFs, existing supports and milestone obligations.
 - Shared mobile PDF uses width-based sizing outside fullscreen, explicit navigation only, same-source page retention and source reset; supplementary images reserve a fixed frame; why: Safari chrome, panning and delayed media must not move learner content.

@@ -1,5 +1,13 @@
 # Feuille de route
 
+## 12/11 09:28 — Deux urgences isolées
+- [x] Bilan VTC : 505/506/507 et cours 9001 rendus via legacy, filtre navigation seul ; 49/46/48 et réponse B fictive restaurée vérifiés PC/mobile sans mutation. A–E/TAXI inchangés.
+- [x] Sauvegardes : comptage bloquant prouvé, pages lisibles, divergences de concurrence distinctes ; correctif fonction seule déployé, comptes facultatifs, conflits de lots refusés, empreintes et tests reprise exécutés. Bucket privé, aucun cron global/restauration.
+- [x] Rattrapage borné effectivement réalisé : 10000 lignes journal pour chaque nuit, relecture 10000 clés uniques/ordre/empreinte ; marqueurs historiques conservés, aucun terminal de réparation encore présent.
+- [ ] Achever les deux réexports : débit borné nécessaire pendant l'activité élèves, journaux volumineux ; autres trois tables du 12 pas encore atteintes. Pas de chaîne intensive. Couverture cohérente/restauration NON PROUVÉES.
+- [x] Rapport docs/urgences-bilan-sauvegardes-2026-11-12.md, 59 tests finaux PASS, build OK ; mise en service frontend isolée expliquée sans publication globale.
+- [ ] Publication Bilan isolée et soumission legacy complète : bundle public isolé/qualification du parcours serveur encore nécessaires ; aperçu global non publié.
+
 ## 12/11 09:22 — Convocations FC et répétitions
 - [x] Présentation FC de la convocation formation : 9h–13h / 13h–17h, sans cours en ligne ni consignes d'examens initiaux ; récapitulatif, identité, date et ancienne signature non répétés. Classification par session FC même avec fiche VTC.
 - [x] 12 tests PASS ; aperçu admin réel Ali Reziki contrôlé sans confirmer l'envoi, générateur PC/mobile vérifié, build OK. Aucun modèle enregistré, droit, donnée ni publication modifié. Mail séparé de confirmation FC hors périmètre.
