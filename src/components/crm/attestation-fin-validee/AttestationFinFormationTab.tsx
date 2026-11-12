@@ -163,6 +163,12 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            <div className="border border-destructive/40 rounded-md p-3 bg-destructive/5">
+              <p className="font-semibold text-destructive">Certification pédagogique non établie — modèle non valable</p>
+              <p className="mt-1">Aucune attestation certifiant tous les jalons ne peut être enregistrée, envoyée ou signée sans preuve serveur complète.</p>
+              <p className="font-semibold mt-2">Éléments pédagogiques restant à valider</p>
+              {ap.elementsPedagogiques?.length ? <ul className="list-disc pl-5 mt-1">{ap.elementsPedagogiques.map((m,i)=><li key={i}>{m.nom} — {m.statut}</li>)}</ul> : <p className="mt-1">Validation pédagogique incomplète — détail à vérifier dans le dossier apprenant</p>}
+            </div>
             {!ap.q.isLoading && ap.motifs.length > 0 && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
                 <p className="font-semibold text-destructive flex items-center gap-2"><Lock className="h-4 w-4" />Attestation à vérifier</p>
@@ -179,7 +185,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
             {manquants.length > 0 && <p className="text-destructive">Champs du dossier à compléter : {manquants.join(", ")}</p>}
             <Button variant="outline" className="min-h-11" disabled={!ap.q.data || occupe === "apercu"} onClick={() => void apercuBrouillon()}><Eye className="h-4 w-4 mr-1" />Prévisualiser le brouillon (PDF)</Button>
 
-            {ap.pret && !manquants.length && (
+            {false && ap.pret && !manquants.length && (
               <div className="space-y-3 rounded-md border p-3">
                 <label className="block space-y-1"><span className="font-medium">Représentant du centre (signataire)</span>
                   <Input value={representant} onChange={e => setRepresentant(e.target.value)} placeholder="Nom et prénom du responsable" maxLength={120} /></label>

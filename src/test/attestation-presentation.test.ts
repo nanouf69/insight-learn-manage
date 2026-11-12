@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { attestationFinaleProuvee, jalonsIntegralementProuves } from "@/lib/attestationFinValidee/presentation";
+import { attestationFinaleProuvee, jalonsIntegralementProuves, texteCertificationPresentation } from "@/lib/attestationFinValidee/presentation";
 import { elementsRestantAValider, motifSansDuree } from '@/lib/attestationFinValidee/redactionPresentation';
 const p = { apprenantId: "fixture", sourceId: "server-proof", verifieLe: "2026-11-12T17:01:00Z", jalonsObligatoires: 7, jalonsValides: 7, validationsRequisesConfirmees: true };
 const signature = { nom: "Fixture", image: "existing-image", le: p.verifieLe, autorisationId: "explicit-authorization", tampon: "existing-stamp" };
 describe("attestation presentation proof", () => {
+  it('sans certification le texte modèle ne certifie jamais nominativement Léa',()=>{
+    const e={certifie:false,prenom:'Léa',nom:'CATANIA',formation:'Formation VTC',debut:'14 septembre 2026',fin:'19 octobre 2026'};
+    const texte=texteCertificationPresentation(e);
+    expect(texte).toContain('atteste que [Prénom NOM]');expect(texte).not.toContain('Léa');
+    expect(texteCertificationPresentation({...e,certifie:true})).toContain('atteste que Léa CATANIA');
+  });
   it('le détail pédagogique vient du verdict serveur ; une lecture absente ne devient pas un module manquant',()=>{
     const etat = {module_id:3,status:null,status_effectif:null,completed_at:null,questions_requises:0,questions_prouvees:0,preuve_complete:false,progress_effectif:0};
     expect(elementsRestantAValider([{id:3,nom:'3.FORMULES'}],new Map([[3,etat]]))).toEqual([{nom:'3.FORMULES',statut:'Validation non enregistrée'}]);

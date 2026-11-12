@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 17:37 — Modèle officiel attestation, non valable sans preuve
+- [x] Formulation officielle ; sans certification, champs génériques dans le texte et filigrane MODÈLE NON VALABLE, alertes hors PDF ; enregistrement du nouveau modèle bloqué sans preuve globale, historiques intacts.
+- [ ] Tests complet/incomplet et PDF imprimable PC/mobile, contrôle dossier incomplet réel ; pas de publication.
+
 ## 12/11 17:27 — Notes apprenant : examens officiels / Bilans
 - [x] Six EB officiels avec détail pondéré et graphique ; Bilans réels et révisions séparés, À revoir conservé en bas ; lecture seule.
 - [x] Tests pondération/tentatives/attente/isolation, PC/mobile fictifs, Rodrigue réel CRM et panne/retry vérifiés ; rapport docs/notes-officielles-eleve-2026-11-12.md.
