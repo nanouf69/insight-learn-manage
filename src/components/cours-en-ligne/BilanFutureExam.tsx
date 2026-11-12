@@ -27,7 +27,7 @@ import { fetchLiveExamens } from "./useLiveExamens";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 import { BilanSrTraining } from "./BilanSrTraining";
 
-import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
+import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, BilanRemisesRecap, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
 export const FUTURE_SUBJECT_NAMES = NOMS_MATIERES_BILAN;
 
 type Q = { id: number; enonce: string; image?: string; imageSize?: string; support?: { numero: number; paragraphes: string[] }; choix: { lettre: string; texte: string }[] };
@@ -339,6 +339,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
           })()}
 
           {/* Mobile/tablet collapsible progression */}
+          {moduleId===5 && <BilanRemisesRecap matieres={FUTURE_SUBJECT_NAMES.map((_,i)=>statutsLus ? statuts[base+i] ?? {submitted:false} : undefined)} />}
           <div className="md:hidden">
             <button
               onClick={() => setMobileProgressOpen(!mobileProgressOpen)}

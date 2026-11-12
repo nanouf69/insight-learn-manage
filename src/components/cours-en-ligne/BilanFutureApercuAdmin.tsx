@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
+import { BilanMatiereSteps, BilanMatiereCard, BilanQuestionCard, BilanRemiseSummary, BilanRemisesRecap, NOMS_MATIERES_BILAN } from "./BilanFuturePresentation";
 import { Button } from "@/components/ui/button";
 import { QuizQuestionSidebar } from "./learnerQuizUi";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ export function BilanFutureApercuAdmin({ apercu, presentationVtc = false, titre,
         <aside className="md:w-48 lg:w-56 shrink-0 rounded-lg border bg-card p-5 self-start w-full"><h3 className="text-sm font-bold mb-4">Progression</h3><BilanMatiereSteps current={current} submitted={submitted} onSelect={i => setOuvert(500 + i)} /><p className="text-xs text-muted-foreground mt-3">{matieres ? `${submitted.filter(Boolean).length}/5 quiz remis` : "État des remises indisponible"}</p></aside>
         <div className="flex-1 min-w-0 space-y-4">
           <div className="text-center space-y-1"><h2 className="text-2xl font-bold">{titre ?? "Bilan examen VTC"}</h2>{description && <p className="text-muted-foreground text-sm">{description}</p>}</div>
+          <BilanRemisesRecap matieres={NOMS_MATIERES_BILAN.map((_,i)=>{const m=matieres?.find(x=>x.exercise_id===500+i);return m ? {submitted:!!m.submitted,correct:m.submitted?.correct_count,total:m.submitted?.question_count} : undefined;})} />
           <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
             <BilanMatiereCard nom={NOMS_MATIERES_BILAN[current]}>
               <p className="text-sm text-muted-foreground">{selected?.questions ? `${selected.questions.length} questions` : "Questions indisponibles"} — {selected ? selected.submitted ? "Remis" : "Non remis" : "État de remise indisponible"}</p>
