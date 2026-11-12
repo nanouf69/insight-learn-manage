@@ -441,9 +441,43 @@ function ecrireFile(file: ElementFile[]): void {
 let fileMemoire: ElementFile[] | null = null;
 let envoiEnCours = false;
 
+// STABILISATION 12/11 — une seule réponse en attente par question (la plus récente),
+// au plus une requête en vol à la fois, et un délai croissant borné (avec aléa)
+// après un échec réseau : plus de rafale « une écriture par lettre tapée » ni
+// de renvoi à chaque frappe pendant une panne.
+const cleElement = (e: { attemptId: string; matiereId: string; questionId: number | string }) =>
+  `${e.attemptId}|${e.matiereId}|${String(e.questionId)}`;
+let elementEnVol: ElementFile | null = null;
+// Délai de nouvel essai PAR passage : la panne d'une ancienne tentative ne retarde jamais la tentative ouverte.
+const attentes = new Map<string, { echecs: number; prochainEssaiMs: number }>();
+const enAttenteReseau = (attemptId: string) => (attentes.get(attemptId)?.prochainEssaiMs ?? 0) > Date.now();
+let minuteurReessai: ReturnType<typeof setTimeout> | null = null;
+export const DELAI_REESSAI_MIN_MS = 1_000;
+export const DELAI_REESSAI_MAX_MS = 30_000;
+
+/** Délai avant nouvel essai : 1 s, 2 s, 4 s… plafonné à 30 s, avec ±30 % d'aléa. */
+export function delaiReessai(echecs: number, alea: number = Math.random()): number {
+  const base = Math.min(DELAI_REESSAI_MAX_MS, DELAI_REESSAI_MIN_MS * 2 ** Math.max(0, echecs - 1));
+  return Math.round(base * (0.7 + 0.6 * alea));
+}
+
+function planifierReessai(): void {
+  if (minuteurReessai) clearTimeout(minuteurReessai);
+  const prochain = Math.min(...[...attentes.values()].map((a) => a.prochainEssaiMs));
+  if (!Number.isFinite(prochain)) return;
+  const attente = Math.max(0, prochain - Date.now());
+  minuteurReessai = setTimeout(() => { minuteurReessai = null; void viderFileNoyau(); }, attente);
+}
+
 /** Met une réponse en file puis tente de la transmettre au noyau. */
 export function enfilerReponseNoyau(element: Omit<ElementFile, "at">): void {
   const file = fileMemoire ?? lireFile();
+  const cle = cleElement(element);
+  // Remplace en place l'ancienne valeur en attente de la même question (jamais celle déjà en vol) :
+  // la plus récente gagne, l'ordre d'arrivée des autres questions est conservé.
+  for (let i = file.length - 1; i >= 0; i -= 1) {
+    if (file[i] !== elementEnVol && cleElement(file[i]) === cle) file.splice(i, 1);
+  }
   file.push({ ...element, at: new Date().toISOString() });
   fileMemoire = file;
   ecrireFile(file);
@@ -626,28 +660,36 @@ async function chargerRevisionsServeur(attemptId: string): Promise<void> {
 
 /** Réservé aux tests : simule un rechargement de page. */
 export function __simulerRechargementPourTests(): void {
+  attentes.clear(); elementEnVol = null;
+  if (minuteurReessai) { clearTimeout(minuteurReessai); minuteurReessai = null; }
   revisionsChargees.clear();
   valeursConfirmees.clear();
   fileMemoire = null;
 }
 
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
-export async function viderFileNoyau(attemptId?: string | null): Promise<{ restantes: number }> {
+export async function viderFileNoyau(attemptId?: string | null, options?: { forcer?: boolean }): Promise<{ restantes: number }> {
   const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
   if (envoiEnCours) return { restantes: compter(fileMemoire ?? lireFile()) };
+  // Pendant le délai de nouvel essai, seules les actions explicites (terminer, retour réseau) relancent.
+  if (!options?.forcer && attemptId && enAttenteReseau(attemptId)) return { restantes: compter(fileMemoire ?? lireFile()) };
   envoiEnCours = true;
   try {
     let file = fileMemoire ?? lireFile();
-    let index = 0;
-    while (index < file.length) {
-      const element = file[index];
-      // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un
-      // autre passage. Ces éléments restent conservés à leur place et seront
-      // traités lorsqu'ils redeviendront la cible active.
-      if (attemptId && element.attemptId !== attemptId) {
-        index += 1;
-        continue;
-      }
+    fileMemoire = file;
+    const retirer = (element: ElementFile) => {
+      const i = file.indexOf(element);
+      if (i >= 0) file.splice(i, 1); // même tableau que fileMemoire : les ajouts pendant l'envoi sont conservés
+      ecrireFile(file);
+    };
+    for (;;) {
+      // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un autre passage.
+      const element = file.find((e) => (attemptId ? e.attemptId === attemptId : options?.forcer || !enAttenteReseau(e.attemptId)));
+      if (!element) break;
+      // Une valeur plus récente de la même question attend déjà : l'ancienne n'est jamais envoyée.
+      const posElement = file.indexOf(element);
+      if (file.some((e, i) => i > posElement && cleElement(e) === cleElement(element))) { retirer(element); continue; }
+      elementEnVol = element;
       // Reprise (F5, autre tablette) : numéros de version de ce passage lus une
       // fois depuis le serveur avant le premier envoi.
       await chargerRevisionsServeur(element.attemptId);
@@ -675,29 +717,32 @@ export async function viderFileNoyau(attemptId?: string | null): Promise<{ resta
             attemptId: element.attemptId,
             questionId: idQuestionNoyau(element.matiereId, element.questionId),
           });
-          file = [...file.slice(0, index), ...file.slice(index + 1)];
-          fileMemoire = file;
-          ecrireFile(file);
+          retirer(element);
           continue;
         }
         if (!refusDefinitif(res.message)) {
+          const echecs = (attentes.get(element.attemptId)?.echecs ?? 0) + 1;
+          attentes.set(element.attemptId, { echecs, prochainEssaiMs: Date.now() + delaiReessai(echecs) });
+          planifierReessai();
           console.warn("[PontV2] réponse conservée pour nouvel essai", {
             attemptId: element.attemptId,
             questionId: idQuestionNoyau(element.matiereId, element.questionId),
             message: res.message,
+            essaiDans_ms: (attentes.get(element.attemptId)?.prochainEssaiMs ?? 0) - Date.now(),
           });
           break; // réseau/conflit : on garde l'ordre et on réessaiera
         }
         // Refus définitif : la réponse est conservée à part, la file continue.
         ecarter(element);
         console.warn("[PontV2] réponse mise de côté (refus définitif):", res.message);
+      } else {
+        attentes.delete(element.attemptId);
       }
-      file = [...file.slice(0, index), ...file.slice(index + 1)];
-      fileMemoire = file;
-      ecrireFile(file);
+      retirer(element);
     }
     return { restantes: compter(file) };
   } finally {
+    elementEnVol = null;
     envoiEnCours = false;
   }
 }

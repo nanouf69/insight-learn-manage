@@ -497,7 +497,7 @@ function PassageMatiere({
 
   // Retour du réseau : les réponses en attente repartent vers le noyau.
   useEffect(() => {
-    const auRetour = () => { void viderFileNoyau(); };
+    const auRetour = () => { void viderFileNoyau(null, { forcer: true }); };
     window.addEventListener("online", auRetour);
     return () => window.removeEventListener("online", auRetour);
   }, []);
@@ -736,7 +736,7 @@ function PassageMatiere({
       setEchecsSynchronisation(0);
       setSaveStatus("saved");
     } else {
-      const { restantes } = await viderFileNoyau(attemptId);
+      const { restantes } = await viderFileNoyau(attemptId, { forcer: true });
       if (restantes > 0 || reponsesNoyauEnAttente(attemptId) > 0) {
         setSaveStatus("error");
         setEchecsSynchronisation((n) => n + 1);
@@ -755,7 +755,7 @@ function PassageMatiere({
       if (attendues > 0) {
         if (!confirmation?.toutesConfirmees) {
           rattraperReponsesNoyau(attemptId);
-          await viderFileNoyau(attemptId);
+          await viderFileNoyau(attemptId, { forcer: true });
           confirmation = await lireConfirmationNoyau();
         }
         if (!confirmation?.contenuConforme || !confirmation.toutesConfirmees) {
