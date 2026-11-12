@@ -2,7 +2,7 @@
 
 ## 12/11 17:12 — Chargement visible Notes par session
 - [x] Étapes de lecture réelles, compteur seulement pour candidats/tableau mesurables, temps écoulé sans estimation inventée ; résultats partiels visibles, notes précédentes conservées en actualisation.
-- [ ] Tests journée/soirée/vide/lent/erreur/changement session/timeout et PC/mobile ; aucune donnée réelle modifiée, aucune publication.
+- [x] 15 tests PASS : journée/soirée/vide/lent/erreur/changement session/timeout/notes et filtres conservés ; Chromium PC/mobile fictifs PASS, aucun débordement ni erreur JS. Build OK, aucune donnée réelle modifiée, aucune publication ; vrai chargement authentifié non vérifié.
 
 ## 12/11 17:03 — Bandeau questions fausses et preuve durable
 - [x] Audit SELECT : 221 clôtures, 109 sans reçu (2 couverture complète/sources seulement), 36 reçus sans sources avec sources dans leur propre reprise ; aucun rattrapage.

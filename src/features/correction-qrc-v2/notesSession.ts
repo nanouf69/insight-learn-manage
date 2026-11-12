@@ -83,6 +83,7 @@ export async function chargerNotesSession(sessionId:string,suivi?:SuiviChargemen
   try {
     signalerLectureNotes(suivi,{etape:'Récupération des notes'});
     const ids=inscrits.map(a=>a.id);const definitions=await loadSavedExamens(false,undefined,true);
+    verifierLectureNotes(suivi);
     const tracks=new Set(inscrits.map(a=>filiereInscrit(a.type_apprenant)));
     examens=definitions.filter(d=>d.numero>=1&&d.numero<=6&&tracks.has(d.type)).map(d=>({id:d.id,numero:d.numero,filiere:d.type,matieres:d.matieres.map(m=>({id:m.id,nom:m.nom}))})).sort((a,b)=>a.numero-b.numero||a.filiere.localeCompare(b.filiere));
     const rows:any[]=[];const resets:any[]=[];const liens:any[]=[];
@@ -92,7 +93,9 @@ export async function chargerNotesSession(sessionId:string,suivi?:SuiviChargemen
       liens.push(...await lirePagesParalleles<any>(de=>supabase.from('session_apprenants').select('id,apprenant_id,date_debut,date_fin,sessions:session_id(id,nom,date_debut,date_fin)').in('apprenant_id',lot).order('id').range(de,de+999) as any,1));
       verifierLectureNotes(suivi);
     }
-    const core=await fetchCoreMatiereStatesBulk(ids);const preuves=core===null?null:await fetchPassagesV2NonFiables(core);
+    const core=await fetchCoreMatiereStatesBulk(ids);
+    verifierLectureNotes(suivi);
+    const preuves=core===null?null:await fetchPassagesV2NonFiables(core);
     if(core===null||preuves===null)throw new Error('Lecture des publications officielles indisponible');
     signalerLectureNotes(suivi,{etape:'Préparation du tableau',charges:0,total:inscrits.length});
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
@@ -107,6 +110,7 @@ export async function chargerNotesSession(sessionId:string,suivi?:SuiviChargemen
     const sources=Object.values(sourcesAttente).flatMap(ex=>Object.values(ex).flatMap(ms=>Object.values(ms)));
     const passageIds=[...new Set(sources.flatMap(s=>s.destinations.map(d=>d.attemptId)))];
     const copies=await chargerSessionTest('migre',passageIds);
+    verifierLectureNotes(suivi);
     for(const source of sources){
       source.destinations=source.destinations.flatMap(d=>{
         const classes=copies.qrc.filter(q=>q.attempt_id===d.attemptId).map(q=>statutFile(q,copies));
