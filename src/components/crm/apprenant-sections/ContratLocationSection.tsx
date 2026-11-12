@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Car, FileDown, Eye, RefreshCw, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicule, pointsVehicule, type VehiculeLocation } from "@/lib/contratLocation";
-import { A_RENSEIGNER, LIB_GARANTIE, VERSION_CONTRAT_LOCATION, annexeAssurance, annexePieces, articleDepot, articleDommages, articleLitiges, articleRestitution, articleVol, assuranceVide, blocagesSignature, type AssuranceLocation, type Regime, type Tri } from "@/lib/contratLocationClauses";
-import { STATUT_LOCATION_NON_AUTORISEE, assuranceDepuisPolice, blocagesPolice, lignesAnnexePolice, perimetreVide, policePourVehicule, type PerimetreValide } from "@/lib/assurancesVehicules";
+import { A_RENSEIGNER, LIB_GARANTIE, VERSION_CONTRAT_LOCATION, annexeAssurance, annexePieces, articleDepot, blocagesVersionASigner, articleDommages, articleLitiges, articleRestitution, articleVol, assuranceVide, blocagesSignature, type AssuranceLocation, type Regime, type Tri } from "@/lib/contratLocationClauses";
+import { STATUT_LOCATION_NON_AUTORISEE, assuranceDepuisPolice, blocagesPolice, blocagesPoliceVersionASigner, statutAssuranceLocation, lignesAnnexePolice, perimetreVide, policePourVehicule, type PerimetreValide } from "@/lib/assurancesVehicules";
 import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.md?raw";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,6 +95,14 @@ function ContratLocationForm({ apprenant }: Props) {
     edlDepartSigne: false, consentementSpecifique: false, texteValideJuridiquement: false,
   });
   const blocages = [...blocagesVehicule, ...blocagesBase];
+  const blocagesASigner = [
+    ...(vehiculeId ? blocagesPoliceVersionASigner(police, perimetre) : []),
+    ...blocagesVersionASigner({
+      locataire: { nomComplet, email, telephone, adresse, numPermis, dateDelivrancePermis, prefecturePermis },
+      vehiculeChoisi: !!vehiculeId, immatriculation, dateDebut, dateFin, prixLocation, tarifJournalier, regime, assurance,
+    }),
+  ];
+  const statutAssurance = statutAssuranceLocation(perimetre);
   const ctxClauses = { avecCaution: cautionRequise, regime, tarifJournalier, assurance };
 
   // Signature
@@ -173,7 +181,8 @@ function ContratLocationForm({ apprenant }: Props) {
     return format(d, "dd/MM/yyyy");
   };
 
-  const generatePDF = (preview = false) => {
+  const generatePDF = (preview = false, final = false) => {
+    if (final && blocagesASigner.length) { toast.error("Champs essentiels manquants : " + blocagesASigner.join(" ; ")); return; }
     setGenerating(true);
     try {
       const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -195,7 +204,7 @@ function ContratLocationForm({ apprenant }: Props) {
         doc.setFontSize(7);
         doc.setTextColor(120);
         doc.text(
-          "BROUILLON NON SIGNABLE – REVUE JURIDIQUE REQUISE | FTRANSPORT SERVICES PRO | 12/11/2026",
+          final ? `Contrat de location FTRANSPORT SERVICES PRO – 86 route de Genas, 69003 Lyon – Version ${VERSION_CONTRAT_LOCATION} – Page ${doc.getNumberOfPages()} – Paraphe : ____` : "BROUILLON NON SIGNABLE – REVUE JURIDIQUE REQUISE | FTRANSPORT SERVICES PRO | 12/11/2026",
           pageW / 2,
           pageH - 8,
           { align: "center" }
@@ -261,8 +270,13 @@ function ContratLocationForm({ apprenant }: Props) {
       y += 6;
 
       h1("CONTRAT DE LOCATION DE VÉHICULE");
-      para(`BROUILLON NON SIGNABLE – Conditions en revue, assurance et disponibilité non vérifiées. Aucun envoi, paiement ni signature. Version ${VERSION_CONTRAT_LOCATION}.`, { bold: true });
-      if (blocages.length) para(`Signature bloquée – éléments manquants : ${blocages.join(" ; ")}.`);
+      if (final) {
+        para(`Contrat établi le ${fmtDate(dateSignature)} à ${lieuSignature} – Version ${VERSION_CONTRAT_LOCATION}. Signature manuscrite des deux parties sur chaque exemplaire ; état des lieux de départ contradictoire signé avant la remise des clés.`, { bold: true });
+        if (police) para(`Assurance : ${statutAssurance.texte}`, { bold: statutAssurance.niveau !== "ecrit" });
+      } else {
+        para(`BROUILLON NON SIGNABLE – Conditions en revue, assurance et disponibilité non vérifiées. Aucun envoi, paiement ni signature. Version ${VERSION_CONTRAT_LOCATION}.`, { bold: true });
+        if (blocages.length) para(`Signature bloquée – éléments manquants : ${blocages.join(" ; ")}.`);
+      }
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.text(
@@ -498,16 +512,17 @@ function ContratLocationForm({ apprenant }: Props) {
 
       addFooter();
       doc.addPage(); y = margin;
-      if (police) article({ titre: `ANNEXE 1 bis – POLICE ${police.assureur} N° ${police.numeroPolice} (${police.immatriculation})`, paragraphes: lignesAnnexePolice(police) });
+      if (police) article({ titre: `ANNEXE 1 bis – POLICE ${police.assureur} N° ${police.numeroPolice} (${police.immatriculation})`, paragraphes: lignesAnnexePolice(police, perimetre) });
       else if (vehiculeId) para("Aucune police enregistrée pour ce véhicule : annexe assurance à compléter avec sa propre police.");
       article(annexeAssurance(assurance));
       article(annexePieces(cautionRequise));
       addFooter();
 
-      const fileName = `Brouillon_location_${apprenant.id}_${crypto.randomUUID()}.pdf`;
+      const nomFichier = (nomComplet || "locataire").replace(/[^A-Za-z0-9-]+/g, "_");
+      const fileName = final ? `Contrat_location_${nomFichier}_${immatriculation}_${dateDebut}.pdf` : `Brouillon_location_${apprenant.id}_${crypto.randomUUID()}.pdf`;
       if (preview) setPdfUrl(URL.createObjectURL(doc.output("blob")));
       else doc.save(fileName);
-      toast.success("Brouillon PDF généré, non signé et non enregistré dans le CRM.");
+      toast.success(final ? "Contrat à signer généré (2 exemplaires à imprimer), non enregistré dans le CRM et non envoyé." : "Brouillon PDF généré, non signé et non enregistré dans le CRM.");
     } catch (err: any) {
       console.error(err);
       toast.error("Erreur génération PDF : " + (err.message || ""));
@@ -690,6 +705,12 @@ function ContratLocationForm({ apprenant }: Props) {
               <p className="font-semibold text-destructive">{STATUT_LOCATION_NON_AUTORISEE}</p>
               <p>Police {police.assureur} n° {police.numeroPolice}, valable du {police.validiteDebut.split("-").reverse().join("/")} au {police.validiteFin.split("-").reverse().join("/")}. Usage déclaré : {police.usageDeclare}.</p>
               <p className="text-muted-foreground">Brouillon et aperçu possibles ; contrat non signable et non envoyable. PDF originaux non encore téléversés.</p>
+              <label className="flex items-start gap-2 min-h-11 cursor-pointer"><Checkbox checked={perimetre.accordOralDeclare} onCheckedChange={c => setPerimetre(x => ({ ...x, accordOralDeclare: c === true }))} className="mt-1" /><span>Accord ORAL de l'assureur déclaré (imprimé tel quel, jamais présenté comme écrit)</span></label>
+              {perimetre.accordOralDeclare && <>
+                <div className="space-y-2"><Label htmlFor="oral-date">Date de l'accord oral</Label><Input id="oral-date" type="date" value={perimetre.dateAccordOral} onChange={e => setPerimetre(x => ({ ...x, dateAccordOral: e.target.value }))} /></div>
+                <div className="space-y-2"><Label htmlFor="oral-qui">Interlocuteur AXA (facultatif)</Label><Input id="oral-qui" value={perimetre.interlocuteurAccordOral} onChange={e => setPerimetre(x => ({ ...x, interlocuteurAccordOral: e.target.value }))} /></div>
+              </>}
+              <p className="font-medium">Statut imprimé : {statutAssurance.texte}</p>
               <div className="space-y-2">
                 <Label htmlFor="ref-axa">Référence de la confirmation écrite de l'assureur (courrier/mail)</Label>
                 <Input id="ref-axa" value={perimetre.referenceConfirmation} onChange={e => setPerimetre(x => ({ ...x, referenceConfirmation: e.target.value }))} />
@@ -751,8 +772,17 @@ function ContratLocationForm({ apprenant }: Props) {
           </div>
         </div>
 
+        <div role="status" aria-label="Contrôle version à signer" className="rounded-md border border-border p-3 text-sm space-y-2">
+          {blocagesASigner.length ? <>
+            <p className="font-semibold">Version à signer : {blocagesASigner.length} champ{blocagesASigner.length > 1 ? "s" : ""} essentiel{blocagesASigner.length > 1 ? "s" : ""} à compléter</p>
+            <ul className="list-disc pl-5 space-y-1">{blocagesASigner.map(b => <li key={b}>{b}</li>)}</ul>
+          </> : <p className="font-semibold text-primary">Champs essentiels complets : contrat prêt à imprimer et à signer à la main (signature électronique non activée).</p>}
+          {police && statutAssurance.niveau === "oral" && <p className="text-destructive">Attention : seule une confirmation orale d'AXA est déclarée. Demandez-la par écrit pour être couvert de façon certaine.</p>}
+        </div>
+        <Button onClick={() => generatePDF(true, true)} disabled={generating || loading || blocagesASigner.length > 0} className="w-full gap-2"><Eye className="w-4 h-4" /> Aperçu du contrat à signer</Button>
+        <Button onClick={() => generatePDF(false, true)} disabled={generating || loading || blocagesASigner.length > 0} className="w-full gap-2"><FileDown className="w-4 h-4" /> Télécharger le contrat à signer (PDF)</Button>
         <Button variant="outline" onClick={() => generatePDF(true)} disabled={generating || loading} className="w-full gap-2"><Eye className="w-4 h-4" /> Aperçu du brouillon PDF</Button>
-        <Button onClick={() => generatePDF()} disabled={generating || loading} className="w-full gap-2">
+        <Button variant="outline" onClick={() => generatePDF()} disabled={generating || loading} className="w-full gap-2">
           <FileDown className="w-4 h-4" />
           {generating ? "Génération..." : "Télécharger le brouillon de location (PDF)"}
         </Button>
