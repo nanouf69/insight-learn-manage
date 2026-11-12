@@ -57,7 +57,9 @@ describe("Attestation de fin de formation — circuit serveur", () => {
     expect((await envoyer(x.d, r.doc.id, "admin-1")).etat).toBe("deja_envoye");
     expect(x.mails).toEqual(["lea@example.test"]);
     const signe = await signerApprenant(x.d, r.doc.token, { signature: png(true), consentement: true, empreinteVue: r.doc.texte_empreinte, userAgent: "fixture" });
-    expect(signe.etat).toBe("signe");
+    expect(signe.status).toBe(200);
+    expect(signe.body).toMatchObject({ success: true });
+    expect(r.doc.statut).toBe("signe");
   });
   it("connexion après la fin CRM : fin plafonnée et preuve originale conservée", async () => {
     const x = fake({ cnx: [{ id: "apres-fin", started_at: "2026-11-12T17:00:00Z" }] });
