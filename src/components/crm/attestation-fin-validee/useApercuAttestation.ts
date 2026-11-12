@@ -15,12 +15,13 @@ export function useApercuAttestation(apprenant: any) {
   const q = useQuery({
     queryKey: ["attestation-fin-validee", apprenant.id],
     queryFn: async () => {
-      const [etats, taux, cnx] = await Promise.all([
+      const [etats, taux, cnx, emg] = await Promise.all([
         chargerEtatCompletionServeur(apprenant.id).catch(() => null),
         chargerApprenantTauxRealisation(apprenant.id, apprenant).catch(() => null),
-        supabase.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", apprenant.id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(1),
+        supabase.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", apprenant.id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(500),
+        supabase.from("emargements_fc").select("id, date_emargement").eq("apprenant_id", apprenant.id).eq("masque", false).eq("absent", false).not("signed_at", "is", null).not("signature_data_url", "is", null).order("date_emargement", { ascending: false }).limit(200),
       ]);
-      return { etats, taux, connexions: cnx.error ? null : (cnx.data ?? []) };
+      return { etats, taux, connexions: cnx.error || emg.error ? null : [...(cnx.data ?? []), ...(emg.data ?? []).map((x: any) => ({ id: `emargement:${x.id}`, started_at: `${x.date_emargement}T11:00:00Z` }))] };
     },
     staleTime: 0,
   });

@@ -85,7 +85,10 @@ export function dateFinDepuisConnexions(args: { connexions: ConnexionLite[] | nu
   if (!connexions) return { etat: "bloquee", raison: "Historique des connexions illisible" };
   const valides = connexions.filter(c => c.started_at && Number.isFinite(Date.parse(c.started_at)));
   if (!valides.length) return { etat: "bloquee", raison: "Aucune connexion enregistrée : date de fin indisponible" };
-  const der = valides.reduce((a, b) => (Date.parse(b.started_at ?? "") > Date.parse(a.started_at ?? "") ? b : a));
+  // Dernier jour réel (connexion e-learning OU signature de présence/pratique) au plus tard à la date de fin CRM.
+  const avant = valides.filter(c => dateParis(Date.parse(c.started_at ?? "")) <= limite);
+  const pool = avant.length ? avant : valides;
+  const der = pool.reduce((a, b) => (Date.parse(b.started_at ?? "") > Date.parse(a.started_at ?? "") ? b : a));
   const startedAt = der.started_at;
   if (!startedAt) return { etat: "bloquee", raison: "Connexion enregistrée illisible" };
   const ms = Date.parse(startedAt);
@@ -93,7 +96,7 @@ export function dateFinDepuisConnexions(args: { connexions: ConnexionLite[] | nu
   const date = dateConnexion > limite ? limite : dateConnexion;
   if (dateDebut && date < dateDebut.slice(0, 10)) return { etat: "bloquee", raison: `Dernière connexion (${date}) antérieure au début de formation : contrôle humain requis` };
   return { etat: "ok", date, connexionId: der.id, startedAt,
-    source: dateConnexion > limite ? "Dernière connexion e-learning enregistrée, date plafonnée à la fin CRM" : "Dernière connexion e-learning enregistrée",
+    source: `${String(der.id).startsWith("emargement:") ? "Dernière signature de présence enregistrée" : "Dernière connexion e-learning enregistrée"}${dateConnexion > limite ? ", date plafonnée à la fin CRM" : ""}`,
     dateLimiteCrm: limite };
 }
 
