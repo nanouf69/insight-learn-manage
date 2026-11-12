@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest';
 const db = vi.hoisted(() => ({ rows: [] as any[] }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => {
+vi.mock('@/lib/bilanRevisionActivation',()=>({BILAN_REVISION_FINALISATION_ACTIVE:true}));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: async (_:string,args:any)=>{
+ const row=db.rows.find(r=>r.exercice_id===args.p_exercice);
+ if(!row||row.write_seq!==args.p_seq||JSON.stringify(row.reponses)!==JSON.stringify(args.p_reponses))return {error:new Error('Conflit')};
+ row.status='submitted';row.submitted_at='2026-11-12T16:49:00Z';return {data:row,error:null};
+}, from: () => {
   let id: string | null = null;
   const q: any = { select: () => q, eq: (k: string,v: string) => { if(k==='exercice_id') id=v; return q; }, like: () => q, order: () => q,
     range: async () => ({data:db.rows,error:null}), maybeSingle: async () => ({data:db.rows.find(r=>r.exercice_id===id)??null,error:null}) }; return q;

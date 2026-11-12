@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { reponseExacte, questionsFausses, lireCorrection } from "@/lib/bilanFutureCorrection";
 import { setAnswerSaveAuthToken, setAnswerSaveOwnership, __testResetMemorySeq } from '@/lib/answerPersistence';
+vi.mock('@/lib/bilanRevisionActivation',()=>({BILAN_REVISION_FINALISATION_ACTIVE:true}));
 
 const calls: { name: string; args: any }[] = [];
 const QUESTIONS = [
@@ -14,6 +15,7 @@ const SUBMITTED = { "1": ["B"], "2": ["A"], "3": ["A"] };
 const KEYS: Record<string, string[]> = { "1": ["A"], "2": ["A", "B"], "3": ["A"] };
 function rpc(name: string, args: any) {
   calls.push({ name, args });
+  if(name==='bilan_revision_finaliser'){const row=revisions.find(r=>r.exercice_id===args.p_exercice);if(!row||row.write_seq!==args.p_seq)return Promise.resolve({error:new Error('Conflit')});row.status='submitted';row.submitted_at='2026-11-12T16:49:00Z';return Promise.resolve({data:row,error:null});}
   if (name === "bilan_future_open") return Promise.resolve({ data: { id: "r1", version_id: "v1" }, error: null });
   if (name === "bilan_future_questions") return Promise.resolve({ data: { version_id: "v1", questions: QUESTIONS }, error: null });
   if (name === "bilan_future_resume") return Promise.resolve({ data: { version_id: "v1", answers: {}, submitted: true }, error: null });

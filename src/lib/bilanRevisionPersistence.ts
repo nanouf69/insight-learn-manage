@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { answersAreEqual, canQueueAnswerSaveFor, enqueueAnswerSave, flushAnswerSavesAndWait, getPendingAnswers, getPendingAnswerExerciseIdsFor, primeKnownWriteSeq } from './answerPersistence';
 import { lireReponsesExactes } from './originauxExacts';
+import { BILAN_REVISION_FINALISATION_ACTIVE } from './bilanRevisionActivation';
 
 export type BilanRevisionSource = { owner: string; module: number; exercise: number; receipt: string; version: string; questions: string[] };
 export type BilanRevision = { id: string; source: BilanRevisionSource; answers: Record<string, unknown>; submitted: boolean };
@@ -67,7 +68,12 @@ export async function confirmerBilanRevision(revision: BilanRevision, completed 
   primeKnownWriteSeq(revision.source.owner, revision.id, data.write_seq);
   const submitted = data.status === 'submitted' && !!data.submitted_at;
   if (completed && !submitted) {
-    enregistrerBilanRevision(revision, true);
+    if (!BILAN_REVISION_FINALISATION_ACTIVE) throw new Error('Réponses enregistrées ; finalisation sécurisée pas encore activée. Aucun « Déjà effectué » confirmé.');
+    const result = await supabase.rpc('bilan_revision_finaliser' as never, {
+      p_exercice: revision.id, p_seq: data.write_seq,
+      p_reponses: { __source: revision.source, ...revision.answers },
+    } as never);
+    if (result.error) throw result.error;
     const back = await confirmerBilanRevision(revision);
     if (!back.submitted) throw new Error('Finalisation non confirmée : réessayez');
     return back;
