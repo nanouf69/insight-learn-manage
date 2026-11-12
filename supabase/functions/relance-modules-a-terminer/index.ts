@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 // Relance automatique "heures atteintes mais modules non terminés".
 // Tous les 3 jours max par élève, tant que tous les modules attribués ne sont pas terminés.
 // Lecture seule sur les données élèves : n'écrit que l'e-mail envoyé (table emails) et une alerte récap.
@@ -96,6 +97,7 @@ Deno.serve(async (req) => {
 
       const { subject, html, preview } = mailModulesATerminer({ prenom: a.prenom, etat, nomModule });
       try {
+        if (!(await relanceAutoriseeApresAttestation(sb, a.id))) continue;
         await sendBrandedEmail({ to: a.email, subject, html, replyTo: "contact@ftransport.fr" });
         await sb.from("emails").insert({
           apprenant_id: a.id, subject, body_html: html,

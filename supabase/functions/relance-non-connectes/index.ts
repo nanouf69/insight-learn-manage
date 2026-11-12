@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
@@ -215,6 +216,7 @@ serve(async (req) => {
         const subject = `⚠️ URGENT : Vous ne vous êtes pas connecté(e) à vos cours en ligne – Risque CPF / France Travail`;
 
         try {
+          if (!(await relanceAutoriseeApresAttestation(supabaseAdmin, apprenant.id))) continue;
           await sendBrandedEmail({ to: apprenant.email, subject, html: emailBody, replyTo: senderEmail });
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,

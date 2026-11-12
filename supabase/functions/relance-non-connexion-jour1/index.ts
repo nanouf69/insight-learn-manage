@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 // Relance J+1 après envoi des identifiants si l'apprenant ne s'est PAS connecté
 // Cible : apprenants e-learning VTC/TAXI (*-e) à qui les codes ont été envoyés la veille
 // et qui n'ont AUCUNE connexion enregistrée depuis.
@@ -158,6 +159,7 @@ Deno.serve(async (req) => {
         continue;
       }
       try {
+        if (!(await relanceAutoriseeApresAttestation(supabase, a.id))) continue;
         await sendEmail(a.email, subject, html);
         await supabase.from("emails").insert({
           apprenant_id: a.id,

@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
@@ -69,6 +70,7 @@ Deno.serve(async (req) => {
     const subject = `⚠️ ${r.prenom}, finalisez vos heures de formation avant votre examen pratique ${r.formation} du ${r.dateExamen}`;
     const html = appliquerSignatureEmail(buildHtml(r));
     try {
+      if (!(await relanceAutoriseeApresAttestation(supabase, null, r.to))) continue;
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Authorization": `Bearer ${resendApiKey}`, "Content-Type": "application/json" },

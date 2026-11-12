@@ -1,3 +1,4 @@
+import { relanceAutoriseeApresAttestation } from "../_shared/arretRelancesAttestation.ts";
 // Envoi automatique du lien de reservation de la formation pratique
 // des qu'un candidat (VTC ou TAXI) a termine le module Pratique correspondant
 // (module_id 8 pour VTC, 6 pour TAXI) et a reussi l'examen theorique.
@@ -212,6 +213,7 @@ serve(async (req) => {
         if (!pratiqueLabel) { sansPlanning.push(`${a.prenom || ''} ${a.nom || ''}`.trim()); continue; }
         const url = buildUrl(a.id, type, examLabel || 'na', pratiqueLabel);
         const { subject, body: html } = buildEmail(a.prenom || '', a.nom || '', type, url, ignoreModule, apology, relance);
+        if (relance && !(await relanceAutoriseeApresAttestation(supabase, a.id))) continue;
         const marker = relance ? `${EMAIL_TYPE}:relance-aout:${a.id}` : `${EMAIL_TYPE}:${a.id}`;
 
         // Verrou anti-doublon : la contrainte UNIQUE sur outlook_message_id

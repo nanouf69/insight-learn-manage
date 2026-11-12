@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 12/11 18:12 — Arrêter les relances après l’attestation
+- [x] Garde partagée avant transport dans les 11 relances, 2 envois nominatifs anciens et mode relance pratique ; lecture exacte non cachée et paginée des attestations, erreur = refus. Mails ordinaires/authentification/signature inchangés.
+- [x] 30 tests PASS dont 12 garde attestation, vérification Deno des 15 fichiers PASS, build OK ; champs réels vérifiés par SELECT, aucun mail réel ni modification des preuves. Envoi réel bout-en-bout non testé.
+- [ ] Mise en service : déploiement ciblé après validation explicite, sans publication globale.
+
 ## 12/11 17:37 — Modèle officiel attestation, non valable sans preuve
 - [x] Formulation officielle ; sans certification, champs génériques dans le texte et filigrane MODÈLE NON VALABLE, alertes hors PDF ; enregistrement du nouveau modèle bloqué sans preuve globale, historiques intacts.
 - [x] 32 tests PASS ; PDF Léa réel exporté en lecture seule, texte générique/non valable sans heure ni certification nominative ; complet fictif et A4 inspectés indépendamment, mobile réel rendu vérifié. Répétition « formation Formation »/e-learning corrigée ; aucune superposition. Aucun envoi/publication.
