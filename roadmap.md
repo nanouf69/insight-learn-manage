@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 12/11 18:25 — Contrat location véhicule
+- [x] Audit SELECT dossier Mamadou SOW et trois véhicules ; onze articles lus, tableau risques/fondements/propositions disponible dans le bouton Revue juridique.
+- [x] Aperçu préremplissage fiable sans signature CMA, choix véhicule explicite, Avec/Sans caution, PDF brouillon non signable ; aucune écriture/envoi/publication.
+- [x] 15 tests fictifs PASS ; CRM authentifié lecture seule, deux PDF téléchargés sur fiche fictive, quatre pages rendues PC/mobile, réseau en erreur/relecture et saisie protégée testés ; build OK.
+- [ ] Activation bloquée par assurance/avenant location-examen, calendrier de disponibilité, aptitude/contrôle applicable et revue juridique (statut client, médiateur, franchises, tarifs, RGPD) à fournir/valider ; aucun stockage ni circuit de signature location activé.
+
 ## 12/11 18:23 — Bouton Envoyer par mail visible
 - [x] Action visible sur le brouillon et les attestations à envoyer, motif du blocage explicite ; aucun contournement ni mail réel. 13 tests PASS dont rendu du vrai onglet avec dossier fictif complet/non certifié ; build OK.
 - [ ] Activation bloquée par certification/fermeture compte non actives ; rendu authentifié PC/mobile non vérifié, aucune publication.

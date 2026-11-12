@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { Car, FileDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Car, FileDown, Eye, RefreshCw, Scale } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicule, pointsVehicule, type VehiculeLocation } from "@/lib/contratLocation";
+import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.md?raw";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LocationPdfPreview } from "./LocationPdfPreview";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,18 +23,35 @@ interface Props {
 }
 
 const NIVEAUX_CARBURANT = ["Vide", "1/4", "1/2", "3/4", "Plein"];
+// Widen the projection string to avoid recursive generated JSON path types.
+const CHAMPS_BIENVENUE: string = "id,apprenant_id,completed_at,nom:donnees->>nom,prenom:donnees->>prenom,email:donnees->>email,telephone:donnees->>telephone,adresse:donnees->>adresse,code_postal:donnees->>code_postal,ville:donnees->>ville,date_naissance:donnees->>date_naissance";
+type ContactRow = { id: string; apprenant_id: string; completed_at: string | null } & Record<string, unknown>;
 
 export function ContratLocationSection({ apprenant }: Props) {
+  return <ContratLocationForm key={apprenant.id} apprenant={apprenant} />;
+}
+
+function ContratLocationForm({ apprenant }: Props) {
   const today = format(new Date(), "yyyy-MM-dd");
+  const contactsTouched = useRef(false);
+  const [sourceBienvenue, setSourceBienvenue] = useState("");
+  const [lectureErreur, setLectureErreur] = useState("");
+  const [vehicules, setVehicules] = useState<VehiculeLocation[]>([]);
+  const [vehiculeId, setVehiculeId] = useState("");
+  const [vin, setVin] = useState("");
+  const [premiereImmatriculation, setPremiereImmatriculation] = useState("");
+  const [controleAvant, setControleAvant] = useState("");
+  const [lectureRevision, setLectureRevision] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [revueOpen, setRevueOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   // Locataire (pré-rempli depuis l'apprenant)
-  const [nomComplet, setNomComplet] = useState(`${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim());
-  const [dateNaissance, setDateNaissance] = useState<string>(apprenant.date_naissance || "");
-  const [adresse, setAdresse] = useState<string>(
-    [apprenant.adresse, apprenant.code_postal, apprenant.ville].filter(Boolean).join(", ")
-  );
-  const [telephone, setTelephone] = useState<string>(apprenant.telephone || "");
-  const [email, setEmail] = useState<string>(apprenant.email || "");
+  const [nomComplet, setNomComplet] = useState("");
+  const [dateNaissance, setDateNaissance] = useState<string>("");
+  const [adresse, setAdresse] = useState<string>("");
+  const [telephone, setTelephone] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [numPermis, setNumPermis] = useState("");
   const [dateDelivrancePermis, setDateDelivrancePermis] = useState("");
   const [prefecturePermis, setPrefecturePermis] = useState("");
@@ -65,6 +88,62 @@ export function ContratLocationSection({ apprenant }: Props) {
 
   const [generating, setGenerating] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setLectureErreur("");
+    (async () => {
+      try {
+        const { data: auth, error: authError } = await supabase.auth.getSession();
+        const owner = auth.session?.user.id;
+        if (authError || !owner) throw new Error("Session administrateur requise.");
+        const [welcome, fleet] = await Promise.all([
+          supabase.from("apprenant_documents_completes")
+            .select(CHAMPS_BIENVENUE)
+            .eq("apprenant_id", apprenant.id).eq("type_document", "dossier-bienvenue")
+            .not("completed_at", "is", null).order("completed_at", { ascending: false }).order("id").limit(1),
+          supabase.from("renouvellements").select("id,libelle,reference,date_debut,date_echeance")
+            .eq("categorie", "vehicule").order("ordre").order("id").limit(1000),
+        ]);
+        const { data: current } = await supabase.auth.getSession();
+        if (!alive || current.session?.user.id !== owner) return;
+        const errors: string[] = [];
+        if (welcome.error) errors.push("Dossier de bienvenue indisponible : aucun préremplissage effectué.");
+        else {
+          const row = (welcome.data as unknown as ContactRow[] | null)?.[0];
+          const contact = row ? coordonneesLocation({ ...row, donnees: row }, apprenant.id) : null;
+          if (!contact) errors.push("Aucun dossier de bienvenue complété et identifiable : coordonnées à compléter.");
+          else {
+            setSourceBienvenue(`Dossier de bienvenue complété le ${new Date(contact.completedAt).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · ${contact.sourceId}`);
+            if (!contactsTouched.current) {
+              setNomComplet(contact.nomComplet); setEmail(contact.email); setTelephone(contact.telephone);
+              setAdresse(contact.adresse); setDateNaissance(contact.dateNaissance);
+            }
+          }
+        }
+        if (fleet.error) errors.push("Parc indisponible : réessayez la lecture.");
+        else if ((fleet.data?.length ?? 0) >= 1000) errors.push("Parc trop volumineux : lecture incomplète, sélection non disponible.");
+        else setVehicules(fleet.data ?? []);
+        setLectureErreur(errors.join(" "));
+      } catch {
+        if (alive) setLectureErreur("Lecture impossible : vérifiez votre connexion et réessayez.");
+      } finally { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [apprenant.id, lectureRevision]);
+
+  useEffect(() => () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); }, [pdfUrl]);
+
+  const choisirVehicule = (id: string) => {
+    const vehicle = vehicules.find(v => v.id === id);
+    if (!vehicle) return;
+    const details = detailsVehicule(vehicle);
+    setVehiculeId(id); setMarqueModele(details.marqueModele); setImmatriculation(details.immatriculation);
+    setAnnee(details.premiereImmatriculation.slice(0, 4)); setVin(details.vin);
+    setPremiereImmatriculation(details.premiereImmatriculation); setControleAvant(details.controleAvant);
+    setCouleur(""); setKmDepart("");
+  };
+
   const fmtDate = (v: string) => {
     if (!v) return "............................";
     const d = new Date(v);
@@ -72,7 +151,7 @@ export function ContratLocationSection({ apprenant }: Props) {
     return format(d, "dd/MM/yyyy");
   };
 
-  const generatePDF = () => {
+  const generatePDF = (preview = false) => {
     setGenerating(true);
     try {
       const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -94,7 +173,7 @@ export function ContratLocationSection({ apprenant }: Props) {
         doc.setFontSize(7);
         doc.setTextColor(120);
         doc.text(
-          "FTRANSPORT SERVICES PRO | SASU | SIRET 823 461 561 000 18 | NDA 84 69 15114 69 | 86 route de Genas, 69003 Lyon",
+          "BROUILLON NON SIGNABLE – REVUE JURIDIQUE REQUISE | FTRANSPORT SERVICES PRO | 12/11/2026",
           pageW / 2,
           pageH - 8,
           { align: "center" }
@@ -160,6 +239,7 @@ export function ContratLocationSection({ apprenant }: Props) {
       y += 6;
 
       h1("CONTRAT DE LOCATION DE VÉHICULE");
+      para("BROUILLON NON SIGNABLE – Conditions en revue, assurance et disponibilité non vérifiées. Aucun envoi, paiement ni signature. Version location-preview-2026-11-12.", { bold: true });
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.text(
@@ -188,9 +268,7 @@ export function ContratLocationSection({ apprenant }: Props) {
       kv("Date de délivrance :", fmtDate(dateDelivrancePermis));
       kv("Préfecture délivrance :", prefecturePermis);
       y += 2;
-      para(
-        "Le locataire certifie être titulaire d'un permis de conduire valide de catégorie B, en cours de validité à la date de prise en charge du véhicule, et autorise FTRANSPORT SERVICES PRO à en vérifier l'authenticité."
-      );
+      para("À confirmer avant signature : permis B valide et vérification des conditions du conducteur. Ce brouillon ne vaut ni certification ni autorisation du locataire.");
       y += 4;
 
       // ── Article 2 ──
@@ -198,6 +276,10 @@ export function ContratLocationSection({ apprenant }: Props) {
       kv("Marque / Modèle :", marqueModele);
       kv("Immatriculation :", immatriculation);
       kv("Année de mise en circulation :", annee);
+      kv("VIN :", vin);
+      kv("Première immatriculation :", fmtDate(premiereImmatriculation));
+      kv("Contrôle avant (registre) :", fmtDate(controleAvant));
+      para(pointsVehicule(vehicules.find(v => v.id === vehiculeId), dateFin).join(" "));
       kv("Couleur :", couleur);
       kv("Kilométrage au départ :", kmDepart ? `${kmDepart} km` : "");
       kv("Niveau de carburant départ :", carburantDepart);
@@ -234,6 +316,7 @@ export function ContratLocationSection({ apprenant }: Props) {
 
       // ── Article 5 ──
       h1("ARTICLE 5 – DÉPÔT DE CAUTION");
+      kv("Dépôt de garantie :", `${conditionsDepot(cautionRequise).depot} €`);
       if (cautionRequise) {
         para(
           "Le locataire remet au loueur, préalablement à la prise en charge du véhicule, un chèque de caution d'un montant de 500 € (cinq cents euros)."
@@ -246,12 +329,7 @@ export function ContratLocationSection({ apprenant }: Props) {
         kv("N° du chèque de caution :", numCheque);
         kv("Banque :", banque);
       } else {
-        para(
-          "Aucun dépôt de caution n'est exigé dans le cadre du présent contrat de location."
-        );
-        para(
-          "Le locataire demeure néanmoins responsable, dans les conditions prévues aux articles 7 et suivants, de tout dommage, dégradation, perte de document, contravention ou non-restitution du véhicule à l'échéance."
-        );
+        para(clauseSansCaution());
       }
       y += 4;
 
@@ -289,7 +367,7 @@ export function ContratLocationSection({ apprenant }: Props) {
 
       // ── Article 9 ──
       h1("ARTICLE 9 – CARBURANT");
-      para("Le véhicule est remis avec un niveau de carburant indiqué à l'état des lieux. Il doit être restitué avec le même niveau. En cas de restitution avec un niveau inférieur, le coût du carburant manquant, majoré de 10 € de frais de service, sera déduit de la caution ou facturé séparément.");
+      para(`Le véhicule est remis avec un niveau de carburant indiqué à l'état des lieux. Il doit être restitué avec le même niveau. En cas de restitution avec un niveau inférieur, le coût du carburant manquant, majoré de 10 € de frais de service, sera ${cautionRequise ? "déduit du dépôt sur justificatifs ou facturé séparément" : "facturé séparément sur justificatifs, sans prélèvement ni préautorisation de caution"}.`);
       y += 4;
 
       // ── Article 10 ──
@@ -309,6 +387,7 @@ export function ContratLocationSection({ apprenant }: Props) {
       // ── Signatures ──
       checkPage(60);
       h1("SIGNATURES");
+      para("Brouillon : aucune signature CMA transférée. Une signature spécifique au contrat de location sera nécessaire après validation juridique.");
       para(`Fait en deux exemplaires originaux, à ${lieuSignature}, le ${fmtDate(dateSignature)}.`);
       y += 8;
 
@@ -430,9 +509,10 @@ export function ContratLocationSection({ apprenant }: Props) {
 
       addFooter();
 
-      const fileName = `Contrat_location_${(apprenant.prenom || "").trim()}_${(apprenant.nom || "").trim()}_${format(new Date(), "ddMMyyyy")}.pdf`;
-      doc.save(fileName);
-      toast.success("Contrat de location PDF généré !");
+      const fileName = `Brouillon_location_${apprenant.id}_${crypto.randomUUID()}.pdf`;
+      if (preview) setPdfUrl(URL.createObjectURL(doc.output("blob")));
+      else doc.save(fileName);
+      toast.success("Brouillon PDF généré, non signé et non enregistré dans le CRM.");
     } catch (err: any) {
       console.error(err);
       toast.error("Erreur génération PDF : " + (err.message || ""));
@@ -442,16 +522,22 @@ export function ContratLocationSection({ apprenant }: Props) {
   };
 
   return (
-    <Card className="border-orange-300/40">
+    <Card className="border-border">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Car className="w-5 h-5 text-orange-600" />
+          <Car className="w-5 h-5 text-primary" />
           Contrat de location de véhicule
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <p className="text-sm text-muted-foreground">Brouillon en revue juridique · aucun envoi ni signature · données existantes inchangées.</p>
+        <Button variant="outline" onClick={() => setRevueOpen(true)} className="gap-2"><Scale className="h-4 w-4" /> Revue juridique des 11 articles</Button>
+        {loading && <p role="status">Lecture du dossier et du parc…</p>}
+        {lectureErreur && <p role="alert" className="text-sm text-destructive">{lectureErreur}</p>}
+        {sourceBienvenue && <p className="text-xs text-muted-foreground break-words">{sourceBienvenue}</p>}
+        <Button variant="ghost" disabled={loading} onClick={() => setLectureRevision(v => v + 1)} className="gap-2"><RefreshCw className="h-4 w-4" /> Relire le dossier et le parc</Button>
         {/* Locataire */}
-        <div className="space-y-3">
+        <div className="space-y-3" onChangeCapture={() => { contactsTouched.current = true; }}>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Locataire</h3>
           <div className="space-y-2">
             <Label>Nom et Prénom</Label>
@@ -492,13 +578,20 @@ export function ContratLocationSection({ apprenant }: Props) {
         {/* Véhicule */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Véhicule mis à disposition</h3>
+          <Label htmlFor="parc-location">Choisir dans le parc</Label>
+          <Select value={vehiculeId} onValueChange={choisirVehicule} disabled={loading}>
+            <SelectTrigger id="parc-location"><SelectValue placeholder="Choix explicite — véhicule actuel conservé" /></SelectTrigger>
+            <SelectContent>{vehicules.map(v => <SelectItem key={v.id} value={v.id}>{v.libelle}</SelectItem>)}</SelectContent>
+          </Select>
+          <ul className="text-sm text-muted-foreground space-y-1">{pointsVehicule(vehicules.find(v => v.id === vehiculeId), dateFin).map(p => <li key={p}>{p}</li>)}</ul>
+          {vehiculeId && <p className="text-sm break-words">VIN : {vin || "Non renseigné"} · 1ère immatriculation : {fmtDate(premiereImmatriculation)} · Contrôle avant : {fmtDate(controleAvant)}</p>}
           <div className="space-y-2">
             <Label>Marque / Modèle</Label>
-            <Input value={marqueModele} onChange={(e) => setMarqueModele(e.target.value)} placeholder="Ex : Peugeot 308" />
+            <Input value={marqueModele} onChange={(e) => { setMarqueModele(e.target.value); setVehiculeId(""); setVin(""); setPremiereImmatriculation(""); setControleAvant(""); }} placeholder="Ex : Peugeot 308" />
           </div>
           <div className="space-y-2">
             <Label>Immatriculation</Label>
-            <Input value={immatriculation} onChange={(e) => setImmatriculation(e.target.value)} placeholder="AA-123-BB" />
+            <Input value={immatriculation} onChange={(e) => { setImmatriculation(e.target.value); setVehiculeId(""); setVin(""); setPremiereImmatriculation(""); setControleAvant(""); }} placeholder="AA-123-BB" />
           </div>
           <div className="space-y-2">
             <Label>Année de mise en circulation</Label>
@@ -559,10 +652,12 @@ export function ContratLocationSection({ apprenant }: Props) {
             <Checkbox id="formationIncluse" checked={formationIncluse} onCheckedChange={(c) => setFormationIncluse(!!c)} />
             <Label htmlFor="formationIncluse" className="cursor-pointer">Formation incluse</Label>
           </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Checkbox id="cautionRequise" checked={cautionRequise} onCheckedChange={(c) => setCautionRequise(!!c)} />
-            <Label htmlFor="cautionRequise" className="cursor-pointer">Caution requise (chèque de 500 €)</Label>
-          </div>
+          <Tabs value={cautionRequise ? "avec" : "sans"} onValueChange={v => setCautionRequise(v === "avec")}>
+            <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="avec">Avec caution</TabsTrigger><TabsTrigger value="sans">Sans caution</TabsTrigger></TabsList>
+          </Tabs>
+          <p className="font-semibold">Dépôt de garantie : {conditionsDepot(cautionRequise).depot} €</p>
+          {!cautionRequise && <p className="text-sm text-muted-foreground">{clauseSansCaution()}</p>}
+          <p className="text-sm text-muted-foreground">Franchise d'assurance : non renseignée, police à vérifier. Aucun reçu, échéancier ou paiement n'est créé.</p>
           {cautionRequise && (
             <>
               <div className="space-y-2">
@@ -596,10 +691,17 @@ export function ContratLocationSection({ apprenant }: Props) {
           </div>
         </div>
 
-        <Button onClick={generatePDF} disabled={generating} className="w-full gap-2 bg-orange-600 hover:bg-orange-700">
+        <Button variant="outline" onClick={() => generatePDF(true)} disabled={generating || loading} className="w-full gap-2"><Eye className="w-4 h-4" /> Aperçu du brouillon PDF</Button>
+        <Button onClick={() => generatePDF()} disabled={generating || loading} className="w-full gap-2">
           <FileDown className="w-4 h-4" />
-          {generating ? "Génération..." : "Télécharger le contrat de location (PDF)"}
+          {generating ? "Génération..." : "Télécharger le brouillon de location (PDF)"}
         </Button>
+        <Dialog open={revueOpen} onOpenChange={setRevueOpen}>
+          <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Revue juridique — non publiée</DialogTitle></DialogHeader><pre className="whitespace-pre-wrap break-words text-sm font-sans">{revueLocation}</pre></DialogContent>
+        </Dialog>
+        <Dialog open={!!pdfUrl} onOpenChange={open => { if (!open) setPdfUrl(null); }}>
+          <DialogContent className="max-w-5xl h-[90dvh] flex flex-col"><DialogHeader><DialogTitle>Brouillon de location — non signable</DialogTitle></DialogHeader>{pdfUrl && <LocationPdfPreview url={pdfUrl} />}</DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
