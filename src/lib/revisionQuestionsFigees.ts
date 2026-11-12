@@ -89,15 +89,18 @@ export function questionActuelleRapprochee(figee: Question, matiereActuelle: Mat
   if (a.type !== figee.type) return null;
   const memeEnonce = normTexte(a.enonce) === normTexte(figee.enonce);
   if (figee.type === "QCM") {
-    // Identité stable : même ID unique, même type, mêmes lettres dans le même ordre.
-    // Une correction éditoriale est acceptée si UNE des deux dimensions (énoncé OU
-    // textes des propositions) est restée identique et sert d'ancrage ; si les deux
-    // ont changé, le rapprochement n'est pas prouvé (jamais propagé au hasard).
+    // Identité stable : même ID unique, même type, mêmes lettres dans le même ordre,
+    // et UNE SEULE dimension modifiée à la fois (sinon non prouvé, jamais propagé) :
+    // - énoncé seul reformulé (propositions et corrigé identiques) ;
+    // - texte de propositions seul corrigé (énoncé et corrigé identiques) ;
+    // - corrigé seul changé (énoncé et propositions identiques).
     const lettres = (q: Question) => JSON.stringify((q.choix ?? []).map((c) => c.lettre));
     const textes = (q: Question) => JSON.stringify((q.choix ?? []).map((c) => [c.lettre, normTexte(c.texte)]).sort());
+    const corrige = (q: Question) => JSON.stringify((q.choix ?? []).filter((c) => c.correct).map((c) => c.lettre).sort());
     if (!a.choix?.length || lettres(a) !== lettres(figee)) return null;
     if (!a.choix.some((c) => c.correct)) return null;
-    if (!memeEnonce && textes(a) !== textes(figee)) return null;
+    const changements = [!memeEnonce, textes(a) !== textes(figee), corrige(a) !== corrige(figee)].filter(Boolean).length;
+    if (changements > 1) return null;
     return a;
   }
   if (!memeEnonce) return null;

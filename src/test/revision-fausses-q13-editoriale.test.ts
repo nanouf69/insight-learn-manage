@@ -47,3 +47,14 @@ describe("Q13 — cohérence après édition", () => {
     expect(JSON.stringify(questionsFaussesDuPassage(actuelle, r))).toBe(JSON.stringify(questionsFaussesDuPassage(actuelle, r)));
   });
 });
+describe("Q13 — une seule dimension modifiée à la fois", () => {
+  it("texte de proposition ET corrigé changés ensemble : non prouvé", () => {
+    const f = figees[1] as any;
+    const a = { ...f, choix: f.choix.map((c: any) => c.lettre === "B" ? { ...c, texte: "corrigé", correct: false } : { ...c, correct: c.lettre === "A" }) };
+    expect(questionActuelleRapprochee(f, matiere([a]))).toBeNull();
+  });
+  it("énoncé seul reformulé : rapproché", () => {
+    const f = figees[1] as any;
+    expect(questionActuelleRapprochee(f, matiere([{ ...f, enonce: "Le prix de vente d’une prestation est égal au" }]))?.id).toBe(13);
+  });
+});
