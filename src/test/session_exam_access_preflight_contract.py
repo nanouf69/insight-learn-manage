@@ -27,6 +27,8 @@ class Preflight(base.Access):
   c.sql("CREATE FUNCTION canonical_get_quiz_questions(text) RETURNS jsonb LANGUAGE sql AS $$SELECT '[]'::jsonb$$;")
   c.sql(live['functions']['canonical_start_exam_attempt(text,text,integer)'])
   c.sql(Path('docs/sql-revue/2026-11-12-session-exam-import.sql').read_text())
+  c.sql("CREATE TABLE reponses_apprenants_journal(event_id uuid PRIMARY KEY,apprenant_id uuid,user_id uuid,module_id int,exercice_id text,exercice_type text,question_id text,valeur jsonb,valeur_originale jsonb,tentative int,client_saved_at timestamptz);")
+  for definition in json.loads(Path('src/test/fixtures/session-exam-persistence-20261112.json').read_text()).values():c.sql(definition)
   c.sql("INSERT INTO core_bridge_flags(cle,actif) VALUES('passage_v2_apprenants_reels',true);")
 
  def test_17_both_real_timer_overloads_block_new_start_keep_resume(self):
@@ -115,6 +117,69 @@ class Preflight(base.Access):
   receipt=json.loads(self.call(q,base.U).stdout.splitlines()[-1])
   self.set_access(False,expected=self.current())
   self.assertEqual(json.loads(self.call(q,base.U).stdout.splitlines()[-1]),receipt)
+
+ def persist(self,key,version=2,answers=None):
+  args=f"'{base.A}','{base.U}',35,'{key}','examen_blanc',{base.J(answers or {'1':['A']})},false,NULL,999,'[]'"
+  if version==3:args+=",'{}'"
+  return f"SELECT row_to_json(r) FROM persist_answer_batch_v{version}({args}) r"
+
+ def test_23_real_persist_rpcs_first_answer_refused_then_late_save_allowed(self):
+  self.set_access(False,expected=self.current())
+  for version in [2,3]:
+   key=f'EB3__persist{version}'
+   r=self.call(self.persist(key,version),base.U,False)
+   self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+   self.assertEqual(self.sql(f"SELECT count(*) FROM reponses_apprenants WHERE exercice_id='{key}'").stdout.strip(),'0')
+   self.set_access(True,expected=self.current())
+   self.call(self.persist(key,version),base.U)
+   self.set_access(False,expected=self.current())
+   saved=json.loads(self.call(self.persist(key,version,{'1':['B']}),base.U).stdout.splitlines()[-1])
+   self.assertEqual(saved['stored_reponses'],{'1':['B']})
+   self.sql(f"INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses) VALUES('{base.A}','{base.U}','{key}','examen_blanc','{{}}') ON CONFLICT(apprenant_id,exercice_id) DO NOTHING")
+
+ def test_24_exact_timer_identity_not_other_subject_or_tentative(self):
+  self.set_access(True,expected=self.current())
+  self.call(f"SELECT * FROM start_or_get_exam_timer('{base.A}','EB3__identity',1800,2)",base.U)
+  self.set_access(False,expected=self.current())
+  for key in ['EB3__otheridentity','EB3__identity__t3','EB3__identity__t2']:
+   r=self.call(self.persist(key),base.U,False)
+   self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+  # Same exact exercise key + tentative 2 is a legitimate continuation.
+  self.sql(f"INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative) VALUES('{base.A}','{base.U}','EB3__identity','examen_blanc',2)")
+
+ def test_25_fabricated_import_json_and_private_capability_refused(self):
+  self.set_access(False,expected=self.current())
+  v=self.sql("SELECT id FROM exam_content_versions WHERE exam_id='EB3' LIMIT 1").stdout.strip()
+  r=self.call(f"INSERT INTO exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint) VALUES('{base.A}','EB3','{v}','{{\"source_historique\":{{\"result_id\":\"00000000-0000-0000-0000-000000000001\"}}}}','f')",base.U,False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('fermé',r.stderr)
+  r=self.call("INSERT INTO session_exam_import_permits VALUES(gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),'EB3',txid_current(),pg_backend_pid())",base.U,False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('permission denied',r.stderr)
+  result=self.sql("SELECT result_id FROM session_exam_import_permits LIMIT 1").stdout.strip()
+  r=self.call(f"SELECT core_import_passage_finalise('{result}')",base.U,False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('IMPORT_NON_AUTORISE',r.stderr)
+
+ def test_26_canonical_no_new_eb_but_exact_existing_replay(self):
+  self.set_access(False,expected=self.current())
+  for ref in [base.A,'not-an-owner']:
+   r=self.call(f"SELECT canonical_start_exam_attempt('EB3','{ref}',1)",base.U,False)
+   self.assertNotEqual(r.returncode,0);self.assertIn('inactif',r.stderr)
+  # Simulate an immutable record predating installation, never a live row.
+  self.sql("ALTER TABLE canonical_exam_attempts DISABLE TRIGGER session_exam_new_canonical;INSERT INTO canonical_exam_attempts(quiz_id,apprenant_ref,tentative,snapshot,snapshot_versions) VALUES('EB3','preexisting',1,'[]','{}');ALTER TABLE canonical_exam_attempts ENABLE TRIGGER session_exam_new_canonical;")
+  before=self.sql("SELECT to_jsonb(a) FROM canonical_exam_attempts a WHERE apprenant_ref='preexisting'").stdout.strip()
+  replay=self.call("SELECT canonical_start_exam_attempt('EB3','preexisting',1)",base.U).stdout.splitlines()[-1]
+  self.assertEqual(json.loads(before),json.loads(replay))
+  r=self.call("SELECT canonical_start_exam_attempt('EB3','preexisting',2)",base.U,False)
+  self.assertNotEqual(r.returncode,0)
+
+ def test_27_import_source_mismatch_rolls_back_without_permit(self):
+  self.set_access(True,expected=self.current())
+  result=str(uuid.uuid4())
+  details={'snapshot':{'questions':[{'id':'1','type':'QCM','enonce':'Fictif'}]},'reponses':{'1':['B']}}
+  self.sql(f"SET request.jwt.claim.sub='{base.ADMIN}';INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at) VALUES('{base.A}','{base.U}','EB3__badimport','examen_blanc','{{\"1\":[\"A\"]}}',true,'submitted','2026-10-01 10:00:00+00');INSERT INTO apprenant_quiz_results(id,apprenant_id,user_id,quiz_id,quiz_titre,matiere_id,matiere_nom,details,completed_at) VALUES('{result}','{base.A}','{base.U}','EB3','Fictif','badimport','A - Fictif',{base.J(details)},'2026-10-01 10:00:00+00')")
+  self.set_access(False,expected=self.current())
+  r=self.call(f"SELECT core_import_passage_finalise('{result}')",check=False)
+  self.assertNotEqual(r.returncode,0);self.assertIn('non concordante',r.stderr)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM session_exam_import_permits WHERE result_id='{result}'").stdout.strip(),'0')
 
 
 if __name__=='__main__':
