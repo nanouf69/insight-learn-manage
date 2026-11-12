@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 10:14 — Accès directs F/G nouveau Bilan VTC
+- [ ] Raccourcis 505/506 avant A–E ; ciblage après réhydratation, F→G→A–E, H/QRC préservés ; tests simulés PC/mobile/admin/ancien parcours, sans compte réel ni publication.
+
 ## 12/11 09:59 — Présentation admin nouveau Bilan VTC
 - [x] Cartes matière/questions, noms/ordre/étapes et résumé remis partagés sans effets ; admin module 5 uniquement lecture autorisée, pas de composant élève monté. PC/mobile fixtures comparés, zéro appel mutateur admin, 12 tests PASS. Compléments/TAXI préservés, aucune publication. Limites/proofs docs/bilan-vtc-presentation-admin-2026-11-12.md.
 

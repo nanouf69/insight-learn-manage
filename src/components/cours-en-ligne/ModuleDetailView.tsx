@@ -191,7 +191,7 @@ import {
 import { resolveOverrideConflict, buildAdminEditJournalMap } from "@/components/fournisseurs/quiz-editor-utils";
 import { questionAvecCleFigee, exoIdDepuisArchive, type PassageFige } from "./passagesFiges";
 import { BilanFutureExam, lireRouteBilanFuture } from "./BilanFutureExam";
-import { BilanVtcComplements } from "./BilanVtcComplements";
+import { BilanVtcComplements, type CibleComplementVtc } from "./BilanVtcComplements";
 import { estComplementBilanVtc } from "@/lib/bilanVtcComplements";
 import { RevisionCopieCorrigee } from "./RevisionCopieCorrigee";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
@@ -6874,7 +6874,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const onTrackCours = (moduleId: number, coursTitle: string) => rappelsEleveRef.current.onTrackCours?.(moduleId, coursTitle);
     const onLearnerActivity = () => rappelsEleveRef.current.onLearnerActivity?.();
     const onModuleCompleted = (moduleId: number) => rappelsEleveRef.current.onModuleCompleted?.(moduleId);
-    const LearnerPreviewComponent = ({ secureMode = true, complementsVtc = false }: { secureMode?: boolean; complementsVtc?: boolean }) => {
+    const LearnerPreviewComponent = ({ secureMode = true, complementsVtc = false, cibleComplement = null }: { secureMode?: boolean; complementsVtc?: boolean; cibleComplement?: CibleComplementVtc | null }) => {
     const moduleData = (() => {
       const base = moduleDataRef.current;
       const etat = etatSnapshotsRef.current;
@@ -7258,25 +7258,37 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // Keep full pages and original indices for answers, proofs and progression.
     const indicesVisibles = pages.map((p, i) => ({ p, i })).filter(({ p }) => !complementsVtc || estComplementBilanVtc(Number(module.id), p)).map(({ i }) => i);
     const complementCibleApplique = useRef(false);
+    const selectionComplementAppliquee = useRef<number | null>(null);
+    const cibleComplementEnAttente = complementsVtc && cibleComplement != null && selectionComplementAppliquee.current !== cibleComplement.selection;
     useEffect(() => {
-      if (!complementsVtc || !uiStateHydrated || complementCibleApplique.current || !indicesVisibles.length) return;
+      if (!uiStateHydrated || !cibleComplementEnAttente || !cibleComplement) return;
+      const target = pages.findIndex(p => p.type === "exercice-single" && Number(p.exercice.id) === cibleComplement.exerciceId);
+      if (target < 0) return;
+      selectionComplementAppliquee.current = cibleComplement.selection;
+      complementCibleApplique.current = true;
+      setPendingResultRestore(null);
+      setCurrentPage(target);
+    }, [uiStateHydrated, cibleComplementEnAttente, cibleComplement, pages]);
+    useEffect(() => {
+      if (!complementsVtc || cibleComplement || !uiStateHydrated || complementCibleApplique.current || !indicesVisibles.length) return;
       complementCibleApplique.current = true;
       setCurrentPage(p => indicesVisibles.includes(p) ? p : indicesVisibles[0]);
-    }, [complementsVtc, uiStateHydrated, indicesVisibles]);
+    }, [complementsVtc, cibleComplement, uiStateHydrated, indicesVisibles]);
     const exerciseTargetApplied = useRef(false);
     useEffect(() => {
-      if (!uiStateHydrated || exerciseTargetApplied.current || initialExerciseId == null) return;
+      if (complementsVtc || !uiStateHydrated || exerciseTargetApplied.current || initialExerciseId == null) return;
       const target = pages.findIndex(p => p?.type === "exercice-single" && String(p.exercice.id) === initialExerciseId);
       if (target < 0) return;
       exerciseTargetApplied.current = true;
       setPendingResultRestore(null);
       setCurrentPage(target);
-    }, [uiStateHydrated, initialExerciseId, pages]);
+    }, [complementsVtc, uiStateHydrated, initialExerciseId, pages]);
     const currentPageData = pages[currentPage];
     const exoCourantId = currentPageData?.type === "exercice-single" ? Number(currentPageData.exercice.id) : null;
     useEffect(() => {
+      if (complementsVtc && (!uiStateHydrated || cibleComplementEnAttente)) return;
       if (exoCourantId != null) ouvrirMatiereBilanRef.current(exoCourantId);
-    }, [exoCourantId]);
+    }, [exoCourantId, complementsVtc, uiStateHydrated, cibleComplementEnAttente]);
     // L'étape facultative « Quiz complémentaires » (toujours la dernière) n'entre pas dans l'avancement.
     const totalPagesProgression = pages.filter(p => !(p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES)).length;
     const progressPercent = pourcentagePagesActuelles(completedPages, totalPagesProgression);
@@ -7498,7 +7510,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
     // --- If a quiz was just validated, force-restore the exact result screen ---
     useEffect(() => {
-      if (!uiStateHydrated || !pendingResultRestore) return;
+      if (!uiStateHydrated || !pendingResultRestore || cibleComplementEnAttente) return;
 
       // Expire stale pending restore after 30 minutes
       if (Date.now() - pendingResultRestore.validatedAt > 30 * 60 * 1000) {
@@ -7532,7 +7544,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       if (currentPage !== resolvedPage) {
         setCurrentPage(resolvedPage);
       }
-    }, [uiStateHydrated, pendingResultRestore, pages, currentPage]);
+    }, [uiStateHydrated, pendingResultRestore, pages, currentPage, cibleComplementEnAttente]);
 
     // --- Get user ID and JWT for reponses_apprenants ---
     const userIdForSaveRef = useRef<string | null>(null);
@@ -10224,11 +10236,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         ) : routeFutureConcernee && apercuAdmin && apercuFuture === "erreur" ? (
           <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center">Lecture du Bilan impossible. Rechargez la page.</div>
         ) : routeFutureConcernee && apercuAdmin && apercuFuture && apercuFuture !== "erreur" && apercuFuture.route === "future" ? (
-          module.id === 5 ? <BilanVtcComplements future={<BilanFutureApercuAdmin apercu={apercuFuture} presentationVtc titre={moduleData.nom} description={moduleData.description} />} legacy={<ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc /></ActivitesModuleContext.Provider>} /> : <BilanFutureApercuAdmin apercu={apercuFuture} />
+          module.id === 5 ? <BilanVtcComplements future={<BilanFutureApercuAdmin apercu={apercuFuture} presentationVtc titre={moduleData.nom} description={moduleData.description} />} legacy={cible => <ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc cibleComplement={cible} /></ActivitesModuleContext.Provider>} /> : <BilanFutureApercuAdmin apercu={apercuFuture} />
         ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
-          module.id === 5 ? <BilanVtcComplements future={<BilanFutureExam moduleId={5} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />} legacy={<ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc /></ActivitesModuleContext.Provider>} /> : <BilanFutureExam moduleId={11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
+          module.id === 5 ? <BilanVtcComplements future={<BilanFutureExam moduleId={5} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />} legacy={cible => <ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc cibleComplement={cible} /></ActivitesModuleContext.Provider>} /> : <BilanFutureExam moduleId={11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
         ) : etatSnapshotsEleve.statut === "chargement" ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : etatSnapshotsEleve.statut === "bloque" ? (
