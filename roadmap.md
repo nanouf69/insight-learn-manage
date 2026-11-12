@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 12/11 12:22 — Énoncé cliquable éditeur EB
-- [ ] Carte identifiée : AdminExamQuestionCard dans MatiereEditor ; édition locale du seul énoncé via updateQuestion, sauvegarde CAS/relecture/publication existantes inchangées.
-- [ ] Valider QRC/QCM, erreurs, relecture, partage existant et copies figées sur simulations uniquement ; aucune publication ou donnée réelle.
+- [x] Carte identifiée : AdminExamQuestionCard dans MatiereEditor ; édition locale du seul énoncé via updateQuestion, sauvegarde CAS/relecture/publication existantes inchangées.
+- [x] 25 tests PASS, deux parcours PC/mobile vrai éditeur avec transport simulé : QRC/QCM, rechargement, variante VA liée, EB2/identités distinctes, copie figée, réponses inchangées, refus/retry. Build OK. Rapport docs/eb-enonce-clic-2026-11-12.md.
+- Écran apprenant authentifié et publication V2 complète non vérifiés ; aucun compte réel, aucune publication ou donnée réelle. Aucun autre chantier modifié.
 
 ## 12/11 10:49 — Révision Sécurité routière VTC
 - [x] Diagnostic SELECT : Q71 éditeur B, anciennes clés A ; Q226 D dans toutes les sources contrôlées, sélections C+D encore fausses. Cas individuel/cache inconnu ; aucun compte réel.
