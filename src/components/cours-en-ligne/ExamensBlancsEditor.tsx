@@ -115,23 +115,40 @@ function isStaleModuleEditorStateError(error: unknown): boolean {
 }
 
 
-async function saveExamModuleWithCas({
+/**
+ * Référence serveur d'un module, lue AVEC son contenu dans la même requête.
+ * - string : updated_at de la ligne dont le contenu est affiché ;
+ * - null   : non-existence explicitement vérifiée par une lecture réussie (création) ;
+ * - undefined : référence non vérifiée → aucune écriture.
+ */
+export type ReferenceServeurModule = string | null | undefined;
+
+export class ReferenceServeurNonVerifieeError extends Error {
+  constructor(moduleId: number) {
+    super(`Référence serveur non vérifiée pour le module ${moduleId} : aucune écriture envoyée. Rechargez l'éditeur ; votre saisie reste affichée.`);
+    this.name = "ReferenceServeurNonVerifieeError";
+  }
+}
+
+export async function saveExamModuleWithCas({
   moduleId,
   moduleData,
   expectedUpdatedAt,
 }: {
   moduleId: number;
   moduleData: Record<string, unknown>;
-  expectedUpdatedAt: string | null | undefined;
+  expectedUpdatedAt: ReferenceServeurModule;
 }): Promise<string> {
-  const fallbackSavedAt = new Date().toISOString();
+  // Garde AVANT toute écriture : jamais d'appel avec une référence inconnue
+  // (le serveur sauterait alors le contrôle de version) ni de date locale.
+  if (expectedUpdatedAt === undefined) throw new ReferenceServeurNonVerifieeError(moduleId);
   const { data, error } = await supabase.rpc("save_module_editor_state", {
     p_module_id: moduleId,
     p_module_data: moduleData as any,
     p_deleted_cours: [] as any,
     p_deleted_exercices: [] as any,
     p_source_fingerprint: null,
-    p_expected_updated_at: expectedUpdatedAt ?? null,
+    p_expected_updated_at: expectedUpdatedAt,
   });
 
   if (error) throw error;
@@ -151,7 +168,9 @@ async function saveExamModuleWithCas({
     throw e;
   }
   signalerContenuModifie(moduleId);
-  return relu.data.updated_at ?? ackUpdatedAt ?? fallbackSavedAt;
+  const reference = relu.data.updated_at ?? ackUpdatedAt;
+  if (!reference) throw new Error("Relecture serveur sans date de version : l'enregistrement n'est pas confirmé.");
+  return reference;
 }
 
 function hashCode(s: string): number {
@@ -397,9 +416,11 @@ export async function loadSavedExamens(
   /** Relevé figé : lignes lues dans le contenu figé à la fin des accès (jamais le contenu actuel). */
   lireLignesFigees?: (moduleIds: number[]) => Promise<Array<{ module_id: number; module_data: any; updated_at: string | null }>>,
   lectureSeuleSansJournal = false,
+  /** Rempli avec la référence updated_at lue DANS LA MÊME requête que le contenu (null = absence vérifiée). */
+  references?: Record<number, string | null>,
 ): Promise<ExamenBlanc[]> {
   if (lireLignesFigees) return fusionnerExamensFiges(await lireLignesFigees(cloneExamens(tousLesExamens).map((ex) => getModuleIdForExamId(ex.id))));
-  return loadSavedExamensActuels(notifyRepairs, undefined, lectureSeuleSansJournal);
+  return loadSavedExamensActuels(notifyRepairs, undefined, lectureSeuleSansJournal, references);
 }
 
 /** Même fusion que la version active, à partir de lignes figées : aucune lecture de la base. */
@@ -408,7 +429,7 @@ async function fusionnerExamensFiges(rows: Array<{ module_id: number; module_dat
   return loadSavedExamensActuels(false, rows);
 }
 
-async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Array<{ module_id: number; module_data: any; updated_at: string | null }>, sansJournal = false): Promise<ExamenBlanc[]> {
+async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Array<{ module_id: number; module_data: any; updated_at: string | null }>, sansJournal = false, references?: Record<number, string | null>): Promise<ExamenBlanc[]> {
   const tracerChargementExamens = (t: TraceChargement) => { if (!sansJournal) tracerLectureAvecJournal(t); };
   const examens = cloneExamens(tousLesExamens);
   // Date réelle de dernière écriture Admin enregistrée par la base : sert de
@@ -491,6 +512,16 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
         throw new ExamContentUnavailableError("Aucune version active enregistrée");
       }
       tracerChargementExamens({ phase: "relecture", session: "stable", premiere: "vide", relecture: "trouve" });
+    }
+
+    if (references && !lignesFigees && data) {
+      // Lecture réussie : chaque module lu porte sa référence ; un module absent
+      // de cette réponse est une non-existence vérifiée (null).
+      for (const id of moduleIds) references[id] = null;
+      for (const row of data as any[]) {
+        if (row?.updated_at) references[row.module_id] = row.updated_at;
+        else delete references[row.module_id];
+      }
     }
 
     if (data && data.length > 0) {
@@ -1402,7 +1433,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   // Tracks the DB `updated_at` this tab last saw for each module_id (from load or from
   // its own last successful save). Used to detect "another tab/session saved more
   // recently than what this tab knows about" before blindly overwriting it.
-  const lastKnownServerUpdatedAtRef = useRef<Record<number, string>>({});
+  const lastKnownServerUpdatedAtRef = useRef<Record<number, string | null>>({});
   const saveWaitersRef = useRef<Array<(ok: boolean) => void>>([]);
   const attendreSauvegarde = () => new Promise<boolean>((resolve) => {
     let fini = false;
@@ -1506,7 +1537,6 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
 
-      const now = new Date().toISOString();
       const writeOrigin = showSuccessToast ? "manuel" : "autosave";
       const changedModuleFingerprints: Record<number, string> = {};
       const rows = synced
@@ -1557,7 +1587,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
           persistedUpdatedAtByModule[row.module_id] = await saveExamModuleWithCas({
             moduleId: row.module_id,
             moduleData: row.module_data as Record<string, unknown>,
-            expectedUpdatedAt: lastKnownServerUpdatedAtRef.current[row.module_id] ?? null,
+            expectedUpdatedAt: lastKnownServerUpdatedAtRef.current[row.module_id],
           });
 
           const examenPublie = synced.find((ex) => getModuleIdForExamId(ex.id) === row.module_id);
@@ -1578,7 +1608,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
             toast.error("Le contenu est enregistré dans l'éditeur, mais sa nouvelle version V2 n'a pas pu être confirmée. Ne faites pas commencer une nouvelle tentative avant vérification.", { duration: 15000 });
             return false;
           }
-          if (isStaleModuleEditorStateError(error)) {
+          if (error instanceof ReferenceServeurNonVerifieeError) {
+            toast.error(error.message, { duration: 15000 });
+          } else if (isStaleModuleEditorStateError(error)) {
             toast.error(
               "Une version plus récente de cet examen existe en base. Rechargez la page avant de ré-enregistrer.",
               { duration: 10000 },
@@ -1603,7 +1635,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         ...changedModuleFingerprints,
       };
       for (const moduleId of moduleIdsToCheck) {
-        lastKnownServerUpdatedAtRef.current[moduleId] = persistedUpdatedAtByModule[moduleId] ?? now;
+        // Jamais de date locale : sans référence relue, le module redevient non vérifié.
+        if (persistedUpdatedAtByModule[moduleId]) lastKnownServerUpdatedAtRef.current[moduleId] = persistedUpdatedAtByModule[moduleId];
+        else delete lastKnownServerUpdatedAtRef.current[moduleId];
       }
 
       // RAFRAÎCHISSEMENT D'AFFICHAGE UNIQUEMENT : `synced` contient déjà la
@@ -1670,7 +1704,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
 
   useEffect(() => {
-    loadSavedExamens(true).catch((err) => {
+    const referencesLues: Record<number, string | null> = {};
+    loadSavedExamens(true, undefined, false, referencesLues).catch((err) => {
       console.error("[ExamensEditor] Chargement impossible", err);
       toast.error(EXAM_CONTENT_UNAVAILABLE_MESSAGE);
       return null;
@@ -1683,20 +1718,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
         acc[getModuleIdForExamId(ex.id)] = JSON.stringify(ex.matieres ?? []);
         return acc;
       }, {});
-      // Record the server's current updated_at per module so persistExamens can
-      // detect if another tab/session saves in between.
-      try {
-        const moduleIds = loadedExamens.map((ex) => getModuleIdForExamId(ex.id));
-        const { data } = await supabase
-          .from("module_editor_state")
-          .select("module_id, updated_at")
-          .in("module_id", moduleIds);
-        for (const row of (data as any[]) || []) {
-          lastKnownServerUpdatedAtRef.current[row.module_id] = row.updated_at;
-        }
-      } catch (err) {
-        console.error("[ExamensEditor] Error loading server updated_at map:", err);
-      }
+      // Référence = updated_at lu dans la MÊME requête que le contenu affiché.
+      // Pas de seconde lecture : elle pourrait renvoyer une date plus récente
+      // que le contenu chargé et autoriser l'écrasement d'une version plus récente.
+      lastKnownServerUpdatedAtRef.current = { ...referencesLues };
       initialLoadDoneRef.current = true;
     });
   }, []);
