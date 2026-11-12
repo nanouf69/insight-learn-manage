@@ -3561,8 +3561,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     !!templateId && templateId.startsWith('convocation-') && templateId !== 'convocation-examen';
   const habillerConvocation = (a: any, corps: string): { html: string; accesManquant: boolean } => {
     const sa = apprenantsInSession.find((x: any) => x.apprenant?.id === a.id) as any;
-    const presentiel = isPresentielType(a.type_apprenant, a.formation_choisie, a.creneau_horaire);
-    const isFC = isFormationContinueValue(a.type_apprenant, a.formation_choisie);
+    const isFC = isFormationContinue || isFormationContinueValue(a.type_apprenant, a.formation_choisie);
+    const presentiel = isFC || isPresentielType(a.type_apprenant, a.formation_choisie, a.creneau_horaire);
     const acces = calculerAccesCours({
       apprenant: a,
       isFC,
@@ -3576,7 +3576,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const html = construireConvocationHtml({
       civilite: a.civilite, prenom: a.prenom, nom: a.nom,
       referenceDossier: a.id ? `FT-${String(a.id).slice(0, 8).toUpperCase()}` : null,
-      intituleFormation: getFormationTypeLocal(a.type_apprenant),
+      intituleFormation: isFC ? session.title : getFormationTypeLocal(a.type_apprenant),
       presentiel,
       formationContinue: isFC,
       dateDebut: session?.dateDebut ? formatDateFr(session.dateDebut) : null,
