@@ -53,7 +53,7 @@ export function notesMatieresSession(def:ExamenBlanc,rows:any[],indisponible=fal
   const scores=rows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
   return Object.fromEntries(def.matieres.map(m=>{
     const row=findScoreForMatiere(scores,m);const note=row?noteExamenAffichee(row):null;
-    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...(row.__doublonConcordant?{doublon:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
+    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...((row as any).__doublonConcordant?{doublon:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
     return [m.id,value];
   }));
 }
