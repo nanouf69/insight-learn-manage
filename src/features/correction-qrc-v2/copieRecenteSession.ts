@@ -1,5 +1,6 @@
 import type { CoreMatiereState } from '@/lib/coreExamPublication';
 import { CORE_LECTURE_IMPOSSIBLE } from '@/lib/noteExamenAffichee';
+import { nativeResultMatchesAnswers, nativeSnapshotSupportsResult } from '@/lib/nativeExamResultIdentity';
 
 /** Read-only projection of an actual submitted attempt, never a linkage to legacy answers. */
 export function copieRecenteSession<T extends Record<string, any>>(row:T,states:CoreMatiereState[],nonFiables:Set<string>):T {
@@ -9,7 +10,12 @@ export function copieRecenteSession<T extends Record<string, any>>(row:T,states:
   if(!latest)return row;
   // A later legacy submission must not be replaced by an older native attempt.
   const legacyEnd=Date.parse(String(row.completed_at));
-  if(Number.isFinite(legacyEnd)&&legacyEnd>Date.parse(latest.finishedAt))return row;
+  // A result receipt is written AFTER submission. Its timestamp alone cannot
+  // establish a later copy when its complete frozen answers match this attempt.
+  // This only selects the attempt; it never creates a legacy/native linkage.
+  const receiptMatchesLatest=!latest.resultId&&nativeSnapshotSupportsResult(latest.questions)
+    &&nativeResultMatchesAnswers(latest,row.__preuveOriginaleDetails??row.details);
+  if(Number.isFinite(legacyEnd)&&legacyEnd>Date.parse(latest.finishedAt)&&!receiptMatchesLatest)return row;
   const impossible=nonFiables.has(latest.attemptId)||(!latest.pending&&(latest.status!=='definitif'||latest.note20===null||!Number.isFinite(latest.note20)));
   return {...row,
     id:latest.resultId??latest.provenResultIds?.[0]??latest.attemptId,

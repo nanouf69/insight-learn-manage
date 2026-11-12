@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 16:47 — Note Anis toujours masquée
+- [ ] Corriger la confusion remise/reçu de résultat avec preuve des réponses figées, vérifier EB4 réel en lecture seule ; aucune publication ni mutation des copies.
+
 ## 12/11 16:38 — Copie récente dans Notes par session
 - [x] Dernière remise V2 par apprenant/examen/matière projetée avec ses propres réponses et note, après cutoff de remise à zéro ; notes différentes/attente/zéro/égalité de date/sources conservées : 18 tests PASS, build OK. Aucune publication ni mutation réelle ; écran authentifié réel non vérifié.
 
