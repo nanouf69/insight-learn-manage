@@ -30,9 +30,13 @@ export function depsAttestation(db: SupabaseClient, opts: { authHeader?: string;
       return (data ?? []) as any;
     },
     async connexions(id) {
-      const { data, error } = await db.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(1);
-      if (error) throw error;
-      return (data ?? []) as any;
+      const [c, e] = await Promise.all([
+        db.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(500),
+        db.from("emargements_fc").select("id, date_emargement").eq("apprenant_id", id).eq("masque", false).eq("absent", false).not("signed_at", "is", null).not("signature_data_url", "is", null).order("date_emargement", { ascending: false }).limit(200),
+      ]);
+      if (c.error) throw c.error;
+      if (e.error) throw e.error;
+      return [...(c.data ?? []), ...(e.data ?? []).map((x: any) => ({ id: `emargement:${x.id}`, started_at: `${x.date_emargement}T11:00:00Z` }))] as any;
     },
     async signatureCentreDisponible() { return (await imageSignatureCentre(db)) !== null; },
     async findDocs(apprenantId) {

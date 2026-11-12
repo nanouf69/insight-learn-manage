@@ -26,3 +26,17 @@ describe("fin d'attestation limitée à la fin CRM", () => {
     expect(finFormationCrm(a, false)).toBe("2026-11-30");
   });
 });
+import { dateFinDepuisConnexions as dfc2 } from "../../supabase/functions/_shared/modeleAttestationFin";
+describe("Date de fin = dernier jour réel avant la date rouge", () => {
+  it("ignore une connexion après la fin CRM et prend le dernier jour avant", () => {
+    const r: any = dfc2({ dateDebut: "2026-09-14", dateLimiteCrm: "2026-10-31", connexions: [
+      { id: "c1", started_at: "2026-11-01T09:00:00Z" }, { id: "c2", started_at: "2026-10-20T09:00:00Z" }] });
+    expect(r.date).toBe("2026-10-20");
+  });
+  it("prend la pratique signée si elle est plus tardive que l'e-learning", () => {
+    const r: any = dfc2({ dateDebut: "2026-09-14", dateLimiteCrm: "2026-10-31", connexions: [
+      { id: "c2", started_at: "2026-10-20T09:00:00Z" }, { id: "emargement:x", started_at: "2026-10-28T11:00:00Z" }] });
+    expect(r.date).toBe("2026-10-28");
+    expect(r.source).toContain("signature");
+  });
+});
