@@ -9,7 +9,7 @@ import type { ResultatAcces } from "./accesCoursFenetre";
 /** Projection du mail uniquement : ne modifie ni modèle enregistré ni droits. */
 export function presentationConvocation(formationContinue: boolean, horaires?: string | null) {
   return {
-    horaires: formationContinue ? "9h–13h / 13h–17h" : horaires,
+    horaires: formationContinue ? "9h–12h / 13h–17h" : horaires,
     afficherAccesCours: !formationContinue,
   };
 }
