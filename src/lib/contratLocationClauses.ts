@@ -88,7 +88,7 @@ export function blocagesSignature(c: ContexteSignature): string[] {
 /** Champs essentiels de la version papier à signer : tout sauf les éléments réalisés au moment de la signature. */
 export function blocagesVersionASigner(c: Omit<ContexteSignature, "edlDepartSigne" | "consentementSpecifique" | "texteValideJuridiquement">): string[] {
   return blocagesSignature({ ...c, edlDepartSigne: true, consentementSpecifique: true, texteValideJuridiquement: true })
-    .filter(x => !/^Annexe assurance : (Location payante|Usage formation)/.test(x));
+    .filter(x => !/^Annexe assurance : Autorisation/.test(x));
 }
 
 export interface Article { titre: string; paragraphes: string[] }
