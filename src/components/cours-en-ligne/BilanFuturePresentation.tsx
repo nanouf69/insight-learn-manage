@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseQuestionPrompt, QcmChoiceButtons, ProgressionStep, QUESTION_IMAGE_SIZES, QuizScoreSummary } from "./learnerQuizUi";
 import { ExamQuestionImage } from "./ExamQuestionImage";
-import { useAccesComplementVtc } from "./BilanVtcComplements";
+import { useAccesComplementVtc, useRemisesComplementsVtc } from "./BilanVtcComplements";
 
 export const NOMS_MATIERES_BILAN = ["Réglementation T3P", "Gestion", "Sécurité routière", "Français", "Anglais"];
 export type QuestionBilanPresentation = { id: number; enonce: string; image?: string; imageSize?: string; support?: { numero: number; paragraphes: string[] }; choix?: { lettre: string; texte: string }[] };
@@ -10,12 +10,28 @@ export type QuestionBilanPresentation = { id: number; enonce: string; image?: st
 /** Presentation only: no reads, effects, receipts or persistence. */
 export function BilanMatiereSteps({ current, submitted, onSelect }: { current: number; submitted: boolean[]; onSelect: (index: number) => void }) {
   const ouvrirComplement = useAccesComplementVtc();
+  const remises = useRemisesComplementsVtc();
   return <div className="space-y-1.5">{NOMS_MATIERES_BILAN.map((nom, i) => <ProgressionStep key={nom} label={`📝 Quiz — ${nom}`} current={current === i} completed={submitted[i] === true} unlocked isLast={i === 4 && !ouvrirComplement} badge="quiz" onClick={() => onSelect(i)} />)}
     {ouvrirComplement && <>
-      <ProgressionStep label="F(V) — Développement commercial" current={false} completed={false} unlocked isLast={false} badge="quiz" onClick={() => ouvrirComplement(505)} />
-      <ProgressionStep label="G(V) — Réglementation spécifique" current={false} completed={false} unlocked isLast badge="quiz" onClick={() => ouvrirComplement(506)} />
+      <ProgressionStep label="F(V) — Développement commercial" current={false} completed={remises.rows[505]?.submitted === true} unlocked isLast={false} badge="quiz" onClick={() => ouvrirComplement(505)} />
+      <ProgressionStep label="G(V) — Réglementation spécifique" current={false} completed={remises.rows[506]?.submitted === true} unlocked isLast badge="quiz" onClick={() => ouvrirComplement(506)} />
     </>}
   </div>;
+}
+export function BilanRemisesRecap({ matieres }: { matieres: ({ submitted: boolean; correct?: number; total?: number } | undefined)[] }) {
+  const complements=useRemisesComplementsVtc();
+  const enabled=useAccesComplementVtc();
+  if (!enabled) return null;
+  const ae=matieres.filter(m=>m?.submitted).length;
+  const fg=[505,506].filter(id=>complements.rows[id]?.submitted).length;
+  return <section className="space-y-2 border-t border-border pt-3" aria-label="Récapitulatif des remises">
+    <h3 className="font-semibold">Récapitulatif des remises</h3>
+    <p className="text-sm">{complements.state==='ready' ? `${ae+fg}/7 matières remises — A–E : ${ae}/5 ; F/G : ${fg}/2` : `A–E : ${ae}/5 matières remises ; F/G : ${complements.state==='loading' ? 'lecture en cours' : 'lecture indisponible'}`}</p>
+    <ul className="space-y-1 text-sm">{NOMS_MATIERES_BILAN.map((nom,i)=><li key={nom}>{nom} — {!matieres[i] ? 'État indisponible' : matieres[i]?.submitted ? `Remis${matieres[i]?.correct != null && matieres[i]?.total != null ? ` : ${matieres[i]?.correct}/${matieres[i]?.total} bonnes réponses` : ' — résultat indisponible'}` : 'Non remis'}</li>)}
+      {[505,506].map(id=>{const r=complements.rows[id];return <li key={id}>{id===505?'F(V) — Développement commercial':'G(V) — Réglementation spécifique'} — {complements.state!=='ready' ? 'Lecture indisponible' : r?.submitted ? `Remis${r.correct!=null && r.total!=null ? ` : ${r.correct}/${r.total} bonnes réponses` : ' — résultat indisponible'}` : 'Non remis'}</li>;})}
+    </ul>
+    <p className="text-xs text-muted-foreground">Résultat pondéré : A–E uniquement. F/G : remises originales, hors calcul de la moyenne A–E.</p>
+  </section>;
 }
 export function BilanMatiereCard({ nom, tools, children }: { nom: string; tools?: ReactNode; children: ReactNode }) {
   return <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;
