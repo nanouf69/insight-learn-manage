@@ -596,6 +596,8 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   ];
 
   return (
+    <>
+    <AttestationFinValideePanel apprenant={apprenant} />
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -862,6 +864,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         )}
       </CardContent>
     </Card>
+    </>
   );
 }
 
