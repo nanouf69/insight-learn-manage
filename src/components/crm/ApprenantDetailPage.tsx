@@ -2,6 +2,7 @@ import { ChoixPratiqueBadges } from "@/components/crm/apprenant-sections/ChoixPr
 import { SignaturesPlanningResume } from "./apprenant-sections/SignaturesPlanningResume";
 import { ReactiverPlateformeTab } from "./apprenant-sections/ReactiverPlateformeTab";
 import { useState, useEffect, useMemo, useRef } from "react";
+import { AttestationFinFormationTab } from "@/components/crm/attestation-fin-validee/AttestationFinFormationTab";
 import { RemarquesApprenant } from "@/components/crm/apprenant-sections/RemarquesApprenant";
 import { useNavigate } from "react-router-dom";
 import { EdofFinFormationTab } from "@/components/crm/apprenant-sections/EdofFinFormationTab";
@@ -1240,6 +1241,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
           <TabsTrigger value="edof-fin" className="text-sm">EDOF déjà validé</TabsTrigger>
           <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
+          <TabsTrigger value="attestation-fin" className="text-sm font-semibold">Attestation de fin de formation</TabsTrigger>
           <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
           <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
           <TabsTrigger value="examens" className="text-sm">Examens</TabsTrigger>
@@ -1383,6 +1385,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           }} />}
           {activeTab === "controle" && <ControleQualiteTab apprenant={apprenant} />}
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
+          {activeTab === "attestation-fin" && <AttestationFinFormationTab apprenant={apprenant} />}
           {activeTab === "dossier" && <DocumentsDossier apprenant={apprenant} />}
           {activeTab === "docs-inscription" && <DocumentsInscription apprenant={apprenant} />}
           {activeTab === "examens" && (<div className="space-y-4"><ExamensSection apprenant={apprenant} /><PreuvesExamensBlancsCard apprenantId={apprenant.id} typeApprenant={apprenant.type_apprenant} formationChoisie={apprenant.formation_choisie} /></div>)}
