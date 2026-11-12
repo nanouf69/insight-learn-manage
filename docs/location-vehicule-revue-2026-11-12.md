@@ -84,3 +84,6 @@ Texte intégral : `src/lib/contratLocationClauses.ts` (art. 5 dépôt, 6 états 
 - Code de la route L121-6 (désignation du conducteur) ; C. civ. 2224 (prescription, durée RGPD) ; CNIL (réclamation).
 Sources complémentaires : https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032041571 (C. route L121-6), https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000019017112 (C. civ. 2224), https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032224816 (L616-1).
 À vérifier par un juriste : délais (15 j, 48 h, 30 min), base de l'indemnité de retard, présomption art. 6.1, durées de conservation, médiateur, qualification formation/location (prestation liée ou location autonome), autorisation de l'assureur.
+
+## Police AXA KIA HK-870-BF (12/11/2026, données dictées, PDF non téléversés)
+Registre `src/lib/assurancesVehicules.ts` : police 10832847704, CP effet 30/07/2026, attestation 21/08/2026 (01/05/2026–30/04/2027), usage auto-école sous garde du moniteur. Statut : location non autorisée sans confirmation écrite AXA ; CG 460.002I / 460.003E / 460.004C / 460.005A absentes, aucune exclusion supposée ; police jamais réutilisée pour le Sharan.
