@@ -9,7 +9,7 @@ class Access(unittest.TestCase):
  def setUpClass(c):
   c.d=tempfile.mkdtemp(prefix='session-exam-',dir='/tmp');os.chown(c.d,1000,1000)
   c.env={k:v for k,v in os.environ.items() if not k.startswith('PG')};c.addClassCleanup(c.cleanup)
-  for cmd in [AS+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale'],AS+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55489 -h ""','-w','start']]:subprocess.run(cmd,env=c.env,check=True,capture_output=True)
+  for cmd in [AS+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale','--encoding=UTF8'],AS+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55489 -h ""','-w','start']]:subprocess.run(cmd,env=c.env,check=True,capture_output=True)
   c.sql("CREATE ROLE authenticated;CREATE ROLE anon;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;GRANT USAGE ON SCHEMA auth TO authenticated;")
   cat=json.loads(Path('src/test/fixtures/subject-reset-catalog-20261111.json').read_text());c.sql(cat['schema'])
   for f in cat['functions']:c.sql(f)
