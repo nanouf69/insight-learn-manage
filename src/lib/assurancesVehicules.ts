@@ -96,7 +96,7 @@ export function lignesAnnexePolice(p: PoliceVehicule, perim?: PerimetreValide): 
   return [
     `Police propre au véhicule ${p.immatriculation} – ${p.vehicule}. Version : ${p.versionCp} ; attestation du ${p.attestationDu.split("-").reverse().join("/")}.`,
     `Usage déclaré à l'assureur : ${p.usageDeclare}.`,
-    `STATUT : ${statut ? statut.texte : `usage location à confirmer par écrit par AXA. ${STATUT_LOCATION_NON_AUTORISEE}.`} Les garanties ci-dessous s'appliquent dans les conditions et exclusions de la police.`,
+    `STATUT : ${statut ? statut.texte : `usage location à confirmer par écrit par AXA. ${STATUT_LOCATION_NON_AUTORISEE}.`} ${statut?.niveau === "ecrit" ? "Les garanties ci-dessous s'appliquent dans les conditions et exclusions de la police." : "Les garanties ci-dessous ne sont pas présumées applicables à une location tant que l'assureur ne l'a pas confirmé par écrit."}`,
     ...(perim ? [`Périmètre indiqué : conduite avec moniteur seulement : ${tri(perim.avecMoniteur)} ; formation : ${tri(perim.formation)} ; usage professionnel : ${tri(perim.usageProfessionnel)} ; location payante : ${tri(perim.locationPayante)}.`] : []),
     ...p.garanties.map(x => `${x.libelle} : ${x.souscrite === false ? "NON souscrite" : x.souscrite === "legale" ? "régime légal" : "souscrite"}${x.souscrite === false ? "" : ` – franchise par sinistre : ${x.franchise}`}${x.plafond ? ` – plafond : ${x.plafond}` : ""}.`),
     `Documents référencés non fournis (exclusions non supposées) : ${p.documentsReferencesAbsents.join(", ")}.`,
