@@ -1354,7 +1354,7 @@ export function resolveExamPassage({
     && r.exercice_id === buildExamMatiereExerciceId(examId, r.matiere_id, r.tentative));
   const isolatedIds = new Set(receipts.map(r => r.exercice_id));
   const answers = allAnswers.filter(r => !isolatedIds.has(safeStr(r.exercice_id)));
-  const results = allResults.filter(row => !receipts.some(r => row.matiere_id === r.matiere_id
+  const results = allResults.filter((row: any) => !receipts.some(r => row.matiere_id === r.matiere_id
     && getAttemptNumber(row) === r.tentative));
 
   const occupiedExerciceIds = new Set(allAnswers.map((row) => safeStr(row.exercice_id)));
