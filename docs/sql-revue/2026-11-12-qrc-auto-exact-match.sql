@@ -11,7 +11,7 @@ SET search_path TO 'pg_catalog', 'public' AS $$
   SELECT btrim(regexp_replace(
            regexp_replace(
              regexp_replace(lower(public.unaccent(coalesce(p, ''))), '([0-9])\s*[,.]\s*([0-9])', '\1#\2', 'g'),
-             '[[:space:].,;:!?"''’‘`«»()\[\]…_]+|(?<![0-9])-(?![0-9])|-$', ' ', 'g'),
+             '[[:space:].,;:!?"''’‘`«»()\[\]…_]+|(?<![0-9])-(?![0-9])', ' ', 'g'),
            '\s+', ' ', 'g'))
 $$;
 
