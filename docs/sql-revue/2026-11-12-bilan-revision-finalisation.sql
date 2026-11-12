@@ -18,7 +18,7 @@ BEGIN
     OR s->>'owner' IS DISTINCT FROM r.apprenant_id::text
     OR jsonb_typeof(s->'questions') IS DISTINCT FROM 'array' OR jsonb_array_length(s->'questions')=0
     OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(s->'questions') q WHERE
-       NOT EXISTS(SELECT 1 FROM public.bilan_future_questions(rec.id)->'questions' qs WHERE qs->>'id'=q)) THEN
+       NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.bilan_future_questions(rec.id)->'questions') qs WHERE qs->>'id'=q)) THEN
     RAISE EXCEPTION 'Source de reprise non confirmée' USING ERRCODE='P0557';
   END IF;
   IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(s->'questions') q WHERE
