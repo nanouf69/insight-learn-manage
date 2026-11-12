@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
+import { supabase } from "@/integrations/supabase/client";
+import { dateFinDepuisConnexions } from "@/lib/attestationFinValidee/dateFin";
 import { isElearningType } from "@/lib/dossierFormation";
 import { eligibiliteAttestation, libelleMotif } from "@/lib/attestationFinValidee/eligibilite";
 import { texteAttestation, champsManquants, empreinteAttestation, referenceAttestation } from "@/lib/attestationFinValidee/modele";
@@ -19,8 +21,12 @@ export function AttestationFinValideePanel({ apprenant }: { apprenant: any }) {
   const q = useQuery({
     queryKey: ["attestation-fin-validee", apprenant.id],
     queryFn: async () => {
-      const [etats, taux] = await Promise.all([chargerEtatCompletionServeur(apprenant.id), chargerApprenantTauxRealisation(apprenant.id, apprenant)]);
-      return { etats, taux };
+      const [etats, taux, cnx] = await Promise.all([
+        chargerEtatCompletionServeur(apprenant.id),
+        chargerApprenantTauxRealisation(apprenant.id, apprenant),
+        supabase.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", apprenant.id).order("started_at", { ascending: false }).limit(1),
+      ]);
+      return { etats, taux, connexions: cnx.error ? null : (cnx.data ?? []) };
     },
     staleTime: 0,
   });
@@ -34,15 +40,17 @@ export function AttestationFinValideePanel({ apprenant }: { apprenant: any }) {
     elearning: elearning ? { faites: t ? t.doneElearning : null, minimum: t ? t.reqElearning : null } : null,
     presentiel: !elearning ? { signees: t?.signatures?.signees ?? null, attendues: t?.signatures?.attendues ?? null } : null,
   });
+  const derniereValidation = q.data ? ids.map(id => q.data!.etats.get(id)?.completed_at ?? null).reduce<string | null>((a, b) => (a === "" || b == null ? "" : a == null || b > a ? b : a), null) || null : null;
+  const fin = dateFinDepuisConnexions({ connexions: q.data?.connexions ?? null, dateDebut: apprenant.date_debut_formation ?? null, derniereValidation });
   const champs = {
     representant, nom: apprenant.nom ?? null, prenom: apprenant.prenom ?? null,
     formation: apprenant.formation_choisie ?? apprenant.type_apprenant ?? null, modalite: elearning ? "e-learning" : "présentiel",
-    dateDebut: apprenant.date_debut_formation ?? null, dateFin: apprenant.date_fin_formation ?? null,
+    dateDebut: apprenant.date_debut_formation ?? null, dateFin: fin.etat === "ok" ? fin.date : null,
     dureeHeures: typeof apprenant.heures_totales === "number" ? apprenant.heures_totales : null,
     dateEmission: new Date().toISOString().slice(0, 10),
   };
   const manquants = champsManquants(champs);
-  const lignes = elig.eligible ? texteAttestation(champs) : null;
+  const lignes = elig.eligible && fin.etat === "ok" ? texteAttestation(champs) : null;
   const emp = useQuery({ queryKey: ["aff-emp", apprenant.id, lignes?.join("|")], enabled: !!lignes, queryFn: () => empreinteAttestation(lignes!, apprenant.id) });
 
   return (
@@ -51,7 +59,7 @@ export function AttestationFinValideePanel({ apprenant }: { apprenant: any }) {
         <CardTitle className="text-base flex flex-wrap items-center gap-2">
           <ShieldCheck className="h-5 w-5" /> Attestation de fin de formation validée
           <Badge variant="outline">Aperçu — non publié</Badge>
-          <Badge variant={elig.eligible ? "default" : "destructive"}>{elig.eligible ? (manquants.length ? "À vérifier" : "Brouillon") : "Bloquée"}</Badge>
+          <Badge variant={elig.eligible && fin.etat === "ok" ? "default" : "destructive"}>{elig.eligible && fin.etat === "ok" ? (manquants.length ? "À vérifier" : "Brouillon") : "Bloquée"}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -62,7 +70,12 @@ export function AttestationFinValideePanel({ apprenant }: { apprenant: any }) {
             {q.isError && <Button size="sm" variant="outline" className="mt-2 min-h-11" onClick={() => q.refetch()}><RefreshCw className="h-4 w-4 mr-1" />Réessayer</Button>}
           </div>
         )}
-        {elig.eligible && (
+        {q.data && (
+          <p className={fin.etat === "ok" ? "text-muted-foreground" : "text-destructive font-medium"}>
+            Date de fin : {fin.etat === "ok" ? `${fin.date.split("-").reverse().join("/")} — source : ${fin.source} (connexion du ${new Date(fin.startedAt).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}, réf. ${fin.connexionId.slice(0, 8)})` : fin.raison}
+          </p>
+        )}
+        {elig.eligible && fin.etat === "ok" && (
           <>
             <label className="block space-y-1"><span className="font-medium">Représentant du centre (signataire)</span>
               <Input value={representant} onChange={e => setRepresentant(e.target.value)} placeholder="Nom et prénom du responsable" /></label>
