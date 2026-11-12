@@ -78,23 +78,20 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
   const ids = [...new Set((a.modules_autorises ?? []).map(Number).filter(Number.isFinite))];
   let etats: EtatModuleSrv[];
   let cnx: { id: string; started_at: string | null }[] | null;
-  try { etats = await deps.etatModules(a.id); } catch { return bloque(["Lecture des modules impossible : réessayez."]); }
+  // Modules lus pour la piste d'audit uniquement (non bloquants depuis le 12/11/2026).
+  try { etats = await deps.etatModules(a.id); } catch { etats = []; }
   try { cnx = await deps.connexions(a.id); } catch { cnx = null; }
   const parId = new Map(etats.map((x) => [Number(x.module_id), x]));
   const heures = elearning ? { faites: num(e.heures?.faites), minimum: num(e.heures?.minimum) } : null;
   const pres = !elearning ? { signees: num(e.signaturesPresentiel?.signees), attendues: num(e.signaturesPresentiel?.attendues) } : null;
-  const elig = eligibiliteAttestation({
-    modulesAttribues: ids,
-    modules: ids.map((id) => { const m = parId.get(id); return { id, nom: "", statutEffectif: m?.status_effectif ?? null, preuveComplete: m?.preuve_complete ?? null }; }),
-    elearning: heures, presentiel: pres,
-  });
+  const elig = eligibiliteAttestation({ elearning: heures, presentiel: pres });
   const derniereValidation = derniereValidationModules(ids, (id) => parId.get(id)?.completed_at);
   const dateDebut = debutFormation(a, elearning);
   const fin = dateFinDepuisConnexions({ connexions: cnx, dateDebut, derniereValidation });
   const raisons = elig.motifs.map(libelleMotif);
   if (fin.etat !== "ok") raisons.push(fin.raison);
   if (raisons.length) return bloque(raisons);
-  if (fin.etat !== "ok" || !derniereValidation) return bloque(["Date de fin indisponible."]);
+  if (fin.etat !== "ok") return bloque(["Date de fin indisponible."]);
 
   const now = deps.now();
   const dateEmission = dateParis(now.getTime());
@@ -110,7 +107,7 @@ export async function preparer(deps: DepsAtt, e: EntreePreparer) {
 
   const contenu: TexteFigeAttestation = {
     version: VERSION_MODELE, lignes: texteAttestation(champs)!,
-    modules: ids.map((id) => { const m = parId.get(id)!; return { id, statut: m.status_effectif, preuve_complete: m.preuve_complete, completed_at: m.completed_at }; }),
+    modules: ids.map((id) => { const m = parId.get(id); return { id, statut: m?.status_effectif ?? null, preuve_complete: m?.preuve_complete ?? null, completed_at: m?.completed_at ?? null }; }),
     sources: {
       date_fin: { connexion_id: fin.connexionId, started_at: fin.startedAt, source: fin.source },
       derniere_validation: derniereValidation,
@@ -157,13 +154,6 @@ export async function envoyer(deps: DepsAtt, docId: string, adminId: string) {
   if (!a) return { etat: "bloque" as const, raison: "Dossier introuvable." };
   if (a.emails_bloques) return { etat: "bloque" as const, raison: "Les e-mails sont bloqués pour ce dossier." };
   if ((a.email || "").trim().toLowerCase() !== String(d.identite_figee.email).toLowerCase()) return { etat: "bloque" as const, raison: "L'adresse e-mail du dossier a changé depuis la préparation." };
-  // Recontrôle : un module figé « validé » doit l'être encore.
-  let etats: EtatModuleSrv[];
-  try { etats = await deps.etatModules(a.id); } catch { return { etat: "bloque" as const, raison: "Lecture des modules impossible : réessayez." }; }
-  const fige = JSON.parse(d.texte_fige) as TexteFigeAttestation;
-  const regression = fige.modules.find((m) => { const x = etats.find((y) => Number(y.module_id) === m.id); return !x || x.status_effectif !== "completed" || x.preuve_complete !== true; });
-  if (regression) return { etat: "bloque" as const, raison: `Module ${regression.id} n'est plus validé : envoi refusé.` };
-
   const claim = await deps.updateIf(d.id, { envoi_etat: "envoi_en_cours", envoi_tente_le: deps.now().toISOString(), envoi_erreur: null }, { envoi_etat: "prepare" });
   if (claim.error || claim.rows.length !== 1) return { etat: "non_disponible" as const, raison: "Envoi déjà en cours ailleurs." };
   let r: IssueEnvoi;

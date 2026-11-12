@@ -29,8 +29,6 @@ export function useApercuAttestation(apprenant: any) {
   const signatures = !elearning ? { signees: t?.signatures?.signees ?? null, attendues: t?.signatures?.attendues ?? null } : null;
   const elig = eligibiliteAttestation({
     lectureErreur: q.isError ? "suivi pédagogique illisible" : q.isLoading ? "chargement en cours" : (q.data && !t ? "heures indisponibles" : null),
-    modulesAttribues: ids,
-    modules: q.data ? ids.map(id => { const e = q.data!.etats.get(id); return { id, nom: "", statutEffectif: e?.status_effectif ?? null, preuveComplete: e?.preuve_complete ?? null }; }) : null,
     elearning: heures, presentiel: signatures,
   });
   const derniereValidation = q.data ? derniereValidationModules(ids, id => q.data!.etats.get(id)?.completed_at ?? null) : null;
