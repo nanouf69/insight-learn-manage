@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { attestationFinaleProuvee, jalonsIntegralementProuves } from "@/lib/attestationFinValidee/presentation";
+import { elementsRestantAValider, intituleAttestation, motifSansDuree } from '@/lib/attestationFinValidee/redactionPresentation';
 const p = { apprenantId: "fixture", sourceId: "server-proof", verifieLe: "2026-11-12T17:01:00Z", jalonsObligatoires: 7, jalonsValides: 7, validationsRequisesConfirmees: true };
 const signature = { nom: "Fixture", image: "existing-image", le: p.verifieLe, autorisationId: "explicit-authorization", tampon: "existing-stamp" };
 describe("attestation presentation proof", () => {
+  it('le détail pédagogique vient du verdict serveur ; une lecture absente ne devient pas un module manquant',()=>{
+    const etat = {module_id:3,status:null,status_effectif:null,completed_at:null,questions_requises:0,questions_prouvees:0,preuve_complete:false,progress_effectif:0};
+    expect(elementsRestantAValider([{id:3,nom:'3.FORMULES'}],new Map([[3,etat]]))).toEqual([{nom:'3.FORMULES',statut:'Validation non enregistrée'}]);
+    expect(elementsRestantAValider([{id:3,nom:'3.FORMULES'}],new Map())).toBeNull();
+    expect(elementsRestantAValider([{id:3,nom:'3.FORMULES'}],new Map([[3,{...etat,status_effectif:'completed',preuve_complete:true}]]))).toEqual([]);
+  });
+  it('aucun motif de durée ne passe dans la présentation',()=>{
+    expect(motifSansDuree('38h11 / 60h')).toBe(false);
+    expect(motifSansDuree('Heures manquantes')).toBe(false);
+    expect(motifSansDuree('Durée à compléter')).toBe(false);
+    expect(motifSansDuree('Identité à vérifier')).toBe(true);
+  });
   it("Léa 3/7 et 98,9% ne prouvent pas tous les jalons", () => {
     expect(jalonsIntegralementProuves({ ...p, jalonsValides: 3 }, "fixture")).toBe(false);
     expect(jalonsIntegralementProuves({ ...p, jalonsValides: 6.923 }, "fixture")).toBe(false);

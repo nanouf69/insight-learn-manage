@@ -9,9 +9,10 @@ import "@/index.css";
 function Harness() {
   const [blob, setBlob] = useState<Blob | null>(null);
   const exportPdf = async (complete: boolean) => {
-    const b = await genererPdfPresentation({ apprenantId: "fixture", prenom: "Camille", nom: "EXEMPLE FICTIF", formation: "VTC", modalite: "e-learning",
+    const b = await genererPdfPresentation({ apprenantId: "fixture", prenom: "Camille", nom: "EXEMPLE FICTIF", formation: "vtc-elearning", modalite: "e-learning",
       debut: "2026-09-14", fin: "2026-10-19", dateEmission: "2026-11-12", sourceFin: "connexion fictive vérifiée du 19/10/2026 à 14:30",
-      motifs: complete ? [] : ["Parcours incomplet"], preuve: complete ? { apprenantId: "fixture", sourceId: "fixture-only", verifieLe: "2026-11-12T17:01:00Z", jalonsObligatoires: 7, jalonsValides: 7, validationsRequisesConfirmees: true } : null });
+      elementsPedagogiques:complete ? [] : [{nom:'3.FORMULES',statut:'Validation non enregistrée'}],
+      motifs: complete ? [] : ["38h11 / 60h", "Durée à compléter"], preuve: complete ? { apprenantId: "fixture", sourceId: "fixture-only", verifieLe: "2026-11-12T17:01:00Z", jalonsObligatoires: 7, jalonsValides: 7, validationsRequisesConfirmees: true } : null });
     setBlob(b);
   };
   return <main className="max-w-3xl mx-auto p-4 space-y-4">
