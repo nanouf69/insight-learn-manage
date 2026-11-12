@@ -14,7 +14,7 @@ export function BilanMatiereCard({ nom, tools, children }: { nom: string; tools?
   return <Card className="scroll-mt-4 transition-all"><CardContent className="p-6 space-y-4"><div className="flex items-center justify-between gap-2 flex-wrap"><h3 className="text-lg font-bold">📝 {nom}</h3>{tools}</div>{children}</CardContent></Card>;
 }
 export function BilanQuestionCard({ question: q, index, selected = [], disabled, showResults = false, correct, wrong = false, missing = false, anchor, onSelect }: { question: QuestionBilanPresentation; index: number; selected?: string[]; disabled: boolean; showResults?: boolean; correct?: string[]; wrong?: boolean; missing?: boolean; anchor?: string; onSelect?: (letter: string) => void }) {
-  const prompt = q.support ? `Support ${q.support.numero}\n${q.support.paragraphes.join("\n\n")}\n\n${q.enonce}` : q.enonce;
+  const prompt = q.support ? { question: q.enonce, passageTitle: `Texte ${q.support.numero}`, passageBody: q.support.paragraphes.join("\n\n") } : { question: q.enonce };
   return <div id={anchor} data-learner-question data-answer-scroll-anchor data-question-id={q.id} data-question-faute={wrong ? "1" : undefined} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${wrong ? 'border-destructive border-4 bg-destructive/10' : missing ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
     <ExerciseQuestionPrompt questionNumber={index + 1} prompt={prompt} />
     {q.image && <ExamQuestionImage image={q.image} alt="Illustration" className={`${QUESTION_IMAGE_SIZES[q.imageSize ?? "sm"] ?? "max-h-40"} rounded border object-contain ml-2`} fallbackClassName="ml-2 text-xs text-muted-foreground italic" />}
