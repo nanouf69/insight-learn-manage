@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import ExamensBlancsEditor from "@/components/cours-en-ligne/ExamensBlancsEditor";
+import ExamensBlancsEditor, { loadSavedExamens } from "@/components/cours-en-ligne/ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMatiereForScoring } from "@/components/cours-en-ligne/examens-blancs-scoring";
 import "@/index.css";
@@ -46,7 +46,8 @@ const session = { user: { id: "simulated-only" }, access_token: "fictif", refres
 };
 (window as any).promptTest = {
   calls, fail: (v: boolean) => { fail = v; }, rows: () => structuredClone(rows),
+  readActive: () => loadSavedExamens(false, undefined, true),
   frozen: () => resolveMatiereForScoring(rows[0].module_data.matieres[0], { snapshot: { ...original, version: 1, matiereId: original.id, questions: original.questions.map((q, ordre) => ({ ...q, ordre, points: 1 })) } }),
 };
 const root = document.getElementById("root");
-if (root) createRoot(root).render(<main className="p-4"><ExamensBlancsEditor defaultExamenId="EB1" onBack={() => {}} /></main>);
+if (root) createRoot(root).render(<main className="p-4"><ExamensBlancsEditor defaultExamenId={new URLSearchParams(location.search).get("exam") ?? "EB1"} onBack={() => {}} /></main>);
