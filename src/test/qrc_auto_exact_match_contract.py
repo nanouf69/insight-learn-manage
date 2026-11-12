@@ -75,7 +75,7 @@ RESET ROLE; RESET SESSION AUTHORIZATION;"""
 class AutoExact(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.pg = Pg(); cls.pg.sql(SCHEMA); cls.pg.sql(LIVE.read_text()); cls.pg.sql(TRIGGERS); cls.pg.sql(MIG.read_text())
+        cls.pg = Pg(); cls.pg.sql(SCHEMA); cls.pg.sql("SET check_function_bodies = off;\n" + LIVE.read_text()); cls.pg.sql(TRIGGERS); cls.pg.sql(MIG.read_text())
     @classmethod
     def tearDownClass(cls): cls.pg.stop()
 
