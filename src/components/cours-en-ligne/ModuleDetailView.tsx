@@ -7263,7 +7263,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const cibleComplementEnAttente = complementsVtc && cibleComplement != null && selectionComplementAppliquee.current !== cibleComplement.selection;
     useEffect(() => {
       if (!uiStateHydrated || !cibleComplementEnAttente || !cibleComplement) return;
-      const target = pages.findIndex(p => p.type === "exercice-single" && Number(p.exercice.id) === cibleComplement.exerciceId);
+      const target = pages.findIndex(p => cibleComplement.exerciceId === 1794399472264
+        ? p.type === "cours" && Number(p.cours.id) === 1794399472264
+        : p.type === "exercice-single" && Number(p.exercice.id) === cibleComplement.exerciceId);
       if (target < 0) return;
       selectionComplementAppliquee.current = cibleComplement.selection;
       complementCibleApplique.current = true;

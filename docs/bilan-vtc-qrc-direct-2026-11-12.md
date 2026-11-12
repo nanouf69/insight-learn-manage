@@ -1,0 +1,8 @@
+# Accès direct Questions QRC VTC
+
+- Diff séparé après `aee1e42fbbe7127512f4f64fb9d1111597f4dfe2` : trois fichiers fonctionnels (BilanFuturePresentation, BilanVtcComplements, ModuleDetailView), test existant enrichi et documentation.
+- Ajout d'une entrée Questions QRC VTC après Anglais/F/G dans les étapes partagées du nouveau Bilan module 5. Aucun changement des remises, compteurs/notes F/G, H, TAXI ou SQL.
+- Cible : cours original 1794399472264 ; aucun ciblage de 9001. Même moteur legacy, même carte et lien historique `https://quick-qna-engine.lovable.app`. La sélection utilise le type cours + ID exact après hydratation, annule seulement une restauration locale de page devenue périmée, pas les réponses ni preuves. Retour A–E existant conservé.
+- 10 tests Vitest PASS (un nouveau scénario ciblage QRC/F/QRC + neuf régressions). Quatre parcours Playwright PC/mobile × élève/admin PASS : ordre des boutons Anglais < F < G < QRC, clic direct, lien historique ouvert dans un nouvel onglet intercepté, F/retour/QRC, rechargement avec ancienne page puis reciblage QRC. Zéro transport mutateur observé ; admin sans ouverture future. Images carte PC élève/mobile admin examinées.
+- Toutes données fictives, appels externes interceptés, aucun compte réel, aucune écriture réelle, publication ou envoi. Compilation aperçu : build OK.
+- Le contenu du site externe n'est pas vérifié : seul son lien exact et le clic sont prouvés. Rendu et accès du dossier réel non vérifiés sans capture/session réelle ; aucun test de ces droits n'a été réalisé.

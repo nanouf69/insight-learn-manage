@@ -19,8 +19,8 @@ export function projeterRemisesComplements(rows: { exercice_id: string; status?:
   return { state: 'ready', rows: result };
 }
 
-export type CibleComplementVtc = { exerciceId: 505 | 506; selection: number };
-const AccesComplementContext = createContext<((id: 505 | 506) => void) | null>(null);
+export type CibleComplementVtc = { exerciceId: 505 | 506 | 1794399472264; selection: number };
+const AccesComplementContext = createContext<((id: CibleComplementVtc['exerciceId']) => void) | null>(null);
 export const useAccesComplementVtc = () => useContext(AccesComplementContext);
 /** Keep the future passage mounted, then mount the existing legacy renderer on demand. */
 export function BilanVtcComplements({ future, legacy, apprenantId }: { future: ReactNode; legacy: (cible: CibleComplementVtc | null) => ReactNode; apprenantId?: string }) {
@@ -41,7 +41,7 @@ export function BilanVtcComplements({ future, legacy, apprenantId }: { future: R
   const [ouvert, setOuvert] = useState(false);
   const [visite, setVisite] = useState(false);
   const [cible, setCible] = useState<CibleComplementVtc | null>(null);
-  const ouvrirExercice = (exerciceId: 505 | 506) => {
+  const ouvrirExercice = (exerciceId: CibleComplementVtc['exerciceId']) => {
     setCible(prev => ({ exerciceId, selection: (prev?.selection ?? 0) + 1 }));
     setVisite(true);
     setOuvert(true);

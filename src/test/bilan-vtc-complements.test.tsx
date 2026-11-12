@@ -8,6 +8,19 @@ import { BilanMatiereSteps } from "@/components/cours-en-ligne/BilanFuturePresen
 const Steps = () => <BilanMatiereSteps current={0} submitted={[]} onSelect={() => {}} />;
 
 describe("compléments VTC isolés", () => {
+  it("ouvre exclusivement la carte QRC historique par identité puis revient sans remise à zéro", () => {
+    const ids: number[] = [];
+    render(<BilanVtcComplements future={<Steps />} legacy={c => { if(c) ids.push(c.exerciceId); return <p>Carte {c?.exerciceId}</p>; }} />);
+    fireEvent.click(screen.getByText('Questions QRC VTC'));
+    expect(ids.at(-1)).toBe(1794399472264);
+    expect(ids).not.toContain(9001);
+    fireEvent.click(screen.getByRole('button', {name:'Retour au Bilan A–E'}));
+    fireEvent.click(screen.getByText('F(V) — Développement commercial'));
+    expect(ids.at(-1)).toBe(505);
+    fireEvent.click(screen.getByRole('button', {name:'Retour au Bilan A–E'}));
+    fireEvent.click(screen.getByText('Questions QRC VTC'));
+    expect(ids.at(-1)).toBe(1794399472264);
+  });
   it("filtre exclusivement 505/506/507 et la carte Questions QRC VTC sans toucher les identités", () => {
     const pages = [500, 501, 502, 503, 504, 505, 506, 507, 607].map(id => ({ type: "exercice-single", exercice: { id } }));
     expect(pages.filter(p => estComplementBilanVtc(5, p)).map(p => p.exercice.id)).toEqual([505, 506, 507]);
