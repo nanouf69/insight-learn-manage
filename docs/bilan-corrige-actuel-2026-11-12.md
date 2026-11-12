@@ -13,3 +13,8 @@
 - Admin : même composant en `lectureSeule` (aucun entraînement), via le même lecteur ; non branché dans l'écran admin.
 - A–E : docs/sql-revue/2026-11-12-bilan-future-uid-liens.sql — table de liens append-only vide (pas de backfill), candidats admin en lecture, confirmation admin re-prouvée côté serveur et idempotente, lecteur qui ne rapproche qu'avec lien confirmé. SELECT 12/11 : 2 022 occurrences, 1 930 candidates, 84 ambiguës, 8 absentes de l'éditeur.
 - Tests : bilan-corrige-actuel.test.ts (14), bilan-corrige-actuel-ui.test.tsx (5, transport simulé), bilan_corrige_actuel_sql_contract.py (5), bilan_future_uid_liens_sql_contract.py (4).
+
+## Intégration 13:45
+- Nouveau Bilan A–E : après remise (correction lue), BilanCorrigeActuel sourceType=future, id = passage.receipt.passageId, derrière BILAN_CORRIGE_ACTUEL_ACTIF.
+- Admin : BLOQUÉ — bilan_future_admin_apercu ne renvoie aucun identifiant de copie remise (seulement correct_count/question_count) ; message explicite, aucun appel, aucune déduction.
+- Tests : bilan-corrige-actuel-integration.test.tsx (8).
