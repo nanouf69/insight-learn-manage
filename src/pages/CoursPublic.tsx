@@ -4,6 +4,7 @@ import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import MonDossierFormation from "@/components/cours-en-ligne/MonDossierFormation";
 import { ChangementMotDePasseObligatoire } from "@/components/cours-en-ligne/ChangementMotDePasseObligatoire";
 import { isElearningType } from "@/lib/dossierFormation";
+import { chargerDernierModulePedagogique, contourModulePedagogique } from '@/lib/dernierModulePedagogique';
 
 // Évite tout va-et-vient infini si un admin est renvoyé ici par erreur :
 // on ne tente le retour vers la page d'origine qu'une seule fois par chargement.
@@ -926,7 +927,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     });
     return ids;
   }, [examBlancRows, examResetRows, examensActuels]);
-  const [lastModuleName, setLastModuleName] = useState<string | null>(null);
+  const [lastModuleId, setLastModuleId] = useState<{owner:string;id:number|null}|null>(null);
   const [isInExam, setIsInExam] = useState(false);
   const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "skipped" | "n/a" | "erreur">("checking");
   const [emargementCreneau, setEmargementCreneau] = useState<CreneauKey | null>(null);
@@ -1211,7 +1212,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const requestId = ++completionsRequestRef.current;
     let cancelled = false;
     const fetchCompletions = async () => {
-      const [completionsResult, { data: examData }, { data: lastActivityData }, { data: lastConnData }, etatsServeur] = await Promise.all([
+      const [completionsResult, { data: examData }, etatsServeur] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
         // never yields an empty progression (which re-locked validated modules).
         fetchModuleCompletions(apprenant.id),
@@ -1220,22 +1221,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, tentative, completed_at, created_at, details")
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc"),
-        // Primary: use apprenant_module_activites (works even without active connexion)
-        supabase
-          .from("apprenant_module_activites" as any)
-          .select("module_nom")
-          .eq("apprenant_id", apprenant.id)
-          .eq("action_type", "open_module")
-          .order("occurred_at", { ascending: false })
-          .limit(1),
-        // Fallback: use apprenant_connexions.current_module
-        supabase
-          .from("apprenant_connexions" as any)
-          .select("current_module")
-          .eq("apprenant_id", apprenant.id)
-          .not("current_module", "is", null)
-          .order("started_at", { ascending: false })
-          .limit(1),
         // Verdict serveur unique ; erreur de lecture = progression non affichée (jamais un faux terminé).
         chargerEtatCompletionServeur(apprenant.id).catch((e) => { console.error("[CoursPublic] état serveur indisponible", e); return null as Map<number, EtatCompletionServeur> | null; }),
       ]);
@@ -1283,14 +1268,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setExamBlancRows(examData as any[]);
       }
 
-      // Use activity log as primary source, fall back to connexion current_module
-      const lastModName =
-        (lastActivityData && (lastActivityData as any[]).length > 0 && (lastActivityData as any[])[0].module_nom) ||
-        (lastConnData && (lastConnData as any[]).length > 0 && (lastConnData as any[])[0].current_module) ||
-        null;
-      if (!cancelled && requestId === completionsRequestRef.current) {
-        setLastModuleName(lastModName);
-      }
     };
     fetchCompletions().catch(() => {
       if (!cancelled && requestId === completionsRequestRef.current) setCompletionsError(true);
@@ -1299,6 +1276,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       cancelled = true;
     };
   }, [apprenant?.id, completionsReloadToken, user?.id]);
+
+  useEffect(()=>{
+    if(!apprenant?.id||!selectedFormation){setLastModuleId(null);return;}
+    let alive=true;
+    const owner=apprenant.id;
+    setLastModuleId(null);
+    const ids=modulesAttribuesDashboard(selectedFormation,apprenant.modules_autorises,owner).map(m=>m.id);
+    void chargerDernierModulePedagogique(owner,ids).then(id=>{if(alive)setLastModuleId({owner,id});}).catch(()=>{if(alive)setLastModuleId(null);});
+    return()=>{alive=false;};
+  },[apprenant?.id,selectedFormation,completionsReloadToken,selectedModule?.id]);
 
   // Relire la progression quand la connexion arrive ou se renouvelle
   // (sinon une première lecture faite trop tôt n'était jamais refaite).
@@ -2151,8 +2138,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
   // Check if a module was the last one the learner was on
-  const isLastModule = (modNom: string) =>
-    !!lastModuleName && modNom.trim().toLowerCase() === lastModuleName.trim().toLowerCase();
+  const isLastModule = (id: number) => lastModuleId?.owner===apprenant?.id && lastModuleId?.id===id;
 
   // E-learning sequential order enforcement
   const ELEARNING_FORMATION_IDS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
@@ -2503,11 +2489,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   )}
                   {remainingModules.map((mod, idx) => {
                     const locked = isModuleLocked(mod.id);
-                    const lastMod = isLastModule(mod.nom);
+                    const lastMod = isLastModule(mod.id);
                     return (
                     <Card
                       key={mod.id}
-                      className={`shadow-sm transition-all duration-300 overflow-hidden border border-destructive ${lastMod ? "ring-2 ring-destructive/20" : ""} ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
+                      className={`shadow-sm transition-all duration-300 overflow-hidden ${contourModulePedagogique(lastMod)} ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
                       onClick={() => { if (!locked) { setSelectedExerciseTarget(null); trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
@@ -2522,7 +2508,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <h3 className={`font-bold text-sm transition-colors ${locked ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
                               {mod.nom}
                               {lastMod && !locked && (
-                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
+                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-primary text-primary-foreground border-primary">
                                   ▶ Reprendre
                                 </Badge>
                               )}
@@ -2620,11 +2606,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   )}
                   {doneModules.map((mod) => {
                     const introLockedDone = isIntroLocked(mod.id);
-                    const lastMod = isLastModule(mod.nom);
+                    const lastMod = isLastModule(mod.id);
                     return (
                     <Card
                       key={mod.id}
-                      className={`shadow-sm transition-all duration-300 overflow-hidden border-l-4 ${lastMod ? "border-2 border-red-500 ring-2 ring-red-200 dark:ring-red-900/40 border-l-red-500" : "border-l-emerald-400"} ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
+                      className={`shadow-sm transition-all duration-300 overflow-hidden ${contourModulePedagogique(lastMod)} ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
                       onClick={() => { if (!introLockedDone) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
@@ -2826,7 +2812,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     handleTrackCours,
     handleLearnerQuizActivity,
     inactivityDeadline,
-    lastModuleName,
+    lastModuleId,
     moduleCompletionsForNotes,
     moduleScores,
     presenceDeadline,
