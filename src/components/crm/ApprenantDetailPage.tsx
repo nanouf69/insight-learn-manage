@@ -2,6 +2,7 @@ import { ChoixPratiqueBadges } from "@/components/crm/apprenant-sections/ChoixPr
 import { SignaturesPlanningResume } from "./apprenant-sections/SignaturesPlanningResume";
 import { ReactiverPlateformeTab } from "./apprenant-sections/ReactiverPlateformeTab";
 import { useState, useEffect, useMemo, useRef } from "react";
+import { RemarquesApprenant } from "@/components/crm/apprenant-sections/RemarquesApprenant";
 import { useNavigate } from "react-router-dom";
 import { EdofFinFormationTab } from "@/components/crm/apprenant-sections/EdofFinFormationTab";
 import { EdofStatutInfos } from "@/components/crm/apprenant-sections/EdofStatutInfos";
@@ -1293,6 +1294,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                       <p className="text-sm text-muted-foreground">Adresse</p>
                       <p className="font-medium">{apprenant.adresse || '-'}</p>
                     </div>
+                    <RemarquesApprenant key={apprenant.id} apprenantId={apprenant.id} initial={(apprenant as any).notes ?? null} />
                   </CardContent>
                 </Card>
 
