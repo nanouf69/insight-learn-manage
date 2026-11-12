@@ -12,10 +12,9 @@ export function jalonsIntegralementProuves(p: PreuvePresentationAttestation | nu
     && Number.isInteger(p.jalonsObligatoires) && p.jalonsObligatoires > 0
     && p.jalonsValides === p.jalonsObligatoires && p.validationsRequisesConfirmees === true;
 }
-/** Without certification, personal data never fills the certification sentence. */
+/** The draft repeats the dossier identity; final validity remains separately guarded. */
 export function texteCertificationPresentation(e: {certifie:boolean;prenom:string;nom:string;formation:string;debut:string;fin:string}):string {
-  const personne=e.certifie?`${e.prenom} ${e.nom.toUpperCase()}`:'[Prénom NOM]';
-  // Real course and verified dates may fill the model; uncertified identity stays generic.
+  const personne=[e.prenom.trim(), e.nom.trim().toUpperCase()].filter(Boolean).join(' ') || '[Prénom NOM]';
   const formation=`« ${e.formation.replace(/\s*—\s*à distance \(e-learning\)|\s*—\s*présentiel|\s+E-learning/gi,'').replace(/^Formation\s+/i,'').trim()} »`;
   const debut=e.debut;const fin=e.fin;
   return `Je soussigné(e), représentant(e) de l'organisme Ftransport, atteste que ${personne} a suivi et réalisé l'intégralité des jalons pédagogiques obligatoires prévus dans le cadre de sa formation ${formation}, dispensée du ${debut} au ${fin}.\n\nLa présente attestation est délivrée pour servir et valoir ce que de droit.`;
