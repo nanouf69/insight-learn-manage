@@ -26,7 +26,8 @@ export async function chargerDernierModulePedagogique(owner: string, ids: number
     for (let offset = 0; ; offset += 100) {
       const column = table === 'apprenant_module_activites' ? 'occurred_at' : table === 'reponses_apprenants' ? 'updated_at' : 'completed_at';
       const select = table === 'apprenant_module_activites' ? 'id,module_id,action_type,occurred_at' : table === 'reponses_apprenants' ? 'id,exercice_id,reponses,updated_at' : 'id,quiz_id,completed_at';
-      let q = supabase.from(table).select(select).eq('apprenant_id',owner).not(column,'is',null);
+      // Dynamic read projection only: avoid the generated union's recursive type expansion.
+      let q = (supabase.from(table) as any).select(select).eq('apprenant_id',owner).not(column,'is',null);
       if (table === 'apprenant_module_activites') q = q.in('action_type',['open_module','open_cours']);
       const { data, error } = await q.order(column,{ascending:false}).order('id').range(offset,offset+99);
       if (error) throw new Error('Dernière activité pédagogique indisponible');
