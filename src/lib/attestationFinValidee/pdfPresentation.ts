@@ -27,6 +27,7 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   const finale = e.final === true && attestationFinaleProuvee({ ...e, centre: e.centre ?? null, apprenant: e.apprenant ?? null,
     empreinte: e.empreinte ?? null, empreinteSignee: e.empreinteSignee ?? null });
   if (e.final && !finale) throw new Error("Attestation finale refusée : preuves ou double signature non confirmées");
+  const o = e.officiel ?? null;
   const logo = await image(logoOfficiel);
   const css = getComputedStyle(document.documentElement);
   const couleur = (nom: string): [number, number, number] => {
@@ -68,7 +69,6 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   texte(`Fin : ${date(e.fin)}`, 110, 143, 9.5, false, 74);
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
-  const o = e.officiel ?? null;
   const central = o ? o.texteCentral : texteCertificationPresentation({certifie:complet,prenom:e.prenom,nom:e.nom,formation:intitule,debut:date(e.debut),fin:date(e.fin)});
   const height = texte(central, 20, 165, 11, false, 170);
   if (height > (o ? 58 : 49)) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
