@@ -62,7 +62,7 @@ export function BilanCorrigeActuel({ snapshotId, lectureSeule = false, lecteur =
   const restantes = faussesApresVerification(p, local);
   return <div className="space-y-3" data-testid="bilan-corrige-actuel">
     {error && <p role="alert" className="text-destructive">Relecture échouée : dernier corrigé lu conservé.</p>}
-    <p className="text-sm" data-testid="corrige-actuel-notes">Note d'origine : <strong>{orig ?? "—"}</strong> · Réponses remises correctes selon le corrigé actuel : <strong>{p.justes}/{p.rapprochees}</strong> · Note recalculée : <strong>{p.noteRecalculee ? `${p.noteRecalculee.sur20}/20` : p.motifNoteIndisponible === "bareme_non_prouve" ? "indisponible (barème de la copie non prouvé)" : "indisponible (questions non rapprochées)"}</strong></p>
+    <p className="text-sm" data-testid="corrige-actuel-notes">Résultat d'origine enregistré (inchangé) : <strong>{orig ?? "—"}</strong> · Réponses remises correctes selon le corrigé actuel : <strong>{p.justes}/{p.rapprochees}</strong> · Note recalculée : <strong>{p.noteRecalculee ? `${p.noteRecalculee.sur20}/20` : p.motifNoteIndisponible === "bareme_non_prouve" ? "indisponible (barème de la copie non prouvé)" : "indisponible (questions non rapprochées)"}</strong></p>
     {(p.nonRapprochees > 0 || p.aReverifier > 0) && <p role="status" className="text-sm text-muted-foreground">{p.nonRapprochees} question(s) non rapprochée(s), {p.aReverifier} QRC à revérifier : exclues, sans note supposée.</p>}
     {!lectureSeule && <>
       <p data-testid="corrige-actuel-fausses">{restantes.length} question(s) fausse(s) à refaire.</p>
