@@ -199,4 +199,23 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
     const r = await h.call({ reprise: true });
     expect(r.deja_termine).toBe(true);
   });
+  it.each(['reponses_apprenants_journal', 'answer_state_historique', 'answer_state', 'apprenant_question_temps'])('comptage exact indisponible %s : parcours des clés terminé, intégrité non certifiée', async table => {
+    const rows = jeuFictif(2500);
+    const h = harness({ rows, echec: ({ table: t, kind }) => t === table && kind === 'count' ? { message: '', code: '57014' } : null });
+    const fin = await h.run();
+    expect(fin.ok).toBe(true);
+    expect(h.parts(`${JOUR}/${table}/`)).toEqual(rows[table]);
+    expect(h.objects.get(`${JOUR}/_export_termine.json`).observations[table]).toMatchObject({ comptage_indisponible: true, debut: -1, fin: -1 });
+    expect(fin.integrite).toBe('non_verifiee');
+  });
+  it('lot déjà présent différent : jamais écrasé, position conservée puis erreur explicite', async () => {
+    const objects = new Map<string, any>();
+    const path = `${JOUR}/${JOURNAL}/part-00000000.json`;
+    objects.set(path, [{ id: uuid(1), valeur: 'ancienne sauvegarde' }]);
+    const h = harness({ rows: jeuFictif(5), objects });
+    const fin = await h.run();
+    expect(fin.ok).toBe(false);
+    expect(objects.get(path)).toEqual([{ id: uuid(1), valeur: 'ancienne sauvegarde' }]);
+    expect(fin.erreurs.join(' ')).toContain('Lot existant différent');
+  });
 });
