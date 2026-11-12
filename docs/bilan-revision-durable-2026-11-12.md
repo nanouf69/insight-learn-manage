@@ -15,6 +15,8 @@
 - Pilotes 502/505/506 et corrigés actuels restent OFF ; aucune nouvelle IA.
 
 ## Tests exécutés
+- Validation finale : 78 tests ciblés dans 12 fichiers PASS (Bilan, EB, admin, propriétaires, queue et séquences) ; avertissements React act et mocks de référentiel existants conservés, pas d’erreur d’aperçu.
+- Vrai handler `upsert-reponse-apprenant` + PostgREST + PostgreSQL jetables : contrat HTTP PASS (auth/propriété, journal 501 événements, exact Unicode/NUL, accusé perdu, concurrence, preuve figée et faux ACK refusé).
 - 33 tests de règles/écrans/queue/modules, puis 29 tests reprise Bilan/EB/concurrence/séquences (ensembles se recoupant, ne pas additionner).
 - 4 contrats PostgreSQL jetables : concurrence/rejeu même date de clôture, version périmée refusée, autre propriétaire refusé, réponse manquante refusée ; empreinte remise initiale inchangée.
 - Chromium PC 1280×1800 et mobile 390×844 : multi-choix, serveur lent 250 ms, rechargement avec réponses relues, finalisation OFF explicitement bloquée.

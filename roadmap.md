@@ -2,7 +2,7 @@
 
 ## 12/11 16:49 — Sauvegarde durable des questions fausses
 - [x] Audit Bilan futur uniquement en mémoire + archive historique recouvrant la reprise ; modules/EB utilisent déjà la file partagée. Pilotes/corrigés courants OFF conservés, zéro mutation réelle.
-- [x] Aperçu : file commune, identité reçu/version, accusé/relecture, reprise hors ligne, admin lecture ; priorité historique corrigée. Tests fictifs et navigateur PC/mobile exécutés, rapport docs/bilan-revision-durable-2026-11-12.md.
+- [x] Aperçu : file commune, identité reçu/version, accusé/relecture, reprise hors ligne, admin lecture ; priorité historique corrigée. 78 tests ciblés PASS, 4 contrats SQL et vrai handler HTTP jetables PASS, navigateur PC/mobile PASS ; rapport docs/bilan-revision-durable-2026-11-12.md.
 - [ ] Mise en service : finalisation dédiée non installée (candidat testé jetable), rounds/finalisation des historiques TA/VA et matrice complète EB/jour/soir encore non prouvés ; aucune publication.
 
 ## 12/11 16:47 — Note Anis toujours masquée
