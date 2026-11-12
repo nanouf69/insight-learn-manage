@@ -55,6 +55,7 @@ export function useBilanRevision(source: BilanRevisionSource | null) {
   const finish = async () => {
     const r = latest.current;
     if (!r || finalizing.current) return false;
+    if (r.submitted) return true;
     finalizing.current = true; const g = generation.current; setStatut('saving');
     try {
       enregistrerBilanRevision(r);

@@ -30,6 +30,14 @@
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
 
+    /* Fixed white-paper palette for the printable Ftransport attestation. */
+    --pdf-attestation-bleu: 28 155 213;
+    --pdf-attestation-texte: 24 28 32;
+    --pdf-attestation-secondaire: 83 93 103;
+    --pdf-attestation-fond: 244 249 252;
+    --pdf-attestation-bord: 201 217 226;
+    --pdf-attestation-filigrane: 214 228 237;
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 

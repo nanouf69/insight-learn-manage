@@ -40,7 +40,7 @@ vi.mock("@/lib/answerPersistence", async (original) => {
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 const question = { id: 1, type: "QRC", enonce: "Question Gestion", reponseQRC: "Texte", reponses_possibles: ["texte"] };
-const wrongQuestions: any[] = [{ matiereNom: "Gestion", matiere: { id: "gestion", questions: [question] }, question }];
+const wrongQuestions: any[] = [{ matiereNom: "Gestion", matiere: { id: "gestion", questions: [question] }, question, sourceResultId: "original-immutable-copy" }];
 const order = ["gestion:1"];
 
 beforeEach(() => {
@@ -73,6 +73,8 @@ describe("Révision fausses — chemin publié tant que le serveur n'est pas ins
     expect(h.inserts[0].table).toBe("apprenant_quiz_results");
     expect(h.inserts[0].payload).toMatchObject({ quiz_type: "revision_fausses", quiz_id: "EB2-TAXI", score_obtenu: 1, score_max: 1 });
     expect(h.inserts[0].payload.details.revision_exercice_id).toBe("revision_fausses_EB2-TAXI");
+    expect(h.saved.reponses.revisionState.sourceResultIds).toEqual({ "gestion:1": "original-immutable-copy" });
+    expect(h.inserts[0].payload.details.sourceResultIds).toEqual({ "gestion:1": "original-immutable-copy" });
   });
 
   it("la reprise relit aussi une clôture dont l'insertion a été interrompue", async () => {

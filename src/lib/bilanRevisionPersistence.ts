@@ -7,6 +7,15 @@ export type BilanRevisionSource = { owner: string; module: number; exercise: num
 export type BilanRevision = { id: string; source: BilanRevisionSource; answers: Record<string, unknown>; submitted: boolean };
 export const bilanRevisionBase = (s: BilanRevisionSource) => `bilan_revision_${s.module}_${s.exercise}_${s.receipt}`;
 export const memeSourceRevision = (a: unknown, b: BilanRevisionSource) => answersAreEqual(a, b);
+export function bilanRevisionAchevementConfirme(row: any, source: BilanRevisionSource): boolean {
+  if (row?.status !== 'submitted' || !row.submitted_at || !Number.isFinite(Date.parse(row.submitted_at))
+    || !source.questions.length || new Set(source.questions).size !== source.questions.length) return false;
+  const exact = lireReponsesExactes(row.reponses ?? {}, row.originaux_exacts, row.reponses_meta);
+  return !Object.keys(exact.anomalies).length && memeSourceRevision(exact.reponses.__source, source)
+    && source.questions.every(k => {
+      const v = exact.reponses[k]; return Array.isArray(v) ? v.length > 0 : typeof v === 'string' && v.trim().length > 0;
+    });
+}
 
 /** Existing module transport only: no Bilan submission/draft, grade or completion write. */
 export async function lireBilanRevision(source: BilanRevisionSource): Promise<BilanRevision | null> {
@@ -32,7 +41,9 @@ export async function lireBilanRevision(source: BilanRevisionSource): Promise<Bi
   primeKnownWriteSeq(source.owner, row.exercice_id, row.write_seq);
   // Preserve explicit deselection in the pending journal, including empty arrays.
   const merged = { ...exact.reponses, ...(getPendingAnswers(source.owner, row.exercice_id) ?? {}) };
-  return { id: row.exercice_id, source, answers: Object.fromEntries(source.questions.filter(k => k in merged).map(k => [k, merged[k]])), submitted: row.status === 'submitted' && !!row.submitted_at };
+  const submitted = bilanRevisionAchevementConfirme(row, source);
+  if (row.status === 'submitted' && !submitted) throw new Error('Clôture incohérente : toutes les réponses ne sont pas prouvées');
+  return { id: row.exercice_id, source, answers: Object.fromEntries(source.questions.filter(k => k in merged).map(k => [k, merged[k]])), submitted };
 }
 
 export function prochaineBilanRevision(source: BilanRevisionSource, previous: BilanRevision | null): BilanRevision {
@@ -66,7 +77,8 @@ export async function confirmerBilanRevision(revision: BilanRevision, completed 
   const exact = lireReponsesExactes(data.reponses as Record<string, unknown>, originals, meta);
   if (Object.keys(exact.anomalies).length || !answersAreEqual(exact.reponses, { __source: revision.source, ...revision.answers })) throw new Error('Autre réponse enregistrée : votre saisie reste conservée, vérifiez la reprise');
   primeKnownWriteSeq(revision.source.owner, revision.id, data.write_seq);
-  const submitted = data.status === 'submitted' && !!data.submitted_at;
+  const submitted = bilanRevisionAchevementConfirme(data, revision.source);
+  if (data.status === 'submitted' && !submitted) throw new Error('Clôture incohérente : toutes les réponses ne sont pas prouvées');
   if (completed && !submitted) {
     if (!BILAN_REVISION_FINALISATION_ACTIVE) throw new Error('Réponses enregistrées ; finalisation sécurisée pas encore activée. Aucun « Déjà effectué » confirmé.');
     const result = await supabase.rpc('bilan_revision_finaliser' as never, {
