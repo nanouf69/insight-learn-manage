@@ -10,5 +10,7 @@ it('sans horodatage fiable, hors parcours ou égalité ambiguë : aucun contour'
 });
 it('identité exercice stable uniquement, aucun rapprochement par titre ou nom',()=>{
  expect(moduleDepuisClePedagogique('module_5_revision_exo_505')).toBe(5);
+ expect(moduleDepuisClePedagogique('EB4')).toBe(35);
+ expect(moduleDepuisClePedagogique('EB6-TAXI')).toBe(36);
  expect(moduleDepuisClePedagogique('Sécurité routière')).toBeNull();
 });

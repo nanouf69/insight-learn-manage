@@ -13,6 +13,8 @@ export function dernierModulePedagogique(events: EvenementModule[], attribues: n
 }
 export function moduleDepuisClePedagogique(key: unknown): number | null {
   if (typeof key !== 'string') return null;
+  const eb = /^EB[1-6](-TAXI|-TA|-VA)?$/.exec(key);
+  if (eb) return eb[1] === '-TAXI' ? 36 : eb[1] === '-TA' ? 37 : eb[1] === '-VA' ? 38 : 35;
   const m = /^module_(\d+)_(?:revision_)?(?:exo|inline)_\d+/.exec(key);
   return m ? Number(m[1]) : null;
 }

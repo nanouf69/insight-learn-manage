@@ -2,7 +2,7 @@
 
 ## 12/11 17:16 — Contour dernier module apprenant
 - [x] Cadres rouges retirés des cartes ; contour bleu 3 px seulement sur dernière activité horodatée/ID attribué, sans repli connexion/nom/achèvement ; aucune mutation.
-- [ ] Tests sources/horodatages et PC/mobile ; aucune publication.
+- [x] 5 tests PASS (identité, ordre, datation absente, égalité, hors parcours) ; aperçu administrateur Anis PC/mobile : un seul contour bleu, autres cartes grises, aucun débordement. Build OK ; aucune publication. Compte apprenant direct non testé.
 
 ## 12/11 17:12 — Chargement visible Notes par session
 - [x] Étapes de lecture réelles, compteur seulement pour candidats/tableau mesurables, temps écoulé sans estimation inventée ; résultats partiels visibles, notes précédentes conservées en actualisation.
