@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 17:27 — Notes apprenant : examens officiels / Bilans
+- [ ] Six EB officiels avec détail pondéré et graphique ; Bilans réels et révisions séparés, À revoir conservé en bas ; lecture seule.
+- [ ] Tests pondération/tentatives/attente/isolation et PC/mobile, contrôle Rodrigue ; aucun déploiement/publication.
+
 ## 12/11 17:19 — Retouche attestation professionnelle
 - [x] Intitulé référentiel sans doublon, liste pédagogique issue des verdicts serveur (sinon détail à vérifier), aucun motif d’heures dans le nouveau PDF ; contrôles et documents historiques inchangés.
 - [x] 31 tests PASS, exports complet/incomplet et consultation PC/mobile fictifs ; inspection indépendante PDF : contradiction du cas complet corrigée, aucune durée ni chevauchement. Identité/modules Léa vérifiés par SELECT, mais verdict RPC refusé et session navigateur sans accès admin : PDF réel Léa NON PROUVÉ. Aucun état réel modifié, aucune publication.
