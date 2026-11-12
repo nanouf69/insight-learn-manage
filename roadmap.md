@@ -1,5 +1,8 @@
 # Feuille de route
 
+## 12/11 16:47 — Note Anis toujours masquée
+- [x] Confusion remise/reçu corrigée avec preuve des réponses figées ; 16 tests PASS et écran administrateur réel : Sécurité EB4 13/20, général 12,3/20 définitif (Français 4 éliminatoire). Aucune publication ni mutation des copies.
+
 ## 12/11 16:38 — Copie récente dans Notes par session
 - [x] Dernière remise V2 par apprenant/examen/matière projetée avec ses propres réponses et note, après cutoff de remise à zéro ; notes différentes/attente/zéro/égalité de date/sources conservées : 18 tests PASS, build OK. Aucune publication ni mutation réelle ; écran authentifié réel non vérifié.
 

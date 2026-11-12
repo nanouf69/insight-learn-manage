@@ -32,3 +32,16 @@ it('ne modifie aucune copie réponse ou note source',()=>{
   copieRecenteSession(row,states,new Set());expect(JSON.stringify({row,states})).toBe(before);
 });
 it('un vrai zéro définitif de la dernière copie reste zéro',()=>expect(noteExamenAffichee(copieRecenteSession(row,[older,{...newer,note20:0}],new Set()))).toMatchObject({etat:'note',note20:0}));
+it('Anis : le reçu après remise ne masque pas la dernière Sécurité EB4 à 13/20',()=>{
+  const questions=[{id:'securite:1',type:'QCM',enonce:'Question figée',points:1,choix:[{lettre:'A',correct:true}]}];
+  const recent={...newer,finishedAt:'2026-11-12T16:04:10.956Z',answers:{'securite:1':['A']},questions};
+  const receipt={...row,completed_at:'2026-11-12T16:04:12.822364Z',details:{reponses:{1:['A']}}};
+  const result=copieRecenteSession(receipt,[{...older,answers:recent.answers,questions},recent],new Set());
+  expect('__copieSessionAttemptId' in result&&result.__copieSessionAttemptId).toBe('new');
+  expect(noteExamenAffichee(result)).toMatchObject({etat:'note',note20:13});
+});
+it('un reçu ultérieur divergent conserve sa propre copie sans association devinée',()=>{
+  const recent={...newer,answers:{'securite:1':['A']},questions:[{id:'securite:1',type:'QCM',enonce:'Question',points:1,choix:[{correct:true}]}]};
+  const receipt={...row,completed_at:'2026-11-12T16:04:12Z',details:{reponses:{1:['B']}}};
+  expect(copieRecenteSession(receipt,[recent],new Set())).toBe(receipt);
+});
