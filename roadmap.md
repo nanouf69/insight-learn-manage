@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 12/11 12:57 — Corrigé courant entraînement F/G VTC
+- [x] Q18/Q19 identifiées module 5/505, corrigé A+C enregistré ; 32 snapshots 505 portent UID Q18. Lecteur installé réservé EB publiés, inutilisable pour ce Bilan ; candidat owner/remis F/G préparé, non installé.
+- [x] Relecture à chaque entrée/démarrage/vérification, dernier choix conservé seulement si identité/options concordent, erreurs sans repli figé ; 16 Vitest et 16 PostgreSQL jetables PASS, deux parcours PC/mobile PASS. Installation serveur reste nécessaire ; aucun compte réel, publication ou écriture production.
+
 ## 12/11 12:50 — Accès direct Questions QRC VTC
 - [x] Entrée après F/G vers carte historique 1794399472264, sélection après hydratation et retour ; notes F/G et SQL inchangés.
 - [x] 10 tests PASS, quatre parcours PC/mobile élève/admin : ordre Anglais/F/G/QRC, carte et lien exact cliqué, retour/rechargement, zéro mutation. Aucune publication ; écran réel non vérifié. Diff isolé documenté dans docs/bilan-vtc-qrc-direct-2026-11-12.md.

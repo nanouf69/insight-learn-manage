@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { readSrTraining, srTrainingWrong } from "@/lib/bilanSrTraining";
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
@@ -40,12 +40,13 @@ describe("Entraînement VTC, sans historique réécrit", () => {
     await screen.findByText("Commencer l’entraînement");
     expect(screen.getByTestId("sr-wrong-count").textContent).toContain("1 question(s) fausse(s)");
     fireEvent.click(screen.getByText("Commencer l’entraînement"));
+    await screen.findByText('Vérifier l’entraînement');
     const choice = (letter: string) => document.querySelector(`[data-choix="${letter}"]`) as HTMLElement;
     fireEvent.click(choice("A")); fireEvent.click(choice("B"));
     fireEvent.click(screen.getByText("Vérifier l’entraînement"));
-    expect(screen.getByTestId("sr-wrong-count").textContent).toContain("0 question(s) fausse(s)");
+    await waitFor(() => expect(screen.getByTestId("sr-wrong-count").textContent).toContain("0 question(s) fausse(s)"));
     fireEvent.click(screen.getByText("Retour à la copie"));
-    expect(rpc.mock.calls).toEqual([["bilan_vtc_sr_training_read", { p_type: "snapshot", p_source: "copy" }]]);
+    expect(rpc.mock.calls).toEqual(Array.from({length:3},()=>["bilan_vtc_sr_training_read", { p_type: "snapshot", p_source: "copy" }]));
     expect(JSON.stringify(data)).toBe(before);
   });
   it("canal absent = suspension, jamais liste vide réussie", async () => {
@@ -54,5 +55,30 @@ describe("Entraînement VTC, sans historique réécrit", () => {
     fireEvent.click(screen.getByText("🎯 Refaire les fausses"));
     expect((await screen.findByRole("alert")).textContent).toContain("entraînement suspendu");
     expect(screen.queryByTestId("sr-wrong-count")).toBeNull();
+  });
+  it('F(V) Q18 relit A→A+C dans un onglet ouvert, garde le dernier choix et ignore la note historique',async()=>{
+    const fixture={...data,questions:[{uid:'visual',id:18,enonce:"Lors du transport d'une personne atteinte de déficience visuelle, je dois :",choix:[{lettre:'A',texte:'donner des repères pendant le trajet'},{lettre:'B',texte:'parler fort'},{lettre:'C',texte:'me présenter'}],correct:['A'],answer:['A']},{uid:'price',id:19,enonce:'Le prix de vente doit être égal au :',choix:[{lettre:'A',texte:'coût + TVA'},{lettre:'B',texte:'coût + marge + TVA'}],correct:['B'],answer:['A']}]};
+    const before=JSON.stringify(fixture);
+    rpc.mockResolvedValue({data:fixture,error:null});
+    render(<BilanSrTraining sourceType="snapshot" sourceId="copy" exerciseId={505}/>);
+    fireEvent.click(screen.getByText('🎯 Refaire les fausses'));
+    await screen.findByText('Commencer l’entraînement');
+    expect(screen.getByTestId('sr-wrong-count').textContent).toContain('1 question(s)');
+    const fresh={...fixture,editor_at:'2026-11-12T13:00:00Z',questions:fixture.questions.map(q=>q.uid==='visual'?{...q,correct:['A','C']}:q)};
+    rpc.mockResolvedValue({data:fresh,error:null});
+    fireEvent.click(screen.getByText('Commencer l’entraînement'));
+    await screen.findByText(fixture.questions[0].enonce);
+    fireEvent.click(document.querySelector('[data-question-id="18"] [data-choix="C"]') as HTMLElement);
+    fireEvent.click(document.querySelector('[data-question-id="19"] [data-choix="A"]') as HTMLElement);
+    fireEvent.click(document.querySelector('[data-question-id="19"] [data-choix="B"]') as HTMLElement);
+    fireEvent.click(screen.getByText('Vérifier l’entraînement'));
+    await waitFor(()=>expect(screen.getByTestId('sr-wrong-count').textContent).toContain('0 question(s)'));
+    fireEvent.click(screen.getByText('Retour à la copie'));fireEvent.click(screen.getByText('🎯 Refaire les fausses'));
+    await waitFor(()=>expect(screen.getByTestId('sr-wrong-count').textContent).toContain('0 question(s)'));
+    expect(rpc.mock.calls.every(([name])=>name==='bilan_vtc_fg_training_read')).toBe(true);
+    expect(JSON.stringify(fixture)).toBe(before);
+    rpc.mockRejectedValue(new Error('network'));
+    fireEvent.click(screen.getByText('🎯 Refaire les fausses'));
+    await screen.findByRole('alert');expect(screen.queryByTestId('sr-wrong-count')).toBeNull();
   });
 });

@@ -9704,7 +9704,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             }}>
                               🔄 Recommencer tout
                             </Button>
-                            {module.id === 5 && Number(exo.id) === 502 && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[502] ? (
+                            {module.id === 5 && [505,506].includes(Number(exo.id)) && !apercuAdmin ? (
+                              etatSnap.statut === "pret" && etatSnap.parExo[exo.id] ? <BilanSrTraining key={etatSnap.parExo[exo.id].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[exo.id].snapshotId} exerciseId={Number(exo.id) === 505 ? 505 : 506} />
+                                : <p role="status" className="text-sm text-muted-foreground">Correction actuelle indisponible : aucun passage remis identifiable pour cet entraînement.</p>
+                            ) : module.id === 5 && Number(exo.id) === 502 && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[502] ? (
                               <BilanSrTraining key={etatSnap.parExo[502].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[502].snapshotId} />
                             ) : <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
                               const snapshot: Record<string, string | string[]> = {};
