@@ -57,7 +57,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
         sourceFin: ap.fin.etat === "ok" ? `connexion vérifiée du ${dfr(ap.fin.startedAt)} · ${ap.fin.connexionId}` : undefined,
         // No server-frozen attestation-wide milestone proof exists in this model.
         // Never turn 98.9%, a module counter, or a client calculation into certification.
-        preuve: null, motifs: [...ap.motifs, ...manquants.filter(m => m !== "durée"), "Validation complète des jalons non certifiée"],
+        preuve: null, elementsPedagogiques: ap.elementsPedagogiques, motifs: [...ap.motifs, ...manquants.filter(m => m !== "durée"), "Validation complète des jalons non certifiée"],
       });
       setApercuPdf(blob);
     } catch (e) { toast({ title: "PDF impossible", description: e instanceof Error ? e.message : "Export interrompu", variant: "destructive" }); }
