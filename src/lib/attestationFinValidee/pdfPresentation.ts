@@ -13,6 +13,8 @@ export interface AttestationPresentation {
   /** Only a server-frozen, authorized double-signature model may request a final export. */
   final?: boolean;
   elementsPedagogiques?: ElementPedagogique[] | null;
+  /** Explicitly confirmed applicable approval; never inferred from conflicting templates. */
+  agrement?: { filiere: 'VTC' | 'TAXI'; numero: string } | null;
 }
 const date = (v: string | null) => v ? new Date(v.length === 10 ? `${v}T12:00:00Z` : v).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" }) : "Non vérifiée";
 const image = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
@@ -44,9 +46,12 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
     doc.addImage(src, "PNG", x + (w - p.width * ratio) / 2, y + (h - p.height * ratio) / 2, p.width * ratio, p.height * ratio);
   };
   fitImage(logo, 20, 15, 88, 28);
+  doc.setTextColor(...bleu);
+  texte("FTRANSPORT", 120, 24, 10, true, 70);
   doc.setTextColor(...gris);
-  texte("Ftransport\n86 Route de Genas\n69003 Lyon\nNDA 11770762377", 132, 27, 9, false, 58);
-  doc.setDrawColor(...bleu); doc.setLineWidth(0.35); doc.line(20, 52, 190, 52);
+  texte("86 Route de Genas · 69003 Lyon\nTél. : 04 28 29 60 91\ncontact@ftransport.fr\nNDA 11770762377", 120, 30, 8.5, false, 70);
+  if(e.agrement?.numero.trim()) texte(`Agrément ${e.agrement.filiere} : ${e.agrement.numero}`,120,48,8,false,70);
+  doc.setDrawColor(...bleu); doc.setLineWidth(0.35); doc.line(20, 55, 190, 55);
   doc.setTextColor(...bleu); texte("ATTESTATION DE FIN", 20, 65, 21, true); texte("DE FORMATION", 20, 75, 21, true);
   doc.setTextColor(...gris); texte(finale ? "DOCUMENT VALIDÉ ET SIGNÉ" : "MODÈLE NON VALABLE — NON SIGNÉ", 20, 86, 10, true);
   doc.setFillColor(...pale); doc.setDrawColor(...bord); doc.roundedRect(20, 95, 170, 59, 2, 2, "FD");
