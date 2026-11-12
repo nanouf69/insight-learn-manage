@@ -62,6 +62,14 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     finally { setOccupe(null); }
   };
 
+  // Même règle que le texte : date de dernière connexion (Paris), jamais après la fin de formation CRM.
+  const finPlafonnee = (df: { started_at?: string; date_limite_crm?: string } | undefined): string | null => {
+    if (!df?.started_at || !Number.isFinite(Date.parse(df.started_at))) return null;
+    const d = new Date(df.started_at).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+    const lim = df.date_limite_crm?.slice(0, 10);
+    return lim && d > lim ? lim : d;
+  };
+
   const pdfOfficiel = async (d: AttestationEnregistree, telecharger: boolean) => {
     const f = fige(d);
     if (!f) { toast({ title: "Attestation illisible", description: "Le contenu enregistré ne peut pas être lu.", variant: "destructive" }); return; }
@@ -75,7 +83,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
       const blob = await genererPdfPresentation({
         apprenantId: apprenant.id, prenom: idf.prenom ?? apprenant.prenom ?? "—", nom: idf.nom ?? apprenant.nom ?? "—",
         formation: champs.formation ?? "Non renseignée", modalite: champs.modalite,
-        debut: champs.dateDebut, fin: f.sources?.date_fin?.started_at ?? champs.dateFin, dateEmission: champs.dateEmission,
+        debut: champs.dateDebut, fin: finPlafonnee(f.sources?.date_fin) ?? champs.dateFin, dateEmission: champs.dateEmission,
         preuve: null, motifs: [], reference: idf.reference, empreinte: d.texte_empreinte,
         officiel: {
           texteCentral, signee: signe,
