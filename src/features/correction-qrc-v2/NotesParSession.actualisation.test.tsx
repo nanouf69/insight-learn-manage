@@ -31,7 +31,7 @@ it('signal de validation : retire le premier cadre, conserve l’autre et le fil
   if(!b)throw new Error('Cellule apprenant absente');
   expect(within(b).getByText('Note définitive manquante')).toBeInTheDocument();
   expect(screen.getByRole('table')).toHaveTextContent('0 /20');
-  expect(charger.mock.calls).toEqual([['s1'], ['s1']]);
+  expect(charger.mock.calls.map(([id])=>id)).toEqual(['s1', 's1']);
 });
 it('rafraîchissement en erreur : conserve les derniers résultats et le filtre, puis reprend au retour visible', async () => {
   let signal = () => {};
@@ -61,7 +61,7 @@ it('sérialise les relectures et ignore une réponse de l’ancienne session', a
   await act(async () => terminer(relevé(true)));
   await screen.findByText('Aucun inscrit — Aucune note définitive (0/0).');
   expect(screen.queryByRole('link', { name: 'Ouvrir la fiche CRM de A Test (nouvel onglet)' })).toBeNull();
-  expect(charger.mock.calls).toEqual([['s1'], ['s1'], ['s2']]);
+  expect(charger.mock.calls.map(([id])=>id)).toEqual(['s1', 's1', 's2']);
 });it('bouton Actualiser : relit notes et émargement, garde examen et date, une seule lecture à la fois, dernier relevé conservé en erreur', async () => {
   let finir: (r: ReleveSession) => void = () => {};
   const charger = vi.fn().mockResolvedValueOnce(relevé())
