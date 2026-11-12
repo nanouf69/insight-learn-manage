@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 12/11 16:49 — Sauvegarde durable des questions fausses
-- [ ] Audit comparatif Bilan futur/historique, modules et EB ; coordonner corrigé courant inactif, ne modifier aucune copie réelle.
-- [ ] Réutiliser la persistance partagée avec preuve de copie, accusé/relecture, reprise, concurrence et finalisation idempotente ; intégration fictive quatre filières et non-régression avant toute publication.
+- [x] Audit Bilan futur uniquement en mémoire + archive historique recouvrant la reprise ; modules/EB utilisent déjà la file partagée. Pilotes/corrigés courants OFF conservés, zéro mutation réelle.
+- [x] Aperçu : file commune, identité reçu/version, accusé/relecture, reprise hors ligne, admin lecture ; priorité historique corrigée. Tests fictifs et navigateur PC/mobile exécutés, rapport docs/bilan-revision-durable-2026-11-12.md.
+- [ ] Mise en service : finalisation dédiée non installée (candidat testé jetable), rounds/finalisation des historiques TA/VA et matrice complète EB/jour/soir encore non prouvés ; aucune publication.
 
 ## 12/11 16:47 — Note Anis toujours masquée
 - [x] Confusion remise/reçu corrigée avec preuve des réponses figées ; 16 tests PASS et écran administrateur réel : Sécurité EB4 13/20, général 12,3/20 définitif (Français 4 éliminatoire). Aucune publication ni mutation des copies.

@@ -62,3 +62,18 @@ it('ne finalise jamais une reprise incomplète',async()=>{
  await expect(confirmerBilanRevision(r,true)).rejects.toThrow('toutes les questions');expect(bodies).toHaveLength(0);
 });
 it('une réponse étrangère ne peut pas être envoyée',()=>expect(()=>enregistrerBilanRevision({...prochaineBilanRevision(source,null),answers:{'alien':'x'}})).toThrow('étrangère'));
+it('première saisie hors ligne sans ligne serveur est restaurée depuis la file du propriétaire',async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>({ok:false,status:503,text:async()=> 'offline'})));
+ const r={...prochaineBilanRevision(source,null),answers:{'71':['C'],'226':'hors ligne'}};
+ enregistrerBilanRevision(r);expect(db.rows).toHaveLength(0);
+ expect((await lireBilanRevision(source))?.answers).toEqual(r.answers);
+ setAnswerSaveOwnership({apprenantId:'other'});setAnswerSaveAuthToken('other-token','other');
+ expect(await lireBilanRevision({...source,owner:'other'})).toBeNull();
+});
+it('une modification concurrente ne devient jamais un faux accusé de sauvegarde',async()=>{
+ const r={...prochaineBilanRevision(source,null),answers:{'71':['A'],'226':'local'}};
+ enregistrerBilanRevision(r);await confirmerBilanRevision(r);
+ db.rows[0].reponses['226']='autre onglet';db.rows[0].meta['226']=99;db.rows[0].write_seq=99;
+ await expect(confirmerBilanRevision(r)).rejects.toThrow('Autre réponse');
+ expect(db.rows[0].reponses['226']).toBe('autre onglet');expect(r.answers['226']).toBe('local');
+});
