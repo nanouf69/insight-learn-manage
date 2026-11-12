@@ -15,6 +15,8 @@ export interface AttestationPresentation {
   elementsPedagogiques?: ElementPedagogique[] | null;
   /** Explicitly confirmed applicable approval; never inferred from conflicting templates. */
   agrement?: { filiere: 'VTC' | 'TAXI'; numero: string } | null;
+  /** Attestation enregistrée : même mise en page ; signature + tampon du centre apposés SEULEMENT après la signature de l'apprenant. */
+  officiel?: { texteCentral: string; signee: boolean; centre: { image: string; tampon: string; le: string | null } | null; apprenant: { image: string; le: string | null } | null } | null;
 }
 const date = (v: string | null) => v ? new Date(v.length === 10 ? `${v}T12:00:00Z` : v).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" }) : "Non vérifiée";
 const image = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
@@ -53,7 +55,7 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   if(e.agrement?.numero.trim()) texte(`Agrément ${e.agrement.filiere} : ${e.agrement.numero}`,120,48,8,false,70);
   doc.setDrawColor(...bleu); doc.setLineWidth(0.35); doc.line(20, 55, 190, 55);
   doc.setTextColor(...bleu); texte("ATTESTATION DE FIN", 20, 65, 21, true); texte("DE FORMATION", 20, 75, 21, true);
-  doc.setTextColor(...gris); texte(finale ? "DOCUMENT VALIDÉ ET SIGNÉ" : "MODÈLE NON VALABLE — NON SIGNÉ", 20, 86, 10, true);
+  doc.setTextColor(...gris); texte(o ? (o.signee ? "DOCUMENT SIGNÉ PAR LES DEUX PARTIES" : "EN ATTENTE DE LA SIGNATURE DE L'APPRENANT(E)") : finale ? "DOCUMENT VALIDÉ ET SIGNÉ" : "MODÈLE NON VALABLE — NON SIGNÉ", 20, 86, 10, true);
   doc.setFillColor(...pale); doc.setDrawColor(...bord); doc.roundedRect(20, 95, 170, 59, 2, 2, "FD");
   doc.setTextColor(...gris); texte("APPRENANT(E)", 26, 104, 8, true);
   doc.setTextColor(...noir); texte(`${e.prenom} ${e.nom.toUpperCase()}`, 26, 112, 15, true, 158);
@@ -66,10 +68,11 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   texte(`Fin : ${date(e.fin)}`, 110, 143, 9.5, false, 74);
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
-  const central = texteCertificationPresentation({certifie:complet,prenom:e.prenom,nom:e.nom,formation:intitule,debut:date(e.debut),fin:date(e.fin)});
+  const o = e.officiel ?? null;
+  const central = o ? o.texteCentral : texteCertificationPresentation({certifie:complet,prenom:e.prenom,nom:e.nom,formation:intitule,debut:date(e.debut),fin:date(e.fin)});
   const height = texte(central, 20, 165, 11, false, 170);
-  if (height > 49) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
-  if (!finale) {
+  if (height > (o ? 58 : 49)) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
+  if (!finale && !o) {
     // Dedicated strip, away from the body and signature panels, legible in print.
     doc.setTextColor(...filigrane); texte('MODÈLE NON VALABLE',43,226,18,true);
   }
@@ -77,7 +80,16 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   doc.rect(20, 230, 82, 39); doc.rect(108, 230, 82, 39);
   doc.setTextColor(...bleu); texte("POUR FTRANSPORT", 24, 236, 8.5, true); texte("L'APPRENANT(E)", 112, 236, 8.5, true);
   doc.setTextColor(...gris);
-  if (finale && e.centre && e.apprenant) {
+  if (o) {
+    if (o.signee && o.centre && o.apprenant) {
+      fitImage(o.centre.image, 24, 240, 38, 16); fitImage(o.centre.tampon, 65, 240, 32, 18);
+      fitImage(o.apprenant.image, 113, 240, 71, 17);
+      if (o.apprenant.le) texte(`Signé le ${o.apprenant.le}`, 112, 265, 7.5);
+    } else {
+      texte("Signature et tampon apposés\naprès la signature de l'apprenant(e)", 24, 245, 9, false, 74);
+      texte("En attente de signature\nélectronique", 112, 245, 9, false, 74);
+    }
+  } else if (finale && e.centre && e.apprenant) {
     fitImage(e.centre.image, 24, 240, 38, 16); fitImage(e.centre.tampon ?? "", 65, 240, 32, 18);
     fitImage(e.apprenant.image, 113, 240, 71, 17);
     texte(`Signé le ${date(e.centre.le)}`, 24, 265, 7.5); texte(`Signé le ${date(e.apprenant.le)}`, 112, 265, 7.5);
@@ -87,6 +99,6 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   }
   doc.setTextColor(...gris); texte(`Fait à Lyon, le ${date(e.dateEmission)}.`, 20, 278, 8.5);
   // Source timestamps remain in the CRM audit panel, not in the official body.
-  texte(`NDA 11770762377 · Réf. ${e.reference ?? `APERÇU-${e.apprenantId.slice(0,8)}`} · Document ${finale ? 'validé' : 'préparatoire'}`,20,292,7,false,170);
+  texte(`NDA 11770762377 · Réf. ${e.reference ?? `APERÇU-${e.apprenantId.slice(0,8)}`} · Document ${o ? (o.signee ? 'signé' : 'en attente de signature') : finale ? 'validé' : 'préparatoire'}`,20,292,7,false,170);
   return doc.output("blob");
 }

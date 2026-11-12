@@ -67,15 +67,21 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
     if (!f) { toast({ title: "Attestation illisible", description: "Le contenu enregistré ne peut pas être lu.", variant: "destructive" }); return; }
     setOccupe(d.id);
     try {
-      const image = await chargerElementAdmin("signature"); // échec de lecture = pas de PDF (aucune signature substituée)
       const signe = d.statut === "signe";
-      const blob = genererPdfAttestation({
-        mode: "officiel", lignes: f.lignes, modules: [], reference: d.identite_figee?.reference, empreinte: d.texte_empreinte,
-        infos: [`Date de fin = dernière connexion e-learning du ${dfr(f.sources.date_fin.started_at)} (réf. ${f.sources.date_fin.connexion_id.slice(0, 8)})`,
-          ...(f.sources.heures ? [`Heures e-learning prouvées : ${h(f.sources.heures.faites)} / ${h(f.sources.heures.minimum)}`] : []),
-          ...(signe ? [] : ["En attente de la signature de l'apprenant(e)"])],
-        signatureCentre: { representant: f.signature_centre.representant, le: f.signature_centre.autorise_le, image },
-        signatureApprenant: signe ? { nom: `${d.identite_figee?.prenom ?? ""} ${d.identite_figee?.nom ?? ""}`.trim(), image: d.reponses?.signature ?? null, le: d.signe_le_paris } : null,
+      // Signature + tampon du centre lus (échec = pas de PDF) et apposés seulement une fois l'apprenant(e) signé(e).
+      const [image, tampon] = signe ? await Promise.all([chargerElementAdmin("signature"), chargerElementAdmin("tampon")]) : [null, null];
+      const idf = d.identite_figee ?? {};
+      const texteCentral = f.lignes.filter((l: string) => /^(Je soussign|Cette attestation)/.test(l)).join("\n\n");
+      const blob = await genererPdfPresentation({
+        apprenantId: apprenant.id, prenom: idf.prenom ?? apprenant.prenom ?? "—", nom: idf.nom ?? apprenant.nom ?? "—",
+        formation: champs.formation ?? "Non renseignée", modalite: champs.modalite,
+        debut: champs.dateDebut, fin: f.sources?.date_fin?.started_at ?? champs.dateFin, dateEmission: champs.dateEmission,
+        preuve: null, motifs: [], reference: idf.reference, empreinte: d.texte_empreinte,
+        officiel: {
+          texteCentral, signee: signe,
+          centre: signe && image && tampon ? { image, tampon, le: f.signature_centre.autorise_le } : null,
+          apprenant: signe && d.reponses?.signature ? { image: d.reponses.signature, le: d.signe_le_paris } : null,
+        },
       });
       if (telecharger) telechargerBlob(blob, `Attestation_fin_formation_${d.identite_figee?.nom ?? ""}_${d.identite_figee?.reference ?? ""}.pdf`);
       else setApercuPdf(blob); // visionneuse intégrée : window.open après un chargement asynchrone est bloqué
