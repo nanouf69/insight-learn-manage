@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 13/11 13:10 UTC — Signature tardive d’émargement (aperçu uniquement)
-- [ ] Audit SELECT frontend/Edge/RPC/RLS, liens, identité, anti-doublon et cas anonyme 30/10 matin.
-- [ ] Préparer autorisation tardive exacte, horodatage réel, aucune présence inventée ni remplacement ; confirmation et relecture.
-- [ ] Tests isolés matin/après-midi, passé/futur, accès, signatures, concurrence, audit et PC/mobile ; rapport des limites.
+- [x] Audit SELECT : date Paris égale aujourd’hui dans RPC/Edge, remplacement refusé, bouton passé divergent ; 30/10 : 12 matin + 12 après-midi signées, zéro autorisation exacte, aucune identité déduite.
+- [x] Aperçu confirmation/conservation des preuves et recherche exacte, flag OFF ; candidat SQL atomicité/journal + Edge PNG non branchés, aucune présence inventée ni remplacement.
+- [x] 26 Vitest + 25 SQL existants + 26 SQL candidats + 6 Deno PASS, PC/mobile fictifs inspectés, build OK ; rapport docs/emargement-tardif-audit-2026-11-13.md.
+- [ ] Circuit complet : migration/Edge non installés, ancien INSERT/handler à couvrir, relecture/PDF et accès réel non prouvés ; horaires par session pratique exacte à certifier.
 - [ ] Activation : bloquée par validation explicite et sauvegarde/restauration ; aucune écriture réelle, installation ou publication autorisée.
 
 ## 13/11 12:17 UTC — Bilan examen HASSEN BENKHELIL invisible
