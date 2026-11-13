@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 15:31 UTC — Annuler et refaire une signature
+- [ ] Préparer confirmation ciblée par zone/signataire, motif facultatif et conservation de l’original ; aucune signature réelle désignée ou annulée.
+- [ ] Tester journal/révisions, identité, permissions, multi-signataires, PDF et statuts ; transports réels déconnectés tant que journal serveur/stockage/restauration non prouvés.
+- [ ] Vérifier l’aperçu et préciser les limites d’activation sans publication.
+
 ## 13/11 15:23 UTC — Parcours présence bloqué
 - [x] Candidats SQL exact/journal immuable/rapprochement snapshot et dépôt PDF analysé/relu, projection par union ; message explicite de non-enregistrement. Aucun branchement réel.
 - [x] 46 Vitest + 7 Deno PASS ; contrat PostgreSQL jetable sécurité/doublons/pg_dump-restauration PASS ; modale authentifiée en lecture PC/mobile, build OK, deux déclarations réelles inchangées.
