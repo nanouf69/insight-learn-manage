@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CODES_CRENEAUX, lireCreneauxValides } from '@/lib/presenceCreneauTransport';
+import { CODES_CRENEAUX, bornesHoraire, dureeLisible, libelleHoraire, lireCreneauxValides } from '@/lib/presenceCreneauTransport';
 import { HEURES_VALIDEES_EVENT } from '@/lib/heuresValideesAdmin';
 import { chargerSignaturesManquantes, dateDuJourParis, type SignatureManquante } from '@/lib/signaturesManquantes';
 import { heuresRestantSigner, formatMinutesPresence } from '@/lib/heuresRestantSigner';
@@ -34,7 +34,7 @@ export function DetailHeuresNonSignees({ rows, apprenantId }: { rows: readonly S
   const fmt = (minutes: number | null) => minutes == null ? 'À vérifier — durée non prouvée' : formatMinutesPresence(minutes);
   return <section aria-label="Heures non signées" className="space-y-3 border-y py-4">
     <div><h3 className="text-sm font-semibold">Nombre d’heures restant à signer</h3><p className="text-2xl font-bold text-foreground">{fmt(bilan.minutes)}</p></div>
-    <ul className="divide-y">{bilan.details.map(r => <li className="py-2 text-sm break-words flex flex-wrap items-center gap-2" key={`${r.date}|${r.creneau}`}><span>{r.date.split('-').reverse().join('/')} — {r.horaires ?? r.creneau} — <strong>{fmt(r.minutes)}</strong></span>{apprenantId&&<Button size="sm" variant="outline" className="h-auto whitespace-normal text-left" disabled={r.minutes==null||bilan.conflit} onClick={()=>void ouvrir({...r,pratique:/pratique/i.test(r.source)})}>Valider manuellement la présence</Button>}</li>)}</ul>
+    <ul className="divide-y">{bilan.details.map(r => <li className="py-2 text-sm break-words flex flex-wrap items-center gap-2" key={`${r.date}|${r.creneau}`}><span>{r.date.split('-').reverse().join('/')} — {(()=>{const b=bornesHoraire(r.horaires);return b?`de ${libelleHoraire(b)}`:(r.horaires ?? r.creneau);})()} — durée : <strong>{r.minutes==null?'à vérifier':dureeLisible(r.minutes)}</strong></span>{apprenantId&&<Button size="sm" variant="outline" className="h-auto whitespace-normal text-left" disabled={r.minutes==null||bilan.conflit} onClick={()=>void ouvrir({...r,pratique:/pratique/i.test(r.source)})}>Valider manuellement la présence</Button>}</li>)}</ul>
     <div><h3 className="text-sm font-semibold">Heures de présence à justifier / régulariser</h3><p className="text-lg font-bold">{fmt(bilan.minutesAJustifier)}</p>
       <p className="text-sm text-muted-foreground">Créneaux sans signature ni validation administrative liée précisément au créneau. Les validations sans créneau ne réduisent pas ce montant ; aucune signature n’est remplacée.</p></div>
     {apprenantId&&<div className="border-t pt-3 space-y-2"><h3 className="font-semibold">PRATIQUE — {pratique.data ? `${formatMinutesPresence(Math.round(pratique.data.pratique.faites*60))}/6h` : 'lecture en cours'}</h3>
