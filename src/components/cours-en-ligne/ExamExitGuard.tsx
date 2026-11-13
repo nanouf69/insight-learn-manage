@@ -4,6 +4,12 @@ import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescripti
 import { EXAM_EXIT_WARNING } from "./examUxPolicy";
 
 const EXIT_REQUEST = "ftransport-exam-exit-request";
+// Register before BrowserRouter's history listener: on window, listener order
+// matters even for capture listeners. Otherwise Router can unmount us first.
+let activePopHandler: ((event: PopStateEvent) => void) | null = null;
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', event => activePopHandler?.(event), true);
+}
 export function requestExamExit(action: () => void) {
   const event = new CustomEvent(EXIT_REQUEST, { cancelable: true, detail: action });
   if (window.dispatchEvent(event)) action();
@@ -63,10 +69,10 @@ export function ExamExitGuard({ active }: { active: boolean }) {
       window.history.go(-delta);
       ask(() => { bypass.current = true; window.history.go(delta); });
     };
-    window.addEventListener("popstate", pop, true);
+    activePopHandler = pop;
     return () => {
       navigator.push = push; navigator.replace = replace; navigator.go = go;
-      window.removeEventListener("popstate", pop, true);
+      if (activePopHandler === pop) activePopHandler = null;
     };
   }, [context?.navigator, ask]);
 
