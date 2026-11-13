@@ -5,6 +5,7 @@ import {
   flushAnswerSavesAndWait,
   flushAnswerSavesOnUnload,
   mergeSavedAndPendingAnswers,
+  primeKnownWriteSeq,
 } from "@/lib/answerPersistence";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
 import {
@@ -1366,7 +1367,7 @@ function RevisionFausses({
         tentativePreteRef.current = true;
         let lecture = supabase
           .from("reponses_apprenants")
-          .select("reponses, score, completed")
+          .select("reponses, score, completed, write_seq")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses");
@@ -1375,6 +1376,7 @@ function RevisionFausses({
           .limit(1)
           .maybeSingle();
         if (error) throw error;
+        primeKnownWriteSeq(apprenantId, idTentative, data?.write_seq);
         termineeRef.current = data?.completed === true;
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
         const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);

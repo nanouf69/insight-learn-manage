@@ -2,7 +2,7 @@ import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { RevisionFausses } from "@/components/cours-en-ligne/ExamenBlancsResultats";
-import { enqueueAnswerSave, flushAnswerSavesAndWait } from "@/lib/answerPersistence";
+import { enqueueAnswerSave, flushAnswerSavesAndWait, primeKnownWriteSeq } from "@/lib/answerPersistence";
 import { creerRevisionProgressState } from "@/lib/revisionFaussesProgression";
 
 const h = vi.hoisted(() => ({
@@ -40,6 +40,7 @@ vi.mock("@/lib/answerPersistence", async (original) => {
   return {
     ...actual,
     enqueueAnswerSave: vi.fn(),
+    primeKnownWriteSeq: vi.fn(),
     flushAnswerSavesAndWait: vi.fn(async () => {
       const calls = vi.mocked(enqueueAnswerSave).mock.calls;
       const last = calls.at(-1)?.[0] as any;
@@ -88,6 +89,13 @@ beforeEach(() => {
 });
 
 describe("Révision questions fausses — comportement", () => {
+  it("une reprise utilise la version réellement relue avant toute nouvelle saisie", async () => {
+    h.saved = { reponses: {}, write_seq: 394, completed: false };
+    monter(); await screen.findByText("Question T3P");
+    expect(primeKnownWriteSeq).toHaveBeenCalledWith("a1", base, 394);
+    fireEvent.click(screen.getByText("Réponse B"));
+    expect(primeKnownWriteSeq).toHaveBeenCalledBefore(vi.mocked(enqueueAnswerSave));
+  });
   it("BENNANI : revient vers la réponse vide déjà cochée et permet de la compléter sans double score", async () => {
     h.saved = { reponses: { revisionState: creerRevisionProgressState({
       examenId: "EB2-TAXI", answers: { "t3p:1": [], "gestion:1": "texte" }, currentIndex: 1,
