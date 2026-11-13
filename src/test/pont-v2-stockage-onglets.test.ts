@@ -106,6 +106,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 type Pont = typeof import("@/features/noyau-passage/pontV2");
+/** Fermeture d'onglet : le navigateur libère les verrous Web Locks qu'il détenait. */
+const fermerOnglet = () => tenus.clear();
 /** Un onglet = une instance de module indépendante (mémoire propre), stockage partagé. */
 async function ouvrirOnglet(): Promise<Pont> {
   vi.resetModules();
@@ -271,6 +273,7 @@ describe("Fermeture ou rechargement pendant une requête en vol", () => {
     // La réponse n'a pas été confirmée à l'onglet : elle est toujours dans la file durable.
     expect(JSON.parse(local.getItem("noyau_v2_answer_queue_v1")!)).toHaveLength(1);
     perdreReponseApresCommit = false;
+    fermerOnglet();
     const rouvert = await ouvrirOnglet();
     expect(rouvert.reponsesNoyauEnAttente("t")).toBe(1);
     await vider(rouvert);
@@ -286,6 +289,7 @@ describe("Fermeture ou rechargement pendant une requête en vol", () => {
     await pause(5);
     expect(serveur.size).toBe(0);
     perdreAvantServeur = false;
+    fermerOnglet();
     const rouvert = await ouvrirOnglet();
     await vider(rouvert);
     expect(valeurServeur("t", "m:1")).toEqual(["A", "C"]);
@@ -299,6 +303,7 @@ describe("Fermeture ou rechargement pendant une requête en vol", () => {
     await pause(2);
     A.enfilerReponseNoyau({ attemptId: "t", matiereId: "m", questionId: 1, valeur: "réponse définitive" });
     perdreReponseApresCommit = false;
+    fermerOnglet();
     const rouvert = await ouvrirOnglet();
     await vider(rouvert);
     expect(valeurServeur("t", "m:1")).toBe("réponse définitive");
@@ -318,6 +323,7 @@ describe("Panne prolongée de six minutes", () => {
       for (let q = 1; q <= 5; q++) A.enfilerReponseNoyau({ attemptId: "p", matiereId: "qrc", questionId: q, valeur: `final-${q}` });
       const appelsAvantFermeture = appels;
       // Fermeture du navigateur au milieu de la panne, réouverture 3 minutes plus tard.
+      fermerOnglet();
       const B = await ouvrirOnglet();
       for (let s = 0; s < 180; s += 10) { await vi.advanceTimersByTimeAsync(10_000); await B.viderFileNoyau("p"); }
       expect(B.reponsesNoyauEnAttente("p")).toBe(5);
