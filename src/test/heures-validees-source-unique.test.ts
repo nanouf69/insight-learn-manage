@@ -3,8 +3,8 @@ import { describe, it, expect, vi } from "vitest";
 const state: { rows: any[]; error: any } = { rows: [], error: null };
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    from: () => ({
-      select: () => ({ eq: () => ({ order: () => ({ range: async () => ({ data: state.error ? null : state.rows, error: state.error }) }) }) }),
+    from: (table: string) => ({
+      select: () => ({ eq: () => ({ order: () => ({ range: async () => table === "presentiel_validation_decisions" && !state.error ? ({ data: [], error: null }) : ({ data: state.error ? null : state.rows, error: state.error }) }) }) }),
     }),
   },
 }));
