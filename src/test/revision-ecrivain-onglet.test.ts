@@ -34,3 +34,11 @@ describe("révision : accusé perdu sur le même onglet", () => {
     expect(tamponnerEcrivainRevision(r)).toBe(r);
   });
 });
+
+describe("révision : jamais de réponse effacée", () => {
+  it("refuse une version locale qui retire une réponse enregistrée", () => {
+    const serveur = tamponnerEcrivainRevision(etat({ a: "1" }, []));
+    const local = tamponnerEcrivainRevision(etat({}, []));
+    expect(revisionEcriteParCetOnglet(local, serveur)).toBe(false);
+  });
+});

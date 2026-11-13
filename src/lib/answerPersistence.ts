@@ -637,6 +637,10 @@ export function revisionEcriteParCetOnglet(candidate: unknown, stored: unknown, 
   if (st.examenId && c.examenId !== st.examenId) return false;
   const so = Array.isArray(st.questionOrder) ? st.questionOrder : [];
   if (so.length > 0 && JSON.stringify(so) !== JSON.stringify(c.questionOrder ?? [])) return false;
+  // Une réponse déjà enregistrée peut être précisée, jamais retirée.
+  const sa = estObjet(st.answers) ? st.answers : {}, ca = estObjet(c.answers) ? c.answers : {};
+  const vide = (v: unknown) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
+  if (Object.keys(sa).some((k) => !vide(sa[k]) && (!Object.prototype.hasOwnProperty.call(ca, k) || vide(ca[k])))) return false;
   // Une validation déjà enregistrée n'est jamais retirée.
   const cc = new Set(Array.isArray(c.correctedQuestions) ? c.correctedQuestions.map(String) : []);
   return (Array.isArray(st.correctedQuestions) ? st.correctedQuestions.map(String) : []).every((k: string) => cc.has(k));
