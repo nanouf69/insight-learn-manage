@@ -1,8 +1,8 @@
 /** Isolated preparation only: no database writes, transport, scheduler or booking mutation. */
-import { modeleRappelTheorique, type ModeleRappelTheorique, type FinancementRappelVerifie } from "./modelesRappelTheorique.ts";
-export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-obligations-v4";
-export const RAPPEL_THEORIQUE_OBJET = "Rappel important – Finalisez vos modules pour votre entraînement pratique";
-export const RAPPEL_THEORIQUE_TEXTE = "Bonjour, À la suite de votre examen théorique, nous vous invitons à terminer l'ensemble des modules de votre formation sur notre plateforme e-learning, à l'exception de la partie pratique. Les candidats ayant terminé l'ensemble de leurs modules seront prioritaires pour le choix d'une date d'entraînement pratique. Si vos modules ne sont pas encore terminés, vous ne serez donc pas prioritaire dans l'attribution des créneaux disponibles. Nous vous invitons à finaliser votre parcours dès que possible afin de bénéficier de cette priorité. En cas de difficulté technique ou de problème de validation d'un module, merci de contacter notre centre de formation. Cordialement, L'équipe Ftransport";
+import { apercuHtmlRappel, apercuTexteRappel, modeleRappelTheorique, OBJET_RAPPEL_THEORIQUE, type ModeleRappelTheorique, type FinancementRappelVerifie } from "./modelesRappelTheorique.ts";
+export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-ferme-v5";
+export const RAPPEL_THEORIQUE_OBJET = OBJET_RAPPEL_THEORIQUE;
+export const RAPPEL_THEORIQUE_TEXTE = apercuTexteRappel(modeleRappelTheorique("ferme"));
 
 export interface ObligationCanonique {
   id: number;
@@ -71,7 +71,7 @@ export function progressionNonPratique(obligations: ObligationCanonique[] | null
 export type DecisionRappel =
   | { etat: "arreter"; raison: string }
   | { etat: "attendre" | "a_verifier"; raison: string }
-  | { etat: "preparer"; jourEcheance: string; rang: number; cle: string; objet: string; texte: string;
+  | { etat: "preparer"; jourEcheance: string; rang: number; cle: string; objet: string; texte: string; html: string;
       phase: "avant" | "apres"; modele: ModeleRappelTheorique; activationAutorisee: false; pointsAValider: string[] };
 
 export function preparerRappelTheorique(input: {
@@ -134,7 +134,7 @@ function construirePreparation(
       ? ["Impossibilité de passer à pratique non effective : règle et validité contractuelle à confirmer", "Priorité non opérationnelle", "Activation non autorisée"]
       : ["Mentions conditionnelles et validité contractuelle à valider", "Activation non autorisée"],
     cle: ["rappel_modules_theorique", dossier.id, occurrenceId, phase, jour, RAPPEL_THEORIQUE_VERSION].map(encodeURIComponent).join(":"),
-    objet: modele.objet, texte: modele.paragraphes.map(p => p.texte).join("\n\n"),
+    objet: modele.objet, texte: apercuTexteRappel(modele), html: apercuHtmlRappel(modele),
   };
 }
 
