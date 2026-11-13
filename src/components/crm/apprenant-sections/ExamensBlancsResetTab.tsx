@@ -46,6 +46,8 @@ import SelectionCopieMoyennePreview from './SelectionCopieMoyennePreview';
 import { fetchCoreMatiereStates } from "@/lib/coreExamPublication";
 import { fetchPassagesV2NonFiables } from "@/lib/passagesV2NonFiables";
 import { attacherSourceUnique } from "@/lib/noteExamenAffichee";
+import { lignesCanoniquesEB, brouillonDejaRemis } from '@/lib/ebNativeDisplay';
+import { lireResultatsQuizEleve } from '@/lib/learnerQuizResultsRead';
 import { useCoreChangeTick } from "@/hooks/useCoreChangeTick";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExamensArchivesTab from './ExamensArchivesTab';
@@ -134,11 +136,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
     queryFn: async () => {
       const examensDefs = await fetchLiveExamens().catch(() => STATIC_EXAMENS_BLANCS);
       // 1. Load completed quiz results
-      const { data, error } = await supabase
-        .from("apprenant_quiz_results")
-        .select("*")
-        .eq("apprenant_id", apprenant.id)
-        .eq("quiz_type", "examen_blanc");
+      const { data, error } = await lireResultatsQuizEleve(apprenant.id,undefined,'examen_blanc');
 
       if (error) throw error;
 
@@ -152,11 +150,14 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       const coreStates = await fetchCoreMatiereStates(apprenant.id);
       const nonFiables = coreStates === null ? null
         : await fetchPassagesV2NonFiables(new Map([[apprenant.id, coreStates]]));
+      if(coreStates===null||nonFiables===null)throw new Error('Lecture des copies officielles indisponible');
+      const activeStates=coreStates.filter(s=>isAfterExamReset(s.finishedAt,resetCutoffs[s.examId]));
+      const canonicalRows=lignesCanoniquesEB((data??[]).filter(r=>!archivedLegacyIds.has(String(r.id))&&isAfterExamReset(r.completed_at,resetCutoffs[r.quiz_id])),activeStates,nonFiables,apprenant.id,examensDefs);
 
       // Group rows by quiz_id, then dedupe per matière via selectLatestAttemptRows
       // (same logic as ExamenBlancsListe.tsx côté élève) so admin & student agree.
       const rowsByQuiz = new Map<string, any[]>();
-      for (const row of (data || [])) {
+      for (const row of canonicalRows) {
         if (!row?.quiz_id || archivedLegacyIds.has(String(row.id))) continue;
         if (!rowsByQuiz.has(row.quiz_id)) rowsByQuiz.set(row.quiz_id, []);
         rowsByQuiz.get(row.quiz_id)!.push(row);
@@ -185,7 +186,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             reponses: (row as any).details?.reponses ?? null,
             correctionsIA: (row as any).details?.correctionsIA ?? null,
             details: (row as any).details ?? null,
-            __core: attacherSourceUnique(row, coreStates, nonFiables).__core,
+            __core: row.__copieSessionAttemptId ? row.__core : attacherSourceUnique(row, activeStates, nonFiables).__core,
           };
 
           const existing = grouped.get(key);
@@ -214,7 +215,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       // 2. Also detect in-progress exams from reponses_apprenants (no quiz_results yet)
       const { data: inProgressData } = await supabase
         .from("reponses_apprenants")
-        .select("exercice_id, updated_at, completed")
+        .select("apprenant_id, exercice_id, updated_at, created_at, completed, reponses")
         .eq("apprenant_id", apprenant.id)
         .like("exercice_id", "EB%");
 
@@ -224,6 +225,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
         for (const row of inProgressData) {
           const parts = (row.exercice_id ?? "").split("_");
           const examPart = parts[0] ?? ""; // e.g. "EB6"
+          if(row.completed===true||brouillonDejaRemis(row,activeStates,apprenant.id,examPart))continue;
           if (!isAfterExamReset(row.updated_at, resetCutoffs[examPart])) continue;
           const existing = inProgressByExam.get(examPart);
           const date = row.updated_at ?? "";
