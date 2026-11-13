@@ -97,4 +97,20 @@ class Contract(unittest.TestCase):
   self.assertEqual(before,self.sql("SELECT to_jsonb(r) FROM reponses_apprenants r WHERE exercice_id='EB6__t3p'").stdout)
   self.assertEqual(json.loads(self.start(c,'bbbbbbbb-9999-1111-1111-111111111111').stdout.splitlines()[-1]),second)
   self.assertEqual(self.sql("SELECT count(*) FROM apprenant_quiz_results WHERE quiz_id='EB6'").stdout.strip(),'1')
+ def test_10_taxi_fg_separate_authorizations_preserve_all_originals(self):
+  self.seed('EB1-TAXI','reglementation_taxi')
+  self.sql("UPDATE module_editor_state SET module_data=jsonb_set(module_data,'{matieres}',module_data->'matieres'||'[ {\"id\":\"reglementation_taxi2\",\"nom\":\"G(T) - Locale TAXI\",\"duree\":20,\"questions\":[{\"id\":1,\"type\":\"QCM\",\"enonce\":\"Fictif G\"}]} ]'::jsonb) WHERE module_data->>'id'='EB1-TAXI'")
+  for mid,score in [('reglementation_taxi',15),('reglementation_taxi2',8),('anglais',12)]:
+   self.sql(f"INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at,tentative) VALUES('{A}','{U}','EB1-TAXI__{mid}','examen_blanc','{{\"1\":[\"A\"]}}',true,'submitted',now(),1);INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,score_obtenu,score_max) VALUES('{A}','{U}','examen_blanc','EB1-TAXI','Fictif','{mid}','Fictif',1,{score},20)")
+  proof="SELECT jsonb_build_object('answers',(SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM reponses_apprenants r WHERE exercice_id LIKE 'EB1-TAXI__%'),'grades',(SELECT jsonb_agg(to_jsonb(q) ORDER BY id) FROM apprenant_quiz_results q WHERE quiz_id='EB1-TAXI'),'timers',(SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM apprenant_examen_timers t))"
+  before=self.sql(proof).stdout
+  f=self.context('EB1-TAXI','reglementation_taxi');g=self.context('EB1-TAXI','reglementation_taxi2')
+  self.assertEqual((f['status'],g['status']),('notee','notee'))
+  self.authorize(f,'aaaaaaaa-ab01-1111-1111-111111111111')
+  self.assertIsNone(self.context('EB1-TAXI','reglementation_taxi2')['authorization_id'])
+  self.assertIsNone(self.context('EB1-TAXI','anglais')['authorization_id'])
+  self.authorize(g,'aaaaaaaa-ab02-1111-1111-111111111111')
+  self.assertEqual(self.sql("SELECT matiere_id FROM exam_subject_reset_authorizations WHERE exam_id='EB1-TAXI' ORDER BY matiere_id").stdout.splitlines(),['reglementation_taxi','reglementation_taxi2'])
+  self.assertEqual(before,self.sql(proof).stdout)
+  self.assertEqual(self.sql("SELECT count(*) FROM exam_subject_reset_authorizations WHERE exam_id='EB1-TAXI' AND actor IS NOT NULL AND learner_name='Élève FICTIF'").stdout.strip(),'2')
 if __name__=='__main__':unittest.main(verbosity=2)

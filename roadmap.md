@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 09:45 UTC — Boutons F(T)/G(T) TAXI
+- [x] Audit SELECT : F=reglementation_taxi, G=reglementation_taxi2 dans EB1–6 TAXI ; RPC présentes/droits authenticated, anon refusé ; aucun incident correspondant journalisé. Cause individuelle non prouvée sans identité/erreur ; aucune identité déduite.
+- [x] Aperçu : refus lisible, relecture explicite après erreur, réponses tardives invalidées et confirmation par matière. 21 Vitest + 10 SQL + 14 contrats déclencheurs PASS, boutons réels avec serveur fictif PC/mobile PASS ; build OK. Rapport docs/taxi-fg-reset-2026-11-13.md.
+- [ ] Publication NO-GO : restauration complète non prouvée ; aucun reset, écriture réelle ou migration autorisé.
+
 ## 13/11 09:08 UTC — Urgence BENNANI et signatures après formation
 - [x] BENNANI : EB5 47 marqueurs/une QRC vide, refus local confirmé ; retour vers question manquante et version de reprise corrigés en aperçu. 42 tests ciblés PASS, PC/mobile fictifs sans écriture, build OK ; rapport docs/benani-revision-eb5-2026-11-13.md.
 - [ ] Signatures après formation : préciser attestation ou régularisation de présence, conserver dates réelles et preuves.
