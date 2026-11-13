@@ -9,6 +9,9 @@ import { planningCreneaux, marquerFiliereRows } from "@/lib/signaturesManquantes
 import { fusionnerPresenceAdministrative, type ValidationPresence, type JourPresence } from '@/lib/presenceAdministrative';
 import { HEURES_VALIDEES_EVENT, lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
 import { estVtcPresentiel, pratiquePrevueVtc } from '@/lib/tauxTotalPresence';
+import { lireCreneauxValides, type LienCreneau } from '@/lib/presenceCreneauTransport';
+import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
+import { unionPresence, type IntervallePresence } from '@/lib/presenceUnion';
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -19,7 +22,7 @@ const signatureValide = (e: any) =>
 export interface TauxHeures { faites: number; prevues: number; derniere?: string; datesEntrainement?: string[] }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
-export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = [], validations: ValidationPresence[] = [], vtcPresentiel = filiere === 'vtc') {
+export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = [], validations: ValidationPresence[] = [], vtcPresentiel = filiere === 'vtc', liens: LienCreneau[] = []) {
   // The VTC-only change must never alter another track, even with a stale flag.
   const appliquerLotVtc = vtcPresentiel && String(filiere ?? '').toLowerCase() === 'vtc';
   const res: { session: TauxHeures; pratique: TauxHeures } = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
@@ -33,6 +36,8 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   res.session.prevues = heuresTheorieInscrites(inscriptions, filiere);
   const vus = new Set<string>();
   const signes: JourPresence[] = [];
+  const signesExacts: IntervallePresence[] = [];
+  const prevusExacts = inscriptions.flatMap(row => creneauxSessionInscrite(row, filiere ?? 'VTC').map(slot => ({...slot,categorie:'theorie'})));
   const autorises = new Set<string>();
   const pratiquesVues = new Set<string>();
   const { parDate } = planningCreneaux(inscriptions, reservations, configs);
@@ -66,12 +71,14 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       if (!sessionPlanning.get(date)?.creneaux.has(creneau)) continue;
       const reservation = reservations.find(r => d10(r.date_choisie) === date);
       const parts = pratique && (daySlots.has(date) || reservation) ? resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation ?? s.type_session), normalizePratiqueCreneau(reservation?.creneau)) : [];
-      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : HEURES_CRENEAU[creneau];
+      const exact = prevusExacts.find(p => p.date === date && p.creneau === creneau);
+      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : exact && liens.length ? (Number(exact.fin.slice(0,2))*60+Number(exact.fin.slice(3,5))-Number(exact.debut.slice(0,2))*60-Number(exact.debut.slice(3,5)))/60 : HEURES_CRENEAU[creneau];
       if (!h) continue;
       vus.add(cle);
       const minutes=Math.round(h*60);
       cible.faites = (Math.round(cible.faites*60)+minutes)/60;
       signes.push({date,categorie:pratique?'pratique':'theorie',minutes});
+      if (!pratique && exact) signesExacts.push(exact);
       if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
   }
@@ -96,27 +103,46 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     }
   }
   res.pratique.datesEntrainement = [...datesEntrainement].sort();
-  const admin=fusionnerPresenceAdministrative(signes,validations,autorises);
+  // Slot receipts supersede date-only ambiguity without changing historic rows.
+  const idsExacts = new Set(liens.map(l=>l.validation_id));
+  const admin=fusionnerPresenceAdministrative(signes,validations.filter(v=>!idsExacts.has(v.id ?? '')),autorises);
+  const actives = new Set(validations.filter(v=>!v.annulee).map(v=>v.id));
+  const union = unionPresence(signesExacts,liens.filter(l=>actives.has(l.validation_id)).map(l=>({id:l.validation_id,date:l.date_presence,categorie:'theorie',debut:l.debut,fin:l.fin,preuve:l.pdf_chemin})),prevusExacts);
+  const netExact = union.netMinutes;
+  // Legacy declarations only prove a daily coverage: don't add them twice to exact coverage.
+  const netLegacy = admin.ajouts.filter(a=>a.categorie==='theorie').reduce((s,a)=>{
+    const exactJour=unionPresence(signesExacts.filter(p=>p.date===a.date),liens.filter(l=>actives.has(l.validation_id) && l.date_presence===a.date).map(l=>({id:l.validation_id,date:l.date_presence,categorie:'theorie',debut:l.debut,fin:l.fin,preuve:l.pdf_chemin})),prevusExacts.filter(p=>p.date===a.date));
+    return s+Math.max(0,a.minutes-exactJour.netMinutes);
+  },0);
+  admin.minutesAdmin += netExact + netLegacy - admin.theorieMinutes;
+  admin.theorieMinutes = netExact + netLegacy;
+  admin.ajouts.push(...liens.filter(l=>actives.has(l.validation_id)).map(l=>({id:l.validation_id,date:l.date_presence,categorie:'theorie',minutes:0})));
   res.session.faites=(Math.round(res.session.faites*60)+admin.theorieMinutes)/60;
   res.pratique.faites=(Math.round(res.pratique.faites*60)+admin.pratiqueMinutes)/60;
   const formationInitiale = inscriptions.some(row => /theorique/i.test(row.sessions?.type_session ?? '') && !/continue|\bfc\b/i.test(`${row.sessions?.nom ?? ''} ${row.sessions?.type_session ?? ''}`) && !row.liste_attente && !row.emargements_exclus && !/annul/i.test(row.sessions?.statut ?? ''));
   res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, appliquerLotVtc && formationInitiale);
-  return { ...res, admin };
+  const signees = res.session.faites + res.pratique.faites - admin.minutesAdmin/60;
+  if (appliquerLotVtc) {
+    res.session.faites = Math.min(res.session.prevues,res.session.faites);
+    res.pratique.faites = Math.min(res.pratique.prevues,res.pratique.faites);
+  }
+  return { ...res, admin, signees, manuelles: union.manuellesMinutes/60 };
 }
 
 /** Chargeur partage avec la fiche apprenant ; aucune regle de calcul n'est dupliquee. */
 export async function chargerTauxPresenceHeures(apprenantId: string, filiere?: string | null) {
-  const [em, ins, reservations, configs, validations, dossier] = await Promise.all([
+  const [em, ins, reservations, configs, validations, dossier, liens] = await Promise.all([
     fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,session_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(id,type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
     lirePresencesAdministratives(apprenantId),
     supabase.from('apprenants').select('type_apprenant,formation_choisie').eq('id',apprenantId).maybeSingle(),
+    lireCreneauxValides(apprenantId),
   ]);
   if (dossier.error || !dossier.data) throw dossier.error ?? new Error('Parcours de présence indisponible');
   const vtc = estVtcPresentiel(dossier.data);
-  return calculerTauxPresenceHeures(em, ins, filiere ?? (vtc ? 'vtc' : null), reservations, configs, validations, vtc);
+  return calculerTauxPresenceHeures(em, ins, filiere ?? (vtc ? 'vtc' : null), reservations, configs, validations, vtc, liens);
 }
 
 export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true, filiere?: string | null) {
@@ -146,7 +172,7 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     const channel=supabase.channel(`presence-heures-${apprenantId}-${crypto.randomUUID()}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_heures_validees',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_validation_decisions',filter:`apprenant_id=eq.${apprenantId}`},refresh)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'presentiel_validation_decisions',filter:`apprenant_id=eq.${apprenantId}`},refresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_presence_creneaux',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'emargements_fc',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'session_apprenants',filter:`apprenant_id=eq.${apprenantId}`},refresh).subscribe();
     return () => { annule = true; window.removeEventListener(HEURES_VALIDEES_EVENT,local);window.removeEventListener('online',refresh);window.removeEventListener('focus',refresh);void supabase.removeChannel(channel); };
