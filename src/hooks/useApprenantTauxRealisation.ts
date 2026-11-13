@@ -7,7 +7,8 @@ import { getSessionEndMs, clampConnexionsToAccessEnd, getAccessCutoffMs } from "
 import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { chargerClassificationSignatures, signaturesRetenuesPourHeures } from "@/lib/signaturesManquantes";
-import { computePresentielHours, presentielProgress } from "@/lib/presentielHours";
+import { computePresenceAvecAdmin, presentielProgress } from "@/lib/presentielHours";
+import { HEURES_VALIDEES_EVENT } from '@/lib/heuresValideesAdmin';
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
 import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
@@ -96,7 +97,7 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
           .range(from, to)),
         fetchAllRows<any>((from, to) => supabase
           .from("presentiel_heures_validees" as any)
-          .select("id, heures, created_at")
+          .select("id, heures, created_at, date_presence, categorie")
           .eq("apprenant_id", apprenantId)
           .range(from, to)), // erreur propagée : taux indisponible, jamais un faux 0 h
         chargerClassificationSignatures(apprenantId),
@@ -108,12 +109,11 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
       });
 
       // ---- Presentiel : les feuilles d'emargement font foi (theorie ET pratique)
-      const { theorieHours, pratiqueMinutes } = computePresentielHours(signaturesRetenuesPourHeures(emargAll as any[], classification), pratiqueDetails as any[]);
+      const { theorieHours, pratiqueMinutes, admin } = computePresenceAvecAdmin(signaturesRetenuesPourHeures(emargAll as any[], classification), pratiqueDetails as any[],heuresValideesRows);
 
       // Heures validées manuellement par un admin : elles S'AJOUTENT aux heures
       // signées, sans jamais modifier ni remplacer les émargements existants.
-      const heuresPresentielValidees = (heuresValideesRows as any[])
-        .reduce((sum, r) => sum + (Number(r?.heures) || 0), 0);
+      const heuresPresentielValidees = admin.minutesAdmin/60;
 
       const reqElearning = requiredElearningHours(apprenant);
       const presence = presentielProgress(theorieHours + pratiqueMinutes / 60, Number(apprenant?.heures_presentiel) || 0, pratiqueDetails);
@@ -122,7 +122,7 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
 
       // Actual proven time is never capped at the contractual target.
       const doneElearning = onlineMin / 60;
-      const donePresentiel = presence.done + heuresPresentielValidees;
+      const donePresentiel = presence.done + admin.generiqueMinutes/60;
 
       // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
       const ta = String(apprenantRow.type_apprenant || "").toLowerCase().trim();
@@ -161,6 +161,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     // Each effect owns its channel: admin + learner preview and StrictMode
     // can mount concurrently while a previous removal is still asynchronous.
     const channel = supabase.channel(`taux-presence-${apprenantId}-${crypto.randomUUID()}`)
+      .on("postgres_changes",{event:"*",schema:"public",table:"presentiel_heures_validees",filter:`apprenant_id=eq.${apprenantId}`},()=>queryClient.invalidateQueries({queryKey:["apprenant-taux-realisation",apprenantId]}))
       .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
       })
@@ -169,7 +170,9 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
       .on("postgres_changes", { event: "*", schema: "public", table: "agenda_blocs" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
       .on("postgres_changes", { event: "*", schema: "public", table: "planning_pratique_config" }, () => { queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] }); })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const local=(e:Event)=>{if((e as CustomEvent).detail?.apprenantId===apprenantId)void queryClient.invalidateQueries({queryKey:["apprenant-taux-realisation",apprenantId]});};
+    window.addEventListener(HEURES_VALIDEES_EVENT,local);
+    return () => { window.removeEventListener(HEURES_VALIDEES_EVENT,local);supabase.removeChannel(channel); };
   }, [apprenantId, queryClient]);
   return useQuery<TauxRealisation | null>({
     queryKey: ["apprenant-taux-realisation", apprenantId, apprenantProp?.type_apprenant ?? null, apprenantProp?.formation_choisie ?? null, apprenantProp?.heures_elearning ?? null, apprenantProp?.heures_presentiel ?? null, apprenantProp?.heures_totales ?? null],

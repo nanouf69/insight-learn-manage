@@ -1,5 +1,6 @@
 import { estSignatureVideConnue } from "@/lib/preuveSignatureEmargement";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
+import { fusionnerPresenceAdministrative, type ValidationPresence } from '@/lib/presenceAdministrative';
 
 export interface EmargementRowLike {
   date_emargement?: string | null;
@@ -89,4 +90,18 @@ export function computePresentielHours(
   }
 
   return { theorieHours, pratiqueMinutes };
+}
+
+/** Current display only; frozen calculations continue calling computePresentielHours. */
+export function computePresenceAvecAdmin(emargRows: EmargementRowLike[], details: PratiqueSlotDetail[], validations: ValidationPresence[]) {
+  const base = computePresentielHours(emargRows, details);
+  const dates = [...buildEmargementsSlotMap(emargRows).keys()];
+  const signes = dates.flatMap(date => {
+    const d = computePresentielHours(emargRows.filter(r=>r.date_emargement?.slice(0,10)===date), details.filter(r=>r.date===date));
+    return [{ date, categorie:'theorie', minutes:Math.round(d.theorieHours*60) }, {date,categorie:'pratique',minutes:d.pratiqueMinutes}];
+  });
+  const admin = fusionnerPresenceAdministrative(signes, validations);
+  return { ...base, theorieHours: base.theorieHours + admin.theorieMinutes/60,
+    pratiqueMinutes: base.pratiqueMinutes + admin.pratiqueMinutes, admin,
+    totalMinutes: Math.round(base.theorieHours*60)+base.pratiqueMinutes+admin.minutesAdmin };
 }

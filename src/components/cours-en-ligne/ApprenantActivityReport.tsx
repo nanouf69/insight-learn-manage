@@ -36,7 +36,8 @@ import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import { getSessionEndMs, getSessionDurationMinutes, getAccessCutoffMs, filterSessionsWithinAccess } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails, type PratiqueSlotDetail } from "@/lib/pratiqueSlots";
 import { fetchHeuresValideesAdmin, HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
-import { isSignedPresentielRow, presentielProgress } from "@/lib/presentielHours";
+import { isSignedPresentielRow, presentielProgress, computePresenceAvecAdmin } from "@/lib/presentielHours";
+import type { HeureValideeAdmin } from '@/lib/heuresValideesAdmin';
 import { requiredElearningHours, formatLearningHours } from "@/lib/elearningRequiredHours";
 import { getHistoryDefaults, historyStartTimestamp, type HistoryPeriod } from "@/lib/reports/history-defaults";
 import { learningSessionWindow, learningSessionMinutes, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
@@ -195,7 +196,7 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [emargements, setEmargements] = useState<EmargementRow[]>([]);
   const [pratiqueDetails, setPratiqueDetails] = useState<PratiqueSlotDetail[]>([]);
-  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[]; indisponible?: boolean }>({ minutes: 0, lignes: [] });
+  const [heuresValidees, setHeuresValidees] = useState<{ minutes: number; lignes: { date: string; heures: number; label: string }[]; items?: HeureValideeAdmin[]; indisponible?: boolean }>({ minutes: 0, lignes: [] });
   const [loading, setLoading] = useState(false);
   // Préférence d'affichage uniquement : Tout l'historique reste toujours disponible.
   const [period, setPeriod] = useState<HistoryPeriod>(() => getHistoryDefaults(lockedApprenantId).period);
@@ -561,8 +562,11 @@ export default function ApprenantActivityReport({ onBack, lockedApprenantId }: P
     }
     // Heures validées par l'administration : une ligne par ajout, comptée
     // en présentiel comme la carte « Taux présentiel » et les jalons.
-    for (const l of heuresValidees.lignes) {
-      rows.push({ date: l.date, label: l.label, hours: l.heures });
+    const fusion=computePresenceAvecAdmin(emargements,pratiqueDetails,(heuresValidees.items??[]).map(r=>({id:r.id,heures:r.heures,date_presence:r.datePresence,categorie:r.categorie})));
+    for (const ajout of fusion.admin.ajouts) {
+      const item=heuresValidees.items?.find(r=>r.id===ajout.id);
+      const l=heuresValidees.lignes.find(r=>r.date===(item?.datePresence??item?.dateSaisie));
+      rows.push({ date: ajout.date??item?.dateSaisie??'', label: `${l?.label??'Présence administrative'}${fusion.admin.revue.length?' — couverture à vérifier':''}`, hours: ajout.minutes/60 });
     }
     // Une réservation/session pratique sans émargement signé ne produit
     // aucune ligne et ne compte aucune heure dans le rapport.

@@ -39,7 +39,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 
 describe("Heures de présence validées manuellement", () => {
   it("s'ajoutent aux heures signées sans les remplacer", async () => {
-    state.heuresValidees = [{ heures: 6 }, { heures: 3.5 }];
+    state.heuresValidees = [{ id:'h1',heures: 6 }, {id:'h2', heures: 3.5 }];
     const { result } = renderHook(() => useApprenantTauxRealisation("app-1"), { wrapper });
     await waitFor(() => { if (result.current.error) throw result.current.error; expect(result.current.data).toBeTruthy(); });
     expect(result.current.data?.heuresPresentielValidees).toBe(9.5);

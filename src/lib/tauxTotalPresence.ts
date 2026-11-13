@@ -11,7 +11,9 @@ export function tauxTotalPresence(d: PresenceHeuresTotal | null, pratiquePrevue 
   const prevues = sessionPrevues + pratiquePrevues;
   if (prevues <= 0) return null;
   // Cap each part separately: extra theory hours never compensate missing practice.
-  const faites = d.session.faites + d.pratique.faites;
-  const acquises = Math.min(d.session.faites, sessionPrevues) + Math.min(d.pratique.faites, pratiquePrevues);
-  return { faites, prevues, pratiquePrevues, pct: Math.min(100, acquises / prevues * 100) };
+  const sessionMinutes=Math.max(0,Math.round(d.session.faites*60));
+  const pratiqueMinutes=Math.max(0,Math.round(d.pratique.faites*60));
+  const faites = (sessionMinutes+pratiqueMinutes)/60;
+  const acquises = Math.min(sessionMinutes, Math.round(sessionPrevues*60)) + Math.min(pratiqueMinutes, Math.round(pratiquePrevues*60));
+  return { faites, prevues, pratiquePrevues, pct: Math.min(100, acquises / Math.round(prevues*60) * 100) };
 }

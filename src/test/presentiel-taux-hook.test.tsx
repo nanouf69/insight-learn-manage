@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   learner: { heures_elearning: 60, heures_presentiel: 0, heures_totales: 66, type_apprenant: "vtc-e" } as Record<string, unknown>,
   connections: [] as Record<string, unknown>[],
   activities: [] as Record<string, unknown>[],
+  admin: [] as Record<string, unknown>[],
   channels: new Map<string, { subscribed: boolean; on: (event: string, filter: unknown, callback: () => void) => unknown; subscribe: () => unknown }>(),
   removed: [] as unknown[],
   ratio: { signees: 1, attendues: 2, taux: 50, raison: null } as any,
@@ -31,11 +32,12 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
       : table === "emargements_fc" ? state.rows
       : table === "apprenant_connexions" ? state.connections
       : table === "apprenant_module_activites" ? state.activities : [];
+    const resultat=()=>table==='presentiel_heures_validees'?state.admin:data();
     const builder: Record<string, unknown> = {};
     for (const method of ["eq", "filter", "range", "order"]) builder[method] = () => builder;
     builder.select = (columns: string) => { if (table === "emargements_fc") state.selects.push(columns); return builder; };
     builder.maybeSingle = () => builder;
-    builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: data(), error: null }).then(resolve);
+    builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: resultat(), error: null }).then(resolve);
     return builder;
   },
   channel: (name: string) => {
@@ -86,6 +88,20 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
   beforeEach(() => {
     state.profileReads = 0;
     state.channels.clear(); state.removed = []; state.subscription = undefined;
+    state.admin=[];
+  });
+  it('validation administrative tardive confirmée déclenche un nouveau calcul sans doublon',async()=>{
+    state.learner={type_apprenant:'vtc-e',heures_presentiel:46,heures_totales:46};
+    state.rows=[];state.connections=[];state.activities=[];
+    const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+    const wrapper=({children}:{children:ReactNode})=><QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view=renderHook(()=>useApprenantTauxRealisation('presence-fictive'),{wrapper});
+    await waitFor(()=>expect(view.result.current.data?.donePresentiel).toBe(0));
+    state.admin=[{id:'h1',heures:1.5,date_presence:'2026-09-17',categorie:'theorie'},{id:'h2',heures:4,date_presence:'2026-09-18',categorie:'theorie'}];
+    act(()=>window.dispatchEvent(new CustomEvent('heures-validees-changed',{detail:{apprenantId:'presence-fictive'}})));
+    await waitFor(()=>expect(view.result.current.data?.donePresentiel).toBe(5.5));
+    act(()=>window.dispatchEvent(new CustomEvent('heures-validees-changed',{detail:{apprenantId:'autre'}})));
+    expect(view.result.current.data?.donePresentiel).toBe(5.5);view.unmount();client.clear();
   });
   it("relit le dossier une seule fois sans changer les heures ni les modules", async () => {
     state.learner = { type_apprenant: "vtc-e", heures_elearning: 60 };
