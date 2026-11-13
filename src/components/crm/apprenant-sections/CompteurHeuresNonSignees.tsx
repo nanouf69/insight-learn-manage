@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
 import { chargerTauxPresenceHeures } from '@/components/crm/TauxPresenceSessionsCard';
 import { ValidationPresenceCreneauDialog, type CiblePresenceCreneau } from './ValidationPresenceCreneauDialog';
 
@@ -18,9 +19,8 @@ export function DetailHeuresNonSignees({ rows, apprenantId }: { rows: readonly S
       if(error||!uid)throw new Error('session');
       const role=await supabase.from('user_roles').select('role').eq('user_id',uid).eq('role','admin').maybeSingle();
       if(role.error||!role.data)throw new Error('admin');
-      const declarations=await supabase.from('presentiel_heures_validees').select('id,date_presence,heures').eq('apprenant_id',apprenantId);
-      if(declarations.error)throw declarations.error;
-      setCible({...c,apprenantId,conflit:(declarations.data ?? []).some(v=>v.date_presence===c.date&&Number(v.heures)>0)});
+      const declarations=await lirePresces(apprenantId);
+      setCible({...c,apprenantId,conflit:declarations.some(v=>v.date_presence===c.date&&Number(v.heures)>0)});
     }catch{toast.error('Accès administrateur et lecture des preuves requis : aucune présence modifiée');}
   };
   const bilan = heuresRestantSigner(rows, dateDuJourParis());

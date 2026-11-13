@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { PRESENCE_REVOCATIONS_ACTIVE, projeterDecisionsPresence } from './presenceRevocations';
+import { lireJournalPresence } from './presenceDecisionTransport';
 
 /**
  * Source UNIQUE des heures de présence validées par l'administration
@@ -63,13 +65,7 @@ export function normaliserHeuresValidees(rows: any[], dateFinFormation?: string 
 }
 
 export async function fetchHeuresValideesAdmin(apprenantId: string, dateFinFormation?: string | null) {
-  const { data, error } = await supabase
-    .from("presentiel_heures_validees" as any)
-    .select("id, heures, motif, created_at, date_presence, categorie")
-    .eq("apprenant_id", apprenantId)
-    .order("created_at", { ascending: true });
-  if (error) throw new Error("Heures validées par l'administration indisponibles (lecture refusée ou en erreur)");
-  const items = normaliserHeuresValidees((data as any[]) ?? [], dateFinFormation);
+  const items = normaliserHeuresValidees(await lirePresencesAdministratives(apprenantId), dateFinFormation);
   const minutes = Math.round(items.reduce((s, r) => s + r.heures, 0) * 60);
   // journees : pour le relevé PDF. La date affichée est celle de présence si connue,
   // sinon la date de saisie, explicitement libellée comme telle.
@@ -80,3 +76,20 @@ export async function fetchHeuresValideesAdmin(apprenantId: string, dateFinForma
 
 /** Clés de cache à invalider après une écriture CONFIRMÉE par le serveur. */
 export const HEURES_VALIDEES_EVENT = "heures-validees-changed";
+
+/** All live consumers use this projection; frozen archives never use it. */
+export async function lirePresencesAdministratives(apprenantId: string, inclureAnnulees = false): Promise<any[]> {
+  const originals: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    if (from >= 50000) throw new Error('Lecture de présence incomplète');
+    const { data, error } = await supabase.from('presentiel_heures_validees' as any)
+      .select('*').eq('apprenant_id', apprenantId).order('id').range(from, from + 999);
+    if (error) throw error;
+    const page = (data ?? []) as any[];
+    originals.push(...page);
+    if (page.length < 1000) break;
+  }
+  const journal = PRESENCE_REVOCATIONS_ACTIVE ? await lireJournalPresence(apprenantId) : [];
+  const projection = projeterDecisionsPresence(originals, journal, apprenantId);
+  return inclureAnnulees ? projection : projection.filter(r => !r.annulee);
+}

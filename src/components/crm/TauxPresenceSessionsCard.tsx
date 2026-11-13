@@ -7,7 +7,7 @@ import { isPratiqueType } from "@/lib/sessionTypes";
 import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueType, normalizePratiqueCreneau } from "@/lib/pratiqueSlots";
 import { planningCreneaux, marquerFiliereRows } from "@/lib/signaturesManquantes";
 import { fusionnerPresenceAdministrative, type ValidationPresence, type JourPresence } from '@/lib/presenceAdministrative';
-import { HEURES_VALIDEES_EVENT } from '@/lib/heuresValideesAdmin';
+import { HEURES_VALIDEES_EVENT, lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -81,7 +81,7 @@ export async function chargerTauxPresenceHeures(apprenantId: string, filiere?: s
     fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,session_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(id,type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
-    fetchAllRows<any>((f,t)=>supabase.from('presentiel_heures_validees').select('id,heures,created_at,date_presence,categorie').eq('apprenant_id',apprenantId).order('id').range(f,t)),
+    lirePresencesAdministratives(apprenantId),
   ]);
   return calculerTauxPresenceHeures(em, ins, filiere, reservations, configs, validations);
 }
@@ -112,6 +112,7 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     window.addEventListener('focus',refresh);
     const channel=supabase.channel(`presence-heures-${apprenantId}-${crypto.randomUUID()}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_heures_validees',filter:`apprenant_id=eq.${apprenantId}`},refresh)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'presentiel_validation_decisions',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'emargements_fc',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'session_apprenants',filter:`apprenant_id=eq.${apprenantId}`},refresh).subscribe();
     return () => { annule = true; window.removeEventListener(HEURES_VALIDEES_EVENT,local);window.removeEventListener('online',refresh);window.removeEventListener('focus',refresh);void supabase.removeChannel(channel); };
