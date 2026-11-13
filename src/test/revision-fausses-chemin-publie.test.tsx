@@ -109,8 +109,8 @@ describe("Révision fausses — chemin publié tant que le serveur n'est pas ins
     h.saved.reponses.revisionState.answers = {};
     const done = vi.fn();
     render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={done} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
-    fireEvent.click(await screen.findByRole("button", { name: /Terminer la révision/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /Terminer la révision/ })).toBeEnabled());
+    expect(await screen.findByRole("button", { name: "Valider ma réponse" })).toBeDisabled();
+    expect(flushAnswerSavesAndWait).not.toHaveBeenCalled();
     expect(h.inserts).toHaveLength(0); expect(done).not.toHaveBeenCalled();
   });
 });

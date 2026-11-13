@@ -1,10 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { revisionCouvertureConfirmee, revisionResultatConfirme } from "@/lib/revisionFinalisationPreuve";
+import { revisionCouvertureConfirmee, revisionResultatConfirme, premiereQuestionRevisionIncomplete, revisionReponseRenseignee } from "@/lib/revisionFinalisationPreuve";
 
 const order = Array.from({ length: 73 }, (_, i) => `francais:${i + 1}`);
 const state = () => ({ revisionState: { examenId: "EB3", questionOrder: order, correctedQuestions: order,
   answers: Object.fromEntries(order.map(k => [k, ["A", "C"]])) } });
 describe("Finalisation publiée : preuves indépendantes du compteur de points", () => {
+  it.each(["EB1", "EB2", "EB3", "EB4", "EB5", "EB6"])("%s : une réponse vide cochée doit rester reprenable", exam => {
+    const saved = state(); saved.revisionState.examenId = exam;
+    saved.revisionState.answers[order[7]] = [];
+    expect(revisionCouvertureConfirmee(saved, exam, order)).toBe(false);
+    expect(premiereQuestionRevisionIncomplete(saved.revisionState.answers, order, order)).toBe(7);
+    saved.revisionState.answers[order[7]] = ["A", "C"];
+    expect(revisionCouvertureConfirmee(saved, exam, order)).toBe(true);
+  });
+  it("une QRC constituée d’espaces ne constitue pas une réponse", () => {
+    expect(revisionReponseRenseignee(" \n ")).toBe(false);
+    expect(revisionReponseRenseignee("réponse réelle")).toBe(true);
+  });
   it("73 réponses validées prouvent la couverture sans limite 50", () => expect(revisionCouvertureConfirmee(state(), "EB3", order)).toBe(true));
   it("la dernière position ne prouve pas une réponse manquante", () => {
     const saved = state(); delete saved.revisionState.answers[order[10]];
