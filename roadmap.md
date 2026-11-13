@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 14:48 UTC — Modale présence simplifiée
+- [x] Champ session retiré, correspondance interne exacte unique ; formateurs liés si disponibles/Autre et justificatifs/PDF local facultatif 4 Mo.
+- [x] 28 tests PASS/3 fichiers, rendu PC/mobile inspecté, inscription réelle retrouvée et 1 formateur lié +Autre ; faux PDF refusé, fichier valide local seulement ; build OK.
+- [ ] Dépôt réel/validation bloqués par analyse PDF serveur, stockage privé, rattachement journal et restauration non installés ; aucun dépôt ni publication.
+
 ## 13/11 14:40 UTC — Présence par créneau et pratique
 - [x] Trois actions par créneau, confirmation preuve/identité avec rôle admin relu, pratique 0–6 h sans séance inventée ; signatures manquantes conservées, enregistrement déconnecté.
 - [x] 65 tests PASS/6 fichiers ; parcours lecture réelle PC/mobile : trois boutons, avertissement de chevauchement, pratique 7 h refusée, confirmation désactivée ; build OK. Rapport docs/presence-creneaux-pratique-2026-11-13.md.
