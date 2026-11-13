@@ -454,21 +454,6 @@ function ContratLocationForm({ apprenant }: Props) {
       y += 8;
 
       const elements = ELEMENTS_ETAT_LIEUX;
-      const _unused = [
-        "Carrosserie avant",
-        "Carrosserie arrière",
-        "Flanc gauche",
-        "Flanc droit",
-        "Toit",
-        "Vitres",
-        "Jantes / Pneus",
-        "Intérieur / sièges",
-        "Tableau de bord",
-        "Coffre",
-        "Documents bord (CI + carte grise + assurance)",
-        "Niveau carburant",
-        "Kilométrage",
-      ];
 
       const tableX = margin;
       const colElW = 80;
