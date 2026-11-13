@@ -15,9 +15,10 @@ export function ExamExitGuard({ active }: { active: boolean }) {
   const [pending, setPending] = useState<(() => void) | null>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
+  const bypass = useRef(false);
   const staying = useRef<HTMLButtonElement>(null);
   const ask = useCallback((action: () => void) => {
-    if (!activeRef.current) { action(); return; }
+    if (!activeRef.current || bypass.current) { action(); return; }
     setPending(current => current ?? action);
   }, []);
 
@@ -47,36 +48,37 @@ export function ExamExitGuard({ active }: { active: boolean }) {
     const go = navigator.go.bind(navigator);
     navigator.push = (...args) => ask(() => push(...args));
     navigator.replace = (...args) => ask(() => replace(...args));
-    navigator.go = delta => ask(() => { activeRef.current = false; go(delta); });
+    navigator.go = delta => ask(() => { bypass.current = true; go(delta); });
     // Browser Back/Forward: restore the current history position before asking,
     // then replay exactly the requested delta, without inventing history entries.
     let index = window.history.state?.idx as number | undefined;
     let restoring = false;
-    const pop = () => {
+    const pop = (event: PopStateEvent) => {
       const next = window.history.state?.idx as number | undefined;
-      if (restoring) { restoring = false; return; }
-      if (!activeRef.current || index === undefined || next === undefined || next === index) { index = next; return; }
+      if (restoring) { restoring = false; event.stopImmediatePropagation(); return; }
+      if (!activeRef.current || bypass.current || index === undefined || next === undefined || next === index) { index = next; return; }
+      event.stopImmediatePropagation();
       const delta = next - index;
       restoring = true;
       window.history.go(-delta);
-      ask(() => { activeRef.current = false; window.history.go(delta); });
+      ask(() => { bypass.current = true; window.history.go(delta); });
     };
-    window.addEventListener("popstate", pop);
+    window.addEventListener("popstate", pop, true);
     return () => {
       navigator.push = push; navigator.replace = replace; navigator.go = go;
-      window.removeEventListener("popstate", pop);
+      window.removeEventListener("popstate", pop, true);
     };
   }, [context?.navigator, ask]);
 
   useEffect(() => { if (!active) setPending(null); }, [active]);
   return <AlertDialog open={pending !== null} onOpenChange={open => { if (!open) setPending(null); }}>
-    <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg" onOpenAutoFocus={event => { event.preventDefault(); staying.current?.focus(); }}>
+    <AlertDialogContent className="max-w-[calc(100%_-_2rem)] sm:max-w-lg" onOpenAutoFocus={event => { event.preventDefault(); staying.current?.focus(); }}>
       <AlertDialogTitle>Quitter la matière en cours ?</AlertDialogTitle>
       <AlertDialogDescription className="text-base leading-relaxed">{EXAM_EXIT_WARNING}</AlertDialogDescription>
       <div className="flex flex-col gap-3">
         <AlertDialogCancel ref={staying} className="m-0 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setPending(null)}>Rester et terminer</AlertDialogCancel>
         <AlertDialogAction className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => {
-          const action = pending; setPending(null); activeRef.current = false; action?.();
+          const action = pending; setPending(null); bypass.current = true; action?.();
         }}>Quitter quand même</AlertDialogAction>
       </div>
     </AlertDialogContent>

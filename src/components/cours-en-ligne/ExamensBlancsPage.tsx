@@ -1794,7 +1794,7 @@ export default function ExamensBlancsPage({
       <div className="flex gap-4 xl:gap-6 max-w-[1760px] mx-auto">
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            {subjectRetake && <Button variant="outline" onClick={() => void returnFromSubjectRetake()}>Retour aux autres matières</Button>}
+            {subjectRetake && <Button variant="outline" onClick={() => requestExamExit(() => void returnFromSubjectRetake())}>Retour aux autres matières</Button>}
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 {examenChoisi.matieres.map((_, i) => {

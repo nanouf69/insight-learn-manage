@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Timer, Pause, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { claimTimeWarning, remainingFromAnchor } from "./examUxPolicy";
