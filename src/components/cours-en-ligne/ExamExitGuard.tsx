@@ -42,6 +42,7 @@ export function ExamExitGuard({ active }: { active: boolean }) {
 
   useEffect(() => {
     const navigator = context?.navigator;
+    console.debug('ux-pop-diagnostic-install', Boolean(navigator));
     if (!navigator) return;
     const push = navigator.push.bind(navigator);
     const replace = navigator.replace.bind(navigator);
