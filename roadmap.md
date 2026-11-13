@@ -18,9 +18,9 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## P1 — Formation continue / e-mails
 - [x] Aperçu e-mails en texte lisible — APERÇU.
-- [x] Accusé « Je confirme avoir reçu » : table + page de confirmation — PROD (page en ligne, testée sur lien invalide/inconnu). Lien dans les e-mails : ÉTEINT (secret EMAIL_CONFIRMATION_RECEPTION_ACTIVE=true + redéploiement des fonctions d'envoi).
+- [x] Accusé « Je confirme avoir reçu » : PROD, bouton actif sur renvoi nouvelle adresse, documents, identifiants, régularisation émargement, Outlook, identifiants auto. Relances (modifiées il y a 25 h) non redéployées volontairement. À prouver au premier envoi réel.
 - [ ] États distincts dans CRM (accepté/remis/rejet/indice d'ouverture/confirmé) — APERÇU.
-- [ ] Avis de remise/rejet : brancher webhook Resend + vérifier signature — BLOQUÉ : action utilisateur dans Resend + secret RESEND_WEBHOOK_SECRET.
+- [ ] Avis de remise/rejet : récepteur signé en PROD (refus 401 sans signature) — attend la clé de signature Resend (RESEND_WEBHOOK_SECRET).
 - [ ] Devis FC signé → session, doublons, classement FC VTC — à implémenter (alerte non destructive).
 - [ ] Convocation après 50 € confirmés — règle enregistrée, automatisation non activée.
 - [ ] CMA ajournés → prochaine session — APERÇU, bloqué : territoire pratique absent.
