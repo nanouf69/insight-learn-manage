@@ -71,13 +71,13 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       if (!sessionPlanning.get(date)?.creneaux.has(creneau)) continue;
       const reservation = reservations.find(r => d10(r.date_choisie) === date);
       const parts = pratique && (daySlots.has(date) || reservation) ? resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation ?? s.type_session), normalizePratiqueCreneau(reservation?.creneau)) : [];
-      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : HEURES_CRENEAU[creneau];
+      const exact = prevusExacts.find(p => p.date === date && p.creneau === creneau);
+      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : exact && liens.length ? (Number(exact.fin.slice(0,2))*60+Number(exact.fin.slice(3,5))-Number(exact.debut.slice(0,2))*60-Number(exact.debut.slice(3,5)))/60 : HEURES_CRENEAU[creneau];
       if (!h) continue;
       vus.add(cle);
       const minutes=Math.round(h*60);
       cible.faites = (Math.round(cible.faites*60)+minutes)/60;
       signes.push({date,categorie:pratique?'pratique':'theorie',minutes});
-      const exact = prevusExacts.find(p => p.date === date && p.creneau === creneau);
       if (!pratique && exact) signesExacts.push(exact);
       if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
@@ -122,8 +122,10 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   const formationInitiale = inscriptions.some(row => /theorique/i.test(row.sessions?.type_session ?? '') && !/continue|\bfc\b/i.test(`${row.sessions?.nom ?? ''} ${row.sessions?.type_session ?? ''}`) && !row.liste_attente && !row.emargements_exclus && !/annul/i.test(row.sessions?.statut ?? ''));
   res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, appliquerLotVtc && formationInitiale);
   const signees = res.session.faites + res.pratique.faites - admin.minutesAdmin/60;
-  res.session.faites = Math.min(res.session.prevues,res.session.faites);
-  res.pratique.faites = Math.min(res.pratique.prevues,res.pratique.faites);
+  if (appliquerLotVtc) {
+    res.session.faites = Math.min(res.session.prevues,res.session.faites);
+    res.pratique.faites = Math.min(res.pratique.prevues,res.pratique.faites);
+  }
   return { ...res, admin, signees, manuelles: union.manuellesMinutes/60 };
 }
 

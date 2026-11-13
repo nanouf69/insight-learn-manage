@@ -843,10 +843,10 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
             <p className="text-2xl font-bold text-primary">{totalHeuresIndisponible ? "Indisponible" : formatPresenceHours(totalHeures)}</p>
             {presenceHeures&&<div className="text-sm text-muted-foreground space-y-1">
               <p>Heures signées : {formatPresenceHours(presenceHeures.signees)}</p>
-              <p className="font-semibold text-foreground">Heures validées manuellement : {formatPresenceHours(presenceHeures.manuelles)}</p>
+              <p className="font-semibold text-foreground">Heures validées manuellement : {Math.floor(presenceHeures.manuelles)} h {String(Math.round(presenceHeures.manuelles*60)%60).padStart(2,'0')}</p>
               <p>Ajout administratif net après dédoublonnage : {formatPresenceHours(presenceHeures.adminNet)}</p>
               <p>Théorie retenue : {formatPresenceHours(presenceHeures.theorie.faites)} / {formatPresenceHours(presenceHeures.theorie.prevues)} · {presenceHeures.theorie.prevues>0?(100*presenceHeures.theorie.faites/presenceHeures.theorie.prevues).toLocaleString('fr-FR',{maximumFractionDigits:1}):'—'} %</p>
-              <p>Durée prévue théorie + pratique : {formatPresenceHours(presenceHeures.total.prevues)} · Présence totale : {presenceHeures.total.pct.toLocaleString('fr-FR',{maximumFractionDigits:1})} %.</p>
+              <p>Durée prévue théorie + pratique : {formatPresenceHours(presenceHeures.total.prevues)} · Présence totale : {presenceHeures.total.pct.toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1})} %.</p>
               {presenceHeures.revue.length>0&&<p>Créneau administratif non précisé : à vérifier, sans double comptage.</p>}
             </div>}
           </div>
