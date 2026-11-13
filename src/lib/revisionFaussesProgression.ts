@@ -107,3 +107,13 @@ export function restaurerRevisionProgressState(
     contexteChange: Boolean(enveloppe) && (!sameExam || !sameOrder),
   };
 }
+
+/** Never attach persisted answers from an older copy to a new one with the same question ids. */
+export function revisionSourcesCompatibles(saved: unknown, expected: Record<string, string>): boolean {
+  const root = saved as {revisionState?: {sourceResultIds?: Record<string, string>}} | null;
+  const actual = root?.revisionState?.sourceResultIds;
+  // Legacy drafts without provenance remain compatible only for callers without sources.
+  if (!actual) return Object.keys(expected).length === 0;
+  return Object.entries(actual).every(([key,id]) => expected[key] === id)
+    && Object.entries(expected).every(([key,id]) => actual[key] === id);
+}

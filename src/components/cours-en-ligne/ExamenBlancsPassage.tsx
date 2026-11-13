@@ -443,7 +443,7 @@ function PassageMatiere({
           const pending = valeursNoyauEnAttente(decision.attemptId, matiere.id);
           const restored = normalizeReponses({...confirmed, ...pending});
           latestReponsesRef.current = restored;
-          lastPersistedRef.current = {...confirmed};
+          lastPersistedRef.current = normalizeReponses(confirmed);
           ligneServeurTermineeRef.current = nouvelle.etat === 'terminee';
           setReponses(restored);
           const firstOpen = projection.matiere.questions.findIndex(q => !isReponseFournie(q.type, restored[q.id]));
