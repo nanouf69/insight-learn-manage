@@ -7,6 +7,7 @@ import { intituleAttestation, type ElementPedagogique } from './redactionPresent
 export interface AttestationPresentation {
   apprenantId: string; prenom: string; nom: string; formation: string; modalite: string;
   debut: string | null; fin: string | null; sourceFin?: string; dateEmission: string;
+  periodeElearning?: {derniere:string|null;administrative:string|null;minutes:number|null;cibleMinutes:number|null;achevee:boolean} | null;
   preuve: PreuvePresentationAttestation | null; motifs: string[];
   reference?: string; empreinte?: string | null; empreinteSignee?: string | null;
   centre?: SignaturePresentation | null; apprenant?: SignaturePresentation | null;
@@ -66,10 +67,11 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   const formation = texte(intitule, 26, 128, 10.5, true, 158);
   if (formation > 12) throw new Error("Intitulé trop long pour le modèle : contrôle de présentation requis");
   texte(`Début : ${date(e.debut)}`, 26, 143, 9.5, false, 77);
-  texte(`Fin : ${date(e.fin)}`, 110, 143, 9.5, false, 74);
+  const periode=!o?e.periodeElearning:null;
+  texte(periode ? `Dernière activité pédagogique : ${periode.derniere?.split('-').reverse().join('/') ?? 'Non vérifiée'}` : `Fin : ${date(e.fin)}`, periode?26:110, periode?150:143, periode?8:9.5, false, periode?158:74);
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
-  const central = o ? o.texteCentral : texteCertificationPresentation({certifie:complet,prenom:e.prenom,nom:e.nom,formation:intitule,debut:date(e.debut),fin:date(e.fin)});
+  const central = o ? o.texteCentral : periode ? `Période pédagogique documentée pour ${e.prenom} ${e.nom.toUpperCase()}. Dernière activité pédagogique : ${periode.derniere?.split('-').reverse().join('/') ?? 'non vérifiée'}.\nFin administrative prévue : ${date(periode.administrative)}.\n${periode.minutes!=null?`Temps e-learning enregistré : ${Math.floor(periode.minutes/60)}h${String(periode.minutes%60).padStart(2,'0')}.`:'Temps e-learning non vérifié.'}\n${periode.achevee?'Achèvement prouvé.':'Ce relevé ne certifie pas une formation achevée ni la réalisation de la durée prévue.'}` : texteCertificationPresentation({certifie:complet,prenom:e.prenom,nom:e.nom,formation:intitule,debut:date(e.debut),fin:date(e.fin)});
   const height = texte(central, 20, 165, 11, false, 170);
   if (height > (o ? 58 : 49)) throw new Error("Texte trop long pour le modèle : contrôle de présentation requis");
   if (!finale && !o) {

@@ -9,19 +9,21 @@ import { debutFormation, finFormationCrm } from "../../../../supabase/functions/
 import type { ModulePdf } from "@/lib/attestationFinValidee/pdf";
 import { modulesExigesDashboard, resolveFormationId } from '@/lib/parcoursModulesDashboard';
 import { elementsRestantAValider } from '@/lib/attestationFinValidee/redactionPresentation';
+import { chargerDatesPedagogiquesAttestation } from '@/lib/chargerDatesPedagogiquesAttestation';
 
 /** Lecture seule des preuves du dossier pour le brouillon ; le serveur refait le même contrôle avant tout enregistrement. */
 export function useApercuAttestation(apprenant: any) {
   const q = useQuery({
     queryKey: ["attestation-fin-validee", apprenant.id],
     queryFn: async () => {
-      const [etats, taux, cnx, emg] = await Promise.all([
+      const [etats, taux, cnx, emg, pedagogie] = await Promise.all([
         chargerEtatCompletionServeur(apprenant.id).catch(() => null),
         chargerApprenantTauxRealisation(apprenant.id, apprenant).catch(() => null),
         supabase.from("apprenant_connexions").select("id, started_at").eq("apprenant_id", apprenant.id).not("started_at", "is", null).order("started_at", { ascending: false }).limit(500),
         supabase.from("emargements_fc").select("id, date_emargement").eq("apprenant_id", apprenant.id).eq("masque", false).eq("absent", false).not("signed_at", "is", null).not("signature_data_url", "is", null).order("date_emargement", { ascending: false }).limit(200),
+        chargerDatesPedagogiquesAttestation(apprenant.id).catch(()=>null),
       ]);
-      return { etats, taux, connexions: cnx.error || emg.error ? null : [...(cnx.data ?? []), ...(emg.data ?? []).map((x: any) => ({ id: `emargement:${x.id}`, started_at: `${x.date_emargement}T11:00:00Z` }))] };
+      return { etats, taux, pedagogie, connexions: cnx.error || emg.error ? null : [...(cnx.data ?? []), ...(emg.data ?? []).map((x: any) => ({ id: `emargement:${x.id}`, started_at: `${x.date_emargement}T11:00:00Z` }))] };
     },
     staleTime: 0,
   });
