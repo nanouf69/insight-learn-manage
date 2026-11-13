@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apercuTexteEmail } from "@/lib/apercuTexteEmail";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -924,7 +925,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
           destinataires: Array.isArray(e.recipients) ? e.recipients.join(", ") : (e.recipients || ""),
           lu: e.is_read ? "Oui" : "Non",
           pieces_jointes: e.has_attachments ? "Oui" : "Non",
-          apercu: maskPasswords((e.body_preview || "").replace(/\s+/g, " ").slice(0, 500)),
+          apercu: maskPasswords(apercuTexteEmail(e.body_preview || e.body_html, 500)),
         }));
         const emailCsv = toCsv(emailRows, ["type","date","sujet","expediteur","destinataires","lu","pieces_jointes","apercu"]);
         const emailsFolder = zip.folder("emails")!;

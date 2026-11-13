@@ -1,4 +1,5 @@
 import { useState, useRef, type ChangeEvent } from "react";
+import { apercuTexteEmail } from "@/lib/apercuTexteEmail";
 import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X, RotateCcw, Download, Phone, Trash2, Copy } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -922,7 +923,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       const dateStr = d ? format(new Date(d), "dd/MM/yyyy HH:mm", { locale: fr }) : "";
       const from = e.sender_name || e.sender_email || "";
       const to = (e.recipients || []).join(", ");
-      const preview = (e.body_preview || "").replace(/\s+/g, " ").slice(0, 220);
+      const preview = apercuTexteEmail(e.body_preview || e.body_html, 220);
       return [
         dateStr,
         e.type === "sent" ? "Envoyé" : "Reçu",
@@ -1426,7 +1427,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                         )}
                       </div>
                       <p className={`text-sm truncate ${!email.is_read ? 'text-foreground/70 font-medium' : 'text-muted-foreground'}`}>
-                        {email.body_preview}
+                        {apercuTexteEmail(email.body_preview) || (email.body_html ? apercuTexteEmail(email.body_html) : '')}
                       </p>
                       {email.type === 'sent' && (() => {
                         const history = sendHistoryBySubject.get(normalizeSubject(email.subject)) || [];
