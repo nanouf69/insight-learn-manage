@@ -369,7 +369,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     // Formation présentielle : taux présentiel = heures signées / heures prévues, pondéré par les heures de chaque part
     // (session + pratique) pour rester cohérent avec la ligne d'heures affichée : 60 h / 66 h = 91 %, jamais 50 %.
     const f = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
-    return { ...tauxBrut, reqPresentiel: prevues, donePresentiel: faites, pctPresentiel: pct, reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h signées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)` } };
+    return { ...tauxBrut, reqPresentiel: prevues, donePresentiel: faites, pctPresentiel: pct, reqTotal: prevues, pctTotal: pct, signatures: { ...(tauxBrut.signatures as any), taux: pct, raison: `${f(faites)} h prouvées / ${f(prevues)} h prévues (session ${f(d?.session.faites ?? 0)}/${f(d?.session.prevues ?? 0)} h + pratique ${f(d?.pratique.faites ?? 0)}/${f(pratiquePrevues)} h)${d?.admin.revue.length ? ' — validation administrative à vérifier (créneau non précisé)' : ''}` } };
   }, [tauxBrut, presenceHeures.data, presenceHeures.erreur]);
 
   const { data: photoDoc } = useQuery({
