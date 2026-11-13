@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { UNSAFE_NavigationContext } from "react-router-dom";
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { EXAM_EXIT_WARNING } from "./examUxPolicy";
@@ -40,9 +40,8 @@ export function ExamExitGuard({ active }: { active: boolean }) {
     };
   }, [ask]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const navigator = context?.navigator;
-    console.debug('ux-pop-diagnostic-install', Boolean(navigator));
     if (!navigator) return;
     const push = navigator.push.bind(navigator);
     const replace = navigator.replace.bind(navigator);
@@ -56,7 +55,6 @@ export function ExamExitGuard({ active }: { active: boolean }) {
     let restoring = false;
     const pop = (event: PopStateEvent) => {
       const next = window.history.state?.idx as number | undefined;
-      console.debug('ux-pop-diagnostic', { index, next, restoring, active: activeRef.current, bypass: bypass.current });
       if (restoring) { restoring = false; event.stopImmediatePropagation(); return; }
       if (!activeRef.current || bypass.current || index === undefined || next === undefined || next === index) { index = next; return; }
       event.stopImmediatePropagation();
