@@ -1,11 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { traiterRegularisation } from "./regularisation.ts";
 import { signatureVide } from "./signatureVide.ts";
+import { dateSignatureAutorisee, SIGNATURE_PASSEE_REFUSEE } from "./dateSignature.ts";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 type CreneauKey = "matin" | "apres_midi" | "soir" | "soir_1" | "soir_2";
 
@@ -62,8 +60,9 @@ Deno.serve(async (req) => {
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!token) return json({ error: "Session apprenant requise" }, 401);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return json({ error: "Service indisponible" }, 503);
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
@@ -72,7 +71,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
-    // ── Régularisation autorisée par l'Admin (créneaux passés listés, compte exact) ──
+    // Retired route: no authorization may grant a past learner signature.
     if (body?.regularisation_id) {
       return await traiterRegularisation(supabase, user.id, body);
     }
@@ -86,6 +85,9 @@ Deno.serve(async (req) => {
 
     if (!apprenantId || !["matin", "apres_midi", "soir", "soir_1", "soir_2"].includes(demi) || !/^\d{4}-\d{2}-\d{2}$/.test(dateEmargement)) {
       return json({ error: "Données d'émargement invalides" }, 400);
+    }
+    if (!dateSignatureAutorisee(dateEmargement)) {
+      return json({ error: SIGNATURE_PASSEE_REFUSEE, code: "P0541" }, 403);
     }
     if (!absent && !signature) return json({ error: "Signature requise" }, 400);
     // Une signature vide (aucun trait) n'est jamais enregistrée comme signature.
