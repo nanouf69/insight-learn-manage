@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 15:09 UTC — Divergence progression admin/apprenant
+- [ ] Identifier en lecture seule les dossiers/versions des captures et les preuves du module 2 ; aucune identité présumée.
+- [ ] Unifier la projection des statuts/compteurs et le rafraîchissement événementiel en aperçu, sans mutation des preuves ni droits.
+- [ ] Exécuter les tests de progression/isolation et comparer les vues authentifiées du même dossier ; documenter les limites iOS/production et le GO/NO-GO.
+
 ## 13/11 14:58 UTC — Identité sous signatures PDF
 - [x] Nom/prénom de la ligne apprenant sous chaque zone des sept générateurs, bande réservée, images stockées intactes ; modèle formateur sans apprenant exclu.
 - [x] Sept PDF fictifs/neuf pages inspectées puis deux en-têtes longs corrigés et réinspectés ; signé/vierge, deux élèves, accents, soir/pratique/TA ; 19 tests existants PASS, build OK. Aucun enregistrement/publication ; toutes variantes de filière non exercées individuellement.
