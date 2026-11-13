@@ -1919,6 +1919,13 @@
       "when": 1794595435089,
       "tag": "0273_email_confirmations_reception",
       "breakpoints": true
+    },
+    {
+      "idx": 274,
+      "version": "7",
+      "when": 1794596992657,
+      "tag": "0274_resend_webhook_config",
+      "breakpoints": true
     }
   ]
 }
