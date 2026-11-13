@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 13:38 UTC — Fiabilisation globale EB1–6 TAXI/VTC
+- [ ] Audit complet en SELECT : inventaire, anomalies chiffrées par type/compte, identités, snapshots, QRC/publications, reçus et reprises ; signaler toute lecture incomplète.
+- [ ] Source canonique partagée aperçu : priorité explicite par matière, copies indépendantes, ambiguïtés visibles, états de correction/publication/lecture distincts, resets conservés.
+- [ ] Rapport d’alertes admin réexécutable en lecture seule et événements de correction/finalisation/reconnexion sans polling ajouté.
+- [ ] Régressions EB1–6 TAXI/VTC, concurrence/multi-tentatives/reset/pannes, PC/mobile, tests complets et build ; GO/NO-GO sans écriture réelle ni publication.
+
 ## 13/11 13:25 UTC — Audit MEMDOUH Ilies EB6 TAXI
 - [x] SELECT sept matières définitives, G 17, général 14 ; 18 QRC corrigées, zéro ouvert, deux copies G conservées ; source secondaire ambiguë et sept autosaves anciens prouvés.
 - [x] Correctif affichage aperçu : copie native indépendante commune, sauvegarde exacte déjà remise ne propose plus reprise, signal de tentative live ; 78 tests PASS, PC/mobile fictifs inspectés, admin PC réel confirmé.
