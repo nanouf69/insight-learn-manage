@@ -10,6 +10,32 @@ const refusNul = (requestId: string, code: string, message: string, status = 422
     status, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+// RATTRAPAGE « DERNIER CLIC » (accusé perdu, 13/11).
+// Une question ignorée (skipped) parce que la base du client est périmée est
+// appliquée UNIQUEMENT si la valeur envoyée est exactement le dernier clic
+// journalisé (horloge de saisie, puis arrivée serveur) de CE compte pour cette
+// question. Un ancien écran qui rejoue une valeur dépassée reste ignoré : rien
+// de plus récent n'est jamais écrasé. Les clés égales à la valeur enregistrée
+// ne sont plus signalées comme conflit (le serveur détient déjà cette valeur).
+type LigneJournal = { question_id: string; valeur: unknown; user_id: string | null; client_saved_at: string | null; created_at: string };
+export function choisirDernierClic(
+  candidats: string[],
+  reponses: Record<string, unknown>,
+  lignes: LigneJournal[],
+  userId: string,
+): string[] {
+  const t = (l: LigneJournal) => Date.parse(l.client_saved_at ?? l.created_at) || 0;
+  const dernier = new Map<string, LigneJournal>();
+  for (const l of lignes) {
+    const cur = dernier.get(l.question_id);
+    if (!cur || t(l) > t(cur) || (t(l) === t(cur) && Date.parse(l.created_at) > Date.parse(cur.created_at))) dernier.set(l.question_id, l);
+  }
+  return candidats.filter((k) => {
+    const l = dernier.get(k);
+    return !!l && l.user_id === userId && canonique(l.valeur) === canonique(reponses[k]);
+  });
+}
+
 Deno.serve(async (req) => {
   const requestId = crypto.randomUUID();
   let operation: unknown;
@@ -172,7 +198,49 @@ Deno.serve(async (req) => {
       );
     }
 
-    const confirmation = data[0];
+    let confirmation = data[0];
+
+    const sauteesInitiales: string[] = Array.isArray(confirmation.skipped_questions) ? confirmation.skipped_questions.filter((k: unknown): k is string => typeof k === "string") : [];
+    if (!lot && !confirmation.frozen && !completed && sauteesInitiales.length > 0 && sauteesInitiales.length <= 300) {
+      const rep = reponses as Record<string, unknown>;
+      const stocke = (confirmation.stored_reponses ?? {}) as Record<string, unknown>;
+      const egales = new Set(sauteesInitiales.filter((k) => canonique(stocke[k]) === canonique(rep[k])));
+      const candidats = sauteesInitiales.filter((k) => !egales.has(k) && k !== "revisionState" && Object.prototype.hasOwnProperty.call(rep, k));
+      let appliquees: string[] = [];
+      let rattrapageOk = true;
+      if (candidats.length > 0) {
+        const { data: lignes, error: jErr } = await supabase
+          .from("reponses_apprenants_journal")
+          .select("question_id, valeur, user_id, client_saved_at, created_at")
+          .eq("apprenant_id", apprenant_id)
+          .eq("exercice_id", exercice_id)
+          .in("question_id", candidats)
+          .order("created_at", { ascending: false })
+          .limit(5000);
+        if (jErr || !Array.isArray(lignes)) rattrapageOk = false;
+        else appliquees = choisirDernierClic(candidats, rep, lignes as LigneJournal[], effectiveUserId);
+      }
+      if (rattrapageOk && appliquees.length > 0) {
+        const { data: d2, error: e2 } = await supabase.rpc("persist_answer_batch_v2", {
+          ...argsRpc,
+          p_reponses: Object.fromEntries(appliquees.map((k) => [k, rep[k]])),
+          p_completed: false,
+          p_score: null,
+          p_base_seq: Number(confirmation.stored_write_seq ?? 0),
+          p_events: [],
+        });
+        if (e2 || !d2?.[0]?.saved || d2[0].frozen) rattrapageOk = false;
+        else {
+          const resteDeuxieme: string[] = Array.isArray(d2[0].skipped_questions) ? d2[0].skipped_questions : [];
+          const reste = sauteesInitiales.filter((k) => !egales.has(k) && (!appliquees.includes(k) || resteDeuxieme.includes(k)));
+          confirmation = { ...d2[0], skipped_questions: reste, accepted_event_ids: confirmation.accepted_event_ids };
+        }
+      }
+      if (rattrapageOk && appliquees.length === 0 && egales.size > 0) {
+        confirmation = { ...confirmation, skipped_questions: sauteesInitiales.filter((k) => !egales.has(k)) };
+      }
+      traceSauvegarde(requestId, rattrapageOk ? "rattrapage_dernier_clic" : "rattrapage_refuse", 200, operation, `a${appliquees.length}_e${egales.size}_s${sauteesInitiales.length}`);
+    }
 
     // ACK EXACT (lot avec U+0000) : chaque original appliqué et chaque événement
     // accepté doivent se relire identiques à la saisie, sinon aucune confirmation.
