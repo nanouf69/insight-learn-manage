@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 14:40 UTC — Présence par créneau et pratique
+- [ ] Préparer actions par créneau, confirmation de preuve/identité, pratique 0–6 h sans séance inventée ; conserver signatures manquantes.
+- [ ] Tester projection exacte et chevauchements, permissions/confirmation fictives et PC/mobile ; documenter blocage serveur/rattachement, aucune écriture/publication.
+
 ## 13/11 14:36 UTC — Motif facultatif pour ajout de présence
 - [x] Motif facultatif, null si vide, 200 caractères maximum ; auteur/date serveur/heures/date présence et verrou double-clic inchangés.
 - [x] 28 tests PASS/4 fichiers, build OK ; lecture authentifiée sans écriture. SQL accepte null ; exigence distincte de motif pratique après gel conservée. Aucune écriture/publication.
