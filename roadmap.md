@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 13/11 15:50 UTC — Annulation opérationnelle des 4 h CHERNI
-- [ ] Terminer transport RPC, journal append-only, lecture effective commune et relecture ciblée ; ne jamais révoquer les 4 h réelles sans confirmation spécifique.
-- [ ] Tester annulation/restauration, autorisations, concurrence et restauration sur PostgreSQL jetable, puis parcours navigateur isolé avec relecture des compteurs.
-- [ ] Contrôler toutes les lectures et le delta publié ; installation/publication uniquement si isolation et sûreté démontrées.
+- [x] Transport candidat RPC/relecture, journal append-only/snapshot, annulation sans motif et lecteurs live communs ; 4 h et 1h30 réelles conservées, aucune mutation.
+- [x] 105 Vitest et 2 contrats PostgreSQL jetables PASS ; vrai bouton PC/mobile vers PostgreSQL isolé, 330→90→330 min et reload, restauration originaux/journal PASS ; build OK.
+- [x] Delta contre production d2c478257 : seulement correctif actuel ; changements concurrents anciens plus un obstacle démontré. Rapport docs/presence-revocation-operationnelle-2026-11-13.md.
+- [ ] Installation/publication bloquées : cible Cloud/restauration réelle et parcours hébergé indépendants absents, concurrence producteurs réels EDOF/gels/anciens lecteurs non qualifiée ; journal non installé et flag OFF, bouton production NON actif.
 
 ## 13/11 15:38 UTC — Dates pédagogiques attestation Léa CATANIA
 - [x] Cause 19/10 : connexion accueil de deux secondes figée dans attestation signée ; remise 13/10 confirmée, 38h11/60h, fin CRM actuelle 31/10. Aucun changement réel.
