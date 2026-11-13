@@ -78,7 +78,7 @@ export function ExamExitGuard({ active }: { active: boolean }) {
       <div className="flex flex-col gap-3">
         <AlertDialogCancel ref={staying} className="m-0 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setPending(null)}>Rester et terminer</AlertDialogCancel>
         <AlertDialogAction className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => {
-          const action = pending; setPending(null); bypass.current = true; action?.();
+          const action = pending; setPending(null); action?.();
         }}>Quitter quand même</AlertDialogAction>
       </div>
     </AlertDialogContent>
