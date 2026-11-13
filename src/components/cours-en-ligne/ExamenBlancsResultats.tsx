@@ -1317,6 +1317,7 @@ function RevisionFausses({
   const [lectureErreur, setLectureErreur] = useState<string | null>(null);
   const [finErreur, setFinErreur] = useState<string | null>(null);
   const finEnCoursRef = useRef(false);
+  const finConfirmeeRef = useRef(false);
   const derniereValidationRef = useRef(0);
   const revisionRowsRef = useRef<RevisionRowLike[]>([]);
   const correctedQuestionsRef = useRef<string[]>([]);
@@ -1515,7 +1516,7 @@ function RevisionFausses({
   };
 
   const goNext = async () => {
-    if (finEnCoursRef.current) return;
+    if (finEnCoursRef.current || finConfirmeeRef.current) return;
     // Le second geste d'un double tap ne doit pas valider PUIS avancer.
     if (Date.now() - derniereValidationRef.current < 400) return;
     setShowCorrection(false);
@@ -1613,6 +1614,7 @@ function RevisionFausses({
         if (readback.error || !revisionResultatConfirme(readback.data, apprenantId, examenId, exerciceId,
           relu.reponses, questionOrder, finalCorrected)) throw new Error(readback.error?.message || "Résultat final non confirmé pour cette révision");
         finEnregistree = true;
+        finConfirmeeRef.current = true;
         toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
         onTerminer();
         return;
@@ -1630,6 +1632,7 @@ function RevisionFausses({
           throw new Error("Reçu de finalisation non conforme");
         }
         finEnregistree = true;
+        finConfirmeeRef.current = true;
         toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
         onTerminer();
       }
@@ -1660,6 +1663,7 @@ function RevisionFausses({
     correctedQuestionsRef.current = [];
     tentativePreteRef.current = true;
     termineeRef.current = false;
+    finConfirmeeRef.current = false;
     const vide = creerRevisionProgressState({
       examenId, answers: {}, currentIndex: 0, correctedCount: 0,
       correctedQuestions: [], showCorrection: false, questionOrder,
