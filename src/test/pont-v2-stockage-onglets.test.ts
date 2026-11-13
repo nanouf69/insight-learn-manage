@@ -327,7 +327,7 @@ describe("Appel figé sans réponse", () => {
       expect(tenus.size).toBe(0); // le verrou inter-onglets n'est pas retenu indéfiniment
       expect(A.reponsesNoyauEnAttente("f")).toBe(1); // jamais présentée comme enregistrée
       perdreReponseApresCommit = false;
-      for (let i = 0; i < 10 && A.reponsesNoyauEnAttente() > 0; i++) { await A.viderFileNoyau(null, { forcer: true }); await vi.advanceTimersByTimeAsync(0); }
+      for (let i = 0; i < 2000 && A.reponsesNoyauEnAttente() > 0; i++) { await A.viderFileNoyau(null, { forcer: true }); await new Promise((r) => setImmediate(r)); }
       expect(A.reponsesNoyauEnAttente()).toBe(0);
       expect(ecrituresEffectives).toBe(1);
     } finally {
@@ -338,7 +338,8 @@ describe("Appel figé sans réponse", () => {
 
 describe("Panne prolongée de six minutes", () => {
   it("modifications pendant la panne, fermeture puis réouverture : zéro perte, essais bornés, une écriture par question", async () => {
-    vi.useFakeTimers();
+    // Seules les minuteries sont simulées : le calcul SHA-256 des opérations reste réel (asynchrone hors minuterie).
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     try {
       panne = true;
       const A = await ouvrirOnglet();
@@ -356,7 +357,7 @@ describe("Panne prolongée de six minutes", () => {
       expect(appelsAvantFermeture).toBeLessThanOrEqual(20);
       panne = false;
       await vi.advanceTimersByTimeAsync(31_000);
-      for (let i = 0; i < 20 && B.reponsesNoyauEnAttente() > 0; i++) { await B.viderFileNoyau(null, { forcer: true }); await vi.advanceTimersByTimeAsync(0); }
+      for (let i = 0; i < 2000 && B.reponsesNoyauEnAttente() > 0; i++) { await B.viderFileNoyau(null, { forcer: true }); await new Promise((r) => setImmediate(r)); }
       expect(B.reponsesNoyauEnAttente()).toBe(0);
       for (let q = 1; q <= 5; q++) expect(valeurServeur("p", `qrc:${q}`)).toBe(`final-${q}`);
       expect(ecrituresEffectives).toBe(5);
