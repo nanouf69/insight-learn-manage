@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 14:40 UTC — Présence par créneau et pratique
+- [x] Trois actions par créneau, confirmation preuve/identité avec rôle admin relu, pratique 0–6 h sans séance inventée ; signatures manquantes conservées, enregistrement déconnecté.
+- [x] 65 tests PASS/6 fichiers ; parcours lecture réelle PC/mobile : trois boutons, avertissement de chevauchement, pratique 7 h refusée, confirmation désactivée ; build OK. Rapport docs/presence-creneaux-pratique-2026-11-13.md.
+- [ ] Activation et taux/événements réels bloqués : journal exact et rattachement inscription/session absents, arbitrage des anciennes validations et protection EDOF/lecture propriétaire/restauration à prouver. Aucune écriture/publication.
+
 ## 13/11 14:36 UTC — Motif facultatif pour ajout de présence
 - [x] Motif facultatif, null si vide, 200 caractères maximum ; auteur/date serveur/heures/date présence et verrou double-clic inchangés.
 - [x] 28 tests PASS/4 fichiers, build OK ; lecture authentifiée sans écriture. SQL accepte null ; exigence distincte de motif pratique après gel conservée. Aucune écriture/publication.
