@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 15:38 UTC — Dates pédagogiques attestation Léa CATANIA
+- [ ] Audit lecture seule identité, activités qualifiantes, suivi heures et source du 19/10 ; distinguer preuve de lecture et simple ouverture.
+- [ ] Préparer source dates pédagogique/admin séparées et texte sans achèvement/durée cible non prouvés, tous parcours e-learning ; anciens signés inchangés.
+- [ ] Tests limites dates/Paris/reprise/incomplet, PDF aperçu et rapport ; aucune écriture réelle/publication.
+
 ## 13/11 15:31 UTC — Annuler et refaire une signature
 - [x] Action de revue par zone dans Documents PDF signés ; motif facultatif, confirmation ciblée, original affiché, aucune signature réelle annulée. Candidat annulation/reprise par propriétaire et projection indépendante.
 - [x] 21 tests PASS identité/droits simulés, multi-signataires/statuts, génération PDF original intact ; modale fictive PC/mobile inspectée, build OK, aucun transport réel branché.
