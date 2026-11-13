@@ -67,4 +67,17 @@ class LateAttendance(unittest.TestCase):
   for role in ['authenticated','anon']: self.assertEqual(self.sql(f"select has_function_privilege('{role}','emargement_tardif_signer(uuid,uuid,uuid,uuid,date,text,text,boolean,boolean,text)','execute')").stdout.strip(),'f')
  def test_journal_rls_other_account(self):
   self.call();self.assertEqual(self.sql(f"set role authenticated;set test.uid='{S}';select count(*) from emargement_tardif_journal").stdout.strip().splitlines()[-1],'0')
+ def test_concurrent_different_operations_one_evidence(self):
+  from concurrent.futures import ThreadPoolExecutor
+  with ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(lambda op:self.call(op=op),[O,S]))
+  receipts=[json.loads(r.stdout) for r in results]
+  self.assertEqual(sum(not r['duplicate'] for r in receipts),1)
+  self.assertEqual(self.sql('select count(*) from emargements_fc').stdout.strip(),'1')
+  self.assertEqual(self.sql('select count(*) from emargement_tardif_journal').stdout.strip(),'1')
+ def test_existing_absence_never_becomes_presence(self):
+  self.sql(f"insert into emargements_fc(id,apprenant_id,user_id,date_emargement,demi_journee,absent,regularisation_id) values('{O}','{A}','{U}','2026-10-30','matin',true,'{G}')")
+  self.assertTrue(json.loads(self.call().stdout)['conserve'])
+  self.assertEqual(self.sql('select absent from emargements_fc').stdout.strip(),'t')
+  self.assertEqual(self.sql('select count(*) from emargement_tardif_journal').stdout.strip(),'0')
 if __name__=='__main__': unittest.main(verbosity=2)
