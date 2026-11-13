@@ -1,5 +1,12 @@
 # Feuille de route
 
+## 13/11 13:10 UTC — Signature tardive d’émargement (aperçu uniquement)
+- [x] Audit SELECT : date Paris égale aujourd’hui dans RPC/Edge, remplacement refusé, bouton passé divergent ; 30/10 : 12 matin + 12 après-midi signées, zéro autorisation exacte, aucune identité déduite.
+- [x] Aperçu confirmation/conservation des preuves et recherche exacte, flag OFF ; candidat SQL atomicité/journal + Edge PNG non branchés, aucune présence inventée ni remplacement.
+- [x] 62 Vitest + 25 SQL existants + 26 SQL candidats + 6 Deno PASS, PC/mobile fictifs inspectés, empreintes finales identiques, build OK ; rapport docs/emargement-tardif-audit-2026-11-13.md.
+- [ ] Circuit complet : migration/Edge non installés, ancien INSERT/handler à couvrir, relecture/PDF et accès réel non prouvés ; horaires par session pratique exacte à certifier.
+- [ ] Activation : bloquée par validation explicite et sauvegarde/restauration ; aucune écriture réelle, installation ou publication autorisée.
+
 ## 13/11 12:17 UTC — Bilan examen HASSEN BENKHELIL invisible
 - [x] SELECT : cinq exercices historiques module 11 marqués remis, un brouillon, aucun passage figé/futur ; l’onglet ne lit pas cette source historique. Droits admin présents.
 - [x] Consultation historique en lecture seule ajoutée, révisions/brouillons exclus, notes non vérifiées nulles ; 13 tests PASS, compte admin réel PC et compteur mobile vérifiés ; empreintes inchangées, build OK. Aucun envoi/migration/publication.

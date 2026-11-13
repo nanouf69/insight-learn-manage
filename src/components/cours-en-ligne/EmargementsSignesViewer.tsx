@@ -8,6 +8,8 @@ import { getExpectedEmargements, isPresentielType, PRATIQUE_HORAIRES, type Crene
 import { getPratiqueDates } from "@/lib/pratiqueEmargements";
 import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
 import cachetAsset from "@/assets/cachet-ftransport.png.asset.json";
+import { autorisationsPourCreneau, EMARGEMENT_TARDIF_ACTIF, signatureTardive, type AutorisationTardive } from '@/lib/emargementTardif';
+import { ConfirmationEmargementTardif } from './ConfirmationEmargementTardif';
 
 
 interface EmargementRow {
@@ -328,6 +330,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean; extras?: CreneauKey[] } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [confirmationTardive, setConfirmationTardive] = useState<{ date: string; creneau: CreneauKey; existing: boolean; grant?: string; error?: string } | null>(null);
   const [pratiqueDates, setPratiqueDates] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!apprenantId) return;
@@ -463,8 +466,19 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       .filter((slot): slot is { date: string; creneau: CreneauKey } => Boolean(slot));
   }, [expected, rows]);
 
-  const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
+  const openSignatureFor = useCallback(async (slot: { date: string; creneau: CreneauKey }) => {
     const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
+    if (hasValidSignature(existing)) {
+      setConfirmationTardive({ ...slot, existing: true });
+      return;
+    }
+    if (slot.date < new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date())) {
+      setConfirmationTardive({ ...slot, existing: false, error: 'Vérification de l’autorisation…' });
+      const { data, error } = await supabase.from('emargement_regularisations').select('id, auth_user_id, apprenant_id, creneaux, expire_le').eq('apprenant_id', apprenantId ?? '').eq('auth_user_id', userId ?? '');
+      const grants = !error && Array.isArray(data) ? autorisationsPourCreneau(data as AutorisationTardive[], userId ?? '', apprenantId ?? '', slot.date, slot.creneau) : [];
+      setConfirmationTardive(current => current?.date === slot.date && current.creneau === slot.creneau ? { ...slot, existing: false, grant: grants.length === 1 ? grants[0].id : undefined, error: error ? 'Lecture de l’autorisation impossible : aucune signature envoyée.' : grants.length > 1 ? 'Plusieurs autorisations : vérification du centre nécessaire.' : undefined } : current);
+      return;
+    }
     // Pratique : une seule signature couvre matin + après-midi du même jour.
     // Seules les demi-journées prévues ET encore non signées sont ajoutées :
     // une signature existante n'est jamais remplacée.
@@ -472,7 +486,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       ? missingSlots.filter((s) => s.date === slot.date && s.creneau !== slot.creneau && (s.creneau === "matin" || s.creneau === "apres_midi")).map((s) => s.creneau)
       : [];
     setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing), extras });
-  }, [rowBySlot, pratiqueDates, missingSlots]);
+  }, [rowBySlot, pratiqueDates, missingSlots, apprenantId, userId]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -684,6 +698,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">Non signé</span>
                         )}
                       </div>
+                      {r?.absent !== true && signatureTardive(date, r?.signed_at) && <p className="text-xs text-muted-foreground mb-2">Signé tardivement le {new Date(r?.signed_at ?? '').toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}</p>}
                       <div className="border rounded bg-white flex items-center justify-center h-[90px]">
                         {r?.signature_data_url ? (
                           <img
@@ -744,6 +759,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           onSkipped={() => setSignTarget(null)}
         />
       )}
+
+      {confirmationTardive && <ConfirmationEmargementTardif
+        date={formatDateFR(confirmationTardive.date)} creneau={labelDemi(confirmationTardive.creneau)}
+        existing={confirmationTardive.existing} authorized={Boolean(confirmationTardive.grant)} active={EMARGEMENT_TARDIF_ACTIF}
+        error={confirmationTardive.error} onClose={() => setConfirmationTardive(null)}
+        onContinue={() => { if (EMARGEMENT_TARDIF_ACTIF && confirmationTardive.grant) window.location.assign(`/emargements-regularisation/${confirmationTardive.grant}`); }}
+      />}
 
       {!completed && (
         <div className="flex justify-end">
