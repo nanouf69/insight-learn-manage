@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 15:50 UTC — Annulation opérationnelle des 4 h CHERNI
+- [ ] Terminer transport RPC, journal append-only, lecture effective commune et relecture ciblée ; ne jamais révoquer les 4 h réelles sans confirmation spécifique.
+- [ ] Tester annulation/restauration, autorisations, concurrence et restauration sur PostgreSQL jetable, puis parcours navigateur isolé avec relecture des compteurs.
+- [ ] Contrôler toutes les lectures et le delta publié ; installation/publication uniquement si isolation et sûreté démontrées.
+
 ## 13/11 15:38 UTC — Dates pédagogiques attestation Léa CATANIA
 - [x] Cause 19/10 : connexion accueil de deux secondes figée dans attestation signée ; remise 13/10 confirmée, 38h11/60h, fin CRM actuelle 31/10. Aucun changement réel.
 - [x] Nouveau lecteur de remises scoppé + panneau/PDF période séparant activité/admin sans certifier fin ; chemin des signés conservé. Parcours partagent preview, autres modèles tracés.
