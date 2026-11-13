@@ -344,7 +344,7 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     const src = read(PASSAGE);
     expect(src).toContain("serveurCompletRef.current) return true");
     expect(src).toContain("archiverMarqueursObsoletes");
-    expect(src).toContain("!serveurComplet && <AnswerSaveIndicator />");
+    expect(src).toContain("!serveurComplet && <AnswerSaveIndicator noyau={attemptV2Ref.current ? fileNoyau : null} />");
   });
 
   it("RÈGLE 2 — une matière non récupérable propose de recommencer sans rien supprimer", () => {
