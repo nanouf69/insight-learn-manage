@@ -57,7 +57,7 @@ export function ValidationPresenceCreneauDialog({cible,onClose}:{cible:CiblePres
     {pdfErreur&&<p role="alert" className="text-sm text-destructive">{pdfErreur}</p>}
     <label className="flex items-start gap-2 text-sm"><Checkbox checked={confirme} onCheckedChange={v=>setConfirme(v===true)}/>Je confirme le déroulement réel, l’identité du candidat et la preuve de présence.</label>
     <p className="text-sm">Présence validée administrativement — signature apprenant absente. Aucune signature ni absence ne sera remplacée ; la date de validation sera celle du serveur.</p>
-    <p role="status" className="text-sm text-muted-foreground">Enregistrement non activé : rattachement exact, journal sécurisé et contrôle des chevauchements doivent être vérifiés avant toute validation réelle.</p>
+    <p role="status" className="text-sm text-destructive">Validation indisponible : ce formulaire ne peut pas enregistrer de présence. Le dépôt PDF privé et le journal de validation ne sont pas installés. Le fichier sélectionné reste sur cet appareil ; fermer cette fenêtre ne valide aucune heure.</p>
     <DialogFooter className="gap-2"><Button variant="outline" onClick={onClose}>Fermer</Button><Button disabled>Confirmer la présence</Button></DialogFooter>
   </DialogContent></Dialog>;
 }

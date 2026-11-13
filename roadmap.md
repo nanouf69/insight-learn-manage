@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 15:23 UTC — Parcours présence bloqué
+- [x] Candidats SQL exact/journal immuable/rapprochement snapshot et dépôt PDF analysé/relu, projection par union ; message explicite de non-enregistrement. Aucun branchement réel.
+- [x] 46 Vitest + 7 Deno PASS ; contrat PostgreSQL jetable sécurité/doublons/pg_dump-restauration PASS ; modale authentifiée en lecture PC/mobile, build OK, deux déclarations réelles inchangées.
+- [x] Deux brouillons utilisent la base réelle : pas d’Auth/Storage hébergé isolé ; publication complète non isolée (49 fichiers dans les dix derniers changements). Rapport docs/presence-operationnelle-2026-11-13.md.
+- [ ] Activation bloquée : environnement Auth/Storage indépendant requis ; raccord UI/lecteurs et interverrouillage anciens chemins + annulation/restauration à prouver dans cet environnement. Bouton production NON actif, aucune publication.
+
 ## 13/11 15:19 UTC — Supprimer une validation sans motif
 - [x] Confirmation simple sans motif saisi, boutons Annuler/Oui, supprimer ; libellé audit automatique, opération et retour ciblé conservés, restauration inchangée.
 - [x] 20 tests PASS, PC/mobile simulés inspectés, build OK ; annulation sans envoi, confirmation/double clic/isolation et projection 330→90 min prouvés ; aucune écriture réelle/publication.
