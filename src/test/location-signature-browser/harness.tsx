@@ -1,0 +1,12 @@
+import { createRoot } from 'react-dom/client';
+import jsPDF from 'jspdf';
+import { LocationMailSignature } from '@/components/crm/apprenant-sections/LocationMailSignature';
+import { LocationSignatureForm, type LocationPublicDoc } from '@/components/documents/LocationSignatureForm';
+import { assuranceVide } from '@/lib/contratLocationClauses';
+import '@/index.css';
+const pdf = new jsPDF(); pdf.text('CONTRAT FICTIF - ESSAI ISOLE', 20, 20); pdf.text('Aucune donnee ni signature reelle.', 20, 40);
+const url = URL.createObjectURL(pdf.output('blob'));
+const doc: LocationPublicDoc = { modele_code: 'contrat_location', reference: 'LOC-FICTIF', destinataire_nom: 'Client Fictif', texte_empreinte: 'sha-fictif', statut: 'envoye', fileUrl: url };
+const client = location.search.includes('client');
+const root = document.getElementById('root');
+if (root) createRoot(root).render(client ? <LocationSignatureForm doc={doc} submit={async () => ({ success: true })} read={async () => ({ ...doc, statut: 'signe', signed_at: '2026-11-13T12:00:00Z', signedFileUrl: url })} /> : <main className="max-w-xl mx-auto p-4"><LocationMailSignature context={{ locataire: { nomComplet: 'Client Fictif', email: 'client@example.test', telephone: '', adresse: '', numPermis: '', dateDelivrancePermis: '', prefecturePermis: '' }, vehiculeChoisi: false, immatriculation: '', dateDebut: '2026-11-13', dateFin: '2026-11-14', prixLocation: '', tarifJournalier: '', regime: 'non_determine', assurance: assuranceVide() }} policeBlockers={[]} /></main>);
