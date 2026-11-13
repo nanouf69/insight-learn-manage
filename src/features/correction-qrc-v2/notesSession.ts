@@ -16,7 +16,7 @@ import { deciderRattachementCrm } from './rattachementCrm';
 import type { DestinationCorrection } from './lienCorrectionSession';
 import { signalerLectureNotes, verifierLectureNotes, type SuiviChargementNotes } from './chargementNotesSession';
 
-export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string; doublon?:boolean };
+export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string; doublon?:boolean; revue?:boolean };
 export type InscritNotes = {id:string;nom:string;prenom:string;type_apprenant:string|null;abandonnee?:boolean};
 export function filiereInscrit(type:string|null):ExamenBlanc['type']|null {
   const t=(type??'').trim().toLowerCase().replace(/-e$/,'');
@@ -55,7 +55,7 @@ export function notesMatieresSession(def:ExamenBlanc,rows:any[],indisponible=fal
   const scores=rows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
   return Object.fromEntries(def.matieres.map(m=>{
     const row=findScoreForMatiere(scores,m);const note=row?noteExamenAffichee(row):null;
-    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...((row as any).__doublonConcordant?{doublon:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
+    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...((row as any).__doublonConcordant?{doublon:true}:{}),...((row as any).__revueProvenance?{revue:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null,...((row as any).__statutCopieEB==='revue'?{revue:true}:{})}:{etat:'attente',note:null};
     return [m.id,value];
   }));
 }

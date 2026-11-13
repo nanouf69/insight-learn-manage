@@ -144,9 +144,10 @@ function EcranResultats({
   // Les emplacements vides (matière sans résultat) restent à leur index : jamais de plantage.
   resultats = useMemo(() => {
     const states = sameCoreOwner ? coreStates : null;
-    const seeds = resultatsSource.filter(r => !r.nonPassee).map(r => ({ ...r, id: r.resultId, apprenant_id: apprenantId, quiz_id: r.quizId ?? examen.id, matiere_id: r.matiereId, completed_at: r.completedAt }));
+    const seeds = resultatsSource.filter(r => r && !r.nonPassee).map(r => ({ ...r, id: r.resultId, apprenant_id: apprenantId, quiz_id: r.quizId ?? examen.id, matiere_id: r.matiereId, completed_at: r.completedAt }));
     const projected = isViewingSaved && apprenantId ? lignesCanoniquesEB(seeds, states, rejectedCopies, apprenantId, [examen]) : seeds;
     return resultatsSource.map(r => {
+      if(r == null)return r;
       const native = projected.find(p => p.matiere_id === r.matiereId && p.__copieSessionAttemptId);
       if (native) return { ...r, nonPassee: false, resultId: native.id, completedAt: native.completed_at, details: native.details, reponses: native.details?.reponses ?? {}, correctionsIA: undefined, __core: native.__core };
       return { ...r, __core: coreFiablePourLigne(states, { ...r, quizId: r.quizId ?? examen.id }) };

@@ -10,7 +10,7 @@ function fixture() {
 }
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => {
   const result = {data: table === 'apprenant_quiz_results' ? fixture() : [], error: null};
-  const q: any = { select: () => q, eq: () => q, like: () => q, then: (resolve: any) => Promise.resolve(result).then(resolve) }; return q;
+  const q: any = { select: () => q, eq: () => q, in: () => q, order: () => q, range: () => q, like: () => q, then: (resolve: any) => Promise.resolve(result).then(resolve) }; return q;
 } } }));
 vi.mock('@/components/cours-en-ligne/useLiveExamens', () => ({ useLiveExamens: () => ({examens: [exam]}), fetchLiveExamens: async () => [exam] }));
 vi.mock('@/hooks/useCoreChangeTick', () => ({ useCoreChangeTick: () => h.tick }));
