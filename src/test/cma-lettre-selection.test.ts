@@ -1,0 +1,20 @@
+import { describe,it,expect } from 'vitest';
+import { selectionLettreCma, type CmaCandidat } from '@/lib/cmaLettreSelection';
+const calvo:CmaCandidat={id:'calvo',nom:'Calvo',prenom:'Enzo',type_apprenant:'vtc-e',date_examen_theorique:'21 juillet 2026',date_examen_pratique:'2026-11-03',resultat_examen:'oui',resultat_examen_pratique:'non'};
+const period='Du 16 au 23 décembre 2026';
+const proof={apprenant_id:'calvo',date_examen:'2026-11-03',filiere:'VTC',territoire:'69'};
+const run=(a:CmaCandidat[]= [calvo],p=[proof])=>selectionLettreCma(a,p,[],'17 novembre 2026',period,'69');
+describe('Lettre CMA : sélection exacte non destructive',()=>{
+ it('Calvo ajourné novembre apparaît une fois à représenter en décembre, pas confirmé',()=>{const r=run([calvo,calvo]);expect(r.aRepresenter.map(a=>a.id)).toEqual(['calvo']);expect(r.confirmes).toHaveLength(0);expect(calvo.resultat_examen_pratique).toBe('non');});
+ it('territoire manquant : Calvo est à vérifier, jamais déclaré inscrit',()=>{const r=run([calvo],[{...proof,territoire:''}]);expect(r.aVerifier.map(x=>x.candidat.id)).toEqual(['calvo']);expect(r.aRepresenter).toHaveLength(0);});
+ it.each(['absent','annule','oui','reporte'])('%s ne compte pas comme ajournement',result=>expect(run([{...calvo,resultat_examen_pratique:result}]).aRepresenter).toHaveLength(0));
+ it('ajourné plus ancien exclu',()=>expect(run([{...calvo,date_examen_pratique:'2026-09-03'}]).aRepresenter).toHaveLength(0));
+ it('reprise plus récente exclut l’ancien ajournement',()=>expect(run([calvo],[proof,{...proof,date_examen:'2026-11-05'}]).aRepresenter).toHaveLength(0));
+ it('autre territoire exclu des deux groupes',()=>{const r=run([calvo],[{...proof,territoire:'63'}]);expect(r.aRepresenter).toHaveLength(0);expect(r.confirmes).toHaveLength(0);});
+ it('autre catégorie ne prouve pas le passage',()=>expect(run([calvo],[{...proof,filiere:'TAXI'}]).aRepresenter).toHaveLength(0));
+ it('confirmation cible dédoublonne le candidat des ajournés',()=>{const r=run([calvo],[proof,{...proof,date_examen:'2026-12-17'}]);expect(r.confirmes.map(a=>a.id)).toEqual(['calvo']);expect(r.aRepresenter).toHaveLength(0);});
+ it('ajout sans confirmation ni ajournement admissible exclu',()=>expect(run([{...calvo,resultat_examen_pratique:null}]).confirmes).toHaveLength(0));
+ it('session suivante non publiée refusée',()=>expect(selectionLettreCma([calvo],[proof],[],'26 janvier 2027','Début janvier 2027','69').erreur).toBeTruthy());
+ it('génération répétée conserve la sélection et les sources',()=>{const before=JSON.stringify(calvo);expect(run()).toEqual(run());expect(JSON.stringify(calvo)).toBe(before);});
+ it('ajournement successif reste lié à la dernière période',()=>{const a={...calvo,date_examen_pratique:'2026-12-17'};expect(run([a],[{...proof,date_examen:'2026-12-17'}]).aRepresenter).toHaveLength(0);});
+});
