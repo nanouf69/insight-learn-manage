@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 13:10 UTC — Signature tardive d’émargement (aperçu uniquement)
+- [ ] Audit SELECT frontend/Edge/RPC/RLS, liens, identité, anti-doublon et cas anonyme 30/10 matin.
+- [ ] Préparer autorisation tardive exacte, horodatage réel, aucune présence inventée ni remplacement ; confirmation et relecture.
+- [ ] Tests isolés matin/après-midi, passé/futur, accès, signatures, concurrence, audit et PC/mobile ; rapport des limites.
+- [ ] Activation : bloquée par validation explicite et sauvegarde/restauration ; aucune écriture réelle, installation ou publication autorisée.
+
 ## 13/11 12:17 UTC — Bilan examen HASSEN BENKHELIL invisible
 - [x] SELECT : cinq exercices historiques module 11 marqués remis, un brouillon, aucun passage figé/futur ; l’onglet ne lit pas cette source historique. Droits admin présents.
 - [x] Consultation historique en lecture seule ajoutée, révisions/brouillons exclus, notes non vérifiées nulles ; 13 tests PASS, compte admin réel PC et compteur mobile vérifiés ; empreintes inchangées, build OK. Aucun envoi/migration/publication.
