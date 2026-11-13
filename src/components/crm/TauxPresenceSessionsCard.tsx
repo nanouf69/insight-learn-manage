@@ -96,7 +96,8 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   const admin=fusionnerPresenceAdministrative(signes,validations,autorises);
   res.session.faites=(Math.round(res.session.faites*60)+admin.theorieMinutes)/60;
   res.pratique.faites=(Math.round(res.pratique.faites*60)+admin.pratiqueMinutes)/60;
-  res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, vtcPresentiel);
+  const formationInitiale = inscriptions.some(row => /theorique/i.test(row.sessions?.type_session ?? '') && !/continue|\bfc\b/i.test(`${row.sessions?.nom ?? ''} ${row.sessions?.type_session ?? ''}`) && !row.liste_attente && !row.emargements_exclus && !/annul/i.test(row.sessions?.statut ?? ''));
+  res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, vtcPresentiel && formationInitiale);
   return { ...res, admin };
 }
 

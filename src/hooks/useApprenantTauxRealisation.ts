@@ -147,7 +147,7 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
         reqTotal,
         pctElearning: pct(doneElearning, reqElearning),
         pctPresentiel: totalVtc?.pct ?? pct(donePresentiel, reqPresentiel),
-        pctTotal: totalVtc?.pct ?? (regle.presentiel ? signatures?.taux ?? 0 : pct(doneElearning + donePresentiel, reqTotal)),
+        pctTotal: vtcPresentiel ? totalVtc?.pct ?? 0 : (regle.presentiel ? signatures?.taux ?? 0 : pct(doneElearning + donePresentiel, reqTotal)),
         signatures: vtcPresentiel ? { signees: signatures?.signees ?? 0, attendues: signatures?.attendues ?? 0, taux: totalVtc?.pct ?? null, raison: totalVtc ? `${totalVtc.faites.toLocaleString('fr-FR',{maximumFractionDigits:1})} h prouvées / ${totalVtc.prevues} h prévues` : 'Présence indisponible' } : signatures,
         totalParSignatures: regle.presentiel || vtcPresentiel,
         premiereActiviteAt,

@@ -11,7 +11,7 @@ export function estVtcPresentiel(row: { type_apprenant?: unknown; formation_choi
 
 /** Expected practice is an obligation, not proof that it has been performed. */
 export function pratiquePrevueVtc(theoriePrevue: number, pratiqueInscrite: number, vtcPresentiel: boolean) {
-  return vtcPresentiel && theoriePrevue > 0 ? Math.max(6, pratiqueInscrite) : pratiqueInscrite;
+  return vtcPresentiel && theoriePrevue > 0 ? 6 : pratiqueInscrite;
 }
 
 /** Live display only: targets come from the shared course/enrollment projection. */
