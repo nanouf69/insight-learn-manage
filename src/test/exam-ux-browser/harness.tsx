@@ -30,6 +30,6 @@ function Subject() {
     <PassageMatiere matiere={matiere} numero={1} total={2} apprenantId={A} userId={U} examenId={type === 'TAXI' ? 'EB1-TAXI' : 'EB1'} onTerminer={() => { throw new Error('Unexpected finalization in UX-only check'); }} />
   </main>;
 }
-function Notes() { const nav = useNavigate(); return <><p>Notes fictives</p><Button onClick={() => nav('/src/test/exam-ux-browser/harness.html'+location.search)}>Ouvrir la matière</Button></>; }
+function Notes() { const nav = useNavigate(); return <><p>Notes fictives</p><Button onClick={() => nav('/src/test/exam-ux-browser/harness.html?type='+type)}>Ouvrir la matière</Button></>; }
 const root = document.getElementById('root');
 if (root) createRoot(root).render(<BrowserRouter><Routes><Route path="/ux-notes" element={<Notes />} /><Route path="*" element={<Subject />} /></Routes></BrowserRouter>);

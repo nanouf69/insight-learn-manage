@@ -78,7 +78,7 @@ export function ExamExitGuard({ active }: { active: boolean }) {
 
   useEffect(() => { if (!active) setPending(null); }, [active]);
   return <AlertDialog open={pending !== null} onOpenChange={open => { if (!open) setPending(null); }}>
-    <AlertDialogContent className="max-w-[calc(100%_-_2rem)] sm:max-w-lg" onOpenAutoFocus={event => { event.preventDefault(); staying.current?.focus(); }}>
+    <AlertDialogContent className="max-w-[calc(100%_-_2rem)] max-h-[calc(100dvh_-_2rem)] overflow-y-auto sm:max-w-lg" onOpenAutoFocus={event => { event.preventDefault(); staying.current?.focus(); }}>
       <AlertDialogTitle>Quitter la matière en cours ?</AlertDialogTitle>
       <AlertDialogDescription className="text-base leading-relaxed">{EXAM_EXIT_WARNING}</AlertDialogDescription>
       <div className="flex flex-col gap-3">
