@@ -17,6 +17,7 @@ import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, t
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from "./ExamensBlancsEditor";
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
+import { lignesCanoniquesEB } from '@/lib/ebNativeDisplay';
 import ConfirmationPresentielEB from "./ConfirmationPresentielEB";
 import { confirmationPresentielRequise } from "@/lib/confirmationPresentielEB";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
@@ -961,7 +962,11 @@ export default function ExamensBlancsPage({
       toast.error('Lecture des résultats impossible. Réessayez sans relancer votre examen.');
       return;
     }
-    const rows = lignesExamenAffichees(data, resets.data);
+    const states=await fetchCoreMatiereStates(apprenantId);
+    const rejected=states?await fetchPassagesV2NonFiables(new Map([[apprenantId,states]])):null;
+    if(states===null||rejected===null){toast.error('Lecture des copies officielles impossible. Aucun examen ne sera relancé.');return;}
+    const activeStates=states.filter(s=>!(resets.data??[]).some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
+    const rows = lignesCanoniquesEB(lignesExamenAffichees(data, resets.data),activeStates,rejected,apprenantId,[examReference]);
     // Surveillance (lecture seule) : journalise toute divergence « élève en
     // attente / aucune QRC réellement à corriger ». Ne modifie jamais rien.
     // Même règle que l'affichage (EcranResultats) : une matière ayant un passage
@@ -1046,6 +1051,7 @@ export default function ExamensBlancsPage({
           score_max: safeScoreMax,
           note_sur_20: row.note_sur_20,
           reussi: row.reussi,
+          __core: row.__core,
         },
         findStaticFallbackMatiere(examReference.id, matiere.id, matiere.nom),
       );
@@ -1061,6 +1067,7 @@ export default function ExamensBlancsPage({
 
       return {
         resultId: row.id,
+        __core: row.__core,
                   completedAt: row.completed_at,
                   quizId: row.quiz_id,
         matiereId: row.matiere_id || matiere.id,

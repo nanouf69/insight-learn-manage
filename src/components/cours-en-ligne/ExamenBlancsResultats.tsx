@@ -44,7 +44,8 @@ import {
 import { computeMoyenneExamen, computeResultatMatiereScore, computeMatiereScoreForAttempt, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { rafraichirCopiesAffichees } from "@/lib/refreshSavedExamResults";
-import { lignesNativesAffichees } from '@/lib/ebNativeDisplay';
+import { lignesCanoniquesEB } from '@/lib/ebNativeDisplay';
+import { libelleAttenteEB } from '@/lib/ebCanonicalStatus';
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
 import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
 import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisationServeur";
@@ -109,6 +110,7 @@ function EcranResultats({
   // Source unique : état serveur des passages du nouveau système (même source
   // que l'écran Correction QRC et la fiche Admin). Lecture seule.
   const [coreStates, setCoreStates] = useState<CoreMatiereState[] | null>(null);
+  const [rejectedCopies,setRejectedCopies]=useState<Set<string>|null>(null);
   const coreOwnerRef = useRef(apprenantId);
   const sameCoreOwner = coreOwnerRef.current === apprenantId;
   const coreTick = useCoreChangeTick(apprenantId);
@@ -130,7 +132,7 @@ function EcranResultats({
     fetchCoreMatiereStates(apprenantId).then(async (st) => {
       // Passages non fiables (défaut du 23/09) : note de l'ancien système.
       const nf = st && apprenantId ? await fetchPassagesV2NonFiables(new Map([[apprenantId, st]])) : null;
-      if (!cancelled) setCoreStates(st && nf ? st.filter((s) => !nf.has(s.attemptId)) : st);
+      if (!cancelled) {setCoreStates(st);setRejectedCopies(nf);}
     });
     return () => { cancelled = true; };
   }, [apprenantId, examen?.id, coreTick]);
@@ -143,13 +145,13 @@ function EcranResultats({
   resultats = useMemo(() => {
     const states = sameCoreOwner ? coreStates : null;
     const seeds = resultatsSource.filter(r => !r.nonPassee).map(r => ({ ...r, id: r.resultId, apprenant_id: apprenantId, quiz_id: r.quizId ?? examen.id, matiere_id: r.matiereId, completed_at: r.completedAt }));
-    const projected = isViewingSaved && apprenantId ? lignesNativesAffichees(seeds, states, states ? new Set() : null, apprenantId, [examen]) : seeds;
+    const projected = isViewingSaved && apprenantId ? lignesCanoniquesEB(seeds, states, rejectedCopies, apprenantId, [examen]) : seeds;
     return resultatsSource.map(r => {
       const native = projected.find(p => p.matiere_id === r.matiereId && p.__copieSessionAttemptId);
       if (native) return { ...r, nonPassee: false, resultId: native.id, completedAt: native.completed_at, details: native.details, reponses: native.details?.reponses ?? {}, correctionsIA: undefined, __core: native.__core };
       return { ...r, __core: coreFiablePourLigne(states, { ...r, quizId: r.quizId ?? examen.id }) };
     });
-  }, [resultatsSource, coreStates, examen, sameCoreOwner, isViewingSaved, apprenantId]);
+  }, [resultatsSource, coreStates, rejectedCopies, examen, sameCoreOwner, isViewingSaved, apprenantId]);
   // Corrigé officiel actuel (affichage seul) : la note reste celle du snapshot du passage.
   const [corrigesActuels, setCorrigesActuels] = useState<CarteCorrigesActuels>(() => new Map());
   const attemptIdsCore = useMemo(
@@ -694,10 +696,10 @@ function EcranResultats({
           <div className="p-8 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
             <Clock className="w-14 h-14 mx-auto mb-3 text-amber-400" />
             <h3 className="text-3xl font-black mb-2 text-amber-400">
-              En attente de correction des QRC
+              {libelleAttenteEB(resultats)}
             </h3>
             <p className="text-lg text-gray-300 mt-2">
-              Certaines réponses aux questions ouvertes (QRC) n'ont pas encore été corrigées. Votre résultat final sera publié dès qu'elles le seront.
+              {libelleAttenteEB(resultats)==='En attente de correction des QRC'?'Des réponses ouvertes de cette copie restent à corriger.':'La copie remise est conservée ; sa publication ou sa provenance reste à vérifier.'}
             </p>
             <p className="text-sm text-gray-400 mt-3">{examen.titre}</p>
           </div>
