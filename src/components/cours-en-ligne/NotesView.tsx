@@ -10,6 +10,7 @@ import { BilansARevoir } from "./BilansARevoir";
 import { useLiveExamens } from "./useLiveExamens";
 import { dernieresCopiesOfficielles, modeleExamenOfficiel } from "@/lib/notesOfficiellesEleve";
 import { copieRecenteSession } from "@/features/correction-qrc-v2/copieRecenteSession";
+import { lignesCanoniquesEB } from '@/lib/ebNativeDisplay';
 import { lireBilansNotes, modelesBilansNotes, type SourcesBilansNotes } from "@/lib/notesBilansEleve";
 import { MODULES_DATA } from "./formations-data";
 import { isExamAttemptPublicationPending, excludeResultPlaceholders, mergePassageSiblingRows } from "./exam-helpers";
@@ -174,7 +175,9 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
           const rows = [...activeRows.filter((r: any) => /^examen_blanc/.test(r.quiz_type)),
             ...mergePassageSiblingRows(activeRows.filter((r: any) => !/^examen_blanc/.test(r.quiz_type)))] as any[];
           const states=(coreStates??[]).filter(s=>!(resetsRes.data??[]).some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
-          setQuizResults(rows.map(r=>{const attached=attacherSourceUnique(r,resetsRes.error?null:states,nonFiables);return coreStates&&nonFiables&&/^examen_blanc/.test(r.quiz_type)?copieRecenteSession(attached,states,nonFiables):attached;}) as any);
+          if(resetsRes.error || coreStates===null || nonFiables===null) throw new Error('Lecture des publications officielles indisponible');
+          const projected=lignesCanoniquesEB(rows.filter(r=>/^examen_blanc/.test(r.quiz_type)),states,nonFiables,apprenantId,definitions.examens);
+          setQuizResults([...projected,...rows.filter(r=>!/^examen_blanc/.test(r.quiz_type)).map(r=>attacherSourceUnique(r,states,nonFiables))] as any);
           setReadError(null);
         }
 
@@ -191,7 +194,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = EMPTY_COM
       state.inFlight = false;
       if (isCurrent()) setLoading(false);
     }
-  }, [apprenantId, moduleCompletionsSeed]);
+  }, [apprenantId, moduleCompletionsSeed, definitions.examens]);
 
   useEffect(() => {
     fetchAll();

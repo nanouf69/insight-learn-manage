@@ -11,7 +11,7 @@ import { chargerAbsentsSessionJour } from './absenceSessionJour';
 import { chargerNotesSession, filiereInscrit, moyenneSessionExamen, type NoteSession, type ReleveSession } from './notesSession';
 import { ChargementNotesSession } from './ChargementNotesSession';
 import { lectureNotesBornee, type ProgressionNotes, type SuiviChargementNotes } from './chargementNotesSession';
-const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='definitif'?`${n.note?.toLocaleString('fr-FR')} /20`:n.etat==='non_passe'?'Non passé':n.etat==='attente'?'À corriger / en attente':n.etat==='incomplet'?`Incomplet (${n.couverture})`:'Lecture indisponible';
+const texteNote=(n:NoteSession|undefined)=>!n?'Lecture indisponible':n.etat==='definitif'?`${n.note?.toLocaleString('fr-FR')} /20${n.revue?' · provenance à vérifier':''}`:n.revue?'Copie remise — à vérifier':n.etat==='non_passe'?'Non passé':n.etat==='attente'?'À corriger / en attente':n.etat==='incomplet'?`Incomplet (${n.couverture})`:'Lecture indisponible';
 const motifs={publication:'Publication en attente — aucune QRC à corriger',non_rattachee:'Copie non rattachée au circuit de correction',ambigue:'Session de la copie à vérifier'} as const;
 export function NotesParSession({sessions,charger=chargerNotesSession,souscrire=souscrireNotesSession,chargerAbsences=chargerAbsentsSessionJour}:{sessions:GroupeSessionCrm[];charger?:typeof chargerNotesSession;souscrire?:typeof souscrireNotesSession;chargerAbsences?:typeof chargerAbsentsSessionJour}){
   const [examenId,setExamenId]=useState('tous');

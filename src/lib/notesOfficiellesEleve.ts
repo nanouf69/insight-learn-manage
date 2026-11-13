@@ -3,6 +3,7 @@ import { computeMoyenneExamen } from '@/components/cours-en-ligne/examens-blancs
 import { buildMatiereLookupKeys, findScoreForMatiere } from '@/components/cours-en-ligne/examens-blancs-utils';
 import { noteExamenAffichee, verdictMatiereAffiche } from './noteExamenAffichee';
 import { isExamAttemptPublicationPending } from '@/components/cours-en-ligne/exam-helpers';
+import { libelleAttenteEB } from './ebCanonicalStatus';
 
 export interface MatiereNoteOfficielle { id:string; nom:string; coefficient:number|null; note:number|null; date:string|null; statut:string }
 export interface ExamenNoteOfficielle { id:string; titre:string; date:string|null; note:number|null; statut:string; matieres:MatiereNoteOfficielle[] }
@@ -23,7 +24,7 @@ export function modeleExamenOfficiel(def:ExamenBlanc,rows:any[]):ExamenNoteOffic
     const coef=r?.__core?.coefficient??r?.details?.snapshot?.coefficient??m.coefficient;
     const coefficient=typeof coef==='number'&&Number.isFinite(coef)&&coef>0?coef:null;
     const note=n?.etat==='note'&&!isExamAttemptPublicationPending([r])?n.note20:null;
-    return {id:m.id,nom:m.nom,coefficient,note,date:r?.completed_at??null,statut:!r?'Non réalisé':note==null?'Note en attente':verdictMatiereAffiche(r)===true?'Réussi':verdictMatiereAffiche(r)===false?'À revoir':'Définitive'};
+    return {id:m.id,nom:m.nom,coefficient,note,date:r?.completed_at??null,statut:!r?'Non réalisé':note==null?libelleAttenteEB([r]):verdictMatiereAffiche(r)===true?'Réussi':verdictMatiereAffiche(r)===false?'À revoir':'Définitive'};
   });
   const dated=matieres.map(m=>m.date).filter((d):d is string=>!!d&&Number.isFinite(Date.parse(d))).sort((a,b)=>Date.parse(b)-Date.parse(a));
   const complete=matieres.length>0&&matieres.every(m=>m.note!=null&&m.coefficient!=null);

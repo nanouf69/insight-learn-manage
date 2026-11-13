@@ -58,6 +58,6 @@ describe("raccordement dans le code (contrôle statique)", () => {
     expect(page).toContain("onSansReponse={handleMatiereSansResultat}");
   });
   it("résultats : emplacement null ne plante plus (erreur quizId 14/10)", () => {
-    expect(res).toContain("r == null ? r");
+    expect(res).toContain("if(r == null)return r");
   });
 });

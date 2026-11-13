@@ -27,6 +27,7 @@ import ResultatsSessionPage from "./ResultatsSessionPage";
 import NotationPratiqueTab from "./NotationPratiqueTab";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertesNotesGlobales } from "@/features/surveillance-examens/AlertesNotesGlobales";
+import { ControleCoherenceEB } from '@/features/surveillance-examens/ControleCoherenceEB';
 import { SynchronisationNotes } from "@/features/surveillance-examens/SynchronisationNotes";
 
 // IDs des modules bilan qui ouvrent directement l'onglet examens
@@ -558,6 +559,7 @@ const ApprenantSearchPreview = () => {
           <NotationPratiqueTab />
         </TabsContent>
         <TabsContent value="notes-non-remontees" className="mt-6">
+          {isAdmin&&<ControleCoherenceEB/>}
           <AlertesNotesGlobales modeSepare />
         </TabsContent>
         <TabsContent value="correction-qrc" className="mt-6">

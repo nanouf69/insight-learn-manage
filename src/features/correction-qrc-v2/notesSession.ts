@@ -1,4 +1,5 @@
 import { copieRecenteSession, ajouterCopiesNativesSession } from './copieRecenteSession';
+import { lignesCanoniquesEB } from '@/lib/ebNativeDisplay';
 import { supabase } from '@/integrations/supabase/client';
 import { loadSavedExamens } from '@/components/cours-en-ligne/ExamensBlancsEditor';
 import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-data';
@@ -15,7 +16,7 @@ import { deciderRattachementCrm } from './rattachementCrm';
 import type { DestinationCorrection } from './lienCorrectionSession';
 import { signalerLectureNotes, verifierLectureNotes, type SuiviChargementNotes } from './chargementNotesSession';
 
-export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string; doublon?:boolean };
+export type NoteSession = { etat:'non_passe'|'attente'|'incomplet'|'indisponible'|'definitif'; note:number|null; verdict?:string; couverture?:string; doublon?:boolean; revue?:boolean };
 export type InscritNotes = {id:string;nom:string;prenom:string;type_apprenant:string|null;abandonnee?:boolean};
 export function filiereInscrit(type:string|null):ExamenBlanc['type']|null {
   const t=(type??'').trim().toLowerCase().replace(/-e$/,'');
@@ -54,7 +55,7 @@ export function notesMatieresSession(def:ExamenBlanc,rows:any[],indisponible=fal
   const scores=rows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
   return Object.fromEntries(def.matieres.map(m=>{
     const row=findScoreForMatiere(scores,m);const note=row?noteExamenAffichee(row):null;
-    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...((row as any).__doublonConcordant?{doublon:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null}:{etat:'attente',note:null};
+    const value:NoteSession=indisponible?{etat:'indisponible',note:null}:!row?{etat:'non_passe',note:null}:note?.etat==='note'?{etat:'definitif',note:note.note20,...((row as any).__doublonConcordant?{doublon:true}:{}),...((row as any).__revueProvenance?{revue:true}:{})}:note?.etat==='lecture_impossible'?{etat:'indisponible',note:null,...((row as any).__statutCopieEB==='revue'?{revue:true}:{})}:{etat:'attente',note:null};
     return [m.id,value];
   }));
 }
@@ -100,8 +101,8 @@ export async function chargerNotesSession(sessionId:string,suivi?:SuiviChargemen
     signalerLectureNotes(suivi,{etape:'Préparation du tableau',charges:0,total:inscrits.length});
     for(const a of inscrits){const track=filiereInscrit(a.type_apprenant);const reset=resets.filter(r=>r.apprenant_id===a.id);const archived=new Set(reset.flatMap(r=>r.archived_legacy_result_ids??[]));
       const states=(core.get(a.id)??[]).filter(s=>!reset.some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
-      const legacySelected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset).map(r=>copieRecenteSession(attacherSourceUnique(r,states,preuves),states,preuves));
-      const selected=ajouterCopiesNativesSession(legacySelected,states,preuves,a.id,definitions.filter(d=>d.type===track));
+      const legacySelected=lignesExamenAffichees(rows.filter(r=>r.apprenant_id===a.id&&!archived.has(r.id)),reset);
+      const selected=lignesCanoniquesEB(legacySelected,states,preuves,a.id,definitions.filter(d=>d.type===track));
       const liensApprenant=liens.filter(l=>l.apprenant_id===a.id&&l.sessions).map(l=>({session:l.sessions,debut:String(l.date_debut??l.sessions.date_debut).slice(0,10),fin:String(l.date_fin??l.sessions.date_fin).slice(0,10)}));
       notes[a.id]={};matieres[a.id]={};sourcesAttente[a.id]={};for(let n=1;n<=6;n++){const def=definitions.find(d=>d.numero===n&&d.type===track);const examRows=selected.filter(r=>r.quiz_id===def?.id);const sansFiche=examRows.length===0&&(core.get(a.id)??[]).some(s=>s.examId===def?.id);notes[a.id][n]=noteGeneraleSession(def,examRows,sansFiche);if(def){matieres[a.id][def.id]=notesMatieresSession(def,examRows,sansFiche);sourcesAttente[a.id][def.id]={};const scores=examRows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));for(const m of def.matieres){if(matieres[a.id][def.id][m.id]?.etat==='attente')sourcesAttente[a.id][def.id][m.id]=sourceAttenteMatiere(findScoreForMatiere(scores,m),liensApprenant,`crm:${sessionId}`,a.type_apprenant??'');}}}
       signalerLectureNotes(suivi,{etape:'Préparation du tableau',charges:Object.keys(notes).length,total:inscrits.length});

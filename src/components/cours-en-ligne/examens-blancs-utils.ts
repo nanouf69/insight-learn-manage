@@ -294,8 +294,11 @@ export function recoverCorruptedScoreRow(row: any, examensData: ExamenBlanc[]) {
 }
 
 export function findScoreForMatiere(scores: ExamScoreItem[], matiere: Pick<Matiere, "id" | "nom">): ExamScoreItem | undefined {
+  const exact=scores.find(score=>String(score.matiere_id)===String(matiere.id));
+  if(exact)return exact;
   const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
-  return scores.find((score) => shareLookupKey(score.lookupKeys, expectedKeys));
+  const compatible=scores.filter((score) => shareLookupKey(score.lookupKeys, expectedKeys));
+  return compatible.length===1?compatible[0]:undefined;
 }
 
 export function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {

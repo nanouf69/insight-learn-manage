@@ -18,6 +18,7 @@ import { BilanPassagesStatutsPanel } from "./BilanPassagesStatutsPanel";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
 import { estExamenBlanc } from "@/lib/noteExamenAffichee";
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
+import { lignesCanoniquesEB } from '@/lib/ebNativeDisplay';
 import { RevisionsAdmin } from "@/features/correction-qrc-v2/RevisionsAdmin";
 
 interface ResultatsApprenantTabProps {
@@ -29,6 +30,7 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
   const [bilans, setBilans] = useState<Record<string, string>>({});
   const [quizResults, setQuizResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [readError,setReadError]=useState<string|null>(null);
   // Définitions d'examens réellement en vigueur (base), identiques à l'espace apprenant
   // AUCUN REPLI STATIQUE : tant que la version active n'est pas chargée, rien n'est comparé.
   const [liveExamens, setLiveExamens] = useState<any[]>([]);
@@ -45,7 +47,9 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
   const coreTick = useCoreChangeTick(apprenantId);
   useEffect(() => {
     if (!apprenantId) return;
+    let cancelled=false;
     setLoading(true);
+    setExamScores([]);setReadError(null);
 
     Promise.all([
       // Exam blanc scores
@@ -64,6 +68,8 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         .select("exam_id, cutoff_at")
         .eq("apprenant_id", apprenantId),
     ]).then(async ([scoresRes, coreStates, bilansRes, resetsRes]) => {
+      if(cancelled)return;
+      if(scoresRes.error||resetsRes.error||coreStates===null)throw new Error('Lecture des notes officielles indisponible');
       if (scoresRes.data) {
         // Source unique : même fonction commune que « Mes notes » (élève).
         const nonFiables = coreStates === null
@@ -74,8 +80,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         // tentative, remise à zéro), jamais un mélange de tentatives par date.
         const eb = lignesExamenAffichees(toutes.filter((r: any) => estExamenBlanc(r)), resetsRes?.error ? null : (resetsRes?.data as any[]));
         const autres = mergePassageSiblingRows(excludeResultPlaceholders(toutes.filter((r: any) => !estExamenBlanc(r)))) as any[];
-        const rows = [...eb, ...autres];
-        setExamScores(rows.map((r: any) => attacherSourceUnique(r, coreStates, nonFiables)));
+        if(cancelled)return;
+        if(nonFiables===null)throw new Error('Lecture des copies officielles indisponible');
+        const states=coreStates.filter(s=>!(resetsRes.data??[]).some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
+        const rows = [...lignesCanoniquesEB(eb,states,nonFiables,apprenantId,liveExamens), ...autres.map(r=>attacherSourceUnique(r,states,nonFiables))];
+        setExamScores(rows);
       }
       if (bilansRes.data) {
         const map: Record<string, string> = {};
@@ -85,9 +94,11 @@ export function ResultatsApprenantTab({ apprenantId }: ResultatsApprenantTabProp
         setBilans(map);
       }
       setLoading(false);
-    });
-  }, [apprenantId, coreTick]);
+    }).catch(e=>{if(!cancelled){setReadError(e instanceof Error?e.message:'Lecture impossible');setLoading(false);}});
+    return ()=>{cancelled=true;};
+  }, [apprenantId, coreTick, liveExamens]);
 
+  if(readError)return <p role="alert" className="text-destructive">{readError}</p>;
   if (loading) {
     return (
       <div className="space-y-4">

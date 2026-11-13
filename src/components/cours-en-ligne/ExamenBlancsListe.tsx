@@ -28,7 +28,8 @@ import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDe
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
-import { lignesNativesAffichees, brouillonDejaRemis } from '@/lib/ebNativeDisplay';
+import { lignesCanoniquesEB, brouillonDejaRemis } from '@/lib/ebNativeDisplay';
+import { libelleAttenteEB } from '@/lib/ebCanonicalStatus';
 import { previousAttempt, type PreviousAttempt } from '@/lib/ebPreviousAttempt';
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { ExamCardAccess, useExamAccessSessions } from '@/components/sessions/acces-examens/ExamCardAccess';
@@ -101,6 +102,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
     return () => clearInterval(id);
   }, []);
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
+  const [notesReadError,setNotesReadError]=useState<string|null>(null);
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, PreviousAttempt>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
   // without needing `examensData` as a dependency (its identity changes on
@@ -136,6 +138,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
     if (!apprenantId) return;
 
     // 1) Fetch completed results — with retry + session refresh in case the
+    let cancelled=false;
+    setNotesReadError(null);
+    setExamScores({});setCompletedExamIds(new Set());setPartialExamIds(new Set());setOpenAttemptIds(new Set());
     // auth token expired in the background (same class of issue as the
     // tablet/session bugs fixed previously: a stale token can make this
     // read return incomplete/wrong data without any visible error).
@@ -167,10 +172,15 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
         .eq("etat", "en_cours"),
       fetchCoreMatiereStates(apprenantId),
     ])
-      .then(async ([{ data }, { data: resetRows }, { data: openV2Rows }, coreStatesBruts]) => {
+      .then(async ([resultRead, resetRead, openRead, coreStatesBruts]) => {
+        if(cancelled)return;
+        const {data}=resultRead;const resetRows=resetRead.data;const openV2Rows=openRead.data;
+        if(!data||resetRead.error||openRead.error||coreStatesBruts===null)throw new Error('Lecture des notes officielles indisponible');
         // Passages non fiables (défaut du 23/09) : note de l'ancien système.
         const nonFiablesV2 = coreStatesBruts ? await fetchPassagesV2NonFiables(new Map([[apprenantId, coreStatesBruts]])) : null;
-        const coreStates = coreStatesBruts && nonFiablesV2 ? coreStatesBruts.filter((s) => !nonFiablesV2.has(s.attemptId)) : coreStatesBruts;
+        if(cancelled)return;
+        if(nonFiablesV2===null)throw new Error('Lecture des copies officielles indisponible');
+        const coreStates = coreStatesBruts.filter(s=>!(resetRows??[]).some(r=>r.exam_id===s.examId&&Date.parse(s.finishedAt)<=Date.parse(r.cutoff_at)));
         if (data) {
           const resetCutoffs = latestExamResetCutoffs(resetRows);
           // Les lignes techniques « en attente de finalisation » (score 0 créé
@@ -186,7 +196,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           });
 
           // Sélection commune avec la fiche Résultats admin (même tentative affichée).
-          const latestRows = lignesNativesAffichees(lignesExamenAffichees(data as any[], resetRows as any[]), coreStates, nonFiablesV2, apprenantId, examensDataRef.current);
+          const latestRows = lignesCanoniquesEB(lignesExamenAffichees(data as any[], resetRows as any[]), coreStates, nonFiablesV2, apprenantId, examensDataRef.current);
 
           // FALLBACK: some rows have an empty details.reponses (the grading
           // snapshot never captured the answers, e.g. a save that failed
@@ -437,7 +447,9 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
             .select("apprenant_id, exercice_id, completed, reponses, created_at, updated_at")
             .eq("apprenant_id", apprenantId)
             .eq("exercice_type", "examen_blanc")
-            .then(({ data: repData }) => {
+            .then(({ data: repData, error:repError }) => {
+              if(cancelled)return;
+              if(repError){setNotesReadError('Lecture des reprises indisponible');return;}
               const started = new Set<string>();
 
               // Une sauvegarde de réponses, même marquée completed, ne remplace
@@ -482,7 +494,8 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               setOpenAttemptIds(open);
             });
         }
-      });
+      }).catch(e=>{if(!cancelled)setNotesReadError(e instanceof Error?e.message:'Lecture des notes impossible');});
+    return ()=>{cancelled=true;};
   }, [apprenantId, refreshKey, resetRefreshKey, coreTick]);
 
   const examens = examensData.filter(e => {
@@ -495,6 +508,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
 
   return (
     <div className="space-y-6">
+      {notesReadError&&<p role="alert" className="text-destructive">{notesReadError}</p>}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
@@ -583,10 +597,10 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                         return (
                           <div className="flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border-2 bg-amber-50 border-amber-400">
                             <span className="text-amber-700 font-bold text-base uppercase tracking-wide text-center">
-                              ⏳ En attente de correction des QRC
+                              {libelleAttenteEB(scores)}
                             </span>
                             <span className="text-xs text-amber-700 text-center">
-                              La note finale sera publiée dès que toutes les QRC restantes auront été corrigées.
+                              {libelleAttenteEB(scores)==='En attente de correction des QRC'?'Des QRC de cette copie restent à corriger.':'La copie remise est conservée ; sa publication ou sa provenance reste à vérifier.'}
                             </span>
                           </div>
                         );
@@ -711,7 +725,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                              {isCompleted && scoreData && publicationPending ? (
-                              <span className="shrink-0 font-semibold text-amber-600">⏳ En attente</span>
+                              <span className="shrink-0 font-semibold text-amber-600">{libelleAttenteEB([scoreData])}</span>
                             ) : isCompleted && scoreData ? (() => {
                               const score = computeMatiereScoreForAttempt(
                                 m,
