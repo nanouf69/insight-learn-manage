@@ -9,7 +9,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Signatures tardives / à refaire, nom-prénom feuilles — à confirmer par dossier nommé ; aucune annulation de signature.
 
 ## P0 — Examens blancs / sauvegarde
-- [ ] P0 Bilan examen VTC 505 « Développement commercial » : cause = accusé perdu + version serveur identique traitée comme conflit → validation bloquée à l’étape envoi (SAIDI, ABDELHAK, MALKI, CABRAL, Alpha). Correctif APERÇU (envoi-onglet-accuse-perdu.test.ts + 185 tests). Bloqué : publication globale.
+- [ ] P0 Bilan examen VTC 505 « Développement commercial » : cause prouvée = 2e clic des questions à plusieurs réponses journalisé mais écarté de la copie (base périmée) → « envoi » refusé en boucle. Correctif serveur EN LIGNE 13/11 19:26 (upsert-reponse-apprenant : dernier clic du même compte appliqué, 7 tests). À confirmer : premier « Valider » réussi de SAIDI / ABDELHAK / CABRAL.
 - [ ] Révisions « questions fausses » : rebase même onglet — APERÇU (214 tests).
 - [ ] Clôture sûre persist_answer_batch v2/v3 — BLOQUÉ : change le serveur pour tous les élèves → sauvegarde préalable.
 - [ ] 18 révisions figées (16 élèves) : récupération par nouvelle révision autorisée — BLOQUÉ par le point précédent.
