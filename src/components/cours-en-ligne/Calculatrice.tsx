@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Calculator, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export default function Calculatrice({ onClose }: { onClose: () => void }) {
+export default function Calculatrice({ onClose, inline = false }: { onClose: () => void; inline?: boolean }) {
   const [display, setDisplay] = useState("0");
   const [prevValue, setPrevValue] = useState<number | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
@@ -76,22 +77,20 @@ export default function Calculatrice({ onClose }: { onClose: () => void }) {
 
   const btnBase = "flex items-center justify-center rounded-lg text-base font-semibold h-12 transition-colors active:scale-95";
   const btnNum = `${btnBase} bg-muted hover:bg-muted/80 text-foreground`;
-  const btnOp = `${btnBase} text-white`;
-  const btnOpStyle = { backgroundColor: "#00B4D8" };
-  const btnEq = `${btnBase} text-white`;
-  const btnEqStyle = { backgroundColor: "#0D2540" };
+  const btnOp = `${btnBase} bg-primary text-primary-foreground hover:bg-primary/90`;
+  const btnEq = `${btnBase} bg-secondary text-secondary-foreground hover:bg-secondary/80`;
   const btnFunc = `${btnBase} bg-muted/50 hover:bg-muted/70 text-muted-foreground`;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl shadow-2xl border bg-card overflow-hidden" style={{ borderColor: "#00B4D8" }}>
-      <div className="flex items-center justify-between px-4 py-2" style={{ backgroundColor: "#0D2540" }}>
+    <section aria-label="Calculatrice" className={`${inline ? "relative w-full max-w-72" : "fixed bottom-4 right-4 z-50 w-72"} rounded-lg shadow-lg border border-primary bg-card overflow-hidden`}>
+      <div className="flex items-center justify-between px-4 py-2 bg-secondary text-secondary-foreground">
         <div className="flex items-center gap-2">
-          <Calculator className="w-4 h-4" style={{ color: "#00B4D8" }} />
-          <span className="text-sm font-semibold text-white">Calculatrice</span>
+          <Calculator className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold">Calculatrice</span>
         </div>
-        <button onClick={onClose} className="text-white/70 hover:text-white">
+        <Button onClick={onClose} variant="ghost" size="icon" aria-label="Fermer la calculatrice" title="Fermer la calculatrice">
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
       <div className="px-4 py-3 text-right border-b border-border bg-background">
         <div className="text-xs text-muted-foreground h-4">
@@ -100,30 +99,30 @@ export default function Calculatrice({ onClose }: { onClose: () => void }) {
         <div className="text-2xl font-mono font-bold text-foreground truncate">{display}</div>
       </div>
       <div className="grid grid-cols-4 gap-1 p-2">
-        <button className={btnFunc} onClick={clear}>C</button>
-        <button className={btnFunc} onClick={toggleSign}>±</button>
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("%")}>%</button>
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("÷")}>÷</button>
+        <Button className={btnFunc} onClick={clear}>C</Button>
+        <Button className={btnFunc} onClick={toggleSign}>±</Button>
+        <Button className={btnOp} onClick={() => performOperation("%")}>%</Button>
+        <Button className={btnOp} onClick={() => performOperation("÷")}>÷</Button>
 
         {["7", "8", "9"].map((d) => (
-          <button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</button>
+          <Button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</Button>
         ))}
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("×")}>×</button>
+        <Button className={btnOp} onClick={() => performOperation("×")}>×</Button>
 
         {["4", "5", "6"].map((d) => (
-          <button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</button>
+          <Button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</Button>
         ))}
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("-")}>−</button>
+        <Button className={btnOp} onClick={() => performOperation("-")}>−</Button>
 
         {["1", "2", "3"].map((d) => (
-          <button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</button>
+          <Button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</Button>
         ))}
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("+")}>+</button>
+        <Button className={btnOp} onClick={() => performOperation("+")}>+</Button>
 
-        <button className={`${btnNum} col-span-2`} onClick={() => inputDigit("0")}>0</button>
-        <button className={btnNum} onClick={inputDot}>.</button>
-        <button className={btnEq} style={btnEqStyle} onClick={handleEquals}>=</button>
+        <Button className={`${btnNum} col-span-2`} onClick={() => inputDigit("0")}>0</Button>
+        <Button className={btnNum} onClick={inputDot}>.</Button>
+        <Button className={btnEq} onClick={handleEquals}>=</Button>
       </div>
-    </div>
+    </section>
   );
 }

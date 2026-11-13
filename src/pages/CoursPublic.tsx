@@ -1,4 +1,5 @@
 import { MonChoixPratique } from "@/components/cours-en-ligne/MonChoixPratique";
+import { requestExamExit } from '@/components/cours-en-ligne/ExamExitGuard';
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import MonDossierFormation from "@/components/cours-en-ligne/MonDossierFormation";
@@ -1887,7 +1888,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       // Bilan modules open ExamensBlancsPage directly
       return (
         <div className="min-h-screen bg-background p-4">
-          <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
+          <Button variant="ghost" size="sm" className="mb-4" onClick={() => requestExamExit(() => setSelectedModule(null))}>
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
           </Button>
           <ExamensBlancsPage
@@ -1906,7 +1907,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       // Examens blancs modules open ExamensBlancsPage filtered by type
       return (
         <div className="min-h-screen bg-background p-4">
-          <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
+          <Button variant="ghost" size="sm" className="mb-4" onClick={() => requestExamExit(() => setSelectedModule(null))}>
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
           </Button>
           <ErrorBoundary>
@@ -2249,7 +2250,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                <button
                  key={tab}
                  className={`px-4 py-2 text-sm rounded-lg transition-all ${activeTab === tab ? "font-bold text-white bg-white/15 shadow-inner" : "hover:bg-white/10 text-slate-400 hover:text-white"}`}
-                 onClick={() => setActiveTab(tab)}
+                onClick={() => { if (tab !== activeTab) requestExamExit(() => setActiveTab(tab)); }}
                >
                  {tab === "accueil" ? "🏠 Accueil" : tab === "examens" ? "📝 Examens" : "📊 Notes"}
                </button>
@@ -2270,7 +2271,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                 />
               )}
               <ChangePasswordDialog />
-              <Button variant="destructive" size="sm" className="text-xs" onClick={handleLogout}>
+              <Button variant="destructive" size="sm" className="text-xs" onClick={() => requestExamExit(() => void handleLogout())}>
                 <LogOut className="w-3.5 h-3.5 mr-1" />
                 Déconnexion
               </Button>

@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 16:28 UTC — UX examens blancs TAXI/VTC (sans publication)
+- [x] Confirmation de sortie non destructive (retours/navigations internes), alertes 5/2 minutes par épreuve et calculatrice dans le flux sans recouvrement ; chrono ancré au dernier retour serveur, pas de durée inventée en cas d’erreur.
+- [x] 33 tests ciblés PASS ; huit parcours vrais composants élève/sessions fictives × TAXI/VTC × 1280/768/390/320 px PASS, retour navigateur et rechargement inclus ; zéro écriture réelle, build OK. Rapport docs/examens-blancs-ux-2026-11-13.md. Non publié.
+- [ ] Compte apprenant hébergé/appareils physiques et livraison publique : non exécutés pour ne pas démarrer de copie réelle ; publication attend accord. Polling préexistant laissé inchangé, arbitrage distinct signalé.
+
 ## 13/11 16:05 UTC — Deux boutons présence (validation créneau + suppression 4 h)
 - [x] Cause confirmée en base : aucun des objets requis n'existe (2 journaux, table créneaux, dossier PDF privé) et les deux verrous d'activation sont à OFF.
 - [x] Aucun environnement séparé possible : un nouveau brouillon (16:03) partage aussi la base réelle.
