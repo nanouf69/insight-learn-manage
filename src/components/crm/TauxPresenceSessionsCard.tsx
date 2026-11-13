@@ -109,11 +109,12 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     const local=(e:Event)=>{if((e as CustomEvent).detail?.apprenantId===apprenantId)refresh();};
     window.addEventListener(HEURES_VALIDEES_EVENT,local);
     window.addEventListener('online',refresh);
+    window.addEventListener('focus',refresh);
     const channel=supabase.channel(`presence-heures-${apprenantId}-${crypto.randomUUID()}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_heures_validees',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'emargements_fc',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'session_apprenants',filter:`apprenant_id=eq.${apprenantId}`},refresh).subscribe();
-    return () => { annule = true; window.removeEventListener(HEURES_VALIDEES_EVENT,local);window.removeEventListener('online',refresh);void supabase.removeChannel(channel); };
+    return () => { annule = true; window.removeEventListener(HEURES_VALIDEES_EVENT,local);window.removeEventListener('online',refresh);window.removeEventListener('focus',refresh);void supabase.removeChannel(channel); };
   }, [apprenantId, actif, filiere]);
   return { data, erreur };
 }
