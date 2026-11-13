@@ -1,5 +1,15 @@
 # Rappel modules J+1 après examen théorique — diagnostic et préparation
 
+## Mise à jour prioritaire — 23:06 UTC (remplace le calendrier et le texte de 22:59 ci-dessous)
+
+- **FERME** : J−7 selon date prévue confirmée ; J+1/J+3/J+5 selon date réelle prouvée. Deux passages rouges et gras préparés : impossibilité de passer à pratique et non-priorité. Copie proposée, jamais envoyée.
+- **NORMAL** : dès J+7 puis J+9/J+11… jusqu'à achèvement, sans rouge ni menace, simple invitation à terminer les modules hors pratique.
+- **Incohérence bloquante pour activation** : l'impossibilité de passer à pratique n'est pas une règle effective vérifiée ; le modèle ferme porte explicitement cette réserve. Validation contractuelle et règle effective, ou reformulation autorisée, nécessaires avant tout envoi. Aucun blocage dur de réservation créé.
+- Dates prévues annulées/reportées ignorées, nouvelle occurrence confirmée évaluée séparément ; après examen, date réelle seule. Aucun rattrapage d'échéance manquée ou massif des anciens dossiers.
+- Modules/dispenses/exclusions/arrêt et priorité non destructive conservés. Les modèles sont dans `modelesRappelTheorique.ts`, le calendrier isolé dans `rappelTheoriquePriorite.ts` ; aucun import par un circuit actif.
+- **56 tests exécutés avec succès** après cette mise à jour : J−7/report/annulation, J+1/3/5 ferme, J+7/9/11 normal, arrêt aux complets, calendrier Paris et protections précédentes. Ce sont des tests isolés, pas un envoi ni un test authentifié du circuit déployé.
+- Reste à réaliser : preuve datée CMA/admin, adaptateur canonique complet, journal atomique et concurrence, file admin/exception auditée, vérification contractuelle, branchement et tests bout-en-bout. Activation et publication non autorisées ; aucun mail réel expédié.
+
 ## État au 13 novembre 2026
 
 Audit effectué en lecture seule sur la base réelle partagée entre aperçu et production. Aucune fonction d'envoi appelée, aucun dossier modifié, aucune programmation installée, aucune réservation bloquée, rien publié. Mise à jour utilisateur 22:59 intégrée : projection pure isolée implémentée et 40 tests Vitest exécutés avec succès ; pas encore d'automatisation opérationnelle.
