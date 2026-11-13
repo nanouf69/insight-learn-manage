@@ -7,6 +7,7 @@
  * signalée « lecture non possible », jamais confondue avec 0 trace.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { lirePresencesAdministratives } from './heuresValideesAdmin';
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { clampConnexionsToAccessEnd, getAccessCutoffMs } from "@/lib/reports/session-duration";
 import { learningSessionWindow } from "@/lib/reports/learning-hours-window";
@@ -214,7 +215,7 @@ export async function chargerPreuvesJalons(p: {
     lire(sources, "emargements", "Émargements", g ? archive("emargements", (r) => r.masque !== true) : () => fetchAllRows<any>((from, to) => (supabase.from("emargements_fc" as any) as any)
       .select("id, date_emargement, demi_journee, absent, signature_data_url, masque, signed_at").eq("apprenant_id", id).eq("masque", false).order("id", { ascending: true }).range(from, to))),
     lire(sources, "planning", "Planning pratique", g ? async () => pratiqueSlotDetailsDepuisGel(g) : () => fetchPratiqueSlotDetails(id)),
-    lire(sources, "heuresValidees", "Heures validées par l’administration", page("presentiel_heures_validees", "id, heures, motif, created_at", "id", "heures_validees")),
+    lire(sources, "heuresValidees", "Heures validées par l’administration", g ? archive('heures_validees') : () => lirePresencesAdministratives(id)),
   ]);
   return construirePreuvesJalons({
     apprenantId: id, filiere: p.filiere, lignesModuleIds: p.lignesModuleIds, completions: p.completions,

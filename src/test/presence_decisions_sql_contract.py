@@ -10,12 +10,17 @@ class Decisions(unittest.TestCase):
   subprocess.run(AS+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale'],env=c.env,check=True,capture_output=True)
   subprocess.run(AS+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55489 -h ""','-w','start'],env=c.env,check=True,capture_output=True)
   c.sql(f"""CREATE ROLE authenticated;CREATE ROLE anon;CREATE ROLE service_role;CREATE SCHEMA auth;
+  CREATE PUBLICATION supabase_realtime;
   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
   GRANT USAGE ON SCHEMA auth TO authenticated,anon;
   CREATE FUNCTION has_role(u uuid,r text) RETURNS boolean LANGUAGE sql AS $$SELECT u='{ADMIN}'::uuid AND r='admin'$$;
   CREATE TABLE presentiel_heures_validees(id uuid PRIMARY KEY,apprenant_id uuid,heures numeric,date_presence date,categorie text);
   CREATE TABLE edof_fin_formation(apprenant_id uuid);CREATE TABLE releve_jalons_fin_acces(apprenant_id uuid);CREATE TABLE releve_jalons_gels(apprenant_id uuid);
-  INSERT INTO presentiel_heures_validees VALUES('{V}','{A}',4,'2026-09-18','theorie');""")
+  CREATE FUNCTION releve_sources_apprenant(_id uuid) RETURNS jsonb LANGUAGE sql AS $$ SELECT coalesce((SELECT jsonb_agg(to_jsonb(v)) FROM public.presentiel_heures_validees WHERE apprenant_id = _id),'[]'::jsonb) FROM public.presentiel_heures_validees v LIMIT 1 $$;
+  INSERT INTO presentiel_heures_validees VALUES('{V}','{A}',4,'2026-09-18','theorie'),('55555555-5555-5555-5555-555555555555','{A}',1.5,'2026-09-17','theorie');
+  CREATE TABLE signatures(id uuid, image text); INSERT INTO signatures VALUES('{V}','original-signature');
+  CREATE TABLE notes(id uuid,note numeric); INSERT INTO notes VALUES('{V}',12);
+  CREATE TABLE copies(id uuid,reponse text); INSERT INTO copies VALUES('{V}','original-answer');""")
   c.sql(Path('docs/sql-revue/2026-11-13-presence-decisions.sql').read_text())
  @classmethod
  def sql(c,q,check=True):
@@ -33,18 +38,47 @@ class Decisions(unittest.TestCase):
   op=str(uuid.uuid4())
   self.assertNotEqual(self.call(op,uid=U).returncode,0)
   self.assertNotEqual(self.call(op,apprenant=U).returncode,0)
-  self.assertNotEqual(self.call(op,motif='x').returncode,0)
-  first=self.call(op,check=True);self.assertEqual(json.loads(first.stdout.splitlines()[-1])['action'],'annuler')
-  self.assertEqual(self.call(op).stdout,first.stdout)
+  self.assertNotEqual(self.call(op,action='restaurer',motif='x').returncode,0)
+  others=self.sql('SELECT row_to_json(s) FROM signatures s;SELECT row_to_json(n) FROM notes n;SELECT row_to_json(c) FROM copies c').stdout
+  first=self.call(op,motif='',check=True);receipt=json.loads(first.stdout.splitlines()[-1]);self.assertEqual(receipt['action'],'annuler')
+  self.assertEqual(receipt['original']['heures'],4)
+  self.assertEqual(receipt['created_by'],ADMIN)
+  self.assertTrue(receipt['created_at'])
+  self.assertEqual(self.call(op,motif='').stdout,first.stdout)
+  self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT sum(heures) FROM presentiel_validations_effectives('{A}')").stdout.splitlines()[-1],'1.5')
+  self.assertEqual(self.sql(f"SELECT jsonb_array_length(releve_sources_apprenant('{A}'))").stdout.strip(),'1')
   self.assertNotEqual(self.call(str(uuid.uuid4())).returncode,0)
-  self.assertNotEqual(self.call(op,motif='Autre motif').returncode,0)
+  self.assertNotEqual(self.call(op,action='restaurer').returncode,0)
   self.assertNotEqual(self.sql('UPDATE presentiel_validation_decisions SET motif=\'Modifier\'',False).returncode,0)
   self.assertNotEqual(self.sql('DELETE FROM presentiel_validation_decisions',False).returncode,0)
   self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{U}';SELECT count(*) FROM presentiel_validation_decisions").stdout.splitlines()[-1],'0')
   restored=self.call(str(uuid.uuid4()),version=1,action='restaurer',check=True)
   self.assertEqual(json.loads(restored.stdout.splitlines()[-1])['version'],2)
+  self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT sum(heures) FROM presentiel_validations_effectives('{A}')").stdout.splitlines()[-1],'5.5')
   self.sql(f"INSERT INTO edof_fin_formation VALUES('{A}')")
   self.assertNotEqual(self.call(str(uuid.uuid4()),version=2).returncode,0)
   self.assertEqual(before,self.sql('SELECT to_jsonb(v) FROM presentiel_heures_validees v').stdout)
-  self.assertEqual(self.sql('SELECT count(*) FROM presentiel_validation_decisions').stdout.strip(),'2')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM presentiel_validation_decisions WHERE validation_id='{V}'").stdout.strip(),'2')
+  self.assertEqual(others,self.sql('SELECT row_to_json(s) FROM signatures s;SELECT row_to_json(n) FROM notes n;SELECT row_to_json(c) FROM copies c').stdout)
+  dump=subprocess.run(['pg_dump','-h',self.d,'-p','55489','-U','postgres','--no-owner'],env=self.env,text=True,capture_output=True,check=True).stdout
+  self.sql('CREATE DATABASE restored')
+  r=subprocess.run(['psql','-X','-h',self.d,'-p','55489','-U','postgres','-d','restored','-v','ON_ERROR_STOP=1'],input=dump,env=self.env,text=True,capture_output=True)
+  self.assertEqual(r.returncode,0,r.stderr)
+  restored_rows=subprocess.run(['psql','-XAt','-h',self.d,'-p','55489','-U','postgres','-d','restored','-c','SELECT to_jsonb(v) FROM presentiel_heures_validees v'],env=self.env,text=True,capture_output=True,check=True).stdout
+  self.assertEqual(before,restored_rows)
+  journal_after=subprocess.run(['psql','-XAt','-h',self.d,'-p','55489','-U','postgres','-d','restored','-c','SELECT jsonb_agg(to_jsonb(d) ORDER BY version) FROM presentiel_validation_decisions d'],env=self.env,text=True,capture_output=True,check=True).stdout.strip()
+  self.assertEqual(journal_after,self.sql('SELECT jsonb_agg(to_jsonb(d) ORDER BY version) FROM presentiel_validation_decisions d').stdout.strip())
+ def test_concurrent_commands(self):
+  target='66666666-6666-6666-6666-666666666666'
+  self.sql(f"INSERT INTO presentiel_heures_validees VALUES('{target}','{U}',4,'2026-09-18','theorie')")
+  def run(op):
+   return self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT row_to_json(r) FROM presentiel_decider_validation('{op}','{U}','{target}',0,'annuler','') r;",False)
+  from concurrent.futures import ThreadPoolExecutor
+  with ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(run,[str(uuid.uuid4()),str(uuid.uuid4())]))
+  self.assertEqual(sum(r.returncode==0 for r in results),1)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM presentiel_validation_decisions WHERE validation_id='{target}'").stdout.strip(),'1')
+  self.sql(f"INSERT INTO releve_jalons_gels VALUES('{U}')")
+  r=self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT presentiel_decider_validation('{uuid.uuid4()}','{U}','{target}',1,'restaurer','Restauration justifiée')",False)
+  self.assertNotEqual(r.returncode,0)
 if __name__=='__main__':unittest.main(verbosity=2)

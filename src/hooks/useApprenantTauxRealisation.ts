@@ -8,7 +8,7 @@ import { retirerCreneauxPratique } from "@/lib/reports/exclusionPratique";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { chargerClassificationSignatures, signaturesRetenuesPourHeures } from "@/lib/signaturesManquantes";
 import { computePresenceAvecAdmin, presentielProgress } from "@/lib/presentielHours";
-import { HEURES_VALIDEES_EVENT } from '@/lib/heuresValideesAdmin';
+import { HEURES_VALIDEES_EVENT, lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
 import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
@@ -95,11 +95,7 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
           .eq("apprenant_id", apprenantId)
           .eq("status", "completed")
           .range(from, to)),
-        fetchAllRows<any>((from, to) => supabase
-          .from("presentiel_heures_validees" as any)
-          .select("id, heures, created_at, date_presence, categorie")
-          .eq("apprenant_id", apprenantId)
-          .range(from, to)), // erreur propagée : taux indisponible, jamais un faux 0 h
+        lirePresencesAdministratives(apprenantId), // read errors never become zero
         chargerClassificationSignatures(apprenantId),
       ]);
 
@@ -162,6 +158,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     // can mount concurrently while a previous removal is still asynchronous.
     const channel = supabase.channel(`taux-presence-${apprenantId}-${crypto.randomUUID()}`)
       .on("postgres_changes",{event:"*",schema:"public",table:"presentiel_heures_validees",filter:`apprenant_id=eq.${apprenantId}`},()=>queryClient.invalidateQueries({queryKey:["apprenant-taux-realisation",apprenantId]}))
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"presentiel_validation_decisions",filter:`apprenant_id=eq.${apprenantId}`},()=>queryClient.invalidateQueries({predicate:q=>q.queryKey.includes(apprenantId)}))
       .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
       })

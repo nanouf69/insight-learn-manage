@@ -7,7 +7,7 @@ import { creerControleDecisionPresence, type PresenceDecision, type PresenceDeci
 export interface PresenceDecisionCible { id: string; heures: number; date: string | null; categorie: string | null; annulee: boolean; version: number }
 export function PresenceDecisionDialog({ cible, apprenantId, transport, onClose, onConfirmed }: {
   cible: PresenceDecisionCible | null; apprenantId: string; transport?: (c: PresenceDecisionCommande)=>Promise<PresenceDecision>;
-  onClose:()=>void; onConfirmed:()=>void;
+  onClose:()=>void; onConfirmed:()=>void | Promise<void>;
 }) {
   const [motif,setMotif]=useState(''); const [busy,setBusy]=useState(false); const [erreur,setErreur]=useState('');
   const lock=useRef(false); const operation=useRef(''); const scope=useRef('');
@@ -17,7 +17,7 @@ export function PresenceDecisionDialog({ cible, apprenantId, transport, onClose,
     lock.current=true;setBusy(true);setErreur('');const currentScope=scope.current;
     try {
       await creerControleDecisionPresence(transport)({operationId:operation.current,apprenantId,validationId:cible.id,version:cible.version,action:cible.annulee?'restaurer':'annuler',motif:motif.trim()});
-      if(scope.current===currentScope){onConfirmed();onClose();}
+      if(scope.current===currentScope){await onConfirmed();if(scope.current===currentScope)onClose();}
     } catch {if(scope.current===currentScope)setErreur('Décision non confirmée : aucun total modifié. Relisez avant de réessayer.');}
     finally{lock.current=false;setBusy(false);}
   };

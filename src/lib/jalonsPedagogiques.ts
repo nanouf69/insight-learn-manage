@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { lirePresencesAdministratives } from './heuresValideesAdmin';
 import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
@@ -84,7 +85,7 @@ export async function chargerCalculJalons(params: {
     params.completions
       ? Promise.resolve({ data: params.completions, error: null })
       : supabase.from("apprenant_module_completion").select("module_id, status, progress, completed_at, details").eq("apprenant_id", params.apprenantId),
-    supabase.from("presentiel_heures_validees" as any).select("id, heures, created_at, date_presence, categorie").eq("apprenant_id", params.apprenantId),
+    lirePresencesAdministratives(params.apprenantId).then(data=>({data,error:null})),
     // Jeux du module 8 : seule une ligne serveur completed = true compte (jamais le score local).
     supabase.from("reponses_apprenants").select("exercice_id, completed").eq("apprenant_id", params.apprenantId).in("exercice_id", idsActivites(parcoursInitial).length ? idsActivites(parcoursInitial) : ["__aucune__"]),
     supabase.from("apprenants").select("modules_autorises, type_apprenant, formation_choisie, date_fin_cours_en_ligne").eq("id", params.apprenantId).single(),

@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Clock, Plus, Loader2, Trash2, Undo2 } from "lucide-react";
 import { format } from "date-fns";
-import { CATEGORIES_PRESENCE, HEURES_VALIDEES_EVENT, libelleHeureValidee, normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
+import { CATEGORIES_PRESENCE, HEURES_VALIDEES_EVENT, libelleHeureValidee, normaliserHeuresValidees, lirePresencesAdministratives } from "@/lib/heuresValideesAdmin";
 import { PresenceDecisionDialog, type PresenceDecisionCible } from './PresenceDecisionDialog';
-import { projeterDecisionsPresence } from '@/lib/presenceRevocations';
+import { PRESENCE_REVOCATIONS_ACTIVE } from '@/lib/presenceRevocations';
+import { envoyerDecisionPresence } from '@/lib/presenceDecisionTransport';
 import { motifPresenceSchema } from '@/lib/motifPresence';
 
 interface Props {
@@ -22,6 +23,8 @@ interface HeureValideeRow {
   created_at: string;
   date_presence: string | null;
   categorie: string | null;
+  annulee: boolean;
+  versionDecision: number;
 }
 
 /**
@@ -39,22 +42,13 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
   const addLock = useRef(false);
   const [cible, setCible] = useState<PresenceDecisionCible | null>(null);
 
-  const { data: rows } = useQuery<HeureValideeRow[]>({
+  const { data: rows, isError, refetch } = useQuery<HeureValideeRow[]>({
     queryKey: ["presentiel-heures-validees", apprenantId],
     enabled: !!apprenantId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("presentiel_heures_validees" as any)
-        .select("id, heures, motif, created_at, date_presence, categorie")
-        .eq("apprenant_id", apprenantId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data as any[]) || [];
-    },
+    queryFn: () => lirePresencesAdministratives(apprenantId, true),
   });
 
-  // No journal installed: originals are read unchanged; real decision transport stays disconnected.
-  const projection = projeterDecisionsPresence(rows || [], [], apprenantId);
+  const projection = rows || [];
   const total = projection.filter(r=>!r.annulee).reduce((sum, r) => sum + Math.round(Number(r.heures)*60), 0)/60;
 
   const ouvrirDecision = async (id: string) => {
@@ -127,7 +121,7 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
         <Clock className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm font-semibold">Heures de présence validées manuellement</span>
         <span className="text-xs text-muted-foreground">
-          {total > 0 ? `Total validé : ${total}h` : "Aucune heure validée manuellement"}
+          {isError ? 'Lecture impossible : total non confirmé' : total > 0 ? `Total validé : ${total}h` : "Aucune heure validée manuellement"}
         </span>
       </div>
       <div className="flex flex-col gap-2">
@@ -163,6 +157,7 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
             <li key={r.id} className="flex flex-col gap-2 border-t py-3">
               <span className="break-words">{r.heures}h — {libelleHeureValidee(r)} ({format(new Date(r.createdAt), "HH:mm")})
               {r.motif ? ` — ${r.motif}` : " — motif non renseigné"}</span>
+              {projection.find(x=>x.id===r.id)?.annulee && <span>Validation annulée — original conservé, heures non comptées</span>}
               <Button variant="outline" size="sm" className="self-start" onClick={()=>void ouvrirDecision(r.id)}>
                 {projection.find(x=>x.id===r.id)?.annulee?<Undo2 className="mr-2 h-4 w-4"/>:<Trash2 className="mr-2 h-4 w-4"/>}{projection.find(x=>x.id===r.id)?.annulee?'Restaurer':'Supprimer'}
               </Button>
@@ -170,7 +165,7 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
           ))}
         </ul>
       )}
-      <PresenceDecisionDialog cible={cible} apprenantId={apprenantId} onClose={()=>setCible(null)} onConfirmed={()=>{void queryClient.invalidateQueries({predicate:q=>q.queryKey.includes(apprenantId)});window.dispatchEvent(new CustomEvent(HEURES_VALIDEES_EVENT,{detail:{apprenantId}}));}}/>
+      <PresenceDecisionDialog cible={cible} apprenantId={apprenantId} transport={PRESENCE_REVOCATIONS_ACTIVE ? envoyerDecisionPresence : undefined} onClose={()=>setCible(null)} onConfirmed={async()=>{await refetch();await queryClient.invalidateQueries({predicate:q=>q.queryKey.includes(apprenantId)});window.dispatchEvent(new CustomEvent(HEURES_VALIDEES_EVENT,{detail:{apprenantId}}));}}/>
     </section>
   );
 }
