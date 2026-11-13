@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 13/11 17:29 UTC — Présence retenue détaillée
-- [ ] Union exacte des créneaux justifiés, détail séparé des validations manuelles, plafond et actualisation des lecteurs.
-- [ ] Tests et lecture CHERNI sans écriture ; parité élève à qualifier selon droits existants. Aucune publication.
+- [x] Union des reçus de créneaux justifiés, détail séparé date/horaire/auteur/PDF/statut, plafond VTC et actualisation locale/Realtime. Aucun original modifié.
+- [x] 56 tests PASS ; lecture CHERNI réelle admin + reload PC/mobile : 33h30 +6h30 net =40h, TOTAL 40/46=87,0 %. Trois signatures restent manquantes. Rapport docs/presence-retenue-2026-11-13.md. Non publié.
+- [ ] Parité propriétaire élève : droits validations/journal/liens admin-only, projection serveur propriétaire limitée à préparer/tester. Nouveau cycle d'écriture hébergé non testé, aucune mutation autorisée sur CHERNI.
 
 ## 13/11 17:06 UTC — Lettre CMA ciblée
 - [x] Diagnostic lecture seule : sélection actuelle inclut tous les ajournés pratiques ; Calvo Enzo 03/11/2026 non, VTC, confirmation session absente.
