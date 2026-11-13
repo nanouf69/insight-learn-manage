@@ -14,6 +14,7 @@ import {
   revisionQuestionKey,
   revisionQuestionOrder,
   reponseRevisionAffichee,
+  revisionSourcesCompatibles,
 } from "@/lib/revisionFaussesProgression";
 
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ import { lireBanniereRevision } from "@/lib/revisionBannierePreuve";
 import { QuestionsFaussesEffectuees } from "./QuestionsFaussesEffectuees";
 import { useExamCurrentCorrection } from "@/hooks/useExamCurrentCorrection";
 import { ExamCurrentCorrectionNotice } from "./ExamCurrentCorrectionNotice";
+import { ebRevisionSource } from '@/lib/ebRevisionSource';
 
 
 function EcranResultats({
@@ -194,6 +196,13 @@ function EcranResultats({
   const [revisionFinTick, setRevisionFinTick] = useState(0);
   const [isRetake, setIsRetake] = useState(false);
   const [activeTab, setActiveTab] = useState<"resultats" | "revision">("resultats");
+
+  const revisionSelection = useMemo(() => {
+    try {
+      if (!sameCoreOwner || coreStates === null) return {results: resultats, error: 'Lecture des dernières copies en cours…'};
+      return {results: resultats.map(r => ebRevisionSource(r, examen.id, apprenantId ?? '', coreStates)), error: null};
+    } catch (e) { return {results: [] as ResultatMatiere[], error: e instanceof Error ? e.message : 'Dernières réponses non confirmées.'}; }
+  }, [resultats, coreStates, sameCoreOwner, examen.id, apprenantId]);
 
   // Examen branché sur le nouveau moteur QRC → le blocage vient des mêmes
   // identifiants que la file de correction. Sinon : règle historique inchangée.
@@ -619,14 +628,15 @@ function EcranResultats({
     const out: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
     examenPourCalcul.matieres.forEach((matiere, mi) => {
       if (!matiere || (!CORRIGES_TROIS_SURFACES_ACTIFS && (matiere.id === "francais" || matiere.id === "bilan_francais"))) return;
-      const r = resultats.find((item) => item.matiereId === matiere.id) ?? resultats[mi];
+      const r = revisionSelection.results.find((item) => item.matiereId === matiere.id);
       if (!r) return;
-      const bilan = questionsFaussesDuPassage(matierePedagogique(matiere, r, sourcesOfficielles.map), r as any);
+      const currentSubject = currentCorrection.source?.exam.matieres.find(m => m.id === matiere.id) ?? matiere;
+      const bilan = questionsFaussesDuPassage(matierePedagogique(currentSubject, r, sourcesOfficielles.map), r as any);
       const matiereDuPassage = { ...matiere, questions: bilan.fausses.map((f) => f.question) };
       bilan.fausses.forEach((f) => out.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId, corrigeSource: sourcePour(sourcesOfficielles.map,r,matiere.id,f.question.id) }));
     });
     return out;
-  }, [examenPourCalcul, resultats, sourcesOfficielles.map]);
+  }, [examenPourCalcul, revisionSelection, currentCorrection.source, sourcesOfficielles.map]);
 
   const [revisionLectureErreur, setRevisionLectureErreur] = useState<string | null>(null);
   const sourcesRevision = useMemo(() => Object.fromEntries(wrongQuestions
@@ -1275,7 +1285,7 @@ function EcranResultats({
               {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser · corrigé pédagogique actuel, notes d’examen conservées
             </p>
           </div>
-          {sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : CORRIGES_TROIS_SURFACES_ACTIFS && apprenantId ? (
+          {revisionSelection.error || currentCorrection.error ? <p role="alert" className="text-destructive">{revisionSelection.error ?? 'Corrigé actuel non confirmé ; réessayez après reconnexion.'}</p> : sourcesOfficielles.error ? <p role="alert" className="text-destructive">{sourcesOfficielles.error} Révision suspendue pour ne pas utiliser un corrigé obsolète.</p> : sourcesOfficielles.loading ? <p>Lecture du corrigé officiel…</p> : CORRIGES_TROIS_SURFACES_ACTIFS && apprenantId ? (
             <RevisionCorrigeVersionnee owner={apprenantId}
               refs={wrongQuestions.flatMap(w=>w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle?[{type:w.corrigeSource.source_type,id:w.corrigeSource.source_id,question:w.corrigeSource.question_id}]:[])}
               nonRapprochees={wrongQuestions.filter(w=>!(w.corrigeSource?.statut==="rapproche"&&w.corrigeSource.actuelle)).map(w=>({libelle:`${w.matiereNom} · question ${w.question.id}`,raison:w.corrigeSource?.raison ?? null}))}
@@ -1326,6 +1336,9 @@ function RevisionFausses({
 
   const baseExerciceId = revisionBaseId(examenId);
   const questionOrder = useMemo(() => revisionQuestionOrder(wrongQuestions), [wrongQuestions]);
+  const expectedSources = Object.fromEntries(wrongQuestions.filter(q => typeof q.sourceResultId === 'string')
+    .map(q => [revisionQuestionKey(q), q.sourceResultId as string]));
+  const revisionContextKey = JSON.stringify([questionOrder, expectedSources, wrongQuestions.map(q => q.question)]);
   // Identifiant de la tentative en cours : jamais celui d'une révision déjà terminée.
   const [exerciceId, setExerciceId] = useState<string>(baseExerciceId);
   // Tant que la tentative n'est pas identifiée (ou après la fin), aucune écriture.
@@ -1340,6 +1353,7 @@ function RevisionFausses({
       return;
     }
     let annule = false;
+    setLoaded(false); setLectureErreur(null); tentativePreteRef.current = false;
     (async () => {
       try {
         const { data: tentatives, error: errTentatives } = await supabase
@@ -1380,6 +1394,9 @@ function RevisionFausses({
         termineeRef.current = data?.completed === true;
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
         const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);
+        if (data && !revisionSourcesCompatibles(saved, expectedSources)) {
+          throw new Error('Ce brouillon appartient à une autre copie. Il est conservé sans être réutilisé.');
+        }
         const restored = restaurerRevisionProgressState(merged, examenId, questionOrder);
         if (annule) return;
         sourceResultIdsRef.current = restored.sourceResultIds ?? Object.fromEntries(wrongQuestions
@@ -1396,13 +1413,13 @@ function RevisionFausses({
       } catch (err) {
         console.error("Erreur chargement révision:", err);
         tentativePreteRef.current = false;
-        if (!annule) setLectureErreur("Votre révision n’a pas pu être relue. Revenez aux résultats puis réessayez ; aucune réponse n’a été effacée.");
+        if (!annule) setLectureErreur(`${err instanceof Error ? err.message : 'Votre révision n’a pas pu être relue.'} Revenez aux résultats puis réessayez ; aucune réponse n’a été effacée.`);
       } finally {
         if (!annule) setLoaded(true);
       }
     })();
     return () => { annule = true; };
-  }, [apprenantId, userId, examenId, baseExerciceId, wrongQuestions.length]);
+  }, [apprenantId, userId, examenId, baseExerciceId, revisionContextKey]);
 
   // ---- File durable : chaque saisie est localement récupérable, puis confirmée par le serveur. ----
   const persistProgress = useCallback((

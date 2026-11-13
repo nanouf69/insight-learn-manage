@@ -924,6 +924,12 @@ export function reponsesNoyauEnAttente(attemptId?: string | null): number {
   return attemptId ? file.filter((e) => e.attemptId === attemptId).length : file.length;
 }
 
+/** Editable drafts of THIS immutable attempt only; never confirmed server evidence. */
+export function valeursNoyauEnAttente(attemptId: string, matiereId: string): Record<string, unknown> {
+  return Object.fromEntries(lireFile().filter(e => e.attemptId === attemptId && e.matiereId === matiereId)
+    .map(e => [String(e.questionId), e.valeur]));
+}
+
 
 // ---------------------------------------------------------------------------
 // RÈGLE 1 — LE SERVEUR FAIT FOI QUAND IL POSSÈDE TOUTES LES RÉPONSES

@@ -27,6 +27,7 @@ const h = vi.hoisted(() => ({
   finaliser: null as null | (() => Promise<any>),
   noyauEnfile: [] as any[],
   remappageAppels: [] as any[],
+  pendingNative: {} as Record<string, unknown>,
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -74,6 +75,7 @@ vi.mock("@/features/noyau-passage/pontV2", () => ({
   viderFileNoyau: vi.fn(async () => ({ restantes: 0 })),
   finaliserMatiere: () => h.finaliser ? h.finaliser() : Promise.resolve({ ok: true }),
   reponsesNoyauEnAttente: () => 0,
+  valeursNoyauEnAttente: () => h.pendingNative,
   reponsesNoyauEcartees: () => 0,
   questionsNoyauEcartees: () => new Set(),
   remapperFileApresReouverture: (params: any) => {
@@ -143,7 +145,7 @@ const preparerV2 = (valeur: any = ["A"]) => {
 beforeEach(() => {
   h.lectures = []; h.routage = null; h.remaining = 0; h.rpcCalls = 0; h.flush = []; h.enqueue = [];
   h.reponsesNoyau = []; h.tentativesListe = []; h.tentativeUne = null; h.resultatUne = null;
-  h.finaliser = null; h.noyauEnfile = []; h.remappageAppels = [];
+  h.finaliser = null; h.noyauEnfile = []; h.remappageAppels = []; h.pendingNative = {};
 });
 
 describe("clôture d'une matière — comportement", () => {
@@ -237,22 +239,29 @@ describe("clôture d'une matière — comportement", () => {
     expect(new Set(terminales().map((p) => p.exercice_id)).size).toBe(1);
   });
 
-  it("reset : les réponses locales d'une tentative abandonnée sont proposées au remappage du même snapshot", async () => {
+  it("un nouveau passage ne remappe jamais les réponses d'une ancienne copie même avec le même snapshot", async () => {
     const snapshot = preparerV2();
     h.tentativesListe.push({ attempt_id: "ancienne-abandonnee", etat: "abandonnee", snapshot });
     monter();
-    await waitFor(() => expect(h.remappageAppels).toHaveLength(1));
-    expect(h.remappageAppels[0]).toMatchObject({
-      anciensAttemptIds: ["ancienne-abandonnee"],
-      nouvelAttemptId: "nouvelle",
-      matiereId: matiere.id,
-      questionIdsSnapshot: [`${matiere.id}:1`],
-    });
+    await screen.findByRole('button', {name: 'Terminer la matière'});
+    expect(h.remappageAppels).toHaveLength(0);
+    expect(h.noyauEnfile.every(r => r.attemptId === 'nouvelle')).toBe(true);
+  });
+
+  it('HADDOU : ancienne projection renseignée, nouveau passage vide = aucune réponse empruntée', async () => {
+    preparerV2(); h.lectures = [ligne({1:['B']})]; h.reponsesNoyau = [];
+    const {onTerminer} = monter();
+    const finish = await screen.findByRole('button', {name: 'Terminer la matière (0/1)'});
+    expect(h.noyauEnfile).toEqual([]);
+    fireEvent.click(finish);
+    expect(onTerminer).not.toHaveBeenCalled();
+    expect(terminales()).toEqual([]);
   });
 
   it("une ancienne valeur serveur ne suffit pas : la dernière valeur locale est renvoyée et la clôture reste bloquée", async () => {
     preparerV2(["A"]); // serveur encore à A
-    h.lectures = [ligne({ 1: ["B"] })]; // tablette à B
+    h.pendingNative = {1: ['B']}; // this attempt's unconfirmed tablet journal
+    h.lectures = [ligne({ 1: ["B"] })];
     const fin = vi.fn(async () => ({ ok: true }));
     h.finaliser = fin;
     const { onTerminer } = monter();
