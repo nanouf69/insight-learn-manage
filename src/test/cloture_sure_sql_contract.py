@@ -23,7 +23,7 @@ AS = ["setpriv", "--reuid=1000", "--regid=1000", "--clear-groups"]
 env = {k: v for k, v in os.environ.items() if not k.startswith("PG")}
 subprocess.run(AS + ["initdb", "-D", d+"/data", "-A", "trust", "--no-locale", "-U", "postgres"], env=env, check=True, capture_output=True)
 port = "55439"
-subprocess.run(AS + ["pg_ctl", "-D", d+"/data", "-o", f"-p {port} -k {d} -c listen_addresses=''", "-w", "start"], env=env, check=True, capture_output=True)
+subprocess.run(AS + ["pg_ctl", "-D", d+"/data", "-l", d+"/log", "-o", f"-p {port} -k {d} -h ''", "-w", "start"], env=env, check=True, stdout=subprocess.DEVNULL)
 def q(sql):
     r = subprocess.run(["psql", "-h", d, "-p", port, "-U", "postgres", "-At", "-v", "ON_ERROR_STOP=1", "-c", sql], env=env, capture_output=True, text=True)
     if r.returncode: raise RuntimeError(r.stderr)
@@ -57,6 +57,6 @@ try:
                 call(v, 0, False, {"correctedQuestions": [], "n": 0})
                 ok &= q("select jsonb_array_length(reponses->'revisionState'->'correctedQuestions') from public.reponses_apprenants") == "3"
 finally:
-    subprocess.run(AS + ["pg_ctl", "-D", d+"/data", "-m", "immediate", "stop"], env=env, capture_output=True)
+    subprocess.run(AS + ["pg_ctl", "-D", d+"/data", "-m", "immediate", "stop"], env=env, stdout=subprocess.DEVNULL)
     shutil.rmtree(d, ignore_errors=True)
 print("PASS" if ok else "FAIL"); sys.exit(0 if ok else 1)
