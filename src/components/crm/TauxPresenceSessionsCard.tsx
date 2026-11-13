@@ -20,6 +20,8 @@ export interface TauxHeures { faites: number; prevues: number; derniere?: string
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
 export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = [], validations: ValidationPresence[] = [], vtcPresentiel = filiere === 'vtc') {
+  // The VTC-only change must never alter another track, even with a stale flag.
+  const appliquerLotVtc = vtcPresentiel && String(filiere ?? '').toLowerCase() === 'vtc';
   const res: { session: TauxHeures; pratique: TauxHeures } = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
   // Dates du planning nominatif uniquement ; une réservation ne prouve pas la présence.
   const datesEntrainement = new Set<string>();
@@ -42,7 +44,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     if (!pratique && !/theorique/i.test(s.type_session ?? "")) continue;
     const cible = pratique ? res.pratique : res.session;
     const sessionId = String(s.id ?? row.session_id ?? row.id ?? '');
-    if (pratique && !pratiquesVues.has(sessionId)) {
+    if (pratique && (!appliquerLotVtc || !pratiquesVues.has(sessionId))) {
       pratiquesVues.add(sessionId);
       cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
     }
@@ -76,6 +78,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   // A recorded nominative practice day can carry real signatures without a
   // separate session enrollment. Require entered times, never booking alone.
   for (const [date, jour] of parDate) {
+    if (!appliquerLotVtc) break;
     if (!jour.pratique || !daySlots.has(date)) continue;
     const reservation = reservations.find(r => d10(r.date_choisie) === date);
     const parts = resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation), normalizePratiqueCreneau(reservation?.creneau));
@@ -97,7 +100,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   res.session.faites=(Math.round(res.session.faites*60)+admin.theorieMinutes)/60;
   res.pratique.faites=(Math.round(res.pratique.faites*60)+admin.pratiqueMinutes)/60;
   const formationInitiale = inscriptions.some(row => /theorique/i.test(row.sessions?.type_session ?? '') && !/continue|\bfc\b/i.test(`${row.sessions?.nom ?? ''} ${row.sessions?.type_session ?? ''}`) && !row.liste_attente && !row.emargements_exclus && !/annul/i.test(row.sessions?.statut ?? ''));
-  res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, vtcPresentiel && formationInitiale);
+  res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, appliquerLotVtc && formationInitiale);
   return { ...res, admin };
 }
 

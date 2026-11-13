@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 17:04 UTC — STOP périmètre TOTAL
+- [x] Lecture seule 90 dossiers TAXI/TA/VA, 174 inscriptions, 807 feuilles ; changements annexes désormais VTC-only, 90/90 projections identiques à l'avant-lot ; preuves inchangées.
+- [x] 73 tests PASS, build OK ; rapport par filière et CSV nominatif livrés. Non publié.
+- [ ] Capture 30/30 : six candidats TA, identité/programme contractuel absents ; comptes propriétaires élèves non testés (droits de preuve limités). Aucun choix nominatif ni correction implicite.
+
 ## 13/11 16:46 UTC — TOTAL VTC présentiel 40+6 / 60+6 (sans publication)
 - [x] Lecture seule/diagnostic, TOTAL partagé +6 VTC initial (soir 46/jour 66), théorie distincte et pratique réellement prouvée ; affichage élève séparé, Documents/tableau partagent le calcul, attestations sans taux de présence/frozen intactes.
 - [x] 114 tests PASS/9 fichiers, quatre parcours fictifs PC/mobile pratique 0/3/6 + reload PASS ; lecture authentifiée CHERNI actuelle 37/46=80,4 %, aucune écriture effectuée ; build OK.
