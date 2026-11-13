@@ -28,6 +28,7 @@ import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDe
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
+import { lignesNativesAffichees, brouillonDejaRemis } from '@/lib/ebNativeDisplay';
 import { previousAttempt, type PreviousAttempt } from '@/lib/ebPreviousAttempt';
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { ExamCardAccess, useExamAccessSessions } from '@/components/sessions/acces-examens/ExamCardAccess';
@@ -185,7 +186,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           });
 
           // Sélection commune avec la fiche Résultats admin (même tentative affichée).
-          const latestRows = lignesExamenAffichees(data as any[], resetRows as any[]);
+          const latestRows = lignesNativesAffichees(lignesExamenAffichees(data as any[], resetRows as any[]), coreStates, nonFiablesV2, apprenantId, examensDataRef.current);
 
           // FALLBACK: some rows have an empty details.reponses (the grading
           // snapshot never captured the answers, e.g. a save that failed
@@ -288,7 +289,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
               correctionsIA: r?.details?.correctionsIA ?? null,
               details: r?.details ?? null,
               // Source unique : état serveur du passage nouveau système, s'il existe.
-              __core: coreFiablePourLigne(coreStates, r),
+              __core: r.__copieSessionAttemptId ? r.__core : coreFiablePourLigne(coreStates, r),
             } as ExamScoreItem);
 
             if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
@@ -433,7 +434,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
           //    on considère l'examen comme terminé si toutes ses matières ont completed=true dans reponses_apprenants.
           supabase
             .from("reponses_apprenants" as any)
-            .select("exercice_id, completed, reponses, created_at, updated_at")
+            .select("apprenant_id, exercice_id, completed, reponses, created_at, updated_at")
             .eq("apprenant_id", apprenantId)
             .eq("exercice_type", "examen_blanc")
             .then(({ data: repData }) => {
@@ -462,6 +463,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
                   if (!isAfterExamReset(r?.updated_at ?? r?.created_at, resetCutoffs[quizId])) return;
                   const nbReponses = getMeaningfulAnswerCount(r?.reponses);
                   if (nbReponses === 0) return;
+                  if (brouillonDejaRemis(r, coreStates, apprenantId, quizId)) return;
                   // Après une remise à zéro complète, seul le nouveau passage V2
                   // ouvert fait foi. Une écriture historique tardive ne peut donc
                   // jamais remettre la carte en « NON TERMINÉ ».

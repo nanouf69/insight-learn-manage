@@ -7,6 +7,13 @@ vi.mock('@/integrations/supabase/client',()=>({supabase:{channel:()=>{const c={o
 beforeEach(()=>{vi.useFakeTimers();h.events=[];h.statuses=[];h.removed.mockClear();});
 afterEach(()=>{cleanup();vi.useRealTimers();});
 describe('QRC event catch-up',()=>{
+  it('refreshes attempt-only finalization without a legacy result mutation',()=>{
+    h.tables=[];
+    const {result}=renderHook(()=>useCoreChangeTick('learner'));
+    const index=h.tables.indexOf('exam_attempts_v2');
+    expect(index).toBeGreaterThanOrEqual(0);
+    act(()=>{h.events[index]();vi.advanceTimersByTime(400);});expect(result.current).toBe(1);
+  });
   it('cards, detail and CRM also refresh on a legacy result correction without remount',()=>{
     h.tables=[];
     const {result}=renderHook(()=>useCoreChangeTick('zine'));
