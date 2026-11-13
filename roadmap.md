@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 14:26 UTC — Annulations individuelles et heures restant à signer
+- [ ] Préparer confirmation Supprimer/restaurer et journal réversible admin en aperçu désactivé pour la production ; originaux préservés.
+- [ ] Afficher 6h30 brut depuis les trois créneaux non signés, présence à justifier séparée sans soustraction admin devinée ; corriger le libellé 39h signatures.
+- [ ] Tests permissions/double-clic/annulation/restauration/chevauchement et PC/mobile, compilation et empreintes SELECT.
+- [ ] Mise en service bloquée par journal serveur non installé, protections jalons/relevés et parité propriétaire à prouver ; aucune écriture réelle/publication.
+
 ## 13/11 14:18 UTC — Rectification du dénominateur présence CHERNI
 - [x] Lecture seule : session soir 40 h par défaut, heures configurées NULL, aucun contrat devis ni catalogue lié ; aucune inscription pratique, heures individuelles NULL. Le supplément 6 h vient du code, pas du dossier.
 - [x] Supplément pratique implicite retiré de la projection commune, durées explicites préservées ; 33,5/40=83,75%, 39/40=97,5% et 37,5/40=93,75% vérifiés.
