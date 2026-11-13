@@ -15,7 +15,10 @@ class Decisions(unittest.TestCase):
   CREATE FUNCTION has_role(u uuid,r text) RETURNS boolean LANGUAGE sql AS $$SELECT u='{ADMIN}'::uuid AND r='admin'$$;
   CREATE TABLE presentiel_heures_validees(id uuid PRIMARY KEY,apprenant_id uuid,heures numeric,date_presence date,categorie text);
   CREATE TABLE edof_fin_formation(apprenant_id uuid);CREATE TABLE releve_jalons_fin_acces(apprenant_id uuid);CREATE TABLE releve_jalons_gels(apprenant_id uuid);
-  INSERT INTO presentiel_heures_validees VALUES('{V}','{A}',4,'2026-09-18','theorie');""")
+  INSERT INTO presentiel_heures_validees VALUES('{V}','{A}',4,'2026-09-18','theorie'),('55555555-5555-5555-5555-555555555555','{A}',1.5,'2026-09-17','theorie');
+  CREATE TABLE signatures(id uuid, image text); INSERT INTO signatures VALUES('{V}','original-signature');
+  CREATE TABLE notes(id uuid,note numeric); INSERT INTO notes VALUES('{V}',12);
+  CREATE TABLE copies(id uuid,reponse text); INSERT INTO copies VALUES('{V}','original-answer');""")
   c.sql(Path('docs/sql-revue/2026-11-13-presence-decisions.sql').read_text())
  @classmethod
  def sql(c,q,check=True):
@@ -33,18 +36,31 @@ class Decisions(unittest.TestCase):
   op=str(uuid.uuid4())
   self.assertNotEqual(self.call(op,uid=U).returncode,0)
   self.assertNotEqual(self.call(op,apprenant=U).returncode,0)
-  self.assertNotEqual(self.call(op,motif='x').returncode,0)
-  first=self.call(op,check=True);self.assertEqual(json.loads(first.stdout.splitlines()[-1])['action'],'annuler')
-  self.assertEqual(self.call(op).stdout,first.stdout)
+  self.assertNotEqual(self.call(op,action='restaurer',motif='x').returncode,0)
+  others=self.sql('SELECT row_to_json(s) FROM signatures s;SELECT row_to_json(n) FROM notes n;SELECT row_to_json(c) FROM copies c').stdout
+  first=self.call(op,motif='',check=True);receipt=json.loads(first.stdout.splitlines()[-1]);self.assertEqual(receipt['action'],'annuler')
+  self.assertEqual(receipt['original']['heures'],4)
+  self.assertEqual(receipt['created_by'],ADMIN)
+  self.assertTrue(receipt['created_at'])
+  self.assertEqual(self.call(op,motif='').stdout,first.stdout)
+  self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT sum(heures) FROM presentiel_validations_effectives('{A}')").stdout.splitlines()[-1],'1.5')
   self.assertNotEqual(self.call(str(uuid.uuid4())).returncode,0)
-  self.assertNotEqual(self.call(op,motif='Autre motif').returncode,0)
+  self.assertNotEqual(self.call(op,action='restaurer').returncode,0)
   self.assertNotEqual(self.sql('UPDATE presentiel_validation_decisions SET motif=\'Modifier\'',False).returncode,0)
   self.assertNotEqual(self.sql('DELETE FROM presentiel_validation_decisions',False).returncode,0)
   self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{U}';SELECT count(*) FROM presentiel_validation_decisions").stdout.splitlines()[-1],'0')
   restored=self.call(str(uuid.uuid4()),version=1,action='restaurer',check=True)
   self.assertEqual(json.loads(restored.stdout.splitlines()[-1])['version'],2)
+  self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT sum(heures) FROM presentiel_validations_effectives('{A}')").stdout.splitlines()[-1],'5.5')
   self.sql(f"INSERT INTO edof_fin_formation VALUES('{A}')")
   self.assertNotEqual(self.call(str(uuid.uuid4()),version=2).returncode,0)
   self.assertEqual(before,self.sql('SELECT to_jsonb(v) FROM presentiel_heures_validees v').stdout)
   self.assertEqual(self.sql('SELECT count(*) FROM presentiel_validation_decisions').stdout.strip(),'2')
+  self.assertEqual(others,self.sql('SELECT row_to_json(s) FROM signatures s;SELECT row_to_json(n) FROM notes n;SELECT row_to_json(c) FROM copies c').stdout)
+  dump=subprocess.run(['pg_dump','-h',self.d,'-p','55489','-U','postgres','--no-owner'],env=self.env,text=True,capture_output=True,check=True).stdout
+  self.sql('CREATE DATABASE restored')
+  r=subprocess.run(['psql','-X','-h',self.d,'-p','55489','-U','postgres','-d','restored','-v','ON_ERROR_STOP=1'],input=dump,env=self.env,text=True,capture_output=True)
+  self.assertEqual(r.returncode,0,r.stderr)
+  restored_rows=subprocess.run(['psql','-XAt','-h',self.d,'-p','55489','-U','postgres','-d','restored','-c','SELECT to_jsonb(v) FROM presentiel_heures_validees v'],env=self.env,text=True,capture_output=True,check=True).stdout
+  self.assertEqual(before,restored_rows)
 if __name__=='__main__':unittest.main(verbosity=2)
