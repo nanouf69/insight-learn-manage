@@ -1,4 +1,6 @@
 import { EdofValideBadge } from "./EdofValideBadge";
+import { useCmaLettreSources } from '@/hooks/useCmaLettreSources';
+import { selectionLettreCma } from '@/lib/cmaLettreSelection';
 import { EntrainementSansExamenAlerte } from "./EntrainementSansExamenAlerte";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
@@ -1009,6 +1011,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   );
   const [dateDebutPratique, setDateDebutPratique] = useState("");
   const candidateNotes = usePratiqueCandidateNotes(selectedExamDate, selectedDatePratique);
+  const cmaLettreSources = useCmaLettreSources(selectedExamDate, selectedDatePratique);
   const [selectedResultsPratiqueDate, setSelectedResultsPratiqueDate] = useState(
     () => getPratiqueDateForExam(getDefaultExamDate()) || getDefaultPratiqueDate()
   );
@@ -3122,7 +3125,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const tousSansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
         const sansResultat = tousSansResultat.filter(a => !lettreExclusIds.includes(a.id));
         const exclusDeLettre = tousSansResultat.filter(a => lettreExclusIds.includes(a.id));
-        const resultatsIncomplets = totalInscrits === 0 || sansResultat.length > 0;
+        const resultatsIncomplets = cmaLettreSources.isPending || !!cmaLettreSources.error;
 
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         // Find the default practical date for the current theoretical exam
@@ -3192,8 +3195,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           !deplacesApprenantsCMA.some(r => r.id === a.id) &&
           !echouesPratiqueCMA.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA]
-          .filter(a => !removedCandidatsCMA.includes(a.id));
+        const cmaSelection = selectionLettreCma(cmaLettreSources.data?.candidats ?? [], cmaLettreSources.data?.preuves ?? [], cmaLettreSources.data?.confirmations ?? [], selectedExamDate, selectedDatePratique, '69', removedCandidatsCMA);
+        const representedIds = new Set(cmaSelection.aRepresenter.map(a=>a.id));
+        const selectedIds = new Set([...cmaSelection.confirmes,...cmaSelection.aRepresenter].map(a=>a.id));
+        const reussisLettre = (allApprenants ?? []).filter(a=>selectedIds.has(a.id));
         const cmaSearchResults = mergeApprenantSearchResults(allApprenants, cmaDirectSearchResults, searchCMA);
 
 
@@ -3210,7 +3215,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
 
         const generateLettreHTML = (notes = candidateNotes.query.data, other = candidateNotes.otherQuery.data) => {
-          const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other));
+          const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other)) + `<br/><small>${representedIds.has(a.id) ? 'Ajourné à représenter — inscription à confirmer' : 'Confirmé pour cette session'}</small>`;
           const taxiRows = taxiReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
           const vtcRows = vtcReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
           const padTaxi = taxiReussis.length < maxRows ? Array(maxRows - taxiReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
@@ -3237,12 +3242,12 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <a href="mailto:audrey.crevier@cma-auvergnerhonealpes.fr">audrey.crevier@cma-auvergnerhonealpes.fr</a></p>
               </div>
 
-              <p><strong>Objet :</strong> Liste des candidats inscrits aux épreuves pratiques — Examen du ${selectedExamDate}</p>
+              <p><strong>Objet :</strong> Candidats confirmés et demandes de représentation aux épreuves pratiques — Examen du ${selectedExamDate}</p>
               <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
               ${dateDebutText ? `<p><strong>Début souhaité des passages :</strong> à partir du ${dateDebutText}</p>` : ''}
 
               <p>Madame,</p>
-              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation inscrits aux épreuves pratiques (candidats ayant réussi l'examen théorique du ${selectedExamDate}, candidats décalés de la session précédente et candidats en repassage pratique) :</p>
+              <p>Veuillez trouver les candidats confirmés pour cette session et, distinctement identifiés, les candidats ajournés de la période précédente à représenter. Ces demandes de représentation ne constituent pas une inscription officiellement validée.</p>
 
               <div style="display:flex;gap:20px;margin:20px 0;">
                 <div style="flex:1;">
@@ -3281,7 +3286,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           `;
         };
 
-        const handlePrintLettre = () => {
+        const handlePrintLettre = async () => {
+          const fresh = await cmaLettreSources.refetch();
+          if (fresh.error || !fresh.data) { toast.error('Preuves CMA indisponibles'); return; }
+          const freshSelection=selectionLettreCma(fresh.data.candidats,fresh.data.preuves,fresh.data.confirmations,selectedExamDate,selectedDatePratique,'69',removedCandidatsCMA);
+          if (freshSelection.erreur || freshSelection.aVerifier.length || JSON.stringify([...freshSelection.confirmes,...freshSelection.aRepresenter])!==JSON.stringify([...cmaSelection.confirmes,...cmaSelection.aRepresenter])) { toast.error('La sélection doit être vérifiée ; consultez la liste actualisée avant de générer.'); return; }
           const printWindow = window.open('', '_blank');
           if (!printWindow) return;
           printWindow.document.write(`
@@ -3298,6 +3307,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           if (reussisLettre.length === 0) return;
           setSendingCMAEmail(true);
           try {
+            const fresh = await cmaLettreSources.refetch();
+            if (fresh.error || !fresh.data) throw new Error('Preuves CMA indisponibles');
+            const freshSelection=selectionLettreCma(fresh.data.candidats,fresh.data.preuves,fresh.data.confirmations,selectedExamDate,selectedDatePratique,'69',removedCandidatsCMA);
+            if (freshSelection.erreur || freshSelection.aVerifier.length || JSON.stringify([...freshSelection.confirmes,...freshSelection.aRepresenter])!==JSON.stringify([...cmaSelection.confirmes,...cmaSelection.aRepresenter])) throw new Error('Sélection CMA modifiée ou à vérifier');
             if (reussisLettre.some(a => candidateNotes.draft(a.id) || candidateNotes.isSaving(a.id))) throw new Error("Enregistrez les notes avant l’envoi CMA.");
             const refreshed = await candidateNotes.query.refetch();
             if (refreshed.error) throw refreshed.error;
@@ -3355,18 +3368,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Mail className="h-5 w-5 text-teal-600" />
-                  Lettre CMA — Candidats reçus
+                  Lettre CMA — Confirmés / à représenter
                 </span>
                 <div className="flex items-center gap-2">
                   {fsLettre.button}
-                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets} variant="outline" className="gap-2">
+                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0} variant="outline" className="gap-2">
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button 
-                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets} 
+                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0} 
                         className="gap-2"
                       >
                         <Mail className="h-4 w-4" />
@@ -3379,7 +3392,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <AlertDialogDescription asChild>
                           <div className="space-y-3 text-sm">
                             <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
-                            <p><strong>Objet :</strong> Liste candidats inscrits épreuves pratiques - Examen du {selectedExamDate}</p>
+                            <p><strong>Objet :</strong> Candidats confirmés / à représenter — Examen du {selectedExamDate}</p>
                             <p><strong>Dates pratique :</strong> {selectedDatePratique}</p>
                             {dateDebutPratique && (
                               <p><strong>Début souhaité des passages :</strong> à partir du {formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -3458,6 +3471,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               )}
             </CardHeader>
             <CardContent>
+              {(cmaSelection.erreur || cmaLettreSources.error || cmaSelection.aVerifier.length > 0) && <div className="mb-4 border border-destructive p-3 text-destructive" role="alert"><p>{cmaSelection.erreur || (cmaLettreSources.error ? 'Lecture des preuves CMA indisponible' : 'Territoire ou passage pratique à vérifier — génération suspendue')}</p>{cmaSelection.aVerifier.map(({candidat,raison})=><p key={candidat.id}>{candidat.nom} {candidat.prenom} — {raison}</p>)}</div>}
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 <p className="text-sm text-muted-foreground">Dates de passage pratique :</p>
                 <Select value={selectedDatePratique} onValueChange={setSelectedDatePratique}>
@@ -3537,7 +3551,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     <div className="space-y-1">
                       {taxiReussis.map(a => (
                         <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1"><span>{a.nom} {a.prenom}</span>
+                          <div className="min-w-0 flex-1"><span>{a.nom} {a.prenom}</span><p className="text-xs text-muted-foreground">{representedIds.has(a.id) ? 'À représenter — inscription à confirmer' : 'Confirmé pour cette session'}</p>
                             <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
                           </div>
                           <Button
