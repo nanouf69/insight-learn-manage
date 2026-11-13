@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 13/11 14:26 UTC — Annulations individuelles et heures restant à signer
-- [ ] Préparer confirmation Supprimer/restaurer et journal réversible admin en aperçu désactivé pour la production ; originaux préservés.
-- [ ] Afficher 6h30 brut depuis les trois créneaux non signés, présence à justifier séparée sans soustraction admin devinée ; corriger le libellé 39h signatures.
-- [ ] Tests permissions/double-clic/annulation/restauration/chevauchement et PC/mobile, compilation et empreintes SELECT.
+- [x] Confirmation Supprimer/restaurer préparée, rôle relu et journal append-only candidat ; transport réel débranché, originaux préservés.
+- [x] 6h30 brut depuis trois créneaux, compteur à justifier distinct sans déduction date-only ; Documents distingue 33h30 signatures +4h net, 37h30/40 connu, contrat non prouvé.
+- [x] 69 Vitest PASS/9 fichiers +1 contrat SQL jetable (14 assertions), PC/mobile fictifs inspectés ; lecture authentifiée composants/dossier réel 6h30 confirmée, build OK, empreinte SELECT intacte. Rapport docs/presence-actions-2026-11-13.md.
 - [ ] Mise en service bloquée par journal serveur non installé, protections jalons/relevés et parité propriétaire à prouver ; aucune écriture réelle/publication.
 
 ## 13/11 14:18 UTC — Rectification du dénominateur présence CHERNI
