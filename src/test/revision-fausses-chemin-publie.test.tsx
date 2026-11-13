@@ -50,6 +50,7 @@ beforeEach(() => {
   h.saved = { reponses: { revisionState: creerRevisionProgressState({
     examenId: "EB2-TAXI", answers: { "gestion:1": "texte" }, currentIndex: 0,
     correctedCount: 1, correctedQuestions: order, showCorrection: true, questionOrder: order,
+    sourceResultIds: {'gestion:1': 'original-immutable-copy'},
   }) }, score: 1 };
   vi.mocked(flushAnswerSavesAndWait).mockImplementation(async () => {
     const last = vi.mocked(enqueueAnswerSave).mock.calls.at(-1)?.[0] as any;
