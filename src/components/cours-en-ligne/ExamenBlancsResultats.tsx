@@ -1486,6 +1486,7 @@ function RevisionFausses({
   const rep = reponseRevisionAffichee(reponses as Record<string, unknown>, wrongQuestions, current) as any;
 
   const checkAnswer = () => {
+    if (finEnCoursRef.current || finConfirmeeRef.current) return;
     if (!revisionReponseRenseignee(rep)) return;
     // Double clic / double tap : une question n'est comptée et validée qu'une fois.
     if (correctedQuestionsRef.current.includes(currentKey)) {
@@ -1519,8 +1520,8 @@ function RevisionFausses({
     if (finEnCoursRef.current || finConfirmeeRef.current) return;
     // Le second geste d'un double tap ne doit pas valider PUIS avancer.
     if (Date.now() - derniereValidationRef.current < 400) return;
-    setShowCorrection(false);
     if (currentIndex < wrongQuestions.length - 1) {
+      setShowCorrection(false);
       const newIdx = currentIndex + 1;
       setCurrentIndex(newIdx);
       persistProgress(reponses, newIdx, correctedCount, correctedQuestionsRef.current, false);
