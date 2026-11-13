@@ -30,6 +30,7 @@ import { chargerTauxPresenceHeures } from '../TauxPresenceSessionsCard';
 import { regleSuiviFormation } from '@/lib/suiviFormationIndicateurs';
 import { tauxTotalPresence } from '@/lib/tauxTotalPresence';
 import { CompteurHeuresNonSignees } from './CompteurHeuresNonSignees';
+import { PresencesManuellesDetail } from './PresencesManuellesDetail';
 
 interface Props {
   apprenant: any;
@@ -179,13 +180,16 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const refresh = (e: Event) => {
-      if ((e as CustomEvent).detail?.apprenantId !== apprenant.id) return;
-      void queryClient.invalidateQueries({queryKey:['apprenant-presence-heures',apprenant.id]});
-      void queryClient.invalidateQueries({queryKey:['relance-signatures-manquantes',apprenant.id]});
-    };
-    window.addEventListener(HEURES_VALIDEES_EVENT,refresh);
-    return()=>window.removeEventListener(HEURES_VALIDEES_EVENT,refresh);
+    const refresh = () => { void queryClient.invalidateQueries({predicate:q=>q.queryKey.includes(apprenant.id)}); };
+    const local = (e:Event)=>{if((e as CustomEvent).detail?.apprenantId===apprenant.id)refresh();};
+    window.addEventListener(HEURES_VALIDEES_EVENT,local);
+    window.addEventListener('focus',refresh);
+    const channel=supabase.channel(`documents-presence-${apprenant.id}-${crypto.randomUUID()}`);
+    for(const table of ['presentiel_heures_validees','presentiel_validation_decisions','presentiel_presence_creneaux','emargements_fc','session_apprenants']){
+      channel.on('postgres_changes',{event:'*',schema:'public',table,filter:`apprenant_id=eq.${apprenant.id}`},refresh);
+    }
+    channel.subscribe();
+    return()=>{window.removeEventListener(HEURES_VALIDEES_EVENT,local);window.removeEventListener('focus',refresh);void supabase.removeChannel(channel);};
   },[apprenant.id,queryClient]);
 
   // Rafraîchissement temps réel : dès qu'un document d'inscription est ajouté/modifié
@@ -447,7 +451,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       const d = await chargerTauxPresenceHeures(apprenant.id,regleSuiviFormation(apprenant).filiere);
       const total = tauxTotalPresence(d);
       if(!total)throw new Error('Durée de présence indisponible');
-      return {total, signees:total.faites-d.admin.minutesAdmin/60, adminNet:d.admin.minutesAdmin/60, revue:d.admin.revue};
+      return {total, signees:d.signees, manuelles:d.manuelles, theorie:d.session, adminNet:d.admin.minutesAdmin/60, revue:d.admin.revue};
     },
   });
 
@@ -837,7 +841,14 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
           <div>
             <p className="text-sm text-muted-foreground">Présence retenue — signatures et validations dédoublonnées</p>
             <p className="text-2xl font-bold text-primary">{totalHeuresIndisponible ? "Indisponible" : formatPresenceHours(totalHeures)}</p>
-            {presenceHeures&&<div className="text-sm text-muted-foreground space-y-1"><p>Signatures : {formatPresenceHours(presenceHeures.signees)} · Ajout administratif net : {formatPresenceHours(presenceHeures.adminNet)}</p><p>Durée prévue théorie + pratique : {formatPresenceHours(presenceHeures.total.prevues)} · Présence totale : {presenceHeures.total.pct.toLocaleString('fr-FR',{maximumFractionDigits:1})} %.</p>{presenceHeures.revue.length>0&&<p>Chevauchement ou créneau administratif non précisé : à vérifier, sans double comptage.</p>}</div>}
+            {presenceHeures&&<div className="text-sm text-muted-foreground space-y-1">
+              <p>Heures signées : {formatPresenceHours(presenceHeures.signees)}</p>
+              <p className="font-semibold text-foreground">Heures validées manuellement : {formatPresenceHours(presenceHeures.manuelles)}</p>
+              <p>Ajout administratif net après dédoublonnage : {formatPresenceHours(presenceHeures.adminNet)}</p>
+              <p>Théorie retenue : {formatPresenceHours(presenceHeures.theorie.faites)} / {formatPresenceHours(presenceHeures.theorie.prevues)} · {presenceHeures.theorie.prevues>0?(100*presenceHeures.theorie.faites/presenceHeures.theorie.prevues).toLocaleString('fr-FR',{maximumFractionDigits:1}):'—'} %</p>
+              <p>Durée prévue théorie + pratique : {formatPresenceHours(presenceHeures.total.prevues)} · Présence totale : {presenceHeures.total.pct.toLocaleString('fr-FR',{maximumFractionDigits:1})} %.</p>
+              {presenceHeures.revue.length>0&&<p>Créneau administratif non précisé : à vérifier, sans double comptage.</p>}
+            </div>}
           </div>
           <div className="text-right text-sm text-muted-foreground">
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>
@@ -850,6 +861,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
             onOuvrirRelanceSignatures={onOuvrirRelanceSignatures}
           />
         </CardContent>
+        <CardContent className="px-4 pb-2 pt-0"><PresencesManuellesDetail apprenantId={apprenant.id}/></CardContent>
         <CardContent className="px-4 pb-2 pt-0" data-testid="bilan-signatures-edof">
           {/e-?learning/i.test(formationEdof) ? null : bilanEdofErreur ? (
             <p role="alert" className="text-sm text-destructive">Total des signatures : indisponible (erreur de lecture).</p>
