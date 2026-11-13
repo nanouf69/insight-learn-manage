@@ -44,6 +44,7 @@ import {
 import { computeMoyenneExamen, computeResultatMatiereScore, computeMatiereScoreForAttempt, getSeuilEliminatoireAffiche } from "./examens-blancs-scoring";
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { rafraichirCopiesAffichees } from "@/lib/refreshSavedExamResults";
+import { lignesNativesAffichees } from '@/lib/ebNativeDisplay';
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
 import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
 import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisationServeur";
@@ -139,10 +140,16 @@ function EcranResultats({
       return matiere ? computeMatiereScoreForAttempt(matiere, row) : null;
     }) : resultats;
   // Les emplacements vides (matière sans résultat) restent à leur index : jamais de plantage.
-  resultats = useMemo(() => resultatsSource.map((r) => (r == null ? r : {
-    ...r,
-    __core: coreFiablePourLigne(sameCoreOwner ? coreStates : null, { ...r, quizId: r.quizId ?? examen?.id }),
-  })), [resultatsSource, coreStates, examen?.id, sameCoreOwner]);
+  resultats = useMemo(() => {
+    const states = sameCoreOwner ? coreStates : null;
+    const seeds = resultatsSource.filter(r => !r.nonPassee).map(r => ({ ...r, id: r.resultId, apprenant_id: apprenantId, quiz_id: r.quizId ?? examen.id, matiere_id: r.matiereId, completed_at: r.completedAt }));
+    const projected = isViewingSaved && apprenantId ? lignesNativesAffichees(seeds, states, states ? new Set() : null, apprenantId, [examen]) : seeds;
+    return resultatsSource.map(r => {
+      const native = projected.find(p => p.matiere_id === r.matiereId && p.__copieSessionAttemptId);
+      if (native) return { ...r, nonPassee: false, resultId: native.id, completedAt: native.completed_at, details: native.details, reponses: native.details?.reponses ?? {}, correctionsIA: undefined, __core: native.__core };
+      return { ...r, __core: coreFiablePourLigne(states, { ...r, quizId: r.quizId ?? examen.id }) };
+    });
+  }, [resultatsSource, coreStates, examen, sameCoreOwner, isViewingSaved, apprenantId]);
   // Corrigé officiel actuel (affichage seul) : la note reste celle du snapshot du passage.
   const [corrigesActuels, setCorrigesActuels] = useState<CarteCorrigesActuels>(() => new Map());
   const attemptIdsCore = useMemo(

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const CORE_TABLES = ["core_exam_results", "qrc_instances_v2"];
+const CORE_TABLES = ["core_exam_results", "qrc_instances_v2", "exam_attempts_v2"];
 const ALL_TABLES = [...CORE_TABLES, "apprenant_quiz_results", "apprenant_module_completion"];
 
 /** Event-only catch-up, shared per learner/table set. No periodic polling. */

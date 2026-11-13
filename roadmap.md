@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 13:25 UTC — Audit MEMDOUH Ilies EB6 TAXI
+- [x] SELECT sept matières définitives, G 17, général 14 ; 18 QRC corrigées, zéro ouvert, deux copies G conservées ; source secondaire ambiguë et sept autosaves anciens prouvés.
+- [x] Correctif affichage aperçu : copie native indépendante commune, sauvegarde exacte déjà remise ne propose plus reprise, signal de tentative live ; 78 tests PASS, PC/mobile fictifs inspectés, admin PC réel confirmé.
+- [x] Rapport docs/memdouh-eb6-audit-2026-11-13.md ; cinq empreintes avant/après identiques, build OK, aucune écriture réelle ni publication.
+- [ ] Compte élève réel, corrections live réelles et mobile admin : non prouvés sans flux autorisé ; publication attend accord/garde-fous. Polling parent existant inchangé, chantier distinct soumis au choix utilisateur.
+
 ## 13/11 13:19 UTC — Audit note Sécurité routière Pogos SARKISIAN
 - [x] SELECT : EB6 TAXI C/securite, 20 QCM remis, 12/20 définitif publié 09:38:02 UTC ; fiche secondaire absente, six autres valeurs correspondent exactement. Zéro écriture réelle.
 - [x] Correctif lecture seule aperçu : projection exacte de matière native sans fiche, aucune création de résultat ; 54 tests PASS, PC admin réel 12/20 et moyenne 10,7 définitive, build OK.
