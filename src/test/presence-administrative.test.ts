@@ -23,9 +23,9 @@ describe('Présence administrative live en minutes, sans écriture',()=>{
  it('une validation hors inscription reste en revue',()=>{
   const r=fusionnerPresenceAdministrative([],admin,new Set(['2026-09-17|theorie']));expect(r.minutesAdmin).toBe(90);expect(r.revue.length).toBe(1);
  });
- it('théorie ne devient jamais pratique et n’invente pas 6h prévues',()=>{
+ it('théorie ne devient jamais pratique, mais VTC soir prévoit 6h pratiques',()=>{
   const r=calculerTauxPresenceHeures([],ins,'vtc',[],[],admin);
-  expect(r.session.faites).toBe(5.5);expect(r.session.prevues).toBe(40);expect(r.pratique.faites).toBe(0);expect(tauxTotalPresence(r)?.prevues).toBe(40);
+  expect(r.session.faites).toBe(5.5);expect(r.session.prevues).toBe(40);expect(r.pratique.faites).toBe(0);expect(tauxTotalPresence(r)?.prevues).toBe(46);
  });
  it('les signatures vierges ne bloquent pas les heures admin',()=>{
   const end='/6n6jacAAAAGSURBVAMAsfYBgSFBzwQAAAAASUVORK5CYII=';

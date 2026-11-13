@@ -3,7 +3,18 @@ export interface PresenceHeuresTotal {
   pratique: { faites: number; prevues: number };
 }
 
-/** Live display only: practice needs an enrolled or explicitly proven target, never an implicit supplement. */
+/** Initial VTC presential course only; FC, e-learning and practice-only stay separate. */
+export function estVtcPresentiel(row: { type_apprenant?: unknown; formation_choisie?: unknown } | null | undefined) {
+  const type = String(row?.type_apprenant || row?.formation_choisie || '').trim().toLowerCase();
+  return ['vtc', 'vtc-cours-du-soir', 'vtc-e-presentiel'].includes(type);
+}
+
+/** Expected practice is an obligation, not proof that it has been performed. */
+export function pratiquePrevueVtc(theoriePrevue: number, pratiqueInscrite: number, vtcPresentiel: boolean) {
+  return vtcPresentiel && theoriePrevue > 0 ? Math.max(6, pratiqueInscrite) : pratiqueInscrite;
+}
+
+/** Live display only: targets come from the shared course/enrollment projection. */
 export function tauxTotalPresence(d: PresenceHeuresTotal | null, pratiquePrevue = 0) {
   if (!d) return null;
   const sessionPrevues = d.session.prevues;
