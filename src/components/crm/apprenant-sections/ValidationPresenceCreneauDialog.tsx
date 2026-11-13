@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { dureePratiqueSchema } from '@/lib/presenceCreneau';
-import { formatMinutesPresence } from '@/lib/heuresRestantSigner';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
 import { retrouverInscriptionPresence, verifierPdfPresence } from '@/lib/presenceJustificatif';
