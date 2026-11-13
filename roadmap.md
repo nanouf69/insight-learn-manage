@@ -6,7 +6,8 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Validation par créneau + PDF privé + annulation sans motif + union/plafond 40/46/6 h — APERÇU (444 tests). Critère : clic réel admin sur dossier de test, relecture après rechargement. Bloqué : publication à valider.
 - [ ] Justificatifs dans Contrôle qualité + ZIP — APERÇU (8 tests).
 - [ ] Périmètre TOTAL VTC seulement (TAXI/TA/VA restaurés) — APERÇU (73 tests).
-- [ ] Signatures tardives / à refaire, nom-prénom feuilles — à confirmer par dossier nommé ; aucune annulation de signature.
+- [ ] P0 interdiction serveur de toute signature apprenant passée (13/11 19:57) : PRÉPARÉ, routes de régularisation/envoi fermées, page sans saisie, remplacement du contrôle en base testé sur PostgreSQL jetable (6 tests), 40 Vitest + 9 Deno, 3 tailles navigateur. Responsable : Lovable. NON DÉPLOYÉ ; production conserve l’exception regularisation_id. Activation : sauvegarde/restauration indépendante puis installation isolée du contrôle et des deux fonctions ; aucun changement de données ni publication globale.
+- [ ] Cases anciennes manquantes : présence/absence administrative justifiée et auditée uniquement, sans signature apprenant ; aucune annulation de signature. Nom-prénom feuilles : aperçu à vérifier.
 
 ## P0 — Examens blancs / sauvegarde
 - [ ] P0 Bilan examen VTC 505 « Développement commercial » : cause prouvée = 2e clic des questions à plusieurs réponses journalisé mais écarté de la copie (base périmée) → « envoi » refusé en boucle. Correctif serveur EN LIGNE 13/11 19:26 (upsert-reponse-apprenant : dernier clic du même compte appliqué, 7 tests). À confirmer : premier « Valider » réussi de SAIDI / ABDELHAK / CABRAL.
