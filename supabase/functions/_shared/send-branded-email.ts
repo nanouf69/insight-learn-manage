@@ -95,8 +95,27 @@ export async function sendBrandedEmail({
 
   // Signature commune FTRANSPORT apposée en fin de chaque e-mail sortant.
   const htmlSigne = appliquerSignatureEmail(html);
+  // Lien « Je confirme avoir reçu cet e-mail » : uniquement si activé explicitement
+  // (EMAIL_CONFIRMATION_RECEPTION_ACTIVE=true) ET si la ligne de jeton est créée.
+  let htmlAvecLien = htmlSigne;
+  if (trackingEnabled && Deno.env.get("EMAIL_CONFIRMATION_RECEPTION_ACTIVE") === "true") {
+    try {
+      const { nouveauJeton, hacherJeton } = await import("./confirmationReception.ts");
+      const jeton = nouveauJeton();
+      const r = await fetch(`${supabaseUrl}/rest/v1/email_confirmations_reception`, {
+        method: "POST",
+        headers: { ...restHeaders, Prefer: "return=minimal" },
+        body: JSON.stringify({ accuse_id: trackingId, token_hash: await hacherJeton(jeton) }),
+      });
+      if (r.ok) {
+        htmlAvecLien = `${htmlSigne}<p style="margin-top:24px;font-family:Arial,sans-serif;font-size:14px"><a href="${supabaseUrl}/functions/v1/email-confirm-reception?t=${jeton}" style="display:inline-block;padding:10px 16px;background:#1f4e9c;color:#ffffff;text-decoration:none;border-radius:4px">Je confirme avoir reçu cet e-mail</a></p>`;
+      }
+    } catch (e) {
+      console.warn("[accuse-reception] lien de confirmation non créé (non bloquant):", e);
+    }
+  }
   const htmlWithPixel = trackingEnabled
-    ? `${htmlSigne}<img src="${supabaseUrl}/functions/v1/email-track-open?id=${trackingId}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0" />`
+    ? `${htmlAvecLien}<img src="${supabaseUrl}/functions/v1/email-track-open?id=${trackingId}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0" />`
     : html;
 
   const response = await fetch("https://api.resend.com/emails", {
