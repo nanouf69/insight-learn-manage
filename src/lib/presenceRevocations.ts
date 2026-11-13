@@ -1,5 +1,5 @@
-/** Candidate only: no production RPC is called until the journal and all readers are approved. */
-export const PRESENCE_REVOCATIONS_ACTIVE = false;
+/** Journal installed 13/11 (migration presence_lot_operationnel); production only after an explicit publish. */
+export const PRESENCE_REVOCATIONS_ACTIVE = true;
 /** Technical audit label, never a justification requested from the administrator. */
 export const AUDIT_REVOCATION_PRESENCE = 'Révocation confirmée par l’administration';
 export interface PresenceDecision {
