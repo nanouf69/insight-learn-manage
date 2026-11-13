@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Check, CheckCheck, Eye, AlertTriangle } from "lucide-react";
+import { etapesSuiviEmail, alerteNonRemis } from "@/lib/suiviEmailEtats";
 
 export interface AccuseReception {
   id: string;
@@ -45,41 +46,31 @@ export function findAccuse(
 
 const dt = (v: string | null) => (v ? format(new Date(v), "dd/MM/yyyy HH:mm", { locale: fr }) : "");
 
-export function AccuseReceptionBadge({ accuse }: { accuse?: AccuseReception }) {
+export function AccuseReceptionBadge({ accuse }: { accuse?: AccuseReception & { confirmed_at?: string | null } }) {
   if (!accuse) return null;
-
-  if (accuse.statut === "echec") {
-    return (
-      <Badge variant="destructive" className="text-[10px] py-0 h-5 gap-1">
-        <AlertTriangle className="w-3 h-3" />
-        Non délivré{accuse.erreur ? ` — ${accuse.erreur.slice(0, 60)}` : ""}
-      </Badge>
-    );
-  }
-
-  if (accuse.statut === "ouvert" || accuse.opened_at) {
-    return (
-      <Badge className="text-[10px] py-0 h-5 gap-1 bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border border-emerald-300">
-        <Eye className="w-3 h-3" />
-        Ouvert le {dt(accuse.opened_at)}
-        {accuse.open_count > 1 ? ` (${accuse.open_count}×)` : ""}
-      </Badge>
-    );
-  }
-
-  if (accuse.delivered_at || accuse.statut === "remis") {
-    return (
-      <Badge className="text-[10px] py-0 h-5 gap-1 bg-blue-100 text-blue-800 hover:bg-blue-100 border border-blue-300">
-        <CheckCheck className="w-3 h-3" />
-        Bien remis{accuse.delivered_at ? ` le ${dt(accuse.delivered_at)}` : ""}
-      </Badge>
-    );
-  }
-
+  const etapes = etapesSuiviEmail(accuse);
+  const alerte = alerteNonRemis(accuse);
+  const cls = "text-[10px] py-0 h-5 gap-1";
   return (
-    <Badge variant="secondary" className="text-[10px] py-0 h-5 gap-1">
-      <Check className="w-3 h-3" />
-      Envoyé — pas encore ouvert
-    </Badge>
+    <span className="inline-flex flex-wrap gap-1">
+      {etapes.map((e) => {
+        switch (e.code) {
+          case "accepte":
+            return <Badge key={e.code} variant="secondary" className={cls}><Check className="w-3 h-3" />Accepté par le service d'envoi{e.date ? ` le ${dt(e.date)}` : ""}</Badge>;
+          case "remis":
+            return <Badge key={e.code} variant="secondary" className={cls}><CheckCheck className="w-3 h-3" />Remis le {dt(e.date)}</Badge>;
+          case "remis_inconnu":
+            return <Badge key={e.code} variant={alerte ? "destructive" : "outline"} className={cls}>{alerte && <AlertTriangle className="w-3 h-3" />}Remise non vérifiée</Badge>;
+          case "echec":
+            return <Badge key={e.code} variant="destructive" className={cls}><AlertTriangle className="w-3 h-3" />Non délivré{e.erreur ? ` — ${e.erreur.slice(0, 60)}` : ""}</Badge>;
+          case "ouvert_indice":
+            return <Badge key={e.code} variant="outline" className={cls} title="Indice seulement : certaines messageries ouvrent l'e-mail automatiquement, d'autres bloquent ce suivi."><Eye className="w-3 h-3" />Ouverture détectée le {dt(e.date)}{e.nombre > 1 ? ` (${e.nombre}×)` : ""} — indice</Badge>;
+          case "confirme":
+            return <Badge key={e.code} className={cls}><CheckCheck className="w-3 h-3" />Réception confirmée par le destinataire le {dt(e.date)}</Badge>;
+          case "non_confirme":
+            return <Badge key={e.code} variant="outline" className={cls}>Réception non confirmée</Badge>;
+        }
+      })}
+    </span>
   );
 }
