@@ -22,6 +22,10 @@ describe('VTC présentiel TOTAL théorie + 6 heures de pratique', () => {
     expect(total(46,40)?.pct).toBeLessThan(100);
   });
   it('plusieurs journées pratiques ne doublent pas les 6h du programme initial',()=>expect(pratiquePrevueVtc(60,12,true)).toBe(6));
+  it('une inscription FC ne reçoit pas le supplément du programme initial',()=>{
+    const r=calculerTauxPresenceHeures([],[{sessions:{id:'fc',type_session:'theorique',nom:'Formation Continue VTC',heures_total:14,date_debut:'2026-11-17',date_fin:'2026-11-18'}}],'vtc');
+    expect(r.pratique.prevues).toBe(0);expect(r.pratique.faites).toBe(0);
+  });
   it('absence inscription pratique prévoit 6h sans aucune preuve fabriquée', () => {
     const ins=[{sessions:{id:'soir',type_session:'theorique',nom:'VTC cours du soir',date_debut:'2026-09-14',date_fin:'2026-09-27'}}];
     const r=calculerTauxPresenceHeures([],ins,'vtc');
