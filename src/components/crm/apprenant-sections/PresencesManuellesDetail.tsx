@@ -12,9 +12,9 @@ export function PresencesManuellesDetail({apprenantId}:{apprenantId:string}) {
     const [liens,rows,profiles] = await Promise.all([
       fetchAllRows<any>((a,z)=>supabase.from('presentiel_presence_creneaux' as any).select('*').eq('apprenant_id',apprenantId).order('id').range(a,z)),
       lirePresencesAdministratives(apprenantId,true),
-      fetchAllRows<any>((a,z)=>supabase.from('profiles').select('id,full_name').order('id').range(a,z)),
+      fetchAllRows<any>((a,z)=>supabase.from('profiles').select('id,user_id,full_name').order('id').range(a,z)),
     ]);
-    return liens.map(l=>({...l,annulee:rows.find(r=>r.id===l.validation_id)?.annulee===true,auteurNom:profiles.find(p=>p.id===l.auteur)?.full_name || 'Administrateur — nom indisponible'}));
+    return liens.map(l=>({...l,annulee:rows.find(r=>r.id===l.validation_id)?.annulee===true,auteurNom:profiles.find(p=>p.user_id===l.auteur)?.full_name || 'Administrateur — nom indisponible'}));
   }});
   const preuve=async(chemin:string)=>{
     const tab=window.open('','_blank');

@@ -110,7 +110,10 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   const union = unionPresence(signesExacts,liens.filter(l=>actives.has(l.validation_id)).map(l=>({id:l.validation_id,date:l.date_presence,categorie:'theorie',debut:l.debut,fin:l.fin,preuve:l.pdf_chemin})),prevusExacts);
   const netExact = union.netMinutes;
   // Legacy declarations only prove a daily coverage: don't add them twice to exact coverage.
-  const netLegacy = Math.max(0,admin.theorieMinutes-netExact);
+  const netLegacy = admin.ajouts.filter(a=>a.categorie==='theorie').reduce((s,a)=>{
+    const exactJour=unionPresence(signesExacts.filter(p=>p.date===a.date),liens.filter(l=>actives.has(l.validation_id) && l.date_presence===a.date).map(l=>({id:l.validation_id,date:l.date_presence,categorie:'theorie',debut:l.debut,fin:l.fin,preuve:l.pdf_chemin})),prevusExacts.filter(p=>p.date===a.date));
+    return s+Math.max(0,a.minutes-exactJour.netMinutes);
+  },0);
   admin.minutesAdmin += netExact + netLegacy - admin.theorieMinutes;
   admin.theorieMinutes = netExact + netLegacy;
   admin.ajouts.push(...liens.filter(l=>actives.has(l.validation_id)).map(l=>({id:l.validation_id,date:l.date_presence,categorie:'theorie',minutes:0})));
