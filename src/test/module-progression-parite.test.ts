@@ -27,8 +27,9 @@ describe('Module 2 : parité des preuves admin/élève sans mutation', () => {
     const proofs=Array.from({length:count},(_,i)=>proof(i+1));
     const admin=projeterProgressionConfirmee([original],'owner',states,proofs);
     const learner=projeterProgressionConfirmee([original],'owner',states,proofs);
-    expect(compterQuizModule(admin,[]).completedQuizzes).toBe(count);
-    expect(compterQuizModule(learner,[])).toEqual(compterQuizModule(admin,[]));
+    const current=row.details.map(d=>({id:String(d.exerciceId),label:String(d.exerciceId),questionIds:['1']}));
+    expect(compterQuizModule(admin,current).completedQuizzes).toBe(count);
+    expect(compterQuizModule(learner,current)).toEqual(compterQuizModule(admin,current));
     expect(computeServerCompletedModuleIds(admin,{},n=>n).has(2)).toBe(count===15);
   });
   it('15 soumissions corrigent le compteur figé 2/15 sans toucher notes/dates/réponses', () => {
