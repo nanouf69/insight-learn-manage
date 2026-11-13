@@ -17,8 +17,7 @@ import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatPresenceHours } from "@/lib/emargementHours";
-import { computePresentielHours } from "@/lib/presentielHours";
-import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
+import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
@@ -814,6 +813,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   return (
     <div className="space-y-4">
       <SignaturesPapierDossier apprenant={apprenant} />
+      <CompteurHeuresNonSignees apprenantId={apprenant.id}/>
       <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
         <CardContent className="p-4">
           <p className="text-sm font-semibold text-foreground">
