@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Clock, Plus, Loader2 } from "lucide-react";
+import { Clock, Plus, Loader2, Trash2, Undo2 } from "lucide-react";
 import { format } from "date-fns";
 import { CATEGORIES_PRESENCE, HEURES_VALIDEES_EVENT, libelleHeureValidee, normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
+import { PresenceDecisionDialog, type PresenceDecisionCible } from './PresenceDecisionDialog';
+import { projeterDecisionsPresence } from '@/lib/presenceRevocations';
 
 interface Props {
   apprenantId: string;
@@ -33,6 +35,8 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
   const [datePresence, setDatePresence] = useState("");
   const [categorie, setCategorie] = useState("");
   const [saving, setSaving] = useState(false);
+  const addLock = useRef(false);
+  const [cible, setCible] = useState<PresenceDecisionCible | null>(null);
 
   const { data: rows } = useQuery<HeureValideeRow[]>({
     queryKey: ["presentiel-heures-validees", apprenantId],
@@ -48,7 +52,22 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
     },
   });
 
-  const total = (rows || []).reduce((sum, r) => sum + (Number(r.heures) || 0), 0);
+  // No journal installed: originals are read unchanged; real decision transport stays disconnected.
+  const projection = projeterDecisionsPresence(rows || [], [], apprenantId);
+  const total = projection.filter(r=>!r.annulee).reduce((sum, r) => sum + Math.round(Number(r.heures)*60), 0)/60;
+
+  const ouvrirDecision = async (id: string) => {
+    try {
+      const {data:userData,error:authError}=await supabase.auth.getUser();
+      const uid=userData?.user?.id;
+      if(authError||!uid)throw new Error('Session expirée');
+      const {data:role,error}=await supabase.from('user_roles').select('role').eq('user_id',uid).eq('role','admin').maybeSingle();
+      if(error||!role)throw new Error('Administrateur requis');
+      const p=projection.find(x=>x.id===id);
+      if(!p)return;
+      setCible({id:p.id,heures:Number(p.heures),date:p.date_presence,categorie:p.categorie,annulee:p.annulee,version:p.versionDecision});
+    }catch{toast.error('Accès administrateur vérifié requis : aucune heure modifiée');}
+  };
 
   const handleAdd = async () => {
     const value = Number(String(heures).replace(",", "."));
@@ -69,7 +88,8 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
       toast.error("Indiquez un motif précis (5 caractères minimum)");
       return;
     }
-    if (saving) return; // verrou double-clic
+    if (addLock.current) return;
+    addLock.current = true;
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -94,37 +114,38 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
       queryClient.invalidateQueries({ predicate: (q) => q.queryKey.includes(apprenantId) || String(q.queryKey[0] ?? "").startsWith("jalons") });
       window.dispatchEvent(new CustomEvent(HEURES_VALIDEES_EVENT, { detail: { apprenantId } }));
     } finally {
+      addLock.current = false;
       setSaving(false);
     }
   };
 
   return (
-    <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3 space-y-3">
-      <div className="flex items-center gap-2">
+    <section className="w-full py-3 space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
         <Clock className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm font-semibold">Heures de présence validées manuellement</span>
         <span className="text-xs text-muted-foreground">
           {total > 0 ? `Total validé : ${total}h` : "Aucune heure validée manuellement"}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2">
         <Input
           type="text"
           inputMode="decimal"
           placeholder="Heures (ex : 6)"
           value={heures}
           onChange={(e) => setHeures(e.target.value)}
-          className="w-36"
+          className="w-full"
         />
         <Input
           type="text"
           placeholder="Motif (obligatoire)"
           value={motif}
           onChange={(e) => setMotif(e.target.value)}
-          className="flex-1 min-w-48"
+          className="w-full"
           maxLength={200}
         />
-        <Input type="date" aria-label="Date de présence" value={datePresence} onChange={(e) => setDatePresence(e.target.value)} className="w-40" />
+        <Input type="date" aria-label="Date de présence" value={datePresence} onChange={(e) => setDatePresence(e.target.value)} className="w-full" />
         <select aria-label="Catégorie de présence" value={categorie} onChange={(e) => setCategorie(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
           <option value="">Catégorie…</option>
           {Object.entries(CATEGORIES_PRESENCE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -136,14 +157,18 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
       </div>
       {(rows || []).length > 0 && (
         <ul className="text-xs text-muted-foreground space-y-1">
-          {normaliserHeuresValidees(rows || []).slice().reverse().map((r) => (
-            <li key={r.id}>
-              {r.heures}h — {libelleHeureValidee(r)} ({format(new Date(r.createdAt), "HH:mm")})
-              {r.motif ? ` — ${r.motif}` : " — motif non renseigné"}
+          {normaliserHeuresValidees(projection).slice().reverse().map((r) => (
+            <li key={r.id} className="flex flex-col gap-2 border-t py-3">
+              <span className="break-words">{r.heures}h — {libelleHeureValidee(r)} ({format(new Date(r.createdAt), "HH:mm")})
+              {r.motif ? ` — ${r.motif}` : " — motif non renseigné"}</span>
+              <Button variant="outline" size="sm" className="self-start" onClick={()=>void ouvrirDecision(r.id)}>
+                {projection.find(x=>x.id===r.id)?.annulee?<Undo2 className="mr-2 h-4 w-4"/>:<Trash2 className="mr-2 h-4 w-4"/>}{projection.find(x=>x.id===r.id)?.annulee?'Restaurer':'Supprimer'}
+              </Button>
             </li>
           ))}
         </ul>
       )}
-    </div>
+      <PresenceDecisionDialog cible={cible} apprenantId={apprenantId} onClose={()=>setCible(null)} onConfirmed={()=>{void queryClient.invalidateQueries({predicate:q=>q.queryKey.includes(apprenantId)});window.dispatchEvent(new CustomEvent(HEURES_VALIDEES_EVENT,{detail:{apprenantId}}));}}/>
+    </section>
   );
 }

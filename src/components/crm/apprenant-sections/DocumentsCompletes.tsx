@@ -17,8 +17,7 @@ import { useState } from "react";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatPresenceHours } from "@/lib/emargementHours";
-import { computePresentielHours } from "@/lib/presentielHours";
-import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
+import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
 import { etatDepotDossierBienvenue, libelleDepotDossierBienvenue } from "@/lib/dossierBienvenueDepot";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { pratiqueDocumentHours } from "@/lib/pratiqueDocumentHours";
@@ -27,6 +26,10 @@ import { chargerClassificationSignatures, chargerBilanSignaturesEdof } from '@/l
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 import { SignaturesPapierDossier } from './SignaturesPapierDossier';
+import { chargerTauxPresenceHeures } from '../TauxPresenceSessionsCard';
+import { regleSuiviFormation } from '@/lib/suiviFormationIndicateurs';
+import { tauxTotalPresence } from '@/lib/tauxTotalPresence';
+import { CompteurHeuresNonSignees } from './CompteurHeuresNonSignees';
 
 interface Props {
   apprenant: any;
@@ -174,6 +177,16 @@ const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'appr
 export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const refresh = (e: Event) => {
+      if ((e as CustomEvent).detail?.apprenantId !== apprenant.id) return;
+      void queryClient.invalidateQueries({queryKey:['apprenant-presence-heures',apprenant.id]});
+      void queryClient.invalidateQueries({queryKey:['relance-signatures-manquantes',apprenant.id]});
+    };
+    window.addEventListener(HEURES_VALIDEES_EVENT,refresh);
+    return()=>window.removeEventListener(HEURES_VALIDEES_EVENT,refresh);
+  },[apprenant.id,queryClient]);
 
   // Rafraîchissement temps réel : dès qu'un document d'inscription est ajouté/modifié
   // par l'apprenant (étape 1 du tunnel), on ré-hydrate l'onglet Formulaires.
@@ -431,24 +444,10 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
     queryKey: ["apprenant-presence-heures", apprenant.id],
     enabled: !!apprenant?.id,
     queryFn: async () => {
-      const [emargRes, pratiqueDetails, classification] = await Promise.all([
-        supabase
-          .from("emargements_fc" as any)
-          .select("date_emargement, demi_journee, absent, signature_data_url")
-          .filter("masque", "eq", false)
-          .eq("apprenant_id", apprenant.id),
-        fetchPratiqueSlotDetails(apprenant.id),
-        chargerClassificationSignatures(apprenant.id),
-      ]);
-      if (emargRes.error) throw emargRes.error;
-      const labels: Record<string,string> = { matin:'Matin',apres_midi:'Après-midi',soir_1:'Soir 1 (17h-18h30)',soir_2:'Soir 2 (18h30-21h)' };
-      const validKeys = new Set(classification.valides.map(e => `${e.date}|${e.creneau}`));
-      const { theorieHours, pratiqueMinutes } = computePresentielHours(
-        ((emargRes.data as any[]) || []).filter(e => validKeys.has(`${e.date_emargement}|${labels[e.demi_journee] ?? e.demi_journee}`)),
-        pratiqueDetails,
-      );
-      const validees = await fetchHeuresValideesAdmin(apprenant.id); // erreur = indisponible, jamais 0 h
-      return theorieHours + (pratiqueMinutes + validees.minutes) / 60;
+      const d = await chargerTauxPresenceHeures(apprenant.id,regleSuiviFormation(apprenant).filiere);
+      const total = tauxTotalPresence(d);
+      if(!total)throw new Error('Durée de présence indisponible');
+      return {total, signees:total.faites-d.admin.minutesAdmin/60, adminNet:d.admin.minutesAdmin/60, revue:d.admin.revue};
     },
   });
 
@@ -805,7 +804,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   // Même calcul que la carte « Taux présentiel » (computePresentielHours) :
   // heures réellement signées, sans plafonnement, pour que les deux affichages
   // soient toujours cohérents.
-  const totalHeures = presenceHeures ?? 0;
+  const totalHeures = presenceHeures?.total.faites ?? 0;
   const totalHeuresIndisponible = presenceHeuresErreur || presenceHeures == null;
 
   const uniqueMap = new Map<string, any>();
@@ -824,6 +823,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   return (
     <div className="space-y-4">
       <SignaturesPapierDossier apprenant={apprenant} />
+      <CompteurHeuresNonSignees apprenantId={apprenant.id}/>
       <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
         <CardContent className="p-4">
           <p className="text-sm font-semibold text-foreground">
@@ -835,8 +835,9 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <p className="text-sm text-muted-foreground">Total heures de présence (basé sur les signatures)</p>
+            <p className="text-sm text-muted-foreground">Présence retenue — signatures et validations dédoublonnées</p>
             <p className="text-2xl font-bold text-primary">{totalHeuresIndisponible ? "Indisponible" : formatPresenceHours(totalHeures)}</p>
+            {presenceHeures&&<div className="text-sm text-muted-foreground space-y-1"><p>Signatures : {formatPresenceHours(presenceHeures.signees)} · Ajout administratif net : {formatPresenceHours(presenceHeures.adminNet)}</p><p>Durée des sessions inscrites : {formatPresenceHours(presenceHeures.total.prevues)} — aucune pratique supplémentaire déduite.</p>{presenceHeures.revue.length>0&&<p>Chevauchement ou créneau administratif non précisé : à vérifier, sans double comptage.</p>}</div>}
           </div>
           <div className="text-right text-sm text-muted-foreground">
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>

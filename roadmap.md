@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 14:26 UTC — Annulations individuelles et heures restant à signer
+- [x] Confirmation Supprimer/restaurer préparée, rôle relu et journal append-only candidat ; transport réel débranché, originaux préservés.
+- [x] 6h30 brut depuis trois créneaux, compteur à justifier distinct sans déduction date-only ; Documents distingue 33h30 signatures +4h net, 37h30/40 connu, contrat non prouvé.
+- [x] 69 Vitest PASS/9 fichiers +1 contrat SQL jetable (14 assertions), PC/mobile fictifs inspectés ; lecture authentifiée composants/dossier réel 6h30 confirmée, build OK, empreinte SELECT intacte. Rapport docs/presence-actions-2026-11-13.md.
+- [ ] Mise en service bloquée par journal serveur non installé, protections jalons/relevés et parité propriétaire à prouver ; aucune écriture réelle/publication.
+
 ## 13/11 14:18 UTC — Rectification du dénominateur présence CHERNI
 - [x] Lecture seule : session soir 40 h par défaut, heures configurées NULL, aucun contrat devis ni catalogue lié ; aucune inscription pratique, heures individuelles NULL. Le supplément 6 h vient du code, pas du dossier.
 - [x] Supplément pratique implicite retiré de la projection commune, durées explicites préservées ; 33,5/40=83,75%, 39/40=97,5% et 37,5/40=93,75% vérifiés.
