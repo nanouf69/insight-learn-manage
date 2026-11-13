@@ -28,7 +28,9 @@ describe('Présence administrative live en minutes, sans écriture',()=>{
   expect(r.session.faites).toBe(5.5);expect(r.session.prevues).toBe(40);expect(r.pratique.faites).toBe(0);expect(tauxTotalPresence(r)?.prevues).toBe(46);
  });
  it('les signatures vierges ne bloquent pas les heures admin',()=>{
-  const blank='data:image/png;base64,'+'A'.repeat(4577)+'/6n6jacAAAAGSURBVAMAsfYBgSFBzwQAAAAASUVORK5CYII=';
+  const end='/6n6jacAAAAGSURBVAMAsfYBgSFBzwQAAAAASUVORK5CYII=';
+  const prefix='data:image/png;base64,';
+  const blank=prefix+'A'.repeat(4642-prefix.length-end.length)+end;
   const r=calculerTauxPresenceHeures([{...sig('2026-09-18','soir_1'),signature_data_url:blank}],ins,'vtc',[],[],admin);
   expect(r.admin.minutesAdmin).toBe(330);
  });
