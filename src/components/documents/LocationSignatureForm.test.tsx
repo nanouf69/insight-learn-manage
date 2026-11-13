@@ -1,0 +1,15 @@
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { LocationSignatureForm, type LocationPublicDoc } from './LocationSignatureForm';
+vi.mock('@/components/crm/apprenant-sections/LocationPdfPreview', () => ({ LocationPdfPreview: () => null }));
+vi.mock('@/components/onboarding/SignaturePad', () => ({ SignaturePad: ({ onChange }: { onChange: (v: string) => void }) => <input aria-label="signature fictive" onChange={e => onChange(e.target.value)} /> }));
+const doc: LocationPublicDoc = { modele_code: 'contrat_location', reference: 'LOC-TEST', destinataire_nom: 'Client Fictif', texte_empreinte: 'sha-test', statut: 'envoye', fileUrl: '/test.pdf' };
+afterEach(cleanup);
+function fill() { fireEvent.click(screen.getByRole('checkbox')); fireEvent.change(screen.getByLabelText('signature fictive'), { target: { value: 'fixture-png' } }); }
+describe('rental client signing confirmation', () => {
+  it('requires consent and specific signature before calling the server', async () => { const submit = vi.fn(); render(<LocationSignatureForm doc={doc} submit={submit} read={vi.fn()} />); fireEvent.click(screen.getByRole('button', { name: 'Signer mon contrat' })); expect(submit).not.toHaveBeenCalled(); expect(await screen.findByRole('alert')).toBeTruthy(); });
+  it('does not call signed until matching server receipt and final file read back', async () => { render(<LocationSignatureForm doc={doc} submit={async () => ({ success: true })} read={async () => doc} />); fill(); fireEvent.click(screen.getByRole('button', { name: 'Signer mon contrat' })); await screen.findByRole('alert'); expect(screen.queryByRole('status')).toBeNull(); expect(screen.getByLabelText('signature fictive')).toHaveProperty('value', 'fixture-png'); });
+  it('refuses another contract receipt', async () => { render(<LocationSignatureForm doc={doc} submit={async () => ({ success: true })} read={async () => ({ ...doc, reference: 'OTHER', statut: 'signe', signed_at: '2026-11-13T12:00:00Z', signedFileUrl: '/signed.pdf' })} />); fill(); fireEvent.click(screen.getByRole('button', { name: 'Signer mon contrat' })); await screen.findByRole('alert'); expect(screen.queryByRole('link')).toBeNull(); });
+  it('confirms only the same immutable signed contract', async () => { const submit = vi.fn(async () => ({ success: true })); render(<LocationSignatureForm doc={doc} submit={submit} read={async () => ({ ...doc, statut: 'signe', signed_at: '2026-11-13T12:00:00Z', signedFileUrl: '/signed.pdf' })} />); fill(); fireEvent.click(screen.getByRole('button', { name: 'Signer mon contrat' })); fireEvent.click(screen.getByRole('button', { name: /Vérification/ })); expect(await screen.findByRole('link', { name: 'Télécharger mon contrat signé' })).toHaveProperty('href', 'http://localhost:3000/signed.pdf'); expect(submit).toHaveBeenCalledTimes(1); });
+});
