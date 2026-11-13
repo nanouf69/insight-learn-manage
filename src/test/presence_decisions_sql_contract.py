@@ -15,6 +15,7 @@ class Decisions(unittest.TestCase):
   CREATE FUNCTION has_role(u uuid,r text) RETURNS boolean LANGUAGE sql AS $$SELECT u='{ADMIN}'::uuid AND r='admin'$$;
   CREATE TABLE presentiel_heures_validees(id uuid PRIMARY KEY,apprenant_id uuid,heures numeric,date_presence date,categorie text);
   CREATE TABLE edof_fin_formation(apprenant_id uuid);CREATE TABLE releve_jalons_fin_acces(apprenant_id uuid);CREATE TABLE releve_jalons_gels(apprenant_id uuid);
+  CREATE FUNCTION releve_sources_apprenant(_id uuid) RETURNS jsonb LANGUAGE sql AS $$ SELECT coalesce((SELECT jsonb_agg(to_jsonb(v)) FROM public.presentiel_heures_validees WHERE apprenant_id = _id),'[]'::jsonb) FROM public.presentiel_heures_validees v LIMIT 1 $$;
   INSERT INTO presentiel_heures_validees VALUES('{V}','{A}',4,'2026-09-18','theorie'),('55555555-5555-5555-5555-555555555555','{A}',1.5,'2026-09-17','theorie');
   CREATE TABLE signatures(id uuid, image text); INSERT INTO signatures VALUES('{V}','original-signature');
   CREATE TABLE notes(id uuid,note numeric); INSERT INTO notes VALUES('{V}',12);
@@ -44,6 +45,7 @@ class Decisions(unittest.TestCase):
   self.assertTrue(receipt['created_at'])
   self.assertEqual(self.call(op,motif='').stdout,first.stdout)
   self.assertEqual(self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT sum(heures) FROM presentiel_validations_effectives('{A}')").stdout.splitlines()[-1],'1.5')
+  self.assertEqual(self.sql(f"SELECT jsonb_array_length(releve_sources_apprenant('{A}'))").stdout.strip(),'1')
   self.assertNotEqual(self.call(str(uuid.uuid4())).returncode,0)
   self.assertNotEqual(self.call(op,action='restaurer').returncode,0)
   self.assertNotEqual(self.sql('UPDATE presentiel_validation_decisions SET motif=\'Modifier\'',False).returncode,0)
