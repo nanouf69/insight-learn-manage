@@ -1,5 +1,6 @@
 /** Isolated preparation only: no database writes, transport, scheduler or booking mutation. */
-export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-priorite-v2";
+import { modeleRappelTheorique, type ModeleRappelTheorique } from "./modelesRappelTheorique";
+export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-calendrier-v3";
 export const RAPPEL_THEORIQUE_OBJET = "Rappel important – Finalisez vos modules pour votre entraînement pratique";
 export const RAPPEL_THEORIQUE_TEXTE = "Bonjour, À la suite de votre examen théorique, nous vous invitons à terminer l'ensemble des modules de votre formation sur notre plateforme e-learning, à l'exception de la partie pratique. Les candidats ayant terminé l'ensemble de leurs modules seront prioritaires pour le choix d'une date d'entraînement pratique. Si vos modules ne sont pas encore terminés, vous ne serez donc pas prioritaire dans l'attribution des créneaux disponibles. Nous vous invitons à finaliser votre parcours dès que possible afin de bénéficier de cette priorité. En cas de difficulté technique ou de problème de validation d'un module, merci de contacter notre centre de formation. Cordialement, L'équipe Ftransport";
 
@@ -17,6 +18,12 @@ export interface DossierRappel {
   accesActif: boolean;
   exclu: boolean;
   obligations: ObligationCanonique[] | null;
+  examenPrevu?: {
+    id: string;
+    dossierId: string;
+    datePrevue: string;
+    statut: "confirme" | "annule" | "reporte" | "inconnu";
+  } | null;
   passage: {
     id: string;
     dossierId: string;
@@ -63,12 +70,13 @@ export function progressionNonPratique(obligations: ObligationCanonique[] | null
 export type DecisionRappel =
   | { etat: "arreter"; raison: string }
   | { etat: "attendre" | "a_verifier"; raison: string }
-  | { etat: "preparer"; jourEcheance: string; rang: number; cle: string; objet: string; texte: string };
+  | { etat: "preparer"; jourEcheance: string; rang: number; cle: string; objet: string; texte: string;
+      phase: "avant" | "apres"; modele: ModeleRappelTheorique; activationAutorisee: false; pointsAValider: string[] };
 
 export function preparerRappelTheorique(input: {
   dossier: DossierRappel;
   maintenant: Date;
-  /** Earliest real exam date eligible after activation; no historic catch-up. Null = not configured. */
+  /** Earliest exam occurrence eligible after activation; no historic catch-up. Null = not configured. */
   premiereDateExamenEligible: string | null;
   historique: readonly HistoriqueRappel[] | null;
 }): DecisionRappel {
@@ -77,29 +85,54 @@ export function preparerRappelTheorique(input: {
   const progression = progressionNonPratique(dossier.obligations);
   if (progression.etat === "inconnu") return { etat: "a_verifier", raison: "progression canonique indisponible" };
   if (progression.complete) return { etat: "arreter", raison: "modules non pratiques complets" };
+  if (!Number.isFinite(input.maintenant.getTime())) return { etat: "a_verifier", raison: "horloge serveur indisponible" };
+  const jour = jourParis(input.maintenant);
+  const aujourdHui = numeroJour(jour);
+  const borne = input.premiereDateExamenEligible ? numeroJour(input.premiereDateExamenEligible) : null;
+  if (aujourdHui === null || borne === null) return { etat: "a_verifier", raison: "date ou borne non vérifiée" };
+  const prevu = dossier.examenPrevu;
+  if (prevu && (!dossier.passage || dossier.passage.statut !== "present")) {
+    if (!prevu.id || prevu.dossierId !== dossier.id || prevu.statut === "inconnu") return { etat: "a_verifier", raison: "examen prévu non vérifié" };
+    if (prevu.statut !== "confirme") return { etat: "arreter", raison: "examen prévu annulé ou reporté" };
+    const datePrevue = numeroJour(prevu.datePrevue);
+    if (datePrevue === null) return { etat: "a_verifier", raison: "date prévue invalide" };
+    if (datePrevue > aujourdHui) {
+      if (datePrevue < borne) return { etat: "arreter", raison: "ancien examen hors activation" };
+      if (datePrevue - aujourdHui !== 7) return { etat: "attendre", raison: "hors J−7" };
+      if (dossier.passage?.statut === "absent") return { etat: "arreter", raison: "absence déclarée" };
+      return construirePreparation(input, prevu.id, jour, 0, "avant", "ferme");
+    }
+  }
   const passage = dossier.passage;
   if (!passage || passage.dossierId !== dossier.id || !passage.id || passage.source === "planning"
     || passage.statut === "inconnu") return { etat: "a_verifier", raison: "passage réel non prouvé" };
   if (passage.statut !== "present") return { etat: "arreter", raison: "absent, reporté ou annulé" };
   const examen = numeroJour(passage.dateReelle);
-  const borne = input.premiereDateExamenEligible ? numeroJour(input.premiereDateExamenEligible) : null;
   if (examen === null || borne === null) return { etat: "a_verifier", raison: "date ou borne non vérifiée" };
   if (examen < borne) return { etat: "arreter", raison: "ancien passage hors activation" };
-  const jour = jourParis(input.maintenant);
-  const aujourdHui = numeroJour(jour);
-  if (aujourdHui === null) return { etat: "a_verifier", raison: "horloge serveur indisponible" };
   const ecart = aujourdHui - examen;
-  if (ecart < 1 || ecart % 2 === 0) return { etat: "attendre", raison: "hors J+1/J+3/J+5" };
+  if (ecart < 1 || ecart % 2 === 0) return { etat: "attendre", raison: "hors échéance impaire après examen" };
+  return construirePreparation(input, passage.id, jour, (ecart + 1) / 2, "apres", ecart <= 5 ? "ferme" : "normal");
+}
+function construirePreparation(
+  input: Parameters<typeof preparerRappelTheorique>[0], occurrenceId: string, jour: string,
+  rang: number, phase: "avant" | "apres", type: "ferme" | "normal",
+): DecisionRappel {
+  const { dossier, historique } = input;
   if (!historique) return { etat: "a_verifier", raison: "journal indisponible" };
-  const memePassage = historique.filter(h => h.dossierId === dossier.id && h.passageId === passage.id);
+  const memePassage = historique.filter(h => h.dossierId === dossier.id && h.passageId === occurrenceId);
   if (memePassage.some(h => ["reserve", "indetermine", "rejete"].includes(h.etat))) {
     return { etat: "a_verifier", raison: "envoi précédent réservé, indéterminé ou rejeté" };
   }
   if (memePassage.some(h => h.jourEcheance >= jour)) return { etat: "attendre", raison: "échéance déjà traitée" };
+  const modele = modeleRappelTheorique(type, phase === "avant");
   return {
-    etat: "preparer", jourEcheance: jour, rang: (ecart + 1) / 2,
-    cle: ["rappel_modules_theorique", dossier.id, passage.id, jour, RAPPEL_THEORIQUE_VERSION].map(encodeURIComponent).join(":"),
-    objet: RAPPEL_THEORIQUE_OBJET, texte: RAPPEL_THEORIQUE_TEXTE,
+    etat: "preparer", jourEcheance: jour, rang, phase, modele, activationAutorisee: false,
+    pointsAValider: type === "ferme"
+      ? ["Impossibilité de passer à pratique non effective : règle et validité contractuelle à confirmer", "Priorité non opérationnelle", "Activation non autorisée"]
+      : ["Copie normale proposée à valider", "Activation non autorisée"],
+    cle: ["rappel_modules_theorique", dossier.id, occurrenceId, phase, jour, RAPPEL_THEORIQUE_VERSION].map(encodeURIComponent).join(":"),
+    objet: modele.objet, texte: modele.paragraphes.map(p => p.texte).join("\n\n"),
   };
 }
 

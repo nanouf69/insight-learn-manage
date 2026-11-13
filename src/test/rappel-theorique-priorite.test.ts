@@ -15,6 +15,41 @@ function decide(d = dossier(), instant = "2026-11-18T09:00:00Z", historique: His
   return preparerRappelTheorique({ dossier: d, maintenant: new Date(instant), premiereDateExamenEligible: "2026-11-17", historique });
 }
 describe("Rappels théorie isolés, sans transport", () => {
+  it("J−7 utilise seulement la date prévue confirmée", () => {
+    const d = { ...dossier(), passage: null, examenPrevu: { id: "prevu-1", dossierId: "eleve-1", datePrevue: "2026-11-17", statut: "confirme" as const } };
+    expect(decide(d, "2026-11-10T09:00:00Z")).toMatchObject({ etat: "preparer", phase: "avant", rang: 0, modele: { type: "ferme" }, activationAutorisee: false });
+  });
+  for (const jour of [9, 11]) it(`aucun rattrapage J−7 au jour ${jour}`, () => {
+    const d = { ...dossier(), passage: null, examenPrevu: { id: "prevu-1", dossierId: "eleve-1", datePrevue: "2026-11-17", statut: "confirme" as const } };
+    expect(decide(d, `2026-11-${String(jour).padStart(2, "0")}T09:00:00Z`).etat).toBe("attendre");
+  });
+  for (const statut of ["annule", "reporte"] as const) it(`J−7 ${statut} exclu`, () => {
+    const d = { ...dossier(), passage: null, examenPrevu: { id: "prevu-1", dossierId: "eleve-1", datePrevue: "2026-11-17", statut } };
+    expect(decide(d, "2026-11-10T09:00:00Z").etat).toBe("arreter");
+  });
+  it("report confirmé crée nouvelle échéance J−7 sans reprendre l'ancienne", () => {
+    const d = { ...dossier(), passage: null, examenPrevu: { id: "prevu-2", dossierId: "eleve-1", datePrevue: "2026-11-24", statut: "confirme" as const } };
+    expect(decide(d, "2026-11-10T09:00:00Z").etat).toBe("attendre");
+    expect(decide(d, "2026-11-17T09:00:00Z")).toMatchObject({ etat: "preparer", phase: "avant" });
+  });
+  it("J−7 est aussi supprimé si tous les modules hors pratique sont complets", () => {
+    const d = { ...dossier(), passage: null, obligations: [obligation(2, true), obligation(8, false, true)], examenPrevu: { id: "prevu-1", dossierId: "eleve-1", datePrevue: "2026-11-17", statut: "confirme" as const } };
+    expect(decide(d, "2026-11-10T09:00:00Z").etat).toBe("arreter");
+  });
+  for (const [jour, type] of [[18, "ferme"], [20, "ferme"], [22, "ferme"], [24, "normal"], [26, "normal"], [28, "normal"]] as const) {
+    it(`J+${jour - 17} modèle ${type}`, () => expect(decide(dossier(), `2026-11-${jour}T09:00:00Z`)).toMatchObject({ etat: "preparer", phase: "apres", modele: { type }, activationAutorisee: false }));
+  }
+  it("après examen, la date réelle prime sur une date prévue différente", () => {
+    expect(decide({ ...dossier(), examenPrevu: { id: "prevu", dossierId: "eleve-1", datePrevue: "2026-11-19", statut: "confirme" } })).toMatchObject({ etat: "preparer", rang: 1, phase: "apres" });
+  });
+  it("une horloge invalide est un incident, jamais une émission", () => expect(decide(dossier(), "invalid").etat).toBe("a_verifier"));
+  it("le modèle ferme signale l'incohérence et n'autorise pas l'activation", () => {
+    const resultat = decide();
+    if (resultat.etat !== "preparer") throw new Error("fixture");
+    expect(resultat.modele.exigeValidationReglePratique).toBe(true);
+    expect(resultat.activationAutorisee).toBe(false);
+    expect(resultat.pointsAValider.length).toBe(3);
+  });
   for (const filiere of ["vtc", "taxi"] as const) it(`${filiere} : premier rappel J+1`, () => {
     expect(decide({ ...dossier(), filiere })).toMatchObject({ etat: "preparer", jourEcheance: "2026-11-18", rang: 1 });
   });
