@@ -1,5 +1,7 @@
 /** Candidate only: no production RPC is called until the journal and all readers are approved. */
 export const PRESENCE_REVOCATIONS_ACTIVE = false;
+/** Technical audit label, never a justification requested from the administrator. */
+export const AUDIT_REVOCATION_PRESENCE = 'Révocation confirmée par l’administration';
 export interface PresenceDecision {
   id: string; validation_id: string; apprenant_id: string; version: number;
   action: 'annuler' | 'restaurer'; motif: string; created_at: string; created_by: string;
@@ -26,9 +28,10 @@ export function creerControleDecisionPresence(transport: (c: PresenceDecisionCom
   let pending: Promise<PresenceDecision> | null = null;
   let key = '';
   return (c: PresenceDecisionCommande) => {
+    if (c.action === 'annuler') c = { ...c, motif: AUDIT_REVOCATION_PRESENCE };
     const next = JSON.stringify(c);
     if (pending) return key === next ? pending : Promise.reject(new Error('Une autre décision est en cours'));
-    if (c.motif.trim().length < 5) return Promise.reject(new Error('Motif précis requis'));
+    if (c.action === 'restaurer' && c.motif.trim().length < 5) return Promise.reject(new Error('Motif précis requis'));
     key = next;
     pending = transport(c).then(d => {
       if (d.validation_id !== c.validationId || d.apprenant_id !== c.apprenantId || d.action !== c.action || d.version !== c.version + 1) throw new Error('Décision non confirmée : relire le journal');

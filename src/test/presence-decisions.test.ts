@@ -1,5 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
-import {projeterDecisionsPresence,creerControleDecisionPresence,PRESENCE_REVOCATIONS_ACTIVE,type PresenceDecision} from '@/lib/presenceRevocations';
+import {projeterDecisionsPresence,creerControleDecisionPresence,PRESENCE_REVOCATIONS_ACTIVE,AUDIT_REVOCATION_PRESENCE,type PresenceDecision} from '@/lib/presenceRevocations';
 import {heuresRestantSigner} from '@/lib/heuresRestantSigner';
 import {fusionnerPresenceAdministrative} from '@/lib/presenceAdministrative';
 const rows=[{id:'h1',heures:1.5,date_presence:'2026-09-17',categorie:'theorie'},{id:'h2',heures:4,date_presence:'2026-09-18',categorie:'theorie'}];
@@ -38,4 +38,11 @@ describe('Présence réversible, preuves et heures non signées',()=>{
   await expect(send({operationId:'op',apprenantId:'a',validationId:'h2',version:0,action:'annuler',motif:'Erreur saisie'})).rejects.toThrow(/non confirmée/);
  });
  it('production inactive',()=>expect(PRESENCE_REVOCATIONS_ACTIVE).toBe(false));
+ it('motif vide accepté pour révocation, audit automatique et calcul ciblé confirmés',async()=>{
+  const transport=vi.fn(async()=>d);
+  const confirmed=await creerControleDecisionPresence(transport)({operationId:'op-sans-motif',apprenantId:'a',validationId:'h2',version:0,action:'annuler',motif:''});
+  expect(transport).toHaveBeenCalledWith({operationId:'op-sans-motif',apprenantId:'a',validationId:'h2',version:0,action:'annuler',motif:AUDIT_REVOCATION_PRESENCE});
+  expect(fusionnerPresenceAdministrative([],projeterDecisionsPresence(rows,[confirmed],'a')).minutesAdmin).toBe(90);
+  expect(confirmed.created_by).toBe('admin');expect(confirmed.created_at).toBe('2026-11-13T14:00:00Z');
+ });
 });
