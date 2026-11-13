@@ -20,7 +20,7 @@ export function DetailHeuresNonSignees({ rows, apprenantId }: { rows: readonly S
       if(role.error||!role.data)throw new Error('admin');
       const declarations=await supabase.from('presentiel_heures_validees').select('id,date_presence,heures').eq('apprenant_id',apprenantId);
       if(declarations.error)throw declarations.error;
-      setCible({...c,conflit:(declarations.data ?? []).some(v=>v.date_presence===c.date&&Number(v.heures)>0)});
+      setCible({...c,apprenantId,conflit:(declarations.data ?? []).some(v=>v.date_presence===c.date&&Number(v.heures)>0)});
     }catch{toast.error('Accès administrateur et lecture des preuves requis : aucune présence modifiée');}
   };
   const bilan = heuresRestantSigner(rows, dateDuJourParis());

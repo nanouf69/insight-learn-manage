@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { creneauxSessionInscrite } from './emargementSessionSlots';
 import { minutesHorairePresence } from './heuresRestantSigner';
+import { parseClockMinutes } from './pratiqueSlots';
 export const PRESENCE_PDF_MAX_BYTES = 4 * 1024 * 1024;
 export const justificatifPresenceSchema = z.object({type:z.enum(['feuille','attestation','autre']),libelle:z.string().trim().max(200)}).refine(v=>v.type!=='autre'||v.libelle.length>0,'Précisez le justificatif');
 /** Local screening only; a server parser, private storage and atomic evidence link remain required. */
@@ -16,7 +17,7 @@ export function retrouverInscriptionPresence(rows:readonly any[],cible:{date?:st
   if(cible.pratique)return {inscription:null,message:'Rattachement pratique exact non prouvé : aucune validation autorisée.'};
   const matches=rows.filter(row=>creneauxSessionInscrite(row,filiere).some(s=>s.date===cible.date&&s.creneau===cible.creneau&&
     minutesHorairePresence(`${s.debut}-${s.fin}`)===minutesHorairePresence(cible.horaires)&&
-    s.debut.replace(':','h')===cible.horaires?.split(/[-–]/)[0].padEnd(5,'0')));
+    parseClockMinutes(s.debut)===parseClockMinutes(cible.horaires?.split(/[-–]/)[0].replace('h',':').replace(/:$/,':00'))));
   const unique=new Map(matches.filter(r=>r.id&&r.session_id).map(r=>[r.id,r]));
   if(unique.size!==1)return {inscription:null,message:unique.size?'Plusieurs inscriptions correspondent : revue administrative requise.':'Aucune inscription autorisée ne correspond exactement au créneau.'};
   return {inscription:[...unique.values()][0],message:''};
