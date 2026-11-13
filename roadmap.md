@@ -19,6 +19,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [ ] Rappel VTC/TAXI J+1 après examen théorique réel — préparation uniquement, aucun envoi/activation/publication. Responsable : Lovable. Diagnostic lecture seule et plan du 13/11 dans `docs/rappel-modules-j1-theorique-2026-11-13.md`. Dépendances : preuve datée du passage réel, périmètre des modules en ligne contractuels, anti-doublon atomique et journal d'envoi. Critères : date Paris J+1, absent/reporté exclu, une émission par dossier/passage/version, erreurs sans renvoi aveugle, exceptions admin auditées. Blocage réservation distinct, non autorisé à l'activation ; réservations et contrats CPF existants conservés.
 - [x] Aperçu e-mails en texte lisible — APERÇU.
 - [x] Accusé « Je confirme avoir reçu » : PROD, bouton actif sur renvoi nouvelle adresse, documents, identifiants, régularisation émargement, Outlook, identifiants auto. Relances (modifiées il y a 25 h) non redéployées volontairement. À prouver au premier envoi réel.
 - [ ] États distincts dans CRM (accepté/remis/rejet/indice d'ouverture/confirmé) — APERÇU.
