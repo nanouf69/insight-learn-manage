@@ -25,6 +25,8 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
+import { JustificatifsPresenceControle } from "./JustificatifsPresenceControle";
+import { lireJustificatifsPresence, urlJustificatif, nomFichierZip } from "@/lib/justificatifsPresence";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
@@ -962,6 +964,20 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] identifiants PDF failed:", credentialsErr);
         }
 
+        // Justificatifs PDF des validations manuelles actives (lecture seule, sans copie en base)
+        {
+          const justifs = (await lireJustificatifsPresence(apprenant.id)).filter((j) => j.statut === "active");
+          if (justifs.length > 0) {
+            const jf = zip.folder("justificatifs-presence")!;
+            for (const j of justifs) {
+              if (j.fichier === "absent") throw new Error(`Justificatif de présence introuvable (${j.datePresence} ${j.debut}) : export interrompu`);
+              const resp = await fetch(await urlJustificatif(j.chemin));
+              if (!resp.ok) throw new Error(`Justificatif de présence illisible (${j.datePresence} ${j.debut}) : export interrompu`);
+              jf.file(nomFichierZip(j), await resp.blob());
+            }
+          }
+        }
+
         // Documents libres ajoutés manuellement au dossier
         try {
           const { data: libres } = await supabase
@@ -1074,6 +1090,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
 
       {/* Documents libres ajoutés depuis l'ordinateur */}
       <DossierDocumentsLibres apprenantId={apprenant.id} />
+      <JustificatifsPresenceControle apprenantId={apprenant.id} />
 
 
 
