@@ -79,7 +79,7 @@ beforeEach(() => {
   cleanup();
   vi.clearAllMocks();
   h.rows = [{ exercice_id: base, completed: false }];
-  h.saved = null; h.insertError = null; h.failAfterCommit=false; h.inserts = []; h.tables = [];
+  h.saved = {reponses:{revisionState:creerRevisionProgressState({examenId:'EB2-TAXI',answers:{},currentIndex:0,correctedCount:0,correctedQuestions:[],showCorrection:false,questionOrder:order})}}; h.insertError = null; h.failAfterCommit=false; h.inserts = []; h.tables = [];
   vi.mocked(flushAnswerSavesAndWait).mockImplementation(async () => {
     const last = dernierPayload();
     if (last?.completed) h.saved = { reponses: last.reponses, score: last.score, completed: true };

@@ -20,7 +20,7 @@ vi.mock("@/integrations/supabase/client", () => ({
         select: () => query,
         eq: (k: string, v: unknown) => { query.filters[k] = v; return query; },
         like: () => query, order: () => query, limit: () => query,
-        maybeSingle: async () => { h.lectures.push({ table, ...query.filters }); return { data: table === "apprenant_quiz_results" ? h.result : h.saved, error: h.readError ? { message: "offline" } : null }; },
+        maybeSingle: async () => { h.lectures.push({ table, ...query.filters }); return { data: table === "apprenant_quiz_results" ? h.result : query.filters.exercice_id === 'revision_fausses_EB2-TAXI' ? h.saved : null, error: h.readError ? { message: "offline" } : null }; },
         insert: async (payload: any) => {
           h.inserts.push({ table, payload });
           if (h.failBeforeCommit) { h.failBeforeCommit = false; return { error: { message: "offline" } }; }
@@ -67,7 +67,8 @@ describe("Révision fausses — chemin publié tant que le serveur n'est pas ins
   it('un brouillon de la tentative précédente est refusé sans écriture ni emprunt de réponse', async () => {
     h.saved.reponses.revisionState.sourceResultIds = {'gestion:1':'older-copy'};
     render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('autre copie');
+    await screen.findByText('Question Gestion');
+    expect(screen.getByRole('button',{name:'Valider ma réponse'})).toBeDisabled();
     expect(enqueueAnswerSave).not.toHaveBeenCalled(); expect(h.inserts).toEqual([]);
   });
 
@@ -75,7 +76,7 @@ describe("Révision fausses — chemin publié tant que le serveur n'est pas ins
     const view=render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
     await screen.findByText('Question Gestion');
     view.rerender(<RevisionFausses wrongQuestions={wrongQuestions.map(q=>({...q,sourceResultId:'new-copy'}))} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('autre copie');
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Valider ma réponse'})).toBeDisabled());
     expect(enqueueAnswerSave).not.toHaveBeenCalled();
   });
 

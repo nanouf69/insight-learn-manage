@@ -26,8 +26,8 @@ export function choisirTentativeRevision(base: string, rows: RevisionRowLike[]):
   const mine = rows
     .map((r) => ({ r, n: roundOf(base, String(r.exercice_id)) }))
     .filter((x): x is { r: RevisionRowLike; n: number } => x.n != null);
-  const enCours = mine.filter((x) => x.r.completed !== true).sort((a, b) => b.n - a.n)[0];
-  if (enCours) return enCours.r.exercice_id;
+  const latest = mine.sort((a, b) => b.n - a.n)[0];
+  if (latest && latest.r.completed !== true) return latest.r.exercice_id;
   if (mine.length === 0) return base;
   const max = Math.max(...mine.map((x) => x.n));
   return `${base}__r${max + 1}`;

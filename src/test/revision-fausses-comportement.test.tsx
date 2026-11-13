@@ -80,7 +80,7 @@ beforeEach(() => {
   cleanup();
   vi.clearAllMocks();
   h.rows = [{ exercice_id: base, completed: false }];
-  h.saved = null; h.insertError = null; h.inserts = []; h.tables = [];
+  h.saved = {reponses:{revisionState:creerRevisionProgressState({examenId:'EB2-TAXI',answers:{},currentIndex:0,correctedCount:0,correctedQuestions:[],showCorrection:false,questionOrder:order})}}; h.insertError = null; h.inserts = []; h.tables = [];
   vi.mocked(flushAnswerSavesAndWait).mockImplementation(async () => {
     const last = dernierPayload();
     if (last?.completed) h.saved = { reponses: last.reponses, score: last.score, completed: true };
@@ -90,7 +90,7 @@ beforeEach(() => {
 
 describe("Révision questions fausses — comportement", () => {
   it("une reprise utilise la version réellement relue avant toute nouvelle saisie", async () => {
-    h.saved = { reponses: {}, write_seq: 394, completed: false };
+    h.saved = { ...h.saved, write_seq: 394, completed: false };
     monter(); await screen.findByText("Question T3P");
     expect(primeKnownWriteSeq).toHaveBeenCalledWith("a1", base, 394);
     fireEvent.click(screen.getByText("Réponse B"));
