@@ -1,4 +1,5 @@
 # Shared Edge code
+- Prepared theoretical-exam reminders reference the existing suspension sender by identifier after J+7, without copying its HTML or invoking it; why: preserve one historical template and prevent an unverified campaign from sending.
 
 - Signature e-mail commune : `signatureEmail.ts` (`appliquerSignatureEmail`) doit être appliquée dans chaque transport d'envoi (`send-branded-email.ts` et tout envoi Resend direct) AVANT le pixel de suivi ; elle remplace une signature « Cordialement + FTRANSPORT » déjà en fin de corps au lieu de doubler ; jamais de signature sur les e-mails d'authentification (pipeline distinct) ; why: chaque mail sortant se termine par la signature bleue cursive FTRANSPORT Services Pro sans doublon.
 
