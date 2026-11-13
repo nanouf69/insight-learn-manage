@@ -14,8 +14,8 @@ export function apercuTexteEmail(valeur: string | null | undefined, max = 220): 
   s = s
     .replace(/<(style|script|head)[\s\S]*?(<\/\1>|$)/gi, " ")
     .replace(/<br\s*\/?>|<\/(p|div|li|tr|h[1-6])>/gi, " ")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/<[^>]*$/g, " ") // balise tronquée en fin d'aperçu
+    .replace(/<\/?[a-z!][^>]*>/gi, " ")
+    .replace(/<\/?[a-z][^>]*$/gi, " ") // balise tronquée en fin d'aperçu
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .replace(/&[a-z#0-9]+;/gi, (e) => ENTITES[e.toLowerCase()] ?? " ");
   return s.replace(/\s+/g, " ").trim().slice(0, max);
