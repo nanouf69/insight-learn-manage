@@ -56,6 +56,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
         // No server-frozen attestation-wide milestone proof exists in this model.
         // Never turn 98.9%, a module counter, or a client calculation into certification.
         preuve: null, elementsPedagogiques: ap.elementsPedagogiques, motifs: [...ap.motifs, ...manquants.filter(m => m !== "durée"), "Validation complète des jalons non certifiée"],
+        periodeElearning:ap.elearning?{derniere:ap.q.data?.pedagogie?.derniere??null,administrative:ap.q.data?.pedagogie?.administrative??null,minutes:ap.heures?.faites!=null?Math.round(ap.heures.faites*60):null,cibleMinutes:ap.heures?.minimum!=null?Math.round(ap.heures.minimum*60):null,achevee:false}:null,
       });
       setApercuPdf(blob);
     } catch (e) { toast({ title: "PDF impossible", description: e instanceof Error ? e.message : "Export interrompu", variant: "destructive" }); }
@@ -151,6 +152,7 @@ export function AttestationFinFormationTab({ apprenant }: { apprenant: any }) {
 
   return (
     <div className="space-y-4">
+      {ap.elearning && <section className="space-y-1 text-sm"><p>Dernière activité pédagogique prouvée : {ap.q.data?.pedagogie?.derniere?.split('-').reverse().join('/')??'Non vérifiée'}</p><p>Fin administrative prévue : {ap.q.data?.pedagogie?.administrative?.split('-').reverse().join('/')??'Non vérifiée'}</p><p className="text-muted-foreground">Les ouvertures de pages ne prouvent pas une lecture effective. Les attestations déjà signées restent inchangées.</p></section>}
       <div className="flex flex-wrap items-center gap-2">
         <div role="tablist" aria-label="Statut des attestations" className="flex flex-wrap gap-2">
           {(Object.keys(LIBELLES_FILTRE) as FiltreAttestation[]).map(f => (

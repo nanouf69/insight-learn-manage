@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 15:38 UTC — Dates pédagogiques attestation Léa CATANIA
+- [x] Cause 19/10 : connexion accueil de deux secondes figée dans attestation signée ; remise 13/10 confirmée, 38h11/60h, fin CRM actuelle 31/10. Aucun changement réel.
+- [x] Nouveau lecteur de remises scoppé + panneau/PDF période séparant activité/admin sans certifier fin ; chemin des signés conservé. Parcours partagent preview, autres modèles tracés.
+- [x] 26 tests PASS, lecture authentifiée dossier réel et PDF fictif A4 inspecté ; build OK, rapport docs/attestation-pedagogie-catania-2026-11-13.md.
+- [ ] Activation bloquée : provenance/version serveur des nouveaux envois, événement de lecture effective absent, exhaustivité reçus quiz et parité CRM/relevé stricts à qualifier ; rien publié.
+
 ## 13/11 15:31 UTC — Annuler et refaire une signature
 - [x] Action de revue par zone dans Documents PDF signés ; motif facultatif, confirmation ciblée, original affiché, aucune signature réelle annulée. Candidat annulation/reprise par propriétaire et projection indépendante.
 - [x] 21 tests PASS identité/droits simulés, multi-signataires/statuts, génération PDF original intact ; modale fictive PC/mobile inspectée, build OK, aucun transport réel branché.
