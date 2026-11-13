@@ -88,6 +88,28 @@ beforeEach(() => {
 });
 
 describe("Révision questions fausses — comportement", () => {
+  it("BENNANI : revient vers la réponse vide déjà cochée et permet de la compléter sans double score", async () => {
+    h.saved = { reponses: { revisionState: creerRevisionProgressState({
+      examenId: "EB2-TAXI", answers: { "t3p:1": [], "gestion:1": "texte" }, currentIndex: 1,
+      correctedCount: 1, correctedQuestions: order, showCorrection: true, questionOrder: order,
+    }) }, score: 1 };
+    const { onTerminer } = monter();
+    fireEvent.click(await screen.findByRole("button", { name: /Terminer la révision/ }));
+    await screen.findByText("Question T3P");
+    expect(screen.getByRole("alert")).toHaveTextContent("question 1 / 2");
+    expect(flushAnswerSavesAndWait).not.toHaveBeenCalled();
+    expect(onTerminer).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Réponse B"));
+    fireEvent.click(screen.getByRole("button", { name: "Valider ma réponse" }));
+    expect(dernierPayload().reponses.revisionState.correctedCount).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: /Question suivante/ }));
+    await screen.findByText("Question Gestion");
+    fireEvent.click(screen.getByRole("button", { name: "Valider ma réponse" }));
+    await new Promise(resolve => setTimeout(resolve, 450));
+    fireEvent.click(screen.getByRole("button", { name: /Terminer la révision/ }));
+    await waitFor(() => expect(onTerminer).toHaveBeenCalledTimes(1));
+    expect(h.saved.reponses.revisionState.answers).toEqual({ "t3p:1": ["B"], "gestion:1": "texte" });
+  });
   it("restaure la QRC, sa position et sa correction déjà validée", async () => {
     h.saved = { reponses: { revisionState: creerRevisionProgressState({
       examenId: "EB2-TAXI", answers: { "gestion:1": "brouillon QRC" }, currentIndex: 1,
