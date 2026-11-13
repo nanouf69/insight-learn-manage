@@ -56,6 +56,19 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
   const projection = projeterDecisionsPresence(rows || [], [], apprenantId);
   const total = projection.filter(r=>!r.annulee).reduce((sum, r) => sum + Math.round(Number(r.heures)*60), 0)/60;
 
+  const ouvrirDecision = async (id: string) => {
+    try {
+      const {data:userData,error:authError}=await supabase.auth.getUser();
+      const uid=userData?.user?.id;
+      if(authError||!uid)throw new Error('Session expirée');
+      const {data:role,error}=await supabase.from('user_roles').select('role').eq('user_id',uid).eq('role','admin').maybeSingle();
+      if(error||!role)throw new Error('Administrateur requis');
+      const p=projection.find(x=>x.id===id);
+      if(!p)return;
+      setCible({id:p.id,heures:Number(p.heures),date:p.date_presence,categorie:p.categorie,annulee:p.annulee,version:p.versionDecision});
+    }catch{toast.error('Accès administrateur vérifié requis : aucune heure modifiée');}
+  };
+
   const handleAdd = async () => {
     const value = Number(String(heures).replace(",", "."));
     if (!Number.isFinite(value) || value <= 0 || value > 500) {
@@ -148,7 +161,7 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
             <li key={r.id} className="flex flex-col gap-2 border-t py-3">
               <span className="break-words">{r.heures}h — {libelleHeureValidee(r)} ({format(new Date(r.createdAt), "HH:mm")})
               {r.motif ? ` — ${r.motif}` : " — motif non renseigné"}</span>
-              <Button variant="outline" size="sm" className="self-start" onClick={()=>{const p=projection.find(x=>x.id===r.id);setCible({id:r.id,heures:r.heures,date:r.datePresence,categorie:r.categorie,annulee:p?.annulee??false,version:p?.versionDecision??0});}}>
+              <Button variant="outline" size="sm" className="self-start" onClick={()=>void ouvrirDecision(r.id)}>
                 {projection.find(x=>x.id===r.id)?.annulee?<Undo2 className="mr-2 h-4 w-4"/>:<Trash2 className="mr-2 h-4 w-4"/>}{projection.find(x=>x.id===r.id)?.annulee?'Restaurer':'Supprimer'}
               </Button>
             </li>

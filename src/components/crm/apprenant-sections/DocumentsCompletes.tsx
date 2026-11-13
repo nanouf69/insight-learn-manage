@@ -178,6 +178,16 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    const refresh = (e: Event) => {
+      if ((e as CustomEvent).detail?.apprenantId !== apprenant.id) return;
+      void queryClient.invalidateQueries({queryKey:['apprenant-presence-heures',apprenant.id]});
+      void queryClient.invalidateQueries({queryKey:['relance-signatures-manquantes',apprenant.id]});
+    };
+    window.addEventListener(HEURES_VALIDEES_EVENT,refresh);
+    return()=>window.removeEventListener(HEURES_VALIDEES_EVENT,refresh);
+  },[apprenant.id,queryClient]);
+
   // Rafraîchissement temps réel : dès qu'un document d'inscription est ajouté/modifié
   // par l'apprenant (étape 1 du tunnel), on ré-hydrate l'onglet Formulaires.
   useEffect(() => {
