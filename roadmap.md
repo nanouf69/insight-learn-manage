@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 13/11 15:31 UTC — Annuler et refaire une signature
-- [ ] Préparer confirmation ciblée par zone/signataire, motif facultatif et conservation de l’original ; aucune signature réelle désignée ou annulée.
-- [ ] Tester journal/révisions, identité, permissions, multi-signataires, PDF et statuts ; transports réels déconnectés tant que journal serveur/stockage/restauration non prouvés.
-- [ ] Vérifier l’aperçu et préciser les limites d’activation sans publication.
+- [x] Action de revue par zone dans Documents PDF signés ; motif facultatif, confirmation ciblée, original affiché, aucune signature réelle annulée. Candidat annulation/reprise par propriétaire et projection indépendante.
+- [x] 21 tests PASS identité/droits simulés, multi-signataires/statuts, génération PDF original intact ; modale fictive PC/mobile inspectée, build OK, aucun transport réel branché.
+- [x] Rapport docs/signature-reprise-2026-11-13.md : pas de publication ni de migration ; date de capture insuffisante pour désigner un dossier.
+- [ ] Activation bloquée : association signataire Auth, repository DB atomique/journal immuable, archives/version PDF, restauration et lecteurs officiels à qualifier sur environnement isolé. Reprise UI réelle/émargements/modèles non raccordés.
 
 ## 13/11 15:23 UTC — Parcours présence bloqué
 - [x] Candidats SQL exact/journal immuable/rapprochement snapshot et dépôt PDF analysé/relu, projection par union ; message explicite de non-enregistrement. Aucun branchement réel.

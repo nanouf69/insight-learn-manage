@@ -18,6 +18,8 @@ La préparation UI concerne les PDF à zones de Documents. Attestations/modèles
 Point relevé en lecture : Documents possède déjà des actions de suppression et de renvoi qui ne constituent pas ce processus de révocation. Ne pas les utiliser pour refaire une signature enregistrée. Leur sécurisation globale n’est pas entreprise sans audit dédié ; aucune action destructive exécutée.
 
 ## Tests
-À compléter après exécution : règles identité/droits, archive PDF, absence de perte, multi-signataires, projection de statuts, confirmation UI ; tests isolés seulement.
+- 21 tests PASS / 3 fichiers : 19 règles simulées, confirmation sans transport, génération réelle de PDF avant/à refaire/après avec image autre signataire présente et octets de l’original inchangés.
+- Modale fictive avec session administrateur restaurée, PC 1280×1800 / mobile 390×844 : date Paris correcte, motif vide/renseigné, confirmation ciblée, bouton final désactivé ; captures inspectées. Ce n’est pas un flux serveur de révocation authentifié.
+- Build OK 15:34:50 UTC. Aucun test de migration, restauration DB, isolation Cloud ou révocation réelle revendiqué ; recalcul officiel et nouvelle signature UI complète restent NON PROUVÉS.
 
 **Non publié, non actif en production.** Activation après désignation certaine du dossier/zone, confirmation spécifique et preuve de journal/archives/restauration/lecteurs serveur ; la capture seule n’autorise aucune annulation.

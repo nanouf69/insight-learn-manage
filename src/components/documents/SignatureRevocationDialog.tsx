@@ -12,7 +12,7 @@ export function SignatureRevocationDialog({cible,onClose}:{cible:CibleSignatureR
  <img src={cible.image} alt="Signature originale conservée" className="w-full h-24 object-contain border border-border"/>
  <p className="text-sm">La preuve originale et son PDF seront conservés. Seule cette zone sera à refaire ; les autres signatures resteront inchangées.</p>
  <label className="text-sm space-y-1">Motif (facultatif)<Input aria-label="Motif (facultatif)" value={motif} onChange={e=>setMotif(e.target.value)} maxLength={200}/></label>
- <label className="flex items-start gap-2 text-sm"><Checkbox checked={confirme} onCheckedChange={v=>setConfirme(v===true)}/>Je confirme l’annulation de cette signature uniquement.</label>
+ <label className="flex items-start gap-2 text-sm"><Checkbox className="shrink-0 mt-0.5" checked={confirme} onCheckedChange={v=>setConfirme(v===true)}/>Je confirme l’annulation de cette signature uniquement.</label>
  <p role="status" className="text-sm text-destructive">Annulation indisponible : journal sécurisé et archive PDF non activés. Aucun changement ne sera enregistré.</p>
  <DialogFooter><Button variant="outline" onClick={onClose}>Conserver la signature</Button><Button disabled>Confirmer l’annulation</Button></DialogFooter></DialogContent></Dialog>;
 }
