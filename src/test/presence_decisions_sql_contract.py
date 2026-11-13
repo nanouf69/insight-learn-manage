@@ -58,7 +58,7 @@ class Decisions(unittest.TestCase):
   self.sql(f"INSERT INTO edof_fin_formation VALUES('{A}')")
   self.assertNotEqual(self.call(str(uuid.uuid4()),version=2).returncode,0)
   self.assertEqual(before,self.sql('SELECT to_jsonb(v) FROM presentiel_heures_validees v').stdout)
-  self.assertEqual(self.sql('SELECT count(*) FROM presentiel_validation_decisions').stdout.strip(),'2')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM presentiel_validation_decisions WHERE validation_id='{V}'").stdout.strip(),'2')
   self.assertEqual(others,self.sql('SELECT row_to_json(s) FROM signatures s;SELECT row_to_json(n) FROM notes n;SELECT row_to_json(c) FROM copies c').stdout)
   dump=subprocess.run(['pg_dump','-h',self.d,'-p','55489','-U','postgres','--no-owner'],env=self.env,text=True,capture_output=True,check=True).stdout
   self.sql('CREATE DATABASE restored')
