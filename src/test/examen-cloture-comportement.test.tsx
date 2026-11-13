@@ -248,6 +248,16 @@ describe("clôture d'une matière — comportement", () => {
     expect(h.noyauEnfile.every(r => r.attemptId === 'nouvelle')).toBe(true);
   });
 
+  it('HADDOU : ancienne projection renseignée, nouveau passage vide = aucune réponse empruntée', async () => {
+    preparerV2(); h.lectures = [ligne({1:['B']})]; h.reponsesNoyau = [];
+    const {onTerminer} = monter();
+    await screen.findByRole('button', {name: 'Terminer la matière'});
+    expect(h.noyauEnfile).toEqual([]);
+    fireEvent.click(screen.getByRole('button', {name: 'Terminer la matière'}));
+    expect(onTerminer).not.toHaveBeenCalled();
+    expect(terminales()).toEqual([]);
+  });
+
   it("une ancienne valeur serveur ne suffit pas : la dernière valeur locale est renvoyée et la clôture reste bloquée", async () => {
     preparerV2(["A"]); // serveur encore à A
     h.pendingNative = {1: ['B']}; // this attempt's unconfirmed tablet journal

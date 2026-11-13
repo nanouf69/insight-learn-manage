@@ -64,6 +64,21 @@ describe("Révision fausses — chemin publié tant que le serveur n'est pas ins
     expect(REVISION_FINALISATION_SERVEUR_ACTIVE).toBe(false);
   });
 
+  it('un brouillon de la tentative précédente est refusé sans écriture ni emprunt de réponse', async () => {
+    h.saved.reponses.revisionState.sourceResultIds = {'gestion:1':'older-copy'};
+    render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('autre copie');
+    expect(enqueueAnswerSave).not.toHaveBeenCalled(); expect(h.inserts).toEqual([]);
+  });
+
+  it('même nombre de questions mais source changée : invalide la reprise et relit', async () => {
+    const view=render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
+    await screen.findByText('Question Gestion');
+    view.rerender(<RevisionFausses wrongQuestions={wrongQuestions.map(q=>({...q,sourceResultId:'new-copy'}))} onTerminer={vi.fn()} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('autre copie');
+    expect(enqueueAnswerSave).not.toHaveBeenCalled();
+  });
+
   it("Terminer n'appelle jamais finaliser_revision_fausses et insère un seul résultat", async () => {
     const onTerminer = vi.fn();
     render(<RevisionFausses wrongQuestions={wrongQuestions} onTerminer={onTerminer} apprenantId="a1" userId="u1" examenId="EB2-TAXI" />);
