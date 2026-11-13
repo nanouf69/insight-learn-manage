@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 13:19 UTC — Audit note Sécurité routière Pogos SARKISIAN
+- [ ] SELECT : identité exacte, en-têtes du tableau, EB/session, copies/résultats/corrections et publication ; zéro écriture réelle.
+- [ ] Reproduction de la lecture, cause prouvée et proposition ; correctif aperçu seulement si défaut d’affichage confirmé, tests fictifs.
+- [ ] Rapport et preuves avant/après, aucune note/tentative/signature modifiée, aucun recalcul ou publication.
+
 ## 13/11 13:10 UTC — Signature tardive d’émargement (aperçu uniquement)
 - [x] Audit SELECT : date Paris égale aujourd’hui dans RPC/Edge, remplacement refusé, bouton passé divergent ; 30/10 : 12 matin + 12 après-midi signées, zéro autorisation exacte, aucune identité déduite.
 - [x] Aperçu confirmation/conservation des preuves et recherche exacte, flag OFF ; candidat SQL atomicité/journal + Edge PNG non branchés, aucune présence inventée ni remplacement.
