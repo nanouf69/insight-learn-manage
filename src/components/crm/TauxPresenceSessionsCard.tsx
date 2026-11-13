@@ -112,6 +112,7 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     window.addEventListener('focus',refresh);
     const channel=supabase.channel(`presence-heures-${apprenantId}-${crypto.randomUUID()}`)
       .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_heures_validees',filter:`apprenant_id=eq.${apprenantId}`},refresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_validation_decisions',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'presentiel_validation_decisions',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'emargements_fc',filter:`apprenant_id=eq.${apprenantId}`},refresh)
       .on('postgres_changes',{event:'*',schema:'public',table:'session_apprenants',filter:`apprenant_id=eq.${apprenantId}`},refresh).subscribe();

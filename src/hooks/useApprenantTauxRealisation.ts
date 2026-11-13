@@ -158,6 +158,7 @@ export function useApprenantTauxRealisation(apprenantId?: string, apprenantProp?
     // can mount concurrently while a previous removal is still asynchronous.
     const channel = supabase.channel(`taux-presence-${apprenantId}-${crypto.randomUUID()}`)
       .on("postgres_changes",{event:"*",schema:"public",table:"presentiel_heures_validees",filter:`apprenant_id=eq.${apprenantId}`},()=>queryClient.invalidateQueries({queryKey:["apprenant-taux-realisation",apprenantId]}))
+      .on("postgres_changes",{event:"*",schema:"public",table:"presentiel_validation_decisions",filter:`apprenant_id=eq.${apprenantId}`},()=>queryClient.invalidateQueries({queryKey:["apprenant-taux-realisation",apprenantId]}))
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"presentiel_validation_decisions",filter:`apprenant_id=eq.${apprenantId}`},()=>queryClient.invalidateQueries({predicate:q=>q.queryKey.includes(apprenantId)}))
       .on("postgres_changes", { event: "*", schema: "public", table: "emargements_fc", filter: `apprenant_id=eq.${apprenantId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["apprenant-taux-realisation", apprenantId] });
