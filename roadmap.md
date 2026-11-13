@@ -1,9 +1,11 @@
 # Feuille de route
 
 ## 13/11 09:56 UTC — HADDOU EB6 TAXI F/G et dernières réponses
-- [ ] Audit SELECT des résultats, réponses, chronomètres, passages/imports F/G et preuves exactes ; aucune écriture réelle.
-- [ ] Correctif aperçu des reprises : isoler les sources de copies et distinguer réponses serveur, brouillons non confirmés et corrigés actuels ; tests fictifs multi-tentatives/conflits/panne.
-- [ ] Rapport factuel, références à comparer et garde-fous ; publication NO-GO jusqu’aux preuves indispensables.
+- [x] Audit SELECT : deux passages natifs par matière, aucune importation/reçu ; dernier résultat t2 opposé à projection ancienne t1 sans suffixe, liaison legacy/V2 non univoque. Reset maintenu verrouillé ; aucune écriture réelle.
+- [x] Aperçu : réponses natives et file de leur seul attempt_id, aucune recopie/remappage implicite d’ancien passage ; projection révision distincte et refus des brouillons d’autres sources. 135 tests ciblés et 4 754 suite complète PASS/13 ignorés/0 FAIL, PC/mobile avec backend fictif, empreintes identiques et build OK.
+- [x] Rapport docs/haddou-eb6-fg-dernieres-reponses-2026-11-13.md avec références exactes sans réponses privées.
+- [ ] Liaison immuable legacy/V2 manquante : reset F/G non débloqué ; dernière révision multi-round par question non entièrement livrée (sources absentes bloquées, pas de rapprochement inventé).
+- [ ] Publication NO-GO : restauration complète et isolement public non prouvés, vrai compte élève non exercé ; polling préexistant 8 s à arbitrer séparément.
 
 ## 13/11 09:45 UTC — Boutons F(T)/G(T) TAXI
 - [x] Audit SELECT : F=reglementation_taxi, G=reglementation_taxi2 dans EB1–6 TAXI ; RPC présentes/droits authenticated, anon refusé ; aucun incident correspondant journalisé. Cause individuelle non prouvée sans identité/erreur ; aucune identité déduite.
