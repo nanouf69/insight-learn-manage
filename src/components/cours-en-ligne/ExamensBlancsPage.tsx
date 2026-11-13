@@ -3,6 +3,8 @@ import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { matierePedagogique, sourcePour, type CorrigeSource } from "@/lib/corrigesSources";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
 import { RevisionCorrigeVersionnee } from "./RevisionCorrigeVersionnee";
+import { useExamCurrentCorrection } from '@/hooks/useExamCurrentCorrection';
+import { ebRevisionSource } from '@/lib/ebRevisionSource';
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // Re-export all sub-components and utilities for backward compatibility
 // This file was split from the original monolithic ExamensBlancsPage.tsx
@@ -1896,13 +1898,36 @@ export function RevisionPhaseView({
   }, []);
 
   const officiels = useCorrigesSources(apprenantId, tousResultats.flatMap(r => r.__core?.attemptId ? [r.__core.attemptId] : []), tousResultats.flatMap(r => r.resultId ? [r.resultId] : []));
+  const currentCorrection = useExamCurrentCorrection(examenChoisi.id, apprenantId, true);
+  const [revisionCopies, setRevisionCopies] = useState<{key:string;results:ResultatMatiere[];error:string|null}|null>(null);
+  const copyKey = JSON.stringify([apprenantId, examenChoisi.id, tousResultats.map(r=>r.resultId)]);
+  useEffect(() => {
+    let alive = true, generation = 0;
+    const read = async () => {
+      const g = ++generation;
+      setRevisionCopies(null);
+      try {
+        const states = await fetchCoreMatiereStates(apprenantId);
+        if (!states) throw new Error('Les dernières réponses serveur ne sont pas confirmées.');
+        const results = tousResultats.map(r=>ebRevisionSource(r,examenChoisi.id,apprenantId,states));
+        if (alive && g === generation) setRevisionCopies({key:copyKey,results,error:null});
+      } catch(e) {
+        if(alive && g === generation) setRevisionCopies({key:copyKey,results:[],error:e instanceof Error?e.message:'Lecture impossible.'});
+      }
+    };
+    void read();
+    window.addEventListener('focus',read); window.addEventListener('online',read);
+    return ()=>{alive=false;generation++;window.removeEventListener('focus',read);window.removeEventListener('online',read);};
+  },[copyKey]);
+  if (revisionCopies?.key !== copyKey || revisionCopies.error || currentCorrection.error) return <div role="alert" className="text-destructive"><p>{revisionCopies?.error ?? (currentCorrection.error ? 'Corrigé actuel non confirmé.' : 'Lecture des dernières réponses serveur…')}</p><Button variant="outline" onClick={onRetour}>Retour aux résultats</Button></div>;
   const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
   examenChoisi.matieres.forEach((matiere, mi) => {
     if (!matiere || (!CORRIGES_TROIS_SURFACES_ACTIFS && (matiere.id === "francais" || matiere.id === "bilan_francais"))) return;
     // Résultat de CETTE matière (par identifiant, jamais par position).
-    const r = tousResultats.find((x) => x?.matiereId === matiere.id) ?? null;
+    const r = revisionCopies.results.find((x) => x?.matiereId === matiere.id) ?? null;
     if (!r) return;
-    const bilan = questionsFaussesDuPassage(matierePedagogique(matiere, r, officiels.map), r as any);
+    const currentSubject = currentCorrection.source?.exam.matieres.find(m=>m.id===matiere.id) ?? matiere;
+    const bilan = questionsFaussesDuPassage(matierePedagogique(currentSubject, r, officiels.map), r as any);
     const matiereDuPassage = { ...matiere, questions: bilan.fausses.map((f) => f.question) };
     bilan.fausses.forEach((f) => wrongQuestions.push({ matiere: matiereDuPassage, question: f.question, matiereNom: matiere.nom, sourceResultId: r.resultId, corrigeSource: sourcePour(officiels.map,r,matiere.id,f.question.id) }));
   });

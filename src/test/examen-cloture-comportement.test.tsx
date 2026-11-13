@@ -251,9 +251,9 @@ describe("clôture d'une matière — comportement", () => {
   it('HADDOU : ancienne projection renseignée, nouveau passage vide = aucune réponse empruntée', async () => {
     preparerV2(); h.lectures = [ligne({1:['B']})]; h.reponsesNoyau = [];
     const {onTerminer} = monter();
-    await screen.findByRole('button', {name: 'Terminer la matière'});
+    const finish = await screen.findByRole('button', {name: 'Terminer la matière (0/1)'});
     expect(h.noyauEnfile).toEqual([]);
-    fireEvent.click(screen.getByRole('button', {name: 'Terminer la matière'}));
+    fireEvent.click(finish);
     expect(onTerminer).not.toHaveBeenCalled();
     expect(terminales()).toEqual([]);
   });
