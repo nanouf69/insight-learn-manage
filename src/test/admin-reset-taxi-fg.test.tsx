@@ -1,0 +1,74 @@
+import {afterEach,expect,it,vi} from 'vitest';
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+const mocks=vi.hoisted(()=>({read:vi.fn(),authorize:vi.fn()}));
+vi.mock('@/lib/adminSubjectReset',()=>({readSubjectResetContext:mocks.read,authorizeSubjectReset:mocks.authorize}));
+import {ResetMatiereAdminButton,type ResetMatiereAdminTarget} from '@/components/crm/apprenant-sections/ResetMatiereAdminButton';
+const f:ResetMatiereAdminTarget={apprenantId:'fictif',prenom:'Élève',nom:'FICTIF',examId:'EB5-TAXI',examLabel:'EB5 TAXI',filiere:'taxi',matiereId:'reglementation_taxi',matiereNom:'F(T) - Réglementation nationale TAXI',resultId:'result-f'};
+const g={...f,matiereId:'reglementation_taxi2',matiereNom:'G(T) - Connaissance du territoire et réglementation locale TAXI',resultId:'result-g'};
+const ctx=(t:ResetMatiereAdminTarget)=>({apprenant_id:t.apprenantId,exam_id:t.examId,matiere_id:t.matiereId,filiere:t.filiere,learner_name:'Élève FICTIF',status:'notee',source_result_id:t.resultId,source_token:`source-${t.matiereId}`,version_token:'version',authorization_id:null});
+afterEach(()=>{cleanup();vi.resetAllMocks()});
+it.each([f,g])('confirms only $matiereId with both TAXI buttons present',async selected=>{
+ mocks.read.mockImplementation((_a,_e,s)=>Promise.resolve(ctx(s===f.matiereId?f:g)));
+ mocks.authorize.mockImplementation(c=>Promise.resolve({...c,authorization_id:'confirmed'}));
+ render(<><ResetMatiereAdminButton target={f}/><ResetMatiereAdminButton target={g}/></>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${selected.matiereNom}`}));
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeEnabled());
+ expect(mocks.read).toHaveBeenCalledWith('fictif','EB5-TAXI',selected.matiereId);
+ expect(mocks.authorize).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'Confirmer cette matière'}));
+ await waitFor(()=>expect(screen.getByRole('status')).toBeInTheDocument());
+ expect(mocks.authorize).toHaveBeenCalledTimes(1);
+ expect(mocks.authorize.mock.calls[0][0]).toEqual(ctx(selected));
+});
+it('read failure is retried without any authorization, then cancel preserves both subjects',async()=>{
+ mocks.read.mockRejectedValueOnce(new Error('Droits insuffisants.')).mockResolvedValueOnce(ctx(g));
+ render(<ResetMatiereAdminButton target={g}/>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${g.matiereNom}`}));
+ await screen.findByRole('alert');
+ expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('button',{name:'Relire cette matière'}));
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeEnabled());
+ fireEvent.click(screen.getByRole('button',{name:'Annuler'}));
+ expect(mocks.authorize).not.toHaveBeenCalled();
+ expect(mocks.read.mock.calls).toEqual([['fictif','EB5-TAXI','reglementation_taxi2'],['fictif','EB5-TAXI','reglementation_taxi2']]);
+});
+it('late F read cannot unlock G confirmation',async()=>{
+ let resolveF:(v:unknown)=>void=()=>{};
+ mocks.read.mockReturnValueOnce(new Promise(r=>resolveF=r)).mockResolvedValueOnce(ctx(g));
+ const {rerender}=render(<ResetMatiereAdminButton target={f}/>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${f.matiereNom}`}));
+ rerender(<ResetMatiereAdminButton target={g}/>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${g.matiereNom}`}));
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeEnabled());
+ resolveF(ctx(f));
+ await waitFor(()=>expect(screen.getByRole('alertdialog')).toHaveTextContent(g.matiereNom));
+ fireEvent.click(screen.getByRole('button',{name:'Confirmer cette matière'}));
+ await waitFor(()=>expect(mocks.authorize).toHaveBeenCalledTimes(1));
+ expect(mocks.authorize.mock.calls[0][0]).toEqual(ctx(g));
+});
+it.each(['en_cours','ambigu'])('keeps %s server protection for F',async status=>{
+ mocks.read.mockResolvedValue({...ctx(f),status,reason:'Revue manuelle requise'});
+ render(<ResetMatiereAdminButton target={f}/>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${f.matiereNom}`}));
+ await screen.findByRole('alert');
+ expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeDisabled();
+ expect(mocks.authorize).not.toHaveBeenCalled();
+});
+it('wrong result remains refused, never bypassed by read retry',async()=>{
+ mocks.read.mockResolvedValue({...ctx(f),source_result_id:'different'});
+ render(<ResetMatiereAdminButton target={f}/>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${f.matiereNom}`}));
+ await screen.findByRole('alert');
+ expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeDisabled();
+ expect(mocks.authorize).not.toHaveBeenCalled();
+});
+it('server authorization failure requires explicit reread before retry',async()=>{
+ mocks.read.mockResolvedValue(ctx(g));mocks.authorize.mockRejectedValue(new Error('Version modifiée'));
+ render(<ResetMatiereAdminButton target={g}/>);
+ fireEvent.click(screen.getByRole('button',{name:`Réinitialiser la matière : ${g.matiereNom}`}));
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeEnabled());
+ fireEvent.click(screen.getByRole('button',{name:'Confirmer cette matière'}));
+ await screen.findByRole('alert');
+ expect(screen.getByRole('button',{name:'Confirmer cette matière'})).toBeDisabled();
+ expect(mocks.authorize).toHaveBeenCalledTimes(1);
+});

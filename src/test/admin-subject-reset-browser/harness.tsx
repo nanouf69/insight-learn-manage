@@ -18,6 +18,10 @@ client.setQueryData(['examen-blanc-results-admin', 'fictif-only'], [{
   examenNum: 3, examenLabel: `Examen Blanc 3 — ${track.toUpperCase()}`, type: track, quizId,
   totalScore: 27, totalMax: 40, lastDate: '2026-11-01T12:00:00Z',
   results: [
+    ...(track==='taxi' ? [
+      {result_id:'fictif-f',quiz_id:quizId,matiere_id:'reglementation_taxi',matiere_nom:'F(T) - Réglementation nationale TAXI',score_obtenu:15,score_max:20,completed_at:'2026-11-01T12:00:00Z'},
+      {result_id:'fictif-g',quiz_id:quizId,matiere_id:'reglementation_taxi2',matiere_nom:'G(T) - Connaissance du territoire et réglementation locale TAXI',score_obtenu:8,score_max:20,completed_at:'2026-11-01T12:00:00Z'},
+    ] : []),
     { result_id: 'fictif-gestion', quiz_id: quizId, matiere_id: 'gestion', matiere_nom: 'B Gestion', score_obtenu: 15, score_max: 20, completed_at: '2026-11-01T12:00:00Z' },
     { result_id: 'fictif-anglais', quiz_id: quizId, matiere_id: 'anglais', matiere_nom: 'E Anglais', score_obtenu: 12, score_max: 20, completed_at: '2026-11-01T12:00:00Z' },
   ],
