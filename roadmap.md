@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 17:06 UTC — Lettre CMA ciblée
+- [x] Diagnostic lecture seule : sélection actuelle inclut tous les ajournés pratiques ; Calvo Enzo 03/11/2026 non, VTC, confirmation session absente.
+- [ ] Sélection confirmés session exacte + ajournés période précédente, catégories/territoires, dédoublonnage et libellés non trompeurs ; plan présenté avant modification.
+- [ ] Tests Calvo/cycles/régénération et rapport ; preuves historiques/territoire à qualifier. Aucun statut, envoi ou publication.
+
 ## 13/11 17:04 UTC — STOP périmètre TOTAL
 - [x] Lecture seule 90 dossiers TAXI/TA/VA, 174 inscriptions, 807 feuilles ; changements annexes désormais VTC-only, 90/90 projections identiques à l'avant-lot ; preuves inchangées.
 - [x] 73 tests PASS, build OK ; rapport par filière et CSV nominatif livrés. Non publié.
