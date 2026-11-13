@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 14:33 UTC — Durées PDF signatures manquantes
+- [x] Colonne durée, total exact en minutes, dates/horaires/formateur/signature manuscrite 53×30 mm conservés ; doublons exclus, total union des intervalles même date ; horaires inconnus signalés.
+- [x] 29 tests PASS/3 fichiers ; 5 pages converties/inspectées puis réinspection après correction de l'ordre matin/après-midi ; PDF réel CHERNI 390 min/3 créneaux A4 et téléchargements PC/mobile confirmés ; build OK, aucune écriture/publication.
+
 ## 13/11 14:26 UTC — Annulations individuelles et heures restant à signer
 - [x] Confirmation Supprimer/restaurer préparée, rôle relu et journal append-only candidat ; transport réel débranché, originaux préservés.
 - [x] 6h30 brut depuis trois créneaux, compteur à justifier distinct sans déduction date-only ; Documents distingue 33h30 signatures +4h net, 37h30/40 connu, contrat non prouvé.

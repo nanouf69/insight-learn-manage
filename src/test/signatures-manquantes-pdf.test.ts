@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { FORMATEUR_EMARGEMENT, lignesPdfSignaturesManquantes, generateSignaturesManquantesPdf } from '../lib/pdf/signatures-manquantes-pdf';
+import { FORMATEUR_EMARGEMENT, lignesPdfSignaturesManquantes, generateSignaturesManquantesPdf, totalPdfSignaturesManquantes } from '../lib/pdf/signatures-manquantes-pdf';
 import type { SignatureManquante } from '../lib/signaturesManquantes';
 
 const row = (date: string, creneau: string, extra: Partial<SignatureManquante> = {}): SignatureManquante => ({
@@ -8,6 +8,20 @@ const row = (date: string, creneau: string, extra: Partial<SignatureManquante> =
 });
 
 describe('PDF signatures manquantes : horaires + formateur', () => {
+  it('17/09 et 18/09 : 150+90+150 minutes = 6h30 pour 3 créneaux',()=>{
+    const rows=[row('2026-09-17','Soir 2',{horaires:'18h30-21h'}),row('2026-09-18','Soir 1',{horaires:'17h-18h30'}),row('2026-09-18','Soir 2',{horaires:'18h30-21h'})];
+    expect(lignesPdfSignaturesManquantes(rows).map(r=>r.minutes)).toEqual([150,90,150]);
+    expect(totalPdfSignaturesManquantes(rows)).toEqual({minutes:390,creneaux:3});
+  });
+  it('journée et pratique aux horaires réels, sans durée fixe',()=>expect(totalPdfSignaturesManquantes([row('2026-09-17','Matin',{horaires:'9h30-12h30'}),row('2026-09-17','Pratique',{horaires:'13h-17h'})]).minutes).toBe(420));
+  it('même date : ordre horaire matin puis après-midi',()=>expect(lignesPdfSignaturesManquantes([row('2026-09-17','Après-midi',{horaires:'13h-16h'}),row('2026-09-17','Matin',{horaires:'9h-12h'})]).map(r=>r.horaires)).toEqual(['9h-12h','13h-16h']));
+  it('duplication de session et créneaux chevauchants ne doublent pas le temps',()=>{
+    const a=row('2026-09-17','Pratique',{horaires:'9h-12h'});
+    expect(totalPdfSignaturesManquantes([a,a,row('2026-09-17','Matin',{horaires:'10h-12h'})])).toEqual({minutes:180,creneaux:2});
+  });
+  it('horaires absents : total inconnu, pas un zéro inventé',()=>expect(totalPdfSignaturesManquantes([row('2026-09-17','Matin')]).minutes).toBeNull());
+  it('conflit exact : impression refusée',()=>expect(()=>totalPdfSignaturesManquantes([row('2026-09-17','Matin',{horaires:'9h-12h'}),row('2026-09-17','Matin',{horaires:'9h-11h'})])).toThrow());
+  it('absence enregistrée conservée sur feuille mais exclue des heures à signer',()=>expect(totalPdfSignaturesManquantes([row('2026-09-17','Matin',{horaires:'9h-12h',etat:'absence_enregistree'})]).minutes).toBe(0));
   it('le formateur demandé est écrit sur la feuille', () => {
     expect(FORMATEUR_EMARGEMENT).toBe('Guenichi Naoufal');
   });
