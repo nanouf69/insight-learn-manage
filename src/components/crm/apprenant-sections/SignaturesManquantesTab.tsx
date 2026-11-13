@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { supabase } from '@/integrations/supabase/client';
 import { chargerSignaturesManquantes, chargerClassificationSignatures, dateDuJourParis, type SignatureManquante } from '@/lib/signaturesManquantes';
 import { creneauxRelancables, empreinteCreneauxRelance, preparerRelanceSignatures, resultatRelance, dateSignatureLisible } from '@/lib/relanceSignaturesManquantes';
+import { DetailHeuresNonSignees } from './CompteurHeuresNonSignees';
 
 interface Props {
   apprenant: { id: string; prenom?: string | null; nom?: string | null; email?: string | null };
@@ -102,6 +103,7 @@ export function SignaturesManquantesTab({ apprenant, demandeOuverture = 0 }: Pro
     </div>
     {query.isError ? <p role="alert" className="text-destructive">Signatures indisponibles : la relance est désactivée.</p> : query.isPending ? <p className="text-muted-foreground">Chargement des signatures…</p> : <>
       <p className="font-medium">{missing.length} signature(s) manquante(s)</p>
+      <DetailHeuresNonSignees rows={rows}/>
       {missing.length === 0 ? <p className="text-muted-foreground">Aucune signature à relancer.</p> : <ul className="divide-y border-y">{missing.map(row => <li className="py-3" key={`${row.date}|${row.creneau}`}><span className="font-medium">{dateSignatureLisible(row.date)} — {row.creneau}</span><p className="text-sm text-muted-foreground">{row.source}</p></li>)}</ul>}
       {absent.length > 0 && <div><h3 className="font-semibold">Absences enregistrées — hors relance ({absent.length})</h3>{absent.map(row => <p className="text-sm text-muted-foreground" key={`${row.date}|${row.creneau}`}>{dateSignatureLisible(row.date)} — {row.creneau}</p>)}</div>}
       {(query.data?.classification.anomalies.length ?? 0) > 0 && <div><h3 className="font-semibold">Anomalies à vérifier</h3>{query.data?.classification.anomalies.map((row, i) => <p className="text-sm text-muted-foreground" key={i}>{dateSignatureLisible(row.date)} — {row.creneau} — {row.detail}</p>)}</div>}
