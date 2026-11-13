@@ -195,6 +195,19 @@ describe("Stockage navigateur refusé, saturé ou inaccessible", () => {
   });
 });
 
+describe("Alerte dès l'ouverture", () => {
+  it("rechargement avec stockage refusé : l'état est « mémoire seule » avant toute nouvelle saisie", async () => {
+    local.refuseEcriture = true; session.refuseEcriture = true;
+    const A = await ouvrirOnglet();
+    expect(A.etatStockageFileNoyau()).toBe("memoire");
+  });
+  it("rechargement avec seul localStorage plein : repli « onglet » annoncé immédiatement", async () => {
+    local.refuseEcriture = true;
+    const A = await ouvrirOnglet();
+    expect(A.etatStockageFileNoyau()).toBe("session");
+  });
+});
+
 describe("Deux onglets du même navigateur", () => {
   it("chaque onglet garde les réponses de l'autre (aucun écrasement de la file partagée)", async () => {
     panne = true;
