@@ -1,0 +1,31 @@
+import { describe,it,expect } from 'vitest';
+import { ajouterCopiesNativesSession } from './copieRecenteSession';
+import { notesMatieresSession,noteGeneraleSession } from './notesSession';
+import type { CoreMatiereState } from '@/lib/coreExamPublication';
+import type { ExamenBlanc } from '@/components/cours-en-ligne/examens-blancs-data';
+const subjects=['t3p','gestion','securite','francais','anglais','reglementation_taxi','reglementation_taxi2'];
+const names=['A - T3P','B - Gestion','C - Sécurité routière','D - Français','E - Anglais','F(T) - Nationale','G(T) - Locale'];
+const def={id:'EB6-TAXI',numero:6,type:'TAXI',titre:'EB6 TAXI',matieres:subjects.map((id,i)=>({id,nom:names[i],coefficient:[3,2,3,2,1,3,3][i],noteSur:20,noteEliminatoire:6,questions:[]}))} as unknown as ExamenBlanc;
+const rows=subjects.filter(id=>id!=='securite').map(id=>({id:`receipt-${id}`,apprenant_id:'learner',quiz_id:def.id,quiz_type:'examen_blanc',matiere_id:id,matiere_nom:names[subjects.indexOf(id)],completed_at:'2026-11-13T10:00:00Z',details:{},__core:{note20:({t3p:8.5,gestion:10,francais:6,anglais:11,reglementation_taxi:14.5,reglementation_taxi2:11.5} as Record<string,number>)[id],pending:false,noteEliminatoire:6,noteSur:20}}));
+const state:CoreMatiereState={attemptId:'security-attempt',apprenantId:'learner',examId:def.id,matiereId:'securite',matiereNom:names[2],finishedAt:'2026-11-13T09:37:59.635544Z',note20:12,status:'definitif',pending:false,qrcTotal:0,qrcRestantes:0,questions:[{id:'securite:1',type:'QCM',enonce:'Question figée',points:1,choix:[{lettre:'A',texte:'Oui',correct:true}]}],answers:{'securite:1':['A']}};
+const project=(extra:Partial<CoreMatiereState>={},unreliable=new Set<string>())=>ajouterCopiesNativesSession(rows,[{...state,...extra}],unreliable,'learner',[def]);
+describe('Matière V2 remise sans fiche historique',()=>{
+ it('reproduit six sur sept et ajoute Sécurité à 12 sans écrire',()=>{
+  expect(noteGeneraleSession(def,rows)).toMatchObject({etat:'incomplet',couverture:'6/7'});
+  const before=JSON.stringify({rows,state});const result=project();
+  expect(notesMatieresSession(def,result).securite).toEqual({etat:'definitif',note:12});
+  expect(noteGeneraleSession(def,result)).toMatchObject({etat:'definitif',note:10.7});
+  expect(JSON.stringify({rows,state})).toBe(before);expect(result.at(-1)?.id).toBe('security-attempt');
+ });
+ it('aucun passage reste non passé sans inventer une note',()=>expect(notesMatieresSession(def,ajouterCopiesNativesSession(rows,[],new Set(),'learner',[def])).securite).toEqual({etat:'non_passe',note:null}));
+ it('autre compte ne donne pas de note',()=>expect(project({apprenantId:'other'})).toHaveLength(6));
+ it('autre examen ne donne pas de note',()=>expect(project({examId:'EB6'})).toHaveLength(6));
+ it('matière sans identité exacte jamais rapprochée au nom C',()=>expect(project({matiereId:'other'})).toHaveLength(6));
+ it('passage neutralisé reste exclu',()=>expect(project({neutralise:true})).toHaveLength(6));
+ it('fin invalide ne prouve pas une remise',()=>expect(project({finishedAt:'invalid'})).toHaveLength(6));
+ it('publication en attente ne récupère pas une autre note',()=>expect(notesMatieresSession(def,project({pending:true,status:'provisoire',note20:null})).securite).toEqual({etat:'attente',note:null}));
+ it('contenu absent reste indisponible',()=>expect(notesMatieresSession(def,project({questions:[]})).securite).toEqual({etat:'indisponible',note:null}));
+ it('preuve non fiable reste indisponible',()=>expect(notesMatieresSession(def,project({},new Set(['security-attempt']))).securite).toEqual({etat:'indisponible',note:null}));
+ it('copie existante jamais dupliquée',()=>{const once=project();expect(ajouterCopiesNativesSession(once,[state],new Set(),'learner',[def])).toHaveLength(7);});
+ it('zéro définitif reste zéro',()=>expect(notesMatieresSession(def,project({note20:0})).securite).toEqual({etat:'definitif',note:0}));
+});

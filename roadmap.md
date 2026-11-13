@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 13:19 UTC — Audit note Sécurité routière Pogos SARKISIAN
+- [x] SELECT : EB6 TAXI C/securite, 20 QCM remis, 12/20 définitif publié 09:38:02 UTC ; fiche secondaire absente, six autres valeurs correspondent exactement. Zéro écriture réelle.
+- [x] Correctif lecture seule aperçu : projection exacte de matière native sans fiche, aucune création de résultat ; 54 tests PASS, PC admin réel 12/20 et moyenne 10,7 définitive, build OK.
+- [x] Rapport docs/sarkisian-securite-eb6-audit-2026-11-13.md, empreintes avant/après identiques ; aucune note/tentative/signature modifiée, aucun recalcul enregistré ni publication.
+- [ ] Mobile visuel/compte élève direct non prouvés ; capture masquée par menu, aucun compte élève dédié autorisé. Site publié inchangé, diffusion attend accord explicite.
+
 ## 13/11 13:10 UTC — Signature tardive d’émargement (aperçu uniquement)
 - [x] Audit SELECT : date Paris égale aujourd’hui dans RPC/Edge, remplacement refusé, bouton passé divergent ; 30/10 : 12 matin + 12 après-midi signées, zéro autorisation exacte, aucune identité déduite.
 - [x] Aperçu confirmation/conservation des preuves et recherche exacte, flag OFF ; candidat SQL atomicité/journal + Edge PNG non branchés, aucune présence inventée ni remplacement.

@@ -1,6 +1,7 @@
 import type { CoreMatiereState } from '@/lib/coreExamPublication';
 import { CORE_LECTURE_IMPOSSIBLE } from '@/lib/noteExamenAffichee';
 import { nativeResultMatchesAnswers, nativeSnapshotSupportsResult } from '@/lib/nativeExamResultIdentity';
+import { buildMatiereLookupKeys, findScoreForMatiere } from '@/components/cours-en-ligne/examens-blancs-utils';
 
 /** Read-only projection of an actual submitted attempt, never a linkage to legacy answers. */
 export function copieRecenteSession<T extends Record<string, any>>(row:T,states:CoreMatiereState[],nonFiables:Set<string>):T {
@@ -25,4 +26,29 @@ export function copieRecenteSession<T extends Record<string, any>>(row:T,states:
     __core:impossible?CORE_LECTURE_IMPOSSIBLE:latest,
     __noteRecalculee:false,__doublonConcordant:undefined,__copieSessionAttemptId:latest.attemptId,
   };
+}
+
+/** Add only an exact, server-owned submitted subject absent from legacy receipts.
+ * This is a display row keyed by attempt ID, not a new result or inferred linkage. */
+export function ajouterCopiesNativesSession(rows:any[],states:CoreMatiereState[],nonFiables:Set<string>,apprenantId:string,definitions:Array<{id:string;matieres:Array<{id:string;nom:string}>}>):any[] {
+  const out=[...rows];
+  for(const def of definitions) for(const subject of def.matieres) {
+    const examRows=out.filter(r=>r.quiz_id===def.id&&r.apprenant_id===apprenantId);
+    const existing=findScoreForMatiere(examRows.map(r=>({...r,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)})),subject);
+    if(existing)continue;
+    const candidates=states.filter(s=>s.apprenantId===apprenantId&&!s.neutralise&&s.examId===def.id&&s.matiereId===subject.id&&Number.isFinite(Date.parse(s.finishedAt)));
+    const latest=[...candidates].sort((a,b)=>Date.parse(b.finishedAt)-Date.parse(a.finishedAt)||b.attemptId.localeCompare(a.attemptId))[0];
+    if(!latest)continue;
+    const native=latest.resultId==null;
+    // Incomplete identity/content remains unavailable, never non-passed or zero.
+    const proven=native&&nativeSnapshotSupportsResult(latest.questions)&&Array.isArray(latest.questions)
+      &&new Set(latest.questions.map(q=>q.id)).size===latest.questions.length
+      &&latest.questions.every(q=>typeof q.id==='string'&&q.id.startsWith(`${subject.id}:`))
+      &&latest.answers!==undefined&&Object.keys(latest.answers).every(id=>latest.questions?.some(q=>q.id===id))
+      &&(latest.qrcTotal===0||latest.qrcProofs?.length===latest.qrcTotal);
+    const rejected=new Set(nonFiables);if(!proven)rejected.add(latest.attemptId);
+    const seed={id:latest.attemptId,apprenant_id:apprenantId,quiz_id:def.id,quiz_type:'examen_blanc',matiere_id:subject.id,matiere_nom:subject.nom,completed_at:latest.finishedAt,details:{},__projectionNativeSansFiche:true};
+    out.push(copieRecenteSession(seed,[latest],rejected));
+  }
+  return out;
 }
