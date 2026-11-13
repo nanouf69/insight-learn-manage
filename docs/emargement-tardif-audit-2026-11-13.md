@@ -12,7 +12,7 @@
 
 ## Cas 30/10/2026 matin, contrôle anonyme
 Lecture agrégée : 12 lignes matin, 12 après-midi ; les 24 ont une signature, aucune absence ni ligne masquée ni ligne vide. **Cela ne prouve pas que tous les inscrits ont signé**, car une feuille peut ne pas encore exister. Zéro autorisation de régularisation listant exactement le 30/10 matin. Aucun nom ni réponse personnelle extrait.
-Empreinte contrôle des 24 lignes : `49af82c50011f92ccc09c59a6f4b0e9e` ; contrôle final prévu avant conclusion. Le compte de la capture et son inscription restent inconnus.
+Empreinte contrôle des 24 lignes : `49af82c50011f92ccc09c59a6f4b0e9e` ; contrôle final identique, 24 lignes conservées. Le compte de la capture et son inscription restent inconnus.
 
 ## Liens, session et accès
 La page `/emargements-regularisation/:id` exige la connexion ; connaître son adresse ne donne aucun droit. L’Edge valide le jeton par `auth.getUser`. L’autorisation contient sa propre expiration, distincte de celle du jeton et de la fin des cours. Reconnexion ≠ renouvellement d’autorisation. La fin de session ne doit pas, seule, interdire une présence passée autorisée ; annulation, exclusion, attente et absence restent opposables.
@@ -36,7 +36,7 @@ La base timestamptz empêche ordinairement une date d’expiration invalide ; le
 5. Envoi isolé single-flight préparé et testé, sans rejeu automatique après livraison inconnue. Aucun mail de test ni faux émargement créé en production.
 
 ## Tests réellement exécutés
-- 26 Vitest PASS : choix compte/dossier/date/créneau, passé/futur, label tardif Paris, horodatage absent, double clic, erreur sans rejeu, fenêtres −30 min et anciennes autorisations.
+- 62 Vitest PASS (8 fichiers, contrôle final) : choix compte/dossier/date/créneau, passé/futur, label tardif Paris, horodatage absent, double clic, erreur sans rejeu, fenêtres −30 min, anciennes autorisations et régressions agenda/ouverture/preuves/attente.
 - 25 tests PostgreSQL existants PASS sur cluster jetable : droits d’inscription, dates, pratique, matin/soir, historique protégé et refus passé sans autorisation.
 - 26 tests PostgreSQL candidat PASS : cas 30/10 matin, après-midi indépendant, compte/dossier/créneau faux, futur, expiration, présence/identité manquantes, signature invalide, attente/exclusion/annulation, e-learning, bonne session, ligne masquée, signature/absence existante intacte, RLS/journal, concurrence réelle deux connexions = une seule preuve et un seul journal.
 - 6 Deno PASS : PNG réellement tracé, vierge, illisible, absence, identité/presence manquantes. `deno check` PASS.
