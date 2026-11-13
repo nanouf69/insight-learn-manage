@@ -18,7 +18,7 @@ const refusNul = (requestId: string, code: string, message: string, status = 422
 // de plus récent n'est jamais écrasé. Les clés égales à la valeur enregistrée
 // ne sont plus signalées comme conflit (le serveur détient déjà cette valeur).
 type LigneJournal = { question_id: string; valeur: unknown; user_id: string | null; client_saved_at: string | null; created_at: string };
-export function choisirDernierClic(
+function choisirDernierClic(
   candidats: string[],
   reponses: Record<string, unknown>,
   lignes: LigneJournal[],
