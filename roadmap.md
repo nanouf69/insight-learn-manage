@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 08:49 UTC — Correction visible Q3 EB5 VTC
+- [x] Audit SELECT : éditeur 90004 et publication EB5 v10 portent C « 4 minutes » ; 53 snapshots portent C « 8 minutes ». Realtime exam_content_versions absent.
+- [ ] Préparer affichage séparé du corrigé actuel avec identité/contenu prouvés, notifications sans polling, copies/notes intactes.
+- [ ] Tests fictifs et rapport ; aucune écriture réelle ni publication. Restauration complète demeure NON PROUVÉE.
+
 ## 12/11 23:19 UTC — Qualification publication conditionnelle stabilisation
 - [x] Comparaison site public/HEAD : 12 fichiers, trois fichiers applicatifs ; location/attestation absentes du delta, SQL auto-QRC de revue non installé constaté.
 - [x] 77 tests ciblés, suite globale 4 680 réussis/3 échecs ; fixture manquante reconstituée sur cluster jetable (5 SQL + 2 lecteurs PASS), deux échecs textuels restent.
