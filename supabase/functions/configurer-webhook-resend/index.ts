@@ -15,7 +15,8 @@ Deno.serve(async (req) => {
   const { data: u } = await sb.auth.getUser(jeton);
   if (!u?.user) return json({ error: "connexion requise" }, 401);
   const { data: role } = await sb.from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
-  if (!role) return json({ error: "réservé aux administrateurs" }, 403);
+  const { data: prof } = await sb.from("profiles").select("role").eq("id", u.user.id).maybeSingle();
+  if (!role && prof?.role !== "admin") return json({ error: "réservé aux administrateurs" }, 403);
 
   const { data: existant } = await sb.from("resend_webhook_config").select("webhook_id").eq("id", 1).maybeSingle();
   if (existant) return json({ etat: "deja_configure", webhook_id: existant.webhook_id });
