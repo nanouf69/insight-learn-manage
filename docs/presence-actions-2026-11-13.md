@@ -8,8 +8,8 @@
 - Total des inscriptions connues : **40h théorie, 0h pratique inscrite**. Heures individuelles et heures session configurées NULL, aucun contrat enregistré retrouvé : 40h est le défaut soir, pas une durée contractuelle certifiée. Aucune nouvelle modification du dénominateur dans ce chantier.
 
 ## Aperçu livré
-- Bouton **Supprimer** individuel, contrôle de rôle administrateur fraîchement relu, confirmation détaillée, motif obligatoire ; aucune destruction. Dialogue/restauration et contrôleur testés avec transport fictif exact, double-clic protégé.
-- **Transport réel volontairement débranché**. La confirmation réelle est désactivée, avec motif visible. L'interface ne simule jamais une annulation sur les données réelles.
+- Mise à jour 15:19 UTC : **Supprimer** ouvre « Êtes-vous sûr de vouloir supprimer ces heures de présence ? », boutons **Annuler** et **Oui, supprimer**, sans motif demandé. L'identité de la ligne reste visible ; le contrôleur attribue automatiquement un libellé technique d'audit, conserve operationId/CAS et exige un retour exact avant actualisation. Le motif de restauration reste distinct et inchangé.
+- **Transport réel volontairement débranché** : journal sécurisé non installé/vérifié. La confirmation réelle reste désactivée ; aucune annulation ni recalcul fictif des données réelles. Le transport simulé prouve uniquement la confirmation ciblée et la projection des compteurs.
 - SQL de revue séparé : journal append-only, RLS admin SELECT, RPC admin scoped dossier/validation, CAS version, horloge serveur, idempotence operation_id, update/delete refusés ; dossiers EDOF/relevés protégés refusés. Rien installé.
 - Compteurs et détail présents dans Documents et Signatures manquantes, erreurs/durées inconnues explicites. Bloc Documents utilise la même projection minutes que le taux CRM. Événement local après confirmation invalide les seuls calculs du dossier.
 
