@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 17:29 UTC — Présence retenue détaillée
+- [ ] Union exacte des créneaux justifiés, détail séparé des validations manuelles, plafond et actualisation des lecteurs.
+- [ ] Tests et lecture CHERNI sans écriture ; parité élève à qualifier selon droits existants. Aucune publication.
+
 ## 13/11 17:06 UTC — Lettre CMA ciblée
 - [x] Diagnostic lecture seule : sélection actuelle inclut tous les ajournés pratiques ; Calvo Enzo 03/11/2026 non, VTC, confirmation session absente.
 - [x] Projection préparée confirmés exacts + ajournés période précédente, dédoublonnage, libellés distincts, lectures paginées et relecture génération ; 41 tests PASS, vérification module dans Chromium, rapport docs/cma-lettre-selection-2026-11-13.md.
