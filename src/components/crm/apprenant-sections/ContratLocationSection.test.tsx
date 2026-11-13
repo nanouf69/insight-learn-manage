@@ -43,7 +43,7 @@ describe('rental integration fixtures',()=>{
  it('prefills every learner without a completed welcome document',async()=>{
   h.noWelcome=true;
   render(<ContratLocationSection apprenant={{id:'learner-fictif',nom:'Martin',prenom:'Lea',email:'lea@example.test',telephone:'0102030405',adresse:'12 rue Test',code_postal:'69003',ville:'Lyon',date_naissance:'1990-06-15'}}/>);
-  await waitFor(()=>expect(screen.queryByRole('status')).toBeNull());
+  await waitFor(()=>expect(screen.queryByText('Lecture du dossier et du parc…')).toBeNull());
   expect(screen.getByLabelText('Nom et Prénom')).toHaveProperty('value','Lea Martin');
   expect(screen.getByLabelText('Adresse complète')).toHaveProperty('value','12 rue Test, 69003, Lyon');
   expect(screen.getByLabelText('Date de naissance')).toHaveProperty('value','1990-06-15');
@@ -60,7 +60,7 @@ describe('rental integration fixtures',()=>{
   const {rerender}=render(<ContratLocationSection apprenant={learner}/>);
   fireEvent.change(await screen.findByDisplayValue('Mamadou Sow'),{target:{value:'Local edit'}});
   rerender(<ContratLocationSection apprenant={{id:'second-fictif',nom:'Durand',prenom:'Paul',email:'paul@example.test'}}/>);
-  await waitFor(()=>expect(screen.queryByRole('status')).toBeNull());
+  await waitFor(()=>expect(screen.queryByText('Lecture du dossier et du parc…')).toBeNull());
   expect(screen.getByLabelText('Nom et Prénom')).toHaveProperty('value','Paul Durand');
   expect(screen.getByLabelText('E-mail')).toHaveProperty('value','paul@example.test');
   expect(screen.queryByDisplayValue('Local edit')).toBeNull();
