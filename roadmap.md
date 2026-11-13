@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 09:08 UTC — Urgence BENNANI et signatures après formation
+- [ ] BENNANI : diagnostic réel SELECT, sauvegarde/finalisation révision, correctif aperçu et régressions sans écriture réelle.
+- [ ] Signatures après formation : préciser attestation ou régularisation de présence, conserver dates réelles et preuves.
+- [ ] Publication bloquée par sauvegarde/restauration non prouvées ; aucune publication ni migration réelle.
+
 ## 13/11 08:49 UTC — Correction visible Q3 EB5 VTC
 - [x] Audit SELECT : éditeur 90004 et publication EB5 v10 portent C « 4 minutes » ; 53 snapshots portent C « 8 minutes ». Realtime exam_content_versions absent.
 - [x] Affichage distinct du corrigé administrateur enregistré, identité exacte/aucune association de réponse sur texte modifié, événements sans nouveau polling ; copies/notes intactes.
