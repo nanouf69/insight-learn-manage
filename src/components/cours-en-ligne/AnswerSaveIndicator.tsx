@@ -22,7 +22,14 @@ import {
  * Indicateur honnête de l'état d'enregistrement des réponses.
  * Tant que le serveur n'a pas confirmé, on n'affiche jamais « enregistré ».
  */
-export function AnswerSaveIndicator({ className = "" }: { className?: string }) {
+export function AnswerSaveIndicator({
+  className = "",
+  noyau = null,
+}: {
+  className?: string;
+  /** File du noyau V2 : tant qu'une réponse y attend, jamais « Sauvegardé ». */
+  noyau?: { enAttente: number; stockage: "durable" | "session" | "memoire" } | null;
+}) {
   const [state, setState] = useState<AnswerSaveState>("idle");
   const [pending, setPending] = useState(0);
   const [pendingAnswers, setPendingAnswers] = useState(0);
@@ -39,7 +46,7 @@ export function AnswerSaveIndicator({ className = "" }: { className?: string }) 
   const [rejection, setRejection] = useState<AnswerSaveRejection | null>(null);
   useEffect(() => onAnswerSaveRejected((r) => setRejection(r)), []);
 
-  const view = getAnswerSaveIndicatorView({ state, pendingAnswers, saturated, rejection });
+  const view = getAnswerSaveIndicatorView({ state, pendingAnswers, saturated, rejection, noyau });
   const identityBlocked = rejection?.reason === "identity";
   const blocker = identityBlocked ? (
     <AlertDialog open>
