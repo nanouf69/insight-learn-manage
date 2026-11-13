@@ -1905,6 +1905,13 @@
       "when": 1794407406859,
       "tag": "0271_qualiopi_liens_cpf",
       "breakpoints": true
+    },
+    {
+      "idx": 272,
+      "version": "7",
+      "when": 1794586725680,
+      "tag": "0272_presence_lot_operationnel",
+      "breakpoints": true
     }
   ]
 }

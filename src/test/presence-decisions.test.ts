@@ -37,7 +37,7 @@ describe('Présence réversible, preuves et heures non signées',()=>{
   const send=creerControleDecisionPresence(async()=>({...d,apprenant_id:'b'}));
   await expect(send({operationId:'op',apprenantId:'a',validationId:'h2',version:0,action:'annuler',motif:'Erreur saisie'})).rejects.toThrow(/non confirmée/);
  });
- it('production inactive',()=>expect(PRESENCE_REVOCATIONS_ACTIVE).toBe(false));
+ it('journal installé : annulation réelle branchée',()=>expect(PRESENCE_REVOCATIONS_ACTIVE).toBe(true));
  it('motif vide accepté pour révocation, audit automatique et calcul ciblé confirmés',async()=>{
   const transport=vi.fn(async()=>d);
   const confirmed=await creerControleDecisionPresence(transport)({operationId:'op-sans-motif',apprenantId:'a',validationId:'h2',version:0,action:'annuler',motif:''});
