@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Car, FileDown, Eye, RefreshCw, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicule, pointsVehicule, type VehiculeLocation } from "@/lib/contratLocation";
+import { clauseSansCaution, conditionsDepot, coordonneesFicheLocation, coordonneesLocation, detailsVehicule, pointsVehicule, type VehiculeLocation } from "@/lib/contratLocation";
 import { A_RENSEIGNER, LIB_GARANTIE, VERSION_CONTRAT_LOCATION, annexeAssurance, annexePieces, articleDepot, blocagesVersionASigner, articleDommages, articleLitiges, articleRestitution, articleVol, assuranceVide, blocagesSignature, type AssuranceLocation, type Regime, type Tri } from "@/lib/contratLocationClauses";
 import { STATUT_LOCATION_NON_AUTORISEE, assuranceDepuisPolice, blocagesPolice, blocagesPoliceVersionASigner, statutAssuranceLocation, lignesAnnexePolice, perimetreVide, policePourVehicule, type PerimetreValide } from "@/lib/assurancesVehicules";
 import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.md?raw";
@@ -35,6 +35,7 @@ export function ContratLocationSection({ apprenant }: Props) {
 
 function ContratLocationForm({ apprenant }: Props) {
   const today = format(new Date(), "yyyy-MM-dd");
+  const ficheContact = coordonneesFicheLocation(apprenant, apprenant.id);
   const contactsTouched = useRef(false);
   const [sourceBienvenue, setSourceBienvenue] = useState("");
   const [lectureErreur, setLectureErreur] = useState("");
@@ -49,11 +50,11 @@ function ContratLocationForm({ apprenant }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   // Locataire (pré-rempli depuis l'apprenant)
-  const [nomComplet, setNomComplet] = useState("");
-  const [dateNaissance, setDateNaissance] = useState<string>("");
-  const [adresse, setAdresse] = useState<string>("");
-  const [telephone, setTelephone] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
+  const [nomComplet, setNomComplet] = useState(ficheContact?.nomComplet ?? "");
+  const [dateNaissance, setDateNaissance] = useState<string>(ficheContact?.dateNaissance ?? "");
+  const [adresse, setAdresse] = useState<string>(ficheContact?.adresse ?? "");
+  const [telephone, setTelephone] = useState<string>(ficheContact?.telephone ?? "");
+  const [email, setEmail] = useState<string>(ficheContact?.email ?? "");
   const [numPermis, setNumPermis] = useState("");
   const [dateDelivrancePermis, setDateDelivrancePermis] = useState("");
   const [prefecturePermis, setPrefecturePermis] = useState("");
@@ -134,16 +135,19 @@ function ContratLocationForm({ apprenant }: Props) {
         const { data: current } = await supabase.auth.getSession();
         if (!alive || current.session?.user.id !== owner) return;
         const errors: string[] = [];
-        if (welcome.error) errors.push("Dossier de bienvenue indisponible : aucun préremplissage effectué.");
+        if (welcome.error) errors.push("Dossier de bienvenue indisponible : seules les coordonnées de la fiche apprenant sont préremplies.");
         else {
           const row = (welcome.data as unknown as ContactRow[] | null)?.[0];
           const contact = row ? coordonneesLocation({ ...row, donnees: row }, apprenant.id) : null;
-          if (!contact) errors.push("Aucun dossier de bienvenue complété et identifiable : coordonnées à compléter.");
+          if (!contact) setSourceBienvenue("Coordonnées issues de la fiche apprenant · informations manquantes à compléter.");
           else {
             setSourceBienvenue(`Dossier de bienvenue complété le ${new Date(contact.completedAt).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · ${contact.sourceId}`);
             if (!contactsTouched.current) {
-              setNomComplet(contact.nomComplet); setEmail(contact.email); setTelephone(contact.telephone);
-              setAdresse(contact.adresse); setDateNaissance(contact.dateNaissance);
+              setNomComplet(contact.nomComplet || ficheContact?.nomComplet || "");
+              setEmail(contact.email || ficheContact?.email || "");
+              setTelephone(contact.telephone || ficheContact?.telephone || "");
+              setAdresse(contact.adresse || ficheContact?.adresse || "");
+              setDateNaissance(contact.dateNaissance || ficheContact?.dateNaissance || "");
             }
           }
         }
@@ -550,24 +554,24 @@ function ContratLocationForm({ apprenant }: Props) {
         <div className="space-y-3" onChangeCapture={() => { contactsTouched.current = true; }}>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Locataire</h3>
           <div className="space-y-2">
-            <Label>Nom et Prénom</Label>
-            <Input value={nomComplet} onChange={(e) => setNomComplet(e.target.value)} />
+            <Label htmlFor="location-nom">Nom et Prénom</Label>
+            <Input id="location-nom" value={nomComplet} onChange={(e) => setNomComplet(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Date de naissance</Label>
-            <Input type="date" value={dateNaissance} onChange={(e) => setDateNaissance(e.target.value)} />
+            <Label htmlFor="location-naissance">Date de naissance</Label>
+            <Input id="location-naissance" type="date" value={dateNaissance} onChange={(e) => setDateNaissance(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Adresse complète</Label>
-            <Input value={adresse} onChange={(e) => setAdresse(e.target.value)} />
+            <Label htmlFor="location-adresse">Adresse complète</Label>
+            <Input id="location-adresse" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Téléphone</Label>
-            <Input value={telephone} onChange={(e) => setTelephone(e.target.value)} />
+            <Label htmlFor="location-telephone">Téléphone</Label>
+            <Input id="location-telephone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>E-mail</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Label htmlFor="location-email">E-mail</Label>
+            <Input id="location-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>N° de permis (catégorie B)</Label>

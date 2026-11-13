@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 10:51 UTC — Préremplir les contrats de location de tous les apprenants
+- [x] Coordonnées de la fiche CRM dès l’ouverture, même sans dossier de bienvenue ; dossier complété du même apprenant prioritaire et fiche en complément des champs absents. Champs inconnus laissés vides, signatures/permis non copiés.
+- [x] 33 tests PASS ; navigateur PC/mobile fictif : préremplissage, relecture sans écraser la saisie et changement de dossier sans fuite PASS ; build OK. Aucune écriture réelle ni publication ; parcours réel non exercé.
+
 ## 13/11 10:13 UTC — Suite HADDOU F/G et révisions
 - [ ] Examiner journaux immuables et empreintes ; aucune liaison par temps/texte seul.
 - [ ] Préparer reset/revue admin append-only en environnement jetable, sans activation.

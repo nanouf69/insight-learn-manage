@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clauseSansCaution, conditionsDepot, coordonneesLocation, detailsVehicule, pointsVehicule } from './contratLocation';
+import { clauseSansCaution, conditionsDepot, coordonneesFicheLocation, coordonneesLocation, detailsVehicule, pointsVehicule } from './contratLocation';
 const doc = { id: 'bienvenue-fictif', apprenant_id: 'eleve-fictif', completed_at: '2026-04-30T09:56:12Z', donnees: {nom:'Sow',prenom:'Mamadou',email:'fictif@example.test',signature:'CMA-SEULEMENT',num_permis:'NE-PAS-COPIER'} };
 const kia = {id:'kia-fictif',libelle:'KIA Sportage — HK-870-BF',reference:'VIN U5YPX81GBSL278919',date_debut:'2026-03-31',date_echeance:'2030-03-31'};
 describe('location read-only', () => {
+ it('prefills CRM identity without requiring welcome completion',()=>expect(coordonneesFicheLocation({id:'eleve-fictif',nom:'Sow',prenom:'Mamadou',email:'fictif@example.test'},'eleve-fictif')).toMatchObject({nomComplet:'Mamadou Sow',email:'fictif@example.test',telephone:'',adresse:'',dateNaissance:''}));
+ it('refuses another CRM dossier',()=>expect(coordonneesFicheLocation({id:'autre',nom:'Sow'},'eleve-fictif')).toBeNull());
+ it('never copies CRM signatures or licence assertions',()=>{
+  const result=coordonneesFicheLocation({id:'eleve-fictif',signature:'private',num_permis:'123'},'eleve-fictif');
+  expect(result).not.toHaveProperty('signature');expect(result?.numPermis).toBe('');
+ });
  it('whitelists completed welcome identity and contact fields',()=>expect(coordonneesLocation(doc,'eleve-fictif')).toMatchObject({nomComplet:'Mamadou Sow',email:'fictif@example.test',adresse:'',telephone:''}));
  it('never exports the CMA signature',()=>expect(coordonneesLocation(doc,'eleve-fictif')).not.toHaveProperty('signature'));
  it('leaves every licence field empty',()=>expect(coordonneesLocation(doc,'eleve-fictif')).toMatchObject({numPermis:'',dateDelivrancePermis:'',prefecturePermis:''}));
