@@ -47,6 +47,7 @@ import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { completionEvidenceAllowsDone } from "@/lib/moduleCompletionEvidence";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
+import { chargerPreuvesQuizModules, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
 import { activitesModuleEleve, libelleJeux, jeuxRestants, type EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -1212,7 +1213,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const requestId = ++completionsRequestRef.current;
     let cancelled = false;
     const fetchCompletions = async () => {
-      const [completionsResult, { data: examData }, etatsServeur] = await Promise.all([
+      const [completionsResult, { data: examData }, etatsServeur, preuvesQuiz] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
         // never yields an empty progression (which re-locked validated modules).
         fetchModuleCompletions(apprenant.id),
@@ -1223,6 +1224,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .eq("quiz_type", "examen_blanc"),
         // Verdict serveur unique ; erreur de lecture = progression non affichée (jamais un faux terminé).
         chargerEtatCompletionServeur(apprenant.id).catch((e) => { console.error("[CoursPublic] état serveur indisponible", e); return null as Map<number, EtatCompletionServeur> | null; }),
+        chargerPreuvesQuizModules(apprenant.id),
       ]);
 
       // Liste vide = peut-être une lecture faite avant que la connexion soit prête
@@ -1244,7 +1246,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         return;
       }
       if (completionsResult.ok && etatsServeur && !cancelled && requestId === completionsRequestRef.current) {
-        const completionRows = completionsResult.rows.map(row => avecEtatServeur(row, etatsServeur));
+        const completionRows = projeterProgressionConfirmee(completionsResult.rows, apprenant.id, etatsServeur, preuvesQuiz);
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
 
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
@@ -1316,13 +1318,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const channel = supabase.channel(`learner-module-proof-${apprenant.id}-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "apprenant_module_completion", filter: `apprenant_id=eq.${apprenant.id}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "reponses_apprenants", filter: `apprenant_id=eq.${apprenant.id}` }, refresh)
-      .subscribe();
+      .subscribe(status => { if (status === 'SUBSCRIBED') refresh(); });
     window.addEventListener("focus", refresh);
     window.addEventListener("online", refresh);
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       if (timer) clearTimeout(timer);
       window.removeEventListener("focus", refresh);
       window.removeEventListener("online", refresh);
+      document.removeEventListener('visibilitychange', onVisible);
       void supabase.removeChannel(channel);
     };
   }, [apprenant?.id, user?.id]);
@@ -1511,8 +1516,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Activités du registre (jeux) confirmées par le serveur, pour CE compte uniquement.
   const activitesEleve = useActivitesTermineesEleve(apprenant?.id);
 
-  const handleModuleCompleted = useCallback((moduleId: number) => {
-    setCompletedModuleIds(prev => new Set([...prev, moduleId]));
+  const handleModuleCompleted = useCallback((_moduleId: number) => {
+    // A child notification is not server proof. Reread without optimistic completion.
+    setCompletionsReloadToken(t => t + 1);
   }, []);
 
   // Scroll auto en haut lors de l'ouverture d'un module
@@ -1564,7 +1570,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
       const requestId = ++completionsRequestRef.current;
-      const [completionsResult, { data: examData }, etatsServeur] = await Promise.all([
+      const [completionsResult, { data: examData }, etatsServeur, preuvesQuiz] = await Promise.all([
         fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
@@ -1573,9 +1579,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .eq("quiz_type", "examen_blanc"),
         // Verdict serveur unique ; erreur de lecture = progression non affichée (jamais un faux terminé).
         chargerEtatCompletionServeur(apprenant.id).catch((e) => { console.error("[CoursPublic] état serveur indisponible", e); return null as Map<number, EtatCompletionServeur> | null; }),
+        chargerPreuvesQuizModules(apprenant.id),
       ]);
       if (completionsResult.ok && etatsServeur && requestId === completionsRequestRef.current) {
-        const completionRows = completionsResult.rows.map(row => avecEtatServeur(row, etatsServeur));
+        const completionRows = projeterProgressionConfirmee(completionsResult.rows, apprenant.id, etatsServeur, preuvesQuiz);
         // Lecture seule : le tableau de bord n'écrit jamais de statut (serveur seule autorité).
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 

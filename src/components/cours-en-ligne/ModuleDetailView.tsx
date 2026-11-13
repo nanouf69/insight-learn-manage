@@ -11,6 +11,7 @@ import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestio
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
+import { chargerPreuvesQuizModules, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
@@ -7789,12 +7790,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           //    (apprenant_module_completion exists for this apprenant/module).
           //    If yes → freeze module: lock writes to reponses_apprenants and
           //    only restore answers from the immutable snapshot in details.
-          const { data: completionData } = await supabase
+          const { data: recordedCompletion, error: completionReadError } = await supabase
             .from("apprenant_module_completion")
-            .select("details, score_obtenu, status, completed_at")
+            .select("module_id, details, score_obtenu, status, completed_at")
             .eq("apprenant_id", apprenantId)
             .eq("module_id", module.id)
             .maybeSingle();
+
+          if (completionReadError) throw completionReadError;
+          const completionData = recordedCompletion
+            ? avecPreuvesQuizConfirmees(recordedCompletion, apprenantId, await chargerPreuvesQuizModules(apprenantId))
+            : null;
 
           const isAlreadyValidated = isCompletionDone(completionData as any);
           if (isAlreadyValidated && completionData) {
