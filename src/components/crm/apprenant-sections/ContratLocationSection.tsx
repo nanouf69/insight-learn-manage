@@ -29,6 +29,12 @@ const NIVEAUX_CARBURANT = ["Vide", "1/4", "1/2", "3/4", "Plein"];
 const CHAMPS_BIENVENUE: string = "id,apprenant_id,completed_at,nom:donnees->>nom,prenom:donnees->>prenom,email:donnees->>email,telephone:donnees->>telephone,adresse:donnees->>adresse,code_postal:donnees->>code_postal,ville:donnees->>ville,date_naissance:donnees->>date_naissance";
 type ContactRow = { id: string; apprenant_id: string; completed_at: string | null } & Record<string, unknown>;
 
+const ELEMENTS_ETAT_LIEUX = [
+  "Carrosserie avant", "Carrosserie arrière", "Flanc gauche", "Flanc droit", "Toit", "Vitres",
+  "Jantes / Pneus", "Intérieur / sièges", "Tableau de bord", "Coffre",
+  "Documents bord (CI + carte grise + assurance)", "Niveau carburant", "Kilométrage",
+];
+
 export function ContratLocationSection({ apprenant }: Props) {
   return <ContratLocationForm key={apprenant.id} apprenant={apprenant} />;
 }
@@ -66,6 +72,10 @@ function ContratLocationForm({ apprenant }: Props) {
   const [couleur, setCouleur] = useState("");
   const [kmDepart, setKmDepart] = useState("");
   const [carburantDepart, setCarburantDepart] = useState("Plein");
+  const [etatsLieux, setEtatsLieux] = useState<Record<string, { depart: string; retour: string }>>({});
+  const [observationsRetour, setObservationsRetour] = useState("");
+  const majEtat = (el: string, cote: "depart" | "retour", v: string) =>
+    setEtatsLieux(e => ({ ...e, [el]: { depart: e[el]?.depart ?? "", retour: e[el]?.retour ?? "", [cote]: v } }));
 
   // Période
   const [dateDebut, setDateDebut] = useState(today);
@@ -443,21 +453,7 @@ function ContratLocationForm({ apprenant }: Props) {
       );
       y += 8;
 
-      const elements = [
-        "Carrosserie avant",
-        "Carrosserie arrière",
-        "Flanc gauche",
-        "Flanc droit",
-        "Toit",
-        "Vitres",
-        "Jantes / Pneus",
-        "Intérieur / sièges",
-        "Tableau de bord",
-        "Coffre",
-        "Documents bord (CI + carte grise + assurance)",
-        "Niveau carburant",
-        "Kilométrage",
-      ];
+      const elements = ELEMENTS_ETAT_LIEUX;
 
       const tableX = margin;
       const colElW = 80;
@@ -482,6 +478,10 @@ function ContratLocationForm({ apprenant }: Props) {
         doc.rect(tableX + colElW, y, colStateW, rowH);
         doc.rect(tableX + colElW + colStateW, y, colStateW, rowH);
         doc.text(el, tableX + 2, y + 6);
+        const dep = etatsLieux[el]?.depart || (el === "Kilométrage" && kmDepart ? `${kmDepart} km` : el === "Niveau carburant" ? carburantDepart : "");
+        const ret = etatsLieux[el]?.retour || "";
+        if (dep) doc.text(doc.splitTextToSize(dep, colStateW - 4)[0], tableX + colElW + 2, y + 6);
+        if (ret) doc.text(doc.splitTextToSize(ret, colStateW - 4)[0], tableX + colElW + colStateW + 2, y + 6);
         y += rowH;
       }
       y += 6;
@@ -495,9 +495,13 @@ function ContratLocationForm({ apprenant }: Props) {
       }
       y += 4;
       h2("Observations au retour :");
+      if (observationsRetour.trim()) {
+        for (const line of doc.splitTextToSize(observationsRetour, pageW - 2 * margin)) { checkPage(5); doc.text(line, margin, y); y += 5; }
+      } else {
       doc.text("...............................................................................................................................", margin, y);
       y += 5;
       doc.text("...............................................................................................................................", margin, y);
+      }
       y += 12;
 
       // Signatures annexe
@@ -628,6 +632,24 @@ function ContratLocationForm({ apprenant }: Props) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">État des lieux (départ / retour)</h3>
+          <p className="text-xs text-muted-foreground">Laisser vide pour remplir à la main sur le papier. Kilométrage et carburant reprennent les valeurs ci-dessus si vides.</p>
+          {ELEMENTS_ETAT_LIEUX.map((el, i) => (
+            <div key={el} className="space-y-2 rounded-md border border-border p-3">
+              <p className="text-sm font-medium">{el}</p>
+              <Label htmlFor={`edl-dep-${i}`}>État au départ</Label>
+              <Input id={`edl-dep-${i}`} value={etatsLieux[el]?.depart ?? ""} onChange={(e) => majEtat(el, "depart", e.target.value)} placeholder="Ex. : RAS, rayure légère…" />
+              <Label htmlFor={`edl-ret-${i}`}>État au retour</Label>
+              <Input id={`edl-ret-${i}`} value={etatsLieux[el]?.retour ?? ""} onChange={(e) => majEtat(el, "retour", e.target.value)} />
+            </div>
+          ))}
+          <Label htmlFor="edl-obs-retour">Observations au retour</Label>
+          <Textarea id="edl-obs-retour" value={observationsRetour} onChange={(e) => setObservationsRetour(e.target.value)} />
         </div>
 
         <Separator />
