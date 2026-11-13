@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   channels: new Map<string, { subscribed: boolean; on: (event: string, filter: unknown, callback: () => void) => unknown; subscribe: () => unknown }>(),
   removed: [] as unknown[],
   ratio: { signees: 1, attendues: 2, taux: 50, raison: null } as any,
+  inscriptions: [] as any[],
 }));
 vi.mock('@/lib/suiviFormationIndicateurs', async () => ({
   ...(await vi.importActual<any>('@/lib/suiviFormationIndicateurs')),
@@ -29,6 +30,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   from: (table: string) => {
     if (table === "apprenants") state.profileReads += 1;
     const data = () => table === "apprenants" ? state.learner
+      : table === "session_apprenants" ? state.inscriptions
       : table === "emargements_fc" ? state.rows
       : table === "apprenant_connexions" ? state.connections
       : table === "apprenant_module_activites" ? state.activities : [];
@@ -89,6 +91,7 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
     state.profileReads = 0;
     state.channels.clear(); state.removed = []; state.subscription = undefined;
     state.admin=[];
+    state.inscriptions=[];
   });
   it('validation administrative tardive confirmée déclenche un nouveau calcul sans doublon',async()=>{
     state.learner={type_apprenant:'vtc-e',heures_presentiel:46,heures_totales:46};
@@ -114,7 +117,7 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
     expect(view.result.current.data).toMatchObject({ reqElearning: 60, doneElearning: 0, modulesCompleted: 0 });
     view.unmount(); client.clear();
   });
-  it.each([['vtc',66],['taxi',96],['ta',36]])('total présentiel %s : seules les signatures, heures prévues %s', async (type, required) => {
+  it.each([['taxi',96],['ta',36]])('total présentiel %s : seules les signatures, heures prévues %s', async (type, required) => {
     state.learner = { type_apprenant:type, date_debut_formation:'2026-07-01', heures_totales:69 };
     state.rows=[]; state.connections=[]; state.activities=[];
     state.ratio={signees:1,attendues:2,taux:50,raison:null};
@@ -126,6 +129,20 @@ describe("Taux présentiel de la fiche, lecture seule", () => {
     state.ratio={signees:2,attendues:2,taux:100,raison:null};
     act(()=>state.subscription?.());
     await waitFor(()=>expect(view.result.current.data?.pctTotal).toBe(100));
+    view.unmount();client.clear();
+  });
+  it('VTC soir : admin et élève lisent 37,5/46, sans confondre nombre de signatures et heures', async () => {
+    state.learner={type_apprenant:'vtc',date_debut_formation:'2026-09-14'};
+    state.inscriptions=[{sessions:{id:'soir',nom:'VTC cours du soir',type_session:'theorique',date_debut:'2026-09-14',date_fin:'2026-09-27'}}];
+    state.rows=[];state.connections=[];state.activities=[];
+    state.admin=[{id:'preuve',heures:37.5,date_presence:'2026-09-18',categorie:'theorie'}];
+    const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+    const wrapper=({children}:{children:ReactNode})=><QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view=renderHook(()=>({admin:useApprenantTauxRealisation('vtc-soir-fictif'),eleve:useApprenantTauxRealisation('vtc-soir-fictif')}),{wrapper});
+    await waitFor(()=>expect(view.result.current.admin.data?.reqTotal).toBe(46));
+    expect(view.result.current.admin.data?.donePresentiel).toBe(37.5);
+    expect(view.result.current.admin.data?.pctTotal).toBeCloseTo(81.52173913);
+    expect(view.result.current.eleve.data).toEqual(view.result.current.admin.data);
     view.unmount();client.clear();
   });
   it("isole deux affichages simultanés, les doubles montages et la réouverture", async () => {

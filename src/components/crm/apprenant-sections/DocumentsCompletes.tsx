@@ -837,7 +837,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
           <div>
             <p className="text-sm text-muted-foreground">Présence retenue — signatures et validations dédoublonnées</p>
             <p className="text-2xl font-bold text-primary">{totalHeuresIndisponible ? "Indisponible" : formatPresenceHours(totalHeures)}</p>
-            {presenceHeures&&<div className="text-sm text-muted-foreground space-y-1"><p>Signatures : {formatPresenceHours(presenceHeures.signees)} · Ajout administratif net : {formatPresenceHours(presenceHeures.adminNet)}</p><p>Durée des sessions inscrites : {formatPresenceHours(presenceHeures.total.prevues)} — aucune pratique supplémentaire déduite.</p>{presenceHeures.revue.length>0&&<p>Chevauchement ou créneau administratif non précisé : à vérifier, sans double comptage.</p>}</div>}
+            {presenceHeures&&<div className="text-sm text-muted-foreground space-y-1"><p>Signatures : {formatPresenceHours(presenceHeures.signees)} · Ajout administratif net : {formatPresenceHours(presenceHeures.adminNet)}</p><p>Durée prévue théorie + pratique : {formatPresenceHours(presenceHeures.total.prevues)} · Présence totale : {presenceHeures.total.pct.toLocaleString('fr-FR',{maximumFractionDigits:1})} %.</p>{presenceHeures.revue.length>0&&<p>Chevauchement ou créneau administratif non précisé : à vérifier, sans double comptage.</p>}</div>}
           </div>
           <div className="text-right text-sm text-muted-foreground">
             <p><strong className="text-foreground">{emargementsSignes.length}</strong> demi-journée(s) signée(s)</p>

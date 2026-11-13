@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 16:46 UTC — TOTAL VTC présentiel 40+6 / 60+6 (sans publication)
+- [x] Lecture seule/diagnostic, TOTAL partagé +6 VTC initial (soir 46/jour 66), théorie distincte et pratique réellement prouvée ; affichage élève séparé, Documents/tableau partagent le calcul, attestations sans taux de présence/frozen intactes.
+- [x] 114 tests PASS/9 fichiers, quatre parcours fictifs PC/mobile pratique 0/3/6 + reload PASS ; lecture authentifiée CHERNI actuelle 37/46=80,4 %, aucune écriture effectuée ; build OK.
+- [ ] Parité propriétaire élève réellement authentifié : validations/journal restent admin-only ; nouveau lecteur propriétaire sûr non installé. Dossier CHERNI changé en parallèle (annulations et trois nouvelles saisies) ; couverture précise des deux créneaux du 18/09 à qualifier, sans correction automatique. Non publié.
+
 ## 13/11 16:28 UTC — UX examens blancs TAXI/VTC (sans publication)
 - [x] Confirmation de sortie non destructive (retours/navigations internes), alertes 5/2 minutes par épreuve et calculatrice dans le flux sans recouvrement ; chrono ancré au dernier retour serveur, pas de durée inventée en cas d’erreur.
 - [x] 33 tests ciblés PASS ; huit parcours vrais composants élève/sessions fictives × TAXI/VTC × 1280/768/390/320 px PASS, retour navigateur et rechargement inclus ; zéro écriture réelle, build OK. Rapport docs/examens-blancs-ux-2026-11-13.md. Non publié.

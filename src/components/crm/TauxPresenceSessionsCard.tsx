@@ -8,6 +8,7 @@ import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueType,
 import { planningCreneaux, marquerFiliereRows } from "@/lib/signaturesManquantes";
 import { fusionnerPresenceAdministrative, type ValidationPresence, type JourPresence } from '@/lib/presenceAdministrative';
 import { HEURES_VALIDEES_EVENT, lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
+import { estVtcPresentiel, pratiquePrevueVtc } from '@/lib/tauxTotalPresence';
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -18,7 +19,7 @@ const signatureValide = (e: any) =>
 export interface TauxHeures { faites: number; prevues: number; derniere?: string; datesEntrainement?: string[] }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
-export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = [], validations: ValidationPresence[] = []) {
+export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = [], validations: ValidationPresence[] = [], vtcPresentiel = filiere === 'vtc') {
   const res: { session: TauxHeures; pratique: TauxHeures } = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
   // Dates du planning nominatif uniquement ; une réservation ne prouve pas la présence.
   const datesEntrainement = new Set<string>();
@@ -31,6 +32,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   const vus = new Set<string>();
   const signes: JourPresence[] = [];
   const autorises = new Set<string>();
+  const pratiquesVues = new Set<string>();
   const { parDate } = planningCreneaux(inscriptions, reservations, configs);
   const daySlots = daySlotsDepuisConfigs([...parDate.keys()], configs);
   for (const row of inscriptions) {
@@ -39,7 +41,11 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     const pratique = isPratiqueType(s.type_session);
     if (!pratique && !/theorique/i.test(s.type_session ?? "")) continue;
     const cible = pratique ? res.pratique : res.session;
-    if (pratique) cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
+    const sessionId = String(s.id ?? row.session_id ?? row.id ?? '');
+    if (pratique && !pratiquesVues.has(sessionId)) {
+      pratiquesVues.add(sessionId);
+      cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
+    }
     const debut = [d10(s.date_debut), d10(row.date_debut)].filter(Boolean).sort().at(-1) ?? "";
     const fin = [d10(s.date_fin || s.date_debut), d10(row.date_fin_personnalisee || row.date_fin)].filter(Boolean).sort()[0] ?? "";
     // Seules les paires date + créneau réellement prévues par les horaires de la
@@ -67,23 +73,47 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
   }
+  // A recorded nominative practice day can carry real signatures without a
+  // separate session enrollment. Require entered times, never booking alone.
+  for (const [date, jour] of parDate) {
+    if (!jour.pratique || !daySlots.has(date)) continue;
+    const reservation = reservations.find(r => d10(r.date_choisie) === date);
+    const parts = resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation), normalizePratiqueCreneau(reservation?.creneau));
+    if (!parts.length) continue;
+    autorises.add(`${date}|pratique`);
+    for (const e of emargements) {
+      const creneau = String(e.demi_journee ?? '').trim().toLowerCase();
+      const cle = `${date}|${creneau}`;
+      const part = parts.find(p => p.creneau === creneau);
+      if (d10(e.date_emargement) !== date || !signatureValide(e) || vus.has(cle) || !part || part.startMinute == null || part.endMinute == null) continue;
+      vus.add(cle);
+      res.pratique.faites = (Math.round(res.pratique.faites*60)+part.minutes)/60;
+      signes.push({date,categorie:'pratique',minutes:part.minutes});
+      if (!res.pratique.derniere || date > res.pratique.derniere) res.pratique.derniere = date;
+    }
+  }
   res.pratique.datesEntrainement = [...datesEntrainement].sort();
   const admin=fusionnerPresenceAdministrative(signes,validations,autorises);
   res.session.faites=(Math.round(res.session.faites*60)+admin.theorieMinutes)/60;
   res.pratique.faites=(Math.round(res.pratique.faites*60)+admin.pratiqueMinutes)/60;
+  const formationInitiale = inscriptions.some(row => /theorique/i.test(row.sessions?.type_session ?? '') && !/continue|\bfc\b/i.test(`${row.sessions?.nom ?? ''} ${row.sessions?.type_session ?? ''}`) && !row.liste_attente && !row.emargements_exclus && !/annul/i.test(row.sessions?.statut ?? ''));
+  res.pratique.prevues = pratiquePrevueVtc(res.session.prevues, res.pratique.prevues, vtcPresentiel && formationInitiale);
   return { ...res, admin };
 }
 
 /** Chargeur partage avec la fiche apprenant ; aucune regle de calcul n'est dupliquee. */
 export async function chargerTauxPresenceHeures(apprenantId: string, filiere?: string | null) {
-  const [em, ins, reservations, configs, validations] = await Promise.all([
+  const [em, ins, reservations, configs, validations, dossier] = await Promise.all([
     fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,session_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(id,type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
     lirePresencesAdministratives(apprenantId),
+    supabase.from('apprenants').select('type_apprenant,formation_choisie').eq('id',apprenantId).maybeSingle(),
   ]);
-  return calculerTauxPresenceHeures(em, ins, filiere, reservations, configs, validations);
+  if (dossier.error || !dossier.data) throw dossier.error ?? new Error('Parcours de présence indisponible');
+  const vtc = estVtcPresentiel(dossier.data);
+  return calculerTauxPresenceHeures(em, ins, filiere ?? (vtc ? 'vtc' : null), reservations, configs, validations, vtc);
 }
 
 export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true, filiere?: string | null) {

@@ -13,6 +13,8 @@ import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
 import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/learning-hours-window";
 import { regleSuiviFormation, chargerRatioSignatures, type RatioSignatures } from "@/lib/suiviFormationIndicateurs";
+import { estVtcPresentiel, tauxTotalPresence } from '@/lib/tauxTotalPresence';
+import { chargerTauxPresenceHeures } from '@/components/crm/TauxPresenceSessionsCard';
 
 
 export interface TauxRealisation {
@@ -57,6 +59,9 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
       const apprenant = { ...(apprenantProp || {}), ...(apprenantRow || {}) } as any;
       if (apprenantError || !apprenantRow) throw apprenantError ?? new Error("Formation indisponible");
       const regle = regleSuiviFormation(apprenant);
+      const vtcPresentiel = estVtcPresentiel(apprenant);
+      const presenceVtc = vtcPresentiel ? await chargerTauxPresenceHeures(apprenantId, 'vtc') : null;
+      const totalVtc = tauxTotalPresence(presenceVtc);
       const signatures = regle.presentiel && regle.filiere
         ? await chargerRatioSignatures(apprenantId, regle.filiere).catch(() => ({ signees: 0, attendues: 0, taux: null, raison: "Signatures / planning indisponibles : lecture échouée" }))
         : undefined;
@@ -113,12 +118,12 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
 
       const reqElearning = requiredElearningHours(apprenant);
       const presence = presentielProgress(theorieHours + pratiqueMinutes / 60, Number(apprenant?.heures_presentiel) || 0, pratiqueDetails);
-      const reqPresentiel = regle.heures ?? presence.required;
-      const reqTotal = regle.heures ?? (Number(apprenant?.heures_totales) || reqElearning + reqPresentiel);
+      const reqPresentiel = totalVtc?.prevues ?? regle.heures ?? presence.required;
+      const reqTotal = totalVtc?.prevues ?? regle.heures ?? (Number(apprenant?.heures_totales) || reqElearning + reqPresentiel);
 
       // Actual proven time is never capped at the contractual target.
       const doneElearning = onlineMin / 60;
-      const donePresentiel = presence.done + admin.generiqueMinutes/60;
+      const donePresentiel = totalVtc?.faites ?? (presence.done + admin.generiqueMinutes/60);
 
       // ---- Jalons (modules terminés) : status='completed' fait foi, jamais completed_at seul
       const ta = String(apprenantRow.type_apprenant || "").toLowerCase().trim();
@@ -141,10 +146,10 @@ export async function chargerApprenantTauxRealisation(apprenantId: string, appre
         reqPresentiel,
         reqTotal,
         pctElearning: pct(doneElearning, reqElearning),
-        pctPresentiel: pct(donePresentiel, reqPresentiel),
-        pctTotal: regle.presentiel ? signatures?.taux ?? 0 : pct(doneElearning + donePresentiel, reqTotal),
-        signatures,
-        totalParSignatures: regle.presentiel,
+        pctPresentiel: totalVtc?.pct ?? pct(donePresentiel, reqPresentiel),
+        pctTotal: vtcPresentiel ? totalVtc?.pct ?? 0 : (regle.presentiel ? signatures?.taux ?? 0 : pct(doneElearning + donePresentiel, reqTotal)),
+        signatures: vtcPresentiel ? { signees: signatures?.signees ?? 0, attendues: signatures?.attendues ?? 0, taux: totalVtc?.pct ?? null, raison: totalVtc ? `${totalVtc.faites.toLocaleString('fr-FR',{maximumFractionDigits:1})} h prouvées / ${totalVtc.prevues} h prévues` : 'Présence indisponible' } : signatures,
+        totalParSignatures: regle.presentiel || vtcPresentiel,
         premiereActiviteAt,
         derniereActiviteAt,
       };

@@ -1,4 +1,5 @@
 import { MonChoixPratique } from "@/components/cours-en-ligne/MonChoixPratique";
+import { PresenceFormationVtc } from '@/components/cours-en-ligne/PresenceFormationVtc';
 import { requestExamExit } from '@/components/cours-en-ligne/ExamExitGuard';
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
@@ -2400,6 +2401,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                       formationChoisie={apprenant?.formation_choisie}
                       progressionMemory={seuilProgressionMemory}
                    />
+                   <PresenceFormationVtc apprenantId={apprenant?.id} typeApprenant={apprenant?.type_apprenant} formationChoisie={apprenant?.formation_choisie} />
                  </>
                );
             })()}
