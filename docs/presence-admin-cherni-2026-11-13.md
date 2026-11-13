@@ -1,5 +1,19 @@
 # Présence administrative — audit du 13 novembre 2026
 
+## Rectification prioritaire du 13/11, demande 14:18 UTC
+Cette section remplace les dénominateurs de la conclusion précédente ; le compte rendu initial ci-dessous reste conservé comme historique de l'audit.
+
+- Relecture exacte : session `20a69b8e-fdf6-4fad-a1e6-666a0997a6c1`, « Session VTC cours du soir - Du 14 au 27 septembre 2026 », théorie, 17:00–21:00. `sessions.heures_total` = NULL : **40 h est le défaut du parcours soir**, non une valeur contractuelle enregistrée.
+- `apprenants.heures_presentiel`, `heures_pratique`, `heures_totales`, `heures_elearning` = NULL. Aucune autre inscription, aucune session pratique. Aucun devis/contrat dans `devis_envois`, aucun document contrat dans `documents_inscription`, aucun catalogue lié à la session : la durée contractuelle n'est pas vérifiable par ces sources.
+- **Cause des 46 h** : `tauxTotalPresence` ajoutait par défaut 6 h même lorsque `pratique.prevues = 0`. Aucune preuve du dossier ne justifie ce supplément. Ce n'est pas une preuve de « 40 h incluant 6 h de pratique » non plus.
+- Dénominateur de présence selon les inscriptions connues : **théorie 40 h ; pratique 0 h inscrite (obligation contractuelle non déterminée) ; total inscrit 40 h**. Une future preuve contractuelle ou inscription pratique explicite reste à intégrer sans réécrire le contrat ; on ne déclare pas une dispense pratique.
+- Signatures valides relues : **2010 minutes = 33 h 30**. Les deux validations font 330 minutes mais le 17/09 soir_1 prouve déjà 90 minutes : **240 minutes nettes retenues**, soit **2250 minutes = 37 h 30**. Résultat **37,5/40 = 93,75 %, affiché 93,8 %**. Les 90 minutes restent en revue, pas supprimées.
+- Références testées : 33,5/40 = **83,75 %** ; 39/40 = **97,5 %** uniquement si les 330 minutes sont distinctes. 39 h n'est pas le temps actuellement prouvé.
+- Aperçu : total partagé CRM/liste sans supplément implicite ; une durée pratique explicite reste comptée (40+6=46), les plafonds par catégorie sont conservés. Le défaut soir ne remplace plus une durée positive configurée.
+- **Limites** : CRM/élève authentifiés complets non vérifiés sur ce correctif ; table de validations admin-only et événements distants non disponibles restent les blocages de parité déjà identifiés. Aucun changement de droits, jalons/EDOF, contrat, inscription, note ou signature. Les calculs génériques élève et rapports non alimentés par cette projection restent à aligner après preuve propriétaire sûre.
+- Contrôle SELECT avant/après des validations : `09a38657f55fa99702ee04e73d3a5dad` identique (formule de cette relecture) ; signatures SELECT 2010 minutes ; aucune écriture réelle ni publication.
+- Tests et vérifications de cette rectification : voir résultats finaux ci-dessous.
+
 ## État exact (SELECT uniquement)
 Dossier **Tarek CHERNI, VTC cours du soir**, identité CRM `8fc60874-fa5d-4fed-aced-da946fbf1cca`.
 - Validation `69de7ba5-6d4a-422f-86a2-fb9a3faa6e34` : théorie **90 minutes**, présence 17/09, créée 13/11 **13:52:38 UTC = 14:52:38 Paris**.
