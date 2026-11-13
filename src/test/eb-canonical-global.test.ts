@@ -4,11 +4,16 @@ import {statutCopieEB,libelleAttenteEB} from '@/lib/ebCanonicalStatus';
 import {observerCoherenceEB} from '@/features/surveillance-examens/coherenceEB';
 import {lireCurseurCoherence} from '@/features/surveillance-examens/lireCoherenceEB';
 import type {CoreMatiereState} from '@/lib/coreExamPublication';
+import {findScoreForMatiere,buildMatiereLookupKeys} from '@/components/cours-en-ligne/examens-blancs-utils';
 const exams=Array.from({length:6},(_,i)=>[`EB${i+1}`,`EB${i+1}-TAXI`]).flat();
 const subjects=['t3p','gestion','securite','francais','anglais','reglementation','reglementation2'];
 const state=(examId:string,matiereId:string,extra:Partial<CoreMatiereState>={}):CoreMatiereState=>({attemptId:`${examId}-${matiereId}`,examId,matiereId,apprenantId:'owner',finishedAt:'2026-11-13T10:00:00Z',qrcTotal:1,qrcRestantes:0,qrcProofs:[{questionId:`${matiereId}:1`,etat:'corrigee',note:12,reponse:'frozen'}],questions:[{id:`${matiereId}:1`,type:'QRC',enonce:'Frozen question',points:20}],answers:{[`${matiereId}:1`]:'frozen'},status:'definitif',pending:false,note20:12,publishedAt:'2026-11-13T10:01:00Z',...extra});
 const def=(id:string)=>[{id,matieres:subjects.map(id=>({id,nom:id}))}];
 describe('Canonical EB current views, 12 exams × seven exact subjects',()=>{
+ it('exact G(T) identity wins over a colliding F(T) title alias',()=>{
+   const scores=[{matiere_id:'reglementation_taxi',matiere_nom:'F(T)',note_sur_20:16},{matiere_id:'reglementation_taxi2',matiere_nom:'G(T)',note_sur_20:17}].map(r=>({...r,score_obtenu:r.note_sur_20,score_max:20,lookupKeys:buildMatiereLookupKeys(r.matiere_id,r.matiere_nom)}));
+   expect(findScoreForMatiere(scores,{id:'reglementation_taxi2',nom:'G(T)'})?.note_sur_20).toBe(17);
+ });
  for(const exam of exams)for(const subject of subjects)it(`${exam}/${subject}: missing receipt never hides submitted 12`,()=>{
    const s=state(exam,subject);const out=lignesCanoniquesEB([], [s],new Set(),'owner',def(exam));
    expect(out).toHaveLength(1);expect(out[0].__core.note20).toBe(12);expect(out[0].__copieSessionAttemptId).toBe(s.attemptId);expect(out[0].__statutCopieEB).toBe('definitif');
