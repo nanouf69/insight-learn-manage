@@ -48,6 +48,9 @@ BEGIN
  VALUES(p_operation,p_validation,p_apprenant,p_version+1,p_action,motif_effectif,auth.uid(),to_jsonb(v)) RETURNING * INTO d;
  RETURN d;
 END $$;
+
+-- Admin-only journal notifications; consumers refetch scoped evidence, never invent a new total.
+ALTER PUBLICATION supabase_realtime ADD TABLE public.presentiel_validation_decisions;
 REVOKE ALL ON FUNCTION public.presentiel_decider_validation(uuid,uuid,uuid,integer,text,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.presentiel_decider_validation(uuid,uuid,uuid,integer,text,text) TO authenticated;
 REVOKE ALL ON FUNCTION public.presentiel_decisions_append_only() FROM PUBLIC,anon,authenticated;

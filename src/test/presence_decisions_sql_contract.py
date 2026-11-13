@@ -10,6 +10,7 @@ class Decisions(unittest.TestCase):
   subprocess.run(AS+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale'],env=c.env,check=True,capture_output=True)
   subprocess.run(AS+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55489 -h ""','-w','start'],env=c.env,check=True,capture_output=True)
   c.sql(f"""CREATE ROLE authenticated;CREATE ROLE anon;CREATE ROLE service_role;CREATE SCHEMA auth;
+  CREATE PUBLICATION supabase_realtime;
   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
   GRANT USAGE ON SCHEMA auth TO authenticated,anon;
   CREATE FUNCTION has_role(u uuid,r text) RETURNS boolean LANGUAGE sql AS $$SELECT u='{ADMIN}'::uuid AND r='admin'$$;
@@ -65,4 +66,19 @@ class Decisions(unittest.TestCase):
   self.assertEqual(r.returncode,0,r.stderr)
   restored_rows=subprocess.run(['psql','-XAt','-h',self.d,'-p','55489','-U','postgres','-d','restored','-c','SELECT to_jsonb(v) FROM presentiel_heures_validees v'],env=self.env,text=True,capture_output=True,check=True).stdout
   self.assertEqual(before,restored_rows)
+  journal_after=subprocess.run(['psql','-XAt','-h',self.d,'-p','55489','-U','postgres','-d','restored','-c','SELECT jsonb_agg(to_jsonb(d) ORDER BY version) FROM presentiel_validation_decisions d'],env=self.env,text=True,capture_output=True,check=True).stdout.strip()
+  self.assertEqual(journal_after,self.sql('SELECT jsonb_agg(to_jsonb(d) ORDER BY version) FROM presentiel_validation_decisions d').stdout.strip())
+ def test_concurrent_commands(self):
+  target='66666666-6666-6666-6666-666666666666'
+  self.sql(f"INSERT INTO presentiel_heures_validees VALUES('{target}','{U}',4,'2026-09-18','theorie')")
+  def run(op):
+   return self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT row_to_json(r) FROM presentiel_decider_validation('{op}','{U}','{target}',0,'annuler','') r;",False)
+  from concurrent.futures import ThreadPoolExecutor
+  with ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(run,[str(uuid.uuid4()),str(uuid.uuid4())]))
+  self.assertEqual(sum(r.returncode==0 for r in results),1)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM presentiel_validation_decisions WHERE validation_id='{target}'").stdout.strip(),'1')
+  self.sql(f"INSERT INTO releve_jalons_gels VALUES('{U}')")
+  r=self.sql(f"SET ROLE authenticated;SET request.jwt.claim.sub='{ADMIN}';SELECT presentiel_decider_validation('{uuid.uuid4()}','{U}','{target}',1,'restaurer','Restauration justifiée')",False)
+  self.assertNotEqual(r.returncode,0)
 if __name__=='__main__':unittest.main(verbosity=2)
