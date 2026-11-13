@@ -48,6 +48,9 @@ import {
   remapperFileApresReouverture,
   archiverMarqueursObsoletes,
   recommencerMatiereNoyau,
+  surveillerFileNoyau,
+  etatStockageFileNoyau,
+  type EtatStockageFileNoyau,
 } from "@/features/noyau-passage/pontV2";
 import { projeterMatiereDepuisSnapshot } from "@/features/noyau-passage/snapshotMatiere";
 import { captureError } from "@/lib/monitoring/errorLogger";
@@ -494,6 +497,31 @@ function PassageMatiere({
     }, 5000);
     return () => window.clearInterval(interval);
   }, [matiere.id]);
+
+  // État réel de la file V2 (cet onglet et les autres) : jamais « Sauvegardé »
+  // tant qu'une réponse attend une confirmation serveur.
+  const [fileNoyau, setFileNoyau] = useState<{ enAttente: number; stockage: EtatStockageFileNoyau }>({ enAttente: 0, stockage: "durable" });
+  useEffect(() => {
+    const lire = () => {
+      const attemptId = attemptV2Ref.current;
+      setFileNoyau({ enAttente: attemptId ? reponsesNoyauEnAttente(attemptId) : 0, stockage: etatStockageFileNoyau() });
+    };
+    lire();
+    return surveillerFileNoyau(lire);
+  }, [matiere.id]);
+
+  // Stockage refusé : une fermeture perdrait les réponses non confirmées → demande de confirmation du navigateur.
+  useEffect(() => {
+    const garde = (evenement: BeforeUnloadEvent) => {
+      const attemptId = attemptV2Ref.current;
+      if (!attemptId || etatStockageFileNoyau() === "durable" || reponsesNoyauEnAttente(attemptId) === 0) return;
+      void viderFileNoyau(attemptId, { forcer: true });
+      evenement.preventDefault();
+      evenement.returnValue = "";
+    };
+    window.addEventListener("beforeunload", garde);
+    return () => window.removeEventListener("beforeunload", garde);
+  }, []);
 
   // Retour du réseau : les réponses en attente repartent vers le noyau.
   useEffect(() => {
@@ -1271,7 +1299,20 @@ function PassageMatiere({
 
       {/* RÈGLE 1 : quand le serveur possède toutes les réponses, aucune alerte
           technique héritée ne reste affichée. */}
-      {!serveurComplet && <AnswerSaveIndicator />}
+      {!serveurComplet && <AnswerSaveIndicator noyau={attemptV2Ref.current ? fileNoyau : null} />}
+      {attemptV2Ref.current && fileNoyau.enAttente > 0 && fileNoyau.stockage !== "durable" && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" data-testid="alerte-stockage-noyau">
+          <span>
+            {fileNoyau.stockage === "memoire"
+              ? "Votre navigateur bloque la conservation locale des réponses (navigation privée ou mémoire pleine)."
+              : "La mémoire de votre navigateur est pleine : vos réponses sont gardées dans cet onglet uniquement."}{" "}
+            Restez sur cette page jusqu'à « toutes vos réponses sont sécurisées sur le serveur ».
+          </span>
+          <Button size="sm" variant="outline" onClick={() => { const id = attemptV2Ref.current; if (id) void viderFileNoyau(id, { forcer: true }).then(() => actualiserConfirmationsNoyau(id)); }}>
+            Réessayer l'envoi maintenant
+          </Button>
+        </div>
+      )}
 
       {attemptV2Ref.current && (
         <p className={`text-sm font-medium ${serveurComplet ? "text-green-700" : "text-muted-foreground"}`}>
