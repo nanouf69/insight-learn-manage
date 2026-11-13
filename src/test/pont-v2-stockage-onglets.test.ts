@@ -339,6 +339,8 @@ describe("Appel figé sans réponse", () => {
       expect(appels).toBe(1);
       await vi.advanceTimersByTimeAsync(A.DELAI_MAX_APPEL_MS + 10);
       expect(ecrituresEffectives).toBe(1);
+      // Sans avancer davantage le temps simulé : la libération ne dépend que des promesses en cours.
+      for (let i = 0; i < 2000 && tenus.size > 0; i++) await new Promise((r) => setImmediate(r));
       expect(tenus.size).toBe(0); // le verrou inter-onglets n'est pas retenu indéfiniment
       expect(A.reponsesNoyauEnAttente("f")).toBe(1); // jamais présentée comme enregistrée
       perdreReponseApresCommit = false;
