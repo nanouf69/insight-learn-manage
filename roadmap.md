@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 13:25 UTC — Audit MEMDOUH Ilies EB6 TAXI
+- [ ] SELECT sept matières, QRC/corrections/publications, deux circuits, bouton reprise, filtres/session et logs ; aucune écriture réelle.
+- [ ] Cause affichage prouvée et correctif aperçu ciblé si possible, identités/copies conservées ; tests fictifs TAXI/VTC EB1–6/live.
+- [ ] Rapport, empreintes avant/après et limites, aucun reset/recalcul réel/migration/publication.
+
 ## 13/11 13:19 UTC — Audit note Sécurité routière Pogos SARKISIAN
 - [x] SELECT : EB6 TAXI C/securite, 20 QCM remis, 12/20 définitif publié 09:38:02 UTC ; fiche secondaire absente, six autres valeurs correspondent exactement. Zéro écriture réelle.
 - [x] Correctif lecture seule aperçu : projection exacte de matière native sans fiche, aucune création de résultat ; 54 tests PASS, PC admin réel 12/20 et moyenne 10,7 définitive, build OK.
