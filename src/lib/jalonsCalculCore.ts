@@ -1,5 +1,5 @@
 import { normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
-import { computePresentielHours, computePresenceAvecAdmin, type EmargementRowLike } from "@/lib/presentielHours";
+import { computePresentielHours, type EmargementRowLike } from "@/lib/presentielHours";
 import { construireVolumes } from "@/lib/jalonsVolumes";
 import { activitesDuModule, activiteHorsVolume, completionAvecActivites, METHODE_ACTIVITES, type EtatActivites } from "@/lib/jeuxPedagogiques";
 import type { PratiqueSlotDetail } from "@/lib/pratiqueSlots";
@@ -63,9 +63,7 @@ export function assemblerCalculJalons(i: {
   const heuresValidees = normaliserHeuresValidees(i.heuresValidees ?? []);
   const valideesMinutes = Math.round(heuresValidees.reduce((s, r) => s + r.heures, 0) * 60);
   const theorieMinutes = Math.round(theorieHours * 60);
-  // Live-only coverage deduplication; the archived calculation method remains untouched.
-  const presenceLive = i.preuvesHistoriquesLive ? computePresenceAvecAdmin(emargements,i.pratiqueDetails,i.heuresValidees) : null;
-  const pratiqueMinutes = presenceLive?.totalMinutes ?? (pratiqueSigneeMinutes + theorieMinutes + valideesMinutes);
+  const pratiqueMinutes = pratiqueSigneeMinutes + theorieMinutes + valideesMinutes;
   // Le gel par module (activités ajoutées après la validation = acquises) lit la date de
   // validation ENREGISTRÉE ; la preuve serveur est appliquée ensuite sur la ligne recomposée
   // (details + preuve_serveur conservés), donc aucun ancien « completed » contredit n'est restauré.
@@ -130,7 +128,7 @@ export function assemblerCalculJalons(i: {
     jeux: activites[0] ?? null,
     pratique: {
       minutes: pratiqueMinutes,
-      detail: { pratiqueSignee: pratiqueSigneeMinutes, theorieSignee: theorieMinutes, valideesAdmin: presenceLive?.admin.minutesAdmin ?? valideesMinutes },
+      detail: { pratiqueSignee: pratiqueSigneeMinutes, theorieSignee: theorieMinutes, valideesAdmin: valideesMinutes },
       progression: Math.max(0, Math.min(100, pratiqueMinutes / 360 * 100)),
       dernierePreuve: datesPratique.at(-1) ?? null,
       source: "Émargements signés + heures validées par l’administration",
