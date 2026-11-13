@@ -6954,6 +6954,127 @@ export type Database = {
           },
         ]
       }
+      presentiel_presence_creneaux: {
+        Row: {
+          apprenant_id: string
+          auteur: string
+          created_at: string
+          creneau: string
+          date_presence: string
+          debut: string
+          fin: string
+          formateur_id: string | null
+          formateur_nom: string | null
+          id: string
+          inscription_id: string
+          justificatif: string
+          justificatif_libelle: string | null
+          minutes: number
+          operation_id: string
+          pdf_chemin: string
+          remplace: string[]
+          session_id: string
+          validation_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          auteur: string
+          created_at?: string
+          creneau: string
+          date_presence: string
+          debut: string
+          fin: string
+          formateur_id?: string | null
+          formateur_nom?: string | null
+          id?: string
+          inscription_id: string
+          justificatif: string
+          justificatif_libelle?: string | null
+          minutes: number
+          operation_id: string
+          pdf_chemin: string
+          remplace?: string[]
+          session_id: string
+          validation_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          auteur?: string
+          created_at?: string
+          creneau?: string
+          date_presence?: string
+          debut?: string
+          fin?: string
+          formateur_id?: string | null
+          formateur_nom?: string | null
+          id?: string
+          inscription_id?: string
+          justificatif?: string
+          justificatif_libelle?: string | null
+          minutes?: number
+          operation_id?: string
+          pdf_chemin?: string
+          remplace?: string[]
+          session_id?: string
+          validation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentiel_presence_creneaux_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: true
+            referencedRelation: "presentiel_heures_validees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentiel_validation_decisions: {
+        Row: {
+          action: string
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          id: string
+          motif: string
+          operation_id: string
+          original: Json
+          validation_id: string
+          version: number
+        }
+        Insert: {
+          action: string
+          apprenant_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          motif: string
+          operation_id: string
+          original: Json
+          validation_id: string
+          version: number
+        }
+        Update: {
+          action?: string
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          motif?: string
+          operation_id?: string
+          original?: Json
+          validation_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentiel_validation_decisions_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: false
+            referencedRelation: "presentiel_heures_validees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prestataire_dossiers: {
         Row: {
           adresse: string | null
@@ -10852,6 +10973,90 @@ export type Database = {
           debut: string
           fin: string
         }[]
+      }
+      presentiel_bilan_jour: {
+        Args: { p_apprenant: string; p_date: string; p_exclure: string[] }
+        Returns: {
+          prevues: number
+          signees: number
+          validees: number
+        }[]
+      }
+      presentiel_decider_validation: {
+        Args: {
+          p_action: string
+          p_apprenant: string
+          p_motif: string
+          p_operation: string
+          p_validation: string
+          p_version: number
+        }
+        Returns: {
+          action: string
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          id: string
+          motif: string
+          operation_id: string
+          original: Json
+          validation_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "presentiel_validation_decisions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      presentiel_decision_active: {
+        Args: { p_validation: string }
+        Returns: boolean
+      }
+      presentiel_dossier_protege: {
+        Args: { p_apprenant: string }
+        Returns: boolean
+      }
+      presentiel_signature_valide: { Args: { u: string }; Returns: boolean }
+      presentiel_validations_effectives: {
+        Args: { p_apprenant: string }
+        Returns: {
+          apprenant_id: string
+          categorie: string | null
+          created_at: string
+          created_by: string | null
+          date_presence: string | null
+          heures: number
+          id: string
+          motif: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "presentiel_heures_validees"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      presentiel_valider_creneau: {
+        Args: {
+          p_apprenant: string
+          p_confirme: boolean
+          p_creneau: string
+          p_date: string
+          p_debut: string
+          p_fin: string
+          p_formateur: string
+          p_formateur_nom: string
+          p_inscription: string
+          p_justificatif: string
+          p_justificatif_libelle: string
+          p_operation: string
+          p_pdf_chemin: string
+          p_remplace: string[]
+          p_session: string
+        }
+        Returns: Json
       }
       qrc_attempt_publication_state: {
         Args: { p_attempt_id: string }
