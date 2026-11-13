@@ -389,7 +389,22 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
         : query.eq('apprenant_id', apprenant.id);
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as AccuseReception[];
+      const rows = (data || []) as (AccuseReception & { confirmed_at?: string | null })[];
+      if (rows.length) {
+        const ids = rows.map((r) => r.id);
+        const confs: { accuse_id: string; confirmed_at: string | null }[] = [];
+        for (let i = 0; i < ids.length; i += 150) {
+          const { data: c, error: ce } = await supabase
+            .from('email_confirmations_reception')
+            .select('accuse_id, confirmed_at')
+            .in('accuse_id', ids.slice(i, i + 150));
+          if (ce) throw ce;
+          confs.push(...(c || []));
+        }
+        const m = new Map(confs.map((c) => [c.accuse_id, c.confirmed_at]));
+        rows.forEach((r) => { r.confirmed_at = m.get(r.id) ?? null; });
+      }
+      return rows;
     },
     enabled: !!apprenant.id,
     refetchInterval: 60000,
