@@ -1,0 +1,92 @@
+-- REVIEW ONLY. Not installed. No backfill, production signing or automatic grants.
+-- Existing grant is account/dossier/session/closed slot-list scoped and append-only.
+CREATE TABLE public.emargement_tardif_journal (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ operation_id uuid NOT NULL UNIQUE,
+ emargement_id uuid NOT NULL,
+ regularisation_id uuid NOT NULL,
+ signataire_id uuid NOT NULL,
+ apprenant_id uuid NOT NULL,
+ date_cours date NOT NULL,
+ creneau text NOT NULL,
+ signe_le timestamptz NOT NULL,
+ empreinte_signature text NOT NULL,
+ confirme_presence boolean NOT NULL CHECK(confirme_presence),
+ confirme_identite boolean NOT NULL CHECK(confirme_identite),
+ tardif boolean NOT NULL DEFAULT true CHECK(tardif)
+);
+GRANT SELECT ON public.emargement_tardif_journal TO authenticated;
+GRANT ALL ON public.emargement_tardif_journal TO service_role;
+ALTER TABLE public.emargement_tardif_journal ENABLE ROW LEVEL SECURITY;
+CREATE POLICY lecture_tardif_propre ON public.emargement_tardif_journal FOR SELECT TO authenticated
+ USING(signataire_id=auth.uid() OR public.has_role(auth.uid(),'admin'));
+CREATE FUNCTION public.emargement_tardif_immuable() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN RAISE EXCEPTION 'Journal de signature tardive immuable' USING ERRCODE='P0541'; END $$;
+CREATE TRIGGER emargement_tardif_immuable BEFORE UPDATE OR DELETE ON public.emargement_tardif_journal
+ FOR EACH ROW EXECUTE FUNCTION public.emargement_tardif_immuable();
+REVOKE ALL ON FUNCTION public.emargement_tardif_immuable() FROM PUBLIC,anon,authenticated;
+
+-- Called ONLY by an authenticated Edge adapter AFTER PNG decoding. No learner execute grant.
+CREATE FUNCTION public.emargement_tardif_signer(
+ p_operation uuid,p_signataire uuid,p_regularisation uuid,p_apprenant uuid,p_date date,p_creneau text,
+ p_signature text,p_presence boolean,p_identite boolean,p_user_agent text DEFAULT NULL
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE g public.emargement_regularisations%ROWTYPE; e public.emargements_fc%ROWTYPE;
+ j public.emargement_tardif_journal%ROWTYPE; v_hash text; v_now timestamptz:=clock_timestamp();
+BEGIN
+ IF p_operation IS NULL OR p_signataire IS NULL OR p_apprenant IS NULL OR p_regularisation IS NULL
+ OR p_presence IS DISTINCT FROM true OR p_identite IS DISTINCT FROM true THEN
+ RAISE EXCEPTION 'Identité et présence par créneau requises' USING ERRCODE='42501'; END IF;
+ IF p_signature IS NULL OR length(p_signature)>600000 OR p_signature !~ '^data:image/png;base64,[A-Za-z0-9+/=]{200,}$' THEN
+ RAISE EXCEPTION 'Signature invalide' USING ERRCODE='22023'; END IF;
+ v_hash:=md5(p_signature);
+ -- Same slot serializes different operation IDs too; existing blank row is never overwritten twice.
+ PERFORM pg_advisory_xact_lock(hashtextextended(p_apprenant::text||'|'||p_date::text||'|'||p_creneau,0));
+ SELECT * INTO j FROM public.emargement_tardif_journal WHERE operation_id=p_operation;
+ IF FOUND THEN
+   IF j.signataire_id IS DISTINCT FROM p_signataire OR j.apprenant_id IS DISTINCT FROM p_apprenant
+   OR j.regularisation_id IS DISTINCT FROM p_regularisation OR j.date_cours IS DISTINCT FROM p_date
+   OR j.creneau IS DISTINCT FROM p_creneau OR j.empreinte_signature IS DISTINCT FROM v_hash THEN
+   RAISE EXCEPTION 'Identité de requête réutilisée avec des données différentes' USING ERRCODE='P0541'; END IF;
+   RETURN jsonb_build_object('success',true,'duplicate',true,'id',j.emargement_id,'signed_at',j.signe_le,'tardif',true,'operation_id',j.operation_id);
+ END IF;
+ SELECT * INTO g FROM public.emargement_regularisations WHERE id=p_regularisation;
+ IF NOT FOUND OR g.auth_user_id IS DISTINCT FROM p_signataire OR g.apprenant_id IS DISTINCT FROM p_apprenant
+ OR g.expire_le IS NULL OR g.expire_le<v_now OR g.session_id IS NULL OR nullif(trim(g.motif),'') IS NULL
+ OR nullif(trim(g.autorise_par),'') IS NULL OR NOT(g.creneaux @> jsonb_build_array(jsonb_build_object('date',p_date::text,'creneau',p_creneau))) THEN
+ RAISE EXCEPTION 'Autorisation absente, expirée ou hors périmètre' USING ERRCODE='42501'; END IF;
+ IF p_date IS NULL OR p_date >= (v_now AT TIME ZONE 'Europe/Paris')::date THEN
+ RAISE EXCEPTION 'Régularisation réservée aux créneaux passés' USING ERRCODE='P0541'; END IF;
+ -- Exact current account or explicit attendance-only link, not a guessed name/email.
+ IF NOT EXISTS(SELECT 1 FROM public.apprenants a WHERE a.id=p_apprenant AND a.deleted_at IS NULL
+ AND NOT coalesce(a.abandonnee,false) AND coalesce(a.statut,'') !~* 'annul|abandon|exclu|attente'
+ AND (a.auth_user_id=p_signataire OR (a.auth_user_id IS NULL AND EXISTS(SELECT 1 FROM public.emargement_dossiers_lies l WHERE l.auth_user_id=p_signataire AND l.apprenant_id=a.id)))) THEN
+ RAISE EXCEPTION 'Compte ou dossier non autorisé' USING ERRCODE='42501'; END IF;
+ -- Closed session is not itself a rejection: cancelled/excluded/waitlisted remains forbidden.
+ IF NOT EXISTS(SELECT 1 FROM public.session_apprenants sa JOIN public.sessions s ON s.id=sa.session_id
+ WHERE sa.apprenant_id=p_apprenant AND sa.session_id=g.session_id AND NOT coalesce(sa.liste_attente,false)
+ AND NOT coalesce(sa.emargements_exclus,false) AND coalesce(sa.statut_suivi,'') !~* 'annul|abandon|exclu|attente'
+ AND coalesce(s.statut,'') !~* 'annul|abandon'
+ AND p_date BETWEEN greatest(s.date_debut,coalesce(sa.date_debut,s.date_debut))
+ AND least(coalesce(s.date_fin,s.date_debut),coalesce(sa.date_fin_personnalisee,sa.date_fin,s.date_fin,s.date_debut)))
+ OR NOT EXISTS(SELECT 1 FROM public.emargement_creneaux_reels(p_apprenant) r WHERE r.date_cours=p_date AND r.creneau=p_creneau) THEN
+ RAISE EXCEPTION 'Créneau non prévu pour cette inscription' USING ERRCODE='P0541'; END IF;
+ SELECT * INTO e FROM public.emargements_fc WHERE apprenant_id=p_apprenant AND date_emargement=p_date AND demi_journee=p_creneau FOR UPDATE;
+ IF FOUND AND e.masque IS TRUE THEN RAISE EXCEPTION 'Preuve masquée : revue administrative requise' USING ERRCODE='P0541'; END IF;
+ IF FOUND AND (nullif(trim(coalesce(e.signature_data_url,'')),'') IS NOT NULL OR e.absent IS TRUE) THEN
+ RETURN jsonb_build_object('success',true,'duplicate',true,'conserve',true,'id',e.id,'signed_at',e.signed_at,'tardif',e.signed_at AT TIME ZONE 'Europe/Paris' >= (p_date+1)::timestamp);
+ END IF;
+ IF e.id IS NULL THEN
+ INSERT INTO public.emargements_fc(apprenant_id,user_id,date_emargement,demi_journee,signature_data_url,absent,confirme_presence_creneau,confirme_identite,regularisation_id,signed_at,user_agent)
+ VALUES(p_apprenant,p_signataire,p_date,p_creneau,p_signature,false,true,true,p_regularisation,v_now,left(p_user_agent,500)) RETURNING * INTO e;
+ ELSE
+ IF e.user_id IS DISTINCT FROM p_signataire THEN RAISE EXCEPTION 'Identité de feuille incohérente' USING ERRCODE='42501'; END IF;
+ UPDATE public.emargements_fc SET signature_data_url=p_signature,absent=false,confirme_presence_creneau=true,confirme_identite=true,regularisation_id=p_regularisation,signed_at=v_now,user_agent=left(p_user_agent,500) WHERE id=e.id RETURNING * INTO e;
+ END IF;
+ INSERT INTO public.emargement_tardif_journal(operation_id,emargement_id,regularisation_id,signataire_id,apprenant_id,date_cours,creneau,signe_le,empreinte_signature,confirme_presence,confirme_identite)
+ VALUES(p_operation,e.id,g.id,p_signataire,p_apprenant,p_date,p_creneau,e.signed_at,v_hash,true,true);
+ RETURN jsonb_build_object('success',true,'duplicate',false,'id',e.id,'signed_at',e.signed_at,'tardif',true,'operation_id',p_operation);
+END $$;
+REVOKE ALL ON FUNCTION public.emargement_tardif_signer(uuid,uuid,uuid,uuid,date,text,text,boolean,boolean,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.emargement_tardif_signer(uuid,uuid,uuid,uuid,date,text,text,boolean,boolean,text) TO service_role;
+COMMENT ON FUNCTION public.emargement_tardif_signer(uuid,uuid,uuid,uuid,date,text,text,boolean,boolean,text) IS 'Review candidate; authenticated Edge PNG decoding mandatory. Does not authorize grants, replace existing signatures, backdate or certify historical presence.';
