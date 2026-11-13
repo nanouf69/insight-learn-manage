@@ -30,7 +30,7 @@ export function copieRecenteSession<T extends Record<string, any>>(row:T,states:
 
 /** Add only an exact, server-owned submitted subject absent from legacy receipts.
  * This is a display row keyed by attempt ID, not a new result or inferred linkage. */
-export function ajouterCopiesNativesSession(rows:Record<string,any>[],states:CoreMatiereState[],nonFiables:Set<string>,apprenantId:string,definitions:Array<{id:string;matieres:Array<{id:string;nom:string}>}>):Record<string,any>[] {
+export function ajouterCopiesNativesSession(rows:any[],states:CoreMatiereState[],nonFiables:Set<string>,apprenantId:string,definitions:Array<{id:string;matieres:Array<{id:string;nom:string}>}>):any[] {
   const out=[...rows];
   for(const def of definitions) for(const subject of def.matieres) {
     const examRows=out.filter(r=>r.quiz_id===def.id&&r.apprenant_id===apprenantId);
