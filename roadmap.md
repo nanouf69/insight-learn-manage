@@ -2,7 +2,7 @@
 
 ## 13/11 12:17 UTC — Bilan examen HASSEN BENKHELIL invisible
 - [x] SELECT : cinq exercices historiques module 11 marqués remis, un brouillon, aucun passage figé/futur ; l’onglet ne lit pas cette source historique. Droits admin présents.
-- [ ] Ajouter leur consultation en lecture seule, sans note inventée ni copie de révision, tests et contrôle PC/mobile.
+- [x] Consultation historique en lecture seule ajoutée, révisions/brouillons exclus, notes non vérifiées nulles ; 13 tests PASS, compte admin réel PC et compteur mobile vérifiés ; empreintes inchangées, build OK. Aucun envoi/migration/publication.
 
 ## 13/11 12:06 UTC — Contrat de location : signature par mail
 - [x] Retirer les mentions résiduelles de brouillon de la version finale ; garder les contrôles assurance/permis et le brouillon disponible.
