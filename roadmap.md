@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 09:45 UTC — Boutons F(T)/G(T) TAXI
+- [ ] Audit lecture seule des handlers, catalogue, droits et erreurs ; aucune identité déduite de la capture.
+- [ ] Aperçu : refus lisible, relecture explicite et confirmation strictement par matière ; tests fictifs F/G, concurrence et conservation.
+- [ ] Publication NO-GO : restauration complète non prouvée ; aucun reset, écriture réelle ou migration autorisé.
+
 ## 13/11 09:08 UTC — Urgence BENNANI et signatures après formation
 - [x] BENNANI : EB5 47 marqueurs/une QRC vide, refus local confirmé ; retour vers question manquante et version de reprise corrigés en aperçu. 42 tests ciblés PASS, PC/mobile fictifs sans écriture, build OK ; rapport docs/benani-revision-eb5-2026-11-13.md.
 - [ ] Signatures après formation : préciser attestation ou régularisation de présence, conserver dates réelles et preuves.

@@ -62,7 +62,7 @@ import { readSubjectResetContext } from '@/lib/adminSubjectReset';
 function SubjectPanelStatus({account,exam,subject}:{account:string;exam:string;subject:string}) {
  const {data,error}=useQuery({queryKey:['subject-reset-context',account,exam,subject],queryFn:()=>readSubjectResetContext(account,exam,subject),retry:false});
  const labels={non_commencee:'Non commencée',en_cours:'En cours',en_attente:'En attente',notee:'Résultat conservé',ambigu:'À vérifier'};
- return <span className="text-xs text-muted-foreground" title={data?.reason ?? undefined}>{error?'Lecture indisponible':data?.authorization_id?'À refaire':data?labels[data.status]:'Vérification…'}</span>;
+ return <span className={`text-xs ${error ? 'text-destructive' : 'text-muted-foreground'}`} title={data?.reason ?? undefined}>{error ? (error instanceof Error ? error.message : 'Lecture impossible. Ouvrez le bouton de cette matière pour réessayer.') : data?.authorization_id?'À refaire':data?labels[data.status]:'Vérification…'}</span>;
 }
 interface ExamensBlancsResetTabProps {
   apprenant: {
