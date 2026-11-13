@@ -19,6 +19,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] Correction 23:16 du modèle ferme après examen : objet URGENT, deux avertissements exacts #C62828/700, HTML et texte issus du même modèle ; préparation seule. J+1/J+3/J+5 conservés et obligations J+7 inchangées. Activation bloquée : interdiction de pratique non effective/validité contractuelle non prouvée, priorité non opérationnelle, raccordement serveur absent. Aucun envoi ni publication.
 - [ ] Rappels VTC/TAXI — rectification 23:11 : FERME J−7/J+1/J+3/J+5 ; dès J+7/J+9/J+11 OBLIGATIONS avec mentions CPF/France Travail conditionnelles, sans sanction automatique. Modèles/calendrier/conditions isolés préparés, **63 tests exécutés avec succès**. Aux incomplets NON PRATIQUES seuls, arrêt dès complétion. Responsable : Lovable. Zéro envoi, activation ou publication. BLOQUÉ pour activation : preuve datée CMA, adaptateurs progression/financement vérifiés, journal atomique, priorité/exception, contrats/tests bout-en-bout et confirmation. Impossibilité de passer à pratique toujours à valider/reformuler. Aucun blocage dur de réservation.
 - [x] Aperçu e-mails en texte lisible — APERÇU.
 - [x] Accusé « Je confirme avoir reçu » : PROD, bouton actif sur renvoi nouvelle adresse, documents, identifiants, régularisation émargement, Outlook, identifiants auto. Relances (modifiées il y a 25 h) non redéployées volontairement. À prouver au premier envoi réel.
