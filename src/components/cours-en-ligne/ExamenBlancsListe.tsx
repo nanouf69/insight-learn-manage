@@ -28,7 +28,8 @@ import { computeExamRetakeLock, examRetakeLockMessage } from "@/lib/examRetakeDe
 import { useQrcEnginePending } from "@/hooks/useQrcEnginePending";
 import { isAfterExamReset, latestExamResetCutoffs } from "@/lib/examResetCutoff";
 import { lignesExamenAffichees } from "@/lib/ebLignesAffichees";
-import { lignesNativesAffichees, brouillonDejaRemis } from '@/lib/ebNativeDisplay';
+import { lignesCanoniquesEB, brouillonDejaRemis } from '@/lib/ebNativeDisplay';
+import { libelleAttenteEB } from '@/lib/ebCanonicalStatus';
 import { previousAttempt, type PreviousAttempt } from '@/lib/ebPreviousAttempt';
 import { lireResultatsQuizEleve } from "@/lib/learnerQuizResultsRead";
 import { ExamCardAccess, useExamAccessSessions } from '@/components/sessions/acces-examens/ExamCardAccess';
@@ -101,6 +102,7 @@ function EcranSelection({ onStart, onStartPartial, onEdit, onViewResults, defaul
     return () => clearInterval(id);
   }, []);
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
+  const [notesReadError,setNotesReadError]=useState<string|null>(null);
   const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, PreviousAttempt>>({});
   // Ref so the score-fetch effect below can read the LATEST exam definitions
   // without needing `examensData` as a dependency (its identity changes on
