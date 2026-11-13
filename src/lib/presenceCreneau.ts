@@ -37,7 +37,7 @@ export function projeterPresenceCreneaux(rows: readonly SignatureManquante[], pr
   const aJustifier = details.filter(r => !r.presenceValidee).reduce((s,r) => s + (r.minutes ?? 0),0);
   return {...bilan,details,minutesAJustifier:bilan.minutes == null ? null : aJustifier,
     // Totals require an authoritative merged read; overlapping legacy declarations never become additions.
-    minutesPresenceL liee: 0};
+    minutesPresenceLiee: details.filter(r => r.presenceValidee).reduce((s,r)=>s+(r.minutes ?? 0),0)};
 }
 
 export const dureePratiqueSchema = z.coerce.number().finite().min(0).max(6)
