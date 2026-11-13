@@ -1912,6 +1912,13 @@
       "when": 1794586725680,
       "tag": "0272_presence_lot_operationnel",
       "breakpoints": true
+    },
+    {
+      "idx": 273,
+      "version": "7",
+      "when": 1794595435089,
+      "tag": "0273_email_confirmations_reception",
+      "breakpoints": true
     }
   ]
 }
