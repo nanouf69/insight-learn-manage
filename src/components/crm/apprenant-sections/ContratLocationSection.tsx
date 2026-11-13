@@ -8,6 +8,7 @@ import revueLocation from "../../../../docs/location-vehicule-revue-2026-11-12.m
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LocationPdfPreview } from "./LocationPdfPreview";
+import { LocationMailSignature } from "./LocationMailSignature";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -319,7 +320,7 @@ function ContratLocationForm({ apprenant }: Props) {
       kv("Date de délivrance :", fmtDate(dateDelivrancePermis));
       kv("Préfecture délivrance :", prefecturePermis);
       y += 2;
-      para("À confirmer avant signature : permis B valide et vérification des conditions du conducteur. Ce brouillon ne vaut ni certification ni autorisation du locataire.");
+      para(final ? "Le permis B valide et les conditions du conducteur doivent être vérifiés avant remise du véhicule." : "À confirmer avant signature : permis B valide et vérification des conditions du conducteur. Ce brouillon ne vaut ni certification ni autorisation du locataire.");
       y += 4;
 
       // ── Article 2 ──
@@ -402,7 +403,7 @@ function ContratLocationForm({ apprenant }: Props) {
       // ── Signatures ──
       checkPage(60);
       h1("SIGNATURES");
-      para("Brouillon : aucune signature CMA transférée. Une signature spécifique au contrat de location sera nécessaire après validation juridique.");
+      para(final ? "Chaque partie signe spécifiquement ce contrat. Aucune signature d’un autre document n’est réutilisée." : "Brouillon : aucune signature CMA transférée. Une signature spécifique au contrat de location sera nécessaire après validation juridique.");
       para(`Fait en deux exemplaires originaux, à ${lieuSignature}, le ${fmtDate(dateSignature)}.`);
       y += 8;
 
@@ -812,6 +813,10 @@ function ContratLocationForm({ apprenant }: Props) {
           <FileDown className="w-4 h-4" />
           {generating ? "Génération..." : "Télécharger le brouillon de location (PDF)"}
         </Button>
+        <LocationMailSignature context={{
+          locataire: { nomComplet, email, telephone, adresse, numPermis, dateDelivrancePermis, prefecturePermis },
+          vehiculeChoisi: !!vehiculeId, immatriculation, dateDebut, dateFin, prixLocation, tarifJournalier, regime, assurance,
+        }} policeBlockers={blocagesVehicule} />
         <Dialog open={revueOpen} onOpenChange={setRevueOpen}>
           <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Revue juridique — non publiée</DialogTitle></DialogHeader><pre className="whitespace-pre-wrap break-words text-sm font-sans">{revueLocation}</pre></DialogContent>
         </Dialog>

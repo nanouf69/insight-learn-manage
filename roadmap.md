@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 12:06 UTC — Contrat de location : signature par mail
+- [x] Retirer les mentions résiduelles de brouillon de la version finale ; garder les contrôles assurance/permis et le brouillon disponible.
+- [x] Préparer section mail CRM, écran client et noyau injecté isolé : empreinte/consentement, réservation envoi/renvoi et quarantaine inconnue. Flag OFF, aucune activation.
+- [x] 47 tests PASS, PC/mobile fictifs PASS et build OK ; limites dans docs/location-signature-mail-2026-11-13.md.
+- [ ] Envoi/renvoi réels et PDF signé durable : bloqués par circuit atomique non installé, pièces assurance et restauration complète non prouvées ; aucun mail réel ni publication.
+
 ## 13/11 10:51 UTC — Préremplir les contrats de location de tous les apprenants
 - [x] Coordonnées de la fiche CRM dès l’ouverture, même sans dossier de bienvenue ; dossier complété du même apprenant prioritaire et fiche en complément des champs absents. Champs inconnus laissés vides, signatures/permis non copiés.
 - [x] 33 tests PASS ; navigateur PC/mobile fictif : préremplissage, relecture sans écraser la saisie et changement de dossier sans fuite PASS ; build OK. Aucune écriture réelle ni publication ; parcours réel non exercé.

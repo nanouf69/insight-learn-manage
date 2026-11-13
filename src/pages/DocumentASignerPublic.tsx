@@ -15,6 +15,7 @@ import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { ChoixPratiqueForm, type ChoixDocData } from "@/components/documents/ChoixPratiqueForm";
 import { AttestationSignatureForm, type AttestationDocData } from "@/components/documents/AttestationSignatureForm";
 import { DocumentZoneEditor, dateDuJourDocument } from "@/components/documents/DocumentZoneEditor";
+import { LocationSignatureForm, type LocationPublicDoc } from "@/components/documents/LocationSignatureForm";
 
 
 ensurePdfWorker();
@@ -46,6 +47,7 @@ export default function DocumentASignerPublic() {
   const [downloading, setDownloading] = useState(false);
   const [choixDoc, setChoixDoc] = useState<ChoixDocData | null>(null);
   const [attestationDoc, setAttestationDoc] = useState<AttestationDocData | null>(null);
+  const [locationDoc, setLocationDoc] = useState<LocationPublicDoc | null>(null);
   const [zoneActive, setZoneActive] = useState<ChampDocument | null>(null);
 
   const telecharger = async () => {
@@ -96,6 +98,7 @@ export default function DocumentASignerPublic() {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Document indisponible");
+        if (json.document?.modele_code === "contrat_location") { setLocationDoc(json.document); return; }
         if (json.document?.modele_code === "attestation_fin_formation") { setAttestationDoc(json.document); return; }
         if (json.document?.modele_code) { setChoixDoc(json.document); return; }
         setDoc(json.document);
@@ -145,6 +148,10 @@ export default function DocumentASignerPublic() {
       </div>
     );
   }
+
+  if (locationDoc) return <LocationSignatureForm key={token} doc={locationDoc}
+    submit={async p => { const r = await appel({ action: "submit", ...p }); return r.ok ? r.json : { error: r.json.error || "Signature non confirmée" }; }}
+    read={async () => { const r = await appel({ action: "get" }); if (!r.ok || r.json.document?.modele_code !== "contrat_location") throw new Error("Contrat indisponible"); return r.json.document; }} />;
 
   if (attestationDoc) {
     return (
