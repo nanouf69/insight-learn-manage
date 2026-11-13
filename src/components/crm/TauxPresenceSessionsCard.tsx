@@ -73,6 +73,25 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
   }
+  // A recorded nominative practice day can carry real signatures without a
+  // separate session enrollment. Require entered times, never booking alone.
+  for (const [date, jour] of parDate) {
+    if (!jour.pratique || !daySlots.has(date)) continue;
+    const reservation = reservations.find(r => d10(r.date_choisie) === date);
+    const parts = resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation), normalizePratiqueCreneau(reservation?.creneau));
+    if (!parts.length) continue;
+    autorises.add(`${date}|pratique`);
+    for (const e of emargements) {
+      const creneau = String(e.demi_journee ?? '').trim().toLowerCase();
+      const cle = `${date}|${creneau}`;
+      const part = parts.find(p => p.creneau === creneau);
+      if (d10(e.date_emargement) !== date || !signatureValide(e) || vus.has(cle) || !part || part.startMinute == null || part.endMinute == null) continue;
+      vus.add(cle);
+      res.pratique.faites = (Math.round(res.pratique.faites*60)+part.minutes)/60;
+      signes.push({date,categorie:'pratique',minutes:part.minutes});
+      if (!res.pratique.derniere || date > res.pratique.derniere) res.pratique.derniere = date;
+    }
+  }
   res.pratique.datesEntrainement = [...datesEntrainement].sort();
   const admin=fusionnerPresenceAdministrative(signes,validations,autorises);
   res.session.faites=(Math.round(res.session.faites*60)+admin.theorieMinutes)/60;

@@ -36,4 +36,14 @@ describe('VTC présentiel TOTAL théorie + 6 heures de pratique', () => {
     expect(estVtcPresentiel({type_apprenant:type})).toBe(false);
     expect(pratiquePrevueVtc(40,0,false)).toBe(0);
   });
+  it('réservation seule ne prouve rien ; signatures et horaires enregistrés prouvent 3 puis 6h', () => {
+    const ins=[{sessions:{id:'soir',type_session:'theorique',nom:'VTC cours du soir',date_debut:'2026-09-14',date_fin:'2026-09-27'}}];
+    const reservations=[{date_choisie:'2026-09-28',type_formation:'vtc',creneau:'journee'}];
+    const configs=[{day_time_slots:{'2026-09-28':{matin:'9h-12h',apresmidi:'13h-16h'}}}];
+    const morning={date_emargement:'2026-09-28',demi_journee:'matin',signature_data_url:'data:image/png;base64,fictif'};
+    const afternoon={...morning,demi_journee:'apres_midi'};
+    expect(calculerTauxPresenceHeures([],ins,'vtc',reservations,configs).pratique.faites).toBe(0);
+    expect(calculerTauxPresenceHeures([morning],ins,'vtc',reservations,configs).pratique.faites).toBe(3);
+    expect(calculerTauxPresenceHeures([morning,morning,afternoon],ins,'vtc',reservations,configs).pratique.faites).toBe(6);
+  });
 });
