@@ -2,8 +2,9 @@
 
 ## 13/11 08:49 UTC — Correction visible Q3 EB5 VTC
 - [x] Audit SELECT : éditeur 90004 et publication EB5 v10 portent C « 4 minutes » ; 53 snapshots portent C « 8 minutes ». Realtime exam_content_versions absent.
-- [ ] Préparer affichage séparé du corrigé actuel avec identité/contenu prouvés, notifications sans polling, copies/notes intactes.
-- [ ] Tests fictifs et rapport ; aucune écriture réelle ni publication. Restauration complète demeure NON PROUVÉE.
+- [x] Affichage distinct du corrigé administrateur enregistré, identité exacte/aucune association de réponse sur texte modifié, événements sans nouveau polling ; copies/notes intactes.
+- [x] 46 tests ciblés, suite 4 727 PASS/13 ignorés/0 échec, build OK ; navigateur PC/mobile fictif sans recharge et sans écriture. Rapport docs/eb5-correction-visible-2026-11-13.md.
+- [ ] Publication NO-GO : restauration complète non prouvée ; compte apprenant et livraison Realtime inter-appareils réels non vérifiés. Aucune écriture réelle ni publication.
 
 ## 12/11 23:19 UTC — Qualification publication conditionnelle stabilisation
 - [x] Comparaison site public/HEAD : 12 fichiers, trois fichiers applicatifs ; location/attestation absentes du delta, SQL auto-QRC de revue non installé constaté.

@@ -66,6 +66,8 @@ import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
 import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
 import { lireBanniereRevision } from "@/lib/revisionBannierePreuve";
 import { QuestionsFaussesEffectuees } from "./QuestionsFaussesEffectuees";
+import { useExamCurrentCorrection } from "@/hooks/useExamCurrentCorrection";
+import { ExamCurrentCorrectionNotice } from "./ExamCurrentCorrectionNotice";
 
 
 function EcranResultats({
@@ -105,6 +107,7 @@ function EcranResultats({
   const coreOwnerRef = useRef(apprenantId);
   const sameCoreOwner = coreOwnerRef.current === apprenantId;
   const coreTick = useCoreChangeTick(apprenantId);
+  const currentCorrection = useExamCurrentCorrection(examen.id, apprenantId, resultats.some(r => !r.nonPassee));
   const [freshCopies, setFreshCopies] = useState<{ owner: string; rows: any[] } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -1036,6 +1039,8 @@ function EcranResultats({
                                   <span className="font-medium text-green-700">Corrigé de notation du passage : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
                                 </div>
                                 <CorrigeSourceNotice source={sourcePour(sourcesOfficielles.map, r, r.matiereId, q.id)} answer={rep} />
+                                <ExamCurrentCorrectionNotice source={currentCorrection.source} examId={examen.id} subject={r.matiereId ?? matiere.id} frozen={q} />
+                                {currentCorrection.error && <p role="alert" className="text-xs text-destructive">Corrigé administrateur actuel indisponible. Le corrigé et la note du passage sont conservés.</p>}
                                 {!CORRIGES_TROIS_SURFACES_ACTIFS && (() => {
                                   const maj = corrigeActuelPour(
                                     corrigesActuels,
