@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 16:05 UTC — Deux boutons présence (validation créneau + suppression 4 h)
+- [x] Cause confirmée en base : aucun des objets requis n'existe (2 journaux, table créneaux, dossier PDF privé) et les deux verrous d'activation sont à OFF.
+- [x] Aucun environnement séparé possible : un nouveau brouillon (16:03) partage aussi la base réelle.
+- [x] Point de restauration lecture seule : 3 lignes md5 c751e286…, définition exacte de releve_sources_apprenant sauvegardée, retour arrière écrit (docs/sql-revue/sauvegarde-2026-11-13-presence).
+- [ ] Installation additive dans la base réelle + activation + publication ciblée : en attente d'un « OUI » explicite de l'utilisateur.
+
 ## 13/11 15:50 UTC — Annulation opérationnelle des 4 h CHERNI
 - [x] Transport candidat RPC/relecture, journal append-only/snapshot, annulation sans motif et lecteurs live communs ; 4 h et 1h30 réelles conservées, aucune mutation.
 - [x] 105 Vitest et 2 contrats PostgreSQL jetables PASS ; vrai bouton PC/mobile vers PostgreSQL isolé, 330→90→330 min et reload, restauration originaux/journal PASS ; build OK.
