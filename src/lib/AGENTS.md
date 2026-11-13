@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Live attendance totals sum enrolled theory/practice targets only; an unenrolled practice supplement needs explicit contractual proof, and evening defaults never override positive configured hours. Why: implicit practice invented a denominator unrelated to the learner's session.
 - Formation invitation HTML uses an explicit continuing-training projection and removes only identified legacy paragraphs locally; why: keep saved templates, access rights and sent mail history unchanged while avoiding duplicate summaries and initial-exam instructions in FC.
 - First-passage rates retain their exact counted/excluded observations in the same read model; drilldowns never reread approximate copies, QCM needs submitted native proof, and full-copy mirrors use shared strict provenance. Why: detail denominators and frozen answers must match the displayed statistic.
 - Effective reset read adapters remain disconnected until all readers and refresh paths are approved; why: a passing isolated projection cannot establish coherent production displays.

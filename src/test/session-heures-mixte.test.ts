@@ -56,5 +56,5 @@ it2("cours du soir VTC = 40 h même si la session commune est en journée", () =
   const s = { id: "s1", type_session: "theorique", nom: "VTC TAXI", heure_debut: "09:00", types_apprenant: ["VTC", "TAXI"], date_debut: "2026-09-01", date_fin: "2026-10-01" };
   ex2(hti([{ sessions: s, heure_debut_personnalisee: "17:00" }], "vtc")).toBe(40);
   ex2(hti([{ sessions: s }], "vtc")).toBe(60);
-  ex2(hti([{ sessions: { ...s, id: "s2", heures_total: 60, nom: "VTC soir" } }], "vtc")).toBe(40);
+  ex2(hti([{ sessions: { ...s, id: "s2", heures_total: 60, nom: "VTC soir" } }], "vtc")).toBe(60);
 });
