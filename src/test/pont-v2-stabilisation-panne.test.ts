@@ -106,7 +106,7 @@ describe("Panne serveur pendant un examen blanc", () => {
     expect(delaiReessai(1, 0.5)).toBe(1000);
     expect(delaiReessai(3, 0.5)).toBe(4000);
     expect(delaiReessai(20, 0.5)).toBe(30000);
-    expect(delaiReessai(20, 1)).toBeLessThanOrEqual(39000);
+    expect(delaiReessai(20, 1)).toBeLessThanOrEqual(30000);
     expect(delaiReessai(1, 0)).toBe(700);
   });
 

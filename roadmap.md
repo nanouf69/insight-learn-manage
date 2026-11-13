@@ -4,7 +4,8 @@
 - [x] Comparaison site public/HEAD : 12 fichiers, trois fichiers applicatifs ; location/attestation absentes du delta, SQL auto-QRC de revue non installé constaté.
 - [x] 77 tests ciblés, suite globale 4 680 réussis/3 échecs ; fixture manquante reconstituée sur cluster jetable (5 SQL + 2 lecteurs PASS), deux échecs textuels restent.
 - [x] Empreintes SELECT avant/après identiques : 216 copies, 216 notes, 488 QRC, 3 328 réponses EB5 ; aucune écriture réelle.
-- [ ] Publication NO-GO : sauvegarde complète/auth/fichiers et restauration isolée non accessibles/non prouvées ; scan frais, deux onglets et stockage refusé non qualifiés. Build automatique OK 23:27:38 UTC. Rapport docs/stabilisation-go-no-go-2026-11-12.md.
+- [x] 13/11 : stockage refusé, deux onglets, envoi en vol, appel figé, tests globaux (4 704 OK), scan frais (rien de nouveau) — corrigés/prouvés en aperçu.
+- [ ] Publication NO-GO : sauvegarde complète/auth/fichiers et restauration isolée non accessibles/non prouvées. Rapport docs/stabilisation-go-no-go-2026-11-12.md.
 
 ## 12/11 21:04 UTC — Vérification directe sauvegardes et poursuite aperçu
 - [x] Santé Cloud et inventaire stockage lus ; manifestes privés 11/12 relus avec session admin, deux lots de 10 000 clés vérifiés sans écriture.
@@ -1853,3 +1854,10 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
 - [x] 77 tests PASS ; journée 49/49 et soir 54/54 notes définitives concordantes ; 34 copies soir en attente gardées sans note ; rechargement PC/mobile identique, 42 notes TAXI conservées.
 - [ ] Publication ciblée demandée ; contrôle public 07:21 UTC sert encore index-Cv4rxQEI.js sans projection. Bascule du déploiement non prouvée, attente du service de publication.
+
+## 13/11 00:41 UTC — Corriger les obstacles du NO-GO stabilisation (aperçu, aucune écriture réelle)
+- [ ] File V2 : stockage refusé/saturé → repli session/mémoire, alerte visible, garde de fermeture, jamais « sauvegardé » sans confirmation.
+- [ ] Deux onglets : verrou inter-onglets, fusion sans perte, dernière valeur par horodatage, conflits mis de côté.
+- [ ] Tests : fermeture pendant envoi, panne prolongée, deux onglets, stockage refusé.
+- [ ] Deux tests globaux en échec, suite entière, scan de sécurité frais.
+- [ ] Sauvegardes/restauration isolée : vérifier ce qui est possible, déclarer le blocage sinon. Lot à publier contrôlé.

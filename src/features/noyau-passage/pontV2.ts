@@ -309,6 +309,24 @@ export async function demarrerTentative(params: {
   return attemptId;
 }
 
+/**
+ * Un appel sans réponse (réseau figé) ne doit jamais bloquer la file ni le
+ * verrou inter-onglets : au-delà de ce délai il est traité comme une coupure.
+ * Le renvoi reste sans effet double (operation_id déterministe, révision CAS).
+ */
+export const DELAI_MAX_APPEL_MS = 20_000;
+async function avecDelaiMax<T>(appel: PromiseLike<T>): Promise<T | { data: null; error: { message: string } }> {
+  let minuteur: ReturnType<typeof setTimeout> | null = null;
+  const delai = new Promise<{ data: null; error: { message: string } }>((resoudre) => {
+    minuteur = setTimeout(() => resoudre({ data: null, error: { message: "CLIENT_TIMEOUT Failed to fetch" } }), DELAI_MAX_APPEL_MS);
+  });
+  try {
+    return await Promise.race([Promise.resolve(appel), delai]);
+  } finally {
+    if (minuteur) clearTimeout(minuteur);
+  }
+}
+
 /** Enregistre une réponse dans le noyau (append-only + révision serveur). */
 export async function enregistrerReponse(params: {
   attemptId: string;
@@ -341,7 +359,7 @@ export async function enregistrerReponse(params: {
     p_session_origine: "passage_apprenant",
   });
   // Réponse absente (coupure) : traitée comme une erreur réseau, la réponse reste en file.
-  let { data, error } = (await sauvegarder(op, params.revisionAttendue ?? null)) ?? {
+  let { data, error } = (await avecDelaiMax(sauvegarder(op, params.revisionAttendue ?? null))) ?? {
     data: null,
     error: { message: "Failed to fetch" },
   };
@@ -409,8 +427,23 @@ export function demanderCorrectionIa(attemptId: string): void {
 // Une réponse saisie hors connexion n'est jamais perdue : elle attend dans le
 // navigateur et repart au retour du réseau. Les identifiants d'opération étant
 // déterministes, un renvoi ne peut pas créer de doublon côté serveur.
+//
+// STABILISATION 13/11 — trois garanties supplémentaires :
+//  1. stockage refusé/saturé : repli sessionStorage puis mémoire, état exposé
+//     (etatStockageFileNoyau) pour une alerte visible ; rien n'est retiré tant
+//     que le serveur n'a pas confirmé ;
+//  2. plusieurs onglets : chaque mutation relit le stockage partagé (aucun
+//     onglet n'écrase la file d'un autre), chaque élément a un identifiant
+//     unique, la valeur la plus récente d'une question est choisie par
+//     horodatage et un verrou inter-onglets (Web Locks) garantit un seul envoi
+//     à la fois pour tout le navigateur ;
+//  3. le délai de nouvel essai ne dépasse jamais 30 s, aléa compris.
 
 const CLE_FILE = "noyau_v2_answer_queue_v1";
+const CLE_FILE_ECARTEE = "noyau_v2_answer_queue_parked_v1";
+const CLE_FILE_RESOLUE = "noyau_v2_answer_queue_resolved_v1";
+const CLE_REVISIONS = "noyau_v2_revisions_confirmees_v1";
+const NOM_VERROU = "noyau_v2_answer_queue_lock_v1";
 
 type ElementFile = {
   attemptId: string;
@@ -418,11 +451,67 @@ type ElementFile = {
   questionId: number | string;
   valeur: unknown;
   at: string;
+  /** Identifiant unique de l'élément (absent des files écrites avant le 13/11). */
+  uid?: string;
+  /** Ordre d'arrivée dans l'onglet (départage deux saisies de la même milliseconde). */
+  seq?: number;
 };
 
-function lireFile(): ElementFile[] {
+/** durable = localStorage ; session = repli sessionStorage (onglet) ; memoire = rien ne survit à la fermeture. */
+export type EtatStockageFileNoyau = "durable" | "session" | "memoire";
+
+const cleElement = (e: { attemptId: string; matiereId: string; questionId: number | string }) =>
+  `${e.attemptId}|${e.matiereId}|${String(e.questionId)}`;
+const uidDe = (e: ElementFile) => e.uid ?? `ancien|${cleElement(e)}|${e.at}`;
+/** Ordre chronologique : horodatage puis ordre d'arrivée. */
+const comparer = (a: ElementFile, b: ElementFile) =>
+  String(a.at).localeCompare(String(b.at)) || (a.seq ?? 0) - (b.seq ?? 0);
+
+let sequenceOnglet = 0;
+const nouvelUid = () => {
+  try { return crypto.randomUUID(); } catch { return `u${Date.now()}-${Math.random().toString(36).slice(2)}-${++sequenceOnglet}`; }
+};
+
+let etatStockage: EtatStockageFileNoyau = "durable";
+const abonnes = new Set<() => void>();
+function notifier(): void {
+  for (const abonne of abonnes) { try { abonne(); } catch { /* un écran défaillant ne bloque jamais la file */ } }
+}
+
+/** État réel de conservation locale des réponses non encore confirmées. */
+/** Sonde réelle du stockage : après un rechargement, l'alerte doit apparaître avant toute nouvelle saisie. */
+function sonderStockage(): EtatStockageFileNoyau {
+  const { local, session } = magasins();
+  const essayer = (m: Storage | null) => {
+    if (!m) return false;
+    try { m.setItem("noyau_v2_sonde_stockage", "1"); m.removeItem("noyau_v2_sonde_stockage"); return true; } catch { return false; }
+  };
+  return essayer(local) ? "durable" : essayer(session) ? "session" : "memoire";
+}
+let stockageSonde = false;
+export function etatStockageFileNoyau(): EtatStockageFileNoyau {
+  if (!stockageSonde) { stockageSonde = true; etatStockage = sonderStockage(); }
+  return etatStockage;
+}
+
+/** Abonnement aux changements de la file (ajout, confirmation, stockage, autre onglet). */
+export function surveillerFileNoyau(rappel: () => void): () => void {
+  abonnes.add(rappel);
+  return () => { abonnes.delete(rappel); };
+}
+
+function magasins(): { local: Storage | null; session: Storage | null } {
+  let local: Storage | null = null;
+  let session: Storage | null = null;
+  try { local = (globalThis as { localStorage?: Storage }).localStorage ?? null; } catch { local = null; }
+  try { session = (globalThis as { sessionStorage?: Storage }).sessionStorage ?? null; } catch { session = null; }
+  return { local, session };
+}
+
+function lireTableau(magasin: Storage | null, cle: string): ElementFile[] {
+  if (!magasin) return [];
   try {
-    const brut = localStorage.getItem(CLE_FILE);
+    const brut = magasin.getItem(cle);
     const parsed = brut ? JSON.parse(brut) : [];
     return Array.isArray(parsed) ? (parsed as ElementFile[]) : [];
   } catch {
@@ -430,35 +519,90 @@ function lireFile(): ElementFile[] {
   }
 }
 
-function ecrireFile(file: ElementFile[]): void {
-  try {
-    localStorage.setItem(CLE_FILE, JSON.stringify(file));
-  } catch {
-    /* la file bascule en mémoire : rien n'est effacé silencieusement */
+/**
+ * Par liste : éléments que cet onglet n'a pas pu écrire (repli mémoire) et
+ * éléments que cet onglet a retirés après confirmation (jamais ressuscités
+ * depuis une ancienne copie restée dans un stockage).
+ */
+type Tampon = { nonPersistes: ElementFile[] | null; retires: Set<string> };
+const tampons = new Map<string, Tampon>();
+const tampon = (cle: string): Tampon => {
+  let t = tampons.get(cle);
+  if (!t) { t = { nonPersistes: null, retires: new Set() }; tampons.set(cle, t); }
+  return t;
+};
+
+function lireListe(cle: string): ElementFile[] {
+  const { local, session } = magasins();
+  const t = tampon(cle);
+  const vus = new Map<string, ElementFile>();
+  for (const e of [...lireTableau(local, cle), ...lireTableau(session, cle), ...(t.nonPersistes ?? [])]) {
+    if (!e || typeof e !== "object") continue;
+    const u = uidDe(e);
+    if (t.retires.has(u) || vus.has(u)) continue;
+    vus.set(u, e);
   }
+  return [...vus.values()].sort(comparer);
 }
 
-let fileMemoire: ElementFile[] | null = null;
-let envoiEnCours = false;
+function ecrireListe(cle: string, liste: ElementFile[]): EtatStockageFileNoyau {
+  const { local, session } = magasins();
+  const t = tampon(cle);
+  const json = JSON.stringify(liste);
+  let etat: EtatStockageFileNoyau = "memoire";
+  try {
+    if (!local) throw new Error("localStorage indisponible");
+    local.setItem(cle, json);
+    etat = "durable";
+    // Copie de repli devenue inutile : retirée pour ne jamais ressusciter un élément confirmé.
+    try { session?.removeItem(cle); } catch { /* les identifiants retirés restent filtrés */ }
+  } catch {
+    try {
+      if (!session) throw new Error("sessionStorage indisponible");
+      session.setItem(cle, json);
+      etat = "session";
+      // L'ancienne copie locale n'est retirée qu'APRÈS une écriture de repli réussie.
+      try { local?.removeItem(cle); } catch { /* filtrée par les identifiants retirés */ }
+    } catch {
+      etat = "memoire";
+    }
+  }
+  t.nonPersistes = etat === "memoire" ? [...liste] : null;
+  return etat;
+}
 
-// STABILISATION 12/11 — une seule réponse en attente par question (la plus récente),
-// au plus une requête en vol à la fois, et un délai croissant borné (avec aléa)
-// après un échec réseau : plus de rafale « une écriture par lettre tapée » ni
-// de renvoi à chaque frappe pendant une panne.
-const cleElement = (e: { attemptId: string; matiereId: string; questionId: number | string }) =>
-  `${e.attemptId}|${e.matiereId}|${String(e.questionId)}`;
-let elementEnVol: ElementFile | null = null;
+/** Mutation atomique dans l'onglet : relit le stockage partagé, applique, réécrit. */
+function muterListe(cle: string, mutation: (liste: ElementFile[]) => ElementFile[]): ElementFile[] {
+  const avant = lireListe(cle);
+  const apres = mutation([...avant]);
+  const gardes = new Set(apres.map(uidDe));
+  const t = tampon(cle);
+  for (const e of avant) if (!gardes.has(uidDe(e))) t.retires.add(uidDe(e));
+  const etat = ecrireListe(cle, apres);
+  if (cle === CLE_FILE) { etatStockage = etat; stockageSonde = true; }
+  notifier();
+  return apres;
+}
+
+const lireFile = () => lireListe(CLE_FILE);
+const lireEcartees = () => lireListe(CLE_FILE_ECARTEE);
+
+let envoiEnCours = false;
+let uidEnVol: string | null = null;
 // Délai de nouvel essai PAR passage : la panne d'une ancienne tentative ne retarde jamais la tentative ouverte.
 const attentes = new Map<string, { echecs: number; prochainEssaiMs: number }>();
 const enAttenteReseau = (attemptId: string) => (attentes.get(attemptId)?.prochainEssaiMs ?? 0) > Date.now();
 let minuteurReessai: ReturnType<typeof setTimeout> | null = null;
+let minuteurVerrou: ReturnType<typeof setTimeout> | null = null;
 export const DELAI_REESSAI_MIN_MS = 1_000;
 export const DELAI_REESSAI_MAX_MS = 30_000;
+/** Un autre onglet envoie déjà : nouvelle vérification après ce délai. */
+export const DELAI_VERROU_OCCUPE_MS = 1_500;
 
-/** Délai avant nouvel essai : 1 s, 2 s, 4 s… plafonné à 30 s, avec ±30 % d'aléa. */
+/** Délai avant nouvel essai : 1 s, 2 s, 4 s… avec ±30 % d'aléa, jamais plus de 30 s. */
 export function delaiReessai(echecs: number, alea: number = Math.random()): number {
   const base = Math.min(DELAI_REESSAI_MAX_MS, DELAI_REESSAI_MIN_MS * 2 ** Math.max(0, echecs - 1));
-  return Math.round(base * (0.7 + 0.6 * alea));
+  return Math.min(DELAI_REESSAI_MAX_MS, Math.round(base * (0.7 + 0.6 * alea)));
 }
 
 function planifierReessai(): void {
@@ -469,18 +613,29 @@ function planifierReessai(): void {
   minuteurReessai = setTimeout(() => { minuteurReessai = null; void viderFileNoyau(); }, attente);
 }
 
+function planifierApresVerrou(attemptId?: string | null, forcer?: boolean): void {
+  if (minuteurVerrou) return;
+  minuteurVerrou = setTimeout(() => {
+    minuteurVerrou = null;
+    void viderFileNoyau(attemptId ?? null, forcer ? { forcer: true } : undefined);
+  }, DELAI_VERROU_OCCUPE_MS);
+}
+
+// Autre onglet : ses ajouts/confirmations rafraîchissent les compteurs affichés ici.
+try {
+  const fenetre = (globalThis as { addEventListener?: Window["addEventListener"] });
+  fenetre.addEventListener?.("storage", (evenement: StorageEvent) => {
+    if (!evenement.key || evenement.key === CLE_FILE || evenement.key === CLE_FILE_ECARTEE) notifier();
+  });
+} catch { /* environnement sans fenêtre */ }
+
 /** Met une réponse en file puis tente de la transmettre au noyau. */
-export function enfilerReponseNoyau(element: Omit<ElementFile, "at">): void {
-  const file = fileMemoire ?? lireFile();
+export function enfilerReponseNoyau(element: Omit<ElementFile, "at" | "uid" | "seq">): void {
   const cle = cleElement(element);
-  // Remplace en place l'ancienne valeur en attente de la même question (jamais celle déjà en vol) :
+  const nouveau: ElementFile = { ...element, at: new Date().toISOString(), uid: nouvelUid(), seq: ++sequenceOnglet };
+  // Remplace l'ancienne valeur en attente de la même question (jamais celle en vol dans cet onglet) :
   // la plus récente gagne, l'ordre d'arrivée des autres questions est conservé.
-  for (let i = file.length - 1; i >= 0; i -= 1) {
-    if (file[i] !== elementEnVol && cleElement(file[i]) === cle) file.splice(i, 1);
-  }
-  file.push({ ...element, at: new Date().toISOString() });
-  fileMemoire = file;
-  ecrireFile(file);
+  muterListe(CLE_FILE, (file) => [...file.filter((e) => uidDe(e) === uidEnVol || cleElement(e) !== cle), nouveau]);
   void viderFileNoyau();
 }
 
@@ -491,24 +646,9 @@ export function enfilerReponseNoyau(element: Omit<ElementFile, "at">): void {
  * les réponses de la matière en cours puissent partir et que « Terminer la
  * matière » redevienne possible.
  */
-const CLE_FILE_ECARTEE = "noyau_v2_answer_queue_parked_v1";
-
-function lireEcartees(): ElementFile[] {
-  try {
-    const brut = localStorage.getItem(CLE_FILE_ECARTEE);
-    const parsed = brut ? JSON.parse(brut) : [];
-    return Array.isArray(parsed) ? (parsed as ElementFile[]) : [];
-  } catch {
-    return [];
-  }
-}
-
 function ecarter(element: ElementFile): void {
-  try {
-    localStorage.setItem(CLE_FILE_ECARTEE, JSON.stringify([...lireEcartees(), element]));
-  } catch {
-    /* rien n'est effacé : au pire l'élément reste seulement en mémoire */
-  }
+  const copie = { ...element, uid: uidDe(element) };
+  muterListe(CLE_FILE_ECARTEE, (liste) => (liste.some((e) => uidDe(e) === copie.uid) ? liste : [...liste, copie]));
 }
 
 export type ResultatRemappageFileNoyau = {
@@ -538,11 +678,10 @@ export function remapperFileApresReouverture(params: {
   const attendues = new Set(params.questionIdsSnapshot.map(String));
   if (anciens.size === 0 || attendues.size === 0) return { ok: false, correspondance: 0, recuperees: 0 };
 
-  const active = fileMemoire ?? lireFile();
+  const active = lireFile();
   const parked = lireEcartees();
-  const candidates = [...parked, ...active]
-    .filter((e) => anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId))
-    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const concerne = (e: ElementFile) => anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId);
+  const candidates = [...parked, ...active].filter(concerne).sort(comparer);
 
   const dernierParQuestion = new Map<string, ElementFile>();
   for (const element of candidates) {
@@ -552,32 +691,32 @@ export function remapperFileApresReouverture(params: {
     }
     dernierParQuestion.set(id, element);
   }
-  const idsLocales = new Set(dernierParQuestion.keys());
   // Couverture partielle acceptée : chaque réponse locale appartient déjà au
   // snapshot officiel (contrôle ci-dessus). Les questions absentes restent
   // simplement à répondre ; aucune réponse n'est inventée ni écrasée.
-  if (idsLocales.size === 0) return { ok: false, correspondance: 0, recuperees: 0 };
+  if (dernierParQuestion.size === 0) return { ok: false, correspondance: 0, recuperees: 0 };
 
   // Toute ancienne entrée encore active est d'abord conservée dans la file
   // écartée. Elle ne sera donc plus jamais envoyée vers ATTEMPT_CLOSED.
-  const anciennesActives = active.filter(
-    (e) => anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId),
-  );
-  for (const element of anciennesActives) ecarter(element);
-  const autresActives = active.filter(
-    (e) => !(anciens.has(e.attemptId) && String(e.matiereId) === String(params.matiereId)),
-  );
-  const dejaNouvelles = new Set(
-    autresActives
-      .filter((e) => e.attemptId === params.nouvelAttemptId && String(e.matiereId) === String(params.matiereId))
-      .map((e) => idQuestionNoyau(params.matiereId, e.questionId)),
-  );
-  const remappees = [...dernierParQuestion.entries()]
-    .filter(([id]) => !dejaNouvelles.has(id))
-    .map(([, element]) => ({ ...element, attemptId: params.nouvelAttemptId, at: new Date().toISOString() }));
-  const prochaine = [...autresActives, ...remappees];
-  fileMemoire = prochaine;
-  ecrireFile(prochaine);
+  for (const element of active.filter(concerne)) ecarter(element);
+  muterListe(CLE_FILE, (file) => {
+    const autres = file.filter((e) => !concerne(e));
+    const dejaNouvelles = new Set(
+      autres
+        .filter((e) => e.attemptId === params.nouvelAttemptId && String(e.matiereId) === String(params.matiereId))
+        .map((e) => idQuestionNoyau(params.matiereId, e.questionId)),
+    );
+    const remappees = [...dernierParQuestion.entries()]
+      .filter(([id]) => !dejaNouvelles.has(id))
+      .map(([, element]) => ({
+        ...element,
+        attemptId: params.nouvelAttemptId,
+        at: new Date().toISOString(),
+        uid: nouvelUid(),
+        seq: ++sequenceOnglet,
+      }));
+    return [...autres, ...remappees];
+  });
   return { ok: true, correspondance: attendues.size, recuperees: dernierParQuestion.size };
 }
 
@@ -609,32 +748,40 @@ export function questionsNoyauEcartees(attemptId?: string | null): Set<string> {
 // première réponse arrivait au noyau. Chaque tablette retient le dernier numéro
 // confirmé par le serveur pour chaque question et l'envoie avec la réponse.
 // Si un autre appareil a modifié la réponse, le numéro ne correspond plus :
-// refus serveur, mise de côté, jamais d'écrasement.
-const CLE_REVISIONS = "noyau_v2_revisions_confirmees_v1";
+// refus serveur, mise de côté, jamais d'écrasement. Les numéros sont partagés
+// entre onglets (stockage) et doublés en mémoire si le stockage est refusé.
 const cleRevision = (attemptId: string, qid: string) => `${attemptId}|${qid}`;
 const revisionsChargees = new Set<string>();
+const revisionsMemoire: Record<string, number> = {};
 /** Dernière valeur confirmée par le serveur (mémoire de page) : un renvoi identique ne crée pas de nouvelle révision. */
 const valeursConfirmees = new Map<string, string>();
 
 function lireRevisions(): Record<string, number> {
-  try {
-    const brut = localStorage.getItem(CLE_REVISIONS);
-    const parsed = brut ? JSON.parse(brut) : {};
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
+  const fusion: Record<string, number> = { ...revisionsMemoire };
+  const { local, session } = magasins();
+  for (const magasin of [local, session]) {
+    if (!magasin) continue;
+    try {
+      const brut = magasin.getItem(CLE_REVISIONS);
+      const parsed = brut ? JSON.parse(brut) : {};
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) continue;
+      for (const [cle, rev] of Object.entries(parsed as Record<string, unknown>)) {
+        if (typeof rev === "number" && !(typeof fusion[cle] === "number" && fusion[cle] >= rev)) fusion[cle] = rev;
+      }
+    } catch { /* stockage illisible : la mémoire de page reste utilisée */ }
   }
+  return fusion;
 }
 
 function memoriserRevision(cle: string, revision: number): void {
   const courant = lireRevisions();
   // Un numéro ne recule jamais.
   if (typeof courant[cle] === "number" && courant[cle] >= revision) return;
-  try {
-    localStorage.setItem(CLE_REVISIONS, JSON.stringify({ ...courant, [cle]: revision }));
-  } catch {
-    /* au pire, envoi sans numéro : le serveur refuse, rien n'est écrasé */
-  }
+  revisionsMemoire[cle] = revision;
+  const json = JSON.stringify({ ...courant, [cle]: revision });
+  const { local, session } = magasins();
+  try { if (!local) throw new Error(); local.setItem(CLE_REVISIONS, json); return; } catch { /* repli */ }
+  try { session?.setItem(CLE_REVISIONS, json); } catch { /* mémoire de page : le serveur refuse au pire, rien n'est écrasé */ }
 }
 
 /** Charge une fois par page les numéros de version serveur d'un passage (lecture seule). */
@@ -658,98 +805,122 @@ async function chargerRevisionsServeur(attemptId: string): Promise<void> {
   }
 }
 
-/** Réservé aux tests : simule un rechargement de page. */
+/** Réservé aux tests : simule un rechargement de page (la mémoire de l'onglet disparaît). */
 export function __simulerRechargementPourTests(): void {
-  attentes.clear(); elementEnVol = null;
+  attentes.clear(); uidEnVol = null; envoiEnCours = false;
   if (minuteurReessai) { clearTimeout(minuteurReessai); minuteurReessai = null; }
+  if (minuteurVerrou) { clearTimeout(minuteurVerrou); minuteurVerrou = null; }
   revisionsChargees.clear();
   valeursConfirmees.clear();
-  fileMemoire = null;
+  tampons.clear();
+  for (const cle of Object.keys(revisionsMemoire)) delete revisionsMemoire[cle];
+  etatStockage = "durable";
+  stockageSonde = false;
+}
+
+type Verrous = { request: (nom: string, options: { ifAvailable: boolean }, rappel: (verrou: unknown) => Promise<unknown>) => Promise<unknown> };
+
+/**
+ * Un seul envoi à la fois pour tout le navigateur. Sans Web Locks (anciens
+ * navigateurs, tests), le verrou d'onglet suffit : l'idempotence et les numéros
+ * de version serveur empêchent toujours un double effet ou un écrasement.
+ */
+async function sousVerrou(travail: () => Promise<void>): Promise<boolean> {
+  const verrous = (globalThis as { navigator?: { locks?: Verrous } }).navigator?.locks;
+  if (!verrous?.request) { await travail(); return true; }
+  let obtenu = false;
+  await verrous.request(NOM_VERROU, { ifAvailable: true }, async (verrou) => {
+    if (!verrou) return;
+    obtenu = true;
+    await travail();
+  });
+  return obtenu;
 }
 
 /** Vide la file séquentiellement. Une réponse ne quitte la file qu'une fois confirmée. */
 export async function viderFileNoyau(attemptId?: string | null, options?: { forcer?: boolean }): Promise<{ restantes: number }> {
   const compter = (f: ElementFile[]) => (attemptId ? f.filter((e) => e.attemptId === attemptId).length : f.length);
-  if (envoiEnCours) return { restantes: compter(fileMemoire ?? lireFile()) };
+  if (envoiEnCours) return { restantes: compter(lireFile()) };
   // Pendant le délai de nouvel essai, seules les actions explicites (terminer, retour réseau) relancent.
-  if (!options?.forcer && attemptId && enAttenteReseau(attemptId)) return { restantes: compter(fileMemoire ?? lireFile()) };
+  if (!options?.forcer && attemptId && enAttenteReseau(attemptId)) return { restantes: compter(lireFile()) };
   envoiEnCours = true;
   try {
-    let file = fileMemoire ?? lireFile();
-    fileMemoire = file;
-    const retirer = (element: ElementFile) => {
-      const i = file.indexOf(element);
-      if (i >= 0) file.splice(i, 1); // même tableau que fileMemoire : les ajouts pendant l'envoi sont conservés
-      ecrireFile(file);
-    };
-    for (;;) {
-      // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un autre passage.
-      const element = file.find((e) => (attemptId ? e.attemptId === attemptId : options?.forcer || !enAttenteReseau(e.attemptId)));
-      if (!element) break;
-      // Une valeur plus récente de la même question attend déjà : l'ancienne n'est jamais envoyée.
-      const posElement = file.indexOf(element);
-      if (file.some((e, i) => i > posElement && cleElement(e) === cleElement(element))) { retirer(element); continue; }
-      elementEnVol = element;
-      // Reprise (F5, autre tablette) : numéros de version de ce passage lus une
-      // fois depuis le serveur avant le premier envoi.
-      await chargerRevisionsServeur(element.attemptId);
-      const cleRev = cleRevision(element.attemptId, idQuestionNoyau(element.matiereId, element.questionId));
-      const revisionConnue = lireRevisions()[cleRev];
-      // Valeur identique à la dernière confirmée : envoi sans numéro, le serveur
-      // répond « déjà enregistré » sans créer de nouvelle révision.
-      const identique = valeursConfirmees.get(cleRev) === JSON.stringify(element.valeur ?? null);
-      const res = await enregistrerReponse({
-        attemptId: element.attemptId,
-        matiereId: element.matiereId,
-        questionId: element.questionId,
-        valeur: element.valeur,
-        revisionAttendue: !identique && typeof revisionConnue === "number" ? revisionConnue : null,
-        clientSavedAt: element.at,
-      });
-      if (res.ok && typeof res.revision === "number") {
-        memoriserRevision(cleRev, res.revision);
-        valeursConfirmees.set(cleRev, JSON.stringify(element.valeur ?? null));
-      }
-      if (!res.ok) {
-        if (res.message === "ANSWER_STALE_REVISION_CONFLICT") {
+    const obtenu = await sousVerrou(async () => {
+      for (;;) {
+        // Relu à chaque tour : les ajouts de cet onglet et des autres sont pris en compte.
+        const file = lireFile();
+        // Un vidage ciblé ne doit jamais être bloqué par une ancienne file d'un autre passage.
+        const element = file.find((e) => (attemptId ? e.attemptId === attemptId : options?.forcer || !enAttenteReseau(e.attemptId)));
+        if (!element) break;
+        const uid = uidDe(element);
+        const retirer = () => muterListe(CLE_FILE, (f) => f.filter((e) => uidDe(e) !== uid));
+        // Une valeur plus récente de la même question attend déjà : l'ancienne n'est jamais envoyée.
+        if (file.some((e) => e !== element && cleElement(e) === cleElement(element) && comparer(e, element) > 0)) { retirer(); continue; }
+        uidEnVol = uid;
+        // Reprise (F5, autre tablette) : numéros de version de ce passage lus une
+        // fois depuis le serveur avant le premier envoi.
+        await chargerRevisionsServeur(element.attemptId);
+        const cleRev = cleRevision(element.attemptId, idQuestionNoyau(element.matiereId, element.questionId));
+        const revisionConnue = lireRevisions()[cleRev];
+        // Valeur identique à la dernière confirmée : envoi sans numéro, le serveur
+        // répond « déjà enregistré » sans créer de nouvelle révision.
+        const identique = valeursConfirmees.get(cleRev) === JSON.stringify(element.valeur ?? null);
+        const res = await enregistrerReponse({
+          attemptId: element.attemptId,
+          matiereId: element.matiereId,
+          questionId: element.questionId,
+          valeur: element.valeur,
+          revisionAttendue: !identique && typeof revisionConnue === "number" ? revisionConnue : null,
+          clientSavedAt: element.at,
+        });
+        uidEnVol = null;
+        if (res.ok && typeof res.revision === "number") {
+          memoriserRevision(cleRev, res.revision);
+          valeursConfirmees.set(cleRev, JSON.stringify(element.valeur ?? null));
+        }
+        if (!res.ok) {
+          if (res.message === "ANSWER_STALE_REVISION_CONFLICT") {
+            ecarter(element);
+            console.warn("[PontV2] conflit P0409 conservé sans écrasement", {
+              attemptId: element.attemptId,
+              questionId: idQuestionNoyau(element.matiereId, element.questionId),
+            });
+            retirer();
+            continue;
+          }
+          if (!refusDefinitif(res.message)) {
+            const echecs = (attentes.get(element.attemptId)?.echecs ?? 0) + 1;
+            attentes.set(element.attemptId, { echecs, prochainEssaiMs: Date.now() + delaiReessai(echecs) });
+            planifierReessai();
+            console.warn("[PontV2] réponse conservée pour nouvel essai", {
+              attemptId: element.attemptId,
+              questionId: idQuestionNoyau(element.matiereId, element.questionId),
+              message: res.message,
+              essaiDans_ms: (attentes.get(element.attemptId)?.prochainEssaiMs ?? 0) - Date.now(),
+            });
+            break; // réseau : on garde l'ordre et on réessaiera
+          }
+          // Refus définitif : la réponse est conservée à part, la file continue.
           ecarter(element);
-          console.warn("[PontV2] conflit P0409 conservé sans écrasement", {
-            attemptId: element.attemptId,
-            questionId: idQuestionNoyau(element.matiereId, element.questionId),
-          });
-          retirer(element);
-          continue;
+          console.warn("[PontV2] réponse mise de côté (refus définitif):", res.message);
+        } else {
+          attentes.delete(element.attemptId);
         }
-        if (!refusDefinitif(res.message)) {
-          const echecs = (attentes.get(element.attemptId)?.echecs ?? 0) + 1;
-          attentes.set(element.attemptId, { echecs, prochainEssaiMs: Date.now() + delaiReessai(echecs) });
-          planifierReessai();
-          console.warn("[PontV2] réponse conservée pour nouvel essai", {
-            attemptId: element.attemptId,
-            questionId: idQuestionNoyau(element.matiereId, element.questionId),
-            message: res.message,
-            essaiDans_ms: (attentes.get(element.attemptId)?.prochainEssaiMs ?? 0) - Date.now(),
-          });
-          break; // réseau/conflit : on garde l'ordre et on réessaiera
-        }
-        // Refus définitif : la réponse est conservée à part, la file continue.
-        ecarter(element);
-        console.warn("[PontV2] réponse mise de côté (refus définitif):", res.message);
-      } else {
-        attentes.delete(element.attemptId);
+        retirer();
       }
-      retirer(element);
-    }
-    return { restantes: compter(file) };
+    });
+    // Un autre onglet envoie : il traite aussi nos réponses (file partagée) ; nouvelle vérification bientôt.
+    if (!obtenu && compter(lireFile()) > 0) planifierApresVerrou(attemptId, options?.forcer);
+    return { restantes: compter(lireFile()) };
   } finally {
-    elementEnVol = null;
+    uidEnVol = null;
     envoiEnCours = false;
   }
 }
 
 /** Nombre de réponses encore non confirmées par le noyau (pour cette tentative si précisée). */
 export function reponsesNoyauEnAttente(attemptId?: string | null): number {
-  const file = fileMemoire ?? lireFile();
+  const file = lireFile();
   return attemptId ? file.filter((e) => e.attemptId === attemptId).length : file.length;
 }
 
@@ -762,20 +933,6 @@ export function reponsesNoyauEnAttente(attemptId?: string | null): number {
 // ne doivent plus afficher d'alerte ni bloquer la clôture. Ils sont ARCHIVÉS
 // (jamais supprimés) dans une clé dédiée, et AUCUNE réponse n'est effacée.
 
-const CLE_FILE_RESOLUE = "noyau_v2_answer_queue_resolved_v1";
-
-function archiver(elements: ElementFile[]): void {
-  if (elements.length === 0) return;
-  try {
-    const brut = localStorage.getItem(CLE_FILE_RESOLUE);
-    const parsed = brut ? JSON.parse(brut) : [];
-    const precedent = Array.isArray(parsed) ? (parsed as ElementFile[]) : [];
-    localStorage.setItem(CLE_FILE_RESOLUE, JSON.stringify([...precedent, ...elements]));
-  } catch {
-    /* archive impossible : on ne supprime alors rien */
-  }
-}
-
 /**
  * Retire des files techniques les éléments dont la réponse est DÉJÀ confirmée
  * par le serveur pour cette tentative. Renvoie le nombre d'éléments archivés.
@@ -786,31 +943,22 @@ export function archiverMarqueursObsoletes(
 ): number {
   const estObsolete = (e: ElementFile) =>
     e.attemptId === attemptId && questionsConfirmees.has(idQuestionNoyau(e.matiereId, e.questionId));
-
-  const ecartees = lireEcartees();
-  const ecarteesObsoletes = ecartees.filter(estObsolete);
-  if (ecarteesObsoletes.length > 0) {
-    archiver(ecarteesObsoletes);
-    try {
-      localStorage.setItem(
-        CLE_FILE_ECARTEE,
-        JSON.stringify(ecartees.filter((e) => !estObsolete(e))),
-      );
-    } catch {
-      /* rien n'est supprimé si l'écriture échoue */
-    }
+  let total = 0;
+  for (const cle of [CLE_FILE_ECARTEE, CLE_FILE]) {
+    const obsoletes = lireListe(cle).filter(estObsolete);
+    if (obsoletes.length === 0) continue;
+    // Archive d'abord ; le retrait n'a lieu que si l'archive est bien conservée.
+    const archives = new Set(obsoletes.map(uidDe));
+    const etatArchive = (() => {
+      const avant = lireListe(CLE_FILE_RESOLUE);
+      const deja = new Set(avant.map(uidDe));
+      return ecrireListe(CLE_FILE_RESOLUE, [...avant, ...obsoletes.filter((e) => !deja.has(uidDe(e))).map((e) => ({ ...e, uid: uidDe(e) }))]);
+    })();
+    if (etatArchive === "memoire") continue; // archive impossible : on ne retire alors rien
+    muterListe(cle, (liste) => liste.filter((e) => !archives.has(uidDe(e))));
+    total += obsoletes.length;
   }
-
-  const file = fileMemoire ?? lireFile();
-  const fileObsolete = file.filter(estObsolete);
-  if (fileObsolete.length > 0) {
-    archiver(fileObsolete);
-    const restante = file.filter((e) => !estObsolete(e));
-    fileMemoire = restante;
-    ecrireFile(restante);
-  }
-
-  return ecarteesObsoletes.length + fileObsolete.length;
+  return total;
 }
 
 /**

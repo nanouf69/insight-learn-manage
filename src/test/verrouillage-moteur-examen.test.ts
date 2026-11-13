@@ -344,7 +344,7 @@ describe("CRITIQUE 2 — sauvegarde des réponses", () => {
     const src = read(PASSAGE);
     expect(src).toContain("serveurCompletRef.current) return true");
     expect(src).toContain("archiverMarqueursObsoletes");
-    expect(src).toContain("!serveurComplet && <AnswerSaveIndicator />");
+    expect(src).toContain("!serveurComplet && <AnswerSaveIndicator noyau={attemptV2Ref.current ? fileNoyau : null} />");
   });
 
   it("RÈGLE 2 — une matière non récupérable propose de recommencer sans rien supprimer", () => {
@@ -461,9 +461,14 @@ describe("CRITIQUE 6 — affichage CRM ↔ apprenant", () => {
     expect(h).not.toContain("from(\"apprenants\")");
   });
 
-  it("l'ancien circuit est clairement identifié dans l'écran de correction", () => {
+  // Décision utilisateur 12/11 : plus aucun groupe « Ancien circuit » ; les copies
+  // historiques restent identifiées comme archives en consultation seule.
+  it("les copies historiques sont clairement identifiées comme archives en lecture seule, sans groupe « Ancien circuit »", () => {
     const c = read(CORRECTION);
-    expect(c).toContain("ANCIEN CIRCUIT");
+    expect(c).toContain("Copies archivées — consultation seule");
+    expect(c).toContain("Archive — lecture seule");
+    expect(c).toContain("Identité ou barème non prouvé : aucune notation possible.");
+    expect(c).not.toMatch(/>\s*Ancien circuit|["'`]Ancien circuit["'`]|ANCIEN CIRCUIT/);
   });
 });
 

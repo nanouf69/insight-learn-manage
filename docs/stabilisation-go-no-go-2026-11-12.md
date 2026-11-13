@@ -69,3 +69,20 @@ Mémoire 63 puis 65 %, disque 36 %, connexions 37 puis 36/90, base 2,03 Go, aucu
 2. Export complet + copie séparée des fichiers privés, cible indépendante possédée par le projet, restauration hors production, paramètres de connexion restaurés séparément, connexion et empreintes vérifiées. Un remix seul ne copie pas les données.
 3. Qualification du stockage refusé, deux onglets, destruction en vol et E2E 10/20/30 sur cible indépendante ; traitement des deux tests restants et scan actuel. Compilation automatique déjà vérifiée.
 4. Confirmer le lot exact à publier. Jusqu'à satisfaction de toutes ces conditions : NO-GO, pas de publication ni migration réelle.
+## Mise à jour 13/11/2026 ~01:15 UTC — obstacles techniques corrigés (aperçu seulement)
+
+Statut : **NO-GO maintenu** (restauration complète non prouvée). Aucune écriture réelle, migration, restauration, publication ni dépense.
+
+Corrigé dans le code :
+- File V2 (`pontV2.ts`) : repli localStorage → sessionStorage → mémoire, état sondé dès l'ouverture ; une réponse ne sort de la file qu'après confirmation serveur ; chaque modification relit la file partagée (identifiant unique par élément, valeur la plus récente gagne) ; un seul envoi pour tout le navigateur (Web Locks) ; appel figé coupé à 20 s ; délai de nouvel essai plafonné à 30 s gigue comprise.
+- Écran d'examen : indicateur « pas encore confirmée par le serveur » au lieu de « Sauvegardé », alerte rouge + bouton « Réessayer l'envoi maintenant » si stockage refusé/plein, confirmation du navigateur avant fermeture dans ce cas.
+- Les deux anciens échecs : assertions périmées remplacées par les règles actuelles ; la donnée d'essai fictive du test de remise à zéro est rangée dans `src/test/fixtures/` (régénérée par 5 scénarios SQL sur base jetable locale, PASS).
+
+Preuves :
+- Suite complète : 550 fichiers, 4 704 tests réussis, 0 échec, 13 ignorés. Construction : OK.
+- 16 tests dédiés (stockage refusé/plein/inaccessible, ouverture, deux onglets, envoi en vol puis fermeture, appel figé, panne 6 min) + 5 tests d'indicateur.
+- Vrai Chromium (faux serveur, toute autre requête vers la base bloquée : 0) : Web Locks présents ; deux onglets → 3 valeurs exactes, 3 écritures ; fermeture d'onglet pendant l'envoi → valeur conservée, 1 seule écriture ; localStorage plein → état « session », réponse retrouvée après F5 puis enregistrée ; tout stockage refusé → état « mémoire », réponse gardée jusqu'à confirmation.
+- Scan de sécurité frais (13/11 00:51 UTC) : 6 avertissements + 2 informations, tous préexistants (règles d'accès de tables/fichiers) ; le lot ne change aucune règle d'accès.
+- Lot public→aperçu : 5 fichiers applicatifs (`pontV2.ts`, `ExamenBlancsPassage.tsx`, `AnswerSaveIndicator.tsx`, `answerSaveIndicatorModel.ts`, `useApprenantTauxRealisation.ts`), aucune fonctionnalité concurrente ; SQL auto-QRC uniquement document de revue non installé.
+
+Toujours bloqué : aucun outil ne liste les sauvegardes quotidiennes, ne lance un export complet (base + comptes + fichiers) ni une restauration vers une cible isolée. Sans cela, la restauration reste NON PROUVÉE. Non testé : vrai serveur arrêté 6 minutes et 10/20/30 vrais navigateurs connectés (impossible sans écrire en production).

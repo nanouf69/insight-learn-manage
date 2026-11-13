@@ -64,7 +64,8 @@ describe("Révision d'un quiz déjà validé", () => {
 
   it("« Refaire les fausses » reste disponible et bascule sur la révision si le quiz est validé", () => {
     expect(src).toContain("const startWrongQuestionRevision");
-    expect(src).toContain("if (submittedExoIdsRef.current.has(pending.exoId)) revisionActiveRef.current.add(pending.exoId);");
+    // Quiz validé OU passage Bilan figé : la reprise devient une révision séparée (correctif 12/11).
+    expect(src).toContain("if (submittedExoIdsRef.current.has(pending.exoId) || passagesFiges[pending.exoId]) revisionActiveRef.current.add(pending.exoId);");
   });
 });
 

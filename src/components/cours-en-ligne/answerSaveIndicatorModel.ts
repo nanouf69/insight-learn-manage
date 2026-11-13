@@ -12,6 +12,8 @@ interface AnswerSaveIndicatorInput {
   pendingAnswers: number;
   saturated: boolean;
   rejection: AnswerSaveRejection | null;
+  /** File du noyau V2 (examens blancs) : réponses non confirmées et stockage réel. */
+  noyau?: { enAttente: number; stockage: "durable" | "session" | "memoire" } | null;
 }
 
 /** Présentation purement informative : aucune écriture ni mutation de la file. */
@@ -20,7 +22,16 @@ export function getAnswerSaveIndicatorView({
   pendingAnswers,
   saturated,
   rejection,
+  noyau,
 }: AnswerSaveIndicatorInput): AnswerSaveIndicatorView {
+  const enAttenteNoyau = Math.max(0, noyau?.enAttente ?? 0);
+  // Stockage refusé : rien ne survivrait à une fermeture. Alerte prioritaire tant que tout n'est pas confirmé.
+  if (noyau?.stockage === "memoire" && enAttenteNoyau > 0) {
+    return {
+      tone: "saturated",
+      message: `Cet appareil refuse de conserver vos réponses : ${enAttenteNoyau} réponse${enAttenteNoyau > 1 ? "s" : ""} pas encore enregistrée${enAttenteNoyau > 1 ? "s" : ""} sur le serveur. Ne fermez pas et ne rechargez pas la page : l'envoi est réessayé automatiquement.`,
+    };
+  }
   if (rejection) {
     return {
       tone: "rejected",
@@ -44,6 +55,15 @@ export function getAnswerSaveIndicatorView({
       tone: "unavailable",
       message:
         "Serveur temporairement indisponible — vos réponses sont conservées sur cet appareil. Ne fermez pas votre navigateur et ne changez pas d'appareil.",
+    };
+  }
+
+  if (enAttenteNoyau > 0) {
+    return {
+      tone: "pending",
+      message: `Synchronisation en cours — ${enAttenteNoyau} réponse${enAttenteNoyau > 1 ? "s" : ""} pas encore confirmée${enAttenteNoyau > 1 ? "s" : ""} par le serveur${
+        noyau?.stockage === "session" ? " (conservées dans cet onglet uniquement : ne le fermez pas)" : ""
+      }`,
     };
   }
 

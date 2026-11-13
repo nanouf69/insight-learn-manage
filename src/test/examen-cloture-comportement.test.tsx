@@ -82,6 +82,8 @@ vi.mock("@/features/noyau-passage/pontV2", () => ({
   },
   archiverMarqueursObsoletes: vi.fn(),
   recommencerMatiereNoyau: vi.fn(),
+  surveillerFileNoyau: () => () => {},
+  etatStockageFileNoyau: () => "durable",
 }));
 
 vi.mock("@/lib/answerPersistence", () => ({
