@@ -14,6 +14,7 @@ describe('PDF signatures manquantes : horaires + formateur', () => {
     expect(totalPdfSignaturesManquantes(rows)).toEqual({minutes:390,creneaux:3});
   });
   it('journée et pratique aux horaires réels, sans durée fixe',()=>expect(totalPdfSignaturesManquantes([row('2026-09-17','Matin',{horaires:'9h30-12h30'}),row('2026-09-17','Pratique',{horaires:'13h-17h'})]).minutes).toBe(420));
+  it('même date : ordre horaire matin puis après-midi',()=>expect(lignesPdfSignaturesManquantes([row('2026-09-17','Après-midi',{horaires:'13h-16h'}),row('2026-09-17','Matin',{horaires:'9h-12h'})]).map(r=>r.minutes)).toEqual([180,180]));
   it('duplication de session et créneaux chevauchants ne doublent pas le temps',()=>{
     const a=row('2026-09-17','Pratique',{horaires:'9h-12h'});
     expect(totalPdfSignaturesManquantes([a,a,row('2026-09-17','Matin',{horaires:'10h-12h'})])).toEqual({minutes:180,creneaux:2});

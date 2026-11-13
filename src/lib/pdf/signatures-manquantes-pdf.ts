@@ -24,7 +24,8 @@ export function lignesPdfSignaturesManquantes(rows: SignatureManquante[]): Ligne
     if(previous && (previous.horaires !== r.horaires || previous.etat !== r.etat)) throw new Error('Créneau contradictoire : revue avant impression');
     uniques.set(key,r);
   }
-  const sorted = [...uniques.values()].sort((a, b) => a.date.localeCompare(b.date) || a.creneau.localeCompare(b.creneau));
+  const debut = (r: SignatureManquante) => {const h=/^(\d{1,2})[h:](\d{2})?/.exec(r.horaires??'');return h?Number(h[1])*60+Number(h[2]??0):1440;};
+  const sorted = [...uniques.values()].sort((a, b) => a.date.localeCompare(b.date) || debut(a)-debut(b) || a.creneau.localeCompare(b.creneau));
   return sorted.map(r => ({
     date: datePresenceAvecJour(r.date),
     creneau: r.creneau,
