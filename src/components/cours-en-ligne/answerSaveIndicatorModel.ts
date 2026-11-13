@@ -58,7 +58,7 @@ export function getAnswerSaveIndicatorView({
     };
   }
 
-  if (enAttenteNoyau > 0 && state !== "error") {
+  if (enAttenteNoyau > 0) {
     return {
       tone: "pending",
       message: `Synchronisation en cours — ${enAttenteNoyau} réponse${enAttenteNoyau > 1 ? "s" : ""} pas encore confirmée${enAttenteNoyau > 1 ? "s" : ""} par le serveur${
