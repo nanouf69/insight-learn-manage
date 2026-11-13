@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 09:56 UTC — HADDOU EB6 TAXI F/G et dernières réponses
+- [ ] Audit SELECT des résultats, réponses, chronomètres, passages/imports F/G et preuves exactes ; aucune écriture réelle.
+- [ ] Correctif aperçu des reprises : isoler les sources de copies et distinguer réponses serveur, brouillons non confirmés et corrigés actuels ; tests fictifs multi-tentatives/conflits/panne.
+- [ ] Rapport factuel, références à comparer et garde-fous ; publication NO-GO jusqu’aux preuves indispensables.
+
 ## 13/11 09:45 UTC — Boutons F(T)/G(T) TAXI
 - [x] Audit SELECT : F=reglementation_taxi, G=reglementation_taxi2 dans EB1–6 TAXI ; RPC présentes/droits authenticated, anon refusé ; aucun incident correspondant journalisé. Cause individuelle non prouvée sans identité/erreur ; aucune identité déduite.
 - [x] Aperçu : refus lisible, relecture explicite après erreur, réponses tardives invalidées et confirmation par matière. 21 Vitest + 10 SQL + 14 contrats déclencheurs PASS, boutons réels avec serveur fictif PC/mobile PASS ; build OK. Rapport docs/taxi-fg-reset-2026-11-13.md.
