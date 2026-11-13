@@ -56,7 +56,8 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   texte("86 Route de Genas · 69003 Lyon\nTél. : 04 28 29 60 91\ncontact@ftransport.fr\nNDA 11770762377", 120, 30, 8.5, false, 70);
   if(e.agrement?.numero.trim()) texte(`Agrément ${e.agrement.filiere} : ${e.agrement.numero}`,120,48,8,false,70);
   doc.setDrawColor(...bleu); doc.setLineWidth(0.35); doc.line(20, 55, 190, 55);
-  doc.setTextColor(...bleu); texte("ATTESTATION DE FIN", 20, 65, 21, true); texte("DE FORMATION", 20, 75, 21, true);
+  const periode=!o?e.periodeElearning:null;
+  doc.setTextColor(...bleu); texte(periode ? "RELEVÉ DE PÉRIODE" : "ATTESTATION DE FIN", 20, 65, 21, true); texte(periode ? "E-LEARNING" : "DE FORMATION", 20, 75, 21, true);
   doc.setTextColor(...gris); texte(o ? (o.signee ? "DOCUMENT SIGNÉ PAR LES DEUX PARTIES" : "EN ATTENTE DE LA SIGNATURE DE L'APPRENANT(E)") : finale ? "DOCUMENT VALIDÉ ET SIGNÉ" : "MODÈLE NON VALABLE — NON SIGNÉ", 20, 86, 10, true);
   doc.setFillColor(...pale); doc.setDrawColor(...bord); doc.roundedRect(20, 95, 170, 59, 2, 2, "FD");
   doc.setTextColor(...gris); texte("APPRENANT(E)", 26, 104, 8, true);
@@ -67,7 +68,6 @@ export async function genererPdfPresentation(e: AttestationPresentation): Promis
   const formation = texte(intitule, 26, 128, 10.5, true, 158);
   if (formation > 12) throw new Error("Intitulé trop long pour le modèle : contrôle de présentation requis");
   texte(`Début : ${date(e.debut)}`, 26, 143, 9.5, false, 77);
-  const periode=!o?e.periodeElearning:null;
   texte(periode ? `Dernière activité pédagogique : ${periode.derniere?.split('-').reverse().join('/') ?? 'Non vérifiée'}` : `Fin : ${date(e.fin)}`, periode?26:110, periode?150:143, periode?8:9.5, false, periode?158:74);
   const complet = jalonsIntegralementProuves(e.preuve, e.apprenantId);
   doc.setTextColor(...noir);
