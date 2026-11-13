@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 12:06 UTC — Contrat de location : signature par mail
+- [ ] Préparer le contrat complet sans mention brouillon sur la version finale uniquement, garder les contrôles assurance/permis et le brouillon disponible.
+- [ ] Préparer en aperçu le circuit nominatif figé, envoi/renvoi explicites, signature spécifique et lecture du PDF signé, sans mail ni écriture réelle.
+- [ ] Tests fictifs, contrôles PC/mobile et rapport des limites ; aucune publication ni activation serveur.
+
 ## 13/11 10:51 UTC — Préremplir les contrats de location de tous les apprenants
 - [x] Coordonnées de la fiche CRM dès l’ouverture, même sans dossier de bienvenue ; dossier complété du même apprenant prioritaire et fiche en complément des champs absents. Champs inconnus laissés vides, signatures/permis non copiés.
 - [x] 33 tests PASS ; navigateur PC/mobile fictif : préremplissage, relecture sans écraser la saisie et changement de dossier sans fuite PASS ; build OK. Aucune écriture réelle ni publication ; parcours réel non exercé.
