@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 15:19 UTC — Supprimer une validation sans motif
+- [x] Confirmation simple sans motif saisi, boutons Annuler/Oui, supprimer ; libellé audit automatique, opération et retour ciblé conservés, restauration inchangée.
+- [x] 20 tests PASS, PC/mobile simulés inspectés, build OK ; annulation sans envoi, confirmation/double clic/isolation et projection 330→90 min prouvés ; aucune écriture réelle/publication.
+- [ ] Révocation et actualisation réelles bloquées par journal sécurisé non installé et lecteurs protégés non qualifiés ; confirmation réelle reste désactivée, aucun total simulé sur un dossier réel.
+
 ## 13/11 15:09 UTC — Divergence progression admin/apprenant
 - [x] Emmanuel NIBITANGA identifié par score exact : quinze remises, verdict 627/627 positif ; compteur ancienne completion 2/15. Production 6bdc7ed09, identité/bundle exact iPhone non prouvés malgré connexions concordantes.
 - [x] Projection des remises confirmées partagée dashboard/détail, statut serveur inchangé, callback non optimiste et relecture Realtime/reconnexion/visibilité ; empreintes avant/après identiques.
