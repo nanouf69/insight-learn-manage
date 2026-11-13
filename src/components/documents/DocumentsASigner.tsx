@@ -38,6 +38,7 @@ import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
 import { DocumentZoneEditor } from "@/components/documents/DocumentZoneEditor";
 import { chargerElementAdmin, DOCUMENT_ADMIN_ELEMENTS, type AdminElementId } from "@/lib/documentAdminElements";
+import { SignatureRevocationDialog, type CibleSignatureRevision } from './SignatureRevocationDialog';
 
 
 ensurePdfWorker();
@@ -85,6 +86,7 @@ export function DocumentsASigner() {
   const [reponsesApercu, setReponsesApercu] = useState<Record<string, string>>({});
   const [elementsLocaux, setElementsLocaux] = useState<Array<{ champ: ChampDocument; image: string }>>([]);
   const [elementLoading, setElementLoading] = useState(false);
+  const [signatureARevoir,setSignatureARevoir]=useState<CibleSignatureRevision|null>(null);
 
   const insererElement = async (id: AdminElementId) => {
     if (!selected || selected.statut === "signe") return;
@@ -648,6 +650,7 @@ export function DocumentsASigner() {
               </div>
 
               <div className="flex flex-col gap-2">
+                {selected.statut === 'signe' && selected.signed_at && champs.filter(c=>c.type==='signature' && selected.reponses?.[c.id]).map(c=><Button key={`revision-${c.id}`} variant="outline" className="whitespace-normal h-auto min-h-10 text-left" onClick={()=>setSignatureARevoir({documentId:selected.id,documentNom:selected.nom,zoneId:c.id,zoneNom:c.label,signataireNom:selected.destinataire_nom ?? '',signedAt:selected.signed_at ?? '',image:selected.reponses?.[c.id] ?? ''})}><PenTool className="h-4 w-4 shrink-0"/>Annuler et refaire la signature — {c.label}</Button>)}
                 <Button variant="outline" className="gap-2" onClick={enregistrer} disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
                 </Button>
@@ -710,6 +713,7 @@ export function DocumentsASigner() {
       )}
       {zoneActive && <DocumentZoneEditor key={zoneActive.id} champ={zoneActive} valeur={reponsesApercu[zoneActive.id] || ""}
         onClose={() => setZoneActive(null)} onApply={(value) => setReponsesApercu((prev) => ({ ...prev, [zoneActive.id]: value }))} />}
+      {signatureARevoir && <SignatureRevocationDialog key={`${signatureARevoir.documentId}:${signatureARevoir.zoneId}`} cible={signatureARevoir} onClose={()=>setSignatureARevoir(null)}/>}
     </div>
   );
 }
