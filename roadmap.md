@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 14:15 UTC — Incident signatures tardives, accord de publication ciblée
+- [x] Isolation contrôlée contre production de7e9a862 : HEAD inclut 12 fichiers présence CHERNI non validés ; publication globale interdite par la demande.
+- [x] Production route régularisation présente ; trigger accepte autorisation exacte et horodatage serveur ; 30/10 matin : 12 images existantes, zéro feuille réellement vide, zéro autorisation active exacte.
+- [x] 12 tests tardif PASS ; appel réel liste sans session refusé 401 (ne prouve pas un parcours signé). Aucun déploiement ni signature réelle.
+- [ ] Correctif ciblé bloqué : nécessite version isolée de la version publiée + autorisation nominative/motif/preuve/créneaux et circuit atomique installé/vérifié ; jamais remplacer les images existantes du 30/10.
+
 ## 13/11 — Présence administrative Tarek CHERNI (aperçu seulement)
 - [x] SELECT CHERNI Tarek : 2010 minutes signées, validation 17/09 chevauche 90 min, 18/09 ajoute 240 ; résultat prudent 37h30/46 =81,5%, supplément 39h non prouvé.
 - [x] Projection minutes commune aperçu, conflits explicites, événements locaux/focus/reconnexion ; rapport docs/presence-admin-cherni-2026-11-13.md.
