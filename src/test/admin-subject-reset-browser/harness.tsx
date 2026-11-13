@@ -9,6 +9,7 @@ import {RefaireMatiereButton} from '@/components/cours-en-ligne/RefaireMatiereBu
 import {validateSubjectRetakeReceipt,type SubjectRetakeReceipt} from '@/lib/examSubjectRetake';
 import {EXAMENS_BLANCS_VTC,EXAMENS_BLANCS_TAXI} from '@/components/cours-en-ligne/examens-blancs-data';
 import {Button} from '@/components/ui/button';
+import {ResetMatiereAdminButton} from '@/components/crm/apprenant-sections/ResetMatiereAdminButton';
 import '@/index.css';
 const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
 const track = new URLSearchParams(location.search).get('track') === 'taxi' ? 'taxi' : 'vtc';
@@ -29,6 +30,10 @@ client.setQueryData(['examen-blanc-results-admin', 'fictif-only', 0], [{
 function Harness(){
  const [mode,setMode]=useState('admin');
  const [receipt,setReceipt]=useState<SubjectRetakeReceipt|null>(null);
+ if(new URLSearchParams(location.search).get('fg')==='1')return <div className="p-4 space-y-4">{[
+  {id:'reglementation_taxi',nom:'F(T) - Réglementation nationale TAXI',result:'fictif-f',score:15},
+  {id:'reglementation_taxi2',nom:'G(T) - Connaissance du territoire et réglementation locale TAXI',result:'fictif-g',score:8},
+ ].map(s=><section key={s.id} className="space-y-2"><h2>{s.nom}</h2><p>{s.score}/20</p><ResetMatiereAdminButton target={{apprenantId:'fictif-only',prenom:'Élève',nom:'FICTIF',examId:quizId,examLabel:'Examen Blanc 3 — TAXI',filiere:'taxi',matiereId:s.id,matiereNom:s.nom,resultId:s.result}}/></section>)}</div>;
  return <div className="p-4 space-y-4"><Button onClick={()=>setMode(mode==='admin'?'learner':'admin')}>{mode==='admin'?'Espace élève':'Espace admin'}</Button>
  {mode==='admin'?<ExamensBlancsResetTab apprenant={{id:'fictif-only',prenom:'Élève',nom:'FICTIF'}}/>:
  <div><RefaireMatiereButton owner="fictif-owner" account="fictif-only" exam={quizId} subject="t3p" sourceExercise={`${quizId}__t3p`} onStarted={setReceipt}/>
