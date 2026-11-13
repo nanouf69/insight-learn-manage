@@ -3,6 +3,14 @@ import { canonique } from "@/lib/originauxExacts";
 type Objet = Record<string, any>;
 const objet = (value: unknown): Objet => value && typeof value === "object" && !Array.isArray(value) ? value as Objet : {};
 
+export const revisionReponseRenseignee = (answer: unknown): boolean =>
+  typeof answer === "string" ? answer.trim().length > 0 : Array.isArray(answer) && answer.length > 0;
+
+/** Route back to missing evidence, even when an old draft claims it was checked. */
+export function premiereQuestionRevisionIncomplete(answers: Record<string, unknown>, checked: string[], order: string[]): number {
+  return order.findIndex(key => !checked.includes(key) || !revisionReponseRenseignee(answers[key]));
+}
+
 /** Completion is coverage, not a perfect mark or the last visible index. */
 export function revisionCouvertureConfirmee(reponses: unknown, examen: string, order: string[]): boolean {
   const state = objet(objet(reponses).revisionState);
@@ -11,7 +19,7 @@ export function revisionCouvertureConfirmee(reponses: unknown, examen: string, o
     && canonique(state.questionOrder) === canonique(order)
     && Array.isArray(state.correctedQuestions)
     && order.every(key => state.correctedQuestions.includes(key) && Object.prototype.hasOwnProperty.call(answers, key)
-      && (typeof answers[key] === "string" ? answers[key].trim().length > 0 : Array.isArray(answers[key]) && answers[key].length > 0));
+      && revisionReponseRenseignee(answers[key]));
 }
 
 /** A result read back for this exact revision, never a neighbouring exam/attempt. */

@@ -45,7 +45,7 @@ import { rafraichirCopiesAffichees } from "@/lib/refreshSavedExamResults";
 import { isExamAttemptPublicationPending, legacyEnginePendingForRows } from "./exam-helpers";
 import { choisirTentativeRevision, nouvelleTentativeRevision, revisionBaseId, type RevisionRowLike } from "@/lib/revisionFaussesTentative";
 import { REVISION_FINALISATION_SERVEUR_ACTIVE } from "@/lib/revisionFinalisationServeur";
-import { revisionCouvertureConfirmee, revisionResultatConfirme } from "@/lib/revisionFinalisationPreuve";
+import { revisionCouvertureConfirmee, revisionResultatConfirme, revisionReponseRenseignee, premiereQuestionRevisionIncomplete } from "@/lib/revisionFinalisationPreuve";
 import { estCorrectionIaEnregistree } from "./CorrectionQRCTab";
 import { fetchCoreMatiereStates, type CoreMatiereState } from "@/lib/coreExamPublication";
 import { coreFiablePourLigne } from "@/lib/noteExamenAffichee";
@@ -1315,6 +1315,7 @@ function RevisionFausses({
   const [loaded, setLoaded] = useState(false);
   const [finEnCours, setFinEnCours] = useState(false);
   const [lectureErreur, setLectureErreur] = useState<string | null>(null);
+  const [finErreur, setFinErreur] = useState<string | null>(null);
   const finEnCoursRef = useRef(false);
   const derniereValidationRef = useRef(0);
   const revisionRowsRef = useRef<RevisionRowLike[]>([]);
@@ -1385,7 +1386,7 @@ function RevisionFausses({
         setCorrectedCount(restored.correctedCount);
         correctedQuestionsRef.current = restored.correctedQuestions;
         setCurrentIndex(restored.currentIndex);
-        setShowCorrection(restored.showCorrection);
+        setShowCorrection(restored.showCorrection && revisionReponseRenseignee(restored.answers[questionOrder[restored.currentIndex]]));
         if (restored.contexteChange) {
           toast.info("La liste des questions a changé. Vos réponses identifiables sont conservées ; la première question non validée est affichée.");
         }
@@ -1484,8 +1485,13 @@ function RevisionFausses({
   const rep = reponseRevisionAffichee(reponses as Record<string, unknown>, wrongQuestions, current) as any;
 
   const checkAnswer = () => {
+    if (!revisionReponseRenseignee(rep)) return;
     // Double clic / double tap : une question n'est comptée et validée qu'une fois.
-    if (correctedQuestionsRef.current.includes(currentKey)) return;
+    if (correctedQuestionsRef.current.includes(currentKey)) {
+      setShowCorrection(true);
+      persistProgress(reponses, currentIndex, correctedCount, correctedQuestionsRef.current, true);
+      return;
+    }
     derniereValidationRef.current = Date.now();
     let isCorrect = false;
     if (q?.type === "QCM" && q.choix) {
@@ -1523,6 +1529,14 @@ function RevisionFausses({
     const ecritureBloquee = blockLearnerWrite("revision_fausses(fin)");
     if (ecritureBloquee) { onTerminer(); return; }
     if (!apprenantId || !userId || !examenId) return;
+    setFinErreur(null);
+    const incomplete = premiereQuestionRevisionIncomplete(reponses, correctedQuestionsRef.current, questionOrder);
+    if (!termineeRef.current && incomplete >= 0) {
+      setCurrentIndex(incomplete);
+      setShowCorrection(false);
+      setFinErreur(`La question ${incomplete + 1} / ${questionOrder.length} n’a pas de réponse validée. Complétez-la ; vos autres réponses sont conservées.`);
+      return;
+    }
     finEnCoursRef.current = true;
     setFinEnCours(true);
     let finEnregistree = false;
@@ -1621,13 +1635,14 @@ function RevisionFausses({
       }
     } catch (err) {
       console.error("Erreur sauvegarde révision:", err);
-      toast.error(err instanceof Error ? err.message : "Finalisation non confirmée.");
+      const message = err instanceof Error ? err.message : "Finalisation non confirmée.";
+      setFinErreur(`${message} Vos réponses restent conservées ; vous pouvez réessayer.`);
+      toast.error(message);
     } finally {
       finEnCoursRef.current = false;
       setFinEnCours(false);
       if (!finEnregistree) {
         setShowCorrection(true);
-        toast.error("Révision non enregistrée par le serveur. Vérifiez votre connexion puis réessayez ; vos réponses restent conservées.");
       }
     }
   };
@@ -1686,6 +1701,7 @@ function RevisionFausses({
       </div>
       <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
       <AnswerSaveIndicator />
+      {finErreur && <p role="alert" className="text-destructive">{finErreur}</p>}
       <p className="text-xs text-muted-foreground">
         Les réponses déjà confirmées sont récupérables sur un autre appareil. Hors connexion, elles restent sur cet appareil jusqu’à leur confirmation serveur.
       </p>
@@ -1778,7 +1794,7 @@ function RevisionFausses({
           {!showCorrection ? (
             <Button
               onClick={checkAnswer}
-              disabled={!rep || (Array.isArray(rep) && rep.length === 0)}
+              disabled={!revisionReponseRenseignee(rep)}
               className="w-full gap-2"
               style={{ backgroundColor: '#0D2540' }}
             >
