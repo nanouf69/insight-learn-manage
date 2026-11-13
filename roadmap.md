@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 15:23 UTC — Parcours présence bloqué
+- [ ] Préparer circuit serveur exact, PDF privé, journal immuable, rapprochement explicite et lecture après confirmation, sans écriture réelle.
+- [ ] Tester sécurité, doublons et restauration sur PostgreSQL jetable ; ne pas confondre ce test avec Auth/Storage hébergés isolés.
+- [ ] Vérifier disponibilité d’un environnement Auth/Storage isolé et possibilité d’une publication ciblée ; sinon nommer les obstacles.
+
 ## 13/11 15:19 UTC — Supprimer une validation sans motif
 - [x] Confirmation simple sans motif saisi, boutons Annuler/Oui, supprimer ; libellé audit automatique, opération et retour ciblé conservés, restauration inchangée.
 - [x] 20 tests PASS, PC/mobile simulés inspectés, build OK ; annulation sans envoi, confirmation/double clic/isolation et projection 330→90 min prouvés ; aucune écriture réelle/publication.
