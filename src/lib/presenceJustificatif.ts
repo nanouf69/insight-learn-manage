@@ -15,7 +15,10 @@ export async function verifierPdfPresence(file: Pick<File,'name'|'type'|'size'|'
 }
 export function retrouverInscriptionPresence(rows:readonly any[],cible:{date?:string;creneau?:string;horaires?:string;pratique:boolean},filiere:string) {
   if(cible.pratique)return {inscription:null,message:'Rattachement pratique exact non prouvé : aucune validation autorisée.'};
-  const matches=rows.filter(row=>creneauxSessionInscrite(row,filiere).some(s=>s.date===cible.date&&s.creneau===cible.creneau&&
+  // Exact labels emitted by calculerSignaturesManquantes; no fuzzy label matching.
+  const labels:Record<string,string>={'Matin':'matin','Après-midi':'apres_midi','Soir 1 (17h-18h30)':'soir_1','Soir 2 (18h30-21h)':'soir_2'};
+  const key=labels[cible.creneau ?? ''] ?? cible.creneau;
+  const matches=rows.filter(row=>creneauxSessionInscrite(row,filiere).some(s=>s.date===cible.date&&s.creneau===key&&
     minutesHorairePresence(`${s.debut}-${s.fin}`)===minutesHorairePresence(cible.horaires)&&
     parseClockMinutes(s.debut)===parseClockMinutes(cible.horaires?.split(/[-–]/)[0].replace('h',':').replace(/:$/,':00'))));
   const unique=new Map(matches.filter(r=>r.id&&r.session_id).map(r=>[r.id,r]));

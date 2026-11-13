@@ -8,6 +8,7 @@ describe('Justificatif local et inscription exacte',()=>{
  it.each([make('png'),make('%PDF-1.4'),make(undefined,'image/png'),make(undefined,undefined,'a.png')])('faux PDF refusé',async f=>await expect(verifierPdfPresence(f)).rejects.toThrow());
  it('plus de 4 Mo refusé avant lecture',async()=>await expect(verifierPdfPresence({...make(),size:PRESENCE_PDF_MAX_BYTES+1})).rejects.toThrow());
  it('rattachement unique exact',()=>expect(retrouverInscriptionPresence([ins],cible,'VTC').inscription?.id).toBe('i'));
+ it('libellé exact émis par le lecteur correspond à sa clé stable',()=>expect(retrouverInscriptionPresence([ins],{...cible,creneau:'Soir 2 (18h30-21h)'},'VTC').inscription?.id).toBe('i'));
  it('deux inscriptions même plage refusées',()=>expect(retrouverInscriptionPresence([ins,{...ins,id:'i2'}],cible,'VTC').inscription).toBeNull());
  it('décalage horaire refusé même durée',()=>expect(retrouverInscriptionPresence([ins],{...cible,horaires:'18h-20h30'},'VTC').inscription).toBeNull());
  it('session annulée refusée',()=>expect(retrouverInscriptionPresence([{...ins,sessions:{...ins.sessions,statut:'annulee'}}],cible,'VTC').inscription).toBeNull());
