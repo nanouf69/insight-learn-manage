@@ -479,7 +479,18 @@ function notifier(): void {
 }
 
 /** État réel de conservation locale des réponses non encore confirmées. */
+/** Sonde réelle du stockage : après un rechargement, l'alerte doit apparaître avant toute nouvelle saisie. */
+function sonderStockage(): EtatStockageFileNoyau {
+  const { local, session } = magasins();
+  const essayer = (m: Storage | null) => {
+    if (!m) return false;
+    try { m.setItem("noyau_v2_sonde_stockage", "1"); m.removeItem("noyau_v2_sonde_stockage"); return true; } catch { return false; }
+  };
+  return essayer(local) ? "durable" : essayer(session) ? "session" : "memoire";
+}
+let stockageSonde = false;
 export function etatStockageFileNoyau(): EtatStockageFileNoyau {
+  if (!stockageSonde) { stockageSonde = true; etatStockage = sonderStockage(); }
   return etatStockage;
 }
 
@@ -568,7 +579,7 @@ function muterListe(cle: string, mutation: (liste: ElementFile[]) => ElementFile
   const t = tampon(cle);
   for (const e of avant) if (!gardes.has(uidDe(e))) t.retires.add(uidDe(e));
   const etat = ecrireListe(cle, apres);
-  if (cle === CLE_FILE) etatStockage = etat;
+  if (cle === CLE_FILE) { etatStockage = etat; stockageSonde = true; }
   notifier();
   return apres;
 }
@@ -804,6 +815,7 @@ export function __simulerRechargementPourTests(): void {
   tampons.clear();
   for (const cle of Object.keys(revisionsMemoire)) delete revisionsMemoire[cle];
   etatStockage = "durable";
+  stockageSonde = false;
 }
 
 type Verrous = { request: (nom: string, options: { ifAvailable: boolean }, rappel: (verrou: unknown) => Promise<unknown>) => Promise<unknown> };
