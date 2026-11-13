@@ -4,7 +4,7 @@ const state: { rows: any[]; error: any } = { rows: [], error: null };
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: () => ({
-      select: () => ({ eq: () => ({ order: async () => ({ data: state.error ? null : state.rows, error: state.error }) }) }),
+      select: () => ({ eq: () => ({ order: () => ({ range: async () => ({ data: state.error ? null : state.rows, error: state.error }) }) }) }),
     }),
   },
 }));

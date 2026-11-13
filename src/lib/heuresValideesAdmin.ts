@@ -65,7 +65,8 @@ export function normaliserHeuresValidees(rows: any[], dateFinFormation?: string 
 }
 
 export async function fetchHeuresValideesAdmin(apprenantId: string, dateFinFormation?: string | null) {
-  const items = normaliserHeuresValidees(await lirePresencesAdministratives(apprenantId), dateFinFormation);
+  const rows = await lirePresencesAdministratives(apprenantId).catch(() => { throw new Error("Heures validées par l'administration indisponibles (lecture refusée ou en erreur)"); });
+  const items = normaliserHeuresValidees(rows, dateFinFormation);
   const minutes = Math.round(items.reduce((s, r) => s + r.heures, 0) * 60);
   // journees : pour le relevé PDF. La date affichée est celle de présence si connue,
   // sinon la date de saisie, explicitement libellée comme telle.
