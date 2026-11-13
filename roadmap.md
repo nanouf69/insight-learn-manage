@@ -1,5 +1,11 @@
 # Feuille de route
 
+## 13/11 10:13 UTC — Suite HADDOU F/G et révisions
+- [ ] Examiner journaux immuables et empreintes ; aucune liaison par temps/texte seul.
+- [ ] Préparer reset/revue admin append-only en environnement jetable, sans activation.
+- [ ] Terminer lecture par question des rounds confirmés de la même source.
+- [ ] Tests ciblés/globaux, PC/mobile fictifs et SELECT avant/après ; rapport GO/NO-GO.
+
 ## 13/11 09:56 UTC — HADDOU EB6 TAXI F/G et dernières réponses
 - [x] Audit SELECT : deux passages natifs par matière, aucune importation/reçu ; dernier résultat t2 opposé à projection ancienne t1 sans suffixe, liaison legacy/V2 non univoque. Reset maintenu verrouillé ; aucune écriture réelle.
 - [x] Aperçu : réponses natives et file de leur seul attempt_id, aucune recopie/remappage implicite d’ancien passage ; projection révision distincte et refus des brouillons d’autres sources. 135 tests ciblés et 4 754 suite complète PASS/13 ignorés/0 FAIL, PC/mobile avec backend fictif, empreintes identiques et build OK.
