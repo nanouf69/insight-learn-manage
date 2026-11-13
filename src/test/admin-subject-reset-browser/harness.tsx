@@ -14,7 +14,7 @@ const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinit
 const track = new URLSearchParams(location.search).get('track') === 'taxi' ? 'taxi' : 'vtc';
 const quizId = track === 'taxi' ? 'EB3-TAXI' : 'EB3';
 client.setQueryData(['examens-blancs-live'],track==='taxi'?EXAMENS_BLANCS_TAXI:EXAMENS_BLANCS_VTC);
-client.setQueryData(['examen-blanc-results-admin', 'fictif-only'], [{
+client.setQueryData(['examen-blanc-results-admin', 'fictif-only', 0], [{
   examenNum: 3, examenLabel: `Examen Blanc 3 — ${track.toUpperCase()}`, type: track, quizId,
   totalScore: 27, totalMax: 40, lastDate: '2026-11-01T12:00:00Z',
   results: [
