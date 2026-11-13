@@ -9392,6 +9392,30 @@ export type Database = {
         }
         Relationships: []
       }
+      resend_webhook_config: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: number
+          signing_secret: string
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: number
+          signing_secret: string
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: number
+          signing_secret?: string
+          webhook_id?: string
+        }
+        Relationships: []
+      }
       reservations_pratique: {
         Row: {
           apprenant_id: string

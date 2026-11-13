@@ -32,6 +32,7 @@ export default function SuiviEmailsPage() {
   const [filtre, setFiltre] = useState("all");
   const [recherche, setRecherche] = useState("");
   const [ouvert, setOuvert] = useState<AccuseReception | null>(null);
+  const [activation, setActivation] = useState<string | null>(null);
 
   const { data: accuses = [], isLoading, isError, error: erreurLecture, refetch, isFetching } = useQuery({
     queryKey: ["email-accuses", periode],
@@ -89,10 +90,28 @@ export default function SuiviEmailsPage() {
             Accusés de réception : emails bien remis, ouverts et échecs d'envoi.
           </p>
         </div>
+        <div className="flex gap-2 flex-wrap">
+        <Button
+          size="sm"
+          disabled={activation === "en_cours"}
+          onClick={async () => {
+            setActivation("en_cours");
+            const { data, error } = await supabase.functions.invoke("configurer-webhook-resend", { body: {} });
+            let etat = (data as any)?.etat as string | undefined;
+            if (error) {
+              try { etat = (await (error as any).context?.json?.())?.error; } catch { /* message générique */ }
+            }
+            setActivation(etat === "configure" || etat === "deja_configure" ? "ok" : `Échec : ${etat ?? "erreur inconnue"}`);
+          }}
+        >
+          {activation === "ok" ? "Suivi de remise activé ✓" : activation === "en_cours" ? "Activation…" : "Activer le suivi de remise Resend"}
+        </Button>
+        {activation && activation !== "ok" && activation !== "en_cours" && <span className="text-sm text-destructive self-center">{activation}</span>}
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
           <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
           Actualiser
         </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
