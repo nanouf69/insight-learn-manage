@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 14:36 UTC — Motif facultatif pour ajout de présence
+- [ ] Retirer le minimum de texte pour l'ajout seulement ; conserver auteur/date serveur/heures/date présence, validation durée/date/catégorie et verrou double-clic.
+- [ ] Tester motif vide/renseigné et refus ; contrôler les exigences spécifiques du relevé pratique après gel, aucune écriture/publication.
+
 ## 13/11 14:33 UTC — Durées PDF signatures manquantes
 - [x] Colonne durée, total exact en minutes, dates/horaires/formateur/signature manuscrite 53×30 mm conservés ; doublons exclus, total union des intervalles même date ; horaires inconnus signalés.
 - [x] 29 tests PASS/3 fichiers ; 5 pages converties/inspectées puis réinspection après correction de l'ordre matin/après-midi ; PDF réel CHERNI 390 min/3 créneaux A4 et téléchargements PC/mobile confirmés ; build OK, aucune écriture/publication.

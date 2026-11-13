@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { CATEGORIES_PRESENCE, HEURES_VALIDEES_EVENT, libelleHeureValidee, normaliserHeuresValidees } from "@/lib/heuresValideesAdmin";
 import { PresenceDecisionDialog, type PresenceDecisionCible } from './PresenceDecisionDialog';
 import { projeterDecisionsPresence } from '@/lib/presenceRevocations';
+import { motifPresenceSchema } from '@/lib/motifPresence';
 
 interface Props {
   apprenantId: string;
@@ -84,8 +85,9 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
       toast.error("Choisissez la catégorie de présence");
       return;
     }
-    if (motif.trim().length < 5) {
-      toast.error("Indiquez un motif précis (5 caractères minimum)");
+    const motifValide = motifPresenceSchema.safeParse(motif);
+    if (!motifValide.success) {
+      toast.error("Le motif ne doit pas dépasser 200 caractères");
       return;
     }
     if (addLock.current) return;
@@ -99,7 +101,7 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
       const { data: inserted, error } = await supabase.from("presentiel_heures_validees" as any).insert({
         apprenant_id: apprenantId,
         heures: value,
-        motif: motif.trim(),
+        motif: motifValide.data,
         date_presence: datePresence,
         categorie,
         created_by: uid,
@@ -139,7 +141,7 @@ export function HeuresPresentielValidees({ apprenantId }: Props) {
         />
         <Input
           type="text"
-          placeholder="Motif (obligatoire)"
+          placeholder="Motif (facultatif)"
           value={motif}
           onChange={(e) => setMotif(e.target.value)}
           className="w-full"
