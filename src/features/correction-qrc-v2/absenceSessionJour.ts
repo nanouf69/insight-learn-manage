@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
 import { creneauxSessionInscrite } from '@/lib/emargementSessionSlots';
 import { aPreuveSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 import { jourParis } from './sessionsActuelles';
@@ -58,7 +59,7 @@ export async function chargerAbsentsSessionJour(sessionId:string,jour:string):Pr
       const [s,p,h]=await Promise.all([
         lirePagesParalleles<any>(de=>supabase.from('emargements_fc').select('id,apprenant_id,demi_journee,signature_data_url,signed_at,absent,masque').in('apprenant_id',lot).eq('date_emargement',jour).eq('masque',false).order('id').range(de,de+999) as any,1),
         lirePagesParalleles<any>(de=>supabase.from('fc_signatures_papier').select('id,apprenant_id,session_id,creneau,heures,documents_inscription:document_id(url,statut)').in('apprenant_id',lot).eq('date_presence',jour).order('id').range(de,de+999) as any,1),
-        lirePagesParalleles<any>(de=>supabase.from('presentiel_heures_validees').select('id,apprenant_id,heures').in('apprenant_id',lot).eq('date_presence',jour).order('id').range(de,de+999) as any,1),
+        (async()=>{const all:any[]=[];for(const id of lot)all.push(...(await lirePresencesAdministratives(id)).filter(r=>r.date_presence===jour));return all;})(),
       ]);signatures.push(...s);papier.push(...p);heures.push(...h);
     }
     const clock=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(now);

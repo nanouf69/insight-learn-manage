@@ -19,7 +19,7 @@ export function DetailHeuresNonSignees({ rows, apprenantId }: { rows: readonly S
       if(error||!uid)throw new Error('session');
       const role=await supabase.from('user_roles').select('role').eq('user_id',uid).eq('role','admin').maybeSingle();
       if(role.error||!role.data)throw new Error('admin');
-      const declarations=await lirePresces(apprenantId);
+      const declarations=await lirePresencesAdministratives(apprenantId);
       setCible({...c,apprenantId,conflit:declarations.some(v=>v.date_presence===c.date&&Number(v.heures)>0)});
     }catch{toast.error('Accès administrateur et lecture des preuves requis : aucune présence modifiée');}
   };
