@@ -27,3 +27,12 @@ Ordre d’activation isolée : vérifier sauvegarde et restauration sur environn
 Uniquement présence/absence administrative justifiée et auditée, avec auteur, date réelle et justificatif, sans signature fabriquée ni nom de l’élève utilisé comme signataire. Aucun lien rétroactif ne doit être créé ni envoyé. Aucune présence de CABRAL ni d’un autre dossier n’a été modifiée.
 
 Le P0 Bilan Développement commercial reste un chantier séparé, inchangé par ce correctif.
+
+## Reprise du 13/11 à 20:21 UTC — STOP de sécurité
+- Accord utilisateur pour poursuivre confirmé ; aucune nouvelle autorisation de développement nécessaire.
+- Lecture réelle : `garde_emargement_fenetre` conserve l’exception `regularisation_id`, empreinte MD5 `36fcaddbfedab7cdf5854edf5ea7039f`. `emargement_controle_creneau` reste limité au jour Paris, empreinte `be80c60a153b0b4b42605801e287d010`.
+- Inventaire de référence à 20:21:01 UTC / 21:21:01 Paris : 3 537 lignes, 3 340 signatures, 0 absences, empreinte complète des lignes `5eabd0ca413c1f9a2cb5769425c07e04`. Cette observation n’est ni une sauvegarde ni une preuve de restauration ; des écritures légitimes concurrentes peuvent la faire évoluer.
+- Tests effectivement rejoués : 6 PostgreSQL synthétiques, 12 Vitest, 9 Deno, tous réussis. Aucun test authentifié de refus après activation en production : activation non effectuée.
+- Aucune preuve disponible d’un export actuel de la base réelle restauré dans une destination indépendante, ni de restauration séparée des fichiers privés. Les tests jetables ne restaurent pas les données de production. Aucune date de sauvegarde automatique revendiquée : inventaire uniquement visible pour l’utilisateur dans More → Database → Manage → Backups.
+- Aucune migration, aucun déploiement, aucune publication, aucun envoi et aucune écriture d’émargement dans cette reprise. Blocage : preuve de sauvegarde/restauration indépendante exigée explicitement par l’utilisateur avant modification.
+- Étape utilisateur indispensable : lancer l’export depuis More → Database → Manage → Settings → Export project data ; relever la date UTC dans Backups. Les fichiers sont à télécharger séparément dans More → Storage. Une destination indépendante et une restauration vérifiée restent nécessaires avant activation ; restaurer un snapshot dans ce projet ferait perdre les changements ultérieurs et rétablirait aussi l’ancien schéma.
