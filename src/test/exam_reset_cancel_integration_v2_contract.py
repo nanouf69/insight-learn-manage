@@ -48,7 +48,7 @@ class Integration(base.Integrated):
   for table in ['core_exam_resets','core_exam_resets_effective','core_tentatives_neutralisees','core_exam_neutralisations_effective','exam_retake_authorizations','exam_retake_authorizations_effective','qrc_instances_v2','core_exam_results','apprenant_quiz_results','answer_state']:
    tables[table]=json.loads(self.scalar(f"SELECT coalesce(jsonb_agg(to_jsonb(t)),'[]') FROM {table} t"))
   tables['exam_attempts_v2']=json.loads(self.scalar("SELECT coalesce(jsonb_agg(to_jsonb(t)||jsonb_build_object('matiere',snapshot->>'matiere','matieres',snapshot->'matieres','questions',snapshot->'questions','tentative',snapshot->>'tentative','result_id',snapshot->'source_historique'->>'result_id','historique',snapshot->'source_historique')),'[]') FROM exam_attempts_v2 t"))
-  Path('/tmp/exam-reset-cancel-reader-fixture.json').write_text(json.dumps(tables))
+  Path('/tmp/exam-reset-cancel-reader-fixture.json').write_text(json.dumps(tables));Path('src/test/fixtures/exam-reset-cancel-reader-fixture.json').write_text(json.dumps(tables))
   out=self.call(f"SELECT core_start_attempt('{uuid.uuid4()}','{A}','{exam}','t3p')",U,False)
   self.assertEqual(out.returncode,0,out.stderr)
   self.assertEqual(self.scalar(f"SELECT count(*) FROM exam_retake_authorizations WHERE reset_id='{reset}' AND consumed_at IS NULL"),'1')

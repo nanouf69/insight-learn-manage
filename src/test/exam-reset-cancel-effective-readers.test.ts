@@ -11,7 +11,7 @@ import {fetchCoreMatiereStates,coreStateScore} from '@/lib/coreExamPublication';
 import {listerSessions} from '@/features/correction-qrc-v2/noyauReel';
 import {latestExamResetCutoffs} from '@/lib/examResetCutoff';
 it('real SQL fixture: same seven official notes appear in shared learner/CRM and QRC readers only with effective projections',async()=>{
- state.tables=JSON.parse(readFileSync('/tmp/exam-reset-cancel-reader-fixture.json','utf8'));state.effective=false;
+ state.tables=JSON.parse(readFileSync('src/test/fixtures/exam-reset-cancel-reader-fixture.json','utf8'));state.effective=false;
  expect(await fetchCoreMatiereStates('11111111-1111-1111-1111-111111111111')).toHaveLength(0);
  expect(await listerSessions('test')).toHaveLength(0);
  state.effective=true;
