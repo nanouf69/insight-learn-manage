@@ -1,6 +1,6 @@
 /** Isolated preparation only: no database writes, transport, scheduler or booking mutation. */
 import { apercuHtmlRappel, apercuTexteRappel, modeleRappelTheorique, OBJET_RAPPEL_THEORIQUE, type ModeleRappelTheorique, type FinancementRappelVerifie } from "./modelesRappelTheorique.ts";
-export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-ferme-v5";
+export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-historique-v6";
 export const RAPPEL_THEORIQUE_OBJET = OBJET_RAPPEL_THEORIQUE;
 export const RAPPEL_THEORIQUE_TEXTE = apercuTexteRappel(modeleRappelTheorique("ferme"));
 
@@ -71,7 +71,7 @@ export function progressionNonPratique(obligations: ObligationCanonique[] | null
 export type DecisionRappel =
   | { etat: "arreter"; raison: string }
   | { etat: "attendre" | "a_verifier"; raison: string }
-  | { etat: "preparer"; jourEcheance: string; rang: number; cle: string; objet: string; texte: string; html: string;
+  | { etat: "preparer"; jourEcheance: string; rang: number; cle: string; objet: string; texte: string; html: string | null;
       phase: "avant" | "apres"; modele: ModeleRappelTheorique; activationAutorisee: false; pointsAValider: string[] };
 
 export function preparerRappelTheorique(input: {
@@ -132,7 +132,7 @@ function construirePreparation(
     etat: "preparer", jourEcheance: jour, rang, phase, modele, activationAutorisee: false,
     pointsAValider: type === "ferme"
       ? ["Impossibilité de passer à pratique non effective : règle et validité contractuelle à confirmer", "Priorité non opérationnelle", "Activation non autorisée"]
-      : ["Mentions conditionnelles et validité contractuelle à valider", "Activation non autorisée"],
+      : ["Réutiliser le modèle existant relance_suspension_cpf sans modifier son HTML", "Vérifier financement et affirmation jamais connecté du modèle existant", "Activation non autorisée"],
     cle: ["rappel_modules_theorique", dossier.id, occurrenceId, phase, jour, RAPPEL_THEORIQUE_VERSION].map(encodeURIComponent).join(":"),
     objet: modele.objet, texte: apercuTexteRappel(modele), html: apercuHtmlRappel(modele),
   };

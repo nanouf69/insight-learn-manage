@@ -43,6 +43,12 @@ describe("Rappels théorie isolés, sans transport", () => {
   it("après examen, la date réelle prime sur une date prévue différente", () => {
     expect(decide({ ...dossier(), examenPrevu: { id: "prevu", dossierId: "eleve-1", datePrevue: "2026-11-19", statut: "confirme" } })).toMatchObject({ etat: "preparer", rang: 1, phase: "apres" });
   });
+  for (const jour of [24, 26, 28]) it(`J+${jour - 17} référence historique uniquement, aucune expédition autorisée`, () => {
+    const resultat = decide(dossier(), `2026-11-${jour}T09:00:00Z`);
+    if (resultat.etat !== "preparer") throw new Error("fixture");
+    expect(resultat.modele.modeleExistantId).toBe("relance_suspension_cpf");
+    expect(resultat.activationAutorisee).toBe(false);
+  });
   it("une horloge invalide est un incident, jamais une émission", () => expect(decide(dossier(), "invalid").etat).toBe("a_verifier"));
   it("le modèle ferme signale l'incohérence et n'autorise pas l'activation", () => {
     const resultat = decide();
