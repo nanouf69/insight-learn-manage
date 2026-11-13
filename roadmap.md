@@ -1,9 +1,9 @@
 # Feuille de route
 
 ## 13/11 09:08 UTC — Urgence BENNANI et signatures après formation
-- [ ] BENNANI : diagnostic réel SELECT, sauvegarde/finalisation révision, correctif aperçu et régressions sans écriture réelle.
+- [x] BENNANI : EB5 47 marqueurs/une QRC vide, refus local confirmé ; retour vers question manquante et version de reprise corrigés en aperçu. 42 tests ciblés PASS, PC/mobile fictifs sans écriture, build OK ; rapport docs/benani-revision-eb5-2026-11-13.md.
 - [ ] Signatures après formation : préciser attestation ou régularisation de présence, conserver dates réelles et preuves.
-- [ ] Publication bloquée par sauvegarde/restauration non prouvées ; aucune publication ni migration réelle.
+- [ ] Publication bloquée par sauvegarde/restauration non prouvées ; suite globale 4 734 PASS/1 FAIL sous charge (panne 30 candidats, 7/7 PASS seule). Aucune publication ni migration réelle.
 
 ## 13/11 08:49 UTC — Correction visible Q3 EB5 VTC
 - [x] Audit SELECT : éditeur 90004 et publication EB5 v10 portent C « 4 minutes » ; 53 snapshots portent C « 8 minutes ». Realtime exam_content_versions absent.
