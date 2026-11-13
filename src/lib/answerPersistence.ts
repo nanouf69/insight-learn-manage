@@ -665,6 +665,34 @@ function revisionStateContientSansConflit(candidate: unknown, previous: unknown)
   return candidateCount >= previousCount;
 }
 
+
+// Versions envoyées par CET onglet (sessionStorage : jamais partagé avec un
+// autre onglet ni un autre appareil). Si la version serveur qui fait ignorer un
+// envoi est exactement une version que cet onglet a déjà envoyée (accusé perdu),
+// elle vient de nous : la nouvelle version peut repartir depuis le numéro serveur.
+const ENVOYES_KEY = "answer_envoyes_onglet_v1";
+const empreinte = (v: unknown): string => {
+  const tri = (x: any): any => Array.isArray(x) ? x.map(tri) : (x && typeof x === "object")
+    ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, tri(x[k])])) : x;
+  try { return JSON.stringify(tri(v)); } catch { return ""; }
+};
+function lireEnvoyes(): Record<string, string[]> {
+  try { return JSON.parse(globalThis.sessionStorage?.getItem(ENVOYES_KEY) || "{}") || {}; } catch { return {}; }
+}
+export function memoriserEnvoiOnglet(apprenantId: string, exerciceId: string, reponses: unknown): void {
+  try {
+    const m = lireEnvoyes(); const k = `${apprenantId}__${exerciceId}`; const e = empreinte(reponses);
+    if (!e) return;
+    m[k] = [...(m[k] ?? []).filter((x) => x !== e), e].slice(-20);
+    globalThis.sessionStorage?.setItem(ENVOYES_KEY, JSON.stringify(m));
+  } catch { /* stockage indisponible : la protection anti-écrasement reste stricte */ }
+}
+export function versionServeurEnvoyeeParCetOnglet(apprenantId: string, exerciceId: string, stored: unknown): boolean {
+  if (!estObjet(stored)) return false;
+  const e = empreinte(stored);
+  return !!e && (lireEnvoyes()[`${apprenantId}__${exerciceId}`] ?? []).includes(e);
+}
+
 function reponsesContiennentSansConflit(candidate: unknown, previous: unknown, onlyKeys?: string[]): boolean {
   if (!estObjet(candidate) || !estObjet(previous)) return false;
   const keys = onlyKeys ?? Object.keys(previous);
@@ -960,6 +988,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
   envoiEnCoursId = item.id;
   try {
     console.info('[answerPersistence] envoi', { operation: item.id, tentative: item.attempts + 1 });
+    if (item.payload.exercice_type !== "revision_fausses") memoriserEnvoiOnglet(item.payload.apprenant_id, item.payload.exercice_id, item.payload.reponses);
     const res = await fetch(url, {
       method: "POST",
       headers,
@@ -999,7 +1028,9 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
             // Comparaison exacte dans la forme non codée réellement transmise.
             (reponsesContiennentSansConflit(item.payload.reponses, confirmation.stored_reponses, skipped) ||
               (skipped.every((k: unknown) => k === "revisionState") &&
-                revisionEcriteParCetOnglet(item.payload.reponses, confirmation.stored_reponses)))
+                revisionEcriteParCetOnglet(item.payload.reponses, confirmation.stored_reponses)) ||
+              (item.payload.exercice_type !== "revision_fausses" && !item.payload.completed &&
+                versionServeurEnvoyeeParCetOnglet(item.payload.apprenant_id, item.payload.exercice_id, confirmation.stored_reponses)))
           ) {
             item.payload = { ...item.payload, base_seq: confirmedSeq };
             item.rebase_operation_id = `${item.id}__rebase_${confirmedSeq}_${item.attempts + 1}`;
