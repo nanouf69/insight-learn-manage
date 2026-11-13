@@ -29,7 +29,7 @@ export function ExamExitGuard({ active }: { active: boolean }) {
       ask((event as CustomEvent<() => void>).detail);
     };
     const unload = (event: BeforeUnloadEvent) => {
-      if (!activeRef.current) return;
+      if (!activeRef.current || bypass.current) return;
       event.preventDefault(); event.returnValue = "";
     };
     window.addEventListener(EXIT_REQUEST, receive);

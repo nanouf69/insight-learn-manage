@@ -1247,7 +1247,7 @@ function PassageMatiere({
       <div className="space-y-4 min-w-0">
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
           <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold" style={{ backgroundColor: '#00B4D8', color: '#0D2540' }}>
             {numero}
           </div>
@@ -1256,7 +1256,7 @@ function PassageMatiere({
             <h3 className="font-semibold text-base text-white">{matiere.nom}</h3>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap min-w-0 w-full sm:w-auto">
             <Button variant="secondary" size="sm" aria-expanded={showCalculator}
               onClick={() => setShowCalculator(v => !v)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
@@ -1498,7 +1498,7 @@ function PassageMatiere({
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-center">
         <Button
           variant="outline"
           onClick={() => setQuestionIndex(i => Math.max(0, i - 1))}
@@ -1519,7 +1519,7 @@ function PassageMatiere({
             <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={terminerUneSeuleFois} className="gap-2 bg-green-600 hover:bg-green-700">
+          <Button onClick={terminerUneSeuleFois} className="gap-2 h-auto min-h-10 whitespace-normal">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
             {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
