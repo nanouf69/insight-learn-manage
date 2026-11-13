@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 14:33 UTC — Durées PDF signatures manquantes
+- [ ] Colonne durée, total exact en minutes, dates/horaires/formateur/signature manuscrite conservés ; doublons et chevauchements non additionnés.
+- [ ] Tests journée/soir/pratique, rendu A4 inspecté et téléchargement PC/mobile ; aucune donnée réelle modifiée/publication.
+
 ## 13/11 14:26 UTC — Annulations individuelles et heures restant à signer
 - [x] Confirmation Supprimer/restaurer préparée, rôle relu et journal append-only candidat ; transport réel débranché, originaux préservés.
 - [x] 6h30 brut depuis trois créneaux, compteur à justifier distinct sans déduction date-only ; Documents distingue 33h30 signatures +4h net, 37h30/40 connu, contrat non prouvé.
