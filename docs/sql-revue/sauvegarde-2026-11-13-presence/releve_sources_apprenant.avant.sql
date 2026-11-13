@@ -1,0 +1,2 @@
+-- Définition exacte relevée le 13/11/2026 16:05 UTC, md5 23509f3cb8c55b13f13b16bf488483cb
+-- (définition complète : voir lecture pg_get_functiondef du même horodatage ; recopiée dans retour-arriere.sql au moment de l'installation, après revérification du md5)

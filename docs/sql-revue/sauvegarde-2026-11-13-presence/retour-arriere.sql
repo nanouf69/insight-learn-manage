@@ -1,0 +1,6 @@
+-- Retour arrière du lot présence (NON exécuté).
+-- 1. Revérifier que md5(pg_get_functiondef) actuel = définition installée, puis rejouer releve_sources_apprenant.avant.sql (définition d'origine).
+-- 2. REVOKE EXECUTE ON FUNCTION public.presentiel_decider_validation(uuid,uuid,uuid,integer,text,text) FROM authenticated;
+-- 3. REVOKE EXECUTE ON FUNCTION public.presentiel_confirmer_creneau(uuid,uuid,uuid,uuid,date,text,time,time,uuid,text,uuid,jsonb,boolean,boolean) FROM authenticated;
+-- 4. Remettre PRESENCE_REVOCATIONS_ACTIVE / validation créneau à false et republier.
+-- Les journaux et PDF déjà déposés sont conservés (aucune suppression).
