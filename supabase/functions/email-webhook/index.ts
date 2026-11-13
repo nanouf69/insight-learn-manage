@@ -11,7 +11,12 @@ Deno.serve(async (req) => {
 
   try {
     // Vérification de la signature Resend (Svix) : sans secret ou signature valide, refus.
-    const secret = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
+    let secret = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
+    if (!secret) {
+      const sbCfg = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: cfg } = await sbCfg.from("resend_webhook_config").select("signing_secret").eq("id", 1).maybeSingle();
+      secret = cfg?.signing_secret ?? "";
+    }
     const raw = await req.text();
     const id = req.headers.get("svix-id") ?? "";
     const ts = req.headers.get("svix-timestamp") ?? "";
