@@ -5,6 +5,7 @@ import { depsSupabase } from "../_shared/echecChoixPratiqueDeps.ts";
 import { lienActifAttestation, vuePubliqueAttestation, signerApprenant } from "../_shared/attestationFinCore.ts";
 import { depsAttestation, imageSignatureCentre } from "../_shared/attestationFinDeps.ts";
 import { MODELE_CODE_ATTESTATION } from "../_shared/modeleAttestationFin.ts";
+import { LOCATION_MODEL } from "../_shared/locationSignatureCore.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,6 +40,9 @@ serve(async (req) => {
 
     if (error) throw error;
     if (!doc) return json({ error: "Document introuvable ou lien expiré" }, 404);
+
+    // Rental must never fall through to generic choice/PDF submission before its own atomic circuit is installed.
+    if (doc.modele_code === LOCATION_MODEL) return json({ error: "Signature des contrats de location non activée." }, 409);
 
     // ---------- Attestation de fin de formation (texte figé + double signature) ----------
     if (doc.modele_code === MODELE_CODE_ATTESTATION) {
