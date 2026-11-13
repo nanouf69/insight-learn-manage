@@ -18,7 +18,12 @@ Cause exacte : `ValidationPresenceCreneauDialog` rend un bouton `disabled` sans 
 - Projection candidate : union des intervalles exacts, aucune addition double entre signature et présence administrative. Non branchée sur les taux réels.
 
 ## Contrôles exécutés
-Résultats à compléter après exécution ; aucun résultat simulé ne vaut Auth/Storage hébergé.
+- 46 tests Vitest PASS / 5 fichiers : minutes exactes, union/doublons, rattachement, PDF local, formulaire déconnecté ; 7 tests ciblés rejoués PASS après le message final.
+- 7 tests Deno PASS : PDF réel/parseur, limite 4 Mo, MIME, non-admin avant dépôt, relecture avant journal, corruption refusée. Le port dépôt/Auth est simulé ; le handler Cloud candidat n’est pas déployé ni vérifié de bout en bout.
+- 1 contrat PostgreSQL jetable PASS, avec douze cas de refus, protection EDOF, auteur/date/minutes, double appel identique, conflit, deux tables immuables/RLS et restauration pg_dump dans une seconde base avec reçu identique. Le calendrier y est une fixture, non le catalogue complet de production.
+- Chromium authentifié en lecture sur le dossier réel via les composants CRM, PC/mobile : inscription retrouvée et formateur NAOUFAL GUENICHI, faux PDF refusé, sélection locale uniquement, bouton toujours désactivé, refus pratique 7 h. Captures inspectées ; aucune soumission.
+- Build OK à 15:28:32 UTC. Lecture avant/après : les deux déclarations réelles 1,50 h et 4 h sont identiques.
+- NON PROUVÉ : vrai flux Auth/Storage/PDF/RPC/UI hébergé isolé, concurrence avec anciennes écritures, annulation/restauration des nouveaux reçus, parité des lecteurs. Aucun résultat simulé ne remplace ces contrôles.
 
 ## Obstacles précis et chemin d’activation
 1. Environnement indépendant avec Auth, API et Storage nécessaire pour le test demandé avec vrai compte/PDF ; les brouillons actuels ne conviennent pas. Le PostgreSQL jetable teste SQL/restauration, pas ces services.

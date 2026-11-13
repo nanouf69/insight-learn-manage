@@ -1,9 +1,10 @@
 # Feuille de route
 
 ## 13/11 15:23 UTC — Parcours présence bloqué
-- [ ] Préparer circuit serveur exact, PDF privé, journal immuable, rapprochement explicite et lecture après confirmation, sans écriture réelle.
-- [ ] Tester sécurité, doublons et restauration sur PostgreSQL jetable ; ne pas confondre ce test avec Auth/Storage hébergés isolés.
-- [ ] Vérifier disponibilité d’un environnement Auth/Storage isolé et possibilité d’une publication ciblée ; sinon nommer les obstacles.
+- [x] Candidats SQL exact/journal immuable/rapprochement snapshot et dépôt PDF analysé/relu, projection par union ; message explicite de non-enregistrement. Aucun branchement réel.
+- [x] 46 Vitest + 7 Deno PASS ; contrat PostgreSQL jetable sécurité/doublons/pg_dump-restauration PASS ; modale authentifiée en lecture PC/mobile, build OK, deux déclarations réelles inchangées.
+- [x] Deux brouillons utilisent la base réelle : pas d’Auth/Storage hébergé isolé ; publication complète non isolée (49 fichiers dans les dix derniers changements). Rapport docs/presence-operationnelle-2026-11-13.md.
+- [ ] Activation bloquée : environnement Auth/Storage indépendant requis ; raccord UI/lecteurs et interverrouillage anciens chemins + annulation/restauration à prouver dans cet environnement. Bouton production NON actif, aucune publication.
 
 ## 13/11 15:19 UTC — Supprimer une validation sans motif
 - [x] Confirmation simple sans motif saisi, boutons Annuler/Oui, supprimer ; libellé audit automatique, opération et retour ciblé conservés, restauration inchangée.
