@@ -14,7 +14,7 @@ Le contrôle `emargement_controle_creneau` n’autorise que la date du jour Euro
 
 ## Vérifications exécutées
 - 40 tests Vitest réussis : date passée, jour actuel, minuit hiver/été Paris, dates invalides, parcours VTC/TAXI/TA/VA/FC/pratique, signatures historiques et fenêtres existantes.
-- 6 tests Deno : ancien adaptateur ne déclenche aucun RPC, y compris avec une signature renseignée.
+- 9 tests Deno : ancien adaptateur ne déclenche aucun RPC, y compris avec une signature renseignée ; régularisation et liste refusées sans aucun accès aux données.
 - 6 tests sur PostgreSQL jetable : INSERT direct authenticated/service_role refusé, ancienne case vide non remplissable, ancienne preuve intacte, remplacement refusé, jour courant horodaté réellement, futur refusé, frontières Paris et changements saisonniers.
 - Page en aperçu vérifiée avec session injectée, sur 1280×1800, 800×1280 et 360×800 : aucun cadre de signature, aucune commande de signature, aucun débordement. Simulation Chromium tablette, pas test matériel Samsung réel.
 - Aperçu : compilation OK.

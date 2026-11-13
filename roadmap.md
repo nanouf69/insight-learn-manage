@@ -6,7 +6,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Validation par créneau + PDF privé + annulation sans motif + union/plafond 40/46/6 h — APERÇU (444 tests). Critère : clic réel admin sur dossier de test, relecture après rechargement. Bloqué : publication à valider.
 - [ ] Justificatifs dans Contrôle qualité + ZIP — APERÇU (8 tests).
 - [ ] Périmètre TOTAL VTC seulement (TAXI/TA/VA restaurés) — APERÇU (73 tests).
-- [ ] P0 interdiction serveur de toute signature apprenant passée (13/11 19:57) : PRÉPARÉ, routes de régularisation/envoi fermées, page sans saisie, remplacement du contrôle en base testé sur PostgreSQL jetable (6 tests), 40 Vitest + 6 Deno, 3 tailles navigateur. Responsable : Lovable. NON DÉPLOYÉ ; production conserve l’exception regularisation_id. Activation : sauvegarde/restauration indépendante puis installation isolée du contrôle et des deux fonctions ; aucun changement de données ni publication globale.
+- [ ] P0 interdiction serveur de toute signature apprenant passée (13/11 19:57) : PRÉPARÉ, routes de régularisation/envoi fermées, page sans saisie, remplacement du contrôle en base testé sur PostgreSQL jetable (6 tests), 40 Vitest + 9 Deno, 3 tailles navigateur. Responsable : Lovable. NON DÉPLOYÉ ; production conserve l’exception regularisation_id. Activation : sauvegarde/restauration indépendante puis installation isolée du contrôle et des deux fonctions ; aucun changement de données ni publication globale.
 - [ ] Cases anciennes manquantes : présence/absence administrative justifiée et auditée uniquement, sans signature apprenant ; aucune annulation de signature. Nom-prénom feuilles : aperçu à vérifier.
 
 ## P0 — Examens blancs / sauvegarde
