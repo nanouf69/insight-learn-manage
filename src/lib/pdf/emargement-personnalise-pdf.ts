@@ -59,7 +59,9 @@ export function generateEmargementPersoPdf(apprenant: { nom?: string; prenom?: s
       const lab = (t: string, x: number, yy: number) => doc.text(t, x, yy);
       lab('APPRENANT', m + 4, y + 6); lab('FORMATION', m + 96, y + 6); lab('FORMATEUR', m + 4, y + 18); lab('PÉRIODE', m + 96, y + 18);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...bleu);
-      doc.text(name, m + 4, y + 12); doc.text(o.formation, m + 96, y + 12); doc.text(o.formateur, m + 4, y + 24);
+      let nameSize=11;doc.setFontSize(nameSize);
+      while(nameSize>6&&doc.getTextWidth(name)>88){nameSize-=0.5;doc.setFontSize(nameSize);}
+      doc.text(name, m + 4, y + 12);doc.setFontSize(11); doc.text(o.formation, m + 96, y + 12); doc.text(o.formateur, m + 4, y + 24);
       doc.setFontSize(10); doc.text(`${datePresenceAvecJour(dates[0])} au ${datePresenceAvecJour(dates[dates.length - 1])}`, m + 96, y + 24);
       y += 34;
       doc.setFillColor(...bleu); doc.roundedRect(m, y, w, 9, 2, 2, 'F');
