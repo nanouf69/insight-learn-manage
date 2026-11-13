@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const h = vi.hoisted(() => ({ inserts: 0, insertError: null as any, user: "admin-fictif" as string | null, resolveInsert: null as null | (() => void) }));
+const h = vi.hoisted(() => ({ inserts: 0, payload: null as any, insertError: null as any, user: "admin-fictif" as string | null, resolveInsert: null as null | (() => void) }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: h.user ? { id: h.user } : null } }) },
     from: () => ({
       select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }),
-      insert: () => ({ select: () => ({ single: () => new Promise((res) => { h.inserts += 1; h.resolveInsert = () => res(h.insertError ? { data: null, error: h.insertError } : { data: { id: "n1" }, error: null }); }) }) }),
+      insert: (payload:any) => { h.payload=payload;return ({ select: () => ({ single: () => new Promise((res) => { h.inserts += 1; h.resolveInsert = () => res(h.insertError ? { data: null, error: h.insertError } : { data: { id: "n1" }, error: null }); }) }) }); },
     }),
   },
 }));
@@ -29,6 +29,14 @@ function setup() {
 
 describe("saisie présence admin — courses (fictif)", () => {
   beforeEach(() => { h.inserts = 0; h.insertError = null; h.user = "admin-fictif"; });
+  it.each(['', '   ', 'Séance théorie fictive'])('motif facultatif %j : auteur, heures et séance restent transmis',async motif=>{
+    setup();fireEvent.change(screen.getByPlaceholderText(/Motif/),{target:{value:motif}});
+    fireEvent.click(screen.getByRole('button',{name:/Valider les heures/}));
+    await waitFor(()=>expect(h.inserts).toBe(1));
+    expect(h.payload).toMatchObject({apprenant_id:'eleve-A',heures:3,date_presence:'2026-09-20',categorie:'theorie',created_by:'admin-fictif',motif:motif.trim()||null});
+    expect(h.payload).not.toHaveProperty('created_at');
+    h.resolveInsert?.();
+  });
   it("double-clic = une seule insertion ; invalidation et événement seulement après confirmation", async () => {
     const { inv } = setup();
     const ev = vi.fn(); window.addEventListener(HEURES_VALIDEES_EVENT, ev);
@@ -61,7 +69,7 @@ describe("saisie présence admin — courses (fictif)", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(h.inserts).toBe(0);
   });
-  it("sans date/catégorie/motif : aucune valeur inventée, aucune insertion", async () => {
+  it("sans date/catégorie : aucune valeur inventée, aucune insertion", async () => {
     const qc = new QueryClient();
     render(<QueryClientProvider client={qc}><HeuresPresentielValidees apprenantId="eleve-C" /></QueryClientProvider>);
     fireEvent.change(screen.getAllByPlaceholderText(/Heures/).at(-1)!, { target: { value: "6" } });

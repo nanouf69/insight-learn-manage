@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 14:36 UTC — Motif facultatif pour ajout de présence
+- [x] Motif facultatif, null si vide, 200 caractères maximum ; auteur/date serveur/heures/date présence et verrou double-clic inchangés.
+- [x] 28 tests PASS/4 fichiers, build OK ; lecture authentifiée sans écriture. SQL accepte null ; exigence distincte de motif pratique après gel conservée. Aucune écriture/publication.
+
 ## 13/11 14:33 UTC — Durées PDF signatures manquantes
 - [x] Colonne durée, total exact en minutes, dates/horaires/formateur/signature manuscrite 53×30 mm conservés ; doublons exclus, total union des intervalles même date ; horaires inconnus signalés.
 - [x] 29 tests PASS/3 fichiers ; 5 pages converties/inspectées puis réinspection après correction de l'ordre matin/après-midi ; PDF réel CHERNI 390 min/3 créneaux A4 et téléchargements PC/mobile confirmés ; build OK, aucune écriture/publication.
