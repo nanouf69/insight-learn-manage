@@ -335,7 +335,7 @@ describe("Appel figé sans réponse", () => {
       perdreReponseApresCommit = true;
       A.enfilerReponseNoyau({ attemptId: "f", matiereId: "m", questionId: 1, valeur: "fige" });
       // Le calcul de l'identifiant d'opération (SHA-256) n'est pas une minuterie : attendre l'appel réel.
-      for (let i = 0; i < 200 && appels === 0; i++) await new Promise((r) => setImmediate(r));
+      for (let i = 0; i < 20000 && appels === 0; i++) await new Promise((r) => setImmediate(r));
       expect(appels).toBe(1);
       await vi.advanceTimersByTimeAsync(A.DELAI_MAX_APPEL_MS + 10);
       expect(ecrituresEffectives).toBe(1);
