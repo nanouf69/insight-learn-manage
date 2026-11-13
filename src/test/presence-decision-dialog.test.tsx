@@ -29,7 +29,7 @@ describe('Confirmation présence',()=>{
   rerender(<PresenceDecisionDialog {...props} cible={{...cible,id:'h1',heures:1.5}}/>);
   resolve?.({id:'d',validation_id:'h2',apprenant_id:'a',version:1,action:'annuler',created_by:'admin',created_at:'2026-11-13'});
   await waitFor(()=>expect(screen.getByRole('button',{name:'Oui, supprimer'})).toBeEnabled());
-  expect(confirmed).not.toHaveBeenCalled();expect(transport.mock.calls[0][0].validationId).toBe('h2');
+  expect(confirmed).not.toHaveBeenCalled();expect(transport).toHaveBeenCalledWith(expect.objectContaining({validationId:'h2',apprenantId:'a'}));
  });
  it('restauration et refus de permission ne modifient aucun total',async()=>{
   const confirmed=vi.fn();render(<PresenceDecisionDialog cible={{...cible,annulee:true,version:1}} apprenantId="a" transport={async()=>{throw new Error('42501');}} onClose={()=>{}} onConfirmed={confirmed}/>);
