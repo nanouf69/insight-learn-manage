@@ -9,6 +9,7 @@ const obligation = (id: number, terminee = false, pratique = false): ObligationC
   ({ id, terminee, pratique, obligatoire: true, dispense: false });
 const dossier = (): DossierRappel => ({
   id: "eleve-1", filiere: "vtc", accesActif: true, exclu: false, obligations: [obligation(2), obligation(8, false, true)],
+  financementVerifie: { cpf: false, engagementsFranceTravail: false },
   passage: { id: "passage-1", dossierId: "eleve-1", dateReelle: "2026-11-17", source: "cma_verifie", statut: "present" },
 });
 function decide(d = dossier(), instant = "2026-11-18T09:00:00Z", historique: HistoriqueRappel[] | null = []) {
@@ -36,7 +37,7 @@ describe("Rappels théorie isolés, sans transport", () => {
     const d = { ...dossier(), passage: null, obligations: [obligation(2, true), obligation(8, false, true)], examenPrevu: { id: "prevu-1", dossierId: "eleve-1", datePrevue: "2026-11-17", statut: "confirme" as const } };
     expect(decide(d, "2026-11-10T09:00:00Z").etat).toBe("arreter");
   });
-  for (const [jour, type] of [[18, "ferme"], [20, "ferme"], [22, "ferme"], [24, "normal"], [26, "normal"], [28, "normal"]] as const) {
+  for (const [jour, type] of [[18, "ferme"], [20, "ferme"], [22, "ferme"], [24, "obligations"], [26, "obligations"], [28, "obligations"]] as const) {
     it(`J+${jour - 17} modèle ${type}`, () => expect(decide(dossier(), `2026-11-${jour}T09:00:00Z`)).toMatchObject({ etat: "preparer", phase: "apres", modele: { type }, activationAutorisee: false }));
   }
   it("après examen, la date réelle prime sur une date prévue différente", () => {

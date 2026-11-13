@@ -1,5 +1,17 @@
 # Rappel modules J+1 après examen théorique — diagnostic et préparation
 
+## Rectification finale — 23:11 UTC (prime sur les versions ci-dessous)
+
+J−7/J+1/J+3/J+5 : modèle ferme inchangé, réserve contractuelle sur « impossibilité de passer à pratique » maintenue. Dès J+7/J+9/J+11 : **modèle obligations de formation**, remplaçant le rappel neutre. Objet exact : « IMPORTANT – Modules de formation non terminés : rappel de vos obligations ».
+
+Texte utilisateur intégré avec variantes : CPF seul → conséquences possibles CPF uniquement ; engagements de formation France Travail seuls → conséquences France Travail uniquement ; les deux → formulation combinée demandée ; ni l'un ni l'autre → aucune mention des financeurs/sanctions. Information non vérifiée → décision à vérifier, pas d'envoi. Une précision évite toute assimilation du simple retard à une sanction automatique ; seuls les organismes compétents décident après examen de la situation.
+
+Audit agrégé réel : 277 dossiers CPF, dont 8 marqués inscrits France Travail ; 67 personnels, dont 1 inscrit France Travail ; 5 organismes. Le booléen d'inscription France Travail ne prouve PAS les engagements concernant cette formation. Ces chiffres ne sont pas une liste de destinataires autorisés.
+
+**63 tests isolés exécutés avec succès** (56 calendrier/progression/priorité + 7 conditions financement). Modèles et décisions sont préparés, non raccordés aux envois ou réservations. Dates/preuves et progression sont encore injectées dans les tests, pas lues via un circuit opérationnel. Le contrôle de financement vérifié doit être relié aux preuves du dossier avant activation.
+
+**Production : aucun changement pour ce lot. Aucun email réel, aucune campagne, aucune activation, aucune publication, aucune sanction ou restriction de réservation.** Restent à valider/réaliser les preuves CMA et contrats, adaptateurs canoniques/financements, journal atomique, file admin/exception, tests authentifiés et accord d'activation. Les textes proposés ci-dessous datant de 23:06/22:59 sont supersédés par cette section.
+
 ## Mise à jour prioritaire — 23:06 UTC (remplace le calendrier et le texte de 22:59 ci-dessous)
 
 - **FERME** : J−7 selon date prévue confirmée ; J+1/J+3/J+5 selon date réelle prouvée. Deux passages rouges et gras préparés : impossibilité de passer à pratique et non-priorité. Copie proposée, jamais envoyée.
