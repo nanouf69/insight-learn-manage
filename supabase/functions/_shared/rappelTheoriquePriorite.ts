@@ -1,5 +1,5 @@
 /** Isolated preparation only: no database writes, transport, scheduler or booking mutation. */
-import { modeleRappelTheorique, type ModeleRappelTheorique } from "./modelesRappelTheorique";
+import { modeleRappelTheorique, type ModeleRappelTheorique } from "./modelesRappelTheorique.ts";
 export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-calendrier-v3";
 export const RAPPEL_THEORIQUE_OBJET = "Rappel important – Finalisez vos modules pour votre entraînement pratique";
 export const RAPPEL_THEORIQUE_TEXTE = "Bonjour, À la suite de votre examen théorique, nous vous invitons à terminer l'ensemble des modules de votre formation sur notre plateforme e-learning, à l'exception de la partie pratique. Les candidats ayant terminé l'ensemble de leurs modules seront prioritaires pour le choix d'une date d'entraînement pratique. Si vos modules ne sont pas encore terminés, vous ne serez donc pas prioritaire dans l'attribution des créneaux disponibles. Nous vous invitons à finaliser votre parcours dès que possible afin de bénéficier de cette priorité. En cas de difficulté technique ou de problème de validation d'un module, merci de contacter notre centre de formation. Cordialement, L'équipe Ftransport";
