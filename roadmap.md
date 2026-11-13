@@ -1,10 +1,12 @@
 # Feuille de route
 
 ## 13/11 13:38 UTC — Fiabilisation globale EB1–6 TAXI/VTC
-- [ ] Audit complet en SELECT : inventaire, anomalies chiffrées par type/compte, identités, snapshots, QRC/publications, reçus et reprises ; signaler toute lecture incomplète.
-- [ ] Source canonique partagée aperçu : priorité explicite par matière, copies indépendantes, ambiguïtés visibles, états de correction/publication/lecture distincts, resets conservés.
-- [ ] Rapport d’alertes admin réexécutable en lecture seule et événements de correction/finalisation/reconnexion sans polling ajouté.
-- [ ] Régressions EB1–6 TAXI/VTC, concurrence/multi-tentatives/reset/pannes, PC/mobile, tests complets et build ; GO/NO-GO sans écriture réelle ni publication.
+- [x] Inventaire SELECT global : 3392 passages/159 comptes, 7003 reçus/193 comptes, 979 copies à reçu pending périmé, 1381 autosaves exacts/65 comptes ; rapport docs/eb-coherence-globale-2026-11-13.md avec exclusions et limites.
+- [x] Adaptateur partagé aperçu sur liste/détails/ouverture/Notes/CRM/session, statut correction/publication/revue distinct, ID exact prioritaire F/G, événements reset/tentative ; aucune écriture réelle.
+- [x] Contrôle admin en lecture seule réexécutable ajouté, pages clés 100/annulation/seconde lecture ; parcours navigateur réel exhaustif non prouvé.
+- [x] Matrice EB1–6 × 7, PC/mobile fictifs inspectés, suite complète exécutée (4918 PASS/3 FAIL/13 SKIP), deux timeouts passent au rejeu ; build OK, NO-GO documenté.
+- [ ] Sécurité/restauration et parcours élève réel/live/panneau global : preuves manquantes, aucune publication autorisée.
+- [ ] File multionglets : échecs intermittents existants non résolus, hors adaptateur notes ; parité reprise parent legacy complète non prouvée. NO-GO.
 
 ## 13/11 13:25 UTC — Audit MEMDOUH Ilies EB6 TAXI
 - [x] SELECT sept matières définitives, G 17, général 14 ; 18 QRC corrigées, zéro ouvert, deux copies G conservées ; source secondaire ambiguë et sept autosaves anciens prouvés.
