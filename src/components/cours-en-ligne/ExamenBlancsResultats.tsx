@@ -71,6 +71,7 @@ import { QuestionsFaussesEffectuees } from "./QuestionsFaussesEffectuees";
 import { useExamCurrentCorrection } from "@/hooks/useExamCurrentCorrection";
 import { ExamCurrentCorrectionNotice } from "./ExamCurrentCorrectionNotice";
 import { ebRevisionSource } from '@/lib/ebRevisionSource';
+import { selectConfirmedRevisionRounds, type ConfirmedRevisionRound } from '@/lib/revisionConfirmedRounds';
 
 
 function EcranResultats({
@@ -1365,18 +1366,26 @@ function RevisionFausses({
         if (errTentatives) throw errTentatives;
         const rows = (tentatives as RevisionRowLike[]) || [];
         revisionRowsRef.current = rows;
-        let idTentative: string;
+        let selectionRounds: ReturnType<typeof selectConfirmedRevisionRounds>;
         {
           // Both paths: never abandon a closed draft whose result failed to persist.
           const { data: finalises, error: erreurFinalises } = await supabase.from("apprenant_quiz_results")
             .select("details").eq("apprenant_id", apprenantId).eq("quiz_id", examenId).eq("quiz_type", "revision_fausses");
           if (erreurFinalises) throw erreurFinalises;
           const finished = new Set((finalises ?? []).map((r: any) => r.details?.revision_exercice_id));
-          const interrupted = rows.filter(r => r.completed === true && !finished.has(r.exercice_id))
-            .sort((a, b) => a.exercice_id.localeCompare(b.exercice_id, undefined, { numeric: true })).at(-1);
-          idTentative = interrupted?.exercice_id ?? choisirTentativeRevision(baseExerciceId, rows);
+          const confirmed: ConfirmedRevisionRound[] = [];
+          for (const row of rows) {
+            const {data: round, error: roundError} = await supabase.from('reponses_apprenants')
+              .select('id, reponses, completed, write_seq').eq('apprenant_id', apprenantId)
+              .eq('exercice_id', row.exercice_id).eq('exercice_type', 'revision_fausses').maybeSingle();
+            if (roundError) throw roundError;
+            if (!round) throw new Error('Une révision annoncée est introuvable ; relisez avant de continuer.');
+            confirmed.push({...round, exercice_id:row.exercice_id, completed:round.completed ?? row.completed});
+          }
+          selectionRounds = selectConfirmedRevisionRounds(examenId, confirmed, wrongQuestions, finished);
         }
         if (annule) return;
+        const idTentative = selectionRounds.exerciseId;
         setExerciceId(idTentative);
         tentativePreteRef.current = true;
         let lecture = supabase
@@ -1385,18 +1394,25 @@ function RevisionFausses({
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", idTentative)
           .eq("exercice_type", "revision_fausses");
-        const { data, error } = await lecture
+        const { data: reread, error } = await lecture
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         if (error) throw error;
+        // A newly allocated ID must not silently adopt a round concurrently created by another tab.
+        if (!selectionRounds.selected && reread) throw new Error('Cette révision vient d’être créée ailleurs ; relisez avant de continuer.');
+        const data = reread;
         primeKnownWriteSeq(apprenantId, idTentative, data?.write_seq);
         termineeRef.current = data?.completed === true;
         const saved = (data?.reponses && typeof data.reponses === "object" ? data.reponses : {}) as any;
-        const merged = mergeSavedAndPendingAnswers(saved, apprenantId, idTentative);
         if (data && !revisionSourcesCompatibles(saved, expectedSources)) {
           throw new Error('Ce brouillon appartient à une autre copie. Il est conservé sans être réutilisé.');
         }
+        const baseState = restaurerRevisionProgressState(saved, examenId, questionOrder);
+        const confirmedState = creerRevisionProgressState({...baseState, answers:{...selectionRounds.answers,...baseState.answers}, sourceResultIds:expectedSources});
+        const pending = mergeSavedAndPendingAnswers({revisionState:confirmedState}, apprenantId, idTentative);
+        if (!revisionSourcesCompatibles(pending, expectedSources)) throw new Error('La saisie en attente appartient à une autre copie ; elle est conservée.');
+        const merged = pending;
         const restored = restaurerRevisionProgressState(merged, examenId, questionOrder);
         if (annule) return;
         sourceResultIdsRef.current = restored.sourceResultIds ?? Object.fromEntries(wrongQuestions
@@ -1687,6 +1703,7 @@ function RevisionFausses({
     const vide = creerRevisionProgressState({
       examenId, answers: {}, currentIndex: 0, correctedCount: 0,
       correctedQuestions: [], showCorrection: false, questionOrder,
+      sourceResultIds: sourceResultIdsRef.current,
     });
     enqueueAnswerSave({
       apprenant_id: apprenantId, user_id: userId, exercice_id: nouvelId,
