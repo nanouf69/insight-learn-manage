@@ -58,3 +58,4 @@
 - TAXI/TA form defaults mirror FORMATION_MODULES (test modeles-taxi-ta-fin-formation); why: no missing modules.
 - CRM month extension: crm_reactiver_un_mois adds the month; send-prolongation-acces only emails per extension_id; why: resend never adds a month.
 - FC convocations use a separate evidence/outbox/journal workflow, with explicit bank-to-enrollment and contractual amount proofs, server revalidation and unknown-delivery quarantine; the accounting screen never auto-writes or sends; why: names and import duplicates cannot authorize a financial mutation or a duplicate convocation.
+- upsert-reponse-apprenant re-applies a skipped (stale base) question only when the sent value equals that account's latest journaled click (client time, then arrival) and treats skipped keys equal to the stored value as resolved; never for closures, revisionState or v3 lots; why: lost acknowledgements froze multi-answer quizzes while older-device replays must stay ignored.
