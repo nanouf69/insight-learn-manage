@@ -34,6 +34,9 @@ describe("Présence selon la filière", () => {
     const row = { sessions: { ...mixte, id: "unique" } };
     expect(calculerTauxPresenceHeures([], [row, row], "taxi").session.prevues).toBe(90);
   });
+  it('le soir conserve les 36h explicitement configurées plutôt que le défaut 40h', () => {
+    expect(calculerTauxPresenceHeures([], [{sessions:{id:'soir-configure',nom:'Session VTC cours du soir',type_session:'theorique',heures_total:36}}], 'vtc').session.prevues).toBe(36);
+  });
   it.each([["vtc",60,66],["taxi",90,96]])("%s utilise sa base sans modifier les preuves", (filiere, session, total) => {
     const avant = JSON.stringify({ signatures, inscriptions });
     const d = calculerTauxPresenceHeures(signatures, inscriptions, String(filiere));

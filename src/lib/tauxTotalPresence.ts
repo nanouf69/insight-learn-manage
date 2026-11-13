@@ -3,8 +3,8 @@ export interface PresenceHeuresTotal {
   pratique: { faites: number; prevues: number };
 }
 
-/** Live display only: recorded hours, signatures and frozen statements stay untouched. */
-export function tauxTotalPresence(d: PresenceHeuresTotal | null, pratiquePrevue = 6) {
+/** Live display only: practice needs an enrolled or explicitly proven target, never an implicit supplement. */
+export function tauxTotalPresence(d: PresenceHeuresTotal | null, pratiquePrevue = 0) {
   if (!d) return null;
   const sessionPrevues = d.session.prevues;
   const pratiquePrevues = d.pratique.prevues > 0 ? d.pratique.prevues : pratiquePrevue;

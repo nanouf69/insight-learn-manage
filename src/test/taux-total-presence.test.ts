@@ -7,10 +7,21 @@ describe('total présence session + pratique', () => {
     expect(r?.pct).toBe(100);
     expect(r?.prevues).toBe(heures + 6);
   });
-  it('sans inscription pratique : session 60/60 mais total 60/66', () => {
+  it('sans inscription ni cible pratique prouvée : aucun supplément automatique', () => {
     const r = tauxTotalPresence({session:{faites:60,prevues:60},pratique:{faites:0,prevues:0}});
-    expect(r?.prevues).toBe(66);
-    expect(r?.pct).toBeCloseTo(90.909);
+    expect(r?.prevues).toBe(60);
+    expect(r?.pct).toBe(100);
+  });
+  it('33h30 sur la session 40h donnent exactement 83,75 %', () => {
+    expect(tauxTotalPresence({session:{faites:33.5,prevues:40},pratique:{faites:0,prevues:0}})?.pct).toBe(83.75);
+  });
+  it('39h sur 40h donnent exactement 97,5 % si les 5h30 sont distinctes', () => {
+    expect(tauxTotalPresence({session:{faites:39,prevues:40},pratique:{faites:0,prevues:0}})?.pct).toBe(97.5);
+  });
+  it('une cible pratique contractuelle explicitement fournie reste comprise', () => {
+    const r = tauxTotalPresence({session:{faites:40,prevues:40},pratique:{faites:0,prevues:0}},6);
+    expect(r?.prevues).toBe(46);
+    expect(r?.pct).toBeCloseTo(86.9565217);
   });
   it('taux présentiel = heures signées / heures prévues : 60 h signées sur 66 h prévues ne fait jamais 50 %', () => {
     // La carte « Taux présentiel » utilise ce pct (jamais la moyenne simple 100 % + 0 % = 50 %).
