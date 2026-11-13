@@ -2,7 +2,7 @@
 
 ## 13/11 16:46 UTC — TOTAL VTC présentiel 40+6 / 60+6 (sans publication)
 - [x] Lecture seule/diagnostic, TOTAL partagé +6 VTC initial (soir 46/jour 66), théorie distincte et pratique réellement prouvée ; affichage élève séparé, Documents/tableau partagent le calcul, attestations sans taux de présence/frozen intactes.
-- [x] 113 tests PASS avant ajout du dernier test FC, quatre parcours fictifs PC/mobile pratique 0/3/6 + reload PASS ; lecture authentifiée CHERNI actuelle 37/46=80,4 %, aucune écriture effectuée ; build OK.
+- [x] 114 tests PASS/9 fichiers, quatre parcours fictifs PC/mobile pratique 0/3/6 + reload PASS ; lecture authentifiée CHERNI actuelle 37/46=80,4 %, aucune écriture effectuée ; build OK.
 - [ ] Parité propriétaire élève réellement authentifié : validations/journal restent admin-only ; nouveau lecteur propriétaire sûr non installé. Dossier CHERNI changé en parallèle (annulations et trois nouvelles saisies) ; couverture précise des deux créneaux du 18/09 à qualifier, sans correction automatique. Non publié.
 
 ## 13/11 16:28 UTC — UX examens blancs TAXI/VTC (sans publication)

@@ -17,7 +17,7 @@
 | Journée théorie et pratique complètes | 60/60 = 100 % | dépendait de l’inscription | 66/66 = 100 % |
 
 ## Tests et lecture réelle
-- Suite ciblée : 113 tests PASS dans neuf fichiers avant ajout du dernier cas FC (résultat final consigné dans le retour).
+- Suite ciblée finale : 114 tests PASS dans neuf fichiers, y compris exclusion FC. Dernier build observé OK à 16:56:47 UTC.
 - Quatre parcours Chromium fictifs : soir/journée × ordinateur 1280×1800/téléphone 390×844 ; pratique 0, 3, 6 ; événements et rechargement ; calcul visible admin/élève identique, aucune erreur JS/débordement. Tous les appels externes des fixtures interceptés.
 - Lecture authentifiée réelle CHERNI via chargeur de présence, PC/mobile et rechargement : données actuelles lues 37 h théorie, 0 pratique, TOTAL 37/46 = 80,4 %. Ce n’est plus l’état de la capture 37h30.
 - Catalogue VTC des sessions examiné en lecture seule : journée/soir/pratique/FC, valeurs configurées conservées. Tous les dossiers n’ont pas été ouverts individuellement.
