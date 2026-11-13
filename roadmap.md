@@ -1,8 +1,8 @@
 # Feuille de route
 
 ## 13/11 14:58 UTC — Identité sous signatures PDF
-- [ ] Ajouter nom/prénom de la ligne apprenant sous chaque zone signature dans les sept générateurs apprenant, bande réservée sans modifier les images stockées.
-- [ ] Générer/inspecter les PDF signés/vierges, longs noms/accents, collectifs et filières ; aucune écriture réelle/publication.
+- [x] Nom/prénom de la ligne apprenant sous chaque zone des sept générateurs, bande réservée, images stockées intactes ; modèle formateur sans apprenant exclu.
+- [x] Sept PDF fictifs/neuf pages inspectées puis deux en-têtes longs corrigés et réinspectés ; signé/vierge, deux élèves, accents, soir/pratique/TA ; 19 tests existants PASS, build OK. Aucun enregistrement/publication ; toutes variantes de filière non exercées individuellement.
 
 ## 13/11 14:48 UTC — Modale présence simplifiée
 - [x] Champ session retiré, correspondance interne exacte unique ; formateurs liés si disponibles/Autre et justificatifs/PDF local facultatif 4 Mo.
