@@ -43,9 +43,9 @@ import {
   viderFileNoyau,
   finaliserMatiere,
   reponsesNoyauEnAttente,
+  valeursNoyauEnAttente,
   reponsesNoyauEcartees,
   questionsNoyauEcartees,
-  remapperFileApresReouverture,
   archiverMarqueursObsoletes,
   recommencerMatiereNoyau,
   surveillerFileNoyau,
@@ -58,6 +58,7 @@ import { deciderCloture, compterReponsesSaisies, finalisationBloqueeParRefus } f
 import { getAnswerSaveRejectionFor } from "@/lib/answerPersistence";
 import { RefaireMatiereButton } from './RefaireMatiereButton';
 import type { SubjectRetakeReceipt } from '@/lib/examSubjectRetake';
+import { examAttemptAnswers } from '@/lib/examAttemptAnswers';
 
 
 
@@ -431,45 +432,27 @@ function PassageMatiere({
         setQuestionsSafe(projection.matiere.questions);
         setBlocageV2(null);
         const idsSnapshot = projection.matiere.questions.map((q) => `${matiere.id}:${q.id}`);
-        const ancienneIds = matiereTentatives
-          .filter((row) => row.etat !== "en_cours" && row.attempt_id !== decision.attemptId)
-          .map((row) => String(row.attempt_id));
-        if (!subjectRetake && ancienneIds.length > 0) {
-          // Toute tentative clôturée de la MÊME matière (neutralisée ou non)
-          // peut détenir des réponses locales non envoyées : elles sont
-          // rattachées à la tentative ouverte, uniquement si chaque question
-          // figure à l'identique dans le snapshot officiel.
-          const remappage = remapperFileApresReouverture({
-            anciensAttemptIds: ancienneIds,
-            nouvelAttemptId: decision.attemptId,
-            matiereId: matiere.id,
-            questionIdsSnapshot: idsSnapshot,
-          });
-          if (!remappage.ok && remappage.questionInvalide) {
-            setBlocageV2(`Récupération arrêtée : la question ${remappage.questionInvalide ?? "inconnue"} ne correspond pas au sujet officiel.`);
-            void captureError({
-              message: "[NoyauV2] remappage local refusé — snapshot non conforme",
-              source: "passage-examen-blanc",
-              fingerprint: `exam-remap-mismatch:${apprenantId}:${examenId}:${matiere.id}`,
-              context: {
-                apprenantId,
-                examenId,
-                matiere: matiere.id,
-                attemptId: decision.attemptId,
-                code: "REMAPPAGE_SNAPSHOT_INCOMPLET",
-                correspondance: remappage.correspondance,
-                attendues: idsSnapshot.length,
-                questionInvalide: remappage.questionInvalide,
-                heure: new Date().toISOString(),
-              },
-            });
-            return;
-          }
+        // The legacy row may belong to an older attempt, even when its key is
+        // unsuffixed and its status is still in_progress. Never replay it into V2.
+        const {data: nativeAnswers, error: nativeError} = await supabase.from('answer_state')
+          .select('question_id,valeur,revision').eq('attempt_id', decision.attemptId).eq('apprenant_id', apprenantId);
+        if (annule) return;
+        try {
+          if (nativeError) throw nativeError;
+          const confirmed = examAttemptAnswers(matiere.id, idsSnapshot, nativeAnswers ?? []);
+          const pending = valeursNoyauEnAttente(decision.attemptId, matiere.id);
+          const restored = normalizeReponses({...confirmed, ...pending});
+          latestReponsesRef.current = restored;
+          lastPersistedRef.current = {...confirmed};
+          ligneServeurTermineeRef.current = nouvelle.etat === 'terminee';
+          setReponses(restored);
+          const firstOpen = projection.matiere.questions.findIndex(q => !isReponseFournie(q.type, restored[q.id]));
+          setQuestionIndex(firstOpen >= 0 ? firstOpen : Math.max(0, projection.matiere.questions.length - 1));
+        } catch {
+          setBlocageV2('Les réponses de cette copie ne sont pas confirmées. Relisez sans recommencer ; les anciennes copies restent conservées.');
+          return;
         }
-        // HOTFIX 23/09/2026 : les réponses déjà saisies AVANT l'ouverture de la
-        // tentative V2 (saisie pendant le routage, reprise après F5) sont
-        // renvoyées vers le noyau. Sans cela la matière pouvait être clôturée
-        // avec zéro réponse côté V2 → note 0 technique.
+        // Only this attempt's confirmed values and its own pending journal.
         rattraperReponsesNoyau(decision.attemptId);
         // Résolu seulement APRÈS restauration des réponses et identité chrono fixée.
         marquerResolu();
