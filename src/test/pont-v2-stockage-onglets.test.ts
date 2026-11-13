@@ -313,7 +313,9 @@ describe("Fermeture ou rechargement pendant une requête en vol", () => {
     const A = await ouvrirOnglet();
     perdreReponseApresCommit = true;
     A.enfilerReponseNoyau({ attemptId: "t", matiereId: "m", questionId: 1, valeur: "brouillon" });
-    await pause(2);
+    // « Pendant l'envoi » = la requête est réellement partie (le calcul d'empreinte peut être lent sous charge).
+    for (let i = 0; i < 2000 && appels === 0; i++) await pause(1);
+    expect(appels).toBeGreaterThan(0);
     A.enfilerReponseNoyau({ attemptId: "t", matiereId: "m", questionId: 1, valeur: "réponse définitive" });
     perdreReponseApresCommit = false;
     fermerOnglet();
