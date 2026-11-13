@@ -1,9 +1,11 @@
 # Feuille de route
 
 ## 13/11 15:09 UTC — Divergence progression admin/apprenant
-- [ ] Identifier en lecture seule les dossiers/versions des captures et les preuves du module 2 ; aucune identité présumée.
-- [ ] Unifier la projection des statuts/compteurs et le rafraîchissement événementiel en aperçu, sans mutation des preuves ni droits.
-- [ ] Exécuter les tests de progression/isolation et comparer les vues authentifiées du même dossier ; documenter les limites iOS/production et le GO/NO-GO.
+- [x] Emmanuel NIBITANGA identifié par score exact : quinze remises, verdict 627/627 positif ; compteur ancienne completion 2/15. Production 6bdc7ed09, identité/bundle exact iPhone non prouvés malgré connexions concordantes.
+- [x] Projection des remises confirmées partagée dashboard/détail, statut serveur inchangé, callback non optimiste et relecture Realtime/reconnexion/visibilité ; empreintes avant/après identiques.
+- [x] 73 tests PASS/8 fichiers, admin réel PC/mobile 14/15 (au lieu de 2/15), build OK ; rapport docs/progression-parite-2026-11-13.md, aucune publication.
+- [ ] Parité réelle admin/élève et iOS Safari : session nominative refusée dans ce contexte, aucune identité/autorisation contournée. NO-GO publication et corrections pédagogiques réelles.
+- [ ] Compteur 82 : trois questions supprimées présentes dans détail ancien mais absentes de la remise ; projection historique question-par-question serveur non exposée. Aucun rapprochement implicite ni réponse inventée, 15/15 non revendiqué.
 
 ## 13/11 14:58 UTC — Identité sous signatures PDF
 - [x] Nom/prénom de la ligne apprenant sous chaque zone des sept générateurs, bande réservée, images stockées intactes ; modèle formateur sans apprenant exclu.
