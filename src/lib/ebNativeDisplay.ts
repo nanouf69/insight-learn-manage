@@ -36,8 +36,8 @@ export function lignesCanoniquesEB(rows: any[], states: CoreMatiereState[] | nul
     const seed = { id: latest.attemptId, apprenant_id: owner, quiz_id: def.id, quiz_type: 'examen_blanc', quiz_titre: def.id,
       matiere_id: m.id, matiere_nom: m.nom, completed_at: latest.finishedAt, details: {} };
     // Select the independent native copy even when a secondary receipt is missing or ambiguous.
-    const projected = lignesNativesAffichees([], [latest], rejected, owner, [def]).find(r => r.matiere_id === m.id)
-      ?? copieRecenteSession(seed,[latest],rejected);
+    const projected = latest.resultId ? copieRecenteSession(seed,[latest],rejected)
+      : lignesNativesAffichees([], [latest], rejected, owner, [def]).find(r => r.matiere_id === m.id) ?? copieRecenteSession(seed,[latest],rejected);
     const laterDivergent = receipts.find(r => Date.parse(r.completed_at)>Date.parse(latest.finishedAt)
       && r.id!==latest.resultId && !latest.provenResultIds?.includes(String(r.id)) && !nativeResultMatchesAnswers(latest,r.__preuveOriginaleDetails??r.details));
     const status = rejected.has(latest.attemptId) ? 'revue' : statutCopieEB(latest);
