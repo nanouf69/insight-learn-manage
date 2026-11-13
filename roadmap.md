@@ -1853,3 +1853,10 @@ Règle : chaque incident réel (Kevin, Thierno, Léa, Seydou, BOUDJORF) = protec
 - [x] Projection en lecture seule du résultat original /20, identité consultation, aucune mutation réelle.
 - [x] 77 tests PASS ; journée 49/49 et soir 54/54 notes définitives concordantes ; 34 copies soir en attente gardées sans note ; rechargement PC/mobile identique, 42 notes TAXI conservées.
 - [ ] Publication ciblée demandée ; contrôle public 07:21 UTC sert encore index-Cv4rxQEI.js sans projection. Bascule du déploiement non prouvée, attente du service de publication.
+
+## 13/11 00:41 UTC — Corriger les obstacles du NO-GO stabilisation (aperçu, aucune écriture réelle)
+- [ ] File V2 : stockage refusé/saturé → repli session/mémoire, alerte visible, garde de fermeture, jamais « sauvegardé » sans confirmation.
+- [ ] Deux onglets : verrou inter-onglets, fusion sans perte, dernière valeur par horodatage, conflits mis de côté.
+- [ ] Tests : fermeture pendant envoi, panne prolongée, deux onglets, stockage refusé.
+- [ ] Deux tests globaux en échec, suite entière, scan de sécurité frais.
+- [ ] Sauvegardes/restauration isolée : vérifier ce qui est possible, déclarer le blocage sinon. Lot à publier contrôlé.
