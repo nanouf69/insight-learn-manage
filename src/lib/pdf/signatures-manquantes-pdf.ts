@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { nomSousSignature } from './identite-signature-apprenant';
 import logoImage from '@/assets/logo-ftransport.png';
 import type { SignatureManquante } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
@@ -98,6 +99,7 @@ export function generateSignaturesManquantesPdf(apprenant: { nom?: string; preno
     doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(l.absence?'Hors total':l.minutes==null?'À vérifier':formatMinutesPresence(l.minutes),xDuree+2,y+10);doc.setFont('helvetica','normal');
     doc.setFontSize(8);
     doc.text(doc.splitTextToSize(FORMATEUR_EMARGEMENT,colFormateur-4), xFormateur + 2, y + 7);
+    nomSousSignature(doc,apprenant,xSignature,y+rowH-8,m+w-xSignature);
     y += rowH;
   }
   const pages = doc.getNumberOfPages();

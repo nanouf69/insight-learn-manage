@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { nomSousSignature } from './identite-signature-apprenant';
 import logoImage from '@/assets/logo-ftransport.png';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
 
@@ -85,6 +86,7 @@ export function generateEmargementPersoPdf(apprenant: { nom?: string; prenom?: s
     doc.setFontSize(7); doc.setTextColor(110, 110, 110); doc.text(formatHeures(dureeCreneau(l.c)), xH + 2, y + 13);
     if (signatureFormateur) { try { doc.addImage(signatureFormateur, 'PNG', xF + 4, y + 3, 40, 11); } catch { /* image illisible : case laissée vide */ } }
     doc.setFontSize(6.5); doc.text(o.formateur, xF + 2, y + rowH - 2);
+    nomSousSignature(doc,apprenant,xS,y+rowH-8,m+w-xS);
     y += rowH;
   }
   const pages = doc.getNumberOfPages();

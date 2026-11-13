@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { nomSousSignature } from './identite-signature-apprenant';
 import logoImage from '@/assets/logo-ftransport.png';
 import type { SignatureRassemblee } from '@/lib/signaturesRassemblees';
 
@@ -52,11 +53,12 @@ export function generateSignaturesRassembleesPdf(apprenant: { nom?: string; pren
     doc.text(`Référence : ${row.id}`, margin + 3, y + 36);
     try {
       const props = doc.getImageProperties(row.signature);
-      const scale = Math.min(53 / props.width, 26 / props.height);
-      doc.addImage(row.signature, props.fileType, 138 + (53 - props.width * scale) / 2, y + 6 + (26 - props.height * scale) / 2, props.width * scale, props.height * scale);
+      const scale = Math.min(53 / props.width, 23 / props.height);
+      doc.addImage(row.signature, props.fileType, 138 + (53 - props.width * scale) / 2, y + 4 + (23 - props.height * scale) / 2, props.width * scale, props.height * scale);
     } catch {
       doc.setFontSize(8); doc.text(['Signature enregistrée', 'mais image illisible'], 138, y + 17);
     }
+    nomSousSignature(doc,apprenant,133,y+rowHeight-9,63,9);
     y += rowHeight;
   }
   const pages = doc.getNumberOfPages();

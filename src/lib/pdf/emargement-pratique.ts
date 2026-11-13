@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { nomSousSignature } from './identite-signature-apprenant';
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -232,7 +233,7 @@ export function generateEmargementPratiquePDF(
       cellPadding: 5,
     },
     bodyStyles: {
-      minCellHeight: 20,
+      minCellHeight: 28,
     },
     columnStyles: {
       0: { cellWidth: 50, fontStyle: "bold" },
@@ -248,16 +249,17 @@ export function generateEmargementPratiquePDF(
       if (data.column.index !== 2 && data.column.index !== 4) return;
       const cand = candidats[data.row.index];
       if (!cand) return;
+      nomSousSignature(doc,cand,data.cell.x,data.cell.y+data.cell.height-8,data.cell.width);
       const sig = data.column.index === 2 ? cand.signatureMatin : cand.signatureApresMidi;
       if (!sig || !String(sig).startsWith("data:image")) return;
       try {
         const w = Math.min(data.cell.width - 6, 34);
-        const h = Math.min(data.cell.height - 4, 14);
+        const h = Math.min(data.cell.height - 12, 14);
         doc.addImage(
           String(sig),
           "PNG",
           data.cell.x + (data.cell.width - w) / 2,
-          data.cell.y + (data.cell.height - h) / 2,
+          data.cell.y + (data.cell.height - 8 - h) / 2,
           w,
           h,
         );

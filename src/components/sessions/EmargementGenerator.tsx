@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { nomSousSignature } from '@/lib/pdf/identite-signature-apprenant';
 import autoTable from "jspdf-autotable";
 import { format, eachDayOfInterval, parseISO, isWeekend } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -265,12 +266,13 @@ function generatePage(
       cellPadding: 3,
     },
     bodyStyles: {
-      minCellHeight: 12,
+      minCellHeight: 24,
     },
     columnStyles,
     margin: { left: margin, right: margin },
     tableLineColor: [41, 128, 185],
     tableLineWidth: 0.5,
+    didDrawCell:(data)=>{const apprenant=apprenants[data.row.index];if(data.section==='body'&&data.column.index>=2&&apprenant)nomSousSignature(doc,apprenant,data.cell.x,data.cell.y+data.cell.height-9,data.cell.width,9);},
   });
 
   // Position après le tableau

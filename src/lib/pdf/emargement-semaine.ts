@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { nomSousSignature } from './identite-signature-apprenant';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import logoImage from '@/assets/logo-ftransport.png';
@@ -206,7 +207,7 @@ export function generateEmargementSemainePdf(
       // Signature image
       if (sig && sig.signature && sig.signature.startsWith('data:image')) {
         try {
-          const sigH = rowH - 6;
+          const sigH = rowH - 13;
           const sigW = Math.min(sigColW - 6, 60);
           doc.addImage(
             sig.signature,
@@ -224,6 +225,7 @@ export function generateEmargementSemainePdf(
         doc.text('(Non signé)', margin + dateColW + demiColW + 4, y + rowH / 2);
       }
 
+      nomSousSignature(doc,apprenant,margin+dateColW+demiColW,y+rowH-8,sigColW);
       y += rowH;
     }
   }
