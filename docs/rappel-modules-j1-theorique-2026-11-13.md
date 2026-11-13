@@ -2,7 +2,7 @@
 
 ## État au 13 novembre 2026
 
-Audit effectué en lecture seule sur la base réelle partagée entre aperçu et production. Aucune fonction d'envoi appelée, aucun dossier modifié, aucune programmation installée, aucune réservation bloquée, rien publié. Cette livraison contient un diagnostic et un plan, pas une automatisation opérationnelle.
+Audit effectué en lecture seule sur la base réelle partagée entre aperçu et production. Aucune fonction d'envoi appelée, aucun dossier modifié, aucune programmation installée, aucune réservation bloquée, rien publié. Mise à jour utilisateur 22:59 intégrée : projection pure isolée implémentée et 40 tests Vitest exécutés avec succès ; pas encore d'automatisation opérationnelle.
 
 ## Constats vérifiés
 
@@ -12,7 +12,7 @@ Audit effectué en lecture seule sur la base réelle partagée entre aperçu et 
 - Sur 349 dossiers non supprimés de types stricts `vtc`, `vtc-e`, `taxi`, `taxi-e` : 301 ont une valeur, aucune au format ISO ou JJ/MM/AAAA ; 298 sont des libellés de dates françaises et 3 portent `pas_encore_choisi`. Les types hybrides ne sont pas inclus dans ces chiffres.
 - Répartition des résultats : 126 `oui`, 37 `non`, 26 `absent`, 9 `annule`, 6 `reporte`, 145 sans résultat.
 - La date centrale est une date d'inscription prévue, pas à elle seule une preuve de participation réelle. Le résultat peut être saisi manuellement et n'apporte pas un horodatage de passage à J+1. La date d'envoi de copie ne doit jamais servir de référence.
-- Il faut une preuve de passage rattachée au dossier et à cette occurrence d'examen (preuve CMA ou confirmation administrative auditée). Sans preuve disponible à J+1 : signalement administratif, aucun envoi présumé. Les imports/documents CMA et leur association nominative restent à examiner avant implémentation ; leur capacité à fournir cette preuve n'est pas établie par cet audit.
+- Il faut une preuve de passage rattachée au dossier et à cette occurrence d'examen (preuve CMA ou confirmation administrative auditée). Sans preuve : signalement administratif, aucun envoi présumé. `parse-exam-results` extrait noms/dossier/résultat et ne stocke pas de date réelle de passage vérifiée ; il ne fournit donc pas la preuve nécessaire. Les tables `cma_planning_lignes`/`cma_planning_attente` stockent dates de planning, fichier et rapprochement, pas preuve de présence à l'examen. Adaptateur de preuve datée encore requis.
 
 ### Déclencheurs existants
 
@@ -26,49 +26,53 @@ Audit effectué en lecture seule sur la base réelle partagée entre aperçu et 
 ### Modules et réservation
 
 - Source des attributions : `modules_autorises`, à rapprocher du programme du dossier et des dispenses existantes. Source de progression commune : `etat_completion_modules` (statut effectif, date, preuves), sans recalculer les notes ni rouvrir les modules achevés.
-- Les modules pratiques physiques 6/8 ne doivent pas devenir un préalable circulaire à la réservation de leur propre séance. Les activités réellement obligatoires en ligne dans ces modules doivent être distinguées de la présence pratique.
+- Pour CE rappel et CE classement, toute la partie pratique/entraînement est exclue, y compris les activités pratiques en ligne des modules 6/8. Les obligations des autres usages de progression restent inchangées.
 - `ReservationPratique.tsx` et `confirm-reservation-pratique` ne contrôlent pas l'achèvement de tous les modules avant réservation. La fonction contrôle notamment la capacité journalière.
 - Les trois déclencheurs réels de `reservations_pratique` concernent capacité, feuilles et inscription à la session ; aucun n'impose tous les modules. La fonction de capacité réelle a été lue : aucun contrôle de progression.
-- Les politiques réelles autorisent la gestion admin et les lectures des dossiers liés ; pas d'écriture directe élève. Le portail utilise néanmoins une fonction privilégiée acceptant un identifiant de dossier : le contrôle d'identité et du lien doit être renforcé avant d'y greffer une nouvelle règle. Aucun appel de réservation n'a été effectué, car il modifierait les dossiers et peut expédier un mail.
+- Les politiques réelles autorisent la gestion admin et les lectures des dossiers liés ; pas d'écriture directe élève. Le portail utilise néanmoins une fonction privilégiée acceptant un identifiant de dossier : point de sécurité existant à traiter séparément. Aucun appel de réservation n'a été effectué, car il modifierait les dossiers et peut expédier un mail. Aucun contrôle dur de modules ne sera ajouté.
 - Le code historique de modification de réservation contient une suppression de rattachement à l'ancienne session. Cette voie n'a pas été utilisée ; le nouveau lot ne doit ni la déclencher ni s'en servir pour migrer des réservations.
 
 ## Décision de périmètre
 
-L'ancienne règle permet la réservation sans module pratique préalable. La demande actuelle envisage un nouveau préalable de tous les modules obligatoires en ligne, mais exige une confirmation distincte avant activation. Le plan prépare ce changement sans remplacer aujourd'hui la règle existante. Le mail contenant cette affirmation ne doit pas être activé tant que le préalable n'est pas effectivement en vigueur et compatible avec les contrats ; sinon il annoncerait un blocage inexistant.
+La mise à jour impérative de 22:59 remplace le plan précédent : priorité aux candidats ayant terminé les modules obligatoires non pratiques, sans interdiction de réserver pour les autres. Rappels uniquement aux incomplets à J+1/J+3/J+5… ; arrêt dès complétion. Le nouveau texte ne doit pas être envoyé avant que la priorité annoncée soit réellement applicable et compatible avec les contrats. Pas de campagne activée ni de publication.
 
 ## Contenu demandé, conservé sans envoi
 
 > Bonjour,
 >
-> À la suite de votre examen théorique, nous vous rappelons qu'il est nécessaire de terminer l'ensemble des modules obligatoires de votre formation sur notre plateforme e-learning.
+> À la suite de votre examen théorique, nous vous invitons à terminer l'ensemble des modules de votre formation sur notre plateforme e-learning, à l'exception de la partie pratique.
 >
-> Nous vous invitons à vérifier votre progression et à finaliser les modules encore en attente.
+> Les candidats ayant terminé l'ensemble de leurs modules seront prioritaires pour le choix d'une date d'entraînement pratique.
 >
-> La réservation d'une date d'entraînement pratique sera accessible uniquement après validation de l'ensemble des modules obligatoires.
+> Si vos modules ne sont pas encore terminés, vous ne serez donc pas prioritaire dans l'attribution des créneaux disponibles.
 >
-> Si vous avez déjà terminé tous vos modules, aucune action supplémentaire n'est nécessaire.
+> Nous vous invitons à finaliser votre parcours dès que possible afin de bénéficier de cette priorité.
 >
-> En cas de difficulté technique ou de problème de validation, merci de contacter notre centre de formation.
+> En cas de difficulté technique ou de problème de validation d'un module, merci de contacter notre centre de formation.
 >
 > Cordialement,
 > L'équipe Ftransport
 
-Le transport existant ajoutera la signature commune sans doublon et l'accusé explicite par message. Aucun lien de réservation, donnée d'examen, réponse ou note dans ce rappel.
+Objet exact : « Rappel important – Finalisez vos modules pour votre entraînement pratique ». Texte/objet conservés dans `supabase/functions/_shared/rappelTheoriquePriorite.ts`. Le futur transport devra ajouter la signature commune sans doublon et l'accusé explicite par message. Aucun lien de réservation, donnée d'examen, réponse ou note dans ce rappel.
 
 ## Acceptation à vérifier avant activation
 
 - J+1 calendaire Europe/Paris de la date réelle confirmée ; heure proposée : 10 h Paris, non encore validée. Tester week-end, changement de mois/année et heure d'été/hiver.
 - Types VTC/TAXI avec parcours en ligne attribué, hybride inclus après classification ; FC, TA, VA, pratique seule exclus sauf autre instruction.
 - Absents, annulés, reportés, date inconnue et passage non prouvé exclus. Un échec théorique prouvé ne signifie pas une absence.
-- Un rappel par dossier + identifiant immuable du passage + version du modèle. Deux passages différents ne sont pas fusionnés ; deux imports du même passage ne créent pas deux envois.
+- Un rappel par dossier + identifiant immuable du passage + échéance calendaire + version du modèle. Deux passages différents ne sont pas fusionnés ; deux imports du même passage ne créent pas deux envois.
 - Envoi atomiquement réservé, résultat accepté/remis/rejet/ouvert/confirmé distingué ; délai réseau inconnu = à vérifier, jamais un renvoi aveugle.
-- Pas de rattrapage automatique d'anciens examens à l'activation. Preuve tardive au-delà de J+1 : décision administrative, pas d'envoi automatiquement décalé.
+- Pas de rattrapage automatique d'anciens examens à l'activation : borne explicite sur date réelle de passage. Une échéance manquée n'est pas rattrapée ; seules les échéances J+1/J+3/J+5 suivantes sont préparées si la preuve existe et les modules restent incomplets.
 - Comptes techniques, désinscrits/archivés, adresses bloquées, attestation déjà envoyée et accès terminés exclus ; erreur de lecture = aucune expédition. Aucun prolongement automatique d'accès.
-- Modules tous terminés : rappel unique conservé selon le texte demandé, pas de relance répétée. Une erreur de progression n'est pas une preuve de module manquant.
-- Contrats CPF et réservations existants inchangés. Le nouveau préalable nécessite périmètre d'application explicite et vérification contractuelle, sans sanction CPF ni ajout d'obligation rétroactive.
+- Modules non pratiques tous terminés : aucun mail, arrêt de la séquence, échéances futures neutralisées sans effacer le journal. Une erreur de progression n'est pas une preuve de module manquant.
+- Contrats CPF et réservations existants inchangés. Priorité indicative uniquement, sans sanction CPF ni ajout d'obligation rétroactive. Les incomplets restent dans la file, jamais refusés par ce lot.
 - Exception admin nominative et limitée à une réservation/période en cas de bug : journal d'auteur/date/justification, sans fabriquer de module terminé ou de présence.
 - Tests avec données fictives : doublons et concurrence, report, plusieurs dossiers, modules facultatifs, pratique physique, lecture en panne, issue d'envoi inconnue, dérogation admin, liens directs, PC/mobile.
 
 ## Limites et dépendances
 
-Les tests fonctionnels authentifiés, le transport réel, les contrats individuels et la preuve automatique de passage CMA ne sont pas encore vérifiés pour ce nouveau lot. Les travaux serveur éventuels restent soumis à sauvegarde et restauration indépendante vérifiées. Le diagnostic ne constitue ni avis juridique ni preuve d'autorisation contractuelle d'un nouveau blocage.
+Implémenté isolément : décision pure J+1/J+3/J+5, clé stable par échéance, exclusions, lecture fraîche injectée et classement indicatif (réservations préservées, ordre contractuel, exception admin). **40 tests Vitest réussis**, couvrant VTC/TAXI, calendrier Paris/hiver/été/mois/année, complets/pratique/facultatifs/dispenses, erreurs, identité, doublons de projection, arrêt après relecture et priorité non destructive.
+
+Non implémenté en production : preuve datée CMA/admin, adaptateur complet obligations/dispenses/activités canoniques, verrou atomique concurrent et journal d'envoi, annulation des échéances futures, file admin affichée, exception auditée persistée et transport. La clé pure ne constitue PAS un verrou contre deux envois concurrents. Aucun module isolé n'est importé par une fonction active ni par la réservation.
+
+Les tests authentifiés, l'envoi, l'allocation réelle des places, les contrats individuels et le branchement bout-en-bout ne sont pas prouvés. Aucun avis juridique n'est fourni. Activation attend tests complets et confirmation ; travaux serveur à risque soumis à restauration indépendante vérifiée. Une vérification quotidienne à heure Paris est proposée pour servir les échéances un jour sur deux, aucun job créé ; l'heure et la fenêtre de livraison doivent être validées avant activation.
