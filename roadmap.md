@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 13/11 14:48 UTC — Modale présence simplifiée
-- [ ] Rattachement automatique sans champ visible, formateurs enregistrés/Autre et justificatif sélectionné/PDF local facultatif.
-- [ ] Tester ambiguïtés, PDF/type/taille, PC/mobile ; aucun dépôt réel ni publication, activation toujours bloquée par serveur/journal privé.
+- [x] Champ session retiré, correspondance interne exacte unique ; formateurs liés si disponibles/Autre et justificatifs/PDF local facultatif 4 Mo.
+- [x] 28 tests PASS/3 fichiers, rendu PC/mobile inspecté, inscription réelle retrouvée et 1 formateur lié +Autre ; faux PDF refusé, fichier valide local seulement ; build OK.
+- [ ] Dépôt réel/validation bloqués par analyse PDF serveur, stockage privé, rattachement journal et restauration non installés ; aucun dépôt ni publication.
 
 ## 13/11 14:40 UTC — Présence par créneau et pratique
 - [x] Trois actions par créneau, confirmation preuve/identité avec rôle admin relu, pratique 0–6 h sans séance inventée ; signatures manquantes conservées, enregistrement déconnecté.
