@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 10:51 UTC — Préremplir les contrats de location de tous les apprenants
+- [ ] Coordonnées de la fiche CRM dès l’ouverture ; dossier de bienvenue du même apprenant en complément, champs absents laissés vides.
+- [ ] Préserver les saisies locales, isoler les fiches et vérifier les tests/PC/mobile ; aucune écriture ni publication.
+
 ## 13/11 10:13 UTC — Suite HADDOU F/G et révisions
 - [ ] Examiner journaux immuables et empreintes ; aucune liaison par temps/texte seul.
 - [ ] Préparer reset/revue admin append-only en environnement jetable, sans activation.

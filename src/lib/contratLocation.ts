@@ -8,6 +8,18 @@ export interface VehiculeLocation {
   date_debut: string | null; date_echeance: string | null;
 }
 const texte = (value: unknown) => typeof value === 'string' ? value.trim() : '';
+/** Same-dossier CRM fallback; never copy signatures, credentials or unverified licence data. */
+export function coordonneesFicheLocation(fiche: Record<string, unknown>, apprenantId: string) {
+  if (!apprenantId || fiche.id !== apprenantId) return null;
+  const naissance = texte(fiche.date_naissance);
+  return {
+    nomComplet: [texte(fiche.prenom), texte(fiche.nom)].filter(Boolean).join(' '),
+    email: texte(fiche.email), telephone: texte(fiche.telephone),
+    adresse: [texte(fiche.adresse), texte(fiche.code_postal), texte(fiche.ville)].filter(Boolean).join(', '),
+    dateNaissance: /^\d{4}-\d{2}-\d{2}$/.test(naissance) ? naissance : '',
+    numPermis: '', dateDelivrancePermis: '', prefecturePermis: '',
+  };
+}
 export function coordonneesLocation(doc: BienvenueLocation, apprenantId: string) {
   if (doc.apprenant_id !== apprenantId || !doc.completed_at || !Number.isFinite(Date.parse(doc.completed_at))) return null;
   const d = doc.donnees;
