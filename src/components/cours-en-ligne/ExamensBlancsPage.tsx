@@ -10,6 +10,7 @@ import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 // This file was split from the original monolithic ExamensBlancsPage.tsx
 
 import { blockLearnerWrite } from "@/lib/learnerPreviewGuard";
+import { requestExamExit } from './ExamExitGuard';
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
@@ -1807,17 +1808,14 @@ export default function ExamensBlancsPage({
               variant="ghost"
               size="sm"
               className="gap-2"
-              onClick={() => {
-                const ok = window.confirm("Retour à la liste des examens ? Votre progression sur cet examen sera perdue.");
-                if (!ok) return;
-                try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+              onClick={() => requestExamExit(() => {
                 setExamenChoisi(null);
                 setTousResultats([]);
                 setMatiereIndex(0);
                 setLastMatiereResult(null);
                 setSelectionRefreshKey(k => k + 1);
                 setPhase("selection");
-              }}
+              })}
             >
               <ArrowLeft className="w-6 h-6" /> Retour à la liste
             </Button>
