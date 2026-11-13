@@ -9,7 +9,7 @@ export async function analyserPdfPresence(bytes: Uint8Array, mime: string) {
   const document=await PDFDocument.load(bytes,{ignoreEncryption:false,updateMetadata:false,throwOnInvalidObject:true});
   if(document.getPageCount()<1 || document.getPageCount()>500) throw new Error('Nombre de pages PDF invalide');
   // Do not serve uploaded active content; downloadable attachment only.
-  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  const digest=await crypto.subtle.digest('SHA-256',new Uint8Array(bytes).buffer);
   return {sha256:[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join(''),taille:bytes.length};
 }
 export interface DepotPresencePrive {
