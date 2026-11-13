@@ -2,8 +2,8 @@
 
 ## 13/11 14:18 UTC — Rectification du dénominateur présence CHERNI
 - [x] Lecture seule : session soir 40 h par défaut, heures configurées NULL, aucun contrat devis ni catalogue lié ; aucune inscription pratique, heures individuelles NULL. Le supplément 6 h vient du code, pas du dossier.
-- [ ] Retirer le supplément pratique implicite de la projection commune, préserver les durées explicites ; vérifier 33,5/40, 39/40 et 37,5/40 après chevauchement.
-- [ ] Tests ciblés, affichage PC/mobile et contrôle de compilation ; aucune écriture réelle ni publication.
+- [x] Supplément pratique implicite retiré de la projection commune, durées explicites préservées ; 33,5/40=83,75%, 39/40=97,5% et 37,5/40=93,75% vérifiés.
+- [x] 94 tests PASS dans 8 fichiers ; PC/mobile projection fictive inspectée, build OK 14:21:22 UTC ; empreintes dossier/session inchangées, aucune écriture réelle ni publication.
 - [ ] Parité élève authentifiée/événements distants bloquée par droits admin-only déjà constatés ; aucun droit élargi.
 
 ## 13/11 14:15 UTC — Incident signatures tardives, accord de publication ciblée

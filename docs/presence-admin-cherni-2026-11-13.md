@@ -12,7 +12,7 @@ Cette section remplace les dénominateurs de la conclusion précédente ; le com
 - Aperçu : total partagé CRM/liste sans supplément implicite ; une durée pratique explicite reste comptée (40+6=46), les plafonds par catégorie sont conservés. Le défaut soir ne remplace plus une durée positive configurée.
 - **Limites** : CRM/élève authentifiés complets non vérifiés sur ce correctif ; table de validations admin-only et événements distants non disponibles restent les blocages de parité déjà identifiés. Aucun changement de droits, jalons/EDOF, contrat, inscription, note ou signature. Les calculs génériques élève et rapports non alimentés par cette projection restent à aligner après preuve propriétaire sûre.
 - Contrôle SELECT avant/après des validations : `09a38657f55fa99702ee04e73d3a5dad` identique (formule de cette relecture) ; signatures SELECT 2010 minutes ; aucune écriture réelle ni publication.
-- Tests et vérifications de cette rectification : voir résultats finaux ci-dessous.
+- **94 tests PASS dans 8 fichiers**, compilation observée **build OK 14:21:22 UTC** ; PC 1280×1800/mobile 390×844 avec projection fictive inspectée : 37,5/40, 93,8 %, ajout net 240 minutes, sans débordement. Ce contrôle ne prouve pas la parité authentifiée complète. **NO-GO publication** ; source propriétaire élève et durée contractuelle à confirmer.
 
 ## État exact (SELECT uniquement)
 Dossier **Tarek CHERNI, VTC cours du soir**, identité CRM `8fc60874-fa5d-4fed-aced-da946fbf1cca`.
