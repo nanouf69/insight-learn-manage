@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 17:04 UTC — STOP périmètre TOTAL
+- [ ] Lecture seule TAXI/TA/VA/VTC ; isoler les changements récents VTC et restaurer le comportement hors VTC sans modifier les preuves.
+- [ ] Tests ancien/nouveau par filière, rapport et qualification de la capture 30/30 (identité absente). Pas de publication.
+
 ## 13/11 16:46 UTC — TOTAL VTC présentiel 40+6 / 60+6 (sans publication)
 - [x] Lecture seule/diagnostic, TOTAL partagé +6 VTC initial (soir 46/jour 66), théorie distincte et pratique réellement prouvée ; affichage élève séparé, Documents/tableau partagent le calcul, attestations sans taux de présence/frozen intactes.
 - [x] 114 tests PASS/9 fichiers, quatre parcours fictifs PC/mobile pratique 0/3/6 + reload PASS ; lecture authentifiée CHERNI actuelle 37/46=80,4 %, aucune écriture effectuée ; build OK.
