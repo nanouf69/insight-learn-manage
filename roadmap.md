@@ -2,8 +2,8 @@
 
 ## 13/11 17:06 UTC — Lettre CMA ciblée
 - [x] Diagnostic lecture seule : sélection actuelle inclut tous les ajournés pratiques ; Calvo Enzo 03/11/2026 non, VTC, confirmation session absente.
-- [ ] Sélection confirmés session exacte + ajournés période précédente, catégories/territoires, dédoublonnage et libellés non trompeurs ; plan présenté avant modification.
-- [ ] Tests Calvo/cycles/régénération et rapport ; preuves historiques/territoire à qualifier. Aucun statut, envoi ou publication.
+- [x] Projection préparée confirmés exacts + ajournés période précédente, dédoublonnage, libellés distincts, lectures paginées et relecture génération ; 41 tests PASS, vérification module dans Chromium, rapport docs/cma-lettre-selection-2026-11-13.md.
+- [ ] Activation complète : territoire pratique absent des sources CMA, historique passages/résultats incomplet ; Calvo classé à vérifier et génération suspendue, aucune inscription inventée. Page authentifiée entière et lettre effective non testées. Aucun statut, envoi ni publication.
 
 ## 13/11 17:04 UTC — STOP périmètre TOTAL
 - [x] Lecture seule 90 dossiers TAXI/TA/VA, 174 inscriptions, 807 feuilles ; changements annexes désormais VTC-only, 90/90 projections identiques à l'avant-lot ; preuves inchangées.
