@@ -602,6 +602,50 @@ const estObjet = (value: unknown): value is Record<string, any> =>
  * des réponses et avancer la progression, mais ne change jamais une réponse,
  * l'ordre des questions ou une validation déjà enregistrée.
  */
+/**
+ * Signature d'écrivain des états de révision (un seul champ JSON réécrit à
+ * chaque clic). Après un accusé perdu (délai dépassé alors que le serveur avait
+ * appliqué l'écriture), la version serveur vient de CE même onglet : la version
+ * locale plus récente la remplace légitimement. Un autre appareil/onglet garde
+ * la protection anti-écrasement existante.
+ */
+const ECRIVAIN_ID = (() => {
+  try {
+    const k = "ftransport_answer_writer_v1";
+    const ex = sessionStorage.getItem(k);
+    if (ex) return ex;
+    const v = `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem(k, v);
+    return v;
+  } catch {
+    return `w_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+})();
+let ecrivainCompteur = Date.now();
+export function tamponnerEcrivainRevision<T>(reponses: T): T {
+  if (!estObjet(reponses) || !estObjet((reponses as any).revisionState)) return reponses;
+  ecrivainCompteur = Math.max(ecrivainCompteur + 1, Date.now());
+  return { ...(reponses as any), revisionState: { ...(reponses as any).revisionState, _ecrivain: { id: ECRIVAIN_ID, n: ecrivainCompteur } } };
+}
+export function revisionEcriteParCetOnglet(candidate: unknown, stored: unknown, ecrivain = ECRIVAIN_ID): boolean {
+  if (!estObjet(candidate) || !estObjet(stored)) return false;
+  const c = (candidate as any).revisionState, st = (stored as any).revisionState;
+  if (!estObjet(c) || !estObjet(st)) return false;
+  const ce = c._ecrivain, se = st._ecrivain;
+  if (!estObjet(ce) || !estObjet(se) || ce.id !== ecrivain || se.id !== ecrivain) return false;
+  if (!(Number(se.n) <= Number(ce.n))) return false;
+  if (st.examenId && c.examenId !== st.examenId) return false;
+  const so = Array.isArray(st.questionOrder) ? st.questionOrder : [];
+  if (so.length > 0 && JSON.stringify(so) !== JSON.stringify(c.questionOrder ?? [])) return false;
+  // Une réponse déjà enregistrée peut être précisée, jamais retirée.
+  const sa = estObjet(st.answers) ? st.answers : {}, ca = estObjet(c.answers) ? c.answers : {};
+  const vide = (v: unknown) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
+  if (Object.keys(sa).some((k) => !vide(sa[k]) && (!Object.prototype.hasOwnProperty.call(ca, k) || vide(ca[k])))) return false;
+  // Une validation déjà enregistrée n'est jamais retirée.
+  const cc = new Set(Array.isArray(c.correctedQuestions) ? c.correctedQuestions.map(String) : []);
+  return (Array.isArray(st.correctedQuestions) ? st.correctedQuestions.map(String) : []).every((k: string) => cc.has(k));
+}
+
 function revisionStateContientSansConflit(candidate: unknown, previous: unknown): boolean {
   if (!estObjet(candidate) || !estObjet(previous)) return false;
   if (previous.examenId && candidate.examenId !== previous.examenId) return false;
@@ -953,7 +997,9 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           if (
             confirmedSeq > 0 &&
             // Comparaison exacte dans la forme non codée réellement transmise.
-            reponsesContiennentSansConflit(item.payload.reponses, confirmation.stored_reponses, skipped)
+            (reponsesContiennentSansConflit(item.payload.reponses, confirmation.stored_reponses, skipped) ||
+              (skipped.every((k: unknown) => k === "revisionState") &&
+                revisionEcriteParCetOnglet(item.payload.reponses, confirmation.stored_reponses)))
           ) {
             item.payload = { ...item.payload, base_seq: confirmedSeq };
             item.rebase_operation_id = `${item.id}__rebase_${confirmedSeq}_${item.attempts + 1}`;
@@ -1100,7 +1146,7 @@ async function processQueue(): Promise<void> {
             q.payload.apprenant_id === item.payload.apprenant_id &&
             q.payload.exercice_id === item.payload.exercice_id &&
             (q.payload.base_seq ?? 0) < confirmedSeq &&
-            (item.payload.exercice_type !== "revision_fausses" || reponsesContiennentSansConflit(q.payload.reponses, item.payload.reponses))
+            (item.payload.exercice_type !== "revision_fausses" || reponsesContiennentSansConflit(q.payload.reponses, item.payload.reponses) || revisionEcriteParCetOnglet(q.payload.reponses, item.payload.reponses))
               ? { ...q, payload: { ...q.payload, base_seq: confirmedSeq } }
               : q
           );
@@ -1194,6 +1240,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     id: `${payload.exercice_id}__${Date.now()}__${Math.random().toString(36).slice(2, 8)}`,
     payload: {
       ...payload,
+      reponses: tamponnerEcrivainRevision(payload.reponses),
       updated_at: payload.updated_at ?? new Date().toISOString(),
       base_seq: payload.base_seq ?? getKnownWriteSeq(payload.apprenant_id, payload.exercice_id),
       events: (payload.events ?? []).map((event) => ({
