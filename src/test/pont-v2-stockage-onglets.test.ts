@@ -312,6 +312,27 @@ describe("Fermeture ou rechargement pendant une requête en vol", () => {
   });
 });
 
+describe("Appel figé sans réponse", () => {
+  it("au-delà de 20 s l'appel est traité comme une coupure : la file et le verrou sont libérés, aucune double écriture", async () => {
+    vi.useFakeTimers();
+    try {
+      const A = await ouvrirOnglet();
+      perdreReponseApresCommit = true;
+      A.enfilerReponseNoyau({ attemptId: "f", matiereId: "m", questionId: 1, valeur: "fige" });
+      await vi.advanceTimersByTimeAsync(A.DELAI_MAX_APPEL_MS + 10);
+      expect(ecrituresEffectives).toBe(1);
+      expect(tenus.size).toBe(0); // le verrou inter-onglets n'est pas retenu indéfiniment
+      expect(A.reponsesNoyauEnAttente("f")).toBe(1); // jamais présentée comme enregistrée
+      perdreReponseApresCommit = false;
+      for (let i = 0; i < 10 && A.reponsesNoyauEnAttente() > 0; i++) { await A.viderFileNoyau(null, { forcer: true }); await vi.advanceTimersByTimeAsync(0); }
+      expect(A.reponsesNoyauEnAttente()).toBe(0);
+      expect(ecrituresEffectives).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("Panne prolongée de six minutes", () => {
   it("modifications pendant la panne, fermeture puis réouverture : zéro perte, essais bornés, une écriture par question", async () => {
     vi.useFakeTimers();

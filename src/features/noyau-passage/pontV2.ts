@@ -309,6 +309,24 @@ export async function demarrerTentative(params: {
   return attemptId;
 }
 
+/**
+ * Un appel sans réponse (réseau figé) ne doit jamais bloquer la file ni le
+ * verrou inter-onglets : au-delà de ce délai il est traité comme une coupure.
+ * Le renvoi reste sans effet double (operation_id déterministe, révision CAS).
+ */
+export const DELAI_MAX_APPEL_MS = 20_000;
+async function avecDelaiMax<T>(appel: PromiseLike<T>): Promise<T | { data: null; error: { message: string } }> {
+  let minuteur: ReturnType<typeof setTimeout> | null = null;
+  const delai = new Promise<{ data: null; error: { message: string } }>((resoudre) => {
+    minuteur = setTimeout(() => resoudre({ data: null, error: { message: "CLIENT_TIMEOUT Failed to fetch" } }), DELAI_MAX_APPEL_MS);
+  });
+  try {
+    return await Promise.race([Promise.resolve(appel), delai]);
+  } finally {
+    if (minuteur) clearTimeout(minuteur);
+  }
+}
+
 /** Enregistre une réponse dans le noyau (append-only + révision serveur). */
 export async function enregistrerReponse(params: {
   attemptId: string;
@@ -341,7 +359,7 @@ export async function enregistrerReponse(params: {
     p_session_origine: "passage_apprenant",
   });
   // Réponse absente (coupure) : traitée comme une erreur réseau, la réponse reste en file.
-  let { data, error } = (await sauvegarder(op, params.revisionAttendue ?? null)) ?? {
+  let { data, error } = (await avecDelaiMax(sauvegarder(op, params.revisionAttendue ?? null))) ?? {
     data: null,
     error: { message: "Failed to fetch" },
   };
