@@ -37,7 +37,7 @@ Les lectures ont échoué temporairement avant de reprendre. Les métriques ci-d
 | Copie native définitive avec reçu aux mêmes réponses mais ancien drapeau QRC en attente | 979 | Risque de source périmée ; ordre des tableaux QCM neutralisé, textes QRC conservés. La présence d’un reçu concordant n’autorise pas une fusion |
 | Sauvegardes anciennes exactes non terminées déjà remises | 1 381, 65 comptes | Clés canoniques `EBx__matiere`, réponses exactes, sauvegarde antérieure à remise. Le compteur n’inclut pas toutes les anciennes générations de clés ni les suffixes tN ; risque de fausse reprise, pas preuve de 1 381 boutons affichés |
 | Groupes natifs compte/examen/matière avec plusieurs copies remises | 118 groupes, 137 copies supplémentaires | Multitentatives normales ou doublons possibles ; aucune suppression/fusion |
-| Reçus égaux aux réponses de plusieurs copies natives | 42 reçus, 85 correspondances, 8 comptes | Comparaison conservant texte, ordre QCM indifférent ; collisions, pas preuve d’une identité unique |
+| Reçus égaux aux réponses de plusieurs copies natives | Total opérationnel NON PROUVÉ | Comparaison conservant texte, ordre QCM indifférent ; collisions, pas preuve d’une identité unique |
 | Copies remises sans aucune question figée accessible | 0 hors comptes techniques | Test de présence seulement ; ne prouve pas le barème/identité de chaque question |
 
 ### Reçus absents : comptes et matières
@@ -61,7 +61,7 @@ Les lectures ont échoué temporairement avant de reprendre. Les métriques ci-d
 | MEMDOUH Ilies | EB6 TAXI | 1 |
 | DEMO Test VTC (technique) | EB4 VTC | 1 |
 
-Correction du total : cette liste contient **9 comptes, 43 reçus et 87 correspondances** (dont DEMO : 1 reçu / 3 correspondances). Hors compte technique DEMO : **8 comptes, 42 reçus, 84 correspondances**. Les correspondances sont des liens potentiels, jamais des liaisons enregistrées. Le tableau synthétique brut précédent indiquait 42/85/8 : utiliser ce détail recompté, pas cette ligne pour un total opérationnel.
+Les comptages de collisions varient selon les exclusions techniques et la normalisation QCM : total opérationnel NON PROUVÉ. Les correspondances restent des liens potentiels, jamais des liaisons enregistrées.
 
 ## Causes racines et correctifs d’aperçu
 1. Les lecteurs construisaient la liste des matières depuis les seuls reçus secondaires : une copie native sans reçu disparaissait. `lignesCanoniquesEB` sélectionne désormais une copie indépendante par compte/examen/matière et l’affiche sans créer de reçu.
