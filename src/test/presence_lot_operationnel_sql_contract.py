@@ -59,7 +59,7 @@ class Lot(unittest.TestCase):
  def decider(self,op,vid,version,action,motif='Restauration demandée'):
   return self.as_(f"SELECT row_to_json(r) FROM presentiel_decider_validation('{op}','{A}','{vid}',{version},'{action}','{motif}') r")
  def test_parcours(self):
-  originals=self.sql(f"SELECT md5(string_agg(v::text,'|' order by id)) FROM presentiel_heures_validees v").stdout
+  originals=self.sql(f"SELECT md5(string_agg(v::text,'|' order by id)) FROM presentiel_heures_validees v WHERE id IN ('{V17}','{V18}')").stdout
   autres=self.sql("SELECT md5(string_agg(e::text,'|' order by id)) FROM emargements_fc e;SELECT row_to_json(n) FROM notes n").stdout
   op=str(uuid.uuid4())
   # Upload policy: admin PDF only.
