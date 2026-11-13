@@ -4139,6 +4139,41 @@ export type Database = {
         }
         Relationships: []
       }
+      email_confirmations_reception: {
+        Row: {
+          accuse_id: string
+          confirmed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          accuse_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          accuse_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_confirmations_reception_accuse_id_fkey"
+            columns: ["accuse_id"]
+            isOneToOne: true
+            referencedRelation: "email_accuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           body_template: string
