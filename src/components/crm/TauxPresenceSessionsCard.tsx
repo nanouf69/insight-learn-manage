@@ -6,6 +6,8 @@ import { heuresSessionPourApprenant, heuresTheorieInscrites } from "@/lib/sessio
 import { isPratiqueType } from "@/lib/sessionTypes";
 import { daySlotsDepuisConfigs, resolvePratiqueSlotParts, normalizePratiqueType, normalizePratiqueCreneau } from "@/lib/pratiqueSlots";
 import { planningCreneaux, marquerFiliereRows } from "@/lib/signaturesManquantes";
+import { fusionnerPresenceAdministrative, type ValidationPresence, type JourPresence } from '@/lib/presenceAdministrative';
+import { HEURES_VALIDEES_EVENT } from '@/lib/heuresValideesAdmin';
 
 /** Heures représentées par une signature valide (horaires standards du centre). */
 const HEURES_CRENEAU: Record<string, number> = { matin: 3, apres_midi: 3, soir_1: 1.5, soir_2: 2.5 };
@@ -16,7 +18,7 @@ const signatureValide = (e: any) =>
 export interface TauxHeures { faites: number; prevues: number; derniere?: string; datesEntrainement?: string[] }
 
 /** Lecture seule : heures signées dans les dates de chaque session / total d'heures de la session. */
-export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = []) {
+export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any[], filiere?: string | null, reservations: any[] = [], configs: any[] = [], validations: ValidationPresence[] = []) {
   const res: { session: TauxHeures; pratique: TauxHeures } = { session: { faites: 0, prevues: 0 }, pratique: { faites: 0, prevues: 0 } };
   // Dates du planning nominatif uniquement ; une réservation ne prouve pas la présence.
   const datesEntrainement = new Set<string>();
@@ -27,6 +29,8 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
   if (String(filiere ?? "").toLowerCase() === "ta") inscriptions = marquerFiliereRows(inscriptions, "TA");
   res.session.prevues = heuresTheorieInscrites(inscriptions, filiere);
   const vus = new Set<string>();
+  const signes: JourPresence[] = [];
+  const autorises = new Set<string>();
   const { parDate } = planningCreneaux(inscriptions, reservations, configs);
   const daySlots = daySlotsDepuisConfigs([...parDate.keys()], configs);
   for (const row of inscriptions) {
@@ -42,6 +46,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     // session comptent : une signature sur un créneau non prévu est conservée
     // ailleurs (anomalie) mais jamais comptée ici.
     const sessionPlanning = planningCreneaux([row], reservations, configs).parDate;
+    for (const date of sessionPlanning.keys()) autorises.add(`${date}|${pratique?'pratique':'theorie'}`);
     if (pratique) {
       for (const date of sessionPlanning.keys()) datesEntrainement.add(date);
     }
@@ -56,23 +61,29 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : HEURES_CRENEAU[creneau];
       if (!h) continue;
       vus.add(cle);
-      cible.faites += h;
+      const minutes=Math.round(h*60);
+      cible.faites = (Math.round(cible.faites*60)+minutes)/60;
+      signes.push({date,categorie:pratique?'pratique':'theorie',minutes});
       if (!cible.derniere || date > cible.derniere) cible.derniere = date;
     }
   }
   res.pratique.datesEntrainement = [...datesEntrainement].sort();
-  return res;
+  const admin=fusionnerPresenceAdministrative(signes,validations,autorises);
+  res.session.faites=(Math.round(res.session.faites*60)+admin.theorieMinutes)/60;
+  res.pratique.faites=(Math.round(res.pratique.faites*60)+admin.pratiqueMinutes)/60;
+  return { ...res, admin };
 }
 
 /** Chargeur partage avec la fiche apprenant ; aucune regle de calcul n'est dupliquee. */
 export async function chargerTauxPresenceHeures(apprenantId: string, filiere?: string | null) {
-  const [em, ins, reservations, configs] = await Promise.all([
+  const [em, ins, reservations, configs, validations] = await Promise.all([
     fetchAllRows<any>((f, t) => supabase.from("emargements_fc").select("id,date_emargement,demi_journee,signature_data_url,absent,masque").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f, t) => supabase.from("session_apprenants").select("id,session_id,liste_attente,emargements_exclus,date_debut,date_fin,date_fin_personnalisee,heure_debut_personnalisee,heure_fin_personnalisee,sessions:session_id(id,type_session,statut,date_debut,date_fin,heure_debut,heure_fin,nom,types_apprenant,heures_total)").eq("apprenant_id", apprenantId).order("id").range(f, t)),
     fetchAllRows<any>((f,t) => supabase.from("reservations_pratique").select("id,date_choisie,creneau,type_formation").eq("apprenant_id",apprenantId).order("id").range(f,t)),
     fetchAllRows<any>((f,t) => supabase.from("planning_pratique_config").select("id,day_time_slots,updated_at").order("id").range(f,t)),
+    fetchAllRows<any>((f,t)=>supabase.from('presentiel_heures_validees').select('id,heures,created_at,date_presence,categorie').eq('apprenant_id',apprenantId).order('id').range(f,t)),
   ]);
-  return calculerTauxPresenceHeures(em, ins, filiere, reservations, configs);
+  return calculerTauxPresenceHeures(em, ins, filiere, reservations, configs, validations);
 }
 
 export function useTauxPresenceHeures(apprenantId: string | null | undefined, actif = true, filiere?: string | null) {
@@ -83,15 +94,26 @@ export function useTauxPresenceHeures(apprenantId: string | null | undefined, ac
     setErreur(false);
     if (!apprenantId || !actif) return;
     let annule = false;
-    (async () => {
+    let generation=0;
+    const load=async () => {
+      const g=++generation;
       try {
         const resultat = await chargerTauxPresenceHeures(apprenantId, filiere);
-        if (!annule) setData(resultat);
+        if (!annule && g===generation) {setData(resultat);setErreur(false);}
       } catch {
-        if (!annule) setErreur(true);
+        if (!annule && g===generation) {setData(null);setErreur(true);}
       }
-    })();
-    return () => { annule = true; };
+    };
+    void load();
+    const refresh=()=>void load();
+    const local=(e:Event)=>{if((e as CustomEvent).detail?.apprenantId===apprenantId)refresh();};
+    window.addEventListener(HEURES_VALIDEES_EVENT,local);
+    window.addEventListener('online',refresh);
+    const channel=supabase.channel(`presence-heures-${apprenantId}-${crypto.randomUUID()}`)
+      .on('postgres_changes',{event:'*',schema:'public',table:'presentiel_heures_validees',filter:`apprenant_id=eq.${apprenantId}`},refresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'emargements_fc',filter:`apprenant_id=eq.${apprenantId}`},refresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'session_apprenants',filter:`apprenant_id=eq.${apprenantId}`},refresh).subscribe();
+    return () => { annule = true; window.removeEventListener(HEURES_VALIDEES_EVENT,local);window.removeEventListener('online',refresh);void supabase.removeChannel(channel); };
   }, [apprenantId, actif, filiere]);
   return { data, erreur };
 }
@@ -112,13 +134,13 @@ export function TauxPresenceSessionsCard({ apprenantId, filiere }: { apprenantId
           <div key={label} className="rounded-md px-3 py-2 bg-muted/50" data-indicateur={label}>
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-              <span className="text-lg font-bold text-foreground">{pct == null ? "—" : `${Math.round(pct)}%`}</span>
+              <span className="text-lg font-bold text-foreground">{pct == null ? "—" : `${Math.min(100,pct).toLocaleString('fr-FR',{maximumFractionDigits:1})}%`}</span>
             </div>
             <div className="mt-1.5 h-1.5 w-full rounded-full bg-border overflow-hidden">
               <div className="h-full rounded-full bg-foreground/60" style={{ width: `${Math.min(100, pct ?? 0)}%` }} />
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {erreur ? "Indisponible (lecture impossible)" : !t ? "Chargement…" : t.prevues > 0 ? `${fmt(t.faites)} signées / ${fmt(t.prevues)} de session` : "Aucune session inscrite"}
+              {erreur ? "Indisponible (lecture impossible)" : !t ? "Chargement…" : t.prevues > 0 ? `${fmt(t.faites)} prouvées / ${fmt(t.prevues)} de session` : "Aucune session inscrite"}
             </div>
             {t && !erreur && t.prevues > 0 && (
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -133,6 +155,7 @@ export function TauxPresenceSessionsCard({ apprenantId, filiere }: { apprenantId
           </div>
         );
       })}
+      {!!data?.admin.revue.length && <p role="status" className="text-sm text-muted-foreground">Présences administratives à vérifier : chevauchement ou créneau non précisé, sans double comptage.</p>}
     </div>
   );
 }
