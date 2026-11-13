@@ -55,6 +55,7 @@ export function ExamExitGuard({ active }: { active: boolean }) {
     let restoring = false;
     const pop = (event: PopStateEvent) => {
       const next = window.history.state?.idx as number | undefined;
+      console.debug('ux-pop-diagnostic', { index, next, restoring, active: activeRef.current, bypass: bypass.current });
       if (restoring) { restoring = false; event.stopImmediatePropagation(); return; }
       if (!activeRef.current || bypass.current || index === undefined || next === undefined || next === index) { index = next; return; }
       event.stopImmediatePropagation();
