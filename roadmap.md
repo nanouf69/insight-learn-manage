@@ -1,8 +1,9 @@
 # Feuille de route
 
 ## 13/11 17:04 UTC — STOP périmètre TOTAL
-- [ ] Lecture seule TAXI/TA/VA/VTC ; isoler les changements récents VTC et restaurer le comportement hors VTC sans modifier les preuves.
-- [ ] Tests ancien/nouveau par filière, rapport et qualification de la capture 30/30 (identité absente). Pas de publication.
+- [x] Lecture seule 90 dossiers TAXI/TA/VA, 174 inscriptions, 807 feuilles ; changements annexes désormais VTC-only, 90/90 projections identiques à l'avant-lot ; preuves inchangées.
+- [x] 73 tests PASS, build OK ; rapport par filière et CSV nominatif livrés. Non publié.
+- [ ] Capture 30/30 : six candidats TA, identité/programme contractuel absents ; comptes propriétaires élèves non testés (droits de preuve limités). Aucun choix nominatif ni correction implicite.
 
 ## 13/11 16:46 UTC — TOTAL VTC présentiel 40+6 / 60+6 (sans publication)
 - [x] Lecture seule/diagnostic, TOTAL partagé +6 VTC initial (soir 46/jour 66), théorie distincte et pratique réellement prouvée ; affichage élève séparé, Documents/tableau partagent le calcul, attestations sans taux de présence/frozen intactes.
