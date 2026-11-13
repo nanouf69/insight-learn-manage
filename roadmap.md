@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 14:58 UTC — Identité sous signatures PDF
+- [x] Nom/prénom de la ligne apprenant sous chaque zone des sept générateurs, bande réservée, images stockées intactes ; modèle formateur sans apprenant exclu.
+- [x] Sept PDF fictifs/neuf pages inspectées puis deux en-têtes longs corrigés et réinspectés ; signé/vierge, deux élèves, accents, soir/pratique/TA ; 19 tests existants PASS, build OK. Aucun enregistrement/publication ; toutes variantes de filière non exercées individuellement.
+
 ## 13/11 14:48 UTC — Modale présence simplifiée
 - [x] Champ session retiré, correspondance interne exacte unique ; formateurs liés si disponibles/Autre et justificatifs/PDF local facultatif 4 Mo.
 - [x] 28 tests PASS/3 fichiers, rendu PC/mobile inspecté, inscription réelle retrouvée et 1 formateur lié +Autre ; faux PDF refusé, fichier valide local seulement ; build OK.

@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { nomSousSignature } from './identite-signature-apprenant';
 import logoImage from '@/assets/logo-ftransport.png';
 import type { SignatureManquante } from '@/lib/signaturesManquantes';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
@@ -71,12 +72,14 @@ export function generateSignaturesManquantesPdf(apprenant: { nom?: string; preno
     doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(13, 37, 64);
     doc.text('Feuille d’émargement — signatures manquantes', m, 33);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-    doc.text(`Apprenant : ${name}`, m, 41);
-    doc.text(`Formateur : ${FORMATEUR_EMARGEMENT}`, m + 70, 41);
-    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(totalTexte,m,48);
+    const nomLignes=doc.splitTextToSize(`Apprenant : ${name}`,w);
+    doc.text(nomLignes, m, 41);
+    const decalage=(nomLignes.length-1)*4;
+    doc.text(`Formateur : ${FORMATEUR_EMARGEMENT}`, m, 47+decalage);
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(totalTexte,m,54+decalage);
     doc.setFont('helvetica','normal');doc.setFontSize(8);
-    doc.text('Feuille à signer : ne certifie pas une présence acquise. Aucune signature antidatée.', m, 54);
-    y = 61;
+    doc.text('Feuille à signer : ne certifie pas une présence acquise. Aucune signature antidatée.', m, 60+decalage);
+    y = 67+decalage;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
     doc.rect(m, y, w, 12);
     doc.text('Date', m + 2, y + 7); doc.text('Créneau / horaire', xCreneau + 2, y + 7);
@@ -98,6 +101,7 @@ export function generateSignaturesManquantesPdf(apprenant: { nom?: string; preno
     doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(l.absence?'Hors total':l.minutes==null?'À vérifier':formatMinutesPresence(l.minutes),xDuree+2,y+10);doc.setFont('helvetica','normal');
     doc.setFontSize(8);
     doc.text(doc.splitTextToSize(FORMATEUR_EMARGEMENT,colFormateur-4), xFormateur + 2, y + 7);
+    nomSousSignature(doc,apprenant,xSignature,y+rowH-8,m+w-xSignature);
     y += rowH;
   }
   const pages = doc.getNumberOfPages();

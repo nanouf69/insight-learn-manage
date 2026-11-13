@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Attendance PDF signature cells reserve a separate bottom band for the exact row learner identity through nomSousSignature; never infer or replace signature evidence. Why: names identify signed and unsigned cells without covering handwriting.
 - Attendance-addition notes use the optional bounded motifPresence schema; cancellation reasons and frozen-practice statement requirements remain separate. Why: optional free text must not bypass protected evidence workflows.
 - Missing-signature PDFs share the recorded-range minute parser and union same-date intervals for totals, preserve handwriting space and remain unsigned worksheets. Why: duplicate enrollment and overlap must never manufacture attendance hours.
 - Manual attendance cancellation uses a separate append-only decision journal with scoped admin RPC/CAS/readback; preview transport stays disconnected until every live reader and protected statement is covered. Why: originals must survive reversible withdrawal and stale clients must never keep counting cancelled hours.

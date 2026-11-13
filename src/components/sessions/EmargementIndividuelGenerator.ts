@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { nomSousSignature } from '@/lib/pdf/identite-signature-apprenant';
 import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -289,6 +290,7 @@ function generateIndividualPage(
     margin: { left: margin, right: margin },
     tableLineColor: [41, 128, 185],
     tableLineWidth: 0.5,
+    didDrawCell:(data)=>{if(data.section==='body'&&data.column.index>=2)nomSousSignature(doc,apprenant,data.cell.x,data.cell.y+data.cell.height-9,data.cell.width,9);},
   });
 
   const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
