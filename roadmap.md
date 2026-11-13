@@ -1,5 +1,10 @@
 # Feuille de route
 
+## 13/11 — Présence administrative Tarek CHERNI (aperçu seulement)
+- [ ] SELECT exact dossier/validations/signatures/inscription ; chevauchements et dénominateur 46 h.
+- [ ] Calcul minutes commun, preuves admin par date/catégorie, conflits explicites, aucun double comptage ni théorie requalifiée pratique ; rafraîchissement événementiel.
+- [ ] Tests régression, PC/mobile fictifs et compilation ; rapport et NO-GO sans publication/écriture réelle.
+
 ## 13/11 13:38 UTC — Fiabilisation globale EB1–6 TAXI/VTC
 - [x] Inventaire SELECT global : 3392 passages/159 comptes, 7003 reçus/193 comptes, 979 copies à reçu pending périmé, 1381 autosaves exacts/65 comptes ; rapport docs/eb-coherence-globale-2026-11-13.md avec exclusions et limites.
 - [x] Adaptateur partagé aperçu sur liste/détails/ouverture/Notes/CRM/session, statut correction/publication/revue distinct, ID exact prioritaire F/G, événements reset/tentative ; aucune écriture réelle.
