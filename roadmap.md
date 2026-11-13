@@ -1,5 +1,9 @@
 # Feuille de route
 
+## 13/11 16:28 UTC — UX examens blancs TAXI/VTC (sans publication)
+- [ ] Confirmation de sortie non destructive, alertes 5/2 minutes par épreuve et calculatrice sans recouvrement.
+- [ ] Tests ciblés et parcours élève fictif PC/mobile/tablette, sans écritures réelles ; rapport et état de publication.
+
 ## 13/11 16:05 UTC — Deux boutons présence (validation créneau + suppression 4 h)
 - [x] Cause confirmée en base : aucun des objets requis n'existe (2 journaux, table créneaux, dossier PDF privé) et les deux verrous d'activation sont à OFF.
 - [x] Aucun environnement séparé possible : un nouveau brouillon (16:03) partage aussi la base réelle.
