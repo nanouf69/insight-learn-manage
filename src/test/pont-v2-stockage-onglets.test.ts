@@ -314,11 +314,14 @@ describe("Fermeture ou rechargement pendant une requête en vol", () => {
 
 describe("Appel figé sans réponse", () => {
   it("au-delà de 20 s l'appel est traité comme une coupure : la file et le verrou sont libérés, aucune double écriture", async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     try {
       const A = await ouvrirOnglet();
       perdreReponseApresCommit = true;
       A.enfilerReponseNoyau({ attemptId: "f", matiereId: "m", questionId: 1, valeur: "fige" });
+      // Le calcul de l'identifiant d'opération (SHA-256) n'est pas une minuterie : attendre l'appel réel.
+      for (let i = 0; i < 200 && appels === 0; i++) await new Promise((r) => setImmediate(r));
+      expect(appels).toBe(1);
       await vi.advanceTimersByTimeAsync(A.DELAI_MAX_APPEL_MS + 10);
       expect(ecrituresEffectives).toBe(1);
       expect(tenus.size).toBe(0); // le verrou inter-onglets n'est pas retenu indéfiniment
