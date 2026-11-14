@@ -9361,12 +9361,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           setValidatingExo(505);
                           const current = () => Object.fromEntries(Object.entries(latestRemiseAnswersRef.current).filter(([k]) => k.startsWith('505-')));
                           try {
-                            const result = await remettreBilan505({ apprenantId, answers: current(), current, revueConfirmee: bilan505RevueConfirmee });
+                            const result = await remettreBilan505({ apprenantId, answers: current(), current, revueConfirmee: bilan505RevueConfirmee, revueAffichee: bilan505Revue.length > 0 });
                             if (result.revue) {
                               const next = result.revue;
+                              // Keep the review on screen until submission: a later sync must not hide it.
                               setBilan505Revue(prev => {
-                                if (JSON.stringify(prev) !== JSON.stringify(next)) setBilan505RevueConfirmee(false);
-                                return next;
+                                const merged = [...prev.filter(i => !next.some(n => n.question_id === i.question_id)), ...next]
+                                  .sort((a, b) => Number(a.question_id.split('-')[1]) - Number(b.question_id.split('-')[1]));
+                                if (JSON.stringify(prev) !== JSON.stringify(merged)) setBilan505RevueConfirmee(false);
+                                return merged;
                               });
                             }
                             if (result.restored) {
@@ -9382,7 +9385,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               setCompletedPages(prev => new Set(prev).add(currentPage));
                               toast.success('✅ Quiz validé (confirmation serveur reçue).');
                             } else {
-                              setValidationFailedFor(prev => new Set(prev).add(505));
+                              if (result.reason !== 'revue_requise' && result.reason !== 'choix_ambigus') setValidationFailedFor(prev => new Set(prev).add(505));
                               if (result.reason === 'corrige_snapshot_incomplet') toast.error(result.recovered
                                 ? 'Vos réponses sont enregistrées sur le serveur. Le corrigé de votre version doit être vérifié par le centre : aucune note ni remise pour l’instant.'
                                 : 'Le corrigé de votre version doit être vérifié par le centre. Vos réponses sont conservées ; aucune note ni remise automatique.');

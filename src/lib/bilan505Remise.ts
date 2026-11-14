@@ -32,6 +32,8 @@ export async function remettreBilan505(p: {
   apprenantId: string; answers: Record<string, unknown>; current: () => Record<string, unknown>;
   /** True only after the learner ticked the review of restored choices displayed on screen. */
   revueConfirmee?: boolean;
+  /** A review panel is on screen: confirmation stays required even if a later save already synced the copy. */
+  revueAffichee?: boolean;
   read?: () => Promise<RemiseRow>; commit?: Rpc; recover?: Rpc;
   pending?: () => ReturnType<typeof getAnswerQueueProof>; owner?: () => boolean;
 }): Promise<Result> {
@@ -59,11 +61,12 @@ export async function remettreBilan505(p: {
     return { ok: false, reason: 'difference_non_resolue', revue };
   }
   if ((row.ambiguous_questions ?? []).length) return { ok: false, reason: 'choix_ambigus', revue };
-  const needsReview = !answersAreEqual(row.stored_reponses, p.answers);
+  const copieDifferente = !answersAreEqual(row.stored_reponses, p.answers);
+  const needsReview = copieDifferente || !!p.revueAffichee;
   if (needsReview && !p.revueConfirmee) return { ok: false, reason: 'revue_requise', revue };
   if (row.grading_status !== 'verifiable') {
     // Grade blocked (e.g. answer key absent from the frozen version): recover answers only, never submit.
-    if (!needsReview) return { ok: false, reason: 'corrige_snapshot_incomplet' };
+    if (!copieDifferente) return { ok: false, reason: 'corrige_snapshot_incomplet' };
     if (!unchanged()) return { ok: false, reason: 'choix_local_plus_recent' };
     const saved = await (p.recover ?? rpcCall('bilan_505_recuperer_reponses', p.apprenantId, p.answers))(row, true);
     const recovered = saved.id === row.id && saved.tentative === row.tentative && saved.status === 'in_progress'

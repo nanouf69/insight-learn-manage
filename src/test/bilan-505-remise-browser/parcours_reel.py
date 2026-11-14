@@ -118,7 +118,7 @@ async def main():
         results = {}
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
-            valider = lambda page: page.get_by_role('button', name=re.compile(r'Valider', re.I)).last
+            valider = lambda page: page.get_by_role('button', name=re.compile(r'Valider|Réessayer la validation', re.I)).last
 
             async def flow_a(page):  # Abdelhak-like, PC
                 before = A.row()
@@ -150,6 +150,8 @@ async def main():
                 expected = sorted(set(ANS['505-51']) ^ {other['lettre']})
                 last = t.sql(f"SELECT valeur FROM reponses_apprenants_journal WHERE apprenant_id='{B.app}' AND question_id='505-51' ORDER BY created_at DESC LIMIT 1")
                 assert sorted(json.loads(last)) == expected, (last, expected)
+                await valider(page).click(); await page.wait_for_timeout(3000)
+                assert B.row()['status'] == 'in_progress', 'review still required after a synced click'
                 for _ in range(3):
                     await valider(page).click(); await page.wait_for_timeout(3000)
                     cb = page.get_by_role('checkbox', name='Je confirme mes choix')
