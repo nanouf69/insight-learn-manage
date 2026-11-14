@@ -13,11 +13,12 @@ let row={id:'33333333-3333-4333-8333-333333333333',apprenant_id:A,exercice_id:'m
 const calls:string[]=[];Object.assign(window,{fixtureCalls:calls});
 const questions=Array.from({length:49},(_,i)=>({id:i+1,type:'QCM',enonce:`Question fictive ${i+1}`,choix:[{lettre:'A',texte:'Choix A',correct:true},{lettre:'B',texte:'Choix B',correct:true},{lettre:'C',texte:'Choix C'}]}));
 const moduleData={id:5,nom:'Bilan examen VTC',description:'',cours:[],exercices:[{id:505,titre:'Développement commercial',actif:true,questions}]};
-(supabase.auth as any).getSession=async()=>({data:{session:{user:{id:U},access_token:'synthetic-only',expires_at:4102444800}},error:null});
+(supabase.auth as any).getSession=async()=>({data:{session:{user:{id:U},access_token:'synthetic-only',refresh_token:'synthetic-only',expires_at:4102444800}},error:null});
 (supabase.auth as any).getUser=async()=>({data:{user:{id:U}},error:null});
 (supabase as any).rpc=async(name:string,args:any)=>{
  calls.push(name);
  if(name==='bilan_future_route')return {data:'legacy',error:null};
+ if(name==='bilan_ouvrir_passage_eleve')return {data:{statut:'ancien'},error:null};
  if(name==='bilan_505_remise_prepare')return {data:{...row,reponses:scenario==='journal'?{...answers,'505-1':['B']}:answers,stored_reponses:answers},error:null};
  if(name==='bilan_505_remise_commit'){
    if(scenario==='late')await new Promise(r=>setTimeout(r,1200));

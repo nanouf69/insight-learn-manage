@@ -32,7 +32,7 @@ class Contract(unittest.TestCase):
   self.sql(f"INSERT INTO reponses_apprenants_journal(apprenant_id,user_id,exercice_id,question_id,valeur,tentative) VALUES('{APP}','{ELEVE_UID}','module_5_exo_505','505-1','[\"B\"]',1)")
   self.assertNotEqual(self.call()[0],0)
   ans={**ANS,'505-1':['B']};c,o=self.call(ans);self.assertEqual(c,0,o)
-  self.assertEqual(self.sql(f"SELECT tentative||'|'||status||'|'||reponses->>'505-1' FROM reponses_apprenants WHERE id='{RID}'"),'1|submitted|["B"]')
+  self.assertEqual(self.sql(f"SELECT tentative||'|'||status||'|'||(reponses->>'505-1') FROM reponses_apprenants WHERE id='{RID}'"),'1|submitted|["B"]')
  def test_newer_sequence_refused(self):
   self.sql(f"UPDATE reponses_apprenants SET write_seq=101 WHERE id='{RID}'")
   self.assertNotEqual(self.call()[0],0)
