@@ -73,6 +73,10 @@ class Contract(unittest.TestCase):
   self.assertEqual(self.sql(f"SELECT bonnes_reponses FROM reponses_apprenants WHERE id='{RID}'"),'48')
  def test_snapshot_tamper_refused(self):
   self.sql("UPDATE bilan_passage_snapshots SET empreinte='wrong'");self.assertNotEqual(self.call()[0],0)
+ def test_option_order_independent_answer_set(self):
+  ans={k:list(reversed(v)) for k,v in ANS.items()}
+  self.sql(f"UPDATE reponses_apprenants SET reponses={j(ans)} WHERE id='{RID}';UPDATE reponses_apprenants_journal x SET valeur=a.value FROM jsonb_each({j(ans)}) a WHERE x.question_id=a.key")
+  c,o=self.call(ans);self.assertEqual(c,0,o);self.assertEqual(self.sql(f"SELECT score FROM reponses_apprenants WHERE id='{RID}'"),'100')
  def test_real_red_and_frozen_guards(self):
   self.sql(f"INSERT INTO bilan_passage_categories VALUES('{APP}',5,505,1,'ROUGE')")
   self.assertNotEqual(self.call()[0],0)
