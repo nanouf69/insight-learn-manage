@@ -1,6 +1,6 @@
 /** Isolated preparation only: no database writes, transport, scheduler or booking mutation. */
 import { apercuHtmlRappel, apercuTexteRappel, modeleRappelTheorique, OBJET_RAPPEL_THEORIQUE, type ModeleRappelTheorique, type FinancementRappelVerifie } from "./modelesRappelTheorique.ts";
-export const RAPPEL_THEORIQUE_VERSION = "2026-11-13-historique-v6";
+export const RAPPEL_THEORIQUE_VERSION = "2026-11-14-connectes-v7";
 export const RAPPEL_THEORIQUE_OBJET = OBJET_RAPPEL_THEORIQUE;
 export const RAPPEL_THEORIQUE_TEXTE = apercuTexteRappel(modeleRappelTheorique("ferme"));
 
@@ -17,6 +17,11 @@ export interface DossierRappel {
   filiere: "vtc" | "taxi" | "hors_perimetre";
   accesActif: boolean;
   exclu: boolean;
+  /** Confirmed account-owned connection evidence; null/undefined never means connected. */
+  dejaConnecte?: boolean | null;
+  incidentTechnique?: boolean | null;
+  /** Verified effective allocation policy, not a proposed priority projection. */
+  prioritePratiqueEffective?: boolean;
   obligations: ObligationCanonique[] | null;
   financementVerifie?: FinancementRappelVerifie;
   examenPrevu?: {
@@ -83,6 +88,9 @@ export function preparerRappelTheorique(input: {
 }): DecisionRappel {
   const { dossier, historique } = input;
   if (dossier.filiere === "hors_perimetre" || dossier.exclu || !dossier.accesActif) return { etat: "arreter", raison: "dossier exclu" };
+  if (dossier.dejaConnecte === false) return { etat: "arreter", raison: "non connecté : campagne historique uniquement" };
+  if (dossier.dejaConnecte !== true) return { etat: "a_verifier", raison: "connexion du dossier non prouvée" };
+  if (dossier.incidentTechnique !== false) return { etat: "a_verifier", raison: "incident technique ou état non vérifié" };
   const progression = progressionNonPratique(dossier.obligations);
   if (progression.etat === "inconnu") return { etat: "a_verifier", raison: "progression canonique indisponible" };
   if (progression.complete) return { etat: "arreter", raison: "modules non pratiques complets" };
@@ -126,14 +134,13 @@ function construirePreparation(
     return { etat: "a_verifier", raison: "envoi précédent réservé, indéterminé ou rejeté" };
   }
   if (memePassage.some(h => h.jourEcheance >= jour)) return { etat: "attendre", raison: "échéance déjà traitée" };
-  const modele = modeleRappelTheorique(type, phase === "avant", dossier.financementVerifie);
+  const modele = modeleRappelTheorique(type, phase === "avant", dossier.financementVerifie, dossier.prioritePratiqueEffective === true);
   if (modele.financementAVerifier) return { etat: "a_verifier", raison: "financement CPF et engagements France Travail non vérifiés" };
   return {
     etat: "preparer", jourEcheance: jour, rang, phase, modele, activationAutorisee: false,
-    pointsAValider: type === "ferme"
-      ? ["Impossibilité de passer à pratique non effective : règle et validité contractuelle à confirmer", "Priorité non opérationnelle", "Activation non autorisée"]
-      : ["Réutiliser le modèle existant relance_suspension_cpf sans modifier son HTML", "Vérifier financement et affirmation jamais connecté du modèle existant", "Activation non autorisée"],
-    cle: ["rappel_modules_theorique", dossier.id, occurrenceId, phase, jour, RAPPEL_THEORIQUE_VERSION].map(encodeURIComponent).join(":"),
+    pointsAValider: ["Preuves datées et obligations canoniques raccordées", "Verrou atomique et transport testés", "Activation de production non effectuée"],
+    // Template revisions must not allow a second send for the same occurrence/day.
+    cle: ["rappel_modules_connectes_theorique", dossier.id, occurrenceId, phase, jour].map(encodeURIComponent).join(":"),
     objet: modele.objet, texte: apercuTexteRappel(modele), html: apercuHtmlRappel(modele),
   };
 }
