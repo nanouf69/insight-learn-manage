@@ -62,7 +62,7 @@ def capture():
     for f in fns:
         out.append(live(f"select string_agg(pg_get_functiondef(oid),E';\\n' order by oid) from pg_proc where proname='{f}' and pronamespace='public'::regnamespace") + ';')
         for line in live(f"select coalesce(string_agg(pg_get_function_identity_arguments(oid)||E'\\t'||coalesce(proacl::text,''),E'\\n'),'') from pg_proc where proname='{f}' and pronamespace='public'::regnamespace").splitlines():
-            args, acl = line.split('\t', 1)
+            args, _, acl = line.partition('\t')
             if not acl: continue
             out.append(f'REVOKE ALL ON FUNCTION public.{f}({args}) FROM PUBLIC;')
             for g in acl.strip('{}').split(','):
