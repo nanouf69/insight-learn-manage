@@ -21,6 +21,8 @@ def deps():
     start = list(ROOTS)
     for t in TRIG_TABLES:
         start += live(f"select coalesce(string_agg(distinct p.proname,' '),'') from pg_trigger t join pg_proc p on p.oid=t.tgfoid where t.tgrelid='public.{t}'::regclass and not t.tgisinternal").split()
+    pol = live("select coalesce(string_agg(coalesce(pg_get_expr(polqual,polrelid),'')||' '||coalesce(pg_get_expr(polwithcheck,polrelid),''),' '),'') from pg_policy where polrelid='public.reponses_apprenants'::regclass")
+    start += [w for w in set(re.findall(r'\b([a-z_][a-z0-9_]*)\s*\(', pol)) if w in procs]
     seen, todo, T = set(), start, set(TRIG_TABLES) | {'apprenants'}
     while todo:
         f = todo.pop()
@@ -59,6 +61,14 @@ def capture():
     out = ['-- Catalogue de production capturé en lecture seule. Ne jamais appliquer à la base réelle.',
            "DO $$BEGIN CREATE TYPE public.app_role AS ENUM ('admin','moderator','user'); EXCEPTION WHEN duplicate_object THEN NULL; END$$;"]
     for t in tabs: out += table_ddl(t)
+    for t in tabs:
+        acl = live(f"select coalesce(relacl::text,'') from pg_class where oid='public.{t}'::regclass")
+        for g in [x for x in acl.strip('{}').split(',') if x]:
+            who, _, rest = g.partition('=')
+            privs = {'r': 'SELECT', 'a': 'INSERT', 'w': 'UPDATE', 'd': 'DELETE'}
+            if who in ('anon', 'authenticated', 'service_role'):
+                ps = [v for k, v in privs.items() if k in rest.split('/')[0]]
+                if ps: out.append(f'GRANT {", ".join(ps)} ON public.{t} TO {who};')
     for f in fns:
         out.append(live(f"select string_agg(pg_get_functiondef(oid),E';\\n' order by oid) from pg_proc where proname='{f}' and pronamespace='public'::regnamespace") + ';')
         for line in live(f"select coalesce(string_agg(pg_get_function_identity_arguments(oid)||E'\\t'||coalesce(proacl::text,''),E'\\n'),'') from pg_proc where proname='{f}' and pronamespace='public'::regnamespace").splitlines():

@@ -11,6 +11,26 @@ CREATE TABLE public.alertes_systeme (
   created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE public.alertes_systeme ADD CONSTRAINT alertes_systeme_pkey PRIMARY KEY (id);
+-- apprenant_connexions (table)
+CREATE TABLE public.apprenant_connexions (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  apprenant_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  started_at timestamp with time zone DEFAULT now() NOT NULL,
+  ended_at timestamp with time zone,
+  last_seen_at timestamp with time zone DEFAULT now() NOT NULL,
+  source text DEFAULT 'cours'::text NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL,
+  end_reason text,
+  current_module text,
+  last_action_at timestamp with time zone DEFAULT now(),
+  ip_address text,
+  client_session_id text,
+  user_agent text
+);
+ALTER TABLE public.apprenant_connexions ADD CONSTRAINT apprenant_connexions_pkey PRIMARY KEY (id);
+ALTER TABLE public.apprenant_connexions ADD CONSTRAINT apprenant_connexions_ended_after_start CHECK (((ended_at IS NULL) OR (ended_at >= started_at)));
 -- apprenant_module_completion (table)
 CREATE TABLE public.apprenant_module_completion (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -379,6 +399,68 @@ CREATE TABLE public.user_roles (
 );
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role);
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_pkey PRIMARY KEY (id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.alertes_systeme TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.alertes_systeme TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.alertes_systeme TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_connexions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_connexions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_connexions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_module_completion TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_module_completion TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_module_completion TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_quiz_results TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_quiz_results TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenant_quiz_results TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenants TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenants TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.apprenants TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passage_categories TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passage_categories TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passage_categories TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passage_snapshots TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passage_snapshots TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passage_snapshots TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passages_figes TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passages_figes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_passages_figes TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_reponse_statuts_effectifs TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_reponse_statuts_effectifs TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.bilan_reponse_statuts_effectifs TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.comptes_test_techniques TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.comptes_test_techniques TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.comptes_test_techniques TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.donnees_eleves_suppressions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.donnees_eleves_suppressions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.donnees_eleves_suppressions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_retake_authorizations TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_retake_authorizations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_retake_authorizations TO service_role;
+GRANT SELECT ON public.exam_subject_reset_authorizations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_subject_reset_authorizations TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_subject_retakes TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_subject_retakes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_subject_retakes TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.module_editor_state TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.module_editor_state TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.module_editor_state TO service_role;
+GRANT INSERT, UPDATE, DELETE ON public.module_regles_validation TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.module_regles_validation TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.module_regles_validation TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.quiz_valide_reecritures_refusees TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.quiz_valide_reecritures_refusees TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.quiz_valide_reecritures_refusees TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants_historique TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants_historique TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants_historique TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants_journal TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants_journal TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reponses_apprenants_journal TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_roles TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_roles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_roles TO service_role;
 CREATE OR REPLACE FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer)
  RETURNS TABLE(answered integer, total integer, validated boolean)
  LANGUAGE plpgsql
@@ -821,6 +903,19 @@ GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO anon;
 GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO service_role;
+CREATE OR REPLACE FUNCTION public.est_proprietaire_apprenant(_apprenant_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (SELECT 1 FROM public.apprenants a WHERE a.id = _apprenant_id AND a.auth_user_id = auth.uid());
+$function$;
+REVOKE ALL ON FUNCTION public.est_proprietaire_apprenant(_apprenant_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.est_proprietaire_apprenant(_apprenant_id uuid) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION public.est_proprietaire_apprenant(_apprenant_id uuid) TO anon;
+GRANT EXECUTE ON FUNCTION public.est_proprietaire_apprenant(_apprenant_id uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.est_proprietaire_apprenant(_apprenant_id uuid) TO service_role;
 CREATE OR REPLACE FUNCTION public.fusion_details_progression(_ancien jsonb, _nouveau jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1119,6 +1214,32 @@ $function$;
 REVOKE ALL ON FUNCTION public.has_role(_user_id uuid, _role app_role) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.has_role(_user_id uuid, _role app_role) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.has_role(_user_id uuid, _role app_role) TO service_role;
+CREATE OR REPLACE FUNCTION public.is_current_user_apprenant(_apprenant_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  WITH target_apprenant AS (
+    SELECT a.id FROM public.apprenants a
+    WHERE a.id = _apprenant_id AND (a.id = auth.uid() OR a.auth_user_id = auth.uid()) LIMIT 1
+  ),
+  active_connexion AS (
+    SELECT c.started_at, c.last_seen_at, c.last_action_at
+    FROM public.apprenant_connexions c
+    JOIN target_apprenant ta ON ta.id = c.apprenant_id
+    WHERE c.user_id = auth.uid() AND c.ended_at IS NULL
+    ORDER BY c.started_at DESC LIMIT 1
+  )
+  SELECT EXISTS (
+    SELECT 1 FROM active_connexion c
+    WHERE now() < c.started_at + interval '12 hours'
+      AND now() < COALESCE(c.last_action_at, c.started_at) + interval '35 minutes'
+  );
+$function$;
+REVOKE ALL ON FUNCTION public.is_current_user_apprenant(_apprenant_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_current_user_apprenant(_apprenant_id uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_current_user_apprenant(_apprenant_id uuid) TO service_role;
 CREATE OR REPLACE FUNCTION public.persist_answer_batch_v2(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb)
  RETURNS TABLE(saved boolean, stored_reponses jsonb, stored_tentative integer, stored_updated_at timestamp with time zone, stored_write_seq bigint, frozen boolean, skipped_questions text[], accepted_event_ids uuid[])
  LANGUAGE plpgsql
