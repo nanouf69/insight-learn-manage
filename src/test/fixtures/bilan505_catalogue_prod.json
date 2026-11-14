@@ -1,5 +1,6 @@
 {
  "functions": [
+  "autovalidate_module_if_complete",
   "bilan_corriger_snapshot",
   "bilan_garde_passage_rouge",
   "bilan_garde_reponses_verrouillees",
@@ -9,6 +10,7 @@
   "enforce_exam_retake_delay",
   "ensure_quiz_result_on_matiere_completion",
   "est_compte_test",
+  "fusion_details_progression",
   "garde_activites_taxi_2026_v1",
   "garde_cas_pratique_feries",
   "garde_donnee_eleve",
@@ -20,12 +22,16 @@
   "garde_quiz_module_valide",
   "has_role",
   "persist_answer_batch_v2",
+  "persist_answer_batch_v3",
   "protect_reponses_apprenants_journal",
   "protect_reponses_apprenants_terminal",
+  "reponse_enregistree",
+  "save_module_completion",
   "submit_quiz_attempt"
  ],
  "tables": [
   "alertes_systeme",
+  "apprenant_module_completion",
   "apprenant_quiz_results",
   "apprenants",
   "bilan_passage_categories",
@@ -37,6 +43,8 @@
   "exam_retake_authorizations",
   "exam_subject_reset_authorizations",
   "exam_subject_retakes",
+  "module_editor_state",
+  "module_regles_validation",
   "quiz_valide_reecritures_refusees",
   "reponses_apprenants",
   "reponses_apprenants_historique",
@@ -44,6 +52,7 @@
   "user_roles"
  ],
  "md5": {
+  "autovalidate_module_if_complete": "4699b31d8104f754e30ea83fa2a20fad",
   "bilan_corriger_snapshot": "875901261f43780950145a39423ed593",
   "bilan_garde_passage_rouge": "f48e5b07a795761a6f27d557f0469fb7",
   "bilan_garde_reponses_verrouillees": "3fe3add69bc2e5194c99160386c0916b",
@@ -53,6 +62,7 @@
   "enforce_exam_retake_delay": "74ed49fa3420aae3016c2b9cf750cc11",
   "ensure_quiz_result_on_matiere_completion": "cef704615113e74842b5b5798736f434",
   "est_compte_test": "ed92d054d8596c4a6f55c6feea3dff2b",
+  "fusion_details_progression": "d96ca529bb2f66d3bd6ec182c73c4290",
   "garde_activites_taxi_2026_v1": "ad29c48f7b646a961d324aea3caaca89",
   "garde_cas_pratique_feries": "1abdcf9e8cb9ce46b478e187ddb9b955",
   "garde_donnee_eleve": "47693dbb00afc7d5900b6d57d4d95829",
@@ -64,8 +74,11 @@
   "garde_quiz_module_valide": "36ff5f21b0d04b6c947f4de50dd08ea3",
   "has_role": "187a79a40c4f51499677e49b6aa4e456",
   "persist_answer_batch_v2": "f602908bf848186f962aa06e7b6d7e95",
+  "persist_answer_batch_v3": "4a64b223f5b0fd65e957d031df73d84a",
   "protect_reponses_apprenants_journal": "815f4cd0f3774b589402a3a4bd0b89e3",
   "protect_reponses_apprenants_terminal": "caecb729fa986d6fb576ede59ba2316b",
+  "reponse_enregistree": "cc42cfc6237da739edef536bad732e08",
+  "save_module_completion": "ead0f4fc2653347c45063c76673d12b2",
   "submit_quiz_attempt": "290972f007c0bce3a22f09d05e41199a",
   "triggers:reponses_apprenants": "181c186bc12620bae52e949f39b7884c",
   "triggers:reponses_apprenants_journal": "25eb7728d4b2f7539deedccb0272b0b5",

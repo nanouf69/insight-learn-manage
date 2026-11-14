@@ -11,6 +11,24 @@ CREATE TABLE public.alertes_systeme (
   created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE public.alertes_systeme ADD CONSTRAINT alertes_systeme_pkey PRIMARY KEY (id);
+-- apprenant_module_completion (table)
+CREATE TABLE public.apprenant_module_completion (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  apprenant_id uuid NOT NULL,
+  module_id integer NOT NULL,
+  completed_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  score_obtenu integer,
+  score_max integer,
+  details jsonb DEFAULT '[]'::jsonb,
+  status text DEFAULT 'in_progress'::text NOT NULL,
+  progress integer DEFAULT 0 NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL,
+  pages_completees jsonb DEFAULT '[]'::jsonb NOT NULL
+);
+ALTER TABLE public.apprenant_module_completion ADD CONSTRAINT apprenant_module_completion_apprenant_id_module_id_key UNIQUE (apprenant_id, module_id);
+ALTER TABLE public.apprenant_module_completion ADD CONSTRAINT apprenant_module_completion_pkey PRIMARY KEY (id);
+ALTER TABLE public.apprenant_module_completion ADD CONSTRAINT amc_terminee_a_une_date CHECK (((status IS DISTINCT FROM 'completed'::text) OR (completed_at IS NOT NULL)));
 -- apprenant_quiz_results (table)
 CREATE TABLE public.apprenant_quiz_results (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -255,6 +273,32 @@ CREATE TABLE public.exam_subject_retakes (
 );
 ALTER TABLE public.exam_subject_retakes ADD CONSTRAINT exam_subject_retakes_apprenant_id_exercice_id_key UNIQUE (apprenant_id, exercice_id);
 ALTER TABLE public.exam_subject_retakes ADD CONSTRAINT exam_subject_retakes_pkey PRIMARY KEY (operation_id);
+-- module_editor_state (table)
+CREATE TABLE public.module_editor_state (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  module_id integer NOT NULL,
+  module_data jsonb DEFAULT '{}'::jsonb NOT NULL,
+  deleted_cours jsonb DEFAULT '[]'::jsonb NOT NULL,
+  deleted_exercices jsonb DEFAULT '[]'::jsonb NOT NULL,
+  source_fingerprint text,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE public.module_editor_state ADD CONSTRAINT module_editor_state_module_id_key UNIQUE (module_id);
+ALTER TABLE public.module_editor_state ADD CONSTRAINT module_editor_state_pkey PRIMARY KEY (id);
+-- module_regles_validation (table)
+CREATE TABLE public.module_regles_validation (
+  module_id integer NOT NULL,
+  nom text NOT NULL,
+  type_activite text NOT NULL,
+  contient_questions boolean,
+  source_questions text DEFAULT 'inconnue'::text NOT NULL,
+  regle_fin text NOT NULL,
+  protection_serveur boolean DEFAULT false NOT NULL,
+  note text,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE public.module_regles_validation ADD CONSTRAINT module_regles_validation_pkey PRIMARY KEY (module_id);
 -- quiz_valide_reecritures_refusees (table)
 CREATE TABLE public.quiz_valide_reecritures_refusees (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -335,6 +379,70 @@ CREATE TABLE public.user_roles (
 );
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role);
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_pkey PRIMARY KEY (id);
+CREATE OR REPLACE FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer)
+ RETURNS TABLE(answered integer, total integer, validated boolean)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_answered integer := 0;
+  v_done boolean := false;
+  v_row public.apprenant_module_completion%ROWTYPE;
+BEGIN
+  IF _apprenant_id IS NULL OR _module_id IS NULL OR _total_questions IS NULL OR _total_questions <= 0 THEN
+    RETURN QUERY SELECT 0, coalesce(_total_questions, 0), false;
+    RETURN;
+  END IF;
+
+  SELECT count(DISTINCT kv.key)::int INTO v_answered
+  FROM public.reponses_apprenants r
+  CROSS JOIN LATERAL jsonb_each(coalesce(r.reponses, '{}'::jsonb)) kv
+  WHERE r.apprenant_id = _apprenant_id
+    AND r.exercice_id LIKE 'module_' || _module_id::text || '_exo_%'
+    AND left(kv.key, 1) <> '_'
+    AND (
+      (jsonb_typeof(kv.value) = 'string' AND btrim(kv.value #>> '{}') <> '')
+      OR (jsonb_typeof(kv.value) = 'array' AND jsonb_array_length(kv.value) > 0)
+      OR (jsonb_typeof(kv.value) IN ('number', 'boolean'))
+    );
+
+  IF v_answered < _total_questions THEN
+    RETURN QUERY SELECT coalesce(v_answered, 0), _total_questions, false;
+    RETURN;
+  END IF;
+
+  SELECT * INTO v_row
+  FROM public.apprenant_module_completion
+  WHERE apprenant_id = _apprenant_id AND module_id = _module_id;
+
+  -- Seul un statut 'completed' (ou une ligne héritée sans statut mais avec
+  -- date de fin) fait foi. completed_at seul avec status 'in_progress' ne
+  -- prouve rien : on poursuit et on laisse la RPC basculer le statut.
+  IF v_row.id IS NOT NULL AND (v_row.status = 'completed' OR (v_row.status IS NULL AND v_row.completed_at IS NOT NULL)) THEN
+    RETURN QUERY SELECT v_answered, _total_questions, true;
+    RETURN;
+  END IF;
+
+  PERFORM public.save_module_completion(
+    _apprenant_id,
+    _module_id,
+    true,
+    100,
+    v_row.score_obtenu,
+    v_row.score_max,
+    v_row.details
+  );
+  v_done := true;
+
+  RETURN QUERY SELECT v_answered, _total_questions, v_done;
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer) TO anon;
+GRANT EXECUTE ON FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.autovalidate_module_if_complete(_apprenant_id uuid, _module_id integer, _total_questions integer) TO service_role;
 CREATE OR REPLACE FUNCTION public.bilan_corriger_snapshot(p_snapshot_id uuid, p_reponses jsonb)
  RETURNS jsonb
  LANGUAGE sql
@@ -713,6 +821,37 @@ GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO anon;
 GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.est_compte_test(_apprenant_id uuid) TO service_role;
+CREATE OR REPLACE FUNCTION public.fusion_details_progression(_ancien jsonb, _nouveau jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE m jsonb;
+BEGIN
+  IF jsonb_typeof(_nouveau) IS DISTINCT FROM 'array' OR jsonb_typeof(_ancien) IS DISTINCT FROM 'array' THEN RETURN _nouveau; END IF;
+  -- Première réponse enregistrée par (exerciceId, questionId) : agrégat en ordre décroissant, la première du tableau l'emporte.
+  SELECT jsonb_object_agg(jsonb_build_array(a->>'exerciceId', a->>'questionId')::text, a->'reponseEleve' ORDER BY i DESC)
+    INTO m
+    FROM jsonb_array_elements(_ancien) WITH ORDINALITY t(a, i)
+   WHERE jsonb_typeof(a) = 'object' AND a->>'exerciceId' IS NOT NULL AND a->>'questionId' IS NOT NULL
+     AND public.reponse_enregistree(a->'reponseEleve');
+  IF m IS NULL THEN
+    RETURN COALESCE((SELECT jsonb_agg(n.v ORDER BY n.i) FROM jsonb_array_elements(_nouveau) WITH ORDINALITY n(v, i)), '[]'::jsonb);
+  END IF;
+  RETURN COALESCE((
+    SELECT jsonb_agg(
+      CASE WHEN jsonb_typeof(n.v) = 'object' AND n.v->>'exerciceId' IS NOT NULL AND n.v->>'questionId' IS NOT NULL
+                AND m ? jsonb_build_array(n.v->>'exerciceId', n.v->>'questionId')::text
+                AND NOT public.reponse_enregistree(n.v->'reponseEleve')
+           THEN jsonb_set(n.v, '{reponseEleve}', m -> jsonb_build_array(n.v->>'exerciceId', n.v->>'questionId')::text)
+           ELSE n.v END ORDER BY n.i)
+      FROM jsonb_array_elements(_nouveau) WITH ORDINALITY n(v, i)), '[]'::jsonb);
+END
+$function$;
+REVOKE ALL ON FUNCTION public.fusion_details_progression(_ancien jsonb, _nouveau jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fusion_details_progression(_ancien jsonb, _nouveau jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.fusion_details_progression(_ancien jsonb, _nouveau jsonb) TO service_role;
 CREATE OR REPLACE FUNCTION public.garde_activites_taxi_2026_v1()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -1119,6 +1258,143 @@ END;
 $function$;
 REVOKE ALL ON FUNCTION public.persist_answer_batch_v2(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.persist_answer_batch_v2(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb) TO service_role;
+CREATE OR REPLACE FUNCTION public.persist_answer_batch_v3(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb, p_originaux jsonb)
+ RETURNS TABLE(saved boolean, stored_reponses jsonb, stored_originaux jsonb, stored_meta jsonb, stored_tentative integer, stored_updated_at timestamp with time zone, stored_write_seq bigint, frozen boolean, skipped_questions text[], accepted_event_ids uuid[])
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_current public.reponses_apprenants%ROWTYPE;
+  v_tentative integer := 1;
+  v_accepted uuid[] := ARRAY[]::uuid[];
+  v_skipped text[] := ARRAY[]::text[];
+  v_event jsonb;
+  v_event_id uuid;
+  v_base bigint := GREATEST(COALESCE(p_base_seq, 0), 0);
+  v_next_seq bigint;
+  v_merged jsonb;
+  v_meta jsonb;
+  v_orig jsonb;
+  v_key text;
+  v_value jsonb;
+  v_marker jsonb;
+  v_stored_seq bigint;
+  v_frozen boolean := false;
+  v_applied boolean := false;
+BEGIN
+  -- Contrat du marqueur : version connue, projection = valeur envoyée, sinon refus (aucun stockage partiel).
+  FOR v_key, v_marker IN SELECT key, value FROM jsonb_each(COALESCE(p_originaux, '{}'::jsonb)) LOOP
+    IF jsonb_typeof(v_marker) <> 'object' OR v_marker->>'v' IS DISTINCT FROM 'nul-b64-v1'
+       OR COALESCE(v_marker->>'b64', '') !~ '^[A-Za-z0-9+/]+={0,2}$'
+       OR NOT (COALESCE(p_reponses, '{}'::jsonb) ? v_key)
+       OR (v_marker->'projection') IS DISTINCT FROM (p_reponses->v_key) THEN
+      RAISE EXCEPTION USING ERRCODE = 'P0550', MESSAGE = format('ORIGINAL_MARQUEUR_INVALIDE question %s', v_key);
+    END IF;
+  END LOOP;
+
+  SELECT * INTO v_current FROM public.reponses_apprenants
+  WHERE apprenant_id = p_apprenant_id AND exercice_id = p_exercice_id
+  FOR UPDATE;
+
+  IF FOUND THEN
+    v_tentative := COALESCE(v_current.tentative, 1);
+    IF v_current.status = 'submitted' OR v_current.completed = true THEN
+      v_frozen := true;
+    ELSE
+      v_next_seq := COALESCE(v_current.write_seq, 0) + 1;
+      v_merged := COALESCE(v_current.reponses, '{}'::jsonb);
+      v_meta := COALESCE(v_current.reponses_meta, '{}'::jsonb);
+      v_orig := COALESCE(v_current.originaux_exacts, '{}'::jsonb);
+      FOR v_key, v_value IN SELECT key, value FROM jsonb_each(COALESCE(p_reponses, '{}'::jsonb)) LOOP
+        v_stored_seq := NULLIF(v_meta -> v_key ->> 'seq', '')::bigint;
+        IF v_stored_seq IS NULL OR v_stored_seq <= v_base THEN
+          v_merged := jsonb_set(v_merged, ARRAY[v_key], v_value, true);
+          v_meta := jsonb_set(v_meta, ARRAY[v_key], jsonb_build_object('seq', v_next_seq, 'at', to_jsonb(now())), true);
+          -- Le marqueur suit EXACTEMENT la valeur écrite : posé si fourni, retiré sinon.
+          IF COALESCE(p_originaux, '{}'::jsonb) ? v_key THEN
+            v_orig := jsonb_set(v_orig, ARRAY[v_key], (p_originaux->v_key) || jsonb_build_object('seq', v_next_seq), true);
+          ELSE
+            v_orig := v_orig - v_key;
+          END IF;
+          v_applied := true;
+        ELSE
+          v_skipped := array_append(v_skipped, v_key);
+        END IF;
+      END LOOP;
+
+      IF v_applied OR COALESCE(p_completed, false) OR p_score IS NOT NULL THEN
+        UPDATE public.reponses_apprenants
+        SET user_id = COALESCE(p_user_id, user_id),
+            exercice_type = p_exercice_type,
+            reponses = v_merged,
+            reponses_meta = v_meta,
+            originaux_exacts = v_orig,
+            write_seq = v_next_seq,
+            completed = v_current.completed OR COALESCE(p_completed, false),
+            score = CASE WHEN p_score IS NULL THEN v_current.score ELSE p_score END,
+            updated_at = now()
+        WHERE id = v_current.id
+        RETURNING * INTO v_current;
+      END IF;
+    END IF;
+  ELSE
+    v_merged := COALESCE(p_reponses, '{}'::jsonb);
+    v_meta := '{}'::jsonb;
+    v_orig := '{}'::jsonb;
+    FOR v_key IN SELECT key FROM jsonb_each(v_merged) LOOP
+      v_meta := jsonb_set(v_meta, ARRAY[v_key], jsonb_build_object('seq', 1, 'at', to_jsonb(now())), true);
+      IF COALESCE(p_originaux, '{}'::jsonb) ? v_key THEN
+        v_orig := jsonb_set(v_orig, ARRAY[v_key], (p_originaux->v_key) || jsonb_build_object('seq', 1), true);
+      END IF;
+    END LOOP;
+    INSERT INTO public.reponses_apprenants (
+      apprenant_id, user_id, exercice_id, exercice_type, reponses,
+      reponses_meta, originaux_exacts, write_seq, completed, score, updated_at
+    ) VALUES (
+      p_apprenant_id, p_user_id, p_exercice_id, p_exercice_type,
+      v_merged, v_meta, v_orig, 1, COALESCE(p_completed, false), p_score, now()
+    )
+    RETURNING * INTO v_current;
+    v_tentative := COALESCE(v_current.tentative, 1);
+  END IF;
+
+  IF jsonb_typeof(COALESCE(p_events, '[]'::jsonb)) = 'array' THEN
+    FOR v_event IN SELECT value FROM jsonb_array_elements(COALESCE(p_events, '[]'::jsonb)) LOOP
+      IF NULLIF(v_event->>'question_id', '') IS NULL THEN CONTINUE; END IF;
+      IF v_event ? 'valeur_originale' AND (
+           jsonb_typeof(v_event->'valeur_originale') <> 'object'
+           OR v_event->'valeur_originale'->>'v' IS DISTINCT FROM 'nul-b64-v1'
+           OR (v_event->'valeur_originale'->'projection') IS DISTINCT FROM COALESCE(v_event->'valeur', 'null'::jsonb)) THEN
+        RAISE EXCEPTION USING ERRCODE = 'P0550', MESSAGE = 'ORIGINAL_MARQUEUR_INVALIDE evenement';
+      END IF;
+      BEGIN
+        v_event_id := COALESCE(NULLIF(v_event->>'event_id', '')::uuid, gen_random_uuid());
+      EXCEPTION WHEN invalid_text_representation THEN
+        v_event_id := gen_random_uuid();
+      END;
+      INSERT INTO public.reponses_apprenants_journal (
+        event_id, apprenant_id, user_id, module_id, exercice_id,
+        exercice_type, question_id, valeur, valeur_originale, tentative, client_saved_at
+      ) VALUES (
+        v_event_id, p_apprenant_id, p_user_id, p_module_id, p_exercice_id,
+        p_exercice_type, v_event->>'question_id', COALESCE(v_event->'valeur', 'null'::jsonb),
+        v_event->'valeur_originale',
+        COALESCE(NULLIF(v_event->>'tentative', '')::integer, v_tentative),
+        NULLIF(v_event->>'client_saved_at', '')::timestamptz
+      )
+      ON CONFLICT (event_id) DO NOTHING;
+      v_accepted := array_append(v_accepted, v_event_id);
+    END LOOP;
+  END IF;
+
+  RETURN QUERY SELECT true, v_current.reponses, COALESCE(v_current.originaux_exacts, '{}'::jsonb), COALESCE(v_current.reponses_meta, '{}'::jsonb),
+    COALESCE(v_current.tentative, v_tentative), v_current.updated_at,
+    COALESCE(v_current.write_seq, 0), v_frozen, v_skipped, v_accepted;
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.persist_answer_batch_v3(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb, p_originaux jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.persist_answer_batch_v3(p_apprenant_id uuid, p_user_id uuid, p_module_id integer, p_exercice_id text, p_exercice_type text, p_reponses jsonb, p_completed boolean, p_score numeric, p_base_seq bigint, p_events jsonb, p_originaux jsonb) TO service_role;
 CREATE OR REPLACE FUNCTION public.protect_reponses_apprenants_journal()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -1193,6 +1469,130 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
+CREATE OR REPLACE FUNCTION public.reponse_enregistree(v jsonb)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE e jsonb;
+BEGIN
+  CASE jsonb_typeof(v)
+    WHEN 'string' THEN RETURN (v #>> '{}') ~ '\S';
+    WHEN 'number', 'boolean' THEN RETURN true;
+    WHEN 'array' THEN
+      FOR e IN SELECT x FROM jsonb_array_elements(v) x LOOP
+        IF public.reponse_enregistree(e) THEN RETURN true; END IF;
+      END LOOP;
+      RETURN false;
+    WHEN 'object' THEN
+      FOR e IN SELECT x.value FROM jsonb_each(v) x LOOP
+        IF public.reponse_enregistree(e) THEN RETURN true; END IF;
+      END LOOP;
+      RETURN false;
+    ELSE RETURN false;
+  END CASE;
+END $function$;
+REVOKE ALL ON FUNCTION public.reponse_enregistree(v jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reponse_enregistree(v jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.reponse_enregistree(v jsonb) TO service_role;
+CREATE OR REPLACE FUNCTION public.save_module_completion(_apprenant_id uuid, _module_id integer, _completed boolean DEFAULT false, _progress integer DEFAULT 0, _score_obtenu integer DEFAULT NULL::integer, _score_max integer DEFAULT NULL::integer, _details jsonb DEFAULT NULL::jsonb)
+ RETURNS apprenant_module_completion
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  allowed BOOLEAN;
+  result public.apprenant_module_completion;
+  v_deja_termine boolean;
+  v_nb_questions bigint := 0;
+  v_preuve boolean;
+  v_manquantes integer := 0;
+BEGIN
+  SELECT EXISTS (SELECT 1 FROM public.apprenants a WHERE a.id = _apprenant_id AND a.auth_user_id = auth.uid())
+    OR public.has_role(auth.uid(), 'admin')
+    OR current_setting('role', true) = 'service_role'
+  INTO allowed;
+  IF NOT allowed THEN RAISE EXCEPTION 'not authorized for this apprenant'; END IF;
+  IF _completed THEN
+    SELECT EXISTS (SELECT 1 FROM public.apprenant_module_completion
+                    WHERE apprenant_id = _apprenant_id AND module_id = _module_id AND status = 'completed')
+      INTO v_deja_termine;
+    IF NOT v_deja_termine THEN
+      SELECT COALESCE(SUM(CASE WHEN jsonb_typeof(e->'questions') = 'array' THEN jsonb_array_length(e->'questions') ELSE 0 END), 0)
+        INTO v_nb_questions
+        FROM public.module_editor_state m,
+             jsonb_array_elements(CASE WHEN jsonb_typeof(m.module_data->'exercices') = 'array' THEN m.module_data->'exercices' ELSE '[]'::jsonb END) e
+       WHERE m.module_id = _module_id;
+      IF v_nb_questions = 0 AND EXISTS (SELECT 1 FROM public.module_regles_validation r
+                                         WHERE r.module_id = _module_id AND r.protection_serveur AND r.contient_questions IS TRUE) THEN
+        v_nb_questions := 1;
+      END IF;
+      IF v_nb_questions > 0 THEN
+        v_preuve := EXISTS (
+            SELECT 1 FROM public.reponses_apprenants r, jsonb_each(r.reponses) x
+             WHERE r.apprenant_id = _apprenant_id
+               AND r.exercice_id LIKE 'module\_' || _module_id || '\_%'
+               AND x.value::text NOT IN ('null', '""', '[]', '{}'))
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(_details) = 'array' THEN _details ELSE '[]'::jsonb END) d
+             WHERE d->'reponseEleve' IS NOT NULL
+               AND (d->'reponseEleve')::text NOT IN ('null', '""', '[]', '{}'));
+        IF NOT v_preuve THEN
+          RAISE EXCEPTION 'MODULE_INCOMPLET: aucune réponse enregistrée pour ce module' USING ERRCODE = 'P0501';
+        END IF;
+      END IF;
+      IF jsonb_typeof(_details) = 'array'
+         AND _module_id NOT BETWEEN 35 AND 38
+         AND NOT EXISTS (SELECT 1 FROM public.module_regles_validation r WHERE r.module_id = _module_id
+                          AND r.contient_questions IS TRUE AND r.protection_serveur IS FALSE) THEN
+        SELECT count(*) INTO v_manquantes
+          FROM jsonb_array_elements(_details) d
+         WHERE jsonb_typeof(d) = 'object' AND d->>'exerciceId' IS NOT NULL AND d->>'questionId' IS NOT NULL
+           AND NOT (jsonb_typeof(d->'reponseCorrecte') = 'array' AND jsonb_array_length(d->'reponseCorrecte') = 0)
+           AND NOT public.reponse_enregistree(d->'reponseEleve')
+           AND NOT EXISTS (
+             SELECT 1 FROM public.reponses_apprenants r
+              WHERE r.apprenant_id = _apprenant_id
+                AND r.exercice_id = 'module_' || _module_id || '_exo_' || (d->>'exerciceId')
+                AND r.status = 'submitted' AND r.submitted_at IS NOT NULL
+                AND jsonb_typeof(r.reponses) = 'object'
+                AND NOT EXISTS (
+                  SELECT 1 FROM jsonb_array_elements(_details) d2
+                   WHERE jsonb_typeof(d2) = 'object' AND d2->>'exerciceId' = d->>'exerciceId' AND d2->>'questionId' IS NOT NULL
+                     AND NOT (jsonb_typeof(d2->'reponseCorrecte') = 'array' AND jsonb_array_length(d2->'reponseCorrecte') = 0)
+                     AND NOT public.reponse_enregistree(r.reponses -> ((d2->>'exerciceId') || '-' || (d2->>'questionId')))));
+        IF v_manquantes > 0 THEN
+          RAISE EXCEPTION 'MODULE_INCOMPLET: % question(s) QCM sans réponse enregistrée', v_manquantes USING ERRCODE = 'P0501';
+        END IF;
+      END IF;
+    END IF;
+  END IF;
+  INSERT INTO public.apprenant_module_completion AS amc
+    (apprenant_id, module_id, status, progress, completed_at, score_obtenu, score_max, details)
+  VALUES (_apprenant_id, _module_id,
+    CASE WHEN _completed THEN 'completed' ELSE 'in_progress' END,
+    CASE WHEN _completed THEN 100 ELSE GREATEST(COALESCE(_progress, 0), 0) END,
+    CASE WHEN _completed THEN now() ELSE NULL END,
+    _score_obtenu, _score_max, COALESCE(_details, '[]'::jsonb))
+  ON CONFLICT (apprenant_id, module_id) DO UPDATE
+  SET status = CASE WHEN amc.status = 'completed' OR _completed THEN 'completed' ELSE 'in_progress' END,
+      progress = GREATEST(COALESCE(amc.progress, 0), COALESCE(_progress, 0), CASE WHEN _completed THEN 100 ELSE 0 END),
+      completed_at = CASE WHEN amc.status = 'completed' THEN amc.completed_at WHEN _completed THEN now() ELSE amc.completed_at END,
+      score_obtenu = COALESCE(_score_obtenu, amc.score_obtenu),
+      score_max = COALESCE(_score_max, amc.score_max),
+      details = CASE WHEN _details IS NULL THEN amc.details
+                     WHEN amc.status = 'completed' AND jsonb_array_length(COALESCE(_details, '[]'::jsonb)) = 0 THEN amc.details
+                     WHEN amc.status IS DISTINCT FROM 'completed' AND NOT _completed THEN public.fusion_details_progression(amc.details, _details)
+                     ELSE _details END
+  RETURNING * INTO result;
+  RETURN result;
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.save_module_completion(_apprenant_id uuid, _module_id integer, _completed boolean, _progress integer, _score_obtenu integer, _score_max integer, _details jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.save_module_completion(_apprenant_id uuid, _module_id integer, _completed boolean, _progress integer, _score_obtenu integer, _score_max integer, _details jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.save_module_completion(_apprenant_id uuid, _module_id integer, _completed boolean, _progress integer, _score_obtenu integer, _score_max integer, _details jsonb) TO service_role;
 CREATE OR REPLACE FUNCTION public.submit_quiz_attempt(_apprenant_id uuid, _exercice_id text, _exercice_type text, _reponses jsonb, _score numeric DEFAULT NULL::numeric, _bonnes_reponses integer DEFAULT NULL::integer, _total_questions integer DEFAULT NULL::integer)
  RETURNS reponses_apprenants
  LANGUAGE plpgsql

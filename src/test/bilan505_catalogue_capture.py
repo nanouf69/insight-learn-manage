@@ -10,7 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT_SQL = ROOT / 'src/test/fixtures/bilan505_catalogue_prod.sql'
 OUT_JSON = ROOT / 'src/test/fixtures/bilan505_catalogue_prod.json'
 TRIG_TABLES = ['reponses_apprenants', 'reponses_apprenants_journal', 'bilan_passage_snapshots']
-ROOTS = ['persist_answer_batch_v2', 'submit_quiz_attempt', 'bilan_corriger_snapshot']
+ROOTS = ['persist_answer_batch_v2', 'persist_answer_batch_v3', 'submit_quiz_attempt', 'bilan_corriger_snapshot', 'autovalidate_module_if_complete']
 
 def live(q):
     return subprocess.check_output(['psql', '-X', '-At', '-v', 'ON_ERROR_STOP=1', '-c', 'BEGIN READ ONLY;' + q + ';COMMIT;'], text=True).strip().removeprefix('BEGIN').removesuffix('COMMIT').strip()
