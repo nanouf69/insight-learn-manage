@@ -6942,6 +6942,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const [validationSessionPerdueFor, setValidationSessionPerdueFor] = useState<Set<number>>(new Set());
     const latestRemiseAnswersRef = useRef(selectedAnswers);
     latestRemiseAnswersRef.current = selectedAnswers;
+    const [bilan505ServerPoints, setBilan505ServerPoints] = useState<number | null>(null);
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
@@ -9359,6 +9360,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               setSelectedAnswers(prev => ({ ...prev, ...restored }));
                               toast('Vos derniers choix ont été retrouvés. Vérifiez-les puis appuyez de nouveau sur Valider.');
                             } else if (result.ok) {
+                              setBilan505ServerPoints(result.confirmed?.bonnes_reponses ?? null);
                               submittedExoIdsRef.current.add(505);
                               setValidationFailedFor(prev => { const next = new Set(prev); next.delete(505); return next; });
                               setShowResultsFor(prev => new Set(prev).add(505));
@@ -9680,7 +9682,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         </div>
                       );
                     }
-                    const exoPoints = etatQrc === "terminee"
+                    const exoPoints = module.id === 5 && exo.id === 505 && bilan505RemiseActive() && bilan505ServerPoints !== null
+                      ? bilan505ServerPoints : etatQrc === "terminee"
                       ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
                       : exoCorrect;
                     return (
