@@ -9355,7 +9355,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           try {
                             const result = await remettreBilan505({ apprenantId, answers: current(), current });
                             if (result.restored) {
-                              setSelectedAnswers(prev => ({ ...prev, ...result.restored }));
+                              const restored = Object.fromEntries(Object.entries(result.restored).filter((entry): entry is [string, string | string[]] => typeof entry[1] === 'string' || (Array.isArray(entry[1]) && entry[1].every(v => typeof v === 'string'))));
+                              setSelectedAnswers(prev => ({ ...prev, ...restored }));
                               toast('Vos derniers choix ont été retrouvés. Vérifiez-les puis appuyez de nouveau sur Valider.');
                             } else if (result.ok) {
                               submittedExoIdsRef.current.add(505);
