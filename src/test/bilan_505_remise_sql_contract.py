@@ -2,7 +2,7 @@
 import json,pathlib,unittest
 from core_correction_securite_contract import Pg,SCHEMA,APP,ELEVE_UID,AUTRE_UID,as_ctx
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-def j(x):return "'"+json.dumps(x).replace("'","''")+"'::jsonb"
+def j(x):return "'"+json.dumps(x,ensure_ascii=False).replace("'","''")+"'::jsonb"
 COMPLETE=json.loads((ROOT/'src/test/bilan-505-remise-browser/snapshot-complete.json').read_text())
 MISSING=json.loads((ROOT/'src/test/bilan-505-remise-browser/snapshot-missing.json').read_text())
 ANS={q['cle']:[c['lettre'] for c in q['choix'] if c.get('correct')] for q in COMPLETE['questions']}
