@@ -14,5 +14,5 @@ describe('remise 505 isolée',()=>{
  it('autre tentative en retour ne valide pas',async()=>{const p=setup();p.commit=vi.fn(async()=>({...row,tentative:2,status:'submitted'}));expect((await remettreBilan505(p)).ok).toBe(false);});
  it('réponse tardive exacte confirme sans deuxième écriture',async()=>{const p=setup();p.commit=vi.fn(async()=>{await new Promise(r=>setTimeout(r,30));return {...row,status:'submitted'};});expect((await remettreBilan505(p)).ok).toBe(true);expect(p.commit).toHaveBeenCalledTimes(1);});
  it('révision ne peut devenir une copie',async()=>{const p=setup();p.commit=vi.fn(async()=>({...row,id:'revision',status:'submitted'}));expect((await remettreBilan505(p)).ok).toBe(false);});
- it('compte changé pendant lecture bloque',async()=>{const p=setup();p.read=async()=>{p.owner=()=>false;return row;};expect((await remettreBilan505(p)).ok).toBe(false);expect(p.commit).not.toHaveBeenCalled();});
+ it('compte changé pendant lecture bloque',async()=>{const p=setup();let same=true;p.owner=()=>same;p.read=async()=>{same=false;return row;};expect((await remettreBilan505(p)).ok).toBe(false);expect(p.commit).not.toHaveBeenCalled();});
 });
