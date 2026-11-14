@@ -523,6 +523,12 @@ export function getPendingAnswers(
     : null;
 }
 
+/** Read-only proof for targeted submission; includes blocked and in-flight batches. */
+export function getAnswerQueueProof(apprenantId: string, exerciceId: string) {
+  return readQueue().filter(q => q.payload.apprenant_id === apprenantId && q.payload.exercice_id === exerciceId && isOwnedByCurrentUser(q))
+    .map(q => ({ reponses: q.payload.reponses, events: q.payload.events ?? [], completed: q.payload.completed === true }));
+}
+
 /** Account-scoped identities only, to restore a first offline revision before its row exists. */
 export function getPendingAnswerExerciseIdsFor(apprenantId: string): string[] {
   return [...new Set(readQueue().filter(item => item.payload.apprenant_id === apprenantId && isOwnedByCurrentUser(item)).map(item => item.payload.exercice_id))];

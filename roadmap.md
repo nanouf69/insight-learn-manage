@@ -10,6 +10,8 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Cases anciennes manquantes : présence/absence administrative justifiée et auditée uniquement, sans signature apprenant ; aucune annulation de signature. Nom-prénom feuilles : aperçu à vérifier.
 
 ## P0 — Examens blancs / sauvegarde
+- [x] 14/11 16:12 — remise VTC 505 : flux original corrigé et testé UNIQUEMENT dans l'écran navigateur isolé ; 21 Vitest + 6 SQL jetables + 8 parcours PC/mobile. Cabral 0 écart, Abdelhak 7, Alpha 3, Malki 1 ; SELECT avant/après identiques. Diff et plan : docs/bilan-505-remise-2026-11-14.md. Zéro écriture réelle/déploiement/publication, campagnes hors lot.
+- [ ] Livraison ciblée 505 : bloquée par source pédagogique exacte des 49 questions et note serveur à établir (4 scores NULL, snapshot/éditeur 5 absents au SELECT), triggers réels à éprouver et restauration indépendante. Wrapper candidat réutilise persistance/remise existantes mais ne doit pas être activé tel quel. Aucun manque d'accord pour l'aperçu.
 - [ ] P0 Bilan examen VTC 505 « Développement commercial » : cause prouvée = 2e clic des questions à plusieurs réponses journalisé mais écarté de la copie (base périmée) → « envoi » refusé en boucle. Correctif serveur EN LIGNE 13/11 19:26 (upsert-reponse-apprenant : dernier clic du même compte appliqué, 7 tests). À confirmer : premier « Valider » réussi de SAIDI / ABDELHAK / CABRAL.
 - [ ] Révisions « questions fausses » : rebase même onglet — APERÇU (214 tests).
 - [ ] Clôture sûre persist_answer_batch v2/v3 — BLOQUÉ : change le serveur pour tous les élèves → sauvegarde préalable.
