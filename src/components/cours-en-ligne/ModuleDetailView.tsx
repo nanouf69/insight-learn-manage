@@ -9364,7 +9364,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               setShowResultsFor(prev => new Set(prev).add(505));
                               setCompletedPages(prev => new Set(prev).add(currentPage));
                               toast.success('✅ Quiz validé (confirmation serveur reçue).');
-                            } else setValidationFailedFor(prev => new Set(prev).add(505));
+                            } else {
+                              setValidationFailedFor(prev => new Set(prev).add(505));
+                              if (result.reason === 'corrige_snapshot_incomplet') toast.error('Le corrigé de votre version doit être vérifié par le centre. Vos réponses sont conservées ; aucune note ni remise automatique.');
+                            }
                           } catch { setValidationFailedFor(prev => new Set(prev).add(505)); }
                           finally { validationEnCoursRef.current.delete(505); setValidatingExo(null); }
                           return;

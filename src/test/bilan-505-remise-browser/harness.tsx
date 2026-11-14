@@ -9,7 +9,7 @@ import '@/index.css';
 const A='11111111-1111-4111-8111-111111111111',U='22222222-2222-4222-8222-222222222222';
 const scenario=new URLSearchParams(location.search).get('case')??'concordant';
 const answers=Object.fromEntries(Array.from({length:49},(_,i)=>[`505-${i+1}`,['A','B']]));
-let row={id:'33333333-3333-4333-8333-333333333333',apprenant_id:A,exercice_id:'module_5_exo_505',tentative:1,write_seq:100,status:'in_progress',reponses:answers,stored_reponses:answers};
+let row={id:'33333333-3333-4333-8333-333333333333',apprenant_id:A,exercice_id:'module_5_exo_505',tentative:1,write_seq:100,status:'in_progress',reponses:answers,stored_reponses:answers,grading_status:'verifiable',score:100,bonnes_reponses:49,total_questions:49};
 const calls:string[]=[];Object.assign(window,{fixtureCalls:calls});
 const questions=Array.from({length:49},(_,i)=>({id:i+1,type:'QCM',enonce:`Question fictive ${i+1}`,choix:[{lettre:'A',texte:'Choix A',correct:true},{lettre:'B',texte:'Choix B',correct:true},{lettre:'C',texte:'Choix C'}]}));
 const moduleData={id:5,nom:'Bilan examen VTC',description:'',cours:[],exercices:[{id:505,titre:'Développement commercial',actif:true,questions}]};
@@ -19,7 +19,7 @@ const moduleData={id:5,nom:'Bilan examen VTC',description:'',cours:[],exercices:
  calls.push(name);
  if(name==='bilan_future_route')return {data:'legacy',error:null};
  if(name==='bilan_ouvrir_passage_eleve')return {data:{statut:'ancien'},error:null};
- if(name==='bilan_505_remise_prepare')return {data:{...row,reponses:scenario==='journal'?{...answers,'505-1':['B']}:answers,stored_reponses:answers},error:null};
+ if(name==='bilan_505_remise_prepare')return {data:{id:row.id,tentative:1,write_seq:100,status:row.status,grading_status:scenario==='missing'?'corrige_snapshot_incomplet':'verifiable',reponses:scenario==='journal'?{...answers,'505-1':['B']}:answers,stored_reponses:answers},error:null};
  if(name==='bilan_505_remise_commit'){
    if(scenario==='late')await new Promise(r=>setTimeout(r,21000));
    row={...row,status:'submitted',reponses:args.p_reponses};return {data:row,error:null};
