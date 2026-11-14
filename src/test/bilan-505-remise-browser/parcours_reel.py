@@ -130,6 +130,7 @@ async def main():
                 await valider(page).click(); await page.wait_for_timeout(2500)
                 assert A.row()['status'] == 'in_progress', 'no submission without ticked review'
                 await page.get_by_role('checkbox', name='Je confirme mes choix').check()
+                print('  buttons', await page.get_by_role('button', name=re.compile(r'Valider', re.I)).all_inner_texts())
                 await valider(page).click(); await page.wait_for_timeout(4000)
                 r = A.row(); await page.screenshot(path=str(SHOTS / 'A2_remise_pc.png'))
                 assert (r['status'], r['reponses'], r['bonnes_reponses'], r['total_questions']) == ('submitted', ANS, 49, 49), r['status']

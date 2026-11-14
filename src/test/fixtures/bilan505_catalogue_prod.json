@@ -88,6 +88,9 @@
   "triggers:reponses_apprenants": "181c186bc12620bae52e949f39b7884c",
   "triggers:reponses_apprenants_journal": "25eb7728d4b2f7539deedccb0272b0b5",
   "triggers:bilan_passage_snapshots": "5a5704903b5f2986e1932c52eb9b92e9",
+  "unique_indexes:reponses_apprenants": "529b284265f4f4c65774764bfa37ae23",
+  "unique_indexes:reponses_apprenants_journal": "a32cf8162f4367a0bc9017e0b0129021",
+  "unique_indexes:bilan_passage_snapshots": "707e0f1a3385bcb23a96e5029e1a67d7",
   "columns:reponses_apprenants": "5aca7802c03510d74569914a86043e21"
  }
 }

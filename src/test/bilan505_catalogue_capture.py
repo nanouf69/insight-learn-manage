@@ -40,6 +40,8 @@ def manifest(fns):
         m[f] = live(f"select string_agg(md5(pg_get_functiondef(oid)),',' order by oid) from pg_proc where proname='{f}' and pronamespace='public'::regnamespace")
     for t in TRIG_TABLES:
         m['triggers:' + t] = live(f"select md5(coalesce(string_agg(pg_get_triggerdef(oid)||tgenabled::text,'|' order by tgname),'')) from pg_trigger where tgrelid='public.{t}'::regclass and not tgisinternal")
+    for t in TRIG_TABLES:
+        m['unique_indexes:' + t] = live(f"select md5(coalesce(string_agg(pg_get_indexdef(indexrelid),'|' order by indexrelid::regclass::text),'')) from pg_index where indrelid='public.{t}'::regclass and indisunique")
     m['columns:reponses_apprenants'] = live("select md5(string_agg(attname||format_type(atttypid,atttypmod)||attnotnull,'|' order by attnum)) from pg_attribute where attrelid='public.reponses_apprenants'::regclass and attnum>0 and not attisdropped")
     return m
 
@@ -54,6 +56,8 @@ def table_ddl(t):
     if kind == 'r':
         for line in live(f"select coalesce(string_agg(conname||E'\\t'||pg_get_constraintdef(oid),E'\\n' order by contype desc,conname),'') from pg_constraint where conrelid='public.{t}'::regclass and contype in ('p','u','c')").splitlines():
             if line: n, d = line.split('\t', 1); out.append(f'ALTER TABLE public.{t} ADD CONSTRAINT {n} {d};')
+        for line in live(f"select coalesce(string_agg(pg_get_indexdef(i.indexrelid),E'\\n'),'') from pg_index i where i.indrelid='public.{t}'::regclass and i.indisunique and not exists(select 1 from pg_constraint c where c.conindid=i.indexrelid)").splitlines():
+            if line: out.append(line + ';')
     return out
 
 def capture():

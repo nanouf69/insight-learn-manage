@@ -71,6 +71,7 @@ CREATE TABLE public.apprenant_quiz_results (
 );
 ALTER TABLE public.apprenant_quiz_results ADD CONSTRAINT unique_apprenant_quiz_matiere_tentative UNIQUE (apprenant_id, quiz_id, matiere_id, tentative);
 ALTER TABLE public.apprenant_quiz_results ADD CONSTRAINT apprenant_quiz_results_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX uniq_aqr_revision_fausses_finalisation ON public.apprenant_quiz_results USING btree (apprenant_id, quiz_id, ((details ->> 'revision_exercice_id'::text))) WHERE ((quiz_type = 'revision_fausses'::text) AND (details ? 'revision_exercice_id'::text));
 -- apprenants (table)
 CREATE TABLE public.apprenants (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -257,6 +258,7 @@ CREATE TABLE public.exam_retake_authorizations (
   reset_id uuid
 );
 ALTER TABLE public.exam_retake_authorizations ADD CONSTRAINT exam_retake_authorizations_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX exam_retake_authorizations_reset_unique ON public.exam_retake_authorizations USING btree (reset_id) WHERE (reset_id IS NOT NULL);
 -- exam_subject_reset_authorizations (table)
 CREATE TABLE public.exam_subject_reset_authorizations (
   operation_id uuid NOT NULL,
@@ -293,6 +295,7 @@ CREATE TABLE public.exam_subject_retakes (
 );
 ALTER TABLE public.exam_subject_retakes ADD CONSTRAINT exam_subject_retakes_apprenant_id_exercice_id_key UNIQUE (apprenant_id, exercice_id);
 ALTER TABLE public.exam_subject_retakes ADD CONSTRAINT exam_subject_retakes_pkey PRIMARY KEY (operation_id);
+CREATE UNIQUE INDEX exam_subject_retakes_actual_source_key ON public.exam_subject_retakes USING btree (apprenant_id, exam_id, matiere_id, source_exercice_id) WHERE (exercice_id <> source_exercice_id);
 -- module_editor_state (table)
 CREATE TABLE public.module_editor_state (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -390,6 +393,7 @@ CREATE TABLE public.reponses_apprenants_journal (
   valeur_originale jsonb
 );
 ALTER TABLE public.reponses_apprenants_journal ADD CONSTRAINT reponses_apprenants_journal_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX uq_reponses_apprenants_journal_event_id ON public.reponses_apprenants_journal USING btree (event_id);
 -- user_roles (table)
 CREATE TABLE public.user_roles (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
