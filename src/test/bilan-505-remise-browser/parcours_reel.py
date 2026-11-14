@@ -77,10 +77,14 @@ async def scenario(browser, name, e, steps, viewport):
         if u.startswith('http://localhost:8080') or u.startswith('ws://localhost'): return await r.continue_()
         if SUPA.match(u):
             resp = await r.fetch(url=SUPA.sub(f'http://127.0.0.1:{GW}/', u))
+            if '/rpc/bilan_505' in u or '/functions/' in u:
+                (SHOTS / f'{name}_net.log').open('a').write(f'{r.request.method} {u[-60:]} {resp.status} {(await resp.text())[:300]}\n')
             return await r.fulfill(response=resp)
-        external.append(u); return await r.abort()
+        if not u.startswith('https://fonts.'): external.append(u)
+        return await r.abort()
     await ctx.route('**/*', route)
     page.on('pageerror', lambda err: print(f'  [{name}] pageerror', err))
+    page.on('console', lambda m: (SHOTS / f'{name}_console.log').open('a').write(m.text[:300] + '\n') if m.type in ('error', 'warning') else None)
     await page.goto(f'http://localhost:8080/src/test/bilan-505-remise-browser/harness.html?case=reel&app={e.app}&uid={e.uid}&jwt={jwt({"sub": e.uid, "role": "authenticated", "aud": "authenticated"})}')
     await page.get_by_text(COMPLETE['questions'][0]['enonce'][:40]).first.wait_for(timeout=60000)
     await page.wait_for_timeout(1500)
