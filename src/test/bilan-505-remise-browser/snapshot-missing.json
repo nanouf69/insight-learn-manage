@@ -1,0 +1,2671 @@
+{
+  "empreinte": "040ddc91eaca766e067e0a7c41b194ed",
+  "questions": [
+    {
+      "cle": "505-1",
+      "uid": "f60efe2d-1433-4b0e-87b2-cac50f0b788e",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "3,20 €",
+          "lettre": "A"
+        },
+        {
+          "texte": "5,00 €",
+          "lettre": "B"
+        },
+        {
+          "texte": "4,00 €",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Vous accordez à un client régulier une remise de 5 % sur le 10ème trajet. La prestation est d'un montant de 80 €, la remise sera donc de :",
+      "position": 1,
+      "reponseQRC": null,
+      "question_id": "1",
+      "question_source": {
+        "id": 1,
+        "uid": "f60efe2d-1433-4b0e-87b2-cac50f0b788e",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "3,20 €",
+            "lettre": "A"
+          },
+          {
+            "texte": "5,00 €",
+            "lettre": "B"
+          },
+          {
+            "texte": "4,00 €",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Vous accordez à un client régulier une remise de 5 % sur le 10ème trajet. La prestation est d'un montant de 80 €, la remise sera donc de :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-2",
+      "uid": "6a3a0d45-1ef8-4a24-a921-63ffc0090d83",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "lorsque la demande est supérieure à l'offre, les prix diminuent",
+          "lettre": "A"
+        },
+        {
+          "texte": "lorsque la demande est inférieure à l'offre, les prix augmentent",
+          "lettre": "B"
+        },
+        {
+          "texte": "lorsque la demande est supérieure à l'offre, les prix augmentent",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Quelle affirmation est vraie ?",
+      "position": 2,
+      "reponseQRC": null,
+      "question_id": "2",
+      "question_source": {
+        "id": 2,
+        "uid": "6a3a0d45-1ef8-4a24-a921-63ffc0090d83",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "lorsque la demande est supérieure à l'offre, les prix diminuent",
+            "lettre": "A"
+          },
+          {
+            "texte": "lorsque la demande est inférieure à l'offre, les prix augmentent",
+            "lettre": "B"
+          },
+          {
+            "texte": "lorsque la demande est supérieure à l'offre, les prix augmentent",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "image": null,
+        "enonce": "Quelle affirmation est vraie ?",
+        "_editedAt": "2026-09-29T13:35:13.738Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-3",
+      "uid": "0adb8b40-cf3c-46bf-ba8f-8b6905c56493",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "sur le siège arrière droit",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "sur le siège arrière gauche",
+          "lettre": "B"
+        },
+        {
+          "texte": "sur le siège avant",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "En accueillant un client qui voyage seul, un chauffeur de VTC l'invite à prendre place :",
+      "position": 3,
+      "reponseQRC": null,
+      "question_id": "3",
+      "question_source": {
+        "id": 3,
+        "uid": "0adb8b40-cf3c-46bf-ba8f-8b6905c56493",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "sur le siège arrière droit",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "sur le siège arrière gauche",
+            "lettre": "B"
+          },
+          {
+            "texte": "sur le siège avant",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "En accueillant un client qui voyage seul, un chauffeur de VTC l'invite à prendre place :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-4",
+      "uid": "8d0148a1-5a30-453f-b3e4-38d94c202eab",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "le même prix que d'en trouver de nouveaux",
+          "lettre": "A"
+        },
+        {
+          "texte": "moins cher que d'en trouver de nouveaux",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "plus cher que d'en trouver de nouveaux",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Diriez-vous que fidéliser vos clients VTC coûte :",
+      "position": 4,
+      "reponseQRC": null,
+      "question_id": "4",
+      "question_source": {
+        "id": 4,
+        "uid": "8d0148a1-5a30-453f-b3e4-38d94c202eab",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "le même prix que d'en trouver de nouveaux",
+            "lettre": "A"
+          },
+          {
+            "texte": "moins cher que d'en trouver de nouveaux",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "plus cher que d'en trouver de nouveaux",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Diriez-vous que fidéliser vos clients VTC coûte :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-5",
+      "uid": "0a67c6ea-0cf8-4f5b-94d6-6ab20e27d97b",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "c'est un bateau",
+          "lettre": "A"
+        },
+        {
+          "texte": "c'est le nombre de conducteurs de VTC qu'il y a dans une zone géographique",
+          "lettre": "B"
+        },
+        {
+          "texte": "c'est la zone géographique d'où provient la majorité de la clientèle",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Qu'est-ce qu'une zone de chalandise ?",
+      "position": 5,
+      "reponseQRC": null,
+      "question_id": "5",
+      "question_source": {
+        "id": 5,
+        "uid": "0a67c6ea-0cf8-4f5b-94d6-6ab20e27d97b",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "c'est un bateau",
+            "lettre": "A"
+          },
+          {
+            "texte": "c'est le nombre de conducteurs de VTC qu'il y a dans une zone géographique",
+            "lettre": "B"
+          },
+          {
+            "texte": "c'est la zone géographique d'où provient la majorité de la clientèle",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "image": null,
+        "enonce": "Qu'est-ce qu'une zone de chalandise ?",
+        "_editedAt": "2026-09-29T13:35:36.509Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-6",
+      "uid": "70bf8f35-3f3d-44c4-80ae-eef0ad36912b",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "un consommateur",
+          "lettre": "A"
+        },
+        {
+          "texte": "un grossiste",
+          "lettre": "B"
+        },
+        {
+          "texte": "un prescripteur",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Une personne qui influence l'acte d'achat est :",
+      "position": 6,
+      "reponseQRC": null,
+      "question_id": "6",
+      "question_source": {
+        "id": 6,
+        "uid": "70bf8f35-3f3d-44c4-80ae-eef0ad36912b",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "un consommateur",
+            "lettre": "A"
+          },
+          {
+            "texte": "un grossiste",
+            "lettre": "B"
+          },
+          {
+            "texte": "un prescripteur",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Une personne qui influence l'acte d'achat est :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-7",
+      "uid": "9453d1ea-5a63-42f6-94ed-723472403a91",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "le lien où des producteurs se rassemblent pour proposer directement",
+          "lettre": "A"
+        },
+        {
+          "texte": "leurs produits/prestations aux consommateurs",
+          "lettre": "B"
+        },
+        {
+          "texte": "le lien de rencontre physique ou virtuel de l'offre et de la demande",
+          "lettre": "C"
+        },
+        {
+          "texte": "l'ensemble des vendeurs et des acheteurs concernés par l'échange d'un bien ou d'un service",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Qu'est-ce que le marché en mercatique ?",
+      "position": 7,
+      "reponseQRC": null,
+      "question_id": "7",
+      "question_source": {
+        "id": 7,
+        "uid": "9453d1ea-5a63-42f6-94ed-723472403a91",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "le lien où des producteurs se rassemblent pour proposer directement",
+            "lettre": "A"
+          },
+          {
+            "texte": "leurs produits/prestations aux consommateurs",
+            "lettre": "B"
+          },
+          {
+            "texte": "le lien de rencontre physique ou virtuel de l'offre et de la demande",
+            "lettre": "C"
+          },
+          {
+            "texte": "l'ensemble des vendeurs et des acheteurs concernés par l'échange d'un bien ou d'un service",
+            "lettre": "D"
+          }
+        ],
+        "image": null,
+        "enonce": "Qu'est-ce que le marché en mercatique ?",
+        "_editedAt": "2026-09-29T13:36:02.913Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-8",
+      "uid": "49bf951f-1473-49a3-9614-691df4f34980",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "un service de premier prix",
+          "lettre": "A"
+        },
+        {
+          "texte": "un service gratuit",
+          "lettre": "B"
+        },
+        {
+          "texte": "un service haut de gamme",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Qu'appelle-t-on un service premium ?",
+      "position": 8,
+      "reponseQRC": null,
+      "question_id": "8",
+      "question_source": {
+        "id": 8,
+        "uid": "49bf951f-1473-49a3-9614-691df4f34980",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "un service de premier prix",
+            "lettre": "A"
+          },
+          {
+            "texte": "un service gratuit",
+            "lettre": "B"
+          },
+          {
+            "texte": "un service haut de gamme",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Qu'appelle-t-on un service premium ?",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-9",
+      "uid": "e26cd915-c3ee-418b-840c-950556cffddd",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "le nom de la société et bonjour",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "le nom de la société",
+          "lettre": "B"
+        },
+        {
+          "texte": "allo",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Que doit-on dire lorsqu'on décroche un appel téléphonique ?",
+      "position": 9,
+      "reponseQRC": null,
+      "question_id": "9",
+      "question_source": {
+        "id": 9,
+        "uid": "e26cd915-c3ee-418b-840c-950556cffddd",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "le nom de la société et bonjour",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "le nom de la société",
+            "lettre": "B"
+          },
+          {
+            "texte": "allo",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Que doit-on dire lorsqu'on décroche un appel téléphonique ?",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-10",
+      "uid": "565d1039-92df-4b66-8329-551b6c13e45a",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "au prix de référence pour une catégorie de produits/prestations",
+          "lettre": "A"
+        },
+        {
+          "texte": "au prix que le consommateur est prêt à payer pour acheter le",
+          "lettre": "B"
+        },
+        {
+          "texte": "produit/la prestation",
+          "lettre": "C",
+          "correct": true
+        },
+        {
+          "texte": "au prix perçu par le consommateur",
+          "lettre": "D"
+        },
+        {
+          "texte": "au prix dont se souvient le consommateur",
+          "lettre": "E"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le prix psychologique correspond :",
+      "position": 10,
+      "reponseQRC": null,
+      "question_id": "10",
+      "question_source": {
+        "id": 10,
+        "uid": "565d1039-92df-4b66-8329-551b6c13e45a",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "au prix de référence pour une catégorie de produits/prestations",
+            "lettre": "A"
+          },
+          {
+            "texte": "au prix que le consommateur est prêt à payer pour acheter le",
+            "lettre": "B"
+          },
+          {
+            "texte": "produit/la prestation",
+            "lettre": "C",
+            "correct": true
+          },
+          {
+            "texte": "au prix perçu par le consommateur",
+            "lettre": "D"
+          },
+          {
+            "texte": "au prix dont se souvient le consommateur",
+            "lettre": "E"
+          }
+        ],
+        "enonce": "Le prix psychologique correspond :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-11",
+      "uid": "09169108-e415-4c84-925e-f77e2ce334d6",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "l'envoi d'un message personnalisé à un groupe de personnes qualifiées",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "l'achat d'espace publicitaire dans la presse locale",
+          "lettre": "C"
+        },
+        {
+          "texte": "la mise en valeur d'offres promotionnelles dans le véhicule",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "On appelle marketing direct :",
+      "position": 11,
+      "reponseQRC": null,
+      "question_id": "11",
+      "question_source": {
+        "id": 11,
+        "uid": "09169108-e415-4c84-925e-f77e2ce334d6",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "l'envoi d'un message personnalisé à un groupe de personnes qualifiées",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "l'achat d'espace publicitaire dans la presse locale",
+            "lettre": "C"
+          },
+          {
+            "texte": "la mise en valeur d'offres promotionnelles dans le véhicule",
+            "lettre": "D"
+          }
+        ],
+        "image": null,
+        "enonce": "On appelle marketing direct :",
+        "_editedAt": "2026-09-29T13:36:07.921Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-12",
+      "uid": "b913c7ee-309a-4c21-b65a-7301ae609c5d",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "est interdit par le code du commerce",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "n'est possible que lorsqu'un contrat annuel de type abonnement a été",
+          "lettre": "B"
+        },
+        {
+          "texte": "souscrit par le client",
+          "lettre": "C"
+        },
+        {
+          "texte": "constitue une forme de concurrence déloyale",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Vendre une prestation à perte :",
+      "position": 12,
+      "reponseQRC": null,
+      "question_id": "12",
+      "question_source": {
+        "id": 12,
+        "uid": "b913c7ee-309a-4c21-b65a-7301ae609c5d",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "est interdit par le code du commerce",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "n'est possible que lorsqu'un contrat annuel de type abonnement a été",
+            "lettre": "B"
+          },
+          {
+            "texte": "souscrit par le client",
+            "lettre": "C"
+          },
+          {
+            "texte": "constitue une forme de concurrence déloyale",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "Vendre une prestation à perte :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-13",
+      "uid": "993a1708-4923-4214-a01d-b93b8a04a337",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "le bénéfice unitaire est de 0.97€",
+          "lettre": "A"
+        },
+        {
+          "texte": "une course de 15 kilomètres sera rentable",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "une course de 5 kilomètres ne sera pas rentable",
+          "lettre": "C"
+        },
+        {
+          "texte": "le bénéfice est de 0.09€",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Un véhicule présente un coût monôme de 0.88€ / Km. Son prix de vente est de 0.97 € / Km :",
+      "position": 13,
+      "reponseQRC": null,
+      "question_id": "13",
+      "question_source": {
+        "id": 13,
+        "uid": "993a1708-4923-4214-a01d-b93b8a04a337",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "le bénéfice unitaire est de 0.97€",
+            "lettre": "A"
+          },
+          {
+            "texte": "une course de 15 kilomètres sera rentable",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "une course de 5 kilomètres ne sera pas rentable",
+            "lettre": "C"
+          },
+          {
+            "texte": "le bénéfice est de 0.09€",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "Un véhicule présente un coût monôme de 0.88€ / Km. Son prix de vente est de 0.97 € / Km :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-14",
+      "uid": "5378f9da-917d-474d-89de-7fbd5453e50a",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "ça dépend",
+          "lettre": "A"
+        },
+        {
+          "texte": "oui, tout à fait",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "non, car l'interlocuteur ne me voit pas",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le sourire a-t-il une incidence au téléphone ?",
+      "position": 14,
+      "reponseQRC": null,
+      "question_id": "14",
+      "question_source": {
+        "id": 14,
+        "uid": "5378f9da-917d-474d-89de-7fbd5453e50a",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "ça dépend",
+            "lettre": "A"
+          },
+          {
+            "texte": "oui, tout à fait",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "non, car l'interlocuteur ne me voit pas",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Le sourire a-t-il une incidence au téléphone ?",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-15",
+      "uid": "daf37b8a-cba1-4601-b834-cead6de1b6ba",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "les pneumatiques",
+          "lettre": "A"
+        },
+        {
+          "texte": "l'amortissement du véhicule",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "l'entretien et la réparation du véhicule",
+          "lettre": "C"
+        },
+        {
+          "texte": "le salaire du conducteur",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Sont des charges fixes du véhicule :",
+      "position": 15,
+      "reponseQRC": null,
+      "question_id": "15",
+      "question_source": {
+        "id": 15,
+        "uid": "daf37b8a-cba1-4601-b834-cead6de1b6ba",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "les pneumatiques",
+            "lettre": "A"
+          },
+          {
+            "texte": "l'amortissement du véhicule",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "l'entretien et la réparation du véhicule",
+            "lettre": "C"
+          },
+          {
+            "texte": "le salaire du conducteur",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "Sont des charges fixes du véhicule :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-16",
+      "uid": "923a24df-65c4-43ed-83ab-aeaea25a2e63",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "multiplier les actions de prospection (emailing, carte de visite dans les hôtels, ...)",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "travailler essentiellement sur recommandation",
+          "lettre": "C"
+        },
+        {
+          "texte": "attendre que les clients se présentent d'eux-mêmes",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Selon vous, la démarche commerciale consiste à :",
+      "position": 16,
+      "reponseQRC": null,
+      "question_id": "16",
+      "question_source": {
+        "id": 16,
+        "uid": "923a24df-65c4-43ed-83ab-aeaea25a2e63",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "multiplier les actions de prospection (emailing, carte de visite dans les hôtels, ...)",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "travailler essentiellement sur recommandation",
+            "lettre": "C"
+          },
+          {
+            "texte": "attendre que les clients se présentent d'eux-mêmes",
+            "lettre": "D"
+          }
+        ],
+        "image": null,
+        "enonce": "Selon vous, la démarche commerciale consiste à :",
+        "_editedAt": "2026-09-29T13:36:26.409Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-17",
+      "uid": "f80c201c-a8fa-4097-aa20-07f23d48fcbd",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "le chiffre d'affaire permet de couvrir toutes les charges",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "l'entreprise dégage sa marge bénéficiaire prévisionnelles",
+          "lettre": "B"
+        },
+        {
+          "texte": "le chiffre d'affaires permet de couvrir les charges fixes",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le seuil de rentabilité d'une entreprise est atteint lorsque :",
+      "position": 17,
+      "reponseQRC": null,
+      "question_id": "17",
+      "question_source": {
+        "id": 17,
+        "uid": "f80c201c-a8fa-4097-aa20-07f23d48fcbd",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "le chiffre d'affaire permet de couvrir toutes les charges",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "l'entreprise dégage sa marge bénéficiaire prévisionnelles",
+            "lettre": "B"
+          },
+          {
+            "texte": "le chiffre d'affaires permet de couvrir les charges fixes",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Le seuil de rentabilité d'une entreprise est atteint lorsque :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-18",
+      "uid": "1cac4575-76c3-46c2-adb5-dffd1b3c2ebb",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "donner des repères pendant le trajet",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "parler fort",
+          "lettre": "B"
+        },
+        {
+          "texte": "me présenter",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Lors du transport d'une personne atteinte de déficience visuelle, je dois :",
+      "position": 18,
+      "reponseQRC": null,
+      "question_id": "18",
+      "question_source": {
+        "id": 18,
+        "uid": "1cac4575-76c3-46c2-adb5-dffd1b3c2ebb",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "donner des repères pendant le trajet",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "parler fort",
+            "lettre": "B"
+          },
+          {
+            "texte": "me présenter",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Lors du transport d'une personne atteinte de déficience visuelle, je dois :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-19",
+      "uid": "3b5dab19-fda7-4dec-bdf6-1c4f54ebe9aa",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Coût de revient + TVA",
+          "lettre": "A"
+        },
+        {
+          "texte": "Coût de revient + Marge + TVA",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "Total des charges variable + TVA",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le prix de vente d'une prestation doit être égal au :",
+      "position": 19,
+      "reponseQRC": null,
+      "question_id": "19",
+      "question_source": {
+        "id": 19,
+        "uid": "3b5dab19-fda7-4dec-bdf6-1c4f54ebe9aa",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Coût de revient + TVA",
+            "lettre": "A"
+          },
+          {
+            "texte": "Coût de revient + Marge + TVA",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "Total des charges variable + TVA",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Le prix de vente d'une prestation doit être égal au :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-20",
+      "uid": "99c4b41e-0187-4e05-9e6c-3bd2b41cf21e",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Un client potentiel",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "Une publicité sur format papier A5 ou plus petit permettant au",
+          "lettre": "B"
+        },
+        {
+          "texte": "conducteur de VTC de se faire connaître",
+          "lettre": "C"
+        },
+        {
+          "texte": "L'ensemble des clients non facturés uniquement",
+          "lettre": "D"
+        },
+        {
+          "texte": "Une brochure publicitaire référençant l'ensemble d'un catalogue de",
+          "lettre": "E"
+        },
+        {
+          "texte": "prestation",
+          "lettre": "F"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Qu'est-ce qu'un prospect ?",
+      "position": 20,
+      "reponseQRC": null,
+      "question_id": "20",
+      "question_source": {
+        "id": 20,
+        "uid": "99c4b41e-0187-4e05-9e6c-3bd2b41cf21e",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Un client potentiel",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "Une publicité sur format papier A5 ou plus petit permettant au",
+            "lettre": "B"
+          },
+          {
+            "texte": "conducteur de VTC de se faire connaître",
+            "lettre": "C"
+          },
+          {
+            "texte": "L'ensemble des clients non facturés uniquement",
+            "lettre": "D"
+          },
+          {
+            "texte": "Une brochure publicitaire référençant l'ensemble d'un catalogue de",
+            "lettre": "E"
+          },
+          {
+            "texte": "prestation",
+            "lettre": "F"
+          }
+        ],
+        "enonce": "Qu'est-ce qu'un prospect ?",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-21",
+      "uid": "bc2bea89-f4af-458d-af97-f6a9b3dcb2f3",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "prenant en charge tous les clients avec qui il peut être rentable sans tenir compte de la qualité de la prestation",
+          "lettre": "A"
+        },
+        {
+          "texte": "prenant en charge des clients sans tenir compte des valeurs du conducteur de VTC, ni de la norme de la profession optimisant sa structure, adoptant une attitude et un comportement professionnel et disposant d'un véhicule remarquable et remarqué",
+          "lettre": "C",
+          "correct": true
+        },
+        {
+          "texte": "utilisant un véhicule puissant, en bon état de propreté afin de déposer le client le plus rapidement possible au mépris des règles élémentaires",
+          "lettre": "H",
+          "correct": false
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le conducteur de VTC propose, dans le cadre de sa mission, des prestations de standing auprès d'une clientèle haut de gamme. Pour ces raisons il doit tout mettre en œuvre afin de ne pas avoir une réputation usurpée et se distinguer des autres transporteurs de personnes en :",
+      "position": 21,
+      "reponseQRC": null,
+      "question_id": "21",
+      "question_source": {
+        "id": 21,
+        "uid": "bc2bea89-f4af-458d-af97-f6a9b3dcb2f3",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "prenant en charge tous les clients avec qui il peut être rentable sans tenir compte de la qualité de la prestation",
+            "lettre": "A"
+          },
+          {
+            "texte": "prenant en charge des clients sans tenir compte des valeurs du conducteur de VTC, ni de la norme de la profession optimisant sa structure, adoptant une attitude et un comportement professionnel et disposant d'un véhicule remarquable et remarqué",
+            "lettre": "C",
+            "correct": true
+          },
+          {
+            "texte": "utilisant un véhicule puissant, en bon état de propreté afin de déposer le client le plus rapidement possible au mépris des règles élémentaires",
+            "lettre": "H",
+            "correct": false
+          }
+        ],
+        "image": null,
+        "enonce": "Le conducteur de VTC propose, dans le cadre de sa mission, des prestations de standing auprès d'une clientèle haut de gamme. Pour ces raisons il doit tout mettre en œuvre afin de ne pas avoir une réputation usurpée et se distinguer des autres transporteurs de personnes en :",
+        "_editedAt": "2026-09-29T13:37:57.189Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-22",
+      "uid": "0075a5ea-6225-4c07-a1b9-f6ce9406793e",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "la surveillance de l'hôtel afin d'assurer la tranquillité des",
+          "lettre": "A"
+        },
+        {
+          "texte": "clients",
+          "lettre": "B"
+        },
+        {
+          "texte": "de satisfaire les besoins et demandes des clients",
+          "lettre": "C",
+          "correct": true
+        },
+        {
+          "texte": "le ménage, la sortie des poubelles",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le concierge dans un hôtel a pour fonction :",
+      "position": 22,
+      "reponseQRC": null,
+      "question_id": "22",
+      "question_source": {
+        "id": 22,
+        "uid": "0075a5ea-6225-4c07-a1b9-f6ce9406793e",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "la surveillance de l'hôtel afin d'assurer la tranquillité des",
+            "lettre": "A"
+          },
+          {
+            "texte": "clients",
+            "lettre": "B"
+          },
+          {
+            "texte": "de satisfaire les besoins et demandes des clients",
+            "lettre": "C",
+            "correct": true
+          },
+          {
+            "texte": "le ménage, la sortie des poubelles",
+            "lettre": "D"
+          }
+        ],
+        "enonce": "Le concierge dans un hôtel a pour fonction :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-23",
+      "uid": "aa5945bf-a2af-4d9b-9e45-93bd0f7c962e",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Registre des VTC",
+          "lettre": "A"
+        },
+        {
+          "texte": "Registre des exploitants VTC",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "Registre des enseignants VTC",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Que signifie REVTC ?",
+      "position": 23,
+      "reponseQRC": null,
+      "question_id": "23",
+      "question_source": {
+        "id": 23,
+        "uid": "aa5945bf-a2af-4d9b-9e45-93bd0f7c962e",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Registre des VTC",
+            "lettre": "A"
+          },
+          {
+            "texte": "Registre des exploitants VTC",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "Registre des enseignants VTC",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Que signifie REVTC ?",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-24",
+      "uid": "5c8c0281-7c02-44b6-b6cd-940ccc376d23",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Tu restes dans la voiture tu attends que le chasseur s'éloigne",
+          "lettre": "A"
+        },
+        {
+          "texte": "Tu ouvres la porte au client et tu laisses le chasseur décharger les",
+          "lettre": "B"
+        },
+        {
+          "texte": "valises",
+          "lettre": "C"
+        },
+        {
+          "texte": "Tu ouvres la porte aux clients et tu aides le chasseur",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Tu as des clients dans une voiture et tu arrives à l'hôtel",
+      "position": 24,
+      "reponseQRC": null,
+      "question_id": "24",
+      "question_source": {
+        "id": 24,
+        "uid": "5c8c0281-7c02-44b6-b6cd-940ccc376d23",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Tu restes dans la voiture tu attends que le chasseur s'éloigne",
+            "lettre": "A"
+          },
+          {
+            "texte": "Tu ouvres la porte au client et tu laisses le chasseur décharger les",
+            "lettre": "B"
+          },
+          {
+            "texte": "valises",
+            "lettre": "C"
+          },
+          {
+            "texte": "Tu ouvres la porte aux clients et tu aides le chasseur",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "Tu as des clients dans une voiture et tu arrives à l'hôtel",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-25",
+      "uid": "95b0f2e4-0913-4861-94b1-f2f6b1f685dc",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Prévoir, constater ou stimuler les besoins du marché",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "Réaliser un résultat de commercialisation",
+          "lettre": "B"
+        },
+        {
+          "texte": "Prévoir et acheter son produit commercialisé sur un marché",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "La mercatique a pour objet de :",
+      "position": 25,
+      "reponseQRC": null,
+      "question_id": "25",
+      "question_source": {
+        "id": 25,
+        "uid": "95b0f2e4-0913-4861-94b1-f2f6b1f685dc",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Prévoir, constater ou stimuler les besoins du marché",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "Réaliser un résultat de commercialisation",
+            "lettre": "B"
+          },
+          {
+            "texte": "Prévoir et acheter son produit commercialisé sur un marché",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "La mercatique a pour objet de :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-26",
+      "uid": "3018c8a7-4ffb-4bf9-9422-a3782ea9f633",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Vous l'attendez dans le hall d'arrivée avec une pancarte",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "Vous téléphonez au client pour lui dire où il est",
+          "lettre": "B"
+        },
+        {
+          "texte": "Vous attendez qu'il vous appelle",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Vous attendez un client à l'aéroport",
+      "position": 26,
+      "reponseQRC": null,
+      "question_id": "26",
+      "question_source": {
+        "id": 26,
+        "uid": "3018c8a7-4ffb-4bf9-9422-a3782ea9f633",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Vous l'attendez dans le hall d'arrivée avec une pancarte",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "Vous téléphonez au client pour lui dire où il est",
+            "lettre": "B"
+          },
+          {
+            "texte": "Vous attendez qu'il vous appelle",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Vous attendez un client à l'aéroport",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-27",
+      "uid": "776e5efa-7740-4bf1-99c2-cc41bb425617",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "31 octobre",
+          "lettre": "A"
+        },
+        {
+          "texte": "30 octobre",
+          "lettre": "B"
+        },
+        {
+          "texte": "30 novembre",
+          "lettre": "C",
+          "correct": true
+        },
+        {
+          "texte": "31 novembre",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Un client a la mention suivante « le client paie 30 jours fin du mois » nous sommes les 2 octobre quand doit il payer ?",
+      "position": 27,
+      "reponseQRC": null,
+      "question_id": "27",
+      "question_source": {
+        "id": 27,
+        "uid": "776e5efa-7740-4bf1-99c2-cc41bb425617",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "31 octobre",
+            "lettre": "A"
+          },
+          {
+            "texte": "30 octobre",
+            "lettre": "B"
+          },
+          {
+            "texte": "30 novembre",
+            "lettre": "C",
+            "correct": true
+          },
+          {
+            "texte": "31 novembre",
+            "lettre": "D"
+          }
+        ],
+        "enonce": "Un client a la mention suivante « le client paie 30 jours fin du mois » nous sommes les 2 octobre quand doit il payer ?",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-28",
+      "uid": "48a3aac5-2ac4-4275-8dcd-a246aac69f01",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "3P",
+          "lettre": "A"
+        },
+        {
+          "texte": "4P",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "5P",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Lorsque vous préparez votre plan de marketing vous devez vous occuper des :",
+      "position": 28,
+      "reponseQRC": null,
+      "question_id": "28",
+      "question_source": {
+        "id": 28,
+        "uid": "48a3aac5-2ac4-4275-8dcd-a246aac69f01",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "3P",
+            "lettre": "A"
+          },
+          {
+            "texte": "4P",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "5P",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Lorsque vous préparez votre plan de marketing vous devez vous occuper des :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-29",
+      "uid": "598e0880-b262-48a8-b3e1-279a0d695c48",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "31 mars",
+          "lettre": "A"
+        },
+        {
+          "texte": "2 avril",
+          "lettre": "B"
+        },
+        {
+          "texte": "30 avril",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Vous travaillez avec une entreprise qui règle les prestations à 30 jours fin de mois. Si vous émettez votre facture le 2 mars, vous serez réglé le :",
+      "position": 29,
+      "reponseQRC": null,
+      "question_id": "29",
+      "question_source": {
+        "id": 29,
+        "uid": "598e0880-b262-48a8-b3e1-279a0d695c48",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "31 mars",
+            "lettre": "A"
+          },
+          {
+            "texte": "2 avril",
+            "lettre": "B"
+          },
+          {
+            "texte": "30 avril",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Vous travaillez avec une entreprise qui règle les prestations à 30 jours fin de mois. Si vous émettez votre facture le 2 mars, vous serez réglé le :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-30",
+      "uid": "9c3c5e30-94f7-401c-af4e-d698b5c0c1f8",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "fixer librement les prix en m'assurant de ne pas travailler à perte",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "fixer librement les prix, sous réserve d'être en dessous du prix de revient",
+          "lettre": "C"
+        },
+        {
+          "texte": "fixer les prix en respectant scrupuleusement la tarification imposée par l'Etat",
+          "lettre": "E"
+        },
+        {
+          "texte": "fixer librement les prix sans me soucier d'autres éléments de coûts",
+          "lettre": "G"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "En tant qu'exploitant, je peux :",
+      "position": 30,
+      "reponseQRC": null,
+      "question_id": "30",
+      "question_source": {
+        "id": 30,
+        "uid": "9c3c5e30-94f7-401c-af4e-d698b5c0c1f8",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "fixer librement les prix en m'assurant de ne pas travailler à perte",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "fixer librement les prix, sous réserve d'être en dessous du prix de revient",
+            "lettre": "C"
+          },
+          {
+            "texte": "fixer les prix en respectant scrupuleusement la tarification imposée par l'Etat",
+            "lettre": "E"
+          },
+          {
+            "texte": "fixer librement les prix sans me soucier d'autres éléments de coûts",
+            "lettre": "G"
+          }
+        ],
+        "image": null,
+        "enonce": "En tant qu'exploitant, je peux :",
+        "_editedAt": "2026-09-29T13:38:26.852Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-31",
+      "uid": "10dd896f-9979-4b13-a1b2-28a717c1df8a",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "présenter mes services et savoir-faire",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "proposer mes produits uniquement à l'extérieur de ma zone de",
+          "lettre": "B"
+        },
+        {
+          "texte": "chalandise",
+          "lettre": "C"
+        },
+        {
+          "texte": "générer de nouveaux contacts auprès de prospects potentiels",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le site internet de mon entreprise doit me permettre de :",
+      "position": 31,
+      "reponseQRC": null,
+      "question_id": "31",
+      "question_source": {
+        "id": 31,
+        "uid": "10dd896f-9979-4b13-a1b2-28a717c1df8a",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "présenter mes services et savoir-faire",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "proposer mes produits uniquement à l'extérieur de ma zone de",
+            "lettre": "B"
+          },
+          {
+            "texte": "chalandise",
+            "lettre": "C"
+          },
+          {
+            "texte": "générer de nouveaux contacts auprès de prospects potentiels",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "Le site internet de mon entreprise doit me permettre de :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-32",
+      "uid": "846f5f16-4998-4a86-94c8-2fbdeaf902b4",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "produits/prix/communication ou promotion/distribution ou place",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "projet/prix/communication ou promotion/distribution ou place",
+          "lettre": "C"
+        },
+        {
+          "texte": "produit/présence/communication ou promotion/distribution ou place",
+          "lettre": "D"
+        },
+        {
+          "texte": "produits/prix/commercialisation ou promotion/distribution ou place",
+          "lettre": "E"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Que signifie les 4P :",
+      "position": 32,
+      "reponseQRC": null,
+      "question_id": "32",
+      "question_source": {
+        "id": 32,
+        "uid": "846f5f16-4998-4a86-94c8-2fbdeaf902b4",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "produits/prix/communication ou promotion/distribution ou place",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "projet/prix/communication ou promotion/distribution ou place",
+            "lettre": "C"
+          },
+          {
+            "texte": "produit/présence/communication ou promotion/distribution ou place",
+            "lettre": "D"
+          },
+          {
+            "texte": "produits/prix/commercialisation ou promotion/distribution ou place",
+            "lettre": "E"
+          }
+        ],
+        "image": null,
+        "enonce": "Que signifie les 4P :",
+        "_editedAt": "2026-09-29T13:38:43.425Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-33",
+      "uid": "11532dd0-6323-4069-a140-b61767b508cb",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Business to Consumer",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "Business to Costumer",
+          "lettre": "B"
+        },
+        {
+          "texte": "Business entre entreprises",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Que signifie B to C :",
+      "position": 33,
+      "reponseQRC": null,
+      "question_id": "33",
+      "question_source": {
+        "id": 33,
+        "uid": "11532dd0-6323-4069-a140-b61767b508cb",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Business to Consumer",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "Business to Costumer",
+            "lettre": "B"
+          },
+          {
+            "texte": "Business entre entreprises",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Que signifie B to C :",
+        "_editedAt": "2026-07-23T12:58:09.457872+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-34",
+      "uid": "87cadec0-4554-489b-8af2-e1771d49da32",
+      "type": null,
+      "choix": [
+        {
+          "texte": "Carte de visite",
+          "lettre": "A",
+          "correct": false
+        },
+        {
+          "texte": "Étude de marché",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "Business plan",
+          "lettre": "C",
+          "correct": true
+        },
+        {
+          "texte": "Carte grise du véhicule",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Avant de démarrer votre activité, vous allez devoir convaincre votre banquier afin de lui \"vendre\" votre projet. Quels sont\ndans l'idéal les deux éléments à lui présenter le jour du rendez-vous ?\n",
+      "position": 34,
+      "reponseQRC": null,
+      "question_id": "34",
+      "question_source": {
+        "id": 34,
+        "uid": "87cadec0-4554-489b-8af2-e1771d49da32",
+        "choix": [
+          {
+            "texte": "Carte de visite",
+            "lettre": "A",
+            "correct": false
+          },
+          {
+            "texte": "Étude de marché",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "Business plan",
+            "lettre": "C",
+            "correct": true
+          },
+          {
+            "texte": "Carte grise du véhicule",
+            "lettre": "D"
+          }
+        ],
+        "image": null,
+        "enonce": "Avant de démarrer votre activité, vous allez devoir convaincre votre banquier afin de lui \"vendre\" votre projet. Quels sont\ndans l'idéal les deux éléments à lui présenter le jour du rendez-vous ?\n",
+        "_editedAt": "2026-09-21T08:53:09.256Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-35",
+      "uid": "8fd2779a-3eef-4501-9bfe-fe72564150bf",
+      "type": null,
+      "choix": [
+        {
+          "texte": "est une proposition modifiable jusqu'à acceptation du client",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "est postérieur à la prestation",
+          "lettre": "B"
+        },
+        {
+          "texte": "a une date de validité maximale",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le devis:\n",
+      "position": 35,
+      "reponseQRC": null,
+      "question_id": "35",
+      "question_source": {
+        "id": 35,
+        "uid": "8fd2779a-3eef-4501-9bfe-fe72564150bf",
+        "choix": [
+          {
+            "texte": "est une proposition modifiable jusqu'à acceptation du client",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "est postérieur à la prestation",
+            "lettre": "B"
+          },
+          {
+            "texte": "a une date de validité maximale",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "image": null,
+        "enonce": "Le devis:\n",
+        "_editedAt": "2026-09-21T08:54:30.921Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-36",
+      "uid": "776d2792-84cb-4b47-ad0b-85ec032b282d",
+      "type": null,
+      "choix": [
+        {
+          "texte": "Vos adeptes",
+          "lettre": "A",
+          "correct": false
+        },
+        {
+          "texte": "Vos objectifs",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "Votre marché",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Diriez-vous que vos futurs clients VTC, que vous cherchez à conquérir sont :",
+      "position": 36,
+      "reponseQRC": null,
+      "question_id": "36",
+      "question_source": {
+        "id": 36,
+        "uid": "776d2792-84cb-4b47-ad0b-85ec032b282d",
+        "choix": [
+          {
+            "texte": "Vos adeptes",
+            "lettre": "A",
+            "correct": false
+          },
+          {
+            "texte": "Vos objectifs",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "Votre marché",
+            "lettre": "C"
+          }
+        ],
+        "image": null,
+        "enonce": "Diriez-vous que vos futurs clients VTC, que vous cherchez à conquérir sont :",
+        "_editedAt": "2026-09-21T08:55:30.700Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-37",
+      "uid": "e29f50de-3d7b-4687-9a7b-b7b4456b3e98",
+      "type": null,
+      "choix": [
+        {
+          "texte": "lors du management, je dois prendre les réservations clients quoiqu'il en coute",
+          "lettre": "A",
+          "correct": false
+        },
+        {
+          "texte": "lors du suivi client, je dois mémoriser les personnes et les habitudes des clients",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "lors de la gestion de la mission, je dois déposer mon client le plus rapidement possible",
+          "lettre": "C"
+        },
+        {
+          "texte": "lors de l'accueil client, je dois savoir contrôler ma tenue et mon véhicule",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Parmi ces affirmations, la ou lesquelles sont vraie(s) ?\n",
+      "position": 37,
+      "reponseQRC": null,
+      "question_id": "37",
+      "question_source": {
+        "id": 37,
+        "uid": "e29f50de-3d7b-4687-9a7b-b7b4456b3e98",
+        "choix": [
+          {
+            "texte": "lors du management, je dois prendre les réservations clients quoiqu'il en coute",
+            "lettre": "A",
+            "correct": false
+          },
+          {
+            "texte": "lors du suivi client, je dois mémoriser les personnes et les habitudes des clients",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "lors de la gestion de la mission, je dois déposer mon client le plus rapidement possible",
+            "lettre": "C"
+          },
+          {
+            "texte": "lors de l'accueil client, je dois savoir contrôler ma tenue et mon véhicule",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "image": null,
+        "enonce": "Parmi ces affirmations, la ou lesquelles sont vraie(s) ?\n",
+        "_editedAt": "2026-09-29T13:39:27.129Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-38",
+      "uid": "b61c2d9e-14fd-425d-8309-fa7e1138401a",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "la rémunération des capitaux propres investis par l'entreprise",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "la TVA reversée aux services fiscaux",
+          "lettre": "B"
+        },
+        {
+          "texte": "la rémunération du cabinet comptable de l'entreprise",
+          "lettre": "C"
+        },
+        {
+          "texte": "les intérêts bancaires des emprunts contractés",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Font partie des frais financiers à prendre en compte dans le calcul du coût de revient :",
+      "position": 38,
+      "reponseQRC": null,
+      "question_id": "38",
+      "question_source": {
+        "id": 38,
+        "uid": "b61c2d9e-14fd-425d-8309-fa7e1138401a",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "la rémunération des capitaux propres investis par l'entreprise",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "la TVA reversée aux services fiscaux",
+            "lettre": "B"
+          },
+          {
+            "texte": "la rémunération du cabinet comptable de l'entreprise",
+            "lettre": "C"
+          },
+          {
+            "texte": "les intérêts bancaires des emprunts contractés",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "Font partie des frais financiers à prendre en compte dans le calcul du coût de revient :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-41",
+      "uid": "507b0c0a-22b9-48e4-890e-d06e210fb25a",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "le coût conducteur",
+          "lettre": "A"
+        },
+        {
+          "texte": "le coût variable par kilomètre",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "le coût fixe véhicule par jour",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "La formule binôme permet de calculer le prix de revient sur les termes suivants :",
+      "position": 39,
+      "reponseQRC": null,
+      "question_id": "41",
+      "question_source": {
+        "id": 41,
+        "uid": "507b0c0a-22b9-48e4-890e-d06e210fb25a",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "le coût conducteur",
+            "lettre": "A"
+          },
+          {
+            "texte": "le coût variable par kilomètre",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "le coût fixe véhicule par jour",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "La formule binôme permet de calculer le prix de revient sur les termes suivants :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-44",
+      "uid": "4f4f5f98-39d0-4dd4-813b-21acb31de3e8",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "37 000 €",
+          "lettre": "A"
+        },
+        {
+          "texte": "43 000 €",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "27 000 €",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Un chauffeur VTC, en EURL, fait un chiffre d'affaires de 50 000 €. Il a 10 000 € de charges sociales, a vendu son ancienne voiture 8 000 € HT et a payé 5 000 € de TVA. Quel est son résultat ?",
+      "position": 40,
+      "reponseQRC": null,
+      "question_id": "44",
+      "question_source": {
+        "id": 44,
+        "uid": "4f4f5f98-39d0-4dd4-813b-21acb31de3e8",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "37 000 €",
+            "lettre": "A"
+          },
+          {
+            "texte": "43 000 €",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "27 000 €",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Un chauffeur VTC, en EURL, fait un chiffre d'affaires de 50 000 €. Il a 10 000 € de charges sociales, a vendu son ancienne voiture 8 000 € HT et a payé 5 000 € de TVA. Quel est son résultat ?",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-45",
+      "uid": "5960e4b5-46df-4a2d-9099-7456bb4caaca",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Les impôts et taxes",
+          "lettre": "A"
+        },
+        {
+          "texte": "Les frais administratifs et les assurances",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "Le contrat annuel d'entretien du véhicule",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Dans un calcul de coût de revient, font partie des charges fixes :",
+      "position": 41,
+      "reponseQRC": null,
+      "question_id": "45",
+      "question_source": {
+        "id": 45,
+        "uid": "5960e4b5-46df-4a2d-9099-7456bb4caaca",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Les impôts et taxes",
+            "lettre": "A"
+          },
+          {
+            "texte": "Les frais administratifs et les assurances",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "Le contrat annuel d'entretien du véhicule",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Dans un calcul de coût de revient, font partie des charges fixes :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-49",
+      "uid": "6effda33-2360-4005-b34b-5dc7ed0e1dcb",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "vous vous garez sur des zébras",
+          "lettre": "A"
+        },
+        {
+          "texte": "vous vous garez au niveau de la dépose taxi car c'est au niveau des arrivées",
+          "lettre": "B"
+        },
+        {
+          "texte": "vous vous garez au parking public",
+          "lettre": "C",
+          "correct": true
+        },
+        {
+          "texte": "vous attendez qu'une place se libère",
+          "lettre": "D"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "A l'aéroport, le parking professionnel est saturé alors que vos clients ne vont pas tarder à sortir du check out :",
+      "position": 42,
+      "reponseQRC": null,
+      "question_id": "49",
+      "question_source": {
+        "id": 49,
+        "uid": "6effda33-2360-4005-b34b-5dc7ed0e1dcb",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "vous vous garez sur des zébras",
+            "lettre": "A"
+          },
+          {
+            "texte": "vous vous garez au niveau de la dépose taxi car c'est au niveau des arrivées",
+            "lettre": "B"
+          },
+          {
+            "texte": "vous vous garez au parking public",
+            "lettre": "C",
+            "correct": true
+          },
+          {
+            "texte": "vous attendez qu'une place se libère",
+            "lettre": "D"
+          }
+        ],
+        "enonce": "A l'aéroport, le parking professionnel est saturé alors que vos clients ne vont pas tarder à sortir du check out :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-50",
+      "uid": "b751cae7-5c8d-4dc9-a1bd-4026594a2942",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "vous proposez de la raccompagner jusqu'à la porte de son appartement compte tenu de l'heure tardive",
+          "lettre": "A"
+        },
+        {
+          "texte": "vous la déposez devant la porte de son immeuble et attendez qu'elle soit rentrée dans son immeuble avant de repartir",
+          "lettre": "B",
+          "correct": true
+        },
+        {
+          "texte": "vous la déposez devant chez elle et votre mission étant terminée, vous repartez",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "En déposant une cliente de nuit, à son domicile :",
+      "position": 43,
+      "reponseQRC": null,
+      "question_id": "50",
+      "question_source": {
+        "id": 50,
+        "uid": "b751cae7-5c8d-4dc9-a1bd-4026594a2942",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "vous proposez de la raccompagner jusqu'à la porte de son appartement compte tenu de l'heure tardive",
+            "lettre": "A"
+          },
+          {
+            "texte": "vous la déposez devant la porte de son immeuble et attendez qu'elle soit rentrée dans son immeuble avant de repartir",
+            "lettre": "B",
+            "correct": true
+          },
+          {
+            "texte": "vous la déposez devant chez elle et votre mission étant terminée, vous repartez",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "En déposant une cliente de nuit, à son domicile :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-51",
+      "uid": "9808e8fc-9e2e-41b5-8a31-1f41e9ac8d9f",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "chiffre d'affaires",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "coût fixe",
+          "lettre": "B"
+        },
+        {
+          "texte": "coût des cotisations sociales",
+          "lettre": "C"
+        },
+        {
+          "texte": "coût de revient",
+          "lettre": "D",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "La marge peut être exprimée en pourcentage du :",
+      "position": 44,
+      "reponseQRC": null,
+      "question_id": "51",
+      "question_source": {
+        "id": 51,
+        "uid": "9808e8fc-9e2e-41b5-8a31-1f41e9ac8d9f",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "chiffre d'affaires",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "coût fixe",
+            "lettre": "B"
+          },
+          {
+            "texte": "coût des cotisations sociales",
+            "lettre": "C"
+          },
+          {
+            "texte": "coût de revient",
+            "lettre": "D",
+            "correct": true
+          }
+        ],
+        "enonce": "La marge peut être exprimée en pourcentage du :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-52",
+      "uid": "f3f427cd-26a2-4a23-aea4-54f30af3a4da",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Prix produit parrainage personnalisation",
+          "lettre": "A"
+        },
+        {
+          "texte": "Plateforme présentation place promotion",
+          "lettre": "B"
+        },
+        {
+          "texte": "Prix produit promotion place",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Dans le mix marketing, à quoi correspondent les 4P ?",
+      "position": 45,
+      "reponseQRC": null,
+      "question_id": "52",
+      "question_source": {
+        "id": 52,
+        "uid": "f3f427cd-26a2-4a23-aea4-54f30af3a4da",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Prix produit parrainage personnalisation",
+            "lettre": "A"
+          },
+          {
+            "texte": "Plateforme présentation place promotion",
+            "lettre": "B"
+          },
+          {
+            "texte": "Prix produit promotion place",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Dans le mix marketing, à quoi correspondent les 4P ?",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-53",
+      "uid": "5b8ed4a3-9729-4a5a-839c-fbbaa9b07fcb",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "3 ans",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "5 ans",
+          "lettre": "B",
+          "correct": false
+        },
+        {
+          "texte": "1 an",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Le matériel informatique peut être amorti sur :",
+      "position": 46,
+      "reponseQRC": null,
+      "question_id": "53",
+      "question_source": {
+        "id": 53,
+        "uid": "5b8ed4a3-9729-4a5a-839c-fbbaa9b07fcb",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "3 ans",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "5 ans",
+            "lettre": "B",
+            "correct": false
+          },
+          {
+            "texte": "1 an",
+            "lettre": "C"
+          }
+        ],
+        "image": null,
+        "enonce": "Le matériel informatique peut être amorti sur :",
+        "_editedAt": "2026-09-29T13:39:38.753Z",
+        "imageSize": "sm",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-54",
+      "uid": "dff10438-ff2c-4e6c-98ee-b3d64e138d21",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Le plan d'action",
+          "lettre": "A"
+        },
+        {
+          "texte": "Le marketing mix",
+          "lettre": "B"
+        },
+        {
+          "texte": "L'analyse du marché",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Quelle est la première étape d'une stratégie commerciale ?",
+      "position": 47,
+      "reponseQRC": null,
+      "question_id": "54",
+      "question_source": {
+        "id": 54,
+        "uid": "dff10438-ff2c-4e6c-98ee-b3d64e138d21",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Le plan d'action",
+            "lettre": "A"
+          },
+          {
+            "texte": "Le marketing mix",
+            "lettre": "B"
+          },
+          {
+            "texte": "L'analyse du marché",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Quelle est la première étape d'une stratégie commerciale ?",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-55",
+      "uid": "0d5bc3bf-3adf-4fbe-8797-46422fbf1d58",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "Une nécessité pour la survie de l'entreprise",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "Une obligation de votre comptable",
+          "lettre": "B"
+        },
+        {
+          "texte": "Un moyen de garder votre confort de vie",
+          "lettre": "C"
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Trouver régulièrement de nouveaux clients c'est :",
+      "position": 48,
+      "reponseQRC": null,
+      "question_id": "55",
+      "question_source": {
+        "id": 55,
+        "uid": "0d5bc3bf-3adf-4fbe-8797-46422fbf1d58",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "Une nécessité pour la survie de l'entreprise",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "Une obligation de votre comptable",
+            "lettre": "B"
+          },
+          {
+            "texte": "Un moyen de garder votre confort de vie",
+            "lettre": "C"
+          }
+        ],
+        "enonce": "Trouver régulièrement de nouveaux clients c'est :",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    },
+    {
+      "cle": "505-56",
+      "uid": "c25df26f-50ea-414d-adcd-dad09e896cfb",
+      "type": "QCM",
+      "choix": [
+        {
+          "texte": "de prestations d'un professionnel vers des professionnels",
+          "lettre": "A",
+          "correct": true
+        },
+        {
+          "texte": "de prestations d'un particulier vers des particuliers",
+          "lettre": "B"
+        },
+        {
+          "texte": "de prestations business to business",
+          "lettre": "C",
+          "correct": true
+        }
+      ],
+      "image": null,
+      "bareme": null,
+      "enonce": "Un client vous demande si vous faites des prestations en B to B. De quoi parle-t-il ?",
+      "position": 49,
+      "reponseQRC": null,
+      "question_id": "56",
+      "question_source": {
+        "id": 56,
+        "uid": "c25df26f-50ea-414d-adcd-dad09e896cfb",
+        "type": "QCM",
+        "choix": [
+          {
+            "texte": "de prestations d'un professionnel vers des professionnels",
+            "lettre": "A",
+            "correct": true
+          },
+          {
+            "texte": "de prestations d'un particulier vers des particuliers",
+            "lettre": "B"
+          },
+          {
+            "texte": "de prestations business to business",
+            "lettre": "C",
+            "correct": true
+          }
+        ],
+        "enonce": "Un client vous demande si vous faites des prestations en B to B. De quoi parle-t-il ?",
+        "_editedAt": "2026-09-24T12:35:15.197826+00:00",
+        "manually_edited": true
+      },
+      "reponses_possibles": null
+    }
+  ],
+  "nb_questions": 49,
+  "empreinte_source": "fb4e3bce2709ca0735ac4022c681b206"
+}
