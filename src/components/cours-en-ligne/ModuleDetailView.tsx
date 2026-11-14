@@ -1,5 +1,6 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
-import { bilan505RemiseActive, remettreBilan505 } from '@/lib/bilan505Remise';
+import { bilan505RemiseActive, remettreBilan505, type RevueItem } from '@/lib/bilan505Remise';
+import { Bilan505RevuePanel } from './Bilan505RevuePanel';
 import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
 import { signalerContenuModifie, ecouterContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
@@ -6943,6 +6944,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const latestRemiseAnswersRef = useRef(selectedAnswers);
     latestRemiseAnswersRef.current = selectedAnswers;
     const [bilan505ServerPoints, setBilan505ServerPoints] = useState<number | null>(null);
+    const [bilan505Revue, setBilan505Revue] = useState<RevueItem[]>([]);
+    const [bilan505RevueConfirmee, setBilan505RevueConfirmee] = useState(false);
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
@@ -9343,6 +9346,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           : "Vos réponses sont conservées sur cet écran mais n'ont pas encore été confirmées par le serveur."}
                       </div>
                     )}
+                    {module.id === 5 && exo.id === 505 && bilan505RemiseActive() && !apercuAdmin && (
+                      <Bilan505RevuePanel items={bilan505Revue} confirmee={bilan505RevueConfirmee} onConfirmee={setBilan505RevueConfirmee}
+                        questionIds={(questionsSafe as any[]).map((q: any) => `${exo.id}-${q.id}`)} />
+                    )}
                     <Button
                       size="lg"
                       onClick={async () => {
@@ -9354,11 +9361,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           setValidatingExo(505);
                           const current = () => Object.fromEntries(Object.entries(latestRemiseAnswersRef.current).filter(([k]) => k.startsWith('505-')));
                           try {
-                            const result = await remettreBilan505({ apprenantId, answers: current(), current });
+                            const result = await remettreBilan505({ apprenantId, answers: current(), current, revueConfirmee: bilan505RevueConfirmee, revueAffichee: bilan505Revue.length > 0 });
+                            if (result.revue) {
+                              const next = result.revue;
+                              // Keep the review on screen until submission: a later sync must not hide it.
+                              setBilan505Revue(prev => {
+                                const merged = [...prev.filter(i => !next.some(n => n.question_id === i.question_id)), ...next]
+                                  .sort((a, b) => Number(a.question_id.split('-')[1]) - Number(b.question_id.split('-')[1]));
+                                if (JSON.stringify(prev) !== JSON.stringify(merged)) setBilan505RevueConfirmee(false);
+                                return merged;
+                              });
+                            }
                             if (result.restored) {
                               const restored = Object.fromEntries(Object.entries(result.restored).filter((entry): entry is [string, string | string[]] => typeof entry[1] === 'string' || (Array.isArray(entry[1]) && entry[1].every(v => typeof v === 'string'))));
                               setSelectedAnswers(prev => ({ ...prev, ...restored }));
-                              toast('Vos derniers choix ont été retrouvés. Vérifiez-les puis appuyez de nouveau sur Valider.');
+                              setBilan505RevueConfirmee(false);
+                              toast('Vos derniers choix ont été retrouvés. Vérifiez-les, cochez la confirmation puis appuyez de nouveau sur Valider.');
                             } else if (result.ok) {
                               setBilan505ServerPoints(result.confirmed?.bonnes_reponses ?? null);
                               submittedExoIdsRef.current.add(505);
@@ -9367,8 +9385,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               setCompletedPages(prev => new Set(prev).add(currentPage));
                               toast.success('✅ Quiz validé (confirmation serveur reçue).');
                             } else {
-                              setValidationFailedFor(prev => new Set(prev).add(505));
-                              if (result.reason === 'corrige_snapshot_incomplet') toast.error('Le corrigé de votre version doit être vérifié par le centre. Vos réponses sont conservées ; aucune note ni remise automatique.');
+                              if (result.reason !== 'revue_requise' && result.reason !== 'choix_ambigus') setValidationFailedFor(prev => new Set(prev).add(505));
+                              if (result.reason === 'corrige_snapshot_incomplet') toast.error(result.recovered
+                                ? 'Vos réponses sont enregistrées sur le serveur. Le corrigé de votre version doit être vérifié par le centre : aucune note ni remise pour l’instant.'
+                                : 'Le corrigé de votre version doit être vérifié par le centre. Vos réponses sont conservées ; aucune note ni remise automatique.');
+                              else if (result.reason === 'revue_requise') toast('Cochez la confirmation sous vos derniers choix avant de valider.');
+                              else if (result.reason === 'choix_ambigus') toast('Choisissez de nouveau votre réponse pour les questions indiquées, puis validez.');
+                              else if (result.reason === 'choix_local_plus_recent' || result.reason === 'file_differente' || result.reason === 'difference_non_resolue')
+                                toast('Vos derniers clics sont en cours d’enregistrement ou diffèrent du serveur : attendez quelques secondes puis appuyez de nouveau sur Valider. Rien n’a été remis.');
                             }
                           } catch { setValidationFailedFor(prev => new Set(prev).add(505)); }
                           finally { validationEnCoursRef.current.delete(505); setValidatingExo(null); }
