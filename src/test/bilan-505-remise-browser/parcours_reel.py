@@ -128,8 +128,11 @@ async def main():
                 assert txt.count('Question ') == 7, txt
                 assert A.row() == before, 'restitution must not write'
                 await valider(page).click(); await page.wait_for_timeout(2500)
+                await page.screenshot(path=str(SHOTS / 'A1b_sans_coche.png'))
+                print('  after2', await page.get_by_role('button', name=re.compile(r'Valider', re.I)).all_inner_texts(), await page.get_by_test_id('bilan505-revue').count())
                 assert A.row()['status'] == 'in_progress', 'no submission without ticked review'
                 await page.get_by_role('checkbox', name='Je confirme mes choix').check()
+                await page.screenshot(path=str(SHOTS / 'A1c_coche.png'))
                 print('  buttons', await page.get_by_role('button', name=re.compile(r'Valider', re.I)).all_inner_texts())
                 await valider(page).click(); await page.wait_for_timeout(4000)
                 r = A.row(); await page.screenshot(path=str(SHOTS / 'A2_remise_pc.png'))
