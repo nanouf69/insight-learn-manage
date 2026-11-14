@@ -21,7 +21,7 @@ const moduleData={id:5,nom:'Bilan examen VTC',description:'',cours:[],exercices:
  if(name==='bilan_ouvrir_passage_eleve')return {data:{statut:'ancien'},error:null};
  if(name==='bilan_505_remise_prepare')return {data:{...row,reponses:scenario==='journal'?{...answers,'505-1':['B']}:answers,stored_reponses:answers},error:null};
  if(name==='bilan_505_remise_commit'){
-   if(scenario==='late')await new Promise(r=>setTimeout(r,1200));
+   if(scenario==='late')await new Promise(r=>setTimeout(r,21000));
    row={...row,status:'submitted',reponses:args.p_reponses};return {data:row,error:null};
  }
  return {data:[],error:null};
