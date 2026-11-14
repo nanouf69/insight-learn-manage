@@ -1,4 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
+import { bilan505RemiseActive, remettreBilan505 } from '@/lib/bilan505Remise';
 import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
 import { signalerContenuModifie, ecouterContenuModifie } from "@/lib/contenuModifie";
 import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
@@ -6939,6 +6940,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const [validationFailedFor, setValidationFailedFor] = useState<Set<number>>(new Set());
     // Échec de validation dû à une connexion perdue (jeton absent/expiré) : message dédié.
     const [validationSessionPerdueFor, setValidationSessionPerdueFor] = useState<Set<number>>(new Set());
+    const latestRemiseAnswersRef = useRef(selectedAnswers);
+    latestRemiseAnswersRef.current = selectedAnswers;
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
@@ -9343,6 +9346,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       size="lg"
                       onClick={async () => {
                         if (apercuAdmin) return;
+                        if (module.id === 5 && exo.id === 505 && apprenantId && bilan505RemiseActive()
+                          && !revisionActiveRef.current.has(505) && !submittedExoIdsRef.current.has(505)) {
+                          if (validationEnCoursRef.current.has(505)) return;
+                          validationEnCoursRef.current.add(505);
+                          setValidatingExo(505);
+                          const current = () => Object.fromEntries(Object.entries(latestRemiseAnswersRef.current).filter(([k]) => k.startsWith('505-')));
+                          try {
+                            const result = await remettreBilan505({ apprenantId, answers: current(), current });
+                            if (result.restored) {
+                              setSelectedAnswers(prev => ({ ...prev, ...result.restored }));
+                              toast('Vos derniers choix ont été retrouvés. Vérifiez-les puis appuyez de nouveau sur Valider.');
+                            } else if (result.ok) {
+                              submittedExoIdsRef.current.add(505);
+                              setValidationFailedFor(prev => { const next = new Set(prev); next.delete(505); return next; });
+                              setShowResultsFor(prev => new Set(prev).add(505));
+                              setCompletedPages(prev => new Set(prev).add(currentPage));
+                              toast.success('✅ Quiz validé (confirmation serveur reçue).');
+                            } else setValidationFailedFor(prev => new Set(prev).add(505));
+                          } catch { setValidationFailedFor(prev => new Set(prev).add(505)); }
+                          finally { validationEnCoursRef.current.delete(505); setValidatingExo(null); }
+                          return;
+                        }
                         // Check all QCM questions are answered (skip QRC)
                         const unansweredQcmKeys: string[] = [];
                         let firstMissingIndex = -1;
