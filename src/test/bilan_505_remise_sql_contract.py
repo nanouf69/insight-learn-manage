@@ -32,8 +32,8 @@ class Contract(unittest.TestCase):
   self.sql(f"DELETE FROM bilan_passages_figes;DELETE FROM bilan_passage_categories;DELETE FROM bilan_reponse_statuts_effectifs;DELETE FROM bilan_passage_snapshots;DELETE FROM reponses_apprenants;DELETE FROM reponses_apprenants_journal;INSERT INTO reponses_apprenants(id,apprenant_id,user_id,exercice_id,exercice_type,reponses,write_seq) VALUES('{RID}','{APP}','{ELEVE_UID}','module_5_exo_505','quiz',{j(ANS)},100);INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,score,status) VALUES('{APP}','module_5_revision_exo_505','{{}}',72,'submitted'),('{APP}','module_5_exo_506','{{}}',83,'submitted');")
   self.sql(f"INSERT INTO reponses_apprenants_journal(apprenant_id,user_id,exercice_id,question_id,valeur,tentative,client_saved_at,created_at) SELECT '{APP}','{ELEVE_UID}','module_5_exo_505',key,value,1,'2026-11-01','2026-11-01' FROM jsonb_each({j(ANS)});")
   self.sql(f"INSERT INTO bilan_passage_snapshots(apprenant_id,module_id,exercice_id,tentative,nb_questions,questions,empreinte) VALUES('{APP}',5,505,1,49,{j(COMPLETE['questions'])},'{COMPLETE['empreinte']}')")
- def call(self,answers=ANS,seq=100,attempt=1,who=ELEVE_UID):
-  return self.pg.sql(as_ctx('authenticated',{'sub':who},f"SELECT bilan_505_remise_commit('{APP}','{RID}',{attempt},{seq},{j(answers)});"))
+ def call(self,answers=ANS,seq=100,attempt=1,who=ELEVE_UID,confirm=False):
+  return self.pg.sql(as_ctx('authenticated',{'sub':who},f"SELECT bilan_505_remise_commit('{APP}','{RID}',{attempt},{seq},{j(answers)},{str(confirm).lower()});"))
  def test_concordant_idempotent_and_other_notes(self):
   before=self.sql("SELECT md5(string_agg(to_jsonb(r)::text,'' ORDER BY exercice_id)) FROM reponses_apprenants r WHERE exercice_id<>'module_5_exo_505'")
   c,o=self.call();self.assertEqual(c,0,o)
@@ -44,7 +44,8 @@ class Contract(unittest.TestCase):
  def test_latest_journal_reconciled_no_reset(self):
   self.sql(f"INSERT INTO reponses_apprenants_journal(apprenant_id,user_id,exercice_id,question_id,valeur,tentative) VALUES('{APP}','{ELEVE_UID}','module_5_exo_505','505-1','[\"B\"]',1)")
   self.assertNotEqual(self.call()[0],0)
-  ans={**ANS,'505-1':['B']};c,o=self.call(ans);self.assertEqual(c,0,o)
+  ans={**ANS,'505-1':['B']};c,o=self.call(ans);self.assertIn('revue_requise',o)
+  c,o=self.call(ans,confirm=True);self.assertEqual(c,0,o)
   self.assertEqual(self.sql(f"SELECT tentative||'|'||status||'|'||(reponses->>'505-1') FROM reponses_apprenants WHERE id='{RID}'"),'1|submitted|["B"]')
  def test_newer_sequence_refused(self):
   self.sql(f"UPDATE reponses_apprenants SET write_seq=101 WHERE id='{RID}'")
@@ -84,6 +85,6 @@ class Contract(unittest.TestCase):
   self.assertNotEqual(self.call()[0],0)
  def test_real_locked_answer_guard_rolls_back(self):
   self.sql(f"INSERT INTO bilan_reponse_statuts_effectifs VALUES('{APP}',5,505,1,'505-1',{j(ANS['505-1'])},'INCERTAINE');INSERT INTO reponses_apprenants_journal(apprenant_id,user_id,exercice_id,question_id,valeur,tentative) VALUES('{APP}','{ELEVE_UID}','module_5_exo_505','505-1','[\"B\"]',1)")
-  ans={**ANS,'505-1':['B']};self.assertNotEqual(self.call(ans)[0],0)
+  ans={**ANS,'505-1':['B']};self.assertNotEqual(self.call(ans,confirm=True)[0],0)
   self.assertEqual(self.sql(f"SELECT status FROM reponses_apprenants WHERE id='{RID}'"),'in_progress')
 if __name__=='__main__':unittest.main(verbosity=2)
