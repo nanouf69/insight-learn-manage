@@ -20,6 +20,7 @@ class Contract(unittest.TestCase):
   return o
  def setUp(self):
   self.sql(f"DELETE FROM reponses_apprenants;DELETE FROM reponses_apprenants_journal;INSERT INTO reponses_apprenants(id,apprenant_id,user_id,exercice_id,exercice_type,reponses,write_seq) VALUES('{RID}','{APP}','{ELEVE_UID}','module_5_exo_505','quiz',{j(ANS)},100);INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,score,status) VALUES('{APP}','module_5_revision_exo_505','{{}}',72,'submitted'),('{APP}','module_5_exo_506','{{}}',83,'submitted');")
+  self.sql(f"INSERT INTO reponses_apprenants_journal(apprenant_id,user_id,exercice_id,question_id,valeur,tentative,client_saved_at,created_at) SELECT '{APP}','{ELEVE_UID}','module_5_exo_505','505-'||i,'[\"A\"]',1,'2026-11-01','2026-11-01' FROM generate_series(1,49) i")
  def call(self,answers=ANS,seq=100,attempt=1,who=ELEVE_UID):
   return self.pg.sql(as_ctx('authenticated',{'sub':who},f"SELECT bilan_505_remise_commit('{APP}','{RID}',{attempt},{seq},{j(answers)});"))
  def test_concordant_idempotent_and_other_notes(self):

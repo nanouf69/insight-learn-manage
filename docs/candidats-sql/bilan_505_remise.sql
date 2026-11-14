@@ -7,7 +7,10 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM apprenants WHERE id=p_apprenant_id AND auth_user_id=auth.uid()) THEN RAISE EXCEPTION 'owner'; END IF;
  SELECT * INTO STRICT r FROM reponses_apprenants WHERE apprenant_id=p_apprenant_id AND exercice_id='module_5_exo_505';
  answers:=r.reponses;
- IF (SELECT count(*) FROM jsonb_object_keys(answers))<>49 THEN RAISE EXCEPTION 'identities'; END IF;
+ IF (SELECT count(*) FROM jsonb_object_keys(answers))<>49
+   OR EXISTS(SELECT 1 FROM jsonb_object_keys(answers) k WHERE k!~'^505-[0-9]+$')
+   OR (SELECT count(DISTINCT question_id) FROM reponses_apprenants_journal WHERE apprenant_id=p_apprenant_id AND exercice_id=r.exercice_id AND tentative=r.tentative)<>49
+ THEN RAISE EXCEPTION 'identities'; END IF;
  FOR e IN SELECT DISTINCT ON(question_id) question_id,valeur,user_id FROM reponses_apprenants_journal
    WHERE apprenant_id=p_apprenant_id AND exercice_id=r.exercice_id AND tentative=r.tentative
    ORDER BY question_id,COALESCE(client_saved_at,created_at) DESC,created_at DESC,id DESC
