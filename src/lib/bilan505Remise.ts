@@ -6,8 +6,9 @@ export const bilan505RemiseActive = () => import.meta.env.DEV && location.hostna
   && location.pathname === '/src/test/bilan-505-remise-browser/harness.html';
 
 export type RemiseRow = { id: string; tentative: number; write_seq: number; status: string;
-  reponses: Record<string, unknown>; stored_reponses: Record<string, unknown> };
-type Result = { ok: boolean; restored?: Record<string, unknown>; reason?: string };
+  reponses: Record<string, unknown>; stored_reponses: Record<string, unknown>;
+  grading_status?: string; unresolved_questions?: string[]; score?: number; bonnes_reponses?: number; total_questions?: number };
+type Result = { ok: boolean; restored?: Record<string, unknown>; reason?: string; confirmed?: RemiseRow };
 
 /** Only invoked by Valider; a complete row alone never expresses submission intent. */
 export async function remettreBilan505(p: {
@@ -24,6 +25,7 @@ export async function remettreBilan505(p: {
     return data as unknown as RemiseRow;
   });
   const row = await read();
+  if (row.grading_status !== 'verifiable') return { ok: false, reason: 'corrige_snapshot_incomplet' };
   if (!owner() || !answersAreEqual(p.current(), p.answers)) return { ok: false, reason: 'choix_local_plus_recent' };
   const pending = p.pending ?? (() => getAnswerQueueProof(p.apprenantId, id));
   // Conservative: old batches with different values must resolve first; no blind queue deletion.
@@ -47,7 +49,10 @@ export async function remettreBilan505(p: {
     return data as unknown as RemiseRow;
   });
   const confirmed = await commit(row);
-  return { ok: owner() && answersAreEqual(p.current(), p.answers) && confirmed.id === row.id
+  const ok = owner() && answersAreEqual(p.current(), p.answers) && confirmed.id === row.id
     && confirmed.tentative === row.tentative && confirmed.status === 'submitted'
-    && answersAreEqual(confirmed.reponses, p.answers) };
+    && typeof confirmed.score === 'number' && Number.isFinite(confirmed.score)
+    && typeof confirmed.bonnes_reponses === 'number' && confirmed.total_questions === 49
+    && answersAreEqual(confirmed.reponses, p.answers);
+  return { ok, confirmed: ok ? confirmed : undefined };
 }
