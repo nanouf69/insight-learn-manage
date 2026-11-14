@@ -106,7 +106,7 @@ class CatalogueProd(unittest.TestCase):
     def test_reordered_final_click_is_ambiguous_never_restored(self):
         copie = {**ANS, '505-3': autre('505-3', ANS['505-3'])}
         j0 = base_journal(copie) + [('505-3', ANS['505-3'], '2026-11-13T19:00:05+00', '2026-11-13T19:00:01+00'),
-                                    ('505-3', ['A'], '2026-11-13T19:00:02+00', '2026-11-13T19:00:09+00')]
+                                    ('505-3', [l for l in OPTS['505-3'] if l not in ANS['505-3']][-1:], '2026-11-13T19:00:02+00', '2026-11-13T19:00:09+00')]
         e = Eleve(self, copie, j0)
         p = e.prepare(); self.assertEqual(p['ambiguous_questions'], ['505-3']); self.assertEqual(p['reponses']['505-3'], copie['505-3'])
         self.assertNotEqual(e.commit(p, confirm=True)[0], 0)
