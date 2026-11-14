@@ -9,6 +9,7 @@ const obligation = (id: number, terminee = false, pratique = false): ObligationC
   ({ id, terminee, pratique, obligatoire: true, dispense: false });
 const dossier = (): DossierRappel => ({
   id: "eleve-1", filiere: "vtc", accesActif: true, exclu: false, obligations: [obligation(2), obligation(8, false, true)],
+  dejaConnecte: true, incidentTechnique: false,
   financementVerifie: { cpf: false, engagementsFranceTravail: false },
   passage: { id: "passage-1", dossierId: "eleve-1", dateReelle: "2026-11-17", source: "cma_verifie", statut: "present" },
 });
@@ -43,20 +44,24 @@ describe("Rappels théorie isolés, sans transport", () => {
   it("après examen, la date réelle prime sur une date prévue différente", () => {
     expect(decide({ ...dossier(), examenPrevu: { id: "prevu", dossierId: "eleve-1", datePrevue: "2026-11-19", statut: "confirme" } })).toMatchObject({ etat: "preparer", rang: 1, phase: "apres" });
   });
-  for (const jour of [24, 26, 28]) it(`J+${jour - 17} référence historique uniquement, aucune expédition autorisée`, () => {
+  for (const jour of [24, 26, 28]) it(`J+${jour - 17} campagne distincte, aucune expédition autorisée`, () => {
     const resultat = decide(dossier(), `2026-11-${jour}T09:00:00Z`);
     if (resultat.etat !== "preparer") throw new Error("fixture");
-    expect(resultat.modele.modeleExistantId).toBe("relance_suspension_cpf");
+    expect(resultat.modele.campagneId).toBe("rappel_modules_connectes_theorique");
     expect(resultat.activationAutorisee).toBe(false);
   });
   it("une horloge invalide est un incident, jamais une émission", () => expect(decide(dossier(), "invalid").etat).toBe("a_verifier"));
-  it("le modèle ferme signale l'incohérence et n'autorise pas l'activation", () => {
+  it("le modèle ferme n'introduit aucun prérequis pratique", () => {
     const resultat = decide();
     if (resultat.etat !== "preparer") throw new Error("fixture");
-    expect(resultat.modele.exigeValidationReglePratique).toBe(true);
+    expect(resultat.modele.exigeValidationReglePratique).toBe(false);
     expect(resultat.activationAutorisee).toBe(false);
     expect(resultat.pointsAValider.length).toBe(3);
   });
+  it("les jamais connectés restent exclusivement dans le circuit historique", () => expect(decide({ ...dossier(), dejaConnecte: false }).etat).toBe("arreter"));
+  it("connexion inconnue ne devient pas connexion prouvée", () => expect(decide({ ...dossier(), dejaConnecte: null }).etat).toBe("a_verifier"));
+  it("incident technique exclut l'envoi", () => expect(decide({ ...dossier(), incidentTechnique: true }).etat).toBe("a_verifier"));
+  it("état des incidents inconnu exclut l'envoi", () => expect(decide({ ...dossier(), incidentTechnique: null }).etat).toBe("a_verifier"));
   for (const filiere of ["vtc", "taxi"] as const) it(`${filiere} : premier rappel J+1`, () => {
     expect(decide({ ...dossier(), filiere })).toMatchObject({ etat: "preparer", jourEcheance: "2026-11-18", rang: 1 });
   });

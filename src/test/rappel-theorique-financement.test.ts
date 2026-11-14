@@ -14,6 +14,7 @@ describe("Éligibilité des mentions financement — sans sanctions automatiques
   it("J+7 avec financement non vérifié ne prépare pas d'envoi", () => {
     const dossier: DossierRappel = {
       id: "eleve", filiere: "vtc", accesActif: true, exclu: false,
+      dejaConnecte: true, incidentTechnique: false,
       obligations: [{ id: 2, obligatoire: true, pratique: false, dispense: false, terminee: false }],
       passage: { id: "passage", dossierId: "eleve", dateReelle: "2026-11-17", source: "cma_verifie", statut: "present" },
     };
