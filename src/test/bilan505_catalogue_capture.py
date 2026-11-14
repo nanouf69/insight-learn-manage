@@ -37,7 +37,7 @@ def manifest(fns):
     for f in fns:
         m[f] = live(f"select string_agg(md5(pg_get_functiondef(oid)),',' order by oid) from pg_proc where proname='{f}' and pronamespace='public'::regnamespace")
     for t in TRIG_TABLES:
-        m['triggers:' + t] = live(f"select md5(coalesce(string_agg(pg_get_triggerdef(oid)||tgenabled,'|' order by tgname),'')) from pg_trigger where tgrelid='public.{t}'::regclass and not tgisinternal")
+        m['triggers:' + t] = live(f"select md5(coalesce(string_agg(pg_get_triggerdef(oid)||tgenabled::text,'|' order by tgname),'')) from pg_trigger where tgrelid='public.{t}'::regclass and not tgisinternal")
     m['columns:reponses_apprenants'] = live("select md5(string_agg(attname||format_type(atttypid,atttypmod)||attnotnull,'|' order by attnum)) from pg_attribute where attrelid='public.reponses_apprenants'::regclass and attnum>0 and not attisdropped")
     return m
 
