@@ -20,6 +20,9 @@ describe('remise 505 isolée',()=>{
   const stored={...answers,'505-32':['E','C']};const p=setup();p.read=async()=>({...row,stored_reponses:stored,revue:[{question_id:'505-32',copie:['E','C'],dernier:['A'],certitude:'certain'}]});
   expect((await remettreBilan505(p)).reason).toBe('revue_requise');expect(p.commit).not.toHaveBeenCalled();
   expect((await remettreBilan505({...p,revueConfirmee:true})).ok).toBe(true);expect(p.commit).toHaveBeenCalledWith(expect.anything(),true);});
+ it('revue encore affichée : un enregistrement ultérieur ne dispense pas de la confirmation',async()=>{const p=setup();
+  expect((await remettreBilan505({...p,revueAffichee:true})).reason).toBe('revue_requise');expect(p.commit).not.toHaveBeenCalled();
+  expect((await remettreBilan505({...p,revueAffichee:true,revueConfirmee:true})).ok).toBe(true);});
  it('clic ambigu : jamais restitué ni remis',async()=>{const p=setup();p.read=async()=>({...row,ambiguous_questions:['505-3'],revue:[{question_id:'505-3',copie:['A'],dernier:['B'],certitude:'ambigu'}]});
   const r=await remettreBilan505({...p,revueConfirmee:true});expect(r.reason).toBe('choix_ambigus');expect(p.commit).not.toHaveBeenCalled();});
  it('49 concordantes même si ancien ACK bloqué',async()=>{const p=setup();p.pending=()=>[{reponses:answers,events:[],completed:false}] as never;expect((await remettreBilan505(p)).ok).toBe(true);expect(p.commit).toHaveBeenCalledTimes(1);});
