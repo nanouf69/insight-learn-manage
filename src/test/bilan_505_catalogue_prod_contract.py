@@ -38,7 +38,7 @@ def load_db():
 class Eleve:
     def __init__(self, t, copie, journal, snapshot=COMPLETE, seq=40):
         self.t, self.app, self.uid, self.rid = t, str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
-        t.sql(f"""INSERT INTO apprenants(id,nom,prenom,auth_user_id) VALUES('{self.app}','FICTIF','Test','{self.uid}');
+        t.sql(f"""INSERT INTO apprenants(id,nom,prenom,auth_user_id) VALUES('{self.app}','FICTIF','Test-{self.app[:8]}','{self.uid}');
           INSERT INTO reponses_apprenants(id,apprenant_id,user_id,exercice_id,exercice_type,reponses,tentative,write_seq,status,completed)
             VALUES('{self.rid}','{self.app}','{self.uid}','module_5_exo_505','quiz',{j(copie)},1,{seq},'in_progress',false);
           INSERT INTO bilan_passage_snapshots(apprenant_id,module_id,exercice_id,filiere,matiere,tentative,passage_cle,questions,nb_questions,empreinte,empreinte_source)
