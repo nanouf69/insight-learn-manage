@@ -1,0 +1,2 @@
+# livre-formation
+- Fiches révisions books (modules 70–73) are served from private bucket livres-formation via edge function livre-formation (rendered pages, formation-checked; original PDF admin-only); the entire reader is hidden in print media and replacements are staged under immutable version prefixes before activation; why: learners consult without original PDF download or printed reader content, while historical files remain intact.

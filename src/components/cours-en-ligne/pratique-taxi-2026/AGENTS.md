@@ -1,0 +1,3 @@
+# Pratique TAXI 2026
+- New TAXI 2026 activities use their own immutable IDs and source dossier, conditional RTST corrections never penalize hypotheses; drafts are scoped by account/activity/version and confirmed completions are read-only; why: additive training never overwrites existing exercises or server proofs.
+- Module 11/28 optional QRC quizzes retain byte-identical content; owner-only qrc_practice RPCs persist append-only answer events, CAS revisions and terminal complete submission. Explicit legacy imports remain drafts; QCM/communes deterministic, Q5/6/13 review, paid AI paused until budget verified; why: durable multi-device practice never changes official grades or progression.
