@@ -9324,7 +9324,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       selected={selectedArr}
                       multi={multi}
                       showResults={exoShowResults}
-                      disabled={apercuAdmin}
+                      disabled={apercuAdmin || (module.id === 5 && exo.id === 505 && bilan505RemiseActive() && validatingExo === 505)}
                       onSelect={(lettre, el) => handleAnswer(exo.id, q.id, lettre, multi, el)}
                     />
                   </div>
