@@ -22,7 +22,7 @@ Le front ne s'active **jamais seul** : il demande au serveur `bilan_505_remise_e
 
 ## Livrer le front seul sur le site publié
 Lovable publie toujours l'état courant du projet, pas une branche ni un patch. Chemins possibles :
-- **A. Branche GitHub** (Paramètres du projet → Git → GitHub → sélecteur de branche) : branche créée depuis `e136eba47` + ce patch, basculer le projet dessus, publier, revenir sur la branche principale. Nécessite de connecter GitHub (non connecté aujourd'hui : seuls les dépôts internes Lovable existent).
+- **A. Branche GitHub** (Paramètres du projet → Git → GitHub → sélecteur de branche) : branche créée depuis `e136eba47` + ce patch, basculer le projet dessus, publier, revenir sur la branche principale. Nécessite une connexion GitHub (aucune n'est visible depuis cet espace : seuls les dépôts internes Lovable apparaissent ; à confirmer dans l'interface).
 - **B. Historique** : Revert vers la version publiée `e136eba47`, appliquer uniquement ces 4 fichiers, publier, puis revenir à la dernière version.
 - **Point de vigilance (A et B)** : selon la documentation, un retour en arrière **redéploie aussi les fonctions serveur correspondant au code**. Le code actuel contient des fonctions préparées NON activées (émargements : `save-emargement-apprenant`, `send-regularisation-emargement`, rappels théoriques). Revenir ensuite à la dernière version pourrait les déployer. Avant A ou B : relever les versions réellement déployées de ces fonctions et prévoir de les redéployer à l'identique ; sinon ne pas utiliser B.
 - Non vérifiable depuis cet espace : je n'ai aucun outil pour publier une branche ou un retour en arrière ; ces étapes se font dans l'interface.
