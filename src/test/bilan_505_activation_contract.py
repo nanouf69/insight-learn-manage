@@ -49,7 +49,7 @@ class Activation(unittest.TestCase):
         c, o = self.basculer(True, motif='  '); self.assertIn('bilan505_motif_requis', o)
         self.assertEqual(self.sql("SELECT actif FROM bilan_505_remise_activation"), 'f')
         self.assertEqual(self.basculer(True)[0], 0)
-        self.assertEqual(self.sql("SELECT actif||'|'||motif||'|'||par FROM bilan_505_remise_activation_journal ORDER BY id DESC LIMIT 1"), f't|go test jetable|{ADMIN}')
+        self.assertEqual(self.sql("SELECT (CASE WHEN actif THEN 't' ELSE 'f' END)||'|'||motif||'|'||par FROM bilan_505_remise_activation_journal ORDER BY id DESC LIMIT 1"), f't|go test jetable|{ADMIN}')
         c, o = self.as_user(e.uid, "SELECT count(*) FROM bilan_505_remise_copies"); self.assertEqual(o.splitlines()[-1], '0')  # learner reads nothing
 
     def test_03_not_allow_listed_learner_unchanged_even_when_on(self):
@@ -97,7 +97,7 @@ class Activation(unittest.TestCase):
         c, o = self.pg.sql(LOT); self.assertNotEqual(c, 0); self.assertIn('lot_505_change: 0', o)
         self.assertEqual(self.sql("SELECT count(*) FROM bilan_505_remise_copies"), n0)
         for rid, app, _ in REAL:  # FICTITIOUS rows carrying the lot UUIDs
-            self.sql(f"INSERT INTO apprenants(id,nom,prenom,auth_user_id) VALUES('{app}','FICTIF','Lot','{uuid.uuid4()}');"
+            self.sql(f"INSERT INTO apprenants(id,nom,prenom,auth_user_id) VALUES('{app}','FICTIF','Lot-{app[:8]}','{uuid.uuid4()}');"
                      f"INSERT INTO reponses_apprenants(id,apprenant_id,user_id,exercice_id,exercice_type,reponses,tentative,write_seq,status,completed) VALUES('{rid}','{app}','{uuid.uuid4()}','module_5_exo_505','quiz',{j(ANS)},1,1,'in_progress',false)")
         self.sql(f"UPDATE reponses_apprenants SET tentative=2 WHERE id='{REAL[0][0]}'")
         c, o = self.pg.sql(LOT); self.assertIn('lot_505_change: 3', o)
