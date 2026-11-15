@@ -40,3 +40,5 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## P2 — Performances
 - [ ] Autosave anti-tempête / lectures périodiques — à faire après P0.
+
+- [ ] DNS TXT openai-business-claim.www (ftransport.fr) : vérifier gestionnaire DNS, aucune autre entrée, aucun code
