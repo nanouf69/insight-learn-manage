@@ -15,6 +15,8 @@ from playwright.async_api import async_playwright
 SHOTS = pathlib.Path('/tmp/browser/b505reel'); SHOTS.mkdir(parents=True, exist_ok=True)
 SECRET = 'local-disposable-secret-' + uuid.uuid4().hex
 PGRST, GW, EDGE = 3555, 3556, 8000
+# B505_BASE=http://localhost:4180 runs against the PRODUCTION build of the isolated delivery tree (static server).
+BASE = os.environ.get('B505_BASE', 'http://localhost:8080')
 SUPA = re.compile(r'^https://[a-z0-9]+\.supabase\.co/')
 
 def jwt(claims):
@@ -74,7 +76,7 @@ async def scenario(browser, name, e, steps, viewport):
     external = []
     async def route(r):
         u = r.request.url
-        if u.startswith('http://localhost:8080') or u.startswith('ws://localhost'): return await r.continue_()
+        if u.startswith(BASE) or u.startswith('ws://localhost'): return await r.continue_()
         if SUPA.match(u):
             resp = await r.fetch(url=SUPA.sub(f'http://127.0.0.1:{GW}/', u))
             if '/rpc/bilan_505' in u or '/functions/' in u:
@@ -85,7 +87,7 @@ async def scenario(browser, name, e, steps, viewport):
     await ctx.route('**/*', route)
     page.on('pageerror', lambda err: print(f'  [{name}] pageerror', err))
     page.on('console', lambda m: (SHOTS / f'{name}_console.log').open('a').write(m.text[:300] + '\n') if m.type in ('error', 'warning') else None)
-    await page.goto(f'http://localhost:8080/src/test/bilan-505-remise-browser/harness.html?case=reel&app={e.app}&uid={e.uid}&jwt={jwt({"sub": e.uid, "role": "authenticated", "aud": "authenticated"})}')
+    await page.goto(f'{BASE}/src/test/bilan-505-remise-browser/harness.html?case=reel&app={e.app}&uid={e.uid}&jwt={jwt({"sub": e.uid, "role": "authenticated", "aud": "authenticated"})}')
     await page.get_by_text(COMPLETE['questions'][0]['enonce'][:40]).first.wait_for(timeout=60000)
     await page.wait_for_timeout(1500)
     res = await steps(page)
@@ -106,6 +108,8 @@ async def main():
         C_copie = {**ANS, **{k: autre(k, ANS[k]) for k in div3}}
         C = Eleve(t, C_copie, base_journal(C_copie, '2026-11-12T12:17') + [(k, ANS[k], '2026-11-12T12:21:34+00', '2026-11-12T12:21:36+00') for k in div3], snapshot=MISSING)
         D = Eleve(t, ANS, base_journal(ANS))
+        E = Eleve(t, ANS, base_journal(ANS), mode=None)  # not in the allow-list
+        F = Eleve(t, ANS, base_journal(ANS))  # allow-listed, switch turned off before the click
         sock = pg.dir
         conf = SHOTS / 'pgrst.conf'
         conf.write_text(f'db-uri = "postgres://authenticator@/postgres?host={sock}&port=55461"\ndb-schemas = "public"\ndb-anon-role = "anon"\njwt-secret = "{SECRET}"\nserver-port = {PGRST}\nserver-host = "127.0.0.1"\n')
@@ -179,8 +183,33 @@ async def main():
                 assert await page.get_by_test_id('bilan505-revue').count() == 0
                 return 'remise directe, aucune revue, note serveur'
 
+            def net(name): 
+                f = SHOTS / f'{name}_net.log'
+                return f.read_text() if f.exists() else ''
+
+            async def flow_e(page):  # hors lot: dedicated path never engaged
+                await page.wait_for_timeout(1500)
+                assert 'bilan_505_remise_eligible' in net('E'), net('E')
+                assert await page.get_by_test_id('bilan505-revue').count() == 0
+                await valider(page).click(); await page.wait_for_timeout(4000)
+                await page.screenshot(path=str(SHOTS / 'E_hors_lot.png'))
+                assert 'bilan_505_remise_prepare' not in net('E') and 'bilan_505_remise_commit' not in net('E'), net('E')
+                return 'copie hors lot : interrupteur ignoré, aucun appel au parcours 505, écran habituel'
+
+            async def flow_f(page):  # arrêt immédiat après ouverture
+                before = F.row()
+                t.sql("UPDATE bilan_505_remise_activation SET actif=false, motif='arrêt immédiat test' WHERE id=1")
+                await valider(page).click(); await page.wait_for_timeout(4000)
+                await page.screenshot(path=str(SHOTS / 'F_arret.png'))
+                t.sql("UPDATE bilan_505_remise_activation SET actif=true, motif='reprise test' WHERE id=1")
+                assert F.row() == before, 'stop must leave the copy untouched'
+                assert 'bilan_505_remise_commit' not in net('F'), net('F')
+                assert await page.get_by_text('momentanément suspendue').count() > 0
+                return 'arrêt pendant que la page est ouverte : clic refusé par le serveur, copie intacte, message affiché'
+
             for name, e, f, vp in [('A', A, flow_a, {'width': 1280, 'height': 1800}), ('B', B, flow_b, {'width': 390, 'height': 844}),
-                                   ('C', C, flow_c, {'width': 1280, 'height': 1800}), ('D', D, flow_d, {'width': 390, 'height': 844})]:
+                                   ('C', C, flow_c, {'width': 1280, 'height': 1800}), ('D', D, flow_d, {'width': 390, 'height': 844}),
+                                   ('E', E, flow_e, {'width': 1280, 'height': 1800}), ('F', F, flow_f, {'width': 390, 'height': 844})]:
                 try: results[name] = 'PASS ' + await scenario(browser, name, e, f, vp)
                 except Exception as ex: results[name] = f'FAIL {type(ex).__name__}: {str(ex)[:400]}'
                 print(name, results[name], flush=True)
