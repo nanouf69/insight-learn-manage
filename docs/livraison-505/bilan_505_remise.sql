@@ -1,8 +1,75 @@
--- PREPARATION ONLY. Never applied to production by this task.
+-- PREPARATION ONLY. Never applied to production by this task. Installs DISABLED (actif=false, empty allow-list).
 -- Targeted to module_5_exo_505 original attempt. Reuses persist_answer_batch_v2 + submit_quiz_attempt.
 -- Rule (last click): a journal value is restorable only if the same owner/attempt's final event is identical
 -- whether ordered by device time or server arrival, with no same-instant conflicting value and only snapshot
 -- letters. Anything else is "ambigu": never restored, the learner must choose again (new event = new proof).
+
+-- ===== Activation contrôlée (production) =====
+-- Off by default. Only the allow-listed copies (exact row/learner/attempt) pass; mode 'recuperation' can never submit.
+-- Arrêt immédiat: bilan_505_remise_basculer(false, motif) by an admin; every RPC re-checks under a share lock.
+CREATE TABLE IF NOT EXISTS public.bilan_505_remise_activation(
+  id smallint PRIMARY KEY DEFAULT 1 CHECK (id=1), actif boolean NOT NULL DEFAULT false,
+  modifie_le timestamptz NOT NULL DEFAULT now(), modifie_par uuid, motif text);
+INSERT INTO public.bilan_505_remise_activation(id,actif,motif) VALUES(1,false,'installation : désactivé par défaut') ON CONFLICT (id) DO NOTHING;
+CREATE TABLE IF NOT EXISTS public.bilan_505_remise_copies(
+  row_id uuid PRIMARY KEY, apprenant_id uuid NOT NULL UNIQUE, tentative int NOT NULL,
+  mode text NOT NULL CHECK (mode IN ('remise','recuperation')), motif text NOT NULL, ajoute_le timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.bilan_505_remise_activation_journal(
+  id bigserial PRIMARY KEY, actif boolean NOT NULL, motif text NOT NULL, par uuid, le timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.bilan_505_remise_activation, public.bilan_505_remise_copies, public.bilan_505_remise_activation_journal TO service_role;
+GRANT SELECT ON public.bilan_505_remise_activation, public.bilan_505_remise_copies, public.bilan_505_remise_activation_journal TO authenticated;
+ALTER TABLE public.bilan_505_remise_activation ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bilan_505_remise_copies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bilan_505_remise_activation_journal ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "admin lit activation 505" ON public.bilan_505_remise_activation FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
+CREATE POLICY "admin lit copies 505" ON public.bilan_505_remise_copies FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
+CREATE POLICY "admin lit journal 505" ON public.bilan_505_remise_activation_journal FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
+
+CREATE OR REPLACE FUNCTION public.bilan_505_remise_immuable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'bilan505_append_only'; END $$;
+CREATE TRIGGER trg_bilan_505_copies_immuables BEFORE UPDATE OR DELETE ON public.bilan_505_remise_copies FOR EACH ROW EXECUTE FUNCTION public.bilan_505_remise_immuable();
+CREATE TRIGGER trg_bilan_505_journal_immuable BEFORE UPDATE OR DELETE ON public.bilan_505_remise_activation_journal FOR EACH ROW EXECUTE FUNCTION public.bilan_505_remise_immuable();
+
+-- Internal gate: raises bilan505_desactive / bilan505_hors_lot. FOR SHARE: a concurrent stop waits for in-flight
+-- transactions, then every later call sees actif=false.
+CREATE OR REPLACE FUNCTION public.bilan_505_remise_gate(p_apprenant_id uuid,p_row_id uuid,p_tentative int,p_besoin text)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE a boolean; m text;
+BEGIN
+ SELECT actif INTO a FROM bilan_505_remise_activation WHERE id=1 FOR SHARE;
+ IF a IS NOT TRUE THEN RAISE EXCEPTION 'bilan505_desactive'; END IF;
+ SELECT mode INTO m FROM bilan_505_remise_copies WHERE row_id=p_row_id AND apprenant_id=p_apprenant_id AND tentative=p_tentative;
+ IF m IS NULL OR (p_besoin='remise' AND m<>'remise') THEN RAISE EXCEPTION 'bilan505_hors_lot'; END IF;
+ RETURN m;
+END $$;
+REVOKE ALL ON FUNCTION public.bilan_505_remise_gate(uuid,uuid,int,text) FROM PUBLIC,anon,authenticated;
+
+-- Learner-callable: tells the screen whether the dedicated path is on for THIS owner only. Never raises, never leaks.
+CREATE OR REPLACE FUNCTION public.bilan_505_remise_eligible(p_apprenant_id uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+DECLARE m text;
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM apprenants WHERE id=p_apprenant_id AND auth_user_id=auth.uid()) THEN RETURN jsonb_build_object('actif',false); END IF;
+ IF NOT COALESCE((SELECT actif FROM bilan_505_remise_activation WHERE id=1),false) THEN RETURN jsonb_build_object('actif',false); END IF;
+ SELECT c.mode INTO m FROM bilan_505_remise_copies c JOIN reponses_apprenants r ON r.id=c.row_id AND r.apprenant_id=c.apprenant_id AND r.tentative=c.tentative
+  WHERE c.apprenant_id=p_apprenant_id AND r.exercice_id='module_5_exo_505';
+ IF m IS NULL THEN RETURN jsonb_build_object('actif',false); END IF;
+ RETURN jsonb_build_object('actif',true,'mode',m);
+END $$;
+
+-- Admin switch (go / arrêt immédiat), journaled append-only.
+CREATE OR REPLACE FUNCTION public.bilan_505_remise_basculer(p_actif boolean,p_motif text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+ IF auth.uid() IS NULL OR NOT has_role(auth.uid(),'admin') THEN RAISE EXCEPTION 'bilan505_admin_requis'; END IF;
+ IF p_actif IS NULL OR length(btrim(COALESCE(p_motif,'')))<5 THEN RAISE EXCEPTION 'bilan505_motif_requis'; END IF;
+ UPDATE bilan_505_remise_activation SET actif=p_actif,modifie_le=now(),modifie_par=auth.uid(),motif=p_motif WHERE id=1;
+ INSERT INTO bilan_505_remise_activation_journal(actif,motif,par) VALUES(p_actif,p_motif,auth.uid());
+ RETURN jsonb_build_object('actif',p_actif,'le',now());
+END $$;
+REVOKE ALL ON FUNCTION public.bilan_505_remise_eligible(uuid),public.bilan_505_remise_basculer(boolean,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.bilan_505_remise_eligible(uuid),public.bilan_505_remise_basculer(boolean,text) TO authenticated;
+-- ===== fin activation =====
 
 CREATE OR REPLACE FUNCTION public.bilan_505_snapshot_grade(p_apprenant_id uuid,p_tentative int,p_reponses jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
@@ -63,6 +130,7 @@ DECLARE r public.reponses_apprenants; rv jsonb; grade jsonb;
 BEGIN
  IF NOT EXISTS(SELECT 1 FROM apprenants WHERE id=p_apprenant_id AND auth_user_id=auth.uid()) THEN RAISE EXCEPTION 'owner'; END IF;
  SELECT * INTO STRICT r FROM reponses_apprenants WHERE apprenant_id=p_apprenant_id AND exercice_id='module_5_exo_505';
+ PERFORM bilan_505_remise_gate(p_apprenant_id,r.id,r.tentative,'lecture');
  IF (SELECT count(*) FROM jsonb_object_keys(r.reponses))<>49
    OR EXISTS(SELECT 1 FROM jsonb_object_keys(r.reponses) k WHERE k!~'^505-[0-9]+$')
    OR EXISTS(SELECT 1 FROM reponses_apprenants_journal WHERE apprenant_id=p_apprenant_id AND exercice_id=r.exercice_id AND tentative=r.tentative AND NOT r.reponses ? question_id)
@@ -86,6 +154,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM apprenants WHERE id=p_apprenant_id AND auth_user_id=auth.uid()) THEN RAISE EXCEPTION 'owner'; END IF;
  SELECT * INTO STRICT r FROM reponses_apprenants WHERE apprenant_id=p_apprenant_id AND exercice_id='module_5_exo_505' FOR UPDATE;
  IF r.id<>p_row_id OR r.tentative<>p_tentative THEN RAISE EXCEPTION 'attempt'; END IF;
+ PERFORM bilan_505_remise_gate(p_apprenant_id,r.id,r.tentative,'lecture');
  IF r.status='submitted' OR r.completed THEN RAISE EXCEPTION 'closed'; END IF;
  IF r.write_seq<>p_write_seq THEN RAISE EXCEPTION 'stale'; END IF;
  proof:=bilan_505_remise_prepare(p_apprenant_id);
@@ -118,6 +187,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM apprenants WHERE id=p_apprenant_id AND auth_user_id=auth.uid()) THEN RAISE EXCEPTION 'owner'; END IF;
  SELECT * INTO STRICT r FROM reponses_apprenants WHERE apprenant_id=p_apprenant_id AND exercice_id='module_5_exo_505' FOR UPDATE;
  IF r.id<>p_row_id OR r.tentative<>p_tentative THEN RAISE EXCEPTION 'attempt'; END IF;
+ PERFORM bilan_505_remise_gate(p_apprenant_id,r.id,r.tentative,'remise');
  IF r.status='submitted' THEN
    IF r.reponses IS DISTINCT FROM p_reponses THEN RAISE EXCEPTION 'closed_difference'; END IF;
    RETURN to_jsonb(r);
