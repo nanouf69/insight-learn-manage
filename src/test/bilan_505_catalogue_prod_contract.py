@@ -121,7 +121,7 @@ class CatalogueProd(unittest.TestCase):
         div = {'505-38': sorted(ANS['505-38'] + [l for l in OPTS['505-38'] if l not in ANS['505-38']][:1]), '505-45': ANS['505-45'], '505-56': ANS['505-56']}
         copie = {**ANS, **{k: autre(k, ANS[k]) for k in div}}
         j0 = base_journal(copie, '2026-11-12T12:17') + [(k, v, '2026-11-12T12:21:34+00', '2026-11-12T12:21:36+00') for k, v in div.items()]
-        e = Eleve(self, copie, j0, snapshot=MISSING)
+        e = Eleve(self, copie, j0, snapshot=MISSING, mode='remise')  # grade layer refuses even if the allow-list said remise
         p = e.prepare()
         self.assertEqual((p['grading_status'], p['unresolved_questions']), ('corrige_snapshot_incomplet', ['505-7']))
         self.assertEqual(len(p['revue']), 3)
@@ -138,7 +138,7 @@ class CatalogueProd(unittest.TestCase):
         j0 = base_journal({**ANS, '505-37': ['D']}, '2026-11-12T12:18') + [
             ('505-37', [], '2026-11-12T12:18:13+00', '2026-11-12T12:18:22.6+00'),
             ('505-37', ANS['505-37'], '2026-11-12T20:38:09+00', '2026-11-12T20:38:09.9+00')]
-        e = Eleve(self, copie, j0, snapshot=MISSING)
+        e = Eleve(self, copie, j0, snapshot=MISSING, mode='remise')  # grade layer refuses even if the allow-list said remise
         p = e.prepare(); self.assertEqual([(x['question_id'], x['copie'], x['certitude']) for x in p['revue']], [('505-37', [], 'certain')])
         c, o = e.commit(p, confirm=True, fn='bilan_505_recuperer_reponses'); self.assertEqual(c, 0, o)
         self.assertEqual(e.row()['reponses']['505-37'], ANS['505-37'])
