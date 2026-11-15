@@ -1,0 +1,1 @@
+- Bilan 505 recovery: certain last clicks only + explicit learner review; SQL must pass src/test/bilan_505_catalogue_prod_contract.py; why: no guessed or overwritten answers.
