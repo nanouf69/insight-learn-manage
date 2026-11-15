@@ -9,7 +9,7 @@ describe('activation 505 décidée par le serveur seulement', () => {
     rpc.mockResolvedValue({ data: null, error: { message: 'Could not find the function public.bilan_505_remise_eligible' } });
     expect(await verifierActivationBilan505('a')).toBe(false);
   });
-  it('erreur réseau → désactivé', async () => { rpc.mockImplementation(async () => { throw new Error('offline'); }); expect(await verifierActivationBilan505('a')).toBe(false); });
+  it('erreur réseau → désactivé', async () => { rpc.mockImplementation(() => ({ then: (_ok: unknown, ko: (e: Error) => void) => ko(new Error('offline')) })); expect(await verifierActivationBilan505('a')).toBe(false); });
   it('interrupteur éteint ou copie hors lot → désactivé', async () => {
     rpc.mockResolvedValue({ data: { actif: false }, error: null }); expect(await verifierActivationBilan505('a')).toBe(false);
   });
