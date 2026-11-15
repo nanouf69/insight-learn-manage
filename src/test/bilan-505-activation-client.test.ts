@@ -5,11 +5,12 @@ import { verifierActivationBilan505, remettreBilan505, Bilan505Desactive } from 
 const answers = Object.fromEntries(Array.from({ length: 49 }, (_, i) => [`505-${i + 1}`, ['A']]));
 beforeEach(() => rpc.mockReset());
 describe('activation 505 décidée par le serveur seulement', () => {
+  it('erreur réseau → désactivé', async () => { rpc.mockImplementation(async () => { throw new Error('offline'); }); expect(await verifierActivationBilan505('a')).toBe(false); });
+  it('réponse réseau en erreur → désactivé', async () => { rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch' } }); expect(await verifierActivationBilan505('a')).toBe(false); });
   it('fonction absente (production actuelle) → désactivé', async () => {
     rpc.mockResolvedValue({ data: null, error: { message: 'Could not find the function public.bilan_505_remise_eligible' } });
     expect(await verifierActivationBilan505('a')).toBe(false);
   });
-  it('erreur réseau → désactivé', async () => { rpc.mockImplementation(() => ({ then: (_ok: unknown, ko: (e: Error) => void) => ko(new Error('offline')) })); expect(await verifierActivationBilan505('a')).toBe(false); });
   it('interrupteur éteint ou copie hors lot → désactivé', async () => {
     rpc.mockResolvedValue({ data: { actif: false }, error: null }); expect(await verifierActivationBilan505('a')).toBe(false);
   });
