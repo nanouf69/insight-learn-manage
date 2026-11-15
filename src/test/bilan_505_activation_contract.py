@@ -96,12 +96,13 @@ class Activation(unittest.TestCase):
         n0 = self.sql("SELECT count(*) FROM bilan_505_remise_copies")
         c, o = self.pg.sql(LOT); self.assertNotEqual(c, 0); self.assertIn('lot_505_change: 0', o)
         self.assertEqual(self.sql("SELECT count(*) FROM bilan_505_remise_copies"), n0)
-        for rid, app, _ in REAL:  # FICTITIOUS rows carrying the lot UUIDs
+        def fictive(rid, app):  # FICTITIOUS rows carrying the lot UUIDs
             self.sql(f"INSERT INTO apprenants(id,nom,prenom,auth_user_id) VALUES('{app}','FICTIF','Lot-{app[:8]}','{uuid.uuid4()}');"
                      f"INSERT INTO reponses_apprenants(id,apprenant_id,user_id,exercice_id,exercice_type,reponses,tentative,write_seq,status,completed) VALUES('{rid}','{app}','{uuid.uuid4()}','module_5_exo_505','quiz',{j(ANS)},1,1,'in_progress',false)")
-        self.sql(f"UPDATE reponses_apprenants SET tentative=2 WHERE id='{REAL[0][0]}'")
+        for rid, app, _ in REAL[1:]: fictive(rid, app)
         c, o = self.pg.sql(LOT); self.assertIn('lot_505_change: 3', o)
-        self.sql(f"UPDATE reponses_apprenants SET tentative=1 WHERE id='{REAL[0][0]}'")
+        self.assertEqual(self.sql("SELECT count(*) FROM bilan_505_remise_copies"), n0)
+        fictive(REAL[0][0], REAL[0][1])
         self.sql(LOT)
         got = self.sql("SELECT string_agg(row_id||':'||mode, ',' ORDER BY row_id) FROM bilan_505_remise_copies WHERE motif<>'test jetable'")
         self.assertEqual(got, ','.join(f'{r}:{m}' for r, _, m in sorted(REAL)))
