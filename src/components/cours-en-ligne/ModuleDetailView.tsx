@@ -1,5 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
-import { bilan505RemiseActive, remettreBilan505, type RevueItem } from '@/lib/bilan505Remise';
+import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
 import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
 import { signalerContenuModifie, ecouterContenuModifie } from "@/lib/contenuModifie";
@@ -6946,6 +6946,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const [bilan505ServerPoints, setBilan505ServerPoints] = useState<number | null>(null);
     const [bilan505Revue, setBilan505Revue] = useState<RevueItem[]>([]);
     const [bilan505RevueConfirmee, setBilan505RevueConfirmee] = useState(false);
+    // Server-only activation for the exact allow-listed 505 copies; off = existing Valider path unchanged.
+    const bilan505Actif = useBilan505Active(apprenantId, module.id === 5 && studentOnly && !apercuAdmin);
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
@@ -9328,7 +9330,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       selected={selectedArr}
                       multi={multi}
                       showResults={exoShowResults}
-                      disabled={apercuAdmin || (module.id === 5 && exo.id === 505 && bilan505RemiseActive() && validatingExo === 505)}
+                      disabled={apercuAdmin || (module.id === 5 && exo.id === 505 && bilan505Actif && validatingExo === 505)}
                       onSelect={(lettre, el) => handleAnswer(exo.id, q.id, lettre, multi, el)}
                     />
                   </div>
@@ -9346,7 +9348,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           : "Vos réponses sont conservées sur cet écran mais n'ont pas encore été confirmées par le serveur."}
                       </div>
                     )}
-                    {module.id === 5 && exo.id === 505 && bilan505RemiseActive() && !apercuAdmin && (
+                    {module.id === 5 && exo.id === 505 && bilan505Actif && !apercuAdmin && (
                       <Bilan505RevuePanel items={bilan505Revue} confirmee={bilan505RevueConfirmee} onConfirmee={setBilan505RevueConfirmee}
                         questionIds={(questionsSafe as any[]).map((q: any) => `${exo.id}-${q.id}`)} />
                     )}
@@ -9354,7 +9356,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       size="lg"
                       onClick={async () => {
                         if (apercuAdmin) return;
-                        if (module.id === 5 && exo.id === 505 && apprenantId && bilan505RemiseActive()
+                        if (module.id === 5 && exo.id === 505 && apprenantId && bilan505Actif
                           && !revisionActiveRef.current.has(505) && !submittedExoIdsRef.current.has(505)) {
                           if (validationEnCoursRef.current.has(505)) return;
                           validationEnCoursRef.current.add(505);
@@ -9394,7 +9396,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               else if (result.reason === 'choix_local_plus_recent' || result.reason === 'file_differente' || result.reason === 'difference_non_resolue')
                                 toast('Vos derniers clics sont en cours d’enregistrement ou diffèrent du serveur : attendez quelques secondes puis appuyez de nouveau sur Valider. Rien n’a été remis.');
                             }
-                          } catch { setValidationFailedFor(prev => new Set(prev).add(505)); }
+                          } catch (err) {
+                            if (err instanceof Bilan505Desactive) {
+                              couperBilan505(apprenantId);
+                              toast('La remise de ce bilan est momentanément suspendue par le centre. Vos réponses sont conservées ; rien n’a été remis.');
+                            } else setValidationFailedFor(prev => new Set(prev).add(505));
+                          }
                           finally { validationEnCoursRef.current.delete(505); setValidatingExo(null); }
                           return;
                         }
@@ -9706,7 +9713,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         </div>
                       );
                     }
-                    const exoPoints = module.id === 5 && exo.id === 505 && bilan505RemiseActive() && bilan505ServerPoints !== null
+                    const exoPoints = module.id === 5 && exo.id === 505 && bilan505Actif && bilan505ServerPoints !== null
                       ? bilan505ServerPoints : etatQrc === "terminee"
                       ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
                       : exoCorrect;
