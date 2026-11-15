@@ -1,6 +1,7 @@
 """Local disposable PostgreSQL; no production connection, no real identity."""
 import json,pathlib,unittest
 from core_correction_securite_contract import Pg,SCHEMA,APP,ELEVE_UID,AUTRE_UID,as_ctx
+from bilan505_roles_prelude import ROLES_PRELUDE,ACTIVER,autoriser
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 def j(x):return "'"+json.dumps(x,ensure_ascii=False).replace("'","''")+"'::jsonb"
 COMPLETE=json.loads((ROOT/'src/test/bilan-505-remise-browser/snapshot-complete.json').read_text())
@@ -21,7 +22,7 @@ class Contract(unittest.TestCase):
   CREATE TABLE quiz_valide_reecritures_refusees(table_cible text,apprenant_id uuid,cle text,champs text[],auteur uuid);
   ''')
   for n in ['persist_answer_batch_v2','submit_quiz_attempt']:cls.sql((ROOT/f'src/test/bilan-505-remise-browser/{n}.sql').read_text())
-  cls.sql((ROOT/'docs/candidats-sql/bilan_505_remise.sql').read_text())
+  cls.sql(ROLES_PRELUDE);cls.sql((ROOT/'docs/candidats-sql/bilan_505_remise.sql').read_text());cls.sql(ACTIVER+autoriser(RID,APP))
   cls.sql((ROOT/'src/test/bilan-505-remise-browser/triggers-live.sql').read_text())
  @classmethod
  def sql(cls,s):

@@ -41,17 +41,17 @@ index 000000000..b527e860b
 +  );
 +}
 diff --git a/src/components/cours-en-ligne/ModuleDetailView.tsx b/src/components/cours-en-ligne/ModuleDetailView.tsx
-index 3bdcb5723..7d25f02e4 100644
+index 3bdcb5723..f93fff21f 100644
 --- a/src/components/cours-en-ligne/ModuleDetailView.tsx
 +++ b/src/components/cours-en-ligne/ModuleDetailView.tsx
 @@ -1,4 +1,6 @@
  import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
-+import { bilan505RemiseActive, remettreBilan505, type RevueItem } from '@/lib/bilan505Remise';
++import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 +import { Bilan505RevuePanel } from './Bilan505RevuePanel';
  import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
  import { signalerContenuModifie, ecouterContenuModifie } from "@/lib/contenuModifie";
  import { acknowledgedEditorState, isIncompleteCurrencyChoice } from "@/lib/editorSaveAcknowledgement";
-@@ -6939,6 +6941,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
+@@ -6939,6 +6941,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
      const [validationFailedFor, setValidationFailedFor] = useState<Set<number>>(new Set());
      // Échec de validation dû à une connexion perdue (jeton absent/expiré) : message dédié.
      const [validationSessionPerdueFor, setValidationSessionPerdueFor] = useState<Set<number>>(new Set());
@@ -60,23 +60,25 @@ index 3bdcb5723..7d25f02e4 100644
 +    const [bilan505ServerPoints, setBilan505ServerPoints] = useState<number | null>(null);
 +    const [bilan505Revue, setBilan505Revue] = useState<RevueItem[]>([]);
 +    const [bilan505RevueConfirmee, setBilan505RevueConfirmee] = useState(false);
++    // Server-only activation for the exact allow-listed 505 copies; off = existing Valider path unchanged.
++    const bilan505Actif = useBilan505Active(apprenantId, module.id === 5 && studentOnly && !apercuAdmin);
      // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
      const submittedExoIdsRef = useRef<Set<number>>(new Set());
      const revisionActiveRef = useRef<Set<number>>(new Set());
-@@ -9321,7 +9328,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
+@@ -9321,7 +9330,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                        selected={selectedArr}
                        multi={multi}
                        showResults={exoShowResults}
 -                      disabled={apercuAdmin}
-+                      disabled={apercuAdmin || (module.id === 5 && exo.id === 505 && bilan505RemiseActive() && validatingExo === 505)}
++                      disabled={apercuAdmin || (module.id === 5 && exo.id === 505 && bilan505Actif && validatingExo === 505)}
                        onSelect={(lettre, el) => handleAnswer(exo.id, q.id, lettre, multi, el)}
                      />
                    </div>
-@@ -9339,10 +9346,58 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
+@@ -9339,10 +9348,63 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                            : "Vos réponses sont conservées sur cet écran mais n'ont pas encore été confirmées par le serveur."}
                        </div>
                      )}
-+                    {module.id === 5 && exo.id === 505 && bilan505RemiseActive() && !apercuAdmin && (
++                    {module.id === 5 && exo.id === 505 && bilan505Actif && !apercuAdmin && (
 +                      <Bilan505RevuePanel items={bilan505Revue} confirmee={bilan505RevueConfirmee} onConfirmee={setBilan505RevueConfirmee}
 +                        questionIds={(questionsSafe as any[]).map((q: any) => `${exo.id}-${q.id}`)} />
 +                    )}
@@ -84,7 +86,7 @@ index 3bdcb5723..7d25f02e4 100644
                        size="lg"
                        onClick={async () => {
                          if (apercuAdmin) return;
-+                        if (module.id === 5 && exo.id === 505 && apprenantId && bilan505RemiseActive()
++                        if (module.id === 5 && exo.id === 505 && apprenantId && bilan505Actif
 +                          && !revisionActiveRef.current.has(505) && !submittedExoIdsRef.current.has(505)) {
 +                          if (validationEnCoursRef.current.has(505)) return;
 +                          validationEnCoursRef.current.add(505);
@@ -124,19 +126,24 @@ index 3bdcb5723..7d25f02e4 100644
 +                              else if (result.reason === 'choix_local_plus_recent' || result.reason === 'file_differente' || result.reason === 'difference_non_resolue')
 +                                toast('Vos derniers clics sont en cours d’enregistrement ou diffèrent du serveur : attendez quelques secondes puis appuyez de nouveau sur Valider. Rien n’a été remis.');
 +                            }
-+                          } catch { setValidationFailedFor(prev => new Set(prev).add(505)); }
++                          } catch (err) {
++                            if (err instanceof Bilan505Desactive) {
++                              couperBilan505(apprenantId);
++                              toast('La remise de ce bilan est momentanément suspendue par le centre. Vos réponses sont conservées ; rien n’a été remis.');
++                            } else setValidationFailedFor(prev => new Set(prev).add(505));
++                          }
 +                          finally { validationEnCoursRef.current.delete(505); setValidatingExo(null); }
 +                          return;
 +                        }
                          // Check all QCM questions are answered (skip QRC)
                          const unansweredQcmKeys: string[] = [];
                          let firstMissingIndex = -1;
-@@ -9651,7 +9706,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
+@@ -9651,7 +9713,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                          </div>
                        );
                      }
 -                    const exoPoints = etatQrc === "terminee"
-+                    const exoPoints = module.id === 5 && exo.id === 505 && bilan505RemiseActive() && bilan505ServerPoints !== null
++                    const exoPoints = module.id === 5 && exo.id === 505 && bilan505Actif && bilan505ServerPoints !== null
 +                      ? bilan505ServerPoints : etatQrc === "terminee"
                        ? pointsAvecQrc(exo.id, questionsCompteesExo, qrcResults, (q: any) => isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q))
                        : exoCorrect;
@@ -160,16 +167,50 @@ index 28faa0c0e..d73cee772 100644
    return [...new Set(readQueue().filter(item => item.payload.apprenant_id === apprenantId && isOwnedByCurrentUser(item)).map(item => item.payload.exercice_id))];
 diff --git a/src/lib/bilan505Remise.ts b/src/lib/bilan505Remise.ts
 new file mode 100644
-index 000000000..a3bf58985
+index 000000000..c676fece6
 --- /dev/null
 +++ b/src/lib/bilan505Remise.ts
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,122 @@
 +import { supabase } from '@/integrations/supabase/client';
 +import { answersAreEqual, canQueueAnswerSaveFor, getAnswerQueueProof } from './answerPersistence';
 +
-+// Production disabled until the isolated SQL contract is installed and approved.
-+export const bilan505RemiseActive = () => import.meta.env.DEV && location.hostname === 'localhost'
-+  && location.pathname === '/src/test/bilan-505-remise-browser/harness.html';
++import { useEffect, useState } from 'react';
++
++/**
++ * Production activation is decided by the server only (bilan_505_remise_eligible): off by default, limited to the
++ * exact allow-listed copies, and switchable off at once. Any read error, missing function or other learner = off,
++ * which keeps the existing Valider path unchanged.
++ */
++export class Bilan505Desactive extends Error { constructor() { super('bilan505_desactive'); } }
++const estDesactive = (e: { message?: string } | null | undefined) => /bilan505_(desactive|hors_lot)/.test(e?.message ?? '');
++const etat = new Map<string, boolean>();
++const abonnes = new Set<() => void>();
++const notifier = () => abonnes.forEach(f => f());
++export function couperBilan505(apprenantId: string) { etat.set(apprenantId, false); notifier(); }
++export async function verifierActivationBilan505(apprenantId: string): Promise<boolean> {
++  let actif = false;
++  try {
++    const { data, error } = await supabase.rpc('bilan_505_remise_eligible' as any, { p_apprenant_id: apprenantId } as any);
++    const d = data as { actif?: unknown; mode?: unknown } | null;
++    actif = !error && d?.actif === true && (d.mode === 'remise' || d.mode === 'recuperation');
++  } catch { actif = false; }
++  etat.set(apprenantId, actif); notifier();
++  return actif;
++}
++/** Read on mount, on focus/visibility return; never assumed true. */
++export function useBilan505Active(apprenantId: string | null | undefined, concerne: boolean): boolean {
++  const [, force] = useState(0);
++  useEffect(() => {
++    if (!apprenantId || !concerne) return;
++    const f = () => force(n => n + 1);
++    abonnes.add(f);
++    const relire = () => { if (document.visibilityState === 'visible') void verifierActivationBilan505(apprenantId); };
++    relire();
++    window.addEventListener('focus', relire); document.addEventListener('visibilitychange', relire);
++    return () => { abonnes.delete(f); window.removeEventListener('focus', relire); document.removeEventListener('visibilitychange', relire); };
++  }, [apprenantId, concerne]);
++  return !!apprenantId && concerne && etat.get(apprenantId) === true;
++}
 +
 +/** The learner's own clicks only (never answer keys): what the copy held vs the last proven click. */
 +export type RevueItem = { question_id: string; copie: unknown; dernier: unknown; certitude: 'certain' | 'ambigu';
@@ -189,6 +230,7 @@ index 000000000..a3bf58985
 +    p_apprenant_id: apprenantId, p_row_id: r.id, p_tentative: r.tentative,
 +    p_write_seq: r.write_seq, p_reponses: answers, p_revue_confirmee: revueConfirmee,
 +  } as any);
++  if (estDesactive(error)) throw new Bilan505Desactive();
 +  if (error || !data) throw new Error(`${fn}_refuse`);
 +  return data as unknown as RemiseRow;
 +};
@@ -209,6 +251,7 @@ index 000000000..a3bf58985
 +  if (!owner()) return { ok: false, reason: 'proprietaire' };
 +  const read = p.read ?? (async () => {
 +    const { data, error } = await supabase.rpc('bilan_505_remise_prepare' as any, { p_apprenant_id: p.apprenantId } as any);
++    if (estDesactive(error)) throw new Bilan505Desactive();
 +    if (error || !data) throw new Error('lecture_refusee');
 +    return data as unknown as RemiseRow;
 +  });
@@ -249,46 +292,4 @@ index 000000000..a3bf58985
 +    && typeof confirmed.bonnes_reponses === 'number' && confirmed.total_questions === 49
 +    && answersAreEqual(confirmed.reponses, p.answers);
 +  return { ok, confirmed: ok ? confirmed : undefined };
-+}
-diff --git a/src/components/cours-en-ligne/Bilan505RevuePanel.tsx b/src/components/cours-en-ligne/Bilan505RevuePanel.tsx
-new file mode 100644
-index 000000000..b527e860b
---- /dev/null
-+++ b/src/components/cours-en-ligne/Bilan505RevuePanel.tsx
-@@ -0,0 +1,36 @@
-+import { Checkbox } from '@/components/ui/checkbox';
-+import type { RevueItem } from '@/lib/bilan505Remise';
-+
-+const lettres = (v: unknown) => Array.isArray(v) && v.length ? v.join(', ') : 'aucune réponse';
-+
-+/** Learner-facing review of restored own choices. Shows letters only, never correctness or keys. */
-+export function Bilan505RevuePanel({ items, questionIds, confirmee, onConfirmee }: {
-+  items: RevueItem[]; questionIds: string[]; confirmee: boolean; onConfirmee: (v: boolean) => void;
-+}) {
-+  if (!items.length) return null;
-+  const numero = (k: string) => { const i = questionIds.indexOf(k); return i >= 0 ? i + 1 : k; };
-+  const ambigus = items.filter(i => i.certitude === 'ambigu');
-+  const certains = items.filter(i => i.certitude === 'certain');
-+  return (
-+    <section aria-label="Vérification de vos derniers choix" data-testid="bilan505-revue"
-+      className="w-full rounded-lg border border-primary/40 bg-primary/5 p-4 text-sm space-y-3">
-+      <p className="font-semibold">Vérifiez vos derniers choix avant de valider</p>
-+      {certains.length > 0 && <>
-+        <p>Votre copie affichait une ancienne réponse pour {certains.length} question{certains.length > 1 ? 's' : ''}. Vos derniers choix enregistrés ont été remis à l’écran :</p>
-+        <ul className="list-disc pl-5 space-y-1">
-+          {certains.map(i => <li key={i.question_id}>Question {numero(i.question_id)} : avant {lettres(i.copie)} → maintenant <strong>{lettres(i.dernier)}</strong></li>)}
-+        </ul>
-+      </>}
-+      {ambigus.length > 0 && <>
-+        <p className="text-destructive">Pour {ambigus.length > 1 ? 'ces questions' : 'cette question'}, l’ordre de vos clics n’est pas certain : choisissez de nouveau votre réponse.</p>
-+        <ul className="list-disc pl-5 space-y-1">{ambigus.map(i => <li key={i.question_id}>Question {numero(i.question_id)}</li>)}</ul>
-+      </>}
-+      {ambigus.length === 0 && (
-+        <label className="flex items-start gap-2 cursor-pointer">
-+          <Checkbox checked={confirmee} onCheckedChange={v => onConfirmee(v === true)} aria-label="Je confirme mes choix" className="mt-0.5" />
-+          <span>J’ai relu ces questions : ce sont bien mes réponses. Vous pouvez encore les modifier avant de valider.</span>
-+        </label>
-+      )}
-+    </section>
-+  );
 +}

@@ -1,9 +1,43 @@
 import { supabase } from '@/integrations/supabase/client';
 import { answersAreEqual, canQueueAnswerSaveFor, getAnswerQueueProof } from './answerPersistence';
 
-// Production disabled until the isolated SQL contract is installed and approved.
-export const bilan505RemiseActive = () => import.meta.env.DEV && location.hostname === 'localhost'
-  && location.pathname === '/src/test/bilan-505-remise-browser/harness.html';
+import { useEffect, useState } from 'react';
+
+/**
+ * Production activation is decided by the server only (bilan_505_remise_eligible): off by default, limited to the
+ * exact allow-listed copies, and switchable off at once. Any read error, missing function or other learner = off,
+ * which keeps the existing Valider path unchanged.
+ */
+export class Bilan505Desactive extends Error { constructor() { super('bilan505_desactive'); } }
+const estDesactive = (e: { message?: string } | null | undefined) => /bilan505_(desactive|hors_lot)/.test(e?.message ?? '');
+const etat = new Map<string, boolean>();
+const abonnes = new Set<() => void>();
+const notifier = () => abonnes.forEach(f => f());
+export function couperBilan505(apprenantId: string) { etat.set(apprenantId, false); notifier(); }
+export async function verifierActivationBilan505(apprenantId: string): Promise<boolean> {
+  let actif = false;
+  try {
+    const { data, error } = await supabase.rpc('bilan_505_remise_eligible' as any, { p_apprenant_id: apprenantId } as any);
+    const d = data as { actif?: unknown; mode?: unknown } | null;
+    actif = !error && d?.actif === true && (d.mode === 'remise' || d.mode === 'recuperation');
+  } catch { actif = false; }
+  etat.set(apprenantId, actif); notifier();
+  return actif;
+}
+/** Read on mount, on focus/visibility return; never assumed true. */
+export function useBilan505Active(apprenantId: string | null | undefined, concerne: boolean): boolean {
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!apprenantId || !concerne) return;
+    const f = () => force(n => n + 1);
+    abonnes.add(f);
+    const relire = () => { if (document.visibilityState === 'visible') void verifierActivationBilan505(apprenantId); };
+    relire();
+    window.addEventListener('focus', relire); document.addEventListener('visibilitychange', relire);
+    return () => { abonnes.delete(f); window.removeEventListener('focus', relire); document.removeEventListener('visibilitychange', relire); };
+  }, [apprenantId, concerne]);
+  return !!apprenantId && concerne && etat.get(apprenantId) === true;
+}
 
 /** The learner's own clicks only (never answer keys): what the copy held vs the last proven click. */
 export type RevueItem = { question_id: string; copie: unknown; dernier: unknown; certitude: 'certain' | 'ambigu';
@@ -23,6 +57,7 @@ const rpcCall = (fn: string, apprenantId: string, answers: Record<string, unknow
     p_apprenant_id: apprenantId, p_row_id: r.id, p_tentative: r.tentative,
     p_write_seq: r.write_seq, p_reponses: answers, p_revue_confirmee: revueConfirmee,
   } as any);
+  if (estDesactive(error)) throw new Bilan505Desactive();
   if (error || !data) throw new Error(`${fn}_refuse`);
   return data as unknown as RemiseRow;
 };
@@ -43,6 +78,7 @@ export async function remettreBilan505(p: {
   if (!owner()) return { ok: false, reason: 'proprietaire' };
   const read = p.read ?? (async () => {
     const { data, error } = await supabase.rpc('bilan_505_remise_prepare' as any, { p_apprenant_id: p.apprenantId } as any);
+    if (estDesactive(error)) throw new Bilan505Desactive();
     if (error || !data) throw new Error('lecture_refusee');
     return data as unknown as RemiseRow;
   });

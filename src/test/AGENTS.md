@@ -1,1 +1,1 @@
-- Bilan 505 recovery: certain last clicks only + explicit learner review; SQL must pass src/test/bilan_505_catalogue_prod_contract.py; why: no guessed or overwritten answers.
+- Bilan 505 recovery: certain last clicks only + explicit learner review; activation only via the server switch + exact allow-list (client never self-activates, any error = off); SQL must pass bilan_505_catalogue_prod_contract.py and bilan_505_activation_contract.py; why: no guessed or overwritten answers, no other learner affected.

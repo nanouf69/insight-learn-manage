@@ -26,6 +26,7 @@ const moduleData={id:5,nom:'Bilan examen VTC',description:'',cours:[],exercices:
 (supabase as any).rpc=async(name:string,args:any)=>{
  calls.push(name);
  if(reel&&name.startsWith('bilan_505_'))return realRpc(name as any,args);
+ if(name==='bilan_505_remise_eligible')return {data:scenario==='off'?{actif:false}:{actif:true,mode:'remise'},error:null};
  if(name==='bilan_future_route')return {data:'legacy',error:null};
  if(name==='bilan_ouvrir_passage_eleve')return {data:{statut:'ancien'},error:null};
  if(name==='bilan_505_remise_prepare')return {data:{id:row.id,tentative:1,write_seq:100,status:row.status,grading_status:scenario==='missing'?'corrige_snapshot_incomplet':'verifiable',reponses:scenario==='journal'?{...answers,'505-1':['B']}:answers,stored_reponses:answers},error:null};
