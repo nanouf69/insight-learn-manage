@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 const rpc = vi.fn();
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: (...a: unknown[]) => rpc(...a) } }));
 import { verifierActivationBilan505, remettreBilan505, Bilan505Desactive } from '@/lib/bilan505Remise';
 const answers = Object.fromEntries(Array.from({ length: 49 }, (_, i) => [`505-${i + 1}`, ['A']]));
-beforeEach(() => rpc.mockReset());
+
 describe('activation 505 décidée par le serveur seulement', () => {
   it('erreur réseau → désactivé', async () => { rpc.mockImplementation(async () => { throw new Error('offline'); }); expect(await verifierActivationBilan505('a')).toBe(false); });
   it('réponse réseau en erreur → désactivé', async () => { rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch' } }); expect(await verifierActivationBilan505('a')).toBe(false); });
