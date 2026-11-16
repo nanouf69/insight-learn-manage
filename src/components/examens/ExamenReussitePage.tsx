@@ -48,6 +48,7 @@ import { EnvoiEchecChoixPratiqueDialog } from './EnvoiEchecChoixPratiqueDialog';
 import { ReinscriptionExamenBadge } from './ReinscriptionExamenBadge';
 import { ChoixPratiqueBadges } from '@/components/crm/apprenant-sections/ChoixPratiqueBadges';
 import { filiereDepuisDossier } from '@/lib/modeles/entrainementPratiqueVtc';
+import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacement';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -5630,6 +5631,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             const candidat = candidatsPratique.find(a => a.id === id);
             const previousResult = (candidat as any)?.resultat_examen_pratique;
 
+            if (resultat === 'deplace') {
+              // This selector belongs to the results period, not the training planning
+              // currently open in another tab. Never persist that unrelated planning.
+              await enregistrerDeplacementPratique(id);
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] }),
+                queryClient.invalidateQueries({ queryKey: ['all-apprenants'] }),
+              ]);
+              toast.success('Candidat déplacé à la prochaine session — retiré de la liste actuelle');
+              return;
+            }
+
             // Update resultat_examen_pratique in apprenants
             const { error } = await supabase
               .from('apprenants')
@@ -5637,47 +5650,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               .eq('id', id);
             if (error) throw error;
 
-            // If "deplace", also mark presence_pratique = 'deplace' in session_apprenants for pratique sessions
-            if (resultat === 'deplace') {
-              const { data: sessionsApprenant } = await supabase
-                .from('session_apprenants')
-                .select('id, session_id, sessions!inner(type_session)')
-                .eq('apprenant_id', id)
-                .in('sessions.type_session', PRATIQUE_TYPES as any);
-              if (sessionsApprenant && sessionsApprenant.length > 0) {
-                for (const sa of sessionsApprenant) {
-                  await supabase
-                    .from('session_apprenants')
-                    .update({ presence_pratique: 'deplace' })
-                    .eq('id', sa.id);
-                }
-              }
-              // Also delete existing reservation so they can book a new one
-              await supabase.from('reservations_pratique').delete().eq('apprenant_id', id);
-              const nextExtraFormation = extraCandidatsFormation.filter((formationId) => formationId !== id);
-              const nextRemovedFormation = removedCandidatsFormation.includes(id)
-                ? removedCandidatsFormation
-                : [...removedCandidatsFormation, id];
-              const nextExtraCMA = extraCandidatsCMA.filter((cmaId) => cmaId !== id);
-              const nextRemovedCMA = removedCandidatsCMA.includes(id)
-                ? removedCandidatsCMA
-                : [...removedCandidatsCMA, id];
-              setExtraCandidatsFormation(nextExtraFormation);
-              setRemovedCandidatsFormation(nextRemovedFormation);
-              setExtraCandidatsCMA(nextExtraCMA);
-              setRemovedCandidatsCMA(nextRemovedCMA);
-              await saveCandidateListsNow({
-                extraFormation: nextExtraFormation,
-                removedFormation: nextRemovedFormation,
-                extraCMA: nextExtraCMA,
-                removedCMA: nextRemovedCMA,
-              });
-              queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
-              queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
-              toast.success("Candidat déplacé à la prochaine session — retiré de la liste actuelle");
-            } else if (resultat !== 'deplace') {
-              toast.success("Résultat pratique mis à jour");
-            }
+            toast.success("Résultat pratique mis à jour");
 
             // Send satisfaction questionnaire email when result changes to "oui"
             if (resultat === 'oui' && previousResult !== 'oui' && candidat) {
@@ -5687,6 +5660,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
             queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
           } catch (err: any) {
+            // Refresh even after a partial refusal: never display an old result
+            // while an earlier, confirmed status write already succeeded.
+            queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
+            queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
             toast.error(err.message || "Erreur");
           }
         };
