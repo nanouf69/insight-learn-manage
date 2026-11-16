@@ -5604,6 +5604,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const echouesPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'non').length;
         const deplacesPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'deplace').length;
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
+        const tauxPratique = (liste: any[]) => {
+          const ok = liste.filter(a => a.resultat_examen_pratique === 'oui').length;
+          const ko = liste.filter(a => a.resultat_examen_pratique === 'non').length;
+          return { ok, total: ok + ko, taux: ok + ko > 0 ? Math.round((ok / (ok + ko)) * 100) : null };
+        };
+        const tauxTaxiPratique = tauxPratique(taxiPratique as any[]);
+        const tauxVtcPratique = tauxPratique(vtcPratique as any[]);
 
         return (
           <Card className={pratiqueFullscreen ? "fixed inset-0 z-40 overflow-auto rounded-none border-l-4 border-l-rose-500 bg-background p-6" : "border-l-4 border-l-rose-500"} style={{ zoom }}>
@@ -5664,6 +5671,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               </div>
               <div className="mt-4 p-3 bg-rose-50 rounded-lg flex items-center justify-between">
                 <p className="text-sm font-bold text-rose-800">Total inscrits CMA : {candidatsPratique.length}</p>
+                <p className="text-sm font-bold text-rose-800">
+                  Taux de réussite TAXI : {tauxTaxiPratique.taux === null ? '—' : `${tauxTaxiPratique.taux} % (${tauxTaxiPratique.ok}/${tauxTaxiPratique.total})`}
+                  {' • '}VTC : {tauxVtcPratique.taux === null ? '—' : `${tauxVtcPratique.taux} % (${tauxVtcPratique.ok}/${tauxVtcPratique.total})`}
+                </p>
                 <p className="text-sm text-rose-700">
                   {reussisPratique} réussi(s) • {echouesPratique} échoué(s) • {deplacesPratique > 0 ? `${deplacesPratique} déplacé(s) • ` : ''}{enAttentePratique} en attente
                 </p>
