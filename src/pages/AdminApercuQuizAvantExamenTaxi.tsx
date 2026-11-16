@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { QuizApercuInteractif } from "@/components/quiz-avant-examen-taxi/QuizApercuInteractif";
 import { construireInventaire, eligible, versCsv, joursFeries, SOURCES, THEMES, type Theme, type ItemInventaire } from "@/lib/quizAvantExamenTaxi/inventaire";
 
 const PAR_PAGE = 25;
@@ -12,9 +13,10 @@ const MODULES = [...new Set(SOURCES.map((s) => s.module))];
 /** Aperçu ADMIN non publié, lecture seule : aucune écriture, aucun accès apprenant. */
 export default function AdminApercuQuizAvantExamenTaxi() {
   const [theme, setTheme] = useState<Theme | "tous">("tous");
-  const [filtre, setFiltre] = useState<"tous" | "eligibles" | "qrc" | "sans_corrige" | "doublons">("tous");
+  const [filtre, setFiltre] = useState<"tous" | "eligibles" | "qrc" | "sans_corrige" | "doublons" | "conflits" | "feries" | "sans_id">("tous");
   const [recherche, setRecherche] = useState("");
   const [page, setPage] = useState(0);
+  const [onglet, setOnglet] = useState<"quiz" | "inventaire">("quiz");
 
   const { data, isLoading, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["apercu-quiz-avant-examen-taxi"],
@@ -32,7 +34,7 @@ export default function AdminApercuQuizAvantExamenTaxi() {
     return items.filter((it) =>
       (theme === "tous" || it.theme === theme) &&
       (filtre === "tous" || (filtre === "eligibles" && eligible(it)) || (filtre === "qrc" && it.type === "QRC") ||
-        (filtre === "sans_corrige" && it.sansCorrige) || (filtre === "doublons" && !!it.doublonDe)) &&
+        (filtre === "sans_corrige" && it.sansCorrige) || (filtre === "doublons" && !!it.doublonDe) || (filtre === "conflits" && it.conflitAvec.length > 0) || (filtre === "feries" && it.ferieFige) || (filtre === "sans_id" && !it.canonique)) &&
       (!q || `${it.enonce} ${it.choix.map((c) => c.texte).join(" ")} ${it.cle} ${it.questionId}`.toLowerCase().includes(q)));
   }, [items, theme, filtre, recherche]);
   const pages = Math.max(1, Math.ceil(liste.length / PAR_PAGE));
@@ -41,7 +43,8 @@ export default function AdminApercuQuizAvantExamenTaxi() {
   const stats = (Object.keys(THEMES) as Theme[]).map((t) => {
     const l = items.filter((i) => i.theme === t);
     return { t, total: l.length, qcm: l.filter(eligible).length, qrc: l.filter((i) => i.type === "QRC").length,
-      sans: l.filter((i) => i.sansCorrige).length, dbl: l.filter((i) => i.doublonDe).length };
+      sans: l.filter((i) => i.sansCorrige).length, dbl: l.filter((i) => i.doublonDe).length,
+      conf: l.filter((i) => i.conflitAvec.length).length, fer: l.filter((i) => i.ferieFige).length, sid: l.filter((i) => !i.canonique).length };
   });
 
   const exporter = () => {
@@ -63,15 +66,24 @@ export default function AdminApercuQuizAvantExamenTaxi() {
 
       <section className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="border-b text-left"><th className="p-2">Thème</th><th>Total</th><th>QCM retenus</th><th>QRC (à convertir ?)</th><th>QCM sans corrigé</th><th>Doublons</th></tr></thead>
+          <thead><tr className="border-b text-left"><th className="p-2">Thème</th><th>Total</th><th>QCM retenus</th><th>QRC (à convertir ?)</th><th>QCM sans corrigé</th><th>Doublons fusionnés</th><th>Conflits</th><th>Fériés figés</th><th>Sans ID</th></tr></thead>
           <tbody>{stats.map((s) => (
-            <tr key={s.t} className="border-b"><td className="p-2">{THEMES[s.t]}</td><td>{s.total}</td><td>{s.qcm}</td><td>{s.qrc}</td><td>{s.sans}</td><td>{s.dbl}</td></tr>
-          ))}</tbody>
+            <tr key={s.t} className="border-b"><td className="p-2">{THEMES[s.t]}</td><td>{s.total}</td><td>{s.qcm}</td><td>{s.qrc}</td><td>{s.sans}</td><td>{s.dbl}</td><td>{s.conf}</td><td>{s.fer}</td><td>{s.sid}</td></tr>
+          ))}
+          <tr className="font-semibold"><td className="p-2">Total</td>{(["total", "qcm", "qrc", "sans", "dbl", "conf", "fer", "sid"] as const).map((k) => <td key={k}>{stats.reduce((t, s) => t + s[k], 0)}</td>)}</tr>
+          </tbody>
         </table>
-        <p className="mt-2 text-xs text-muted-foreground">Arrondissements : aucune question existante (support de cours uniquement). Jours fériés : quiz défini dans le code (module 12), dates calculées ci-dessous pour contrôle.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Arrondissements : aucune question existante (support de cours uniquement). Jours fériés : seuls les QCM existants sont repris ; ceux qui citent une date figée sont signalés. Aucune question générée.</p>
       </section>
 
-      <section className="space-y-3">
+      <div className="flex gap-2" role="tablist">
+        <Button role="tab" aria-selected={onglet === "quiz"} variant={onglet === "quiz" ? "default" : "outline"} onClick={() => setOnglet("quiz")}>Quiz interactif (aperçu)</Button>
+        <Button role="tab" aria-selected={onglet === "inventaire"} variant={onglet === "inventaire" ? "default" : "outline"} onClick={() => setOnglet("inventaire")}>Inventaire complet</Button>
+      </div>
+
+      {onglet === "quiz" && !isLoading && !error && <QuizApercuInteractif items={items} />}
+
+      {onglet === "inventaire" && <section className="space-y-3">
         <div className="flex flex-col gap-3">
           <select aria-label="Thème" className="h-10 w-full rounded-md border bg-background px-3" value={theme} onChange={(e) => { setTheme(e.target.value as Theme | "tous"); setPage(0); }}>
             <option value="tous">Tous les thèmes</option>
@@ -79,7 +91,7 @@ export default function AdminApercuQuizAvantExamenTaxi() {
           </select>
           <select aria-label="Filtre" className="h-10 w-full rounded-md border bg-background px-3" value={filtre} onChange={(e) => { setFiltre(e.target.value as typeof filtre); setPage(0); }}>
             <option value="tous">Toutes les questions</option><option value="eligibles">QCM retenus pour le quiz</option>
-            <option value="qrc">QRC / cas à convertir</option><option value="sans_corrige">QCM sans bonne réponse</option><option value="doublons">Doublons</option>
+            <option value="qrc">QRC / cas à convertir</option><option value="sans_corrige">QCM sans bonne réponse</option><option value="doublons">Doublons fusionnés</option><option value="conflits">Conflits de corrigé</option><option value="feries">Jours fériés à date figée</option><option value="sans_id">Sans ID canonique (ID de repli)</option>
           </select>
           <Input aria-label="Recherche" placeholder="Rechercher (énoncé, proposition, identifiant)…" value={recherche} onChange={(e) => { setRecherche(e.target.value); setPage(0); }} />
           <div className="flex gap-2"><Button onClick={exporter} disabled={!liste.length}>Exporter CSV ({liste.length})</Button><Button variant="outline" onClick={() => refetch()}>Relire</Button></div>
@@ -92,7 +104,7 @@ export default function AdminApercuQuizAvantExamenTaxi() {
           <span className="text-sm">Page {page + 1} / {pages} — {liste.length} questions</span>
           <Button variant="outline" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Suivant</Button>
         </div>
-      </section>
+      </section>}
 
       <section>
         <h2 className="text-lg font-semibold">Jours fériés calculés (contrôle)</h2>
@@ -109,9 +121,13 @@ function Carte({ it }: { it: ItemInventaire }) {
         <Badge variant="secondary">{THEMES[it.theme]}</Badge>
         <Badge variant={it.type === "QRC" ? "destructive" : "outline"}>{it.type}</Badge>
         {it.sansCorrige && <Badge variant="destructive">Sans corrigé</Badge>}
-        {it.doublonDe && <Badge variant="outline">Doublon de {it.doublonDe}</Badge>}
+        {it.doublonDe && <Badge variant="outline">Doublon fusionné dans {it.doublonDe}</Badge>}
+        {it.sourcesFusionnees.length > 0 && <Badge variant="outline">Regroupe {it.sourcesFusionnees.length} doublon(s)</Badge>}
+        {it.conflitAvec.length > 0 && <Badge variant="destructive">Conflit de corrigé avec {it.conflitAvec.join(", ")}</Badge>}
+        {it.ferieFige && <Badge variant="destructive">Jour férié : date figée</Badge>}
+        {it.idCollision && <Badge variant="destructive">ID d'origine en double</Badge>}
         {!it.exerciceActif && <Badge variant="outline">Exercice inactif</Badge>}
-        <span className="text-muted-foreground">Module {it.module} · exo {it.exercice} « {it.exerciceTitre} » · Q {it.questionId} · {it.canonique ? `ID ${it.cle}` : "sans ID canonique"}</span>
+        <span className="text-muted-foreground">Module {it.module} · exo {it.exercice} « {it.exerciceTitre} » · Q {it.questionId} · {it.canonique ? `ID ${it.cle}` : `ID de repli ${it.cle}`}</span>
       </div>
       <p className="whitespace-pre-line font-medium">{it.enonce}</p>
       <ul className="space-y-1 text-sm">{it.choix.map((c) => (
