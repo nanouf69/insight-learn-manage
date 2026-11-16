@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PropositionsArrondissements } from "@/components/quiz-avant-examen-taxi/PropositionsArrondissements";
 import { QuizApercuInteractif } from "@/components/quiz-avant-examen-taxi/QuizApercuInteractif";
 import { construireInventaire, eligible, versCsv, joursFeries, SOURCES, THEMES, type Theme, type ItemInventaire } from "@/lib/quizAvantExamenTaxi/inventaire";
 
@@ -16,7 +17,7 @@ export default function AdminApercuQuizAvantExamenTaxi() {
   const [filtre, setFiltre] = useState<"tous" | "eligibles" | "qrc" | "sans_corrige" | "doublons" | "conflits" | "feries" | "sans_id">("tous");
   const [recherche, setRecherche] = useState("");
   const [page, setPage] = useState(0);
-  const [onglet, setOnglet] = useState<"quiz" | "inventaire">("quiz");
+  const [onglet, setOnglet] = useState<"quiz" | "inventaire" | "arrondissements">("quiz");
 
   const { data, isLoading, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["apercu-quiz-avant-examen-taxi"],
@@ -73,15 +74,18 @@ export default function AdminApercuQuizAvantExamenTaxi() {
           <tr className="font-semibold"><td className="p-2">Total</td>{(["total", "qcm", "qrc", "sans", "dbl", "conf", "fer", "sid"] as const).map((k) => <td key={k}>{stats.reduce((t, s) => t + s[k], 0)}</td>)}</tr>
           </tbody>
         </table>
-        <p className="mt-2 text-xs text-muted-foreground">Arrondissements : aucune question existante (support de cours uniquement). Jours fériés : seuls les QCM existants sont repris ; ceux qui citent une date figée sont signalés. Aucune question générée.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Contrôle de connaissances (13/13100) exclu. Arrondissements : propositions à valider dans l'onglet dédié. Jours fériés : seuls les QCM existants sont repris ; ceux qui citent une date figée sont signalés. Aucune question générée.</p>
       </section>
 
       <div className="flex gap-2" role="tablist">
         <Button role="tab" aria-selected={onglet === "quiz"} variant={onglet === "quiz" ? "default" : "outline"} onClick={() => setOnglet("quiz")}>Quiz interactif (aperçu)</Button>
         <Button role="tab" aria-selected={onglet === "inventaire"} variant={onglet === "inventaire" ? "default" : "outline"} onClick={() => setOnglet("inventaire")}>Inventaire complet</Button>
+        <Button role="tab" aria-selected={onglet === "arrondissements"} variant={onglet === "arrondissements" ? "default" : "outline"} onClick={() => setOnglet("arrondissements")}>Arrondissements (à valider)</Button>
       </div>
 
       {onglet === "quiz" && !isLoading && !error && <QuizApercuInteractif items={items} />}
+
+      {onglet === "arrondissements" && !isLoading && !error && <PropositionsArrondissements items={items} />}
 
       {onglet === "inventaire" && <section className="space-y-3">
         <div className="flex flex-col gap-3">
