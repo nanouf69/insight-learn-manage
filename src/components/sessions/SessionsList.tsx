@@ -117,7 +117,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
     queryFn: async () => {
       const { data, error } = await supabase
         .from('session_apprenants')
-        .select('session_id, apprenant_id, apprenants(nom, prenom, email, telephone, resultat_examen, abandonnee)');
+        .select('session_id, apprenant_id, apprenants(nom, prenom, email, telephone, resultat_examen, resultat_examen_pratique, abandonnee)');
       
       if (error) throw error;
       return (data || []).filter((r: any) => r.apprenants?.abandonnee !== true);
@@ -125,9 +125,9 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
   });
 
   const sessionStats = useMemo(() => {
-    const stats: Record<string, { inscrits: number; passed: number; failed: number; absent: number; total: number }> = {};
+    const stats: Record<string, { inscrits: number; passed: number; failed: number; absent: number; total: number; pPassed: number; pFailed: number; gPassed: number; gTotal: number }> = {};
     for (const sa of sessionApprenants) {
-      if (!stats[sa.session_id]) stats[sa.session_id] = { inscrits: 0, passed: 0, failed: 0, absent: 0, total: 0 };
+      if (!stats[sa.session_id]) stats[sa.session_id] = { inscrits: 0, passed: 0, failed: 0, absent: 0, total: 0, pPassed: 0, pFailed: 0, gPassed: 0, gTotal: 0 };
       stats[sa.session_id].inscrits++;
       const resultat = (sa as any).apprenants?.resultat_examen;
       if (resultat) {
@@ -136,6 +136,15 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         else if (r === 'non') { stats[sa.session_id].failed++; stats[sa.session_id].total++; }
         else if (r === 'absent') { stats[sa.session_id].absent++; }
       }
+      const st = stats[sa.session_id];
+      const th = String(resultat || '').toLowerCase();
+      const pr = String((sa as any).apprenants?.resultat_examen_pratique || '').toLowerCase();
+      if (pr === 'oui') st.pPassed++;
+      else if (pr === 'non') st.pFailed++;
+      // Total : admis = théorie ET pratique réussies ; échec = théorie ou pratique échouée
+      if (th === 'non') st.gTotal++;
+      else if (th === 'oui' && pr === 'oui') { st.gPassed++; st.gTotal++; }
+      else if (th === 'oui' && pr === 'non') st.gTotal++;
     }
     return stats;
   }, [sessionApprenants]);
@@ -563,7 +572,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                             {sessionStats[session.id]?.inscrits || 0} inscrit{sessionStats[session.id]?.inscrits === 1 ? "" : "s"}
                           </span>
                         </div>
-                        {sessionStats[session.id] && (sessionStats[session.id].total > 0 || sessionStats[session.id].absent > 0) && (() => {
+                        {sessionStats[session.id] && (sessionStats[session.id].total > 0 || sessionStats[session.id].absent > 0 || sessionStats[session.id].pPassed + sessionStats[session.id].pFailed > 0) && (() => {
                           const r = sessionStats[session.id];
                           const pct = r.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
                           return (
@@ -578,6 +587,16 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                                 Théorie : ✅ {r.passed} · ❌ {r.failed}{r.absent > 0 ? ` · 🔶 ${r.absent} abs.` : ''}
                                 {r.total > 0 ? ` (${pct}%)` : ''}
                               </span>
+                              {(r.pPassed + r.pFailed) > 0 && (
+                                <span className="font-medium text-primary ml-3">
+                                  Pratique : ✅ {r.pPassed} · ❌ {r.pFailed} ({Math.round((r.pPassed / (r.pPassed + r.pFailed)) * 100)}%)
+                                </span>
+                              )}
+                              {r.gTotal > 0 && (
+                                <span className="font-bold text-foreground ml-3">
+                                  Total théorie + pratique : {r.gPassed}/{r.gTotal} ({Math.round((r.gPassed / r.gTotal) * 100)}%)
+                                </span>
+                              )}
                             </div>
                           );
                         })()}
