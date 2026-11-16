@@ -86,9 +86,8 @@ Deno.serve(async (req) => {
     if (!apprenantId || !["matin", "apres_midi", "soir", "soir_1", "soir_2"].includes(demi) || !/^\d{4}-\d{2}-\d{2}$/.test(dateEmargement)) {
       return json({ error: "Données d'émargement invalides" }, 400);
     }
-    if (!dateSignatureAutorisee(dateEmargement)) {
-      return json({ error: SIGNATURE_PASSEE_REFUSEE, code: "P0541" }, 403);
-    }
+    // 16/11 : décision explicite du centre — les créneaux passés non signés de l'inscription
+    // sont de nouveau signables (heure réelle, sans remplacement) ; contrôle central ci-dessous.
     if (!absent && !signature) return json({ error: "Signature requise" }, 400);
     // Une signature vide (aucun trait) n'est jamais enregistrée comme signature.
     if (!absent && signature && signatureVide(signature)) return json({ error: "Signature vide : merci de signer dans le cadre" }, 400);
