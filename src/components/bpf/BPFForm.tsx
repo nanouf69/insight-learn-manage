@@ -1,4 +1,6 @@
-import { useState, forwardRef } from "react";
+import { useState, forwardRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { chargerTous, chargerFc, compterAnnee } from "@/lib/reports/rapportActiviteDonnees";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,6 +99,10 @@ export const BPFForm = forwardRef<HTMLDivElement>(function BPFForm(_props, ref) 
   const [specialites, setSpecialites] = useState(autoData.specialites);
   const [objectifs, setObjectifs] = useState(autoData.objectifs);
   const [exercice, setExercice] = useState({ debut: "2025-01-01", fin: "2025-12-31" });
+  const rowsQ = useQuery({ queryKey: ["rapport-activite"], queryFn: chargerTous });
+  const fcQ = useQuery({ queryKey: ["rapport-activite-fc"], queryFn: chargerFc });
+  const comptes = useMemo(() => rowsQ.data && fcQ.data ? compterAnnee(rowsQ.data, fcQ.data, exercice.debut.slice(0, 4)) : null, [rowsQ.data, fcQ.data, exercice.debut]);
+  const totalStagiaires = comptes?.total ?? stagiaires.total.nombre;
   const [dirigeant, setDirigeant] = useState({ nom: "", qualite: "Gérant", lieu: "Melun", date: "" });
 
   const generateBPF = async () => {
@@ -168,7 +174,7 @@ F. STAGIAIRES
 Salariés secteur privé: ${stagiaires.salariesPrives.nombre} (${stagiaires.salariesPrives.heures.toLocaleString()}h)
 Particuliers: ${stagiaires.particuliers.nombre} (${stagiaires.particuliers.heures.toLocaleString()}h)
 Demandeurs d'emploi: ${stagiaires.rechercheEmploi.nombre} (${stagiaires.rechercheEmploi.heures.toLocaleString()}h)
-TOTAL: ${stagiaires.total.nombre} stagiaires (${stagiaires.total.heures.toLocaleString()}h)
+TOTAL: ${totalStagiaires} stagiaires (${stagiaires.total.heures.toLocaleString()}h)
 
 SPÉCIALITÉS DE FORMATION
 ------------------------
@@ -233,7 +239,7 @@ Le: ${dirigeant.date}
         stagiaires_particuliers_heures: stagiaires.particuliers.heures,
         stagiaires_demandeurs_emploi_nombre: stagiaires.rechercheEmploi.nombre,
         stagiaires_demandeurs_emploi_heures: stagiaires.rechercheEmploi.heures,
-        stagiaires_total_nombre: stagiaires.total.nombre,
+        stagiaires_total_nombre: totalStagiaires,
         stagiaires_total_heures: stagiaires.total.heures,
         specialites: specialites,
         objectifs: objectifs,
@@ -342,7 +348,7 @@ Le: ${dirigeant.date}
                           <CheckCircle2 className="w-4 h-4" /> 14 sessions de formation
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" /> 135 apprenants inscrits
+                          <CheckCircle2 className="w-4 h-4" /> {comptes ? `${comptes.total} candidats ${exercice.debut.slice(0, 4)} (${comptes.initiale} examen théorique + ${comptes.continue_} formation continue facturée) — identique au Rapport d'activité` : "Chargement des candidats…"}
                         </li>
                         <li className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4" /> 4 formateurs actifs
@@ -444,7 +450,7 @@ Le: ${dirigeant.date}
                     <Card>
                       <CardContent className="p-4 text-center">
                         <GraduationCap className="w-8 h-8 mx-auto mb-2 text-amber-600" />
-                        <p className="text-2xl font-bold text-amber-600">{stagiaires.total.nombre}</p>
+                        <p className="text-2xl font-bold text-amber-600">{totalStagiaires}</p>
                         <p className="text-sm text-muted-foreground">Stagiaires</p>
                       </CardContent>
                     </Card>
@@ -756,7 +762,7 @@ Le: ${dirigeant.date}
               </div>
               <div className="p-4 rounded-xl bg-primary/10 flex justify-around text-center">
                 <div>
-                  <p className="text-2xl font-bold text-primary">{stagiaires.total.nombre}</p>
+                  <p className="text-2xl font-bold text-primary">{totalStagiaires}</p>
                   <p className="text-sm text-muted-foreground">Stagiaires total</p>
                 </div>
                 <div>
