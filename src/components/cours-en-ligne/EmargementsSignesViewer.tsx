@@ -472,13 +472,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       setConfirmationTardive({ ...slot, existing: true });
       return;
     }
-    if (slot.date < new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date())) {
-      setConfirmationTardive({ ...slot, existing: false, error: 'Vérification de l’autorisation…' });
-      const { data, error } = await supabase.from('emargement_regularisations').select('id, auth_user_id, apprenant_id, creneaux, expire_le').eq('apprenant_id', apprenantId ?? '').eq('auth_user_id', userId ?? '');
-      const grants = !error && Array.isArray(data) ? autorisationsPourCreneau(data as AutorisationTardive[], userId ?? '', apprenantId ?? '', slot.date, slot.creneau) : [];
-      setConfirmationTardive(current => current?.date === slot.date && current.creneau === slot.creneau ? { ...slot, existing: false, grant: grants.length === 1 ? grants[0].id : undefined, error: error ? 'Lecture de l’autorisation impossible : aucune signature envoyée.' : grants.length > 1 ? 'Plusieurs autorisations : vérification du centre nécessaire.' : undefined } : current);
-      return;
-    }
+    // 16/11 : créneaux passés non signés signables directement (le serveur contrôle, heure réelle).
     // Pratique : une seule signature couvre matin + après-midi du même jour.
     // Seules les demi-journées prévues ET encore non signées sont ajoutées :
     // une signature existante n'est jamais remplacée.
