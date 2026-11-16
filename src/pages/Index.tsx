@@ -21,6 +21,7 @@ import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
 import { FormateursList } from "@/components/formateurs/FormateursList";
 import { BPFForm } from "@/components/bpf/BPFForm";
+import { RapportActivitePage } from "@/components/rapport-activite/RapportActivitePage";
 import { FactureForm } from "@/components/factures/FactureForm";
 import { ComptabilitePage } from "@/components/comptabilite/ComptabilitePage";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
@@ -457,6 +458,8 @@ const Index = () => {
         return <ComptabilitePage />;
       case "bpf":
         return <BPFForm />;
+      case "rapport-activite":
+        return <RapportActivitePage />;
       case "cours-en-ligne":
         return <CoursEnLignePage />;
       case "factures-prestataires":

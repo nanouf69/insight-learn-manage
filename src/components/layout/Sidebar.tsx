@@ -53,6 +53,7 @@ const menuItems = [
   { id: "factures", label: "Factures", icon: Receipt },
   { id: "comptabilite", label: "Comptabilité", icon: Calculator },
   { id: "bpf", label: "BPF", icon: ClipboardList },
+  { id: "rapport-activite", label: "Rapport d'activité", icon: ClipboardList },
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
   { id: "factures-prestataires", label: "Factures prestataires", icon: Receipt },
