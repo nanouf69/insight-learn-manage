@@ -933,6 +933,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             date_examen_theorique,
             date_examen_pratique,
             resultat_examen,
+            resultat_examen_pratique,
             statut,
             montant_ttc,
             montant_paye,
@@ -4424,15 +4425,22 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                '⚠️ ' + sessionApprenant.statut_suivi}
                             </span>
                           )}
-                          {apprenant.resultat_examen === 'oui' && (
-                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ Théorie réussie</span>
-                          )}
-                          {apprenant.resultat_examen === 'non' && (
-                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">❌ Théorie échouée</span>
-                          )}
-                          {apprenant.resultat_examen === 'absent' && (
-                            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent examen</span>
-                          )}
+                          {(() => {
+                            const badge = (label: string, v?: string | null) => {
+                              const r = (v || '').toLowerCase();
+                              const [txt, cls] = r === 'oui' ? [`✅ ${label} : réussi`, 'bg-green-100 text-green-700']
+                                : r === 'non' ? [`❌ ${label} : échoué`, 'bg-red-100 text-red-700']
+                                : r === 'absent' ? [`🔶 ${label} : absent`, 'bg-orange-100 text-orange-700']
+                                : r === 'deplace' ? [`↪️ ${label} : déplacé`, 'bg-orange-100 text-orange-700']
+                                : r === 'reporte' ? [`⏳ ${label} : reporté`, 'bg-muted text-muted-foreground']
+                                : [`⏳ ${label} : pas de résultat`, 'bg-muted text-muted-foreground'];
+                              return <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${cls}`}>{txt}</span>;
+                            };
+                            return (<>
+                              {badge('Examen théorique', apprenant.resultat_examen)}
+                              {badge('Examen pratique', (apprenant as any).resultat_examen_pratique)}
+                            </>);
+                          })()}
                           {hasNoSignature(apprenant.id) && sessionApprenant.presence_pratique !== 'absent' && (
                             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700" title="Aucune feuille d'émargement signée">❌ Absent (aucune signature)</span>
                           )}
