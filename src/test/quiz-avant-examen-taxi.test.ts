@@ -32,3 +32,61 @@ describe("quiz avant examen TAXI — inventaire", () => {
   });
   it("export CSV contient toutes les lignes", () => expect(versCsv(inv).split("\n")).toHaveLength(5));
 });
+
+import { marquerDoublons } from "@/lib/quizAvantExamenTaxi/inventaire";
+import { bilan, creer, ecrire, lire, ordonner, repondre } from "@/lib/quizAvantExamenTaxi/tentatives";
+
+const mem = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) }; };
+
+describe("quiz avant examen TAXI — doublons, conflits, IDs", () => {
+  const base = construireInventaire(rows);
+  it("doublon au même corrigé fusionné avec source listée", () => expect(base[0].sourcesFusionnees).toEqual(["u7@28/700"]));
+  it("corrigés différents = conflit, aucune version exclue en silence ni notée", () => {
+    const [a, b] = [base[0], { ...base[3], doublonDe: null, sourcesFusionnees: [], cle: "u9", choix: [{ lettre: "A", texte: "x", correct: false }, { lettre: "B", texte: "y", correct: true }], bonnes: ["B"] }];
+    const r = marquerDoublons([{ ...a, sourcesFusionnees: [] }, b]);
+    expect(r.every(x => x.conflitAvec.length === 1 && !x.doublonDe)).toBe(true);
+    expect(r.filter(eligible)).toHaveLength(0);
+  });
+  it("ID d'origine répété : clé suffixée stable et signalée", () => {
+    const r = marquerDoublons([{ ...base[1] }, { ...base[1], enonce: "autre" }]);
+    expect(r.map(x => x.cle)).toEqual(["11:605:2", "11:605:2#2"]); expect(r[1].idCollision).toBe(true);
+  });
+  it("jour férié daté signalé", () => {
+    const r = construireInventaire([{ module_id: 9, module_data: { exercices: [{ id: 203, questions: [
+      { id: 1, enonce: "Le lundi de Pentecôte 2026 est-il férié ?", choix: [{ lettre: "A", texte: "Oui", correct: true }] },
+      { id: 2, enonce: "Un jour férié ouvre-t-il droit à majoration ?", choix: [{ lettre: "A", texte: "Oui", correct: true }] }] }] } }]);
+    expect(r.map(x => x.ferieFige)).toEqual([true, false]);
+  });
+});
+
+describe("quiz avant examen TAXI — tentatives", () => {
+  const q1 = { ...construireInventaire(rows)[0] };
+  const q2 = { ...q1, cle: "k2", theme: "national" as const, bonnes: ["A"], empreinteContenu: "e2" };
+  const inv = new Map([[q1.cle, q1], [q2.cle, q2]]);
+  it("ordre fixe par thème, sans tirage", () => {
+    const loc = { ...q1, cle: "L", theme: "local" as const };
+    expect(ordonner([loc, q1, q2]).map(x => x.cle)).toEqual([q1.cle, "k2", "L"]);
+  });
+  it("sauvegarde relue, reprise, tentatives isolées et par compte", () => {
+    const st = mem();
+    let t1 = creer([], [q1.cle, "k2"], "toutes", null); t1 = repondre(t1, q1, ["A"]); ecrire(st, "admin1", t1);
+    const t2 = creer(lire(st, "admin1"), [q1.cle], "erreurs", t1.id); ecrire(st, "admin1", t2);
+    const l = lire(st, "admin1");
+    expect(l.map(x => x.numero)).toEqual([1, 2]);
+    expect(l[0].reponses[q1.cle].lettres).toEqual(["A"]); expect(l[1].reponses).toEqual({});
+    expect(lire(st, "admin2")).toEqual([]);
+  });
+  it("note /20 recalculée après correction du corrigé, question modifiée non notée", () => {
+    let t = creer([], [q1.cle, "k2"], "toutes", null);
+    t = repondre(t, q1, ["A"]); t = repondre(t, q2, ["B"]);
+    expect(bilan(t, inv, eligible).note20).toBe(10);
+    const corrige = new Map(inv); corrige.set("k2", { ...q2, bonnes: ["B"] });
+    expect(bilan(t, corrige, eligible).note20).toBe(20);
+    const modifie = new Map(inv); modifie.set("k2", { ...q2, empreinteContenu: "autre" });
+    const b = bilan(t, modifie, eligible); expect(b.modifiees).toEqual(["k2"]); expect(b.note20).toBe(20); expect(b.notees).toBe(1);
+  });
+  it("tentative terminée figée", () => {
+    const t = { ...creer([], [q1.cle], "toutes", null), termineeLe: "x" };
+    expect(() => repondre(t, q1, ["A"])).toThrow();
+  });
+});
