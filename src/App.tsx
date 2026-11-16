@@ -36,6 +36,7 @@ import AdminErrorLogs from "./pages/AdminErrorLogs";
 import AdminCalendrierDevis from "./pages/AdminCalendrierDevis";
 import AdminHistoriqueQuestions from "./pages/AdminHistoriqueQuestions";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
+import AdminApercuQuizAvantExamenTaxi from "./pages/AdminApercuQuizAvantExamenTaxi";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 import AdminCorrectionQrcV2Reel from "./pages/AdminCorrectionQrcV2Reel";
@@ -186,6 +187,12 @@ function App() {
                 <Route path="/admin/historique-questions" element={
                   <ProtectedRoute>
                     <ErrorBoundary><AdminHistoriqueQuestions /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/admin/apercu-quiz-avant-examen-taxi" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><AdminApercuQuizAvantExamenTaxi /></ErrorBoundary>
                   </ProtectedRoute>
                 } />
 
