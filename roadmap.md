@@ -44,3 +44,5 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Autosave anti-tempête / lectures périodiques — à faire après P0.
 
 - [ ] DNS TXT openai-business-claim.www — bloqué : DNS chez PlanetHoster, ajout par l utilisateur
+- [ ] Quiz avant examen TAXI : exclure module 13 exo 13100 ; QCM multi par arrondissement (avenues/boulevards/places) marqués « à valider » depuis données existantes ; stations conservées de la source géographie ; totaux recalculés ; aperçu admin seul
+- [ ] Onglet « Signatures manquantes » (clic → fiche CRM élève, formulaire signatures ; pratique à venir distincte)
