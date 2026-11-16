@@ -1,4 +1,6 @@
-import { useState, forwardRef } from "react";
+import { useState, forwardRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { chargerTous, chargerFc, compterAnnee } from "@/lib/reports/rapportActiviteDonnees";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,6 +99,9 @@ export const BPFForm = forwardRef<HTMLDivElement>(function BPFForm(_props, ref) 
   const [specialites, setSpecialites] = useState(autoData.specialites);
   const [objectifs, setObjectifs] = useState(autoData.objectifs);
   const [exercice, setExercice] = useState({ debut: "2025-01-01", fin: "2025-12-31" });
+  const rowsQ = useQuery({ queryKey: ["rapport-activite"], queryFn: chargerTous });
+  const fcQ = useQuery({ queryKey: ["rapport-activite-fc"], queryFn: chargerFc });
+  const comptes = useMemo(() => rowsQ.data && fcQ.data ? compterAnnee(rowsQ.data, fcQ.data, exercice.debut.slice(0, 4)) : null, [rowsQ.data, fcQ.data, exercice.debut]);
   const [dirigeant, setDirigeant] = useState({ nom: "", qualite: "Gérant", lieu: "Melun", date: "" });
 
   const generateBPF = async () => {
@@ -342,7 +347,7 @@ Le: ${dirigeant.date}
                           <CheckCircle2 className="w-4 h-4" /> 14 sessions de formation
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" /> 135 apprenants inscrits
+                          <CheckCircle2 className="w-4 h-4" /> {comptes ? `${comptes.total} candidats ${exercice.debut.slice(0, 4)} (${comptes.initiale} examen théorique + ${comptes.continue_} formation continue facturée) — identique au Rapport d'activité` : "Chargement des candidats…"}
                         </li>
                         <li className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4" /> 4 formateurs actifs
