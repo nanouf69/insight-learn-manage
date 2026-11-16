@@ -52,7 +52,7 @@ export function QuizApercuInteractif({ items }: { items: ItemInventaire[] }) {
         <Button onClick={() => demarrer("toutes", quiz.map((i) => i.cle), null)}>Nouvelle tentative complète ({quiz.length} questions)</Button>
         {t && b && b.fausses.length + b.modifiees.length > 0 && (
           <Button variant="outline" onClick={() => demarrer("erreurs", t.cles.filter((c) => b.fausses.includes(c) || b.modifiees.includes(c)), t.id)}>
-            Refaire seulement les fausses ({b.fausses.length + b.modifiees.length})
+            Refaire seulement les fausses ou sans réponse ({b.fausses.length + b.modifiees.length})
           </Button>)}
         {t && <Button variant="outline" onClick={() => demarrer("toutes", quiz.map((i) => i.cle), t.id)}>Refaire toutes les questions</Button>}
       </div>
