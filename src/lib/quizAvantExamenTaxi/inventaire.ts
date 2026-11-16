@@ -41,6 +41,16 @@ export interface ItemInventaire {
   theme: Theme; module: number; exercice: number; exerciceTitre: string; questionId: string;
   type: "QCM" | "QRC"; enonce: string; choix: Choix[]; bonnes: string[];
   exerciceActif: boolean; sansCorrige: boolean; doublonDe: string | null;
+  /** Empreinte de l'énoncé + propositions (sans corrigé) : détecte une question modifiée. */
+  empreinteContenu: string;
+  /** Même énoncé/propositions qu'une autre source mais bonnes réponses différentes : jamais exclu en silence. */
+  conflitAvec: string[];
+  /** Autres sources fusionnées dans cette question (doublons au corrigé identique). */
+  sourcesFusionnees: string[];
+  /** Mentionne un jour férié avec une année ou une date figée (2026…). */
+  ferieFige: boolean;
+  /** Identifiant d'origine utilisé deux fois dans le même exercice. */
+  idCollision: boolean;
 }
 
 interface RowModule { module_id: number; module_data: unknown }
@@ -67,10 +77,15 @@ export function construireInventaire(rows: RowModule[]): ItemInventaire[] {
       const canon = str(q.question_id) || str(q.uid);
       const questionId = str(q.id);
       const bonnes = choix.filter((c) => c.correct).map((c) => c.lettre);
+      const enonce = str(q.enonce);
+      const empreinteContenu = empreinte(normaliser(enonce) + "|" + choix.map((c) => c.lettre + ":" + normaliser(c.texte)).join("|"));
+      const texteComplet = enonce + " " + choix.map((c) => c.texte).join(" ");
       items.push({
-        cle: canon || `${src.module}:${src.exercice}:${questionId}`, canonique: !!canon,
+        cle: canon || (questionId ? `${src.module}:${src.exercice}:${questionId}` : `${src.module}:${src.exercice}:h${empreinteContenu}`), canonique: !!canon,
+        empreinteContenu, conflitAvec: [], sourcesFusionnees: [], idCollision: false,
+        ferieFige: /f[ée]ri[ée]/i.test(texteComplet) && /\b20\d\d\b|\b\d{1,2}\s*(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre)\b|\d{1,2}\/\d{1,2}/i.test(texteComplet),
         theme: src.theme, module: src.module, exercice: src.exercice, exerciceTitre: str(exo.titre),
-        questionId, type, enonce: str(q.enonce), choix, bonnes,
+        questionId, type, enonce, choix, bonnes,
         exerciceActif: exo.actif !== false, sansCorrige: type === "QCM" && bonnes.length === 0, doublonDe: null,
       });
     }
@@ -78,19 +93,49 @@ export function construireInventaire(rows: RowModule[]): ItemInventaire[] {
   return marquerDoublons(items);
 }
 
-/** Doublon = même énoncé normalisé + mêmes propositions ; la 1re occurrence fait référence. */
-export function marquerDoublons(items: ItemInventaire[]): ItemInventaire[] {
-  const vus = new Map<string, string>();
-  return items.map((it) => {
-    const k = normaliser(it.enonce) + "|" + it.choix.map((c) => normaliser(c.texte)).sort().join("|");
-    const ref = vus.get(k);
-    if (!ref) { vus.set(k, it.cle + "@" + it.module + "/" + it.exercice); return it; }
-    return { ...it, doublonDe: ref };
-  });
+/** Hash FNV-1a 32 bits (hex) — stable, sans dépendance. */
+export function empreinte(t: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(16).padStart(8, "0");
 }
 
-/** Éligible au quiz : QCM avec au moins une bonne réponse, exercice actif, non doublon. */
-export const eligible = (it: ItemInventaire) => it.type === "QCM" && !it.sansCorrige && it.exerciceActif && !it.doublonDe;
+const ref = (it: ItemInventaire) => it.cle + "@" + it.module + "/" + it.exercice;
+const bonnesTextes = (it: ItemInventaire) => it.choix.filter((c) => c.correct).map((c) => normaliser(c.texte)).sort().join("|");
+
+/**
+ * Doublon = même énoncé normalisé + mêmes propositions ET mêmes bonnes réponses : fusionné
+ * dans la 1re occurrence (sources listées). Mêmes propositions mais corrigés différents =
+ * conflit : toutes les versions restent visibles, aucune n'est notée avant arbitrage.
+ * Les clés en double reçoivent un suffixe stable (#2, #3) et sont signalées.
+ */
+export function marquerDoublons(items: ItemInventaire[]): ItemInventaire[] {
+  const cles = new Map<string, number>();
+  const out = items.map((it) => {
+    const n = (cles.get(it.cle) ?? 0) + 1; cles.set(it.cle, n);
+    return n === 1 ? { ...it } : { ...it, cle: `${it.cle}#${n}`, idCollision: true };
+  });
+  const groupes = new Map<string, ItemInventaire[]>();
+  for (const it of out) {
+    if (it.type !== "QCM") continue;
+    const k = normaliser(it.enonce) + "|" + it.choix.map((c) => normaliser(c.texte)).sort().join("|");
+    groupes.set(k, [...(groupes.get(k) ?? []), it]);
+  }
+  for (const g of groupes.values()) {
+    if (g.length < 2) continue;
+    const corriges = new Set(g.filter((x) => !x.sansCorrige).map(bonnesTextes));
+    if (corriges.size > 1) {
+      for (const it of g) it.conflitAvec = g.filter((x) => x !== it).map(ref);
+      continue;
+    }
+    const tete = g.find((x) => !x.sansCorrige && x.exerciceActif) ?? g[0];
+    for (const it of g) if (it !== tete) { it.doublonDe = ref(tete); tete.sourcesFusionnees.push(ref(it)); }
+  }
+  return out;
+}
+
+/** Éligible au quiz : QCM avec au moins une bonne réponse, exercice actif, non doublon, sans conflit. */
+export const eligible = (it: ItemInventaire) => it.type === "QCM" && !it.sansCorrige && it.exerciceActif && !it.doublonDe && it.conflitAvec.length === 0;
 
 /** Score /20 tout-ou-rien (ensemble exact, ordre indifférent). */
 export function score20(questions: Pick<ItemInventaire, "cle" | "bonnes">[], reponses: Record<string, string[]>): number {
@@ -125,9 +170,9 @@ export function joursFeries(annee: number): { nom: string; date: string }[] {
 
 export function versCsv(items: ItemInventaire[]): string {
   const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
-  const tete = ["theme", "module", "exercice", "exercice_titre", "question_id", "cle_canonique", "type", "enonce", "propositions", "bonnes_reponses", "exercice_actif", "sans_corrige", "doublon_de", "eligible_quiz"];
+  const tete = ["theme", "module", "exercice", "exercice_titre", "question_id", "cle_canonique", "type", "enonce", "propositions", "bonnes_reponses", "exercice_actif", "sans_corrige", "doublon_de", "sources_fusionnees", "conflit_avec", "ferie_date_figee", "id_collision", "eligible_quiz"];
   const lignes = items.map((it) => [THEMES[it.theme], it.module, it.exercice, it.exerciceTitre, it.questionId, it.cle, it.type, it.enonce,
     it.choix.map((c) => `${c.lettre}) ${c.texte}`).join(" | "), it.bonnes.join("+"), it.exerciceActif ? "oui" : "non",
-    it.sansCorrige ? "oui" : "non", it.doublonDe ?? "", eligible(it) ? "oui" : "non"].map((v) => esc(String(v))).join(";"));
+    it.sansCorrige ? "oui" : "non", it.doublonDe ?? "", it.sourcesFusionnees.join(" "), it.conflitAvec.join(" "), it.ferieFige ? "oui" : "non", it.idCollision ? "oui" : "non", eligible(it) ? "oui" : "non"].map((v) => esc(String(v))).join(";"));
   return "\uFEFF" + [tete.join(";"), ...lignes].join("\n");
 }
