@@ -49,6 +49,7 @@ import { ReinscriptionExamenBadge } from './ReinscriptionExamenBadge';
 import { ChoixPratiqueBadges } from '@/components/crm/apprenant-sections/ChoixPratiqueBadges';
 import { filiereDepuisDossier } from '@/lib/modeles/entrainementPratiqueVtc';
 import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacement';
+import { FormationPratiqueDateSelect } from './FormationPratiqueDateSelect';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -1250,57 +1251,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     setSendingDerniereRelance(false);
     setSentDerniereRelance(true);
     toast.success(`📧 ${sent}/${echoues.length} email(s) "Dernière relance repassage" envoyé(s)`);
-  };
-
-  // Déplacer un candidat à la prochaine session d'entraînement
-  const handleDecalerProchaineSession = async (apprenantId: string, apprenantNom: string) => {
-    try {
-      // Mark presence_pratique = 'deplace' in session_apprenants for pratique sessions
-      const { data: sessionsApprenant } = await supabase
-        .from('session_apprenants')
-        .select('id, session_id, sessions!inner(type_session)')
-        .eq('apprenant_id', apprenantId)
-        .in('sessions.type_session', PRATIQUE_TYPES as any);
-      if (sessionsApprenant && sessionsApprenant.length > 0) {
-        for (const sa of sessionsApprenant) {
-          await supabase
-            .from('session_apprenants')
-            .update({ presence_pratique: 'deplace' })
-            .eq('id', sa.id);
-        }
-      }
-      // Update resultat_examen_pratique in apprenants
-      await supabase
-        .from('apprenants')
-        .update({ resultat_examen_pratique: 'deplace' } as any)
-        .eq('id', apprenantId);
-      // Delete existing reservation so they can book a new one next session
-      await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
-      const nextExtraFormation = extraCandidatsFormation.filter((id) => id !== apprenantId);
-      const nextRemovedFormation = removedCandidatsFormation.includes(apprenantId)
-        ? removedCandidatsFormation
-        : [...removedCandidatsFormation, apprenantId];
-      const nextExtraCMA = extraCandidatsCMA.filter((id) => id !== apprenantId);
-      const nextRemovedCMA = removedCandidatsCMA.includes(apprenantId)
-        ? removedCandidatsCMA
-        : [...removedCandidatsCMA, apprenantId];
-      setExtraCandidatsFormation(nextExtraFormation);
-      setRemovedCandidatsFormation(nextRemovedFormation);
-      setExtraCandidatsCMA(nextExtraCMA);
-      setRemovedCandidatsCMA(nextRemovedCMA);
-      await saveCandidateListsNow({
-        extraFormation: nextExtraFormation,
-        removedFormation: nextRemovedFormation,
-        extraCMA: nextExtraCMA,
-        removedCMA: nextRemovedCMA,
-      });
-      queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
-      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
-      queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
-      toast.success(`${apprenantNom} déplacé(e) à la prochaine session — retiré(e) de la liste actuelle`);
-    } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Échec'));
-    }
   };
 
   // Annuler le statut "déplacé" d'un candidat
@@ -4170,57 +4120,12 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Déplacer à la prochaine session">
-                                      <CalendarPlus className="h-3.5 w-3.5 text-orange-600" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Déplacer {a.prenom} {a.nom} à la prochaine session ?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Le candidat sera marqué « Décalé », sa réservation actuelle sera annulée et il sera automatiquement inclus dans la prochaine session (lettre CMA + candidats à former).
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}>Déplacer</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title={hasReservation ? "Changer la date" : "Choisir une date"}>
-                                      <CalendarPlus className="h-3.5 w-3.5 text-blue-600" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-2" align="end">
-                                    <p className="text-xs font-medium mb-2">{hasReservation ? 'Changer' : 'Choisir'} la date pour {a.prenom} :</p>
-                                    <div className="grid gap-1">
-                                      {vtcCalendarDates.map(d => (
-                                        <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
-                                          {formatDateShortFR(d)}
-                                        </Button>
-                                      ))}
-                                    </div>
-                                    <div className="border-t mt-2 pt-2">
-                                      <p className="text-xs text-muted-foreground mb-1">Ou choisir une autre date :</p>
-                                      <Input type="date" className="h-8 text-xs" onChange={(e) => { if (e.target.value) handleAssignDate(a.id, `${a.nom} ${a.prenom}`, e.target.value, 'vtc'); }} />
-                                    </div>
-                                    <div className="border-t mt-2 pt-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full text-xs text-orange-700 border-orange-300 hover:bg-orange-50 gap-1.5"
-                                        onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}
-                                      >
-                                        <CalendarPlus className="h-3.5 w-3.5" />
-                                        Déplacer à la prochaine session
-                                      </Button>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
+                                <FormationPratiqueDateSelect
+                                  dates={vtcCalendarDates}
+                                  value={reservation?.date_choisie}
+                                  nom={`${a.prenom} ${a.nom}`}
+                                  onConfirm={date => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, date, 'vtc')}
+                                />
                               </div>
                             </TableCell>
                           </TableRow>
@@ -4551,57 +4456,12 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Déplacer à la prochaine session">
-                                      <CalendarPlus className="h-3.5 w-3.5 text-orange-600" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Déplacer {a.prenom} {a.nom} à la prochaine session ?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Le candidat sera marqué « Décalé », sa réservation actuelle sera annulée et il sera automatiquement inclus dans la prochaine session (lettre CMA + candidats à former).
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}>Déplacer</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title={hasReservation ? "Changer la date" : "Choisir une date"}>
-                                      <CalendarPlus className="h-3.5 w-3.5 text-amber-600" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-2" align="end">
-                                    <p className="text-xs font-medium mb-2">{hasReservation ? 'Changer' : 'Choisir'} la date pour {a.prenom} :</p>
-                                    <div className="grid gap-1">
-                                      {taxiCalendarDates.map(d => (
-                                        <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
-                                          {formatDateShortFR(d)}
-                                        </Button>
-                                      ))}
-                                    </div>
-                                    <div className="border-t mt-2 pt-2">
-                                      <p className="text-xs text-muted-foreground mb-1">Ou choisir une autre date :</p>
-                                      <Input type="date" className="h-8 text-xs" onChange={(e) => { if (e.target.value) handleAssignDate(a.id, `${a.nom} ${a.prenom}`, e.target.value, 'taxi'); }} />
-                                    </div>
-                                    <div className="border-t mt-2 pt-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full text-xs text-orange-700 border-orange-300 hover:bg-orange-50 gap-1.5"
-                                        onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}
-                                      >
-                                        <CalendarPlus className="h-3.5 w-3.5" />
-                                        Déplacer à la prochaine session
-                                      </Button>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
+                                <FormationPratiqueDateSelect
+                                  dates={taxiCalendarDates}
+                                  value={reservation?.date_choisie}
+                                  nom={`${a.prenom} ${a.nom}`}
+                                  onConfirm={date => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, date, 'taxi')}
+                                />
                               </div>
                             </TableCell>
                           </TableRow>
