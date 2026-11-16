@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Training-date dropdowns use the current track-specific planning days, filter past Paris dates, and confirm before calling the existing assignment flow; why: exam periods must not be mistaken for training days or alter exam results.
 - Attendance PDF signature cells reserve a separate bottom band for the exact row learner identity through nomSousSignature; never infer or replace signature evidence. Why: names identify signed and unsigned cells without covering handwriting.
 - Attendance-addition notes use the optional bounded motifPresence schema; cancellation reasons and frozen-practice statement requirements remain separate. Why: optional free text must not bypass protected evidence workflows.
 - Missing-signature PDFs share the recorded-range minute parser and union same-date intervals for totals, preserve handwriting space and remain unsigned worksheets. Why: duplicate enrollment and overlap must never manufacture attendance hours.
