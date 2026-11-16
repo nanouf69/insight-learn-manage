@@ -4,13 +4,12 @@
  * ne modifie et ne convertit rien. Les QRC sont listées mais exclues du quiz.
  */
 export type Theme =
-  | "national" | "local" | "controle" | "adresses" | "stations"
+  | "national" | "local" | "adresses" | "stations"
   | "communes" | "cas_pratiques" | "jours_feries" | "arrondissements";
 
 export const THEMES: Record<Theme, string> = {
   national: "Bilan examen — Réglementation nationale TAXI",
   local: "Bilan examen — Réglementation locale (Métropole de Lyon)",
-  controle: "Contrôle de connaissances TAXI (bilan complet)",
   adresses: "Lyon — places, avenues, boulevards, rues, lieux",
   stations: "Stations de taxi",
   communes: "Communes Métropole de Lyon et ZUPC",
@@ -25,7 +24,7 @@ export const SOURCES: { module: number; exercice: number; theme: Theme }[] = [
   { module: 27, exercice: 250, theme: "national" }, { module: 28, exercice: 700, theme: "national" },
   { module: 9, exercice: 204, theme: "local" }, { module: 11, exercice: 606, theme: "local" },
   { module: 27, exercice: 251, theme: "local" }, { module: 28, exercice: 701, theme: "local" },
-  { module: 13, exercice: 13100, theme: "controle" },
+  // Module 13 / exercice 13100 (Contrôle de connaissances TAXI) EXCLU entièrement (consigne 16/11).
   ...[7001, 7002, 7003, 7004, 7005, 7006, 7007, 7009, 7010, 7011, 7012, 7013, 7014, 7015]
     .map((exercice) => ({ module: 7, exercice, theme: "adresses" as Theme })),
   { module: 7, exercice: 7008, theme: "stations" },
