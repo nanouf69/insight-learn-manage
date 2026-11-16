@@ -48,8 +48,10 @@ describe("quiz avant examen TAXI — doublons, conflits, IDs", () => {
     expect(r.filter(eligible)).toHaveLength(0);
   });
   it("ID d'origine répété : clé suffixée stable et signalée", () => {
-    const r = marquerDoublons([{ ...base[1] }, { ...base[1], enonce: "autre" }]);
-    expect(r.map(x => x.cle)).toEqual(["11:605:2", "11:605:2#2"]); expect(r[1].idCollision).toBe(true);
+    const a = { ...base[1], empreinteContenu: "aaaa" }, b = { ...base[1], enonce: "autre", empreinteContenu: "bbbb" };
+    const r1 = marquerDoublons([a, b]), r2 = marquerDoublons([b, a]);
+    expect(r1.map(x => x.cle)).toEqual(["11:605:2#haaaa", "11:605:2#hbbbb"]);
+    expect(r2.map(x => x.cle).sort()).toEqual(r1.map(x => x.cle)); expect(r1.every(x => x.idCollision)).toBe(true);
   });
   it("jour férié daté signalé", () => {
     const r = construireInventaire([{ module_id: 9, module_data: { exercices: [{ id: 203, questions: [

@@ -107,14 +107,21 @@ const bonnesTextes = (it: ItemInventaire) => it.choix.filter((c) => c.correct).m
  * Doublon = même énoncé normalisé + mêmes propositions ET mêmes bonnes réponses : fusionné
  * dans la 1re occurrence (sources listées). Mêmes propositions mais corrigés différents =
  * conflit : toutes les versions restent visibles, aucune n'est notée avant arbitrage.
- * Les clés en double reçoivent un suffixe stable (#2, #3) et sont signalées.
+ * Les clés en double reçoivent un suffixe d'empreinte de contenu (stable si l'ordre change) et sont signalées.
  */
 export function marquerDoublons(items: ItemInventaire[]): ItemInventaire[] {
   const cles = new Map<string, number>();
   const out = items.map((it) => {
-    const n = (cles.get(it.cle) ?? 0) + 1; cles.set(it.cle, n);
-    return n === 1 ? { ...it } : { ...it, cle: `${it.cle}#${n}`, idCollision: true };
+    cles.set(it.cle, (cles.get(it.cle) ?? 0) + 1); return { ...it };
   });
+  const vusSuffixe = new Map<string, number>();
+  for (const it of out) {
+    if ((cles.get(it.cle) ?? 0) < 2) continue;
+    let k = `${it.cle}#h${it.empreinteContenu}`;
+    const n = (vusSuffixe.get(k) ?? 0) + 1; vusSuffixe.set(k, n);
+    if (n > 1) k += `~${n}`; // contenu strictement identique sous le même ID : départage par ordre
+    it.cle = k; it.idCollision = true;
+  }
   const groupes = new Map<string, ItemInventaire[]>();
   for (const it of out) {
     if (it.type !== "QCM") continue;
