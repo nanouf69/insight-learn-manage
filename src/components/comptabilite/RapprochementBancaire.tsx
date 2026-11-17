@@ -36,6 +36,7 @@ interface Transaction {
   notes: string | null;
   statut: string;
   justificatif_id: string | null;
+  apprenant_id?: string | null;
   source: string;
   created_at: string;
   tva_rate?: number | null;
@@ -344,6 +345,8 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
   const [linkDialogId, setLinkDialogId] = useState<string | null>(null);
+  const [eleveDialogId, setEleveDialogId] = useState<string | null>(null);
+  const [eleveSearch, setEleveSearch] = useState("");
   const [matchSuggestion, setMatchSuggestion] = useState<MatchSuggestion | null>(null);
   const [matchSuggestionLoading, setMatchSuggestionLoading] = useState(false);
   const [confirmingLink, setConfirmingLink] = useState(false);
@@ -1145,6 +1148,17 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       toast.error("Erreur Excel: " + (e?.message || e));
     }
   };
+  const associerEleve = async (txId: string, apprenantId: string | null) => {
+    const { data, error } = await supabase.from("transactions_bancaires").update({ apprenant_id: apprenantId } as any).eq("id", txId).select("id, apprenant_id").maybeSingle();
+    if (error || !data || (data as any).apprenant_id !== apprenantId) {
+      toast.error("Association non enregistrée" + (error ? " : " + error.message : ""));
+      return;
+    }
+    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, apprenant_id: apprenantId } : t));
+    setEleveDialogId(null);
+    toast.success(apprenantId ? "Élève associé à l'opération" : "Association retirée");
+  };
+
   const findApprenantInLibelle = (libelle: string): ApprenantWithSession | null => {
     const upper = libelle.toUpperCase();
     for (const a of apprenants) {
@@ -1442,7 +1456,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                     const StatutIcon = statutCfg.icon;
                     const catCfg = getCat(tx.categorie);
                     const jlié = linkedJustif(tx);
-                    const matchedApprenant = !isDebit ? findApprenantInLibelle(tx.libelle) : null;
+                    const matchedApprenant = (tx.apprenant_id ? apprenants.find(a => a.id === tx.apprenant_id) : null) || (!isDebit ? findApprenantInLibelle(tx.libelle) : null);
 
                     return (
                       <div key={tx.id} className={cn(
@@ -1494,7 +1508,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                 </p>
                                 {matchedApprenant && (
                                   <p className="text-[10px] text-primary font-medium mt-0.5">
-                                    📅 {matchedApprenant.prenom} {matchedApprenant.nom}
+                                    {tx.apprenant_id === matchedApprenant.id ? "🔗" : "📅"} {matchedApprenant.prenom} {matchedApprenant.nom}
                                     {" — "}
                                     {(() => {
                                       const debut = formatDateShort(matchedApprenant.session_date_debut || matchedApprenant.date_debut_formation);
@@ -1710,6 +1724,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                     <DropdownMenuItem onClick={() => openLinkDialog(tx.id)}>
                                       <Link2 className="h-4 w-4 mr-2" /> Associer un justificatif
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => { setEleveSearch(""); setEleveDialogId(tx.id); }}>
+                                      <Link2 className="h-4 w-4 mr-2" /> Associer à un élève
+                                    </DropdownMenuItem>
+                                    {tx.apprenant_id && (
+                                      <DropdownMenuItem onClick={() => associerEleve(tx.id, null)}>
+                                        <MinusCircle className="h-4 w-4 mr-2" /> Retirer l'élève associé
+                                      </DropdownMenuItem>
+                                    )}
                                     {tx.statut !== "justifie" && (
                                       <DropdownMenuItem onClick={() => quickUpdate(tx.id, { statut: "justifie" })}>
                                         <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" /> Marquer justifié
@@ -1740,6 +1762,24 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       )}
 
       {/* Dialog: link justificatif */}
+      <Dialog open={!!eleveDialogId} onOpenChange={o => { if (!o) setEleveDialogId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Associer à un élève</DialogTitle></DialogHeader>
+          <Input autoFocus placeholder="Rechercher un nom, prénom ou e-mail…" value={eleveSearch} onChange={e => setEleveSearch(e.target.value)} />
+          <div className="max-h-[50dvh] overflow-y-auto space-y-1">
+            {apprenants
+              .filter(a => { const q = eleveSearch.trim().toLowerCase(); return !q || `${a.nom} ${a.prenom} ${a.prenom} ${a.nom} ${(a as any).email || ""}`.toLowerCase().includes(q); })
+              .slice(0, 50)
+              .map(a => (
+                <Button key={a.id} variant="ghost" className="w-full justify-start h-auto py-2" onClick={() => eleveDialogId && associerEleve(eleveDialogId, a.id)}>
+                  <span className="font-medium">{a.nom} {a.prenom}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{a.formation_choisie || a.type_apprenant || ""}</span>
+                </Button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!linkDialogId} onOpenChange={o => { if (!o) { setLinkDialogId(null); setMatchSuggestion(null); } }}>
         <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>

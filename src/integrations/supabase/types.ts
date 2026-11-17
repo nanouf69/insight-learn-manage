@@ -9805,6 +9805,7 @@ export type Database = {
       }
       transactions_bancaires: {
         Row: {
+          apprenant_id: string | null
           banque: string
           categorie: string | null
           created_at: string
@@ -9826,6 +9827,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apprenant_id?: string | null
           banque?: string
           categorie?: string | null
           created_at?: string
@@ -9847,6 +9849,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apprenant_id?: string | null
           banque?: string
           categorie?: string | null
           created_at?: string
