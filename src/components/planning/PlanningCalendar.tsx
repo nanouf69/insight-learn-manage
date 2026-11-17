@@ -89,7 +89,22 @@ const FORMATION_TO_EXAM_MAP: Record<string, { date: string; heure: string }[]> =
   '2026-02-27': [{ date: '2026-03-06', heure: '08:30' }, { date: '2026-03-06', heure: '10:00' }, { date: '2026-03-06', heure: '11:30' }, { date: '2026-03-06', heure: '13:30' }],
 };
 
-export function PlanningCalendar() {
+export function PlanningCalendar({ onNavigateToApprenant }: { onNavigateToApprenant: (id: string) => void }) {
+  const renderCandidateName = (candidate: { apprenantId?: string; name: string }) => {
+    if (!candidate.apprenantId) return candidate.name;
+    const apprenantId = candidate.apprenantId;
+    return (
+      <Button
+        variant="link"
+        className="h-auto max-w-full whitespace-normal p-0 text-left text-xs leading-tight text-inherit underline-offset-2"
+        aria-label={`Ouvrir la fiche CRM de ${candidate.name}`}
+        title={`Ouvrir la fiche CRM de ${candidate.name}`}
+        onClick={() => onNavigateToApprenant(apprenantId)}
+      >
+        {candidate.name}
+      </Button>
+    );
+  };
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -664,7 +679,7 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
                               <span className="text-[10px] font-bold text-muted-foreground uppercase">{heure}</span>
                               {candidates.map((c, i) => (
                                 <span key={i} className={`text-xs leading-tight block ${c.type === 'TAXI' ? 'text-amber-600' : 'text-primary'}`}>
-                                  {c.name} <span className="text-[10px] font-medium">({c.type})</span>
+                                  {renderCandidateName(c)} <span className="text-[10px] font-medium">({c.type})</span>
                                   {c.attente && (
                                     <button type="button" className="ml-1 text-[10px] font-bold text-destructive underline"
                                       onClick={(e) => { e.stopPropagation(); setRapprochement(c); }}>À rapprocher</button>
@@ -713,7 +728,7 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
                                   <span className="text-[10px] font-bold text-muted-foreground uppercase">{heure}</span>
                                   {candidates.map((c, i) => (
                                     <span key={i} className={`text-xs leading-tight block ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
-                                      {c.pasInscritExamen && '⚠️ '}{c.name}
+                                      {c.pasInscritExamen && '⚠️ '}{renderCandidateName(c)}
                                       {c.telephone && <span className="block text-[10px] text-muted-foreground font-medium">☎ {c.telephone}</span>}
                                       {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
                                     </span>
@@ -729,7 +744,7 @@ td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
                                 const hoursLabel = parts.map(p => p.label).join(' + ');
                                 return (
                                   <span key={`nt-${i}`} className={`text-xs leading-tight block ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
-                                    {c.pasInscritExamen && '⚠️ '}{c.name}
+                                    {c.pasInscritExamen && '⚠️ '}{renderCandidateName(c)}
                                     {hoursLabel && <span className="text-[10px] text-muted-foreground font-medium"> ({hoursLabel})</span>}
                                     {c.telephone && <span className="block text-[10px] text-muted-foreground font-medium">☎ {c.telephone}</span>}
                                     {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}

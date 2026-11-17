@@ -443,7 +443,7 @@ const Index = () => {
       case "crm":
         return <CRMDashboard initialApprenantId={initialApprenantId} onApprenantClosed={() => setInitialApprenantId(null)} />;
       case "planning":
-        return <PlanningCalendar />;
+        return <PlanningCalendar onNavigateToApprenant={handleNavigateToApprenant} />;
       case "sessions":
         return <SessionsList onNavigateToApprenant={handleNavigateToApprenant} />;
       case "formateurs":
