@@ -11,6 +11,7 @@ export interface Tentative {
   id: string; creeLe: string; termineeLe: string | null;
   mode: "toutes" | "erreurs"; parent: string | null; numero: number;
   cles: string[]; reponses: Record<string, Reponse>;
+  revision?: number;
 }
 
 const PREFIXE = "qaet-apercu-admin:v1:";
@@ -27,11 +28,20 @@ export function lire(st: Stockage, compte: string): Tentative[] {
 
 /** Écrit UNE tentative en relisant l'état stocké (un autre onglet ne perd pas les siennes). */
 export function ecrire(st: Stockage, compte: string, t: Tentative): Tentative[] {
-  const autres = lire(st, compte).filter((x) => x.id !== t.id);
-  const tout = [...autres, t].sort((a, b) => a.numero - b.numero);
+  const existantes = lire(st, compte);
+  const precedente = existantes.find(x => x.id === t.id);
+  if (precedente && (precedente.revision ?? 0) !== (t.revision ?? 0)) {
+    throw new Error("Tentative modifiée dans un autre onglet : reprendre sa version enregistrée");
+  }
+  if (precedente?.termineeLe && JSON.stringify(precedente) !== JSON.stringify(t)) {
+    throw new Error("Tentative terminée : aucune réponse ne peut être remplacée");
+  }
+  const enregistree = { ...t, revision: (t.revision ?? 0) + 1 };
+  const autres = existantes.filter((x) => x.id !== t.id);
+  const tout = [...autres, enregistree].sort((a, b) => a.numero - b.numero);
   st.setItem(cleStockage(compte), JSON.stringify(tout));
   const relu = lire(st, compte).find((x) => x.id === t.id);
-  if (!relu || JSON.stringify(relu) !== JSON.stringify(t)) throw new Error("Sauvegarde non confirmée à la relecture");
+  if (!relu || JSON.stringify(relu) !== JSON.stringify(enregistree)) throw new Error("Sauvegarde non confirmée à la relecture");
   return tout;
 }
 
@@ -86,5 +96,5 @@ export function bilan(t: Tentative, inventaire: Map<string, ItemInventaire>, est
   const rang = Object.keys(THEMES) as Theme[];
   return { note20: notees ? Math.round((justes / notees) * 2000) / 100 : 0, justes, notees, repondues, total: t.cles.length,
     introuvables, modifiees, nonNotees, fausses,
-    parTheme: rang.filter((th) => pt.has(th)).map((th) => ({ theme: th, ...pt.get(th)! })) };
+    parTheme: rang.flatMap((th) => { const p = pt.get(th); return p ? [{ theme: th, ...p }] : []; }) };
 }

@@ -59,19 +59,19 @@ export function QuizApercuInteractif({ items }: { items: ItemInventaire[] }) {
       {erreur && <p className="text-destructive">{erreur}</p>}
 
       {tentatives.length > 0 && (
-        <table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-1">Tentative</th><th>Mode</th><th>Début</th><th>Statut</th><th>Note /20 (recalculée)</th><th /></tr></thead>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-1">Tentative</th><th>Mode</th><th>Début</th><th>Statut</th><th>Note /20 (recalculée)</th><th /></tr></thead>
           <tbody>{tentatives.map((x) => { const bx = bilan(x, parCle, eligible); return (
             <tr key={x.id} className={`border-b ${x.id === courante ? "font-semibold" : ""}`}>
               <td className="p-1">n°{x.numero}</td><td>{x.mode === "erreurs" ? "Fausses seulement" : "Toutes"}</td>
               <td>{new Date(x.creeLe).toLocaleString("fr-FR")}</td><td>{x.termineeLe ? "Terminée" : `En cours ${bx.repondues}/${bx.total}`}</td>
               <td>{bx.note20.toFixed(2)} ({bx.justes}/{bx.notees})</td>
               <td><Button size="sm" variant="ghost" onClick={() => { setCourante(x.id); setIndex(0); }}>{x.termineeLe ? "Revoir" : "Reprendre"}</Button></td>
-            </tr>); })}</tbody></table>)}
+            </tr>); })}</tbody></table></div>)}
 
       {t && b && (
         <section className="space-y-4 rounded-lg border p-4" aria-label="Tentative en cours">
           <div className="space-y-2">
-            <div className="flex justify-between text-sm"><span>Tentative n°{t.numero} — {b.repondues}/{b.total} répondues</span><span>Note actuelle : <strong>{b.note20.toFixed(2)} / 20</strong></span></div>
+            <div className="flex flex-wrap justify-between gap-2 text-sm"><span>Tentative n°{t.numero} — {b.repondues}/{b.total} répondues</span><span>Note actuelle : <strong>{b.note20.toFixed(2)} / 20</strong></span></div>
             <Progress value={b.total ? (b.repondues / b.total) * 100 : 0} />
             <div className="grid gap-1 text-xs">{b.parTheme.map((p) => (
               <div key={p.theme} className="flex justify-between"><span>{THEMES[p.theme]}</span><span>{p.repondues}/{p.total} répondues · {p.justes} justes</span></div>))}</div>
@@ -97,7 +97,7 @@ export function QuizApercuInteractif({ items }: { items: ItemInventaire[] }) {
                 return (
                   <li key={c.lettre}>
                     <label className={`flex items-start gap-3 rounded-md border p-3 ${voirCorrige && c.correct ? "border-primary bg-primary/10" : ""}`}>
-                      <Checkbox checked={coche} disabled={!!t.termineeLe} aria-label={`Réponse ${c.lettre}`}
+                      <Checkbox className="shrink-0" checked={coche} disabled={!!t.termineeLe} aria-label={`Réponse ${c.lettre}`}
                         onCheckedChange={(v) => {
                           const base = (r?.lettres ?? []).filter((x) => x !== c.lettre);
                           sauver(repondre(t, q, v ? [...base, c.lettre] : base));

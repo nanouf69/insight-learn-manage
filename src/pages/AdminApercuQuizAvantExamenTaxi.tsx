@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PropositionsArrondissements } from "@/components/quiz-avant-examen-taxi/PropositionsArrondissements";
 import { QuizApercuInteractif } from "@/components/quiz-avant-examen-taxi/QuizApercuInteractif";
-import { construireInventaire, eligible, versCsv, joursFeries, SOURCES, THEMES, type Theme, type ItemInventaire } from "@/lib/quizAvantExamenTaxi/inventaire";
+import { eligible, versCsv, joursFeries, THEMES, type Theme, type ItemInventaire } from "@/lib/quizAvantExamenTaxi/inventaire";
+import { chargerInventaireServeur } from "@/lib/quizAvantExamenTaxi/sourcesServeur";
 
 const PAR_PAGE = 25;
-const MODULES = [...new Set(SOURCES.map((s) => s.module))];
 
 /** Aperçu ADMIN non publié, lecture seule : aucune écriture, aucun accès apprenant. */
 export default function AdminApercuQuizAvantExamenTaxi() {
@@ -21,13 +21,20 @@ export default function AdminApercuQuizAvantExamenTaxi() {
 
   const { data, isLoading, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["apercu-quiz-avant-examen-taxi"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("module_editor_state").select("module_id, module_data").in("module_id", MODULES);
-      if (error) throw error;
-      return construireInventaire((data ?? []) as { module_id: number; module_data: unknown }[]);
-    },
+    queryFn: chargerInventaireServeur,
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    const channel = supabase.channel("qaet-admin-sources")
+      .on("postgres_changes", { event: "*", schema: "public", table: "module_editor_state" }, () => void refetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_questions" }, () => void refetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_question_bindings" }, () => void refetch())
+      .subscribe();
+    const reconnect = () => void refetch();
+    window.addEventListener("online", reconnect);
+    return () => { void supabase.removeChannel(channel); window.removeEventListener("online", reconnect); };
+  }, [refetch]);
 
   const items = data ?? [];
   const liste = useMemo(() => {
@@ -101,7 +108,7 @@ export default function AdminApercuQuizAvantExamenTaxi() {
           <div className="flex gap-2"><Button onClick={exporter} disabled={!liste.length}>Exporter CSV ({liste.length})</Button><Button variant="outline" onClick={() => refetch()}>Relire</Button></div>
         </div>
 
-        {visibles.map((it) => <Carte key={`${it.module}-${it.exercice}-${it.questionId}`} it={it} />)}
+        {visibles.map((it) => <Carte key={it.cle} it={it} />)}
 
         <div className="flex items-center justify-between">
           <Button variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>Précédent</Button>
