@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] 17/11 — Lucevic / Reziki : inscription FC VTC vérifiée par SELECT, ancien type/modules VTC initial identifiés ; projection partagée corrigée en aperçu, aucune affectation ni preuve réelle réécrite. Publication non effectuée.
 - [x] 16/11 — Candidats à former : menu des dates de formation du planning VTC/TAXI, confirmation avant attribution ; aucun résultat d’examen modifié, aperçu uniquement.
 - [x] 16/11 — sélecteur Résultats pratique : report indépendant du planning d'entraînement ouvert, erreurs et lignes retournées vérifiées, réservations conservées ; aperçu uniquement, aucun candidat déplacé par l'agent.
 - [ ] Décision 14/11 00:22 : campagne distincte connectés incomplets, historique non-connectés intact ; modèles véridiques conditionnels + séparation des destinataires + moteur relecture/réservation/envoi IMPLÉMENTÉS ISOLÉMENT, 85 tests réussis. Responsable : Lovable. NON DÉPLOYÉ/NON ACTIF : adaptateurs dates/contrats/progression/incidents et verrou atomique réel manquants ; sauvegarde/restauration indépendante non disponible. Action utilisateur : déclencher export intégral dans More → Database → Manage → Settings → Export data et rendre disponible destination indépendante de test ; fichiers privés séparés. Détail : docs/campagne-connectes-theorique-2026-11-14.md. Aucune publication globale ni mail réel.

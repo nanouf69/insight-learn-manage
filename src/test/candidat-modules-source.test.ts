@@ -26,6 +26,22 @@ beforeEach(() => {
 });
 
 describe('Candidats : même parcours et preuves que l’élève, lecture simulée', () => {
+  it.each(['Elvis Lucevic', 'Ali Reziki'])('%s : inscription FC VTC malgré les anciens modules initiaux', () => {
+    const legacy = [1, 2, 3, 4, 35, 5, 60, 70, 8, 83, 50];
+    const before = [...legacy];
+    expect(resolveFormationId('vtc', 'continue-vtc', legacy)).toBe('continue-vtc');
+    expect(modulesAttribuesDashboard('continue-vtc', legacy).map(m => m.id)).toEqual([81, 5, 87, 83, 85, 88, 89]);
+    expect(legacy).toEqual(before);
+  });
+  it('FC TAXI explicite : aucune introduction ou pratique initiale', () => {
+    expect(resolveFormationId('taxi', 'formation-continue-taxi', FORMATION_DEFAULT_MODULES.taxi)).toBe('continue-taxi');
+    expect(modulesAttribuesDashboard('continue-taxi', FORMATION_DEFAULT_MODULES.taxi).map(m => m.id)).toEqual(modulesAttribuesDashboard('continue-taxi', null).map(m => m.id));
+    expect(modulesAttribuesDashboard('continue-taxi', FORMATION_DEFAULT_MODULES.taxi).map(m => m.id)).not.toContain(6);
+  });
+  it('VTC initial : les modules explicitement attribués restent prioritaires', () => {
+    expect(resolveFormationId('vtc', 'vtc', FORMATION_DEFAULT_MODULES.vtc)).toBe('vtc');
+    expect(modulesAttribuesDashboard('vtc', FORMATION_DEFAULT_MODULES.vtc).map(m => m.id)).toEqual(FORMATION_DEFAULT_MODULES.vtc);
+  });
   it('dispense individuelle compte dix validations sans écrire de réponses', async () => {
     fake.rows.apprenants.data = { type_apprenant: 'va-e', modules_autorises: null };
     fake.rows.apprenant_module_completion.data = [33,41,3,29,30,38,63,73,8,53].map(module_id => ({ module_id, status: 'completed' }));

@@ -62,6 +62,10 @@ export const resolveFormationId = (
   formationChoisie: string | null | undefined,
   modulesAutorises: number[] | null | undefined,
 ): FormationId | null => {
+  // An explicit continuing-training enrollment wins over a legacy initial-training
+  // module list/type. Display only: never rewrite the stored assignment or proofs.
+  const declaredFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
+  if (declaredFormation === "continue-vtc" || declaredFormation === "continue-taxi") return declaredFormation;
   // Priority: explicit assigned modules (source of truth for learner access)
   const byModules = inferFormationFromModules(modulesAutorises);
   if (byModules) return byModules;
