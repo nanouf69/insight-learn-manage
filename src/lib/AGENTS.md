@@ -1,5 +1,5 @@
 # Persistence boundaries
-- Explicit continuing-training enrollment overrides legacy initial-training module inference in the shared course projection; stored assignments and learner evidence are never rewritten. Why: stale CRM defaults must not show initial courses to continuing-training learners.
+- Explicit continuing-training enrollment and FC VTC type aliases override legacy initial-training module inference in the shared course projection; stored assignments and learner evidence are never rewritten. Why: stale CRM defaults must not show initial courses to continuing-training learners.
 - Training-date dropdowns use the current track-specific planning days, filter past Paris dates, and confirm before calling the existing assignment flow; why: exam periods must not be mistaken for training days or alter exam results.
 - Attendance PDF signature cells reserve a separate bottom band for the exact row learner identity through nomSousSignature; never infer or replace signature evidence. Why: names identify signed and unsigned cells without covering handwriting.
 - Attendance-addition notes use the optional bounded motifPresence schema; cancellation reasons and frozen-practice statement requirements remain separate. Why: optional free text must not bypass protected evidence workflows.
