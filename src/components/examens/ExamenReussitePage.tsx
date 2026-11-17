@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus, Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -3426,7 +3426,36 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               )}
             </CardHeader>
             <CardContent>
-              {(cmaSelection.erreur || cmaLettreSources.error || cmaSelection.aVerifier.length > 0) && <div className="mb-4 border border-destructive p-3 text-destructive" role="alert"><p>{cmaSelection.erreur || (cmaLettreSources.error ? 'Lecture des preuves CMA indisponible' : 'Territoire ou passage pratique à vérifier — génération suspendue')}</p>{cmaSelection.aVerifier.map(({candidat,raison})=><p key={candidat.id}>{candidat.nom} {candidat.prenom} — {raison}</p>)}</div>}
+              {(cmaSelection.erreur || cmaLettreSources.error || cmaSelection.aVerifier.length > 0) && (
+                <div className="mb-4 border border-destructive p-3 text-sm" role="alert">
+                  <p className="text-destructive">{cmaSelection.erreur || (cmaLettreSources.error ? 'Lecture des preuves CMA indisponible' : 'Territoire ou passage pratique à vérifier — génération suspendue')}</p>
+                  {cmaSelection.aVerifier.length > 0 && (
+                    <Dialog>
+                      <Button asChild variant="link" className="h-auto max-w-full justify-start whitespace-normal px-0 py-1 text-left">
+                        <DialogTrigger>
+                          Voir les personnes à vérifier ({cmaSelection.aVerifier.length})
+                        </DialogTrigger>
+                      </Button>
+                      <DialogContent className="flex max-h-[85dvh] max-w-2xl flex-col overflow-hidden">
+                        <DialogHeader>
+                          <DialogTitle>Personnes à vérifier ({cmaSelection.aVerifier.length})</DialogTitle>
+                        </DialogHeader>
+                        <div className="min-h-0 overflow-y-auto divide-y">
+                          {cmaSelection.aVerifier.map(({ candidat, raison }) => (
+                            <div key={candidat.id} className="space-y-1 py-3 pr-2">
+                              <p className="break-words font-medium">{candidat.nom} {candidat.prenom}</p>
+                              <p className="break-words text-sm text-muted-foreground">{raison}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <DialogFooter>
+                          <DialogClose asChild><Button variant="outline">Fermer</Button></DialogClose>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 <p className="text-sm text-muted-foreground">Dates de passage pratique :</p>
                 <Select value={selectedDatePratique} onValueChange={setSelectedDatePratique}>
