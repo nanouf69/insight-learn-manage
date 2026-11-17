@@ -51,6 +51,7 @@ import { filiereDepuisDossier } from '@/lib/modeles/entrainementPratiqueVtc';
 import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacement';
 import { FormationPratiqueDateSelect } from './FormationPratiqueDateSelect';
 import { periodesFormationPratique } from '@/lib/periodesFormationPratique';
+import { enregistrerListesPlanning } from '@/lib/planningCandidatsSave';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -1103,11 +1104,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       throw new Error("Renseignez d'abord les dates « Du / Au » de cette période pratique.");
     }
 
-    const { error } = await supabase
-      .from('planning_pratique_config')
-      .upsert({
-        exam_date: selectedExamDate,
-        date_pratique: selectedDatePratique,
+    const fields = {
         ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
         excluded_days: excludedDays,
         extra_days: extraDays,
@@ -1118,9 +1115,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         note_lettre_cma: noteLettreCMA,
         lettre_exclus_ids: lettreExclusIds,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'exam_date,date_pratique' });
-
-    if (error) throw error;
+      };
+    await enregistrerListesPlanning({
+      exists: planningRowExistsRef.current,
+      fields,
+      update: () => supabase.from('planning_pratique_config').update(fields)
+        .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique)
+        .select('extra_candidats').maybeSingle(),
+      insert: values => supabase.from('planning_pratique_config').upsert({
+        exam_date: selectedExamDate, date_pratique: selectedDatePratique, ...values,
+      } as any, { onConflict: 'exam_date,date_pratique' }).select('extra_candidats').single(),
+    });
+    planningRowExistsRef.current = true;
   }, [
     selectedExamDate,
     selectedDatePratique,
@@ -1313,9 +1319,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       const nextExtraFormation = extraCandidatsFormation.includes(apprenant.id)
         ? extraCandidatsFormation
         : [...extraCandidatsFormation, apprenant.id];
+      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
       setRemovedCandidatsFormation(nextRemovedFormation);
       setExtraCandidatsFormation(nextExtraFormation);
-      await saveCandidateListsNow({ extraFormation: nextExtraFormation, removedFormation: nextRemovedFormation });
       setSearchFormation("");
       toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté aux candidats à former`);
     } catch (err: any) {
@@ -1326,8 +1332,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const handleRemoveExtraFromFormationList = async (apprenant: ExamApprenant) => {
     try {
       const nextExtraFormation = extraCandidatsFormation.filter(id => id !== apprenant.id);
-      setExtraCandidatsFormation(nextExtraFormation);
       await saveCandidateListsNow({ extraFormation: nextExtraFormation });
+      setExtraCandidatsFormation(nextExtraFormation);
       toast.success(`${apprenant.nom} ${apprenant.prenom} retiré(e) de la liste`);
     } catch (err: any) {
       toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
@@ -1340,9 +1346,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       const nextExtraCMA = extraCandidatsCMA.includes(apprenant.id)
         ? extraCandidatsCMA
         : [...extraCandidatsCMA, apprenant.id];
+      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
       setRemovedCandidatsCMA(nextRemovedCMA);
       setExtraCandidatsCMA(nextExtraCMA);
-      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
       setSearchCMA("");
       toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté à la lettre CMA`);
     } catch (err: any) {
@@ -1356,9 +1362,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       const nextRemovedCMA = extraCandidatsCMA.includes(apprenant.id) || removedCandidatsCMA.includes(apprenant.id)
         ? removedCandidatsCMA.filter(id => id !== apprenant.id)
         : [...removedCandidatsCMA, apprenant.id];
+      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
       setExtraCandidatsCMA(nextExtraCMA);
       setRemovedCandidatsCMA(nextRemovedCMA);
-      await saveCandidateListsNow({ extraCMA: nextExtraCMA, removedCMA: nextRemovedCMA });
       toast.success(`${apprenant.nom} ${apprenant.prenom} retiré de la lettre CMA`);
     } catch (err: any) {
       toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);

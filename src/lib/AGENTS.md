@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Candidate-list saves update existing exact planning rows and confirm returned lists before changing UI state; only new rows insert complete bounds. Why: upsert insert constraints reject omitted dates and optimistic lists can falsely show an unsaved addition.
 - Explicit continuing-training enrollment and FC VTC type aliases override legacy initial-training module inference in the shared course projection; stored assignments and learner evidence are never rewritten. Why: stale CRM defaults must not show initial courses to continuing-training learners.
 - Training-date dropdowns use the current track-specific planning days, filter past Paris dates, and confirm before calling the existing assignment flow; why: exam periods must not be mistaken for training days or alter exam results.
 - Training-period labels derive from exact theoretical dates and the next dated CMA practical start; imprecise practical labels yield no period, and selecting a period only switches the existing exam/planning context. Why: calendar bounds must not invent an assignment or overwrite saved planning.
