@@ -347,6 +347,35 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [linkDialogId, setLinkDialogId] = useState<string | null>(null);
   const [eleveDialogId, setEleveDialogId] = useState<string | null>(null);
   const [eleveSearch, setEleveSearch] = useState("");
+  const [eleveResultats, setEleveResultats] = useState<any[]>([]);
+  const [eleveLoading, setEleveLoading] = useState(false);
+  const [elevesLies, setElevesLies] = useState<Record<string, any>>({});
+  useEffect(() => {
+    const ids = Array.from(new Set(transactions.map(t => t.apprenant_id).filter(Boolean) as string[])).filter(id => !elevesLies[id]);
+    if (!ids.length) return;
+    supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation").in("id", ids).then(({ data }) => {
+      if (data?.length) setElevesLies(prev => ({ ...prev, ...Object.fromEntries(data.map((a: any) => [a.id, a])) }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions]);
+  useEffect(() => {
+    if (!eleveDialogId) return;
+    const q = eleveSearch.trim().replace(/[,%()]/g, " ").trim();
+    if (q.length < 2) { setEleveResultats([]); return; }
+    let annule = false;
+    const t = setTimeout(async () => {
+      setEleveLoading(true);
+      const mots = q.split(/\s+/).filter(Boolean);
+      let req = supabase.from("apprenants").select("id, nom, prenom, email, formation_choisie, type_apprenant").is("deleted_at", null);
+      for (const m of mots) req = req.or(`nom.ilike.%${m}%,prenom.ilike.%${m}%,email.ilike.%${m}%`);
+      const { data, error } = await req.order("nom").limit(50);
+      if (annule) return;
+      setEleveLoading(false);
+      if (error) { toast.error("Recherche impossible : " + error.message); return; }
+      setEleveResultats(data ?? []);
+    }, 250);
+    return () => { annule = true; clearTimeout(t); };
+  }, [eleveSearch, eleveDialogId]);
   const [matchSuggestion, setMatchSuggestion] = useState<MatchSuggestion | null>(null);
   const [matchSuggestionLoading, setMatchSuggestionLoading] = useState(false);
   const [confirmingLink, setConfirmingLink] = useState(false);
@@ -1456,7 +1485,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                     const StatutIcon = statutCfg.icon;
                     const catCfg = getCat(tx.categorie);
                     const jlié = linkedJustif(tx);
-                    const matchedApprenant = (tx.apprenant_id ? apprenants.find(a => a.id === tx.apprenant_id) : null) || (!isDebit ? findApprenantInLibelle(tx.libelle) : null);
+                    const matchedApprenant = (tx.apprenant_id ? (apprenants.find(a => a.id === tx.apprenant_id) || elevesLies[tx.apprenant_id]) : null) || (!isDebit ? findApprenantInLibelle(tx.libelle) : null);
 
                     return (
                       <div key={tx.id} className={cn(
@@ -1767,10 +1796,10 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           <DialogHeader><DialogTitle>Associer à un élève</DialogTitle></DialogHeader>
           <Input autoFocus placeholder="Rechercher un nom, prénom ou e-mail…" value={eleveSearch} onChange={e => setEleveSearch(e.target.value)} />
           <div className="max-h-[50dvh] overflow-y-auto space-y-1">
-            {apprenants
-              .filter(a => { const q = eleveSearch.trim().toLowerCase(); return !q || `${a.nom} ${a.prenom} ${a.prenom} ${a.nom} ${(a as any).email || ""}`.toLowerCase().includes(q); })
-              .slice(0, 50)
-              .map(a => (
+            {eleveLoading && <p className="text-xs text-muted-foreground">Recherche…</p>}
+            {!eleveLoading && eleveSearch.trim().length >= 2 && eleveResultats.length === 0 && <p className="text-xs text-muted-foreground">Aucun élève trouvé</p>}
+            {eleveSearch.trim().length < 2 && <p className="text-xs text-muted-foreground">Tapez au moins 2 lettres</p>}
+            {eleveResultats.map(a => (
                 <Button key={a.id} variant="ghost" className="w-full justify-start h-auto py-2" onClick={() => eleveDialogId && associerEleve(eleveDialogId, a.id)}>
                   <span className="font-medium">{a.nom} {a.prenom}</span>
                   <span className="ml-2 text-xs text-muted-foreground">{a.formation_choisie || a.type_apprenant || ""}</span>
