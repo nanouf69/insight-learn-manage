@@ -1,7 +1,7 @@
 # Quiz avant examen TAXI — décision de publication, 17/11/2026
 
 ## État réel
-**NON PUBLIÉ pour les élèves.** Autorisation de publication reçue, mais conditionnée aux preuves ; aucun appel de publication, aucune migration ni écriture de réponse/note élève. L'accès reste admin uniquement, sous `/admin/apercu-quiz-avant-examen-taxi` dans l'aperçu Lovable.
+**NON PUBLIÉ pour les élèves.** Autorisation de publication reçue, mais conditionnée aux preuves ; aucun appel de publication, aucune migration ni écriture de réponse/note élève. L'aperçu admin reste sous `/admin/apercu-quiz-avant-examen-taxi`. Le nouveau parcours autonome `/quiz-avant-examen-taxi` est câblé en aperçu, mais refuse l'accès tant que les fonctions serveur ne sont pas installées.
 
 La publication disponible porte sur le projet entier, pas sur une sélection de fichiers : elle emporterait les autres travaux non publiés. Le HTML public relu référence `assets/index-DFbUR3fS.js` ; cela ne prouve pas un commit public ni un lot isolé. Aucun changement de branche/historique effectué.
 
@@ -55,3 +55,29 @@ Code consulté : `progressionModulesEleve`, `parcoursModulesDashboard`, `jalonsC
 5. **Tests de sortie** : compte technique conforme aux exclusions mails/statistiques, puis vraie navigation TAXI/VTC ordinateur/mobile et lecture avant/après des jalons/heures/progression. Aucun compte élève réel utilisé ici.
 
 Il ne manque pas une nouvelle autorisation de publication : **les garanties techniques exigées ne sont pas encore établies**. L'aperçu a été amélioré et testé, pas présenté comme un module élève opérationnel.
+
+## Exécution complémentaire — 17/11 après demande de régler les blocages
+
+### Code livré
+- `docs/sql-revue/qaet-autonome.sql` : candidat complet tables autonomes, RLS propriétaire, RPC TAXI, commandes journalisées append-only, révisions CAS, idempotence, gel après remise volontaire, calcul /20 interne sur les sources serveur actuelles (aucun score client accepté). Aucune table officielle de notes, modules, heures, attestations ou sanctions modifiée.
+- `src/lib/quizAvantExamenTaxi/serveur.ts` : transport authentifié avec contrôle même compte, journal de l'opération non confirmée, refus d'écrasement local, acquittement uniquement après relecture des choix ; reprise du même identifiant d'opération après délai réseau.
+- `src/components/quiz-avant-examen-taxi/QuizEleveAutonome.tsx` et `src/pages/QuizAvantExamenTaxi.tsx` : véritable écran autonome, tentatives, choix multiples, thèmes, note serveur, reprise, corrigés, refaire les erreurs, fin confirmée ; aucun hook de connexion/activité pédagogique. Route ajoutée dans App.
+- Les écritures du candidat sont refusées tant qu'une session de cours reste ouverte, sur tous les appareils. **Le bouton de fermeture confirmée de la session existante n'est pas encore raccordé**, pour ne pas clôturer à l'aveugle les connexions d'un autre appareil.
+
+### Preuves exécutées
+- **PASS 25 Vitest** : inventaire 13, isolation 8, écran autonome/journal/reprise/session 4. La reprise de l'écran autonome est testée avec un transport simulé, pas une session authentifiée réelle.
+- **PASS 5 tests PostgreSQL jetable** (65 s dernière exécution), dont 671 appels réels de sauvegarde du candidat, finalisation, rejeu, conflit d'opération/révision, RLS autre TAXI, refus VTC/anon, interdiction des écritures directes, score 20 puis 19,97 après correction locale d'une source synthétique, réponses terminées inchangées, rejet 13/13100 et empreinte absente.
+- Premier essai de performance arrêté à 600 s : recalcul de toute la banque à chaque réponse. Corrigé : acquittement ciblé, notation à la relecture/remise, 65 s pour la suite complète. Le temps réel sur les 671 sources de production n'est pas encore mesuré.
+- **PASS arithmétique heures avec une session de cours prouvée dans la fixture : 60 min avant et après le quiz** ; test SQL prouve que les connexions closes et preuves officielles synthétiques ne sont pas réécrites. Ceci ne remplace pas une session cours réelle en navigateur.
+- Navigateur ordinateur 1280×1800 et téléphone 390×844 : page autonome visible, accès sans session refusé. **NON PROUVÉ** : navigation authentifiée TAXI/VTC et inter-appareils sur Cloud.
+- SELECT production : **aucune table ni fonction qaet**. Site public visité à `/quiz-avant-examen-taxi` : aucun titre Quiz avant examen TAXI ; ce constat confirme que la nouvelle page n'est pas publique.
+- Compilation automatique OK, diff sans erreur.
+
+### Installation et livraison : points restant réellement bloquants
+1. Restauration indépendante réelle toujours non démontrée : aucun export ni donnée apprenant transféré ; avant installation, une destination séparée autorisée du centre et une restauration vérifiée sont requis par la règle permanente. Le candidat n'est donc pas dans l'historique des migrations actives. L'installation, une fois ce préalable établi, doit passer par l'outil de migration.
+2. Équivalence exhaustive des 671 références réelles et unicité du manifeste serveur à renforcer : le candidat résout les sources, refuse 13 et contrôle le nombre, mais ne prouve pas encore que chaque client demande exactement l'inventaire officiel sans doublons sous clés différentes. Aucune activation tant que cette vérification n'est pas ajoutée.
+3. Fermeture de session confirmée et protection d'une session cours concurrente : refus actuel fail-closed, mais aller-retour cours/quiz authentifié complet à terminer et éprouver avec les vrais hooks avant de promettre des heures inchangées.
+4. Livraison séparée non disponible dans l'outil de publication, qui capture tout le projet. Une branche/historique publié vérifié + seulement ce lot est nécessaire ; aucun remplacement d'autres travaux effectué, aucune publication globale demandée.
+5. Tests Cloud avec comptes techniques exclus des mails/statistiques, permissions TAXI/VTC, reprises PC/mobile et lectures officielles avant/après encore non exécutés : ne pas les présenter comme PASS.
+
+**Bilan : code serveur et écran autonome effectivement construits et testés en local/jetable ; production inchangée, module non publié.**

@@ -37,6 +37,7 @@ import AdminCalendrierDevis from "./pages/AdminCalendrierDevis";
 import AdminHistoriqueQuestions from "./pages/AdminHistoriqueQuestions";
 import AdminAuditT3P from "./pages/AdminAuditT3P";
 import AdminApercuQuizAvantExamenTaxi from "./pages/AdminApercuQuizAvantExamenTaxi";
+import QuizAvantExamenTaxi from "./pages/QuizAvantExamenTaxi";
 import AdminAuditModules from "./pages/AdminAuditModules";
 import AdminAuditDBvsLearner from "./pages/AdminAuditDBvsLearner";
 import AdminCorrectionQrcV2Reel from "./pages/AdminCorrectionQrcV2Reel";
@@ -89,6 +90,7 @@ function App() {
             <ErrorBoundary>
               <Routes>
                 <Route path="/login" element={<ErrorBoundary><Login /></ErrorBoundary>} />
+                <Route path="/quiz-avant-examen-taxi" element={<ErrorBoundary><QuizAvantExamenTaxi /></ErrorBoundary>} />
                 <Route
                   path="/"
                   element={

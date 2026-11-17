@@ -7,7 +7,8 @@ export interface OperationQuiz {
   operation: string; action: 'start' | 'answer' | 'finish'; tentative: string;
   revision: number; payload: Record<string, unknown>;
 }
-export interface EtatQuiz { tentatives: Tentative[]; coursActif: boolean }
+export interface TentativeServeur extends Tentative { empreintes: Record<string,string>; note20: number | null }
+export interface EtatQuiz { tentatives: TentativeServeur[]; coursActif: boolean }
 export interface TransportQuiz {
   lire(): Promise<EtatQuiz>;
   envoyer(operation: OperationQuiz): Promise<EtatQuiz>;

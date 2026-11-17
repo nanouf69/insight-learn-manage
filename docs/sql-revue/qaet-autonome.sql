@@ -79,14 +79,15 @@ $$;
 REVOKE ALL ON FUNCTION public.qaet_question(jsonb) FROM PUBLIC,anon,authenticated;
 
 CREATE FUNCTION public.qaet_etat(p_cible uuid DEFAULT NULL,p_notation boolean DEFAULT true) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
-DECLARE t record; r jsonb; q jsonb; a jsonb; rows jsonb := '[]'; correct jsonb; ok int; total int;
+DECLARE t record; r jsonb; q jsonb; a jsonb; rows jsonb := '[]'; correct jsonb; ok int; total int; hashes jsonb;
 BEGIN
  IF NOT public.qaet_eligible() THEN RAISE EXCEPTION 'qaet_taxi_requis' USING ERRCODE='42501'; END IF;
  FOR t IN SELECT * FROM public.qaet_tentatives WHERE user_id=auth.uid() AND (p_cible IS NULL OR id=p_cible) ORDER BY numero LOOP
-  ok:=0; total:=0;
+  ok:=0; total:=0; hashes:='{}';
   FOR r IN SELECT value FROM jsonb_array_elements(t.source_refs) WHERE p_notation LOOP
    q:=public.qaet_question(r); a:=t.reponses->(r->>'cle');
    IF q IS NULL THEN CONTINUE; END IF;
+   hashes:=jsonb_set(hashes,ARRAY[r->>'cle'],to_jsonb(public.qaet_empreinte(q)));
    IF a IS NOT NULL AND a->>'empreinte'<>public.qaet_empreinte(q) THEN CONTINUE; END IF;
    total:=total+1;
    SELECT coalesce(jsonb_agg(c->>'lettre' ORDER BY c->>'lettre'),'[]') INTO correct FROM jsonb_array_elements(q->'choix') c WHERE c->>'correct'='true';
@@ -94,7 +95,7 @@ BEGIN
   END LOOP;
   rows:=rows||jsonb_build_array(jsonb_build_object('id',t.id,'numero',t.numero,'creeLe',t.created_at,'termineeLe',t.submitted_at,
     'mode',t.mode,'parent',t.parent,'cles',(SELECT jsonb_agg(x->>'cle') FROM jsonb_array_elements(t.source_refs) x),
-    'reponses',t.reponses,'revision',t.revision,'note20',CASE WHEN total>0 THEN round(ok*20.0/total,2) ELSE NULL END));
+    'reponses',t.reponses,'revision',t.revision,'empreintes',hashes,'note20',CASE WHEN total>0 THEN round(ok*20.0/total,2) ELSE NULL END));
  END LOOP;
  RETURN jsonb_build_object('tentatives',rows,'coursActif',EXISTS(SELECT 1 FROM public.apprenant_connexions c
  WHERE c.user_id=auth.uid() AND c.ended_at IS NULL));

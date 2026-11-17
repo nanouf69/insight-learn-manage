@@ -44,7 +44,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Date dernière activité pédagogique vs fin administrative, rectificatif versionné — à faire (aucune réécriture d'attestation signée).
 
 ## P2 — Performances
-- [ ] 17/11 12:59 — Livraison quiz TAXI : transport serveur append-only/CAS, écran autonome sans suivi cours, tests permissions et reprise ; installation conditionnée à restauration indépendante, publication isolée obligatoire.
+- [ ] 17/11 12:59 — Livraison quiz TAXI : transport journalisé + candidat serveur append-only/CAS/RLS/TAXI et écran autonome câblés ; 25 Vitest et 5 PostgreSQL jetable (671 sauvegardes) PASS. NON INSTALLÉ/NON PUBLIÉ : restauration indépendante, manifeste exact 671 serveur, fermeture de session et concurrence cours, comptes techniques Cloud et livraison isolée restent bloquants. Page publique vérifiée absente, SELECT qaet vide ; rapport actualisé.
 - [ ] 17/11 — Quiz avant examen TAXI : aperçu corrigé sur sources canoniques paginées (671 fiables, pas 694 ; 0 conflit, 19 propositions exclues). 33 tests exécutés, navigation admin PC/mobile et reprise vérifiées ; aucun effet de l'aperçu sur les calculs purs. Publication BLOQUÉE : persistance durable et autorisation TAXI serveur non raccordées, exclusion du temps d'une session cours existante non prouvée, parcours élève réel non testé, livraison seule hors autres travaux non disponible. Rapport docs/quiz-taxi-publication-2026-11-17.md. Aucune migration ni publication.
 - [ ] Autosave anti-tempête / lectures périodiques — à faire après P0.
 
