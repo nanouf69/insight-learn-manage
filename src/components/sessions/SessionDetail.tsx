@@ -614,6 +614,25 @@ function PaiementPopover({
     }
     setSaving(true);
     try {
+      // Préserve un montant déjà saisi sur la fiche (sans ligne de paiement) : le recalcul serveur
+      // additionne uniquement les lignes, il l'effacerait sinon.
+      const [{ data: fiche, error: ficheErr }, { data: lignes, error: lignesErr }] = await Promise.all([
+        supabase.from("apprenants").select("montant_paye, date_paiement, moyen_paiement").eq("id", apprenantId).maybeSingle(),
+        supabase.from("apprenant_paiements").select("montant").eq("apprenant_id", apprenantId),
+      ]);
+      if (ficheErr || lignesErr || !fiche) throw new Error("Lecture des paiements existants impossible : aucun ajout effectué.");
+      const sommeLignes = (lignes ?? []).reduce((acc, l: any) => acc + Number(l.montant || 0), 0);
+      const anterieur = Number((fiche as any).montant_paye || 0) - sommeLignes;
+      if (anterieur > 0.001) {
+        const { error: antErr } = await supabase.from("apprenant_paiements").insert({
+          apprenant_id: apprenantId,
+          montant: Math.round(anterieur * 100) / 100,
+          moyen_paiement: (fiche as any).moyen_paiement || null,
+          date_paiement: (fiche as any).date_paiement || null,
+          notes: "Paiement déjà enregistré sur la fiche (conservé)",
+        } as any);
+        if (antErr) throw antErr;
+      }
       const tx = matches.find((m) => m.id === selectedVirementId);
       const liaisonCertaine = tx && newMoyen === "virement" && Math.abs(montant - Number(tx.montant || 0)) < 0.001 && newDate === tx.date_operation;
       const { error } = await supabase.from("apprenant_paiements").insert({
