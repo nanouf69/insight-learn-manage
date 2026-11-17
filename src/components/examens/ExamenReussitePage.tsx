@@ -50,6 +50,7 @@ import { ChoixPratiqueBadges } from '@/components/crm/apprenant-sections/ChoixPr
 import { filiereDepuisDossier } from '@/lib/modeles/entrainementPratiqueVtc';
 import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacement';
 import { FormationPratiqueDateSelect } from './FormationPratiqueDateSelect';
+import { periodesFormationPratique } from '@/lib/periodesFormationPratique';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -589,9 +590,7 @@ function getDefaultPratiqueDate(): string {
 
 function getPratiqueDateForExam(examDate: string | null | undefined) {
   if (!examDate) return null;
-  const exam = ALL_DATES_EXAMEN_REUSSITE.find((item) => item.date === examDate);
-  if (!exam) return null;
-  return ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT[exam.pratiqueIndex] || null;
+  return periodesFormationPratique().find(p => p.examenTheorique === examDate)?.examenPratique ?? null;
 }
 
 const PRACTICE_VTC_TYPES = new Set(['vtc', 'vtc-e', 'vtc-e-presentiel', 'va', 'va-e', 'va-e-presentiel', 'pa-vtc', 'rp-vtc']);
@@ -1502,8 +1501,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const handleExamDateChange = (date: string) => {
     setShowAllExamDates(false);
     setSelectedExamDate(date);
-    const match = datesExamenTheorique.find(e => e.date === date);
-    const pratiqueDate = match ? datesExamenPratique[match.pratiqueIndex] : undefined;
+    const pratiqueDate = getPratiqueDateForExam(date);
     if (pratiqueDate) {
       setSelectedDatePratique(pratiqueDate);
     }
@@ -3573,7 +3571,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const currentTheorique2 = datesExamenTheorique.find(e => e.date === selectedExamDate);
-        const defaultPratique2 = currentTheorique2 ? datesExamenPratique[currentTheorique2.pratiqueIndex] : null;
+        const defaultPratique2 = getPratiqueDateForExam(currentTheorique2?.date);
         // Parse date range from period string like "Du 23 fevrier au 6 mars 2026"
         const parsePeriodRange = (period: string): { start: Date; end: Date } | null => {
           const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -3803,6 +3801,24 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="mb-5 space-y-2">
+                <Label htmlFor="periode-formation-pratique">Période d’entraînement pratique</Label>
+                <Select
+                  value={periodesFormationPratique().some(p => p.examenTheorique === selectedExamDate && p.examenPratique === selectedDatePratique) ? selectedExamDate : ''}
+                  onValueChange={handleExamDateChange}
+                >
+                  <SelectTrigger id="periode-formation-pratique" className="h-auto min-h-10 w-full whitespace-normal text-left" aria-label="Période d’entraînement pratique">
+                    <SelectValue placeholder="Dates de période non confirmées" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periodesFormationPratique().map(p => (
+                      <SelectItem key={p.examenTheorique} value={p.examenTheorique}>
+                        Du {formatDateFR(p.debut)} au {formatDateFR(p.fin)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-6">
                 {/* VTC */}
                 <div className="space-y-3">

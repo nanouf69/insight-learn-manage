@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] 17/11 — Candidats à former : menu de périodes datées lendemain du théorique → veille du premier jour pratique CMA ; 18/11–15/12 pour novembre. 5 tests réussis, menu connecté vérifié 1280 px / 894 px ; écritures bloquées pendant contrôle, aucune publication ni dossier modifié. Dates 2027 non inventées.
 - [x] 17/11 — Généralisation FC VTC : formation choisie ou type FC/PA VTC prioritaire sur ancienne affectation initiale ; cours FC seuls en aperçu, aucune écriture réelle ni publication.
 - [x] 17/11 — Lucevic / Reziki : inscription FC VTC vérifiée par SELECT, ancien type/modules VTC initial identifiés ; projection partagée corrigée en aperçu, aucune affectation ni preuve réelle réécrite. Publication non effectuée.
 - [x] 16/11 — Candidats à former : menu des dates de formation du planning VTC/TAXI, confirmation avant attribution ; aucun résultat d’examen modifié, aperçu uniquement.
