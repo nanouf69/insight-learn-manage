@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] 17/11 — Liste CMA TAXI/VTC toujours visible : ajouts manuels et candidats à vérifier affichés séparément de la sélection prouvée pour la lettre ; aucune inscription déduite ni envoi, aperçu uniquement.
 - [x] 17/11 — Avertissement CMA compact : lien vers la liste complète des personnes à vérifier et motifs dans une fenêtre défilante ; aucune règle de génération ni donnée modifiée, aperçu seul.
 - [x] 17/11 — Ajout candidat CMA/formation : ligne existante UPDATE avec liste retournée vérifiée, nouvelles lignes dates complètes ; état local après confirmation seulement, aperçu non publié.
 - [x] 17/11 — Candidats à former : menu de périodes datées lendemain du théorique → veille du premier jour pratique CMA ; 18/11–15/12 pour novembre. 5 tests réussis, menu connecté vérifié 1280 px / 894 px ; écritures bloquées pendant contrôle, aucune publication ni dossier modifié. Dates 2027 non inventées.

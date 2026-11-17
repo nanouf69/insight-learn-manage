@@ -1,6 +1,6 @@
 import { EdofValideBadge } from "./EdofValideBadge";
 import { useCmaLettreSources } from '@/hooks/useCmaLettreSources';
-import { selectionLettreCma } from '@/lib/cmaLettreSelection';
+import { selectionLettreCma, listeCmaAffichee, categorieCma } from '@/lib/cmaLettreSelection';
 import { EntrainementSansExamenAlerte } from "./EntrainementSansExamenAlerte";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
@@ -1350,13 +1350,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       setRemovedCandidatsCMA(nextRemovedCMA);
       setExtraCandidatsCMA(nextExtraCMA);
       setSearchCMA("");
-      toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté à la lettre CMA`);
+      toast.success(`${apprenant.nom} ${apprenant.prenom} ajouté à la liste CMA — preuves d'inscription à vérifier`);
     } catch (err: any) {
       toast.error(`Erreur sauvegarde: ${err.message || 'Échec'}`);
     }
   };
 
-  const handleRemoveFromCMAList = async (apprenant: ExamApprenant) => {
+  const handleRemoveFromCMAList = async (apprenant: { id: string; nom: string; prenom: string }) => {
     try {
       const nextExtraCMA = extraCandidatsCMA.filter(id => id !== apprenant.id);
       const nextRemovedCMA = extraCandidatsCMA.includes(apprenant.id) || removedCandidatsCMA.includes(apprenant.id)
@@ -3155,6 +3155,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const selectedIds = new Set([...cmaSelection.confirmes,...cmaSelection.aRepresenter].map(a=>a.id));
         const reussisLettre = (allApprenants ?? []).filter(a=>selectedIds.has(a.id));
         const cmaSearchResults = mergeApprenantSearchResults(allApprenants, cmaDirectSearchResults, searchCMA);
+        const candidatsAffichesCMA = listeCmaAffichee(cmaLettreSources.data?.candidats ?? allApprenants ?? [], cmaSelection, extraCandidatsCMA, removedCandidatsCMA);
+        const candidatsSansPreuveCMA = candidatsAffichesCMA.filter(({ candidat }) => !selectedIds.has(candidat.id));
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -3327,14 +3329,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 </span>
                 <div className="flex items-center gap-2">
                   {fsLettre.button}
-                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0} variant="outline" className="gap-2">
+                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0} variant="outline" className="gap-2">
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button 
-                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0} 
+                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0} 
                         className="gap-2"
                       >
                         <Mail className="h-4 w-4" />
@@ -3498,7 +3500,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       <ScrollArea className="max-h-48">
                         <div className="space-y-1">
                           {cmaSearchResults.map(a => {
-                            const alreadyListed = reussisLettre.some(r => r.id === a.id);
+                            const alreadyListed = candidatsAffichesCMA.some(r => r.candidat.id === a.id);
                             const hasPassedPractice = a.resultat_examen_pratique === 'oui';
                             const disabled = alreadyListed || hasPassedPractice;
 
@@ -3528,60 +3530,33 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </PopoverContent>
                 </Popover>
               </div>
-              {reussisLettre.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2 text-amber-700">TAXI ({taxiReussis.length})</h4>
-                    <div className="space-y-1">
-                      {taxiReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1"><span>{a.nom} {a.prenom}</span><p className="text-xs text-muted-foreground">{representedIds.has(a.id) ? 'À représenter — inscription à confirmer' : 'Confirmé pour cette session'}</p>
-                            <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 shrink-0 text-red-600 hover:bg-red-100 hover:text-red-700"
-                            title="Retirer ce candidat de la lettre CMA"
-                            onClick={() => {
-                              if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
+              <div className="space-y-4">
+                {(['TAXI', 'VTC'] as const).map(categorie => {
+                  const lignes = candidatsAffichesCMA.filter(({ candidat }) => categorieCma(candidat.type_apprenant) === categorie);
+                  return (
+                    <section key={categorie} aria-label={`Liste CMA ${categorie}`}>
+                      <h4 className="mb-2 border-b pb-2 text-sm font-semibold">{categorie} ({lignes.length})</h4>
+                      <div className="divide-y">
+                        {lignes.map(({ candidat: a, statut }) => (
+                          <div key={a.id} className="flex items-start justify-between gap-2 py-2 text-sm">
+                            <div className="min-w-0 flex-1">
+                              <span className="break-words font-medium">{a.nom} {a.prenom}</span>
+                              <p className="break-words text-xs text-muted-foreground">{statut}</p>
+                              <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive" aria-label={`Retirer ${a.nom} ${a.prenom} de la liste CMA`} title="Retirer ce candidat de la liste CMA" onClick={() => {
+                              if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la liste CMA ?`)) return;
                               handleRemoveFromCMAList(a);
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      {taxiReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2 text-blue-700">VTC ({vtcReussis.length})</h4>
-                    <div className="space-y-1">
-                      {vtcReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1"><span>{a.nom} {a.prenom}</span>
-                            <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
+                            }}><X className="h-4 w-4" /></Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 shrink-0 text-red-600 hover:bg-red-100 hover:text-red-700"
-                            title="Retirer ce candidat de la lettre CMA"
-                            onClick={() => {
-                              if (!window.confirm(`Retirer ${a.nom} ${a.prenom} de la lettre CMA ?`)) return;
-                              handleRemoveFromCMAList(a);
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      {vtcReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
+                        ))}
+                        {lignes.length === 0 && <p className="py-2 text-sm text-muted-foreground">Aucun candidat</p>}
+                      </div>
+                    </section>
+                  );
+                })}
+                {candidatsSansPreuveCMA.length > 0 && <p className="text-sm text-destructive">{candidatsSansPreuveCMA.length} candidat(s) à vérifier avant de générer ou envoyer la lettre.</p>}
+              </div>
               <div className="mt-4">
                 <Label className="text-sm font-medium">Note pour la lettre à la CMA</Label>
                 <Textarea

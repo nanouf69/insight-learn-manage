@@ -16,6 +16,17 @@ export function periodePratiqueCma(value:string){
  if(!m||!months[m[2]??m[4]]||!months[m[4]])return null;
  return {start:`${m[5]}-${months[m[2]??m[4]]}-${m[1].padStart(2,'0')}`,end:`${m[5]}-${months[m[4]]}-${m[3].padStart(2,'0')}`};
 }
+/** Display only: manual additions never become evidence for generating the letter. */
+export function listeCmaAffichee(candidats: readonly CmaCandidat[], selection: ReturnType<typeof selectionLettreCma>, ajoutes: readonly string[], exclus: readonly string[]) {
+ const lignes = new Map<string, { candidat: CmaCandidat; statut: string }>();
+ for (const candidat of selection.confirmes) lignes.set(candidat.id, { candidat, statut: 'Confirmé pour cette session' });
+ for (const candidat of selection.aRepresenter) lignes.set(candidat.id, { candidat, statut: 'À représenter — inscription à confirmer' });
+ for (const { candidat, raison } of selection.aVerifier) lignes.set(candidat.id, { candidat, statut: `À vérifier — ${raison}` });
+ for (const candidat of candidats) {
+  if (ajoutes.includes(candidat.id) && !lignes.has(candidat.id)) lignes.set(candidat.id, { candidat, statut: 'Ajout manuel — inscription et territoire à vérifier' });
+ }
+ return [...lignes.values()].filter(({ candidat }) => !exclus.includes(candidat.id)).sort((a,b) => `${a.candidat.nom} ${a.candidat.prenom}`.localeCompare(`${b.candidat.nom} ${b.candidat.prenom}`, 'fr'));
+}
 export function selectionLettreCma(candidats:readonly CmaCandidat[],preuves:readonly CmaPreuve[], confirmations:readonly CmaConfirmation[],examDate:string,period:string,territoire:string,exclus:readonly string[]=[]){
  const target=periodePratiqueCma(period), exam=trouverExamenTheorique(examDate);
  const periods=ALL_DATES_EXAMEN_PRATIQUE.map(periodePratiqueCma).filter((p):p is NonNullable<typeof p>=>p!==null).sort((a,b)=>a.start.localeCompare(b.start));
