@@ -3531,8 +3531,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 </Popover>
               </div>
               <div className="space-y-4">
-                {(['TAXI', 'VTC'] as const).map(categorie => {
-                  const lignes = candidatsAffichesCMA.filter(({ candidat }) => categorieCma(candidat.type_apprenant) === categorie);
+                {(['TAXI', 'VTC', 'Filière à vérifier'] as const).map(categorie => {
+                  const lignes = candidatsAffichesCMA.filter(({ candidat }) => (categorieCma(candidat.type_apprenant) ?? 'Filière à vérifier') === categorie);
+                  if (categorie === 'Filière à vérifier' && lignes.length === 0) return null;
                   return (
                     <section key={categorie} aria-label={`Liste CMA ${categorie}`}>
                       <h4 className="mb-2 border-b pb-2 text-sm font-semibold">{categorie} ({lignes.length})</h4>
