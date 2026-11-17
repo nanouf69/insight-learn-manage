@@ -506,6 +506,7 @@ function PaiementPopover({
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [paiements, setPaiements] = useState<any[]>([]);
   const [loadingPaiements, setLoadingPaiements] = useState(false);
+  const [paiementsError, setPaiementsError] = useState(false);
   const [newMontant, setNewMontant] = useState<string>("");
   const [newMoyen, setNewMoyen] = useState<string>("virement");
   const [newDate, setNewDate] = useState<string>(new Date().toISOString().split("T")[0]);
@@ -518,13 +519,24 @@ function PaiementPopover({
   const loadPaiements = async () => {
     if (!apprenantId) return;
     setLoadingPaiements(true);
+    setPaiementsError(false);
     try {
-      const { data, error } = await supabase
-        .from("apprenant_paiements")
-        .select("*")
-        .eq("apprenant_id", apprenantId)
-        .order("date_paiement", { ascending: false });
-      if (!error && data) setPaiements(data as any[]);
+      const rows: any[] = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await supabase
+          .from("apprenant_paiements")
+          .select("*")
+          .eq("apprenant_id", apprenantId)
+          .order("date_paiement", { ascending: false })
+          .order("id", { ascending: true })
+          .range(offset, offset + 499);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if ((data?.length ?? 0) < 500) break;
+      }
+      setPaiements(rows);
+    } catch {
+      setPaiementsError(true);
     } finally {
       setLoadingPaiements(false);
     }
@@ -648,6 +660,13 @@ function PaiementPopover({
     }
   };
 
+  const dateEnregistrement = (value?: string | null) => {
+    if (!value || Number.isNaN(new Date(value).getTime())) return "Non renseigné";
+    return new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "medium",
+    }).format(new Date(value));
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -661,14 +680,18 @@ function PaiementPopover({
         </Button>
       </PopoverTrigger>
       {!loadingPaiements || paiements.length > 0 ? (
-        <span
-          data-testid="resume-paiement"
-          className={`text-xs font-medium self-center ${resume.integral ? "text-green-600" : "text-orange-600"}`}
-        >
-          {resume.libelle}
-        </span>
+        <PopoverTrigger asChild>
+          <Button
+            variant="link"
+            data-testid="resume-paiement"
+            className="h-auto px-0 text-xs font-medium self-center whitespace-normal text-left"
+            aria-label={`${resume.libelle} — Voir tous les paiements`}
+          >
+            {resume.libelle}
+          </Button>
+        </PopoverTrigger>
       ) : null}
-      <PopoverContent className="w-96 max-h-[80vh] overflow-y-auto">
+      <PopoverContent className="w-96 max-w-[calc(100vw-2rem)] max-h-[80dvh] overflow-y-auto">
         <div className="space-y-4">
           <h4 className="font-medium">Gestion des paiements</h4>
 
@@ -692,7 +715,8 @@ function PaiementPopover({
           <div className="space-y-2">
             <Label className="text-xs">Paiements enregistrés</Label>
             {loadingPaiements && <p className="text-xs text-muted-foreground">Chargement…</p>}
-            {!loadingPaiements && paiements.length === 0 && (
+            {paiementsError && <p role="alert" className="text-xs text-destructive">Impossible de charger tous les paiements. <Button variant="link" size="sm" onClick={loadPaiements}>Réessayer</Button></p>}
+            {!loadingPaiements && !paiementsError && paiements.length === 0 && (
               <p className="text-xs text-muted-foreground">Aucun paiement</p>
             )}
             {paiements.map((p) => (
@@ -700,8 +724,10 @@ function PaiementPopover({
                 <div className="flex-1">
                   <div className="font-medium text-green-700">{Number(p.montant).toFixed(2)} €</div>
                   <div className="text-muted-foreground">
-                    {p.date_paiement || "—"} • {moyenLabel(p.moyen_paiement)}
+                    Date du paiement : {p.date_paiement ? formatDateShortFR(p.date_paiement) : "Non renseignée"} • {moyenLabel(p.moyen_paiement)}
                   </div>
+                  <div className="text-muted-foreground">Enregistré le : {dateEnregistrement(p.created_at)} (Paris)</div>
+                  {p.notes && <div className="break-words text-muted-foreground">{p.notes}</div>}
                 </div>
                 <Button
                   variant="ghost"
@@ -711,6 +737,14 @@ function PaiementPopover({
                 >
                   <X className="w-3.5 h-3.5" />
                 </Button>
+              </div>
+            ))}
+            {resume.virementsAjoutes.map((tx, index) => (
+              <div key={tx.id ?? `virement-${index}`} className="space-y-1 rounded border bg-background px-2 py-1.5 text-xs">
+                <div className="font-medium">{Number(tx.montant).toFixed(2)} € • Virement bancaire</div>
+                <div className="text-muted-foreground">Date du paiement : {tx.date_operation ? formatDateShortFR(tx.date_operation) : "Non renseignée"}</div>
+                <div className="text-muted-foreground">Heure du paiement : non renseignée par la banque</div>
+                <div className="break-words text-muted-foreground">{tx.libelle}</div>
               </div>
             ))}
           </div>

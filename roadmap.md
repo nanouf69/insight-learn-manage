@@ -45,6 +45,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] CMA ajournés → prochaine session — APERÇU, bloqué : territoire pratique absent.
 
 ## P1 — Attestations
+- [x] 17/11 — Clic « Payé intégralement » : détail des versements, dates et horodatage de saisie Paris, virements comptés sans doublon ; 14 tests PASS et clic connecté sur paiement réel 150 € + 50 € vérifié. Aperçu seulement, aucune écriture de paiement.
 - [ ] Date dernière activité pédagogique vs fin administrative, rectificatif versionné — à faire (aucune réécriture d'attestation signée).
 
 ## P2 — Performances
