@@ -66,6 +66,8 @@ export const resolveFormationId = (
   // module list/type. Display only: never rewrite the stored assignment or proofs.
   const declaredFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
   if (declaredFormation === "continue-vtc" || declaredFormation === "continue-taxi") return declaredFormation;
+  const declaredType = FORMATION_ALIASES[normalizeFormationKey(typeApprenant)];
+  if (declaredType === "continue-vtc") return declaredType;
   // Priority: explicit assigned modules (source of truth for learner access)
   const byModules = inferFormationFromModules(modulesAutorises);
   if (byModules) return byModules;

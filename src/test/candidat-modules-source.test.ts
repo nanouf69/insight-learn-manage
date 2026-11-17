@@ -38,6 +38,14 @@ describe('Candidats : même parcours et preuves que l’élève, lecture simulé
     expect(modulesAttribuesDashboard('continue-taxi', FORMATION_DEFAULT_MODULES.taxi).map(m => m.id)).toEqual(modulesAttribuesDashboard('continue-taxi', null).map(m => m.id));
     expect(modulesAttribuesDashboard('continue-taxi', FORMATION_DEFAULT_MODULES.taxi).map(m => m.id)).not.toContain(6);
   });
+  it.each(['PA VTC', 'pa-vtc', 'continue-vtc', 'Formation Continue VTC'])('tout inscrit %s garde les cours FC VTC malgré une affectation initiale', type => {
+    const legacy = [...FORMATION_DEFAULT_MODULES.vtc];
+    const formation = resolveFormationId(type, null, legacy);
+    expect(formation).toBe('continue-vtc');
+    if (!formation) throw new Error('Parcours FC VTC absent');
+    expect(modulesAttribuesDashboard(formation, legacy).map(m => m.id)).toEqual([81, 5, 87, 83, 85, 88, 89]);
+    expect(legacy).toEqual(FORMATION_DEFAULT_MODULES.vtc);
+  });
   it('VTC initial : les modules explicitement attribués restent prioritaires', () => {
     expect(resolveFormationId('vtc', 'vtc', FORMATION_DEFAULT_MODULES.vtc)).toBe('vtc');
     expect(modulesAttribuesDashboard('vtc', FORMATION_DEFAULT_MODULES.vtc).map(m => m.id)).toEqual(FORMATION_DEFAULT_MODULES.vtc);
