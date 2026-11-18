@@ -35,3 +35,20 @@ describe("virements reçus correspondants", () => {
     expect(exclureVirementsLiesAilleurs(banque, liens, "autre-dossier")).toHaveLength(2);
   });
 });
+
+import { dedoublonnerVirements as dedup2, resumePaiement as rp2 } from "@/lib/resumePaiement";
+describe("virements importés plusieurs fois", () => {
+  const tx = (id: string) => ({ id, montant: 200, date_operation: "2026-10-29", libelle: "Chika IMAUJI", banque: "Revolut Pro", reference: "ref-1" });
+  it("7 imports de la même référence = un seul virement de 200 €", () => {
+    const r = rp2(1400, [], [1, 2, 3, 4, 5, 6, 7].map((i) => tx(String(i))));
+    expect(r.virementsAjoutes).toHaveLength(1);
+    expect(r.paye).toBe(200);
+  });
+  it("un doublon d'un virement déjà enregistré n'est pas recompté", () => {
+    const r = rp2(1400, [{ montant: 200, transaction_bancaire_id: "3" }], [tx("1"), tx("3")]);
+    expect(r.paye).toBe(200);
+  });
+  it("références différentes restent distinctes", () => {
+    expect(dedup2([tx("1"), { ...tx("2"), reference: "ref-2" }])).toHaveLength(2);
+  });
+});

@@ -12,7 +12,23 @@ export type PaiementLike = {
   moyen_paiement?: string | null;
   transaction_bancaire_id?: string | null;
 };
-export type VirementLike = { id?: string; montant?: number | string | null; date_operation?: string | null; libelle?: string | null };
+export type VirementLike = { id?: string; montant?: number | string | null; date_operation?: string | null; libelle?: string | null; banque?: string | null; reference?: string | null };
+
+/** Clé d'un virement bancaire : même banque + même référence banque = même opération (import répété). */
+const cleVirement = (v: VirementLike) =>
+  v?.reference ? `ref|${String(v.banque || "").trim().toLowerCase()}|${String(v.reference).trim()}` : `id|${v?.id ?? ""}`;
+
+/** Affichage seul : masque les lignes importées plusieurs fois (même référence bancaire). Aucune ligne n'est supprimée en base. */
+export function dedoublonnerVirements<T extends VirementLike>(txs: T[]): T[] {
+  const vus = new Set<string>();
+  return (txs ?? []).filter((t) => {
+    const k = cleVirement(t);
+    if (k === "id|") return true;
+    if (vus.has(k)) return false;
+    vus.add(k);
+    return true;
+  });
+}
 export type LienVirementLike = { apprenant_id?: string | null; transaction_bancaire_id?: string | null };
 
 const norm = (s: string) =>
@@ -50,10 +66,12 @@ export function resumePaiement(totalDu: number, paiements: PaiementLike[], virem
   const liste = paiements ?? [];
   const payeEnregistre = liste.reduce((s, p) => s + Number(p?.montant || 0), 0);
   const idsLies = new Set(liste.map((p) => p?.transaction_bancaire_id).filter(Boolean).map(String));
+  const clesLiees = new Set((virements ?? []).filter((v) => v?.id && idsLies.has(String(v.id))).map(cleVirement));
   const utilises = new Set<number>();
-  const virementsAjoutes = (virements ?? []).filter((v) => {
-    // Source de vérité : identifiant de transaction, indépendant de la date de saisie.
+  const virementsAjoutes = dedoublonnerVirements(virements ?? []).filter((v) => {
+    // Source de vérité : identifiant de transaction (ou un doublon d'import de la même opération).
     if (v?.id && idsLies.has(String(v.id))) return false;
+    if (clesLiees.has(cleVirement(v))) return false;
     // Repli limité aux anciennes saisies sans liaison, pour ne pas changer leur affichage historique.
     const idx = liste.findIndex(
       (p, i) => !utilises.has(i) && !p?.transaction_bancaire_id && Math.abs(Number(p?.montant || 0) - Number(v?.montant || 0)) < 0.01 &&

@@ -1,5 +1,5 @@
 import { estApprenantHandicap } from "@/lib/apprenantsHandicap";
-import { exclureVirementsLiesAilleurs, resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
+import { dedoublonnerVirements, exclureVirementsLiesAilleurs, resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
@@ -567,13 +567,13 @@ function PaiementPopover({
         if (prenom) orClauses.push(`libelle.ilike.%${prenom}%`);
         const { data, error } = await supabase
           .from("transactions_bancaires")
-          .select("id,date_operation,libelle,montant,banque")
+          .select("id,date_operation,libelle,montant,banque,reference")
           .gt("montant", 0)
           .or(orClauses.join(","))
           .order("date_operation", { ascending: false })
           .limit(10);
         if (!error && data) {
-          setMatches(data as any[]);
+          setMatches(dedoublonnerVirements(data as any[]));
           // Seuls les virements au NOM + PRÉNOM de l'élève, reçus au plus 60 j avant son inscription, comptent comme payés.
           const { data: ap } = await supabase.from("apprenants").select("created_at").eq("id", apprenantId).maybeSingle();
           const c = (ap as any)?.created_at ? new Date((ap as any).created_at) : null;
@@ -1197,7 +1197,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       const orClauses = Array.from(allTokens).map((t) => `libelle.ilike.%${t}%`);
       const { data, error } = await supabase
         .from('transactions_bancaires')
-        .select('id,date_operation,libelle,montant,banque')
+        .select('id,date_operation,libelle,montant,banque,reference')
         .gt('montant', 0)
         .or(orClauses.join(','))
         .order('date_operation', { ascending: false })
@@ -1218,7 +1218,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         // On garde toutes les lignes distinctes sur au moins un de ces critères.
         const seen = new Set<string>();
         const deduped: any[] = [];
-        for (const tx of matches) {
+        for (const tx of dedoublonnerVirements(matches)) {
           const key = [
             tx.date_operation || '',
             Number(tx.montant || 0).toFixed(2),
