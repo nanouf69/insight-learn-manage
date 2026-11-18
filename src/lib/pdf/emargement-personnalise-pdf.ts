@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { nomSousSignature } from './identite-signature-apprenant';
 import logoImage from '@/assets/logo-ftransport.png';
 import { datePresenceAvecJour } from '@/lib/pdf/signatures-rassemblees';
+import { FTRANSPORT } from '@/lib/convocationFormation';
 
 export interface CreneauPerso { debut: string; fin: string }
 export interface OptionsEmargementPerso {
@@ -51,8 +52,13 @@ export function generateEmargementPersoPdf(apprenant: { nom?: string; prenom?: s
     try { doc.addImage(logoImage, 'PNG', m, 8, 36, 12); } catch { /* optional */ }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...bleu);
     doc.text('FEUILLE D’ÉMARGEMENT', m + w, 16, { align: 'right' });
-    doc.setDrawColor(...bleu); doc.setLineWidth(0.8); doc.line(m, 23, m + w, 23); doc.setLineWidth(0.2);
-    y = 28;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text(FTRANSPORT.raisonSociale, m, 26);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text(FTRANSPORT.adresse, m, 31);
+    doc.text(`Tél. : ${FTRANSPORT.telephone}   |   ${FTRANSPORT.email}`, m, 36);
+    doc.setDrawColor(...bleu); doc.setLineWidth(0.8); doc.line(m, 40, m + w, 40); doc.setLineWidth(0.2);
+    y = 45;
     if (premiere) {
       doc.setFillColor(...clair); doc.roundedRect(m, y, w, 30, 2, 2, 'F');
       doc.setFontSize(9); doc.setTextColor(90, 90, 90); doc.setFont('helvetica', 'normal');
