@@ -113,6 +113,16 @@ export function generateEmargementPersoPdf(apprenant: { nom?: string; prenom?: s
     y += rowH;
   }
   const pages = doc.getNumberOfPages();
-  for (let p = 1; p <= pages; p++) { doc.setPage(p); doc.setFontSize(7); doc.setTextColor(140, 140, 140); doc.text(`FTRANSPORT — ${name} — page ${p}/${pages}`, m + w / 2, 292, { align: 'center' }); }
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(...bleu); doc.setLineWidth(0.2); doc.line(m, 284, m + w, 284);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...bleu);
+    doc.text(`${FTRANSPORT.raisonSociale} — ${FTRANSPORT.adresse}`, m + w / 2, 287.5, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text(`Tél. : ${FTRANSPORT.telephone}   |   ${FTRANSPORT.email}`, m + w / 2, 291, { align: 'center' });
+    doc.setFontSize(6.5); doc.setTextColor(110, 110, 110);
+    const footerLines: string[] = doc.splitTextToSize(`${name} — page ${p}/${pages}`, w);
+    doc.text(footerLines, m + w / 2, 294.5, { align: 'center' });
+  }
   return { blob: doc.output('blob'), fileName: `emargement-${name.replace(/\s+/g, '-') || 'apprenant'}-${o.dateDebut}.pdf`, pages };
 }
