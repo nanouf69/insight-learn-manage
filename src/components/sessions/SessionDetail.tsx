@@ -2531,6 +2531,52 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     };
   };
 
+  const champsManquantsApprenant = (a: any): string[] => {
+    if (!a) return [];
+    const fc: any = (financeursFCMap as any)?.[a.id] || {};
+    const f: string[] = [];
+    if (!(a.adresse || fc.adresse)?.trim()) f.push('adresse');
+    if (!(a.code_postal || fc.code_postal)?.trim()) f.push('code postal');
+    if (!(a.ville || fc.ville)?.trim()) f.push('ville');
+    if (!(a.telephone || fc.contact_telephone)?.trim()) f.push('téléphone');
+    return f;
+  };
+  const [demandeCoordEnvoi, setDemandeCoordEnvoi] = useState<string | null>(null);
+  const envoyerDemandeCoordonnees = async (a: any) => {
+    const champs = champsManquantsApprenant(a);
+    if (!a?.email || !champs.length) return;
+    setDemandeCoordEnvoi(a.id);
+    try {
+      const esc = (t: string) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[c]);
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p>Bonjour ${esc(a.prenom)} ${esc(a.nom)},</p>
+          <p>Afin de finaliser votre dossier de formation${session?.title ? ` (<strong>${esc(session.title)}</strong>)` : ''}, il nous manque les informations suivantes :</p>
+          <ul>${champs.map((c) => `<li><strong>${esc(c)}</strong></li>`).join('')}</ul>
+          <p>Merci de nous les communiquer en répondant simplement à ce mail.</p>
+        </div>`;
+      const { data: resp, error } = await supabase.functions.invoke('send-document-email', {
+        body: { apprenantId: a.id, recipientEmail: a.email, recipientName: `${a.prenom} ${a.nom}`, subject: 'Coordonnées manquantes pour votre dossier de formation', htmlBody },
+      });
+      if (error || (resp as any)?.error) throw new Error((error as any)?.message || (resp as any)?.error || 'Envoi échoué');
+      toast({ title: 'Demande envoyée', description: `${a.prenom} ${a.nom} → ${a.email} (${champs.join(', ')})` });
+    } catch (e: any) {
+      toast({ title: "Échec de l'envoi", description: e?.message || 'Envoi impossible', variant: 'destructive' });
+    } finally {
+      setDemandeCoordEnvoi(null);
+    }
+  };
+  const BoutonDemandeCoord = ({ a }: { a: any }) => {
+    const champs = champsManquantsApprenant(a);
+    if (!champs.length) return null;
+    return (
+      <Button size="sm" variant="secondary" className="gap-1" disabled={!a?.email || demandeCoordEnvoi === a.id}
+        title={a?.email ? `Manquant : ${champs.join(', ')}` : "Pas d'e-mail"} onClick={() => envoyerDemandeCoordonnees(a)}>
+        {demandeCoordEnvoi === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />} Demander coordonnées
+      </Button>
+    );
+  };
+
   const checkApprenantsCompleteness = (listArg?: any[]): { ok: boolean; missing: string[] } => {
     const missing: string[] = [];
     for (const sa of (listArg || apprenantsInSession)) {
@@ -6397,6 +6443,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         <p className="font-medium text-sm">{r.a.prenom} {r.a.nom}</p>
                         <p className="text-xs text-muted-foreground">{r.a.email || 'Pas d\'e-mail'} · {r.heures} h de présence · Payé</p>
                       </div>
+                      <BoutonDemandeCoord a={r.a} />
                       <Button size="sm" variant="outline" className="gap-1" disabled={bulkDownloadingAttestations} onClick={() => handleBulkDownloadAttestations([r.sa])}>
                         <FileText className="w-4 h-4" /> Télécharger
                       </Button>
@@ -6415,6 +6462,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                       <div key={r.a.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
                         <span className="flex-1">{r.a.prenom} {r.a.nom}</span>
                         <span className="text-xs text-muted-foreground">{r.raison}</span>
+                        <BoutonDemandeCoord a={r.a} />
                         <DebloquerAttestationFC inscription={r.sa} sessionId={session.id} raison={r.raison} eligible={r.eligible}
                           onDownload={() => handleBulkDownloadAttestations([r.sa])}
                           onRefresh={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['emargements-hours'] }), controlesFC.refetch(), refetchFacturesFC(), refetchExtraFactures(), refetchPaiements()]); }} />
