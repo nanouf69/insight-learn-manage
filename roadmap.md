@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [ ] 18/11 — Formulaires Qualiopi 7/8 : projection CRM/PDF et choix local par document APERÇU, 28 Vitest + 9 SQL jetables + PC/mobile synthétiques PASS. Enregistrement durable et nouveaux questionnaires par inscription NON raccordés (serveur préparé non installé) ; aucun historique/dossier écrit ni publication. Limites docs/formulaires-qualiopi-7-8-apercu-2026-11-18.md.
 - [x] 18/11 — Qualiopi 6 : trois fiches emplois du temps + procédure enregistrées dans Cloud, aucune pièce originale ni adaptation inventée. Dépôt privé et fiche confidentielle en aperçu ; tests unitaires/SQL jetables, aucune publication. Contrôle réel admin bloqué par session fournie apprenant ; trois DOCX originaux restent à joindre. Rapport docs/qualiopi-indicateur6-2026-11-18.md.
 - [x] 18/11 — Agenda : bilan examen TAXI enregistré mais masqué par le mot « examen » ; filtre ciblé sur rendez-vous CMA, relecture après doublon, aucune écriture réelle/publication. Tests de classification exécutés ; parcours réel admin non prouvé.
 - [x] 17/11 — Planning : noms des candidats examen et entraînement cliquables vers leur fiche CRM par identifiant ; lignes CMA non rattachées restent « À rapprocher », aucune donnée modifiée, aperçu seul. Build OK ; clic réel non prouvé : session navigateur injectée redirigée vers le portail apprenant, sans accès admin.

@@ -6,6 +6,7 @@ import { getCompetencesForFormation } from '@/components/cours-en-ligne/competen
 import { ALL_DATES_EXAMEN_THEORIQUE } from '@/lib/examDatesConfig';
 import { parseFrenchDate } from '@/lib/filterPastDates';
 import { lignesEngagementsBienvenue } from '@/lib/bienvenueElearning';
+import { TYPES_PEDAGOGIQUES, contexteDocument, lignesContexte, type ContextePedagogique } from '@/lib/formulairePedagogique';
 import {
   ensureDocumentSignatures,
   getStagiaireSignatureImage,
@@ -459,7 +460,7 @@ function renderAnalyseBesoin(doc: jsPDF, donnees: any, y: number, margin: number
   const formations: string[] = [];
   if (donnees.formationVTC) formations.push('Habilitation VTC (RS5637)');
   if (donnees.formationTAXI) formations.push('Habilitation TAXI (RS5635)');
-  y = renderQA(doc, 'Formation souhaitee', formations.length ? formations.join(' + ') : '(Aucune)', y, margin, pw);
+  y = renderQA(doc, 'Formation souhaitee (réponse d’origine)', formations.length ? formations.join(' + ') : '(Non renseignée)', y, margin, pw);
 
   const eligibilityQuestions = [
     "Avez-vous deja perdu 6 points d'un coup sur votre permis de conduire ?",
@@ -610,13 +611,15 @@ function renderGenericContent(doc: jsPDF, donnees: any, y: number, margin: numbe
 // ===== Main export =====
 export function generateDocumentIndividuelPdf(
   apprenant: { nom: string; prenom: string; civilite?: string; type_apprenant?: string; formation_choisie?: string },
-  document: { type_document: string; titre: string; donnees: any; completed_at: string },
+  document: { type_document: string; titre: string; donnees: any; completed_at: string; contexte_pedagogique?: ContextePedagogique },
   opts?: { returnBlob?: boolean }
 ): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const margin = 15;
-  const donneesWithSignatures = ensureDocumentSignatures(document.donnees);
+  const pedagogique = TYPES_PEDAGOGIQUES.has(document.type_document);
+  const contexte = contexteDocument(document.donnees || {}, document.contexte_pedagogique);
+  const donneesWithSignatures = pedagogique ? { ...(document.donnees || {}) } : ensureDocumentSignatures(document.donnees);
 
   // ---- Header with logo ----
   try { doc.addImage(logoImage, 'PNG', margin, 8, 45, 16); } catch (_) {}
@@ -649,7 +652,7 @@ export function generateDocumentIndividuelPdf(
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80, 80, 80);
-  doc.text(`Formation : ${(apprenant.type_apprenant || apprenant.formation_choisie || '-').toUpperCase()}`, margin + 4, y + 9);
+  doc.text(doc.splitTextToSize(`Formation : ${pedagogique ? contexte.formation : (apprenant.type_apprenant || apprenant.formation_choisie || '-').toUpperCase()}`, pw - margin * 2 - 8), margin + 4, y + 9);
 
   let completedDateStr = '';
   try {
@@ -657,9 +660,13 @@ export function generateDocumentIndividuelPdf(
   } catch (_) {
     completedDateStr = document.completed_at;
   }
-  doc.text(`Complete le : ${completedDateStr}`, pw - margin - 4, y + 2, { align: 'right' });
+  if (!pedagogique) doc.text(`Complete le : ${completedDateStr}`, pw - margin - 4, y + 2, { align: 'right' });
 
   y += 24;
+  if (pedagogique) {
+    if (document.contexte_pedagogique) y = renderQA(doc, 'Statut', 'APERÇU LOCAL — NON ENREGISTRÉ', y, margin, pw);
+    for (const [label, value] of lignesContexte(contexte)) y = renderQA(doc, label, value, y, margin, pw);
+  }
 
   // ---- Document content ----
   if (document.donnees && typeof document.donnees === 'object') {
@@ -735,26 +742,6 @@ export function generateDocumentIndividuelPdf(
       ly += 5;
     }
     y = boxY + boxH + 4;
-  }
-
-  // ---- Décision organisme de formation (pour les docs pédagogiques) ----
-  const DECISION_TYPES = new Set(['projet-professionnel', 'analyse-besoin', 'test-competences']);
-  if (DECISION_TYPES.has(document.type_document)) {
-    const typeApp = String(apprenant.type_apprenant || '').toLowerCase();
-    const isPresentiel = !/(^|-)e($|-)/.test(typeApp);
-    y = ensureSpace(doc, y, 14);
-    y += 6;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(13, 37, 64);
-    let decisionText = "Décision de l'organisme de formation : admis";
-    if (!isPresentiel && document.completed_at) {
-      try {
-        decisionText += `   —   Date : ${format(new Date(document.completed_at), 'dd/MM/yyyy', { locale: fr })}`;
-      } catch {}
-    }
-    doc.text(decisionText, margin, y);
-    y += 4;
   }
 
   // ---- Signatures section ----
@@ -841,7 +828,7 @@ export function generateDocumentIndividuelPdf(
   drawSignatureBlock(
     'Signature du responsable pedagogique :',
     donneesWithSignatures.signatureResponsable,
-    'Naoufal GUENICHI',
+    pedagogique ? getStagiaireSignatureName({ _signed_by: donneesWithSignatures.responsable_nom }) : 'Naoufal GUENICHI',
     margin + colW + colGap,
     y,
   );

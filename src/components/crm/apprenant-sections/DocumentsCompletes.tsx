@@ -31,6 +31,8 @@ import { regleSuiviFormation } from '@/lib/suiviFormationIndicateurs';
 import { tauxTotalPresence } from '@/lib/tauxTotalPresence';
 import { CompteurHeuresNonSignees } from './CompteurHeuresNonSignees';
 import { PresencesManuellesDetail } from './PresencesManuellesDetail';
+import { ContexteFormulaire } from './ContexteFormulaire';
+import { TYPES_PEDAGOGIQUES, type ContextePedagogique } from '@/lib/formulairePedagogique';
 
 interface Props {
   apprenant: any;
@@ -177,6 +179,7 @@ const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'appr
 
 export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [contextesApercu, setContextesApercu] = useState<Record<string, ContextePedagogique>>({});
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -268,7 +271,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       const signatureApprenantNom = findSharedStagiaireSignatureName(rawDocs);
 
       const baseDocs = rawDocs.map((d) => {
-        const donnees = DOCUMENT_SIGNATURE_TYPES.has(d.type_document)
+        const donnees = DOCUMENT_SIGNATURE_TYPES.has(d.type_document) && !TYPES_PEDAGOGIQUES.has(d.type_document)
           ? ensureDocumentSignatures(d.donnees, signatureApprenant, signatureApprenantNom)
           : { ...(d.donnees || {}) };
         return {
@@ -502,6 +505,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       titre: doc.titre,
       donnees: doc.donnees,
       completed_at: doc.completed_at,
+      contexte_pedagogique: contextesApercu[doc.id],
     });
   };
 
@@ -1003,7 +1007,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
                 <div>
                   <p className="font-medium text-sm">{doc.titre}</p>
                   <p className="text-xs text-muted-foreground">
-                    Complété le {format(new Date(doc.completed_at), "dd MMMM yyyy à HH:mm", { locale: fr })}
+                    {TYPES_PEDAGOGIQUES.has(doc.type_document) ? 'Dates pédagogiques détaillées ci-dessous' : `Complété le ${format(new Date(doc.completed_at), "dd MMMM yyyy à HH:mm", { locale: fr })}`}
                   </p>
                 </div>
               </div>
@@ -1026,6 +1030,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
                 </Button>
               </div>
             </div>
+            {TYPES_PEDAGOGIQUES.has(doc.type_document) && <ContexteFormulaire key={`${apprenant.id}-${doc.id}`} apprenantId={apprenant.id} donnees={doc.donnees} contexte={contextesApercu[doc.id]} onPreview={c => setContextesApercu(previous => ({ ...previous, [doc.id]: c }))} />}
             {expandedId === doc.id && (
               <div className="mt-4 pt-4 border-t">
                 {renderFormData(doc.donnees, doc.type_document)}
