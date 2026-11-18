@@ -1,6 +1,10 @@
 /** Date evidence only; never changes measured hours, contractual dates or completion. */
 export interface ActivitePedagogiquePreuve {id:string;apprenantId:string;userId:string;at:string;type:'lecture_effective'|'exercice_remis'|'quiz_remis';serveur:boolean;qualifiante:boolean}
 const paris=(at:string)=>new Date(at).toLocaleDateString('sv-SE',{timeZone:'Europe/Paris'});
+/** Unknown validation evidence must preserve the previous calculation too. */
+export function conserverDatesActiviteAnterieures(edof:boolean|null,tauxJalons:number|null) {
+ return edof!==false || tauxJalons===null || !Number.isFinite(tauxJalons) || tauxJalons>=100;
+}
 export function periodePedagogiqueProuvee(rows:readonly ActivitePedagogiquePreuve[],apprenantId:string,userId:string) {
  const uniques=new Map<string,ActivitePedagogiquePreuve>();
  for(const r of rows){

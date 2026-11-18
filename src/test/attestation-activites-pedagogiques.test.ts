@@ -1,7 +1,12 @@
 import {describe,it,expect} from 'vitest';
-import {periodePedagogiqueProuvee,synthesePeriodeElearning,type ActivitePedagogiquePreuve} from '@/lib/attestationActivitesPedagogiques';
+import {periodePedagogiqueProuvee,synthesePeriodeElearning,conserverDatesActiviteAnterieures,type ActivitePedagogiquePreuve} from '@/lib/attestationActivitesPedagogiques';
 const event:ActivitePedagogiquePreuve={id:'p',apprenantId:'lea',userId:'uid',at:'2026-10-13T08:21:57.414Z',type:'exercice_remis',serveur:true,qualifiante:true};
 describe('Période e-learning prouvée',()=>{
+ it('jalons à 100 % gardent le calcul antérieur',()=>expect(conserverDatesActiviteAnterieures(false,100)).toBe(true));
+ it('EDOF validé garde le calcul antérieur même à 90,9 %',()=>expect(conserverDatesActiviteAnterieures(true,90.9)).toBe(true));
+ it('non EDOF et jalons incomplets seuls utilisent les activités supplémentaires',()=>expect(conserverDatesActiviteAnterieures(false,99.9)).toBe(false));
+ it('statut EDOF illisible garde les dates antérieures',()=>expect(conserverDatesActiviteAnterieures(null,90.9)).toBe(true));
+ it('jalons illisibles gardent les dates antérieures',()=>expect(conserverDatesActiviteAnterieures(false,null)).toBe(true));
  it('Léa : remise 13 octobre, pas connexion accueil 19 octobre',()=>expect(periodePedagogiqueProuvee([event],'lea','uid').derniere).toBe('2026-10-13'));
  it('lecture effective qualifiante peut devenir la dernière activité',()=>expect(periodePedagogiqueProuvee([event,{...event,id:'lecture',type:'lecture_effective',at:'2026-10-14T10:00:00Z'}],'lea','uid').derniere).toBe('2026-10-14'));
  it('simple ouverture non qualifiante exclue',()=>expect(periodePedagogiqueProuvee([{...event,qualifiante:false}],'lea','uid').derniere).toBeNull());
