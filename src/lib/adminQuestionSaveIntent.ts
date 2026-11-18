@@ -46,3 +46,40 @@ export function isCanonicalQuestionSaveIntent(
   const key = `${exerciseId}-${questionId}`;
   return edited.has(key) || added.has(key);
 }
+const comparableQuestion = (q: any) => JSON.stringify({
+  enonce: String(q?.enonce ?? ""),
+  choix: (Array.isArray(q?.choix) ? q.choix : []).map((c: any) => ({
+    lettre: String(c?.lettre ?? ""),
+    texte: String(c?.texte ?? ""),
+    correct: c?.correct === true,
+  })),
+  explication: q?.explication ?? null,
+  reponseQRC: q?.reponseQRC ?? null,
+});
+
+/**
+ * Relecture obligatoire : renvoie les clés `exo-question` dont la version
+ * relue en base diffère de la modification envoyée (ou est absente).
+ * Une liste non vide = la sauvegarde n'a PAS été conservée.
+ */
+export function questionsNonConservees(
+  sent: { exercices?: any[] } | null | undefined,
+  readBack: { exercices?: any[] } | null | undefined,
+  edited: ReadonlySet<string>,
+): string[] {
+  const index = (data: { exercices?: any[] } | null | undefined) => {
+    const map = new Map<string, any>();
+    for (const e of data?.exercices ?? []) for (const q of e?.questions ?? []) map.set(`${Number(e.id)}-${Number(q?.id)}`, q);
+    return map;
+  };
+  const sentMap = index(sent);
+  const readMap = index(readBack);
+  const mismatches: string[] = [];
+  for (const key of edited) {
+    const intended = sentMap.get(key);
+    if (!intended) continue; // pas dans ce module (ou supprimée volontairement)
+    const stored = readMap.get(key);
+    if (!stored || comparableQuestion(stored) !== comparableQuestion(intended)) mismatches.push(key);
+  }
+  return mismatches;
+}

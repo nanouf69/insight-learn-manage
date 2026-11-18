@@ -9,7 +9,7 @@ import { controleConnaissancesDisplay, canonicalRowsControle } from "@/lib/contr
 import { canonicalQuizIdsForDisplay, selectBilanTaxiNationaleRows, canonicalQuizIdsForNationalDisplay, selectBilanNationalDisplayRows } from "@/lib/bilanTaxiNationaleSelection";
 import { BILAN_SOMME_COURS_SOURCES, projectionSommeCoursActive, projeterBilanDepuisCours, retablirExercicesProjetesDuServeur } from "@/lib/bilanCoursSommeProjection";
 import { resoudreExercicesSourcesBilan } from "./bilanCoursSources";
-import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds } from "@/lib/adminQuestionSaveIntent";
+import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestionEditIds, questionsNonConservees } from "@/lib/adminQuestionSaveIntent";
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
@@ -5975,6 +5975,46 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     isSavingToDbRef.current = true;
     let succesAAfficher = false;
     try {
+      // Modules FC 81/82 : leur contenu affiché est TOUJOURS reconstruit depuis le
+      // Bilan parent (4 / 9). Ils n'ont pas de ligne propre : sauvegarder sur 81/82
+      // échouait (« Lecture complète du module indisponible ») et, même réussie,
+      // la relecture reprenait le parent → l'ancienne valeur revenait.
+      // La modification est donc écrite directement dans le parent, puis relue.
+      const fcParentDirect = FC_BILAN_PARENT_BY_MODULE_ID[Number(dataToSave.module_id)];
+      if (fcParentDirect) {
+        const parentRow = await loadModuleEditorStateRow(fcParentDirect);
+        if (!parentRow?.module_data) throw new Error(`Lecture du bilan parent ${fcParentDirect} impossible : aucune sauvegarde envoyée.`);
+        let parentNext = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
+        parentNext = garderExercicesDuServeur(parentNext, parentRow.module_data, new Set());
+        parentNext = applyQuestionSaveIntent(parentNext, parentRow.module_data, activeQuestionEdits, questionsAjouteesSession, questionsSupprimeesSessionRef.current);
+        // Conserver les exercices du parent absents du module FC (ex. Gestion).
+        const fcIds = new Set((parentNext.exercices ?? []).map((e) => Number(e.id)));
+        const parentFull = {
+          ...(parentRow.module_data as ModuleData),
+          exercices: ((parentRow.module_data as ModuleData).exercices ?? []).map((e) =>
+            fcIds.has(Number(e.id)) ? (parentNext.exercices ?? []).find((x) => Number(x.id) === Number(e.id))! : e),
+        } as ModuleData;
+        const savedAt = await saveModuleEditorStateWithCas({
+          moduleId: fcParentDirect,
+          moduleData: normalizeManualQuestionFlags(parentFull),
+          deletedCours: parentRow.deleted_cours ?? [],
+          deletedExercices: parentRow.deleted_exercices ?? [],
+          sourceFingerprint: parentRow.source_fingerprint ?? null,
+          expectedUpdatedAt: parentRow.updated_at ?? null,
+        });
+        const relu = await loadModuleEditorStateRow(fcParentDirect);
+        const perdues = questionsNonConservees(parentFull, relu?.module_data, activeQuestionEdits);
+        if (!relu?.module_data || perdues.length) {
+          throw new Error(`Relecture : ${perdues.length || "toutes les"} question(s) non conservée(s) par la base (${perdues.join(", ")}).`);
+        }
+        const reluFc = buildFcBilanModuleFromParent(dataToSave.module_id, relu.module_data as ModuleData, dataToSave.module_data as ModuleData);
+        if (reluFc) setModuleData((prev) => savedLocalRevision !== adminLocalRevisionRef.current ? prev : appliquerSommeCoursBilan(reluFc));
+        lastSavedPayloadSignatureRef.current = getSavePayloadSignature(dataToSave);
+        saveErrorShownRef.current = false;
+        console.info(`[FC-Bilan] Module ${dataToSave.module_id} enregistré dans le parent ${fcParentDirect} et relu (${savedAt}).`);
+        toast.success("✅ Changement enregistré et relu depuis la base");
+        return true;
+      }
       let normalizedModuleData = normalizeManualQuestionFlags(dataToSave.module_data as ModuleData);
       // Snapshot ancienne version pour détecter les changements pédagogiques
       let previousModuleData: any = null;
@@ -6049,6 +6089,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         });
       }
 
+      const normalizedModuleDataEnvoye = normalizedModuleData;
       saveErrorShownRef.current = false;
       markDbSnapshotApplied(persistedUpdatedAt);
 
@@ -6082,6 +6123,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         throw confirmReadError;
       }
       if (!confirmedRow?.module_data) throw new Error("Sauvegarde non confirmée : relecture complète du module indisponible.");
+      {
+        const perdues = questionsNonConservees(normalizedModuleDataEnvoye, confirmedRow.module_data, activeQuestionEdits);
+        if (perdues.length) throw new Error(`Relecture : ${perdues.length} question(s) non conservée(s) par la base (${perdues.join(", ")}). Rien n'est affiché comme enregistré.`);
+      }
 
       const savedAt = confirmedRow?.updated_at ?? persistedUpdatedAt;
 

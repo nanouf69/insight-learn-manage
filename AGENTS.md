@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+- Admin question saves verify edited questions by fresh readback (questionsNonConservees) before any success toast; FC modules 81/82 write straight into their parent Bilan (4/9); why: FC has no own row and always rereads the parent, so edits silently reverted.
 - Practical attendance PDF hours use learner planning details by exact date and half-day, display-only; why: preserve signatures and never label evening attendance with daytime hours.
 <!-- LOVABLE:END -->
  - Absents-tab presence corrections use a scoped inscription/session write with returned-row confirmation, independently of legacy presence side effects; why: declaring presence must not create signatures, send mail, extend access or change exam results.
