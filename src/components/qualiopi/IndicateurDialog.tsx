@@ -17,6 +17,8 @@ import {
 } from "@/lib/qualiopi/data";
 import { sourcesForIndicateur, type CrmSourceItem } from "@/lib/qualiopi/crm-sources";
 import { PreuveFormDialog } from "./PreuveFormDialog";
+import { AdaptationsIndicateur6 } from "./AdaptationsIndicateur6";
+import { estEmploiDuTemps, joindreOriginal } from "./indicateur6";
 
 interface Props {
   indicateur: QualiopiIndicateur | null;
@@ -33,6 +35,7 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
   const [replaceId, setReplaceId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Record<string, CrmSourceItem[]>>({});
   const [loadingSug, setLoadingSug] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   useEffect(() => { setLocal(etat); }, [etat, indicateur?.numero]);
 
@@ -132,7 +135,7 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
 
             <TabsContent value="c" className="space-y-3 pt-4">
               <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">Preuves réellement disponibles dans notre organisme</p>
+                <p className="text-sm text-muted-foreground">Fiches de preuves et documents disponibles</p>
                 <Button size="sm" className="gap-2" onClick={() => { setReplaceId(null); setAddOpen(true); }}>
                   <Plus className="w-4 h-4" /> Ajouter une preuve
                 </Button>
@@ -145,6 +148,7 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
                   <div className="flex justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{p.titre}</p>
+                      {estEmploiDuTemps(p) && <Badge variant="outline">{p.fichiers.length ? "DOCX déposé — contenu à vérifier" : "Document à joindre"}</Badge>}
                       {p.ce_que_demontre && <p className="text-xs mt-0.5"><span className="font-medium">Ce que démontre la preuve : </span>{p.ce_que_demontre}</p>}
                       {p.description && p.description !== p.ce_que_demontre && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}
                       {p.emplacement && <p className="text-xs text-muted-foreground mt-0.5">Emplacement : {p.emplacement}</p>}
@@ -181,8 +185,23 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
                       ))}
                     </div>
                   )}
+                  {estEmploiDuTemps(p) && <div className="space-y-1">
+                    <Label htmlFor={`original-${p.id}`}>Joindre {p.fichiers.length ? "un autre original DOCX (les précédents sont conservés)" : "le DOCX original"}</Label>
+                    <Input id={`original-${p.id}`} type="file" accept=".docx" disabled={uploadingId !== null} onChange={async (event) => {
+                      const file = event.currentTarget.files?.[0];
+                      if (!file) return;
+                      const input = event.currentTarget;
+                      setUploadingId(p.id);
+                      try { await joindreOriginal(p, file); toast.success("DOCX original déposé et rattachement vérifié"); onChanged(); }
+                      catch (e) { toast.error(e instanceof Error ? e.message : "Dépôt non confirmé"); }
+                      finally { setUploadingId(null); input.value = ""; }
+                    }} />
+                    {uploadingId === p.id && <p className="text-sm text-muted-foreground">Dépôt et vérification…</p>}
+                  </div>}
                 </div>
               ))}
+
+              {indicateur.numero === 6 && <AdaptationsIndicateur6 />}
 
               {archivees.length > 0 && (
                 <div className="pt-2">

@@ -1,0 +1,2 @@
+- Indicator 6 originals attach only after DOCX structure, private-object readback and proof CAS confirmation; append files without replacing history. Why: a declared schedule is not a stored original.
+- Adaptation records use a separate admin-only append-only table and explicit actual-implementation confirmation; never include them in general Qualiopi exports. Why: sensitive needs must not leak or become fabricated evidence.

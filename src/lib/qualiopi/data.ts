@@ -10,6 +10,7 @@ export interface PreuveFichier {
 
 export interface QualiopiPreuve {
   id: string;
+  ref_key?: string | null;
   titre: string;
   description: string | null;
   ce_que_demontre: string | null;

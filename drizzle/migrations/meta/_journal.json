@@ -1940,6 +1940,20 @@
       "when": 1794934792630,
       "tag": "0276_transaction_apprenant_lien",
       "breakpoints": true
+    },
+    {
+      "idx": 277,
+      "version": "7",
+      "when": 1794996370463,
+      "tag": "0277_qualiopi_adaptations_confidentielles",
+      "breakpoints": true
+    },
+    {
+      "idx": 278,
+      "version": "7",
+      "when": 1794996574002,
+      "tag": "0278_qualiopi_adaptations_droits_minimaux",
+      "breakpoints": true
     }
   ]
 }

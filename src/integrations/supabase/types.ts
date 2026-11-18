@@ -8376,6 +8376,60 @@ export type Database = {
         }
         Relationships: []
       }
+      qualiopi_adaptations: {
+        Row: {
+          adaptation: string
+          besoin: string
+          created_at: string
+          created_by: string
+          date_decision: string
+          date_mise_en_place: string
+          id: string
+          mise_en_oeuvre_confirmee: boolean
+          preuve_application: string
+          responsable: string
+          session_reference: string
+          stagiaire_reference: string
+          suite: string
+          validation: string
+          verification_efficacite: string
+        }
+        Insert: {
+          adaptation: string
+          besoin: string
+          created_at?: string
+          created_by?: string
+          date_decision: string
+          date_mise_en_place: string
+          id?: string
+          mise_en_oeuvre_confirmee?: boolean
+          preuve_application: string
+          responsable: string
+          session_reference: string
+          stagiaire_reference: string
+          suite: string
+          validation: string
+          verification_efficacite: string
+        }
+        Update: {
+          adaptation?: string
+          besoin?: string
+          created_at?: string
+          created_by?: string
+          date_decision?: string
+          date_mise_en_place?: string
+          id?: string
+          mise_en_oeuvre_confirmee?: boolean
+          preuve_application?: string
+          responsable?: string
+          session_reference?: string
+          stagiaire_reference?: string
+          suite?: string
+          validation?: string
+          verification_efficacite?: string
+        }
+        Relationships: []
+      }
       qualiopi_indicateurs_etat: {
         Row: {
           applicable: boolean
