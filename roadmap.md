@@ -51,6 +51,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] CMA ajournés → prochaine session — APERÇU, bloqué : territoire pratique absent.
 
 ## P1 — Attestations
+- [x] 18/11 16:57 — Nouveaux calculs : preuves limitées à la fin de formation rouge, jour Paris inclus ; calcul antérieur validés inchangé, aucune date fabriquée, aucune écriture de dossier ni publication.
 - [x] 18/11 — Dates d’activité : ancien calcul conservé pour jalons pondérés à 100 % ou EDOF validé, également en cas de preuve illisible ; 34 tests PASS, aucune écriture de dossier ni publication. Contrôle navigateur réel non prouvé.
 - [x] 17/11 — Clic « Payé intégralement » : détail des versements, dates et horodatage de saisie Paris, virements comptés sans doublon ; 14 tests PASS et clic connecté sur paiement réel 150 € + 50 € vérifié. Aperçu seulement, aucune écriture de paiement.
 - [ ] Date dernière activité pédagogique vs fin administrative, rectificatif versionné — à faire (aucune réécriture d'attestation signée).

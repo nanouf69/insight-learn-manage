@@ -25,6 +25,8 @@ export async function chargerDatesPedagogiquesAttestation(apprenantId:string){
   }catch{/* Unknown/frozen unreadable evidence preserves the previous dates. */}
  }
  if(conserverDatesActiviteAnterieures(edofValide,tauxJalons))return ancienCalcul();
+ const finFormation=a.data.date_fin_formation;
+ if(!finFormation)throw new Error('Date de fin de formation non vérifiée');
  // Only unfinished, proven non-EDOF dossiers include the additional submissions.
  const rec=await supabase.from('bilan_future_receipts').select('id').eq('owner_id',uid);
  if(rec.error)throw new Error('Bilans examen illisibles');
@@ -34,5 +36,5 @@ export async function chargerDatesPedagogiquesAttestation(apprenantId:string){
   for(const s of (sub.data??[]) as any[]) if(s.submitted_at) preuves.push({id:`bilan:${s.receipt_id}`,apprenantId,userId:uid,at:s.submitted_at,type:'quiz_remis',serveur:true,qualifiante:true});}
  const qz=await fetchAllRows<any>((from,to)=>supabase.from('apprenant_quiz_results').select('id,completed_at').eq('apprenant_id',apprenantId).not('completed_at','is',null).order('id').range(from,to));
  for(const r of qz) preuves.push({id:`quiz:${r.id}`,apprenantId,userId:uid,at:r.completed_at,type:'quiz_remis',serveur:true,qualifiante:true});
- return {...periodePedagogiqueProuvee(preuves,apprenantId,uid),administrative:a.data.date_fin_cours_en_ligne||a.data.date_fin_formation||null,lectureEffectiveProuvee:false};
+ return {...periodePedagogiqueProuvee(preuves,apprenantId,uid,finFormation),administrative:a.data.date_fin_cours_en_ligne||a.data.date_fin_formation||null,lectureEffectiveProuvee:false};
 }

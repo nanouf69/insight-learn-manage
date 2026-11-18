@@ -2,6 +2,10 @@ import {describe,it,expect} from 'vitest';
 import {periodePedagogiqueProuvee,synthesePeriodeElearning,conserverDatesActiviteAnterieures,type ActivitePedagogiquePreuve} from '@/lib/attestationActivitesPedagogiques';
 const event:ActivitePedagogiquePreuve={id:'p',apprenantId:'lea',userId:'uid',at:'2026-10-13T08:21:57.414Z',type:'exercice_remis',serveur:true,qualifiante:true};
 describe('Période e-learning prouvée',()=>{
+ it('fin rouge 30 novembre : dernière preuve antérieure, jamais activité décembre ni date limite inventée',()=>expect(periodePedagogiqueProuvee([{...event,at:'2026-11-28T10:00:00Z'},{...event,id:'tardive',at:'2026-12-01T10:00:00Z'}],'lea','uid','2026-11-30')).toMatchObject({derniere:'2026-11-28',preuveDerniere:{id:'p'}}));
+ it('fin rouge inclut le 30 novembre jusqu’à minuit Paris mais exclut le 1 décembre Paris',()=>expect(periodePedagogiqueProuvee([{...event,at:'2026-11-30T22:59:59Z'},{...event,id:'tardive',at:'2026-11-30T23:00:00Z'}],'lea','uid','2026-11-30')).toMatchObject({derniere:'2026-11-30',preuveDerniere:{id:'p'}}));
+ it('aucune preuve avant la fin rouge ne fabrique pas une date',()=>expect(periodePedagogiqueProuvee([{...event,at:'2026-12-01T10:00:00Z'}],'lea','uid','2026-11-30').derniere).toBeNull());
+ it('date limite illisible refusée',()=>expect(()=>periodePedagogiqueProuvee([event],'lea','uid','2026-02-30')).toThrow('Date de fin de formation non vérifiée'));
  it('jalons à 100 % gardent le calcul antérieur',()=>expect(conserverDatesActiviteAnterieures(false,100)).toBe(true));
  it('EDOF validé garde le calcul antérieur même à 90,9 %',()=>expect(conserverDatesActiviteAnterieures(true,90.9)).toBe(true));
  it('non EDOF et jalons incomplets seuls utilisent les activités supplémentaires',()=>expect(conserverDatesActiviteAnterieures(false,99.9)).toBe(false));
