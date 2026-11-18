@@ -3528,6 +3528,45 @@ export type Database = {
           },
         ]
       }
+      demandes_coordonnees: {
+        Row: {
+          apprenant_id: string
+          champs: string[]
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          repondu_at: string | null
+          reponse: Json | null
+          session_id: string | null
+          token: string
+        }
+        Insert: {
+          apprenant_id: string
+          champs?: string[]
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          repondu_at?: string | null
+          reponse?: Json | null
+          session_id?: string | null
+          token: string
+        }
+        Update: {
+          apprenant_id?: string
+          champs?: string[]
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          repondu_at?: string | null
+          reponse?: Json | null
+          session_id?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
       demandes_inscription_urgentes: {
         Row: {
           apprenant_id: string

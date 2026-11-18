@@ -49,6 +49,7 @@ import AdminCorrectionQrcV2 from "./pages/AdminCorrectionQrcV2";
 
 import DocumentASignerPublic from "./pages/DocumentASignerPublic";
 import IdentifiantsT3PPublic from "./pages/IdentifiantsT3PPublic";
+import CoordonneesPublic from "./pages/CoordonneesPublic";
 
 // Onboarding pages
 
@@ -131,6 +132,7 @@ function App() {
                 <Route path="/cours-en-ligne" element={<Navigate to="/cours" replace />} />
                 <Route path="/examens" element={<Navigate to="/?section=examens" replace />} />
                 <Route path="/document-a-signer/:token" element={<ErrorBoundary><DocumentASignerPublic /></ErrorBoundary>} />
+                <Route path="/mes-coordonnees" element={<ErrorBoundary><CoordonneesPublic /></ErrorBoundary>} />
                 <Route path="/identifiants-t3p" element={<ErrorBoundary><IdentifiantsT3PPublic /></ErrorBoundary>} />
 
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />

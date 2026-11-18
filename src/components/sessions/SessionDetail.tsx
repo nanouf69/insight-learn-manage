@@ -2563,13 +2563,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     if (!a?.email || !champs.length) return;
     setDemandeCoordEnvoi(a.id);
     try {
+      const tok = Array.from(crypto.getRandomValues(new Uint8Array(24))).map((b) => b.toString(16).padStart(2, '0')).join('');
+      const { error: insErr } = await supabase.from('demandes_coordonnees' as any).insert({ token: tok, apprenant_id: a.id, session_id: session?.id ?? null, champs } as any);
+      if (insErr) throw new Error(insErr.message);
+      const lien = `https://gestion.ftransport.fr/mes-coordonnees?token=${tok}`;
       const esc = (t: string) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[c]);
       const htmlBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <p>Bonjour ${esc(a.prenom)} ${esc(a.nom)},</p>
           <p>Afin de finaliser votre dossier de formation${session?.title ? ` (<strong>${esc(session.title)}</strong>)` : ''}, il nous manque les informations suivantes :</p>
           <ul>${champs.map((c) => `<li><strong>${esc(c)}</strong></li>`).join('')}</ul>
-          <p>Merci de nous les communiquer en répondant simplement à ce mail.</p>
+          <p>Merci de les renseigner en cliquant sur ce bouton (si votre formation est payée par une société, indiquez aussi ses coordonnées) :</p>
+          <p style="text-align:center;margin:24px 0;"><a href="${lien}" style="background:#1d4ed8;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Compléter mes coordonnées</a></p>
+          <p style="font-size:12px;color:#666;">Lien personnel valable 30 jours : ${lien}</p>
         </div>`;
       const { data: resp, error } = await supabase.functions.invoke('send-document-email', {
         body: { apprenantId: a.id, recipientEmail: a.email, recipientName: `${a.prenom} ${a.nom}`, subject: 'Coordonnées manquantes pour votre dossier de formation', htmlBody },
