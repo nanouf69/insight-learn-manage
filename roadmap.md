@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] 18/11 17:50 — Mails, formulaires et Contrôle/quiz inspectés : 837 preuves / 1 032 liens ajoutés ; 9/10/11 relus 802/348/734, zéro doublon/orphelin, sources identiques. 195 tests structurés, 119 formulaires signés, 523 remises quiz pour 152 apprenants ; sessions candidates seulement, exceptions documentées. Admin réel + 2 tests PASS, aucun envoi/publication/conformité. Rapport docs/qualiopi-controle-formulaires-2026-11-18.md.
 - [x] 18/11 17:35 — Audit individuel Qualiopi 9 : 553 inscriptions / 354 apprenants, 150 convocations préalables non ambiguës ; 832 références 9/10/11 ajoutées, relecture 802/34/16, sources inchangées. Exceptions nominatives privées, lecture complète des preuves corrigée, 18 tests PASS ; aucun envoi/publication/conformité. Rapport docs/qualiopi-9-individuel-2026-11-18.md ; rattachements incertains maintenus comme tels.
 - [x] 18/11 17:05 — Qualiopi 8 : 234 annotations relues, 93 dates de dépôt signé / 64 apprenants ; 141 exceptions (139 sans dossier, 2 sans signature), 0 décision datée inventée, documents sources identiques. 17 SQL jetables + 5 Vitest PASS ; sans publication. Rapport docs/qualiopi-6-7-originaux-8-depots-2026-11-18.md.
 - [ ] 18/11 17:05 — Qualiopi 6/7 : 0 original accessible retrouvé, 0 pièce attachée ; bloqué par les quatre DOCX demandés et le planning TAXI à retransmettre (ancien montage d’envoi inaccessible).
