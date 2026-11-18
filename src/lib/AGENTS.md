@@ -1,4 +1,5 @@
 # Persistence boundaries
+- Standalone attendance access uses moduleEmargementPresentiel by presential track, outside assigned-module progression; why: missing legacy assignments must not hide sheets or change milestones.
 - VTC regulation PPTX replacement uses exact historical asset URLs in courseDisplaySupport plus the static course source; why: update the displayed support without rewriting saved courses, questions or learner evidence, while preserving custom uploads and original files.
 - Personalized attendance exports reuse the existing FTRANSPORT contact source in every page header; why: identify the issuing company without changing attendance evidence or inventing legal identifiers.
 - Candidate-list saves update existing exact planning rows and confirm returned lists before changing UI state; only new rows insert complete bounds. Why: upsert insert constraints reject omitted dates and optimistic lists can falsely show an unsaved addition.

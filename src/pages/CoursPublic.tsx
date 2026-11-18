@@ -1,6 +1,7 @@
 import { MonChoixPratique } from "@/components/cours-en-ligne/MonChoixPratique";
 import { PresenceFormationVtc } from '@/components/cours-en-ligne/PresenceFormationVtc';
 import { projeterParcoursSessionFC, type InscriptionFC } from '@/lib/parcoursSessionFC';
+import { moduleEmargementPresentiel } from '@/lib/moduleEmargementPresentiel';
 import { requestExamExit } from '@/components/cours-en-ligne/ExamExitGuard';
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
@@ -2008,6 +2009,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Dashboard
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
   const filteredSourceModules = modulesAttribuesDashboard(selectedFormation, apprenant?.modules_autorises, apprenant?.id);
+  const moduleEmargement = moduleEmargementPresentiel(selectedFormation);
 
   const modules = filteredSourceModules.map((module) => ({
     ...module,
@@ -2476,6 +2478,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </Card>
             )}
 
+            {moduleEmargement && (
+              <section className="mb-6 border-y border-border py-4">
+                <Button variant="outline" className="h-auto w-full justify-start gap-3 whitespace-normal py-4 text-lg" onClick={() => setSelectedModule(moduleEmargement)}>
+                  <BookOpen className="h-6 w-6 shrink-0" />
+                  Feuilles d’émargement
+                  <ChevronRight className="ml-auto h-5 w-5 shrink-0" />
+                </Button>
+              </section>
+            )}
             {/* Header modules/quiz + déconnexion */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
