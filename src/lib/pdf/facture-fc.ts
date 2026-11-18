@@ -204,33 +204,44 @@ export async function generateFactureFC(
 
   // Tableau désignation
   const tableY = yMid + 6;
+  const tableWidth = mr - ml;
+  const columnWidths = [tableWidth - 72, 16, 28, 28];
+  const columnX = [ml, ml + columnWidths[0], mr - 56, mr - 28];
+  const headerHeight = 8;
+  const lineHeight = 4;
+  // Dimensions en millimètres, indépendantes de l'état du PDF précédent.
+  doc.setCharSpace(0);
+  doc.setLineHeightFactor(1.15);
   doc.setFillColor(240, 240, 240);
-  doc.rect(ml, tableY, mr - ml, 8, 'F');
+  doc.rect(ml, tableY, tableWidth, headerHeight, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('Désignation', ml + 2, tableY + 5.5);
-  doc.text('Qté', ml + 110, tableY + 5.5);
-  doc.text('P.U. HT', ml + 130, tableY + 5.5);
+  doc.text('Qté', columnX[1] + columnWidths[1] / 2, tableY + 5.5, { align: 'center' });
+  doc.text('P.U. HT', columnX[2] + columnWidths[2] - 2, tableY + 5.5, { align: 'right' });
   doc.text('Total HT', mr - 2, tableY + 5.5, { align: 'right' });
 
   doc.setFont('helvetica', 'normal');
-  const ligneY = tableY + 14;
+  doc.setFontSize(9);
+  const ligneY = tableY + headerHeight + 5;
   const designation = data.designation || `Formation Continue Obligatoire ${data.formation}${data.duree ? ` (${data.duree})` : ''}`;
   // Wrap designation
-  const lines = doc.splitTextToSize(designation, 100);
-  doc.text(lines, ml + 2, ligneY);
-  doc.text('1', ml + 110, ligneY);
-  doc.text(eur(data.montantHT), ml + 130, ligneY);
+  const lines: string[] = doc.splitTextToSize(designation, columnWidths[0] - 4);
+  lines.forEach((line, index) => doc.text(line, ml + 2, ligneY + index * lineHeight));
+  doc.text('1', columnX[1] + columnWidths[1] / 2, ligneY, { align: 'center' });
+  doc.text(eur(data.montantHT), columnX[2] + columnWidths[2] - 2, ligneY, { align: 'right' });
   doc.text(eur(data.montantHT), mr - 2, ligneY, { align: 'right' });
 
   // Bordures tableau
-  const tableEndY = ligneY + Math.max(6, lines.length * 4);
+  const tableEndY = tableY + headerHeight + Math.max(10, lines.length * lineHeight + 6);
   doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.2);
   doc.line(ml, tableY, mr, tableY);
   doc.line(ml, tableY + 8, mr, tableY + 8);
   doc.line(ml, tableEndY, mr, tableEndY);
   doc.line(ml, tableY, ml, tableEndY);
   doc.line(mr, tableY, mr, tableEndY);
+  columnX.slice(1).forEach(x => doc.line(x, tableY, x, tableEndY));
 
   // Totaux
   const tva = data.tvaTaux ?? 0;
