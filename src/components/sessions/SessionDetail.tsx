@@ -2543,6 +2543,21 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
   const [demandeCoordEnvoi, setDemandeCoordEnvoi] = useState<string | null>(null);
   const [demandeCoordEnvoyees, setDemandeCoordEnvoyees] = useState<Record<string, string>>({});
+  const idsApprenantsSession = (apprenantsInSession || []).map((sa: any) => sa.apprenant?.id).filter(Boolean) as string[];
+  const { data: demandesCoordHistorique = {} } = useQuery({
+    queryKey: ['demandes-coordonnees', idsApprenantsSession.join(',')],
+    enabled: idsApprenantsSession.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('emails').select('apprenant_id,sent_at,created_at')
+        .in('apprenant_id', idsApprenantsSession).eq('type', 'sent')
+        .eq('subject', 'Coordonnées manquantes pour votre dossier de formation')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const m: Record<string, string> = {};
+      for (const r of (data ?? []) as any[]) if (!m[r.apprenant_id]) m[r.apprenant_id] = r.sent_at || r.created_at;
+      return m;
+    },
+  });
   const envoyerDemandeCoordonnees = async (a: any) => {
     const champs = champsManquantsApprenant(a);
     if (!a?.email || !champs.length) return;
@@ -2572,6 +2587,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const champs = champsManquantsApprenant(a);
     if (!champs.length) return null;
     if (demandeCoordEnvoyees[a.id]) return <span className="text-xs font-medium text-primary">✓ Demande envoyée à {demandeCoordEnvoyees[a.id]}</span>;
+    const deja = (demandesCoordHistorique as Record<string, string>)[a.id];
+    if (deja) {
+      const quand = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }).format(new Date(deja));
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-primary">✓ Déjà envoyée le {quand}</span>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={demandeCoordEnvoi === a.id} onClick={() => envoyerDemandeCoordonnees(a)}>Renvoyer</Button>
+        </div>
+      );
+    }
     return (
       <Button size="sm" variant="secondary" className="gap-1" disabled={!a?.email || demandeCoordEnvoi === a.id}
         title={a?.email ? `Manquant : ${champs.join(', ')}` : "Pas d'e-mail"} onClick={() => envoyerDemandeCoordonnees(a)}>
