@@ -1239,6 +1239,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
           <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
+          <TabsTrigger value="jalons" className="text-sm font-semibold">Jalons</TabsTrigger>
           <TabsTrigger value="edof-fin" className="text-sm">EDOF déjà validé</TabsTrigger>
           <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
           <TabsTrigger value="attestation-fin" className="text-sm font-semibold">Attestation de fin de formation</TabsTrigger>
@@ -1384,6 +1385,11 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             requestAnimationFrame(() => accessTabRef.current?.scrollIntoView({ block: "start" }));
           }} />}
           {activeTab === "controle" && <ControleQualiteTab apprenant={apprenant} />}
+          {activeTab === "jalons" && (
+            <div className="text-lg [&_table]:text-base [&_h3]:text-2xl">
+              <JalonsPonderesCard apprenant={apprenant} apprenantId={apprenant.id} typeApprenant={(apprenant as any).type_apprenant} formationChoisie={(apprenant as any).formation_choisie} defaultOpen afficherObjectifs titre="Jalons — ce qui a été fait" />
+            </div>
+          )}
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
           {activeTab === "attestation-fin" && <AttestationFinFormationTab apprenant={apprenant} />}
           {activeTab === "dossier" && <DocumentsDossier apprenant={apprenant} />}
