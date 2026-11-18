@@ -8,5 +8,14 @@ export async function chargerDatesPedagogiquesAttestation(apprenantId:string){
  const uid=a.data.auth_user_id;
  const rows=await fetchAllRows<any>((from,to)=>supabase.from('reponses_apprenants').select('id,apprenant_id,user_id,status,submitted_at,reponses').eq('apprenant_id',apprenantId).eq('user_id',uid).eq('status','submitted').not('submitted_at','is',null).order('id').range(from,to));
  const preuves:ActivitePedagogiquePreuve[]=rows.filter(r=>Object.entries(r.reponses??{}).some(([k,v])=>!k.startsWith('_')&&v!=null&&v!==''&&JSON.stringify(v)!=='[]'&&JSON.stringify(v)!=='{}')).map(r=>({id:r.id,apprenantId:r.apprenant_id,userId:r.user_id,at:r.submitted_at,type:'exercice_remis',serveur:true,qualifiante:true}));
+ // Bilans examen (circuit actuel) et quiz/examens blancs remis comptent aussi comme activité prouvée.
+ const rec=await supabase.from('bilan_future_receipts').select('id').eq('owner_id',uid);
+ if(rec.error)throw new Error('Bilans examen illisibles');
+ const recIds=(rec.data??[]).map((r:any)=>r.id);
+ if(recIds.length){const sub=await supabase.from('bilan_future_submissions').select('receipt_id,submitted_at').in('receipt_id',recIds);
+  if(sub.error)throw new Error('Bilans examen illisibles');
+  for(const s of (sub.data??[]) as any[]) if(s.submitted_at) preuves.push({id:`bilan:${s.receipt_id}`,apprenantId,userId:uid,at:s.submitted_at,type:'quiz_remis',serveur:true,qualifiante:true});}
+ const qz=await fetchAllRows<any>((from,to)=>supabase.from('apprenant_quiz_results').select('id,completed_at').eq('apprenant_id',apprenantId).not('completed_at','is',null).order('id').range(from,to));
+ for(const r of qz) preuves.push({id:`quiz:${r.id}`,apprenantId,userId:uid,at:r.completed_at,type:'quiz_remis',serveur:true,qualifiante:true});
  return {...periodePedagogiqueProuvee(preuves,apprenantId,uid),administrative:a.data.date_fin_cours_en_ligne||a.data.date_fin_formation||null,lectureEffectiveProuvee:false};
 }
