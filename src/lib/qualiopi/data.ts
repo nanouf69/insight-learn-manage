@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { INDICATEURS, QualiopiStatut } from "./referentiel";
+import { lirePagesQualiopi } from "./lectureComplete";
 
 export interface PreuveFichier {
   nom: string;
@@ -58,11 +59,14 @@ export const DEFAULT_ETAT = (n: number): QualiopiEtat => ({
 });
 
 export async function loadQualiopi(): Promise<{ etats: Record<number, QualiopiEtat>; preuves: QualiopiPreuve[] }> {
-  const [etatRes, preuveRes, lienRes] = await Promise.all([
+  const [etatRes, preuveRows, lienRows] = await Promise.all([
     supabase.from("qualiopi_indicateurs_etat").select("*"),
-    supabase.from("qualiopi_preuves").select("*").order("created_at", { ascending: false }),
-    supabase.from("qualiopi_preuve_liens").select("preuve_id, indicateur"),
+    lirePagesQualiopi((from, to) => supabase.from("qualiopi_preuves").select("*")
+      .order("created_at", { ascending: false }).order("id").range(from, to)),
+    lirePagesQualiopi((from, to) => supabase.from("qualiopi_preuve_liens").select("preuve_id, indicateur")
+      .order("id").range(from, to)),
   ]);
+  if (etatRes.error) throw etatRes.error;
 
   const etats: Record<number, QualiopiEtat> = {};
   for (const ind of INDICATEURS) etats[ind.numero] = DEFAULT_ETAT(ind.numero);
@@ -82,15 +86,15 @@ export async function loadQualiopi(): Promise<{ etats: Record<number, QualiopiEt
   }
 
   const liensByPreuve = new Map<string, number[]>();
-  for (const l of (lienRes.data as any[]) || []) {
+  for (const l of lienRows) {
     const arr = liensByPreuve.get(l.preuve_id) || [];
     arr.push(l.indicateur);
     liensByPreuve.set(l.preuve_id, arr);
   }
 
-  const preuves: QualiopiPreuve[] = ((preuveRes.data as any[]) || []).map((p) => ({
+  const preuves: QualiopiPreuve[] = preuveRows.map((p) => ({
     ...p,
-    fichiers: Array.isArray(p.fichiers) ? (p.fichiers as PreuveFichier[]) : [],
+    fichiers: Array.isArray(p.fichiers) ? (p.fichiers as unknown as PreuveFichier[]) : [],
     indicateurs: (liensByPreuve.get(p.id) || []).sort((a, b) => a - b),
   }));
 

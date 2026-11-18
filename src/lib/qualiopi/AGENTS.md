@@ -1,0 +1,1 @@
+- Load all proof and linkage pages in stable primary-key order and fail on read errors; why: truncated reads falsely label existing evidence as missing.
