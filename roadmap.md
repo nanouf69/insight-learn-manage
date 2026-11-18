@@ -66,3 +66,5 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] DNS TXT openai-business-claim.www — bloqué : DNS chez PlanetHoster, ajout par l utilisateur
 - [x] Quiz avant examen TAXI : exclure module 13 exo 13100 ; QCM multi par arrondissement (avenues/boulevards/places) marqués « à valider » depuis données existantes ; stations conservées de la source géographie ; totaux recalculés ; aperçu admin seul
 - [ ] Onglet « Signatures manquantes » (clic → fiche CRM élève, formulaire signatures ; pratique à venir distincte)
+
+- [x] 18/11 — Qualiopi 9/10/11 : 15 références existantes enregistrées, 20 liens (4/6/10), quatre Word ouverts, preuves datées et limites explicites ; relecture Cloud et page connectée. Notes/bilans inchangés, aucune conformité, pièce fictive, envoi ou publication. Rapport docs/qualiopi-9-10-11-enregistrements-2026-11-18.md.
