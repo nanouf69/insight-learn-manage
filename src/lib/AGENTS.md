@@ -1,4 +1,5 @@
 # Persistence boundaries
+- VTC regulation PPTX replacement uses exact historical asset URLs in courseDisplaySupport plus the static course source; why: update the displayed support without rewriting saved courses, questions or learner evidence, while preserving custom uploads and original files.
 - Personalized attendance exports reuse the existing FTRANSPORT contact source in every page header; why: identify the issuing company without changing attendance evidence or inventing legal identifiers.
 - Candidate-list saves update existing exact planning rows and confirm returned lists before changing UI state; only new rows insert complete bounds. Why: upsert insert constraints reject omitted dates and optimistic lists can falsely show an unsaved addition.
 - Explicit continuing-training enrollment and FC VTC type aliases override legacy initial-training module inference in the shared course projection; stored assignments and learner evidence are never rewritten. Why: stale CRM defaults must not show initial courses to continuing-training learners.
