@@ -2542,6 +2542,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return f;
   };
   const [demandeCoordEnvoi, setDemandeCoordEnvoi] = useState<string | null>(null);
+  const [demandeCoordEnvoyees, setDemandeCoordEnvoyees] = useState<Record<string, string>>({});
   const envoyerDemandeCoordonnees = async (a: any) => {
     const champs = champsManquantsApprenant(a);
     if (!a?.email || !champs.length) return;
@@ -2559,6 +2560,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         body: { apprenantId: a.id, recipientEmail: a.email, recipientName: `${a.prenom} ${a.nom}`, subject: 'Coordonnées manquantes pour votre dossier de formation', htmlBody },
       });
       if (error || (resp as any)?.error) throw new Error((error as any)?.message || (resp as any)?.error || 'Envoi échoué');
+      setDemandeCoordEnvoyees((m) => ({ ...m, [a.id]: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }));
       toast({ title: 'Demande envoyée', description: `${a.prenom} ${a.nom} → ${a.email} (${champs.join(', ')})` });
     } catch (e: any) {
       toast({ title: "Échec de l'envoi", description: e?.message || 'Envoi impossible', variant: 'destructive' });
@@ -2569,6 +2571,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const BoutonDemandeCoord = ({ a }: { a: any }) => {
     const champs = champsManquantsApprenant(a);
     if (!champs.length) return null;
+    if (demandeCoordEnvoyees[a.id]) return <span className="text-xs font-medium text-primary">✓ Demande envoyée à {demandeCoordEnvoyees[a.id]}</span>;
     return (
       <Button size="sm" variant="secondary" className="gap-1" disabled={!a?.email || demandeCoordEnvoi === a.id}
         title={a?.email ? `Manquant : ${champs.join(', ')}` : "Pas d'e-mail"} onClick={() => envoyerDemandeCoordonnees(a)}>
