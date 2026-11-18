@@ -6468,7 +6468,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   {attestationsEligibles.map(r => (
                     <div key={r.a.id} className="flex flex-wrap items-center gap-3 p-3">
                       <div className="flex-1 min-w-[200px]">
-                        <p className="font-medium text-sm">{r.a.prenom} {r.a.nom}</p>
+                        <button type="button" onClick={() => onNavigateToApprenant?.(r.a.id)} className="font-medium text-sm hover:underline hover:text-primary text-left" title="Ouvrir la fiche CRM de l'apprenant">{r.a.prenom} {r.a.nom}</button>
                         <p className="text-xs text-muted-foreground">{r.a.email || 'Pas d\'e-mail'} · {r.heures} h de présence · Payé</p>
                       </div>
                       <BoutonDemandeCoord a={r.a} />
@@ -6488,7 +6488,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   <div className="divide-y border rounded-lg">
                     {attestationsExclues.map(r => (
                       <div key={r.a.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
-                        <span className="flex-1">{r.a.prenom} {r.a.nom}</span>
+                        <button type="button" onClick={() => onNavigateToApprenant?.(r.a.id)} className="flex-1 hover:underline hover:text-primary text-left" title="Ouvrir la fiche CRM de l'apprenant">{r.a.prenom} {r.a.nom}</button>
                         <span className="text-xs text-muted-foreground">{r.raison}</span>
                         <BoutonDemandeCoord a={r.a} />
                         <DebloquerAttestationFC inscription={r.sa} sessionId={session.id} raison={r.raison} eligible={r.eligible}
