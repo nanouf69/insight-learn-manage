@@ -28,6 +28,14 @@ export const normalizeApprenantSearchText = (value: string | null | undefined) =
 const compact = (value: string | null | undefined) =>
   normalizeApprenantSearchText(value).replace(/[^a-z0-9]/g, "");
 
+// Compare French national/international prefixes without changing stored numbers.
+const phoneSearchDigits = (value: string | null | undefined) => {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("0033")) return `0${digits.slice(4).replace(/^0/, "")}`;
+  if (digits.startsWith("33")) return `0${digits.slice(2).replace(/^0/, "")}`;
+  return digits;
+};
+
 const levenshteinLimited = (a: string, b: string, max: number) => {
   if (Math.abs(a.length - b.length) > max) return max + 1;
   let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
@@ -109,17 +117,17 @@ export const scoreApprenantSearch = (apprenant: ApprenantSearchLike, query: stri
   const queryCompact = compact(normalizedQuery);
   const values = buildSearchValues(apprenant);
   const queryDigits = query.replace(/\D/g, "");
-  const isNumericQuery = queryDigits.length > 0 && /^[\s\d.+-]+$/.test(query.trim());
+  const isNumericQuery = queryDigits.length > 0 && /^[\s\d.+()/-]+$/.test(query.trim());
 
   // Requête 100% numérique (code postal / téléphone / n° dossier) :
   // correspondance stricte sur les chiffres, sans fuzzy ni tokens texte
   if (isNumericQuery) {
     const cp = String(apprenant.code_postal ?? "").replace(/\D/g, "");
-    const tel = String(apprenant.telephone ?? "").replace(/\D/g, "");
+    const tel = phoneSearchDigits(apprenant.telephone);
     const dossier = String(apprenant.numero_dossier_cma ?? "").replace(/\D/g, "");
 
     const cpMatch = cp.length > 0 && (queryDigits.length >= 5 ? cp === queryDigits : cp.startsWith(queryDigits));
-    const telMatch = queryDigits.length >= 4 && tel.length > 0 && tel.includes(queryDigits);
+    const telMatch = queryDigits.length >= 4 && tel.length > 0 && tel.includes(phoneSearchDigits(query));
     const dossierMatch = queryDigits.length >= 4 && dossier.length > 0 && dossier.includes(queryDigits);
 
     if (!cpMatch && !telMatch && !dossierMatch) return null;
@@ -166,7 +174,7 @@ export const filterAndSortApprenants = <T extends ApprenantSearchLike>(rows: T[]
   if (!normalizedQuery) return rows;
 
   return rows
-    .map((apprenant, index) => ({ apprenant, index, score: scoreApprenantSearch(apprenant, normalizedQuery) }))
+    .map((apprenant, index) => ({ apprenant, index, score: scoreApprenantSearch(apprenant, query) }))
     .filter((item): item is { apprenant: T; index: number; score: number } => item.score !== null)
     .sort((a, b) => a.score - b.score || a.index - b.index)
     .map((item) => item.apprenant);
