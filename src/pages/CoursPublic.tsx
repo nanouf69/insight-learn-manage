@@ -1,5 +1,6 @@
 import { MonChoixPratique } from "@/components/cours-en-ligne/MonChoixPratique";
 import { PresenceFormationVtc } from '@/components/cours-en-ligne/PresenceFormationVtc';
+import { projeterParcoursSessionFC, type InscriptionFC } from '@/lib/parcoursSessionFC';
 import { requestExamExit } from '@/components/cours-en-ligne/ExamExitGuard';
 import { useState, useEffect, useCallback, memo, useRef, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
@@ -555,6 +556,15 @@ interface SessionAccessWindow {
   session_nom: string | null;
 }
 
+const lireParcoursSessionFC = async (dossier: ApprenantInfo): Promise<ApprenantInfo> => {
+  if (!dossier.id) return dossier;
+  const { data, error } = await supabase.from('session_apprenants')
+    .select('date_debut, date_fin, date_fin_personnalisee, liste_attente, emargements_exclus, statut_suivi, sessions(nom, types_apprenant, type_session, statut, date_debut, date_fin)')
+    .eq('apprenant_id', dossier.id);
+  if (error) throw error;
+  return projeterParcoursSessionFC(dossier, (data ?? []) as InscriptionFC[]);
+};
+
 const dateOnly = (value: unknown): string | null =>
   typeof value === "string" && value.length >= 10 ? value.slice(0, 10) : null;
 
@@ -1102,11 +1112,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         }
 
         if (data) {
-          setApprenant(data as any);
+          const projection = await lireParcoursSessionFC(data as ApprenantInfo);
+          if (cancelled) return;
+          setApprenant(projection);
           fetchSessionAccessWindow(data.id).then((window) => {
             if (!cancelled) setSessionAccessWindow(window);
           });
-          const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
+          const formationId = resolveFormationId(projection.type_apprenant, projection.formation_choisie, projection.modules_autorises);
           setSelectedFormation(formationId);
           setApprenantFetchError(null);
           fetchAttemptRef.current = 0;
@@ -1177,16 +1189,18 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (!apprenantOverride) return;
 
     let cancelled = false;
-    const applyApprenant = (value: ApprenantInfo) => {
-      setApprenant(value);
+    const applyApprenant = async (value: ApprenantInfo) => {
+      const projection = await lireParcoursSessionFC(value);
+      if (cancelled) return;
+      setApprenant(projection);
       fetchSessionAccessWindow(value.id).then((window) => {
         if (!cancelled) setSessionAccessWindow(window);
       });
-      const formationId = resolveFormationId(value.type_apprenant, value.formation_choisie, value.modules_autorises);
+      const formationId = resolveFormationId(projection.type_apprenant, projection.formation_choisie, projection.modules_autorises);
       setSelectedFormation(formationId);
     };
 
-    applyApprenant(apprenantOverride);
+    void applyApprenant(apprenantOverride).catch(() => { if (!cancelled) setApprenantFetchError('Lecture de votre inscription impossible.'); });
 
     // In embedded preview, force-refresh latest DB state to avoid stale search result snapshot
     if (!embedded || !apprenantOverride.id) return;
@@ -1199,10 +1213,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .maybeSingle();
 
       if (cancelled || error || !data) return;
-      applyApprenant(data as ApprenantInfo);
+      await applyApprenant(data as ApprenantInfo);
     };
 
-    void refreshApprenant();
+    void refreshApprenant().catch(() => { if (!cancelled) setApprenantFetchError('Lecture de votre inscription impossible.'); });
 
     return () => {
       cancelled = true;
