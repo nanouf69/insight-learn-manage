@@ -13,6 +13,7 @@ import { buildExportRows, exportQualiopiCsv, exportQualiopiPdf } from "@/lib/qua
 import { IndicateurDialog } from "./IndicateurDialog";
 import {Tabs,TabsList,TabsTrigger,TabsContent} from '@/components/ui/tabs';
 import {LiensCpf} from './LiensCpf';
+import { MatriceIndicateur7 } from './MatriceIndicateur7';
 
 const statutVariant: Record<QualiopiStatut, string> = {
   documente: "bg-blue-100 text-blue-800 border-blue-200",
@@ -90,7 +91,8 @@ export function QualiopiPage() {
 
   return (
     <Tabs defaultValue="indicateurs" className="space-y-6">
-      <TabsList><TabsTrigger value="indicateurs">Indicateurs et preuves</TabsTrigger><TabsTrigger value="cpf">Liens CPF</TabsTrigger></TabsList>
+      <TabsList className="flex-wrap h-auto"><TabsTrigger value="indicateurs">Indicateurs et preuves</TabsTrigger><TabsTrigger value="matrice7">Matrice indicateur 7</TabsTrigger><TabsTrigger value="cpf">Liens CPF</TabsTrigger></TabsList>
+      <TabsContent value="matrice7"><MatriceIndicateur7 /></TabsContent>
       <TabsContent value="cpf"><LiensCpf/></TabsContent>
       <TabsContent value="indicateurs" className="space-y-6">
       {/* Tableau de bord */}

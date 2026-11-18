@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] 18/11 — Qualiopi 6/7/8 : relecture 4/1/5 fiches et liens, 0 pièce ; matrice admin 54 lignes, 3 références PPTX lues sans conformité présumée, scripts/notes et états À compléter. 16 tests, admin réel/rechargement/CSV/PDF PASS ; mobile complet non prouvé (menu global). Sans publication, rapport docs/qualiopi-6-7-8-persistant-2026-11-18.md.
 - [ ] 18/11 — Formulaires Qualiopi 7/8 : projection CRM/PDF et choix local par document APERÇU, 28 Vitest + 9 SQL jetables + PC/mobile synthétiques PASS. Enregistrement durable et nouveaux questionnaires par inscription NON raccordés (serveur préparé non installé) ; aucun historique/dossier écrit ni publication. Limites docs/formulaires-qualiopi-7-8-apercu-2026-11-18.md.
 - [x] 18/11 — Qualiopi 6 : trois fiches emplois du temps + procédure enregistrées dans Cloud, aucune pièce originale ni adaptation inventée. Dépôt privé et fiche confidentielle en aperçu ; tests unitaires/SQL jetables, aucune publication. Contrôle réel admin bloqué par session fournie apprenant ; trois DOCX originaux restent à joindre. Rapport docs/qualiopi-indicateur6-2026-11-18.md.
 - [x] 18/11 — Agenda : bilan examen TAXI enregistré mais masqué par le mot « examen » ; filtre ciblé sur rendez-vous CMA, relecture après doublon, aucune écriture réelle/publication. Tests de classification exécutés ; parcours réel admin non prouvé.

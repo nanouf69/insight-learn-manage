@@ -8502,6 +8502,68 @@ export type Database = {
         }
         Relationships: []
       }
+      qualiopi_matrice_correspondance: {
+        Row: {
+          competence_officielle: string
+          contenu_cours: string
+          couverture: string
+          created_at: string
+          evaluation_quiz: string
+          id: string
+          matiere: string
+          observations: string
+          preuve_id: string
+          ref_key: string
+          reference_diapos: string
+          referentiel_url: string
+          source_modele: string
+          verification_source: string | null
+          verifie_le: string | null
+        }
+        Insert: {
+          competence_officielle: string
+          contenu_cours?: string
+          couverture?: string
+          created_at?: string
+          evaluation_quiz?: string
+          id?: string
+          matiere: string
+          observations?: string
+          preuve_id: string
+          ref_key: string
+          reference_diapos?: string
+          referentiel_url?: string
+          source_modele?: string
+          verification_source?: string | null
+          verifie_le?: string | null
+        }
+        Update: {
+          competence_officielle?: string
+          contenu_cours?: string
+          couverture?: string
+          created_at?: string
+          evaluation_quiz?: string
+          id?: string
+          matiere?: string
+          observations?: string
+          preuve_id?: string
+          ref_key?: string
+          reference_diapos?: string
+          referentiel_url?: string
+          source_modele?: string
+          verification_source?: string | null
+          verifie_le?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualiopi_matrice_correspondance_preuve_id_fkey"
+            columns: ["preuve_id"]
+            isOneToOne: false
+            referencedRelation: "qualiopi_preuves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qualiopi_preuve_liens: {
         Row: {
           created_at: string
