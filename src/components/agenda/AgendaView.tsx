@@ -1,4 +1,5 @@
 import { ALL_MODULES } from "@/components/cours-en-ligne/modules-config";
+import { isCoursAgenda } from "./isCoursAgenda";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -248,15 +249,7 @@ export function AgendaView() {
 
     if (data && formateursList.length > 0) {
       // Filtrer pour exclure les examens individuels (CMA / pratique) — on garde uniquement les COURS
-      const isCoursBloc = (b: any) => {
-        const d = (b.discipline_nom ?? '').trim().toLowerCase();
-        const f = (b.formation ?? '').trim().toLowerCase();
-        const text = `${d} ${f}`;
-        if (/examen\s+blanc/i.test(text)) return true;
-        if (/examen/i.test(text)) return false;
-        return true;
-      };
-      const filtered = data.filter(isCoursBloc);
+      const filtered = data.filter(isCoursAgenda);
 
       const blocks: CourseBlock[] = filtered.map((bloc) => {
         const formateur = formateursList.find(f => f.id === bloc.formateur_id);
@@ -381,6 +374,11 @@ export function AgendaView() {
 
     if (error) {
       console.error('Erreur sauvegarde bloc:', error);
+      if (error.code === '23505') {
+        await loadBlocks();
+        toast.info("Ce cours est déjà enregistré : l’agenda a été rechargé.");
+        return;
+      }
       toast.error("Erreur lors de la sauvegarde du cours");
       return;
     }

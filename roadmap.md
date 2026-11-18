@@ -22,6 +22,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [ ] Zéro polling du chronomètre — écart signalé, décision utilisateur.
 
 ## P1 — Formation continue / e-mails
+- [x] 18/11 — Agenda : bilan examen TAXI enregistré mais masqué par le mot « examen » ; filtre ciblé sur rendez-vous CMA, relecture après doublon, aucune écriture réelle/publication. Tests de classification exécutés ; parcours réel admin non prouvé.
 - [x] 17/11 — Planning : noms des candidats examen et entraînement cliquables vers leur fiche CRM par identifiant ; lignes CMA non rattachées restent « À rapprocher », aucune donnée modifiée, aperçu seul. Build OK ; clic réel non prouvé : session navigateur injectée redirigée vers le portail apprenant, sans accès admin.
 - [x] 17/11 — Liste CMA TAXI/VTC toujours visible : ajouts manuels et candidats à vérifier affichés séparément de la sélection prouvée pour la lettre ; aucune inscription déduite ni envoi, aperçu uniquement.
 - [x] 17/11 — Avertissement CMA compact : lien vers la liste complète des personnes à vérifier et motifs dans une fenêtre défilante ; aucune règle de génération ni donnée modifiée, aperçu seul.
