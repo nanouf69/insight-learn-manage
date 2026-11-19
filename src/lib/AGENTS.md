@@ -1,4 +1,5 @@
 # Persistence boundaries
+- T3P Part 1 replacement uses exact original URLs in t3pPartie1Support with matching PDF/PPTX and static VTC/TAXI references, never rewrites module_editor_state; why: preserve custom files, course identities and learner evidence.
 - Standalone attendance access uses moduleEmargementPresentiel by presential track, outside assigned-module progression; why: missing legacy assignments must not hide sheets or change milestones.
 - VTC regulation PPTX replacement uses exact historical asset URLs in courseDisplaySupport plus the static course source; why: update the displayed support without rewriting saved courses, questions or learner evidence, while preserving custom uploads and original files.
 - Personalized attendance exports reuse the existing FTRANSPORT contact source in every page header; why: identify the issuing company without changing attendance evidence or inventing legal identifiers.

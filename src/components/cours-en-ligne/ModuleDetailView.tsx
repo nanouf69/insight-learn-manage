@@ -479,12 +479,13 @@ function CourseFileLink(props: { fichier: { nom: string; url: string }; compact?
 }
 
 function CourseFileLinkInner({ fichier, compact = false }: { fichier: { nom: string; url: string }; compact?: boolean }) {
-  const displayUrl = useDisplayableCourseUrl(fichier.url);
+  const support = courseDisplaySupport(fichier.url);
+  const displayUrl = useDisplayableCourseUrl(support.url);
   const isExternal = /^https?:\/\//i.test(fichier.url);
 
   return (
     <a
-      href={displayUrl ?? resolveAppFileUrl(fichier.url)}
+      href={displayUrl ?? resolveAppFileUrl(support.url)}
       target="_blank"
       rel="noopener noreferrer"
       className={compact
@@ -4274,8 +4275,8 @@ const ContentCard = ({
             {item.fichiers.map((f, i) => (
               <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium">
                 <CourseFileLink fichier={f} compact />
-                <FileLastModified url={f.url} />
-                <FilePreviewDialog url={f.url} nom={f.nom} />
+                <FileLastModified url={courseDisplaySupport(f.url).url} />
+                <FilePreviewDialog url={courseDisplaySupport(f.url).url} nom={f.nom} />
                 {/* Téléchargement : uniquement dans l'éditeur administrateur (lecture seule, aucun fichier modifié) */}
                 <button
                   type="button"
@@ -4283,7 +4284,7 @@ const ContentCard = ({
                     const ext = (f.url.split("?")[0].match(/\.(pptx?|pdf)$/i)?.[0] ?? "");
                     const nomFichier = /\.(pptx?|pdf)$/i.test(f.nom) ? f.nom : `${f.nom}${ext}`;
                     try {
-                      await telechargerFichierCours(f.url, nomFichier);
+                      await telechargerFichierCours(courseDisplaySupport(f.url).url, nomFichier);
                     } catch {
                       toast.error("Téléchargement impossible pour le moment. Réessayez.");
                     }

@@ -1,6 +1,7 @@
 // ===== Données du module "2. COURS ET EXERCICES VTC" =====
 // Structure : 7 matières (A à G), fichiers PowerPoint originaux
 import { T3P_EXERCICES } from "./exercices/t3p-exercices-data";
+import { T3P_PARTIE1_PPTX_URL, T3P_PARTIE1_PDF_URL } from "@/lib/t3pPartie1Support";
 import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
 import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
 import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
@@ -70,8 +71,8 @@ const MATIERE_A: ContentItem[] = [
     titre: "A. RÉGLEMENTATION T3P — Partie 1",
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
     fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf?v=20260819-1732" },
-      { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx?v=20260915-0900" },
+      { nom: "PDF HD Partie 1", url: T3P_PARTIE1_PDF_URL },
+      { nom: "PowerPoint Partie 1", url: T3P_PARTIE1_PPTX_URL },
     ],
   },
   {
