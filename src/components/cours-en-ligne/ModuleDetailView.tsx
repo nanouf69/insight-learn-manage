@@ -121,6 +121,8 @@ import {
   AnswersCompletionStrip, QuizPageNavigation, QUESTION_IMAGE_SIZES,
 } from "./learnerQuizUi";
 import { isRoadSafetyCourseExercise } from "./roadSafetyQuestionImage";
+import { projectT3pLocalPresentation } from "@/lib/t3pLocalPresentation";
+import { T3pLocalQuestionParts } from "./T3pLocalQuestionParts";
 import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
@@ -9025,7 +9027,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     );
     };
 
-    const renderSingleExercicePage = (exo: ExerciceItem) => {
+    const t3pPresentation = projectT3pLocalPresentation<any, ExerciceItem>(
+      Number(module.id), "cours-et-exercices", activeExercices,
+    );
+    const jumpToOriginalQuestion = (exoId: number, questionId: number | string, index: number) => {
+      const entry = t3pPresentation && [...t3pPresentation.parts[1], ...t3pPresentation.parts[2]]
+        .find(item => item.originalExerciseId === exoId && String(item.question.id) === String(questionId));
+      if (entry && t3pPresentation) {
+        const part = t3pPresentation.parts[1].includes(entry) ? 1 : 2;
+        const pageIndex = pages.findIndex(page => page.type === "exercice-single" && Number(page.exercice.id) === part);
+        if (pageIndex >= 0 && pageIndex !== currentPage) goToPage(pageIndex);
+      }
+      setTimeout(() => document.getElementById(`exo-q-${exoId}-${index}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    };
+    const renderSingleExercicePage = (exo: ExerciceItem, display?: { questionId?: number | string; controlsOnly?: boolean }) => {
       const etatSnap = etatSnapshotsRef.current;
       // « Refaire les fausses » : une QRC jugée entièrement juste par l'IA n'est pas fausse.
       const justePourRefaire = (key: string, q: any): boolean => {
@@ -9158,6 +9173,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         return Array.isArray(answer) ? answer.length > 0 : !!answer;
       };
       const scrollToExerciseQuestion = (questionIndex: number) => {
+        if (display?.controlsOnly && questionsSafe[questionIndex]) {
+          jumpToOriginalQuestion(exo.id, questionsSafe[questionIndex].id, questionIndex);
+          return;
+        }
         document
           .getElementById(`exo-q-${exo.id}-${questionIndex}`)
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -9221,76 +9240,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         );
       }
 
-      return (
-      <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4">
-        <div className="space-y-4 min-w-0">
-          <Card key={exo.id} id={`exo-revision-top-${exo.id}`} className="scroll-mt-4 transition-all">
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {(apprenantInfo?.prenom || apprenantInfo?.nom) && (
-                    <div className="px-3 py-1.5 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-semibold whitespace-nowrap">
-                      👤 {apprenantInfo?.prenom} {apprenantInfo?.nom}
-                    </div>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowCalculator(v => !v)}
-                    className="gap-1"
-                  >
-                    <Calculator className="w-4 h-4" />
-                    Calculatrice
-                  </Button>
-                </div>
-              </div>
-              {exo.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(exo.sousTitre, questionsSafe.length)}</p>}
-              <ReponsesHistoriquesVerrouillees exoId={exo.id} questions={questionsVerrouilleesExo as any} reponses={reponsesVerrouillees} />
-              {pendingWrongQuestionRevision?.exoId === exo.id && (
-                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
-                  <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
-                  <p>
-                    Vous pouvez relire vos erreurs avec les corrections affichées, ou refaire directement uniquement les questions fausses.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      variant="outline"
-                      className="border-amber-300 text-amber-800 hover:bg-amber-100"
-                      onClick={() => {
-                        setPendingWrongQuestionRevision(null);
-                        scheduleScrollToRevisionStart(exo.id);
-                      }}
-                    >
-                      📖 Relire mes erreurs
-                    </Button>
-                    <Button onClick={confirmWrongQuestionRevision}>
-                      🎯 Refaire les questions fausses
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {/* Show file links if present alongside questions */}
-              {exo.fichiers && exo.fichiers.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {exo.fichiers.map((f, i) => (
-                    <CourseFileLink key={`${f.url}-${i}`} fichier={f} compact />
-                  ))}
-                </div>
-              )}
-              {(() => {
-                const revisionSet = revisionEffective(exo.id, questionsSafe);
-                const isRevisionMode = !!revisionSet;
-                if (isRevisionMode) {
-                  return (
-                    <RevisionModeBanner count={revisionSet.size} onShowAll={() => {
-                      setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
-                    }} />
-                  );
-                }
-                return null;
-              })()}
-              {questionsSafe.map((q: any, originalIdx: number) => ({ q, originalIdx })).filter(({ q }: any) => {
+              const renderOriginalQuestions = () => questionsSafe.map((q: any, originalIdx: number) => ({ q, originalIdx })).filter(({ q }: any) => {
+                if (display?.questionId !== undefined && String(q.id) !== String(display.questionId)) return false;
                 // Jamais de page vide : si aucune question à refaire ne correspond
                 // aux questions affichées, on affiche toutes les questions.
                 const revisionSet = revisionEffective(exo.id, questionsSafe);
@@ -9381,7 +9332,80 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     />
                   </div>
                 );
-              })}
+              });
+      // Local T3P cards reuse the original exercise state and transport, never a destination exercise.
+      if (display?.questionId !== undefined) return <>{renderOriginalQuestions()}</>;
+
+      return (
+      <div className={display?.controlsOnly ? "w-full" : "grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4"}>
+        <div className="space-y-4 min-w-0">
+          <Card key={exo.id} id={`exo-revision-top-${exo.id}`} className="scroll-mt-4 transition-all">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(apprenantInfo?.prenom || apprenantInfo?.nom) && (
+                    <div className="px-3 py-1.5 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-semibold whitespace-nowrap">
+                      👤 {apprenantInfo?.prenom} {apprenantInfo?.nom}
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowCalculator(v => !v)}
+                    className="gap-1"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    Calculatrice
+                  </Button>
+                </div>
+              </div>
+              {exo.sousTitre && <p className="text-sm text-muted-foreground">{syncSousTitreQuestionCount(exo.sousTitre, questionsSafe.length)}</p>}
+              <ReponsesHistoriquesVerrouillees exoId={exo.id} questions={questionsVerrouilleesExo as any} reponses={reponsesVerrouillees} />
+              {pendingWrongQuestionRevision?.exoId === exo.id && (
+                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3 text-sm text-amber-900 dark:text-amber-200">
+                  <div className="font-bold text-base">📖 Que souhaitez-vous faire ?</div>
+                  <p>
+                    Vous pouvez relire vos erreurs avec les corrections affichées, ou refaire directement uniquement les questions fausses.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                      onClick={() => {
+                        setPendingWrongQuestionRevision(null);
+                        scheduleScrollToRevisionStart(exo.id);
+                      }}
+                    >
+                      📖 Relire mes erreurs
+                    </Button>
+                    <Button onClick={confirmWrongQuestionRevision}>
+                      🎯 Refaire les questions fausses
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {/* Show file links if present alongside questions */}
+              {exo.fichiers && exo.fichiers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {exo.fichiers.map((f, i) => (
+                    <CourseFileLink key={`${f.url}-${i}`} fichier={f} compact />
+                  ))}
+                </div>
+              )}
+              {(() => {
+                const revisionSet = revisionEffective(exo.id, questionsSafe);
+                const isRevisionMode = !!revisionSet;
+                if (isRevisionMode) {
+                  return (
+                    <RevisionModeBanner count={revisionSet.size} onShowAll={() => {
+                      setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
+                    }} />
+                  );
+                }
+                return null;
+              })()}
+              {!display?.controlsOnly && renderOriginalQuestions()}
 
               {exoTotalQ > 0 && (
                 <div className="flex justify-center gap-4">
@@ -9468,7 +9492,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         if (unansweredQcmKeys.length > 0) {
                           setUnansweredKeys(new Set(unansweredQcmKeys));
                           toast.error("Répondez à toutes les questions QCM avant de valider");
-                          if (firstMissingIndex !== -1) {
+                          if (t3pPresentation && firstMissingIndex !== -1) {
+                            const missing = questionsSafe[firstMissingIndex];
+                            if (missing) jumpToOriginalQuestion(exo.id, missing.id, firstMissingIndex);
+                          } else if (firstMissingIndex !== -1) {
                             setTimeout(() => {
                               document
                                 .getElementById(`exo-q-${exo.id}-${firstMissingIndex}`)
@@ -9717,7 +9744,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         ? "Enregistrement en cours…"
                         : validationFailedFor.has(exo.id)
                           ? "Réessayer la validation"
-                          : "Valider les QCM"}
+                          : display?.controlsOnly ? `Valider l’exercice d’origine T3P P${exo.id}` : "Valider les QCM"}
                     </Button>
                     </div>
                   ) : (() => {
@@ -9781,7 +9808,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             : isAnswerCorrect(selected, q as any);
                           return { key: q.id, correct: isCorrect };
                         })}
-                        onJump={(qi) => flashQuestionAnchor(`exo-q-${exo.id}-${qi}`)}
+                        onJump={(qi) => display?.controlsOnly ? scrollToExerciseQuestion(qi) : flashQuestionAnchor(`exo-q-${exo.id}-${qi}`)}
                       />
 
                       {/* Progress + Actions */}
@@ -9955,7 +9982,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
         </div>
-        <QuizQuestionSidebar
+        {!display?.controlsOnly && <QuizQuestionSidebar
           onJump={scrollToExerciseQuestion}
           items={questionsSafe.map((q: any, qi: number) => {
             const isAnswered = isQuestionAnsweredForSidebar(q);
@@ -9976,7 +10003,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             }
             return { key: q.id ?? qi, answered: isAnswered, wrong: isWrong };
           })}
-        />
+        />}
       </div>
     );
     };
@@ -10258,7 +10285,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             )}
             {Number(currentPageData.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES
               ? <section aria-label={currentPageData.exercice.titre}><QuizExterneBilan moduleId={Number(module.id)} /></section>
-              : renderSingleExercicePage(currentPageData.exercice)}
+              : t3pPresentation && [1, 2].includes(Number(currentPageData.exercice.id))
+                ? <div className="space-y-6">
+                    <nav aria-label="Parties T3P" className="flex gap-2">
+                      {([1, 2] as const).map(part => <Button key={part} variant={Number(currentPageData.exercice.id) === part ? "default" : "outline"}
+                        onClick={() => {
+                          const index = pages.findIndex(page => page.type === "exercice-single" && Number(page.exercice.id) === part);
+                          if (index >= 0) goToPage(index);
+                        }}>Partie {part}</Button>)}
+                    </nav>
+                    <T3pLocalQuestionParts<any, ExerciceItem> presentation={t3pPresentation}
+                      part={Number(currentPageData.exercice.id) === 1 ? 1 : 2}
+                      renderQuestion={entry => {
+                        const origin = activeExercices.find(exercise => Number(exercise.id) === entry.originalExerciseId);
+                        return origin ? renderSingleExercicePage(origin, { questionId: entry.question.id }) : null;
+                      }} />
+                    {renderSingleExercicePage(currentPageData.exercice, { controlsOnly: true })}
+                  </div>
+                : renderSingleExercicePage(currentPageData.exercice)}
           </>}
         </div>
 

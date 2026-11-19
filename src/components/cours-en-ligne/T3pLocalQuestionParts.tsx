@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { T3pDisplayQuestion, T3pExercise, T3pLocalPresentation, T3pQuestion } from "@/lib/t3pLocalPresentation";
 
-/** Prepared, intentionally not mounted by ModuleDetailView until integrated-flow proof exists.
+/** Local grouping mounted only in the TAXI/VTC course exercise screen.
  * The caller renders the existing question with its ORIGINAL exercise context.
  * No answer state, scoring, transport, auto-completion or page identity lives here.
  */
