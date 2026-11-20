@@ -6,7 +6,7 @@ export type ModeSignatureFcTaxi = "centre" | "distance";
 export const TARIF_PUBLIC_FC_TAXI = 299;
 export const CGV_VERSION_FC_TAXI = "CGV-FC-TAXI-2026-10-22-v6";
 export const PROGRAMME_FC_TAXI_URL = "https://ftransport.fr/programme-continue-taxi";
-/** Aucun médiateur de la consommation n'est enregistré dans le projet : champ visible à compléter. */
+/** Médiateur de la consommation (L612-1) : aucun enregistré dans le projet ; tant qu'il est null, le téléchargement est bloqué (aucun placeholder imprimé). */
 export const MEDIATEUR_FC_TAXI: string | null = null;
 
 export const delaiRetractationFcTaxi = (mode: ModeSignatureFcTaxi): 10 | 14 => (mode === "centre" ? 10 : 14);
@@ -31,16 +31,17 @@ export interface DevisFcTaxiInput {
   client: { nomComplet: string; adresse: string; codePostal: string; ville: string; telephone: string; email: string };
   dates: string;
   dateDevis: string; // jj/mm/aaaa
+  dateValidite?: string; // jj/mm/aaaa
   prix: number;
   mode: ModeSignatureFcTaxi;
 }
 
 export interface Article { titre: string; texte: string }
 
-export function articlesFcTaxi(input: Pick<DevisFcTaxiInput, "prix" | "mode" | "dates">): Article[] {
+export function articlesFcTaxi(input: Pick<DevisFcTaxiInput, "prix" | "mode" | "dates">, mediateur: string | null = MEDIATEUR_FC_TAXI): Article[] {
   const d = delaiRetractationFcTaxi(input.mode);
   const e = echeancierFcTaxi(input.prix);
-  const dates = input.dates || "dates à préciser";
+  const dates = input.dates;
   const retract = input.mode === "centre"
     ? `Contrat signé dans les locaux de FTRANSPORT (86 route de Genas, 69003 Lyon). Le stagiaire dispose d'un délai de rétractation de 10 jours à compter de la signature du contrat de formation (article L6353-5 du Code du travail).`
     : `Contrat conclu à distance (internet) ou hors établissement. Le Client consommateur dispose d'un délai de rétractation de 14 jours à compter de la conclusion du contrat, sans avoir à motiver sa décision ni à supporter de frais (articles L221-18 et suivants du Code de la consommation). Ce délai couvre également le délai de 10 jours de l'article L6353-5 du Code du travail. Un formulaire type de rétractation figure en annexe.`;
@@ -55,8 +56,20 @@ export function articlesFcTaxi(input: Pick<DevisFcTaxiInput, "prix" | "mode" | "
     { titre: "Article 8 - Règlement intérieur", texte: `Le règlement intérieur applicable aux stagiaires (articles L6352-3 et R6352-1 et suivants du Code du travail) est remis à chaque participant avant le début de la formation et disponible sur simple demande.` },
     { titre: "Article 9 - Propriété intellectuelle", texte: `Les contenus et supports pédagogiques utilisés par FTRANSPORT sont protégés par le droit d'auteur. Ils sont destinés à un usage personnel strictement lié à la formation suivie et ne peuvent être reproduits ou diffusés sans accord écrit de FTRANSPORT.` },
     { titre: "Article 10 - Données personnelles", texte: `Les données collectées sont utilisées par FTRANSPORT pour la gestion de l'inscription et de la formation. Le Client dispose d'un droit d'accès, de rectification et d'effacement en écrivant à contact@ftransport.fr.` },
-    { titre: "Article 11 - Réclamations et médiation de la consommation", texte: `Toute réclamation peut être adressée par e-mail à contact@ftransport.fr ou par courrier au 86 route de Genas, 69003 Lyon. En cas de litige non résolu, le Client consommateur peut recourir gratuitement au médiateur de la consommation (article L612-1 du Code de la consommation) : ${MEDIATEUR_FC_TAXI ?? "[MÉDIATEUR À COMPLÉTER — nom, adresse, site]"}.` },
+    { titre: "Article 11 - Réclamations et médiation de la consommation", texte: `Toute réclamation peut être adressée par e-mail à contact@ftransport.fr ou par courrier au 86 route de Genas, 69003 Lyon. En cas de litige non résolu, le Client consommateur peut recourir gratuitement au médiateur de la consommation (article L612-1 du Code de la consommation) : ${mediateur ?? "—"}.` },
   ];
+}
+
+/** Données légalement indispensables manquantes : le CRM refuse le téléchargement au lieu de produire un faux document. */
+export function manquesDevisFcTaxi(input: DevisFcTaxiInput, mediateur: string | null = MEDIATEUR_FC_TAXI): string[] {
+  const m: string[] = [];
+  if (!input.client.nomComplet?.trim()) m.push("nom du stagiaire");
+  if (!input.client.adresse?.trim() || !input.client.ville?.trim()) m.push("adresse du stagiaire");
+  if (!input.dates?.trim()) m.push("dates de formation");
+  if (!input.dateDevis?.trim()) m.push("date du devis");
+  if (!(input.prix > 0)) m.push("prix de la formation");
+  if (!mediateur?.trim()) m.push("médiateur de la consommation (article L612-1 du Code de la consommation : nom, adresse et site à communiquer à l'équipe)");
+  return m;
 }
 
 export const MENTION_NON_CONTRAT = "Ce devis ne vaut pas contrat de formation ; un contrat individuel (article L6353-3 du Code du travail) est conclu avant l'inscription définitive et tout paiement.";
@@ -80,7 +93,9 @@ export function formulaireRetractation(): string {
 
 export interface FontesUnicode { regular: string; bold: string } // base64
 
-export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnicode): jsPDF {
+export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnicode, mediateur: string | null = MEDIATEUR_FC_TAXI): jsPDF {
+  const manques = manquesDevisFcTaxi(input, mediateur);
+  if (manques.length) throw new Error(`Devis non généré — information manquante : ${manques.join(", ")}`);
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   let F = "helvetica";
   if (fontes) {
@@ -108,8 +123,8 @@ export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnic
   font("bold", 16); doc.setTextColor(30, 64, 120); doc.text("FTRANSPORT", M, y); doc.setTextColor(0, 0, 0);
   font("normal", 8); doc.text(["86 route de Genas, 69003 Lyon", "04 28 29 60 91 · contact@ftransport.fr"], W - M, y - 3, { align: "right" });
   y += 8;
-  font("bold", 14); doc.text("DEVIS — FORMATION CONTINUE TAXI", W / 2, y, { align: "center" }); y += 5;
-  font("normal", 8.5); doc.text(`Devis du ${input.dateDevis} · Conditions ${CGV_VERSION_FC_TAXI}`, W / 2, y, { align: "center" }); y += 6;
+  font("bold", 14); doc.text("DEVIS – Formation continue TAXI", W / 2, y, { align: "center" }); y += 5;
+  font("normal", 8.5); doc.text(`Devis du ${input.dateDevis}${input.dateValidite ? ` · valable jusqu'au ${input.dateValidite}` : ""} · Conditions ${CGV_VERSION_FC_TAXI}`, W / 2, y, { align: "center" }); y += 6;
 
   titre("Stagiaire");
   const c = input.client;
@@ -118,14 +133,13 @@ export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnic
   titre("Formation");
   const rows: [string, string][] = [
     ["Intitulé", "Formation continue obligatoire des conducteurs de TAXI (présentiel)"],
-    ["Dates", input.dates || "À préciser"],
+    ["Dates", input.dates],
     ["Horaires / durée", "9h–12h / 13h–17h · 14 heures"],
     ["Lieu", "86 route de Genas, 69003 Lyon"],
     ["Effectif", "16 stagiaires maximum"],
     ["Programme", PROGRAMME_FC_TAXI_URL],
     ["Prix total", eur(e.prix)],
     ["Échéancier (financement personnel)", `Acompte ${eur(e.acompte)} après le délai de rétractation, puis ${eur(e.jour1)} + ${eur(e.jour2)} pendant la formation`],
-    ["TVA", "Régime de TVA à confirmer par l'organisme"],
     ["Signature du contrat", input.mode === "centre" ? "Au centre — rétractation 10 jours (L6353-5 C. trav.)" : "À distance / hors établissement — rétractation 14 jours (L221-18 C. conso)"],
   ];
   for (const [k, v] of rows) {
@@ -145,17 +159,18 @@ export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnic
   QUESTIONS_NON_REPONDABLES.forEach((q, i) => para(`${i + 1}. ${q} — Réponse non recueillie`, 8.5, "normal", 0.5));
   para("6. Formation TAXI continue déjà réalisée il y a plus de 5 ans ?   Oui ☐   Non ☐", 8.5);
 
-  titre("Conditions générales de vente");
-  para(`FTRANSPORT, organisme de formation professionnelle — 86 route de Genas, 69003 Lyon — SIRET 823 461 561 000 18 — Déclaration d'activité n° 84 69 15114 69 (cet enregistrement ne vaut pas agrément de l'État) — Centre agréé par la préfecture n° 69-18-001.`, 8);
-  for (const a of articlesFcTaxi(input)) { need(12); para(a.titre, 9, "bold", 0.5); para(a.texte, 8.3); }
-
-  // Signatures
+  // Signatures du devis, puis CGV en annexe paginée dans le même PDF
   need(48); titre("Signatures");
   const half = (CW - 6) / 2;
   font("bold", 9); doc.text("Le stagiaire", M, y); doc.text("Pour FTRANSPORT", M + half + 6, y); y += 4;
   font("normal", 8); doc.text(doc.splitTextToSize("Date, signature précédée de « Lu et approuvé, bon pour accord du devis »", half) as string[], M, y);
   doc.text("Cachet et signature de l'organisme", M + half + 6, y); y += 6;
   doc.setDrawColor(150); doc.rect(M, y, half, 28); doc.rect(M + half + 6, y, half, 28); y += 34;
+
+  doc.addPage(); y = 18;
+  titre("Annexe – Conditions générales de vente");
+  para(`FTRANSPORT, organisme de formation professionnelle — 86 route de Genas, 69003 Lyon — SIRET 823 461 561 000 18 — Déclaration d'activité n° 84 69 15114 69 (cet enregistrement ne vaut pas agrément de l'État) — Centre agréé par la préfecture n° 69-18-001.`, 8);
+  for (const a of articlesFcTaxi(input, mediateur)) { need(12); para(a.titre, 9, "bold", 0.5); para(a.texte, 8.3); }
 
   if (input.mode === "distance") {
     doc.addPage(); y = 18;

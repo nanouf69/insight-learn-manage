@@ -21,7 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import jsPDF from "jspdf";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
-import { buildDevisFcTaxiPdf, chargerFontesUnicode, ecartPrixFcTaxi, type ModeSignatureFcTaxi } from "@/lib/pdf/devis-fc-taxi";
+import { buildDevisFcTaxiPdf, manquesDevisFcTaxi, chargerFontesUnicode, ecartPrixFcTaxi, type ModeSignatureFcTaxi } from "@/lib/pdf/devis-fc-taxi";
 import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
@@ -1158,17 +1158,22 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const totalTTC = totalHT + montantTVA;
 
   // ─── FC TAXI : vrai PDF (le DOCX historique reste dans le dépôt pour les anciens devis) ───
-  const isFcTaxiPdf = selectedTemplate === 'fc_taxi';
+  const isFcTaxiPdf = selectedTemplate === 'fc_taxi'
+    || (/formation continue/i.test(lignes[0]?.designation ?? '') && /taxi/i.test(lignes[0]?.designation ?? ''));
   const prixDevisFcTaxi = (lignes[0]?.prixUnitaire ?? 0) > 0 ? lignes[0].prixUnitaire : selectedTemplatePrix;
   const ecartPrixFc = isFcTaxiPdf ? ecartPrixFcTaxi(prixDevisFcTaxi) : null;
   const telechargerDevisFcTaxiPdf = async () => {
     setGeneratingDocx(true);
     try {
       const fontes = await chargerFontesUnicode();
-      const doc = buildDevisFcTaxiPdf({
+      const entree = {
         client: devisClient, dates: sessionDate || '', dateDevis: formatDateForDevis(dateDevis),
+        dateValidite: dateValidite ? formatDateForDevis(dateValidite) : undefined,
         prix: prixDevisFcTaxi, mode: modeSignatureFc,
-      }, fontes);
+      };
+      const manques = manquesDevisFcTaxi(entree);
+      if (manques.length) { toast.error(`Devis FC TAXI non téléchargé — à renseigner : ${manques.join(" ; ")}`, { duration: 12000 }); return; }
+      const doc = buildDevisFcTaxiPdf(entree, fontes);
       doc.save(`Devis_${apprenant.prenom}_${apprenant.nom}_fc_taxi_${format(new Date(), 'ddMMyyyy')}.pdf`);
       toast.success("Devis PDF téléchargé");
     } catch (err: any) {
@@ -2037,7 +2042,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           </div>
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
-            <Button onClick={() => generateDevisPDF()} disabled={generating} className="flex items-center gap-2">
+            <Button onClick={() => (isFcTaxiPdf ? telechargerDevisFcTaxiPdf() : generateDevisPDF())} disabled={generating || generatingDocx} className="flex items-center gap-2">
               <Download className="w-4 h-4" />
               {generating ? "Génération..." : "Télécharger le devis PDF"}
             </Button>

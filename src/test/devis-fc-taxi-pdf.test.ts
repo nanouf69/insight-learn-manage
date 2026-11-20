@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
-import { buildDevisFcTaxiPdf, delaiRetractationFcTaxi, echeancierFcTaxi, ecartPrixFcTaxi, texteDevisFcTaxi, articlesFcTaxi } from "@/lib/pdf/devis-fc-taxi";
+import { buildDevisFcTaxiPdf, delaiRetractationFcTaxi, echeancierFcTaxi, ecartPrixFcTaxi, texteDevisFcTaxi, articlesFcTaxi, manquesDevisFcTaxi } from "@/lib/pdf/devis-fc-taxi";
 
 const client = { nomComplet: "Jean Exemple", adresse: "1 rue de la Paix", codePostal: "69200", ville: "Vénissieux", telephone: "0600000000", email: "jean@example.com" };
 const base = { client, dates: "19 novembre 2026 + 20 novembre 2026", dateDevis: "18/11/2026" };
@@ -37,9 +37,15 @@ describe("Devis FC TAXI PDF", () => {
   it("génère un PDF exemple", () => {
     const f = { regular: readFileSync("public/fonts/DejaVuSans.ttf").toString("base64"), bold: readFileSync("public/fonts/DejaVuSans-Bold.ttf").toString("base64") };
     for (const mode of ["distance", "centre"] as const) {
-      const doc = buildDevisFcTaxiPdf({ ...base, prix: 200, mode }, f);
+      const doc = buildDevisFcTaxiPdf({ ...base, dateValidite: "18/12/2026", prix: 200, mode }, f, "MEDIATEUR FICTIF DE TEST");
       writeFileSync(`/tmp/devis-fc-taxi-${mode}.pdf`, Buffer.from(doc.output("arraybuffer")));
       expect(doc.getNumberOfPages()).toBeGreaterThan(1);
     }
+  });
+  it("bloque sans médiateur ni dates, sans produire de document", () => {
+    expect(manquesDevisFcTaxi({ ...base, prix: 200, mode: "distance" }, null).join()).toMatch(/médiateur/);
+    expect(manquesDevisFcTaxi({ ...base, dates: "", prix: 200, mode: "distance" }, "M").join()).toMatch(/dates/);
+    expect(() => buildDevisFcTaxiPdf({ ...base, prix: 200, mode: "distance" }, undefined, null)).toThrow(/Devis non généré/);
+    expect(manquesDevisFcTaxi({ ...base, prix: 200, mode: "distance" }, "M")).toEqual([]);
   });
 });
