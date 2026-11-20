@@ -135,11 +135,16 @@ function modulesAttribuesDashboardBase(formation: FormationId, autorises?: numbe
   const defaults = normalize(FORMATION_DEFAULT_MODULES[formation] ?? []);
   const effective = formation === "continue-vtc" || formation === "continue-taxi" ? [...new Set([...assigned, ...defaults])] : assigned;
   const ordered = [...defaults.filter(id => effective.includes(id)), ...effective.filter(id => !defaults.includes(id))];
-  const explicit = ordered.map(id => MODULES_DATA.find(m => m.id === id)).filter((m): m is (typeof MODULES_DATA)[number] => !!m && m.formations.includes(formation));
+  const isFC = formation === "continue-vtc" || formation === "continue-taxi";
+  // FC : un module ajouté explicitement par l'admin (ex. 7 Connaissances de la ville) est affiché même hors catalogue FC.
+  // Seulement si la liste est bâtie sur le parcours FC (commence par son module d'entrée) : une ancienne affectation initiale ne réapparaît jamais.
+  const listeFC = isFC && assigned[0] === defaults[0];
+  const explicitlyAdded = new Set(listeFC ? assigned.filter(id => !defaults.includes(id)) : []);
+  const explicit = ordered.map(id => MODULES_DATA.find(m => m.id === id)).filter((m): m is (typeof MODULES_DATA)[number] => !!m && (m.formations.includes(formation) || explicitlyAdded.has(m.id)));
   const fallback = defaults.map(id => MODULES_DATA.find(m => m.id === id)).filter((m): m is (typeof MODULES_DATA)[number] => !!m);
   const modules = explicit.length ? explicit : fallback.length ? fallback : MODULES_DATA.filter(m => m.formations.includes(formation));
   const whitelist = new Set([82, 11, 92, 84, 86, 93, 94, 95, 96, 51]);
-  if (formation === "continue-taxi") return modules.filter(m => whitelist.has(m.id));
+  if (formation === "continue-taxi") return modules.filter(m => whitelist.has(m.id) || explicitlyAdded.has(m.id));
   // Équipements TAXI (64) absent d'une liste explicite TAXI/TA (formulaires admin antérieurs au 27/10/2026) :
   // ajouté en FIN de liste (aucun module suivant verrouillé), sans écrire modules_autorises.
   if (equipementsTaxiAjoute(formation, autorises)) {
