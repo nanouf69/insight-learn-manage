@@ -123,6 +123,9 @@ import {
 import { isRoadSafetyCourseExercise } from "./roadSafetyQuestionImage";
 import { projectT3pLocalPresentation } from "@/lib/t3pLocalPresentation";
 import { T3pLocalQuestionParts } from "./T3pLocalQuestionParts";
+import { projectCourseSubjectLocalPresentation, type CourseSubjectPart } from "@/lib/courseSubjectLocalPresentation";
+import { COURSE_SUBJECT_LOCAL_RULES } from "@/lib/courseSubjectLocalRules";
+import { CourseSubjectQuestionParts } from "./CourseSubjectQuestionParts";
 import { mergeSourceExercices, moveQuestionToPosition } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
@@ -9030,7 +9033,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const t3pPresentation = projectT3pLocalPresentation<any, ExerciceItem>(
       Number(module.id), "cours-et-exercices", activeExercices,
     );
+    const subjectPresentations = COURSE_SUBJECT_LOCAL_RULES.flatMap(rule => {
+      const presentation = projectCourseSubjectLocalPresentation<any, ExerciceItem>(
+        Number(module.id), "cours-et-exercices", activeExercices, activeCours, rule,
+      );
+      return presentation ? [presentation] : [];
+    });
+    const currentSubjectPresentation = subjectPresentations.find(p =>
+      p.rule.exerciseIds.includes(Number(currentPageData?.type === "exercice-single" ? currentPageData.exercice.id : -1)),
+    );
     const jumpToOriginalQuestion = (exoId: number, questionId: number | string, index: number) => {
+      const subject = subjectPresentations.find(p => p.rule.exerciseIds.includes(exoId));
+      const subjectEntry = subject && Object.values(subject.parts).flat()
+        .find(item => item.originalExerciseId === exoId && String(item.question.id) === String(questionId));
+      if (subject && subjectEntry) {
+        const targetExerciseId = subject.rule.exerciseIds[subjectEntry.targetPart - 1];
+        const targetPage = pages.findIndex(page => page.type === "exercice-single" && Number(page.exercice.id) === targetExerciseId);
+        if (targetPage >= 0 && targetPage !== currentPage) goToPage(targetPage);
+      }
       const entry = t3pPresentation && [...t3pPresentation.parts[1], ...t3pPresentation.parts[2]]
         .find(item => item.originalExerciseId === exoId && String(item.question.id) === String(questionId));
       if (entry && t3pPresentation) {
@@ -9492,7 +9512,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         if (unansweredQcmKeys.length > 0) {
                           setUnansweredKeys(new Set(unansweredQcmKeys));
                           toast.error("Répondez à toutes les questions QCM avant de valider");
-                          if (t3pPresentation && firstMissingIndex !== -1) {
+                          if ((t3pPresentation || subjectPresentations.some(p => p.rule.exerciseIds.includes(Number(exo.id)))) && firstMissingIndex !== -1) {
                             const missing = questionsSafe[firstMissingIndex];
                             if (missing) jumpToOriginalQuestion(exo.id, missing.id, firstMissingIndex);
                           } else if (firstMissingIndex !== -1) {
@@ -9744,7 +9764,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         ? "Enregistrement en cours…"
                         : validationFailedFor.has(exo.id)
                           ? "Réessayer la validation"
-                          : display?.controlsOnly ? `Valider l’exercice d’origine T3P P${exo.id}` : "Valider les QCM"}
+                          : display?.controlsOnly ? (() => {
+                            const subject = subjectPresentations.find(p => p.rule.exerciseIds.includes(Number(exo.id)));
+                            return subject ? `Valider l’exercice d’origine ${subject.rule.subject} P${subject.rule.exerciseIds.indexOf(Number(exo.id)) + 1}` : `Valider l’exercice d’origine T3P P${exo.id}`;
+                          })() : "Valider les QCM"}
                     </Button>
                     </div>
                   ) : (() => {
@@ -10302,7 +10325,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                       }} />
                     {renderSingleExercicePage(currentPageData.exercice, { controlsOnly: true })}
                   </div>
-                : renderSingleExercicePage(currentPageData.exercice)}
+                : currentSubjectPresentation
+                  ? <div className="space-y-6">
+                      <nav aria-label={`Parties ${currentSubjectPresentation.rule.subject}`} className="flex flex-wrap gap-2">
+                        {([1, 2, 3] as const).map(part => <Button key={part}
+                          variant={Number(currentPageData.exercice.id) === currentSubjectPresentation.rule.exerciseIds[part - 1] ? "default" : "outline"}
+                          onClick={() => {
+                            const index = pages.findIndex(page => page.type === "exercice-single" && Number(page.exercice.id) === currentSubjectPresentation.rule.exerciseIds[part - 1]);
+                            if (index >= 0) goToPage(index);
+                          }}>Partie {part}</Button>)}
+                      </nav>
+                      <CourseSubjectQuestionParts<any, ExerciceItem> presentation={currentSubjectPresentation}
+                        part={(currentSubjectPresentation.rule.exerciseIds.indexOf(Number(currentPageData.exercice.id)) + 1) as CourseSubjectPart}
+                        renderQuestion={entry => {
+                          const origin = activeExercices.find(exercise => Number(exercise.id) === entry.originalExerciseId);
+                          return origin ? renderSingleExercicePage(origin, { questionId: entry.question.id }) : null;
+                        }} />
+                      {renderSingleExercicePage(currentPageData.exercice, { controlsOnly: true })}
+                    </div>
+                  : renderSingleExercicePage(currentPageData.exercice)}
           </>}
         </div>
 

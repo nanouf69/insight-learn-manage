@@ -2,6 +2,10 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Gestion / Sécurité routière — présentation locale (20/11)
+- [ ] Auditer les PPT actifs et toutes les questions affichées modules 2/10 ; justifier chaque transfert par diapositive.
+- [ ] Réaffecter seulement les cas prouvés en aperçu, identités et commandes originales inchangées ; tests fictifs PC/mobile, empreintes avant/après et rapport détaillé. Aucun déploiement.
+
 ## P0 — Diagnostic synchronisation emails CRM (20/11)
 - [x] Capture « Emails & contacts » : synchronisation réelle mesurée à 112,57 s avant correction, puis 1,85 s après activation ciblée du service. Recherche Outlook from/to au lieu de 12 pages de contenus complets, dossiers en parallèle, délai maximal et erreurs sans faux succès ; 6 tests Deno réussis. Même fiche : 2 reçus/3 envoyés, 2 IDs Outlook distincts, aucun doublon ni email envoyé, publication globale non effectuée.
 
