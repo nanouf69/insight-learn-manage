@@ -2,6 +2,9 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Assistance dans les convocations (20/11)
+- [x] Paragraphe confirmé ajouté à la génération des futures convocations initiales (quatre modèles TAXI, TA, VTC, VTC soir ; VA utilise le modèle VTC existant). 51 tests et huit aperçus PC/mobile vérifiés sans envoi ; preuve prospective dans docs/qualiopi19-convocations-assistance-2026-11-20.md. FC/examen et modèles/historiques en base inchangés ; aucun déploiement/publication.
+
 ## Gestion / Sécurité routière — présentation locale (20/11)
 - [x] Six PPT actifs/168 diapositives et 386 questions affichées par parcours audités, exclusions historiques et médias candidats vérifiés; annexes exhaustives, propositions URSSAF P2 rejetées après contre-vérification.
 - [x] 14 réaffectations locales par parcours (Gestion5/Sécurité9), supports/contenu exacts gardés; 69 Vitest + 12 parcours fictifs PC/mobile PASS, 8 empreintes modules et 1319 copies inchangées. Aperçu seul, aucun déploiement. Rapport docs/gestion-securite-presentation-locale-2026-11-20.md.
