@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import logoFtransport from "@/assets/logo-ftransport.png?inline";
 
 /** Devis Formation continue TAXI (PDF), aligné sur les CGV publiques CGV-FC-TAXI-2026-10-22-v6. */
 export type ModeSignatureFcTaxi = "centre" | "distance";
@@ -112,109 +113,91 @@ export interface SignatureClientFcTaxi { imagePng: string; horodatage: string; m
 
 export interface FontesUnicode { regular: string; bold: string } // base64
 
-export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnicode, mediateur: string | null = MEDIATEUR_FC_TAXI, signature?: SignatureClientFcTaxi): jsPDF {
+/** Texte compatible Helvetica (police du PDF public) : aucun caractère hors Latin-1 imprimé en carré. */
+export function texteLatin(t: string): string {
+  return t.replace(/\s?€/g, " EUR").replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/[\u2013\u2014]/g, "-")
+    .replace(/\u2026/g, "...").replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u0153/g, "oe").replace(/\u0152/g, "OE")
+    .replace(/[\u202F\u00A0]/g, " ").replace(/\u2260/g, "<>").replace(/\u2022/g, "-").replace(/[^\x00-\xFF]/g, "");
+}
+
+const RIB_FC = { titulaire: "SASU Services Pro F Transport", banque: "Revolut (Revolut Bank UAB)", iban: "FR76 2823 3000 0185 7527 9099 426", bic: "REVOFRP2" };
+
+/** Lignes du devis, dans l'ordre du PDF public ftransport.fr (pdfDevisContinueTaxi), avec les seules données du CRM. */
+export function lignesDevisFcTaxi(input: DevisFcTaxiInput): string[] {
+  const d = delaiRetractationFcTaxi(input.mode);
+  const e = echeancierFcTaxi(input.prix);
+  const jours = input.dates.split(" + ").map(x => x.trim()).filter(Boolean);
+  const c = input.client;
+  const conclusion = input.mode === "centre"
+    ? `Mode de conclusion du contrat prévu : signature dans les locaux de FTRANSPORT - délai de rétractation de 10 jours (C. trav. L6353-5).`
+    : `Mode de conclusion du contrat prévu : à distance ou hors établissement - délai de rétractation de 14 jours (C. consom. L221-18, couvrant le délai de 10 jours de l'article L6353-5 du C. trav.).`;
+  const solde = jours.length >= 2
+    ? `solde de ${eur(e.solde)} échelonné : ${eur(e.jour1)} le ${jours[0]} et ${eur(e.jour2)} le ${jours[jours.length - 1]}`
+    : `solde de ${eur(e.solde)} échelonné pendant la formation`;
+  return [
+    "Services Pro F Transport - SASU au capital de 5 000 EUR",
+    "Siège social : 86 route de Genas, 69003 Lyon",
+    "SIRET : 82346156100018 - Déclaration d'activité : 84 69 15114 69 (cet enregistrement ne vaut pas agrément de l'État) - Centre agréé par la préfecture n° 69-18-001",
+    "Tél. : 04 28 29 60 91 - contact@ftransport.fr",
+    `Date d'émission : ${input.dateDevis}${input.dateValidite ? ` - Devis valable jusqu'au ${input.dateValidite}` : ""}`,
+    "FORMATION CONTINUE OBLIGATOIRE TAXI",
+    `Session : ${input.dates} - ${jours.length || 2} jours - 14 heures en présentiel`,
+    "Horaires : 9h-12h / 13h-17h (pause 12h-13h exclue des heures pédagogiques)",
+    "Lieu : 86 route de Genas, 69003 Lyon",
+    `Prix : ${eur(e.prix)}`,
+    "Capacité maximale de la session : 16 places",
+    `Programme : ${PROGRAMME_FC_TAXI_URL}`,
+    `Bénéficiaire : ${c.nomComplet}`,
+    `Adresse : ${[c.adresse, [c.codePostal, c.ville].filter(Boolean).join(" ")].filter(Boolean).join(", ")}`,
+    `Contact : ${[c.email, c.telephone].filter(Boolean).join(" - ")}`,
+    `Formation exclusivement en présentiel. Prix total : ${eur(e.prix)} = acompte ${eur(e.acompte)} + solde ${eur(e.solde)}.`,
+    conclusion,
+    `Financement personnel : aucune somme exigible avant l'expiration du délai de rétractation de ${d} jours (C. trav. L6353-6) ; acompte de ${eur(e.acompte)} ensuite (au plus 30 % du prix) ; ${solde}.`,
+    "Financement employeur / OPCO / France Travail / autre organisme : paiement selon la convention ou l'accord de prise en charge.",
+    "Moyens de paiement acceptés : virement ou espèces uniquement.",
+    MENTION_NON_CONTRAT,
+  ];
+}
+
+export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, _fontes?: FontesUnicode, mediateur: string | null = MEDIATEUR_FC_TAXI, signature?: SignatureClientFcTaxi): jsPDF {
   const manques = manquesDevisFcTaxi(input);
   if (manques.length) throw new Error(`Devis non généré — information manquante : ${manques.join(", ")}`);
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  let F = "helvetica";
-  if (fontes) {
-    doc.addFileToVFS("DejaVuSans.ttf", fontes.regular); doc.addFont("DejaVuSans.ttf", "DejaVu", "normal");
-    doc.addFileToVFS("DejaVuSans-Bold.ttf", fontes.bold); doc.addFont("DejaVuSans-Bold.ttf", "DejaVu", "bold");
-    F = "DejaVu";
-  }
-  const W = 210, M = 15, CW = W - 2 * M, BOTTOM = 280;
-  let y = 15;
-  const font = (s: "normal" | "bold", size: number) => { doc.setFont(F, s); doc.setFontSize(size); };
-  const need = (h: number) => { if (y + h > BOTTOM) { doc.addPage(); y = 18; } };
-  const para = (t: string, size = 9, style: "normal" | "bold" = "normal", gap = 1.5) => {
-    font(style, size);
-    for (const line of t.split("\n")) {
-      const lines = doc.splitTextToSize(line, CW) as string[];
-      for (const l of lines) { need(size * 0.45); doc.text(l, M, y); y += size * 0.45; }
-    }
-    y += gap;
+  // Présentation reprise du PDF public : Helvetica, texte simple, aucune table ni encadré de couleur.
+  const doc = new jsPDF();
+  try { doc.addImage(logoFtransport, "PNG", 18, 12, 50, 15); }
+  catch { doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("FTRANSPORT", 18, 22); }
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+  doc.text(signature ? "DEVIS SIGNÉ - FORMATION CONTINUE TAXI" : "DEVIS - FORMATION CONTINUE TAXI", 18, 42);
+  doc.setFontSize(10); doc.setFont("helvetica", "normal");
+  let t = 55;
+  const i = (o: string) => {
+    const u = doc.splitTextToSize(texteLatin(o), 174) as string[];
+    if (t + u.length * 5 > 275) { doc.addPage(); t = 20; }
+    doc.text(u, 18, t); t += u.length * 5 + 3;
   };
-  const titre = (t: string) => { need(14); y += 2; doc.setFillColor(30, 64, 120); doc.rect(M, y - 4.5, CW, 7, "F"); doc.setTextColor(255, 255, 255); font("bold", 10.5); doc.text(t, M + 2, y); doc.setTextColor(0, 0, 0); y += 7; };
-  const e = echeancierFcTaxi(input.prix);
-  const d = delaiRetractationFcTaxi(input.mode);
+  lignesDevisFcTaxi(input).forEach(i);
+  doc.setFont("helvetica", "bold"); i("COORDONNÉES BANCAIRES (information)"); doc.setFont("helvetica", "normal");
+  [`Titulaire : ${RIB_FC.titulaire}`, `Banque : ${RIB_FC.banque}`, `IBAN : ${RIB_FC.iban}`, `BIC : ${RIB_FC.bic}`].forEach(i);
+  if (!signature) i("Date et signature du stagiaire, précédées de la mention « Lu et approuvé, bon pour accord » :");
 
-  // En-tête
-  font("bold", 16); doc.setTextColor(30, 64, 120); doc.text("FTRANSPORT", M, y); doc.setTextColor(0, 0, 0);
-  font("normal", 8); doc.text(["86 route de Genas, 69003 Lyon", "04 28 29 60 91 · contact@ftransport.fr"], W - M, y - 3, { align: "right" });
-  y += 8;
-  font("bold", 14); doc.text("DEVIS – Formation continue TAXI", W / 2, y, { align: "center" }); y += 5;
-  font("normal", 8.5); doc.text(`Devis du ${input.dateDevis}${input.dateValidite ? ` · valable jusqu'au ${input.dateValidite}` : ""} · Conditions ${CGV_VERSION_FC_TAXI}`, W / 2, y, { align: "center" }); y += 6;
-
-  titre("Stagiaire");
-  const c = input.client;
-  para([`Nom et prénom : ${c.nomComplet || "—"}`, `Adresse : ${[c.adresse, [c.codePostal, c.ville].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "—"}`, `Téléphone : ${c.telephone || "—"}    E-mail : ${c.email || "—"}`].join("\n"), 9.5);
-
-  titre("Formation");
-  const rows: [string, string][] = [
-    ["Intitulé", "Formation continue obligatoire des conducteurs de TAXI (présentiel)"],
-    ["Dates", input.dates],
-    ["Horaires / durée", "9h–12h / 13h–17h · 14 heures"],
-    ["Lieu", "86 route de Genas, 69003 Lyon"],
-    ["Effectif", "16 stagiaires maximum"],
-    ["Programme", PROGRAMME_FC_TAXI_URL],
-    ["Prix total", eur(e.prix)],
-    ["Échéancier (financement personnel)", `Acompte ${eur(e.acompte)} après le délai de rétractation, puis ${eur(e.jour1)} + ${eur(e.jour2)} pendant la formation`],
-    ["Signature du contrat", input.mode === "centre" ? "Au centre — rétractation 10 jours (L6353-5 C. trav.)" : "À distance / hors établissement — rétractation 14 jours (L221-18 C. conso)"],
-  ];
-  for (const [k, v] of rows) {
-    font("normal", 9); const lines = doc.splitTextToSize(v, CW - 64) as string[];
-    font("bold", 9); const kl = doc.splitTextToSize(k, 58) as string[];
-    const h = Math.max(lines.length, kl.length) * 4.2 + 2.4; need(h);
-    doc.setDrawColor(200); doc.rect(M, y - 3.6, CW, h);
-    doc.text(kl, M + 2, y); font("normal", 9); doc.text(lines, M + 62, y); y += h;
-  }
-  y += 3;
-  doc.setFillColor(255, 243, 205); font("bold", 9); const nc = doc.splitTextToSize(MENTION_NON_CONTRAT, CW - 4) as string[];
-  need(nc.length * 4.5 + 4); doc.rect(M, y - 4, CW, nc.length * 4.5 + 3, "F"); font("bold", 9); doc.text(nc, M + 2, y); y += nc.length * 4.5 + 3;
-  para("Aucun paiement n'est demandé avant la fin du délai de rétractation.", 8.5);
-
-  titre("Informations vous concernant");
-  para("Les cinq questions suivantes sont affichées pour information mais ne peuvent pas recevoir de réponse : aucune donnée relative aux infractions ou condamnations n'est recueillie. Ne joignez aucun extrait de casier judiciaire.", 8.5);
-  QUESTIONS_NON_REPONDABLES.forEach((q, i) => para(`${i + 1}. ${q} — Réponse non recueillie`, 8.5, "normal", 0.5));
-  para("6. Formation TAXI continue déjà réalisée il y a plus de 5 ans ?   Oui ☐   Non ☐", 8.5);
-
-  // Signatures du devis, puis CGV en annexe paginée dans le même PDF
-  need(48); titre("Signatures");
-  const half = (CW - 6) / 2;
-  font("bold", 9); doc.text("Le stagiaire", M, y); doc.text("Pour FTRANSPORT", M + half + 6, y); y += 4;
-  font("normal", 8); doc.text(doc.splitTextToSize("Date, signature précédée de « Lu et approuvé, bon pour accord du devis »", half) as string[], M, y);
-  doc.text("Cachet et signature de l'organisme", M + half + 6, y); y += 6;
-  doc.setDrawColor(150); doc.rect(M, y, half, 28); doc.rect(M + half + 6, y, half, 28);
-  if (signature) {
-    font("normal", 7.5);
-    doc.text(doc.splitTextToSize(`${signature.mention} — signé électroniquement le ${signature.horodatage}`, half - 4) as string[], M + 2, y + 4);
-    doc.addImage(signature.imagePng, "PNG", M + 2, y + 9, half - 4, 18);
-  }
-  y += 34;
-  if (signature?.demarrageAnticipe && input.mode === "distance") {
-    const d = signature.demarrageAnticipe;
-    need(20);
-    para(`Démarrage anticipé (case facultative, version ${d.version}) : demande expresse ${d.demande ? "COCHÉE" : "non cochée"} ; reconnaissance de perte du droit après exécution complète ${d.reconnaissance ? "COCHÉE" : "non cochée"}. Aucune renonciation générale au droit de rétractation ; aucun paiement avant la fin du délai.`, 7.5);
-  }
-
-  doc.addPage(); y = 18;
-  titre("Annexe – Conditions générales de vente");
-  para(`FTRANSPORT, organisme de formation professionnelle — 86 route de Genas, 69003 Lyon — SIRET 823 461 561 000 18 — Déclaration d'activité n° 84 69 15114 69 (cet enregistrement ne vaut pas agrément de l'État) — Centre agréé par la préfecture n° 69-18-001.`, 8);
-  for (const a of articlesFcTaxi(input, mediateur)) { need(12); para(a.titre, 9, "bold", 0.5); para(a.texte, 8.3); }
-
+  doc.addPage(); t = 20;
+  doc.setFont("helvetica", "bold"); i(`CONDITIONS GÉNÉRALES DE VENTE - FORMATION CONTINUE TAXI - version ${CGV_VERSION_FC_TAXI}`);
+  for (const a of articlesFcTaxi(input, mediateur)) { doc.setFont("helvetica", "bold"); i(a.titre); doc.setFont("helvetica", "normal"); i(a.texte); }
   if (input.mode === "distance") {
-    doc.addPage(); y = 18;
-    titre("Annexe — Formulaire type de rétractation");
-    para("Modèle figurant en annexe à l'article R221-1 du Code de la consommation (article L221-5).", 8.5, "bold");
-    para(`Veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat, dans un délai de ${d} jours. Vous pouvez aussi utiliser toute autre déclaration dénuée d'ambiguïté.`, 8.5);
-    para(formulaireRetractation(), 9.5);
+    doc.setFont("helvetica", "bold"); i("FORMULAIRE TYPE DE RÉTRACTATION (annexe à l'article R221-1 du Code de la consommation)"); doc.setFont("helvetica", "normal");
+    i("Veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat, dans un délai de 14 jours. Toute autre déclaration dénuée d'ambiguïté est également possible.");
+    i(formulaireRetractation());
   }
-
-  const n = doc.getNumberOfPages();
-  for (let i = 1; i <= n; i++) {
-    doc.setPage(i); font("normal", 7); doc.setTextColor(110);
-    doc.text(`FTRANSPORT · SIRET 823 461 561 000 18 · NDA 84 69 15114 69 (ne vaut pas agrément de l'État) · Agrément préfecture n° 69-18-001`, W / 2, 289, { align: "center" });
-    doc.text(`Page ${i}/${n}`, W - M, 293, { align: "right" }); doc.setTextColor(0);
+  if (signature) {
+    if (t + 60 > 275) { doc.addPage(); t = 20; }
+    doc.setFont("helvetica", "bold"); i("SIGNATURE DU STAGIAIRE - Bon pour accord"); doc.setFont("helvetica", "normal");
+    i(`${input.client.nomComplet} - « ${signature.mention} » - signé électroniquement le ${signature.horodatage} (heure de Paris) - CGV version ${CGV_VERSION_FC_TAXI} acceptées expressément.`);
+    if (signature.demarrageAnticipe && input.mode === "distance") {
+      const d = signature.demarrageAnticipe;
+      i(`Démarrage anticipé (case facultative, version ${d.version}) : demande expresse ${d.demande ? "cochée" : "non cochée"} ; reconnaissance de perte du droit après exécution complète ${d.reconnaissance ? "cochée" : "non cochée"}. Aucune renonciation générale au droit de rétractation ; aucun paiement avant la fin du délai.`);
+    }
+    try { doc.addImage(signature.imagePng, "PNG", 18, t, 60, 30); } catch { /* image refusée : texte de preuve conservé */ }
+    t += 35;
   }
   return doc;
 }
