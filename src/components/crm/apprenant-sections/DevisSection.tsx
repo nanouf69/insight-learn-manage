@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContratLocationSection } from "./ContratLocationSection";
 import { ContratFormationSection } from "./ContratFormationSection";
 import { toast } from "sonner";
-import { format, parseISO, isValid } from "date-fns";
+import { format, parseISO, isValid, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -969,6 +969,39 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   useEffect(() => { setSessionDate(''); }, [isPracticalQuote, practicalFiliere]);
 
+  // Formation continue : dates lues dans les vraies sessions CRM (jamais le calendrier de la formation initiale).
+  const isContinueQuote = /formation continue/i.test(lignes[0]?.designation ?? '');
+  const [fcSessionDates, setFcSessionDates] = useState<string[]>([]);
+  useEffect(() => {
+    if (!isContinueQuote || !practicalFiliere) { setFcSessionDates([]); return; }
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase.from('sessions').select('nom, date_debut, date_fin')
+        .ilike('nom', `%continue%${practicalFiliere}%`).gte('date_fin', format(new Date(), 'yyyy-MM-dd'))
+        .order('date_debut').order('id');
+      if (!active) return;
+      if (error) { toast.error("Impossible de lire les sessions de formation continue."); setFcSessionDates([]); return; }
+      const jours = new Set<string>();
+      for (const r of data ?? []) {
+        if (!r.date_debut) continue;
+        const fin = parseISO(r.date_fin || r.date_debut);
+        for (let d = parseISO(r.date_debut); d <= fin; d = new Date(d.getTime() + 86400000)) {
+          jours.add(format(d, "d MMMM yyyy", { locale: fr }));
+        }
+      }
+      setFcSessionDates([...jours]);
+    })();
+    return () => { active = false; };
+  }, [isContinueQuote, practicalFiliere]);
+
+  const toggleSessionDay = (label: string) => {
+    setSessionDate(prev => {
+      const set = prev ? prev.split(' + ').filter(Boolean) : [];
+      const next = set.includes(label) ? set.filter(x => x !== label) : [...set, label];
+      return next.join(' + ');
+    });
+  };
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -1112,7 +1145,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     setSessionDate("");
   };
 
-  const availableSessionDates = isPracticalQuote
+  const availableSessionDates = isContinueQuote
+    ? fcSessionDates
+    : isPracticalQuote
     ? practicalFiliere ? devisPratiqueDates(practicalPlanning, practicalFiliere) : []
     : formationType === 'taxi' ? DATES_TAXI : formationType === 'vtc' ? DATES_VTC : [];
 
@@ -1743,13 +1778,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           {(availableSessionDates.length > 0 || isPracticalQuote) && (
             <div className="space-y-2">
               <Label>Dates de formation {isPracticalQuote ? 'pratique ' : ''}à choisir ({(isPracticalQuote ? practicalFiliere : formationType) === 'taxi' ? 'TAXI' : 'VTC'})</Label>
-              <Select value={sessionDate} onValueChange={setSessionDate} disabled={isPracticalQuote && (practicalDatesLoading || practicalDatesError || availableSessionDates.length === 0)}>
+              <Select value="" onValueChange={toggleSessionDay} disabled={isPracticalQuote && (practicalDatesLoading || practicalDatesError || availableSessionDates.length === 0)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une session..." />
+                  <SelectValue placeholder="Ajouter une ou plusieurs dates..." />
                 </SelectTrigger>
                 <SelectContent>
                   {availableSessionDates.map(d => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                    <SelectItem key={d} value={d}>{sessionDate.split(" + ").includes(d) ? "✓ " : ""}{d}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1757,14 +1792,15 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" className="w-full justify-start gap-2">
                     <CalendarIcon className="h-4 w-4" />
-                    {sessionDate ? `Date choisie : ${sessionDate}` : "Choisir une date dans l'agenda"}
+                    {sessionDate ? `Dates choisies : ${sessionDate}` : "Choisir une ou plusieurs dates dans l'agenda"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="single"
+                    mode="multiple"
                     locale={fr}
-                    onSelect={(d) => d && setSessionDate(format(d, "d MMMM yyyy", { locale: fr }))}
+                    selected={sessionDate ? sessionDate.split(' + ').map(l => parse(l, "d MMMM yyyy", new Date(), { locale: fr })).filter(isValid) : []}
+                    onDayClick={(d) => toggleSessionDay(format(d, "d MMMM yyyy", { locale: fr }))}
                     modifiers={{ dispo: (d: Date) => availableSessionDates.includes(format(d, "d MMMM yyyy", { locale: fr })) }}
                     modifiersClassNames={{ dispo: "bg-primary/20 font-bold" }}
                     initialFocus
