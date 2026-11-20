@@ -11,6 +11,7 @@ import { parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
 import { contractSections } from "@/lib/contratFormation/text";
 import { DevisFcTaxiSignature } from "@/components/devis/DevisFcTaxiSignature";
 import { modeFcTaxiDepuisModele } from "@/lib/pdf/devis-fc-taxi";
+import { DEMANDE_COMMENCEMENT_TEXTE, demandeCommencementApplicable } from "@/lib/devis/demandeCommencementAnticipe";
 import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENT_FC_VERSION, CONSENTEMENTS_SIGNATURE, estDevisFormationContinue } from "@/lib/contratFormation/consentements";
 
 /* ─── DEVIS TYPE CONFIG ─── */
@@ -358,7 +359,6 @@ export default function DevisPublic() {
     // Validation
     const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);
     if (!acceptCGV) { toast.error(contrat ? "Veuillez accepter le contrat de formation" : "Veuillez accepter les CGV"); return; }
-    if (!contrat && !acceptEarlyStart) { toast.error("Veuillez cocher la clause de renonciation au délai de rétractation"); return; }
     if (estDevisFormationContinue(devis) && !consentAnnulationFc) { toast.error("Veuillez confirmer avoir pris connaissance de la procédure écrite de demande d’annulation et de remboursement"); return; }
     if (estDevisFormationContinue(devis) && fcServeurVersion !== CONSENTEMENT_FC_VERSION) { toast.error("La preuve serveur n’est pas encore active : aucun document n’a été envoyé"); return; }
     if (!hasSigned) { toast.error("Veuillez signer le devis"); return; }
@@ -382,6 +382,9 @@ export default function DevisPublic() {
       formData.append("file", signatureBlob, `${devis.id}_signature_${Date.now()}.png`);
       if (estDevisFormationContinue(devis)) {
         formData.append("consentement_annulation_remboursement_fc", String(consentAnnulationFc));
+      }
+      if (!contrat && demandeCommencementApplicable(devis)) {
+        formData.append("demande_commencement_anticipe", String(acceptEarlyStart));
       }
       if (contrat) {
         formData.append("consentement_demarrage_anticipe", String(consentDemarrage));
@@ -807,13 +810,13 @@ export default function DevisPublic() {
                 <span className="text-sm text-gray-800">J'accepte le contrat de formation {contrat.contract.reference} et ses annexes, dont j'ai pris connaissance.</span>
               </label>
             </>) : (<>
-            {/* Renonciation rétractation */}
-            <label className="flex items-start gap-3 border border-yellow-200 rounded p-3 bg-yellow-50 cursor-pointer">
-              <input type="checkbox" checked={acceptEarlyStart} onChange={(e) => setAcceptEarlyStart(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" />
-              <span className="text-sm text-gray-800 leading-relaxed font-medium">
-                Je reconnais que la date de début de la formation pratique intervient avant l'expiration du délai légal de rétractation de 14 jours. En acceptant ce devis, je demande expressément le démarrage immédiat de la prestation et renonce en conséquence à mon droit de rétractation, conformément à l'article L221-25 du Code de la consommation.
-              </span>
+            {/* Demande facultative de commencement anticipé (jamais une renonciation) */}
+            {demandeCommencementApplicable(devis) && (
+            <label className="flex items-start gap-3 border border-yellow-200 rounded p-3 bg-yellow-50 cursor-pointer" data-testid="demande-commencement">
+              <input type="checkbox" checked={acceptEarlyStart} onChange={(e) => setAcceptEarlyStart(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" aria-label="Demande de commencement avant la fin du délai de rétractation" />
+              <span className="text-sm text-gray-800 leading-relaxed">{DEMANDE_COMMENCEMENT_TEXTE}</span>
             </label>
+            )}
 
             {/* Accept CGV */}
             <label className="flex items-start gap-3 cursor-pointer">
@@ -933,7 +936,7 @@ export default function DevisPublic() {
               <div className="flex items-center gap-3 flex-wrap">
                 <Button
                   onClick={handleSendDevis}
-                  disabled={uploading || !acceptCGV || (!contrat && !acceptEarlyStart) || (fcRequis && (!consentAnnulationFc || !fcServeurPret)) || !hasSigned}
+                  disabled={uploading || !acceptCGV || (fcRequis && (!consentAnnulationFc || !fcServeurPret)) || !hasSigned}
                   className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base"
                 >
                   {uploading ? (

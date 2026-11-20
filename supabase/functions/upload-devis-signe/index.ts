@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { demandeCommencementApplicable, preuveDemandeCommencement } from "../_shared/demandeCommencementAnticipe.ts";
 import { apposerSignatureTampon } from "../_shared/tamponFtransport.ts";
 import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
 import { construirePreuveConsentementFormationContinue, estDevisFormationContinue, preuveDemarrageAnticipeFcTaxi, refusConsentementFormationContinue } from "../_shared/devisConsentementFc.ts";
@@ -47,7 +48,7 @@ Deno.serve(async (req) => {
     // Validate token
     const { data: devis, error: devisError } = await supabase
       .from("devis_envois")
-      .select("id, apprenant_id, devis_signe_url, signed_at, modele, formation, montant, client_nom, client_email, dates_formation, contrat_conditions")
+      .select("id, apprenant_id, organisation_id, devis_signe_url, signed_at, modele, formation, montant, client_nom, client_email, dates_formation, contrat_conditions")
       .eq("token", token)
       .single();
 
@@ -115,6 +116,18 @@ Deno.serve(async (req) => {
         perte_apres_execution: { coche: perte, texte: CONSENTEMENTS_SIGNATURE.perteApresExecution },
         reserve: "Droits impératifs L6353-5 (10 jours) et L6353-6 (aucun paiement avant expiration) réservés ; ces cases n'avancent pas la date de début.",
         report_a_examiner: reportRequis,
+      };
+    }
+
+    if (!snap && demandeCommencementApplicable(devis as any)) {
+      // Choix facultatif du client, enregistré coché OU non coché, horodaté serveur.
+      consentements = {
+        ...(consentements ?? {}),
+        demande_commencement_anticipe: preuveDemandeCommencement(
+          formData.get("demande_commencement_anticipe") === "true",
+          signedAt.toISOString(),
+          req.headers.get("user-agent") ?? null,
+        ),
       };
     }
 
