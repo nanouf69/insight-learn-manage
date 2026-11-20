@@ -2,6 +2,9 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Attribution de modules depuis une session (20/11 13:28 UTC)
+- [x] Bouton « Ajouter des modules » en aperçu : toute la session ou personnes cochées, plusieurs modules, confirmation, conservation de l’ordre/IDs existants, CAS et relecture individuelle. Comptes absents/archivés et EDOF validé ou illisible refusés ; aucune date ni preuve modifiée. 21 tests et deux parcours PC/mobile avec écritures interceptées réussis ; écran session authentifié réel consulté sans mutation, build OK. Aucune attribution réelle, aucun mail/publication. Persistance réelle non vérifiée ; détails docs/session-ajout-modules-2026-11-20.md.
+
 ## Réexamen Qualiopi sur preuves existantes (20/11 12:20 UTC)
 - [x] Inventaire complet et réexamen des preuves existantes : 11 Conforme (barème figé 194/194 réponses, 106/194 concordant), 29 Non applicable sur déclaration antérieure ; autres états conservés, réserves excessives écartées et lacunes détaillées. Base relue, aucune source élève/mail/publication ; rapport docs/qualiopi-reexamen-preuves-existantes-2026-11-20-1220.md.
 - [ ] Exigences résiduelles non démontrées : cohérence/couverture/adaptations 6–10, prévention et traitement 12, recevabilité 16, modalités FOAD et intervenants 19, compétences vérifiées 21 ; autres sans état : application réelle restant à rapprocher. Blocage probatoire détaillé au rapport, aucune recollecte générale requise.

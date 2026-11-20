@@ -61,6 +61,7 @@ import { RIB_INFO } from "@/lib/pdf/devis-canonical";
 import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { SignaturesPapierFC } from "./SignaturesPapierFC";
 import { SessionExamAccess } from "./acces-examens/SessionExamAccess";
+import { SessionModuleAssignment } from "./SessionModuleAssignment";
 import { DebloquerAttestationFC } from "./DebloquerAttestationFC";
 import { chargerPreuvesPapier } from "@/lib/fcSignaturesPapier";
 import { facturePourAttestationFC, factureFCReglee } from "@/lib/factureAttestationFC";
@@ -5507,7 +5508,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           {/* Apprenants Tab */}
           <TabsContent value="apprenants" className="flex-1 min-h-0 flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
-            <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="shrink-0 flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
                 checked={apprenantsInSession.length > 0 && selectedApprenants.size === apprenantsInSession.length}
                 onCheckedChange={toggleSelectAll}
@@ -5516,6 +5517,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 {selectedApprenants.size > 0 ? `${selectedApprenants.size} sélectionné(s)` : "Tout sélectionner"}
               </span>
               <div className="flex-1" />
+              <SessionModuleAssignment
+                key={session.id}
+                sessionId={session.id}
+                recipients={apprenantsInSession.flatMap((sa: any) => sa.apprenant ? [{ id: sa.apprenant.id, nom: sa.apprenant.nom, prenom: sa.apprenant.prenom }] : [])}
+                selected={selectedApprenants}
+                onSaved={() => {
+                  refetchApprenants();
+                  queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+                }}
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
