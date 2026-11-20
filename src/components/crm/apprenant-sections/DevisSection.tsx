@@ -39,6 +39,7 @@ import { buildDevisContratSnapshot, devisValantContrat, draftFromSnapshot, parse
 
 export const DEVIS_VALANT_CONTRAT_ACTIF = false;
 import { renderContractInto } from "@/lib/contratFormation/pdf";
+import { pagesContratDansDevis } from "@/lib/devisContratRoutage";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
   if (!fichierUrl) return null;
@@ -1531,7 +1532,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         sessionDate,
         notes,
         signatureDataUrl,
-        contractPages: contratActif ? (pdf) => renderContractInto(pdf, contratDraft, new Date(), validateContract(contratDraft, apprenant.id, new Date()).ready) : undefined,
+        // Devis ≠ contrat : pages contrat uniquement si le mode « devis valant contrat » est activé ET le contrat est complet (jamais de brouillon).
+        contractPages: pagesContratDansDevis(DEVIS_VALANT_CONTRAT_ACTIF, contratActif, validateContract(contratDraft, apprenant.id, new Date()).ready) ? (pdf) => renderContractInto(pdf, contratDraft, new Date(), validateContract(contratDraft, apprenant.id, new Date()).ready) : undefined,
       });
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${format(new Date(), 'ddMMyyyy')}.pdf`;
@@ -2096,7 +2098,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             </div>
           )}
           {/* Devis valant contrat (hors FC TAXI : le contrat individuel reste dans son onglet) */}
-          {!isFcTaxiPdf && <div role="status" className="rounded-md border p-3 text-sm space-y-1">
+          {!isFcTaxiPdf && DEVIS_VALANT_CONTRAT_ACTIF && <div role="status" className="rounded-md border p-3 text-sm space-y-1">
             {!contratDraft.funding ? <p className="text-destructive">Financement à choisir dans l'onglet « Contrat de formation » avant tout envoi.</p>
               : contratActif ? (() => { const v = validateContract(contratDraft, apprenant.id, new Date()); return <>
                 <p className="font-medium">Devis valant contrat de formation (financement personnel) — {v.ready ? 'complet, signable après envoi' : `brouillon : ${v.issues.length} point(s) bloquant(s)`}</p>
