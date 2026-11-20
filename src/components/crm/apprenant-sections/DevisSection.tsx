@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContratLocationSection } from "./ContratLocationSection";
 import { ContratFormationSection } from "./ContratFormationSection";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -818,6 +818,45 @@ function detectDevisTemplate(apprenant: any): string | null {
   return null;
 }
 
+function DateDevisPicker({ id, value, onChange }: { id: string; value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const parsed = value ? parseISO(value) : undefined;
+  const selected = parsed && isValid(parsed) ? parsed : undefined;
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>Date du devis</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button id={id} variant="outline" className="w-full justify-start gap-2 font-normal">
+            <CalendarIcon className="h-4 w-4 shrink-0" />
+            {selected ? format(selected, "dd/MM/yyyy", { locale: fr }) : "Choisir une date"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+          <Calendar
+            mode="single"
+            locale={fr}
+            selected={selected}
+            defaultMonth={selected}
+            onSelect={(date) => {
+              if (!date) return;
+              onChange(format(date, "yyyy-MM-dd"));
+              setOpen(false);
+            }}
+            initialFocus
+            className="p-3 pointer-events-auto"
+          />
+        </PopoverContent>
+      </Popover>
+      <Button type="button" variant="outline" className="gap-2" onClick={() => onChange(format(new Date(), "yyyy-MM-dd"))}>
+        <RotateCcw className="h-4 w-4" />
+        Date du jour
+      </Button>
+    </div>
+  );
+}
+
 export function DevisSection({ apprenant }: DevisSectionProps) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const validiteDate = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
@@ -1562,10 +1601,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               </CardTitle>
             </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="date-devis-docx">Date du devis</Label>
-            <Input id="date-devis-docx" type="date" value={dateDevis} onChange={(e) => setDateDevis(e.target.value)} required />
-          </div>
+          <DateDevisPicker id="date-devis-docx" value={dateDevis} onChange={setDateDevis} />
           <div className="space-y-2">
             <Label>Sélectionner le modèle de devis</Label>
             <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
@@ -1682,10 +1718,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         <CardContent className="space-y-6">
           {/* Infos devis */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Date du devis</Label>
-              <Input type="date" value={dateDevis} onChange={(e) => setDateDevis(e.target.value)} />
-            </div>
+            <DateDevisPicker id="date-devis-pdf" value={dateDevis} onChange={setDateDevis} />
             <div className="space-y-2">
               <Label>Valable jusqu'au</Label>
               <Input type="date" value={dateValidite} onChange={(e) => setDateValidite(e.target.value)} />
