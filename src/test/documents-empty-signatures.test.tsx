@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DocumentsCompletes } from '@/components/crm/apprenant-sections/DocumentsCompletes';
 
@@ -28,6 +28,12 @@ vi.mock('@/components/crm/apprenant-sections/PresencesManuellesDetail', () => ({
 vi.mock('@/components/crm/apprenant-sections/SignaturesRassembleesExport', () => ({ SignaturesRassembleesExport: () => null }));
 afterEach(() => { cleanup(); fixture.documentsError = false; fixture.missing = 2; });
 describe('Fiche vide : preuves indépendantes', () => {
+  it('ouvre le circuit de relance habituel sans document déposé', () => {
+    const ouvrirRelance = vi.fn();
+    render(<DocumentsCompletes apprenant={{ id: 'fictif', nom: 'Test', type_apprenant: 'continue-vtc' }} onOuvrirRelanceSignatures={ouvrirRelance} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer les signatures manquantes par mail' }));
+    expect(ouvrirRelance).toHaveBeenCalledTimes(1);
+  });
   it.each(['continue-vtc', 'continue-taxi', 'vtc', 'taxi', 'ta', 'va', 'vtc-e'])('conserve les deux créneaux manquants sans documents pour %s', type => {
     render(<DocumentsCompletes apprenant={{ id: 'fictif', nom: 'Test', type_apprenant: type }} />);
     const list = screen.getByTestId('signatures-manquantes');

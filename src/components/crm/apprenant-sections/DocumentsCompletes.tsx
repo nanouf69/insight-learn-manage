@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
+import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink, Mail } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { generateEmargementSemainePdf } from "@/lib/pdf/emargement-semaine";
 import {
@@ -911,6 +911,9 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
                       <p className="text-sm font-semibold text-destructive">
                         Signatures manquantes ({manquantes.length})
                       </p>
+                      {onOuvrirRelanceSignatures && <Button variant="outline" size="sm" className="mt-2 gap-2 h-auto min-h-11 whitespace-normal text-left" onClick={onOuvrirRelanceSignatures}>
+                        <Mail className="h-4 w-4 shrink-0" />Envoyer les signatures manquantes par mail
+                      </Button>}
                       <ul className="mt-1 space-y-0.5">
                         {manquantes.map((m) => (
                           <li key={`${m.date}|${m.creneau}|${m.source}`} className="text-sm text-destructive">
