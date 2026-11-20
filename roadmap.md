@@ -2,6 +2,10 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Doublons stricts locaux TAXI/VTC (20/11 10:22 UTC)
+- [x] 508 questions/parcours, 16 parties, 35 838 comparaisons intra-partie et parité vérifiées : trois couples stricts, deux avec image utile distincte. Aucun retrait : obligations indépendantes, Q50 non répondue bloque effectivement la remise. Sources/affichage intactes, rapport docs/doublons-stricts-cours-2026-11-20.md.
+- [x] 59 Vitest et 12 parcours fictifs PC/mobile PASS, sauvegardes/remises/reprises et absence de réponse automatique prouvées ; aucune publication. Déduplication permanente arrêtée selon demande, option future = repli réouvrable avec saisie indépendante, pas changement de dénominateurs.
+
 ## Revue probatoire Qualiopi prioritaire (20/11 10:10 UTC)
 - [x] Assistance présente dans le commit public observé, mais zéro mail avec encadré retrouvé ; 19 reste À compléter (18 références). 9–12/16 désormais À compléter (803/758/735/171/496), 21 maintenu (15), 13–15/20 Non applicables conservés. Deux synthèses/sept liens ajoutés, versions contrôlées et base relue ; cinq empreintes sources inchangées, neuf tests PASS, aucun envoi/publication.
 - [x] Bilan par indicateur et actions probatoires concrètes : docs/qualiopi-revue-prioritaire-2026-11-20.md. Aucun compte test exigé pour conclure ; interface connectée actuelle non vérifiée.

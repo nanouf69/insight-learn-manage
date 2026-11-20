@@ -21,6 +21,13 @@ if (params.has("missing")) {
   const row = initial.find(r => r.exercice_id === `module_${id}_exo_62`);
   if (row) delete row.reponses["62-8"];
 }
+if (params.has("missingDuplicate")) {
+  const row = initial.find(r => r.exercice_id === `module_${id}_exo_62`);
+  if (row) {
+    row.reponses["62-31"] = "B";
+    delete row.reponses["62-50"];
+  }
+}
 let rows: any[] = JSON.parse(sessionStorage.getItem(key) ?? JSON.stringify(initial));
 const calls: any[] = [];
 Object.assign(window, { fixtureCalls: calls, fixtureRows: () => rows });
