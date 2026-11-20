@@ -690,6 +690,7 @@ const FORMATIONS_CATALOGUE = [
   { label: "Formation initiale TAXI avec frais d'examen - 1 799 €", prix: 1799, designation: "Formation initiale TAXI avec frais d'examen - Préparation complète à la carte professionnelle chauffeur de taxi" },
   { label: "Formation passerelle TAXI pour chauffeur VTC (TA) - 999 €", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC (TA) - Accès à la carte professionnelle taxi pour titulaires d'une carte VTC" },
   { label: "Formation continue obligatoire VTC - 200 €", prix: 200, designation: "Formation continue obligatoire VTC - Prévention des discriminations et des violences sexuelles et sexistes (14h)" },
+  { label: "Formation continue obligatoire TAXI - 200 €", prix: 200, designation: "Formation continue obligatoire TAXI (14h)" },
   { label: "Formation VTC E-learning - 1 099 €", prix: 1099, designation: "Formation initiale VTC en E-learning - Préparation à la carte professionnelle chauffeur VTC" },
   { label: "Formation VTC E-learning avec examen - 1 499 €", prix: 1499, designation: "Formation initiale VTC en E-learning avec frais d'examen" },
   { label: "Formation TAXI E-learning - 1 299 €", prix: 1299, designation: "Formation initiale TAXI en E-learning" },
@@ -840,7 +841,7 @@ function DateDevisPicker({ id, value, onChange }: { id: string; value: string; o
             selected={selected}
             defaultMonth={selected}
             onSelect={(date) => {
-              if (!date) return;
+              if (!date) { setOpen(false); return; }
               onChange(format(date, "yyyy-MM-dd"));
               setOpen(false);
             }}
