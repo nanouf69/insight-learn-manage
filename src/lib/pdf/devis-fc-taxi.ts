@@ -67,6 +67,7 @@ export function manquesDevisFcTaxi(input: DevisFcTaxiInput): string[] {
   if (!input.client.nomComplet?.trim()) m.push("nom du stagiaire");
   if (!input.client.adresse?.trim() || !input.client.ville?.trim()) m.push("adresse du stagiaire");
   if (!input.dates?.trim()) m.push("dates de formation");
+  else if (input.dates.split(" + ").filter(x => x.trim()).length < 2) m.push("les deux jours de la session (14 h = 2 jours)");
   if (!input.dateDevis?.trim()) m.push("date du devis");
   if (!(input.prix > 0)) m.push("prix de la formation");
   return m;
