@@ -2,6 +2,11 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Revue probatoire Qualiopi prioritaire (20/11 10:10 UTC)
+- [x] Assistance présente dans le commit public observé, mais zéro mail avec encadré retrouvé ; 19 reste À compléter (18 références). 9–12/16 désormais À compléter (803/758/735/171/496), 21 maintenu (15), 13–15/20 Non applicables conservés. Deux synthèses/sept liens ajoutés, versions contrôlées et base relue ; cinq empreintes sources inchangées, neuf tests PASS, aucun envoi/publication.
+- [x] Bilan par indicateur et actions probatoires concrètes : docs/qualiopi-revue-prioritaire-2026-11-20.md. Aucun compte test exigé pour conclure ; interface connectée actuelle non vérifiée.
+- [ ] Compléments nécessaires : communication réelle assistance/issue incidents/intervenants (19), vérifications de maîtrise/missions et grille originale (21), chaîne absence-contact-issue et prévention violences (12), informations préalables/adaptations/évaluations/recevabilité CMA (9–11/16). Bloqués par preuves réelles non présentes dans le corpus, pas par compte fictif.
+
 ## Devis signé dans Formulaires (20/11)
 - [x] Affichage des devis signés/non signés/à vérifier, préparation locale du contrat personnel (FC incluse), aperçu mail/PDF figé et confirmation explicite ; 72 tests PASS, fiche réelle PC/mobile vérifiée sans envoi, build OK. Aperçu uniquement. Annexes et références à compléter ; formation passée = brouillon uniquement, financements tiers hors contrat individuel. Rapport docs/devis-formulaires-signature-2026-11-20.md.
 
