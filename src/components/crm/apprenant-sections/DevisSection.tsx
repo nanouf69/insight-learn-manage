@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContratLocationSection } from "./ContratLocationSection";
 import { ContratFormationSection } from "./ContratFormationSection";
+import { appliquerChampsVides, champsSourcesFcTaxi } from "@/lib/contratFormation/prefillFcTaxi";
 import { toast } from "sonner";
 import { format, parseISO, isValid, parse } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -1162,6 +1163,18 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     || (/formation continue/i.test(lignes[0]?.designation ?? '') && /taxi/i.test(lignes[0]?.designation ?? ''));
   const prixDevisFcTaxi = (lignes[0]?.prixUnitaire ?? 0) > 0 ? lignes[0].prixUnitaire : selectedTemplatePrix;
   const ecartPrixFc = isFcTaxiPdf ? ecartPrixFcTaxi(prixDevisFcTaxi) : null;
+  // Contrat séparé FC TAXI : complète seulement les champs vides depuis la fiche société et l'offre choisie.
+  useEffect(() => {
+    if (!isFcTaxiPdf) return;
+    const champs = champsSourcesFcTaxi({ prix: prixDevisFcTaxi, selectionDates: sessionDate, mode: modeSignatureFc });
+    setContratDraft(d => {
+      // Le mode de conclusion suit le mode de signature tant qu'il vient de ce pré-remplissage.
+      const auto = ['sur place', 'à distance'];
+      const base = auto.includes(d.fields.conclusionMode ?? '') && d.fields.conclusionMode !== champs.conclusionMode
+        ? { ...d, fields: { ...d.fields, conclusionMode: '', withdrawalOnline: '' } } : d;
+      return appliquerChampsVides(base, champs);
+    });
+  }, [isFcTaxiPdf, prixDevisFcTaxi, sessionDate, modeSignatureFc]);
   const construireDevisFcTaxi = async () => {
       const fontes = await chargerFontesUnicode();
       const entree = {

@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { apposerSignatureTampon } from "../_shared/tamponFtransport.ts";
 import { appliquerSignatureEmail } from "../_shared/signatureEmail.ts";
-import { construirePreuveConsentementFormationContinue, estDevisFormationContinue, refusConsentementFormationContinue } from "../_shared/devisConsentementFc.ts";
+import { construirePreuveConsentementFormationContinue, estDevisFormationContinue, preuveDemarrageAnticipeFcTaxi, refusConsentementFormationContinue } from "../_shared/devisConsentementFc.ts";
 
 
 const corsHeaders = {
@@ -129,8 +129,20 @@ Deno.serve(async (req) => {
         horodatageServeur: signedAt.toISOString(),
         userAgent: req.headers.get("user-agent") ?? null,
       });
+      let demarrageFc: ReturnType<typeof preuveDemarrageAnticipeFcTaxi> = null;
+      try {
+        demarrageFc = preuveDemarrageAnticipeFcTaxi({
+          modele: devis.modele,
+          demande: formData.get("demarrage_anticipe_fc_taxi") === "true",
+          reconnaissance: formData.get("reconnaissance_perte_fc_taxi") === "true",
+          horodatageServeur: signedAt.toISOString(),
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: (e as Error).message }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       consentements = {
         ...preuveFc,
+        ...(demarrageFc ? { demarrage_anticipe_fc_taxi: demarrageFc } : {}),
         ...(consentements ?? {}),
         annulation_remboursement_fc: preuveFc.annulation_remboursement_fc,
       };

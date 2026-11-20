@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENT_FC_VERSION } from "@/lib/contratFormation/consentements";
+import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENT_FC_VERSION, DEMARRAGE_FC_TAXI_DEMANDE, DEMARRAGE_FC_TAXI_EXPLICATION, DEMARRAGE_FC_TAXI_RECONNAISSANCE, DEMARRAGE_FC_TAXI_VERSION } from "@/lib/contratFormation/consentements";
 import {
   buildDevisFcTaxiPdf, chargerFontesUnicode, delaiRetractationFcTaxi, eur, MENTION_NON_CONTRAT,
   prixDepuisMontant, type DevisFcTaxiInput, type ModeSignatureFcTaxi,
@@ -36,6 +36,9 @@ export function DevisFcTaxiSignature({ devis, token, mode, fcServeurVersion }: {
   const [accept, setAccept] = useState(false);
   const [consentFc, setConsentFc] = useState(false);
   const [mention, setMention] = useState("");
+  // Cases facultatives, jamais précochées, proposées seulement pour un contrat à distance / hors établissement.
+  const [demarrage, setDemarrage] = useState(false);
+  const [reconnaissance, setReconnaissance] = useState(false);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(!!devis?.signed_at || !!devis?.devis_signe_url);
   const entree = entreeDepuisDevis(devis, mode);
@@ -70,11 +73,15 @@ export function DevisFcTaxiSignature({ devis, token, mode, fcServeurVersion }: {
     try {
       const png = canvasRef.current!.toDataURL("image/png");
       const horodatage = new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
-      const doc = buildDevisFcTaxiPdf(entree, await chargerFontesUnicode(), undefined, { imagePng: png, horodatage, mention: mention.trim() });
+      const doc = buildDevisFcTaxiPdf(entree, await chargerFontesUnicode(), undefined, { imagePng: png, horodatage, mention: mention.trim(), ...(mode === "distance" ? { demarrageAnticipe: { demande: demarrage, reconnaissance: demarrage && reconnaissance, version: DEMARRAGE_FC_TAXI_VERSION } } : {}) });
       const fd = new FormData();
       fd.append("token", token);
       fd.append("file", doc.output("blob"), `${devis.id}_devis_fc_taxi_signe.pdf`);
       fd.append("consentement_annulation_remboursement_fc", String(consentFc));
+      if (mode === "distance") {
+        fd.append("demarrage_anticipe_fc_taxi", String(demarrage));
+        fd.append("reconnaissance_perte_fc_taxi", String(demarrage && reconnaissance));
+      }
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-devis-signe`, {
         method: "POST", headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY }, body: fd,
       });
@@ -111,6 +118,23 @@ export function DevisFcTaxiSignature({ devis, token, mode, fcServeurVersion }: {
             <input type="checkbox" checked={consentFc} onChange={(e) => setConsentFc(e.target.checked)} className="w-5 h-5 mt-0.5" aria-label="Confirmer la procédure écrite d’annulation et de remboursement" />
             <span className="text-sm">{CONSENTEMENT_FC_ANNULATION}</span>
           </label>
+          {mode === "distance" ? (
+            <div className="rounded-md border p-3 space-y-3" data-testid="fc-demarrage-anticipe">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={demarrage} onChange={(e) => { setDemarrage(e.target.checked); if (!e.target.checked) setReconnaissance(false); }} className="w-5 h-5 mt-0.5" aria-label="Demande expresse de démarrage avant la fin du délai de rétractation" />
+                <span className="text-sm">{DEMARRAGE_FC_TAXI_DEMANDE}</span>
+              </label>
+              <p className="text-xs text-muted-foreground">{DEMARRAGE_FC_TAXI_EXPLICATION}</p>
+              {demarrage && (
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={reconnaissance} onChange={(e) => setReconnaissance(e.target.checked)} className="w-5 h-5 mt-0.5" aria-label="Reconnaissance de la perte du droit après exécution complète" />
+                  <span className="text-sm">{DEMARRAGE_FC_TAXI_RECONNAISSANCE}</span>
+                </label>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs rounded-md border p-3 text-muted-foreground">Contrat signé au centre : vous disposez de 10 jours pour vous rétracter (article L6353-5 du Code du travail) et aucun paiement ne peut être exigé avant la fin de ce délai (article L6353-6).</p>
+          )}
           {!serveurPret && <p className="text-xs text-destructive">La preuve serveur n’est pas encore active : la signature est temporairement indisponible.</p>}
           <div className="space-y-1">
             <label className="text-sm font-semibold" htmlFor="mention-fc">Mention manuscrite</label>

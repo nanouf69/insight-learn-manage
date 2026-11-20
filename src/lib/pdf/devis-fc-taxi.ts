@@ -108,7 +108,7 @@ export function prixDepuisMontant(montant: unknown): number {
   const n = Number(String(montant ?? "").replace(/[^0-9,.-]/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 }
-export interface SignatureClientFcTaxi { imagePng: string; horodatage: string; mention: string }
+export interface SignatureClientFcTaxi { imagePng: string; horodatage: string; mention: string; demarrageAnticipe?: { demande: boolean; reconnaissance: boolean; version: string } }
 
 export interface FontesUnicode { regular: string; bold: string } // base64
 
@@ -191,6 +191,11 @@ export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnic
     doc.addImage(signature.imagePng, "PNG", M + 2, y + 9, half - 4, 18);
   }
   y += 34;
+  if (signature?.demarrageAnticipe && input.mode === "distance") {
+    const d = signature.demarrageAnticipe;
+    need(20);
+    para(`Démarrage anticipé (case facultative, version ${d.version}) : demande expresse ${d.demande ? "COCHÉE" : "non cochée"} ; reconnaissance de perte du droit après exécution complète ${d.reconnaissance ? "COCHÉE" : "non cochée"}. Aucune renonciation générale au droit de rétractation ; aucun paiement avant la fin du délai.`, 7.5);
+  }
 
   doc.addPage(); y = 18;
   titre("Annexe – Conditions générales de vente");
