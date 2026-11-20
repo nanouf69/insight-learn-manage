@@ -3,8 +3,8 @@ Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison in
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
 ## Gestion / Sécurité routière — présentation locale (20/11)
-- [ ] Auditer les PPT actifs et toutes les questions affichées modules 2/10 ; justifier chaque transfert par diapositive.
-- [ ] Réaffecter seulement les cas prouvés en aperçu, identités et commandes originales inchangées ; tests fictifs PC/mobile, empreintes avant/après et rapport détaillé. Aucun déploiement.
+- [x] Six PPT actifs/168 diapositives et 386 questions affichées par parcours audités, exclusions historiques et médias candidats vérifiés; annexes exhaustives, propositions URSSAF P2 rejetées après contre-vérification.
+- [x] 14 réaffectations locales par parcours (Gestion5/Sécurité9), supports/contenu exacts gardés; 69 Vitest + 12 parcours fictifs PC/mobile PASS, 8 empreintes modules et 1319 copies inchangées. Aperçu seul, aucun déploiement. Rapport docs/gestion-securite-presentation-locale-2026-11-20.md.
 
 ## P0 — Diagnostic synchronisation emails CRM (20/11)
 - [x] Capture « Emails & contacts » : synchronisation réelle mesurée à 112,57 s avant correction, puis 1,85 s après activation ciblée du service. Recherche Outlook from/to au lieu de 12 pages de contenus complets, dossiers en parallèle, délai maximal et erreurs sans faux succès ; 6 tests Deno réussis. Même fiche : 2 reçus/3 envoyés, 2 IDs Outlook distincts, aucun doublon ni email envoyé, publication globale non effectuée.

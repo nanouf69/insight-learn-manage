@@ -270,6 +270,6 @@ Ces anomalies **ne doivent pas être “corrigées” par un déplacement d’ex
 
 
 ## Complément final de vérification visuelle
-Six images candidates E80 Q71/Q79/Q108/Q113 et E81 Q48/Q49 lues avec droits existants, HTTP 200, et inspectées. Q71 : chaussée étroite sans preuve de pente; Q79 : tunnel et limite 50; Q108 : télépéage/cartes; Q113 : panneau illustré non explicitement retrouvé. Aucun transfert ajouté. Q48/Q49 confirment CT annuel et contre-visite deux mois. Les 43 médias bitmap décodables embarqués ont été inspectés en planches; aucun rendu complet PPT, animation ou contenu masqué revendiqué.
+Six images candidates E80 Q71/Q79/Q108/Q113 et E81 Q48/Q49 lues avec droits existants, HTTP 200, et inspectées. Q71 : chaussée étroite sans preuve de pente; Q79 : tunnel et limite 50; Q108 : télépéage/cartes; Q113 : panneau illustré non explicitement retrouvé. Aucun transfert ajouté. Q48/Q49 confirment CT annuel et contre-visite deux mois. Les 45 médias bitmap décodables embarqués ont été inspectés en planches; aucun rendu complet PPT, animation ou contenu masqué revendiqué.
 
 Comptages finaux après exclusions : 111/50/79 avant, 112/45/83 après présentation locale, pour chaque parcours. Toutes les images externes des 240 questions ne sont pas revendiquées comme inspectées individuellement : les candidates dépendantes d’images ont été conservées, aucune suppression.
