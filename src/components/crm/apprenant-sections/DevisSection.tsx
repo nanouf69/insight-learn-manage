@@ -1219,7 +1219,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   // ─── DOCX TEMPLATE DOWNLOAD ───
   const generateDocxFromTemplate = async () => {
-    if (isFcTaxiPdf) return telechargerDevisFcTaxiPdf();
+    // Format de référence (décision 20/11 17:21) : tous les devis = PDF canonique.
+    return generateDevisPDF();
     if (!selectedTemplate) {
       toast.error("Veuillez sélectionner un modèle de devis");
       return;
@@ -1309,7 +1310,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const sendDevisEmail = async () => {
-    if (isFcTaxiPdf) return envoyerDevisParEmail();
+    // Format de référence : même PDF canonique et même circuit d'envoi signable pour tous les devis.
+    return envoyerDevisParEmail();
     const destinataire = devisClient.email || apprenant.email;
     if (!destinataire) {
       toast.error(isOrgFinanceur ? "Aucun email renseigné pour cette organisation" : "Aucun email renseigné pour cet apprenant");
@@ -1463,6 +1465,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const generateDevisPDF = async (opts?: { returnBase64?: boolean }): Promise<{ base64: string; fileName: string } | void> => {
+    if (isFcTaxiPdf && (sessionDate || '').split(' + ').filter(x => x.trim()).length < 2) {
+      toast.error("Devis FC TAXI : choisissez les deux jours de la session (14 h sur 2 jours).");
+      return;
+    }
+    if (!(lignes[0]?.prixUnitaire > 0)) { toast.error("Prix de l'offre CRM manquant : devis non généré."); return; }
     setGenerating(true);
     try {
       const numDevis = `DEV-${format(new Date(), 'yyyyMM')}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
@@ -1510,10 +1517,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         } : undefined,
         formation: {
           designation: lignes[0]?.designation || apprenant.formation_choisie || 'Formation professionnelle',
-          duree: dureeElearning,
+          duree: isFcTaxiPdf ? '14 heures en presentiel (2 jours, 9h-12h / 13h-17h)' : dureeElearning,
           agrement: undefined,
           type: formationType,
-          isElearning,
+          isElearning: isFcTaxiPdf ? false : isElearning,
         },
         lignes: lignes.map(l => ({
           designation: l.designation,
@@ -1557,13 +1564,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     setSendingDevisEmail(true);
     try {
       let result: { base64: string; fileName: string } | void;
-      if (isFcTaxiPdf) {
-        const docFc = await construireDevisFcTaxi();
-        if (!docFc) return;
-        result = { base64: docFc.output('datauristring').split(',')[1], fileName: `Devis_${apprenant.prenom}_${apprenant.nom}_fc_taxi.pdf` };
-      } else {
-        result = await generateDevisPDF({ returnBase64: true });
-      }
+      result = await generateDevisPDF({ returnBase64: true });
       if (!result) throw new Error("Impossible de générer le PDF");
       const { base64, fileName } = result;
 
@@ -1585,7 +1586,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       // Enregistrer l'envoi
       const { data: devisRecord } = await supabase.from('devis_envois').insert({
         apprenant_id: apprenant.id,
-        modele: isFcTaxiPdf ? modeleFcTaxiPdf(modeSignatureFc) : (selectedTemplate || 'devis'),
+        modele: selectedTemplate || 'devis',
         montant: isFcTaxiPdf ? `${prixDevisFcTaxi.toFixed(2)} €` : `${totalTTC.toFixed(2)} €`,
         formation: isFcTaxiPdf ? 'Formation continue TAXI' : formationDevisAvecDuree(selectedTemplateConfig?.label || apprenant.formation_choisie || '', selectedTemplate || apprenant.formation_choisie || ''),
         fichier_url: urlData.publicUrl,
@@ -1600,7 +1601,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       const appUrl = 'https://insight-learn-manage.lovable.app';
       const devisLink = devisRecord?.token ? `${appUrl}/devis?token=${devisRecord.token}` : '';
-      const em = isFcTaxiPdf ? mailDevisFcTaxi(apprenant.prenom || '', apprenant.nom || '', prixDevisFcTaxi, modeSignatureFc) : getEmailContent();
+      const em = getEmailContent();
       if (!em) throw new Error("Aucun modèle d'email pour ce type de devis");
       const bodyHtml = em.body.replace(/\n/g, '<br/>') +
         (devisLink ? `<br/><br/>📝 <a href="${devisLink}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Consulter et signer le devis en ligne</a>` : '') +
@@ -1789,7 +1790,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               className="flex items-center gap-2"
             >
               <FileDown className="w-4 h-4" />
-              {generatingDocx ? "Génération..." : isFcTaxiPdf ? "Télécharger le devis PDF" : "Télécharger le devis DOCX"}
+              {generatingDocx ? "Génération..." : "Télécharger le devis PDF"}
             </Button>
 
             {selectedTemplate && apprenant.email && (
@@ -2107,7 +2108,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           </div>}
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
-            <Button onClick={() => (isFcTaxiPdf ? telechargerDevisFcTaxiPdf() : generateDevisPDF())} disabled={generating || generatingDocx} className="flex items-center gap-2">
+            <Button onClick={() => generateDevisPDF()} disabled={generating || generatingDocx} className="flex items-center gap-2">
               <Download className="w-4 h-4" />
               {generating ? "Génération..." : "Télécharger le devis PDF"}
             </Button>
