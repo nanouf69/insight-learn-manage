@@ -2,6 +2,10 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Réexamen Qualiopi sur preuves existantes (20/11 12:20 UTC)
+- [x] Inventaire complet et réexamen des preuves existantes : 11 Conforme (barème figé 194/194 réponses, 106/194 concordant), 29 Non applicable sur déclaration antérieure ; autres états conservés, réserves excessives écartées et lacunes détaillées. Base relue, aucune source élève/mail/publication ; rapport docs/qualiopi-reexamen-preuves-existantes-2026-11-20-1220.md.
+- [ ] Exigences résiduelles non démontrées : cohérence/couverture/adaptations 6–10, prévention et traitement 12, recevabilité 16, modalités FOAD et intervenants 19, compétences vérifiées 21 ; autres sans état : application réelle restant à rapprocher. Blocage probatoire détaillé au rapport, aucune recollecte générale requise.
+
 ## Doublons stricts locaux TAXI/VTC (20/11 10:22 UTC)
 - [x] 508 questions/parcours, 16 parties, 35 838 comparaisons intra-partie et parité vérifiées : trois couples stricts, deux avec image utile distincte. Aucun retrait : obligations indépendantes, Q50 non répondue bloque effectivement la remise. Sources/affichage intactes, rapport docs/doublons-stricts-cours-2026-11-20.md.
 - [x] 59 Vitest et 12 parcours fictifs PC/mobile PASS, sauvegardes/remises/reprises et absence de réponse automatique prouvées ; aucune publication. Déduplication permanente arrêtée selon demande, option future = repli réouvrable avec saisie indépendante, pas changement de dénominateurs.
