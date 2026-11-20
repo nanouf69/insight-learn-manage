@@ -2,6 +2,9 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## P0 — Diagnostic synchronisation emails CRM (20/11)
+- [x] Capture « Emails & contacts » : synchronisation réelle mesurée à 112,57 s avant correction, puis 1,85 s après activation ciblée du service. Recherche Outlook from/to au lieu de 12 pages de contenus complets, dossiers en parallèle, délai maximal et erreurs sans faux succès ; 6 tests Deno réussis. Même fiche : 2 reçus/3 envoyés, 2 IDs Outlook distincts, aucun doublon ni email envoyé, publication globale non effectuée.
+
 ## P0 — Présence
 - [x] 20/11 08:19 — Bouton « Envoyer les signatures manquantes par mail » directement dans la liste, relié au circuit habituel aperçu/relecture/confirmation ; 19 tests réussis, build OK, aucun mail envoyé. Contrôle visuel CRM reste bloqué par accès administrateur (ci-dessous).
 - [x] 20/11 — Bloc signatures conservé dans Formulaires même sans document déposé ; absence de documents explicite et erreurs distinctes des manques. 29 tests réussis, sept parcours fictifs, build OK ; aucune donnée ni publication modifiée.

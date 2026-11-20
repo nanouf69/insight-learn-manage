@@ -1,24 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
+import { fetchEmails } from "./graph.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-interface EmailMessage {
-  id: string;
-  subject: string;
-  bodyPreview: string;
-  body?: { content: string; contentType: string };
-  from?: { emailAddress: { address: string; name: string } };
-  toRecipients?: { emailAddress: { address: string; name: string } }[];
-  hasAttachments: boolean;
-  isRead: boolean;
-  receivedDateTime: string;
-  sentDateTime?: string;
-}
 
 interface TokenResponse {
   access_token: string;
@@ -57,57 +45,6 @@ async function getAccessToken(): Promise<string> {
 
   const data: TokenResponse = await response.json();
   return data.access_token;
-}
-
-async function fetchEmails(
-  accessToken: string,
-  userEmail: string,
-  folder: "inbox" | "sentItems",
-  matchEmail?: string
-): Promise<EmailMessage[]> {
-  const orderBy = folder === "sentItems" ? "sentDateTime desc" : "receivedDateTime desc";
-  const select =
-    "id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime";
-
-  // Microsoft Graph rejects $filter on toRecipients and complains about
-  // $filter + $orderby combinations, so we page through recent messages
-  // and match the address locally instead.
-  const pageSize = matchEmail ? 250 : 200;
-  const maxPages = matchEmail ? 6 : 1;
-
-  const collected: EmailMessage[] = [];
-  let url =
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/mailFolders/${folder}/messages` +
-    `?$top=${pageSize}&$orderby=${encodeURIComponent(orderBy)}&$select=${encodeURIComponent(select)}`;
-
-  for (let page = 0; page < maxPages && url; page++) {
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      console.error(`Error fetching ${folder}:`, await response.text());
-      break;
-    }
-
-    const data = await response.json();
-    collected.push(...(data.value || []));
-    url = data["@odata.nextLink"] || "";
-  }
-
-  if (!matchEmail) return collected;
-
-  const needle = matchEmail.trim().toLowerCase();
-  return collected.filter((email) => {
-    const from = email.from?.emailAddress?.address?.toLowerCase();
-    if (from === needle) return true;
-    return (email.toRecipients || []).some(
-      (r) => r?.emailAddress?.address?.toLowerCase() === needle
-    );
-  });
 }
 
 
@@ -277,19 +214,20 @@ Deno.serve(async (req) => {
       // Fetch only emails related to the apprenant directly from Outlook
       const normalizedApprenantEmail = apprenantEmail.trim().toLowerCase();
 
-      const relevantInbox = await fetchEmails(
-        accessToken,
-        userEmail,
-        "inbox",
-        normalizedApprenantEmail
-      );
-
-      const relevantSent = await fetchEmails(
-        accessToken,
-        userEmail,
-        "sentItems",
-        normalizedApprenantEmail
-      );
+      const [relevantInbox, relevantSent] = await Promise.all([
+        fetchEmails(
+          accessToken,
+          userEmail,
+          "inbox",
+          normalizedApprenantEmail
+        ),
+        fetchEmails(
+          accessToken,
+          userEmail,
+          "sentItems",
+          normalizedApprenantEmail
+        ),
+      ]);
 
 
       // Prepare emails for insertion
