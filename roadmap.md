@@ -2,6 +2,9 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Doublons Bilan exercices tous médias (20/11 13:34 UTC)
+- [x] Six couples/parcours relus : quatre variantes illustrées exclues ; seuls 1066/2077 (E100) et 62031/62050 (E101) identiques tous médias. Aucun retrait : secondes réponses indépendantes attendues, refus prouvé sur huit parcours PC/mobile fictifs, puis réponses explicites/sauvegarde/remise/correction/relecture 122/122 et 146/146. 102 tests PASS ; 2/4/9/10 identiques avant/après, totaux actifs VTC734/TAXI838 inchangés. Aucun fichier fonctionnel, dossier/mail/publication modifié. Rapport docs/bilan-exercices-doublons-tous-medias-2026-11-20.md ; blocage = retrait sûr impossible sans changer obligations/dénominateurs ou conserver une saisie indépendante.
+
 ## Attribution de modules depuis une session (20/11 13:28 UTC)
 - [x] Bouton « Ajouter des modules » en aperçu : toute la session ou personnes cochées, plusieurs modules, confirmation, conservation de l’ordre/IDs existants, CAS et relecture individuelle. Comptes absents/archivés et EDOF validé ou illisible refusés ; aucune date ni preuve modifiée. 21 tests et deux parcours PC/mobile avec écritures interceptées réussis ; écran session authentifié réel consulté sans mutation, build OK. Aucune attribution réelle, aucun mail/publication. Persistance réelle non vérifiée ; détails docs/session-ajout-modules-2026-11-20.md.
 
