@@ -1,0 +1,1 @@
+- FC TAXI quote PDF (devis-fc-taxi.ts): CGV v6 text, explicit 10/14-day mode, no waiver, line price kept with public-price warning; historical DOCX untouched. Why: no contradictory clauses, sent quotes never rewritten.
