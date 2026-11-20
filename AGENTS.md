@@ -59,3 +59,4 @@
 - TAXI/TA form defaults mirror FORMATION_MODULES (test modeles-taxi-ta-fin-formation); why: no missing modules.
 - CRM month extension: crm_reactiver_un_mois adds the month; send-prolongation-acces only emails per extension_id; why: resend never adds a month.
 - FC convocations use a separate evidence/outbox/journal workflow, with explicit bank-to-enrollment and contractual amount proofs, server revalidation and unknown-delivery quarantine; the accounting screen never auto-writes or sends; why: names and import duplicates cannot authorize a financial mutation or a duplicate convocation.
+- FC TAXI quote download is a jsPDF built by src/lib/pdf/devis-fc-taxi.ts (CGV v6 text, explicit 10/14-day signature mode, no waiver, line price kept with public-price warning); the historical DOCX stays untouched for old quotes and other templates. Why: avoid contradictory contractual clauses without rewriting sent quotes.

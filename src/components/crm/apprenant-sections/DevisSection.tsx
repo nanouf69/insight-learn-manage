@@ -21,6 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import jsPDF from "jspdf";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
+import { buildDevisFcTaxiPdf, chargerFontesUnicode, ecartPrixFcTaxi, type ModeSignatureFcTaxi } from "@/lib/pdf/devis-fc-taxi";
 import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
@@ -874,6 +875,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>(detectedTemplate || "");
+  const [modeSignatureFc, setModeSignatureFc] = useState<ModeSignatureFcTaxi>("distance");
   const selectedTemplateConfig = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
   const dureeElearning = dureeDevisElearning(selectedTemplate);
   const selectedTemplatePrix = selectedTemplateConfig?.prix ?? apprenant.montant_ttc ?? 0;
@@ -1155,8 +1157,30 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const montantTVA = totalHT * (tvaTaux / 100);
   const totalTTC = totalHT + montantTVA;
 
+  // ─── FC TAXI : vrai PDF (le DOCX historique reste dans le dépôt pour les anciens devis) ───
+  const isFcTaxiPdf = selectedTemplate === 'fc_taxi';
+  const prixDevisFcTaxi = (lignes[0]?.prixUnitaire ?? 0) > 0 ? lignes[0].prixUnitaire : selectedTemplatePrix;
+  const ecartPrixFc = isFcTaxiPdf ? ecartPrixFcTaxi(prixDevisFcTaxi) : null;
+  const telechargerDevisFcTaxiPdf = async () => {
+    setGeneratingDocx(true);
+    try {
+      const fontes = await chargerFontesUnicode();
+      const doc = buildDevisFcTaxiPdf({
+        client: devisClient, dates: sessionDate || '', dateDevis: formatDateForDevis(dateDevis),
+        prix: prixDevisFcTaxi, mode: modeSignatureFc,
+      }, fontes);
+      doc.save(`Devis_${apprenant.prenom}_${apprenant.nom}_fc_taxi_${format(new Date(), 'ddMMyyyy')}.pdf`);
+      toast.success("Devis PDF téléchargé");
+    } catch (err: any) {
+      toast.error(`Erreur : ${err?.message || "Impossible de générer le PDF"}`);
+    } finally {
+      setGeneratingDocx(false);
+    }
+  };
+
   // ─── DOCX TEMPLATE DOWNLOAD ───
   const generateDocxFromTemplate = async () => {
+    if (isFcTaxiPdf) return telechargerDevisFcTaxiPdf();
     if (!selectedTemplate) {
       toast.error("Veuillez sélectionner un modèle de devis");
       return;
@@ -1660,6 +1684,22 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             )}
           </div>
 
+          {isFcTaxiPdf && (
+            <div className="space-y-2">
+              <Label>Mode de signature du contrat</Label>
+              <Select value={modeSignatureFc} onValueChange={(v) => setModeSignatureFc(v as ModeSignatureFcTaxi)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="distance">À distance / hors établissement — rétractation 14 jours</SelectItem>
+                  <SelectItem value="centre">Au centre (86 route de Genas) — rétractation 10 jours</SelectItem>
+                </SelectContent>
+              </Select>
+              {ecartPrixFc && (
+                <p role="alert" className="text-sm font-medium text-destructive">⚠ {ecartPrixFc}. Le prix du devis est conservé.</p>
+              )}
+            </div>
+          )}
+
           {selectedTemplate && (
             <div className="bg-muted/40 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium">Données qui seront injectées dans le DOCX :</p>
@@ -1685,7 +1725,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               className="flex items-center gap-2"
             >
               <FileDown className="w-4 h-4" />
-              {generatingDocx ? "Génération..." : "Télécharger le devis DOCX"}
+              {generatingDocx ? "Génération..." : isFcTaxiPdf ? "Télécharger le devis PDF" : "Télécharger le devis DOCX"}
             </Button>
 
             {selectedTemplate && apprenant.email && (
