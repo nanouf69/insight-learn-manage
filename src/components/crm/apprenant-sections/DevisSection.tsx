@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { organisationsDepuisFinanceurs, type OrganisationDevis } from "@/lib/devisOrganisationsApprenants";
+import { injecterMontantDevisOriginal } from "@/lib/devisFcTaxiOriginal";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1211,15 +1212,16 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   // ─── DOCX TEMPLATE DOWNLOAD ───
   const generateDocxFromTemplate = async () => {
-    if (isFcTaxiPdf) return telechargerDevisFcTaxiPdf();
-    if (!selectedTemplate) {
+    // FC TAXI : retour au format Word original demandé (20/11) ; le PDF simplifié n'est plus proposé au téléchargement.
+    if (!selectedTemplate && !isFcTaxiPdf) {
       toast.error("Veuillez sélectionner un modèle de devis");
       return;
     }
     setGeneratingDocx(true);
     try {
-      const tmpl = selectedTemplateConfig;
+      const tmpl = isFcTaxiPdf ? (DEVIS_TEMPLATES.find(t => t.id === 'fc_taxi') ?? selectedTemplateConfig) : selectedTemplateConfig;
       if (!tmpl) throw new Error("Template introuvable");
+      if (isFcTaxiPdf && !sessionDate) throw new Error("Choisissez les dates de la session avant de télécharger le devis");
 
       const response = await fetch(`/devis/${tmpl.file}`);
       if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
@@ -1235,7 +1237,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         client_email: devisClient.email,
         devis_date: formatDateForDevis(dateDevis),
         devis_ligne_produit_date1: sessionDate || '',
-        montant: String(selectedTemplatePrix),
+        montant: String(isFcTaxiPdf ? prixDevisFcTaxi : selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
         devis_duree_totale: dureeElearning || '',
       };
@@ -1248,6 +1250,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         nullGetter() { return ""; },
       });
       doc.render(sharedPayload);
+      if (isFcTaxiPdf) {
+        const z = doc.getZip();
+        const docXml = z.file('word/document.xml')?.asText();
+        if (docXml) z.file('word/document.xml', injecterMontantDevisOriginal(docXml, prixDevisFcTaxi));
+      }
       const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
@@ -1777,11 +1784,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={generateDocxFromTemplate}
-              disabled={generatingDocx || !selectedTemplate || !formatDevisDate(dateDevis)}
+              disabled={generatingDocx || (!selectedTemplate && !isFcTaxiPdf) || !formatDevisDate(dateDevis)}
               className="flex items-center gap-2"
             >
               <FileDown className="w-4 h-4" />
-              {generatingDocx ? "Génération..." : isFcTaxiPdf ? "Télécharger le devis PDF" : "Télécharger le devis DOCX"}
+              {generatingDocx ? "Génération..." : "Télécharger le devis DOCX"}
             </Button>
 
             {selectedTemplate && apprenant.email && (
@@ -2099,9 +2106,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           </div>}
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
-            <Button onClick={() => (isFcTaxiPdf ? telechargerDevisFcTaxiPdf() : generateDevisPDF())} disabled={generating || generatingDocx} className="flex items-center gap-2">
+            <Button onClick={() => (isFcTaxiPdf ? generateDocxFromTemplate() : generateDevisPDF())} disabled={generating || generatingDocx} className="flex items-center gap-2">
               <Download className="w-4 h-4" />
-              {generating ? "Génération..." : "Télécharger le devis PDF"}
+              {generating || generatingDocx ? "Génération..." : isFcTaxiPdf ? "Télécharger le devis (format original)" : "Télécharger le devis PDF"}
             </Button>
             <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite} title={!apprenant.email ? "L'apprenant n'a pas d'email" : !lignes[0]?.designation?.trim() ? "Renseignez l'intitulé" : !sessionDate ? "Choisissez les dates de formation" : !dateValidite ? "Renseignez la date de validité" : `Envoi à ${apprenant.email}`} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
               <Send className="w-4 h-4" />
