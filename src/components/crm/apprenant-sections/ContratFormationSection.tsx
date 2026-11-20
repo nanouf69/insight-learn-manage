@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Eye, FileText, Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Download, Eye, FileText, Plus, Trash2, AlertTriangle, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,10 @@ import { FORMATIONS } from '@/components/cours-en-ligne/formations-data';
 import { toast } from 'sonner';
 
 interface SessionChoice { id: string; nom: string; date_debut: string | null; date_fin: string | null; lieu: string | null; heure_debut: string | null; heure_fin: string | null; trainers: string }
-export function ContratFormationSection({ apprenant, value, onChange }: { apprenant: ContractLearner; value?: TrainingContract; onChange?: (c: TrainingContract) => void }) {
+export function ContratFormationSection({ apprenant, value, onChange, permettreEnvoi = false }: { apprenant: ContractLearner; value?: TrainingContract; onChange?: (c: TrainingContract) => void; permettreEnvoi?: boolean }) {
+  const [mail, setMail] = useState<{ reference: string; to: string; subject: string; body: string; base64: string; revision: string } | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sentReference, setSentReference] = useState<string | null>(null);
   const [inner, setInner] = useState<TrainingContract>(() => ({ ...newTrainingContract(apprenant), pratique: emptyPratique() }));
   const draft = value ?? inner;
   const setDraft = (next: TrainingContract | ((d: TrainingContract) => TrainingContract)) => {
@@ -94,6 +97,37 @@ export function ContratFormationSection({ apprenant, value, onChange }: { appren
       buildTrainingContractPdf(draft, new Date(), definitive).save(`${draft.reference}_${definitive ? 'non-signe' : 'brouillon'}.pdf`);
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Génération impossible'); }
   };
+  const prepareMail = () => {
+    try {
+      if (!allowed || sourceError || !validateContract(draft, apprenant.id, new Date()).ready) throw new Error('Complétez les informations et les annexes avant de préparer l’envoi.');
+      const to = draft.fields.learnerEmail?.trim();
+      if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error('Adresse email du candidat invalide.');
+      const pdf = buildTrainingContractPdf(draft, new Date(), true);
+      setMail({ reference: draft.reference, to, subject: `Votre contrat de formation à signer — ${draft.reference}`,
+        body: `Bonjour,\n\nVeuillez trouver en pièce jointe votre contrat de formation et ses annexes pour ${draft.fields.title}.\nMerci de lire l’ensemble du document, de le dater au jour réel de votre signature, de le signer et de nous le retourner à contact@ftransport.fr.\nCet envoi ne vaut ni signature ni conclusion du contrat. Les délais de rétractation et conditions de paiement figurent dans le document.\n\nPour toute question : contact@ftransport.fr.`,
+        base64: pdf.output('datauristring').split(',')[1] ?? '', revision: JSON.stringify(draft) });
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Préparation impossible'); }
+  };
+  const sendMail = async () => {
+    if (!mail || sending || sentReference === mail.reference) return;
+    setSending(true);
+    try {
+      if (JSON.stringify(draft) !== mail.revision || sourceError || !validateContract(draft, apprenant.id, new Date()).ready) throw new Error('Le document a changé : préparez un nouvel aperçu.');
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      if (authError || !auth.user) throw new Error('Connexion administrateur requise');
+      const { data: admin, error: roleError } = await supabase.rpc('has_role', { _user_id: auth.user.id, _role: 'admin' });
+      if (roleError || !contractAccess(admin === true, apprenant.id, draft.learnerId)) throw new Error('Accès administrateur requis');
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', { body: {
+        action: 'send', userEmail: 'contact@ftransport.fr', to: mail.to, subject: mail.subject,
+        body: mail.body.split('\n').map(line => line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br/>'),
+        apprenantId: apprenant.id, attachments: [{ name: `${mail.reference}-a-signer.pdf`, contentType: 'application/pdf', contentBytes: mail.base64 }],
+      } });
+      if (error || data?.success !== true) throw new Error(data?.error || 'Envoi non confirmé ; vérifiez l’historique avant toute nouvelle tentative.');
+      setSentReference(mail.reference);
+      toast.success(data.skipped ? 'Envoi déjà enregistré : aucun nouvel email envoyé.' : 'Contrat transmis pour signature ; signature non encore reçue.');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Envoi non confirmé'); }
+    finally { setSending(false); }
+  };
   if (access === 'loading') return <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Vérification de l’accès administrateur…</div>;
   if (!allowed) return <p role="alert" className="text-destructive">Contrat de formation : accès administrateur requis.</p>;
   return <section className="space-y-6 min-w-0">
@@ -104,7 +138,7 @@ export function ContratFormationSection({ apprenant, value, onChange }: { appren
     {sourceError && <p role="alert" className="text-destructive">{sourceError}</p>}
     <div className="space-y-2"><Label>Financement de ce contrat</Label><Select value={draft.funding} onValueChange={v => { setPreview(false); setDraft(d => ({ ...d, funding: v as Funding, verified: false })); }}><SelectTrigger><SelectValue placeholder="Choisir le financement" /></SelectTrigger><SelectContent>{[['personnel','Personnel — payé par le stagiaire'],['cpf','CPF'],['opco','OPCO'],['entreprise','Entreprise'],['autre','Autre financeur']].map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></div>
     {draft.funding !== 'personnel' && <p role="alert" className="text-destructive">Ce modèle individuel et son échéancier ne s’appliquent pas automatiquement à ce financement.</p>}
-    <div className="space-y-2"><Label>Parcours effectivement vendu</Label><Select value={draft.pathway} onValueChange={v => { setPreview(false); setDraft(d => ({ ...d, pathway: v, verified: false, activities: contractProgramme(apprenant, v) })); }}><SelectTrigger><SelectValue placeholder="Choisir le parcours" /></SelectTrigger><SelectContent>{FORMATIONS.map(f => <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>)}<SelectItem value="pratique-taxi">Pratique seule TAXI</SelectItem><SelectItem value="pratique-vtc">Pratique seule VTC</SelectItem></SelectContent></Select></div>
+    <div className="space-y-2"><Label>Parcours effectivement vendu</Label><Select value={draft.pathway} onValueChange={v => { setPreview(false); setDraft(d => ({ ...d, pathway: v, verified: false, activities: contractProgramme(apprenant, v) })); }}><SelectTrigger><SelectValue placeholder="Choisir le parcours" /></SelectTrigger><SelectContent>{FORMATIONS.map(f => <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>)}{permettreEnvoi && <><SelectItem value="formation-continue-taxi">FC TAXI</SelectItem><SelectItem value="formation-continue-vtc">FC VTC</SelectItem></>}<SelectItem value="pratique-taxi">Pratique seule TAXI</SelectItem><SelectItem value="pratique-vtc">Pratique seule VTC</SelectItem></SelectContent></Select></div>
     <div className="space-y-2"><Label>Session rattachée à cet apprenant</Label><Select value={draft.sessionId} onValueChange={chooseSession}><SelectTrigger><SelectValue placeholder={sessions.length ? 'Choisir la session' : 'Aucune session disponible — compléter les dates ci-dessous'} /></SelectTrigger><SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.nom} · {s.date_debut ?? 'date absente'} → {s.date_fin ?? 'date absente'}</SelectItem>)}</SelectContent></Select></div>
     <div className="space-y-4 border-t pt-5"><h3 className="font-semibold">Formation pratique prévue par ce document</h3>
       <div className="space-y-2"><Label>Pratique</Label><Select value={pratique.incluse} onValueChange={v => setPratique({ incluse: v as PratiqueConditions['incluse'] })}><SelectTrigger aria-label="Pratique incluse"><SelectValue placeholder="Incluse ou non incluse" /></SelectTrigger><SelectContent><SelectItem value="oui">Incluse</SelectItem><SelectItem value="non">Non incluse (0 h)</SelectItem></SelectContent></Select></div>
@@ -137,6 +171,15 @@ export function ContratFormationSection({ apprenant, value, onChange }: { appren
       <p className="text-sm text-muted-foreground">Aucune signature en ligne ni ouverture pédagogique n’est déclenchée par ce document. La date réelle de conclusion devra être contrôlée à la signature.</p>
     </div>
     <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => {setPreviewNow(new Date());setPreview(v=>!v);}}><Eye className="h-4 w-4 mr-2" />Aperçu du contrat</Button><Button variant="outline" onClick={() => void download(false)}><Download className="h-4 w-4 mr-2" />Télécharger le brouillon PDF</Button><Button disabled={!validation.ready || !!sourceError} onClick={() => void download(true)}><Download className="h-4 w-4 mr-2" />PDF complet non signé</Button></div>
+    {permettreEnvoi && <div className="space-y-3 border-t pt-4">
+      <Button variant="outline" disabled={!validation.ready || !!sourceError || sending} onClick={prepareMail} className="gap-2"><Mail className="h-4 w-4" />Préparer le mail avec le contrat à signer</Button>
+      <p className="text-sm text-muted-foreground">Financement personnel uniquement. Retour du document signé par email, sans signature automatique. Pour un financement tiers : devis et convention adaptés à vérifier.</p>
+      {mail && <div className="space-y-3">
+        <p className="text-sm">À : {mail.to}</p><p className="font-semibold break-words">{mail.subject}</p><p className="text-sm whitespace-pre-wrap break-words">{mail.body}</p>
+        <p className="text-sm">Pièce jointe : {mail.reference}-a-signer.pdf</p>
+        <Button disabled={sending || sentReference === mail.reference || JSON.stringify(draft) !== mail.revision} onClick={() => void sendMail()} className="gap-2"><Mail className="h-4 w-4" />{sending ? 'Envoi…' : sentReference === mail.reference ? 'Envoi enregistré' : 'Confirmer l’envoi au candidat'}</Button>
+      </div>}
+    </div>}
     {preview && <article aria-label="Aperçu du contrat de formation" className="border-t pt-6 space-y-5">{contractSections(draft,previewNow).map(s => <section key={s.title} className="space-y-2"><h3 className="font-semibold">{s.title}</h3><p className="whitespace-pre-wrap text-sm leading-relaxed break-words">{s.text}</p>{s.title === 'Annexe 1 Programme et valorisation' && <div className="overflow-x-auto"><table className="w-full text-sm border-collapse"><thead><tr>{['Module / activités','Modalité','Durée (h)','Évaluation / suivi','Valeur (€)'].map(h=><th key={h} className="border p-2 text-left">{h}</th>)}</tr></thead><tbody>{draft.activities.map(a=><tr key={a.id}>{[`${a.title} — ${a.activities}`,a.modality,a.hours,a.evaluation,a.value].map((v,i)=><td key={i} className="border p-2">{v||'À compléter'}</td>)}</tr>)}</tbody></table></div>}</section>)}</article>}
   </section>;
 }

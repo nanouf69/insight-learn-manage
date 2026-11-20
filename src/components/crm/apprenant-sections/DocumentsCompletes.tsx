@@ -33,10 +33,13 @@ import { CompteurHeuresNonSignees } from './CompteurHeuresNonSignees';
 import { PresencesManuellesDetail } from './PresencesManuellesDetail';
 import { ContexteFormulaire } from './ContexteFormulaire';
 import { TYPES_PEDAGOGIQUES, type ContextePedagogique } from '@/lib/formulairePedagogique';
+import { DevisFormulaires } from './DevisFormulaires';
+import { devisSignatureEvidence } from '@/lib/devisSignatureEvidence';
 
 interface Props {
   apprenant: any;
   onOuvrirRelanceSignatures?: () => void;
+  onOuvrirDevis?: () => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -177,7 +180,7 @@ function getLabel(key: string): string {
 
 const SKIP_KEYS = new Set(['_status', '_signature_image', 'apprenant_nom', 'apprenant_prenom']);
 
-export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Props) {
+export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures, onOuvrirDevis }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [contextesApercu, setContextesApercu] = useState<Record<string, ContextePedagogique>>({});
   const queryClient = useQueryClient();
@@ -288,18 +291,19 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       });
 
       const devisDocs = ((devisRes.data as any[]) || []).map((d) => {
-        const isSigned = !!d.devis_signe_url || d.statut === "signe" || !!d.signed_at;
+        const signatureState = devisSignatureEvidence(d);
+        const isSigned = signatureState === 'signe';
         return {
           id: `devis-envoi-${d.id}`,
           type_document: "devis-envoi",
-          titre: `Devis ${d.modele || ""}${d.formation ? ` — ${d.formation}` : ""}${isSigned ? " (signé)" : " (envoyé)"}`,
+          titre: `Devis ${d.modele || ""}${d.formation ? ` — ${d.formation}` : ""}${isSigned ? " (signé)" : signatureState === 'a_verifier' ? " (signature à vérifier)" : " (non signé)"}`,
           donnees: {
             modele: d.modele,
             formation: d.formation,
             montant: d.montant,
-            statut: isSigned ? "Signé" : (d.statut || "Envoyé"),
+            statut: isSigned ? "Signé" : signatureState === 'a_verifier' ? 'Signature à vérifier' : 'Non signé',
             fichier_url: d.fichier_url,
-            devis_signe_url: d.devis_signe_url || (isSigned ? d.fichier_url : null),
+            devis_signe_url: d.devis_signe_url || null,
             pdf_disponible: d.fichier_url ? "Oui" : "Non (PDF non enregistré)",
             signed_at: d.signed_at,
           },
@@ -814,6 +818,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   }
   return (
     <div className="space-y-4">
+      <DevisFormulaires apprenant={apprenant} onOuvrirDevis={onOuvrirDevis} />
       <SignaturesPapierDossier apprenant={apprenant} />
       <CompteurHeuresNonSignees apprenantId={apprenant.id}/>
       <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">

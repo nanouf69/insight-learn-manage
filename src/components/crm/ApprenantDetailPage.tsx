@@ -1379,7 +1379,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           )}
 
           {/* Autres onglets */}
-          {activeTab === "docs-completes" && <DocumentsCompletes apprenant={apprenant} onOuvrirRelanceSignatures={() => {
+          {activeTab === "docs-completes" && <DocumentsCompletes apprenant={apprenant} onOuvrirDevis={() => setActiveTab("devis")} onOuvrirRelanceSignatures={() => {
             setDemandeApercuRelance((demande) => demande + 1);
             setActiveTab("signatures-manquantes");
             requestAnimationFrame(() => accessTabRef.current?.scrollIntoView({ block: "start" }));

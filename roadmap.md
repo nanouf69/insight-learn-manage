@@ -2,6 +2,9 @@
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
+## Devis signé dans Formulaires (20/11)
+- [x] Affichage des devis signés/non signés/à vérifier, préparation locale du contrat personnel (FC incluse), aperçu mail/PDF figé et confirmation explicite ; 72 tests PASS, fiche réelle PC/mobile vérifiée sans envoi, build OK. Aperçu uniquement. Annexes et références à compléter ; formation passée = brouillon uniquement, financements tiers hors contrat individuel. Rapport docs/devis-formulaires-signature-2026-11-20.md.
+
 ## Assistance dans les convocations (20/11)
 - [x] Paragraphe confirmé ajouté à la génération des futures convocations initiales (quatre modèles TAXI, TA, VTC, VTC soir ; VA utilise le modèle VTC existant). 51 tests et huit aperçus PC/mobile vérifiés sans envoi ; preuve prospective dans docs/qualiopi19-convocations-assistance-2026-11-20.md. FC/examen et modèles/historiques en base inchangés ; aucun déploiement/publication.
 
