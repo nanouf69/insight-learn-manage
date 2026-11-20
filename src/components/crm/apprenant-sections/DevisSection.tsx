@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContratLocationSection } from "./ContratLocationSection";
 import { ContratFormationSection } from "./ContratFormationSection";
 import { appliquerChampsVides, champsSourcesFcTaxi } from "@/lib/contratFormation/prefillFcTaxi";
+import { joursSessionsFc, type JourSessionFc, type SessionFcRow } from "@/lib/devisSessionsFc";
 import { toast } from "sonner";
 import { format, parseISO, isValid, parse } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -974,25 +975,23 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   // Formation continue : dates lues dans les vraies sessions CRM (jamais le calendrier de la formation initiale).
   const isContinueQuote = /formation continue/i.test(lignes[0]?.designation ?? '');
-  const [fcSessionDates, setFcSessionDates] = useState<string[]>([]);
+  const [fcJours, setFcJours] = useState<JourSessionFc[]>([]);
+  const fcSessionDates = fcJours.map(j => j.jour);
   useEffect(() => {
-    if (!isContinueQuote || !practicalFiliere) { setFcSessionDates([]); return; }
+    if (!isContinueQuote || !practicalFiliere) { setFcJours([]); return; }
     let active = true;
     (async () => {
-      const { data, error } = await supabase.from('sessions').select('nom, date_debut, date_fin')
-        .ilike('nom', `%continue%${practicalFiliere}%`).gte('date_fin', format(new Date(), 'yyyy-MM-dd'))
-        .order('date_debut').order('id');
-      if (!active) return;
-      if (error) { toast.error("Impossible de lire les sessions de formation continue."); setFcSessionDates([]); return; }
-      const jours = new Set<string>();
-      for (const r of data ?? []) {
-        if (!r.date_debut) continue;
-        const fin = parseISO(r.date_fin || r.date_debut);
-        for (let d = parseISO(r.date_debut); d <= fin; d = new Date(d.getTime() + 86400000)) {
-          jours.add(format(d, "d MMMM yyyy", { locale: fr }));
-        }
+      // Toutes les sessions FC enregistrées de la filière, passées comprises (devis historiques).
+      const rows: SessionFcRow[] = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await supabase.from('sessions').select('id, nom, date_debut, date_fin')
+          .ilike('nom', '%continu%').order('date_debut').order('id').range(offset, offset + 499);
+        if (!active) return;
+        if (error) { toast.error("Impossible de lire les sessions de formation continue."); setFcJours([]); return; }
+        rows.push(...(data ?? []));
+        if ((data?.length ?? 0) < 500) break;
       }
-      setFcSessionDates([...jours]);
+      setFcJours(joursSessionsFc(rows, practicalFiliere === 'taxi' ? 'taxi' : 'vtc', format(new Date(), 'yyyy-MM-dd')));
     })();
     return () => { active = false; };
   }, [isContinueQuote, practicalFiliere]);
@@ -1857,9 +1856,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                   <SelectValue placeholder="Ajouter une ou plusieurs dates..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableSessionDates.map(d => (
-                    <SelectItem key={d} value={d}>{sessionDate.split(" + ").includes(d) ? "✓ " : ""}{d}</SelectItem>
-                  ))}
+                  {availableSessionDates.map(d => {
+                    const j = isContinueQuote ? fcJours.find(x => x.jour === d) : undefined;
+                    return <SelectItem key={d} value={d}>{sessionDate.split(" + ").includes(d) ? "✓ " : ""}{d}{j ? ` — ${j.session}${j.passe ? ' (passée)' : ''}` : ''}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
               <Popover>
