@@ -6,7 +6,7 @@ export type ModeSignatureFcTaxi = "centre" | "distance";
 export const TARIF_PUBLIC_FC_TAXI = 299;
 export const CGV_VERSION_FC_TAXI = "CGV-FC-TAXI-2026-10-22-v6";
 export const PROGRAMME_FC_TAXI_URL = "https://ftransport.fr/programme-continue-taxi";
-/** Médiateur de la consommation (L612-1) : aucun enregistré dans le projet ; tant qu'il est null, le téléchargement est bloqué (aucun placeholder imprimé). */
+/** Médiateur de la consommation (L612-1) : aucun enregistré. Non bloquant ; alerte administrateur dans le CRM, aucun nom inventé ni placeholder imprimé. */
 export const MEDIATEUR_FC_TAXI: string | null = null;
 
 export const delaiRetractationFcTaxi = (mode: ModeSignatureFcTaxi): 10 | 14 => (mode === "centre" ? 10 : 14);
@@ -56,20 +56,27 @@ export function articlesFcTaxi(input: Pick<DevisFcTaxiInput, "prix" | "mode" | "
     { titre: "Article 8 - Règlement intérieur", texte: `Le règlement intérieur applicable aux stagiaires (articles L6352-3 et R6352-1 et suivants du Code du travail) est remis à chaque participant avant le début de la formation et disponible sur simple demande.` },
     { titre: "Article 9 - Propriété intellectuelle", texte: `Les contenus et supports pédagogiques utilisés par FTRANSPORT sont protégés par le droit d'auteur. Ils sont destinés à un usage personnel strictement lié à la formation suivie et ne peuvent être reproduits ou diffusés sans accord écrit de FTRANSPORT.` },
     { titre: "Article 10 - Données personnelles", texte: `Les données collectées sont utilisées par FTRANSPORT pour la gestion de l'inscription et de la formation. Le Client dispose d'un droit d'accès, de rectification et d'effacement en écrivant à contact@ftransport.fr.` },
-    { titre: "Article 11 - Réclamations et médiation de la consommation", texte: `Toute réclamation peut être adressée par e-mail à contact@ftransport.fr ou par courrier au 86 route de Genas, 69003 Lyon. En cas de litige non résolu, le Client consommateur peut recourir gratuitement au médiateur de la consommation (article L612-1 du Code de la consommation) : ${mediateur ?? "—"}.` },
+    { titre: mediateur ? "Article 11 - Réclamations et médiation de la consommation" : "Article 11 - Réclamations", texte: `Toute réclamation peut être adressée par e-mail à contact@ftransport.fr ou par courrier au 86 route de Genas, 69003 Lyon.${mediateur ? ` En cas de litige non résolu, le Client consommateur peut recourir gratuitement au médiateur de la consommation (article L612-1 du Code de la consommation) : ${mediateur}.` : ""}` },
   ];
 }
 
 /** Données légalement indispensables manquantes : le CRM refuse le téléchargement au lieu de produire un faux document. */
-export function manquesDevisFcTaxi(input: DevisFcTaxiInput, mediateur: string | null = MEDIATEUR_FC_TAXI): string[] {
+export function manquesDevisFcTaxi(input: DevisFcTaxiInput): string[] {
   const m: string[] = [];
   if (!input.client.nomComplet?.trim()) m.push("nom du stagiaire");
   if (!input.client.adresse?.trim() || !input.client.ville?.trim()) m.push("adresse du stagiaire");
   if (!input.dates?.trim()) m.push("dates de formation");
   if (!input.dateDevis?.trim()) m.push("date du devis");
   if (!(input.prix > 0)) m.push("prix de la formation");
-  if (!mediateur?.trim()) m.push("médiateur de la consommation (article L612-1 du Code de la consommation : nom, adresse et site à communiquer à l'équipe)");
   return m;
+}
+
+/** Mail d'envoi FC TAXI : aucune mention TVA/TTC non prouvée, aucun paiement avant la fin du délai. */
+export function mailDevisFcTaxi(prenom: string, nom: string, prix: number, mode: ModeSignatureFcTaxi) {
+  return {
+    subject: `Votre devis Formation continue TAXI - ${prenom} ${nom}`.trim(),
+    body: `Bonjour ${prenom} ${nom},\n\nVeuillez trouver en pièce jointe votre devis pour la Formation continue obligatoire TAXI (14 heures en présentiel, 86 route de Genas, 69003 Lyon), avec les conditions générales de vente en annexe.\n\nPrix de la formation : ${eur(prix)}.\nDélai de rétractation : ${delaiRetractationFcTaxi(mode)} jours. Aucun paiement n'est demandé avant la fin de ce délai.\n\nCe devis ne vaut pas contrat de formation : un contrat individuel vous sera remis avant l'inscription définitive.\n\nVous pouvez consulter et signer le devis en ligne grâce au lien ci-dessous.\n\ncontact@ftransport.fr | 04.28.29.60.91\n\nCordialement,\nL'équipe Ftransport`,
+  };
 }
 
 export const MENTION_NON_CONTRAT = "Ce devis ne vaut pas contrat de formation ; un contrat individuel (article L6353-3 du Code du travail) est conclu avant l'inscription définitive et tout paiement.";
@@ -91,10 +98,22 @@ export function formulaireRetractation(): string {
   return `À l'attention de FTRANSPORT, 86 route de Genas, 69003 Lyon — contact@ftransport.fr :\nJe/Nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat portant sur la prestation de services ci-dessous :\nFormation continue obligatoire TAXI\nCommandée le (*) / reçue le (*) : ................................\nNom du (des) consommateur(s) : ................................\nAdresse du (des) consommateur(s) : ................................\nSignature du (des) consommateur(s) (uniquement en cas de notification sur papier) :\n\nDate : ................................\n(*) Rayez la mention inutile.`;
 }
 
+/** Modèle enregistré dans devis_envois pour un devis FC TAXI PDF v6 (mode de signature inclus). */
+export const modeleFcTaxiPdf = (mode: ModeSignatureFcTaxi) => `fc_taxi_pdf_v6_${mode}`;
+export function modeFcTaxiDepuisModele(modele: unknown): ModeSignatureFcTaxi | null {
+  const m = /^fc_taxi_pdf_v6_(centre|distance)$/.exec(String(modele ?? ""));
+  return m ? (m[1] as ModeSignatureFcTaxi) : null;
+}
+export function prixDepuisMontant(montant: unknown): number {
+  const n = Number(String(montant ?? "").replace(/[^0-9,.-]/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+export interface SignatureClientFcTaxi { imagePng: string; horodatage: string; mention: string }
+
 export interface FontesUnicode { regular: string; bold: string } // base64
 
-export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnicode, mediateur: string | null = MEDIATEUR_FC_TAXI): jsPDF {
-  const manques = manquesDevisFcTaxi(input, mediateur);
+export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnicode, mediateur: string | null = MEDIATEUR_FC_TAXI, signature?: SignatureClientFcTaxi): jsPDF {
+  const manques = manquesDevisFcTaxi(input);
   if (manques.length) throw new Error(`Devis non généré — information manquante : ${manques.join(", ")}`);
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   let F = "helvetica";
@@ -165,7 +184,13 @@ export function buildDevisFcTaxiPdf(input: DevisFcTaxiInput, fontes?: FontesUnic
   font("bold", 9); doc.text("Le stagiaire", M, y); doc.text("Pour FTRANSPORT", M + half + 6, y); y += 4;
   font("normal", 8); doc.text(doc.splitTextToSize("Date, signature précédée de « Lu et approuvé, bon pour accord du devis »", half) as string[], M, y);
   doc.text("Cachet et signature de l'organisme", M + half + 6, y); y += 6;
-  doc.setDrawColor(150); doc.rect(M, y, half, 28); doc.rect(M + half + 6, y, half, 28); y += 34;
+  doc.setDrawColor(150); doc.rect(M, y, half, 28); doc.rect(M + half + 6, y, half, 28);
+  if (signature) {
+    font("normal", 7.5);
+    doc.text(doc.splitTextToSize(`${signature.mention} — signé électroniquement le ${signature.horodatage}`, half - 4) as string[], M + 2, y + 4);
+    doc.addImage(signature.imagePng, "PNG", M + 2, y + 9, half - 4, 18);
+  }
+  y += 34;
 
   doc.addPage(); y = 18;
   titre("Annexe – Conditions générales de vente");

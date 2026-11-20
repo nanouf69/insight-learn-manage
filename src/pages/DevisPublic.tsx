@@ -9,6 +9,8 @@ import { formatDevisDate } from "@/lib/devisDatesSignature";
 import { dureeDevisEnregistre } from "@/lib/devisDureesElearning";
 import { parseDevisContratSnapshot } from "@/lib/contratFormation/devisContrat";
 import { contractSections } from "@/lib/contratFormation/text";
+import { DevisFcTaxiSignature } from "@/components/devis/DevisFcTaxiSignature";
+import { modeFcTaxiDepuisModele } from "@/lib/pdf/devis-fc-taxi";
 import { CONSENTEMENT_FC_ANNULATION, CONSENTEMENT_FC_VERSION, CONSENTEMENTS_SIGNATURE, estDevisFormationContinue } from "@/lib/contratFormation/consentements";
 
 /* ─── DEVIS TYPE CONFIG ─── */
@@ -444,6 +446,9 @@ export default function DevisPublic() {
       </div>
     );
   }
+
+  const modeFcTaxi = modeFcTaxiDepuisModele(devis?.modele);
+  if (modeFcTaxi && token) return <DevisFcTaxiSignature devis={devis} token={token} mode={modeFcTaxi} fcServeurVersion={fcServeurVersion} />;
 
   const today = new Date().toLocaleDateString("fr-FR");
   const contrat = parseDevisContratSnapshot(devis?.contrat_conditions);

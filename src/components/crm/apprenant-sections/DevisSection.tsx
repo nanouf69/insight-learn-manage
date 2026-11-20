@@ -21,7 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import jsPDF from "jspdf";
 import { buildCanonicalDevisPDF } from "@/lib/pdf/devis-canonical";
-import { buildDevisFcTaxiPdf, manquesDevisFcTaxi, chargerFontesUnicode, ecartPrixFcTaxi, type ModeSignatureFcTaxi } from "@/lib/pdf/devis-fc-taxi";
+import { buildDevisFcTaxiPdf, manquesDevisFcTaxi, MEDIATEUR_FC_TAXI, modeleFcTaxiPdf, mailDevisFcTaxi, chargerFontesUnicode, ecartPrixFcTaxi, type ModeSignatureFcTaxi } from "@/lib/pdf/devis-fc-taxi";
 import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
@@ -1162,9 +1162,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     || (/formation continue/i.test(lignes[0]?.designation ?? '') && /taxi/i.test(lignes[0]?.designation ?? ''));
   const prixDevisFcTaxi = (lignes[0]?.prixUnitaire ?? 0) > 0 ? lignes[0].prixUnitaire : selectedTemplatePrix;
   const ecartPrixFc = isFcTaxiPdf ? ecartPrixFcTaxi(prixDevisFcTaxi) : null;
-  const telechargerDevisFcTaxiPdf = async () => {
-    setGeneratingDocx(true);
-    try {
+  const construireDevisFcTaxi = async () => {
       const fontes = await chargerFontesUnicode();
       const entree = {
         client: devisClient, dates: sessionDate || '', dateDevis: formatDateForDevis(dateDevis),
@@ -1172,8 +1170,14 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         prix: prixDevisFcTaxi, mode: modeSignatureFc,
       };
       const manques = manquesDevisFcTaxi(entree);
-      if (manques.length) { toast.error(`Devis FC TAXI non téléchargé — à renseigner : ${manques.join(" ; ")}`, { duration: 12000 }); return; }
-      const doc = buildDevisFcTaxiPdf(entree, fontes);
+      if (manques.length) { toast.error(`Devis FC TAXI non généré — à renseigner : ${manques.join(" ; ")}`, { duration: 12000 }); return null; }
+      return buildDevisFcTaxiPdf(entree, fontes);
+  };
+  const telechargerDevisFcTaxiPdf = async () => {
+    setGeneratingDocx(true);
+    try {
+      const doc = await construireDevisFcTaxi();
+      if (!doc) return;
       doc.save(`Devis_${apprenant.prenom}_${apprenant.nom}_fc_taxi_${format(new Date(), 'ddMMyyyy')}.pdf`);
       toast.success("Devis PDF téléchargé");
     } catch (err: any) {
@@ -1275,6 +1279,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const sendDevisEmail = async () => {
+    if (isFcTaxiPdf) return envoyerDevisParEmail();
     const destinataire = devisClient.email || apprenant.email;
     if (!destinataire) {
       toast.error(isOrgFinanceur ? "Aucun email renseigné pour cette organisation" : "Aucun email renseigné pour cet apprenant");
@@ -1516,11 +1521,19 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       return;
     }
     if (!validateBeforeSend()) return;
-    const contratSnapshot = contratAEnvoyer();
+    // FC TAXI : devis PDF harmonisé seul, jamais le contrat individuel (document distinct, non figé ici).
+    const contratSnapshot = isFcTaxiPdf ? null : contratAEnvoyer();
     if (contratSnapshot === false) return;
     setSendingDevisEmail(true);
     try {
-      const result = await generateDevisPDF({ returnBase64: true });
+      let result: { base64: string; fileName: string } | void;
+      if (isFcTaxiPdf) {
+        const docFc = await construireDevisFcTaxi();
+        if (!docFc) return;
+        result = { base64: docFc.output('datauristring').split(',')[1], fileName: `Devis_${apprenant.prenom}_${apprenant.nom}_fc_taxi.pdf` };
+      } else {
+        result = await generateDevisPDF({ returnBase64: true });
+      }
       if (!result) throw new Error("Impossible de générer le PDF");
       const { base64, fileName } = result;
 
@@ -1542,20 +1555,23 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       // Enregistrer l'envoi
       const { data: devisRecord } = await supabase.from('devis_envois').insert({
         apprenant_id: apprenant.id,
-        modele: selectedTemplate || 'devis',
-        montant: `${totalTTC.toFixed(2)} €`,
-        formation: formationDevisAvecDuree(selectedTemplateConfig?.label || apprenant.formation_choisie || '', selectedTemplate || apprenant.formation_choisie || ''),
+        modele: isFcTaxiPdf ? modeleFcTaxiPdf(modeSignatureFc) : (selectedTemplate || 'devis'),
+        montant: isFcTaxiPdf ? `${prixDevisFcTaxi.toFixed(2)} €` : `${totalTTC.toFixed(2)} €`,
+        formation: isFcTaxiPdf ? 'Formation continue TAXI' : formationDevisAvecDuree(selectedTemplateConfig?.label || apprenant.formation_choisie || '', selectedTemplate || apprenant.formation_choisie || ''),
         fichier_url: urlData.publicUrl,
         statut: 'envoye',
+        ...(isFcTaxiPdf ? { client_nom: devisClient.nomComplet, client_email: devisClient.email, client_adresse: devisClient.adresse, client_code_postal: devisClient.codePostal, client_ville: devisClient.ville, client_telephone: devisClient.telephone } : {}),
         dates_formation: sessionDate || null,
         date_devis: dateDevis || null,
         date_validite: dateValidite || null,
         contrat_conditions: (contratSnapshot ?? null) as never,
       }).select('token').single();
+      if (isFcTaxiPdf && !devisRecord?.token) throw new Error("Enregistrement du devis non confirmé : aucun mail envoyé");
 
       const appUrl = 'https://insight-learn-manage.lovable.app';
       const devisLink = devisRecord?.token ? `${appUrl}/devis?token=${devisRecord.token}` : '';
-      const em = getEmailContent();
+      const em = isFcTaxiPdf ? mailDevisFcTaxi(apprenant.prenom || '', apprenant.nom || '', prixDevisFcTaxi, modeSignatureFc) : getEmailContent();
+      if (!em) throw new Error("Aucun modèle d'email pour ce type de devis");
       const bodyHtml = em.body.replace(/\n/g, '<br/>') +
         (devisLink ? `<br/><br/>📝 <a href="${devisLink}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Consulter et signer le devis en ligne</a>` : '') +
         `<br/><br/><em style="font-size:12px;color:#888;">Le devis est également joint en PDF à cet email.</em>`;
@@ -2029,8 +2045,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             )}
           </div>
 
-          {/* Devis valant contrat */}
-          <div role="status" className="rounded-md border p-3 text-sm space-y-1">
+          {isFcTaxiPdf && !MEDIATEUR_FC_TAXI && (
+            <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              Alerte administrateur : aucun médiateur de la consommation n'est désigné (article L612-1 du Code de la consommation). Le devis FC TAXI reste téléchargeable et signable, mais l'organisme doit désigner un médiateur indépendant ; aucune mention de médiateur n'est imprimée tant qu'il n'est pas renseigné. Le devis signé ne remplace pas le contrat individuel (L6353-3).
+            </div>
+          )}
+          {/* Devis valant contrat (hors FC TAXI : le contrat individuel reste dans son onglet) */}
+          {!isFcTaxiPdf && <div role="status" className="rounded-md border p-3 text-sm space-y-1">
             {!contratDraft.funding ? <p className="text-destructive">Financement à choisir dans l'onglet « Contrat de formation » avant tout envoi.</p>
               : contratActif ? (() => { const v = validateContract(contratDraft, apprenant.id, new Date()); return <>
                 <p className="font-medium">Devis valant contrat de formation (financement personnel) — {v.ready ? 'complet, signable après envoi' : `brouillon : ${v.issues.length} point(s) bloquant(s)`}</p>
@@ -2039,7 +2060,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 {!v.ready && <ul className="list-disc pl-5 text-destructive">{v.issues.slice(0, 8).map((i, k) => <li key={k}>{i}</li>)}{v.issues.length > 8 && <li>… voir l'onglet Contrat de formation</li>}</ul>}
               </>; })()
               : <p>Financement {contratDraft.funding} : régime du financeur distinct, ce devis n'applique pas le contrat individuel.</p>}
-          </div>
+          </div>}
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
             <Button onClick={() => (isFcTaxiPdf ? telechargerDevisFcTaxiPdf() : generateDevisPDF())} disabled={generating || generatingDocx} className="flex items-center gap-2">
