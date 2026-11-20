@@ -19,6 +19,7 @@ vi.mock('@/lib/signaturesManquantes', async (importOriginal) => {
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: { functions: { invoke: vi.fn() } },
 }));
+vi.mock('@/components/crm/apprenant-sections/CompteurHeuresNonSignees', () => ({ DetailHeuresNonSignees: () => null }));
 
 const manquante = { date: '2026-11-05', creneau: 'Matin', source: 'Pratique TAXI', etat: 'manquante' as const };
 

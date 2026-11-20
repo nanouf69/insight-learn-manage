@@ -214,7 +214,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
     };
   }, [apprenant?.id, queryClient]);
 
-  const { data: documents, isLoading } = useQuery({
+  const { data: documents = [], isLoading, isError: documentsErreur } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
     queryFn: async () => {
       const norm = (s: string) => (s || "").toString().trim().toLowerCase();
@@ -264,6 +264,10 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       ]);
 
       if (docsRes.error) throw docsRes.error;
+      if (devisRes.error) throw devisRes.error;
+      if (emargRes.error) throw emargRes.error;
+      if (inscriptionRes.error) throw inscriptionRes.error;
+      if (fournApprRes.error) throw fournApprRes.error;
 
       const rawDocs = ((docsRes.data as any[]) || []);
 
@@ -385,6 +389,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
           .select("*")
           .in("fournisseur_apprenant_id", matchingIds)
           .order("created_at", { ascending: false });
+        if (fdRes.error) throw fdRes.error;
         fournDocs = ((fdRes.data as any[]) || []).map((d) => ({
           id: `fourn-doc-${d.id}`,
           type_document: "doc-fournisseur",
@@ -783,27 +788,6 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
   const etatDepotBienvenue = etatDepotDossierBienvenue(documents || []);
   const libelleDepotBienvenue = libelleDepotDossierBienvenue(etatDepotBienvenue);
 
-  if (!documents || documents.length === 0) {
-    return (
-      <div className="space-y-4">
-        <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
-          <CardContent className="p-4">
-            <p className="text-sm font-semibold text-foreground">
-              Dossier de bienvenue : <span className="font-medium">{libelleDepotBienvenue}</span>
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Aucun document complété</p>
-            <p className="text-sm mt-1">Les formulaires remplis par l'apprenant apparaîtront ici.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Calcul des heures de présence basé sur les signatures d'émargement
   const emargementsRaw = (documents || []).filter((d: any) => {
     const hasSignature = aPreuveSignatureEmargement({ signature_data_url: d.donnees?.signature, absent: d.donnees?.absent });
@@ -835,7 +819,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
       <Card className="border-primary/30 bg-primary/5" data-testid="date-depot-dossier-bienvenue">
         <CardContent className="p-4">
           <p className="text-sm font-semibold text-foreground">
-            Dossier de bienvenue : <span className="font-medium">{libelleDepotBienvenue}</span>
+            Dossier de bienvenue : <span className="font-medium">{documentsErreur ? "Indisponible (erreur de lecture)" : libelleDepotBienvenue}</span>
           </p>
         </CardContent>
       </Card>
@@ -910,7 +894,11 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
               const manqueObjectif = bilanEdof && !/e-?learning/i.test(formationEdof) ? Math.max(0, bilanEdof.objectifTotal - bilanEdof.total) : 0;
               const nbAnomalies = classificationSignatures?.anomalies?.length ?? 0;
               const nbHorsSession = classificationSignatures?.horsSession?.length ?? 0;
-              if (manquantes.length === 0 && absences.length === 0 && nbAnomalies === 0 && nbHorsSession === 0) {
+              const nbAVerifier = classificationSignatures?.aVerifier?.length ?? 0;
+              if (manquantes.length === 0 && absences.length === 0 && nbAnomalies === 0 && nbHorsSession === 0 && nbAVerifier === 0) {
+                if (bilanEdofErreur || !bilanEdof || bilanEdof.planningIncomplet) {
+                  return <p role="alert" className="text-sm text-destructive">Signatures attendues : à vérifier — planning ou total non confirmé.</p>;
+                }
                 if (manqueObjectif > 0) {
                   return <p className="text-sm font-semibold text-destructive">Il manque {manqueObjectif} signature(s) pour atteindre l'objectif ({bilanEdof?.total} / {bilanEdof?.objectifTotal}).</p>;
                 }
@@ -993,6 +981,11 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures }: Pro
             Documents complétés par l'apprenant ({documents.length})
           </CardTitle>
         </CardHeader>
+        {(documentsErreur || documents.length === 0) && <CardContent>
+          <p role={documentsErreur ? "alert" : undefined} className="font-semibold text-destructive">
+            {documentsErreur ? "Documents indisponibles (erreur de lecture) — absence non confirmée." : "Aucun document déposé ou formulaire complété."}
+          </p>
+        </CardContent>}
       </Card>
 
 

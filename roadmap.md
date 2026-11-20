@@ -3,6 +3,8 @@ Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison in
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 
 ## P0 — Présence
+- [x] 20/11 — Bloc signatures conservé dans Formulaires même sans document déposé ; absence de documents explicite et erreurs distinctes des manques. 29 tests réussis, sept parcours fictifs, build OK ; aucune donnée ni publication modifiée.
+- [ ] 20/11 — Contrôle visuel connecté de cette correction sur CRM : bloqué par session demandeur redirigée vers cours-public (accès expiré) ; ouvrir l’aperçu avec une session administrateur, sans élargissement de droits.
 - [ ] Validation par créneau + PDF privé + annulation sans motif + union/plafond 40/46/6 h — APERÇU (444 tests). Critère : clic réel admin sur dossier de test, relecture après rechargement. Bloqué : publication à valider.
 - [ ] Justificatifs dans Contrôle qualité + ZIP — APERÇU (8 tests).
 - [ ] Périmètre TOTAL VTC seulement (TAXI/TA/VA restaurés) — APERÇU (73 tests).

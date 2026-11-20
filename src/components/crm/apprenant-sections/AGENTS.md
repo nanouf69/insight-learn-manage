@@ -1,4 +1,5 @@
 # Subject-reset boundary
+- CRM document displays retain signature/presence readers even when document lists are empty or fail; report unconfirmed reads separately from missing evidence. Why: an empty dossier must not hide missing attendance signatures.
 - Quick signature consultation uses the same admin-gated, learner-scoped loader as the existing PDF exports and preserves every returned signature ID; why: viewing must not write attendance or invent alternative evidence.
 - Whole-exam reset cancellation is a disabled preview until effective cutoff, exclusive neutralisation and authorization projections cover every reader and starter; use exact reset identity and never write results or originals. Why: a cancellation event alone cannot restore consistent access or grades.
 - CRM Examen blanc averages project the selected result through attacherSourceUnique and refresh on useCoreChangeTick; selection remains latest recorded tentative, never latest correction date. Why: correcting an archived copy must not replace a later copy, and legacy pending totals must not hide definitive V2 grades.
