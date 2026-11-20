@@ -1,0 +1,23 @@
+{
+  "schema": "qualiopi19-network-confinement-v1",
+  "checked_at": "2026-11-20T09:04:51.017131+00:00",
+  "namespace_marker": "pending",
+  "interfaces": "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:     503       9    0    0    0     0          0         0      629       9    0    0    0     0       0          0\n",
+  "routes": {
+    "ipv4": "Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\tMTU\tWindow\tIRTT                                                         \n",
+    "ipv6": ""
+  },
+  "tests": [
+    { "test": "LOOPBACK_LOCAL", "verdict": "PASS", "port": 36747 },
+    { "test": "HTTPS_EXTERNE_IPV4", "verdict": "PASS", "errno": 101, "reason": "[Errno 101] Network is unreachable" },
+    { "test": "SMTP_EXTERNE_IPV4", "verdict": "PASS", "errno": 101, "reason": "[Errno 101] Network is unreachable" },
+    { "test": "SUBMISSION_EMAIL_EXTERNE_IPV4", "verdict": "PASS", "errno": 101, "reason": "[Errno 101] Network is unreachable" },
+    { "test": "HTTPS_EXTERNE_IPV6", "verdict": "PASS", "errno": 101, "reason": "[Errno 101] Network is unreachable" },
+    { "test": "SMTP_EXTERNE_IPV6", "verdict": "PASS", "errno": 101, "reason": "[Errno 101] Network is unreachable" },
+    { "test": "DNS_EXTERNE", "verdict": "PASS", "reason": "[Errno -3] Temporary failure in name resolution" },
+    { "test": "AUCUNE_ROUTE_NON_LOOPBACK_IPV4", "verdict": "PASS" },
+    { "test": "AUCUNE_ROUTE_PAR_DEFAUT_IPV6", "verdict": "PASS" },
+    { "test": "NAMESPACE_RESEAU_DISTINCT_DU_PROJET", "verdict": "PASS", "courant": "net:[45]", "parent": "net:[2]" }
+  ],
+  "verdict": "PASS"
+}
