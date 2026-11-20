@@ -157,7 +157,8 @@ Deno.serve(async (req) => {
         const tamponne = await apposerSignatureTampon(supabase, arrayBuffer as ArrayBuffer);
         if (tamponne) {
           // Original client conservé à part, jamais écrasé.
-          await supabase.storage.from("devis").upload(filePath.replace(/\.pdf$/i, "_original_client.pdf"), arrayBuffer, { contentType: "application/pdf", upsert: false });
+          const { error: origErr } = await supabase.storage.from("devis").upload(filePath.replace(/\.pdf$/i, "_original_client.pdf"), arrayBuffer, { contentType: "application/pdf", upsert: false });
+          if (origErr) throw new Error(`original client non conservé : ${origErr.message}`);
           arrayBuffer = tamponne;
         }
       } catch (e) {
@@ -185,7 +186,7 @@ Deno.serve(async (req) => {
       .getPublicUrl(filePath);
 
     // Update devis record
-    const { error: updateError } = await supabase
+    const { data: updatedRows, error: updateError } = await supabase
       .from("devis_envois")
       .update({
         devis_signe_url: urlData.publicUrl,
@@ -194,7 +195,16 @@ Deno.serve(async (req) => {
         ...(consentements ? { consentements } : {}),
       })
       .eq("id", devis.id)
-      .is("signed_at", null);
+      .is("signed_at", null)
+      .select("id, signed_at, devis_signe_url");
+
+    if (!updateError && (!updatedRows || updatedRows.length !== 1)) {
+      // Signature concurrente déjà enregistrée : aucun doublon, aucune fausse confirmation.
+      return new Response(
+        JSON.stringify({ error: "Ce devis a déjà été signé." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (updateError) {
       console.error("Update error:", updateError);
@@ -229,7 +239,7 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
-      if (existingSignedDocument && !snap) {
+      if (false && existingSignedDocument && !snap) { // historique : jamais d'écrasement d'un devis signé antérieur
         const { error: formUpdateError } = await supabase
           .from("apprenant_documents_completes")
           .update({
@@ -283,7 +293,7 @@ Deno.serve(async (req) => {
             from: "FTRANSPORT <noreply@ftransport.fr>",
             to: "contact@ftransport.fr",
             subject: `📝 Devis signé reçu — ${clientLabel}`,
-            html: appliquerSignatureEmail(`<p>Bonjour,</p><p><strong>${clientLabel}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p><a href="${urlData.publicUrl}">📥 Télécharger le devis signé</a></p>`),
+            html: appliquerSignatureEmail(`<p>Bonjour,</p><p><strong>${clientLabel}</strong> a renvoyé son devis signé pour <strong>${devis.modele}</strong>.</p><p>Le PDF signé est disponible dans la fiche CRM de l\u2019apprenant (onglet Devis).</p>`),
           }),
         });
       }

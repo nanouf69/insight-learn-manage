@@ -162,10 +162,14 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
     setBusyId(d.id);
     try {
       const ext = (file.name.split(".").pop() || "pdf").toLowerCase();
-      const path = asSigned ? `signes/${d.id}.${ext}` : `devis/${d.id}.${ext}`;
+      if (asSigned && d.signed_at && d.devis_signe_url && await devisFileExists(d.devis_signe_url)) {
+        throw new Error("un PDF signé existe déjà pour ce devis : il n'est jamais remplacé");
+      }
+      const unique = crypto.randomUUID();
+      const path = asSigned ? `signes/${d.id}_${unique}.${ext}` : `devis/${d.id}_${unique}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("devis")
-        .upload(path, file, { contentType: file.type || "application/pdf", upsert: true });
+        .upload(path, file, { contentType: file.type || "application/pdf", upsert: false });
       if (upErr) throw upErr;
 
       const { data: pub } = supabase.storage.from("devis").getPublicUrl(path);
@@ -189,6 +193,10 @@ ${signLink ? `<p>Pour signer votre devis en ligne : <a href="${signLink}">${sign
 
   // Remettre le devis en attente de signature et fournir un nouveau lien
   const relancerSignature = async (d: any) => {
+    if (d.signed_at || d.devis_signe_url || d.statut === "signe") {
+      toast.error("Ce devis est déjà signé : la preuve de signature est conservée. Créez un nouveau devis si nécessaire.");
+      return;
+    }
     setBusyId(d.id);
     try {
       const token = d.token || crypto.randomUUID().replace(/-/g, "");

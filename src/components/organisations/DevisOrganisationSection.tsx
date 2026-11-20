@@ -337,14 +337,19 @@ ${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</s
                   </span>
                 )}
                 {d.devis_signe_url && (
-                  <a
-                    href={d.devis_signe_url}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const m = String(d.devis_signe_url).match(/\/devis\/(.+)$/);
+                      const path = m ? decodeURIComponent(m[1]) : d.devis_signe_url;
+                      const { data, error } = await supabase.storage.from("devis").createSignedUrl(path, 3600);
+                      if (error || !data?.signedUrl) { toast.error("PDF signé introuvable"); return; }
+                      window.open(data.signedUrl, "_blank", "noopener");
+                    }}
                     className="text-xs underline text-primary"
                   >
                     Voir la signature
-                  </a>
+                  </button>
                 )}
                 {d.fichier_url && (
                   <a
