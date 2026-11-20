@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { organisationsDepuisFinanceurs, type OrganisationDevis } from "@/lib/devisOrganisationsApprenants";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -914,6 +915,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [sendingDevisEmail, setSendingDevisEmail] = useState(false);
   const [financeurMode, setFinanceurMode] = useState<'apprenant' | 'organisation'>('apprenant');
   const [organismes, setOrganismes] = useState<any[]>([]);
+  const [organisationsApprenants, setOrganisationsApprenants] = useState<OrganisationDevis[]>([]);
   const [organismeId, setOrganismeId] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
@@ -1010,11 +1012,19 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         .from('organismes')
         .select('id, nom, siret, siret_complet, numero_tva, adresse, code_postal, ville, telephone, email')
         .order('nom');
+      // Organisations déjà saisies par les apprenants (financeur professionnel), lecture seule.
+      const { data: fcRows, error: fcErr } = await supabase
+        .from('financeurs_fc')
+        .select('id, apprenant_id, type_financeur, raison_sociale, siren, siret, adresse, code_postal, ville, contact_telephone, contact_email, email_facturation')
+        .eq('type_financeur', 'professionnel')
+        .limit(1000);
+      if (fcErr) toast.error("Organisations des apprenants indisponibles.");
+      setOrganisationsApprenants(organisationsDepuisFinanceurs(fcRows ?? [], apprenant?.id));
       setOrganismes(data ?? []);
     })();
-  }, []);
+  }, [apprenant?.id]);
 
-  const organismeSelectionne = organismes.find(o => o.id === organismeId) || null;
+  const organismeSelectionne = organismes.find(o => o.id === organismeId) || organisationsApprenants.find(o => o.id === organismeId) || null;
   const isOrgFinanceur = financeurMode === 'organisation' && !!organismeSelectionne;
 
   // Coordonnées « client » utilisées dans le devis selon le financeur choisi
@@ -1661,12 +1671,25 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                       <SelectValue placeholder="Sélectionner une organisation..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {organismes.map(o => (
-                        <SelectItem key={o.id} value={o.id}>{o.nom}</SelectItem>
-                      ))}
+                      {organisationsApprenants.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Organisations des apprenants</SelectLabel>
+                          {organisationsApprenants.map(o => (
+                            <SelectItem key={o.id} value={o.id}>
+                              {o.nom}{o.apprenantCourant ? " — organisation de l'apprenant" : ''}{o.ville ? ` (${o.ville})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                      <SelectGroup>
+                        <SelectLabel>Organismes enregistrés</SelectLabel>
+                        {organismes.map(o => (
+                          <SelectItem key={o.id} value={o.id}>{o.nom}</SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
-                  {organismes.length === 0 && (
+                  {organismes.length === 0 && organisationsApprenants.length === 0 && (
                     <p className="text-xs text-muted-foreground">Aucune organisation enregistrée pour le moment.</p>
                   )}
                 </div>

@@ -49,6 +49,8 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
     if (!pratique && !/theorique/i.test(s.type_session ?? "")) continue;
     const cible = pratique ? res.pratique : res.session;
     const sessionId = String(s.id ?? row.session_id ?? row.id ?? '');
+    // FC (9h–12h / 13h–17h) : la durée vient des horaires réels du créneau, jamais du forfait 3 h de l'après-midi.
+    const sessionFc = !pratique && /continue|\bfc\b/i.test(String(s.nom ?? ''));
     if (pratique && (!appliquerLotVtc || !pratiquesVues.has(sessionId))) {
       pratiquesVues.add(sessionId);
       cible.prevues += heuresSessionPourApprenant(s, filiere) ?? 0;
@@ -72,7 +74,7 @@ export function calculerTauxPresenceHeures(emargements: any[], inscriptions: any
       const reservation = reservations.find(r => d10(r.date_choisie) === date);
       const parts = pratique && (daySlots.has(date) || reservation) ? resolvePratiqueSlotParts(daySlots.get(date), normalizePratiqueType(reservation?.type_formation ?? s.type_session), normalizePratiqueCreneau(reservation?.creneau)) : [];
       const exact = prevusExacts.find(p => p.date === date && p.creneau === creneau);
-      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : exact && liens.length ? (Number(exact.fin.slice(0,2))*60+Number(exact.fin.slice(3,5))-Number(exact.debut.slice(0,2))*60-Number(exact.debut.slice(3,5)))/60 : HEURES_CRENEAU[creneau];
+      const h = parts.length ? (parts.find(p => p.creneau === creneau)?.minutes ?? 0) / 60 : exact && (liens.length || sessionFc) ? (Number(exact.fin.slice(0,2))*60+Number(exact.fin.slice(3,5))-Number(exact.debut.slice(0,2))*60-Number(exact.debut.slice(3,5)))/60 : HEURES_CRENEAU[creneau];
       if (!h) continue;
       vus.add(cle);
       const minutes=Math.round(h*60);
