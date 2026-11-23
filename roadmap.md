@@ -1,5 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Émargements Thomas FC VTC (23/11)
+- [x] Relecture transversale après rectification : sources de 60 fichiers et 12 fonctions actives relues, tâches inventoriées ; écarts/limites actualisés dans docs/emargements-revue-lecteurs-2026-11-23.md, aucune correction hors périmètre ni publication.
 - [x] Rectification 23/11 15:37 : vraie formation uniquement 17–18 novembre, jamais octobre ; relecture de tous les créneaux, masqués inclus, compte/deux dossiers/papier/documents/journaux : aucune preuve novembre retrouvée ; quatre images sous octobre intactes, rapport docs/emargement-thomas-rectification-2026-11-23-1537.md, aucun changement fonctionnel/publication.
 - [ ] Deux signés/deux manquants novembre : bloqué par les deux preuves non retrouvées ; capture/feuille originale des deux créneaux nécessaires, aucune réattribution déduite des horodatages.
 - [x] Revue lecteurs hors module en lecture seule : écrans/exports/relances/fonctions inventoriés ; écarts et limites dans docs/emargements-revue-lecteurs-2026-11-23.md, aucun autre correctif appliqué.

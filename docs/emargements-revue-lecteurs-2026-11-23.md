@@ -1,5 +1,7 @@
 # Émargements — revue des autres lecteurs, 23 novembre 2026
 
+> Rectification prioritaire 15:37 UTC : la vraie formation de Thomas est uniquement les 17–18 novembre. Les dates d’octobre mentionnées ci-dessous sont des valeurs stockées potentiellement erronées, jamais des journées réellement suivies. Deux signatures novembre annoncées restent introuvables après recherche numérique/papier/documents ; voir `emargement-thomas-rectification-2026-11-23-1537.md`.
+
 ## Règle vérifiée
 
 Pour **le même dossier et la même période**, administration et apprenant doivent voir les mêmes feuilles et états : signé, non signé, absence ou preuve papier. Une date de signature tardive ne change jamais la date du cours. Aucune preuve d’un autre dossier ne doit être empruntée. Une erreur de lecture n’est ni une signature manquante ni une présence prouvée. Les historiques et les droits restent inchangés.
@@ -85,3 +87,35 @@ Légende : **aligné sur l’identité** = lecteur par ID/date conservant les pr
 Autoriser un lot supplémentaire pour aligner les **nouveaux affichages et calculs** : tableaux de bord et relances sur clés dossier/date/créneau avec preuve réelle ; feuilles hebdomadaires/ZIP sur périmètre réel et erreurs explicites ; visibilité des preuves papier sans créer d’image ; intitulés Qualiopi/rattrapage fidèles à date de cours et règle actuelle. Sans reclasser rétroactivement les historiques, fusionner Thomas, modifier les droits, envoyer un mail ni publier.
 
 La réunion des deux dossiers Thomas demeure une décision distincte ; les signatures d’octobre ne pourront jamais certifier novembre par simple rattachement.
+
+## Nouvelle relecture transversale après rectification (23/11, après 15:37 UTC)
+
+La règle en termes utilisateur : **les deux vues doivent montrer la vraie session et les mêmes signatures prouvées à la même date/créneau, jamais une image d’une autre période**.
+
+Les points de l’inventaire écrans/flux ci-dessus ont été recherchés à nouveau dans le code courant : 60 fichiers sources ouverts pour extraction des lectures, des clés de date/créneau et des contrôles d’image. Relecture ciblée approfondie des listes apprenants, tableaux de bord, PDF hebdomadaire, signatures papier, relance manuelle, ancien lien de régularisation et deux relances automatiques. Il s’agit d’une **lecture de code, pas d’une exécution utilisateur ou de ces tâches**.
+
+### Résultats confirmés / réserves
+
+- **Vue commune (cours, remboursement FC, CRM Documents/Formations/Dossier)** : même ID et mêmes images/date de cours ; ne convertit pas signed_at en date suivie. Toutefois elle réunit toutes les images du dossier avec ses attentes, sans séparation explicite « hors session » ; les preuves papier restent absentes. Elle ne peut pas résoudre le dossier connecté erroné de Thomas ni inventer les deux preuves manquantes.
+- **Signature d’entrée dans les cours et formulaire de signature** : date ciblée transmise au serveur et droits exacts ; pas de déduction de présence à partir de l’heure de saisie. Réserve : consultation et ouverture n’ont pas le même périmètre pratique ; erreur de lecture peut être ignorée sur certains chemins.
+- **CRM manquants/planning/heures, papier Session/Dossier, export rassemblé et ZIP signatures, taux présentiel/jalons, absents QRC et pratique EDOF** : clés dossier/date/créneau ou inscription exactes ; non-emprunt des images entre périodes. **Parité totale non prouvée** : attentes locales/serveur différentes, papier non visible partout, exports préparés et sources d’archive distinctes. Présence administrative n’est pas une signature.
+- **Liste apprenants, tableaux de bord manquants et fin de formation** : écart confirmé, existence de ligne assimilée à preuve sans lire l’image/signed_at. **Suivi en cours** : compteur brut des images du dossier, sans borne à la session active ; le helper `suiviFormationIndicateurs.ts` est plus strict mais cet écran ne l’utilise pas dans le calcul relu ; horaires FC encore 13–16 dans l’écran.
+- **PDF hebdomadaire / branches Documents complétés, rapport d’activité, Contrôle qualité, téléchargement groupé et dossier individuel** : cinq jours et cases par défaut, première version par créneau ; faux manques hors session possibles. Les erreurs ignorées dans certains lecteurs ne doivent pas être interprétées comme une absence. Feuilles personnalisées/collectives/individuelles vierges restent un autre usage, pas des preuves signées.
+- **Qualiopi** : libellé basé sur created_at, pas date_emargement, donc date de saisie tardive susceptible d’être prise pour date suivie.
+- **Ancien lien de régularisation** : retiré sans écriture mais texte contredit les signatures passées autorisées dans le circuit normal ; relance manuelle actuelle distingue correctement date du cours et heure réelle.
+- **Attestations** : contrôle FC exige image datée ou preuve papier exacte ; périmètre dernière session reste distinct des fenêtres d’émargement. Adaptateurs d’aperçu convertissent date du cours en heure technique, pas heure de signature réelle. Aucun document existant régénéré.
+- **Sauvegardes/restauration** : sources relues, aucune opération appelée ; restauration indépendante toujours NON PROUVÉE. Ne pas modifier des archives pour « corriger » un affichage courant.
+
+### Fonctions et tâches réellement relues maintenant
+
+Définitions actives lues : `emargement_creneaux_reels`, `emargement_theorie_inscrite`, `emargement_fenetres_eleve`, `emargement_controle_creneau`, `garde_emargement_fenetre`, `fc_papier_creneaux`, `attestation_fc_controle`, `generer_emargements_session`, `generer_emargements_planning_pratique`, `presentiel_signature_valide`, `releve_sources_apprenant`, `geler_releves_fin_acces`. Aucune appelée pour écrire. Le corps du gel a cette fois été lu : archive par dossier, appelle la source figée, ne transfère aucune signature ; **jamais exécuté manuellement**.
+
+Écarts maintenus : insert-only de feuilles vides incompatible avec les lecteurs « ligne = signé » ; contrôle attestation sur dernière session seulement ; source figée transmet un marqueur d’image et toutes les sessions ; exception de régularisation dans le garde conservée. Les droits/protections n’ont pas été modifiés. Les fonctions `presentiel_bilan_jour` et `presentiel_valider_creneau`, ainsi que le trigger anti-DELETE, ont été lues dans la revue précédente, **pas relues dans cette nouvelle passe** ; leur conformité actuelle n’est pas certifiée ici.
+
+Sources locales relues : `save-emargement-apprenant`, `send-document-email`, `send-regularisation-emargement`, les deux relances, sauvegarde quotidienne/manifeste et backup-export/restore. Déploiements et résultats d’exécution NON VÉRIFIÉS. Horaires/états des tâches relus : relances quotidiennes 18h et 08h UTC, gel chaque heure à :07, sauvegarde 01h30 et reprises 01h–05h ; actives, aucun déclenchement effectué.
+
+### Limites et décision requise
+
+La demande demeure limitée au module des feuilles : **aucun correctif hors module appliqué**. Les deux signatures novembre et le rattachement autorisé du compte Thomas restent non retrouvés ; parcours réel Thomas/admin, PDF de ses images réelles et parité générale de l’application NON PROUVÉS. Aucun nouveau test navigateur ni signature réelle exécuté pendant cette passe.
+
+Accord ciblé nécessaire avant correction prospective des listes/tableaux de bord, relances, PDF hebdomadaires/ZIP, papier visible et libellés Qualiopi/régularisation ; conservation intégrale des feuilles, pièces signées/envoyées, paiements, archives, droits et réglages. Le cas Thomas nécessite séparément les deux preuves exactes, sans transfert automatique depuis octobre.
