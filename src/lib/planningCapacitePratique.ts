@@ -19,3 +19,14 @@ export function ecartsJoursPratique(types: Array<'vtc' | 'taxi' | 'libre'>, beso
 export function appliquerCapacitePratique(maximum: 3 | 4, parDate: Record<string, number>): Record<string, number> {
   return Object.fromEntries(Object.keys(parDate).map(date => [date, maximum]));
 }
+
+/** Number only effective planning dates, independently for each track. */
+export function numerosJoursPratique(typesParDate: Record<string, 'vtc' | 'taxi' | 'libre'>): Record<string, number> {
+  const compte = { vtc: 0, taxi: 0 };
+  const numeros: Record<string, number> = {};
+  for (const date of Object.keys(typesParDate).sort()) {
+    const type = typesParDate[date];
+    if (type === 'vtc' || type === 'taxi') numeros[date] = ++compte[type];
+  }
+  return numeros;
+}

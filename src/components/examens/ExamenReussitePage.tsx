@@ -52,7 +52,8 @@ import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacemen
 import { FormationPratiqueDateSelect } from './FormationPratiqueDateSelect';
 import { periodesFormationPratique } from '@/lib/periodesFormationPratique';
 import { enregistrerListesPlanning } from '@/lib/planningCandidatsSave';
-import { appliquerCapacitePratique, joursFormationPratique, ecartsJoursPratique } from '@/lib/planningCapacitePratique';
+import { appliquerCapacitePratique, joursFormationPratique, ecartsJoursPratique, numerosJoursPratique } from '@/lib/planningCapacitePratique';
+import { confirmerChoixPlanning } from '@/lib/planningChoixConfirmation';
 import { CapacitePratiqueSelect } from './CapacitePratiqueSelect';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
@@ -1076,6 +1077,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
+  const [planningSaveStatus, setPlanningSaveStatus] = useState<'saving' | 'saved' | 'error'>('saved');
   const loadedPlanningKeyRef = useRef<string | null>(null);
   // Dates figées : les bornes Du/Au ne sont envoyées que si l'admin les a modifiées lui-même.
   const planningBoundsEditedRef = useRef(false);
@@ -1176,15 +1178,22 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       lettre_exclus_ids: lettreExclusIds,
       updated_at: new Date().toISOString(),
     };
-    const { error } = planningRowExistsRef.current
+    setPlanningSaveStatus('saving');
+    const { data, error } = planningRowExistsRef.current
       ? await supabase.from('planning_pratique_config').update(fields)
-          .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique)
+          .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique).select('*').maybeSingle()
       : await supabase.from('planning_pratique_config').upsert({
           exam_date: selectedExamDate, date_pratique: selectedDatePratique, ...fields,
-        }, { onConflict: 'exam_date,date_pratique' });
-    if (!error) planningRowExistsRef.current = true;
-
-    if (error) toast.error("Choix non sauvegardé : " + error.message);
+        }, { onConflict: 'exam_date,date_pratique' }).select('*').maybeSingle();
+    try {
+      if (error) throw new Error(error.message);
+      confirmerChoixPlanning(data, fields);
+      planningRowExistsRef.current = true;
+      setPlanningSaveStatus('saved');
+    } catch (err) {
+      setPlanningSaveStatus('error');
+      toast.error('Choix non sauvegardés : ' + (err instanceof Error ? err.message : 'réessayez.'));
+    }
   }, [
     selectedExamDate,
     selectedDatePratique,
@@ -1903,6 +1912,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   useEffect(() => {
     if (!selectedExamDate || !selectedDatePratique) return;
     setLoadedPlanningKey(null);
+    setPlanningSaveStatus('saved');
     planningBoundsEditedRef.current = false;
     const seq = ++planningLoadSeq.current;
     const requestedKey = `${selectedExamDate}::${selectedDatePratique}`;
@@ -1968,6 +1978,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     if (loadedPlanningKey !== currentKey || !selectedExamDate || !selectedDatePratique) return;
     // Pas de planning enregistré et pas de dates valides : on ne crée rien (aucune écriture).
     if (!planningRowExistsRef.current && !isValidPlanningBounds(planningStartDate, planningEndDate)) return;
+    setPlanningSaveStatus('saving');
     const timer = setTimeout(async () => {
       const fields = {
         ...((planningBoundsEditedRef.current || !planningRowExistsRef.current ? planningBoundsPayload(planningStartDate, planningEndDate) : {}) as { planning_start_date: string; planning_end_date: string }),
@@ -1982,14 +1993,22 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         updated_at: new Date().toISOString(),
       };
       // Ligne existante : simple mise à jour (un upsert sans dates « Du/Au » est refusé par la base).
-      const { error } = planningRowExistsRef.current
+      const { data, error } = planningRowExistsRef.current
         ? await supabase.from('planning_pratique_config').update(fields)
-            .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique)
+            .eq('exam_date', selectedExamDate).eq('date_pratique', selectedDatePratique).select('*').maybeSingle()
         : await supabase.from('planning_pratique_config').upsert({
             exam_date: selectedExamDate, date_pratique: selectedDatePratique, ...fields,
-          }, { onConflict: 'exam_date,date_pratique' });
-      if (!error) planningRowExistsRef.current = true;
-      if (error) toast.error(`Choix non sauvegardés : ${error.message}`);
+          }, { onConflict: 'exam_date,date_pratique' }).select('*').maybeSingle();
+      if (loadedPlanningKeyRef.current !== currentKey) return;
+      try {
+        if (error) throw new Error(error.message);
+        confirmerChoixPlanning(data, fields);
+        planningRowExistsRef.current = true;
+        setPlanningSaveStatus('saved');
+      } catch (err) {
+        setPlanningSaveStatus('error');
+        toast.error('Choix non sauvegardés : ' + (err instanceof Error ? err.message : 'réessayez.'));
+      }
     }, 1000);
     return () => clearTimeout(timer);
   }, [loadedPlanningKey, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, removedCandidatsFormation, extraCandidatsCMA, removedCandidatsCMA, maxPerDay, maxPerDayMap, dayTimeSlots, noteLettreCMA, lettreExclusIds]);
@@ -4724,6 +4743,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const vtcDaysNeeded = joursFormationPratique(totalVTC, maxPerDay);
         const taxiDaysNeeded = joursFormationPratique(totalTAXI, maxPerDay);
         const ecartsJours = ecartsJoursPratique(Object.values(dayTypeMap), vtcDaysNeeded, taxiDaysNeeded);
+        const numerosJours = numerosJoursPratique(dayTypeMap);
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
 
@@ -4755,6 +4775,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 </span>
                 {fsPlanning.button}
               </CardTitle>
+              <p role="status" className={`text-xs ${planningSaveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {loadedPlanningKey !== `${selectedExamDate}::${selectedDatePratique}` ? 'Chargement des choix…' : planningSaveStatus === 'saving' ? 'Enregistrement des choix…' : planningSaveStatus === 'error' ? 'Choix non enregistrés — réessayez votre choix' : 'Choix enregistrés'}
+              </p>
               <p className="text-sm text-muted-foreground">
                 VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jours disponibles • {totalReserved} réservation(s) • {vtcPlaces} places VTC / {taxiPlaces} places TAXI
               </p>
@@ -4942,7 +4965,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       return (
                         <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'} ${(vtcOverbooked || taxiOverbooked) ? 'border-destructive bg-destructive/5' : ''}`}>
                           <div className="text-xs font-bold text-center mb-1 pb-1 border-b flex items-center justify-center gap-1">
-                            <span>{dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}</span>
+                            <span className="min-w-0">{new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(day)}</span>
                             <button 
                               onClick={() => {
                                 setExcludedDays(prev => [...prev, key]);
@@ -4953,6 +4976,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             >
                               <X className="h-3 w-3" />
                             </button>
+                          </div>
+
+                          <div className="text-xs font-semibold text-center mb-2 text-foreground">
+                            {expectedType === 'libre' ? 'Jour libre' : `${numerosJours[key] === 1 ? '1er' : `${numerosJours[key]}e`} jour ${expectedType.toUpperCase()}`}
                           </div>
 
                           {/* Résumé occupation & créneaux */}
@@ -5013,7 +5040,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                   else delete current.type;
                                   const next = { ...prev, [key]: current };
                                   void saveDayTimeSlotsNow(next);
-                                  toast.success("Choix sauvegardé");
                                   return next;
                                 })}
                                 className="h-5 min-w-[72px] text-[9px] font-semibold border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary px-1"
@@ -5037,7 +5063,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                       : { matin: current.matin || '9h-12h', apresmidi: current.apresmidi || '13h-16h' };
                                   const next = { ...prev, [key]: { ...current, ...hours, horaireMode: mode } };
                                   void saveDayTimeSlotsNow(next);
-                                  toast.success('Horaires sauvegardés');
                                   return next;
                                 })}
                                 className="h-6 text-[9px] border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary px-1 flex-1 min-w-0"

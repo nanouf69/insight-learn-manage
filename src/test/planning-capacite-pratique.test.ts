@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { appliquerCapacitePratique, capacitePratique, joursFormationPratique, ecartsJoursPratique } from '@/lib/planningCapacitePratique';
+import { appliquerCapacitePratique, capacitePratique, joursFormationPratique, ecartsJoursPratique, numerosJoursPratique } from '@/lib/planningCapacitePratique';
 
 describe('Choix de 3 ou 4 candidats par jour', () => {
+  it('le mercredi 18 novembre 2026 est le premier jour VTC, TAXI garde son propre compteur', () => {
+    const numeros = numerosJoursPratique({ '2026-11-20': 'vtc', '2026-11-18': 'vtc', '2026-11-19': 'taxi', '2026-11-23': 'libre', '2026-11-24': 'taxi' });
+    expect(numeros).toEqual({ '2026-11-18': 1, '2026-11-19': 1, '2026-11-20': 2, '2026-11-24': 2 });
+    expect(new Date('2026-11-18T12:00:00Z').getUTCDay()).toBe(3);
+  });
   it('20 jours pour 56 VTC et 12 TAXI à quatre : trois jours libres, aucun surplus attribué à une filière', () => {
     expect(ecartsJoursPratique([...Array(14).fill('vtc'), ...Array(3).fill('taxi'), ...Array(3).fill('libre')], 14, 3))
       .toEqual({ vtc: 14, taxi: 3, libres: 3, ecartVtc: 0, ecartTaxi: 0 });
