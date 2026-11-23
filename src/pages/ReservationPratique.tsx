@@ -538,7 +538,7 @@ export default function ReservationPratique() {
               <p className="text-sm text-muted-foreground">{getDayBadgeText(dayTimeSlots[existingReservation.date_choisie], type)}</p>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
-              <p>📍 86 Route de Genas 69003 Lyon</p>
+              <p className="font-semibold text-foreground">📍 Rendez-vous au 86 route de Genas, 69003 Lyon</p>
             </div>
             {hasAvailableSlots && (
               <Button
@@ -576,7 +576,7 @@ export default function ReservationPratique() {
               <p className="text-2xl font-bold text-primary">{formatDate(confDate)}</p>
               <div className="flex items-center justify-center gap-4 mt-3 text-sm text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {getDayBadgeText(dayTimeSlots[selectedDate!], type)}</span>
-                <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> Lyon 3e</span>
+                <span className="flex items-start justify-center gap-1 w-full font-semibold text-foreground"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> Rendez-vous au 86 route de Genas, 69003 Lyon</span>
               </div>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left text-sm space-y-2">
