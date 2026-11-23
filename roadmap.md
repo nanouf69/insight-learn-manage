@@ -8,14 +8,15 @@
 - [x] Choix 3/4 partagé Candidats/Planning, journées/places et portail candidat alignés, réservations inchangées ; 16 tests + PC/mobile fictifs PASS, build OK, aucune publication. Rapport docs/planning-capacite-3-4-2026-11-23.md.
 - [ ] Vérification réelle choix/sauvegarde/relecture CRM : compte demandeur redirigé vers cours-public, accès administrateur nécessaire ; aucun réglage réel écrit.
 ## Émargements Thomas FC VTC (23/11)
+- [x] Accord explicite 16:18 UTC : compte existant rattaché au dossier novembre, lien append-only de consultation des preuves octobre, journal avant/après ; vues réelles compte Thomas PC/mobile et actualisation affichent uniquement 17–18 novembre. Quatre preuves octobre inchangées ; deux preuves novembre toujours non retrouvées, aucune publication. Rapport docs/emargement-thomas-rattachement-2026-11-23.md.
 - [x] Relecture transversale après rectification : sources de 60 fichiers et 12 fonctions actives relues, tâches inventoriées ; écarts/limites actualisés dans docs/emargements-revue-lecteurs-2026-11-23.md, aucune correction hors périmètre ni publication.
 - [x] Rectification 23/11 15:37 : vraie formation uniquement 17–18 novembre, jamais octobre ; relecture de tous les créneaux, masqués inclus, compte/deux dossiers/papier/documents/journaux : aucune preuve novembre retrouvée ; quatre images sous octobre intactes, rapport docs/emargement-thomas-rectification-2026-11-23-1537.md, aucun changement fonctionnel/publication.
 - [ ] Deux signés/deux manquants novembre : bloqué par les deux preuves non retrouvées ; capture/feuille originale des deux créneaux nécessaires, aucune réattribution déduite des horodatages.
 - [x] Revue lecteurs hors module en lecture seule : écrans/exports/relances/fonctions inventoriés ; écarts et limites dans docs/emargements-revue-lecteurs-2026-11-23.md, aucun autre correctif appliqué.
 - [ ] Alignement hors module (tableaux de bord, relances, PDF hebdomadaires/ZIP, papier, libellés) : attend accord ciblé car demande initiale limitée au module ; aucun historique/droit/mail modifié.
 - [x] Deux dossiers distincts prouvés ; affichage/PDF partagés, consultation admin sans re-signature, erreurs explicites : 31 tests + 8 parcours fictifs PC/mobile, PDF identiques, quatre empreintes historiques inchangées. Aperçu non publié ; rapport docs/emargement-thomas-parite-2026-11-23.md.
-- [ ] Vérification connectée des vues Thomas : compte disponible non administrateur, refus des deux dossiers ; session Thomas/admin autorisée nécessaire, aucun droit élargi.
-- [ ] Vraie session novembre dans le compte historique : identité/rattachement exact à vérifier ; octobre n’est pas une période suivie selon le demandeur, aucune fusion ni déplacement de signature.
+- [x] Vérification connectée apprenant Thomas PC/mobile après rattachement : dossier novembre et actualisation confirmés ; vue administrateur réelle non vérifiée.
+- [x] Vraie session novembre dans le compte historique : rattachement autorisé effectué, deux dossiers conservés, dates historiques et signatures inchangées.
 
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
