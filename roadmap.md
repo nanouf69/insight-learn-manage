@@ -1,10 +1,12 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Émargements Thomas FC VTC (23/11)
+- [x] Rectification 23/11 15:37 : vraie formation uniquement 17–18 novembre, jamais octobre ; relecture de tous les créneaux, masqués inclus, compte/deux dossiers/papier/documents/journaux : aucune preuve novembre retrouvée ; quatre images sous octobre intactes, rapport docs/emargement-thomas-rectification-2026-11-23-1537.md, aucun changement fonctionnel/publication.
+- [ ] Deux signés/deux manquants novembre : bloqué par les deux preuves non retrouvées ; capture/feuille originale des deux créneaux nécessaires, aucune réattribution déduite des horodatages.
 - [x] Revue lecteurs hors module en lecture seule : écrans/exports/relances/fonctions inventoriés ; écarts et limites dans docs/emargements-revue-lecteurs-2026-11-23.md, aucun autre correctif appliqué.
 - [ ] Alignement hors module (tableaux de bord, relances, PDF hebdomadaires/ZIP, papier, libellés) : attend accord ciblé car demande initiale limitée au module ; aucun historique/droit/mail modifié.
 - [x] Deux dossiers distincts prouvés ; affichage/PDF partagés, consultation admin sans re-signature, erreurs explicites : 31 tests + 8 parcours fictifs PC/mobile, PDF identiques, quatre empreintes historiques inchangées. Aperçu non publié ; rapport docs/emargement-thomas-parite-2026-11-23.md.
 - [ ] Vérification connectée des vues Thomas : compte disponible non administrateur, refus des deux dossiers ; session Thomas/admin autorisée nécessaire, aucun droit élargi.
-- [ ] Même périmètre entre les deux dossiers : bloqué par absence de rattachement autorisé ; aucune fusion ni déplacement de signature.
+- [ ] Vraie session novembre dans le compte historique : identité/rattachement exact à vérifier ; octobre n’est pas une période suivie selon le demandeur, aucune fusion ni déplacement de signature.
 
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.

@@ -1,5 +1,7 @@
 # Émargements Thomas RAMBOANIAINA — diagnostic et correction ciblée
 
+> Rectification du demandeur à 15:37 UTC : Thomas a suivi uniquement les 17–18 novembre, jamais octobre. Les dates d’octobre ci-dessous sont les valeurs stockées de l’ancien dossier, pas des journées réellement suivies. Deux signatures manquantes sont annoncées mais les deux preuves de novembre ne sont pas retrouvées ; voir `emargement-thomas-rectification-2026-11-23-1537.md`. Aucun transfert effectué.
+
 23 novembre 2026. Aperçu uniquement, aucun envoi, aucune publication, aucune écriture Cloud.
 
 ## Cause exacte prouvée
