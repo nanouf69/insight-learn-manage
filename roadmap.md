@@ -1,4 +1,8 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Sécurité — cinq alertes RLS (23/11)
+- [x] Migration 0281 réellement appliquée après tests : propriétaire QRC/colonnes, audit serveur, refus admin/colonnes, flags minimaux, version admin ; 10 tests RLS + 15 EB3 PASS, lectures API réelles, cinq empreintes avant/après identiques, cinq alertes absentes, aucune publication. Rapport docs/securite-cinq-alertes-rls-2026-11-23.md.
+- [ ] Vérification écrite réelle après migration : non effectuée pour préserver dossiers/preuves ; comptes techniques isolés autorisés nécessaires, matrice écriture prouvée sur copie jetable.
+- [ ] Audit hors cinq politiques : 3 alertes scanner + 287 observations linter, notamment chaîne SECURITY DEFINER finalisation/propriété ; périmètre supplémentaire et tests isolés requis, aucun élargissement automatique.
 ## Planning pratique — choix 3 ou 4 candidats (23/11)
 - [x] Choix 3/4 partagé Candidats/Planning, journées/places et portail candidat alignés, réservations inchangées ; 16 tests + PC/mobile fictifs PASS, build OK, aucune publication. Rapport docs/planning-capacite-3-4-2026-11-23.md.
 - [ ] Vérification réelle choix/sauvegarde/relecture CRM : compte demandeur redirigé vers cours-public, accès administrateur nécessaire ; aucun réglage réel écrit.
