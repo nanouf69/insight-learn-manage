@@ -653,7 +653,6 @@ export default function ReservationPratique() {
                    <>
                      <p className="font-semibold">🎓 Pour vos révisions, consultez le module <strong>« PRATIQUE VTC »</strong> sur votre espace en ligne : <a href="https://gestion.ftransport.fr/cours?module=8" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">cliquez ici pour ouvrir le module PRATIQUE VTC</a></p>
                      <p>Notamment les exercices suivants dans <strong>"Formation Pratique VTC"</strong> : Quizz Lyon et Questions à apprendre.</p>
-                     <p>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">https://app.formative.com/join/DNFDZS</a></p>
                    </>
                  ) : (
                    <>
