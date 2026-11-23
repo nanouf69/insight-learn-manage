@@ -55,6 +55,7 @@ import { enregistrerListesPlanning } from '@/lib/planningCandidatsSave';
 import { appliquerCapacitePratique, joursFormationPratique, ecartsJoursPratique, numerosJoursPratique } from '@/lib/planningCapacitePratique';
 import { confirmerChoixPlanning } from '@/lib/planningChoixConfirmation';
 import { CapacitePratiqueSelect } from './CapacitePratiqueSelect';
+import { MailTestPratiqueDialog } from './MailTestPratiqueDialog';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -3862,6 +3863,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
                   <div className="flex flex-wrap gap-2">
+                    <MailTestPratiqueDialog type="vtc" />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button size="sm" variant="outline" disabled={vtcList.length === 0 || sendingVTCPratique || sentVTCPratique} className={`gap-1.5 text-xs ${sentVTCPratique ? 'text-green-700 border-green-300' : ''}`}>
@@ -4198,6 +4200,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
                   <div className="flex flex-wrap gap-2">
+                    <MailTestPratiqueDialog type="taxi" />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button size="sm" variant="outline" disabled={taxiList.length === 0 || sendingTAXIPratique || sentTAXIPratique} className={`gap-1.5 text-xs ${sentTAXIPratique ? 'text-green-700 border-green-300' : ''}`}>

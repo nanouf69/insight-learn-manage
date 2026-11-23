@@ -1,0 +1,2 @@
+# Exam communication boundaries
+- Practical date test emails use fictional identity and an inert booking label, a single explicit recipient, no learner ID and the existing admin-protected sender; success requires a positive non-skipped transport response. Why: a test must never reserve a real learner slot or mark their communication as sent.
