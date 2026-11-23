@@ -1,5 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Sécurité — cinq alertes RLS (23/11)
+- [x] Revue transversale complémentaire : écrans/services et 34 fonctions directes + chaîne replay/import relus ; écarts graves publication/finalisation/import/purge/replay signalés, aucune opération dangereuse appelée, rapport sécurité actualisé.
 - [x] Migration 0281 réellement appliquée après tests : propriétaire QRC/colonnes, audit serveur, refus admin/colonnes, flags minimaux, version admin ; 10 tests RLS + 15 EB3 PASS, lectures API réelles, cinq empreintes avant/après identiques, cinq alertes absentes, aucune publication. Rapport docs/securite-cinq-alertes-rls-2026-11-23.md.
 - [ ] Vérification écrite réelle après migration : non effectuée pour préserver dossiers/preuves ; comptes techniques isolés autorisés nécessaires, matrice écriture prouvée sur copie jetable.
 - [ ] Audit hors cinq politiques : 3 alertes scanner + 287 observations linter, notamment chaîne SECURITY DEFINER finalisation/propriété ; périmètre supplémentaire et tests isolés requis, aucun élargissement automatique.

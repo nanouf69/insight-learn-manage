@@ -62,3 +62,56 @@ Linter : **287 observations de sécurité** hors ces cinq alertes : 1 RLS sans p
 Réserve importante de code réellement lu : `core_assert_session_owner` retourne sans refus si auth.uid() NULL ou aucun dossier trouvé ; `core_finalize_attempt` est SECURITY DEFINER exécutable anon et ne contient pas de garde propriétaire explicite dans sa définition lue. Il appelle d’autres fonctions/gardes ; leur chaîne complète après ce lot n’est pas certifiée. Les restrictions RLS ne sécurisent pas seules les fonctions qui les contournent. Aucun changement de ce moteur hors périmètre des cinq politiques n’a été effectué ; audit ciblé supplémentaire requis avant garantie globale.
 
 Dernier journal aperçu : build OK. Aucun mail, aucune activation de moteur, aucun déplacement de preuve, aucun changement de signature ou de sauvegarde ; aucune publication.
+
+## Revue transversale supplémentaire après correction (23/11, 15:53 UTC)
+
+**Règle** : chacun accède uniquement aux données autorisées ; les réponses, corrections et journaux ne peuvent pas être fabriqués par un autre utilisateur. Une politique de table ne suffit pas si une fonction serveur la contourne.
+
+Relecture des sources locales et des définitions actives de toutes les 34 fonctions référençant directement les cinq tables ; droits EXECUTE vérifiés séparément avec has_function_privilege. Deux autres fonctions de chaîne (replay et import groupé) et helpers d’identité également lus. **Lecture seulement, pas exécution des fonctions de production.**
+
+### Inventaire des usages visibles et services
+
+| Usage | Sources relues | Respect de la règle / réserve |
+|---|---|---|
+| Correcteur QRC réel, liens CRM historiques et rapprochement | AdminCorrectionQrcV2Reel, noyauReel, lectureRapprochement, HistoriqueCopiesMatiere | Lectures QRC protégées par owner/admin ; aucune insertion directe dans les cinq tables. Fonctions de correction contrôlées séparément ci-dessous. |
+| Notes élève et corrections IA affichées | CorrectionsIaEleve, coreExamPublication, useLearnerResultRefresh | SELECT et signaux, aucun droit de modification ajouté ; politique QRC protège les images/réponses des autres. Les sources voisines n’ont pas toutes été auditées ici. |
+| Statistiques premier passage | premierPassageExamStatsRead | Vérification admin serveur avant lecture, compte recontrôlé à la fin ; SELECT QRC compatible. |
+| Surveillance/cohérence/notes de session | ControleCoherenceEB, useAlertesNotesGlobales, signalNotesSession, examPassageIdentity | Abonnements et calculs de lecture ; pas d’écriture des tables ciblées. Autorisation des fonctions de diagnostic vérifiée ci-dessous. |
+| Éditeur examens : refus de sauvegarde | ExamensBlancsEditor | Six champs du refus compatibles avec nouveau GRANT ; admin seulement. L’erreur de journalisation reste silencieuse dans ce chemin, pas une preuve de journal officiel. |
+| Activation ancien moteur et QRC en attente | qrcInstances | Lecture minimale quiz_id/enabled et RPC ; notes internes non demandées. Tables de l’ancien moteur distinctes, pas certifiées globalement par ce lot. |
+| Notification de version | useAppVersionCheck | Après connexion admin/formateur uniquement, SELECT version compatible ; pas de besoin anonyme retrouvé. |
+| Correction IA et suites arrière-plan | qrc-ia-correction, _shared/qrcIaRegles | Propriétaire/admin ou token de suite vérifiés avant traitement ; service pour écritures, réservations/identité exactes. Déploiement et issue réelle non exécutés. |
+| Attestation, signature et fermeture de compte | attestation-fin-formation, _shared/attestationFinCore, attestationFinDeps, attestationCompteFermetureDeps | Entrée admin validée et client service pour journal ; modifications de droits n’empêchent pas ce journal. Signature réelle non exécutée. |
+| Sauvegarde manuelle/export/restauration | backup-export, backup-restore | Connexion + admin exigés ; service conservé. Réserves hors RLS : restore utilise upsert, table fournie par requête ; ne constitue pas une garantie anti-écrasement. Jamais exécuté. |
+| Sauvegarde quotidienne/manifeste | sauvegarde-quotidienne-eleves/index, manifest | Service conservé, identité de pages explicite. Réserve : entrée ordinaire préserve callbacks historiques sans garde applicative commune, diagnostic admin seulement ; protection externe de la fonction déployée non vérifiée. Aucun déclenchement ni réglage changé. |
+
+### Fonctions actives : matrice de lecture
+
+**Contrôle admin/propriétaire présent dans le corps lu** (pas garantie d’exécution end-to-end) :
+- core_admin_reset_exam, core_publish_version_contenu, core_retirer_version_examen, qrc_disable_engine, qrc_ia_definir_actif : admin exigé.
+- core_start_attempt, core_restart_matiere : propriétaire ou admin exigé avant opérations.
+- core_commenter_qrc, core_correct_qrc, core_correct_qrc_publish, core_revise_qrc_publish, core_note_attempt, eb_notes_actualiser, eb_notes_diagnostic : contexte serveur/identité vérifiée ; EXECUTE anon refusé.
+- qrc_demander_verification : propre QRC exigée ; anon refusé.
+- qrc_ia_bilan_statuts : service/admin/interne vérifié, anon refusé.
+
+**Service seul par EXECUTE, non exposé aux clients** : alerter_qrc_ia_coupee, qrc_ia_copies_en_attente_elearning, qrc_ia_enfiler, qrc_ia_raison_file, qrc_ia_reconcilier, qrc_ia_reserver_auto, qrc_ia_reserver_reprise, qrc_ia_reserver_reprise_exceptionnelle, qrc_ia_publier_auto, qrc_ia_publier_initial, qrc_ia_publier_reprise. Certains corps contiennent aussi une garde service ; les droits service sont inchangés.
+
+**Usages spécifiques** : qrc_engine_enabled renvoie seulement un booléen d’activation, aucune note/réponse ; enforce_exam_content_integrity est un trigger (appel RPC direct sans contexte trigger non fonctionnel), contrôles d’identité de contenu et journal serveur, source déclenchante non réauditée en totalité.
+
+**Écarts sérieux restant hors des cinq politiques** :
+- core_publish_exam_version : EXECUTE anon/authenticated, aucune garde admin dans le corps lu ; peut écrire des versions et audit sous son propriétaire. D’autres triggers éventuels non certifiés, pas d’appel tenté.
+- core_operation_replay : EXECUTE anon/authenticated, retourne le résultat d’une opération par ID/type sans vérifier l’auteur/propriétaire ; accès indirect possible si ID connu.
+- core_finalize_attempt : EXECUTE anon/authenticated, pas de garde propriétaire explicite ; core_assert_session_owner tolère uid NULL et compte sans dossier. Les politiques QRC ne protègent pas cette écriture SECURITY DEFINER. Chaîne complète non testée contre production.
+- core_import_passage_finalise et core_import_passages_finalises : EXECUTE anon, garde uniquement « si uid non NULL et non admin » ; uid NULL passe cette garde. Aucun import effectué.
+- core_purge_donnees_test : EXECUTE anon/authenticated, pas de garde ; désactive les triggers et supprime des lignes is_test, dont journaux. **Jamais exécutée** ; le périmètre test ne justifie pas cet accès ouvert.
+- qrc_ia_rattrapage_historique : anon ne peut pas exécuter, mais garde tolère uid NULL ; droits actuellement authentifiés/service. Comptes auth réels contrôlés, contexte interne à examiner.
+
+### Tâches lues
+
+État/horaire uniquement : alerte-qrc-ia-attente-24h et qrc-ia-rattrapage-historique à :17 chaque heure ; qrc-ia-reconciliation toutes les 10 minutes ; sauvegarde 01h30 et reprises toutes les 2 minutes entre 01h–05h. Toutes actives. Commandes, secrets et résultats des jobs non exportés ; aucun job exécuté ou modifié.
+
+### Conclusion remplaçant toute garantie globale
+
+Les cinq alertes de **politiques de table** restent corrigées et données conservées, mais **sécurité de bout en bout non prouvée** : les points serveur ci-dessus peuvent contourner les RLS. Aucun correctif supplémentaire, changement de permissions hors cinq tables, migration d’examen, suppression, modification de données réglées ou publication effectué dans cette relecture.
+
+La demande étant ciblée sur cinq alertes, correction des fonctions d’examen/publication/import/replay/purge et du callback de sauvegarde soumise à accord ciblé, avec tests jetables avant activation. Les limites précédentes (écritures réelles par rôle, parcours QRC/examens/signatures, restauration indépendante, déploiements) demeurent. Les 3 alertes scanner et 287 observations linter précédentes ne représentent pas un audit exhaustif.
